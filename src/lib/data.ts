@@ -170,6 +170,78 @@ export async function getPromptStats() {
   }
 }
 
+export async function createProject(project: {
+  title: string
+  description: string
+  content: string
+  result_content: string | null
+  category_slug: string
+  difficulty: string
+  model_used: string | null
+  model_recommendation: string | null
+  tools_used: string[]
+  tags: string[]
+  steps: { title: string; content: string; result_content: string | null; description: string | null }[]
+}) {
+  if (!SUPABASE_CONFIGURED) return { id: 'mock-id' }
+
+  const { createClient } = await import('./supabase/server')
+  const supabase = await createClient()
+
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) throw new Error('Must be logged in to submit a project')
+
+  // Look up category ID from slug
+  const { data: cat } = await supabase
+    .from('categories')
+    .select('id')
+    .eq('slug', project.category_slug)
+    .single()
+  if (!cat) throw new Error('Invalid category')
+
+  // Insert the project
+  const { data: prompt, error: promptError } = await supabase
+    .from('prompts')
+    .insert({
+      title: project.title,
+      description: project.description,
+      content: project.content,
+      result_content: project.result_content || null,
+      category_id: cat.id,
+      difficulty: project.difficulty,
+      model_used: project.model_used || null,
+      model_recommendation: project.model_recommendation || null,
+      tools_used: project.tools_used,
+      tags: project.tags,
+      status: 'pending',
+      author_id: user.id,
+    })
+    .select('id')
+    .single()
+
+  if (promptError) throw promptError
+
+  // Insert steps if any
+  if (project.steps.length > 0) {
+    const stepsToInsert = project.steps.map((step, idx) => ({
+      prompt_id: prompt.id,
+      step_number: idx + 1,
+      title: step.title,
+      content: step.content,
+      result_content: step.result_content || null,
+      description: step.description || null,
+    }))
+
+    const { error: stepsError } = await supabase
+      .from('prompt_steps')
+      .insert(stepsToInsert)
+
+    if (stepsError) throw stepsError
+  }
+
+  return { id: prompt.id }
+}
+
 export async function updatePromptStatus(id: string, status: 'approved' | 'rejected') {
   if (!SUPABASE_CONFIGURED) {
     const prompt = mockPrompts.find(p => p.id === id)

@@ -26,18 +26,24 @@ export default async function PromptDetailPage({
   const modelDisplay = prompt.model_used ? getModelName(prompt.model_used) : prompt.model_recommendation
 
   // Check if current user has voted/bookmarked
-  const { votes, bookmarks } = await getUserVotesAndBookmarks([prompt.id])
-  const hasVoted = votes.has(prompt.id)
-  const hasBookmarked = bookmarks.has(prompt.id)
-  const isLoggedIn = votes.size >= 0 && (await (async () => {
-    try {
-      if (!process.env.NEXT_PUBLIC_SUPABASE_URL) return false
+  let hasVoted = false
+  let hasBookmarked = false
+  let isLoggedIn = false
+  try {
+    if (process.env.NEXT_PUBLIC_SUPABASE_URL) {
       const { createClient } = await import('@/lib/supabase/server')
       const supabase = await createClient()
       const { data: { user } } = await supabase.auth.getUser()
-      return !!user
-    } catch { return false }
-  })())
+      isLoggedIn = !!user
+      if (user) {
+        const { votes, bookmarks } = await getUserVotesAndBookmarks([prompt.id])
+        hasVoted = votes.has(prompt.id)
+        hasBookmarked = bookmarks.has(prompt.id)
+      }
+    }
+  } catch {
+    // Auth check failed, continue with defaults
+  }
 
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-10">

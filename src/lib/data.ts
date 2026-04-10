@@ -1,4 +1,4 @@
-import { Category, PromptWithRelations } from './types'
+import { Category, Profile, PromptWithRelations } from './types'
 import { mockCategories, mockPrompts, mockProfiles, mockSteps } from './mock-data'
 
 const SUPABASE_CONFIGURED = !!(
@@ -138,6 +138,92 @@ export async function getPromptById(id: string): Promise<PromptWithRelations | n
     .eq('id', id)
     .single()
   return data
+}
+
+// ---- Profiles ----
+
+export async function getProfileByUsername(username: string): Promise<Profile | null> {
+  if (!SUPABASE_CONFIGURED) {
+    return mockProfiles.find(p => p.username === username) ?? null
+  }
+  const { createClient } = await import('./supabase/server')
+  const supabase = await createClient()
+  const { data } = await supabase
+    .from('profiles')
+    .select('*')
+    .eq('username', username)
+    .single()
+  return data
+}
+
+export async function getProjectsByAuthor(authorId: string): Promise<PromptWithRelations[]> {
+  if (!SUPABASE_CONFIGURED) {
+    return mockPrompts
+      .filter(p => p.author_id === authorId && p.status === 'approved')
+      .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+      .map(attachRelations)
+  }
+  const { createClient } = await import('./supabase/server')
+  const supabase = await createClient()
+  const { data } = await supabase
+    .from('prompts')
+    .select('*, category:categories(*), author:profiles(*), steps:prompt_steps(*)')
+    .eq('author_id', authorId)
+    .eq('status', 'approved')
+    .order('created_at', { ascending: false })
+  return data ?? []
+}
+
+export async function getAuthorStats(authorId: string) {
+  if (!SUPABASE_CONFIGURED) {
+    const authorPrompts = mockPrompts.filter(p => p.author_id === authorId && p.status === 'approved')
+    return {
+      totalProjects: authorPrompts.length,
+      totalUpvotes: authorPrompts.reduce((sum, p) => sum + p.vote_count, 0),
+      totalBookmarks: authorPrompts.reduce((sum, p) => sum + p.bookmark_count, 0),
+      topCategory: getTopCategory(authorPrompts),
+      memberSince: mockProfiles.find(p => p.id === authorId)?.created_at ?? '',
+    }
+  }
+  const { createClient } = await import('./supabase/server')
+  const supabase = await createClient()
+  const { data: prompts } = await supabase
+    .from('prompts')
+    .select('vote_count, bookmark_count, category_id, categories(name, icon)')
+    .eq('author_id', authorId)
+    .eq('status', 'approved')
+
+  const items = prompts ?? []
+  return {
+    totalProjects: items.length,
+    totalUpvotes: items.reduce((sum: number, p: { vote_count: number }) => sum + p.vote_count, 0),
+    totalBookmarks: items.reduce((sum: number, p: { bookmark_count: number }) => sum + p.bookmark_count, 0),
+    topCategory: getTopCategoryFromDb(items),
+    memberSince: '',
+  }
+}
+
+function getTopCategory(prompts: typeof mockPrompts) {
+  const counts: Record<string, number> = {}
+  for (const p of prompts) {
+    counts[p.category_id] = (counts[p.category_id] || 0) + 1
+  }
+  const topId = Object.entries(counts).sort((a, b) => b[1] - a[1])[0]?.[0]
+  if (!topId) return null
+  const cat = mockCategories.find(c => c.id === topId)
+  return cat ? { name: cat.name, icon: cat.icon } : null
+}
+
+function getTopCategoryFromDb(prompts: { category_id: string; categories: unknown }[]) {
+  const counts: Record<string, { count: number; name: string; icon: string }> = {}
+  for (const p of prompts) {
+    const cat = p.categories as { name: string; icon: string } | null
+    if (!cat) continue
+    if (!counts[p.category_id]) counts[p.category_id] = { count: 0, name: cat.name, icon: cat.icon }
+    counts[p.category_id].count++
+  }
+  const top = Object.values(counts).sort((a, b) => b.count - a.count)[0]
+  return top ? { name: top.name, icon: top.icon } : null
 }
 
 // ---- Admin ----

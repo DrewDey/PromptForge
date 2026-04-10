@@ -58,7 +58,13 @@ export default async function PromptDetailPage({
 
       {/* Meta bar */}
       <div className="flex items-center gap-4 flex-wrap text-sm text-gray-500 mb-8 pb-6 border-b border-gray-200">
-        <span>By <strong className="text-gray-700">{prompt.author?.display_name ?? 'Anonymous'}</strong></span>
+        <span>By {prompt.author?.username ? (
+          <Link href={`/user/${prompt.author.username}`} className="font-semibold text-gray-700 hover:text-primary-600 transition-colors">
+            {prompt.author.display_name ?? 'Anonymous'}
+          </Link>
+        ) : (
+          <strong className="text-gray-700">Anonymous</strong>
+        )}</span>
         <span className="flex items-center gap-1">
           <ArrowUp className="w-4 h-4" /> {prompt.vote_count}
         </span>

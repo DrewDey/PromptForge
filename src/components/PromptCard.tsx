@@ -72,9 +72,18 @@ export default function PromptCard({ prompt }: { prompt: PromptWithRelations }) 
       </div>
 
       <div className="flex items-center justify-between text-sm text-gray-400 pt-3 border-t border-gray-100">
-        <span className="text-xs">
-          {prompt.author?.display_name ?? 'Anonymous'}
-        </span>
+        {prompt.author?.username ? (
+          <span
+            onClick={(e) => e.stopPropagation()}
+            className="text-xs"
+          >
+            <a href={`/user/${prompt.author.username}`} className="hover:text-primary-600 transition-colors">
+              {prompt.author.display_name ?? 'Anonymous'}
+            </a>
+          </span>
+        ) : (
+          <span className="text-xs">Anonymous</span>
+        )}
         <div className="flex items-center gap-3">
           <span className="flex items-center gap-1">
             <ArrowUp className="w-3.5 h-3.5" />

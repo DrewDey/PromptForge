@@ -4,6 +4,7 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { ArrowLeft, Plus, Trash2, ChevronDown, ChevronUp } from 'lucide-react'
 import { AI_MODELS, getModelsByProvider } from '@/lib/models'
+import ImageUpload from '@/components/ImageUpload'
 
 const categories = [
   { slug: 'finance', name: 'Finance & Accounting' },
@@ -27,6 +28,8 @@ export default function SubmitProjectPage() {
   const [modelId, setModelId] = useState('')
   const [customModel, setCustomModel] = useState('')
   const [expandedStep, setExpandedStep] = useState<number>(0)
+  const [resultImages, setResultImages] = useState<{ file: File; preview: string; caption: string }[]>([])
+  const [stepImages, setStepImages] = useState<Record<number, { file: File; preview: string; caption: string }[]>>({})
 
   const modelsByProvider = getModelsByProvider()
 
@@ -237,11 +240,16 @@ export default function SubmitProjectPage() {
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 The Result <span className="text-gray-400 font-normal">(optional)</span>
               </label>
-              <p className="text-xs text-gray-500 mb-1.5">What did the AI produce? Share the output or a summary of it.</p>
+              <p className="text-xs text-gray-500 mb-1.5">What did the AI produce? Share text, screenshots, or both.</p>
               <textarea
                 rows={6}
                 placeholder="Paste or describe what the AI generated..."
-                className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent mb-3"
+              />
+              <ImageUpload
+                images={resultImages}
+                onChange={setResultImages}
+                label="Screenshots"
               />
             </div>
           </>
@@ -310,14 +318,19 @@ export default function SubmitProjectPage() {
                     </div>
                     <div>
                       <label className="text-xs font-semibold text-green-600 uppercase tracking-wide mb-1 block">
-                        Result <span className="text-gray-400 font-normal normal-case">(optional)</span>
+                        Result <span className="text-gray-400 font-normal normal-case">(optional — text, screenshots, or both)</span>
                       </label>
                       <textarea
                         rows={4}
                         placeholder="What did the AI produce at this step? Share the output or a summary..."
                         value={step.result_content}
                         onChange={(e) => updateStep(idx, 'result_content', e.target.value)}
-                        className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                        className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent mb-3"
+                      />
+                      <ImageUpload
+                        images={stepImages[idx] ?? []}
+                        onChange={(imgs) => setStepImages({ ...stepImages, [idx]: imgs })}
+                        label="Screenshots"
                       />
                     </div>
                   </div>

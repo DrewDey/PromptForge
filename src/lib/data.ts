@@ -94,8 +94,25 @@ export async function getPrompts(options?: {
   if (status !== 'all') {
     query = query.eq('status', status)
   }
+
+  // Category filtering — look up category ID from slug
+  if (options?.categorySlug) {
+    const { data: cat } = await supabase
+      .from('categories')
+      .select('id')
+      .eq('slug', options.categorySlug)
+      .single()
+    if (cat) query = query.eq('category_id', cat.id)
+  }
+
   if (options?.difficulty) query = query.eq('difficulty', options.difficulty)
-  if (options?.search) query = query.or(`title.ilike.%${options.search}%,description.ilike.%${options.search}%`)
+
+  // Search title, description, and tags
+  if (options?.search) {
+    const s = options.search
+    query = query.or(`title.ilike.%${s}%,description.ilike.%${s}%,tags.cs.{${s}}`)
+  }
+
   if (options?.sort === 'popular') {
     query = query.order('vote_count', { ascending: false })
   } else {

@@ -39,7 +39,15 @@ DELETE FROM prompts;
 
 -- Update seed profiles (skip real users, only touch seed data)
 ALTER TABLE profiles DISABLE ROW LEVEL SECURITY;
-DELETE FROM profiles WHERE id LIKE '22222222%';
+ALTER TABLE profiles DROP CONSTRAINT IF EXISTS profiles_id_fkey;
+
+DELETE FROM profiles WHERE id IN (
+  '22222222-2222-2222-2222-222222222201',
+  '22222222-2222-2222-2222-222222222202',
+  '22222222-2222-2222-2222-222222222203',
+  '22222222-2222-2222-2222-222222222204',
+  '22222222-2222-2222-2222-222222222205'
+);
 
 INSERT INTO profiles (id, username, display_name, bio, role) VALUES
   ('22222222-2222-2222-2222-222222222201', 'marcusdev', 'Marcus Chen', 'Full-stack dev building with AI daily. Sharing everything I make.', 'user'),
@@ -49,6 +57,8 @@ INSERT INTO profiles (id, username, display_name, bio, role) VALUES
   ('22222222-2222-2222-2222-222222222205', 'teacherben', 'Ben Okafor', 'High school teacher using AI to build better lessons.', 'user')
 ON CONFLICT (id) DO UPDATE SET username = EXCLUDED.username, display_name = EXCLUDED.display_name, bio = EXCLUDED.bio;
 
+ALTER TABLE profiles ADD CONSTRAINT profiles_id_fkey
+  FOREIGN KEY (id) REFERENCES auth.users(id) ON DELETE CASCADE NOT VALID;
 ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;
 
 -- Update category counts

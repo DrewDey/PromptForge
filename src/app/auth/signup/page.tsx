@@ -10,6 +10,7 @@ export default function SignupPage() {
   const router = useRouter()
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
+  const [success, setSuccess] = useState(false)
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
@@ -17,27 +18,57 @@ export default function SignupPage() {
     setError('')
 
     const formData = new FormData(e.currentTarget)
-    const supabase = createClient()
 
-    const { error } = await supabase.auth.signUp({
-      email: formData.get('email') as string,
-      password: formData.get('password') as string,
-      options: {
-        data: {
-          username: formData.get('username') as string,
-          display_name: formData.get('username') as string,
+    try {
+      const supabase = createClient()
+
+      const { data, error } = await supabase.auth.signUp({
+        email: formData.get('email') as string,
+        password: formData.get('password') as string,
+        options: {
+          data: {
+            username: formData.get('username') as string,
+            display_name: formData.get('username') as string,
+          },
         },
-      },
-    })
+      })
 
-    if (error) {
-      setError(error.message)
+      if (error) {
+        setError(error.message)
+        setLoading(false)
+        return
+      }
+
+      // If email confirmation is required, session will be null
+      if (!data.session) {
+        setSuccess(true)
+        setLoading(false)
+        return
+      }
+
+      router.push('/')
+      router.refresh()
+    } catch (err) {
+      setError('Something went wrong. Please try again.')
       setLoading(false)
-      return
     }
+  }
 
-    router.push('/')
-    router.refresh()
+  if (success) {
+    return (
+      <div className="min-h-[80vh] flex items-center justify-center px-4">
+        <div className="w-full max-w-sm text-center">
+          <div className="text-4xl mb-4">📬</div>
+          <h1 className="text-xl font-bold mb-2">Check your email</h1>
+          <p className="text-gray-600 text-sm mb-6">
+            We sent you a confirmation link. Click it to activate your account.
+          </p>
+          <Link href="/auth/login" className="text-primary-600 hover:text-primary-700 font-medium text-sm">
+            Go to login
+          </Link>
+        </div>
+      </div>
+    )
   }
 
   return (

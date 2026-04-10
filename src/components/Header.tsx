@@ -10,6 +10,7 @@ export default function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [user, setUser] = useState<SupabaseUser | null>(null)
   const [userMeta, setUserMeta] = useState<{ username?: string; display_name?: string }>({})
+  const [isAdmin, setIsAdmin] = useState(false)
 
   useEffect(() => {
     if (!process.env.NEXT_PUBLIC_SUPABASE_URL) return
@@ -24,6 +25,8 @@ export default function Header() {
             username: user.user_metadata?.username,
             display_name: user.user_metadata?.display_name,
           })
+          supabase.from('profiles').select('role').eq('id', user.id).single()
+            .then(({ data }) => setIsAdmin(data?.role === 'admin'))
         }
       })
 
@@ -67,12 +70,14 @@ export default function Header() {
           <div className="hidden md:flex items-center gap-4">
             {user ? (
               <>
-                <Link
-                  href="/admin"
-                  className="text-sm text-gray-500 hover:text-gray-700"
-                >
-                  Admin
-                </Link>
+                {isAdmin && (
+                  <Link
+                    href="/admin"
+                    className="text-sm text-gray-500 hover:text-gray-700"
+                  >
+                    Admin
+                  </Link>
+                )}
                 <span className="flex items-center gap-1.5 text-sm font-medium text-gray-700">
                   <User className="w-4 h-4" />
                   {displayName}
@@ -126,9 +131,11 @@ export default function Header() {
             <hr className="border-gray-100" />
             {user ? (
               <>
-                <Link href="/admin" className="text-gray-500 hover:text-gray-700 text-sm" onClick={() => setMobileMenuOpen(false)}>
-                  Admin
-                </Link>
+                {isAdmin && (
+                  <Link href="/admin" className="text-gray-500 hover:text-gray-700 text-sm" onClick={() => setMobileMenuOpen(false)}>
+                    Admin
+                  </Link>
+                )}
                 <span className="text-sm font-medium text-gray-700 flex items-center gap-1.5">
                   <User className="w-4 h-4" />
                   {displayName}

@@ -24,9 +24,12 @@ export type Prompt = {
   title: string
   description: string
   content: string
+  result_content: string | null
   category_id: string
   difficulty: 'beginner' | 'intermediate' | 'advanced'
+  model_used: string | null
   model_recommendation: string | null
+  tools_used: string[]
   tags: string[]
   status: 'pending' | 'approved' | 'rejected'
   author_id: string
@@ -42,7 +45,18 @@ export type PromptStep = {
   step_number: number
   title: string
   content: string
+  result_content: string | null
   description: string | null
+  created_at: string
+}
+
+export type ProjectImage = {
+  id: string
+  project_id: string
+  step_id: string | null
+  image_url: string
+  caption: string | null
+  display_order: number
   created_at: string
 }
 
@@ -50,4 +64,5 @@ export type PromptWithRelations = Prompt & {
   category?: Category
   author?: Profile
   steps?: PromptStep[]
+  images?: ProjectImage[]
 }

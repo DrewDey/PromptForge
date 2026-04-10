@@ -1,6 +1,7 @@
 import Link from 'next/link'
-import { ArrowUp, Bookmark, Link2 } from 'lucide-react'
+import { ArrowUp, Bookmark, Link2, Cpu } from 'lucide-react'
 import { PromptWithRelations } from '@/lib/types'
+import { getModelName } from '@/lib/models'
 
 const difficultyColors = {
   beginner: 'bg-green-50 text-green-700 border-green-200',
@@ -10,6 +11,7 @@ const difficultyColors = {
 
 export default function PromptCard({ prompt }: { prompt: PromptWithRelations }) {
   const hasSteps = prompt.steps && prompt.steps.length > 0
+  const modelDisplay = prompt.model_used ? getModelName(prompt.model_used) : prompt.model_recommendation
 
   return (
     <Link
@@ -29,7 +31,7 @@ export default function PromptCard({ prompt }: { prompt: PromptWithRelations }) 
           {hasSteps && (
             <span className="text-xs font-medium bg-primary-50 text-primary-700 px-2 py-0.5 rounded-full border border-primary-200 flex items-center gap-1">
               <Link2 className="w-3 h-3" />
-              {prompt.steps!.length}-step chain
+              {prompt.steps!.length} steps
             </span>
           )}
         </div>
@@ -42,6 +44,21 @@ export default function PromptCard({ prompt }: { prompt: PromptWithRelations }) 
       <p className="text-sm text-gray-500 line-clamp-2 mb-4">
         {prompt.description}
       </p>
+
+      {/* Tools & Model */}
+      <div className="flex items-center gap-3 flex-wrap mb-4">
+        {modelDisplay && (
+          <span className="text-xs text-gray-500 flex items-center gap-1">
+            <Cpu className="w-3 h-3" />
+            {modelDisplay}
+          </span>
+        )}
+        {prompt.tools_used && prompt.tools_used.length > 0 && (
+          <span className="text-xs text-gray-400">
+            {prompt.tools_used.join(' + ')}
+          </span>
+        )}
+      </div>
 
       <div className="flex flex-wrap gap-1.5 mb-4">
         {prompt.tags.slice(0, 3).map(tag => (

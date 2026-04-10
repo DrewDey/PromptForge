@@ -3,38 +3,58 @@ import { Category, Profile, Prompt, PromptStep } from './types'
 export const mockProfiles: Profile[] = [
   {
     id: 'user-1',
-    username: 'promptmaster',
-    display_name: 'Alex Chen',
+    username: 'marcusdev',
+    display_name: 'Marcus Chen',
     avatar_url: null,
-    bio: 'AI enthusiast and prompt engineer',
+    bio: 'Full-stack dev building with AI daily. Sharing everything I make.',
     role: 'admin',
     created_at: '2026-03-01T00:00:00Z',
     updated_at: '2026-03-01T00:00:00Z',
   },
   {
     id: 'user-2',
-    username: 'sarahbuilds',
-    display_name: 'Sarah Kim',
+    username: 'sarahgrows',
+    display_name: 'Sarah Mitchell',
     avatar_url: null,
-    bio: 'Small business owner exploring AI',
+    bio: 'Marketing consultant. I use AI to 10x my client work.',
     role: 'user',
     created_at: '2026-03-05T00:00:00Z',
     updated_at: '2026-03-05T00:00:00Z',
   },
   {
     id: 'user-3',
-    username: 'devmarcus',
-    display_name: 'Marcus Johnson',
+    username: 'jakefinance',
+    display_name: 'Jake Torres',
     avatar_url: null,
-    bio: 'Full-stack developer and AI tinkerer',
+    bio: 'CFO at a startup. Automating everything finance with AI.',
     role: 'user',
     created_at: '2026-03-10T00:00:00Z',
     updated_at: '2026-03-10T00:00:00Z',
   },
+  {
+    id: 'user-4',
+    username: 'priya_creates',
+    display_name: 'Priya Sharma',
+    avatar_url: null,
+    bio: 'UX designer and AI tinkerer. Making design faster.',
+    role: 'user',
+    created_at: '2026-03-12T00:00:00Z',
+    updated_at: '2026-03-12T00:00:00Z',
+  },
+  {
+    id: 'user-5',
+    username: 'teacherben',
+    display_name: 'Ben Okafor',
+    avatar_url: null,
+    bio: 'High school teacher using AI to build better lessons.',
+    role: 'user',
+    created_at: '2026-03-15T00:00:00Z',
+    updated_at: '2026-03-15T00:00:00Z',
+  },
 ]
 
 export const mockCategories: Category[] = [
-  { id: 'cat-1', name: 'Finance & Accounting', slug: 'finance', description: 'Budgeting, forecasting, analysis, and financial planning', icon: '💰', prompt_count: 3, created_at: '2026-03-01T00:00:00Z' },
+  { id: 'cat-1', name: 'Finance & Accounting', slug: 'finance', description: 'Budgeting, forecasting, analysis, and financial planning', icon: '💰', prompt_count: 2, created_at: '2026-03-01T00:00:00Z' },
   { id: 'cat-2', name: 'Marketing & Sales', slug: 'marketing', description: 'Campaigns, content strategy, lead generation, and outreach', icon: '📢', prompt_count: 2, created_at: '2026-03-01T00:00:00Z' },
   { id: 'cat-3', name: 'Writing & Content', slug: 'writing', description: 'Blog posts, emails, copy, and creative writing', icon: '✍️', prompt_count: 2, created_at: '2026-03-01T00:00:00Z' },
   { id: 'cat-4', name: 'Coding & Development', slug: 'coding', description: 'Code generation, debugging, architecture, and documentation', icon: '💻', prompt_count: 2, created_at: '2026-03-01T00:00:00Z' },
@@ -47,625 +67,377 @@ export const mockCategories: Category[] = [
 ]
 
 export const mockSteps: PromptStep[] = [
-  // Steps for "Content Calendar Builder" (prompt-5)
-  {
-    id: 'step-1',
-    prompt_id: 'prompt-5',
-    step_number: 1,
-    title: 'Research Phase',
-    content: 'I need to create a content calendar for [BUSINESS/NICHE]. First, analyze these top competitors: [COMPETITOR 1], [COMPETITOR 2]. What content themes, posting frequency, and formats are working well for them? Summarize the key patterns you notice.',
-    description: 'Analyze competitor content strategies to inform your calendar',
-    created_at: '2026-03-15T00:00:00Z',
-  },
-  {
-    id: 'step-2',
-    prompt_id: 'prompt-5',
-    step_number: 2,
-    title: 'Theme & Pillar Creation',
-    content: 'Based on the competitor research, create 4-5 content pillars for [BUSINESS/NICHE] that align with these goals: [GOAL 1], [GOAL 2]. For each pillar, suggest 3 content formats (e.g., how-to post, behind-the-scenes, user story) and the ideal platform for each.',
-    description: 'Define your content pillars and formats',
-    created_at: '2026-03-15T00:00:00Z',
-  },
-  {
-    id: 'step-3',
-    prompt_id: 'prompt-5',
-    step_number: 3,
-    title: 'Calendar Generation',
-    content: 'Now create a 30-day content calendar using the pillars and formats above. Include: date, platform, content pillar, format, topic/title, brief description (1-2 sentences), and suggested hashtags. Arrange it so content pillars rotate evenly and no two consecutive posts use the same format. Output as a table.',
-    description: 'Generate the full 30-day calendar',
-    created_at: '2026-03-15T00:00:00Z',
-  },
-  // Steps for "API Endpoint Designer" (prompt-9)
-  {
-    id: 'step-4',
-    prompt_id: 'prompt-9',
-    step_number: 1,
-    title: 'Requirements Gathering',
-    content: 'I\'m building an API for [APPLICATION DESCRIPTION]. The main resources/entities are: [LIST ENTITIES]. Users need to: [LIST KEY USER ACTIONS]. List all the API endpoints needed, grouped by resource. For each endpoint, specify: HTTP method, path, brief description, and whether it requires authentication.',
-    description: 'Define all required endpoints from user requirements',
-    created_at: '2026-03-18T00:00:00Z',
-  },
-  {
-    id: 'step-5',
-    prompt_id: 'prompt-9',
-    step_number: 2,
-    title: 'Schema & Response Design',
-    content: 'For each endpoint defined above, create: (1) the request body schema (if applicable) with field names, types, and validation rules, (2) the success response schema with example JSON, (3) possible error responses with status codes and messages. Use consistent naming conventions and follow REST best practices.',
-    description: 'Design request/response schemas for each endpoint',
-    created_at: '2026-03-18T00:00:00Z',
-  },
+  // === Brand Identity (prompt-1) ===
+  { id: 'step-1a', prompt_id: 'prompt-1', step_number: 1, title: 'Brand Discovery',
+    content: 'I\'m starting a specialty bakery in Austin, TX called "Sunrise Bakery" focused on sourdough and pastries. Our target customers are health-conscious millennials who value artisan quality and local sourcing. Our differentiator is that we mill our own flour from Texas-grown wheat. Help me develop a brand foundation: brand personality (5 traits), brand voice description, tagline options (give me 8), and a one-paragraph brand story.',
+    result_content: 'Brand Personality: 1) Warm & Welcoming — like the smell of fresh bread in the morning. 2) Artisan & Authentic — we don\'t cut corners, we hand-shape them. 3) Earthy & Grounded — rooted in Texas soil, literally. 4) Playful — we take our craft seriously, but not ourselves. 5) Community-First — your neighborhood living room that smells incredible.\n\nBrand Voice: Conversational and knowledgeable. We talk like your friend who happens to be obsessed with fermentation science. We explain what makes our bread special without being pretentious about it.\n\nTagline Options:\n1. "From Texas Wheat to Your Morning Treat"\n2. "Milled Here. Baked Here. Loved Here."\n3. "Rise With Us"\n4. "Real Flour. Real Craft. Real Good."\n5. "Where Every Loaf Has a Story"\n6. "Baked at Dawn, Gone by Noon"\n7. "Grain to Loaf, Start to Finish"\n8. "The Bakery That Starts From Scratch — Literally"\n\nBrand Story: Sunrise Bakery was born from a simple question: what if we could taste the difference between bread made from freshly-milled local wheat and everything else on the shelf? Turns out, you absolutely can. We source grain from Texas farms within 200 miles of our Austin kitchen, mill it ourselves each morning, and bake it into sourdough and pastries that taste like bread is supposed to taste. We\'re not trying to reinvent baking — we\'re trying to remember what it was before shortcuts became the norm.',
+    description: 'Define brand personality, voice, and story foundation', created_at: '2026-03-15T00:00:00Z' },
+  { id: 'step-1b', prompt_id: 'prompt-1', step_number: 2, title: 'Visual Identity System',
+    content: 'Based on the brand foundation we just created for Sunrise Bakery (artisan, earthy, warm, community-first), create a complete visual identity system. Include: 1) Primary and secondary color palette with hex codes and the reasoning behind each choice, 2) Typography recommendations (specific Google Fonts) for headings, body, and accent text, 3) Logo concept description (we\'ll have a designer execute it), 4) Photography style guide for social media.',
+    result_content: 'COLOR PALETTE:\n\nPrimary:\n- Warm Wheat #D4A843 — our hero color, represents the golden flour and the sunrise in our name\n- Deep Crust #3D2B1F — rich brown like a perfectly baked sourdough crust\n\nSecondary:\n- Flour Dust #FAF6F0 — our light background, warm white like dusted flour on a counter\n- Sage Field #7C8B6E — nods to the Texas landscape where our wheat grows\n- Sunrise Coral #E8845C — warm accent for CTAs and highlights\n\nTYPOGRAPHY:\n- Headings: "DM Serif Display" — warm, editorial, has bakery character without being cliché\n- Body: "Inter" — clean and readable, balances the serif headings\n- Accent/Quotes: "Caveat" — handwritten feel for menu boards, quotes, personal touches\n\nLOGO CONCEPT:\nA minimalist rising sun integrated into a wheat stalk. The sun is half-visible on the horizon line, with 3 wheat stalks growing upward from it. Below: "SUNRISE BAKERY" in DM Serif Display, "Austin, TX" in small caps Inter underneath. The mark should work in single-color (Deep Crust brown) and reversed on dark backgrounds.\n\nPHOTOGRAPHY STYLE:\n- Warm, natural lighting (golden hour feel, never harsh flash)\n- Hands in frame — show the human craft (kneading, shaping, dusting)\n- Raw ingredients as props (whole wheat berries, flour, starter)\n- Muted, earthy tones with the Sunrise Coral as an occasional pop\n- Close-up texture shots of bread crust, crumb structure, flaky pastry layers',
+    description: 'Create color palette, typography, logo concept, and photo style', created_at: '2026-03-15T00:00:00Z' },
+  { id: 'step-1c', prompt_id: 'prompt-1', step_number: 3, title: 'Brand Guidelines Document',
+    content: 'Now compile everything into a structured brand guidelines document for Sunrise Bakery. This will be shared with our designer, social media manager, and any future hires. Format it as a clean, section-by-section document with: Brand Overview, Mission & Values, Brand Voice (with do\'s and don\'ts examples), Visual Identity (colors, type, logo usage rules), Social Media Guidelines, and a section on how to talk about our milling process without being boring.',
+    result_content: null,
+    description: 'Compile everything into a shareable brand guidelines doc', created_at: '2026-03-15T00:00:00Z' },
+
+  // === Customer Review Analyzer (prompt-4) ===
+  { id: 'step-4a', prompt_id: 'prompt-4', step_number: 1, title: 'Build the Analysis Script',
+    content: 'I have ~500 customer reviews for my e-commerce store (home office furniture) exported as a CSV with columns: review_id, date, rating (1-5), review_text, product_name. Write a Python script that: 1) Reads the CSV, 2) Categorizes each review into sentiment (positive/negative/neutral) and topics (quality, shipping, price, customer service, assembly, comfort), 3) Outputs a summary JSON with: overall sentiment breakdown, top complaints, top praises, sentiment trend by month, and product-level scores. Use only standard libraries plus the csv and json modules — no ML frameworks needed, use keyword matching for the MVP.',
+    result_content: '```python\nimport csv\nimport json\nfrom collections import defaultdict\nfrom datetime import datetime\n\n# Keyword dictionaries for topic detection\nTOPICS = {\n    "quality": ["quality", "well-made", "durable", "sturdy", "flimsy", "cheap", "broke", "solid"],\n    "shipping": ["shipping", "delivery", "arrived", "package", "damaged", "fast", "slow", "late"],\n    "price": ["price", "expensive", "affordable", "worth", "value", "overpriced", "cheap"],\n    "customer_service": ["support", "customer service", "response", "helpful", "rude", "return"],\n    "assembly": ["assembly", "instructions", "build", "setup", "install", "tools", "easy to put"],\n    "comfort": ["comfortable", "ergonomic", "support", "cushion", "lumbar", "adjustable", "sitting"]\n}\n\nPOSITIVE = ["love", "great", "excellent", "amazing", "perfect", "best", "fantastic", "happy", "recommend"]\nNEGATIVE = ["hate", "terrible", "worst", "awful", "disappointed", "broken", "waste", "return", "refund"]\n\ndef analyze_reviews(filepath):\n    results = []\n    monthly = defaultdict(lambda: {"positive": 0, "negative": 0, "neutral": 0})\n    product_scores = defaultdict(lambda: {"total_rating": 0, "count": 0, "topics": defaultdict(int)})\n    \n    with open(filepath, "r") as f:\n        reader = csv.DictReader(f)\n        for row in reader:\n            text = row["review_text"].lower()\n            rating = int(row["rating"])\n            month = datetime.strptime(row["date"], "%Y-%m-%d").strftime("%Y-%m")\n            \n            # Sentiment\n            pos_count = sum(1 for w in POSITIVE if w in text)\n            neg_count = sum(1 for w in NEGATIVE if w in text)\n            sentiment = "positive" if rating >= 4 or pos_count > neg_count else "negative" if rating <= 2 or neg_count > pos_count else "neutral"\n            \n            # Topics\n            topics = [t for t, keywords in TOPICS.items() if any(k in text for k in keywords)]\n            \n            monthly[month][sentiment] += 1\n            product_scores[row["product_name"]]["total_rating"] += rating\n            product_scores[row["product_name"]]["count"] += 1\n            for t in topics:\n                product_scores[row["product_name"]]["topics"][t] += 1\n            \n            results.append({"id": row["review_id"], "sentiment": sentiment, "topics": topics, "rating": rating})\n    \n    # Build summary\n    total = len(results)\n    summary = {\n        "total_reviews": total,\n        "sentiment_breakdown": {\n            "positive": len([r for r in results if r["sentiment"] == "positive"]),\n            "negative": len([r for r in results if r["sentiment"] == "negative"]),\n            "neutral": len([r for r in results if r["sentiment"] == "neutral"])\n        },\n        "monthly_trend": dict(monthly),\n        "product_scores": {k: {"avg_rating": round(v["total_rating"]/v["count"], 1), "review_count": v["count"], "top_topics": dict(v["topics"])} for k, v in product_scores.items()}\n    }\n    \n    with open("review_analysis.json", "w") as f:\n        json.dump(summary, f, indent=2)\n    print(f"Analyzed {total} reviews. Results saved to review_analysis.json")\n\nanalyze_reviews("reviews.csv")\n```',
+    description: 'Generate Python script for sentiment analysis and topic categorization', created_at: '2026-03-22T00:00:00Z' },
+  { id: 'step-4b', prompt_id: 'prompt-4', step_number: 2, title: 'Weekly Report Template',
+    content: 'Now create a script that takes the review_analysis.json output and generates a clean, readable weekly report in Markdown format. The report should include: executive summary (2-3 sentences), sentiment pie chart data, top 3 issues to address, top 3 things customers love, product ranking by satisfaction, and 3 recommended actions based on the data. Make it something I can paste into Slack or email to my team every Monday.',
+    result_content: '```python\nimport json\nfrom datetime import datetime\n\ndef generate_report(analysis_path):\n    with open(analysis_path) as f:\n        data = json.load(f)\n    \n    s = data["sentiment_breakdown"]\n    total = data["total_reviews"]\n    pos_pct = round(s["positive"]/total*100)\n    neg_pct = round(s["negative"]/total*100)\n    \n    report = f"""# Customer Review Report — Week of {datetime.now().strftime(\'%B %d, %Y\')}\n\n## Executive Summary\nWe analyzed **{total} reviews** this period. **{pos_pct}% positive**, {neg_pct}% negative. \n{"⚠️ Negative sentiment is above 20% — needs attention." if neg_pct > 20 else "✅ Sentiment is healthy."}\n\n## Sentiment Breakdown\n| Sentiment | Count | Percentage |\n|-----------|-------|------------|\n| Positive | {s["positive"]} | {pos_pct}% |\n| Neutral | {s["neutral"]} | {round(s["neutral"]/total*100)}% |\n| Negative | {s["negative"]} | {neg_pct}% |\n\n## Product Rankings\n"""\n    products = sorted(data["product_scores"].items(), key=lambda x: x[1]["avg_rating"], reverse=True)\n    for name, info in products:\n        stars = "⭐" * round(info["avg_rating"])\n        report += f"- **{name}** — {info[\'avg_rating\']}/5 {stars} ({info[\'review_count\']} reviews)\\n"\n    \n    report += "\\n---\\n*Generated automatically by ReviewBot*"\n    \n    with open("weekly_report.md", "w") as f:\n        f.write(report)\n    print("Report saved to weekly_report.md")\n\ngenerate_report("review_analysis.json")\n```\n\nSample output when run:\n\n# Customer Review Report — Week of March 22, 2026\n\n## Executive Summary\nWe analyzed **487 reviews** this period. **68% positive**, 18% negative.\n✅ Sentiment is healthy.\n\n## Top Issues\n1. Assembly instructions unclear (mentioned in 34% of negative reviews)\n2. Shipping damage on standing desks (12 mentions)\n3. Lumbar support on the ErgoChair wearing out after 3 months\n\n## What Customers Love\n1. Build quality of the solid wood desks\n2. Customer service responsiveness\n3. Comfort of the mesh-back chairs',
+    description: 'Create a Markdown report generator for weekly team updates', created_at: '2026-03-22T00:00:00Z' },
+
+  // === React Dashboard (prompt-6) ===
+  { id: 'step-6a', prompt_id: 'prompt-6', step_number: 1, title: 'Architecture & Project Setup',
+    content: 'I need to build an admin dashboard for a SaaS analytics product. The dashboard should have: a sidebar nav, top stats cards (MRR, active users, churn rate, NPS), a revenue chart (line chart, last 12 months), a recent activity feed, and a customers table with search and pagination. Use Next.js 14, TypeScript, Tailwind CSS, and Recharts for the charts. Give me the full project structure and the layout component with sidebar navigation.',
+    result_content: null,
+    description: 'Define architecture and create the layout shell', created_at: '2026-03-25T00:00:00Z' },
+  { id: 'step-6b', prompt_id: 'prompt-6', step_number: 2, title: 'Stats Cards & Revenue Chart',
+    content: 'Now build the main dashboard page. Create: 1) Four stats cards showing MRR ($48,200, +12.5%), Active Users (2,847, +5.3%), Churn Rate (3.2%, -0.8%), and NPS Score (72, +4). Each card should show the metric, the change percentage with a green/red color, and a small sparkline. 2) A revenue line chart using Recharts showing monthly revenue for the last 12 months. Use this data: [32k, 35k, 33k, 38k, 36k, 40k, 42k, 39k, 44k, 45k, 46k, 48.2k]. Make it responsive.',
+    result_content: null,
+    description: 'Build the stats overview and revenue chart components', created_at: '2026-03-25T00:00:00Z' },
+  { id: 'step-6c', prompt_id: 'prompt-6', step_number: 3, title: 'Customer Table with Search',
+    content: 'Add a customers table component below the chart. Features: search bar that filters by name or email, sortable columns (Name, Email, Plan, MRR, Status, Joined), pagination (10 per page), status badges (active = green, churned = red, trial = yellow). Generate 30 rows of realistic fake customer data. Include the full component code with state management for search, sort, and pagination.',
+    result_content: null,
+    description: 'Create searchable, sortable customer data table', created_at: '2026-03-25T00:00:00Z' },
+
+  // === Email Sequence (prompt-5) ===
+  { id: 'step-5a', prompt_id: 'prompt-5', step_number: 1, title: 'Sequence Strategy & Structure',
+    content: 'I run a project management SaaS tool called "FlowDesk" (similar to Linear but for agencies). I need a 7-email onboarding sequence for new trial users. The trial is 14 days. Goal: get users to invite their team and create their first project within the first 3 days, then convert to paid by day 14. Give me: the send schedule (which day each email goes), the goal of each email, subject line options (2 per email), and a one-sentence summary of the content angle.',
+    result_content: 'FLOWDESK ONBOARDING EMAIL SEQUENCE — STRATEGY\n\nEmail 1 — Day 0 (immediately after signup)\nGoal: Welcome + get them to create their first project\nSubjects: "Your FlowDesk workspace is ready" / "Let\'s set up your first project (takes 2 min)"\nAngle: Warm welcome, single CTA to create a project with a direct link\n\nEmail 2 — Day 1\nGoal: Get them to invite a team member\nSubjects: "FlowDesk works better with your team" / "Invite one person — see the magic"\nAngle: Show that collaboration is where the value is, make inviting dead simple\n\nEmail 3 — Day 3\nGoal: Feature highlight — show the timeline view\nSubjects: "The feature agencies switch for" / "See your projects the way clients see them"\nAngle: Demo the visual timeline that differentiates us from competitors\n\nEmail 4 — Day 5\nGoal: Social proof — share a customer story\nSubjects: "How Redline Agency cut their project chaos by 60%" / "This agency manages 40 clients in FlowDesk"\nAngle: Real story, real numbers, let the customer sell for us\n\nEmail 5 — Day 8\nGoal: Address the #1 objection (migration is hard)\nSubjects: "Switching tools doesn\'t have to suck" / "Import from Asana, Trello, or Notion in 5 min"\nAngle: Acknowledge the pain, show how easy migration actually is\n\nEmail 6 — Day 11\nGoal: Urgency — trial ending soon\nSubjects: "Your trial ends in 3 days" / "Don\'t lose your setup — here\'s what happens next"\nAngle: Remind what they\'ve built, show what they\'d lose, present pricing\n\nEmail 7 — Day 14\nGoal: Final conversion push + offer\nSubjects: "Last day: 20% off your first 3 months" / "Your FlowDesk trial ends tonight"\nAngle: Limited-time discount, clear CTA, easy upgrade path',
+    description: 'Map out the full email sequence strategy and timing', created_at: '2026-03-20T00:00:00Z' },
+  { id: 'step-5b', prompt_id: 'prompt-5', step_number: 2, title: 'Full Email Copy',
+    content: 'Now write the complete email copy for all 7 emails. For each email: subject line (use option A from the strategy), preview text (under 60 chars), body copy (keep each email under 150 words — these should be short and scannable), and one clear CTA button. Tone: friendly, direct, no fluff. Write like a smart friend who happens to work at FlowDesk, not a marketing robot.',
+    result_content: 'EMAIL 1 — DAY 0\n\nSubject: Your FlowDesk workspace is ready\nPreview: Let\'s get your first project set up\n\nHey [First Name],\n\nWelcome to FlowDesk! Your workspace is live and ready to go.\n\nThe teams that get the most out of FlowDesk all do the same thing first: they create a project. It takes about 2 minutes and it\'ll immediately show you how everything flows.\n\nYou can start from scratch or use one of our agency templates (client onboarding, campaign tracker, sprint board).\n\n[Create Your First Project →]\n\nIf you need anything, just reply to this email. Real humans here.\n\n— The FlowDesk Team\n\n---\n\nEMAIL 2 — DAY 1\n\nSubject: FlowDesk works better with your team\nPreview: Invite one person — takes 10 seconds\n\nHey [First Name],\n\nSolo project management is just... a to-do list. The real power of FlowDesk shows up when your team is in there with you.\n\nInvite one person today. They\'ll see the project you created, and you\'ll both see why agencies are switching to this.\n\n[Invite a Team Member →]\n\nFun fact: teams that invite at least 2 people during trial are 4x more likely to say "where has this been all my life."\n\n— The FlowDesk Team',
+    description: 'Write the full copy for all 7 onboarding emails', created_at: '2026-03-20T00:00:00Z' },
+
+  // === Portfolio Analyzer (prompt-7) ===
+  { id: 'step-7a', prompt_id: 'prompt-7', step_number: 1, title: 'Spreadsheet Formula Design',
+    content: 'I manage a personal investment portfolio (~$200k across 15 positions: index funds, individual stocks, bonds, and a REIT). I want a Google Sheets tool that: 1) Takes my current positions (ticker, shares, cost basis), 2) Pulls current prices (I\'ll manually update weekly), 3) Calculates: current allocation % vs target allocation %, drift for each position, total portfolio gain/loss, and suggests rebalancing trades to get within 2% of target. Design all the formulas and the sheet structure. Use columns A-J.',
+    result_content: 'SHEET STRUCTURE — "Portfolio Rebalancer"\n\nRow 1: Headers\nA: Ticker | B: Asset Class | C: Shares | D: Cost Basis/Share | E: Current Price | F: Market Value | G: Current % | H: Target % | I: Drift | J: Action\n\nRow 2 (example: VTI):\nA2: VTI\nB2: US Equity\nC2: 150\nD2: 220.00\nE2: 248.50 (manually updated)\nF2: =C2*E2 → $37,275\nG2: =F2/F$17 → 18.6% (F17 is total)\nH2: 20% (your target)\nI2: =G2-H2 → -1.4%\nJ2: =IF(ABS(I2)>0.02, IF(I2<0, "BUY "&TEXT(ROUND((H2*F$17-F2)/E2,0),"0")&" shares", "SELL "&TEXT(ROUND((F2-H2*F$17)/E2,0),"0")&" shares"), "OK")\n\nRow 17: TOTALS\nF17: =SUM(F2:F16) → total portfolio value\nG17: =SUM(G2:G16) → should equal 100%\n\nSummary Section (Row 19+):\nA19: "Total Portfolio Value" | B19: =F17\nA20: "Total Cost Basis" | B20: =SUMPRODUCT(C2:C16,D2:D16)\nA21: "Total Gain/Loss" | B21: =B19-B20\nA22: "Total Return %" | B22: =B21/B20\nA23: "Positions Needing Rebalance" | B23: =COUNTIF(J2:J16,"<>OK")',
+    description: 'Design the spreadsheet structure with all formulas', created_at: '2026-04-01T00:00:00Z' },
+  { id: 'step-7b', prompt_id: 'prompt-7', step_number: 2, title: 'Tax-Loss Harvesting Logic',
+    content: 'Add a tax-loss harvesting layer. Add columns K-M: K = Unrealized Gain/Loss per position (=F-C*D), L = "Harvest?" flag (YES if loss > $500 and held > 30 days), M = Tax Savings Estimate (assuming 24% bracket). Also add a "Wash Sale Warning" column N that flags if I\'ve bought the same ticker in the last 30 days (I\'ll have a separate "Transactions" sheet with columns: Date, Ticker, Action, Shares). Give me the formulas.',
+    result_content: 'NEW COLUMNS:\n\nK: Unrealized G/L\nK2: =F2-(C2*D2) → shows gain or loss per position\n\nL: Harvest?\nL2: =IF(AND(K2<-500, (TODAY()-VLOOKUP(A2,Transactions!B:A,2,FALSE))>30), "YES", "NO")\n\nM: Est. Tax Savings\nM2: =IF(L2="YES", ABS(K2)*0.24, 0)\nM17: =SUM(M2:M16) → "Total potential tax savings"\n\nN: Wash Sale Warning\nN2: =IF(COUNTIFS(Transactions!B:B,A2,Transactions!C:C,"BUY",Transactions!A:A,">"&TODAY()-30)>0, "⚠️ WASH SALE RISK", "")\n\nTRANSACTIONS SHEET:\nA: Date | B: Ticker | C: Action (BUY/SELL) | D: Shares | E: Price\n\nSUMMARY ADDITIONS (main sheet):\nA24: "Harvestable Losses" | B24: =SUMPRODUCT((L2:L16="YES")*K2:K16)\nA25: "Potential Tax Savings" | B25: =M17\nA26: "Wash Sale Warnings" | B26: =COUNTIF(N2:N16,"*WASH*")',
+    description: 'Add tax optimization formulas and wash sale detection', created_at: '2026-04-01T00:00:00Z' },
+
+  // === Python Course (prompt-9) ===
+  { id: 'step-9a', prompt_id: 'prompt-9', step_number: 1, title: 'Curriculum Framework',
+    content: 'Design an 8-week Python fundamentals course for complete beginners (adult learners, no prior coding experience). Each week should have: a theme, 2 lesson topics, 1 hands-on exercise, 1 mini-project, and a quiz (5 questions). The course should end with students able to build a simple command-line app. Progressive difficulty. Week 1 should feel like "I can do this" and Week 8 should feel like "I can\'t believe I built that."',
+    result_content: 'WEEK 1: "Hello, Python" — Making the Computer Talk\nLesson 1: Installing Python, running your first script, print()\nLesson 2: Variables, strings, numbers, input()\nExercise: Build a "Mad Libs" game using input() and string concatenation\nMini-project: Personal intro generator — asks your name, age, hobby, prints a formatted bio\nQuiz: Variable types, print syntax, string operations, input(), basic errors\n\nWEEK 2: "Making Decisions" — If/Else Logic\nLesson 1: Comparison operators, if/elif/else\nLesson 2: Boolean logic, and/or/not, nested conditions\nExercise: Build a tip calculator that adjusts based on service quality rating\nMini-project: "Choose Your Own Adventure" — a 3-path text story with branching logic\nQuiz: Boolean evaluation, condition syntax, indentation rules, nested if behavior, edge cases\n\nWEEK 3: "Doing Things Again" — Loops\nLesson 1: for loops, range(), iterating over strings\nLesson 2: while loops, break/continue, loop patterns\nExercise: Multiplication table printer (user picks the number)\nMini-project: Number guessing game with attempt counter and hints (higher/lower)\nQuiz: for vs while, range parameters, infinite loops, break usage, loop tracing\n\nWEEK 4: "Collections" — Lists and Dictionaries\nLesson 1: Lists — creating, indexing, slicing, methods (append, sort, etc.)\nLesson 2: Dictionaries — key-value pairs, accessing, iterating\nExercise: Build a contact book (add, search, delete contacts)\nMini-project: Grade tracker — stores student names and scores, calculates averages, finds highest/lowest\n\nWEEK 5: "Building Blocks" — Functions\nLesson 1: Defining functions, parameters, return values\nLesson 2: Scope, default arguments, multiple returns\nExercise: Refactor the grade tracker to use functions\nMini-project: Unit converter app — handles miles/km, lbs/kg, F/C with a menu\n\nWEEK 6: "Working with Files" — Reading and Writing Data\nLesson 1: Opening files, reading text, with statement\nLesson 2: Writing files, CSV basics, handling errors with try/except\nExercise: Word frequency counter — reads a text file, counts each word\nMini-project: Expense logger — add expenses via CLI, saves to CSV, shows totals by category\n\nWEEK 7: "Leveling Up" — Modules and APIs\nLesson 1: Importing modules, useful stdlib (random, datetime, os)\nLesson 2: Installing packages with pip, making a simple API call with requests\nExercise: Build a random password generator with customizable rules\nMini-project: Weather app — asks for a city, calls a free weather API, displays the forecast\n\nWEEK 8: "The Capstone" — Build a Real App\nLesson 1: Project planning, breaking problems into functions\nLesson 2: Code review, debugging strategies, next steps in your Python journey\nExercise: Debug a broken script (5 intentional bugs to find and fix)\nMini-project: CAPSTONE — Personal finance CLI app that combines everything: file I/O, dictionaries, functions, loops, user input. Tracks income/expenses, saves to file, shows reports, plots a simple bar chart using a text-based library.',
+    description: 'Design the complete 8-week course structure', created_at: '2026-03-28T00:00:00Z' },
 ]
 
 export const mockPrompts: Prompt[] = [
-  // ---- FINANCE ----
+  // ---- MARKETING ----
   {
     id: 'prompt-1',
-    title: 'Monthly Budget Analyzer',
-    description: 'Paste your monthly transactions and get a complete spending analysis with actionable budgeting advice. Perfect for getting control of personal or business finances.',
-    content: `I want you to act as a financial analyst. I'll provide my monthly transactions below. Please:
-
-1. Categorize each transaction (housing, food, transportation, entertainment, subscriptions, etc.)
-2. Calculate total spending per category
-3. Show what percentage of total spending each category represents
-4. Compare to the recommended 50/30/20 budgeting rule (needs/wants/savings)
-5. Identify the top 3 areas where I could reduce spending
-6. Suggest a realistic budget for next month based on my income of [YOUR MONTHLY INCOME]
-
-Here are my transactions:
-[PASTE YOUR TRANSACTIONS HERE - format: date, description, amount]`,
-    category_id: 'cat-1',
+    title: 'Complete Brand Identity Package for Sunrise Bakery',
+    description: 'Built a full brand identity from scratch — personality, voice, color palette, typography, logo concept, photography guidelines, and a shareable brand guide. Used for a real bakery launch in Austin.',
+    content: 'I needed to launch a specialty bakery and had zero branding. I used Claude to go from nothing to a complete brand identity in one afternoon. Three prompts, each building on the last, from brand discovery to visual system to a final guidelines document I could hand to my designer and social media manager.',
+    result_content: 'The final brand guidelines document covered: brand story and mission, 5 personality traits with examples, voice guidelines with do\'s and don\'ts, complete color palette (5 colors with hex codes), typography system (3 fonts), logo concept description, and social media photography rules. My designer said it was the most thorough creative brief she\'d ever received from a client. The whole thing took about 2 hours start to finish.',
+    category_id: 'cat-2',
     difficulty: 'beginner',
-    model_recommendation: 'Any model (ChatGPT, Claude, Gemini)',
-    tags: ['budget', 'personal finance', 'spending', 'analysis'],
+    model_used: 'claude-sonnet-4-6',
+    model_recommendation: 'Claude 4.6 Sonnet',
+    tools_used: ['Claude'],
+    tags: ['branding', 'identity', 'bakery', 'design system', 'small business'],
     status: 'approved',
-    author_id: 'user-1',
-    vote_count: 47,
-    bookmark_count: 23,
-    created_at: '2026-03-12T00:00:00Z',
-    updated_at: '2026-03-12T00:00:00Z',
+    author_id: 'user-2',
+    vote_count: 83,
+    bookmark_count: 47,
+    created_at: '2026-03-15T00:00:00Z',
+    updated_at: '2026-03-15T00:00:00Z',
   },
   {
     id: 'prompt-2',
-    title: 'Cash Flow Forecast Generator',
-    description: 'Generate a 6-month cash flow projection for your small business based on historical data and assumptions.',
-    content: `Act as a CFO for a small business. I need a 6-month cash flow forecast.
-
-Business details:
-- Business type: [YOUR BUSINESS TYPE]
-- Monthly recurring revenue: [AMOUNT]
-- Monthly fixed costs: [LIST WITH AMOUNTS]
-- Variable costs as % of revenue: [PERCENTAGE]
-- Expected revenue growth rate: [% PER MONTH]
-- Upcoming one-time expenses: [LIST WITH AMOUNTS AND DATES]
-- Current cash balance: [AMOUNT]
-
-Please create:
-1. A month-by-month cash flow table (revenue, fixed costs, variable costs, one-time expenses, net cash flow, ending balance)
-2. Identify any months where cash balance might go negative
-3. Recommend actions to improve cash position
-4. Suggest what cash reserve I should maintain`,
-    category_id: 'cat-1',
-    difficulty: 'intermediate',
-    model_recommendation: 'Claude or ChatGPT-4',
-    tags: ['cash flow', 'small business', 'forecasting', 'financial planning'],
-    status: 'approved',
-    author_id: 'user-2',
-    vote_count: 35,
-    bookmark_count: 18,
-    created_at: '2026-03-14T00:00:00Z',
-    updated_at: '2026-03-14T00:00:00Z',
-  },
-  {
-    id: 'prompt-3',
-    title: 'Invoice Email Template Generator',
-    description: 'Create professional invoice follow-up emails for different scenarios — from friendly reminders to final notices.',
-    content: `Generate a set of invoice follow-up email templates for a [TYPE OF BUSINESS]. I need 4 versions:
-
-1. **Friendly Reminder** (sent 3 days before due date)
-2. **First Follow-up** (sent 3 days after due date)
-3. **Second Follow-up** (sent 14 days after due date)
-4. **Final Notice** (sent 30 days after due date)
-
-For each email, include:
-- Subject line
-- Body text (professional but warm tone)
-- Placeholders for: client name, invoice number, amount, due date, payment link
-
-My business name: [YOUR BUSINESS NAME]
-My typical payment terms: [NET 15 / NET 30 / etc.]`,
-    category_id: 'cat-1',
+    title: 'YouTube Video Script Pipeline — From Idea to Upload',
+    description: 'Created a complete 12-minute YouTube video script about productivity systems, including hook, story beats, b-roll suggestions, and a thumbnail concept. One prompt, full output.',
+    content: 'I run a productivity YouTube channel (8K subs) and scripting was taking me 6+ hours per video. I built a single detailed prompt that generates a complete, ready-to-film script. The key was giving Claude my exact style, pacing preferences, and audience context upfront.',
+    result_content: 'Generated a 2,800-word script for "The 3-Folder System That Replaced My Entire Productivity Stack." Included: a 30-second cold open hook, 4 story beats with transitions, specific b-roll callouts (e.g., "cut to: screen recording of folder structure"), 2 audience interaction points ("comment below which folder you\'d start with"), a sponsor integration slot, end screen CTA, and 3 thumbnail text options. I filmed it in one take using the script as my teleprompter notes. Video got 12K views — my best performing that month.',
+    category_id: 'cat-3',
     difficulty: 'beginner',
-    model_recommendation: 'Any model',
-    tags: ['invoicing', 'email', 'templates', 'freelance', 'small business'],
-    status: 'approved',
-    author_id: 'user-3',
-    vote_count: 28,
-    bookmark_count: 15,
-    created_at: '2026-03-16T00:00:00Z',
-    updated_at: '2026-03-16T00:00:00Z',
-  },
-
-  // ---- MARKETING ----
-  {
-    id: 'prompt-4',
-    title: 'Social Media Post Generator',
-    description: 'Generate a week\'s worth of engaging social media posts for any platform, tailored to your brand and audience.',
-    content: `Create 7 social media posts for [PLATFORM: Instagram/Twitter/LinkedIn/TikTok] for my [BUSINESS/BRAND TYPE].
-
-Target audience: [DESCRIBE YOUR AUDIENCE]
-Brand voice: [CASUAL/PROFESSIONAL/PLAYFUL/AUTHORITATIVE]
-Goal: [AWARENESS/ENGAGEMENT/SALES/EDUCATION]
-
-For each post, provide:
-- The post text (with appropriate length for the platform)
-- 3-5 relevant hashtags
-- Best time to post (general recommendation)
-- A suggestion for the visual/image to pair with it
-- A call-to-action
-
-Mix of post types: 2 educational, 2 engaging (questions/polls), 1 promotional, 1 behind-the-scenes, 1 user-generated content prompt.`,
-    category_id: 'cat-2',
-    difficulty: 'beginner',
-    model_recommendation: 'Any model',
-    tags: ['social media', 'content creation', 'marketing', 'branding'],
+    model_used: 'claude-opus-4-6',
+    model_recommendation: 'Claude 4.6 Opus',
+    tools_used: ['Claude'],
+    tags: ['youtube', 'video script', 'content creation', 'productivity'],
     status: 'approved',
     author_id: 'user-1',
-    vote_count: 62,
-    bookmark_count: 41,
-    created_at: '2026-03-13T00:00:00Z',
-    updated_at: '2026-03-13T00:00:00Z',
-  },
-  {
-    id: 'prompt-5',
-    title: 'Content Calendar Builder',
-    description: 'A 3-step prompt chain that researches competitors, defines content pillars, and generates a full 30-day content calendar.',
-    content: 'This is a multi-step prompt chain. Follow each step in order, using the output of the previous step as context for the next.',
-    category_id: 'cat-2',
-    difficulty: 'intermediate',
-    model_recommendation: 'Claude or ChatGPT-4',
-    tags: ['content calendar', 'content strategy', 'marketing', 'chain'],
-    status: 'approved',
-    author_id: 'user-3',
-    vote_count: 53,
-    bookmark_count: 34,
-    created_at: '2026-03-15T00:00:00Z',
-    updated_at: '2026-03-15T00:00:00Z',
+    vote_count: 95,
+    bookmark_count: 62,
+    created_at: '2026-03-18T00:00:00Z',
+    updated_at: '2026-03-18T00:00:00Z',
   },
 
   // ---- WRITING ----
   {
-    id: 'prompt-6',
-    title: 'Blog Post Outline Generator',
-    description: 'Create a detailed, SEO-friendly blog post outline on any topic. Includes headers, key points, and word count targets.',
-    content: `Create a detailed blog post outline for the topic: "[YOUR TOPIC]"
-
-Target audience: [WHO IS THIS FOR?]
-Target word count: [1000/1500/2000/2500]
-Primary keyword: [MAIN SEO KEYWORD]
-Secondary keywords: [2-3 RELATED KEYWORDS]
-
-Include:
-1. A compelling title (with the primary keyword)
-2. Meta description (under 160 characters)
-3. Introduction hook (2-3 approaches to choose from)
-4. 4-6 main sections with H2 headers
-5. 2-3 bullet points per section describing what to cover
-6. Suggested places to add images, examples, or data
-7. Conclusion with call-to-action options
-8. 3 internal linking suggestions`,
-    category_id: 'cat-3',
+    id: 'prompt-3',
+    title: '12-Week Strength Training Program with Nutrition Guide',
+    description: 'Generated a complete progressive overload training program customized for my goals — 4 days/week, with warm-ups, exercises, sets/reps, deload weeks, and a meal framework.',
+    content: 'I wanted a structured gym program but didn\'t want to pay $200 for a personal trainer\'s template. I gave Claude my stats, equipment access, goals, and injury history, and got back a program that\'s more detailed than anything I\'ve bought online.',
+    result_content: 'The program included: a 4-day Upper/Lower split, 3 mesocycles (weeks 1-4 hypertrophy focus, weeks 5-8 strength, weeks 9-12 peak), deload every 4th week, specific exercises with alternatives for each, warm-up protocols, RPE targets, and progressive overload rules (add 5lbs upper / 10lbs lower when you hit all reps). The nutrition section covered: calorie targets based on my stats (2,650 cal maintenance, 2,900 lean bulk), macro split (180g protein, 350g carbs, 85g fat), meal timing around workouts, and a sample day of eating. I\'ve been running it for 6 weeks and my squat is up 25lbs.',
+    category_id: 'cat-10',
     difficulty: 'beginner',
-    model_recommendation: 'Any model',
-    tags: ['blog', 'SEO', 'content writing', 'outline'],
-    status: 'approved',
-    author_id: 'user-2',
-    vote_count: 44,
-    bookmark_count: 29,
-    created_at: '2026-03-11T00:00:00Z',
-    updated_at: '2026-03-11T00:00:00Z',
-  },
-  {
-    id: 'prompt-7',
-    title: 'Cold Email Sequence Writer',
-    description: 'Generate a 3-email cold outreach sequence with personalization hooks, value props, and follow-up strategies.',
-    content: `Write a 3-email cold outreach sequence for [YOUR PRODUCT/SERVICE].
-
-Context:
-- I'm reaching out to: [TARGET ROLE, e.g., "marketing directors at mid-size SaaS companies"]
-- My product/service: [BRIEF DESCRIPTION]
-- Key value proposition: [MAIN BENEFIT]
-- Social proof: [ANY METRICS, TESTIMONIALS, OR NOTABLE CLIENTS]
-
-For each email:
-- Subject line (A/B test: give 2 options)
-- Email body (keep under 150 words)
-- Clear CTA
-- Personalization placeholder: [SPECIFIC DETAIL ABOUT THEIR COMPANY]
-
-Email 1: Initial outreach (focus on their pain point)
-Email 2: Follow-up after 3 days (add value, share a relevant insight)
-Email 3: Break-up email after 5 more days (create gentle urgency)`,
-    category_id: 'cat-3',
-    difficulty: 'intermediate',
-    model_recommendation: 'Claude or ChatGPT-4',
-    tags: ['email', 'cold outreach', 'sales', 'B2B'],
+    model_used: 'claude-opus-4-6',
+    model_recommendation: 'Claude 4.6 Opus',
+    tools_used: ['Claude'],
+    tags: ['fitness', 'training program', 'nutrition', 'health', 'personal'],
     status: 'approved',
     author_id: 'user-1',
-    vote_count: 38,
-    bookmark_count: 22,
-    created_at: '2026-03-17T00:00:00Z',
-    updated_at: '2026-03-17T00:00:00Z',
+    vote_count: 112,
+    bookmark_count: 78,
+    created_at: '2026-03-10T00:00:00Z',
+    updated_at: '2026-03-10T00:00:00Z',
+  },
+
+  // ---- DATA ----
+  {
+    id: 'prompt-4',
+    title: 'Automated Customer Review Analyzer with Weekly Reports',
+    description: 'Built a Python tool that categorizes 500+ customer reviews by sentiment and topic, then generates a clean weekly report I paste into Slack every Monday.',
+    content: 'We were drowning in customer reviews across our e-commerce store and had no systematic way to track sentiment or spot trends. I used ChatGPT to build a Python script that reads our review CSV export, categorizes everything, and spits out a Markdown report. No ML frameworks — just keyword matching for the MVP. Total build time: about 3 hours across 2 prompts.',
+    result_content: 'The system processes ~500 reviews per run and outputs: overall sentiment breakdown (68% positive, 14% neutral, 18% negative in our first run), sentiment trend by month, product-level satisfaction scores, top 3 complaints, top 3 praises, and specific action items. The weekly Markdown report goes straight into our #product-feedback Slack channel. Our product manager said it replaced a manual process that was taking her 4 hours every week. The script is 120 lines of Python with zero dependencies beyond the standard library.',
+    category_id: 'cat-8',
+    difficulty: 'intermediate',
+    model_used: 'chatgpt-5-4',
+    model_recommendation: 'ChatGPT 5.4',
+    tools_used: ['ChatGPT', 'Python', 'Google Sheets'],
+    tags: ['python', 'sentiment analysis', 'automation', 'customer feedback', 'reporting'],
+    status: 'approved',
+    author_id: 'user-3',
+    vote_count: 67,
+    bookmark_count: 39,
+    created_at: '2026-03-22T00:00:00Z',
+    updated_at: '2026-03-22T00:00:00Z',
+  },
+
+  // ---- MARKETING ----
+  {
+    id: 'prompt-5',
+    title: 'SaaS Onboarding Email Sequence — 7 Emails That Convert',
+    description: 'Designed and wrote a complete 7-email onboarding drip campaign for a project management SaaS. Includes strategy, timing, subject lines, and full copy for every email.',
+    content: 'I\'m the solo marketer at FlowDesk (a PM tool for agencies). We had a 14-day trial but no onboarding emails — just a welcome email and a "trial ending" email. I used ChatGPT Thinking to first map out the strategy, then write all the copy. The result is a 7-email sequence designed to drive two key actions: invite a team member (day 1-2) and create a first project (day 0).',
+    result_content: 'The sequence covers: Day 0 (welcome + first project), Day 1 (team invite), Day 3 (feature highlight), Day 5 (customer story), Day 8 (objection handling — migration fears), Day 11 (urgency — trial ending), Day 14 (final push + 20% discount). Each email is under 150 words, has a single CTA, and is written in a conversational tone. After implementing in Mailchimp, our trial-to-paid conversion went from 8% to 14% in the first month. The strategy doc alone saved me weeks of planning.',
+    category_id: 'cat-2',
+    difficulty: 'intermediate',
+    model_used: 'chatgpt-5-4-thinking',
+    model_recommendation: 'ChatGPT 5.4 Thinking',
+    tools_used: ['ChatGPT', 'Mailchimp'],
+    tags: ['email marketing', 'SaaS', 'onboarding', 'conversion', 'drip campaign'],
+    status: 'approved',
+    author_id: 'user-2',
+    vote_count: 74,
+    bookmark_count: 51,
+    created_at: '2026-03-20T00:00:00Z',
+    updated_at: '2026-03-20T00:00:00Z',
   },
 
   // ---- CODING ----
   {
-    id: 'prompt-8',
-    title: 'Code Review Assistant',
-    description: 'Get a thorough code review with suggestions for bugs, security issues, performance, and best practices.',
-    content: `Review the following code and provide feedback in these categories:
-
-1. **Bugs & Logic Errors** - Any logic mistakes, off-by-one errors, null pointer risks
-2. **Security** - SQL injection, XSS, authentication issues, data exposure
-3. **Performance** - Unnecessary loops, memory leaks, N+1 queries, caching opportunities
-4. **Readability** - Naming conventions, code organization, comments needed
-5. **Best Practices** - Design patterns, DRY violations, error handling
-
-For each issue found:
-- Severity: 🔴 Critical / 🟡 Warning / 🔵 Suggestion
-- Line reference
-- What's wrong
-- How to fix it (with code example)
-
-Language: [PROGRAMMING LANGUAGE]
-Context: [WHAT THIS CODE DOES]
-
-\`\`\`
-[PASTE YOUR CODE HERE]
-\`\`\``,
+    id: 'prompt-6',
+    title: 'Full SaaS Admin Dashboard — From Wireframe to Working Code',
+    description: 'Built a complete admin dashboard with stats cards, revenue charts, activity feed, and a searchable customer table. Next.js + Tailwind + Recharts. Three prompts from architecture to finished product.',
+    content: 'I needed an internal analytics dashboard for our SaaS but didn\'t want to spend 2 weeks building it. I used Claude Opus Extended to go from a rough wireframe description to working, responsive code in about 4 hours. Three prompts, each building on the last: architecture/layout, then the metrics + chart, then the data table with search and pagination.',
+    result_content: 'The final dashboard includes: responsive sidebar navigation, 4 KPI cards with sparklines and trend indicators (MRR, Active Users, Churn Rate, NPS), a 12-month revenue line chart with tooltips, a recent activity feed, and a full-featured customer table (search, sort by any column, pagination, status badges). All built in Next.js 14 with TypeScript, styled with Tailwind CSS, charts via Recharts. The code was clean enough to ship to production with minor tweaks — I mostly just swapped in real API calls for the mock data.',
     category_id: 'cat-4',
-    difficulty: 'beginner',
-    model_recommendation: 'Claude or ChatGPT-4',
-    tags: ['code review', 'debugging', 'best practices', 'security'],
-    status: 'approved',
-    author_id: 'user-3',
-    vote_count: 71,
-    bookmark_count: 45,
-    created_at: '2026-03-10T00:00:00Z',
-    updated_at: '2026-03-10T00:00:00Z',
-  },
-  {
-    id: 'prompt-9',
-    title: 'API Endpoint Designer',
-    description: 'A 2-step chain that takes your app requirements and produces a complete RESTful API design with schemas and documentation.',
-    content: 'This is a multi-step prompt chain. Follow each step in order, using the output of the previous step as context for the next.',
-    category_id: 'cat-4',
-    difficulty: 'intermediate',
-    model_recommendation: 'Claude',
-    tags: ['API', 'REST', 'backend', 'architecture', 'chain'],
+    difficulty: 'advanced',
+    model_used: 'claude-opus-4-6-ext',
+    model_recommendation: 'Claude 4.6 Opus Extended',
+    tools_used: ['Claude', 'Next.js', 'Tailwind CSS', 'Recharts', 'TypeScript'],
+    tags: ['dashboard', 'react', 'nextjs', 'admin panel', 'charts', 'full-stack'],
     status: 'approved',
     author_id: 'user-1',
-    vote_count: 42,
-    bookmark_count: 27,
-    created_at: '2026-03-18T00:00:00Z',
-    updated_at: '2026-03-18T00:00:00Z',
+    vote_count: 134,
+    bookmark_count: 89,
+    created_at: '2026-03-25T00:00:00Z',
+    updated_at: '2026-03-25T00:00:00Z',
+  },
+
+  // ---- FINANCE ----
+  {
+    id: 'prompt-7',
+    title: 'Investment Portfolio Rebalancer with Tax-Loss Harvesting',
+    description: 'Built a Google Sheets tool that tracks my $200K portfolio, calculates drift from target allocation, suggests rebalancing trades, and identifies tax-loss harvesting opportunities.',
+    content: 'I manage my own portfolio (15 positions across index funds, stocks, bonds, and a REIT) and was doing rebalancing manually in a notebook. I used ChatGPT Thinking to design a spreadsheet that does it all automatically — allocation tracking, drift calculation, trade suggestions, AND tax-loss harvesting with wash sale warnings. Two prompts: first the core rebalancer, then the tax optimization layer.',
+    result_content: 'The finished spreadsheet has: automatic market value calculation per position, current vs target allocation %, drift detection with 2% threshold, specific trade recommendations ("BUY 12 shares of VTI" / "SELL 8 shares of AAPL"), unrealized gain/loss per position, tax-loss harvesting flags (positions with >$500 loss held >30 days), estimated tax savings at my bracket, and wash sale risk warnings that cross-reference a transactions log. Saved me from accidentally triggering a wash sale last month that would have cost me $1,200 in lost deductions.',
+    category_id: 'cat-1',
+    difficulty: 'advanced',
+    model_used: 'chatgpt-5-4-thinking',
+    model_recommendation: 'ChatGPT 5.4 Thinking',
+    tools_used: ['ChatGPT', 'Google Sheets'],
+    tags: ['investing', 'portfolio', 'tax optimization', 'spreadsheet', 'personal finance'],
+    status: 'approved',
+    author_id: 'user-3',
+    vote_count: 91,
+    bookmark_count: 58,
+    created_at: '2026-04-01T00:00:00Z',
+    updated_at: '2026-04-01T00:00:00Z',
+  },
+
+  // ---- STRATEGY ----
+  {
+    id: 'prompt-8',
+    title: 'Competitive Landscape Report for Fintech Startup',
+    description: 'Generated a 15-page competitive analysis covering 8 competitors in the embedded payments space — feature matrices, pricing breakdowns, positioning maps, and strategic recommendations.',
+    content: 'We were preparing for our Series A pitch and needed a competitive analysis fast. I used Gemini Pro to research and structure a comprehensive landscape report. I gave it our product positioning, listed 8 competitors, and asked for a systematic breakdown. The output was thorough enough that our investor said it was "one of the better competitive analyses" they\'d seen from a seed-stage company.',
+    result_content: 'The report covered: market overview and sizing ($4.2B embedded payments market, 34% CAGR), 8 competitor profiles (Stripe Connect, Adyen for Platforms, PayPal Commerce, Square, Payrix, Finix, Rainforest, WePay), feature comparison matrix across 15 dimensions, pricing model comparison (flat-rate vs interchange-plus vs rev-share), positioning map (self-serve vs enterprise, vertical vs horizontal), gap analysis showing underserved segments, and 5 strategic recommendations for our differentiation. Each competitor section included: founding year, funding, target market, key features, pricing, strengths, and weaknesses.',
+    category_id: 'cat-9',
+    difficulty: 'intermediate',
+    model_used: 'gemini-2-5-pro',
+    model_recommendation: 'Gemini 2.5 Pro',
+    tools_used: ['Gemini', 'Google Docs'],
+    tags: ['competitive analysis', 'fintech', 'startup', 'Series A', 'market research'],
+    status: 'approved',
+    author_id: 'user-3',
+    vote_count: 56,
+    bookmark_count: 34,
+    created_at: '2026-03-28T00:00:00Z',
+    updated_at: '2026-03-28T00:00:00Z',
+  },
+
+  // ---- EDUCATION ----
+  {
+    id: 'prompt-9',
+    title: 'Complete 8-Week Python Course for Beginners',
+    description: 'Designed a full Python fundamentals curriculum — lesson plans, exercises, quizzes, and projects for each week. Built for adult learners with zero coding experience.',
+    content: 'I teach an evening coding class at a community college and needed to build a Python fundamentals course from scratch. I used Claude to design the entire 8-week curriculum in one session. The key was specifying the audience (adult beginners, no CS background) and the end goal (build a real CLI app by week 8). Each week has lessons, exercises, a mini-project, and a quiz.',
+    result_content: 'The curriculum goes from "Hello, Python" (week 1: print, variables, input) all the way to a capstone personal finance CLI app (week 8). Week-by-week progression: variables & strings → if/else logic → loops → lists & dictionaries → functions → file I/O → modules & APIs → capstone project. Every week has 2 lessons, a hands-on exercise, a mini-project, and a 5-question quiz. The mini-projects build in complexity: Mad Libs → Choose Your Own Adventure → Number Guessing Game → Contact Book → Unit Converter → Expense Logger → Weather App → Full Finance CLI. Students loved it — 85% completion rate, up from 60% with my old curriculum.',
+    category_id: 'cat-6',
+    difficulty: 'intermediate',
+    model_used: 'claude-opus-4-6',
+    model_recommendation: 'Claude 4.6 Opus',
+    tools_used: ['Claude', 'Jupyter Notebooks'],
+    tags: ['python', 'curriculum', 'teaching', 'beginner', 'course design'],
+    status: 'approved',
+    author_id: 'user-5',
+    vote_count: 88,
+    bookmark_count: 63,
+    created_at: '2026-03-28T00:00:00Z',
+    updated_at: '2026-03-28T00:00:00Z',
   },
 
   // ---- DESIGN ----
   {
     id: 'prompt-10',
-    title: 'UI/UX Audit Checklist',
-    description: 'Get a comprehensive audit of your website or app\'s user experience with actionable improvement suggestions.',
-    content: `Perform a UI/UX audit for my [WEBSITE/APP]. I'll describe the current state and you'll provide a structured assessment.
-
-App/website description: [WHAT IT DOES]
-Target users: [WHO USES IT]
-Main user goal: [WHAT USERS COME TO DO]
-Current pain points I've noticed: [ANY KNOWN ISSUES]
-
-Evaluate across these dimensions (score each 1-10):
-1. **First Impression** - Visual hierarchy, clarity of purpose, trust signals
-2. **Navigation** - Information architecture, menu structure, findability
-3. **Content** - Readability, tone, error messages, empty states
-4. **Forms & Inputs** - Field labels, validation, error handling, progress
-5. **Mobile Experience** - Responsive design, touch targets, load time
-6. **Accessibility** - Color contrast, alt text, keyboard navigation, screen readers
-7. **Conversion Flow** - CTAs, friction points, trust builders
-
-For each dimension: score, 2-3 specific issues found, and concrete fix suggestions.
-End with a prioritized action plan (quick wins vs. larger efforts).`,
+    title: 'Mobile App UI Component Specs for Fitness App',
+    description: 'Created a complete UI design system spec — colors, typography, spacing, component states, and interaction patterns for a fitness tracking mobile app.',
+    content: 'I\'m a solo developer building a fitness app and I\'m not a designer. I used Gemini to generate comprehensive UI specs that I could implement directly in React Native. Instead of vague design advice, I asked for specific values: hex codes, font sizes in pixels, border radii, spacing scales, and component state descriptions I could code against.',
+    result_content: 'The spec covered: a 10-color palette with primary/secondary/semantic colors (all with hex + RGB), 6-step type scale with specific font sizes and line heights for React Native, 8px spacing scale (4/8/12/16/24/32/48/64), component specs for 12 core components (buttons, cards, inputs, tabs, progress bars, workout cards, stat circles, nav bar, modals, toasts, avatars, badges), each with default/hover/pressed/disabled states, plus dark mode variants for every color. My favorite part: the workout card spec was so detailed that implementing it took 20 minutes instead of the usual 2 hours of guessing.',
     category_id: 'cat-5',
     difficulty: 'intermediate',
-    model_recommendation: 'Claude or ChatGPT-4',
-    tags: ['UI', 'UX', 'audit', 'design', 'accessibility'],
+    model_used: 'gemini-2-5-pro',
+    model_recommendation: 'Gemini 2.5 Pro',
+    tools_used: ['Gemini', 'Figma', 'React Native'],
+    tags: ['UI design', 'design system', 'mobile app', 'fitness', 'components'],
     status: 'approved',
-    author_id: 'user-2',
-    vote_count: 33,
-    bookmark_count: 19,
-    created_at: '2026-03-19T00:00:00Z',
-    updated_at: '2026-03-19T00:00:00Z',
-  },
-
-  // ---- EDUCATION ----
-  {
-    id: 'prompt-11',
-    title: 'Concept Explainer (Feynman Technique)',
-    description: 'Get any complex topic explained simply, as if teaching it to a beginner. Uses the Feynman technique for deep understanding.',
-    content: `Explain [CONCEPT/TOPIC] using the Feynman Technique. Here's how:
-
-1. **Simple Explanation** - Explain it as if I'm a smart 12-year-old. No jargon. Use everyday analogies.
-2. **Core Mechanism** - What's actually happening under the hood? Walk through the key process step by step.
-3. **Real-World Example** - Give a concrete, relatable example showing this concept in action.
-4. **Common Misconceptions** - What do most people get wrong about this? Correct those misunderstandings.
-5. **Connection Map** - How does this concept connect to 3 related concepts I might already know?
-6. **Test My Understanding** - Give me 3 questions I should be able to answer if I truly understand this.
-
-My current level of knowledge: [NONE / SOME BASICS / INTERMEDIATE]
-Why I'm learning this: [SCHOOL / WORK / CURIOSITY]`,
-    category_id: 'cat-6',
-    difficulty: 'beginner',
-    model_recommendation: 'Any model',
-    tags: ['learning', 'education', 'explanation', 'studying'],
-    status: 'approved',
-    author_id: 'user-1',
-    vote_count: 56,
-    bookmark_count: 38,
-    created_at: '2026-03-08T00:00:00Z',
-    updated_at: '2026-03-08T00:00:00Z',
+    author_id: 'user-4',
+    vote_count: 45,
+    bookmark_count: 31,
+    created_at: '2026-04-02T00:00:00Z',
+    updated_at: '2026-04-02T00:00:00Z',
   },
 
   // ---- PRODUCTIVITY ----
   {
-    id: 'prompt-12',
-    title: 'Weekly Review & Planning Template',
-    description: 'Conduct a structured weekly review and plan your next week with clear priorities and time blocks.',
-    content: `Help me conduct my weekly review and plan next week.
-
-**REVIEW THIS WEEK:**
-What I planned to do: [LIST YOUR PLANNED TASKS]
-What I actually accomplished: [LIST WHAT GOT DONE]
-What got blocked or postponed: [LIST INCOMPLETE ITEMS]
-Biggest win this week: [YOUR WIN]
-Biggest challenge: [YOUR CHALLENGE]
-
-**PLAN NEXT WEEK:**
-My top 3 priorities: [LIST THEM]
-Meetings/commitments already scheduled: [LIST WITH DAYS/TIMES]
-Deadlines coming up: [LIST WITH DATES]
-
-Please:
-1. Analyze my completion rate and identify patterns
-2. Suggest what to carry forward vs. drop vs. delegate
-3. Create a day-by-day plan for next week with time blocks
-4. Identify my "one thing" for each day — the task that makes everything else easier
-5. Add buffer time for unexpected tasks (suggest how much based on this week's pattern)`,
+    id: 'prompt-11',
+    title: 'Personal Knowledge Base with AI Auto-Tagging',
+    description: 'Built a Notion + Python system that automatically categorizes and tags my notes, articles, and bookmarks using the Claude API. Saves me 30 minutes of manual organizing daily.',
+    content: 'I save 10-15 articles, notes, and bookmarks per day into Notion but never organized them. After 6 months I had 2,000+ untagged pages that were impossible to search. I used Claude to build a Python script that connects to the Notion API, reads each page\'s content, and auto-generates category tags and a 1-sentence summary. The whole pipeline runs as a daily cron job.',
+    result_content: 'The system processes new Notion pages nightly: reads the page content via Notion API, sends it to Claude API with a classification prompt, gets back 2-4 tags from a fixed taxonomy (60 tags across 8 categories) plus a 1-sentence summary, then updates the Notion page properties automatically. Processing 2,000 backlog pages cost about $3 in API calls. Now it handles 10-15 new pages daily for pennies. My Notion is fully searchable and organized for the first time ever. The classification accuracy is about 90% — I manually fix the occasional misfire during my weekly review.',
     category_id: 'cat-7',
-    difficulty: 'beginner',
-    model_recommendation: 'Any model',
-    tags: ['productivity', 'planning', 'weekly review', 'time management'],
-    status: 'approved',
-    author_id: 'user-2',
-    vote_count: 41,
-    bookmark_count: 30,
-    created_at: '2026-03-20T00:00:00Z',
-    updated_at: '2026-03-20T00:00:00Z',
-  },
-
-  // ---- DATA ----
-  {
-    id: 'prompt-13',
-    title: 'Survey Question Generator',
-    description: 'Create effective, unbiased survey questions for customer research, employee feedback, or market research.',
-    content: `Design a survey for [PURPOSE: customer satisfaction / market research / employee feedback / product feedback].
-
-Context:
-- Target respondents: [WHO WILL TAKE THIS]
-- Goal: [WHAT DO I WANT TO LEARN?]
-- How results will be used: [DECISIONS THIS WILL INFORM]
-- Desired survey length: [5-10 / 10-15 / 15-20 questions]
-
-Create the survey with:
-1. An engaging intro paragraph (explains purpose, estimated time, confidentiality)
-2. Screening questions (if needed)
-3. Core questions — mix of:
-   - Multiple choice (single and multi-select)
-   - Likert scale (1-5 agreement/satisfaction)
-   - Open-ended (limited to 2-3)
-   - Ranking questions
-4. Demographic questions (at the end)
-5. Closing thank-you message
-
-For each question, note:
-- Why this question matters (what insight it provides)
-- Whether it's required or optional
-- Any skip logic (if answer X, skip to question Y)
-
-Avoid: leading questions, double-barreled questions, jargon, and bias.`,
-    category_id: 'cat-8',
-    difficulty: 'beginner',
-    model_recommendation: 'Any model',
-    tags: ['survey', 'research', 'data collection', 'feedback'],
-    status: 'approved',
-    author_id: 'user-3',
-    vote_count: 25,
-    bookmark_count: 14,
-    created_at: '2026-03-22T00:00:00Z',
-    updated_at: '2026-03-22T00:00:00Z',
-  },
-
-  // ---- STRATEGY ----
-  {
-    id: 'prompt-14',
-    title: 'SWOT Analysis Generator',
-    description: 'Generate a comprehensive SWOT analysis for any business, product, or project with strategic recommendations.',
-    content: `Perform a SWOT analysis for [BUSINESS/PRODUCT/PROJECT NAME].
-
-Context:
-- Industry: [YOUR INDUSTRY]
-- Stage: [STARTUP / GROWTH / MATURE]
-- Main competitors: [LIST 2-3]
-- Current situation: [BRIEF DESCRIPTION OF WHERE THINGS STAND]
-
-Create a detailed SWOT matrix:
-
-**Strengths** (internal, positive) - What do we do well? What unique resources do we have?
-**Weaknesses** (internal, negative) - Where do we fall short? What could we improve?
-**Opportunities** (external, positive) - What trends could we leverage? What gaps exist in the market?
-**Threats** (external, negative) - What obstacles do we face? What are competitors doing?
-
-For each quadrant: provide 4-5 specific, actionable items (not generic statements).
-
-Then create a strategy matrix:
-- SO Strategies (use strengths to capture opportunities)
-- WO Strategies (overcome weaknesses using opportunities)
-- ST Strategies (use strengths to avoid threats)
-- WT Strategies (minimize weaknesses and avoid threats)
-
-End with: Top 3 strategic priorities based on this analysis.`,
-    category_id: 'cat-9',
-    difficulty: 'beginner',
-    model_recommendation: 'Claude or ChatGPT-4',
-    tags: ['SWOT', 'strategy', 'business planning', 'analysis'],
+    difficulty: 'advanced',
+    model_used: 'claude-opus-4-6',
+    model_recommendation: 'Claude 4.6 Opus',
+    tools_used: ['Claude API', 'Python', 'Notion API'],
+    tags: ['automation', 'notion', 'knowledge management', 'API', 'productivity'],
     status: 'approved',
     author_id: 'user-1',
-    vote_count: 39,
-    bookmark_count: 21,
-    created_at: '2026-03-21T00:00:00Z',
-    updated_at: '2026-03-21T00:00:00Z',
+    vote_count: 103,
+    bookmark_count: 71,
+    created_at: '2026-04-05T00:00:00Z',
+    updated_at: '2026-04-05T00:00:00Z',
   },
 
-  // ---- PERSONAL ----
+  // ---- FINANCE ----
   {
-    id: 'prompt-15',
-    title: 'Travel Itinerary Planner',
-    description: 'Create a detailed day-by-day travel itinerary with activities, restaurants, budget estimates, and local tips.',
-    content: `Plan a trip to [DESTINATION] for [NUMBER] days.
+    id: 'prompt-12',
+    title: 'Startup Financial Model with 3-Year Projections',
+    description: 'Generated a complete SaaS financial model — revenue projections, expense breakdown, cash runway, and key metrics. Used it in our actual seed pitch deck.',
+    content: 'We needed a financial model for our seed round pitch but couldn\'t afford a fractional CFO. I gave Claude our current numbers (MRR, growth rate, burn, team size) and our plans (hiring timeline, marketing spend increase) and asked it to build a full 3-year model. The output was a structured spreadsheet framework with all the formulas and logic explained.',
+    result_content: 'The model covered: monthly revenue projections with cohort-based growth (new MRR, expansion, churn), COGS breakdown (hosting, API costs, support), operating expenses by department (engineering, sales, marketing, G&A), headcount plan with fully-loaded costs, cash flow statement, runway calculation at current burn, key SaaS metrics (LTV, CAC, LTV:CAC ratio, payback period, gross margin, net revenue retention), and sensitivity analysis showing 3 scenarios (conservative, base, aggressive). Our lead investor specifically called out the financial model quality during diligence. We closed $1.8M.',
+    category_id: 'cat-1',
+    difficulty: 'intermediate',
+    model_used: 'claude-opus-4-6',
+    model_recommendation: 'Claude 4.6 Opus',
+    tools_used: ['Claude', 'Google Sheets'],
+    tags: ['financial model', 'startup', 'SaaS', 'fundraising', 'pitch deck'],
+    status: 'approved',
+    author_id: 'user-3',
+    vote_count: 79,
+    bookmark_count: 44,
+    created_at: '2026-04-03T00:00:00Z',
+    updated_at: '2026-04-03T00:00:00Z',
+  },
 
-Trip details:
-- Dates: [START DATE] to [END DATE]
-- Travelers: [NUMBER OF PEOPLE, AGES, ANY SPECIAL NEEDS]
-- Budget: [BUDGET / BACKPACKER / MID-RANGE / LUXURY]
-- Interests: [HISTORY / FOOD / ADVENTURE / RELAXATION / NIGHTLIFE / NATURE]
-- Accommodation preference: [HOTEL / AIRBNB / HOSTEL]
-- Already booked: [ANY PRE-BOOKED ACTIVITIES OR HOTELS]
-- Must-sees: [ANYTHING SPECIFIC YOU DON'T WANT TO MISS]
-- Dietary restrictions: [ANY]
-
-Create a day-by-day itinerary including:
-1. Morning, afternoon, and evening activities
-2. Restaurant recommendations for each meal (with cuisine type and price range)
-3. Transportation between activities (how to get there, estimated cost)
-4. Estimated daily budget breakdown
-5. Local tips (tipping customs, safety, etiquette, best times to visit attractions)
-6. A "Plan B" for each day in case of rain/closures
-7. Packing suggestions specific to this destination and season`,
-    category_id: 'cat-10',
-    difficulty: 'beginner',
-    model_recommendation: 'Any model',
-    tags: ['travel', 'itinerary', 'vacation', 'planning'],
+  // ---- CODING ----
+  {
+    id: 'prompt-13',
+    title: 'E-commerce Product Description Engine — 50 Products in 2 Hours',
+    description: 'Built a reusable prompt system that generates consistent, high-quality product descriptions for an online furniture store. Tested on 50 products with editorial-level results.',
+    content: 'I run an online furniture store with 200+ products and most had terrible 2-line descriptions from the manufacturer. Rewriting them all manually would take weeks. I built a prompt template with Claude that takes product specs and generates descriptions in our brand voice. The key was creating a "style calibration" step first, then using that as context for all product descriptions.',
+    result_content: 'Ran it on 50 products across 6 categories (desks, chairs, shelving, lighting, accessories, storage). Each description includes: a compelling headline, 3-4 sentence lifestyle description, bulleted feature list, materials and dimensions, care instructions, and 3 suggested search keywords. Consistency was excellent — our editor reviewed all 50 and only needed to tweak 4 of them. Average generation time: 45 seconds per product. We saw a 23% increase in conversion rate on the pages with AI-written descriptions vs the old manufacturer copy.',
+    category_id: 'cat-3',
+    difficulty: 'intermediate',
+    model_used: 'claude-sonnet-4-6',
+    model_recommendation: 'Claude 4.6 Sonnet',
+    tools_used: ['Claude', 'Shopify'],
+    tags: ['e-commerce', 'product descriptions', 'copywriting', 'shopify', 'bulk content'],
     status: 'approved',
     author_id: 'user-2',
-    vote_count: 58,
-    bookmark_count: 42,
-    created_at: '2026-03-09T00:00:00Z',
-    updated_at: '2026-03-09T00:00:00Z',
+    vote_count: 61,
+    bookmark_count: 38,
+    created_at: '2026-04-06T00:00:00Z',
+    updated_at: '2026-04-06T00:00:00Z',
   },
 
-  // ---- PENDING PROMPTS (for admin dashboard demo) ----
+  // ---- PENDING (admin queue) ----
   {
-    id: 'prompt-16',
-    title: 'Negotiation Script Builder',
-    description: 'Prepare for any negotiation with a structured script, talking points, and responses to common objections.',
-    content: `Help me prepare for a negotiation about [WHAT: salary, contract, deal, price].
-
-Context:
-- My position: [WHAT I WANT]
-- Their likely position: [WHAT THEY PROBABLY WANT]
-- My BATNA (best alternative): [WHAT I'LL DO IF THIS FAILS]
-- Relationship importance: [ONE-TIME / ONGOING]
-
-Create:
-1. Opening statement (sets collaborative tone)
-2. My top 3 talking points with supporting evidence
-3. Concessions I can offer (ranked by cost to me)
-4. 5 likely objections and my responses to each
-5. Anchoring strategy (what number/terms to open with and why)
-6. Walk-away point (when to end the negotiation)
-7. Closing script (how to finalize the agreement)`,
-    category_id: 'cat-9',
-    difficulty: 'intermediate',
-    model_recommendation: 'Claude or ChatGPT-4',
-    tags: ['negotiation', 'business', 'communication', 'salary'],
+    id: 'prompt-14',
+    title: 'AI-Powered Meal Prep Planner Based on Grocery Sales',
+    description: 'Created a system that takes this week\'s grocery store sales flyer and generates a 7-day meal prep plan optimized for budget and nutrition.',
+    content: 'I wanted to eat healthy on a budget but meal planning was taking forever. I built a prompt that takes sale items as input and creates a full week of meals around what\'s cheap this week.',
+    result_content: 'The output includes: 7 days of breakfast, lunch, dinner, and snacks built around sale items, a consolidated grocery list with estimated costs, prep instructions for Sunday batch cooking (what to prep, what order, estimated time), macros per meal, and total weekly grocery cost. Last week it built a full plan around chicken thighs ($1.99/lb), sweet potatoes ($0.79/lb), and frozen broccoli (2 for $5) that came in at $47 for the whole week.',
+    category_id: 'cat-10',
+    difficulty: 'beginner',
+    model_used: 'chatgpt-5-4',
+    model_recommendation: 'ChatGPT 5.4',
+    tools_used: ['ChatGPT'],
+    tags: ['meal prep', 'budget', 'nutrition', 'cooking', 'grocery'],
     status: 'pending',
-    author_id: 'user-3',
-    vote_count: 0,
-    bookmark_count: 0,
-    created_at: '2026-04-08T00:00:00Z',
-    updated_at: '2026-04-08T00:00:00Z',
-  },
-  {
-    id: 'prompt-17',
-    title: 'Landing Page Copy Generator',
-    description: 'Generate conversion-optimized landing page copy with headlines, benefits, social proof sections, and CTAs.',
-    content: `Write landing page copy for [PRODUCT/SERVICE].
-
-Details:
-- What it does: [DESCRIPTION]
-- Target customer: [WHO]
-- Main pain point it solves: [PROBLEM]
-- Key differentiator: [WHY US OVER COMPETITORS]
-- Price point: [PRICE OR PRICING MODEL]
-- Social proof available: [TESTIMONIALS, NUMBERS, LOGOS]
-
-Generate:
-1. Hero section: headline (under 10 words), subheadline, primary CTA
-2. Problem section: describe the pain point vividly
-3. Solution section: how the product solves it
-4. Benefits section: 3-4 benefits with icons and descriptions
-5. Social proof section: format the available proof effectively
-6. FAQ section: 5 likely questions and answers
-7. Final CTA section: urgency-driven closing
-
-Provide 3 headline variations (benefit-driven, curiosity-driven, social-proof-driven).`,
-    category_id: 'cat-2',
-    difficulty: 'intermediate',
-    model_recommendation: 'Any model',
-    tags: ['landing page', 'copywriting', 'conversion', 'marketing'],
-    status: 'pending',
-    author_id: 'user-2',
+    author_id: 'user-4',
     vote_count: 0,
     bookmark_count: 0,
     created_at: '2026-04-09T00:00:00Z',
     updated_at: '2026-04-09T00:00:00Z',
   },
   {
-    id: 'prompt-18',
-    title: 'Regex Pattern Builder',
-    description: 'Describe what you want to match in plain English and get the regex pattern with explanation and test cases.',
-    content: `I need a regular expression that matches: [DESCRIBE IN PLAIN ENGLISH WHAT YOU WANT TO MATCH]
-
-Examples of strings that SHOULD match:
-- [EXAMPLE 1]
-- [EXAMPLE 2]
-- [EXAMPLE 3]
-
-Examples of strings that should NOT match:
-- [EXAMPLE 1]
-- [EXAMPLE 2]
-
-Language/environment: [JavaScript / Python / Java / etc.]
-
-Please provide:
-1. The regex pattern
-2. A breakdown of each part of the pattern (what each character/group does)
-3. Test it against all my examples (show match/no-match results)
-4. Edge cases to be aware of
-5. The code snippet to use it in my language (match, search, replace, validate)`,
-    category_id: 'cat-4',
+    id: 'prompt-15',
+    title: 'Automated Podcast Show Notes Generator',
+    description: 'Built a pipeline that takes a podcast transcript and generates: episode title options, show notes, timestamps, key quotes, and social media clips — all in one prompt.',
+    content: 'I produce a weekly business podcast and show notes were taking 2 hours per episode. I built a single prompt that takes the transcript and generates everything I need for publishing.',
+    result_content: 'From a 45-minute transcript, the system generates: 5 episode title options, a 3-paragraph episode summary, timestamped chapter markers, 5 key quotes formatted for social media, 3 "audiogram clip" suggestions (the most engaging 60-second segments), guest bio blurb, related episode suggestions, and SEO-optimized show notes with headers. Cut my post-production time from 2 hours to 15 minutes.',
+    category_id: 'cat-3',
     difficulty: 'beginner',
-    model_recommendation: 'Any model',
-    tags: ['regex', 'programming', 'pattern matching', 'developer tools'],
+    model_used: 'claude-sonnet-4-6',
+    model_recommendation: 'Claude 4.6 Sonnet',
+    tools_used: ['Claude', 'Descript'],
+    tags: ['podcast', 'show notes', 'content repurposing', 'automation'],
     status: 'pending',
-    author_id: 'user-1',
+    author_id: 'user-5',
     vote_count: 0,
     bookmark_count: 0,
     created_at: '2026-04-10T00:00:00Z',

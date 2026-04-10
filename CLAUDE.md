@@ -4,12 +4,12 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project
 
-PromptForge — a community-driven platform for sharing AI projects, creations, and workflows. Users share what they BUILT with AI (the finished product, the prompts used, and the results at each step), NOT prompt templates. Organized by domain categories (finance, marketing, coding, etc.). Targets all skill levels.
+PathForge — a community-driven platform for sharing AI projects, creations, and workflows. Users share what they BUILT with AI (the finished product, the prompts used, and the results at each step), NOT prompt templates. Organized by domain categories (finance, marketing, coding, etc.). Targets all skill levels.
 
 **CRITICAL**: This is a project showcase platform, not a prompt template library. Every piece of content should represent a real finished project with actual outputs, not fill-in-the-blank templates with `[PLACEHOLDER]` brackets.
 
 **Live**: https://prompt-forge-sandy.vercel.app
-**Repo**: https://github.com/DrewDey/PromptForge
+**Repo**: https://github.com/DrewDey/PathForge
 
 ## Commands
 

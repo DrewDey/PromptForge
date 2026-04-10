@@ -55,7 +55,7 @@ export default function Header() {
           <div className="flex items-center gap-8">
             <Link href="/" className="flex items-center gap-2 font-bold text-xl text-primary-600">
               <Hammer className="w-6 h-6" />
-              PromptForge
+              PathForge
             </Link>
             <div className="hidden md:flex items-center gap-6">
               <Link href="/browse" className="text-gray-600 hover:text-gray-900 text-sm font-medium">

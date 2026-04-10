@@ -226,6 +226,94 @@ function getTopCategoryFromDb(prompts: { category_id: string; categories: unknow
   return top ? { name: top.name, icon: top.icon } : null
 }
 
+// ---- Votes & Bookmarks ----
+
+export async function toggleVote(promptId: string): Promise<{ voted: boolean; newCount: number }> {
+  if (!SUPABASE_CONFIGURED) return { voted: false, newCount: 0 }
+
+  const { createClient } = await import('./supabase/server')
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) throw new Error('Must be logged in')
+
+  // Check if already voted
+  const { data: existing } = await supabase
+    .from('votes')
+    .select('id')
+    .eq('user_id', user.id)
+    .eq('prompt_id', promptId)
+    .single()
+
+  if (existing) {
+    // Remove vote
+    await supabase.from('votes').delete().eq('id', existing.id)
+    await supabase.from('prompts').update({
+      vote_count: Math.max(0, (await supabase.from('prompts').select('vote_count').eq('id', promptId).single()).data?.vote_count - 1 || 0)
+    }).eq('id', promptId)
+    const { data: updated } = await supabase.from('prompts').select('vote_count').eq('id', promptId).single()
+    return { voted: false, newCount: updated?.vote_count ?? 0 }
+  } else {
+    // Add vote
+    await supabase.from('votes').insert({ user_id: user.id, prompt_id: promptId })
+    await supabase.from('prompts').update({
+      vote_count: ((await supabase.from('prompts').select('vote_count').eq('id', promptId).single()).data?.vote_count || 0) + 1
+    }).eq('id', promptId)
+    const { data: updated } = await supabase.from('prompts').select('vote_count').eq('id', promptId).single()
+    return { voted: true, newCount: updated?.vote_count ?? 0 }
+  }
+}
+
+export async function toggleBookmark(promptId: string): Promise<{ bookmarked: boolean; newCount: number }> {
+  if (!SUPABASE_CONFIGURED) return { bookmarked: false, newCount: 0 }
+
+  const { createClient } = await import('./supabase/server')
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) throw new Error('Must be logged in')
+
+  const { data: existing } = await supabase
+    .from('bookmarks')
+    .select('id')
+    .eq('user_id', user.id)
+    .eq('prompt_id', promptId)
+    .single()
+
+  if (existing) {
+    await supabase.from('bookmarks').delete().eq('id', existing.id)
+    await supabase.from('prompts').update({
+      bookmark_count: Math.max(0, (await supabase.from('prompts').select('bookmark_count').eq('id', promptId).single()).data?.bookmark_count - 1 || 0)
+    }).eq('id', promptId)
+    const { data: updated } = await supabase.from('prompts').select('bookmark_count').eq('id', promptId).single()
+    return { bookmarked: false, newCount: updated?.bookmark_count ?? 0 }
+  } else {
+    await supabase.from('bookmarks').insert({ user_id: user.id, prompt_id: promptId })
+    await supabase.from('prompts').update({
+      bookmark_count: ((await supabase.from('prompts').select('bookmark_count').eq('id', promptId).single()).data?.bookmark_count || 0) + 1
+    }).eq('id', promptId)
+    const { data: updated } = await supabase.from('prompts').select('bookmark_count').eq('id', promptId).single()
+    return { bookmarked: true, newCount: updated?.bookmark_count ?? 0 }
+  }
+}
+
+export async function getUserVotesAndBookmarks(promptIds: string[]): Promise<{ votes: Set<string>; bookmarks: Set<string> }> {
+  if (!SUPABASE_CONFIGURED) return { votes: new Set(), bookmarks: new Set() }
+
+  const { createClient } = await import('./supabase/server')
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { votes: new Set(), bookmarks: new Set() }
+
+  const [votesRes, bookmarksRes] = await Promise.all([
+    supabase.from('votes').select('prompt_id').eq('user_id', user.id).in('prompt_id', promptIds),
+    supabase.from('bookmarks').select('prompt_id').eq('user_id', user.id).in('prompt_id', promptIds),
+  ])
+
+  return {
+    votes: new Set((votesRes.data ?? []).map(v => v.prompt_id)),
+    bookmarks: new Set((bookmarksRes.data ?? []).map(b => b.prompt_id)),
+  }
+}
+
 // ---- Admin ----
 
 export async function getPromptStats() {

@@ -1,9 +1,10 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
-import { ArrowLeft, ArrowUp, Bookmark, Tag, Cpu, Wrench, ChevronDown } from 'lucide-react'
-import { getPromptById } from '@/lib/data'
+import { ArrowLeft, Tag, Cpu, Wrench } from 'lucide-react'
+import { getPromptById, getUserVotesAndBookmarks } from '@/lib/data'
 import { getModelName } from '@/lib/models'
 import CopyButton from './CopyButton'
+import VoteBookmarkButtons from '@/components/VoteBookmarkButtons'
 
 const difficultyColors = {
   beginner: 'bg-green-50 text-green-700 border-green-200',
@@ -23,6 +24,20 @@ export default async function PromptDetailPage({
 
   const hasSteps = prompt.steps && prompt.steps.length > 0
   const modelDisplay = prompt.model_used ? getModelName(prompt.model_used) : prompt.model_recommendation
+
+  // Check if current user has voted/bookmarked
+  const { votes, bookmarks } = await getUserVotesAndBookmarks([prompt.id])
+  const hasVoted = votes.has(prompt.id)
+  const hasBookmarked = bookmarks.has(prompt.id)
+  const isLoggedIn = votes.size >= 0 && (await (async () => {
+    try {
+      if (!process.env.NEXT_PUBLIC_SUPABASE_URL) return false
+      const { createClient } = await import('@/lib/supabase/server')
+      const supabase = await createClient()
+      const { data: { user } } = await supabase.auth.getUser()
+      return !!user
+    } catch { return false }
+  })())
 
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
@@ -65,12 +80,15 @@ export default async function PromptDetailPage({
         ) : (
           <strong className="text-gray-700">Anonymous</strong>
         )}</span>
-        <span className="flex items-center gap-1">
-          <ArrowUp className="w-4 h-4" /> {prompt.vote_count}
-        </span>
-        <span className="flex items-center gap-1">
-          <Bookmark className="w-4 h-4" /> {prompt.bookmark_count}
-        </span>
+        <VoteBookmarkButtons
+          promptId={prompt.id}
+          initialVoteCount={prompt.vote_count}
+          initialBookmarkCount={prompt.bookmark_count}
+          initialVoted={hasVoted}
+          initialBookmarked={hasBookmarked}
+          isLoggedIn={isLoggedIn}
+          size="large"
+        />
         {modelDisplay && (
           <span className="flex items-center gap-1">
             <Cpu className="w-4 h-4" /> {modelDisplay}

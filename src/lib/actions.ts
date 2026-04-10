@@ -2,7 +2,7 @@
 
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
-import { updatePromptStatus, createProject } from './data'
+import { updatePromptStatus, createProject, toggleVote, toggleBookmark } from './data'
 
 export async function approvePrompt(id: string) {
   await updatePromptStatus(id, 'approved')
@@ -22,6 +22,28 @@ export async function logout() {
   await supabase.auth.signOut()
   revalidatePath('/', 'layout')
   redirect('/')
+}
+
+export async function voteOnProject(promptId: string) {
+  try {
+    const result = await toggleVote(promptId)
+    revalidatePath(`/prompt/${promptId}`)
+    revalidatePath('/browse')
+    revalidatePath('/')
+    return result
+  } catch {
+    return { voted: false, newCount: 0 }
+  }
+}
+
+export async function bookmarkProject(promptId: string) {
+  try {
+    const result = await toggleBookmark(promptId)
+    revalidatePath(`/prompt/${promptId}`)
+    return result
+  } catch {
+    return { bookmarked: false, newCount: 0 }
+  }
 }
 
 export async function submitProject(data: {

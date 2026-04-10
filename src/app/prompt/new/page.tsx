@@ -130,7 +130,7 @@ export default function SubmitProjectPage() {
         <LogIn className="w-10 h-10 text-gray-400 mx-auto mb-4" />
         <h1 className="text-xl font-bold mb-2">Log in to share a project</h1>
         <p className="text-gray-600 text-sm mb-6">
-          You need an account to submit projects to PromptForge.
+          You need an account to submit projects to PathForge.
         </p>
         <div className="flex items-center justify-center gap-4">
           <Link href="/auth/login" className="bg-primary-600 text-white px-5 py-2.5 rounded-lg text-sm font-medium hover:bg-primary-700">

@@ -7,7 +7,7 @@ import Footer from '@/components/Footer'
 const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
-  title: 'PromptForge — Discover AI Prompts That Actually Work',
+  title: 'PathForge — Discover AI Prompts That Actually Work',
   description: 'The community hub for AI prompts and workflows. From simple one-liners to multi-step chains — find, share, and build with prompts organized by what you actually need them for.',
 }
 

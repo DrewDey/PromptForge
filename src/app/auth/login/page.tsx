@@ -40,7 +40,7 @@ export default function LoginPage() {
         <div className="text-center mb-8">
           <Link href="/" className="inline-flex items-center gap-2 font-bold text-2xl text-primary-600 mb-2">
             <Hammer className="w-7 h-7" />
-            PromptForge
+            PathForge
           </Link>
           <p className="text-gray-600 text-sm">Welcome back! Log in to your account.</p>
         </div>

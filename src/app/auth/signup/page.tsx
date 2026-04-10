@@ -77,7 +77,7 @@ export default function SignupPage() {
         <div className="text-center mb-8">
           <Link href="/" className="inline-flex items-center gap-2 font-bold text-2xl text-primary-600 mb-2">
             <Hammer className="w-7 h-7" />
-            PromptForge
+            PathForge
           </Link>
           <p className="text-gray-600 text-sm">Create your account and start sharing projects.</p>
         </div>

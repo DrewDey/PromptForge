@@ -9,7 +9,7 @@ export default function Footer() {
           <div className="md:col-span-2">
             <Link href="/" className="flex items-center gap-2 font-bold text-lg text-white mb-3">
               <Hammer className="w-5 h-5" />
-              PromptForge
+              PathForge
             </Link>
             <p className="text-sm leading-relaxed max-w-md">
               The community hub for AI prompts and workflows. Discover, share, and build
@@ -38,7 +38,7 @@ export default function Footer() {
         </div>
 
         <div className="border-t border-gray-800 mt-10 pt-6 text-sm text-center">
-          PromptForge — Built for the AI community
+          PathForge — Built for the AI community
         </div>
       </div>
     </footer>

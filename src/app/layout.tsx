@@ -7,8 +7,8 @@ import Footer from '@/components/Footer'
 const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
-  title: 'PathForge — Discover AI Prompts That Actually Work',
-  description: 'The community hub for AI prompts and workflows. From simple one-liners to multi-step chains — find, share, and build with prompts organized by what you actually need them for.',
+  title: 'PathForge — Proven AI Build Paths You Can Actually Use',
+  description: 'Stop starting from scratch. Browse, fork, and adapt proven AI build paths — the full process from blank chat to useful result.',
 }
 
 export default function RootLayout({
@@ -17,8 +17,8 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="en">
-      <body className={`${inter.className} bg-gray-50 text-gray-900 min-h-screen flex flex-col`}>
+    <html lang="en" className="dark">
+      <body className={`${inter.className} bg-surface-900 text-gray-100 min-h-screen flex flex-col`}>
         <Header />
         <main className="flex-1">{children}</main>
         <Footer />

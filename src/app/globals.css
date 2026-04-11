@@ -1,14 +1,96 @@
 @import "tailwindcss";
 
 @theme {
-  --color-primary-50: oklch(0.97 0.01 260);
-  --color-primary-100: oklch(0.93 0.03 260);
-  --color-primary-200: oklch(0.87 0.06 260);
-  --color-primary-300: oklch(0.78 0.10 260);
-  --color-primary-400: oklch(0.68 0.15 260);
-  --color-primary-500: oklch(0.55 0.20 260);
-  --color-primary-600: oklch(0.48 0.22 260);
-  --color-primary-700: oklch(0.42 0.19 260);
-  --color-primary-800: oklch(0.35 0.16 260);
-  --color-primary-900: oklch(0.28 0.12 260);
+  /* PathForge brand colors — extracted from logo */
+  --color-brand-orange: #E87A2C;
+  --color-brand-orange-light: #F5A623;
+  --color-brand-orange-dark: #C45A1A;
+  --color-brand-blue: #3B8FE4;
+  --color-brand-blue-light: #64B5F6;
+  --color-brand-blue-dark: #2563EB;
+
+  /* Primary = orange (action color) */
+  --color-primary-50: #FFF7ED;
+  --color-primary-100: #FFEDD5;
+  --color-primary-200: #FED7AA;
+  --color-primary-300: #FDBA74;
+  --color-primary-400: #FB923C;
+  --color-primary-500: #E87A2C;
+  --color-primary-600: #C45A1A;
+  --color-primary-700: #9A3412;
+  --color-primary-800: #7C2D12;
+  --color-primary-900: #431407;
+
+  /* Accent = blue */
+  --color-accent-50: #EFF6FF;
+  --color-accent-100: #DBEAFE;
+  --color-accent-200: #BFDBFE;
+  --color-accent-300: #93C5FD;
+  --color-accent-400: #60A5FA;
+  --color-accent-500: #3B8FE4;
+  --color-accent-600: #2563EB;
+  --color-accent-700: #1D4ED8;
+  --color-accent-800: #1E40AF;
+  --color-accent-900: #1E3A5F;
+
+  /* Dark surface palette */
+  --color-surface-900: #0B0F1A;
+  --color-surface-800: #111827;
+  --color-surface-700: #1E293B;
+  --color-surface-600: #2D3A4F;
+  --color-surface-500: #475569;
+}
+
+/* Sharp edges globally */
+*, *::before, *::after {
+  border-radius: 0 !important;
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 8px;
+}
+::-webkit-scrollbar-track {
+  background: var(--color-surface-800);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--color-surface-600);
+}
+
+/* Pipe animation */
+@keyframes pipeDraw {
+  from { height: 0; }
+  to { height: 100%; }
+}
+
+@keyframes pipeDrawHorizontal {
+  from { width: 0; }
+  to { width: 100%; }
+}
+
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(30px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes cardSlideIn {
+  from { opacity: 0; transform: translateY(40px) scale(0.97); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes typewriter {
+  from { width: 0; }
+  to { width: 100%; }
+}
+
+@keyframes blink {
+  50% { border-color: transparent; }
+}
+
+.animate-fade-in-up {
+  animation: fadeInUp 0.6s ease-out both;
+}
+
+.animate-card-slide-in {
+  animation: cardSlideIn 0.5s ease-out both;
 }

@@ -1,8 +1,9 @@
 'use client'
 
 import Link from 'next/link'
+import Image from 'next/image'
 import { useState, useEffect } from 'react'
-import { Hammer, Menu, X, LogOut, User } from 'lucide-react'
+import { Menu, X, LogOut, User } from 'lucide-react'
 import type { User as SupabaseUser } from '@supabase/supabase-js'
 import { logout } from '@/lib/actions'
 
@@ -39,6 +40,7 @@ export default function Header() {
           })
         } else {
           setUserMeta({})
+          setIsAdmin(false)
         }
       })
 
@@ -49,20 +51,19 @@ export default function Header() {
   const displayName = userMeta.display_name || userMeta.username || 'Account'
 
   return (
-    <header className="bg-white border-b border-gray-200 sticky top-0 z-50">
+    <header className="bg-surface-900 border-b border-surface-700 sticky top-0 z-50">
       <nav className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between h-16">
+        <div className="flex justify-between h-14">
           <div className="flex items-center gap-8">
-            <Link href="/" className="flex items-center gap-2 font-bold text-xl text-primary-600">
-              <Hammer className="w-6 h-6" />
-              PathForge
+            <Link href="/" className="flex items-center gap-2">
+              <Image src="/logo.png" alt="PathForge" width={120} height={34} priority />
             </Link>
             <div className="hidden md:flex items-center gap-6">
-              <Link href="/browse" className="text-gray-600 hover:text-gray-900 text-sm font-medium">
+              <Link href="/browse" className="text-gray-400 hover:text-white text-sm font-medium transition-colors">
                 Browse
               </Link>
-              <Link href="/prompt/new" className="text-gray-600 hover:text-gray-900 text-sm font-medium">
-                Submit Project
+              <Link href="/prompt/new" className="text-gray-400 hover:text-white text-sm font-medium transition-colors">
+                Submit
               </Link>
             </div>
           </div>
@@ -71,39 +72,26 @@ export default function Header() {
             {user ? (
               <>
                 {isAdmin && (
-                  <Link
-                    href="/admin"
-                    className="text-sm text-gray-500 hover:text-gray-700"
-                  >
+                  <Link href="/admin" className="text-sm text-gray-500 hover:text-gray-300 transition-colors">
                     Admin
                   </Link>
                 )}
-                <Link href={`/user/${userMeta.username ?? ''}`} className="flex items-center gap-1.5 text-sm font-medium text-gray-700 hover:text-primary-600 transition-colors">
+                <Link href={`/user/${userMeta.username ?? ''}`} className="flex items-center gap-1.5 text-sm font-medium text-gray-300 hover:text-brand-orange transition-colors">
                   <User className="w-4 h-4" />
                   {displayName}
                 </Link>
                 <form action={logout}>
-                  <button
-                    type="submit"
-                    className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-700"
-                  >
+                  <button type="submit" className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-300 transition-colors">
                     <LogOut className="w-4 h-4" />
-                    Log out
                   </button>
                 </form>
               </>
             ) : (
               <>
-                <Link
-                  href="/auth/login"
-                  className="text-sm font-medium text-gray-700 hover:text-gray-900"
-                >
+                <Link href="/auth/login" className="text-sm font-medium text-gray-400 hover:text-white transition-colors">
                   Log in
                 </Link>
-                <Link
-                  href="/auth/signup"
-                  className="bg-primary-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-primary-700 transition-colors"
-                >
+                <Link href="/auth/signup" className="bg-brand-orange text-white px-4 py-2 text-sm font-semibold hover:bg-brand-orange-dark transition-colors">
                   Sign up
                 </Link>
               </>
@@ -111,50 +99,29 @@ export default function Header() {
           </div>
 
           <div className="md:hidden flex items-center">
-            <button
-              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="text-gray-600 hover:text-gray-900"
-            >
+            <button onClick={() => setMobileMenuOpen(!mobileMenuOpen)} className="text-gray-400 hover:text-white">
               {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
             </button>
           </div>
         </div>
 
         {mobileMenuOpen && (
-          <div className="md:hidden pb-4 border-t border-gray-100 mt-2 pt-4 flex flex-col gap-3">
-            <Link href="/browse" className="text-gray-600 hover:text-gray-900 text-sm font-medium" onClick={() => setMobileMenuOpen(false)}>
-              Browse
-            </Link>
-            <Link href="/prompt/new" className="text-gray-600 hover:text-gray-900 text-sm font-medium" onClick={() => setMobileMenuOpen(false)}>
-              Submit Project
-            </Link>
-            <hr className="border-gray-100" />
+          <div className="md:hidden pb-4 border-t border-surface-700 mt-2 pt-4 flex flex-col gap-3">
+            <Link href="/browse" className="text-gray-400 hover:text-white text-sm font-medium" onClick={() => setMobileMenuOpen(false)}>Browse</Link>
+            <Link href="/prompt/new" className="text-gray-400 hover:text-white text-sm font-medium" onClick={() => setMobileMenuOpen(false)}>Submit</Link>
+            <hr className="border-surface-700" />
             {user ? (
               <>
-                {isAdmin && (
-                  <Link href="/admin" className="text-gray-500 hover:text-gray-700 text-sm" onClick={() => setMobileMenuOpen(false)}>
-                    Admin
-                  </Link>
-                )}
-                <Link href={`/user/${userMeta.username ?? ''}`} className="text-sm font-medium text-gray-700 flex items-center gap-1.5 hover:text-primary-600" onClick={() => setMobileMenuOpen(false)}>
-                  <User className="w-4 h-4" />
-                  {displayName}
+                {isAdmin && <Link href="/admin" className="text-gray-500 hover:text-gray-300 text-sm" onClick={() => setMobileMenuOpen(false)}>Admin</Link>}
+                <Link href={`/user/${userMeta.username ?? ''}`} className="text-sm font-medium text-gray-300 flex items-center gap-1.5" onClick={() => setMobileMenuOpen(false)}>
+                  <User className="w-4 h-4" />{displayName}
                 </Link>
-                <form action={logout}>
-                  <button type="submit" className="text-sm text-gray-500 hover:text-gray-700 flex items-center gap-1.5">
-                    <LogOut className="w-4 h-4" />
-                    Log out
-                  </button>
-                </form>
+                <form action={logout}><button type="submit" className="text-sm text-gray-500 hover:text-gray-300 flex items-center gap-1.5"><LogOut className="w-4 h-4" />Log out</button></form>
               </>
             ) : (
               <>
-                <Link href="/auth/login" className="text-sm font-medium text-gray-700" onClick={() => setMobileMenuOpen(false)}>
-                  Log in
-                </Link>
-                <Link href="/auth/signup" className="bg-primary-600 text-white px-4 py-2 rounded-lg text-sm font-medium text-center" onClick={() => setMobileMenuOpen(false)}>
-                  Sign up
-                </Link>
+                <Link href="/auth/login" className="text-sm font-medium text-gray-400" onClick={() => setMobileMenuOpen(false)}>Log in</Link>
+                <Link href="/auth/signup" className="bg-brand-orange text-white px-4 py-2 text-sm font-semibold text-center" onClick={() => setMobileMenuOpen(false)}>Sign up</Link>
               </>
             )}
           </div>

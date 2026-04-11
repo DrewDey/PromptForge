@@ -19,19 +19,19 @@ export default async function AdminDashboard({
   return (
     <div>
       <div className="mb-8">
-        <h1 className="text-2xl font-bold text-gray-900">Admin Dashboard</h1>
+        <h1 className="text-2xl font-bold text-white">Admin Dashboard</h1>
         <p className="text-sm text-gray-500 mt-1">Manage prompts, review submissions, and monitor the platform.</p>
       </div>
 
       {/* Mobile tab nav */}
       <div className="flex gap-2 mb-6 md:hidden">
-        <Link href="/admin" className={`text-xs font-medium px-3 py-1.5 rounded-full border ${tab === 'overview' ? 'bg-gray-900 text-white border-gray-900' : 'bg-white text-gray-600 border-gray-300'}`}>
+        <Link href="/admin" className={`text-xs font-medium px-3 py-1.5 border ${tab === 'overview' ? 'bg-brand-orange text-white border-brand-orange' : 'bg-surface-800 text-gray-400 border-surface-600'}`}>
           Overview
         </Link>
-        <Link href="/admin?tab=pending" className={`text-xs font-medium px-3 py-1.5 rounded-full border ${tab === 'pending' ? 'bg-gray-900 text-white border-gray-900' : 'bg-white text-gray-600 border-gray-300'}`}>
+        <Link href="/admin?tab=pending" className={`text-xs font-medium px-3 py-1.5 border ${tab === 'pending' ? 'bg-brand-orange text-white border-brand-orange' : 'bg-surface-800 text-gray-400 border-surface-600'}`}>
           Review ({stats.pending})
         </Link>
-        <Link href="/admin?tab=all" className={`text-xs font-medium px-3 py-1.5 rounded-full border ${tab === 'all' ? 'bg-gray-900 text-white border-gray-900' : 'bg-white text-gray-600 border-gray-300'}`}>
+        <Link href="/admin?tab=all" className={`text-xs font-medium px-3 py-1.5 border ${tab === 'all' ? 'bg-brand-orange text-white border-brand-orange' : 'bg-surface-800 text-gray-400 border-surface-600'}`}>
           All
         </Link>
       </div>
@@ -50,30 +50,30 @@ export default async function AdminDashboard({
       {/* Pending Review */}
       {(tab === 'overview' || tab === 'pending') && (
         <section className="mb-10">
-          <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
+          <h2 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
             Pending Review
             {stats.pending > 0 && (
-              <span className="bg-amber-100 text-amber-700 text-xs font-semibold px-2 py-0.5 rounded-full">
+              <span className="bg-amber-900/50 text-amber-400 text-xs font-semibold px-2 py-0.5">
                 {stats.pending}
               </span>
             )}
           </h2>
           {pendingPrompts.length === 0 ? (
-            <div className="bg-white rounded-lg border border-gray-200 p-8 text-center text-gray-500 text-sm">
+            <div className="bg-surface-800 border border-surface-600 p-8 text-center text-gray-500 text-sm">
               No prompts pending review. All caught up!
             </div>
           ) : (
-            <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
+            <div className="bg-surface-800 border border-surface-600 overflow-hidden">
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead>
-                    <tr className="border-b border-gray-200 bg-gray-50">
-                      <th className="text-left px-4 py-3 font-medium text-gray-500">Title</th>
-                      <th className="text-left px-4 py-3 font-medium text-gray-500">Category</th>
-                      <th className="text-left px-4 py-3 font-medium text-gray-500">Difficulty</th>
-                      <th className="text-left px-4 py-3 font-medium text-gray-500">Author</th>
-                      <th className="text-left px-4 py-3 font-medium text-gray-500">Submitted</th>
-                      <th className="text-right px-4 py-3 font-medium text-gray-500">Actions</th>
+                    <tr className="border-b border-surface-600 bg-surface-700">
+                      <th className="text-left px-4 py-3 font-medium text-gray-400">Title</th>
+                      <th className="text-left px-4 py-3 font-medium text-gray-400">Category</th>
+                      <th className="text-left px-4 py-3 font-medium text-gray-400">Difficulty</th>
+                      <th className="text-left px-4 py-3 font-medium text-gray-400">Author</th>
+                      <th className="text-left px-4 py-3 font-medium text-gray-400">Submitted</th>
+                      <th className="text-right px-4 py-3 font-medium text-gray-400">Actions</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -91,18 +91,18 @@ export default async function AdminDashboard({
       {/* All Prompts */}
       {tab === 'all' && (
         <section>
-          <h2 className="text-lg font-semibold mb-4">All Prompts ({allPrompts.length})</h2>
-          <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
+          <h2 className="text-lg font-semibold text-white mb-4">All Prompts ({allPrompts.length})</h2>
+          <div className="bg-surface-800 border border-surface-600 overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="border-b border-gray-200 bg-gray-50">
-                    <th className="text-left px-4 py-3 font-medium text-gray-500">Title</th>
-                    <th className="text-left px-4 py-3 font-medium text-gray-500">Category</th>
-                    <th className="text-left px-4 py-3 font-medium text-gray-500">Status</th>
-                    <th className="text-left px-4 py-3 font-medium text-gray-500">Votes</th>
-                    <th className="text-left px-4 py-3 font-medium text-gray-500">Author</th>
-                    <th className="text-right px-4 py-3 font-medium text-gray-500">Actions</th>
+                  <tr className="border-b border-surface-600 bg-surface-700">
+                    <th className="text-left px-4 py-3 font-medium text-gray-400">Title</th>
+                    <th className="text-left px-4 py-3 font-medium text-gray-400">Category</th>
+                    <th className="text-left px-4 py-3 font-medium text-gray-400">Status</th>
+                    <th className="text-left px-4 py-3 font-medium text-gray-400">Votes</th>
+                    <th className="text-left px-4 py-3 font-medium text-gray-400">Author</th>
+                    <th className="text-right px-4 py-3 font-medium text-gray-400">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -121,9 +121,9 @@ export default async function AdminDashboard({
 
 function StatCard({ label, value, highlight }: { label: string; value: number; highlight?: boolean }) {
   return (
-    <div className={`bg-white rounded-lg border p-4 ${highlight ? 'border-amber-300 bg-amber-50' : 'border-gray-200'}`}>
+    <div className={`bg-surface-800 border p-4 ${highlight ? 'border-amber-600 bg-amber-900/20' : 'border-surface-600'}`}>
       <p className="text-xs text-gray-500 mb-1">{label}</p>
-      <p className={`text-2xl font-bold ${highlight ? 'text-amber-700' : 'text-gray-900'}`}>{value}</p>
+      <p className={`text-2xl font-bold ${highlight ? 'text-amber-400' : 'text-white'}`}>{value}</p>
     </div>
   )
 }

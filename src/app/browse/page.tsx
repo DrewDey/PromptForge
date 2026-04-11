@@ -42,8 +42,11 @@ export default async function BrowsePage({
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
-      <h1 className="text-3xl font-bold mb-2">Browse Prompts</h1>
-      <p className="text-gray-600 mb-8">Explore prompts and workflows across every category.</p>
+      <div className="mb-8">
+        <span className="text-xs font-bold uppercase tracking-widest text-brand-orange mb-2 block">Explore</span>
+        <h1 className="text-3xl font-black text-white mb-2">Build Paths</h1>
+        <p className="text-gray-500">Browse proven AI build paths across every category.</p>
+      </div>
 
       {/* Search */}
       <form className="mb-6">
@@ -55,59 +58,53 @@ export default async function BrowsePage({
             type="text"
             name="q"
             defaultValue={params.q ?? ''}
-            placeholder="Search prompts..."
-            className="flex-1 border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+            placeholder="Search build paths..."
+            className="flex-1 bg-surface-800 border border-surface-600 px-4 py-2.5 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-brand-orange transition-colors"
           />
-          <button
-            type="submit"
-            className="bg-primary-600 text-white px-5 py-2.5 rounded-lg text-sm font-medium hover:bg-primary-700 transition-colors"
-          >
+          <button type="submit" className="bg-brand-orange text-white px-5 py-2.5 text-sm font-semibold hover:bg-brand-orange-dark transition-colors">
             Search
           </button>
         </div>
       </form>
 
-      {/* Filters */}
-      <div className="flex flex-col sm:flex-row gap-4 mb-8">
-        {/* Categories */}
-        <div className="flex flex-wrap gap-2">
+      {/* Category filters */}
+      <div className="flex flex-wrap gap-2 mb-6">
+        <Link
+          href={buildUrl({ category: '' })}
+          className={`text-xs font-semibold px-3 py-1.5 border transition-colors ${
+            !activeCategory
+              ? 'bg-brand-orange text-white border-brand-orange'
+              : 'bg-surface-800 text-gray-400 border-surface-600 hover:border-brand-orange/50'
+          }`}
+        >
+          All
+        </Link>
+        {categories.map(cat => (
           <Link
-            href={buildUrl({ category: '' })}
-            className={`text-xs font-medium px-3 py-1.5 rounded-full border transition-colors ${
-              !activeCategory
-                ? 'bg-primary-600 text-white border-primary-600'
-                : 'bg-white text-gray-600 border-gray-300 hover:border-primary-300'
+            key={cat.id}
+            href={buildUrl({ category: cat.slug })}
+            className={`text-xs font-semibold px-3 py-1.5 border transition-colors ${
+              activeCategory === cat.slug
+                ? 'bg-brand-orange text-white border-brand-orange'
+                : 'bg-surface-800 text-gray-400 border-surface-600 hover:border-brand-orange/50'
             }`}
           >
-            All Categories
+            {cat.icon} {cat.name}
           </Link>
-          {categories.map(cat => (
-            <Link
-              key={cat.id}
-              href={buildUrl({ category: cat.slug })}
-              className={`text-xs font-medium px-3 py-1.5 rounded-full border transition-colors ${
-                activeCategory === cat.slug
-                  ? 'bg-primary-600 text-white border-primary-600'
-                  : 'bg-white text-gray-600 border-gray-300 hover:border-primary-300'
-              }`}
-            >
-              {cat.icon} {cat.name}
-            </Link>
-          ))}
-        </div>
+        ))}
       </div>
 
-      <div className="flex items-center gap-4 mb-6">
-        {/* Difficulty filter */}
+      {/* Difficulty + Sort */}
+      <div className="flex items-center gap-4 mb-8">
         <div className="flex gap-2">
           {difficulties.map(d => (
             <Link
               key={d.value}
               href={buildUrl({ difficulty: d.value })}
-              className={`text-xs font-medium px-3 py-1.5 rounded-full border transition-colors ${
+              className={`text-xs font-semibold px-3 py-1.5 border transition-colors ${
                 activeDifficulty === d.value
-                  ? 'bg-gray-900 text-white border-gray-900'
-                  : 'bg-white text-gray-600 border-gray-200 hover:border-gray-400'
+                  ? 'bg-white text-surface-900 border-white'
+                  : 'bg-surface-800 text-gray-500 border-surface-600 hover:border-gray-400'
               }`}
             >
               {d.label}
@@ -116,16 +113,16 @@ export default async function BrowsePage({
         </div>
 
         <div className="ml-auto flex items-center gap-2 text-sm">
-          <span className="text-gray-500">Sort:</span>
+          <span className="text-gray-600 text-xs">Sort:</span>
           <Link
             href={buildUrl({ sort: 'newest' })}
-            className={`px-2 py-1 rounded text-xs font-medium ${activeSort === 'newest' ? 'text-primary-600 bg-primary-50' : 'text-gray-500 hover:text-gray-700'}`}
+            className={`px-2 py-1 text-xs font-semibold ${activeSort === 'newest' ? 'text-brand-orange' : 'text-gray-500 hover:text-gray-300'}`}
           >
             Newest
           </Link>
           <Link
             href={buildUrl({ sort: 'popular' })}
-            className={`px-2 py-1 rounded text-xs font-medium ${activeSort === 'popular' ? 'text-primary-600 bg-primary-50' : 'text-gray-500 hover:text-gray-700'}`}
+            className={`px-2 py-1 text-xs font-semibold ${activeSort === 'popular' ? 'text-brand-orange' : 'text-gray-500 hover:text-gray-300'}`}
           >
             Popular
           </Link>
@@ -134,14 +131,16 @@ export default async function BrowsePage({
 
       {/* Results */}
       {prompts.length === 0 ? (
-        <div className="text-center py-16 text-gray-500">
-          <p className="text-lg mb-2">No prompts found</p>
+        <div className="text-center py-20 text-gray-500">
+          <p className="text-lg mb-2">No build paths found</p>
           <p className="text-sm">Try adjusting your filters or search query.</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-          {prompts.map(prompt => (
-            <PromptCard key={prompt.id} prompt={prompt} />
+          {prompts.map((prompt, idx) => (
+            <div key={prompt.id} className="animate-card-slide-in" style={{ animationDelay: `${idx * 50}ms` }}>
+              <PromptCard prompt={prompt} />
+            </div>
           ))}
         </div>
       )}

@@ -29,8 +29,8 @@ export default async function AdminLayout({ children }: { children: React.ReactN
       return (
         <div className="min-h-[60vh] flex items-center justify-center">
           <div className="text-center">
-            <h1 className="text-2xl font-bold text-white mb-2">Access Denied</h1>
-            <p className="text-gray-400 mb-4">You don&apos;t have admin access.</p>
+            <h1 className="text-2xl font-bold text-gray-900 mb-2">Access Denied</h1>
+            <p className="text-gray-600 mb-4">You don&apos;t have admin access.</p>
             <Link href="/" className="text-brand-orange hover:opacity-80 font-medium text-sm">
               Go back home
             </Link>
@@ -43,28 +43,28 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   return (
     <div className="min-h-[calc(100vh-4rem)] flex">
       {/* Sidebar */}
-      <aside className="w-56 bg-surface-800 border-r border-surface-600 p-4 hidden md:block">
+      <aside className="w-56 bg-white border-r border-gray-200 p-4 hidden md:block">
         <h2 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-4 px-3">
           Admin Console
         </h2>
         <nav className="space-y-1">
           <Link
             href="/admin"
-            className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-gray-300 hover:bg-surface-700 hover:text-white transition-colors"
+            className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-gray-600 hover:bg-gray-100 hover:text-gray-900 transition-colors"
           >
             <LayoutDashboard className="w-4 h-4" />
             Dashboard
           </Link>
           <Link
             href="/admin?tab=pending"
-            className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-gray-300 hover:bg-surface-700 hover:text-white transition-colors"
+            className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-gray-600 hover:bg-gray-100 hover:text-gray-900 transition-colors"
           >
             <FileText className="w-4 h-4" />
             Review Queue
           </Link>
           <Link
             href="/admin?tab=all"
-            className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-gray-300 hover:bg-surface-700 hover:text-white transition-colors"
+            className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-gray-600 hover:bg-gray-100 hover:text-gray-900 transition-colors"
           >
             <Settings className="w-4 h-4" />
             All Prompts
@@ -73,7 +73,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
       </aside>
 
       {/* Main Content */}
-      <div className="flex-1 p-6 sm:p-8 bg-surface-900">
+      <div className="flex-1 p-6 sm:p-8 bg-gray-50">
         {children}
       </div>
     </div>

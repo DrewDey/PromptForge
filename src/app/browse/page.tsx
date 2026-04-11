@@ -44,8 +44,8 @@ export default async function BrowsePage({
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
       <div className="mb-8">
         <span className="text-xs font-bold uppercase tracking-widest text-brand-orange mb-2 block">Explore</span>
-        <h1 className="text-3xl font-black text-white mb-2">Build Paths</h1>
-        <p className="text-gray-500">Browse proven AI build paths across every category.</p>
+        <h1 className="text-3xl font-black text-gray-900 mb-2">Build Paths</h1>
+        <p className="text-gray-600">Browse proven AI build paths across every category.</p>
       </div>
 
       {/* Search */}
@@ -59,7 +59,7 @@ export default async function BrowsePage({
             name="q"
             defaultValue={params.q ?? ''}
             placeholder="Search build paths..."
-            className="flex-1 bg-surface-800 border border-surface-600 px-4 py-2.5 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-brand-orange transition-colors"
+            className="flex-1 bg-white border border-gray-300 px-4 py-2.5 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:border-brand-orange transition-colors"
           />
           <button type="submit" className="bg-brand-orange text-white px-5 py-2.5 text-sm font-semibold hover:bg-brand-orange-dark transition-colors">
             Search
@@ -74,7 +74,7 @@ export default async function BrowsePage({
           className={`text-xs font-semibold px-3 py-1.5 border transition-colors ${
             !activeCategory
               ? 'bg-brand-orange text-white border-brand-orange'
-              : 'bg-surface-800 text-gray-400 border-surface-600 hover:border-brand-orange/50'
+              : 'bg-white text-gray-600 border-gray-200 hover:border-brand-orange/50'
           }`}
         >
           All
@@ -86,7 +86,7 @@ export default async function BrowsePage({
             className={`text-xs font-semibold px-3 py-1.5 border transition-colors ${
               activeCategory === cat.slug
                 ? 'bg-brand-orange text-white border-brand-orange'
-                : 'bg-surface-800 text-gray-400 border-surface-600 hover:border-brand-orange/50'
+                : 'bg-white text-gray-600 border-gray-200 hover:border-brand-orange/50'
             }`}
           >
             {cat.icon} {cat.name}
@@ -103,8 +103,8 @@ export default async function BrowsePage({
               href={buildUrl({ difficulty: d.value })}
               className={`text-xs font-semibold px-3 py-1.5 border transition-colors ${
                 activeDifficulty === d.value
-                  ? 'bg-white text-surface-900 border-white'
-                  : 'bg-surface-800 text-gray-500 border-surface-600 hover:border-gray-400'
+                  ? 'bg-gray-900 text-white border-gray-900'
+                  : 'bg-white text-gray-500 border-gray-200 hover:border-gray-400'
               }`}
             >
               {d.label}
@@ -113,16 +113,16 @@ export default async function BrowsePage({
         </div>
 
         <div className="ml-auto flex items-center gap-2 text-sm">
-          <span className="text-gray-600 text-xs">Sort:</span>
+          <span className="text-gray-500 text-xs">Sort:</span>
           <Link
             href={buildUrl({ sort: 'newest' })}
-            className={`px-2 py-1 text-xs font-semibold ${activeSort === 'newest' ? 'text-brand-orange' : 'text-gray-500 hover:text-gray-300'}`}
+            className={`px-2 py-1 text-xs font-semibold ${activeSort === 'newest' ? 'text-brand-orange' : 'text-gray-500 hover:text-gray-700'}`}
           >
             Newest
           </Link>
           <Link
             href={buildUrl({ sort: 'popular' })}
-            className={`px-2 py-1 text-xs font-semibold ${activeSort === 'popular' ? 'text-brand-orange' : 'text-gray-500 hover:text-gray-300'}`}
+            className={`px-2 py-1 text-xs font-semibold ${activeSort === 'popular' ? 'text-brand-orange' : 'text-gray-500 hover:text-gray-700'}`}
           >
             Popular
           </Link>

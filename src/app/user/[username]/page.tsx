@@ -26,26 +26,26 @@ export default async function UserProfilePage({
   return (
     <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
       {/* Profile Header */}
-      <div className="bg-surface-800 border border-surface-600 overflow-hidden mb-8">
+      <div className="bg-white border border-gray-200 overflow-hidden mb-8">
         {/* Banner */}
         <div className="h-24 bg-gradient-to-r from-brand-orange to-brand-blue" />
 
         <div className="px-6 pb-6">
           {/* Avatar */}
           <div className="-mt-10 mb-4">
-            <div className="w-20 h-20 bg-surface-700 border-4 border-surface-800 flex items-center justify-center text-2xl font-bold text-brand-orange">
+            <div className="w-20 h-20 bg-gray-100 border-4 border-white flex items-center justify-center text-2xl font-bold text-brand-orange">
               {(profile.display_name || profile.username || '?').charAt(0).toUpperCase()}
             </div>
           </div>
 
           <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
             <div>
-              <h1 className="text-2xl font-bold text-white">
+              <h1 className="text-2xl font-bold text-gray-900">
                 {profile.display_name || profile.username}
               </h1>
               <p className="text-sm text-gray-500">@{profile.username}</p>
               {profile.bio && (
-                <p className="text-gray-300 mt-2 max-w-lg">{profile.bio}</p>
+                <p className="text-gray-700 mt-2 max-w-lg">{profile.bio}</p>
               )}
               <div className="flex items-center gap-4 mt-3 text-xs text-gray-500">
                 {joinDate && (
@@ -68,36 +68,36 @@ export default async function UserProfilePage({
 
       {/* Stats */}
       <div className="grid grid-cols-3 gap-4 mb-8">
-        <div className="bg-surface-800 border border-surface-600 p-4 text-center">
+        <div className="bg-white border border-gray-200 p-4 text-center">
           <div className="flex items-center justify-center gap-1.5 text-gray-400 mb-1">
             <Layers className="w-4 h-4" />
             <span className="text-xs font-medium">Projects</span>
           </div>
-          <p className="text-2xl font-bold text-white">{stats.totalProjects}</p>
+          <p className="text-2xl font-bold text-gray-900">{stats.totalProjects}</p>
         </div>
-        <div className="bg-surface-800 border border-surface-600 p-4 text-center">
+        <div className="bg-white border border-gray-200 p-4 text-center">
           <div className="flex items-center justify-center gap-1.5 text-gray-400 mb-1">
             <ArrowUp className="w-4 h-4" />
             <span className="text-xs font-medium">Upvotes</span>
           </div>
-          <p className="text-2xl font-bold text-white">{stats.totalUpvotes}</p>
+          <p className="text-2xl font-bold text-gray-900">{stats.totalUpvotes}</p>
         </div>
-        <div className="bg-surface-800 border border-surface-600 p-4 text-center">
+        <div className="bg-white border border-gray-200 p-4 text-center">
           <div className="flex items-center justify-center gap-1.5 text-gray-400 mb-1">
             <Bookmark className="w-4 h-4" />
             <span className="text-xs font-medium">Saves</span>
           </div>
-          <p className="text-2xl font-bold text-white">{stats.totalBookmarks}</p>
+          <p className="text-2xl font-bold text-gray-900">{stats.totalBookmarks}</p>
         </div>
       </div>
 
       {/* Projects */}
       <div>
-        <h2 className="text-lg font-semibold text-white mb-4">
+        <h2 className="text-lg font-semibold text-gray-900 mb-4">
           Projects ({projects.length})
         </h2>
         {projects.length === 0 ? (
-          <div className="bg-surface-800 border border-surface-600 p-10 text-center text-gray-400">
+          <div className="bg-white border border-gray-200 p-10 text-center text-gray-500">
             <p className="mb-1">No projects yet.</p>
             <p className="text-sm">This user hasn&apos;t shared any projects.</p>
           </div>

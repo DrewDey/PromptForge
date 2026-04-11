@@ -56,11 +56,11 @@ export default function SignupPage() {
 
   if (success) {
     return (
-      <div className="min-h-[80vh] flex items-center justify-center px-4 bg-surface-900">
+      <div className="min-h-[80vh] flex items-center justify-center px-4 bg-gray-50">
         <div className="w-full max-w-sm text-center">
           <div className="text-4xl mb-4">📬</div>
-          <h1 className="text-xl font-bold text-white mb-2">Check your email</h1>
-          <p className="text-gray-400 text-sm mb-6">
+          <h1 className="text-xl font-bold text-gray-900 mb-2">Check your email</h1>
+          <p className="text-gray-600 text-sm mb-6">
             We sent you a confirmation link. Click it to activate your account.
           </p>
           <Link href="/auth/login" className="text-brand-orange hover:opacity-80 font-medium text-sm">
@@ -72,52 +72,52 @@ export default function SignupPage() {
   }
 
   return (
-    <div className="min-h-[80vh] flex items-center justify-center px-4 bg-surface-900">
+    <div className="min-h-[80vh] flex items-center justify-center px-4 bg-gray-50">
       <div className="w-full max-w-sm">
         <div className="text-center mb-8">
           <Link href="/" className="inline-flex items-center gap-2 font-bold text-2xl text-brand-orange mb-2">
             <Image src="/logo.png" alt="PathForge" width={28} height={28} />
             PathForge
           </Link>
-          <p className="text-gray-400 text-sm">Create your account and start sharing projects.</p>
+          <p className="text-gray-600 text-sm">Create your account and start sharing projects.</p>
         </div>
 
         {error && (
-          <div className="bg-red-900/30 border border-red-700 text-red-400 text-sm px-4 py-3 mb-4">
+          <div className="bg-red-50 border border-red-200 text-red-700 text-sm px-4 py-3 mb-4">
             {error}
           </div>
         )}
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-1">Username</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Username</label>
             <input
               type="text"
               name="username"
               required
               placeholder="Choose a username"
-              className="w-full bg-surface-800 border border-surface-600 text-white placeholder-gray-500 px-4 py-2.5 text-sm focus:outline-none focus:border-brand-orange"
+              className="w-full bg-white border border-gray-300 text-gray-900 placeholder-gray-400 px-4 py-2.5 text-sm focus:outline-none focus:border-brand-orange"
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-1">Email</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
             <input
               type="email"
               name="email"
               required
               placeholder="you@example.com"
-              className="w-full bg-surface-800 border border-surface-600 text-white placeholder-gray-500 px-4 py-2.5 text-sm focus:outline-none focus:border-brand-orange"
+              className="w-full bg-white border border-gray-300 text-gray-900 placeholder-gray-400 px-4 py-2.5 text-sm focus:outline-none focus:border-brand-orange"
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-1">Password</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Password</label>
             <input
               type="password"
               name="password"
               required
               minLength={8}
               placeholder="At least 8 characters"
-              className="w-full bg-surface-800 border border-surface-600 text-white placeholder-gray-500 px-4 py-2.5 text-sm focus:outline-none focus:border-brand-orange"
+              className="w-full bg-white border border-gray-300 text-gray-900 placeholder-gray-400 px-4 py-2.5 text-sm focus:outline-none focus:border-brand-orange"
             />
           </div>
           <button

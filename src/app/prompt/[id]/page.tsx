@@ -7,9 +7,9 @@ import CopyButton from './CopyButton'
 import VoteBookmarkButtons from '@/components/VoteBookmarkButtons'
 
 const difficultyColors = {
-  beginner: 'bg-green-500/10 text-green-400 border-green-500/30',
-  intermediate: 'bg-amber-500/10 text-amber-400 border-amber-500/30',
-  advanced: 'bg-red-500/10 text-red-400 border-red-500/30',
+  beginner: 'bg-green-50 text-green-700 border-green-200',
+  intermediate: 'bg-amber-50 text-amber-700 border-amber-200',
+  advanced: 'bg-red-50 text-red-700 border-red-200',
 }
 
 export default async function PromptDetailPage({
@@ -57,7 +57,7 @@ export default async function PromptDetailPage({
           {prompt.category && (
             <Link
               href={`/browse?category=${prompt.category.slug}`}
-              className="text-xs font-semibold bg-surface-800 text-gray-400 px-2.5 py-1 border border-surface-600 hover:border-brand-orange/50 transition-colors"
+              className="text-xs font-semibold bg-gray-100 text-gray-600 px-2.5 py-1 border border-gray-200 hover:border-brand-orange/50 transition-colors"
             >
               {prompt.category.icon} {prompt.category.name}
             </Link>
@@ -72,18 +72,18 @@ export default async function PromptDetailPage({
           )}
         </div>
 
-        <h1 className="text-3xl font-black text-white mb-3">{prompt.title}</h1>
-        <p className="text-gray-400 text-lg leading-relaxed">{prompt.description}</p>
+        <h1 className="text-3xl font-black text-gray-900 mb-3">{prompt.title}</h1>
+        <p className="text-gray-600 text-lg leading-relaxed">{prompt.description}</p>
       </div>
 
       {/* Meta bar */}
-      <div className="flex items-center gap-4 flex-wrap text-sm text-gray-500 mb-8 pb-6 border-b border-surface-700">
+      <div className="flex items-center gap-4 flex-wrap text-sm text-gray-500 mb-8 pb-6 border-b border-gray-200">
         <span>By {prompt.author?.username ? (
-          <Link href={`/user/${prompt.author.username}`} className="font-semibold text-gray-300 hover:text-brand-orange transition-colors">
+          <Link href={`/user/${prompt.author.username}`} className="font-semibold text-gray-700 hover:text-brand-orange transition-colors">
             {prompt.author.display_name ?? 'Anonymous'}
           </Link>
         ) : (
-          <strong className="text-gray-300">Anonymous</strong>
+          <strong className="text-gray-700">Anonymous</strong>
         )}</span>
         <VoteBookmarkButtons
           promptId={prompt.id}
@@ -110,8 +110,8 @@ export default async function PromptDetailPage({
       {/* The Story */}
       <section className="mb-10">
         <h2 className="text-xs font-bold uppercase tracking-widest text-brand-orange mb-3">The Story</h2>
-        <div className="bg-surface-800 border border-surface-600 p-6">
-          <p className="text-gray-300 leading-relaxed whitespace-pre-line">{prompt.content}</p>
+        <div className="bg-white border border-gray-200 p-6">
+          <p className="text-gray-700 leading-relaxed whitespace-pre-line">{prompt.content}</p>
         </div>
       </section>
 
@@ -133,14 +133,14 @@ export default async function PromptDetailPage({
               {prompt.steps!.map((step, idx) => (
                 <div key={step.id} className="relative pl-12">
                   {/* Step node on the pipe */}
-                  <div className="absolute left-3 top-4 w-5 h-5 bg-surface-900 border-2 border-brand-orange flex items-center justify-center">
+                  <div className="absolute left-3 top-4 w-5 h-5 bg-white border-2 border-brand-orange flex items-center justify-center">
                     <span className="text-[10px] font-black text-brand-orange">{idx + 1}</span>
                   </div>
 
-                  <div className="bg-surface-800 border border-surface-600 overflow-hidden">
+                  <div className="bg-white border border-gray-200 overflow-hidden">
                     {/* Step header */}
-                    <div className="bg-surface-700 px-5 py-3 border-b border-surface-600">
-                      <span className="font-bold text-sm text-white">{step.title}</span>
+                    <div className="bg-gray-50 px-5 py-3 border-b border-gray-200">
+                      <span className="font-bold text-sm text-gray-900">{step.title}</span>
                       {step.description && (
                         <p className="text-xs text-gray-500 mt-0.5">{step.description}</p>
                       )}
@@ -152,7 +152,7 @@ export default async function PromptDetailPage({
                         <span className="text-xs font-bold uppercase tracking-widest text-brand-orange">Prompt</span>
                         <CopyButton text={step.content} />
                       </div>
-                      <pre className="text-sm text-gray-300 whitespace-pre-wrap font-mono leading-relaxed bg-surface-900 p-4 border border-surface-700">
+                      <pre className="text-sm text-gray-700 whitespace-pre-wrap font-mono leading-relaxed bg-gray-50 p-4 border border-gray-200">
                         {step.content}
                       </pre>
                     </div>
@@ -161,10 +161,10 @@ export default async function PromptDetailPage({
                     {step.result_content && (
                       <div className="px-5 pb-5">
                         <div className="flex items-center justify-between mb-2">
-                          <span className="text-xs font-bold uppercase tracking-widest text-green-400">Result</span>
+                          <span className="text-xs font-bold uppercase tracking-widest text-green-600">Result</span>
                           <CopyButton text={step.result_content} />
                         </div>
-                        <div className="text-sm text-gray-300 whitespace-pre-wrap leading-relaxed bg-green-500/5 p-4 border border-green-500/20">
+                        <div className="text-sm text-gray-700 whitespace-pre-wrap leading-relaxed bg-green-50 p-4 border border-green-200">
                           {step.result_content}
                         </div>
                       </div>
@@ -184,8 +184,8 @@ export default async function PromptDetailPage({
             <h2 className="text-xs font-bold uppercase tracking-widest text-brand-orange">The Prompt</h2>
             <CopyButton text={prompt.content} />
           </div>
-          <div className="bg-surface-800 border border-surface-600 p-6">
-            <pre className="text-sm text-gray-300 whitespace-pre-wrap font-mono leading-relaxed">
+          <div className="bg-gray-50 border border-gray-200 p-6">
+            <pre className="text-sm text-gray-700 whitespace-pre-wrap font-mono leading-relaxed">
               {prompt.content}
             </pre>
           </div>
@@ -196,21 +196,21 @@ export default async function PromptDetailPage({
       {prompt.result_content && (
         <section className="mb-10">
           <h2 className="text-xs font-bold uppercase tracking-widest text-green-400 mb-3">The Result</h2>
-          <div className="bg-green-500/5 border-2 border-green-500/20 p-6">
-            <p className="text-gray-300 leading-relaxed whitespace-pre-line">{prompt.result_content}</p>
+          <div className="bg-green-50 border-2 border-green-200 p-6">
+            <p className="text-gray-700 leading-relaxed whitespace-pre-line">{prompt.result_content}</p>
           </div>
         </section>
       )}
 
       {/* Tags */}
       {prompt.tags.length > 0 && (
-        <div className="flex items-center gap-2 flex-wrap pt-6 border-t border-surface-700">
-          <Tag className="w-4 h-4 text-gray-600" />
+        <div className="flex items-center gap-2 flex-wrap pt-6 border-t border-gray-200">
+          <Tag className="w-4 h-4 text-gray-400" />
           {prompt.tags.map(tag => (
             <Link
               key={tag}
               href={`/browse?q=${encodeURIComponent(tag)}`}
-              className="text-xs bg-surface-800 text-gray-500 px-2.5 py-1 border border-surface-600 hover:border-brand-orange/50 transition-colors"
+              className="text-xs bg-gray-100 text-gray-500 px-2.5 py-1 border border-gray-200 hover:border-brand-orange/50 transition-colors"
             >
               {tag}
             </Link>

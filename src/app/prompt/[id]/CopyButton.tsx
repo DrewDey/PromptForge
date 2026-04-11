@@ -15,7 +15,7 @@ export default function CopyButton({ text }: { text: string }) {
   return (
     <button
       onClick={handleCopy}
-      className="flex items-center gap-1.5 text-xs font-semibold text-gray-500 hover:text-brand-orange bg-surface-700 hover:bg-surface-600 px-3 py-1.5 border border-surface-600 transition-colors"
+      className="flex items-center gap-1.5 text-xs font-semibold text-gray-500 hover:text-brand-orange bg-gray-100 hover:bg-gray-200 px-3 py-1.5 border border-gray-200 transition-colors"
     >
       {copied ? (
         <>

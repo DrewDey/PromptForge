@@ -33,12 +33,12 @@
   --color-accent-800: #1E40AF;
   --color-accent-900: #1E3A5F;
 
-  /* Dark surface palette */
-  --color-surface-900: #0B0F1A;
-  --color-surface-800: #111827;
-  --color-surface-700: #1E293B;
-  --color-surface-600: #2D3A4F;
-  --color-surface-500: #475569;
+  /* Light surface palette */
+  --color-surface-900: #ffffff;
+  --color-surface-800: #ffffff;
+  --color-surface-700: #f9fafb;
+  --color-surface-600: #e5e7eb;
+  --color-surface-500: #9ca3af;
 }
 
 /* Sharp edges globally */
@@ -51,10 +51,10 @@
   width: 8px;
 }
 ::-webkit-scrollbar-track {
-  background: var(--color-surface-800);
+  background: #f1f5f9;
 }
 ::-webkit-scrollbar-thumb {
-  background: var(--color-surface-600);
+  background: #cbd5e1;
 }
 
 /* Pipe animation */

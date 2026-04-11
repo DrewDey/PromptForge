@@ -8,12 +8,12 @@ export default async function HomePage() {
   const popularPaths = await getPrompts({ sort: 'popular', limit: 6 })
 
   return (
-    <div className="bg-surface-900 text-white">
+    <div className="bg-white text-gray-900">
       {/* ═══════════ HERO ═══════════ */}
       <section className="relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-surface-900 via-surface-800 to-surface-900" />
+        <div className="absolute inset-0 bg-gradient-to-br from-gray-50 to-white" />
         {/* Subtle grid pattern */}
-        <div className="absolute inset-0 opacity-5" style={{ backgroundImage: 'linear-gradient(rgba(255,255,255,.1) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.1) 1px, transparent 1px)', backgroundSize: '60px 60px' }} />
+        <div className="absolute inset-0 opacity-[0.03]" style={{ backgroundImage: 'linear-gradient(rgba(0,0,0,1) 1px, transparent 1px), linear-gradient(90deg, rgba(0,0,0,1) 1px, transparent 1px)', backgroundSize: '60px 60px' }} />
 
         <div className="relative max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 pt-20 pb-24 text-center">
           <Image src="/logo.png" alt="PathForge" width={280} height={80} className="mx-auto mb-8" priority />
@@ -25,7 +25,7 @@ export default async function HomePage() {
             </span>
           </h1>
 
-          <p className="text-lg sm:text-xl text-gray-400 max-w-2xl mx-auto mb-10 leading-relaxed">
+          <p className="text-lg sm:text-xl text-gray-600 max-w-2xl mx-auto mb-10 leading-relaxed">
             PathForge is where successful AI work becomes reusable.
             Browse proven build paths, fork them, adapt them to your needs,
             and skip the blank-chat guesswork.
@@ -41,7 +41,7 @@ export default async function HomePage() {
             </Link>
             <Link
               href="/auth/signup"
-              className="border border-surface-600 text-gray-300 px-8 py-3.5 font-semibold text-sm hover:border-brand-blue hover:text-brand-blue transition-colors"
+              className="border border-gray-300 text-gray-600 px-8 py-3.5 font-semibold text-sm hover:border-brand-blue hover:text-brand-blue transition-colors"
             >
               Create Account
             </Link>
@@ -71,24 +71,24 @@ export default async function HomePage() {
             <span className="text-xs font-bold uppercase tracking-widest text-brand-orange mb-3 block">The Problem</span>
             <h2 className="text-3xl sm:text-4xl font-black mb-6">
               You start from scratch.<br />
-              <span className="text-gray-500">Every. Single. Time.</span>
+              <span className="text-gray-400">Every. Single. Time.</span>
             </h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="bg-surface-800 border border-surface-600 p-5">
+              <div className="bg-white border border-gray-200 p-5">
                 <h3 className="font-bold text-sm text-brand-orange mb-2">Blank Chat Tax</h3>
-                <p className="text-sm text-gray-400">You open a new chat, stare at the cursor, and rebuild something someone else already figured out.</p>
+                <p className="text-sm text-gray-600">You open a new chat, stare at the cursor, and rebuild something someone else already figured out.</p>
               </div>
-              <div className="bg-surface-800 border border-surface-600 p-5">
+              <div className="bg-white border border-gray-200 p-5">
                 <h3 className="font-bold text-sm text-brand-orange mb-2">Hidden Craftsmanship</h3>
-                <p className="text-sm text-gray-400">The best AI work is buried in private chats, screenshots, and memory. Nobody else can use it.</p>
+                <p className="text-sm text-gray-600">The best AI work is buried in private chats, screenshots, and memory. Nobody else can use it.</p>
               </div>
-              <div className="bg-surface-800 border border-surface-600 p-5">
+              <div className="bg-white border border-gray-200 p-5">
                 <h3 className="font-bold text-sm text-brand-orange mb-2">Weak Reproducibility</h3>
-                <p className="text-sm text-gray-400">You see a great result but can&apos;t see how it was built well enough to recreate it.</p>
+                <p className="text-sm text-gray-600">You see a great result but can&apos;t see how it was built well enough to recreate it.</p>
               </div>
-              <div className="bg-surface-800 border border-surface-600 p-5">
+              <div className="bg-white border border-gray-200 p-5">
                 <h3 className="font-bold text-sm text-brand-orange mb-2">Lost Branches</h3>
-                <p className="text-sm text-gray-400">The detours and alternative paths that taught you what works are thrown away instead of shared.</p>
+                <p className="text-sm text-gray-600">The detours and alternative paths that taught you what works are thrown away instead of shared.</p>
               </div>
             </div>
           </div>
@@ -115,7 +115,7 @@ export default async function HomePage() {
           <h2 className="text-3xl sm:text-4xl font-black mb-4">
             Build paths, not prompts.
           </h2>
-          <p className="text-gray-400 max-w-2xl mx-auto">
+          <p className="text-gray-600 max-w-2xl mx-auto">
             A build path captures the full journey from blank chat to useful result —
             the inputs, the sequence, the branches, the outputs. Everything someone needs
             to fork it, adapt it, and get their own result faster.
@@ -124,29 +124,29 @@ export default async function HomePage() {
 
         {/* Flow diagram */}
         <div className="flex items-center justify-center gap-0 overflow-x-auto py-4">
-          <div className="bg-surface-700 border border-surface-500 px-4 py-3 text-center flex-shrink-0">
+          <div className="bg-white border border-gray-200 px-4 py-3 text-center flex-shrink-0">
             <p className="text-xs text-gray-500 mb-1">Start</p>
-            <p className="font-bold text-sm">Blank Chat</p>
+            <p className="font-bold text-sm text-gray-900">Blank Chat</p>
           </div>
-          <div className="h-1 w-8 bg-gradient-to-r from-surface-500 to-brand-orange flex-shrink-0" />
+          <div className="h-1 w-8 bg-gradient-to-r from-gray-300 to-brand-orange flex-shrink-0" />
           <div className="bg-brand-orange/10 border-2 border-brand-orange px-4 py-3 text-center flex-shrink-0">
             <p className="text-xs text-brand-orange mb-1">Share</p>
-            <p className="font-bold text-sm">Build Path</p>
+            <p className="font-bold text-sm text-gray-900">Build Path</p>
           </div>
           <div className="h-1 w-8 bg-brand-orange flex-shrink-0" />
-          <div className="bg-surface-700 border border-brand-blue px-4 py-3 text-center flex-shrink-0">
+          <div className="bg-white border border-brand-blue px-4 py-3 text-center flex-shrink-0">
             <p className="text-xs text-brand-blue mb-1">Copy</p>
-            <p className="font-bold text-sm">Fork</p>
+            <p className="font-bold text-sm text-gray-900">Fork</p>
           </div>
           <div className="h-1 w-8 bg-gradient-to-r from-brand-blue to-brand-orange flex-shrink-0" />
-          <div className="bg-surface-700 border border-surface-500 px-4 py-3 text-center flex-shrink-0">
+          <div className="bg-white border border-gray-200 px-4 py-3 text-center flex-shrink-0">
             <p className="text-xs text-gray-500 mb-1">Customize</p>
-            <p className="font-bold text-sm">Adapt</p>
+            <p className="font-bold text-sm text-gray-900">Adapt</p>
           </div>
-          <div className="h-1 w-8 bg-gradient-to-r from-surface-500 to-green-500 flex-shrink-0" />
-          <div className="bg-green-500/10 border-2 border-green-500 px-4 py-3 text-center flex-shrink-0">
-            <p className="text-xs text-green-400 mb-1">Done</p>
-            <p className="font-bold text-sm">Result</p>
+          <div className="h-1 w-8 bg-gradient-to-r from-gray-300 to-green-500 flex-shrink-0" />
+          <div className="bg-green-50 border-2 border-green-200 px-4 py-3 text-center flex-shrink-0">
+            <p className="text-xs text-green-600 mb-1">Done</p>
+            <p className="font-bold text-sm text-gray-900">Result</p>
           </div>
         </div>
       </section>
@@ -159,30 +159,30 @@ export default async function HomePage() {
       {/* ═══════════ WHY IT WORKS ═══════════ */}
       <section className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className="bg-surface-800 border border-surface-600 p-6 hover:border-brand-orange transition-colors">
+          <div className="bg-white border border-gray-200 p-6 hover:border-brand-orange transition-colors">
             <div className="w-10 h-10 bg-brand-orange/10 flex items-center justify-center mb-4">
               <GitFork className="w-5 h-5 text-brand-orange" />
             </div>
-            <h3 className="font-bold mb-2">Fork & Adapt</h3>
-            <p className="text-sm text-gray-400">
+            <h3 className="font-bold mb-2 text-gray-900">Fork & Adapt</h3>
+            <p className="text-sm text-gray-600">
               Every build path is forkable. Take someone&apos;s proven process, customize it for your context, and publish your version.
             </p>
           </div>
-          <div className="bg-surface-800 border border-surface-600 p-6 hover:border-brand-blue transition-colors">
+          <div className="bg-white border border-gray-200 p-6 hover:border-brand-blue transition-colors">
             <div className="w-10 h-10 bg-brand-blue/10 flex items-center justify-center mb-4">
               <Zap className="w-5 h-5 text-brand-blue" />
             </div>
-            <h3 className="font-bold mb-2">See Every Step</h3>
-            <p className="text-sm text-gray-400">
+            <h3 className="font-bold mb-2 text-gray-900">See Every Step</h3>
+            <p className="text-sm text-gray-600">
               Not just the final prompt — the full sequence. Each step shows the prompt used and the result it produced.
             </p>
           </div>
-          <div className="bg-surface-800 border border-surface-600 p-6 hover:border-green-500 transition-colors">
+          <div className="bg-white border border-gray-200 p-6 hover:border-green-500 transition-colors">
             <div className="w-10 h-10 bg-green-500/10 flex items-center justify-center mb-4">
               <TrendingUp className="w-5 h-5 text-green-500" />
             </div>
-            <h3 className="font-bold mb-2">Proven Results</h3>
-            <p className="text-sm text-gray-400">
+            <h3 className="font-bold mb-2 text-gray-900">Proven Results</h3>
+            <p className="text-sm text-gray-600">
               Every path shows real outcomes — metrics, outputs, what actually worked. No guessing if it&apos;ll work for you.
             </p>
           </div>
@@ -224,7 +224,7 @@ export default async function HomePage() {
       </div>
 
       {/* ═══════════ FINAL CTA ═══════════ */}
-      <section className="border-t border-surface-700">
+      <section className="border-t border-gray-200">
         <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-20 text-center">
           <div className="w-12 h-12 bg-brand-orange/10 flex items-center justify-center mx-auto mb-6">
             <Users className="w-6 h-6 text-brand-orange" />
@@ -232,7 +232,7 @@ export default async function HomePage() {
           <h2 className="text-3xl sm:text-4xl font-black mb-4">
             Stop rebuilding from scratch.
           </h2>
-          <p className="text-gray-400 mb-8 max-w-lg mx-auto">
+          <p className="text-gray-600 mb-8 max-w-lg mx-auto">
             Join PathForge and start using proven AI build paths created by people who already figured it out.
           </p>
           <Link

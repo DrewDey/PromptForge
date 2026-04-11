@@ -67,7 +67,7 @@ export default function VoteBookmarkButtons({
           className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-sm font-medium transition-colors ${
             voted
               ? 'bg-brand-orange/10 border-brand-orange/50 text-brand-orange'
-              : 'bg-surface-800 border-surface-600 text-gray-500 hover:border-brand-orange/50 hover:text-brand-orange'
+              : 'bg-white border-gray-200 text-gray-500 hover:border-brand-orange/50 hover:text-brand-orange'
           } ${!isLoggedIn ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
           title={isLoggedIn ? (voted ? 'Remove upvote' : 'Upvote') : 'Log in to upvote'}
         >
@@ -80,7 +80,7 @@ export default function VoteBookmarkButtons({
           className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-sm font-medium transition-colors ${
             bookmarked
               ? 'bg-brand-blue/10 border-brand-blue/50 text-brand-blue'
-              : 'bg-surface-800 border-surface-600 text-gray-500 hover:border-brand-blue/50 hover:text-brand-blue'
+              : 'bg-white border-gray-200 text-gray-500 hover:border-brand-blue/50 hover:text-brand-blue'
           } ${!isLoggedIn ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
           title={isLoggedIn ? (bookmarked ? 'Remove bookmark' : 'Bookmark') : 'Log in to bookmark'}
         >

@@ -3,7 +3,7 @@ import Image from 'next/image'
 
 export default function Footer() {
   return (
-    <footer className="bg-surface-900 border-t border-surface-700">
+    <footer className="bg-gray-900 border-t border-gray-800">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           <div className="md:col-span-2">
@@ -34,7 +34,7 @@ export default function Footer() {
           </div>
         </div>
 
-        <div className="border-t border-surface-700 mt-10 pt-6 flex items-center justify-between">
+        <div className="border-t border-gray-800 mt-10 pt-6 flex items-center justify-between">
           <p className="text-xs text-gray-600">PathForge</p>
           <div className="flex items-center gap-1">
             <div className="w-2 h-2 bg-brand-orange" />

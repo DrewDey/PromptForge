@@ -101,10 +101,20 @@ export const mockProfiles: Profile[] = [
     created_at: '2026-03-28T00:00:00Z',
     updated_at: '2026-03-28T00:00:00Z',
   },
+  {
+    id: 'user-11',
+    username: 'pathforge_projects',
+    display_name: 'PathForge Projects',
+    avatar_url: null,
+    bio: 'Curated real-world AI projects you can follow along with. Built step by step, with every prompt and result documented.',
+    role: 'user',
+    created_at: '2026-04-01T00:00:00Z',
+    updated_at: '2026-04-01T00:00:00Z',
+  },
 ]
 
 export const mockCategories: Category[] = [
-  { id: 'cat-1', name: 'Finance & Accounting', slug: 'finance', description: 'Budgeting, forecasting, analysis, and financial planning', icon: '💰', prompt_count: 3, created_at: '2026-03-01T00:00:00Z' },
+  { id: 'cat-1', name: 'Finance & Accounting', slug: 'finance', description: 'Budgeting, forecasting, analysis, and financial planning', icon: '💰', prompt_count: 5, created_at: '2026-03-01T00:00:00Z' },
   { id: 'cat-2', name: 'Marketing & Sales', slug: 'marketing', description: 'Campaigns, content strategy, lead generation, and outreach', icon: '📢', prompt_count: 3, created_at: '2026-03-01T00:00:00Z' },
   { id: 'cat-3', name: 'Writing & Content', slug: 'writing', description: 'Blog posts, emails, copy, and creative writing', icon: '✍️', prompt_count: 4, created_at: '2026-03-01T00:00:00Z' },
   { id: 'cat-4', name: 'Coding & Development', slug: 'coding', description: 'Code generation, debugging, architecture, and documentation', icon: '💻', prompt_count: 2, created_at: '2026-03-01T00:00:00Z' },
@@ -117,6 +127,657 @@ export const mockCategories: Category[] = [
 ]
 
 export const mockSteps: PromptStep[] = [
+  // === Personal Expense Tracker App — 5-step build (prompt-38) ===
+  { id: 'step-38a', prompt_id: 'prompt-38', step_number: 1, title: 'Project Setup & Data Model',
+    content: `I want to build a personal expense tracker as a single-page React app. Here's what I need for the MVP:
+
+- Add expenses with: amount, category (groceries, dining, transport, entertainment, utilities, health, shopping, other), date, and a short note
+- See a running list of all expenses, newest first
+- See a summary: total spent this month, breakdown by category, and a simple bar chart
+- All data stored in localStorage for now (no backend)
+
+Start by giving me:
+1. The complete project setup (I'll use Vite + React + TypeScript)
+2. The TypeScript types/interfaces for the data model
+3. A custom hook (useExpenses) that handles all CRUD operations with localStorage
+4. The main App component shell with routing between 3 views: Dashboard, Add Expense, History
+
+Make sure the hook handles edge cases like first-time users with no data, and include a few seed expenses so the app doesn't look empty on first load.`,
+    result_content: `Here's the complete foundation:
+
+**Project setup:**
+\`\`\`bash
+npm create vite@latest expense-tracker -- --template react-ts
+cd expense-tracker
+npm install recharts date-fns
+npm install -D @types/node
+\`\`\`
+
+**Types (src/types.ts):**
+\`\`\`typescript
+export type Category = 'groceries' | 'dining' | 'transport' | 'entertainment' | 'utilities' | 'health' | 'shopping' | 'other'
+
+export interface Expense {
+  id: string
+  amount: number
+  category: Category
+  date: string // ISO format
+  note: string
+  createdAt: string
+}
+
+export interface MonthSummary {
+  total: number
+  byCategory: Record<Category, number>
+  count: number
+}
+
+export const CATEGORY_CONFIG: Record<Category, { label: string; color: string; emoji: string }> = {
+  groceries: { label: 'Groceries', color: '#4CAF50', emoji: '🛒' },
+  dining: { label: 'Dining Out', color: '#FF9800', emoji: '🍽️' },
+  transport: { label: 'Transport', color: '#2196F3', emoji: '🚗' },
+  entertainment: { label: 'Entertainment', color: '#9C27B0', emoji: '🎬' },
+  utilities: { label: 'Utilities', color: '#607D8B', emoji: '💡' },
+  health: { label: 'Health', color: '#F44336', emoji: '🏥' },
+  shopping: { label: 'Shopping', color: '#E91E63', emoji: '🛍️' },
+  other: { label: 'Other', color: '#795548', emoji: '📦' },
+}
+\`\`\`
+
+**Custom hook (src/hooks/useExpenses.ts):**
+\`\`\`typescript
+import { useState, useEffect, useCallback } from 'react'
+import { Expense, Category, MonthSummary } from '../types'
+
+const STORAGE_KEY = 'expense-tracker-data'
+
+const SEED_EXPENSES: Expense[] = [
+  { id: '1', amount: 67.50, category: 'groceries', date: new Date().toISOString().split('T')[0], note: 'Weekly grocery run at Trader Joe\\'s', createdAt: new Date().toISOString() },
+  { id: '2', amount: 42.00, category: 'dining', date: new Date().toISOString().split('T')[0], note: 'Dinner with friends', createdAt: new Date().toISOString() },
+  { id: '3', amount: 35.00, category: 'transport', date: new Date(Date.now() - 86400000).toISOString().split('T')[0], note: 'Gas fillup', createdAt: new Date().toISOString() },
+  { id: '4', amount: 15.99, category: 'entertainment', date: new Date(Date.now() - 86400000).toISOString().split('T')[0], note: 'Netflix subscription', createdAt: new Date().toISOString() },
+  { id: '5', amount: 120.00, category: 'utilities', date: new Date(Date.now() - 172800000).toISOString().split('T')[0], note: 'Electric bill', createdAt: new Date().toISOString() },
+]
+
+export function useExpenses() {
+  const [expenses, setExpenses] = useState<Expense[]>(() => {
+    const stored = localStorage.getItem(STORAGE_KEY)
+    if (stored) {
+      try { return JSON.parse(stored) }
+      catch { return SEED_EXPENSES }
+    }
+    return SEED_EXPENSES
+  })
+
+  useEffect(() => {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(expenses))
+  }, [expenses])
+
+  const addExpense = useCallback((data: Omit<Expense, 'id' | 'createdAt'>) => {
+    const newExpense: Expense = {
+      ...data,
+      id: crypto.randomUUID(),
+      createdAt: new Date().toISOString(),
+    }
+    setExpenses(prev => [newExpense, ...prev])
+  }, [])
+
+  const deleteExpense = useCallback((id: string) => {
+    setExpenses(prev => prev.filter(e => e.id !== id))
+  }, [])
+
+  const getMonthSummary = useCallback((year: number, month: number): MonthSummary => {
+    const monthExpenses = expenses.filter(e => {
+      const d = new Date(e.date)
+      return d.getFullYear() === year && d.getMonth() === month
+    })
+    const byCategory = {} as Record<Category, number>
+    for (const e of monthExpenses) {
+      byCategory[e.category] = (byCategory[e.category] || 0) + e.amount
+    }
+    return {
+      total: monthExpenses.reduce((sum, e) => sum + e.amount, 0),
+      byCategory,
+      count: monthExpenses.length,
+    }
+  }, [expenses])
+
+  return { expenses, addExpense, deleteExpense, getMonthSummary }
+}
+\`\`\`
+
+**App shell (src/App.tsx):**
+\`\`\`tsx
+import { useState } from 'react'
+import { useExpenses } from './hooks/useExpenses'
+import Dashboard from './components/Dashboard'
+import AddExpense from './components/AddExpense'
+import History from './components/History'
+
+type View = 'dashboard' | 'add' | 'history'
+
+export default function App() {
+  const [view, setView] = useState<View>('dashboard')
+  const { expenses, addExpense, deleteExpense, getMonthSummary } = useExpenses()
+
+  return (
+    <div className="app">
+      <nav className="nav">
+        <h1>💰 Expense Tracker</h1>
+        <div className="nav-links">
+          <button onClick={() => setView('dashboard')} className={view === 'dashboard' ? 'active' : ''}>Dashboard</button>
+          <button onClick={() => setView('add')} className={view === 'add' ? 'active' : ''}>Add</button>
+          <button onClick={() => setView('history')} className={view === 'history' ? 'active' : ''}>History</button>
+        </div>
+      </nav>
+      <main>
+        {view === 'dashboard' && <Dashboard expenses={expenses} getMonthSummary={getMonthSummary} />}
+        {view === 'add' && <AddExpense onAdd={(data) => { addExpense(data); setView('dashboard') }} />}
+        {view === 'history' && <History expenses={expenses} onDelete={deleteExpense} />}
+      </main>
+    </div>
+  )
+}
+\`\`\`
+
+This gives you the full skeleton — types, data management with localStorage persistence, seed data so it's not empty, and a clean component structure. Each view is its own component that we'll build next.`,
+    description: 'Set up the project, define data types, and build the localStorage-backed expense hook', created_at: '2026-04-05T00:00:00Z' },
+
+  { id: 'step-38b', prompt_id: 'prompt-38', step_number: 2, title: 'Dashboard View with Charts',
+    content: `Great, the foundation works. Now build the Dashboard component. It should show:
+
+1. A "hero" summary card at the top with: total spent this month (big number), number of transactions, and daily average
+2. A horizontal bar chart showing spending by category (use Recharts), sorted highest to lowest, with the category emoji and amount label on each bar
+3. A "recent transactions" mini-list showing the last 5 expenses with category emoji, note, amount, and relative date ("today", "yesterday", "3 days ago")
+
+Style it clean and modern — dark background (#1a1a2e), card backgrounds (#16213e), and use the category colors from our CATEGORY_CONFIG for the chart bars. Make it look like a fintech app, not a homework assignment.`,
+    result_content: `**Dashboard component (src/components/Dashboard.tsx):**
+\`\`\`tsx
+import { useMemo } from 'react'
+import { BarChart, Bar, XAxis, YAxis, Tooltip, Cell, ResponsiveContainer } from 'recharts'
+import { Expense, MonthSummary, CATEGORY_CONFIG, Category } from '../types'
+import { formatDistanceToNow } from 'date-fns'
+
+interface Props {
+  expenses: Expense[]
+  getMonthSummary: (year: number, month: number) => MonthSummary
+}
+
+export default function Dashboard({ expenses, getMonthSummary }: Props) {
+  const now = new Date()
+  const summary = getMonthSummary(now.getFullYear(), now.getMonth())
+
+  const chartData = useMemo(() => {
+    return Object.entries(summary.byCategory)
+      .map(([cat, amount]) => ({
+        name: CATEGORY_CONFIG[cat as Category].emoji + ' ' + CATEGORY_CONFIG[cat as Category].label,
+        amount: Math.round(amount * 100) / 100,
+        color: CATEGORY_CONFIG[cat as Category].color,
+      }))
+      .sort((a, b) => b.amount - a.amount)
+  }, [summary])
+
+  const recentExpenses = expenses.slice(0, 5)
+  const daysInMonth = now.getDate()
+  const dailyAvg = summary.count > 0 ? (summary.total / daysInMonth).toFixed(2) : '0.00'
+
+  return (
+    <div className="dashboard">
+      {/* Hero Summary */}
+      <div className="summary-card">
+        <div className="summary-main">
+          <span className="summary-label">Spent this month</span>
+          <span className="summary-amount">\${summary.total.toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
+        </div>
+        <div className="summary-stats">
+          <div className="stat">
+            <span className="stat-value">{summary.count}</span>
+            <span className="stat-label">transactions</span>
+          </div>
+          <div className="stat">
+            <span className="stat-value">\${dailyAvg}</span>
+            <span className="stat-label">daily avg</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Category Breakdown Chart */}
+      <div className="chart-card">
+        <h2>Spending by Category</h2>
+        <ResponsiveContainer width="100%" height={chartData.length * 48 + 20}>
+          <BarChart data={chartData} layout="vertical" margin={{ left: 20, right: 40 }}>
+            <XAxis type="number" tickFormatter={(v) => \`\$\${v}\`} />
+            <YAxis type="category" dataKey="name" width={140} tick={{ fill: '#e0e0e0', fontSize: 13 }} />
+            <Tooltip formatter={(value: number) => [\`\$\${value.toFixed(2)}\`, 'Spent']}
+              contentStyle={{ background: '#16213e', border: '1px solid #2a3a5c', borderRadius: 8 }} />
+            <Bar dataKey="amount" radius={[0, 6, 6, 0]} barSize={28}>
+              {chartData.map((entry, i) => (
+                <Cell key={i} fill={entry.color} />
+              ))}
+            </Bar>
+          </BarChart>
+        </ResponsiveContainer>
+      </div>
+
+      {/* Recent Transactions */}
+      <div className="recent-card">
+        <h2>Recent Transactions</h2>
+        {recentExpenses.map(expense => (
+          <div key={expense.id} className="recent-item">
+            <span className="recent-emoji">{CATEGORY_CONFIG[expense.category].emoji}</span>
+            <div className="recent-details">
+              <span className="recent-note">{expense.note}</span>
+              <span className="recent-date">{formatDistanceToNow(new Date(expense.date), { addSuffix: true })}</span>
+            </div>
+            <span className="recent-amount">-\${expense.amount.toFixed(2)}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+\`\`\`
+
+The dashboard looks like a real fintech app now. The dark theme with glowing category colors gives it that polished feel. The bar chart auto-sorts so your biggest spending category is always on top — instant visibility into where your money goes.`,
+    description: 'Build the dashboard with summary stats, category bar chart, and recent transactions', created_at: '2026-04-05T00:00:00Z' },
+
+  { id: 'step-38c', prompt_id: 'prompt-38', step_number: 3, title: 'Add Expense Form',
+    content: `Now build the "Add Expense" form. Requirements:
+
+1. Clean, mobile-friendly form with fields: amount (number input with $ prefix), category (grid of buttons with emojis instead of a dropdown — feels way better on mobile), date (defaults to today), note (short text)
+2. The category selector should highlight the selected one with that category's color
+3. Amount input should be large and prominent — it's the most important field
+4. Form validation: amount must be > 0, category must be selected, note is optional
+5. After submission, show a brief success animation (green checkmark that fades) before navigating back to dashboard
+6. Include a "quick add" section at the top with 3 buttons for common expenses: "☕ Coffee $5.50", "🚗 Gas $45", "🛒 Groceries $75" that auto-fill the form
+
+Keep the dark theme consistent with the dashboard.`,
+    result_content: `**AddExpense component (src/components/AddExpense.tsx):**
+\`\`\`tsx
+import { useState } from 'react'
+import { Category, CATEGORY_CONFIG, Expense } from '../types'
+
+interface Props {
+  onAdd: (data: Omit<Expense, 'id' | 'createdAt'>) => void
+}
+
+const QUICK_ADDS = [
+  { label: '☕ Coffee', amount: 5.50, category: 'dining' as Category, note: 'Coffee' },
+  { label: '🚗 Gas', amount: 45.00, category: 'transport' as Category, note: 'Gas fillup' },
+  { label: '🛒 Groceries', amount: 75.00, category: 'groceries' as Category, note: 'Grocery run' },
+]
+
+export default function AddExpense({ onAdd }: Props) {
+  const [amount, setAmount] = useState('')
+  const [category, setCategory] = useState<Category | null>(null)
+  const [date, setDate] = useState(new Date().toISOString().split('T')[0])
+  const [note, setNote] = useState('')
+  const [showSuccess, setShowSuccess] = useState(false)
+  const [error, setError] = useState('')
+
+  const handleQuickAdd = (qa: typeof QUICK_ADDS[0]) => {
+    setAmount(qa.amount.toString())
+    setCategory(qa.category)
+    setNote(qa.note)
+  }
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault()
+    setError('')
+    const numAmount = parseFloat(amount)
+    if (!numAmount || numAmount <= 0) { setError('Enter a valid amount'); return }
+    if (!category) { setError('Pick a category'); return }
+
+    onAdd({ amount: numAmount, category, date, note: note || 'Expense' })
+    setShowSuccess(true)
+    setTimeout(() => setShowSuccess(false), 1500)
+  }
+
+  if (showSuccess) {
+    return (
+      <div className="success-screen">
+        <div className="success-check">✓</div>
+        <p>Expense added!</p>
+      </div>
+    )
+  }
+
+  return (
+    <form className="add-form" onSubmit={handleSubmit}>
+      {/* Quick Add Buttons */}
+      <div className="quick-add-section">
+        <span className="quick-label">Quick add:</span>
+        <div className="quick-buttons">
+          {QUICK_ADDS.map(qa => (
+            <button key={qa.label} type="button" className="quick-btn" onClick={() => handleQuickAdd(qa)}>
+              {qa.label} \${qa.amount}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Amount Input */}
+      <div className="amount-input-wrapper">
+        <span className="dollar-sign">$</span>
+        <input type="number" step="0.01" placeholder="0.00" value={amount}
+          onChange={e => setAmount(e.target.value)} className="amount-input" autoFocus />
+      </div>
+
+      {/* Category Grid */}
+      <div className="category-grid">
+        {(Object.entries(CATEGORY_CONFIG) as [Category, typeof CATEGORY_CONFIG[Category]][]).map(([key, config]) => (
+          <button key={key} type="button"
+            className={\`category-btn \${category === key ? 'selected' : ''}\`}
+            style={category === key ? { borderColor: config.color, background: config.color + '22' } : {}}
+            onClick={() => setCategory(key)}>
+            <span className="cat-emoji">{config.emoji}</span>
+            <span className="cat-label">{config.label}</span>
+          </button>
+        ))}
+      </div>
+
+      {/* Date & Note */}
+      <div className="form-row">
+        <input type="date" value={date} onChange={e => setDate(e.target.value)} className="date-input" />
+        <input type="text" placeholder="What was this for?" value={note}
+          onChange={e => setNote(e.target.value)} className="note-input" />
+      </div>
+
+      {error && <p className="form-error">{error}</p>}
+      <button type="submit" className="submit-btn">Add Expense</button>
+    </form>
+  )
+}
+\`\`\`
+
+The category grid with emojis feels SO much better than a dropdown, especially on mobile. The quick-add buttons are a game changer for daily stuff — one tap for your morning coffee. The success animation gives nice tactile feedback without being annoying.`,
+    description: 'Create the expense form with quick-add buttons, emoji category picker, and validation', created_at: '2026-04-06T00:00:00Z' },
+
+  { id: 'step-38d', prompt_id: 'prompt-38', step_number: 4, title: 'History View with Filters',
+    content: `Build the History view. This is where you see ALL your expenses and can actually make sense of your spending over time. Requirements:
+
+1. Filter bar at the top: category filter (multi-select chips), date range (this week / this month / last month / custom), and a search box that filters by note text
+2. The expense list should group expenses by date with date headers ("Today", "Yesterday", "Mon, Apr 7")
+3. Each expense row shows: category emoji, note, amount, and a delete button (swipe-to-delete would be cool but a trash icon is fine for now)
+4. Running total at the bottom that updates as you filter: "Showing $X across Y transactions"
+5. If no expenses match the filters, show a friendly empty state
+
+Also add an export button that downloads the filtered expenses as a CSV file. People want their data.`,
+    result_content: `**History component (src/components/History.tsx):**
+\`\`\`tsx
+import { useState, useMemo } from 'react'
+import { Expense, Category, CATEGORY_CONFIG } from '../types'
+import { format, isToday, isYesterday, startOfWeek, startOfMonth, subMonths } from 'date-fns'
+
+interface Props {
+  expenses: Expense[]
+  onDelete: (id: string) => void
+}
+
+type DateRange = 'week' | 'month' | 'last-month' | 'all'
+
+export default function History({ expenses, onDelete }: Props) {
+  const [search, setSearch] = useState('')
+  const [dateRange, setDateRange] = useState<DateRange>('month')
+  const [selectedCategories, setSelectedCategories] = useState<Set<Category>>(new Set())
+
+  const toggleCategory = (cat: Category) => {
+    setSelectedCategories(prev => {
+      const next = new Set(prev)
+      next.has(cat) ? next.delete(cat) : next.add(cat)
+      return next
+    })
+  }
+
+  const filtered = useMemo(() => {
+    const now = new Date()
+    return expenses.filter(e => {
+      // Date filter
+      const d = new Date(e.date)
+      if (dateRange === 'week' && d < startOfWeek(now)) return false
+      if (dateRange === 'month' && d < startOfMonth(now)) return false
+      if (dateRange === 'last-month') {
+        const lm = subMonths(startOfMonth(now), 0)
+        if (d < subMonths(lm, 1) || d >= lm) return false
+      }
+      // Category filter
+      if (selectedCategories.size > 0 && !selectedCategories.has(e.category)) return false
+      // Search filter
+      if (search && !e.note.toLowerCase().includes(search.toLowerCase())) return false
+      return true
+    })
+  }, [expenses, dateRange, selectedCategories, search])
+
+  // Group by date
+  const grouped = useMemo(() => {
+    const groups: Record<string, Expense[]> = {}
+    for (const e of filtered) {
+      const key = e.date
+      if (!groups[key]) groups[key] = []
+      groups[key].push(e)
+    }
+    return Object.entries(groups).sort(([a], [b]) => b.localeCompare(a))
+  }, [filtered])
+
+  const total = filtered.reduce((s, e) => s + e.amount, 0)
+
+  const exportCSV = () => {
+    const header = 'Date,Category,Amount,Note\\n'
+    const rows = filtered.map(e =>
+      \`\${e.date},\${CATEGORY_CONFIG[e.category].label},\${e.amount.toFixed(2)},"\${e.note}"\`
+    ).join('\\n')
+    const blob = new Blob([header + rows], { type: 'text/csv' })
+    const a = document.createElement('a')
+    a.href = URL.createObjectURL(blob)
+    a.download = \`expenses-\${format(new Date(), 'yyyy-MM-dd')}.csv\`
+    a.click()
+  }
+
+  const formatDateHeader = (dateStr: string) => {
+    const d = new Date(dateStr + 'T12:00:00')
+    if (isToday(d)) return 'Today'
+    if (isYesterday(d)) return 'Yesterday'
+    return format(d, 'EEE, MMM d')
+  }
+
+  return (
+    <div className="history">
+      {/* Search */}
+      <input type="text" placeholder="Search expenses..." value={search}
+        onChange={e => setSearch(e.target.value)} className="search-input" />
+
+      {/* Date Range Tabs */}
+      <div className="date-tabs">
+        {(['week', 'month', 'last-month', 'all'] as DateRange[]).map(range => (
+          <button key={range} className={\`tab \${dateRange === range ? 'active' : ''}\`}
+            onClick={() => setDateRange(range)}>
+            {{ week: 'This Week', month: 'This Month', 'last-month': 'Last Month', all: 'All Time' }[range]}
+          </button>
+        ))}
+      </div>
+
+      {/* Category Chips */}
+      <div className="category-chips">
+        {(Object.entries(CATEGORY_CONFIG) as [Category, typeof CATEGORY_CONFIG[Category]][]).map(([key, config]) => (
+          <button key={key} className={\`chip \${selectedCategories.has(key) ? 'active' : ''}\`}
+            style={selectedCategories.has(key) ? { background: config.color + '33', borderColor: config.color } : {}}
+            onClick={() => toggleCategory(key)}>
+            {config.emoji} {config.label}
+          </button>
+        ))}
+      </div>
+
+      {/* Expense List */}
+      {grouped.length === 0 ? (
+        <div className="empty-state">
+          <p>No expenses match your filters</p>
+          <p className="empty-sub">Try broadening your search or date range</p>
+        </div>
+      ) : (
+        grouped.map(([date, items]) => (
+          <div key={date} className="date-group">
+            <h3 className="date-header">{formatDateHeader(date)}</h3>
+            {items.map(expense => (
+              <div key={expense.id} className="expense-row">
+                <span className="row-emoji">{CATEGORY_CONFIG[expense.category].emoji}</span>
+                <div className="row-details">
+                  <span className="row-note">{expense.note}</span>
+                  <span className="row-category">{CATEGORY_CONFIG[expense.category].label}</span>
+                </div>
+                <span className="row-amount">-\${expense.amount.toFixed(2)}</span>
+                <button className="delete-btn" onClick={() => onDelete(expense.id)}>🗑️</button>
+              </div>
+            ))}
+          </div>
+        ))
+      )}
+
+      {/* Footer Summary */}
+      <div className="history-footer">
+        <span>Showing \${total.toLocaleString('en-US', { minimumFractionDigits: 2 })} across {filtered.length} transactions</span>
+        <button className="export-btn" onClick={exportCSV}>📥 Export CSV</button>
+      </div>
+    </div>
+  )
+}
+\`\`\`
+
+The grouped-by-date layout makes it easy to mentally trace "what did I spend on Tuesday?" The multi-select category chips let you compare spending across categories fast. And the CSV export is the kind of small feature that makes people actually trust the tool with their real data.`,
+    description: 'Build the filterable, searchable history view with CSV export', created_at: '2026-04-06T00:00:00Z' },
+
+  { id: 'step-38e', prompt_id: 'prompt-38', step_number: 5, title: 'Polish: Styling, Animations & Monthly Comparison',
+    content: `Last step — let's make this feel professional. Three things:
+
+1. Complete CSS file for the entire app. Dark theme (background #0f0f23, cards #1a1a3e, accent #6c5ce7). Modern, clean, with subtle hover effects and transitions. Mobile-first — should look great on a phone screen.
+2. Add a "vs last month" comparison to the dashboard summary card. Show a percentage change with a green/red arrow. If this month I've spent $1,200 and last month was $1,450, show "↓ 17% vs last month" in green.
+3. Add a subtle entrance animation on the dashboard cards — they should fade in and slide up slightly when the page loads. Use CSS keyframes, not a library.
+
+Give me the complete CSS file and the updated Dashboard summary section.`,
+    result_content: `**Complete stylesheet (src/App.css):**
+\`\`\`css
+/* === Base === */
+* { margin: 0; padding: 0; box-sizing: border-box; }
+:root {
+  --bg: #0f0f23;
+  --card: #1a1a3e;
+  --card-border: #2a2a5e;
+  --text: #e0e0e0;
+  --text-dim: #8888aa;
+  --accent: #6c5ce7;
+  --accent-glow: #6c5ce722;
+  --success: #00b894;
+  --danger: #e17055;
+  --radius: 12px;
+}
+body { font-family: 'Inter', -apple-system, sans-serif; background: var(--bg); color: var(--text); }
+.app { max-width: 480px; margin: 0 auto; min-height: 100vh; padding: 0 16px 80px; }
+
+/* === Nav === */
+.nav { display: flex; justify-content: space-between; align-items: center; padding: 20px 0; border-bottom: 1px solid var(--card-border); margin-bottom: 24px; }
+.nav h1 { font-size: 1.25rem; }
+.nav-links { display: flex; gap: 4px; }
+.nav-links button { background: none; border: none; color: var(--text-dim); padding: 8px 14px; border-radius: 8px; cursor: pointer; font-size: 0.9rem; transition: all 0.2s; }
+.nav-links button.active { background: var(--accent); color: white; }
+.nav-links button:hover:not(.active) { background: var(--card); }
+
+/* === Dashboard === */
+.dashboard { display: flex; flex-direction: column; gap: 20px; }
+.summary-card { background: linear-gradient(135deg, var(--accent), #a855f7); border-radius: var(--radius); padding: 28px; animation: slideUp 0.4s ease-out; }
+.summary-main { margin-bottom: 20px; }
+.summary-label { font-size: 0.85rem; opacity: 0.8; display: block; }
+.summary-amount { font-size: 2.5rem; font-weight: 700; }
+.summary-comparison { font-size: 0.85rem; margin-top: 6px; display: flex; align-items: center; gap: 4px; }
+.comparison-down { color: var(--success); }
+.comparison-up { color: #ffeaa7; }
+.summary-stats { display: flex; gap: 32px; }
+.stat-value { font-size: 1.3rem; font-weight: 600; display: block; }
+.stat-label { font-size: 0.75rem; opacity: 0.7; }
+
+.chart-card, .recent-card { background: var(--card); border: 1px solid var(--card-border); border-radius: var(--radius); padding: 20px; animation: slideUp 0.5s ease-out; }
+.chart-card h2, .recent-card h2 { font-size: 1rem; margin-bottom: 16px; color: var(--text-dim); }
+
+.recent-item { display: flex; align-items: center; gap: 12px; padding: 12px 0; border-bottom: 1px solid var(--card-border); }
+.recent-item:last-child { border-bottom: none; }
+.recent-emoji { font-size: 1.5rem; }
+.recent-details { flex: 1; }
+.recent-note { display: block; font-size: 0.9rem; }
+.recent-date { font-size: 0.75rem; color: var(--text-dim); }
+.recent-amount { font-weight: 600; color: var(--danger); }
+
+/* === Animations === */
+@keyframes slideUp { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
+.chart-card { animation-delay: 0.1s; animation-fill-mode: both; }
+.recent-card { animation-delay: 0.2s; animation-fill-mode: both; }
+
+/* === Add Form === */
+.add-form { display: flex; flex-direction: column; gap: 20px; }
+.quick-add-section { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.quick-label { font-size: 0.8rem; color: var(--text-dim); }
+.quick-btn { background: var(--card); border: 1px solid var(--card-border); color: var(--text); padding: 8px 14px; border-radius: 20px; cursor: pointer; font-size: 0.85rem; transition: border-color 0.2s; }
+.quick-btn:hover { border-color: var(--accent); }
+.amount-input-wrapper { display: flex; align-items: center; background: var(--card); border-radius: var(--radius); padding: 16px; border: 2px solid var(--card-border); transition: border-color 0.2s; }
+.amount-input-wrapper:focus-within { border-color: var(--accent); }
+.dollar-sign { font-size: 2rem; font-weight: 700; color: var(--text-dim); margin-right: 8px; }
+.amount-input { background: none; border: none; color: var(--text); font-size: 2rem; font-weight: 700; width: 100%; outline: none; }
+.category-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+.category-btn { background: var(--card); border: 2px solid var(--card-border); border-radius: var(--radius); padding: 14px 8px; cursor: pointer; text-align: center; transition: all 0.2s; }
+.category-btn.selected { transform: scale(1.05); }
+.cat-emoji { font-size: 1.5rem; display: block; margin-bottom: 4px; }
+.cat-label { font-size: 0.7rem; color: var(--text-dim); }
+.form-row { display: flex; gap: 12px; }
+.date-input, .note-input { flex: 1; background: var(--card); border: 1px solid var(--card-border); color: var(--text); padding: 12px; border-radius: 8px; font-size: 0.9rem; }
+.submit-btn { background: var(--accent); color: white; border: none; padding: 16px; border-radius: var(--radius); font-size: 1rem; font-weight: 600; cursor: pointer; transition: transform 0.15s; }
+.submit-btn:active { transform: scale(0.97); }
+.form-error { color: var(--danger); font-size: 0.85rem; }
+.success-screen { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 60vh; animation: slideUp 0.3s ease-out; }
+.success-check { font-size: 4rem; color: var(--success); margin-bottom: 12px; }
+
+/* === History === */
+.history { display: flex; flex-direction: column; gap: 16px; }
+.search-input { background: var(--card); border: 1px solid var(--card-border); color: var(--text); padding: 12px 16px; border-radius: 8px; font-size: 0.9rem; width: 100%; }
+.date-tabs { display: flex; gap: 6px; overflow-x: auto; }
+.tab { background: var(--card); border: 1px solid var(--card-border); color: var(--text-dim); padding: 8px 14px; border-radius: 20px; font-size: 0.8rem; cursor: pointer; white-space: nowrap; }
+.tab.active { background: var(--accent); color: white; border-color: var(--accent); }
+.category-chips { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 4px; }
+.chip { background: none; border: 1px solid var(--card-border); color: var(--text-dim); padding: 6px 12px; border-radius: 16px; font-size: 0.8rem; cursor: pointer; white-space: nowrap; }
+.chip.active { color: var(--text); }
+.date-header { font-size: 0.8rem; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.5px; padding: 8px 0; }
+.expense-row { display: flex; align-items: center; gap: 12px; background: var(--card); border-radius: 10px; padding: 14px; margin-bottom: 6px; }
+.row-emoji { font-size: 1.3rem; }
+.row-details { flex: 1; }
+.row-note { display: block; font-size: 0.9rem; }
+.row-category { font-size: 0.75rem; color: var(--text-dim); }
+.row-amount { font-weight: 600; color: var(--danger); margin-right: 8px; }
+.delete-btn { background: none; border: none; cursor: pointer; font-size: 1rem; opacity: 0.4; transition: opacity 0.2s; }
+.delete-btn:hover { opacity: 1; }
+.history-footer { display: flex; justify-content: space-between; align-items: center; padding: 16px 0; font-size: 0.85rem; color: var(--text-dim); border-top: 1px solid var(--card-border); }
+.export-btn { background: var(--card); border: 1px solid var(--card-border); color: var(--text); padding: 8px 16px; border-radius: 8px; cursor: pointer; font-size: 0.85rem; }
+.empty-state { text-align: center; padding: 60px 20px; color: var(--text-dim); }
+.empty-sub { font-size: 0.85rem; margin-top: 8px; }
+\`\`\`
+
+**Updated Dashboard comparison (add to Dashboard.tsx):**
+\`\`\`tsx
+// Inside the Dashboard component, after getting current summary:
+const lastMonth = now.getMonth() === 0
+  ? getMonthSummary(now.getFullYear() - 1, 11)
+  : getMonthSummary(now.getFullYear(), now.getMonth() - 1)
+
+const pctChange = lastMonth.total > 0
+  ? Math.round(((summary.total - lastMonth.total) / lastMonth.total) * 100)
+  : null
+
+// In JSX, after summary-amount:
+{pctChange !== null && (
+  <div className={\`summary-comparison \${pctChange <= 0 ? 'comparison-down' : 'comparison-up'}\`}>
+    {pctChange <= 0 ? '↓' : '↑'} {Math.abs(pctChange)}% vs last month
+  </div>
+)}
+\`\`\`
+
+And that's a wrap. Five prompts, one complete expense tracker that looks and feels like a real fintech app. Dark theme, smooth animations, mobile-first layout, CSV export — built entirely through conversation with Claude.`,
+    description: 'Add complete CSS styling, month-over-month comparison, and entrance animations', created_at: '2026-04-06T00:00:00Z' },
+
   // === Brand Identity (prompt-1) ===
   { id: 'step-1a', prompt_id: 'prompt-1', step_number: 1, title: 'Brand Discovery',
     content: 'I\'m starting a specialty bakery in Austin, TX called "Sunrise Bakery" focused on sourdough and pastries. Our target customers are health-conscious millennials who value artisan quality and local sourcing. Our differentiator is that we mill our own flour from Texas-grown wheat. Help me develop a brand foundation: brand personality (5 traits), brand voice description, tagline options (give me 8), and a one-paragraph brand story.',
@@ -1010,5 +1671,47 @@ export const mockPrompts: Prompt[] = [
     bookmark_count: 0,
     created_at: '2026-04-10T00:00:00Z',
     updated_at: '2026-04-10T00:00:00Z',
+  },
+
+  // ---- FINANCE: One-Shot Deep Prompt ----
+  {
+    id: 'prompt-39',
+    title: 'Complete Personal Budget System in Google Sheets — One Prompt',
+    description: 'One detailed prompt that generates an entire budgeting system: income tracking, expense categories with formulas, monthly dashboard, savings goals, and conditional formatting — all ready to copy into a fresh spreadsheet.',
+    content: `I was spending 20 minutes a week manually categorizing expenses in a messy spreadsheet that had no structure. I decided to see if Claude could design a complete budgeting system in one shot — every formula, every layout decision, every conditional format rule. I wrote one very detailed prompt describing exactly what I needed, and the result was a fully-architected budget system I could build in Google Sheets in about 30 minutes.\n\nThe key to making this work as a single prompt was front-loading ALL my requirements: my income structure (salary + side income), my spending categories, my savings goals, and exactly what kind of dashboard view I wanted. The more specific you are upfront, the less back-and-forth you need.\n\n---\n\nHere's the exact prompt I used:\n\nDesign a complete personal budget system for Google Sheets. I need three tabs:\n\n**Tab 1: "Monthly Log"**\n- Columns: Date, Description, Category (dropdown from list), Amount, Payment Method (dropdown: credit card / debit / cash / transfer), Notes\n- Category list: Housing, Groceries, Dining Out, Transport, Utilities, Subscriptions, Health, Shopping, Entertainment, Education, Savings Transfer, Income\n- Auto-calculate a running balance in column G\n- Conditional formatting: Income rows green background, expenses over $200 red text\n- Data validation on Category and Payment Method columns\n\n**Tab 2: "Dashboard"**\n- Section 1: Monthly Summary — Total Income, Total Expenses, Net (income minus expenses), Savings Rate (net / income as percentage)\n- Section 2: Category Breakdown — each category with: budgeted amount (I'll fill in), actual spent (SUMIFS from Monthly Log), difference, and a percentage bar using REPT("█") and REPT("░") characters\n- Section 3: Savings Goals — 3 goals (Emergency Fund $10,000, Vacation $3,000, New Laptop $1,500) with current amount, target, percentage complete, and months remaining at current savings rate\n- Section 4: Monthly Trend — show last 6 months of total income vs total expenses (I'll copy formulas across columns)\n\n**Tab 3: "Settings"**\n- Category list (referenced by data validation in Monthly Log)\n- Payment methods list\n- Monthly budget targets per category\n- Tax rate for income calculations\n\nFor every cell that has a formula, give me the exact formula assuming the Monthly Log data starts in row 2 with headers in row 1. Use named ranges where it makes sense. Make sure all SUMIFS reference the correct tab. Include the conditional formatting rules as step-by-step instructions I can apply in Google Sheets.`,
+    result_content: `The output was a 2,500-word structured document covering all three tabs completely. Here are the highlights:\n\n**Monthly Log tab** — Claude gave exact formulas for the running balance: \`=IF(L2="Income", G1+F2, G1-F2)\` with an initial balance cell, plus ARRAYFORMULA versions for auto-extending. The conditional formatting rules were written as literal steps: "Select range A2:G1000 → Format → Conditional formatting → Custom formula: =$E2='Income' → Background #d4edda".\n\n**Dashboard tab** — The category breakdown section was the star. Each category row used:\n- Budgeted: pulls from Settings tab via \`=Settings!B2\`\n- Actual: \`=SUMIFS('Monthly Log'!F:F, 'Monthly Log'!D:D, A5, 'Monthly Log'!A:A, ">="&DATE(YEAR(TODAY()),MONTH(TODAY()),1))\`\n- Visual bar: \`=REPT("█", MIN(ROUND(C5/B5*20),20)) & REPT("░", 20-MIN(ROUND(C5/B5*20),20))\` — this creates a 20-character progress bar that fills proportionally\n- Status: \`=IF(C5>B5, "🔴 Over by $"&TEXT(C5-B5,"#,##0"), "🟢 Under by $"&TEXT(B5-C5,"#,##0"))\`\n\n**Savings goals** — Months remaining formula: \`=IF(D2>0, ROUND((B2-A2)/D2, 1), "No savings this month")\` where D2 references the current month's net savings.\n\n**What I actually built:** I spent about 30 minutes setting up the sheets, copying formulas, and configuring dropdowns. The visual budget bars in the Dashboard tab are genuinely useful — at a glance I can see I'm at 80% of my dining budget with 10 days left in the month. My savings rate went from "I have no idea" to a clear 22% within the first month of using this.\n\nThe one thing I adjusted: Claude's conditional formatting for expenses over $200 used red text, but I changed it to a subtle red background tint instead — easier to scan.`,
+    category_id: 'cat-1',
+    difficulty: 'beginner',
+    model_used: 'claude-opus-4-6',
+    model_recommendation: 'Claude 4.6 Opus',
+    tools_used: ['Claude', 'Google Sheets'],
+    tags: ['budget', 'personal finance', 'google sheets', 'formulas', 'one-shot', 'spreadsheet'],
+    status: 'approved',
+    author_id: 'user-11',
+    vote_count: 134,
+    bookmark_count: 91,
+    created_at: '2026-04-02T00:00:00Z',
+    updated_at: '2026-04-02T00:00:00Z',
+  },
+
+  // ---- FINANCE: Multi-Step Build (5 prompts) ----
+  {
+    id: 'prompt-38',
+    title: 'Personal Expense Tracker App — Built in 5 Prompts with Claude',
+    description: 'Built a dark-themed, mobile-friendly expense tracker from scratch using React and TypeScript over 5 iterative prompts. Complete with charts, category filtering, CSV export, and smooth animations.',
+    content: `I wanted a personal expense tracker that actually looked good and worked the way I think about money — not a bloated app with 50 features I'll never use. I decided to build it step by step with Claude, starting from zero and refining each piece before moving to the next.\n\nThe approach: 5 focused prompts, each one building on the last. I didn't try to describe the whole app upfront — instead, I got the foundation right first (data model and storage), then built each view one at a time, and finished with styling and polish. This iterative approach meant each prompt could be specific and detailed, and I could test each piece before moving on.\n\nWhat I ended up with: a sleek, dark-themed expense tracker that runs entirely in the browser (localStorage, no backend), with a dashboard showing spending charts, a smart expense form with quick-add buttons, and a full history view with filters and CSV export. It looks like a real fintech app, not a tutorial project.\n\nTools: Vite + React + TypeScript for the app, Recharts for the bar chart, date-fns for date formatting. Total build time across all 5 prompts: about 2 hours.`,
+    result_content: `The final app has three views:\n\n**Dashboard** — A gradient hero card showing total spent this month with a "vs last month" comparison (↓ 17% in green or ↑ 8% in amber). Below that, a horizontal bar chart of spending by category sorted highest-first with emoji labels. And a quick-glance list of the 5 most recent transactions.\n\n**Add Expense** — Instead of a boring dropdown for categories, it uses an emoji grid (🛒 Groceries, 🍽️ Dining, 🚗 Transport, etc.) that highlights with the category's color when selected. The amount input is huge and prominent. Three "quick add" buttons at the top for common expenses (☕ Coffee $5.50, 🚗 Gas $45, 🛒 Groceries $75) that pre-fill the form. Green checkmark success animation after adding.\n\n**History** — Date-grouped expense list ("Today", "Yesterday", "Mon, Apr 7"), filterable by category chips, date range tabs (This Week / This Month / Last Month / All Time), and a search box. Running total updates as you filter. Export button downloads everything as a CSV.\n\nThe dark theme (#0f0f23 background, #6c5ce7 accent purple) with subtle slide-up animations on the dashboard cards gives it that polished fintech feel. Mobile-first layout at 480px max width — looks great on a phone.`,
+    category_id: 'cat-1',
+    difficulty: 'intermediate',
+    model_used: 'claude-opus-4-6',
+    model_recommendation: 'Claude 4.6 Opus',
+    tools_used: ['Claude', 'React', 'TypeScript', 'Recharts', 'Vite'],
+    tags: ['expense tracker', 'react', 'typescript', 'personal finance', 'dark theme', 'web app'],
+    status: 'approved',
+    author_id: 'user-11',
+    vote_count: 156,
+    bookmark_count: 103,
+    created_at: '2026-04-06T00:00:00Z',
+    updated_at: '2026-04-06T00:00:00Z',
   },
 ]

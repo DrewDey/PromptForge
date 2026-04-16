@@ -5,6 +5,47 @@
 
 ---
 
+## 2026-04-16 — Iteration 19: Seed Content Overhaul — Fill All Null Result Steps
+
+**Audit findings** (top problems identified):
+1. 10 steps across 7 projects had `result_content: null` — making those steps show only the prompt with no AI response, breaking the core "build path" showcase
+2. All nulls were step 2+ (later steps) — first steps always had content, creating a pattern of "abandoned" projects
+3. Prompt-6 (SaaS Dashboard) had ALL 3 steps empty — the only project with zero result content, making it look completely broken on detail page
+4. Null steps skip the blue result section entirely in the detail page component — users see an incomplete build path with no explanation
+5. SQL seed data (seed-fix.sql) still uses old placeholder-style content with `[BUSINESS/NICHE]` brackets — fundamentally different structure from mock-data.ts
+
+**Research insights**:
+- **Concrete artifacts pattern** (Dribbble, Behance): Show actual outputs — code snippets, formatted documents, email copy — not descriptions of outputs. The best existing steps (expense tracker, review analyzer) do this well.
+- **Specific context pattern** (Product Hunt, Dev.to): Reference real names, numbers, tools (QuickBooks, Airtable, "Meridian Health") to make content feel authentic rather than templated.
+- **Structure as content** (GitHub repos, tutorials): Show the format/structure of results (tables, JSON, file trees) not just narrative descriptions. Makes outputs scannable and steal-worthy.
+- **Practical wisdom pattern** (best existing steps): Include warnings, edge cases, and "watch out for" notes that show real-world experience, not just theory.
+
+**Design brief** (3 key goals):
+1. Fill all 10 null result_content steps with high-quality, realistic content matching the tone and detail of the best existing steps
+2. Each result should include concrete artifacts (actual code, copy, documents, formulas) — not vague descriptions
+3. Content should feel like a real project output with specific context (names, numbers, tools) not generic templates
+
+**What was implemented**:
+
+*10 steps filled in `src/lib/mock-data.ts`:*
+
+1. **step-1c** (Brand Identity — Brand Guidelines): Full structured guidelines document with 6 sections — Brand Overview, Mission & Values, Voice do's/don'ts with examples, Visual Identity table with hex codes, Social Media guidelines, and "talking about milling" section
+2. **step-6a** (SaaS Dashboard — Architecture): Complete file tree, root layout with sidebar, full Sidebar.tsx component with route-aware active states and Lucide icons
+3. **step-6b** (SaaS Dashboard — Stats Cards): Full StatsCard component with sparklines and trend indicators, Dashboard page with 4 metrics using exact numbers from prompt, responsive grid layout
+4. **step-6c** (SaaS Dashboard — Customer Table): Complete searchable/sortable/paginated table component with status badges, sample customer data, and state management code
+5. **step-16c** (Weekly Report — Iteration): Three specific fixes to the master prompt — archived project filter, specific executive summary with before/after examples, week-over-week utilization comparison with sample table
+6. **step-17b** (Meeting Notes — Edge Cases): Two-pass extraction prompt (topic segmentation → per-segment extraction), carry-over tracking with completed/still-open flags, real-world test results (found 11 items vs 7 with single pass)
+7. **step-19b** (Loom SOP — Troubleshooting): All 5 FAQ scenarios with detailed step-by-step solutions, warnings, and edge case handling. Includes actual response templates for client objections.
+8. **step-22b** (Zapier — Email Templates): Three complete email templates (Small/Mid/Enterprise) with appropriate tone variation, specific service tiers and pricing, social proof points, and Calendly CTAs. Note about the 12-minute send delay.
+9. **step-25b** (Notion — Migration Plan): 5-phase migration plan with time estimates totaling ~6 hours, database mapping guidance, and 4 complete templates (project kickoff, meeting notes, newsletter draft, weekly review)
+10. **step-33b** (Spreadsheet Audit — Apps Script): Complete 46-line Google Apps Script with clipboard copy UI, sample JSON output showing 3 example formulas, and real-world results (found 3 #REF! errors and 7 hardcoded values)
+
+**Review outcome**: Approved with nits. Reviewer confirmed all 10 steps are non-null, content matches prompts, quality matches the best existing steps (expense tracker, review analyzer), and TypeScript compiles cleanly. Minor nits: (1) Email template word counts are at the 120-word boundary the prompt specified, (2) step-6b narrative mentions RevenueChart gradient fill but that component's code isn't shown (it's implied as a separate file). Neither blocking.
+
+**What's next**: The SQL seed data (seed-fix.sql) still uses the old placeholder-style content and needs a complete rewrite to match mock-data.ts — this is a separate, larger task. Browse page visual improvements (#1) and Build page gray-*→surface-* migration are also ready. All projects now have complete build paths.
+
+---
+
 ## 2026-04-16 — Iteration 18: Project Detail Page — Premium Step Flow + Build Page Multi-Open Accordion
 
 **Audit findings** (top problems identified):
@@ -674,6 +715,14 @@
 # Plain English Summary (for Drew)
 
 > What's actually changed on the site, in normal human language. Newest at the top. Let me know when you've reviewed and I'll clear the old stuff.
+
+### Every project now has complete step-by-step results (April 16 — Iteration 19)
+
+Previously, 10 project steps across 7 different projects were showing up empty — you'd see the prompt the person typed, but no result from the AI. This made those projects look broken or abandoned. The worst offender was the "SaaS Admin Dashboard" project which had ALL three steps empty — clicking into it showed three prompts with zero outputs.
+
+Now every single step has real, detailed content. The SaaS Dashboard shows actual React component code. The Brand Identity project now ends with a complete brand guidelines document. The meeting notes tool shows how it handles long transcripts. The Zapier workflow has all three email templates written out. The spreadsheet audit bot includes a working Google Apps Script you could actually paste into a spreadsheet.
+
+This is a big deal because the step-by-step build path is the core thing that makes PathForge different from other platforms. If visitors click into a project and see missing steps, they'll think the platform is half-baked.
 
 ### Project detail page looks way more premium now, and the Build page lets you jump between sections (April 16 — Iteration 18)
 

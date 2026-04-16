@@ -8,6 +8,14 @@
 
 ## Open Questions
 
+### Q9: Seed content quality — are the filled-in project results convincing enough?
+
+Iteration 19 filled in all 10 steps that previously had empty results (including the SaaS Dashboard which had ALL steps empty). The content includes actual code snippets, email templates, structured documents, and migration plans. However, these are generated examples — they're designed to look realistic but aren't from actual user projects. Two questions: (1) Does the level of detail feel right, or should some results be shorter/longer? (2) Should we prioritize getting REAL projects from actual users (even if just Drew's own AI projects) to replace some of the seed data, or is realistic generated content good enough for launch?
+
+**Drew's Response:**
+
+---
+
 ### Q8: Project detail page — prompt blocks now use dark (code-editor) backgrounds. Too dark or just right?
 
 The step-by-step prompt blocks now use a dark terminal-style background (`surface-900` / near-black) with light text, making them look like code editor / terminal output. Results use a lighter blue-tinted background to create clear input→output directionality. This is a significant visual shift from the previous all-white layout. Does this feel right for PathForge's audience (mix of technical and non-technical users), or is the dark prompt styling too intimidating for beginners?

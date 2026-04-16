@@ -8,15 +8,15 @@
 
 ## Open Questions
 
-### Q17: Should the next iteration (iter 28) finally tackle the seed-content overhaul, or stay on UI polish?
+### Q18: After the seed-content overhaul, should iter 29 go back to design work or verify the SQL applied cleanly first?
 
-Your auto-memory has two flags that keep coming up: "Seed content is garbage" and "Mock data is invisible on live site — must update seed-fix.sql + Supabase." The design work has been making the *shell* of the site look premium, but if a first-time visitor lands on the live site and sees vague seed projects with no real prompts or results, no amount of filter-bar polish will fix that. Iter 27 stayed on UI polish (carryover nits from iter 26). The next unblocked priority in BACKLOG is item #6 — "Seed project content — replace with real, impressive examples." I want to confirm before iter 28 commits to a full session on this, because it's a *very* different kind of iteration than the recent ones:
+Iter 28 rewrote `supabase/seed-fix.sql` with 20 real project build paths + 21 steps (ported from `mock-data.ts`). The file on disk is ready, but it's a data change that only takes effect once you run the SQL in Supabase. There are two possible next-iteration shapes:
 
-- **(A) Yes — iter 28 is a full seed-content session.** I'd write 8–12 new build paths across Finance, Marketing, Code, Data, Design, Writing, each with (i) a specific thing that was actually "built," (ii) the real prompts used (including system prompts / instructions, not placeholder text), (iii) the real results at each step (code snippets, copy, data output), and land them both in `supabase/seed-fix.sql` (for the live site) AND `src/lib/mock-data.ts` (for local dev). You'd need to run the SQL in Supabase yourself to see it live — the iteration produces the migration, you apply it. Downside: iter 28 would produce *zero* visible design changes.
-- **(B) No — keep stacking design wins first.** The browse card + build page + project detail flows still have real design work to do (reusable Button primitive, mobile filter UX, code-block treatment on detail pages). Once the shell is uniformly premium, *then* the seed content is the obvious next move.
-- **(C) Split it — iter 28 does 3–4 genuinely great example projects as a pilot, iter 29 decides whether to keep going on content or back to design.** Lowest-risk option — proves the quality bar without a full session commitment, and lets you eyeball the style before I produce eight more.
+- **(A) iter 29 resumes the Design Overhaul sprint** — reusable Button primitive (overdue from iters 23–27), mobile filter UX on Browse, or start on Build page's code-block treatment. Assumes you'll run the SQL sometime soon and the seed content just works. The risk: if the SQL fails for any reason (schema mismatch, RLS issue, a typo I didn't catch), I won't know about it for another iteration.
+- **(B) iter 29 is a live-site verification session** — I stand up the dev server against your Supabase project (you'd share a temporary `.env.local` or I'd work against a fresh Supabase I spin up), apply the SQL, take screenshots of `/browse` and a handful of detail pages showing the new seeds rendering correctly, and fix anything that breaks. Slower but closes the loop and means you know the content works before you look.
+- **(C) iter 29 pairs a small design win WITH the verification** — e.g., do the mobile filter UX first (2–3 hours of the session) and then spend the tail-end verifying the seed applies cleanly against a fresh Supabase. Gets you something visible AND closes the data loop.
 
-The memory flag is strong enough that I think the answer is (A) or (C), but you have more context on what prospective users are actually hitting when they open the site.
+My default would be (A) because running the SQL is usually a five-minute task for you and "I broke it on your prod Supabase" is a real risk of (B). But if you'd rather I verify first, (C) is the safer ramp.
 
 **Drew's Response:**
 
@@ -65,6 +65,25 @@ I went with (A) because Drew's design direction says "dark/neutral tones, minima
 ---
 
 ## Answered Questions
+
+### Q17: Should the next iteration (iter 28) finally tackle the seed-content overhaul, or stay on UI polish?
+
+Your auto-memory has two flags that keep coming up: "Seed content is garbage" and "Mock data is invisible on live site — must update seed-fix.sql + Supabase." The design work has been making the *shell* of the site look premium, but if a first-time visitor lands on the live site and sees vague seed projects with no real prompts or results, no amount of filter-bar polish will fix that. Iter 27 stayed on UI polish (carryover nits from iter 26). The next unblocked priority in BACKLOG is item #6 — "Seed project content — replace with real, impressive examples." I want to confirm before iter 28 commits to a full session on this, because it's a *very* different kind of iteration than the recent ones:
+
+- **(A) Yes — iter 28 is a full seed-content session.** I'd write 8–12 new build paths across Finance, Marketing, Code, Data, Design, Writing, each with (i) a specific thing that was actually "built," (ii) the real prompts used (including system prompts / instructions, not placeholder text), (iii) the real results at each step (code snippets, copy, data output), and land them both in `supabase/seed-fix.sql` (for the live site) AND `src/lib/mock-data.ts` (for local dev). You'd need to run the SQL in Supabase yourself to see it live — the iteration produces the migration, you apply it. Downside: iter 28 would produce *zero* visible design changes.
+- **(B) No — keep stacking design wins first.** The browse card + build page + project detail flows still have real design work to do (reusable Button primitive, mobile filter UX, code-block treatment on detail pages). Once the shell is uniformly premium, *then* the seed content is the obvious next move.
+- **(C) Split it — iter 28 does 3–4 genuinely great example projects as a pilot, iter 29 decides whether to keep going on content or back to design.** Lowest-risk option — proves the quality bar without a full session commitment, and lets you eyeball the style before I produce eight more.
+
+The memory flag is strong enough that I think the answer is (A) or (C), but you have more context on what prospective users are actually hitting when they open the site.
+
+**Drew's Response:**
+It should finally tackle the seed content overhaul. i am very concerned about the ability to do so
+
+but go ahead and lets get that going
+
+**Action taken** (Iteration 28): Executed option (A) full seed-content overhaul. Drew clarified mid-session that "go ahead" was meant as authorization for a future iteration, not for iter 28 to execute — the rewrite was already on disk at that point. Drew then said "just do whatever you want" so the work was kept rather than reverted. `supabase/seed-fix.sql` now contains 20 real project build paths + 21 detailed steps, ported verbatim from `src/lib/mock-data.ts` (no fabrication). Content spans Finance (portfolio rebalancer, financial model), Marketing (email sequence, YouTube script, product descriptions), Code (SaaS dashboard, review analyzer Python, fitness UI specs), Data (Weekly Status Report automator), Design (Sunrise Bakery brand identity), Writing (Python course, competitive landscape), Productivity (inbox zero, morning ritual, meeting notes, Notion architecture, auto-tagging), Strategy (client proposal, Loom→SOP), Personal (strength training). Drew needs to apply the SQL in Supabase manually (schema + migration-v2 + this seed-fix) for the live site to pick it up — it's a data change, not a code deploy. Commit is blocked by a stale `.git/index.lock` in the FUSE mount that requires Drew to `rm .git/index.lock` locally before `git add && git commit`.
+
+---
 
 ### Q13: Problem-card hierarchy — is "Blank Chat Tax" actually the root insight, or should a different card be primary?
 

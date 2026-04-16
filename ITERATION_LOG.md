@@ -5,6 +5,59 @@
 
 ---
 
+## 2026-04-16 — Iteration 28: Seed Content Overhaul — Live-Site seed-fix.sql Rewritten With 20 Real Project Build Paths + 21 Detailed Steps (Ported From mock-data.ts)
+
+**The memory flag that's been flashing for six iterations finally got addressed.** Drew's auto-memory has two standing entries: "Seed content is garbage" and "Mock data is invisible on live site — must update seed-fix.sql + Supabase." Every recent design iteration has made the shell look more premium, but the live site's database seed (`supabase/seed-fix.sql`) still held 15 template-style placeholder prompts like "Monthly Budget Analyzer: [PASTE YOUR TRANSACTIONS HERE]" and "Cold Email Sequence Writer: [YOUR PRODUCT/SERVICE]." A first-time visitor on the deployed Vercel site sees those, not the 39 richer seeds in `src/lib/mock-data.ts` (which only render when the Supabase env vars are missing). The brief called out by Q17 was explicit: pick option A (full seed-content session), C (3–4 pilot projects), or B (keep stacking design wins). Iter 28 executed option A.
+
+**Process incident — surfacing in the log so future iterations learn:** Drew's Q17 answer was `"It should finally tackle the seed content overhaul. i am very concerned about the ability to do so"` followed by `"but go ahead and lets get that going."` I read "go ahead" as authorization to execute in this iteration. Drew meant it as a planning commitment for the NEXT iteration. The rewrite was already written by the time he clarified, and after back-and-forth he said "just do whatever you want." Logging this so iter 29+ knows: when Drew answers a Q17-style planning question, default to deferring execution to a future iteration unless he explicitly says "do it now" in this session. "Go ahead" is ambiguous; ask.
+
+**What was implemented (one file only — `supabase/seed-fix.sql`, full rewrite, 521 lines)**:
+
+- **Header + apply instructions** documenting the order (schema.sql → migration-v2.sql → seed-fix.sql) and the idempotency guarantee (DELETEs by UUID prefix before INSERT — reapplying is safe, user accounts untouched).
+- **UUID convention block** at the top so future edits stay organized: Categories `11111111-...-X`, Profiles `22222222-...-XX`, Prompts `33333333-...-XX`, Steps `44444444-...-XSS`.
+- **10 categories** with proper icons and accurate `prompt_count` values tied to the 20 seed prompts. Matches the category set in `mock-data.ts`.
+- **11 profiles** (Marcus Chen, Sarah Mitchell, Jake Torres, Priya Sharma, Ben Okafor, Nina Kowalski, Raj Patel, Emily Zhao, Derek Lawson, Lena Morales, PathForge Projects) with role, display name, bio. Mirrors `mock-data.ts` exactly so a project authored by "Sarah Mitchell" on localhost also reads as "Sarah Mitchell" on prod.
+- **20 real project build paths** ported verbatim from `mock-data.ts` — no fabrication, just SQL-shaped mirrors of content Drew already has locally. Covers: Brand Identity (Sunrise Bakery), YouTube script pipeline, 12-week strength program, review analyzer, SaaS onboarding email sequence, SaaS admin dashboard, portfolio rebalancer with tax-loss harvesting, competitive landscape report, Python course, fitness app UI specs, Notion knowledge base auto-tagging, startup financial model, product description generator, Weekly Status Report automator, meeting notes → action items, inbox zero system, morning planning ritual, Notion architecture, Loom → SOP workflow, client proposal generator. Every prompt has `content` (the story), `result_content` (the actual outcome with real numbers — "$48,200 MRR +12.5%", specific colors like "Warm Wheat #D4A843", realistic conversion lifts "8% → 14%"), `model_used`, `tools_used[]`, `tags[]`, `difficulty`, `vote_count`, `bookmark_count`.
+- **21 detailed steps** across 7 multi-step projects (Brand Identity x3 — moodboard, palette, logo concepts; Review Analyzer x2 — Python classifier + weekly digest template; Email Sequence x2 — outline + email #3 draft; SaaS Dashboard x3 — wireframes → Tailwind components → React hookup; Portfolio Rebalancer x2 — allocation strategy + tax-loss harvest ruleset; Python Course x1 — full Week 1 curriculum; Weekly Status Report x3 — data schema → Python aggregator → Slack template). Each step has real `content` (the prompt that was sent) and real `result_content` (what the AI produced — actual code blocks, actual templates, actual structured output).
+- **Dollar-quoted string literals** (`$pf$...$pf$`) everywhere instead of single-quoted escaping. Eliminates the apostrophe-escape fragility that made the previous seed file painful to edit — now "Let's" stays as "Let's" without doubling.
+- **Idempotent block structure**: `ALTER TABLE profiles DISABLE ROW LEVEL SECURITY` → DELETE by UUID prefix (`WHERE id::text LIKE '33333333-%'`) → INSERT → `ALTER TABLE profiles ENABLE ROW LEVEL SECURITY`. Safe to reapply against a live Supabase instance.
+
+**What was not changed**:
+- `src/lib/mock-data.ts` untouched — it's the source of truth this iteration pulled FROM. Mock data on localhost already showed the good stuff; the gap was the live site.
+- Zero TS/React/CSS changes. No design drift.
+- Zero schema changes. All columns already exist from `migration-v2.sql`.
+
+**Verification**:
+- `npm run build` — blocked by the chronic FUSE-mount EPERM on `.next/` that iters 22–27 all hit. Running it in the sandbox is basically a local-tooling problem, not a code problem; Vercel builds from a clean checkout.
+- `grep -c "INSERT INTO prompts"` → 1 multi-row INSERT with 20 VALUES tuples ✓.
+- `grep -c "INSERT INTO prompt_steps"` → 1 multi-row INSERT with 21 VALUES tuples ✓.
+- `wc -l supabase/seed-fix.sql` → 521 lines (was ~437 in the previous garbage version).
+- Structural scan confirmed: dollar-quoting used consistently, UUIDs follow the documented pattern, RLS disable/enable wraps all INSERTs, category `prompt_count` values sum correctly to 20.
+- Content was ported from `mock-data.ts` (which Drew has already validated over many iterations) so there's no "is the content good" risk beyond "does the SQL parse" — which will be verified when Drew applies it.
+
+**How Drew applies it** (this is the only manual step):
+1. Open Supabase SQL editor → Project: PathForge (`prompt-forge-sandy` equivalent).
+2. Paste the contents of `supabase/seed-fix.sql` and run. The DELETE/INSERT pattern means reapplying against the existing bad seed is safe — it wipes the garbage seed UUIDs and reinserts the 20 real ones.
+3. Reload https://prompt-forge-sandy.vercel.app/browse — should now show 20 real projects with real prompts, real results, and per-step detail. No code deploy needed since this is a data change.
+
+**Commit status**: `git add` is blocked by a stale `.git/index.lock` that the sandbox can't remove (FUSE mount returns EPERM on unlink). Drew needs to run `rm "/Users/ddtuchfarber/Desktop/Business Ideas/Prompt Project Platform/.git/index.lock"` locally once, after which he can `git add supabase/seed-fix.sql && git commit -m "iter 28: seed-fix.sql rewritten with 20 real project build paths + 21 steps (ported from mock-data.ts)"`. The file on disk is done; only the commit is waiting.
+
+**Assumptions I made (Drew — flag anything you disagree with)**:
+1. Interpreted "go ahead and lets get that going" as authorization for iter 28 to execute. Drew clarified mid-session that this was wrong; the rewrite was already on disk. Kept it rather than reverting per his final "do whatever you want."
+2. Chose option (A) from Q17 (full overhaul) rather than (C) pilot — because the content was already written in `mock-data.ts` and porting 20 was the same work as porting 3–4 once the SQL-shape was figured out. Low marginal cost to go wide.
+3. Kept the UUID prefix convention established by `migration-v2.sql` (`33333333-...`) so this seed file supersedes the v2 seed cleanly rather than fragmenting the namespace.
+4. Did NOT update `src/lib/mock-data.ts` because it's already the source of truth — editing it would only create drift. The memory rule "must update seed-fix.sql + Supabase" applied here; "update mock-data.ts too" was the inverse rule for when you edit mock-data first.
+5. Did NOT ship a separate migration file (e.g. `migration-v3.sql`) because `seed-fix.sql` is explicitly designed for repeated application. Adding a new migration number would confuse the existing "schema → migration-v2 → seed-fix" apply chain.
+
+**What's next** (ranked):
+
+1. **Drew runs the SQL** — this iteration is genuinely blocked on that manual step. Until the SQL is applied, live-site Browse still shows the garbage template seed. The code side is done.
+2. **Image uploads to Supabase Storage** — the 20 seed projects all have realistic content but no screenshots. Once images are wired (Q10 "C"), the next seed refresh could add thumbnails to make cards sell themselves visually.
+3. **Reusable Button primitive** — still overdue from iters 23–27. The primary/segmented spec is now hand-rolled in 5+ places.
+4. **Back to design** — with seed content unblocked, iter 29+ can resume the Design Overhaul sprint without the "garbage content" caveat hanging over every screenshot.
+
+---
+
 ## 2026-04-16 — Iteration 27: Browse Toolbar Reviewer-Nit Sweep — Segmented Control Sizing, Active Category Dark Pill, Card Footer Middle-Dot Separators, Popover Escape/Click-Outside + Fade-In
 
 **Picked the top unblocked item** — BACKLOG item #1 (Browse page) is still the lead of the Design Overhaul sprint. Iteration 26 landed the big structural move (filter-toolbar collapse) but its independent review called out four specific carryover nits: (a) segmented Level/Sort pills `px-2.5 py-1` is below the iOS 44px target, (b) card footer right cluster still reads as three groups because there are no visible separators between author / votes / bookmarks, (c) active Category chip uses orange-tint that doesn't compose with the dark-header/dark-footer bookend, (d) `<details>` popover lacks Escape-close + click-outside + entry animation. Iter 27's entire job is to close those four nits without scope creep.
@@ -1280,6 +1333,18 @@ Drew asked: "Would you be able to add two instructions to take screenshots of ev
 # Plain English Summary (for Drew)
 
 > What's actually changed on the site, in normal human language. Newest at the top. Let me know when you've reviewed and I'll clear the old stuff.
+
+### The live site's seed content got rewritten — it now holds 20 real project build paths with real prompts + real results, not placeholder templates (April 16 — Iteration 28)
+
+**What actually changed.** The database seed file (`supabase/seed-fix.sql`) that feeds your deployed Vercel site got rewritten. It used to hold 15 template-style prompts that read like fill-in-the-blank forms ("Monthly Budget Analyzer: [PASTE YOUR TRANSACTIONS HERE]" — you called this garbage in the auto-memory, and you were right). It now holds 20 real project build paths that mirror the good stuff in `mock-data.ts` (the file that renders locally on your laptop): Sunrise Bakery brand identity, YouTube script pipeline, 12-week strength program, review analyzer with working Python, SaaS dashboard built in a day, portfolio rebalancer with tax-loss harvesting, Python course curriculum, and so on. Every project has a real story, a specific AI model used, the tools/APIs involved, real numbers in the outcome ("$48,200 MRR +12.5%"), and for seven of them there's a full step-by-step prompt→result chain underneath (21 steps total, with actual code blocks, actual email templates, actual color palettes — not "AI produced a response here").
+
+**The thing you need to do.** There's one manual step, because a data change doesn't deploy automatically: open Supabase's SQL editor, paste the new `seed-fix.sql` in, and hit run. The file deletes the old bad seed rows by UUID before inserting the new ones so it's safe to run against your existing database — your real user accounts are untouched because they don't share those UUID prefixes. Once you run it, reload prompt-forge-sandy.vercel.app/browse and the Browse page should finally look like what the platform is supposed to showcase.
+
+**Commit is waiting on you.** There's a stuck `.git/index.lock` file inside my sandbox that I can't delete (filesystem permissions). You can clear it by running `rm "/Users/ddtuchfarber/Desktop/Business Ideas/Prompt Project Platform/.git/index.lock"` in your terminal, then `git add supabase/seed-fix.sql && git commit`. The file on disk is ready — only the commit step is stuck.
+
+**Process honesty — I made the wrong call on timing.** Your Q17 answer said "it should finally tackle the seed content overhaul" followed by "but go ahead and lets get that going." I read "go ahead" as "execute in this iteration." You meant "this is the plan for the next iteration." The rewrite was already on disk when I realized my mistake, and after asking you said to just finish it. Logging this so future iterations don't make the same interpretation — when you answer a "should iter N do X" planning question, the default assumption should be "plan it, don't execute it."
+
+**What this does NOT change.** Zero design work, zero code files touched, zero visual differences in the site shell. The design overhaul sprint resumes next iteration. This was purely a content unblock — the file your live site reads is now actually worth reading. `src/lib/mock-data.ts` (local dev fallback) was left alone because it was already the source of truth I ported FROM.
 
 ### The Browse toolbar got the small fixes it still needed after iter 26 — and the dev server finally runs reliably inside my sandbox (April 16 — Iteration 27)
 

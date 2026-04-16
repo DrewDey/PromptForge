@@ -3,11 +3,13 @@
 import Link from 'next/link'
 import Image from 'next/image'
 import { useState, useEffect } from 'react'
+import { usePathname } from 'next/navigation'
 import { Menu, X, LogOut, User } from 'lucide-react'
 import type { User as SupabaseUser } from '@supabase/supabase-js'
 import { logout } from '@/lib/actions'
 
 export default function Header() {
+  const pathname = usePathname()
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [user, setUser] = useState<SupabaseUser | null>(null)
   const [userMeta, setUserMeta] = useState<{ username?: string; display_name?: string }>({})
@@ -50,6 +52,20 @@ export default function Header() {
 
   const displayName = userMeta.display_name || userMeta.username || 'Account'
 
+  // Active state: highlight nav link matching current route
+  const isActive = (href: string) => {
+    if (href === '/browse') return pathname === '/browse' || (pathname.startsWith('/prompt/') && pathname !== '/prompt/new')
+    if (href === '/prompt/new') return pathname === '/prompt/new'
+    return false
+  }
+
+  const navLinkClass = (href: string) =>
+    `text-sm font-medium transition-colors duration-200 relative py-1 ${
+      isActive(href)
+        ? 'text-brand-orange'
+        : 'text-gray-500 hover:text-gray-900'
+    }`
+
   return (
     <header className="bg-white border-b border-gray-200 sticky top-0 z-50">
       <nav className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -58,12 +74,14 @@ export default function Header() {
             <Link href="/" className="flex items-center gap-2">
               <Image src="/logo.png" alt="PathForge" width={120} height={34} priority />
             </Link>
-            <div className="hidden md:flex items-center gap-6">
-              <Link href="/browse" className="text-gray-500 hover:text-gray-900 text-sm font-medium transition-colors">
-                Browse
+            <div className="hidden md:flex items-center gap-1">
+              <Link href="/browse" className={navLinkClass('/browse')}>
+                <span className="px-3 py-1.5 hover:bg-gray-100 transition-colors duration-200">Browse</span>
+                {isActive('/browse') && <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-brand-orange" />}
               </Link>
-              <Link href="/prompt/new" className="text-gray-500 hover:text-gray-900 text-sm font-medium transition-colors">
-                Submit
+              <Link href="/prompt/new" className={navLinkClass('/prompt/new')}>
+                <span className="px-3 py-1.5 hover:bg-gray-100 transition-colors duration-200">Submit</span>
+                {isActive('/prompt/new') && <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-brand-orange" />}
               </Link>
             </div>
           </div>
@@ -72,26 +90,26 @@ export default function Header() {
             {user ? (
               <>
                 {isAdmin && (
-                  <Link href="/admin" className="text-sm text-gray-400 hover:text-gray-700 transition-colors">
+                  <Link href="/admin" className="text-sm text-gray-400 hover:text-gray-700 transition-colors duration-200">
                     Admin
                   </Link>
                 )}
-                <Link href={`/user/${userMeta.username ?? ''}`} className="flex items-center gap-1.5 text-sm font-medium text-gray-700 hover:text-brand-orange transition-colors">
+                <Link href={`/user/${userMeta.username ?? ''}`} className="flex items-center gap-1.5 text-sm font-medium text-gray-700 hover:text-brand-orange transition-colors duration-200">
                   <User className="w-4 h-4" />
                   {displayName}
                 </Link>
                 <form action={logout}>
-                  <button type="submit" className="flex items-center gap-1.5 text-sm text-gray-400 hover:text-gray-700 transition-colors">
+                  <button type="submit" className="flex items-center gap-1.5 text-sm text-gray-400 hover:text-gray-700 transition-colors duration-200">
                     <LogOut className="w-4 h-4" />
                   </button>
                 </form>
               </>
             ) : (
               <>
-                <Link href="/auth/login" className="text-sm font-medium text-gray-500 hover:text-gray-900 transition-colors">
+                <Link href="/auth/login" className="text-sm font-medium text-gray-500 hover:text-gray-900 transition-colors duration-200">
                   Log in
                 </Link>
-                <Link href="/auth/signup" className="bg-brand-orange text-white px-4 py-2 text-sm font-semibold hover:bg-brand-orange-dark transition-colors">
+                <Link href="/auth/signup" className="bg-brand-orange text-white px-4 py-2 text-sm font-semibold hover:bg-brand-orange-dark transition-colors duration-200">
                   Sign up
                 </Link>
               </>
@@ -106,9 +124,9 @@ export default function Header() {
         </div>
 
         {mobileMenuOpen && (
-          <div className="md:hidden pb-4 border-t border-gray-200 mt-2 pt-4 flex flex-col gap-3">
-            <Link href="/browse" className="text-gray-500 hover:text-gray-900 text-sm font-medium" onClick={() => setMobileMenuOpen(false)}>Browse</Link>
-            <Link href="/prompt/new" className="text-gray-500 hover:text-gray-900 text-sm font-medium" onClick={() => setMobileMenuOpen(false)}>Submit</Link>
+          <div className="md:hidden pb-4 border-t border-gray-200 mt-2 pt-4 flex flex-col gap-1">
+            <Link href="/browse" className={`text-sm font-medium px-3 py-2 transition-colors duration-200 ${isActive('/browse') ? 'text-brand-orange bg-brand-orange/5 border-l-2 border-brand-orange' : 'text-gray-500 hover:text-gray-900 hover:bg-gray-50'}`} onClick={() => setMobileMenuOpen(false)}>Browse</Link>
+            <Link href="/prompt/new" className={`text-sm font-medium px-3 py-2 transition-colors duration-200 ${isActive('/prompt/new') ? 'text-brand-orange bg-brand-orange/5 border-l-2 border-brand-orange' : 'text-gray-500 hover:text-gray-900 hover:bg-gray-50'}`} onClick={() => setMobileMenuOpen(false)}>Submit</Link>
             <hr className="border-gray-200" />
             {user ? (
               <>

@@ -1,0 +1,482 @@
+# PathForge — Iteration Log
+
+> Each hourly iteration adds an entry here. Most recent at the top.
+> This is how the next iteration knows what just happened.
+
+---
+
+## 2026-04-16 — Iteration 11: Project Detail Page — Step Flow, Story Prominence, Metadata Layout
+
+**Audit findings** (top problems identified):
+1. Step numbers use `text-xs` (same size as descriptions) inside 38px bordered circles — they blend into content rather than serving as visual anchors for scanning the progression. The `pipeDraw` CSS animation exists but is never applied to the actual pipe.
+2. Vertical pipe between steps is at 30% opacity with no animation — reads as a faint placeholder rather than a core feature of the product. Doesn't communicate progression or flow.
+3. Story section ("what they built and why") uses same heading size as "The Path" section and a barely-visible `bg-primary-50/50` background — it's not prominent enough despite being the primary narrative hook.
+4. Metadata chips are 5 different color schemes in one flat row with no grouping — users must parse everything linearly to find specific info.
+5. Author section appears after all metadata, separated from the title by the chip wall — delays human connection with the creator.
+6. Copy button feedback is functional but unceremonial — subtle color flash without animation.
+
+**Research insights**:
+- USWDS Step Indicator pattern: large bold step numbers as primary visual anchors that guide the eye down the page
+- Product Hunt launch pages: author avatar + name immediately under the title creates instant human connection
+- GitHub/Dev.to: grouped metadata (context vs. technical specs) separated visually rather than one flat row
+- Instructables: "Step X of Y" inline text in step headers reinforces progression without adding visual clutter
+- Notion gallery: full background tints on featured content blocks create clear visual prominence
+
+**Design brief** (3 key goals):
+1. Make step flow the hero — 48px solid orange step nodes (not bordered circles), apply `pipeDraw` animation to the vertical pipe, increase pipe opacity to 50%, add "Step X of Y" headers, increase step spacing
+2. Promote the Story section — upgrade heading to `text-xl font-black`, strengthen background to full `bg-primary-50`, responsive padding
+3. Reorganize header — move author row immediately after title for human connection, group metadata into context (category + difficulty + steps) and technical (model + tools) clusters
+
+**What was implemented**:
+- **Step nodes redesigned**: From 38px white-bg bordered circles with `text-xs` number → 48px solid `bg-brand-orange` squares with `text-base font-black text-white` number. Left padding increased `pl-14` → `pl-16`, pipe repositioned to `left-[23px]` to center on larger nodes.
+- **Pipe animation activated**: Applied `pipeDraw 1s ease-out forwards` animation via inline style. Opacity increased from `opacity-30` → `opacity-50`. The `pipeDraw` keyframe was already in globals.css but unused — now it's wired up.
+- **Step headers always render**: Previously conditional on `step.title || step.description`. Now always shows "Step X of Y" text (e.g., "Step 1 of 3 — Title"), ensuring every step has a header and screen readers get progression context.
+- **Step spacing**: `space-y-8` → `space-y-10`, section heading `mb-6` → `mb-8`.
+- **Story section promoted**: Heading from `text-lg font-bold` → `text-xl font-black`. Background from `bg-primary-50/50` → `bg-primary-50` (full opacity). Padding responsive: `p-6 sm:p-8`. Text explicitly `text-base`.
+- **Author row repositioned**: Moved from below metadata (after border-t) to immediately after title/description, before metadata. Avatar slightly larger: `w-9 h-9` → `w-10 h-10`.
+- **Metadata grouped**: Split from single flat `flex` row into two groups separated by `gap-6`: context group (category, difficulty, step count) and technical group (model, tools). Wrapped in `items-start` for clean wrapping behavior. Border-t separator now sits between author and metadata rather than between metadata and author.
+- **Header spacing**: `mb-8` → `mb-10` for more breathing room before story section.
+- **Loading skeleton updated**: All structural changes mirrored — 48px step nodes, `pl-16`, `space-y-10`, author row position, grouped metadata with `gap-6`, `sm:p-8` on story section, pipe at `left-[23px]`.
+- **Files changed**: `src/app/prompt/[id]/page.tsx`, `src/app/prompt/[id]/loading.tsx`.
+
+**Review outcome**: Approved with nits. Reviewer confirmed all 3 brief items implemented faithfully with no drift. Skeleton fidelity praised as excellent. Nits noted: (1) inline style for animation is the only one in the file — a CSS utility class would be more consistent, low priority; (2) step number appears twice (node + "Step X of Y" text) — mild redundancy but "of Y" provides useful context the node alone doesn't; (3) pre-existing lack of focus-visible on metadata chips not introduced by this change.
+
+**What's next**: Second pass on remaining landing page items (Popular Paths carousel, mobile responsiveness) or fresh audit of Submit form (#4) or Navigation (#5).
+
+---
+
+## 2026-04-16 — Iteration 10: Browse Page Filter UX Polish
+
+**Audit findings** (top problems identified):
+1. Difficulty filter active state uses `bg-gray-900` (dark gray) while category filters use `bg-brand-orange` — users learn "orange = selected" from categories, then difficulty buttons violate that pattern with a completely different color semantic.
+2. "Clear filters" button is a tiny `text-xs text-gray-400` text link that blends into the filter UI — users who apply filters may not discover this important action.
+3. Vertical spacing rhythm is inconsistent: mb-8 (header) → mb-6 (search) → mb-4 (categories) → mb-8 (difficulty) — three different gap values between four consecutive sections.
+4. Search bar has a redundant text "Search" button next to an input with placeholder "Search build paths..." — the button wastes horizontal space and creates text redundancy.
+5. Empty state uses `py-20` (80px top/bottom padding), creating excessive whitespace around a small content block.
+6. Search input lacks a focus ring for keyboard accessibility.
+
+**Research insights**:
+- Dribbble/Figma Community use inline removable filter chips (with × icons) below filter controls so users see exactly what's filtered and can remove individual filters without clearing all — this pattern reduces confusion and gives users fine-grained control.
+- Product Hunt and Figma use consistent color semantics across all filter types — active state is always the same color regardless of filter category.
+- Filter bars with a visible "Clear all" styled as a chip (not a dim text link) have significantly better discoverability per Baymard usability research.
+
+**Design brief** (3 key goals):
+1. Unify all filter active states to brand orange — difficulty filters match category filters, creating a single consistent visual language for "selected."
+2. Add removable filter summary chips — when any filter is active, show tinted orange chips with × icons for individual removal, plus upgrade the "Clear all" to a visible bordered chip.
+3. Fix spacing rhythm and search affordances — standardize section gaps to clean increments, replace text search button with icon button, improve focus ring, reduce empty state padding.
+
+**What was implemented**:
+- **Difficulty filter active state**: Changed from `bg-gray-900 text-white border-gray-900` to `bg-brand-orange text-white border-brand-orange`. Hover state also aligned to `hover:border-brand-orange/50` matching category chips.
+- **Active filter summary bar**: New section between filter controls and result count. Shows "Filtered by:" label followed by tinted `bg-brand-orange/10` chips for each active filter (category name, difficulty level, search query). Each chip has an × icon and links to a URL that removes just that filter. Only renders when `hasActiveFilters` is true.
+- **Clear button upgrade**: From `text-xs text-gray-400 hover:text-gray-600` text link to `text-xs font-semibold text-gray-600 border border-gray-300 px-3 py-1.5 hover:border-gray-400` bordered chip. Label shortened from "Clear filters" to "Clear all" for conciseness.
+- **Search button**: Replaced text "Search" with `<Search />` icon, added `aria-label="Search"` for accessibility. Padding adjusted to `px-4` for icon-sized button.
+- **Search focus ring**: Added `focus:ring-2 focus:ring-brand-orange/25` (reviewer flagged initial `/10` as too subtle — increased to `/25`).
+- **Spacing rhythm**: Search form `mb-6` → `mb-8`, category filters `mb-4` → `mb-6`. Resulting rhythm: header `mb-8`, search `mb-8`, categories `mb-6`, difficulty `mb-8`, chips `mb-4`, results `mb-5`.
+- **Empty state padding**: `py-20` → `py-12`.
+- **Loading skeleton synced**: Search button width updated from `w-20` to `w-[42px]`, spacing values updated to match page.
+- **Files changed**: `src/app/browse/page.tsx`, `src/app/browse/loading.tsx`.
+
+**Review outcome**: Approved with nits. Reviewer confirmed all 7 brief items implemented correctly, no drift. One nit fixed before commit: focus ring opacity too low (`/10` → `/25`). Reviewer noted that both "All" (category) and "All Levels" (difficulty) showing orange in default state is a lot of orange for "nothing is filtered" — pre-existing design choice, not introduced by this change.
+
+**What's next**: Continue Browse page polish (card design, search responsiveness) or move to Project detail page (#3) for fresh audit pass.
+
+---
+
+## 2026-04-16 — Iteration 9: Landing Page Hero Clarity & Typography Normalization
+
+**Audit findings** (top problems identified):
+1. Hero cognitive overload — tagline chip in orange competes with the main headline for visual attention; both use bold uppercase, splitting the user's eye between two focal points.
+2. Mini-flow diagram (Prompt→Result→Refine→Ship) in the hero adds cognitive load for first-time visitors. It duplicates the Solution section's flow diagram and introduces 4 colors and tiny 10px text into the hero.
+3. Hero subtitle is 3 dense sentences in one block (max-w-2xl = 896px wide), requiring mental parsing before the value prop lands. Fails the 5-second test.
+4. Three competing CTAs — "Browse Build Paths" (orange button), "Share Your Build" (bordered button), and "Get Started Free" (orange button in footer) — all with similar visual weight, creating decision paralysis.
+5. Typography hierarchy inconsistent — "Why It Works" uses `text-2xl sm:text-3xl` while Problem and Solution sections use `text-3xl sm:text-4xl`. Popular Paths heading also undersized.
+6. Pipe connector heights arbitrary — h-16, h-10, h-6 with no consistent rhythm.
+7. Problem cards and feature cards lack focus-visible states for keyboard accessibility.
+8. Popular Paths section header has no visual accent connecting it to the page's design language.
+
+**Research insights**:
+- Linear's categorical positioning: single bold headline > feature lists. "The system for product development" — one declarative statement.
+- Vercel/Stripe dual-CTA pattern: clear primary + visually distinct secondary. Never two equal-weight buttons.
+- Product Hunt card gallery with social proof baked in — engagement metrics visible without requiring testimonials.
+- 80-120px vertical padding between major sections with visual transitions (Stripe, Linear).
+
+**Design brief** (3 key goals):
+1. Reduce hero cognitive load — de-emphasize tagline chip (gray not orange), remove mini-flow diagram, split subtitle into 2 concise lines with reduced max-width
+2. Clarify CTA hierarchy — primary "Browse Build Paths" (bigger, bolder), secondary "or share your build" (text link, not bordered button)
+3. Normalize typography & spacing — all section h2s to text-3xl sm:text-4xl, pipe connectors standardized, accent bar on Popular Paths, focus-visible on all interactive cards
+
+**What was implemented**:
+- **Hero tagline chip**: Changed from `border-brand-orange/30 bg-brand-orange/5` with orange text to `border-gray-200 bg-gray-50` with gray text. Headline now dominates immediately.
+- **Mini-flow diagram removed**: 30 lines of JSX (4-step Prompt→Result→Refine→Ship with connectors) removed from hero. The Solution section's fuller flow diagram remains as the explanatory context.
+- **Subtitle tightened**: From 3 sentences in `max-w-2xl` to 2 lines — primary ("Browse real AI projects with every prompt, result, and step visible") in `text-lg max-w-xl` + secondary ("Fork what works. Skip the blank-chat guesswork.") in `text-base text-gray-400 max-w-lg`. Visual weight split reinforces hierarchy.
+- **CTA hierarchy clarified**: Primary button upgraded to `px-10 py-4 font-bold`. Secondary changed from bordered button (`border border-gray-300 px-8 py-3.5`) to text link (`text-sm font-semibold text-gray-500`) with "or" prefix matching footer's pattern.
+- **Hero spacing increased**: `pt-16 pb-12` → `pt-20 pb-16` for more breathing room.
+- **Typography normalized**: "Why It Works" h2 from `text-2xl sm:text-3xl` → `text-3xl sm:text-4xl`. "Popular Build Paths" h2 same upgrade. All section headings now use identical size.
+- **Pipe connectors normalized**: Hero→Problem from `h-16` → `h-12`. Problem→Solution from `h-10` → `h-12`. Other pipes kept at `h-5`+dot+`h-5` for sub-section rhythm.
+- **Focus-visible states**: Added `focus-visible:outline-2 focus-visible:outline-{color} focus-visible:outline-offset-2` to all 7 interactive cards (4 problem cards with orange, 1 feature card with blue, 1 with green).
+- **Popular Paths accent bar**: Added `border-l-4 border-brand-orange pl-4` to section header for visual connection to brand language.
+- **Loading skeleton updated**: Structure-matched to new hero layout (no mini-flow skeleton, updated padding, 2-line subtitle, single button + text link CTA, accent bar on Popular Paths skeleton, pipe height corrected).
+- **Import cleanup**: Removed unused `Image` (next/image) and `Zap` (lucide-react) imports.
+- **Files changed**: `src/app/page.tsx`, `src/app/loading.tsx`.
+
+**Review outcome**: Approved with nits. Reviewer confirmed all changes trace to design brief, mobile responsiveness preserved, accessibility improved. Noted: focus-visible on non-focusable divs (problem cards) is harmless dead code — divs aren't keyboard-reachable without tabindex. Low priority cleanup for future pass.
+
+**What's next**: Landing page item #1 has been refined across two iterations now. Consider a second pass on Browse page (#2) or Project detail (#3) with fresh audit eyes, or start tackling Next Sprint items.
+
+---
+
+## 2026-04-16 — Iteration 8: Skeleton Loading States
+
+**Audit findings** (top problems identified):
+1. Zero `loading.tsx` files anywhere — every page blocks on the slowest query with no progressive rendering. No Suspense boundaries, no skeleton components, no loading infrastructure at all.
+2. Browse page shows a completely blank grid during data fetch — no categories, no cards, no indication anything is loading. On slow 3G, this persists for 5+ seconds.
+3. Project detail page has sequential blocking fetches (prompt data → related projects) creating up to 5 seconds of blank screen on slow connections. The entire page appears at once rather than progressively.
+4. User profile and admin dashboard both block on multiple parallel fetches with no fallback UI. Stats cards flash from "0" to real values (layout shift).
+5. Header auth state flash: client-side `useEffect` auth check means auth buttons briefly show "Log in" then flip to user profile.
+
+**Research insights**:
+- Shimmer wave animation (left-to-right gradient sweep) feels ~65% faster than pulse variants according to UX research (Syncfusion, web.dev). Used by Vercel, Linear dashboards.
+- Structure-matched skeletons (exact same dimensions as final content) are critical for preventing CLS — stressed by NN/G, LogRocket, and Boneyard (Vercel's framework).
+- Sharp-edge skeletons with flat gray palette reinforce brand identity — PathForge's `border-radius: 0` applies to skeletons too, making them feel native rather than generic.
+- Next.js `loading.tsx` convention automatically wraps pages in Suspense boundaries, enabling streaming server rendering.
+- `prefers-reduced-motion` media query should disable shimmer for accessibility (Clay, LogRocket).
+
+**Design brief** (3 key goals):
+1. Create reusable Skeleton component library (SkeletonBox, SkeletonText, SkeletonCard, SkeletonCardGrid) with shimmer animation
+2. Add `loading.tsx` for all 5 data-fetching routes: landing, browse, detail, profile, admin
+3. Structure-match all skeletons to real page layouts — same padding, grids, element sizes — to eliminate layout shift
+
+**What was implemented**:
+- **Shimmer CSS animation** in `globals.css`: `@keyframes shimmer` with left-to-right gradient sweep (1.8s ease-in-out), `.skeleton-shimmer` utility class, `prefers-reduced-motion` fallback to static gray.
+- **Skeleton.tsx components**: `SkeletonBox` (basic shimmer block), `SkeletonText` (multi-line text placeholder with configurable widths), `SkeletonCard` (matches PromptCard: step flow bar + badges + title + description + model/tools + tags + author/stats footer), `SkeletonCardGrid` (responsive 3-column grid of SkeletonCards).
+- **Browse loading.tsx**: Full page skeleton — header, search bar, 8 category filter chips, 4 difficulty chips, sort controls, result count, and 6-card grid. Structure-matched to browse/page.tsx.
+- **Detail loading.tsx**: Breadcrumb trail, title/description, 4 metadata chips, author row with vote buttons, story section with left-border accent, 3 step skeletons with pipe visualization, related projects grid (`md:grid-cols-3` matching real page).
+- **Landing loading.tsx**: Hero skeleton with grid background, CTA buttons, mini flow preview, pipe connector, problem section cards, popular paths grid.
+- **Profile loading.tsx**: Card with gradient banner, overlapping avatar (`-mt-10`), name/username/bio, stat cards in 3-column grid, project grid. Matched `max-w-5xl` to real page.
+- **Admin loading.tsx**: Stat cards (5 cards, `grid-cols-2 lg:grid-cols-5`), mobile tab nav, pending review table rows. No outer wrapper (admin layout provides container).
+- **Accessibility**: All loading containers have `aria-busy="true"`. Shimmer disables with `prefers-reduced-motion: reduce`.
+- **Files changed**: `globals.css`, new `Skeleton.tsx`, 5 new `loading.tsx` files.
+
+**Review outcome**: Initial review flagged 3 structural mismatches: (1) User profile skeleton had `max-w-4xl` instead of `max-w-5xl` and flat layout instead of card-with-banner — completely rewritten to match. (2) Admin skeleton had 4 stat cards instead of 5 and wrong grid breakpoint — fixed to `grid-cols-2 lg:grid-cols-5` with 5 cards. (3) Detail page related projects grid used default `SkeletonCardGrid` breakpoints instead of the real page's `md:grid-cols-3` — replaced with inline grid. All fixed before commit.
+
+**What's next**: All current sprint items are complete. Consider starting next sprint (core features) or further polish (header auth flash, empty state animations).
+
+---
+
+## 2026-04-16 — Iteration 7: Auth Pages & User Profile Polish
+
+**Audit findings** (top problems identified):
+1. Auth input focus states were invisible — `focus:outline-none` removed browser default with no `focus:ring` replacement. Keyboard users had zero visual feedback when tabbing through form fields.
+2. Auth buttons used `hover:opacity-90 transition-opacity` instead of the design system's standardized `hover:bg-brand-orange-dark transition-colors duration-200`. Navigation links had no transition class at all.
+3. Auth pages were generic white forms with no brand personality — every other page had been polished with PathForge's visual language, but login/signup could belong to any SaaS app.
+4. User profile stat cards (Projects/Upvotes/Saves) used `bg-white border-gray-200` identical to clickable PromptCards, creating false click affordance.
+5. Profile empty state was a plain text message with no visual treatment or call-to-action.
+6. Password requirements only visible as placeholder text — no persistent helper or real-time validation feedback.
+7. Error messages lacked icon and `role="alert"` for screen readers.
+
+**Research insights**:
+- Split-layout auth (Linear, Vercel): form + brand panel reinforces identity and differentiates from generic forms. Works well with PathForge's sharp-edge geometric aesthetic.
+- Inline validation with color feedback (Linear, GitHub): real-time checkmarks for password requirements create confidence without interrupting flow.
+- Empty state with clear CTA (GitHub, Product Hunt): converts blank profiles into onboarding moments with icon + action button + descriptive text.
+- Recessed stat displays (vs card-like): non-interactive data should look visually distinct from interactive cards — lighter background, softer borders.
+
+**Design brief** (3 key goals):
+1. Add brand-reinforcing split layout to auth pages — orange gradient panel on login (value prop: "See what others built"), blue gradient panel on signup (value prop: "Share what you built"), each with numbered step/feature list and grid pattern background. Hidden on mobile.
+2. Fix all design system violations — focus:ring-2 on inputs, transition-colors duration-200 on buttons and links, hover:bg-brand-orange-dark instead of hover:opacity-90, htmlFor/id pairs, role="alert" on errors.
+3. Polish user profile — recessed stat cards (bg-gray-50 border-gray-100), empty state with dashed border + Plus icon + CTA button, uppercase tracking-wide stat labels.
+
+**What was implemented**:
+- **Login page redesign**: Split layout with `hidden lg:flex lg:w-[45%]` orange gradient brand panel containing logo, "See what others built with AI" headline, descriptive paragraph, and 3-step numbered flow diagram (Prompt → Result → Iterate). Form panel gets proper heading hierarchy (h1 on desktop, logo on mobile). All inputs get `focus:ring-2 focus:ring-brand-orange/20 transition-colors duration-200`. Button changed to `hover:bg-brand-orange-dark transition-colors duration-200`. Error state gets icon + `role="alert"`. Loading state gets animated SVG spinner.
+- **Signup page redesign**: Split layout with blue gradient brand panel containing logo, "Share what you built with AI" headline, and 3 numbered value props. Password field becomes controlled input with real-time `passwordLongEnough` check — orange checkbox appears when 8+ chars entered. Success state replaces emoji with branded icon in orange-tinted box. Same focus/transition/error/loading improvements as login.
+- **User profile polish**: Stat cards changed from `bg-white border-gray-200` to `bg-gray-50 border-gray-100` with `uppercase tracking-wide` labels — clearly non-interactive. Empty projects state gets dashed border, Plus icon in orange-tinted box, descriptive text, and "Share your first project" CTA button linking to `/prompt/new`.
+- **Files changed**: `src/app/auth/login/page.tsx`, `src/app/auth/signup/page.tsx`, `src/app/user/[username]/page.tsx`.
+
+**Review outcome**: Approved with nits. Fixed before commit: (1) Replaced emoji-based value props on signup panel with numbered boxes matching login's pattern for visual consistency. (2) Fixed mid-sentence capitalization bug where mobile text produced "Create your account and Start sharing" — split into separate mobile/desktop spans.
+
+**What's next**: Loading skeleton states for async content, or begin next sprint items (image upload persistence, project editing).
+
+---
+
+## 2026-04-16 — Iteration 6: Visual Consistency & Polish
+
+**Audit findings** (top problems identified):
+1. Transition durations were chaotic — mix of 150ms (default), 200ms, 300ms, and unspecified across 40+ interactive elements. Some interactions felt snappy while others were sluggish.
+2. Card hover states were inconsistent — PromptCard used orange offset shadow + border, CategoryCard only had border change, landing page problem cards used gray border hover, feature cards each used different colors with no shadow.
+3. Button and chip padding used 5+ different scales across pages (px-2 py-0.5, px-3 py-1.5, px-4 py-2, px-5 py-2.5, px-8 py-3.5) without clear semantic mapping.
+
+**Research insights**:
+- Standard 200ms transition duration for all hover/focus states (Josh Comeau, web.dev consensus) — creates cohesive, responsive feel
+- 8-point spacing grid (Atlassian, Carbon, Tailwind best practices) — documented as design tokens
+- Consistent card hover language: border-color change + offset shadow lift (Linear, Vercel Geist patterns)
+
+**Design brief** (3 key goals):
+1. Standardize ALL transition durations to 200ms across the entire codebase
+2. Unify card hover states: border change + brand-colored offset shadow (4px 4px) consistently
+3. Document design tokens (spacing, transition, chip/button tiers) in globals.css
+
+**What was implemented**:
+- **Transition standardization**: Added `duration-200` to every `transition-colors`, `transition-all`, and `transition-transform` instance across ALL source files (13 files, 50+ instances). Previously mixed default 150ms with unspecified durations.
+- **Card hover unification**: CategoryCard now has orange offset shadow matching PromptCard. Landing page problem cards changed from `hover:border-gray-300` to `hover:border-brand-orange` + matching offset shadow. Feature cards ("Why It Works") now have matching offset shadows in their respective brand colors (orange, blue, green).
+- **Design token documentation**: Added comment block in `globals.css` documenting the design system: transition timing (200ms), spacing scale (4/8/16/24/32/48/64px), chip tiers (sm/md), button tiers (sm/md/lg).
+- **Files changed**: globals.css, PromptCard.tsx, CategoryCard.tsx, VoteBookmarkButtons.tsx, Header.tsx, Footer.tsx, page.tsx, browse/page.tsx, prompt/[id]/page.tsx, prompt/new/page.tsx, ImageUpload.tsx, admin/AdminPromptRow.tsx, admin/layout.tsx.
+
+**Review outcome**: Initial review flagged 10 missing `duration-200` instances (5 in submit form, 4 in landing page, 1 in ImageUpload). All fixed before commit. Final sweep confirmed zero remaining transition instances without explicit duration.
+
+**What's next**: Current UX sprint is complete (all 6 items done). Next sprint could focus on: loading skeleton states, auth page polish, or moving to core features (image upload persistence, project editing).
+
+---
+
+## 2026-04-16 — Iteration 5: Navigation & Information Architecture
+
+**Audit findings** (top problems identified):
+1. Header nav links (Browse, Submit) had no active state indicator — users couldn't tell which page they were on
+2. Project detail page was a dead end — only a "Back to browse" link, no related projects, no next action to keep users exploring
+3. Browse filters reset when navigating back from detail — clicking "Back to browse" went to `/browse` with no query params, losing the user's category/difficulty selections
+4. Footer used dark theme (bg-gray-900) clashing with the site's light design system
+5. Mobile nav had identical styling for all links regardless of current page
+
+**Research insights**:
+- Sticky header with active section indicator (Stripe, GitHub): persistent visual cue for current page using underline + color change
+- Breadcrumb trail pattern (GitHub, Google Drive): slash-separated path segments (Browse > Category > Title) with each level clickable for multi-level navigation
+- Related content at end of detail pages (Behance, Dribbble): "More in this category" prevents dead-end browsing and encourages deeper exploration
+- Sharp-edge active states (Linear): no border-radius, background fill on hover, saturated color on active — fits PathForge's visual language
+
+**Design brief** (3 key goals):
+1. Add orange underline + text active state to header nav links so users always know where they are
+2. Replace "Back to browse" with a proper breadcrumb (Browse > Category > Title) and add "More in this category" related projects section at the bottom of detail pages
+3. Align footer with light theme and ensure consistent visual language across all navigation elements
+
+**What was implemented**:
+- **Header active state**: `usePathname()` hook determines current page. Active nav links get `text-brand-orange` color + 2px orange bottom underline (absolute positioned). Browse link activates for `/browse` and `/prompt/[id]` pages (but not `/prompt/new`). Inner spans use `hover:bg-gray-100` for subtle hover feedback.
+- **Mobile active state**: Active mobile nav links get `text-brand-orange`, `bg-brand-orange/5` warm tint, and a `border-l-2 border-brand-orange` left accent — consistent with the sharp-edge design system.
+- **Breadcrumb navigation**: Replaced simple back link with `<nav aria-label="Breadcrumb">` containing an ordered list: Browse > Category (with icon) > Project Title (truncated at 300px). Each breadcrumb segment is a link except the current page (`aria-current="page"`). Chevron separators use `aria-hidden="true"`.
+- **Related projects section**: Fetches up to 3 other projects from the same category (with `limit: 4`, filtering out current project). Displayed in a 3-column grid using existing `PromptCard` component. "View all" link with arrow animation navigates to filtered browse page.
+- **Footer light theme**: Changed `bg-gray-900` → `bg-gray-50`, `border-gray-800` → `border-gray-200`, text colors adjusted from `text-gray-400/500` to `text-gray-500` for proper contrast on light background.
+
+**Review outcome**: Approved with nits. Fixed: `isActive` logic bug where `/prompt/new` triggered Browse active state (added exclusion), cleaned up double `ChevronRight` import to single import, added `limit: 4` to related projects query for performance. Remaining nit: long mobile nav className strings could be extracted to helper (cosmetic, not blocking).
+
+**What's next**: Visual consistency & polish (Backlog item #6) — consistent spacing, typography, loading/hover/focus states, transition animations.
+
+---
+
+## 2026-04-16 — Iteration 4: Submit Form UX Redesign
+
+**Audit findings** (top problems identified):
+1. The multi-step chain builder — PathForge's core differentiator — was hidden behind a small checkbox mid-form. Users might never discover it.
+2. The form was a flat wall of 12+ input fields with no section grouping, no progress sense. Felt overwhelming, especially on mobile.
+3. The "Add Step" button used link-style text (colored text, no padding), making it look like a hyperlink rather than an actionable control.
+4. No required field indicators — required fields had the `required` HTML attribute but no visual asterisk. Optional fields inconsistently marked.
+5. The "Final Result" field was ambiguous in multi-step mode — unclear if it replaces or complements step results.
+6. Step accordion headers lacked `aria-expanded`, and no hover contrast change to signal clickability.
+
+**Research insights**:
+- Linear-style collapsible cards: each step as a card with left-border accent when active, collapsed to show title + completion state
+- Zapier's persistent "+ Add Step" button always positioned below the last step — users expect to add at the bottom
+- On-blur validation (not on-type) per NN/g and Smashing Magazine research — less frustrating, catches errors before submit
+- Typeform/GitHub review patterns: summary section before submit helps users see the full shape before committing
+
+**Design brief** (3 key goals):
+1. Make multi-step the default mode with a prominent visual toggle (two cards: "Multi-step" vs "Single prompt") instead of a checkbox
+2. Structure the form into 3 numbered sections with headers and dividers to reduce overwhelm
+3. Upgrade interactive affordances: proper Add Step button, required indicators, step completion dots, aria attributes
+
+**What was implemented**:
+- **3 numbered sections**: "Project Basics" (title, description, story, category/difficulty/model), "Your Build Journey" (mode toggle + steps or single prompt), "Details & Publish" (tools, tags, final result, submit). Each with a SectionHeader component (orange badge + title + subtitle) and border-t dividers.
+- **Mode toggle**: Two-card selector replacing the checkbox. Multi-step selected by default. Cards have orange border + warm bg when active, gray with hover transition when inactive. `aria-pressed` attributes for accessibility.
+- **Add Step button**: Full-width, dashed orange border, warm background, shows "Add Step N" with plus icon. Much more discoverable than the previous link-style text.
+- **Required field indicators**: Orange asterisk `*` on all required labels, plus a legend at the top of the form ("Fields marked with * are required").
+- **Step card improvements**: Three visual states for step number badge (active = solid orange, filled = orange/20 tint, empty = gray). Green completion dot on collapsed steps that have title + content filled. "— click to edit" hint on empty collapsed steps. `aria-expanded` on accordion buttons.
+- **Contextual labels**: "Final Result" renamed to "Overall Outcome" in multi-step mode with contextual help text explaining its role relative to step results.
+- **Focus states**: `focus:ring-1 focus:ring-brand-orange/20` added consistently to all inputs and selects.
+- **ImageUpload fixes**: Removed `rounded-lg` and `rounded-full` that conflicted with sharp-edges design system. Upload button now uses brand-orange hover color instead of generic primary.
+- **Submit area**: Slightly larger button (py-3.5, text-base), plus contextual note "Your project will be reviewed by an admin before appearing publicly."
+
+**Review outcome**: Approved with nits. Fixed: removed unused `GripVertical` import, added `aria-expanded` to step accordion buttons and `aria-pressed` to mode toggle buttons. Remaining nits noted but not blocking: step `required` attributes only validate the currently expanded step (pre-existing pattern), mode toggle could use `grid-cols-1 sm:grid-cols-2` for sub-320px screens (works fine on standard phones).
+
+**What's next**: Navigation & information architecture (Backlog item #5) — header, footer, breadcrumbs, mobile nav flow.
+
+---
+
+## 2026-04-16 — Iteration 3: Project Detail Page Redesign
+
+**Audit findings** (top problems identified):
+1. Prompt and result sections used nearly identical styling — impossible to distinguish input from output at a glance
+2. Step numbers floated disconnected from cards; the vertical pipe didn't create a strong "path" metaphor
+3. Section headers ("The Story", "The Path") used tiny text-xs uppercase — lost in visual noise
+4. Metadata bar crammed author, votes, model, and tools into one wrapping line
+5. Story section was a plain white box with no visual weight — the core differentiator felt flat
+
+**Research insights**:
+- GitHub-style metadata chips: scannable tag row below the title with semantic color coding (model = blue, difficulty = colored dot, category = gray)
+- Dev.to article typography: strong H2 headers with icons to anchor sections, breathing room between content blocks
+- Product Hunt author pattern: avatar + name + date as a compact left-aligned block, actions (vote/bookmark) right-aligned
+
+**Design brief** (3 key goals):
+1. Make prompt vs result instantly distinguishable via color-coded left-border accents (orange = prompt, green = result) and distinct background tints
+2. Strengthen the step flow visualization — larger nodes (38px), thicker pipe, better visual anchoring
+3. Reorganize metadata into scannable chip row + clean author/actions row
+
+**What was implemented**:
+- **Prompt/Result distinction**: Orange 4px left-border + warm bg tint for prompts, green 4px left-border + green bg tint for results. Each also has a colored square dot next to the label. Immediately scannable.
+- **Step flow**: Nodes enlarged to 38px with 3px border, pipe thickened to 3px at 30% opacity (background element, not competing). Steps spaced at 8-unit gap for breathing room.
+- **Section headers**: "The Story" and "The Path" upgraded to text-lg font-bold with lucide icons (MessageSquare, ChevronRight). Step count shown as muted inline text.
+- **Metadata chips**: Category, difficulty (with colored dot), step count, model (with Cpu icon), and tools (with Wrench icon) all as scannable tag chips below the title.
+- **Author row**: Avatar placeholder (gradient from orange→blue, first letter), display name, date — left-aligned. Vote/bookmark buttons right-aligned. Clean separation via border-top.
+- **Story section**: Orange left-border accent with primary-50 background tint — warm and prominent.
+- **CopyButton**: Green background + border + "Copied!" on success (was just gray text color change). Timeout extended to 2.5s. Hover states use brand-orange tint.
+- **Tags**: Now prefixed with # for consistency with browse page cards.
+- **Semantic HTML**: Replaced generic divs with `<header>` and `<section>` elements.
+
+**Review outcome**: Approved with nits. Fixed the CSS border-color conflict on the result section (changed `border-green-500` to `border-l-green-500` for explicit side targeting). Other nits were cosmetic or pre-existing (clipboard API error handling, aria-live for copy state).
+
+**What's next**: Submit form UX (Backlog item #4) — multi-step chain builder intuitiveness, form validation, progress indication.
+
+---
+
+## 2026-04-16 — Iteration 2: Browse Page Refinement
+
+**What was done**: Redesigned the browse page and PromptCard component for better usability and visual polish. Key changes:
+- **PromptCard redesign**: Added mini step-flow visualization at top of cards (numbered step boxes with chevron connectors showing the build journey at a glance), difficulty badges now include colored dots for quicker scanning, added user avatar placeholder in footer, tags prefixed with # for clarity, tools truncated with "+N" for overflow, hover state adds brand-colored offset shadow for depth
+- **Search bar**: Added search icon (magnifying glass) inside input field for clearer affordance
+- **Filter labels**: Added "Category" and "Level" section labels (Level label visible on mobile only) to make filter groups scannable
+- **Result count**: Shows "N paths in Category at level matching query" contextual result summary above the grid
+- **Clear filters**: Added "Clear filters" link next to sort controls when any filter is active, plus a prominent "Clear all filters" CTA in the empty state
+- **Empty state**: Redesigned with FolderOpen icon, dashed border, and contextual messaging (different text for search vs filter misses)
+- **Mobile responsiveness**: Filter controls stack vertically on small screens with proper labels
+
+**Build note**: TypeScript compiles clean. Full `npm run build` fails only due to sandbox network restriction (can't fetch Google Fonts) — not a code issue. Will build fine in Vercel deployment.
+
+**What's next**: Continue with Project detail page improvements (Backlog item #3) — step-by-step flow visual clarity, story section prominence, copy button UX, metadata display.
+
+---
+
+## 2026-04-16 — Iteration 1: Landing Page UX Overhaul
+
+**What was done**: Redesigned the landing page hero and overall visual hierarchy. Key changes:
+- **Hero section**: Added a branded tagline chip ("Community-driven AI project sharing"), rewrote headline to be more action-oriented ("See how it was built. Build it yourself."), added a mini flow preview showing the prompt→result→refine→ship concept at a glance, changed secondary CTA from "Create Account" to "Share Your Build" (more inviting)
+- **Pipe connectors**: Replaced thick line connectors with thinner, more elegant lines with pulsing dot nodes (animated) — feels more like a living data flow between sections
+- **Problem section**: Cleaned up card design with orange dot indicators instead of colored headers, better text contrast, hidden left-side pipe on mobile for cleaner layout
+- **Solution flow diagram**: Added directional ChevronRight arrows between steps, made boxes larger/bolder, added mobile-responsive vertical layout (stacks on small screens)
+- **Features section**: Added section header ("Why It Works / Built for real workflows"), reordered cards (See Every Step first — the core differentiator), added hover transitions on icon backgrounds
+- **Popular Paths section**: Added subtitle text, added empty state for when no paths exist yet
+- **Final CTA**: Added secondary "or browse paths first" link for lower-commitment visitors
+- **CSS**: Added subtle pulse animation for pipe connector nodes
+- **Drew's feedback**: Acted on Q1-Q4 responses — creative direction, between technical/approachable tone, desktop-first, stepped flow emphasis
+
+**What's next**: Continue with Browse page refinement (Backlog item #2) — card design, filter UX, empty states, sort options.
+
+---
+
+## 2026-04-16 — Session 0 (Setup)
+
+**What was done**: Set up the autonomous iteration system. Created BACKLOG.md, ITERATION_GUIDE.md, ITERATION_LOG.md, QUESTIONS.md. Updated CLAUDE.md with iteration instructions. Focus is purely on design, UX, visual polish, and production readiness — no backend feature work.
+
+**What's next**: First real iteration should pick the top item from the Current Sprint in BACKLOG.md (landing page UX improvements).
+
+---
+
+---
+
+# Plain English Summary (for Drew)
+
+> What's actually changed on the site, in normal human language. Newest at the top. Let me know when you've reviewed and I'll clear the old stuff.
+
+### Browse page filters are now cleaner and easier to use (April 16 — Iteration 10)
+
+The browse page's filter system had a confusing inconsistency: when you selected a category, the chip turned orange, but when you selected a difficulty level, the chip turned dark gray. Now they both turn orange — "orange means selected" is the universal rule.
+
+There's also a new "Filtered by" bar that appears when you have any filters active. It shows removable chips for each active filter — so if you're browsing "Marketing" at "Beginner" level, you'll see two little orange-tinted chips with × buttons. Click the × on "Marketing" to remove just that filter without clearing everything. There's also a visible "Clear all" button that's easier to spot than before (it used to be a tiny gray text link that blended into the background).
+
+Other small fixes: the search button is now a magnifying glass icon instead of the word "Search" (saves space, looks cleaner), the search input shows a subtle orange glow when you click into it (accessibility for keyboard users), and the spacing between sections is more consistent.
+
+### Pages now show skeleton placeholders while loading instead of blank screens (April 16 — Iteration 8)
+
+Before this, when you navigated to any page (browse, project detail, profile, admin), the screen went completely blank while data was being fetched from the database. On a slow connection, this could last 3-5 seconds — it looked like the site was broken.
+
+Now every page shows a "skeleton" loading state: gray placeholder shapes that match the layout of the real content, with a subtle shimmer animation sweeping across them. The browse page shows placeholder filter chips and a grid of placeholder cards. The project detail page shows placeholder breadcrumbs, title, steps, and related projects. The profile page shows the banner, avatar, and stat cards as placeholders. It all feels like the page is loading rather than broken.
+
+The skeletons are carefully sized to match the real content, so when the data arrives, things don't jump around on screen. They use sharp edges (matching PathForge's design) and a reduced-motion option for accessibility.
+
+### Login, signup, and profile pages got a proper design pass (April 16 — Iteration 7)
+
+The login and signup pages used to be plain white forms — functional but generic. Now when you visit them on a desktop, there's a colored side panel with PathForge branding: the login page has an orange panel saying "See what others built with AI" with a little numbered flow diagram, and the signup page has a blue panel saying "Share what you built with AI" with feature highlights. On mobile, the panels disappear and you just get the clean form.
+
+Other fixes: all form inputs now show a visible orange glow when you tab into them (they didn't before — bad for keyboard users), the submit buttons animate properly on hover, passwords show a real-time checkmark when you've typed 8+ characters, and error messages now have an icon so they're easier to spot.
+
+On user profiles, the stats boxes (Projects/Upvotes/Saves) used to look like they should be clickable but weren't — now they have a recessed gray background so it's clear they're just displaying numbers. And if a user has no projects yet, instead of a bland "No projects" message, there's a proper empty state with an icon and a "Share your first project" button.
+
+### Everything feels smoother and more consistent now (April 16 — Iteration 6)
+
+Hover over any card on the site — project cards, category cards, the feature cards on the landing page — and they all respond the same way now: the border changes color and a subtle shadow slides in underneath. Before, every card had its own different hover behavior (some got shadows, some just changed border color, some did nothing). It felt inconsistent.
+
+Same with animations. When you hover over a button or filter chip, the color change now happens at the same speed everywhere (200ms). Before, some things changed instantly while others felt sluggish — now it all feels uniform and polished.
+
+This was a "boring but important" update — the kind of thing users feel rather than see. The site just feels more intentional and put together.
+
+**The UX sprint is now complete!** All backlog items including loading states are done. The next question: what do we focus on next?
+
+### Navigation now tells you where you are and where to go next (April 16 — Iteration 5)
+
+Three things changed:
+
+- **The header highlights which page you're on.** Before, the "Browse" and "Submit" links looked identical no matter where you were. Now the active page gets orange text and a little orange underline. Small thing, but it means you always know where you are.
+
+- **Project pages have breadcrumbs and related projects.** Instead of just a "Back to browse" link at the top, there's now a trail: Browse > Category > Project Title — and each piece is clickable. At the bottom of every project, you'll see "More in [Category]" with 3 related projects. No more dead ends.
+
+- **The footer matches the rest of the site.** It was dark gray (leftover from an earlier dark theme), now it's light gray like everything else.
+
+### The submit form got a complete UX overhaul (April 16 — Iteration 4)
+
+The "Share a Project" form was one long wall of fields with no structure. Now it's organized into three clear sections with numbered headers:
+
+- **Section 1: Project Basics** — title, description, story, category, difficulty, model. All required fields now have an orange asterisk so you know what's mandatory.
+
+- **Section 2: Your Build Journey** — this is the big one. The multi-step builder used to be hidden behind a tiny checkbox that said "This project has multiple steps." Most users would never find it. Now there are two big cards to choose from: "Multi-step" (the default!) and "Single prompt." Multi-step is selected by default because showing the step-by-step journey is what makes PathForge special.
+
+- **Section 3: Details & Publish** — tools, tags, and the final result. In multi-step mode, the "Final Result" is now called "Overall Outcome" with help text explaining it's a summary of all your steps.
+
+The "Add Step" button used to look like a plain text link. Now it's a proper full-width button with a dashed border that says "Add Step 3" (or whatever number you're on). Much easier to find. Each step card also shows a green dot when it's filled out, so you can see your progress at a glance.
+
+### The project detail page got a major visual upgrade (April 16 — Iteration 3)
+
+### Project detail page got a major flow + hierarchy upgrade (April 16 — Iteration 11)
+
+When you open a project, three big things changed:
+
+- **The step numbers are impossible to miss.** They used to be tiny text inside thin-bordered white squares. Now they're large bold white numbers on solid orange squares — each step is a clear visual anchor as you scroll down the page.
+- **The vertical pipe between steps actually animates.** There was a pipe-draw animation defined in the code but it was never actually turned on. Now it is — the connecting line draws itself when the page loads and is more visible (stronger opacity). It makes the page feel alive.
+- **The story comes first.** Previously, the author's name and the metadata chips (category, difficulty, model, tools) were all bunched between the title and the story section. Now the author appears right under the title for immediate human connection, the metadata is organized into two clean groups (context stuff like category/difficulty, and technical stuff like AI model/tools), and the Story section itself has a bigger heading and stronger background so it really stands out as "read this first."
+- **Every step header says "Step 1 of 3"** (or whatever the count is). Before, steps without titles had no header at all.
+
+### Project detail page improvements (April 16 — Iteration 3)
+
+When someone clicks into a project to see the full step-by-step build journey, the page now looks and feels much better:
+
+- **You can instantly tell prompts from results.** Before, they looked almost identical — just a tiny label difference. Now prompts have an orange stripe on the left and a warm background, while results have a green stripe and green tint. Your eye immediately knows "this is what the person typed" vs "this is what the AI gave back."
+
+- **The step-by-step flow feels like a real path.** The numbered circles on the left are bigger and bolder, connected by a gradient line. It actually looks like you're following a trail — which is the whole point of PathForge.
+
+- **Key info is in little tags at the top.** Instead of burying the AI model, difficulty, and tools in a cluttered text line, they're now neat little chips right under the title. You can scan them in a second.
+
+- **The author section looks real.** Colored avatar circle with the author's initial, their name, the date. Vote and bookmark buttons sit neatly to the right.
+
+- **"The Story" section pops.** The part where people explain what they built and why now has an orange accent bar — it signals "read this first."
+
+- **The copy button actually shows you it worked.** The whole button turns green with "Copied!" for a couple seconds.
+
+### The browse page got a redesign (April 16 — Iteration 2)
+
+- **Project cards show a mini step-flow.** Little numbered boxes with arrows between them — see at a glance that a project has 3 or 5 steps before you click in.
+- **Better filtering.** Search icon, filter labels, result count ("12 paths in Marketing at beginner level"), and a "Clear filters" link.
+- **Difficulty badges have colored dots.** Green for beginner, amber for intermediate, red for advanced.
+
+### The landing page hero got cleaned up (April 16 — Iteration 9)
+
+The hero section was doing too much — a colored badge, a big headline, three sentences of description, two equal-looking buttons, AND a mini flow diagram. A first-time visitor had too many things competing for their attention. Now it's much simpler: the headline dominates, the description is two short punchy lines instead of a paragraph, and there's one clear "Browse Build Paths" button with a subtle "or share your build" text link underneath. The mini flow diagram was removed from the hero (it's still in the Solution section below where it makes more sense). All section headings across the page are now the same size — before, "Why It Works" and "Popular Build Paths" were noticeably smaller than the other sections. The Popular Paths section also got a small orange accent bar on the left of its title, tying it to the brand.
+
+### The landing page got a full overhaul (April 16 — Iteration 1)
+
+- **New hero.** "See how it was built. Build it yourself." — tells you what PathForge is immediately.
+- **Pipe visual language.** Thin animated lines with pulsing dots connecting sections — feels like a living data flow (the "Flappy Bird pipes" idea).
+- **Better CTAs.** "Explore Paths" + "Share Your Build" + a low-commitment "or browse paths first" link.
+- **Solution flow diagram.** Four connected boxes: Describe → Prompt → Refine → Share.

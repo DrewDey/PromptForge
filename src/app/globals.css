@@ -46,6 +46,13 @@
   border-radius: 0 !important;
 }
 
+/* ─── Design Tokens ───
+ * Transitions: all interactive hover/focus states use 200ms ease
+ * Spacing: 4/8/16/24/32/48/64px (Tailwind 1/2/4/6/8/12/16)
+ * Chips: sm = px-2 py-0.5 | md = px-3 py-1.5
+ * Buttons: sm = px-4 py-2 | md = px-5 py-2.5 | lg = px-8 py-3.5
+ */
+
 /* Scrollbar styling */
 ::-webkit-scrollbar {
   width: 8px;
@@ -93,4 +100,38 @@
 
 .animate-card-slide-in {
   animation: cardSlideIn 0.5s ease-out both;
+}
+
+/* Subtle pulse for pipe connector nodes */
+@keyframes pulseSubtle {
+  0%, 100% { opacity: 0.7; transform: scale(1); }
+  50% { opacity: 1; transform: scale(1.3); }
+}
+
+.animate-pulse-subtle {
+  animation: pulseSubtle 3s ease-in-out infinite;
+}
+
+/* ─── Skeleton shimmer animation ─── */
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+.skeleton-shimmer {
+  background: linear-gradient(
+    90deg,
+    #f0f0f0 25%,
+    #e8e8e8 37%,
+    #f0f0f0 63%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.8s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .skeleton-shimmer {
+    animation: none;
+    background: #f0f0f0;
+  }
 }

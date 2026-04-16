@@ -1,6 +1,6 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+This file provides guidance to Claude/Cowork (claude.ai/code) when working with code in this repository. This is a reoccuring iteration that goes on every single hour of the day.
 
 ## Project
 
@@ -94,6 +94,32 @@ Core types in `src/lib/types.ts`: `Category`, `Profile`, `Prompt`, `PromptStep`,
 
 Hosted on Vercel (auto-deploys from `main` branch). Environment variables `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY` must be set in Vercel project settings.
 
+## Hourly Iteration System
+
+This project runs autonomous hourly iterations focused **purely on design, UX, visual polish, and production readiness**. No backend feature work during these iterations.
+
+### How it works
+Every hour, a fresh Claude Cowork session opens this project and acts as a **product manager with engineers** — reviewing what's been done, picking the next priority, implementing it, and logging the work.
+
+### Files that drive the iteration system
+- **`BACKLOG.md`** — Prioritized work items. Iterations pick the top unblocked item from the current sprint. This is the single source of truth for "what to work on next."
+- **`ITERATION_GUIDE.md`** — The full process guide. Read this if you're a new iteration session and need to understand how to operate.
+- **`ITERATION_LOG.md`** — History of what each iteration accomplished. Add your entry at the top when you finish.
+- **`QUESTIONS.md`** — Questions for Drew (the founder). Check for his responses at the start of each iteration and act on them. Add new questions when you need his input.
+- **`ITERATION_LOG.md`** also contains a **"Plain English Summary"** section at the very bottom. After each iteration, update this section with a non-technical description of what changed and why, written for Drew (a non-dev founder). Keep it cumulative — newest changes at the top of the summary. When Drew says he's reviewed, clear the reviewed items.
+
+### Iteration quick-start
+1. Read `BACKLOG.md` → pick the top unblocked item
+2. Read `QUESTIONS.md` → act on any responses from Drew
+3. Read `ITERATION_LOG.md` → see what was just done
+4. Do the work (design/UX only — no backend features)
+5. `npm run build` → must pass
+6. Commit, update BACKLOG.md + ITERATION_LOG.md
+7. Add questions to QUESTIONS.md if needed
+
+### Current focus: Design & UX Sprint
+The current sprint is about making PathForge look great, feel polished, and operate smoothly. Every change should be something a user would notice and appreciate. Think: visual hierarchy, spacing, typography, responsiveness, interaction feedback, loading states, empty states, transitions.
+
 ## Current state
 
-MVP deployed with Supabase connected. Working: auth (signup/login/logout), landing page, browse with category/difficulty/sort filters and search, project detail with step-by-step prompt→result flow, submit form with model dropdown and image upload UI, admin dashboard with role protection. Not yet wired: submit form persistence to database, image upload to Supabase Storage, upvote/bookmark backend, user profiles page, karma system.
+MVP deployed with Supabase connected. Working: auth (signup/login/logout), landing page, browse with category/difficulty/sort filters and search, project detail with step-by-step prompt→result flow, submit form with model dropdown and image upload UI, admin dashboard with role protection, voting/bookmarks, user profiles. Not yet wired: image upload to Supabase Storage, karma system.

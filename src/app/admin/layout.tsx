@@ -50,21 +50,21 @@ export default async function AdminLayout({ children }: { children: React.ReactN
         <nav className="space-y-1">
           <Link
             href="/admin"
-            className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-gray-600 hover:bg-gray-100 hover:text-gray-900 transition-colors"
+            className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-gray-600 hover:bg-gray-100 hover:text-gray-900 transition-colors duration-200"
           >
             <LayoutDashboard className="w-4 h-4" />
             Dashboard
           </Link>
           <Link
             href="/admin?tab=pending"
-            className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-gray-600 hover:bg-gray-100 hover:text-gray-900 transition-colors"
+            className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-gray-600 hover:bg-gray-100 hover:text-gray-900 transition-colors duration-200"
           >
             <FileText className="w-4 h-4" />
             Review Queue
           </Link>
           <Link
             href="/admin?tab=all"
-            className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-gray-600 hover:bg-gray-100 hover:text-gray-900 transition-colors"
+            className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-gray-600 hover:bg-gray-100 hover:text-gray-900 transition-colors duration-200"
           >
             <Settings className="w-4 h-4" />
             All Prompts

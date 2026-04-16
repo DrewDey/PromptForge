@@ -60,7 +60,7 @@ export default function ImageUpload({
       {images.length > 0 && (
         <div className="grid grid-cols-2 gap-3 mb-3">
           {images.map((img, idx) => (
-            <div key={idx} className="relative group rounded-lg overflow-hidden border border-gray-200">
+            <div key={idx} className="relative group overflow-hidden border border-gray-200">
               <img
                 src={img.preview}
                 alt={img.caption || `Upload ${idx + 1}`}
@@ -69,7 +69,7 @@ export default function ImageUpload({
               <button
                 type="button"
                 onClick={() => removeImage(idx)}
-                className="absolute top-2 right-2 w-6 h-6 bg-black/50 hover:bg-black/70 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                className="absolute top-2 right-2 w-6 h-6 bg-black/50 hover:bg-black/70 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
               >
                 <X className="w-3.5 h-3.5 text-white" />
               </button>
@@ -89,7 +89,7 @@ export default function ImageUpload({
       <button
         type="button"
         onClick={() => fileInputRef.current?.click()}
-        className="flex items-center gap-2 text-sm text-gray-500 hover:text-primary-600 bg-gray-50 hover:bg-primary-50 px-3 py-2 rounded-lg border border-dashed border-gray-300 hover:border-primary-300 transition-colors w-full justify-center"
+        className="flex items-center gap-2 text-sm text-gray-500 hover:text-brand-orange bg-gray-50 hover:bg-primary-50 px-3 py-2 border border-dashed border-gray-300 hover:border-brand-orange/40 transition-colors duration-200 w-full justify-center"
       >
         <ImagePlus className="w-4 h-4" />
         Add Screenshot

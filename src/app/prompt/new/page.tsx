@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { ArrowLeft, Plus, Trash2, ChevronDown, ChevronUp, LogIn } from 'lucide-react'
+import { ArrowLeft, Plus, Trash2, ChevronDown, ChevronUp, LogIn, FileText, GitBranch } from 'lucide-react'
 import { getModelsByProvider, getModelName } from '@/lib/models'
 import { submitProject } from '@/lib/actions'
 import ImageUpload from '@/components/ImageUpload'
@@ -22,6 +22,24 @@ const categories = [
 ]
 
 type Step = { title: string; content: string; result_content: string; description: string }
+
+function SectionHeader({ number, title, subtitle }: { number: number; title: string; subtitle: string }) {
+  return (
+    <div className="flex items-start gap-3 mb-5">
+      <div className="w-7 h-7 bg-brand-orange text-white text-xs font-bold flex items-center justify-center flex-shrink-0 mt-0.5">
+        {number}
+      </div>
+      <div>
+        <h2 className="text-lg font-bold text-gray-900">{title}</h2>
+        <p className="text-sm text-gray-500">{subtitle}</p>
+      </div>
+    </div>
+  )
+}
+
+function RequiredDot() {
+  return <span className="text-brand-orange ml-0.5">*</span>
+}
 
 export default function SubmitProjectPage() {
   const router = useRouter()
@@ -42,7 +60,7 @@ export default function SubmitProjectPage() {
   const [finalResult, setFinalResult] = useState('')
 
   // Multi-step state
-  const [isChain, setIsChain] = useState(false)
+  const [isChain, setIsChain] = useState(true) // Default to multi-step — it's the core feature
   const [steps, setSteps] = useState<Step[]>([{ title: '', content: '', result_content: '', description: '' }])
   const [expandedStep, setExpandedStep] = useState<number>(0)
 
@@ -175,7 +193,7 @@ export default function SubmitProjectPage() {
               setResultContent('')
               setFinalResult('')
               setSteps([{ title: '', content: '', result_content: '', description: '' }])
-              setIsChain(false)
+              setIsChain(true)
             }}
             className="text-gray-500 hover:text-gray-900 text-sm font-medium"
           >
@@ -186,16 +204,22 @@ export default function SubmitProjectPage() {
     )
   }
 
+  // Count filled steps for the summary
+  const filledSteps = steps.filter(s => s.title || s.content).length
+
   return (
     <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
-      <Link href="/browse" className="text-sm text-gray-500 hover:text-gray-300 flex items-center gap-1 mb-6">
+      <Link href="/browse" className="text-sm text-gray-500 hover:text-gray-900 flex items-center gap-1 mb-6">
         <ArrowLeft className="w-4 h-4" />
         Back to browse
       </Link>
 
       <h1 className="text-3xl font-bold text-gray-900 mb-2">Share a Project</h1>
-      <p className="text-gray-600 mb-8">
+      <p className="text-gray-600 mb-3">
         Share what you built with AI — the prompts, the process, and the results.
+      </p>
+      <p className="text-xs text-gray-400 mb-8">
+        Fields marked with <span className="text-brand-orange">*</span> are required.
       </p>
 
       {error && (
@@ -204,181 +228,339 @@ export default function SubmitProjectPage() {
         </div>
       )}
 
-      <form onSubmit={handleSubmit} className="space-y-6">
-        {/* Title */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Project Title</label>
-          <input
-            type="text"
-            required
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            placeholder="e.g., Complete Brand Identity Package for My Bakery"
-            className="w-full bg-white border border-gray-300 text-gray-900 placeholder-gray-400 px-4 py-2.5 text-sm focus:outline-none focus:border-brand-orange"
-          />
-        </div>
+      <form onSubmit={handleSubmit} className="space-y-10">
 
-        {/* Description */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Short Description</label>
-          <textarea
-            required
-            rows={2}
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-            placeholder="One or two sentences about what you built and the result"
-            className="w-full bg-white border border-gray-300 text-gray-900 placeholder-gray-400 px-4 py-2.5 text-sm focus:outline-none focus:border-brand-orange"
-          />
-        </div>
+        {/* ═══════ SECTION 1: PROJECT BASICS ═══════ */}
+        <section>
+          <SectionHeader number={1} title="Project Basics" subtitle="What did you build and in what domain?" />
 
-        {/* The Story */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">The Story</label>
-          <p className="text-xs text-gray-500 mb-1.5 block">What did you build and why? What problem were you solving?</p>
-          <textarea
-            required
-            rows={4}
-            value={story}
-            onChange={(e) => setStory(e.target.value)}
-            placeholder="Tell the story of your project — what you needed, why you used AI, and how it went..."
-            className="w-full bg-white border border-gray-300 text-gray-900 placeholder-gray-400 px-4 py-2.5 text-sm focus:outline-none focus:border-brand-orange"
-          />
-        </div>
+          <div className="space-y-5">
+            {/* Title */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Project Title <RequiredDot />
+              </label>
+              <input
+                type="text"
+                required
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                placeholder="e.g., Complete Brand Identity Package for My Bakery"
+                className="w-full bg-white border border-gray-300 text-gray-900 placeholder-gray-400 px-4 py-2.5 text-sm focus:outline-none focus:border-brand-orange focus:ring-1 focus:ring-brand-orange/20"
+              />
+            </div>
 
-        {/* Category, Difficulty, Model */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
-            <select required value={categorySlug} onChange={(e) => setCategorySlug(e.target.value)} className="w-full bg-white border border-gray-300 text-gray-900 px-4 py-2.5 text-sm focus:outline-none focus:border-brand-orange">
-              <option value="">Select</option>
-              {categories.map(cat => (
-                <option key={cat.slug} value={cat.slug}>{cat.name}</option>
-              ))}
-            </select>
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Difficulty</label>
-            <select required value={difficulty} onChange={(e) => setDifficulty(e.target.value)} className="w-full bg-white border border-gray-300 text-gray-900 px-4 py-2.5 text-sm focus:outline-none focus:border-brand-orange">
-              <option value="">Select</option>
-              <option value="beginner">Beginner</option>
-              <option value="intermediate">Intermediate</option>
-              <option value="advanced">Advanced</option>
-            </select>
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Model Used</label>
-            <select value={modelId} onChange={(e) => setModelId(e.target.value)} className="w-full bg-white border border-gray-300 text-gray-900 px-4 py-2.5 text-sm focus:outline-none focus:border-brand-orange">
-              <option value="">Select model</option>
-              {Object.entries(modelsByProvider).map(([provider, models]) => (
-                <optgroup key={provider} label={provider}>
-                  {models.map(m => (
-                    <option key={m.id} value={m.id}>{m.name}</option>
+            {/* Description */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Short Description <RequiredDot />
+              </label>
+              <textarea
+                required
+                rows={2}
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                placeholder="One or two sentences about what you built and the result"
+                className="w-full bg-white border border-gray-300 text-gray-900 placeholder-gray-400 px-4 py-2.5 text-sm focus:outline-none focus:border-brand-orange focus:ring-1 focus:ring-brand-orange/20"
+              />
+            </div>
+
+            {/* The Story */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                The Story <RequiredDot />
+              </label>
+              <p className="text-xs text-gray-500 mb-1.5 block">What did you build and why? What problem were you solving?</p>
+              <textarea
+                required
+                rows={4}
+                value={story}
+                onChange={(e) => setStory(e.target.value)}
+                placeholder="Tell the story of your project — what you needed, why you used AI, and how it went..."
+                className="w-full bg-white border border-gray-300 text-gray-900 placeholder-gray-400 px-4 py-2.5 text-sm focus:outline-none focus:border-brand-orange focus:ring-1 focus:ring-brand-orange/20"
+              />
+            </div>
+
+            {/* Category, Difficulty, Model */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Category <RequiredDot />
+                </label>
+                <select required value={categorySlug} onChange={(e) => setCategorySlug(e.target.value)} className="w-full bg-white border border-gray-300 text-gray-900 px-4 py-2.5 text-sm focus:outline-none focus:border-brand-orange focus:ring-1 focus:ring-brand-orange/20">
+                  <option value="">Select</option>
+                  {categories.map(cat => (
+                    <option key={cat.slug} value={cat.slug}>{cat.name}</option>
                   ))}
-                </optgroup>
-              ))}
-              <option value="other">Other</option>
-            </select>
-          </div>
-        </div>
-
-        {modelId === 'other' && (
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Model Name</label>
-            <input type="text" required value={customModel} onChange={(e) => setCustomModel(e.target.value)} placeholder="Enter the model name" className="w-full bg-white border border-gray-300 text-gray-900 placeholder-gray-400 px-4 py-2.5 text-sm focus:outline-none focus:border-brand-orange" />
-          </div>
-        )}
-
-        {/* Tools */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Tools & APIs Used <span className="text-gray-500 font-normal">(comma-separated)</span></label>
-          <input type="text" value={tools} onChange={(e) => setTools(e.target.value)} placeholder="e.g., Claude, Python, Google Sheets, Notion API" className="w-full bg-white border border-gray-300 text-gray-900 placeholder-gray-400 px-4 py-2.5 text-sm focus:outline-none focus:border-brand-orange" />
-        </div>
-
-        {/* Tags */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Tags <span className="text-gray-500 font-normal">(comma-separated)</span></label>
-          <input type="text" value={tags} onChange={(e) => setTags(e.target.value)} placeholder="e.g., branding, small business, marketing" className="w-full bg-white border border-gray-300 text-gray-900 placeholder-gray-400 px-4 py-2.5 text-sm focus:outline-none focus:border-brand-orange" />
-        </div>
-
-        {/* Multi-step toggle */}
-        <div className="flex items-center gap-3 p-4 bg-gray-50 border border-gray-200">
-          <label className="flex items-center gap-2 cursor-pointer">
-            <input type="checkbox" checked={isChain} onChange={(e) => setIsChain(e.target.checked)} className="border-gray-300 text-brand-orange focus:ring-brand-orange" />
-            <span className="text-sm font-medium text-gray-700">This project has multiple steps</span>
-          </label>
-          <span className="text-xs text-gray-500">Show the prompt and result at each step</span>
-        </div>
-
-        {/* Single prompt or steps */}
-        {!isChain ? (
-          <>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">The Prompt You Used</label>
-              <textarea required rows={8} value={promptContent} onChange={(e) => setPromptContent(e.target.value)} placeholder="Paste the prompt you used to create this project..." className="w-full bg-white border border-gray-300 text-gray-900 placeholder-gray-400 px-4 py-2.5 text-sm font-mono focus:outline-none focus:border-brand-orange" />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">The Result <span className="text-gray-500 font-normal">(optional)</span></label>
-              <p className="text-xs text-gray-500 mb-1.5 block">What did the AI produce? Share text, screenshots, or both.</p>
-              <textarea rows={6} value={resultContent} onChange={(e) => setResultContent(e.target.value)} placeholder="Paste or describe what the AI generated..." className="w-full bg-white border border-gray-300 text-gray-900 placeholder-gray-400 px-4 py-2.5 text-sm focus:outline-none focus:border-brand-orange mb-3" />
-              <ImageUpload images={resultImages} onChange={setResultImages} label="Screenshots" />
-            </div>
-          </>
-        ) : (
-          <div className="space-y-3">
-            <label className="block text-sm font-medium text-gray-700">Steps</label>
-            {steps.map((step, idx) => (
-              <div key={idx} className="bg-white border border-gray-200 overflow-hidden">
-                <button type="button" onClick={() => setExpandedStep(expandedStep === idx ? -1 : idx)} className="w-full flex items-center justify-between px-4 py-3 bg-gray-50 hover:bg-gray-100 transition-colors">
-                  <div className="flex items-center gap-3">
-                    <span className="w-7 h-7 bg-brand-orange text-white text-xs font-bold flex items-center justify-center">{idx + 1}</span>
-                    <span className="text-sm font-medium text-gray-900">{step.title || `Step ${idx + 1}`}</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    {steps.length > 1 && (
-                      <button type="button" onClick={(e) => { e.stopPropagation(); removeStep(idx) }} className="text-red-500 hover:text-red-700 p-1">
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    )}
-                    {expandedStep === idx ? <ChevronUp className="w-4 h-4 text-gray-400" /> : <ChevronDown className="w-4 h-4 text-gray-400" />}
-                  </div>
-                </button>
-                {expandedStep === idx && (
-                  <div className="p-4 space-y-3 border-t border-gray-200">
-                    <input type="text" required placeholder="Step title (e.g., Brand Discovery)" value={step.title} onChange={(e) => updateStep(idx, 'title', e.target.value)} className="w-full bg-white border border-gray-300 text-gray-900 placeholder-gray-400 px-3 py-2 text-sm focus:outline-none focus:border-brand-orange" />
-                    <input type="text" placeholder="Brief description of this step (optional)" value={step.description} onChange={(e) => updateStep(idx, 'description', e.target.value)} className="w-full bg-white border border-gray-300 text-gray-900 placeholder-gray-400 px-3 py-2 text-sm focus:outline-none focus:border-brand-orange" />
-                    <div>
-                      <label className="text-xs font-semibold text-brand-orange uppercase tracking-wide mb-1 block">Prompt</label>
-                      <textarea required rows={5} placeholder="The prompt you used at this step..." value={step.content} onChange={(e) => updateStep(idx, 'content', e.target.value)} className="w-full bg-white border border-gray-300 text-gray-900 placeholder-gray-400 px-3 py-2 text-sm font-mono focus:outline-none focus:border-brand-orange" />
-                    </div>
-                    <div>
-                      <label className="text-xs font-semibold text-green-600 uppercase tracking-wide mb-1 block">Result <span className="text-gray-500 font-normal normal-case">(optional — text, screenshots, or both)</span></label>
-                      <textarea rows={4} placeholder="What did the AI produce at this step?" value={step.result_content} onChange={(e) => updateStep(idx, 'result_content', e.target.value)} className="w-full bg-white border border-gray-300 text-gray-900 placeholder-gray-400 px-3 py-2 text-sm focus:outline-none focus:border-brand-orange mb-3" />
-                      <ImageUpload images={stepImages[idx] ?? []} onChange={(imgs) => setStepImages({ ...stepImages, [idx]: imgs })} label="Screenshots" />
-                    </div>
-                  </div>
-                )}
+                </select>
               </div>
-            ))}
-            <button type="button" onClick={addStep} className="flex items-center gap-2 text-sm text-brand-orange hover:opacity-80 font-medium mt-2">
-              <Plus className="w-4 h-4" /> Add Step
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Difficulty <RequiredDot />
+                </label>
+                <select required value={difficulty} onChange={(e) => setDifficulty(e.target.value)} className="w-full bg-white border border-gray-300 text-gray-900 px-4 py-2.5 text-sm focus:outline-none focus:border-brand-orange focus:ring-1 focus:ring-brand-orange/20">
+                  <option value="">Select</option>
+                  <option value="beginner">Beginner</option>
+                  <option value="intermediate">Intermediate</option>
+                  <option value="advanced">Advanced</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Model Used</label>
+                <select value={modelId} onChange={(e) => setModelId(e.target.value)} className="w-full bg-white border border-gray-300 text-gray-900 px-4 py-2.5 text-sm focus:outline-none focus:border-brand-orange focus:ring-1 focus:ring-brand-orange/20">
+                  <option value="">Select model</option>
+                  {Object.entries(modelsByProvider).map(([provider, models]) => (
+                    <optgroup key={provider} label={provider}>
+                      {models.map(m => (
+                        <option key={m.id} value={m.id}>{m.name}</option>
+                      ))}
+                    </optgroup>
+                  ))}
+                  <option value="other">Other</option>
+                </select>
+              </div>
+            </div>
+
+            {modelId === 'other' && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Model Name <RequiredDot />
+                </label>
+                <input type="text" required value={customModel} onChange={(e) => setCustomModel(e.target.value)} placeholder="Enter the model name" className="w-full bg-white border border-gray-300 text-gray-900 placeholder-gray-400 px-4 py-2.5 text-sm focus:outline-none focus:border-brand-orange focus:ring-1 focus:ring-brand-orange/20" />
+              </div>
+            )}
+          </div>
+        </section>
+
+        {/* Section divider */}
+        <div className="border-t border-gray-200" />
+
+        {/* ═══════ SECTION 2: YOUR BUILD JOURNEY ═══════ */}
+        <section>
+          <SectionHeader number={2} title="Your Build Journey" subtitle="Show how you built it — the prompts and results at each step." />
+
+          {/* Mode toggle — prominent visual choice */}
+          <div className="grid grid-cols-2 gap-3 mb-6">
+            <button
+              type="button"
+              onClick={() => setIsChain(true)}
+              aria-pressed={isChain}
+              className={`flex items-center gap-3 p-4 border-2 text-left transition-all duration-200 ${
+                isChain
+                  ? 'border-brand-orange bg-primary-50'
+                  : 'border-gray-200 bg-white hover:border-gray-300 hover:bg-gray-50'
+              }`}
+            >
+              <GitBranch className={`w-5 h-5 flex-shrink-0 ${isChain ? 'text-brand-orange' : 'text-gray-400'}`} />
+              <div>
+                <div className={`text-sm font-medium ${isChain ? 'text-gray-900' : 'text-gray-600'}`}>Multi-step</div>
+                <div className="text-xs text-gray-500">Show each prompt→result</div>
+              </div>
+            </button>
+            <button
+              type="button"
+              onClick={() => setIsChain(false)}
+              aria-pressed={!isChain}
+              className={`flex items-center gap-3 p-4 border-2 text-left transition-all duration-200 ${
+                !isChain
+                  ? 'border-brand-orange bg-primary-50'
+                  : 'border-gray-200 bg-white hover:border-gray-300 hover:bg-gray-50'
+              }`}
+            >
+              <FileText className={`w-5 h-5 flex-shrink-0 ${!isChain ? 'text-brand-orange' : 'text-gray-400'}`} />
+              <div>
+                <div className={`text-sm font-medium ${!isChain ? 'text-gray-900' : 'text-gray-600'}`}>Single prompt</div>
+                <div className="text-xs text-gray-500">One prompt, one result</div>
+              </div>
             </button>
           </div>
-        )}
 
-        {/* Final Result */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Final Result <span className="text-gray-500 font-normal">(optional)</span></label>
-          <p className="text-xs text-gray-500 mb-1.5 block">Summarize the outcome. What did you end up with? Any metrics?</p>
-          <textarea rows={4} value={finalResult} onChange={(e) => setFinalResult(e.target.value)} placeholder="The final result was... We saw a 23% improvement in..." className="w-full bg-white border border-gray-300 text-gray-900 placeholder-gray-400 px-4 py-2.5 text-sm focus:outline-none focus:border-brand-orange" />
+          {/* Single prompt or multi-step */}
+          {!isChain ? (
+            <div className="space-y-5">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  The Prompt You Used <RequiredDot />
+                </label>
+                <textarea required rows={8} value={promptContent} onChange={(e) => setPromptContent(e.target.value)} placeholder="Paste the prompt you used to create this project..." className="w-full bg-white border border-gray-300 text-gray-900 placeholder-gray-400 px-4 py-2.5 text-sm font-mono focus:outline-none focus:border-brand-orange focus:ring-1 focus:ring-brand-orange/20" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">The Result <span className="text-gray-400 font-normal">(optional)</span></label>
+                <p className="text-xs text-gray-500 mb-1.5 block">What did the AI produce? Share text, screenshots, or both.</p>
+                <textarea rows={6} value={resultContent} onChange={(e) => setResultContent(e.target.value)} placeholder="Paste or describe what the AI generated..." className="w-full bg-white border border-gray-300 text-gray-900 placeholder-gray-400 px-4 py-2.5 text-sm focus:outline-none focus:border-brand-orange focus:ring-1 focus:ring-brand-orange/20 mb-3" />
+                <ImageUpload images={resultImages} onChange={setResultImages} label="Screenshots" />
+              </div>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {/* Step cards */}
+              {steps.map((step, idx) => (
+                <div key={idx} className={`bg-white border overflow-hidden transition-all duration-200 ${expandedStep === idx ? 'border-brand-orange/40 shadow-sm' : 'border-gray-200'}`}>
+                  {/* Step header */}
+                  <button
+                    type="button"
+                    onClick={() => setExpandedStep(expandedStep === idx ? -1 : idx)}
+                    aria-expanded={expandedStep === idx}
+                    className={`w-full flex items-center justify-between px-4 py-3 transition-colors duration-200 cursor-pointer ${
+                      expandedStep === idx ? 'bg-primary-50' : 'bg-gray-50 hover:bg-gray-100'
+                    }`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <span className={`w-7 h-7 text-xs font-bold flex items-center justify-center transition-colors duration-200 ${
+                        expandedStep === idx
+                          ? 'bg-brand-orange text-white'
+                          : step.title || step.content
+                            ? 'bg-brand-orange/20 text-brand-orange'
+                            : 'bg-gray-200 text-gray-500'
+                      }`}>{idx + 1}</span>
+                      <span className="text-sm font-medium text-gray-900 text-left">
+                        {step.title || `Step ${idx + 1}`}
+                        {!step.title && !step.content && expandedStep !== idx && (
+                          <span className="text-gray-400 font-normal ml-1">— click to edit</span>
+                        )}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {/* Filled indicator */}
+                      {step.title && step.content && expandedStep !== idx && (
+                        <span className="w-2 h-2 bg-green-500 flex-shrink-0" />
+                      )}
+                      {steps.length > 1 && (
+                        <button type="button" onClick={(e) => { e.stopPropagation(); removeStep(idx) }} className="text-gray-400 hover:text-red-500 p-1 transition-colors duration-200" title="Remove step">
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      )}
+                      {expandedStep === idx ? <ChevronUp className="w-5 h-5 text-gray-500" /> : <ChevronDown className="w-5 h-5 text-gray-400" />}
+                    </div>
+                  </button>
+
+                  {/* Expanded step form */}
+                  {expandedStep === idx && (
+                    <div className="p-4 space-y-4 border-t border-gray-200">
+                      <div>
+                        <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wide mb-1">
+                          Step Title <RequiredDot />
+                        </label>
+                        <input
+                          type="text"
+                          required
+                          placeholder="e.g., Brand Discovery, Initial Draft, Refinement..."
+                          value={step.title}
+                          onChange={(e) => updateStep(idx, 'title', e.target.value)}
+                          className="w-full bg-white border border-gray-300 text-gray-900 placeholder-gray-400 px-3 py-2 text-sm focus:outline-none focus:border-brand-orange focus:ring-1 focus:ring-brand-orange/20"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">
+                          Brief Description <span className="text-gray-400 font-normal normal-case">(optional)</span>
+                        </label>
+                        <input
+                          type="text"
+                          placeholder="What was the goal of this step?"
+                          value={step.description}
+                          onChange={(e) => updateStep(idx, 'description', e.target.value)}
+                          className="w-full bg-white border border-gray-300 text-gray-900 placeholder-gray-400 px-3 py-2 text-sm focus:outline-none focus:border-brand-orange focus:ring-1 focus:ring-brand-orange/20"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-xs font-semibold text-brand-orange uppercase tracking-wide mb-1 block">
+                          Prompt <RequiredDot />
+                        </label>
+                        <textarea
+                          required
+                          rows={5}
+                          placeholder="The prompt you used at this step..."
+                          value={step.content}
+                          onChange={(e) => updateStep(idx, 'content', e.target.value)}
+                          className="w-full bg-white border border-gray-300 text-gray-900 placeholder-gray-400 px-3 py-2 text-sm font-mono focus:outline-none focus:border-brand-orange focus:ring-1 focus:ring-brand-orange/20"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-xs font-semibold text-green-600 uppercase tracking-wide mb-1 block">
+                          Result <span className="text-gray-400 font-normal normal-case">(optional — text, screenshots, or both)</span>
+                        </label>
+                        <textarea
+                          rows={4}
+                          placeholder="What did the AI produce at this step?"
+                          value={step.result_content}
+                          onChange={(e) => updateStep(idx, 'result_content', e.target.value)}
+                          className="w-full bg-white border border-gray-300 text-gray-900 placeholder-gray-400 px-3 py-2 text-sm focus:outline-none focus:border-brand-orange focus:ring-1 focus:ring-brand-orange/20 mb-3"
+                        />
+                        <ImageUpload images={stepImages[idx] ?? []} onChange={(imgs) => setStepImages({ ...stepImages, [idx]: imgs })} label="Screenshots" />
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ))}
+
+              {/* Add Step button — prominent secondary action */}
+              <button
+                type="button"
+                onClick={addStep}
+                className="w-full flex items-center justify-center gap-2 text-sm font-medium text-brand-orange bg-primary-50 border-2 border-dashed border-brand-orange/30 px-4 py-3 hover:bg-primary-100 hover:border-brand-orange/50 transition-all duration-200"
+              >
+                <Plus className="w-4 h-4" /> Add Step {steps.length + 1}
+              </button>
+
+              {/* Step count summary */}
+              {filledSteps > 0 && (
+                <p className="text-xs text-gray-500 text-center">
+                  {filledSteps} step{filledSteps !== 1 ? 's' : ''} filled out of {steps.length}
+                </p>
+              )}
+            </div>
+          )}
+        </section>
+
+        {/* Section divider */}
+        <div className="border-t border-gray-200" />
+
+        {/* ═══════ SECTION 3: DETAILS & PUBLISH ═══════ */}
+        <section>
+          <SectionHeader number={3} title="Details & Publish" subtitle="Add tags, tools, and your overall result." />
+
+          <div className="space-y-5">
+            {/* Tools */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Tools & APIs Used <span className="text-gray-400 font-normal">(comma-separated)</span></label>
+              <input type="text" value={tools} onChange={(e) => setTools(e.target.value)} placeholder="e.g., Claude, Python, Google Sheets, Notion API" className="w-full bg-white border border-gray-300 text-gray-900 placeholder-gray-400 px-4 py-2.5 text-sm focus:outline-none focus:border-brand-orange focus:ring-1 focus:ring-brand-orange/20" />
+            </div>
+
+            {/* Tags */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Tags <span className="text-gray-400 font-normal">(comma-separated)</span></label>
+              <input type="text" value={tags} onChange={(e) => setTags(e.target.value)} placeholder="e.g., branding, small business, marketing" className="w-full bg-white border border-gray-300 text-gray-900 placeholder-gray-400 px-4 py-2.5 text-sm focus:outline-none focus:border-brand-orange focus:ring-1 focus:ring-brand-orange/20" />
+            </div>
+
+            {/* Final Result / Overall Outcome */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                {isChain ? 'Overall Outcome' : 'Final Result'} <span className="text-gray-400 font-normal">(optional)</span>
+              </label>
+              <p className="text-xs text-gray-500 mb-1.5 block">
+                {isChain
+                  ? 'Summarize the final outcome after all steps. Leave blank if your step results tell the full story.'
+                  : 'Summarize the outcome. What did you end up with? Any metrics?'
+                }
+              </p>
+              <textarea rows={4} value={finalResult} onChange={(e) => setFinalResult(e.target.value)} placeholder={isChain ? 'After all the steps, the final outcome was...' : 'The final result was... We saw a 23% improvement in...'} className="w-full bg-white border border-gray-300 text-gray-900 placeholder-gray-400 px-4 py-2.5 text-sm focus:outline-none focus:border-brand-orange focus:ring-1 focus:ring-brand-orange/20" />
+            </div>
+          </div>
+        </section>
+
+        {/* Submit */}
+        <div className="border-t border-gray-200 pt-6">
+          <button
+            type="submit"
+            disabled={submitting}
+            className="w-full bg-brand-orange text-white py-3.5 font-medium text-base hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {submitting ? 'Submitting...' : 'Submit for Review'}
+          </button>
+          <p className="text-xs text-gray-400 text-center mt-2">
+            Your project will be reviewed by an admin before appearing publicly.
+          </p>
         </div>
-
-        <button
-          type="submit"
-          disabled={submitting}
-          className="w-full bg-brand-orange text-white py-3 font-medium hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          {submitting ? 'Submitting...' : 'Submit for Review'}
-        </button>
       </form>
     </div>
   )

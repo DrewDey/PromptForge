@@ -1,6 +1,6 @@
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
-import { Calendar, ArrowUp, Bookmark, Layers, Award } from 'lucide-react'
+import { Calendar, ArrowUp, Bookmark, Layers, Award, Plus } from 'lucide-react'
 import { getProfileByUsername, getProjectsByAuthor, getAuthorStats } from '@/lib/data'
 import PromptCard from '@/components/PromptCard'
 
@@ -66,26 +66,26 @@ export default async function UserProfilePage({
         </div>
       </div>
 
-      {/* Stats */}
+      {/* Stats — non-interactive, visually distinguished from clickable cards */}
       <div className="grid grid-cols-3 gap-4 mb-8">
-        <div className="bg-white border border-gray-200 p-4 text-center">
+        <div className="bg-gray-50 border border-gray-100 p-4 text-center">
           <div className="flex items-center justify-center gap-1.5 text-gray-400 mb-1">
             <Layers className="w-4 h-4" />
-            <span className="text-xs font-medium">Projects</span>
+            <span className="text-xs font-medium uppercase tracking-wide">Projects</span>
           </div>
           <p className="text-2xl font-bold text-gray-900">{stats.totalProjects}</p>
         </div>
-        <div className="bg-white border border-gray-200 p-4 text-center">
+        <div className="bg-gray-50 border border-gray-100 p-4 text-center">
           <div className="flex items-center justify-center gap-1.5 text-gray-400 mb-1">
             <ArrowUp className="w-4 h-4" />
-            <span className="text-xs font-medium">Upvotes</span>
+            <span className="text-xs font-medium uppercase tracking-wide">Upvotes</span>
           </div>
           <p className="text-2xl font-bold text-gray-900">{stats.totalUpvotes}</p>
         </div>
-        <div className="bg-white border border-gray-200 p-4 text-center">
+        <div className="bg-gray-50 border border-gray-100 p-4 text-center">
           <div className="flex items-center justify-center gap-1.5 text-gray-400 mb-1">
             <Bookmark className="w-4 h-4" />
-            <span className="text-xs font-medium">Saves</span>
+            <span className="text-xs font-medium uppercase tracking-wide">Saves</span>
           </div>
           <p className="text-2xl font-bold text-gray-900">{stats.totalBookmarks}</p>
         </div>
@@ -97,9 +97,18 @@ export default async function UserProfilePage({
           Projects ({projects.length})
         </h2>
         {projects.length === 0 ? (
-          <div className="bg-white border border-gray-200 p-10 text-center text-gray-500">
-            <p className="mb-1">No projects yet.</p>
-            <p className="text-sm">This user hasn&apos;t shared any projects.</p>
+          <div className="bg-white border border-gray-200 border-dashed p-12 text-center">
+            <div className="w-12 h-12 mx-auto mb-4 bg-brand-orange/10 border border-brand-orange/20 flex items-center justify-center">
+              <Plus className="w-6 h-6 text-brand-orange" />
+            </div>
+            <p className="text-gray-900 font-medium mb-1">No projects yet</p>
+            <p className="text-sm text-gray-500 mb-4">This user hasn&apos;t shared any AI projects.</p>
+            <Link
+              href="/prompt/new"
+              className="inline-flex items-center gap-2 bg-brand-orange text-white px-5 py-2.5 text-sm font-medium hover:bg-brand-orange-dark transition-colors duration-200"
+            >
+              Share your first project
+            </Link>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">

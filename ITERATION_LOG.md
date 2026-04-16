@@ -5,6 +5,87 @@
 
 ---
 
+## 2026-04-16 — Iteration 23: Landing Problem-Card Hierarchy + Auth Page Design System Consistency
+
+**Audit findings** (top problems identified across two parallel audit areas):
+
+*Area A — Button hierarchy inconsistency across pages:*
+1. Auth submit buttons diverge from landing primary spec: `font-medium` vs landing's `font-bold`, `duration-200` vs site-standard `duration-150`, missing `focus-visible` ring, missing `min-h-11` touch target.
+2. Auth pages (login/signup) still use raw `gray-*` Tailwind tokens (~15 instances: `bg-gray-50`, `text-gray-900`, `text-gray-700`, `text-gray-500`, `text-gray-400`, `border-gray-300`, `placeholder-gray-400`) — the site had otherwise migrated to `surface-*` tokens. Last holdout.
+3. Secondary buttons/links have fragmented padding/font-weight specs across pages (addressed partially, wider cleanup deferred).
+
+*Area B — Landing problem cards have zero visual hierarchy:*
+1. All four problem cards rendered pixel-identical (same `bg-white border border-surface-200 p-6`, same `font-bold text-sm` titles, same `text-sm text-surface-500` body, same `w-1.5 h-1.5 bg-brand-orange` dot).
+2. "Blank Chat Tax" is semantically the root insight (the other three are consequences/symptoms) but the design treats them as co-equal — no size, typography, icon, or color signal.
+3. Iteration 22 explicitly scoped this out as "candidate for next round."
+
+**Research insights** (Linear, Vercel, Geist UI, Stripe, Apple, GitHub Primer):
+- **Typography-only hierarchy** (Apple product pages): one dominant headline at +3–4 type steps larger with bolder weight; no color shift needed. Fits light-theme minimalism.
+- **Accent line on primary card only** (Stripe, Notion): 2–4px left border in accent color on the one card that matters. Works at equal or unequal sizes.
+- **Consistent primary button spec** (Geist UI, Stripe): single color fill, same font-weight everywhere, opacity-based disabled state, sharp corners. No per-page variants — one primary, one secondary, one destructive. Tight system.
+- **"Size asymmetry" + "symmetric supporting cards"** (Netflix thumbnail research, modern SaaS): one dominant card followed by 3 equal-weight supporting cards creates instant Z-scan clarity.
+
+**Design brief** (3 primary goals):
+1. Promote "Blank Chat Tax" to a dominant primary card: full-width, left accent bar (`border-l-4 border-l-brand-orange`), larger typography (`text-xl sm:text-2xl font-black` title, `text-base` body), "The root problem" eyebrow. Three sibling cards demoted to a 3-col grid below with smaller padding (`p-5`), subordinate `surface-400` dot icons, and unchanged `text-sm` type.
+2. Migrate all `gray-*` tokens in `src/app/auth/login/page.tsx` + `src/app/auth/signup/page.tsx` to `surface-*` equivalents. Normalize `duration-200` → `duration-150`. Zero `gray-*` classes should remain after.
+3. Align auth submit buttons to the landing primary button spec: `font-bold`, `duration-150`, `focus-visible:outline-2 focus-visible:outline-brand-orange focus-visible:outline-offset-2`, `min-h-11`. Keep the full-width layout (auth is form-embedded, not a hero CTA).
+
+**What was implemented**:
+
+*Landing page (`src/app/page.tsx`):*
+- Restructured `THE PROBLEM` section from `grid-cols-1 md:grid-cols-2 gap-4` (2x2 peer layout) to `space-y-4` wrapper with a primary card + nested 3-col grid underneath.
+- **Primary card** ("Blank Chat Tax"): `bg-white border border-surface-200 border-l-4 border-l-brand-orange p-6 sm:p-8` with eyebrow (`text-xs font-bold uppercase tracking-widest text-brand-orange`), `font-black text-xl sm:text-2xl text-surface-900` title, `text-base text-surface-600` body, `max-w-2xl` body constraint for readability, kept hover shadow.
+- **Supporting row** (Hidden Craftsmanship / Weak Reproducibility / Lost Branches): `grid-cols-1 md:grid-cols-3 gap-4` with `p-5` (was `p-6`), `w-1.5 h-1.5 bg-surface-400` dots (was `bg-brand-orange`) with `aria-hidden="true"`, unchanged text-sm typography.
+- File-header comment refreshed to describe iteration 23 changes; iteration 22 history compressed to one line to keep header scannable.
+
+*Login page (`src/app/auth/login/page.tsx`):*
+- `bg-gray-50` → `bg-surface-50` (page container)
+- `text-gray-900` → `text-surface-900` (h1 "Welcome back")
+- `text-gray-500` → `text-surface-500` (subtitle, signup-link caption)
+- `text-gray-700` → `text-surface-700` (input labels)
+- `border-gray-300` → `border-surface-300` (input borders)
+- `text-gray-900 placeholder-gray-400` → `text-surface-900 placeholder-surface-400`
+- All `transition-colors duration-200` → `duration-150`
+- Submit button: `font-medium` → `font-bold`; added `focus-visible:outline-2 focus-visible:outline-brand-orange focus-visible:outline-offset-2 min-h-11`
+- Signup-link font-weight: `font-medium` → `font-semibold` (harmonization — flagged by reviewer as scope-adjacent but accepted)
+
+*Signup page (`src/app/auth/signup/page.tsx`):*
+- Same token migration as login (covers 3 inputs: username, email, password + success-state panel + "check your email" heading).
+- Password-strength helper: `border-gray-300` → `border-surface-300`, `text-gray-400` → `text-surface-400`, durations normalized.
+- Submit button: same primary-spec alignment as login.
+- Login-link font-weight: `font-medium` → `font-semibold`.
+
+**Review outcome**: Approve with nits. Reviewer confirmed:
+- Zero `gray-*` classes remain in `src/app/auth/` (verified via grep).
+- Zero `duration-200` stragglers in `src/app/auth/`.
+- "Blank Chat Tax" genuinely dominant (border-l accent, eyebrow, font-black text-2xl).
+- Supporting dots correctly demoted with `aria-hidden="true"`.
+- Mobile degrades cleanly (`p-6 sm:p-8`, `grid-cols-1 md:grid-cols-3`).
+- Button parity between auth and landing verified token-by-token.
+
+*Nits addressed:*
+- **Nit #3 (fixed)**: Primary card eyebrow was `text-[10px]` — inconsistent with other page eyebrows at `text-xs`. Unified to `text-xs`.
+
+*Nits acknowledged (not fixed):*
+- **Nit #1**: Auth link font-weight bump (`font-medium` → `font-semibold`) was a scope-adjacent harmonization not explicitly in the brief. Called out here so Drew is aware.
+- **Nit #2**: Primary card eyebrow + title are read as two separate blocks by screen readers. Valid markup, could be tightened with `aria-describedby`. Low priority.
+- **Nit #4**: Primary card inherits same hover shadow as small cards; reads proportionally lighter on a larger footprint. Intentional consistency over proportionality.
+- **Nit #5**: Primary card body has `max-w-2xl` — left-aligned with empty right space is deliberate readability choice.
+
+**Verification:**
+- `npx tsc --noEmit` — clean, zero errors (this is the reliable signal since Vercel builds from clean state)
+- `npm run build` blocked by known `.next` cache `.fuse_hidden*` permission issue (documented sandbox limitation per ITERATION_GUIDE)
+- `next lint` and `eslint` both blocked by known v9 migration issue (pre-existing, not this iteration's problem)
+- After-screenshot deferred: sandbox localhost not reachable from Drew's Chrome MCP (same fallback as iteration 22)
+
+**What's next:**
+- Problem-card visual hierarchy is now addressed. Remaining backlog #7 work: a site-wide Button component to finish the button-system consistency story (currently each page inlines its own variants).
+- Browse page image-thumbnail question (Q10) still open — blocker for that work.
+- Seed content SQL rewrite (BACKLOG #6) remains the biggest unaddressed item.
+- Admin action buttons (`AdminPromptRow.tsx`) have their own ad-hoc palette — flagged by audit but not addressed this iteration.
+
+---
+
 ## 2026-04-16 — Iteration 22: Landing Page — Screenshot-Driven Overhaul (Kill Pipes, Kill Green, Migrate Palette) + New Screenshot Requirement
 
 **Process change (Drew's direction, mid-session):**
@@ -877,6 +958,16 @@ Drew asked: "Would you be able to add two instructions to take screenshots of ev
 # Plain English Summary (for Drew)
 
 > What's actually changed on the site, in normal human language. Newest at the top. Let me know when you've reviewed and I'll clear the old stuff.
+
+### The landing page finally has a "main" problem — and the auth pages join the design system (April 16 — Iteration 23)
+
+Two things got better this round: the landing page's problem section actually tells a story now, and the login/signup pages finally look like they belong on the same site as everything else.
+
+**The landing page problem section now has a clear "main" problem.** Before, there were four equal-sized cards stacked in a 2x2 grid: "Blank Chat Tax," "Hidden Craftsmanship," "Weak Reproducibility," and "Lost Branches." They were all the same size, same typography, same small orange dot icon. Nothing told a visitor "this is the main problem and these three are consequences of it" — even though that's what the words were actually saying. Now "Blank Chat Tax" sits at the top as a wider, taller card with a bold orange bar down its left edge, a little "THE ROOT PROBLEM" label above it, and a much bigger, bolder title. The other three cards moved into a three-across row underneath, smaller and with neutral gray dots instead of orange ones. The hierarchy matches the message: blank-chat is the problem; the other three are what that problem causes. The eye lands on it first, which is the right thing to land on.
+
+**Login and signup pages now use the same color palette as the rest of the site.** Every other page migrated to a cooler zinc-based color palette weeks ago, but the auth pages were still using plain gray. If you looked carefully you could see it — the form input borders, the subtitle text, the page background were all slightly warmer and more generic than everything else. Now they use the same cool palette, which doesn't jump out as "look at me I fixed a thing" but it's the kind of detail that makes a site feel finished.
+
+**The "Log in" and "Create Account" buttons match the hero CTA.** Before, the auth submit buttons used slightly different typography (medium weight), missing keyboard focus ring, and no minimum tap height for mobile. Now they match the "Browse Build Paths" button on the home page exactly — same font weight, same keyboard focus behavior, same 44px minimum height. Small but important for a site that's trying to feel like a real premium tool.
 
 ### Landing page feels calmer and more on-brand, and every iteration will now use screenshots (April 16 — Iteration 22)
 

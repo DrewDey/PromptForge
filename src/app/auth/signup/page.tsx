@@ -59,18 +59,18 @@ export default function SignupPage() {
 
   if (success) {
     return (
-      <div className="min-h-[80vh] flex items-center justify-center px-4 bg-gray-50">
+      <div className="min-h-[80vh] flex items-center justify-center px-4 bg-surface-50">
         <div className="w-full max-w-sm text-center">
           <div className="w-16 h-16 mx-auto mb-4 bg-brand-orange/10 border border-brand-orange/20 flex items-center justify-center">
             <svg className="w-8 h-8 text-brand-orange" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="square" strokeLinejoin="miter" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
             </svg>
           </div>
-          <h1 className="text-xl font-bold text-gray-900 mb-2">Check your email</h1>
-          <p className="text-gray-600 text-sm mb-6">
+          <h1 className="text-xl font-bold text-surface-900 mb-2">Check your email</h1>
+          <p className="text-surface-600 text-sm mb-6">
             We sent you a confirmation link. Click it to activate your account.
           </p>
-          <Link href="/auth/login" className="text-brand-orange hover:text-brand-orange-dark transition-colors duration-200 font-medium text-sm">
+          <Link href="/auth/login" className="text-brand-orange hover:text-brand-orange-dark focus-visible:outline-2 focus-visible:outline-brand-orange focus-visible:outline-offset-2 transition-colors duration-150 font-semibold text-sm">
             Go to login
           </Link>
         </div>
@@ -79,7 +79,7 @@ export default function SignupPage() {
   }
 
   return (
-    <div className="min-h-[80vh] flex bg-gray-50">
+    <div className="min-h-[80vh] flex bg-surface-50">
       {/* Brand Panel — desktop only */}
       <div className="hidden lg:flex lg:w-[45%] bg-gradient-to-br from-brand-blue to-brand-blue-dark relative overflow-hidden">
         <div className="relative z-10 flex flex-col justify-center px-12 xl:px-16 text-white">
@@ -128,8 +128,8 @@ export default function SignupPage() {
               <Image src="/logo.png" alt="PathForge" width={28} height={28} />
               PathForge
             </Link>
-            <h1 className="hidden lg:block text-2xl font-bold text-gray-900 mb-1">Create your account</h1>
-            <p className="text-gray-500 text-sm">
+            <h1 className="hidden lg:block text-2xl font-bold text-surface-900 mb-1">Create your account</h1>
+            <p className="text-surface-500 text-sm">
               <span className="lg:hidden">Create your account and start sharing your AI projects.</span>
               <span className="hidden lg:inline">Start sharing your AI projects.</span>
             </p>
@@ -146,29 +146,29 @@ export default function SignupPage() {
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label htmlFor="username" className="block text-sm font-medium text-gray-700 mb-1">Username</label>
+              <label htmlFor="username" className="block text-sm font-medium text-surface-700 mb-1">Username</label>
               <input
                 id="username"
                 type="text"
                 name="username"
                 required
                 placeholder="Choose a username"
-                className="w-full bg-white border border-gray-300 text-gray-900 placeholder-gray-400 px-4 py-2.5 text-sm focus:outline-none focus:border-brand-orange focus:ring-2 focus:ring-brand-orange/20 transition-colors duration-200"
+                className="w-full bg-white border border-surface-300 text-surface-900 placeholder-surface-400 px-4 py-2.5 text-sm focus:outline-none focus:border-brand-orange focus:ring-2 focus:ring-brand-orange/20 transition-colors duration-150"
               />
             </div>
             <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+              <label htmlFor="email" className="block text-sm font-medium text-surface-700 mb-1">Email</label>
               <input
                 id="email"
                 type="email"
                 name="email"
                 required
                 placeholder="you@example.com"
-                className="w-full bg-white border border-gray-300 text-gray-900 placeholder-gray-400 px-4 py-2.5 text-sm focus:outline-none focus:border-brand-orange focus:ring-2 focus:ring-brand-orange/20 transition-colors duration-200"
+                className="w-full bg-white border border-surface-300 text-surface-900 placeholder-surface-400 px-4 py-2.5 text-sm focus:outline-none focus:border-brand-orange focus:ring-2 focus:ring-brand-orange/20 transition-colors duration-150"
               />
             </div>
             <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">Password</label>
+              <label htmlFor="password" className="block text-sm font-medium text-surface-700 mb-1">Password</label>
               <input
                 id="password"
                 type="password"
@@ -178,18 +178,18 @@ export default function SignupPage() {
                 placeholder="At least 8 characters"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full bg-white border border-gray-300 text-gray-900 placeholder-gray-400 px-4 py-2.5 text-sm focus:outline-none focus:border-brand-orange focus:ring-2 focus:ring-brand-orange/20 transition-colors duration-200"
+                className="w-full bg-white border border-surface-300 text-surface-900 placeholder-surface-400 px-4 py-2.5 text-sm focus:outline-none focus:border-brand-orange focus:ring-2 focus:ring-brand-orange/20 transition-colors duration-150"
               />
               {/* Password helper */}
               <div className="flex items-center gap-1.5 mt-1.5">
-                <div className={`w-3 h-3 border flex items-center justify-center transition-colors duration-200 ${passwordLongEnough ? 'bg-brand-orange border-brand-orange' : 'border-gray-300'}`}>
+                <div className={`w-3 h-3 border flex items-center justify-center transition-colors duration-150 ${passwordLongEnough ? 'bg-brand-orange border-brand-orange' : 'border-surface-300'}`}>
                   {passwordLongEnough && (
                     <svg className="w-2 h-2 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={4}>
                       <path strokeLinecap="square" d="M5 13l4 4L19 7" />
                     </svg>
                   )}
                 </div>
-                <span className={`text-xs transition-colors duration-200 ${passwordLongEnough ? 'text-brand-orange' : 'text-gray-400'}`}>
+                <span className={`text-xs transition-colors duration-150 ${passwordLongEnough ? 'text-brand-orange' : 'text-surface-400'}`}>
                   At least 8 characters
                 </span>
               </div>
@@ -197,7 +197,7 @@ export default function SignupPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-brand-orange text-white py-2.5 font-medium hover:bg-brand-orange-dark transition-colors duration-200 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full bg-brand-orange text-white py-2.5 font-bold text-sm hover:bg-brand-orange-dark focus-visible:outline-2 focus-visible:outline-brand-orange focus-visible:outline-offset-2 transition-colors duration-150 disabled:opacity-50 disabled:cursor-not-allowed min-h-11"
             >
               {loading ? (
                 <span className="inline-flex items-center gap-2">
@@ -211,9 +211,9 @@ export default function SignupPage() {
             </button>
           </form>
 
-          <p className="text-center text-sm text-gray-500 mt-6">
+          <p className="text-center text-sm text-surface-500 mt-6">
             Already have an account?{' '}
-            <Link href="/auth/login" className="text-brand-orange hover:text-brand-orange-dark transition-colors duration-200 font-medium">
+            <Link href="/auth/login" className="text-brand-orange hover:text-brand-orange-dark focus-visible:outline-2 focus-visible:outline-brand-orange focus-visible:outline-offset-2 transition-colors duration-150 font-semibold">
               Log in
             </Link>
           </p>

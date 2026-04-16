@@ -21,7 +21,7 @@ MVP is live at https://prompt-forge-sandy.vercel.app. Auth, browse, project deta
 
 These changes are a starting point. Iterations should build on them, not revert them.
 
-**Last updated**: 2026-04-16 (Iteration 22 — Landing page: removed pipe connectors, killed green leak, migrated palette; new mandatory screenshot step in ITERATION_GUIDE + SKILL)
+**Last updated**: 2026-04-16 (Iteration 23 — Landing problem-card hierarchy: "Blank Chat Tax" promoted to primary; auth pages gray→surface migration + button-spec unification)
 
 ---
 
@@ -126,6 +126,7 @@ These are queued but not yet prioritized for hourly iterations.
 
 | Date | Item | Summary |
 |------|------|---------|
+| 2026-04-16 | Landing problem-card hierarchy + auth page design system consistency | "Blank Chat Tax" promoted to full-width primary card (border-l-4 brand-orange, text-2xl font-black, "The root problem" eyebrow); three siblings demoted to 3-col grid with surface-400 dots + p-5. Auth pages fully migrated gray-* → surface-* (zero gray-* classes remain); auth submit buttons aligned to landing primary spec (font-bold, duration-150, focus-visible ring, min-h-11); auth link font-weight harmonized to font-semibold. |
 | 2026-04-16 | Landing page — screenshot-driven overhaul: removed 5 between-section pipe connectors, killed green leak (flow diagram + Proven Results card), migrated gray-* → surface-*, killed tagline chip, solid-orange H1, consolidated hero subtitle, py-20 standardized, min-h-11 secondary CTAs. Also added mandatory screenshot step (Step 1.5 + Step 6) to ITERATION_GUIDE and SKILL per Drew's direction. |
 | 2026-04-16 | Build page — surface-* token migration, interactive control sizing (p-2 touch targets), progress bar upgrade (h-2, green at 100%), ImageUpload responsive grid + mobile remove button |
 | 2026-04-16 | Browse page — card hierarchy (title-first), spacing rhythm (8px grid), interactive states (sort indicator, touch feedback, focus ring) |

@@ -4,20 +4,22 @@ import { getPrompts } from '@/lib/data'
 import PromptCard from '@/components/PromptCard'
 
 /* ─────────────────────────────────────────────────────────
+   Iteration 23 (2026-04-16) — Problem-card hierarchy:
+   • "Blank Chat Tax" promoted to primary problem: full-width
+     card, left accent bar (border-l-4 brand-orange), text-2xl
+     black title, text-base body, "The root problem" eyebrow.
+   • Three remaining cards ("Hidden Craftsmanship", "Weak
+     Reproducibility", "Lost Branches") demoted to supporting
+     symptoms in a 3-col grid: text-sm titles, neutral
+     surface-400 dot icons (was brand-orange), p-5 (was p-6).
+   • Pattern: typography-only hierarchy + accent line on primary
+     (Stripe/Apple research), one-dominant + three-peer layout.
+
    Iteration 22 (2026-04-16) — Screenshot-driven overhaul:
-   • Removed all 5 decorative pipe connectors between sections
-     (Vercel/Linear use whitespace + typography for section
-     transitions, not SVG dots)
-   • Killed green color leak: flow diagram "Result" box + Proven
-     Results card now use brand-orange (brand palette only)
-   • Migrated raw gray-* → surface-* tokens for text/borders.
-     Cards intentionally remain bg-white per CLAUDE.md ("cards
-     are white with subtle borders") — white cards provide
-     contrast against the #fafafa body surface.
-   • Removed tagline chip above H1 (2022 startup pattern)
-   • Toned down H1: solid orange instead of gradient for weight balance
-   • Standardized section padding to py-20 (hero included)
-   • Touch targets on secondary CTAs min-h-11 (44px)
+   • Removed all 5 decorative pipe connectors, killed green
+     color leak, migrated raw gray-* → surface-* tokens,
+     removed tagline chip, solid orange H1, py-20 standardized.
+     Cards intentionally remain bg-white per CLAUDE.md.
    ───────────────────────────────────────────────────────── */
 
 export default async function HomePage() {
@@ -78,42 +80,57 @@ export default async function HomePage() {
           <p className="text-surface-500 text-lg">Every. Single. Time.</p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="bg-white border border-surface-200 p-6 hover:border-brand-orange hover:shadow-[4px_4px_0px_0px_rgba(232,122,44,0.15)] focus-visible:outline-2 focus-visible:outline-brand-orange focus-visible:outline-offset-2 transition-all duration-150">
-            <h3 className="font-bold text-sm text-surface-900 mb-2 flex items-center gap-2">
-              <span className="w-1.5 h-1.5 bg-brand-orange inline-block flex-shrink-0" />
+        {/* Primary problem — "Blank Chat Tax" is the root insight. Given
+            typographic weight, a left accent bar, and full width so it
+            dominates the Z-scan. The other three cards below read as the
+            consequences that follow from it. */}
+        <div className="space-y-4">
+          <div className="bg-white border border-surface-200 border-l-4 border-l-brand-orange p-6 sm:p-8 hover:border-brand-orange hover:shadow-[4px_4px_0px_0px_rgba(232,122,44,0.15)] focus-visible:outline-2 focus-visible:outline-brand-orange focus-visible:outline-offset-2 transition-all duration-150">
+            <div className="flex items-center gap-2.5 mb-3">
+              <span className="text-xs font-bold uppercase tracking-widest text-brand-orange">
+                The root problem
+              </span>
+            </div>
+            <h3 className="font-black text-xl sm:text-2xl text-surface-900 mb-2 leading-tight">
               Blank Chat Tax
             </h3>
-            <p className="text-sm text-surface-500 leading-relaxed">
-              You open a new chat, stare at the cursor, and rebuild something someone else already figured out.
+            <p className="text-base text-surface-600 leading-relaxed max-w-2xl">
+              You open a new chat, stare at the cursor, and rebuild something someone
+              else already figured out &mdash; every single time.
             </p>
           </div>
-          <div className="bg-white border border-surface-200 p-6 hover:border-brand-orange hover:shadow-[4px_4px_0px_0px_rgba(232,122,44,0.15)] focus-visible:outline-2 focus-visible:outline-brand-orange focus-visible:outline-offset-2 transition-all duration-150">
-            <h3 className="font-bold text-sm text-surface-900 mb-2 flex items-center gap-2">
-              <span className="w-1.5 h-1.5 bg-brand-orange inline-block flex-shrink-0" />
-              Hidden Craftsmanship
-            </h3>
-            <p className="text-sm text-surface-500 leading-relaxed">
-              The best AI work is buried in private chats, screenshots, and memory. Nobody else can learn from it.
-            </p>
-          </div>
-          <div className="bg-white border border-surface-200 p-6 hover:border-brand-orange hover:shadow-[4px_4px_0px_0px_rgba(232,122,44,0.15)] focus-visible:outline-2 focus-visible:outline-brand-orange focus-visible:outline-offset-2 transition-all duration-150">
-            <h3 className="font-bold text-sm text-surface-900 mb-2 flex items-center gap-2">
-              <span className="w-1.5 h-1.5 bg-brand-orange inline-block flex-shrink-0" />
-              Weak Reproducibility
-            </h3>
-            <p className="text-sm text-surface-500 leading-relaxed">
-              You see a great result but can&apos;t see how it was built well enough to recreate it.
-            </p>
-          </div>
-          <div className="bg-white border border-surface-200 p-6 hover:border-brand-orange hover:shadow-[4px_4px_0px_0px_rgba(232,122,44,0.15)] focus-visible:outline-2 focus-visible:outline-brand-orange focus-visible:outline-offset-2 transition-all duration-150">
-            <h3 className="font-bold text-sm text-surface-900 mb-2 flex items-center gap-2">
-              <span className="w-1.5 h-1.5 bg-brand-orange inline-block flex-shrink-0" />
-              Lost Branches
-            </h3>
-            <p className="text-sm text-surface-500 leading-relaxed">
-              The detours and alternative paths that taught you what works are thrown away instead of shared.
-            </p>
+
+          {/* Supporting symptoms — three consequences of the root problem.
+              Peer-weighted to each other, but visibly subordinate to the
+              primary card above (smaller type, no accent bar, 3-col grid). */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="bg-white border border-surface-200 p-5 hover:border-brand-orange hover:shadow-[4px_4px_0px_0px_rgba(232,122,44,0.15)] focus-visible:outline-2 focus-visible:outline-brand-orange focus-visible:outline-offset-2 transition-all duration-150">
+              <h3 className="font-bold text-sm text-surface-900 mb-2 flex items-center gap-2">
+                <span className="w-1.5 h-1.5 bg-surface-400 inline-block flex-shrink-0" aria-hidden="true" />
+                Hidden Craftsmanship
+              </h3>
+              <p className="text-sm text-surface-500 leading-relaxed">
+                The best AI work is buried in private chats, screenshots, and memory. Nobody else can learn from it.
+              </p>
+            </div>
+            <div className="bg-white border border-surface-200 p-5 hover:border-brand-orange hover:shadow-[4px_4px_0px_0px_rgba(232,122,44,0.15)] focus-visible:outline-2 focus-visible:outline-brand-orange focus-visible:outline-offset-2 transition-all duration-150">
+              <h3 className="font-bold text-sm text-surface-900 mb-2 flex items-center gap-2">
+                <span className="w-1.5 h-1.5 bg-surface-400 inline-block flex-shrink-0" aria-hidden="true" />
+                Weak Reproducibility
+              </h3>
+              <p className="text-sm text-surface-500 leading-relaxed">
+                You see a great result but can&apos;t see how it was built well enough to recreate it.
+              </p>
+            </div>
+            <div className="bg-white border border-surface-200 p-5 hover:border-brand-orange hover:shadow-[4px_4px_0px_0px_rgba(232,122,44,0.15)] focus-visible:outline-2 focus-visible:outline-brand-orange focus-visible:outline-offset-2 transition-all duration-150">
+              <h3 className="font-bold text-sm text-surface-900 mb-2 flex items-center gap-2">
+                <span className="w-1.5 h-1.5 bg-surface-400 inline-block flex-shrink-0" aria-hidden="true" />
+                Lost Branches
+              </h3>
+              <p className="text-sm text-surface-500 leading-relaxed">
+                The detours and alternative paths that taught you what works are thrown away instead of shared.
+              </p>
+            </div>
           </div>
         </div>
       </section>

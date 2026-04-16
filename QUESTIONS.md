@@ -8,6 +8,18 @@
 
 ## Open Questions
 
+### Q13: Problem-card hierarchy — is "Blank Chat Tax" actually the root insight, or should a different card be primary?
+
+Iteration 23 promoted "Blank Chat Tax" to the dominant primary problem card on the landing page, with the three others ("Hidden Craftsmanship", "Weak Reproducibility", "Lost Branches") demoted to a supporting 3-col row below. The reasoning: "you open a new chat and rebuild something someone else already figured out" reads as the *cause*, while the other three read as *consequences* of that cause (nobody sees others' work → hidden craftsmanship; can't recreate results → weak reproducibility; alternative paths thrown away → lost branches). But this is my interpretation from the copy, not a product decision you made. Three possible futures:
+
+- **(A) Keep as-is** — "Blank Chat Tax" is the right thesis for PathForge; everything else flows from it
+- **(B) Different card should be primary** — e.g., "Hidden Craftsmanship" (the community angle) might be the more compelling opener for a community-driven platform
+- **(C) No hierarchy, just better equal cards** — maybe all four really are peer problems and the old 2x2 was right; we'd need a different fix for the "all-identical cards" complaint
+
+**Drew's Response:**
+
+---
+
 ### Q12: Landing page flow diagram — keep, simplify further, or remove entirely?
 
 Iteration 22 kept the 5-box horizontal flow diagram (Blank Chat → Build Path → Fork → Adapt → Result) but cleaned it up — removed the green color leak, restricted colors to orange/blue/surface, tightened the connector widths. However, the design research found that NONE of the premium dev-tool landing pages we looked at (Linear, Vercel, Raycast, Resend, Supabase) use horizontal step/process diagrams on their homepages. They either (a) show a product screenshot, (b) use outcome-based messaging, or (c) show nothing and let the Solution headline do the work.

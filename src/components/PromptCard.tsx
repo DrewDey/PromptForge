@@ -18,7 +18,7 @@ export default function PromptCard({ prompt }: { prompt: PromptWithRelations }) 
   return (
     <Link
       href={`/prompt/${prompt.id}`}
-      className="group block bg-white border border-gray-200 hover:border-brand-orange hover:shadow-[4px_4px_0px_0px_rgba(232,122,44,0.15)] transition-all duration-200 relative overflow-hidden"
+      className="group block bg-white border border-gray-200 hover:border-brand-orange hover:shadow-[4px_4px_0px_0px_rgba(232,122,44,0.15)] active:scale-[0.98] active:shadow-none focus-visible:outline-2 focus-visible:outline-brand-orange focus-visible:outline-offset-2 transition-all duration-200 relative overflow-hidden"
     >
       {/* Step flow mini-visualization at top */}
       {hasSteps && (

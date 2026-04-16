@@ -4,10 +4,10 @@ import { getPrompts } from '@/lib/data'
 import PromptCard from '@/components/PromptCard'
 
 /* ─────────────────────────────────────────────────────────
-   Design Brief (Iteration 9):
-   1. Reduce hero cognitive load — remove mini-flow, tighten subtitle
-   2. Clarify CTA hierarchy — primary Browse, secondary Share
-   3. Normalize typography & spacing across all sections
+   Design Brief (Iteration 12):
+   1. Popular Paths: responsive header, fix grid spacing, stronger "View all", mobile empty state
+   2. Mobile touch: active states on cards, 44px secondary CTA tap targets
+   3. Left sidebar: mobile accent replacement, consistent section spacing
    ───────────────────────────────────────────────────────── */
 
 export default async function HomePage() {
@@ -53,7 +53,7 @@ export default async function HomePage() {
             </Link>
             <Link
               href="/prompt/new"
-              className="text-sm font-semibold text-gray-500 hover:text-brand-orange transition-colors duration-200 flex items-center gap-1.5"
+              className="text-sm font-semibold text-gray-500 hover:text-brand-orange transition-colors duration-200 flex items-center gap-1.5 px-4 py-3"
             >
               or share your build <ArrowRight className="w-3.5 h-3.5" />
             </Link>
@@ -74,12 +74,12 @@ export default async function HomePage() {
       {/* ═══════════ THE PROBLEM ═══════════ */}
       <section className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 pb-16">
         <div className="flex gap-6 lg:gap-10">
-          {/* Pipe running down the left side */}
+          {/* Pipe running down the left side (desktop) / top accent bar (mobile) */}
           <div className="w-8 flex-shrink-0 hidden sm:flex flex-col items-center">
             <div className="w-0.5 flex-1 bg-gradient-to-b from-brand-orange via-brand-orange/50 to-brand-blue opacity-40" />
           </div>
 
-          <div className="flex-1">
+          <div className="flex-1 border-t-2 border-brand-orange sm:border-t-0 pt-4 sm:pt-0">
             <span className="text-xs font-bold uppercase tracking-widest text-brand-orange mb-3 block">The Problem</span>
             <h2 className="text-3xl sm:text-4xl font-black mb-3 leading-tight">
               You start from scratch.
@@ -267,7 +267,7 @@ export default async function HomePage() {
 
       {/* ═══════════ POPULAR BUILD PATHS ═══════════ */}
       <section className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-        <div className="flex items-end justify-between mb-8">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between mb-8">
           <div className="border-l-4 border-brand-orange pl-4">
             <span className="text-xs font-bold uppercase tracking-widest text-brand-orange mb-2 block">Explore</span>
             <h2 className="text-3xl sm:text-4xl font-black">Popular Build Paths</h2>
@@ -275,12 +275,12 @@ export default async function HomePage() {
           </div>
           <Link
             href="/browse?sort=popular"
-            className="group text-brand-blue hover:text-brand-blue-dark text-sm font-semibold flex items-center gap-1 flex-shrink-0"
+            className="group text-sm font-semibold text-brand-blue border border-brand-blue/30 bg-brand-blue/5 px-4 py-2 hover:bg-brand-blue/10 hover:border-brand-blue/50 active:bg-brand-blue/15 focus-visible:outline-2 focus-visible:outline-brand-blue focus-visible:outline-offset-2 transition-all duration-200 flex items-center gap-1.5 flex-shrink-0 w-fit"
           >
-            View all <ArrowRight className="w-4 h-4 transition-transform duration-200 group-hover:translate-x-0.5" />
+            View all paths <ArrowRight className="w-4 h-4 transition-transform duration-200 group-hover:translate-x-0.5" />
           </Link>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {popularPaths.map((path, idx) => (
             <div key={path.id} className="animate-card-slide-in" style={{ animationDelay: `${idx * 80}ms` }}>
               <PromptCard prompt={path} />
@@ -288,10 +288,10 @@ export default async function HomePage() {
           ))}
         </div>
         {popularPaths.length === 0 && (
-          <div className="text-center py-16 border border-dashed border-gray-200">
-            <p className="text-gray-400 mb-2">No build paths yet</p>
-            <Link href="/prompt/new" className="text-brand-orange hover:text-brand-orange-dark text-sm font-semibold">
-              Be the first to share one
+          <div className="text-center py-10 sm:py-16 border border-dashed border-gray-300 bg-gray-50/50">
+            <p className="text-gray-500 mb-3 font-medium">No build paths yet</p>
+            <Link href="/prompt/new" className="inline-flex items-center gap-1.5 text-brand-orange hover:text-brand-orange-dark text-sm font-bold px-4 py-2 border border-brand-orange/30 bg-brand-orange/5 hover:bg-brand-orange/10 active:bg-brand-orange/15 focus-visible:outline-2 focus-visible:outline-brand-orange focus-visible:outline-offset-2 transition-all duration-200">
+              Be the first to share one <ArrowRight className="w-3.5 h-3.5" />
             </Link>
           </div>
         )}
@@ -328,7 +328,7 @@ export default async function HomePage() {
             </Link>
             <Link
               href="/browse"
-              className="text-sm font-semibold text-gray-500 hover:text-brand-blue transition-colors duration-200"
+              className="text-sm font-semibold text-gray-500 hover:text-brand-blue transition-colors duration-200 px-4 py-3"
             >
               or browse paths first
             </Link>

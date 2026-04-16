@@ -5,6 +5,44 @@
 
 ---
 
+## 2026-04-16 — Iteration 12: Landing Page — Popular Paths Discovery & Mobile Responsiveness
+
+**Audit findings** (top problems identified):
+1. PromptCards have hover states but no active/pressed states — mobile users see no interaction feedback when tapping cards, making them feel static and non-interactive.
+2. Popular Paths header uses `flex items-end justify-between` without responsive stacking — on small screens, heading and "View all" link compete for space horizontally.
+3. Popular Paths grid uses `gap-5` (1.25rem) which violates the design spacing grid (4/8/16/24/32/48/64px). Other sections use gap-4 and gap-6.
+4. "View all" is a bare blue text link with no border, background, or active state — it reads as low-priority footnote rather than an actionable discovery CTA.
+5. Secondary CTA links ("or share your build", "or browse paths first") have no padding — their tap targets are well below the 44px WCAG minimum.
+6. Problem section's left pipe sidebar disappears on mobile (`hidden sm:flex`) with no visual replacement, creating a jarring layout shift.
+7. Empty state in Popular Paths uses `py-16` on all screen sizes — oversized on mobile — and the CTA lacks visual weight.
+
+**Research insights**:
+- Product Hunt/Figma Community pattern: featured content CTAs need strong visual affordance (borders, backgrounds, icons) to compete with the content cards for attention
+- Mobile touch feedback research: `active:scale-[0.98]` creates a convincing "push" effect without janky animations
+- Responsive stacking: `flex-col gap-4 sm:flex-row sm:items-end` is the standard mobile-first pattern for header + action layouts
+- Touch target minimum: 44px per WCAG, achieved via `px-4 py-3` padding on text links
+
+**Design brief** (3 key goals):
+1. Add mobile touch feedback to PromptCards and make Popular Paths section invite clicking with a stronger "View all" button and responsive header layout
+2. Fix all secondary CTA tap targets to meet 44px minimum and standardize grid spacing to the design grid
+3. Add mobile visual anchor (top accent bar) to replace hidden left sidebar pipe
+
+**What was implemented**:
+- **PromptCard active state**: Added `active:scale-[0.98] active:shadow-none` for touch press feedback, plus `focus-visible:outline-2 focus-visible:outline-brand-orange focus-visible:outline-offset-2` for keyboard accessibility.
+- **Popular Paths header responsive**: Changed from `flex items-end justify-between` to `flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between`. Header stacks on mobile, sits side-by-side on sm+.
+- **"View all" upgraded to button-like element**: From bare `text-brand-blue` text link to bordered element with `border border-brand-blue/30 bg-brand-blue/5 px-4 py-2` plus hover, active, and focus-visible states. Label changed from "View all" to "View all paths" for clarity. Added `w-fit` to prevent full-width stretch when stacked.
+- **Grid spacing fixed**: `gap-5` → `gap-6` (24px), snapping to the design spacing grid.
+- **Empty state improved**: Responsive padding `py-10 sm:py-16`, border upgraded `gray-200` → `gray-300`, background `bg-gray-50/50`, text contrast `gray-400` → `gray-500`, CTA turned into bordered button with icon and active/focus states.
+- **Secondary CTA tap targets**: Both "or share your build" and "or browse paths first" gained `px-4 py-3`, bringing total height to ~44px.
+- **Mobile accent bar**: Problem section content div gained `border-t-2 border-brand-orange sm:border-t-0 pt-4 sm:pt-0` — orange top accent on mobile replaces the hidden left pipe.
+- **Files changed**: `src/app/page.tsx`, `src/components/PromptCard.tsx`.
+
+**Review outcome**: Approved with nits. Reviewer confirmed all 3 brief items implemented faithfully with no drift. Nits flagged: missing focus-visible states on "View all" link, empty state CTA, and PromptCard itself — all fixed before commit. Reviewer noted the changes are "minimal, targeted, and consistent with the design system."
+
+**What's next**: Landing page item #1 has been thoroughly polished across 3 iterations (1, 9, 12). Consider marking it complete and moving to Submit form (#4) or Navigation (#5) for a second pass.
+
+---
+
 ## 2026-04-16 — Iteration 11: Project Detail Page — Step Flow, Story Prominence, Metadata Layout
 
 **Audit findings** (top problems identified):

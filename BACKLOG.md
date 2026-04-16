@@ -16,7 +16,7 @@
 
 MVP is live at https://prompt-forge-sandy.vercel.app. Auth, browse, project detail, admin dashboard, voting/bookmarks, and user profiles all work. The site uses a light theme with sharp edges and orange/blue brand colors.
 
-**Last updated**: 2026-04-16 (Iteration 11)
+**Last updated**: 2026-04-16 (Iteration 12)
 
 ---
 
@@ -104,6 +104,7 @@ These are queued but not yet prioritized for hourly iterations.
 
 | Date | Item | Summary |
 |------|------|---------|
+| 2026-04-16 | Landing page — Popular Paths discovery & mobile responsiveness | Responsive header stacking, "View all" upgraded to bordered button, gap-5→gap-6, PromptCard active/focus states, 44px secondary CTA tap targets, mobile accent bar, empty state redesign |
 | 2026-04-16 | Project detail page — step flow, story prominence, metadata layout | 48px solid orange step nodes, pipeDraw animation on vertical pipe, "Step X of Y" headers, story section promoted with stronger heading/background, author row moved above metadata, metadata grouped into context + technical clusters |
 | 2026-04-16 | Browse page filter UX polish (unified active states, removable filter chips, spacing) | Unified difficulty/category filter active states to brand orange, added removable filter summary chips, upgraded clear button visibility, fixed spacing rhythm, search icon button, focus ring accessibility |
 | 2026-04-16 | Landing page hero clarity & typography normalization | De-emphasized tagline chip, removed hero mini-flow, tightened subtitle, clarified CTA hierarchy, normalized all section heading sizes, added focus-visible states and accent bar |

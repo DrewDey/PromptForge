@@ -5,6 +5,127 @@
 
 ---
 
+## 2026-04-16 — Iteration 16: Header Refinement — Accessibility, Active States, CTA Hierarchy, Dark/Light Transition
+
+**Audit findings** (top problems identified):
+1. Nav link contrast fails WCAG AA: `text-surface-400` (#a1a1aa) on `bg-surface-900` (#18181b) = ~3.2:1 ratio (needs 4.5:1). Admin link at `text-surface-500` even worse at ~2.4:1.
+2. Inconsistent active states: desktop used white text for active nav, mobile used orange — different visual language on different breakpoints.
+3. Zero focus-visible indicators on any interactive element — keyboard users completely unable to see focus position.
+4. Mobile touch targets at ~24px (py-2 + text-[13px]) — well below the 44px WCAG AAA minimum.
+5. Jarring dark/light transition: thin `border-b border-surface-800` between surface-900 header and #fafafa body creates a hard seam with no depth.
+6. "Build" link styled identically to "Browse" — the primary creation action has no visual priority.
+7. Missing ARIA attributes on hamburger button (no aria-label, no aria-expanded).
+8. Logout button has no aria-label — screen readers see an unlabeled button.
+
+**Research insights**:
+- **Orange accent reserved for primary CTA** (Vercel Geist): The highest-priority action gets the brand color treatment — outline by default, filled on hover. Everything else stays neutral. Prevents "orange everywhere" dilution.
+- **Warm dark header with shadow transition** (Linear redesign): Avoid hard border lines between dark header and light content. A subtle multi-layer shadow creates depth hierarchy without a visible line, feeling more sophisticated.
+- **Consistent active states** (GitHub, Linear): Active nav items use the brand accent color universally across breakpoints. White text for active is generic; brand orange for active reinforces identity.
+
+**Design brief** (3 key goals):
+1. Fix all accessibility issues: boost nav link contrast to surface-300 (~12:1 ratio), add focus-visible:outline-brand-orange to every interactive element, increase mobile touch targets to 44px via py-3 + text-sm, add ARIA labels/expanded
+2. Unify active state to orange on both desktop and mobile, making "Build" a distinct CTA with orange border/fill treatment (outline default → filled on hover/active)
+3. Replace border-b with multi-layer shadow for softer dark/light transition
+
+**What was implemented**:
+- **Nav link contrast**: All inactive links changed from `text-surface-400` to `text-surface-300` (#d4d4d8), achieving ~12.1:1 contrast. Admin link upgraded from `text-surface-500` to `text-surface-300`.
+- **Unified active states**: Both desktop and mobile Browse active state now uses `text-brand-orange bg-surface-800`. Consistent brand orange across all breakpoints.
+- **Build as primary CTA**: Desktop Build link now has `border border-brand-orange/40` outline, `text-brand-orange`, and `font-semibold` by default. On hover: `bg-brand-orange text-surface-900` (fills with orange). Active state: inverted `text-surface-900 bg-brand-orange`. Uses `transition-all` for smooth border+color changes. Mobile Build link gets `font-semibold` to maintain CTA distinction.
+- **Focus indicators**: Every interactive element (logo link, nav links, auth links, buttons, hamburger) now has `focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange`. Sign-up button uses `focus-visible:outline-white` since it's on orange bg.
+- **Mobile touch targets**: All mobile menu items increased from `py-2 text-[13px]` to `py-3 text-sm` — achieving ~44px touch targets. Hamburger button increased from `p-1` to `p-2.5`. Mobile links use `active:bg-surface-800` instead of `hover:bg-surface-800` for proper touch feedback.
+- **ARIA improvements**: Hamburger button gets dynamic `aria-label` ("Open menu" / "Close menu") and `aria-expanded`. Logout button gets `aria-label="Log out"`. Logo alt text improved to "PathForge — AI Build Paths".
+- **Dark/light shadow transition**: Replaced `border-b border-surface-800` with `shadow-[0_1px_3px_0_rgba(0,0,0,0.3),0_4px_12px_0_rgba(0,0,0,0.15)]` — a two-layer shadow that creates depth without a hard line.
+- **Mobile menu divider**: Changed from `border-surface-800` to `border-surface-700` for better visibility.
+- **Transition timing**: Unified all transitions to `duration-200` (was `duration-150`).
+- **Desktop logout click target**: Increased from `p-1` to `p-2` (~30px target, appropriate for desktop mouse use).
+- **Files changed**: `src/components/Header.tsx`
+
+**Review outcome**: Approved with nits. Reviewer verified contrast ratios (all pass WCAG AA), confirmed focus indicators on every element, validated mobile touch targets reach 44px. Nits addressed: (1) desktop logout button target increased from p-1.5 to p-2, (2) mobile Build link given `font-semibold` to maintain CTA distinction, (3) active nav orange-on-surface-800 at 4.6:1 passes AA normal text threshold.
+
+**What's next**: Header item #3 is now substantially complete. Next priority should be item #4 (Project detail page) or item #6 (Seed content overhaul). Seed content is important — the design improvements need real content to showcase them.
+
+---
+
+## 2026-04-16 — Iteration 15: Build Page — From Form to Builder (Hero Title, Step Cards, Submit Refinement)
+
+**Audit findings** (top problems identified):
+1. Step cards use `bg-white` on white page background with only subtle `border-gray-200` — virtually indistinguishable from the page itself, breaking the "builder" metaphor.
+2. Page title "Share a Project" at `text-3xl` competes with section headers at `text-xl` — only ~67% size difference creates scattered hierarchy with no clear focal point.
+3. "The Story" textarea dominates Section 1 without clear purpose differentiation from title/description — 3 text fields with nearly equal visual weight.
+4. No drag-drop or reorder affordance on steps — step cards look like form fields, not building blocks. No drag handle or keyboard hints.
+5. Mode toggle doesn't indicate which option is recommended — both modes presented at equal visual weight.
+6. All 3 sections visible at once with no progressive disclosure — cognitive overload on first impression ("lots to fill out" not "I'm building something cool").
+7. Submit button says "Submit for Review" — generic form language, not builder language.
+
+**Research insights**:
+- **Borderless hero title** (Notion/Linear): Large, borderless title input shifts psychology from "filling out a form" to "creating a document." Font-size ~28-32px, no border by default, brand-color underline on focus.
+- **Step cards as interactive blocks** (Notion/Figma): Building blocks need visual depth (shadow, bg tint) and reorder affordance (grip handles, arrow buttons) to feel like a canvas rather than a form.
+- **Progressive disclosure** (Vercel): Show essentials first, reveal on demand. Reduces cognitive load from 3 sections to focused flow.
+- **Minimal progress-driven submit** (Linear): Understated button that lights up when ready, with completion summary text. Not a screaming CTA.
+- **"Recommended" badge on preferred option** (various): Small pill badge draws attention without being obnoxious.
+
+**Design brief** (3 key goals):
+1. Transform the title from a labeled form field into a Notion-style borderless hero input (`text-2xl sm:text-3xl`, bottom-border on focus in brand orange) — make the first impression "I'm creating something"
+2. Give step cards visual depth and interactivity: `bg-surface-50` collapsed state with `shadow-sm`, `shadow-md` expanded, grip handle icon, move up/down reorder buttons, visually distinct prompt (surface tint) and result (green tint) sections
+3. Refine submit area: adaptive button styling (muted when incomplete, orange when ready), completion summary with accurate "Ready to publish" indicator, cleaner language
+
+**What was implemented**:
+- **Hero title** (page.tsx): Removed generic `<h1>Share a Project</h1>` and separate title input. Title field is now borderless `text-2xl sm:text-3xl font-bold` with `border-b-2 border-transparent focus:border-brand-orange` transition. Added `aria-label="Project title"` for accessibility.
+- **Step cards redesigned** (page.tsx): Collapsed cards now `bg-surface-50 shadow-sm` with `hover:shadow-md hover:border-surface-300` — visually distinct from page bg. Expanded cards `shadow-md bg-white border-brand-orange/40`. Added `GripVertical` icon as reorder affordance (no cursor-grab since drag isn't wired). Added `ArrowUp`/`ArrowDown` buttons with `e.stopPropagation()` and `disabled` states. Added `moveStep()` function for reordering.
+- **Prompt/Result visual separation** (page.tsx): Within expanded steps, prompt textarea wrapped in `bg-surface-50 border border-surface-200 p-4` container, result textarea wrapped in `bg-green-50/50 border border-green-100 p-4` — clear visual distinction between input (what you typed) and output (what AI produced).
+- **Mode toggle badge** (page.tsx): Multi-step button now has `<span>Recommended</span>` badge in `text-[10px] uppercase tracking-wider text-brand-orange bg-brand-orange/10`.
+- **Submit refinement** (page.tsx): Completion summary above button ("X of Y steps complete" + "Ready to publish" when `computeErrors()` returns empty). Button uses adaptive styling: muted `bg-surface-200` when incomplete, `bg-brand-orange text-white` when ready. Changed label to "Submit Project".
+- **Surface palette migration** (page.tsx): Migrated section dividers, step card borders, and labels from `gray-*` to `surface-*` tokens for cooler, more consistent palette.
+- **Files changed**: `src/app/prompt/new/page.tsx`
+
+**Review outcome**: Approved with nits. Reviewer flagged: (1) unused `Sparkles` import — removed, (2) GripVertical had `cursor-grab` implying drag-drop — removed, added tooltip via wrapping span, (3) "Ready to publish" checked only title+category — fixed to use `computeErrors()` for accuracy, (4) missing `aria-label` on hero title — added, (5) "Publish Project" vs "Submit" naming — changed to "Submit Project" for accuracy since projects go to review queue. All issues resolved before commit.
+
+**What's next**: Build page item #2 has had a strong second pass (Iteration 13 = validation/typography, Iteration 15 = builder transformation). Next priority should be item #3 (Header refinement) or continuing item #2 with live preview and progressive disclosure (collapsible sections). Seed content (#6) remains important alongside design work.
+
+---
+
+## 2026-04-16 — Iteration 14: Browse Page — Featured Card Distinction, Card Hierarchy, Filter Bar Polish
+
+**Audit findings** (top problems identified):
+1. Featured and regular cards differ by only 4px padding and 2px font size — users can't tell which are featured. No badge, border, or layout change signals editorial curation.
+2. Card information is spread across 3 separate visual zones (metadata row, model/difficulty row, footer) with similar text weights — flat hierarchy makes scanning slow.
+3. Sort toggle buttons are invisible before hover (no border/background in inactive state). Search focus ring is too subtle for a modern dev tool.
+4. Active filter chip dismiss X is only 2.5px — tiny touch target, low discoverability.
+5. Step visualization "+4" text overflow breaks the visual pattern of numbered boxes.
+6. Spacing rhythm is inconsistent — page header uses py-8 while toolbar uses p-4.
+7. Empty state icon (surface-300) has poor contrast on white background.
+8. No section headers distinguish featured from regular projects in the grid.
+
+**Research insights**:
+- **Bento grid with variable card sizing** (Product Hunt): Featured cards should be visually distinct through layout + accent, not just slightly larger text.
+- **Segmented sort control** (Linear/Vercel): Sort toggles housed in a bordered container with active state = white + shadow, creating a pill-switch feel.
+- **Minimal card hierarchy** (Raycast Store): Bold title, muted description, consolidated footer — reduce vertical sections per card.
+- **Search focus glow** (Linear): Subtle box-shadow ring on focus (0 0 0 3px rgba) + icon color change to brand color.
+- **Section headers in grids** (Figma Community): Label "Featured" and "All Projects" sections explicitly so the visual hierarchy has textual reinforcement.
+
+**Design brief** (3 key goals):
+1. Make featured cards dramatically distinct: orange left border, "Featured" badge with star icon, text-xl title, orange-tinted step numbers, show 6 steps instead of 4
+2. Consolidate card footer into a single row (difficulty + model on left, author + stats on right) — reduce from 3 visual zones to 2
+3. Polish filter bar: search focus ring with shadow glow + icon color change, segmented sort toggle, subtle bg-surface-50 on inactive chips, larger filter chip dismiss icons, consistent spacing
+
+**What was implemented**:
+- **Featured card distinction** (PromptCard.tsx): `border-l-[3px] border-l-brand-orange` left accent, `Star` icon + "FEATURED" badge, title upgraded to `text-xl` (from `text-lg`), step numbers use orange tint (`bg-brand-orange/5`) by default (not just on hover), shows 6 steps instead of 4, hover lifts card with `-translate-y-0.5` + `shadow-lg`. Regular cards keep the top accent line on hover.
+- **Card footer consolidation** (PromptCard.tsx): Merged difficulty/model badges and author/stats into a single `pt-3 border-t` footer row. Author section hidden on mobile (both avatar and name) to prevent orphaned icons. Step viz overflow now uses a sized badge (`w-5 h-5` / `w-6 h-6` for featured) instead of bare "+4" text.
+- **Search focus ring** (browse/page.tsx): Added `focus:shadow-[0_0_0_3px_rgba(232,122,44,0.08)]` glow + `group-focus-within` to change search icon to `text-brand-orange` on focus. Input padding increased to `py-2.5`.
+- **Segmented sort toggle** (browse/page.tsx): Sort buttons now in a `border border-surface-200 bg-surface-50 p-0.5` container. Active sort shows `bg-white shadow-sm`, creating a pill-switch effect.
+- **Filter chip improvements** (browse/page.tsx): Inactive chips now `bg-surface-50` (recessed feel vs floating white). Dismiss X increased to `w-3.5 h-3.5` with `opacity-60 hover:opacity-100`. Chip padding increased to `px-2.5 py-1`. Border hover darkens on hover.
+- **Spacing consistency** (browse/page.tsx): Header reduced to `py-6` (from `py-8`), toolbar increased to `p-5` (from `p-4`), filter gap to `gap-4`, divider to `border-surface-200` (from `surface-100`).
+- **Featured section headers**: Added "Featured Projects" header with `Sparkles` icon above featured grid, and "All Projects" label above the regular grid.
+- **Empty state**: Icon color improved to `surface-400` (from `surface-300`), border to `surface-300`, responsive padding.
+- **TODO comment** added noting featured selection should be driven by a database flag, not positional.
+- **Files changed**: `src/components/PromptCard.tsx`, `src/app/browse/page.tsx`.
+
+**Review outcome**: Approved with nits. Reviewer flagged: (1) orphaned avatar on mobile — fixed by hiding both avatar and name with `hidden sm:flex`, (2) step overflow badge sizing mismatch for featured cards — fixed with conditional `w-6 h-6`, (3) TODO comment needed for positional featured logic — added. Also noted pre-existing `duration-200` vs `150ms` token mismatch (not introduced by this diff).
+
+**What's next**: Browse page has now had 3 focused iterations (filter UX, card refinement, this featured/hierarchy pass). Consider marking item #1 substantially complete and moving to item #2 (Build/Submit page as rich project builder) or item #3 (Header refinement).
+
+---
+
 ## 2026-04-16 — Iteration 13: Submit Form — Typography, Step Builder, Validation UX
 
 **Audit findings** (top problems identified):
@@ -457,6 +578,32 @@
 # Plain English Summary (for Drew)
 
 > What's actually changed on the site, in normal human language. Newest at the top. Let me know when you've reviewed and I'll clear the old stuff.
+
+### The header is now accessible and the "Build" button pops (April 16 — Iteration 16)
+
+The navigation bar at the top of every page got a focused accessibility and design pass:
+
+- **You can actually read the nav links now.** The text on the dark header was too low-contrast before (light gray that blended into the dark background). Now the links are brighter and pass accessibility standards. The Admin link was especially hard to see — that's fixed too.
+
+- **"Build" stands out as the main action.** Instead of looking identical to "Browse," the Build link now has a subtle orange border that fills with orange when you hover over it. It's clearly the thing you're supposed to click if you want to share a project. On mobile, it's also bolder than the other links.
+
+- **Active page is shown in orange everywhere.** Before, the currently-active page was highlighted in white on desktop but orange on mobile — inconsistent. Now it's orange everywhere, matching the brand.
+
+- **Keyboard users can see where they are.** Every link and button now shows an orange outline when focused with the keyboard. Before, there was zero visual indication.
+
+- **Mobile menu items are bigger.** The tap targets in the hamburger menu were too small (about 24px tall). Now they're 44px — the recommended minimum for comfortable tapping. The hamburger button itself is also larger.
+
+- **The header blends better with the page below.** Instead of a hard line between the dark header and the light page, there's now a subtle shadow that creates a natural sense of depth.
+
+### Browse page cards now look dramatically different when featured (April 16 — Iteration 14)
+
+The browse page got a focused pass on three things: making featured projects actually stand out, cleaning up the cards, and polishing the filter bar.
+
+- **Featured projects are now obvious.** Before, the "featured" cards at the top of the page were almost identical to regular cards — just slightly larger text (2px difference) and slightly more padding (4px difference). Nobody could tell they were special. Now featured cards have an orange stripe on the left edge, a "Featured" label with a star icon at the top, a noticeably larger title, and the step flow shows 6 steps instead of 4. There's also a "Featured Projects" header above the featured row and an "All Projects" header above the rest of the grid.
+
+- **Cards are easier to scan.** The card footer used to have three separate visual zones stacked vertically: metadata badges, model info, then author + stats. Now it's all consolidated into one clean row at the bottom — difficulty badge and model on the left, author and vote/bookmark counts on the right. Less visual noise, faster scanning. The step overflow also looks better: instead of bare "+4" text, there's a small matching box with the count.
+
+- **The filter bar feels more polished.** The search input now shows a subtle orange glow when you click into it (and the magnifying glass icon turns orange too). The sort toggle (Newest/Popular) is now inside a bordered container with the active option highlighted — it looks like a proper segmented control instead of floating text. Inactive filter chips have a light gray background instead of pure white, giving them a "recessed" feel. The dismiss × on active filter chips is bigger and more visible.
 
 ### The submit form is smarter and easier to navigate (April 16 — Iteration 13)
 

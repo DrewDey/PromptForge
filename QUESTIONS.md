@@ -8,6 +8,19 @@
 
 ## Open Questions
 
+### Q16: Browse filter toolbar — is hiding all 11 categories behind a `<details>` popover the right call, or should the top N stay inline?
+
+Iteration 26 replaced the visible 11-pill category wall with a single "Category" button that opens a popover containing all categories in a 3-col grid. This was the biggest space-saver in the filter-bar collapse — the old wall ate ~70px by itself — and it matches Linear/Raycast's "filters live behind a popover" pattern. The independent reviewer flagged one trade-off: for a power user who filters heavily, category is now *one click deeper* than before (click the popover, then click the category), where previously they could one-tap any of 11 pills. The bet is that most visitors filter by 0–1 categories at a time, so the one-row toolbar is the better default. But the data could disagree. Three options:
+
+- **(A) Keep current — all categories behind popover** — matches Linear/Raycast; maximizes above-the-fold content; one extra click for heavy filterers. Current state.
+- **(B) Hybrid — top 3 categories inline, rest behind popover** — "Popular" categories get a dedicated spot (e.g. the three with the most approved projects), everything else in the popover. Keeps the one-row toolbar but preserves one-click for common paths. More logic but probably the best of both.
+- **(C) Revert to visible pills, accept the ~70px chrome** — if you expect category to be the #1 way people navigate Browse and you want zero friction for filterers, the inline wall may be worth the vertical cost, and we'd find another way to make the toolbar feel less heavy.
+
+**Drew's Response:**
+
+
+---
+
 ### Q15: User profile — should "Upvotes" be accent-highlighted in brand-orange, or should all three stat values be neutral?
 
 Iteration 25 redesigned the profile page stat tiles (Projects / Upvotes / Saves). All three render as GitHub-style left-aligned numeric tiles, but I highlighted the **Upvotes** value in `text-brand-orange` as a single eye-anchor — the idea being that "upvotes received" is the most meaningful signal of community validation on a maker-showcase platform, and a single accent on three otherwise-identical tiles gives the page a focal point rather than three equal-weight mini-cards. This wasn't in the original design brief; the reviewer flagged it as a defensible judgment call but worth surfacing to you.

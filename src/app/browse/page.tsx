@@ -1,5 +1,15 @@
+// Iteration 26 (2026-04-16): Browse page — Linear/Raycast-style single-row filter toolbar.
+// - Collapsed the prior 3-row filter stack (search / 11 category pills wall / level + sort) into one
+//   horizontal toolbar (flex-col → flex-row at sm). Categories now live behind a native <details>
+//   popover so the 11-wide "flag wall" is out of the default scan. No JS required — progressive
+//   disclosure via HTML only.
+// - Promoted the tiny orphaned "33 projects" result-count into a real section anchor
+//   (text-2xl font-bold) with active-filter chips inline on the right baseline. Featured + All
+//   Projects section headers get matched, louder weights.
+// - Kept all existing semantics (server component, search form, Link-based filter navigation).
+
 import Link from 'next/link'
-import { Search, X, FolderOpen, SlidersHorizontal, Sparkles } from 'lucide-react'
+import { Search, X, FolderOpen, SlidersHorizontal, Sparkles, Layers, ChevronDown } from 'lucide-react'
 import { getCategories, getPrompts } from '@/lib/data'
 import PromptCard from '@/components/PromptCard'
 
@@ -42,9 +52,10 @@ export default async function BrowsePage({
     return `/browse${qs ? `?${qs}` : ''}`
   }
 
-  const activeCategoryName = activeCategory
-    ? categories.find(c => c.slug === activeCategory)?.name
-    : null
+  const activeCategoryObj = activeCategory ? categories.find(c => c.slug === activeCategory) : null
+  const activeCategoryName = activeCategoryObj?.name ?? null
+  const activeDifficultyLabel =
+    difficulties.find(d => d.value === activeDifficulty)?.label ?? null
 
   // Split prompts for featured layout (first 2 get featured treatment if no filters active)
   // TODO: Replace with a real `is_featured` flag from the database. Currently positional (first 2 results).
@@ -63,67 +74,88 @@ export default async function BrowsePage({
       </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        {/* Search + Filters toolbar */}
-        <div className="bg-white border border-surface-200 p-6 mb-6">
-          {/* Search bar */}
-          <form className="mb-4">
-            <input type="hidden" name="category" value={activeCategory} />
-            <input type="hidden" name="difficulty" value={activeDifficulty} />
-            <input type="hidden" name="sort" value={activeSort} />
-            <div className="relative group/search">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-surface-400 group-focus-within/search:text-brand-orange transition-colors duration-200" />
-              <input
-                type="text"
-                name="q"
-                defaultValue={params.q ?? ''}
-                placeholder="Search projects..."
-                className="w-full bg-surface-50 border border-surface-200 pl-10 pr-4 py-2.5 text-sm text-surface-900 placeholder-surface-400 focus:outline-none focus:border-brand-orange focus:bg-white focus:ring-2 focus:ring-brand-orange/15 transition-all duration-200"
-              />
-            </div>
-          </form>
+        {/*
+          Filter toolbar — single horizontal row on desktop, stacked on mobile.
+          Shape: [ search ] [ Category popover ] [ Level segmented ] [ Sort segmented ]
+          Total chrome ≈ 56px (was ~200px / 3 rows).
+        */}
+        <div className="bg-white border border-surface-200 p-3 mb-4">
+          <div className="flex flex-col lg:flex-row lg:items-center gap-3">
+            {/* Search — flex-1 so it grows */}
+            <form className="flex-1 min-w-0 lg:max-w-sm">
+              <input type="hidden" name="category" value={activeCategory} />
+              <input type="hidden" name="difficulty" value={activeDifficulty} />
+              <input type="hidden" name="sort" value={activeSort} />
+              <div className="relative group/search">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-surface-400 group-focus-within/search:text-brand-orange transition-colors duration-150" />
+                <input
+                  type="text"
+                  name="q"
+                  defaultValue={params.q ?? ''}
+                  placeholder="Search projects..."
+                  aria-label="Search projects"
+                  className="w-full bg-surface-50 border border-surface-200 pl-9 pr-3 py-2 text-sm text-surface-900 placeholder-surface-400 focus:outline-none focus:border-brand-orange focus:bg-white focus:ring-2 focus:ring-brand-orange/15 transition-all duration-150"
+                />
+              </div>
+            </form>
 
-          {/* Filters row */}
-          <div className="flex flex-col gap-4">
-            {/* Categories */}
-            <div className="flex items-center gap-2 flex-wrap">
-              <SlidersHorizontal className="w-3.5 h-3.5 text-surface-400 shrink-0" />
-              <Link
-                href={buildUrl({ category: '' })}
-                className={`text-[12px] font-medium px-3 py-2 border transition-all duration-200 ${
-                  !activeCategory
-                    ? 'bg-surface-900 text-white border-surface-900'
-                    : 'bg-surface-50 text-surface-600 border-surface-200 hover:border-surface-400 hover:bg-white active:bg-surface-100'
-                }`}
-              >
-                All
-              </Link>
-              {categories.map(cat => (
-                <Link
-                  key={cat.id}
-                  href={buildUrl({ category: cat.slug })}
-                  className={`text-[12px] font-medium px-3 py-2 border transition-all duration-200 ${
-                    activeCategory === cat.slug
-                      ? 'bg-surface-900 text-white border-surface-900'
-                      : 'bg-surface-50 text-surface-600 border-surface-200 hover:border-surface-400 hover:bg-white active:bg-surface-100'
-                  }`}
-                >
-                  {cat.icon} {cat.name}
-                </Link>
-              ))}
-            </div>
+            <div className="flex flex-col sm:flex-row sm:items-center gap-2 lg:ml-auto">
+              {/*
+                Category popover — native <details>, no JS required.
+                Closed state: button showing "Category" + active name (if any) + chevron.
+                Open state: floating panel with the 11 category pills in a responsive grid.
+              */}
+              <details className="relative group/cat">
+                <summary className={`list-none cursor-pointer select-none flex items-center gap-1.5 text-[13px] font-medium px-3 py-2 border transition-colors duration-150 ${
+                  activeCategory
+                    ? 'bg-brand-orange/10 text-brand-orange border-brand-orange/40 hover:bg-brand-orange/15'
+                    : 'bg-surface-50 text-surface-700 border-surface-200 hover:border-surface-400 hover:bg-white'
+                }`}>
+                  <SlidersHorizontal className="w-3.5 h-3.5 opacity-70" aria-hidden="true" />
+                  <span>Category{activeCategoryObj ? `: ${activeCategoryObj.name}` : ''}</span>
+                  <ChevronDown className="w-3.5 h-3.5 opacity-70 group-open/cat:rotate-180 transition-transform duration-150" aria-hidden="true" />
+                </summary>
+                <div className="absolute left-0 top-full mt-1 z-20 bg-white border border-surface-200 shadow-lg p-2 w-[min(92vw,560px)]">
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-1">
+                    <Link
+                      href={buildUrl({ category: '' })}
+                      className={`text-[13px] font-medium px-2.5 py-1.5 border transition-colors duration-150 ${
+                        !activeCategory
+                          ? 'bg-surface-900 text-white border-surface-900'
+                          : 'bg-white text-surface-700 border-surface-200 hover:border-surface-400 hover:bg-surface-50'
+                      }`}
+                    >
+                      All categories
+                    </Link>
+                    {categories.map(cat => (
+                      <Link
+                        key={cat.id}
+                        href={buildUrl({ category: cat.slug })}
+                        className={`text-[13px] font-medium px-2.5 py-1.5 border transition-colors duration-150 truncate ${
+                          activeCategory === cat.slug
+                            ? 'bg-surface-900 text-white border-surface-900'
+                            : 'bg-white text-surface-700 border-surface-200 hover:border-surface-400 hover:bg-surface-50'
+                        }`}
+                      >
+                        <span aria-hidden="true">{cat.icon}</span> {cat.name}
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+              </details>
 
-            {/* Difficulty + Sort row */}
-            <div className="flex flex-col sm:flex-row sm:items-center gap-3 pt-4 border-t border-surface-200">
-              <div className="flex items-center gap-2 flex-wrap">
-                <span className="text-[11px] font-semibold uppercase tracking-wider text-surface-400">Level</span>
+              {/* Level — compact segmented control (inline pills). Replaces the full-row chip line. */}
+              <div className="flex items-center border border-surface-200 bg-surface-50 p-0.5" role="radiogroup" aria-label="Difficulty level">
                 {difficulties.map(d => (
                   <Link
                     key={d.value}
                     href={buildUrl({ difficulty: d.value })}
-                    className={`text-[12px] font-medium px-3 py-2 border transition-all duration-200 ${
+                    role="radio"
+                    aria-checked={activeDifficulty === d.value}
+                    className={`px-2.5 py-1 text-[12px] font-medium transition-all duration-150 ${
                       activeDifficulty === d.value
-                        ? 'bg-surface-900 text-white border-surface-900'
-                        : 'bg-surface-50 text-surface-500 border-surface-200 hover:border-surface-400 hover:bg-white active:bg-surface-100'
+                        ? 'bg-white text-surface-900 shadow-sm border-b-2 border-b-brand-orange'
+                        : 'text-surface-500 hover:text-surface-800 border-b-2 border-b-transparent'
                     }`}
                   >
                     {d.label}
@@ -131,94 +163,94 @@ export default async function BrowsePage({
                 ))}
               </div>
 
-              <div className="sm:ml-auto flex items-center gap-4">
-                {hasActiveFilters && (
-                  <Link
-                    href="/browse"
-                    className="text-[12px] font-medium text-surface-500 hover:text-surface-700 transition-colors duration-200 flex items-center gap-1 px-2 py-1 hover:bg-surface-50"
-                  >
-                    <X className="w-3 h-3" />
-                    Clear all
-                  </Link>
-                )}
-                <div className="flex items-center gap-0.5 border border-surface-200 bg-surface-50 p-0.5">
-                  <Link
-                    href={buildUrl({ sort: 'newest' })}
-                    className={`px-3 py-1.5 text-[12px] font-medium transition-all duration-200 ${
-                      activeSort === 'newest' ? 'text-surface-900 bg-white shadow-sm border-b-2 border-b-brand-orange' : 'text-surface-500 hover:text-surface-700 border-b-2 border-b-transparent'
-                    }`}
-                  >
-                    Newest
-                  </Link>
-                  <Link
-                    href={buildUrl({ sort: 'popular' })}
-                    className={`px-3 py-1.5 text-[12px] font-medium transition-all duration-200 ${
-                      activeSort === 'popular' ? 'text-surface-900 bg-white shadow-sm border-b-2 border-b-brand-orange' : 'text-surface-500 hover:text-surface-700 border-b-2 border-b-transparent'
-                    }`}
-                  >
-                    Popular
-                  </Link>
-                </div>
+              {/* Sort — segmented control (unchanged shape, nudged sizes) */}
+              <div className="flex items-center border border-surface-200 bg-surface-50 p-0.5" role="radiogroup" aria-label="Sort projects">
+                <Link
+                  href={buildUrl({ sort: 'newest' })}
+                  role="radio"
+                  aria-checked={activeSort === 'newest'}
+                  className={`px-2.5 py-1 text-[12px] font-medium transition-all duration-150 ${
+                    activeSort === 'newest' ? 'bg-white text-surface-900 shadow-sm border-b-2 border-b-brand-orange' : 'text-surface-500 hover:text-surface-800 border-b-2 border-b-transparent'
+                  }`}
+                >
+                  Newest
+                </Link>
+                <Link
+                  href={buildUrl({ sort: 'popular' })}
+                  role="radio"
+                  aria-checked={activeSort === 'popular'}
+                  className={`px-2.5 py-1 text-[12px] font-medium transition-all duration-150 ${
+                    activeSort === 'popular' ? 'bg-white text-surface-900 shadow-sm border-b-2 border-b-brand-orange' : 'text-surface-500 hover:text-surface-800 border-b-2 border-b-transparent'
+                  }`}
+                >
+                  Popular
+                </Link>
               </div>
             </div>
           </div>
         </div>
 
-        {/* Active filter chips */}
-        {hasActiveFilters && (
-          <div className="flex items-center gap-2 flex-wrap mb-4">
-            <span className="text-[11px] font-semibold uppercase tracking-wider text-surface-400">Active:</span>
-            {activeCategoryName && (
+        {/*
+          Result header — the previous tiny orphaned "33 projects" line is promoted to a real
+          section anchor. Active filter chips now live on the same baseline (right-aligned),
+          which collapses the "Active:" sub-row that used to orphan below the filter bar.
+        */}
+        <div className="flex flex-col sm:flex-row sm:items-baseline sm:justify-between gap-3 mb-6">
+          <h2 className="text-2xl font-bold text-surface-900 flex items-baseline gap-2">
+            <span className="tabular-nums">{prompts.length}</span>
+            <span>{prompts.length === 1 ? 'Project' : 'Projects'}</span>
+          </h2>
+          {hasActiveFilters ? (
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="text-[11px] font-semibold uppercase tracking-wider text-surface-400">Filtered by</span>
+              {activeCategoryName && (
+                <Link
+                  href={buildUrl({ category: '' })}
+                  className="inline-flex items-center gap-1.5 text-[12px] font-medium bg-brand-orange/10 text-brand-orange border border-brand-orange/30 px-2.5 py-1 hover:bg-brand-orange/15 hover:border-brand-orange/50 transition-colors duration-150"
+                  aria-label={`Remove category filter ${activeCategoryName}`}
+                >
+                  {activeCategoryName}
+                  <X className="w-3 h-3 opacity-75" aria-hidden="true" />
+                </Link>
+              )}
+              {activeDifficultyLabel && activeDifficulty && (
+                <Link
+                  href={buildUrl({ difficulty: '' })}
+                  className="inline-flex items-center gap-1.5 text-[12px] font-medium bg-brand-orange/10 text-brand-orange border border-brand-orange/30 px-2.5 py-1 hover:bg-brand-orange/15 hover:border-brand-orange/50 transition-colors duration-150"
+                  aria-label={`Remove difficulty filter ${activeDifficultyLabel}`}
+                >
+                  {activeDifficultyLabel}
+                  <X className="w-3 h-3 opacity-75" aria-hidden="true" />
+                </Link>
+              )}
+              {params.q && (
+                <Link
+                  href={buildUrl({ q: '' })}
+                  className="inline-flex items-center gap-1.5 text-[12px] font-medium bg-brand-orange/10 text-brand-orange border border-brand-orange/30 px-2.5 py-1 hover:bg-brand-orange/15 hover:border-brand-orange/50 transition-colors duration-150"
+                  aria-label={`Remove search filter`}
+                >
+                  &ldquo;{params.q}&rdquo;
+                  <X className="w-3 h-3 opacity-75" aria-hidden="true" />
+                </Link>
+              )}
               <Link
-                href={buildUrl({ category: '' })}
-                className="inline-flex items-center gap-1.5 text-[12px] font-medium bg-brand-orange/10 text-brand-orange border border-brand-orange/20 px-2.5 py-1 hover:bg-brand-orange/20 hover:border-brand-orange/40 active:bg-brand-orange/25 transition-all duration-200"
+                href="/browse"
+                className="text-[12px] font-medium text-surface-500 hover:text-surface-800 transition-colors duration-150 underline underline-offset-2 decoration-dotted"
               >
-                {activeCategoryName}
-                <X className="w-3.5 h-3.5 opacity-75 hover:opacity-100" />
+                Clear all
               </Link>
-            )}
-            {activeDifficulty && (
-              <Link
-                href={buildUrl({ difficulty: '' })}
-                className="inline-flex items-center gap-1.5 text-[12px] font-medium bg-brand-orange/10 text-brand-orange border border-brand-orange/20 px-2.5 py-1 hover:bg-brand-orange/20 hover:border-brand-orange/40 active:bg-brand-orange/25 transition-all duration-200"
-              >
-                {activeDifficulty.charAt(0).toUpperCase() + activeDifficulty.slice(1)}
-                <X className="w-3.5 h-3.5 opacity-75 hover:opacity-100" />
-              </Link>
-            )}
-            {params.q && (
-              <Link
-                href={buildUrl({ q: '' })}
-                className="inline-flex items-center gap-1.5 text-[12px] font-medium bg-brand-orange/10 text-brand-orange border border-brand-orange/20 px-2.5 py-1 hover:bg-brand-orange/20 hover:border-brand-orange/40 active:bg-brand-orange/25 transition-all duration-200"
-              >
-                &ldquo;{params.q}&rdquo;
-                <X className="w-3.5 h-3.5 opacity-75 hover:opacity-100" />
-              </Link>
-            )}
-          </div>
-        )}
-
-        {/* Result count */}
-        <div className="flex items-center justify-between mb-6">
-          <p className="text-[13px] text-surface-500">
-            <span className="font-semibold text-surface-700">{prompts.length}</span>{' '}
-            {prompts.length === 1 ? 'project' : 'projects'}
-            {activeCategoryName && (
-              <span> in <span className="font-medium text-surface-600">{activeCategoryName}</span></span>
-            )}
-            {activeDifficulty && (
-              <span> at <span className="font-medium text-surface-600">{activeDifficulty}</span> level</span>
-            )}
-            {params.q && (
-              <span> matching &ldquo;<span className="font-medium text-surface-600">{params.q}</span>&rdquo;</span>
-            )}
-          </p>
+            </div>
+          ) : (
+            <p className="text-sm text-surface-500">
+              Curated build paths across every category.
+            </p>
+          )}
         </div>
 
         {/* Results */}
         {prompts.length === 0 ? (
           <div className="text-center py-16 sm:py-20 bg-surface-50 border border-dashed border-surface-300">
-            <FolderOpen className="w-10 h-10 text-surface-300 mx-auto mb-4" />
+            <FolderOpen className="w-10 h-10 text-surface-300 mx-auto mb-4" aria-hidden="true" />
             <p className="text-base font-semibold text-surface-900 mb-1">No projects found</p>
             <p className="text-sm text-surface-500 mb-6 max-w-sm mx-auto">
               {params.q
@@ -228,9 +260,9 @@ export default async function BrowsePage({
             {hasActiveFilters && (
               <Link
                 href="/browse"
-                className="inline-flex items-center gap-1.5 bg-surface-900 text-white text-[13px] font-medium px-4 py-2 hover:bg-surface-800 transition-colors duration-200"
+                className="inline-flex items-center gap-1.5 bg-surface-900 text-white text-[13px] font-bold px-4 py-2 min-h-11 hover:bg-surface-800 transition-colors duration-150 focus-visible:outline-2 focus-visible:outline-brand-orange focus-visible:outline-offset-2"
               >
-                <X className="w-3.5 h-3.5" />
+                <X className="w-3.5 h-3.5" aria-hidden="true" />
                 Clear filters
               </Link>
             )}
@@ -239,30 +271,41 @@ export default async function BrowsePage({
           <div>
             {/* Featured projects (top 2, shown only when no filters) */}
             {showFeatured && featuredPrompts.length > 0 && (
-              <div className="mb-8">
-                <div className="flex items-center gap-2 mb-6">
-                  <Sparkles className="w-4 h-4 text-brand-orange" />
-                  <h2 className="text-sm font-semibold text-surface-700">Featured Projects</h2>
+              <section aria-labelledby="featured-heading" className="mb-10">
+                <div className="flex items-baseline justify-between gap-3 mb-4">
+                  <h3 id="featured-heading" className="text-lg font-bold text-surface-900 flex items-center gap-2">
+                    <Sparkles className="w-4 h-4 text-brand-orange" aria-hidden="true" />
+                    Featured
+                  </h3>
+                  <span className="text-[12px] font-semibold uppercase tracking-wider text-surface-400 tabular-nums">
+                    {featuredPrompts.length} highlighted
+                  </span>
                 </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                   {featuredPrompts.map((prompt, idx) => (
                     <div key={prompt.id} className="animate-card-slide-in" style={{ animationDelay: `${idx * 60}ms` }}>
                       <PromptCard prompt={prompt} featured />
                     </div>
                   ))}
                 </div>
-              </div>
+              </section>
             )}
 
-            {/* Section label for regular grid when featured is shown */}
+            {/* Main grid header — matched weight to Featured */}
             {showFeatured && gridPrompts.length > 0 && (
-              <div className="flex items-center gap-2 mb-6">
-                <h2 className="text-sm font-semibold text-surface-700">All Projects</h2>
+              <div className="flex items-baseline justify-between gap-3 mb-4">
+                <h3 className="text-lg font-bold text-surface-900 flex items-center gap-2">
+                  <Layers className="w-4 h-4 text-surface-400" aria-hidden="true" />
+                  All Projects
+                </h3>
+                <span className="text-[12px] font-semibold uppercase tracking-wider text-surface-400 tabular-nums">
+                  {gridPrompts.length} total
+                </span>
               </div>
             )}
 
             {/* Main grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
               {gridPrompts.map((prompt, idx) => (
                 <div key={prompt.id} className="animate-card-slide-in" style={{ animationDelay: `${(idx + (showFeatured ? 2 : 0)) * 40}ms` }}>
                   <PromptCard prompt={prompt} />

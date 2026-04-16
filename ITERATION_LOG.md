@@ -5,6 +5,58 @@
 
 ---
 
+## 2026-04-16 — Iteration 18: Project Detail Page — Premium Step Flow + Build Page Multi-Open Accordion
+
+**Audit findings** (top problems identified):
+1. Prompt & Result sections visually equivalent — both use border-l-4 at same weight, breaking the input→output reading flow that is PathForge's core differentiator
+2. Gray-* palette used throughout instead of surface-* design tokens — 20+ instances breaking the cooler zinc-based design system
+3. Step headers invisible — text-xs text-gray-400 on bg-gray-50 background kills contrast and scannability
+4. Metadata grouped into two rows with inconsistent gap-6 (not on 4/8/16/24/32 grid) creating visual imbalance
+5. Mobile author row used flex-wrap without column stacking, causing orphaned vote/bookmark buttons on narrow screens
+6. CopyButton used gray-* palette instead of surface-*
+
+**Research insights**:
+- **Typed content sections** (Dev.to, Medium): Separate narrative from code using distinct visual containers — dark bg for input/code, lighter for output. Maps directly to prompt→result.
+- **Code-editor aesthetic** (GitHub, VS Code): Monospace text on dark backgrounds with copy buttons signals "this is technical content." Developers expect this pattern.
+- **Directionality signals** (Linear changelog): Use orange for actions/inputs, blue for results/outputs — functional color rather than decorative.
+- **Compact metadata bands** (Medium, Linear): Single row of chips that wraps naturally instead of multi-group layout.
+
+**Design brief** (3 key goals):
+1. Replace all gray-* with surface-* on detail page and CopyButton for design system consistency
+2. Create clear input→output directionality: prompts get dark code-editor bg (surface-900) with orange border-l-4; results get light bg (accent-50) with blue border-l-2
+3. Make step headers high-contrast: dark bg (surface-900) with white text instead of gray-50 with faint gray text
+
+**What was implemented**:
+
+*Project Detail Page (`src/app/prompt/[id]/page.tsx`):*
+- **Surface palette migration**: All gray-* classes replaced with surface-* equivalents (breadcrumb, title, description, author, metadata, tags, related section)
+- **Step header redesign**: Changed from `bg-gray-50` with `text-xs text-gray-400` to `bg-surface-900` with `text-white` title and `text-surface-400` step counter — dramatically improved scannability
+- **Prompt sections**: New code-editor aesthetic — `bg-surface-900 text-surface-200` monospace blocks with `border-l-4 border-brand-orange`. Prompts now look like terminal input.
+- **Result sections**: Changed from green accent to blue — `bg-accent-50/40` with `border-l-2 border-brand-blue` and `ArrowDown` icon. Lighter visual weight than prompts creates clear directionality.
+- **Metadata flattened**: Two-group layout with `gap-6` replaced by single `flex-wrap` band with `gap-2` — all chips in one row that wraps naturally
+- **Mobile author row**: Changed from `flex-wrap` to `flex-col md:flex-row` for proper stacking on small screens; avatar gets `flex-shrink-0`
+- **Section header**: "The Path" → "The Build Path" at `text-xl font-black` (was `text-lg font-bold`)
+- **Single prompt view**: Now uses code-editor aesthetic with `bg-surface-900` header bar
+- **Final result**: Changed from green accent to blue (`border-l-2 border-brand-blue`, `bg-accent-50/40`) — consistent with step results
+- **Vertical pipe**: Thinned from 3px to 2px, reduced opacity to 40% for subtler connective tissue
+
+*CopyButton (`src/app/prompt/[id]/CopyButton.tsx`):*
+- Migrated from gray-* to surface-* palette (hover, bg, border states)
+- Increased hover border opacity from `/40` to `/60` for better interactive feedback
+
+*Build Page (`src/app/prompt/new/page.tsx`):*
+- **Multi-open accordion**: Per Drew's Q7 response — switched from `activeSection` (single number) to `openSections` (Set<number>) state
+- Sections now toggle independently — clicking one doesn't close others
+- Guard prevents closing ALL sections (at least one stays open)
+- Error handling additive — opens error section without closing others
+- Scroll-into-view only fires when opening, not closing
+
+**Review outcome**: Approved with nits. Reviewer confirmed all 4 brief items implemented correctly. Bug fixed: duplicate `text-surface-800` and `text-surface-200` on prompt `<pre>` tag — removed the incorrect one. Follow-up noted: Build page form internals still use gray-* (57 instances) — tracked for future iteration.
+
+**What's next**: Build page gray-*→surface-* migration, or Seed content overhaul (#6). The detail page is now in good shape with the premium step flow — seed content quality is the bottleneck for making the site look impressive.
+
+---
+
 ## 2026-04-16 — Iteration 17: Build Page — Progressive Disclosure with Collapsible Accordion Sections
 
 **Audit findings** (top problems identified):
@@ -622,6 +674,16 @@
 # Plain English Summary (for Drew)
 
 > What's actually changed on the site, in normal human language. Newest at the top. Let me know when you've reviewed and I'll clear the old stuff.
+
+### Project detail page looks way more premium now, and the Build page lets you jump between sections (April 16 — Iteration 18)
+
+Two changes this round:
+
+**The project detail page got a major visual upgrade.** When you click into a project and see the step-by-step build path, the prompts now look like a code editor — dark background with light text, like a terminal window. This makes it immediately clear "this is what the person typed into the AI." The results, by contrast, have a light blue-tinted background — softer and distinct. Before, prompts and results looked almost the same (both had colored stripes on the left with equal visual weight). Now there's a clear "input → output" flow. The step headers are also way more visible — they used to be light gray text on a light gray background (nearly invisible), now they're white text on a dark bar. You can actually scan through the steps quickly.
+
+The whole page also switched from Tailwind's default gray colors to the proper PathForge surface palette (cooler zinc tones) — so it matches the rest of the site instead of feeling slightly warmer/different.
+
+**The Build page now lets you open multiple sections at once.** Previously, clicking "Your Build Journey" would collapse "Project Basics." Drew said he'd prefer to jump freely between sections, so now clicking one section doesn't close the others. You can have all three open at once if you want. The only rule: at least one section always stays open so you never get a completely collapsed empty page.
 
 ### The header is now accessible and the "Build" button pops (April 16 — Iteration 16)
 

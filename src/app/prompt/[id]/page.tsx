@@ -1,6 +1,6 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
-import { ChevronRight, Tag, Cpu, Wrench, MessageSquare, ArrowRight } from 'lucide-react'
+import { ChevronRight, Tag, Cpu, Wrench, MessageSquare, ArrowRight, ArrowDown } from 'lucide-react'
 import { getPromptById, getUserVotesAndBookmarks, getPrompts } from '@/lib/data'
 import { getModelName } from '@/lib/models'
 import CopyButton from './CopyButton'
@@ -8,9 +8,9 @@ import VoteBookmarkButtons from '@/components/VoteBookmarkButtons'
 import PromptCard from '@/components/PromptCard'
 
 const difficultyConfig = {
-  beginner: { bg: 'bg-green-50', text: 'text-green-700', border: 'border-green-300', dot: 'bg-green-500' },
-  intermediate: { bg: 'bg-amber-50', text: 'text-amber-700', border: 'border-amber-300', dot: 'bg-amber-500' },
-  advanced: { bg: 'bg-red-50', text: 'text-red-700', border: 'border-red-300', dot: 'bg-red-500' },
+  beginner: { bg: 'bg-green-50', text: 'text-green-700', border: 'border-green-200', dot: 'bg-green-500' },
+  intermediate: { bg: 'bg-amber-50', text: 'text-amber-700', border: 'border-amber-200', dot: 'bg-amber-500' },
+  advanced: { bg: 'bg-red-50', text: 'text-red-700', border: 'border-red-200', dot: 'bg-red-500' },
 }
 
 export default async function PromptDetailPage({
@@ -59,25 +59,25 @@ export default async function PromptDetailPage({
       <nav aria-label="Breadcrumb" className="mb-8">
         <ol className="flex items-center gap-1.5 text-sm">
           <li>
-            <Link href="/browse" className="text-gray-400 hover:text-brand-orange transition-colors duration-200 font-medium">
+            <Link href="/browse" className="text-surface-400 hover:text-brand-orange transition-colors duration-200 font-medium">
               Browse
             </Link>
           </li>
           {prompt.category && (
             <>
-              <li aria-hidden="true"><ChevronRight className="w-3.5 h-3.5 text-gray-300" /></li>
+              <li aria-hidden="true"><ChevronRight className="w-3.5 h-3.5 text-surface-300" /></li>
               <li>
                 <Link
                   href={`/browse?category=${prompt.category.slug}`}
-                  className="text-gray-400 hover:text-brand-orange transition-colors duration-200 font-medium"
+                  className="text-surface-400 hover:text-brand-orange transition-colors duration-200 font-medium"
                 >
                   {prompt.category.icon} {prompt.category.name}
                 </Link>
               </li>
             </>
           )}
-          <li aria-hidden="true"><ChevronRight className="w-3.5 h-3.5 text-gray-300" /></li>
-          <li className="text-gray-700 font-semibold truncate max-w-[300px]" aria-current="page">
+          <li aria-hidden="true"><ChevronRight className="w-3.5 h-3.5 text-surface-300" /></li>
+          <li className="text-surface-700 font-semibold truncate max-w-[300px]" aria-current="page">
             {prompt.title}
           </li>
         </ol>
@@ -86,24 +86,24 @@ export default async function PromptDetailPage({
       {/* ─── Header ─── */}
       <header className="mb-10">
         {/* Title */}
-        <h1 className="text-3xl sm:text-4xl font-black text-gray-900 mb-3 leading-tight">{prompt.title}</h1>
-        <p className="text-gray-600 text-lg leading-relaxed mb-4">{prompt.description}</p>
+        <h1 className="text-3xl sm:text-4xl font-black text-surface-900 mb-3 leading-tight">{prompt.title}</h1>
+        <p className="text-surface-500 text-lg leading-relaxed mb-4">{prompt.description}</p>
 
         {/* Author row — immediately after title for human connection */}
-        <div className="flex items-center justify-between flex-wrap gap-4 mb-6">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-gradient-to-br from-brand-orange to-brand-blue flex items-center justify-center text-white text-sm font-bold">
+            <div className="w-10 h-10 bg-gradient-to-br from-brand-orange to-brand-blue flex items-center justify-center text-white text-sm font-bold flex-shrink-0">
               {(prompt.author?.display_name || 'A')[0].toUpperCase()}
             </div>
             <div>
               {prompt.author?.username ? (
-                <Link href={`/user/${prompt.author.username}`} className="text-sm font-semibold text-gray-900 hover:text-brand-orange transition-colors duration-200">
+                <Link href={`/user/${prompt.author.username}`} className="text-sm font-semibold text-surface-900 hover:text-brand-orange transition-colors duration-200">
                   {prompt.author.display_name ?? 'Anonymous'}
                 </Link>
               ) : (
-                <span className="text-sm font-semibold text-gray-900">Anonymous</span>
+                <span className="text-sm font-semibold text-surface-900">Anonymous</span>
               )}
-              <p className="text-xs text-gray-400">
+              <p className="text-xs text-surface-400">
                 {prompt.created_at ? new Date(prompt.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'Shared on PathForge'}
               </p>
             </div>
@@ -119,57 +119,49 @@ export default async function PromptDetailPage({
           />
         </div>
 
-        {/* Metadata — grouped into context + technical */}
-        <div className="flex items-start gap-6 flex-wrap pt-5 border-t border-gray-200">
-          {/* Context group */}
-          <div className="flex items-center gap-2 flex-wrap">
-            {prompt.category && (
-              <Link
-                href={`/browse?category=${prompt.category.slug}`}
-                className="inline-flex items-center gap-1.5 text-xs font-semibold bg-gray-100 text-gray-600 px-3 py-1.5 border border-gray-200 hover:border-brand-orange/50 hover:text-brand-orange transition-colors duration-200"
-              >
-                <span>{prompt.category.icon}</span>
-                {prompt.category.name}
-              </Link>
-            )}
-            <span className={`inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 border ${difficulty.bg} ${difficulty.text} ${difficulty.border}`}>
-              <span className={`w-1.5 h-1.5 ${difficulty.dot}`} />
-              {prompt.difficulty}
+        {/* Metadata — compact band */}
+        <div className="flex items-center gap-2 flex-wrap pt-5 border-t border-surface-200">
+          {prompt.category && (
+            <Link
+              href={`/browse?category=${prompt.category.slug}`}
+              className="inline-flex items-center gap-1.5 text-xs font-semibold bg-surface-100 text-surface-600 px-3 py-1.5 border border-surface-200 hover:border-brand-orange/50 hover:text-brand-orange transition-colors duration-200"
+            >
+              <span>{prompt.category.icon}</span>
+              {prompt.category.name}
+            </Link>
+          )}
+          <span className={`inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 border ${difficulty.bg} ${difficulty.text} ${difficulty.border}`}>
+            <span className={`w-1.5 h-1.5 ${difficulty.dot}`} />
+            {prompt.difficulty}
+          </span>
+          {hasSteps && (
+            <span className="inline-flex items-center gap-1.5 text-xs font-semibold bg-brand-orange/10 text-brand-orange px-3 py-1.5 border border-brand-orange/30">
+              {prompt.steps!.length}-step path
             </span>
-            {hasSteps && (
-              <span className="inline-flex items-center gap-1.5 text-xs font-semibold bg-brand-orange/10 text-brand-orange px-3 py-1.5 border border-brand-orange/30">
-                {prompt.steps!.length}-step path
-              </span>
-            )}
-          </div>
-          {/* Technical specs group */}
-          {(modelDisplay || (prompt.tools_used && prompt.tools_used.length > 0)) && (
-            <div className="flex items-center gap-2 flex-wrap">
-              {modelDisplay && (
-                <span className="inline-flex items-center gap-1.5 text-xs font-semibold bg-accent-50 text-brand-blue px-3 py-1.5 border border-accent-200">
-                  <Cpu className="w-3 h-3" />
-                  {modelDisplay}
-                </span>
-              )}
-              {prompt.tools_used && prompt.tools_used.length > 0 && (
-                <span className="inline-flex items-center gap-1.5 text-xs font-semibold bg-gray-50 text-gray-600 px-3 py-1.5 border border-gray-200">
-                  <Wrench className="w-3 h-3" />
-                  {prompt.tools_used.join(', ')}
-                </span>
-              )}
-            </div>
+          )}
+          {modelDisplay && (
+            <span className="inline-flex items-center gap-1.5 text-xs font-semibold bg-accent-50 text-brand-blue px-3 py-1.5 border border-accent-200">
+              <Cpu className="w-3 h-3" />
+              {modelDisplay}
+            </span>
+          )}
+          {prompt.tools_used && prompt.tools_used.length > 0 && (
+            <span className="inline-flex items-center gap-1.5 text-xs font-semibold bg-surface-50 text-surface-600 px-3 py-1.5 border border-surface-200">
+              <Wrench className="w-3 h-3" />
+              {prompt.tools_used.join(', ')}
+            </span>
           )}
         </div>
       </header>
 
       {/* ─── The Story — most prominent content section ─── */}
       <section className="mb-12">
-        <h2 className="text-xl font-black text-gray-900 mb-4 flex items-center gap-2">
+        <h2 className="text-xl font-black text-surface-900 mb-4 flex items-center gap-2">
           <MessageSquare className="w-5 h-5 text-brand-orange" />
           The Story
         </h2>
-        <div className="bg-primary-50 border-l-4 border-brand-orange p-6 sm:p-8">
-          <p className="text-gray-700 text-base leading-relaxed whitespace-pre-line">{prompt.content}</p>
+        <div className="bg-primary-50/60 border-l-4 border-brand-orange p-6 sm:p-8">
+          <p className="text-surface-700 text-base leading-relaxed whitespace-pre-line">{prompt.content}</p>
         </div>
       </section>
 
@@ -177,46 +169,47 @@ export default async function PromptDetailPage({
       {hasSteps && (
         <section className="mb-12">
           <div className="mb-8">
-            <h2 className="text-lg font-bold text-gray-900 mb-1 flex items-center gap-2">
-              <ChevronRight className="w-5 h-5 text-brand-blue" />
-              The Path
-              <span className="text-sm font-normal text-gray-400">
-                ({prompt.steps!.length} step{prompt.steps!.length > 1 ? 's' : ''})
+            <h2 className="text-xl font-black text-surface-900 mb-1 flex items-center gap-2">
+              The Build Path
+              <span className="text-sm font-medium text-surface-400">
+                {prompt.steps!.length} step{prompt.steps!.length > 1 ? 's' : ''}
               </span>
             </h2>
-            <p className="text-sm text-gray-500 ml-7">
-              Follow along with the prompts used and results at each step.
+            <p className="text-sm text-surface-500">
+              Follow the prompts and results at each step of the build process.
             </p>
           </div>
 
           <div className="relative">
-            {/* Vertical pipe — animated on load */}
-            <div className="absolute left-[23px] top-2 bottom-2 w-[3px] bg-gradient-to-b from-brand-orange via-brand-blue to-brand-orange opacity-50" style={{ animation: 'pipeDraw 1s ease-out forwards' }} />
+            {/* Vertical pipe — gradient from orange to blue */}
+            <div className="absolute left-[23px] top-2 bottom-2 w-[2px] bg-gradient-to-b from-brand-orange via-brand-blue to-brand-orange opacity-40" style={{ animation: 'pipeDraw 1s ease-out forwards' }} />
 
-            <div className="space-y-10">
+            <div className="space-y-8">
               {prompt.steps!.map((step, idx) => (
                 <div key={step.id} className="relative pl-16">
-                  {/* Step node — large number as visual anchor */}
-                  <div className="absolute left-0 top-3 w-[48px] h-[48px] bg-brand-orange flex items-center justify-center z-10 shadow-sm">
+                  {/* Step node — orange number anchor */}
+                  <div className="absolute left-0 top-0 w-[48px] h-[48px] bg-brand-orange flex items-center justify-center z-10 shadow-sm">
                     <span className="text-base font-black text-white">{idx + 1}</span>
                   </div>
 
-                  <div className="border border-gray-200 overflow-hidden">
-                    {/* Step header with inline step count */}
-                    <div className="bg-gray-50 px-5 py-3 border-b border-gray-200">
-                      <span className="text-xs font-semibold text-gray-400 uppercase tracking-wide">
-                        Step {idx + 1} of {prompt.steps!.length}
-                      </span>
-                      {step.title && (
-                        <span className="font-bold text-sm text-gray-900 ml-2">— {step.title}</span>
-                      )}
+                  <div className="border border-surface-200 overflow-hidden bg-white">
+                    {/* Step header — high contrast */}
+                    <div className="bg-surface-900 px-5 py-3">
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs font-mono text-surface-400">
+                          Step {idx + 1}/{prompt.steps!.length}
+                        </span>
+                        {step.title && (
+                          <span className="font-bold text-sm text-white">{step.title}</span>
+                        )}
+                      </div>
                       {step.description && (
-                        <p className="text-xs text-gray-500 mt-1">{step.description}</p>
+                        <p className="text-xs text-surface-400 mt-1">{step.description}</p>
                       )}
                     </div>
 
-                    {/* Prompt section — orange accent */}
-                    <div className="p-5 border-l-4 border-brand-orange bg-white">
+                    {/* Prompt section — input signal with code-editor aesthetic */}
+                    <div className="p-5 border-l-4 border-brand-orange">
                       <div className="flex items-center justify-between mb-3">
                         <span className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-widest text-brand-orange">
                           <span className="w-2 h-2 bg-brand-orange" />
@@ -224,22 +217,22 @@ export default async function PromptDetailPage({
                         </span>
                         <CopyButton text={step.content} />
                       </div>
-                      <pre className="text-sm text-gray-800 whitespace-pre-wrap font-mono leading-relaxed bg-primary-50/40 p-4 border border-primary-100">
+                      <pre className="text-sm whitespace-pre-wrap font-mono leading-relaxed bg-surface-900 text-surface-200 p-4 border border-surface-800">
                         {step.content}
                       </pre>
                     </div>
 
-                    {/* Result section — green accent */}
+                    {/* Result section — output signal with blue accent (visually lighter than prompt) */}
                     {step.result_content && (
-                      <div className="p-5 border-l-4 border-l-green-500 bg-green-50/30 border-t border-t-gray-100">
+                      <div className="p-5 border-l-2 border-brand-blue bg-accent-50/40 border-t border-t-surface-100">
                         <div className="flex items-center justify-between mb-3">
-                          <span className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-widest text-green-700">
-                            <span className="w-2 h-2 bg-green-500" />
+                          <span className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-widest text-brand-blue">
+                            <ArrowDown className="w-3 h-3" />
                             Result
                           </span>
                           <CopyButton text={step.result_content} />
                         </div>
-                        <div className="text-sm text-gray-800 whitespace-pre-wrap leading-relaxed bg-green-50 p-4 border border-green-200">
+                        <div className="text-sm text-surface-700 whitespace-pre-wrap leading-relaxed bg-white p-4 border border-accent-200">
                           {step.result_content}
                         </div>
                       </div>
@@ -256,11 +249,14 @@ export default async function PromptDetailPage({
       {!hasSteps && prompt.content && (
         <section className="mb-12">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-bold text-gray-900">The Prompt</h2>
+            <h2 className="text-lg font-bold text-surface-900">The Prompt</h2>
             <CopyButton text={prompt.content} />
           </div>
-          <div className="bg-primary-50/40 border-l-4 border-brand-orange p-6">
-            <pre className="text-sm text-gray-800 whitespace-pre-wrap font-mono leading-relaxed">
+          <div className="border border-surface-200 overflow-hidden">
+            <div className="bg-surface-900 px-4 py-2">
+              <span className="text-xs font-mono text-surface-400">prompt</span>
+            </div>
+            <pre className="text-sm whitespace-pre-wrap font-mono leading-relaxed bg-surface-900 text-surface-200 p-5">
               {prompt.content}
             </pre>
           </div>
@@ -270,22 +266,25 @@ export default async function PromptDetailPage({
       {/* ─── Final Result ─── */}
       {prompt.result_content && (
         <section className="mb-12">
-          <h2 className="text-lg font-bold text-gray-900 mb-4">The Result</h2>
-          <div className="bg-green-50 border-l-4 border-green-500 p-6">
-            <p className="text-gray-700 leading-relaxed whitespace-pre-line">{prompt.result_content}</p>
+          <h2 className="text-lg font-bold text-surface-900 mb-4 flex items-center gap-2">
+            <ArrowDown className="w-4 h-4 text-brand-blue" />
+            The Result
+          </h2>
+          <div className="bg-accent-50/40 border-l-2 border-brand-blue p-6">
+            <p className="text-surface-700 leading-relaxed whitespace-pre-line">{prompt.result_content}</p>
           </div>
         </section>
       )}
 
       {/* ─── Tags ─── */}
       {prompt.tags.length > 0 && (
-        <div className="flex items-center gap-2 flex-wrap pt-6 border-t border-gray-200">
-          <Tag className="w-4 h-4 text-gray-400" />
+        <div className="flex items-center gap-2 flex-wrap pt-6 border-t border-surface-200">
+          <Tag className="w-4 h-4 text-surface-400" />
           {prompt.tags.map(tag => (
             <Link
               key={tag}
               href={`/browse?q=${encodeURIComponent(tag)}`}
-              className="text-xs bg-gray-100 text-gray-500 px-2.5 py-1 border border-gray-200 hover:border-brand-orange/50 hover:text-brand-orange transition-colors duration-200"
+              className="text-xs bg-surface-100 text-surface-500 px-2.5 py-1 border border-surface-200 hover:border-brand-orange/50 hover:text-brand-orange transition-colors duration-200"
             >
               #{tag}
             </Link>
@@ -295,9 +294,9 @@ export default async function PromptDetailPage({
 
       {/* ─── More in this category ─── */}
       {relatedProjects.length > 0 && prompt.category && (
-        <section className="mt-16 pt-10 border-t border-gray-200">
+        <section className="mt-16 pt-10 border-t border-surface-200">
           <div className="flex items-center justify-between mb-6">
-            <h2 className="text-lg font-bold text-gray-900">
+            <h2 className="text-lg font-bold text-surface-900">
               More in {prompt.category.icon} {prompt.category.name}
             </h2>
             <Link

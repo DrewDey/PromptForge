@@ -18,7 +18,7 @@ export default function CopyButton({ text }: { text: string }) {
       className={`flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 border transition-all duration-200 ${
         copied
           ? 'bg-green-50 border-green-300 text-green-700'
-          : 'text-gray-500 hover:text-brand-orange bg-gray-50 hover:bg-gray-100 border-gray-200 hover:border-brand-orange/40'
+          : 'text-surface-500 hover:text-brand-orange bg-surface-50 hover:bg-surface-100 border-surface-200 hover:border-brand-orange/60'
       }`}
       title={copied ? 'Copied to clipboard!' : 'Copy to clipboard'}
     >

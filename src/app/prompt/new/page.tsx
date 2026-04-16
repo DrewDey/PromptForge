@@ -114,8 +114,8 @@ export default function SubmitProjectPage() {
   const [resultImages, setResultImages] = useState<{ file: File; preview: string; caption: string }[]>([])
   const [stepImages, setStepImages] = useState<Record<number, { file: File; preview: string; caption: string }[]>>({})
 
-  // Section accordion state
-  const [activeSection, setActiveSection] = useState(1)
+  // Section accordion state — multi-open per Drew's preference (Q7)
+  const [openSections, setOpenSections] = useState<Set<number>>(new Set([1]))
 
   // Submission state
   const [submitting, setSubmitting] = useState(false)
@@ -209,9 +209,9 @@ export default function SubmitProjectPage() {
       const section1Fields = ['title', 'description', 'story', 'category', 'difficulty', 'customModel']
       const section2Fields = ['promptContent', 'steps']
       if (section1Fields.includes(firstErrorKey)) {
-        setActiveSection(1)
+        setOpenSections(prev => new Set([...prev, 1]))
       } else if (section2Fields.includes(firstErrorKey)) {
-        setActiveSection(2)
+        setOpenSections(prev => new Set([...prev, 2]))
       }
       // Scroll to first error after section expands
       setTimeout(() => {
@@ -350,13 +350,21 @@ export default function SubmitProjectPage() {
   ].filter(Boolean).join(' · ') || undefined
 
   function toggleSection(section: number) {
-    if (activeSection === section) return // Keep at least one section open
-    setActiveSection(section)
-    // Scroll the newly opened section into view
-    setTimeout(() => {
-      const el = document.querySelector(`[data-section="${section}"]`)
-      el?.scrollIntoView({ behavior: 'smooth', block: 'start' })
-    }, 50)
+    setOpenSections(prev => {
+      const next = new Set(prev)
+      if (next.has(section)) {
+        // Don't allow closing all sections — keep at least one open
+        if (next.size > 1) next.delete(section)
+      } else {
+        next.add(section)
+        // Scroll the newly opened section into view
+        setTimeout(() => {
+          const el = document.querySelector(`[data-section="${section}"]`)
+          el?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+        }, 50)
+      }
+      return next
+    })
   }
 
   return (
@@ -380,18 +388,18 @@ export default function SubmitProjectPage() {
       <form onSubmit={handleSubmit} noValidate className="space-y-3">
 
         {/* ═══════ SECTION 1: PROJECT BASICS ═══════ */}
-        <section data-section="1" className={`border transition-all duration-200 ${activeSection === 1 ? 'border-surface-200 shadow-sm bg-white' : 'border-surface-100 bg-surface-50/50'}`}>
+        <section data-section="1" className={`border transition-all duration-200 ${openSections.has(1) ? 'border-surface-200 shadow-sm bg-white' : 'border-surface-100 bg-surface-50/50'}`}>
           <SectionHeader
             number={1}
             title="Project Basics"
             subtitle="What did you build and in what domain?"
-            isExpanded={activeSection === 1}
+            isExpanded={openSections.has(1)}
             isComplete={section1Complete}
             summary={section1Summary}
             onClick={() => toggleSection(1)}
           />
 
-          {activeSection === 1 && <div id="section-1-panel" className="px-5 pb-5 space-y-5">
+          {openSections.has(1) && <div id="section-1-panel" className="px-5 pb-5 space-y-5">
             {/* Hero title — borderless, Notion-style */}
             <div data-field="title">
               <input
@@ -495,18 +503,18 @@ export default function SubmitProjectPage() {
         </section>
 
         {/* ═══════ SECTION 2: YOUR BUILD JOURNEY ═══════ */}
-        <section data-section="2" className={`border transition-all duration-200 ${activeSection === 2 ? 'border-surface-200 shadow-sm bg-white' : 'border-surface-100 bg-surface-50/50'}`}>
+        <section data-section="2" className={`border transition-all duration-200 ${openSections.has(2) ? 'border-surface-200 shadow-sm bg-white' : 'border-surface-100 bg-surface-50/50'}`}>
           <SectionHeader
             number={2}
             title="Your Build Journey"
             subtitle="Show how you built it — the prompts and results at each step."
-            isExpanded={activeSection === 2}
+            isExpanded={openSections.has(2)}
             isComplete={section2Complete}
             summary={section2Summary}
             onClick={() => toggleSection(2)}
           />
 
-          {activeSection === 2 && <div id="section-2-panel" className="px-5 pb-5">
+          {openSections.has(2) && <div id="section-2-panel" className="px-5 pb-5">
           {/* Mode toggle — prominent visual choice */}
           <div className="grid grid-cols-2 gap-3 mb-6">
             <button
@@ -728,18 +736,18 @@ export default function SubmitProjectPage() {
         </section>
 
         {/* ═══════ SECTION 3: DETAILS & PUBLISH ═══════ */}
-        <section data-section="3" className={`border transition-all duration-200 ${activeSection === 3 ? 'border-surface-200 shadow-sm bg-white' : 'border-surface-100 bg-surface-50/50'}`}>
+        <section data-section="3" className={`border transition-all duration-200 ${openSections.has(3) ? 'border-surface-200 shadow-sm bg-white' : 'border-surface-100 bg-surface-50/50'}`}>
           <SectionHeader
             number={3}
             title="Details & Publish"
             subtitle="Add tags, tools, and your overall result."
-            isExpanded={activeSection === 3}
+            isExpanded={openSections.has(3)}
             isComplete={section3Complete}
             summary={section3Summary}
             onClick={() => toggleSection(3)}
           />
 
-          {activeSection === 3 && <div id="section-3-panel" className="px-5 pb-5 space-y-5">
+          {openSections.has(3) && <div id="section-3-panel" className="px-5 pb-5 space-y-5">
             {/* Tools */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Tools & APIs Used <span className="text-gray-400 font-normal">(optional)</span></label>

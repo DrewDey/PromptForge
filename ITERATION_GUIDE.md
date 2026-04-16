@@ -56,7 +56,7 @@ Every hourly session follows this sequence:
 ### 1. Orient (2 minutes)
 - Read `CLAUDE.md` (architecture, patterns, current state)
 - Read `BACKLOG.md` (what to work on, priority order)
-- Read `QUESTIONS.md` (check if Drew left any responses to act on)
+- Read `QUESTIONS.md` (check if Drew left any responses to act on — if he did, act on them, then move the question from "Open Questions" to "Answered Questions" with a summary of what action was taken)
 - Read `ITERATION_LOG.md` (see what the last iteration did)
 - Check `MEMORY.md` for any feedback from Drew
 - Quick `git log --oneline -5` to see recent commits

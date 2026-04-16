@@ -118,7 +118,7 @@ Every hour, a fresh Claude Cowork session opens this project and acts as a **pro
 - **`BACKLOG.md`** — Prioritized work items. Iterations pick the top unblocked item from the current sprint. This is the single source of truth for "what to work on next."
 - **`ITERATION_GUIDE.md`** — The full process guide. Read this if you're a new iteration session and need to understand how to operate. **Contains the design direction and references — read it.**
 - **`ITERATION_LOG.md`** — History of what each iteration accomplished. Add your entry at the top when you finish.
-- **`QUESTIONS.md`** — Questions for Drew (the founder). Check for his responses at the start of each iteration and act on them. Add questions when you genuinely need his input on a decision.
+- **`QUESTIONS.md`** — Questions for Drew (the founder). Check for his responses at the start of each iteration and act on them. **When a question has been answered and acted on, move it from "Open Questions" to "Answered Questions"** with a summary of the action taken. Only genuinely unanswered questions stay in Open.
 - **`ITERATION_LOG.md`** also contains a **"Plain English Summary"** section at the very bottom. After each iteration, update this section with a non-technical description of what changed and why, written for Drew (a non-dev founder). Keep it cumulative — newest changes at the top of the summary. When Drew says he's reviewed, clear the reviewed items.
 
 ### Iteration quick-start

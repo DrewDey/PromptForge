@@ -21,7 +21,7 @@ MVP is live at https://prompt-forge-sandy.vercel.app. Auth, browse, project deta
 
 These changes are a starting point. Iterations should build on them, not revert them.
 
-**Last updated**: 2026-04-16 (Drew direction session)
+**Last updated**: 2026-04-16 (Iteration 18 — Project detail page redesign + Build page multi-open accordion)
 
 ---
 
@@ -126,6 +126,7 @@ These are queued but not yet prioritized for hourly iterations.
 
 | Date | Item | Summary |
 |------|------|---------|
+| 2026-04-16 | Project detail page — premium step flow (dark prompt blocks, blue result accent, surface-* palette), Build page multi-open accordion (Q7) |
 | 2026-04-16 | Build page — progressive disclosure accordion sections (Drew's request), completion indicators, scroll anchoring, a11y fixes |
 | 2026-04-16 | Header refinement — accessibility (contrast, focus indicators, ARIA, touch targets), unified orange active states, Build CTA with orange accent, shadow dark/light transition |
 | 2026-04-16 | Build page — from form to builder (hero title, step cards, submit refinement) | Borderless Notion-style hero title, step cards as building blocks (shadow, reorder, grip handle), prompt/result tinted sections, mode toggle "Recommended" badge, adaptive submit button with completion summary |

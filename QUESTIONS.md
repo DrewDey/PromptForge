@@ -8,6 +8,19 @@
 
 ## Open Questions
 
+### Q12: Landing page flow diagram — keep, simplify further, or remove entirely?
+
+Iteration 22 kept the 5-box horizontal flow diagram (Blank Chat → Build Path → Fork → Adapt → Result) but cleaned it up — removed the green color leak, restricted colors to orange/blue/surface, tightened the connector widths. However, the design research found that NONE of the premium dev-tool landing pages we looked at (Linear, Vercel, Raycast, Resend, Supabase) use horizontal step/process diagrams on their homepages. They either (a) show a product screenshot, (b) use outcome-based messaging, or (c) show nothing and let the Solution headline do the work.
+
+Three options for next time:
+- **(A) Keep it as-is** — The cleaned-up diagram is on-brand now and explains the concept clearly, especially for non-technical visitors
+- **(B) Simplify further** — Replace the 5 boxes with just 3 (Blank Chat → Build Path → Result) or drop boxes entirely and use numbered inline steps (1. Start with blank chat. 2. Follow a proven build path. 3. Get your result.)
+- **(C) Remove it** — Let "Build paths, not prompts." + the supporting paragraph stand alone, and invest the saved vertical space in a larger / more visual Popular Build Paths grid (the actual product)
+
+**Drew's Response:**
+
+---
+
 ### Q11: Build page — should step results use the same dark code-editor style as the detail page?
 
 On the detail page (where people view finished projects), prompt blocks use a dark terminal-style background and result blocks use a blue-tinted background. On the Build page, we currently use a light surface-50 tint for prompts and a green-50 tint for results — which feels more like "editing mode." Should we bring the dark code-editor aesthetic into the Build page too (at least for the prompt textareas), or does the lighter "editing" feel make more sense when people are actively typing? There's a tension between "preview what it'll look like" and "comfortable editing environment."

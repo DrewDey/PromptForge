@@ -63,9 +63,11 @@ Every hourly session follows this sequence:
 
 ### 2. Audit & Research (5 minutes — use parallel agents)
 
-Launch two agents in parallel:
+**VISUAL FIRST — take screenshots before anything else.** Drew's explicit direction (2026-04-16): "If you visually see it, some things might come to mind on improvements that may not be so clear and evident" from reading code. Before launching audit agents, open the live site at `https://prompt-forge-sandy.vercel.app` in Chrome via the Claude-in-Chrome MCP (`mcp__Claude_in_Chrome__navigate` then `mcp__Claude_in_Chrome__computer` to screenshot). Capture the page(s) you're going to improve — full page, above-the-fold, and any interactive states (hover, filter-open, etc.). **Look at the screenshots yourself** and write down what YOU see — color feel, visual weight, what your eye goes to, what looks off. This is not optional. Code audits miss what pixels reveal. **If the Chrome MCP is unavailable**, state that explicitly in the iteration log and fall back to code-only audit — do NOT silently skip this step.
 
-**Agent 1: UX Audit** — Examine the current state of the page/component you're about to improve. Read the code, understand the user flow, identify specific pain points. Be brutal — if something looks generic or unpolished, say so. Output a short list of concrete problems.
+Then launch two agents in parallel:
+
+**Agent 1: UX Audit** — Examine the current state of the page/component you're about to improve. Read the code, understand the user flow, identify specific pain points. Be brutal — if something looks generic or unpolished, say so. Output a short list of concrete problems. Include the screenshots you took so the agent is grounded in what the page actually looks like, not just the code.
 
 **Agent 2: Research** — Look at how Linear, Vercel, Raycast, or similar modern dev tools handle the same UX pattern. Output 3-5 concrete, actionable patterns worth borrowing (specific things like "Linear uses a muted gray-800 card bg with a 1px border that brightens on hover").
 
@@ -100,6 +102,7 @@ If the review has substantive issues, fix them before moving on.
 - Run `npm run build` — must pass clean. Note: if the `.next` cache has permission issues in the sandbox, try `rm -rf .next` first. If that also fails due to permissions, the code is still fine — Vercel builds from clean state.
 - Run `npm run lint` — fix any warnings
 - TypeScript check: `npx tsc --noEmit` can verify types even if the full build has cache issues
+- **Visual verification (REQUIRED)**: Start the dev server with `npm run dev` (or use the live site if your changes have already been pushed), open it in the Claude-in-Chrome MCP, and take "after" screenshots of every section you changed. Compare them to the "before" screenshots from Step 2. Look for: did the change actually improve the visual weight / hierarchy / feel? Did anything break? Do hover/focus states behave as intended? Save both sets of screenshots to `/sessions/nice-eloquent-gates/` so the review agent can compare them and so you can embed observations in the iteration log. Drew explicitly asked for this — code-only reviews miss things only eyes catch. **If the dev server isn't reachable from the MCP (e.g., sandbox localhost not exposed to the user's Chrome) or the MCP is unavailable**, state that in the iteration log and screenshot the live site on the next iteration once Drew has pushed.
 
 ### 7. Close out (5 minutes)
 - Commit your changes with a clear message describing what and why

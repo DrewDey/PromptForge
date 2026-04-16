@@ -21,7 +21,7 @@ MVP is live at https://prompt-forge-sandy.vercel.app. Auth, browse, project deta
 
 These changes are a starting point. Iterations should build on them, not revert them.
 
-**Last updated**: 2026-04-16 (Iteration 21 — Build page: surface-* migration, interactive controls, progress bar)
+**Last updated**: 2026-04-16 (Iteration 22 — Landing page: removed pipe connectors, killed green leak, migrated palette; new mandatory screenshot step in ITERATION_GUIDE + SKILL)
 
 ---
 
@@ -126,6 +126,7 @@ These are queued but not yet prioritized for hourly iterations.
 
 | Date | Item | Summary |
 |------|------|---------|
+| 2026-04-16 | Landing page — screenshot-driven overhaul: removed 5 between-section pipe connectors, killed green leak (flow diagram + Proven Results card), migrated gray-* → surface-*, killed tagline chip, solid-orange H1, consolidated hero subtitle, py-20 standardized, min-h-11 secondary CTAs. Also added mandatory screenshot step (Step 1.5 + Step 6) to ITERATION_GUIDE and SKILL per Drew's direction. |
 | 2026-04-16 | Build page — surface-* token migration, interactive control sizing (p-2 touch targets), progress bar upgrade (h-2, green at 100%), ImageUpload responsive grid + mobile remove button |
 | 2026-04-16 | Browse page — card hierarchy (title-first), spacing rhythm (8px grid), interactive states (sort indicator, touch feedback, focus ring) |
 | 2026-04-16 | Seed content overhaul — filled all 10 null result_content steps across 7 projects with high-quality content (code, copy, docs, templates) |

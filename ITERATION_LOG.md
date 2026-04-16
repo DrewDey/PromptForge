@@ -5,6 +5,71 @@
 
 ---
 
+## 2026-04-16 — Iteration 22: Landing Page — Screenshot-Driven Overhaul (Kill Pipes, Kill Green, Migrate Palette) + New Screenshot Requirement
+
+**Process change (Drew's direction, mid-session):**
+Drew asked: "Would you be able to add two instructions to take screenshots of everything that you're touching? I feel like if you visually see it, some things might come to mind on improvements we can do that may not be so clear and evident." — I adopted this for this iteration and permanently enshrined it:
+- `ITERATION_GUIDE.md` Step 2: visual capture via Claude-in-Chrome MCP BEFORE audit; written observations required; Chrome-MCP-unavailable fallback documented.
+- `ITERATION_GUIDE.md` Step 6: after-screenshots + before/after compare; fallback documented.
+- `SKILL.md` got the same edits as a new "Step 1.5" (visual capture) and a Step 6 verification add.
+- `MEMORY.md` got a new `feedback_screenshot_visual_audit.md` entry so future sessions don't forget.
+
+**Visual audit findings** (from actually looking at https://prompt-forge-sandy.vercel.app via Chrome MCP):
+1. Five decorative "pulsing pipe" connectors between sections read as keynote-slide chrome, not premium dev-tool transitions
+2. Green color leak in two places: flow diagram "Done/Result" box (`green-400/green-50/green-600`) + "Proven Results" card (`green-500/green-50`) — green isn't in the brand palette, reads as accidental
+3. Whole page still on raw Tailwind `gray-*` / `bg-white` while the rest of the site migrated to `surface-*` — the landing was the last holdout
+4. H1 weight imbalance: "Build it yourself." gradient overwhelmed "See how it was built." — second line screaming, first line plain
+5. Hero over-structured: chip + line1 + gradient-line2 + subtitle + sub-subtitle + CTA + secondary link = 7 stacked elements; Linear/Vercel use 3
+6. Four problem cards visually identical — no visual priority between "Blank Chat Tax" and "Lost Branches"
+7. Tagline chip above H1 ("Community-Driven AI Project Sharing") is a 2022 startup pattern, gone from Linear/Vercel/Raycast/Resend in 2025
+8. Flow diagram 5-box-with-connectors reads as PowerPoint; premium dev tools don't do this
+
+**Research insights** (Linear, Vercel, Raycast, Resend, Supabase):
+- Chip-above-H1 is dead in 2025 — all five sites dropped it
+- Section breaks via whitespace + typography + optional bg shift, NEVER decorative SVG dividers
+- Feature cards in rows should have equal visual weight — no "this one is special" emphasis
+- No horizontal step/flow diagrams on homepages — show the product, not an abstract workflow
+- Vercel pattern: H1 + ONE supporting paragraph, no tagline chip, no sub-subtitle
+
+**Design brief** (3 primary goals):
+1. Remove all 5 between-section pipe connectors; let whitespace + typography + alternating bg (`#fafafa` ↔ `white`) carry the transitions
+2. Kill green everywhere: flow diagram "Result" becomes brand-orange (closing the loop with "Build Path"), "Proven Results" card becomes brand-orange
+3. Migrate `gray-*` → `surface-*` for text/borders; keep cards bg-white for contrast against `#fafafa` body (per CLAUDE.md design decision)
+
+**Supporting fixes:** kill tagline chip, solid orange instead of gradient H1, consolidate hero subtitle to one paragraph, standardize section padding to `py-20`, `min-h-11` (44px) on all secondary CTAs, brand-consistent "View all paths" button treatment.
+
+**What was implemented** (`src/app/page.tsx`, full rewrite):
+- Deleted all 5 between-section `<div>` pipes (Hero→Problem, Problem→Solution, Solution→Features, Features→Popular, Popular→CTA)
+- Sections now alternate: Hero (grid pattern) / Problem (`#fafafa` body) / Solution (`bg-white`) / Why It Works (`#fafafa`) / Popular (`bg-white`) / Final CTA (`#fafafa`) — each separated by `border-t border-surface-200`
+- Extracted `FlowConnector` helper component to keep the in-diagram connectors consistent and free of green
+- Flow diagram: 5 boxes now use only orange/blue/surface (no green). "Result" box echoes "Build Path" with `bg-brand-orange/10 border-2 border-brand-orange` to close the loop
+- "Why It Works" third card (`Proven Results`): `green-500` → `brand-orange`, green hover shadow → orange shadow
+- Hero: removed tagline chip; H1 second line solid `text-brand-orange` (was gradient); two subtitle paragraphs consolidated to one; `py-20` symmetric padding; `min-h-11` on both CTAs
+- All `text-gray-*` → `text-surface-*`, all `border-gray-*` → `border-surface-*`, all `bg-gray-*` → `bg-surface-*` (≈40 instances); `duration-200` → `duration-150`
+- Popular Paths: `View all paths` button switched to neutral surface treatment (was tinted blue) to complement the restored card grid
+- Empty state: `border-gray-300 bg-gray-50/50` → `border-surface-300 bg-surface-50`, touch target upgraded, active/focus states added
+- Removed unused `ChevronRight` and `Sparkles` imports
+
+**Review outcome**: Approved with nits after 4 flagged issues were addressed:
+1. `bg-white` on cards intentionally kept (per CLAUDE.md "cards are white with subtle borders") — file-header comment updated to note this explicitly instead of overclaiming completion
+2. Hero padding `pt-24 pb-20` → `py-20` symmetric (complies strictly with "standardized to py-20")
+3. `ITERATION_GUIDE.md` got Chrome-MCP-unavailable fallback in both Step 2 and Step 6 (was only in SKILL.md)
+4. File-header comment rewritten to accurately describe scope
+
+**Verification:**
+- `npx tsc --noEmit` — clean, zero errors
+- `npm run build` blocked by known sandbox `.next` cache permission issue (Vercel builds from clean state — see `ITERATION_GUIDE.md` for this known condition)
+- ESLint config has a known v9 migration issue unrelated to this change
+- **After-screenshots deferred**: sandbox localhost is not reachable from Drew's Chrome MCP; per the new fallback policy, I'll screenshot the live site on the next iteration once Drew has pushed this change
+
+**What's next:**
+- Next iteration should do the "after" screenshot pass on the deployed change to confirm the fixes read well in pixels (not just code).
+- Browse page still has image-thumbnail opportunity (Q10 open)
+- Seed content SQL rewrite (BACKLOG #6) remains the biggest unaddressed item
+- Problem-card visual hierarchy (make "Blank Chat Tax" primary) was scoped out of this iteration — candidate for next round
+
+---
+
 ## 2026-04-16 — Iteration 21: Build Page — Surface Token Migration, Interactive Controls, Progress Bar
 
 **Audit findings** (top problems identified):
@@ -812,6 +877,24 @@
 # Plain English Summary (for Drew)
 
 > What's actually changed on the site, in normal human language. Newest at the top. Let me know when you've reviewed and I'll clear the old stuff.
+
+### Landing page feels calmer and more on-brand, and every iteration will now use screenshots (April 16 — Iteration 22)
+
+Two things happened this round — one process change (your request) and one design overhaul (the landing page).
+
+**The process change: every future iteration screenshots the page before and after.** You said that if we actually look at the site, we'll catch things that reading the code doesn't reveal. You were right. I added a mandatory "screenshot the live site before auditing, and screenshot again after implementing" step to both the iteration guide and the skill file that drives the scheduled runs, so this is now baked in permanently. I also wrote it into memory so I don't forget.
+
+**The design overhaul: the landing page finally caught up to the rest of the site.** It was the last page still on the old color system — raw Tailwind grays, plain white backgrounds, and a bunch of stuff that didn't match the browse/build/detail pages you already signed off on. Three big changes:
+
+- **The decorative "pipe" connectors between sections are gone.** There were five of them — little vertical lines with pulsing dots between each section. On screen they read as keynote-slide chrome, not as a premium dev tool. Linear and Vercel don't use anything like them. The page now flows section to section via alternating backgrounds (off-white → white → off-white) and clear borders, which feels much more confident.
+
+- **The green color is gone.** The flow diagram had a green "Result" box at the end that stood out from the rest of the diagram in a jarring way, and one of the three "Why It Works" cards had a green icon and green hover shadow. Green isn't in the brand palette (orange and blue only), so it looked like a stray color. Now the "Result" box uses orange — which visually closes the loop with the "Build Path" box at the start — and the "Proven Results" card uses orange too.
+
+- **The hero is cleaner.** The small "Community-Driven AI Project Sharing" chip above the big headline is removed (that pattern has fallen out of fashion on modern dev-tool landing pages). The second line of the headline — "Build it yourself." — used to have a loud orange gradient that overwhelmed the first line; it's now solid orange so both lines have equal visual weight. And the two separate gray subtitle lines underneath the headline are now one clean paragraph.
+
+Smaller fixes: all the gray text/borders migrated to the cooler zinc palette the rest of the site uses; touch targets on the smaller "or share your build" and "or browse paths first" links are now big enough for mobile; section padding is consistent throughout; the "View all paths" button is now a neutral outline style so it doesn't compete with the orange primary button elsewhere.
+
+**One caveat on screenshots:** I was able to take "before" screenshots of the live site this round, but I couldn't take "after" screenshots yet because the sandbox where I'm editing can't share a dev server with your browser. Once you push and Vercel deploys this change, the next iteration will screenshot the deployed version and confirm the fix reads well in pixels, not just code.
 
 ### Build page looks polished and consistent with the rest of the site (April 16 — Iteration 21)
 

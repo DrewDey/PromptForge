@@ -5,6 +5,45 @@
 
 ---
 
+## 2026-04-16 — Iteration 13: Submit Form — Typography, Step Builder, Validation UX
+
+**Audit findings** (top problems identified):
+1. Section numbers (orange w-7 h-7) and step numbers (orange w-7 h-7) are visually identical — users can't distinguish form-level hierarchy from step-level hierarchy.
+2. "Add Step" button uses dashed border and normal font weight — reads as a placeholder/dropzone rather than an actionable button. Core feature is under-afforded.
+3. Collapsed step cards show only a 2px green dot for completion — no text badge, no progress indication at a glance. Users must expand each step to verify completeness.
+4. Mode toggle (single vs multi-step) has same visual weight as form inputs — selected state isn't prominently differentiated from unselected.
+5. No client-side validation — submitting with empty required fields produces only browser-native validation tooltips, not styled inline error messages.
+6. Section dividers (border-t border-gray-200) are too subtle to create visual breathing room between the 3 form sections.
+7. Typography hierarchy is flat: section titles (text-lg) barely differentiate from field labels (text-sm).
+
+**Research insights**:
+- Baymard Institute: top-aligned labels with clear section breaks make multi-section forms 20%+ faster to complete
+- Smashing Magazine "reward early, punish late" validation: show errors only after first submit attempt, then clear reactively as user types
+- GitHub/Linear issue forms: strong section differentiation with color-coded headers and generous whitespace
+- Progressive disclosure research: step completion indicators on collapsed cards reduce "hidden content anxiety"
+
+**Design brief** (3 key goals):
+1. Differentiate section-level from step-level numbering: blue (brand-blue) w-9 h-9 section numbers vs orange w-7 h-7 step numbers, with text-xl section headers and stronger dividers
+2. Improve step builder: solid "Add Step" button with font-semibold, text completion badges ("Complete"/"In progress"/"Click to edit") on collapsed cards, visual progress bar with percentage
+3. Add client-side validation: `noValidate` on form, shared `computeErrors()` function, inline `<FieldError>` components with AlertCircle icons, red border states, scroll-to-first-error on submit, reactive error clearing
+
+**What was implemented**:
+- **Section headers redesigned**: Blue (`bg-brand-blue`) w-9 h-9 numbers (up from orange w-7 h-7), section titles upgraded to `text-xl font-bold`, gap increased to `gap-4`, subtitle has `mt-0.5` spacing.
+- **Section dividers strengthened**: `border-t border-gray-200` → `border-t-2 border-gray-200` for all 3 section breaks.
+- **Mode toggle enhanced**: Selected state uses `shadow-[inset_4px_0_0_var(--color-brand-orange)]` inset accent (not conflicting border-l-4). Labels upgraded to `font-semibold`. Unselected hover shows `shadow-sm`.
+- **Step cards — completion badges**: Collapsed cards now show text status below the title: "Complete" (green), "In progress" (orange), or "Click to edit" (gray). Filled steps show green `bg-green-500` checkmark icon instead of number. Removed the old 2px green dot.
+- **Step progress bar**: Added above step cards — "X of Y steps filled" with percentage and animated orange progress bar. Includes `role="progressbar"` with full ARIA attributes for accessibility.
+- **"Add Step" button redesigned**: Dashed border → solid `border-brand-orange/40`. Font → `font-semibold`. Padding → `py-3.5`. Added `active:bg-primary-200` and `focus-visible:outline-2` states.
+- **Client-side validation**: Added `noValidate` on `<form>`. Shared `computeErrors()` function validates all required fields. `<FieldError>` component shows red text with `AlertCircle` icon. Invalid fields get `border-red-400` styling. Errors appear only after first submit attempt, then clear reactively via `useEffect`. Scroll-to-first-error uses the freshly computed errors object (not stale React state).
+- **All transitions**: Added `transition-colors duration-200` to all inputs for consistent interactive feedback.
+- **Files changed**: `src/app/prompt/new/page.tsx`.
+
+**Review outcome**: Initial review returned "Request changes" with 3 issues: (1) scroll-to-error used stale React state — fixed by returning errors from `validateForm()`, (2) `border-l-4` conflicted with `border-2` on mode toggle — fixed with `shadow-[inset_4px_0_0_...]`, (3) duplicated validation logic — fixed by extracting shared `computeErrors()` function. Also added ARIA progressbar attributes per reviewer nit. All issues resolved before commit.
+
+**What's next**: Submit form item #4 now has solid second pass. Consider marking items 1-5 complete (all have had 2-3 passes) and starting the "Next Sprint" features, or doing a final holistic polish pass across all pages.
+
+---
+
 ## 2026-04-16 — Iteration 12: Landing Page — Popular Paths Discovery & Mobile Responsiveness
 
 **Audit findings** (top problems identified):
@@ -418,6 +457,18 @@
 # Plain English Summary (for Drew)
 
 > What's actually changed on the site, in normal human language. Newest at the top. Let me know when you've reviewed and I'll clear the old stuff.
+
+### The submit form is smarter and easier to navigate (April 16 — Iteration 13)
+
+The form to share a project got a second design pass focused on making it less confusing and more helpful:
+
+- **Section numbers are now blue instead of orange.** Before, the big "1 / 2 / 3" section headers used the same orange color as the step numbers inside the form, so your eye couldn't tell "section of the form" from "step in your project." Now sections are blue and steps are orange — two different levels, two different colors.
+
+- **You can see how far along your steps are without expanding them.** Collapsed step cards now show "Complete," "In progress," or "Click to edit" in text underneath the title. There's also a progress bar at the top that fills up as you complete steps — "2 of 4 steps filled — 50%." Before, you had to expand each step one by one to check if you'd filled it in.
+
+- **The form actually tells you what's missing before you submit.** Previously, hitting "Submit" with empty fields showed the browser's default error popup (that ugly little tooltip). Now the form checks everything itself: empty required fields get a red border with a message like "Project title is required" right below the field. If multiple fields are missing, the page scrolls you to the first one. The errors disappear in real-time as you fill things in.
+
+- **The "Add Step" button looks like a real button now.** It had a dashed border before, which made it look like a placeholder or dropzone rather than something you should click. Now it has a solid border, bolder text, and a clear hover effect.
 
 ### Browse page filters are now cleaner and easier to use (April 16 — Iteration 10)
 

@@ -8,6 +8,21 @@
 
 ## Open Questions
 
+### Q17: Should the next iteration (iter 28) finally tackle the seed-content overhaul, or stay on UI polish?
+
+Your auto-memory has two flags that keep coming up: "Seed content is garbage" and "Mock data is invisible on live site — must update seed-fix.sql + Supabase." The design work has been making the *shell* of the site look premium, but if a first-time visitor lands on the live site and sees vague seed projects with no real prompts or results, no amount of filter-bar polish will fix that. Iter 27 stayed on UI polish (carryover nits from iter 26). The next unblocked priority in BACKLOG is item #6 — "Seed project content — replace with real, impressive examples." I want to confirm before iter 28 commits to a full session on this, because it's a *very* different kind of iteration than the recent ones:
+
+- **(A) Yes — iter 28 is a full seed-content session.** I'd write 8–12 new build paths across Finance, Marketing, Code, Data, Design, Writing, each with (i) a specific thing that was actually "built," (ii) the real prompts used (including system prompts / instructions, not placeholder text), (iii) the real results at each step (code snippets, copy, data output), and land them both in `supabase/seed-fix.sql` (for the live site) AND `src/lib/mock-data.ts` (for local dev). You'd need to run the SQL in Supabase yourself to see it live — the iteration produces the migration, you apply it. Downside: iter 28 would produce *zero* visible design changes.
+- **(B) No — keep stacking design wins first.** The browse card + build page + project detail flows still have real design work to do (reusable Button primitive, mobile filter UX, code-block treatment on detail pages). Once the shell is uniformly premium, *then* the seed content is the obvious next move.
+- **(C) Split it — iter 28 does 3–4 genuinely great example projects as a pilot, iter 29 decides whether to keep going on content or back to design.** Lowest-risk option — proves the quality bar without a full session commitment, and lets you eyeball the style before I produce eight more.
+
+The memory flag is strong enough that I think the answer is (A) or (C), but you have more context on what prospective users are actually hitting when they open the site.
+
+**Drew's Response:**
+
+
+---
+
 ### Q16: Browse filter toolbar — is hiding all 11 categories behind a `<details>` popover the right call, or should the top N stay inline?
 
 Iteration 26 replaced the visible 11-pill category wall with a single "Category" button that opens a popover containing all categories in a 3-col grid. This was the biggest space-saver in the filter-bar collapse — the old wall ate ~70px by itself — and it matches Linear/Raycast's "filters live behind a popover" pattern. The independent reviewer flagged one trade-off: for a power user who filters heavily, category is now *one click deeper* than before (click the popover, then click the category), where previously they could one-tap any of 11 pills. The bet is that most visitors filter by 0–1 categories at a time, so the one-row toolbar is the better default. But the data could disagree. Three options:

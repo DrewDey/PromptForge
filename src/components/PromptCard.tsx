@@ -7,6 +7,13 @@
 // - Footer declutter: dropped the decorative user-icon box; author name now uses a compact
 //   "by …" prefix so the four footer elements (difficulty · model · author · votes · bookmarks)
 //   read as one single typographically-consistent line instead of a chip stew.
+//
+// Iteration 27 (2026-04-16):
+// - Added middle-dot (U+00B7) separators between author / upvotes / bookmarks in the footer
+//   right cluster so the three items read as one typographic string, not three groups. The
+//   iter 26 reviewer specifically flagged that the promise of "one single line" was not yet
+//   visually delivered. Separators are `text-surface-300` (subtle but present) and hidden on
+//   mobile where the author span is also hidden so we don't get a leading orphaned dot.
 
 import Link from 'next/link'
 import { ArrowUp, Bookmark, ChevronRight, Cpu, Layers } from 'lucide-react'
@@ -126,14 +133,16 @@ export default function PromptCard({ prompt, featured = false }: { prompt: Promp
               </span>
             )}
           </div>
-          <div className="flex items-center gap-3 text-[11px] text-surface-500 shrink-0">
+          <div className="flex items-center gap-2 text-[11px] text-surface-500 shrink-0">
             <span className="hidden sm:inline text-surface-500 truncate max-w-[8rem]">
               by <span className="text-surface-700 font-medium">{prompt.author?.display_name ?? 'Anonymous'}</span>
             </span>
+            <span aria-hidden="true" className="hidden sm:inline text-surface-300">·</span>
             <span className="flex items-center gap-1 tabular-nums" aria-label={`${prompt.vote_count} upvotes`}>
               <ArrowUp className="w-3 h-3" aria-hidden="true" />
               {prompt.vote_count}
             </span>
+            <span aria-hidden="true" className="text-surface-300">·</span>
             <span className="flex items-center gap-1 tabular-nums text-surface-400" aria-label={`${prompt.bookmark_count} bookmarks`}>
               <Bookmark className="w-3 h-3" aria-hidden="true" />
               {prompt.bookmark_count}

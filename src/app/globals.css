@@ -115,6 +115,21 @@ body {
   animation: cardSlideIn 0.35s ease-out both;
 }
 
+/* ─── Popover entry animation (iteration 27) ───
+ * Short 150ms fade + scale-up for the Browse Category popover so opening
+ * feels responsive but not abrupt. origin-top-left + scale 0.96 → 1 keeps
+ * the motion anchored under the summary button. The 150ms cadence matches
+ * the rest of the design system's hover/transition timing.
+ */
+@keyframes popoverIn {
+  from { opacity: 0; transform: scale(0.96); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+.animate-popover-in {
+  animation: popoverIn 150ms ease-out both;
+}
+
 /* Subtle pulse for pipe connector nodes */
 @keyframes pulseSubtle {
   0%, 100% { opacity: 0.7; transform: scale(1); }

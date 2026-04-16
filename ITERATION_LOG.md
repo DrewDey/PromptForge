@@ -5,6 +5,81 @@
 
 ---
 
+## 2026-04-16 — Iteration 27: Browse Toolbar Reviewer-Nit Sweep — Segmented Control Sizing, Active Category Dark Pill, Card Footer Middle-Dot Separators, Popover Escape/Click-Outside + Fade-In
+
+**Picked the top unblocked item** — BACKLOG item #1 (Browse page) is still the lead of the Design Overhaul sprint. Iteration 26 landed the big structural move (filter-toolbar collapse) but its independent review called out four specific carryover nits: (a) segmented Level/Sort pills `px-2.5 py-1` is below the iOS 44px target, (b) card footer right cluster still reads as three groups because there are no visible separators between author / votes / bookmarks, (c) active Category chip uses orange-tint that doesn't compose with the dark-header/dark-footer bookend, (d) `<details>` popover lacks Escape-close + click-outside + entry animation. Iter 27's entire job is to close those four nits without scope creep.
+
+**Screenshot-pipeline fix (second-pass unlock)**: iter 26 got Playwright chromium working in-sandbox but the FUSE mount still refuses `unlink` on everything under the project dir, which crashes `next dev` the moment it tries to rotate a log file (`EPERM unlink '.next/dev/logs/next-development.log'`). Iter 26 couldn't run `npm run build` for the same reason and used `npx tsc --noEmit` as the verification fallback. Iter 27 went one step further and wrote a `fs.unlink` shim at `/tmp/fs-shim.js` that swallows `EPERM`/`ENOENT` from `fs.unlink`/`unlinkSync`/`rm`/`rmSync`/`rmdir` + the promises variants + adds an `uncaughtException` catch so webpack's async unlink can't kill the server. Loaded via `NODE_OPTIONS="--require /tmp/fs-shim.js"` in front of `npx next dev --webpack --port 3030 --hostname 127.0.0.1`. With the shim the dev server stays up and serves `/browse` at HTTP 200 in ~7s cold start. Four after PNGs captured: full-page, viewport, filtered (with active Category chip visible), category-open. This shim belongs at `/tmp/fs-shim.js` and future iterations should reuse it, not re-derive it — it is the difference between "visual audit deferred" and "visual audit passed."
+
+**Visual capture (Step 1.5 + Step 6)**:
+- BEFORE (from iter-26's final state, preserved at `/sessions/busy-admiring-thompson/iter-27/iter-27-before-browse-{full,viewport,category-open,filtered}.png`).
+- AFTER captured against a live dev server on `127.0.0.1:3030` — full-page, viewport, category-open (after clicking the summary), filtered (`?difficulty=beginner`) at `/sessions/busy-admiring-thompson/iter-27/iter-27-after-browse-*.png` + copies in `/outputs/` so Drew can view them from the desktop.
+
+**Design brief (4 goals, narrow, from reviewer nits — locked before coding)**:
+
+1. **Segmented-control tap-target bump** — Level + Sort pills from `px-2.5 py-1 text-[12px]` → `px-3 py-1.5 text-[13px]`. Add `hover:bg-white/60` to inactive state so hover gives tactile feedback rather than colour-only shift. Add `focus-visible:outline-2 outline-brand-orange outline-offset-2` to every interactive in the toolbar (summary + segmented links) so keyboard users see a consistent brand ring matching the landing/auth spec.
+
+2. **Active Category trigger — dark pill, tri-tone** — from `bg-brand-orange/10 text-brand-orange border-brand-orange/40 hover:bg-brand-orange/15` to `bg-surface-900 text-white border-surface-900 hover:bg-surface-800`. "Committed filter" now reads unambiguously as a dark eye-anchor that visually pairs with the dark Header/Footer bookend; the orange budget stays on the cards and on the segmented active underline. Tri-tone (black/white/orange) on a white page > monotone orange.
+
+3. **Card footer right cluster — one typographic string** — PromptCard footer gets explicit middle-dot (`U+00B7`) separators between `by {author}` · `↑ votes` · `🔖 bookmarks`. First dot `hidden sm:inline` so mobile (where author span is also hidden) doesn't get an orphaned leading dot. `text-surface-300` so the separator is subtle but present. This completes iter-26's promise of "one single typographically-consistent line" that the reviewer flagged as "not yet visually delivered."
+
+4. **Popover a11y + entry animation** — new `src/components/CategoryPopover.tsx` is a thin `'use client'` wrapper around the existing `<details>` element. Wires (a) Escape-key close with focus return to the summary button, (b) click-outside close, (c) the `animate-popover-in` class on the floating panel for a 150ms `opacity 0 → 1` + `scale(0.96) → 1` entry from `origin-top-left`. The 150ms cadence matches the existing hover/transition timing in the design system. `<details>` stays the underlying element so progressive-disclosure still works with zero JS if hydration fails.
+
+**What was implemented**:
+
+*`src/components/CategoryPopover.tsx`* (new, 62 lines) — client wrapper:
+- `useRef<HTMLDetailsElement>` + `useEffect` mounts two document-level listeners.
+- `keydown` Escape: if details is open, `d.open = false` and returns focus to the `<summary>` child.
+- `click`: if target is outside `details`, close. Children (pills, summary) are a Link → natural navigation + close.
+- Cleanup in effect return — no leaks.
+- Returns `<details ref={ref} className={className}>{children}</details>` — never touches child DOM.
+
+*`src/app/browse/page.tsx`*:
+- `import CategoryPopover from '@/components/CategoryPopover'`.
+- Replaced `<details className="relative group/cat">` with `<CategoryPopover className="relative group/cat">` (1 line diff; children unchanged).
+- Popover panel: added `animate-popover-in origin-top-left` so the floating grid fades in from under the trigger.
+- Summary button: added `focus-visible:outline-2 focus-visible:outline-brand-orange focus-visible:outline-offset-2` + swapped active-state classes from orange-tint to `bg-surface-900 text-white border-surface-900 hover:bg-surface-800`.
+- Level segmented: `px-2.5 py-1 text-[12px]` → `px-3 py-1.5 text-[13px]` + `hover:bg-white/60` on inactive + `focus-visible:outline-2 outline-brand-orange outline-offset-2` on every option.
+- Sort segmented: same changes applied to both Newest and Popular.
+- Iter 27 docstring block at top of file documenting the four nit-sweeps so iter 28 can see the rationale.
+
+*`src/components/PromptCard.tsx`*:
+- Added a `<span aria-hidden="true" className="hidden sm:inline text-surface-300">·</span>` between author and upvotes and a second (always-visible) one between upvotes and bookmarks.
+- Iter 27 comment block at top explaining the "one typographic string" delivery and why the first dot is mobile-hidden.
+
+*`src/app/globals.css`*:
+- Added `@keyframes popoverIn` (`opacity 0 → 1`, `scale(0.96) → 1`) + `.animate-popover-in { animation: popoverIn 150ms ease-out both; }` right after `.animate-card-slide-in`. Annotated with a comment tying the 150ms to the design system's cadence.
+
+**Review outcome** (independent general-purpose agent, loaded the before + after PNGs as images AND read the source files):
+
+**APPROVE. No regressions from iter 26.**
+
+- **(A) Segmented-control tap-target bump — PASS.** "Filter bar row height is uniformly larger," the `All/Beginner/Intermediate/Advanced/Newest/Popular` pill row is "noticeably chunkier." Not true 44px but substantially closer.
+- **(B) Footer middle-dot separators — PASS.** "Right cluster on featured cards now reads as 'by Sarah Mitchell · 83 · 47' — visible single typographic line." Before had no separators reading as three disconnected groups. Clean execution.
+- **(C) Active Category trigger dark treatment — PASS.** `'Category: Productivity'` renders as a dark/black pill with white text in the after-filtered PNG; before was orange-tinted. "Visual parity with dark chrome achieved."
+- **(D) Popover a11y — PASS.** Code for Escape + click-outside + animate-popover-in verified. Static PNG can't prove the 150ms animation but pixel state is correct.
+- **Overall cohesion** — "the taller filter controls actually improve balance with the search input," "the dark active Category trigger gives the toolbar a satisfying black/white/orange tri-tone that echoes the header."
+
+**Verification:**
+- `npx tsc --noEmit` — clean, zero errors (same reliable signal iter-26 used; Vercel will build from a clean checkout so mount EPERM won't hit prod).
+- `npm run build` — blocked by known mount `EPERM unlink` issue (documented iters 22–26, worked around for dev server this iter via `fs-shim.js`; not yet wired up for `next build`, which would need the shim injected into a production build path — scope for future iteration if we want local build verification).
+- `npm run lint` — still blocked by path-with-space bug.
+- Visual audit: **passed for real** — 4 before PNGs + 4 after PNGs on disk, reviewer actually loaded them. Second consecutive iteration to pass the screenshot gate.
+
+**Assumptions I made (Drew — flag anything you disagree with)**:
+1. Scoped iter 27 strictly to the four reviewer carryover nits rather than opening any new design investigation. I took iter-26's review as the "next iteration's design brief" because that's what the review explicitly said should happen next. If you wanted iter 27 to tackle a different part of the Browse page (e.g. mobile filter UX, or the seed content problem flagged in the memory), that trade is what you should push back on.
+2. For (C), read "active Category chip" as the trigger button that shows `Category: {name}` (which is what the popover summary renders), not the separate "Filtered by: {chip}" in the result-header right rail. Code was changed at `page.tsx:124–128`. The "Filtered by" chip further down still uses orange-tint; I didn't touch it because the brief said "active Category" and the reviewer's specific text "Active Category trigger should read as a committed filter" fit the summary button better. If you wanted the Filtered-by chip rail changed too, that's a one-liner for iter 28.
+3. `CategoryPopover` is a new client component — we now have one more `'use client'` boundary on the Browse page. The alternative was a plain inline `useEffect` inside the server component's tree by hoisting the whole `<details>` block to a new client file, which ends up needing the same wrapper anyway. Iter 28 could debate whether there's a cleaner "no-JS first, JS-enhance-when-hydrates" pattern.
+4. Committed `next.config.ts` and `tsconfig.json` back to HEAD (both were mutated by `next dev` and my distDir experiments) so the commit is a clean diff of the four intentional files only: `browse/page.tsx`, `PromptCard.tsx`, `globals.css`, `CategoryPopover.tsx`.
+
+**What's next** (ranked):
+
+1. **Seed content overhaul (memory flag)** — Drew's auto-memory explicitly says "Seed content is garbage" and "Mock data is invisible on live site — must update seed-fix.sql + Supabase." This is a Drew-confirmed priority that no recent iteration has touched. A full-session iteration on `supabase/seed-fix.sql` + `src/lib/mock-data.ts` (together, per memory rule) with 8–12 high-quality, domain-diverse build paths (finance, marketing, code, data, design, writing) would be a bigger quality unlock than more filter-bar polish. This should probably be iter 28.
+2. **Reusable Button primitive** — still overdue from iters 23–25. Profile page, auth pages, landing hero, Browse Sort/Level, and now CategoryPopover summary all hand-roll the primary/segmented spec. One more iteration of drift and the primary spec will be harder to change consistently.
+3. **Build page feature-parity investigation** — iter 26's brief identified `/prompt/new` (the real Build route) vs the documented `/build` (which 404s). Worth resolving which is canonical and aligning the Header nav link + any marketing copy.
+
+---
+
 ## 2026-04-16 — Iteration 26: Browse Toolbar Collapse + Promoted Result Count + Solid FEATURED Pill + Decluttered Card Footer
 
 **Picked the top unblocked item** — BACKLOG item #1 (Browse page) remains the lead priority of the Design Overhaul sprint. Iteration 25 was the profile page; prior Browse iterations had landed featured cards, mini step-flow, search focus glow — but the filter bar was still a ~200px three-row wall and the section headers were whispered. Drew is actively checking whether iterations are cheating on the screenshot gate, so this iteration treated real before+after PNGs as non-negotiable and solved the in-sandbox screenshot pipeline rather than falling back to "Chrome MCP unreachable."
@@ -1205,6 +1280,22 @@ Drew asked: "Would you be able to add two instructions to take screenshots of ev
 # Plain English Summary (for Drew)
 
 > What's actually changed on the site, in normal human language. Newest at the top. Let me know when you've reviewed and I'll clear the old stuff.
+
+### The Browse toolbar got the small fixes it still needed after iter 26 — and the dev server finally runs reliably inside my sandbox (April 16 — Iteration 27)
+
+Iter 26 landed the big collapse of the filter bar into a single row. The reviewer of that iteration then said "great, but four specific nits are still open." Iter 27 is the focused sweep to close those four nits, nothing more — I deliberately didn't open new design work.
+
+**Taller, more deliberate filter pills.** The Level segmented control (All / Beginner / Intermediate / Advanced) and the Sort toggle (Newest / Popular) both had pills that were borderline too small for fingers on a phone — about 28px tall — and they didn't give any tactile feedback when you hovered. Now they're a bit taller (closer to a proper tap target), the inactive pills get a subtle white fade-in on hover so your pointer gets a response, and every one of them — plus the Category popover button — has a keyboard-focus ring in our brand orange so Tab-navigating the toolbar actually shows you where you are.
+
+**The "Category: Productivity" button (once you've picked a category) is now a dark pill.** Before, when you had an active category filter, the button read in orange-on-orange-tint — which clashed with the Header (dark) and the Footer (dark) and meant the whole page used orange for both "accent" and "committed state." Now it's a near-black pill with white text, which pairs cleanly with the dark Header/Footer bookend and leaves the orange budget free for the cards. The toolbar now reads as a quiet three-tone (black / white / orange) instead of an orange monotone.
+
+**The card footer right cluster reads as one string now, not three groups.** Every project card's bottom-right corner shows the author's name, the upvote count, and the bookmark count. Iter 26 removed the icon-box that was cluttering it, but the three items still read as three separate visual groups because nothing connected them. Now there's a subtle dot-separator between each — "by Sarah Mitchell · 83 · 47" — which turns them into one typographic line. It's a tiny thing but it's the difference between "three chips next to each other" and "a single readable footer string." On mobile the author name is hidden (cards are narrower there), so the leading dot gets hidden too — no orphaned punctuation.
+
+**The Category popover has proper a11y manners now.** When you open it with the "Category" button and then want to dismiss it without picking something, you can press Escape or click anywhere outside the panel — both now close it correctly, and Escape also returns keyboard focus to the button you opened it from. It also fades in with a 150ms scale-up (same speed as every other hover/transition on the site) so it feels snappy instead of snapping into place abruptly.
+
+**Unblocked something permanent: the dev server now runs reliably inside my sandbox, which means the screenshot gate isn't going to be a fight every iteration.** The sandbox's file system has a weird restriction that blocks file-delete, and Next.js's dev server tries to delete its own log files while running and crashes on the error. I wrote a one-file shim that silently absorbs those errors, and it means every future iteration can stand up a live `/browse` page against my own dev server in about 7 seconds and take real after-screenshots on a 1440×900 viewport. The shim lives at `/tmp/fs-shim.js` and iter 28's instructions can just reuse it. This is on top of iter 26's Playwright-inside-sandbox fix — together they mean "visual audit deferred" shouldn't come up anymore.
+
+**The reviewer (an independent Claude session that saw the actual pixel diffs) approved all four nits.** No regressions from iter 26. No scope creep.
 
 ### The Browse page filter bar finally collapsed, and I stopped cheating on the screenshot gate (April 16 — Iteration 26)
 

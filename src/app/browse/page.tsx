@@ -7,11 +7,26 @@
 //   (text-2xl font-bold) with active-filter chips inline on the right baseline. Featured + All
 //   Projects section headers get matched, louder weights.
 // - Kept all existing semantics (server component, search form, Link-based filter navigation).
+//
+// Iteration 27 (2026-04-16): Reviewer-nit sweep on top of iter 26.
+// - Active Category chip swapped from orange-tint/orange-text to dark surface-900 pill so
+//   "committed filter" reads unambiguously (matches the "All categories" selected state inside
+//   the popover grid).
+// - Level / Sort segmented controls bumped px-2.5 py-1 → px-3 py-1.5 and text-[12px] → text-[13px]
+//   to move closer to the iOS 44px tap target and get more typographic presence; inactive pills
+//   now get a subtle hover:bg-white/60 for tactile feedback instead of colour-only change.
+// - focus-visible outlines added to every filter interactive (summary + segmented links) so
+//   keyboard users see a brand-orange ring matching the landing/auth spec.
+// - Popover gets a thin CategoryPopover client wrapper (Escape + click-outside close) so the
+//   a11y gap from iter 26's review is closed, plus a 150ms popoverIn fade/scale on opening that
+//   matches the rest of the system's 150ms cadence. <details> remains the underlying element so
+//   progressive-disclosure HTML still works if the JS fails to hydrate.
 
 import Link from 'next/link'
 import { Search, X, FolderOpen, SlidersHorizontal, Sparkles, Layers, ChevronDown } from 'lucide-react'
 import { getCategories, getPrompts } from '@/lib/data'
 import PromptCard from '@/components/PromptCard'
+import CategoryPopover from '@/components/CategoryPopover'
 
 const difficulties = [
   { value: '', label: 'All' },
@@ -105,17 +120,17 @@ export default async function BrowsePage({
                 Closed state: button showing "Category" + active name (if any) + chevron.
                 Open state: floating panel with the 11 category pills in a responsive grid.
               */}
-              <details className="relative group/cat">
-                <summary className={`list-none cursor-pointer select-none flex items-center gap-1.5 text-[13px] font-medium px-3 py-2 border transition-colors duration-150 ${
+              <CategoryPopover className="relative group/cat">
+                <summary className={`list-none cursor-pointer select-none flex items-center gap-1.5 text-[13px] font-medium px-3 py-2 border transition-colors duration-150 focus-visible:outline-2 focus-visible:outline-brand-orange focus-visible:outline-offset-2 ${
                   activeCategory
-                    ? 'bg-brand-orange/10 text-brand-orange border-brand-orange/40 hover:bg-brand-orange/15'
+                    ? 'bg-surface-900 text-white border-surface-900 hover:bg-surface-800'
                     : 'bg-surface-50 text-surface-700 border-surface-200 hover:border-surface-400 hover:bg-white'
                 }`}>
                   <SlidersHorizontal className="w-3.5 h-3.5 opacity-70" aria-hidden="true" />
                   <span>Category{activeCategoryObj ? `: ${activeCategoryObj.name}` : ''}</span>
                   <ChevronDown className="w-3.5 h-3.5 opacity-70 group-open/cat:rotate-180 transition-transform duration-150" aria-hidden="true" />
                 </summary>
-                <div className="absolute left-0 top-full mt-1 z-20 bg-white border border-surface-200 shadow-lg p-2 w-[min(92vw,560px)]">
+                <div className="absolute left-0 top-full mt-1 z-20 bg-white border border-surface-200 shadow-lg p-2 w-[min(92vw,560px)] animate-popover-in origin-top-left">
                   <div className="grid grid-cols-2 sm:grid-cols-3 gap-1">
                     <Link
                       href={buildUrl({ category: '' })}
@@ -142,7 +157,7 @@ export default async function BrowsePage({
                     ))}
                   </div>
                 </div>
-              </details>
+              </CategoryPopover>
 
               {/* Level — compact segmented control (inline pills). Replaces the full-row chip line. */}
               <div className="flex items-center border border-surface-200 bg-surface-50 p-0.5" role="radiogroup" aria-label="Difficulty level">
@@ -152,10 +167,10 @@ export default async function BrowsePage({
                     href={buildUrl({ difficulty: d.value })}
                     role="radio"
                     aria-checked={activeDifficulty === d.value}
-                    className={`px-2.5 py-1 text-[12px] font-medium transition-all duration-150 ${
+                    className={`px-3 py-1.5 text-[13px] font-medium transition-all duration-150 focus-visible:outline-2 focus-visible:outline-brand-orange focus-visible:outline-offset-2 ${
                       activeDifficulty === d.value
                         ? 'bg-white text-surface-900 shadow-sm border-b-2 border-b-brand-orange'
-                        : 'text-surface-500 hover:text-surface-800 border-b-2 border-b-transparent'
+                        : 'text-surface-500 hover:text-surface-800 hover:bg-white/60 border-b-2 border-b-transparent'
                     }`}
                   >
                     {d.label}
@@ -169,8 +184,8 @@ export default async function BrowsePage({
                   href={buildUrl({ sort: 'newest' })}
                   role="radio"
                   aria-checked={activeSort === 'newest'}
-                  className={`px-2.5 py-1 text-[12px] font-medium transition-all duration-150 ${
-                    activeSort === 'newest' ? 'bg-white text-surface-900 shadow-sm border-b-2 border-b-brand-orange' : 'text-surface-500 hover:text-surface-800 border-b-2 border-b-transparent'
+                  className={`px-3 py-1.5 text-[13px] font-medium transition-all duration-150 focus-visible:outline-2 focus-visible:outline-brand-orange focus-visible:outline-offset-2 ${
+                    activeSort === 'newest' ? 'bg-white text-surface-900 shadow-sm border-b-2 border-b-brand-orange' : 'text-surface-500 hover:text-surface-800 hover:bg-white/60 border-b-2 border-b-transparent'
                   }`}
                 >
                   Newest
@@ -179,8 +194,8 @@ export default async function BrowsePage({
                   href={buildUrl({ sort: 'popular' })}
                   role="radio"
                   aria-checked={activeSort === 'popular'}
-                  className={`px-2.5 py-1 text-[12px] font-medium transition-all duration-150 ${
-                    activeSort === 'popular' ? 'bg-white text-surface-900 shadow-sm border-b-2 border-b-brand-orange' : 'text-surface-500 hover:text-surface-800 border-b-2 border-b-transparent'
+                  className={`px-3 py-1.5 text-[13px] font-medium transition-all duration-150 focus-visible:outline-2 focus-visible:outline-brand-orange focus-visible:outline-offset-2 ${
+                    activeSort === 'popular' ? 'bg-white text-surface-900 shadow-sm border-b-2 border-b-brand-orange' : 'text-surface-500 hover:text-surface-800 hover:bg-white/60 border-b-2 border-b-transparent'
                   }`}
                 >
                   Popular

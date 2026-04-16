@@ -18,12 +18,6 @@ The step-by-step prompt blocks now use a dark terminal-style background (`surfac
 
 ## Answered Questions
 
-### Q7: Build page accordion — should users be able to open multiple sections at once?
-The current implementation uses a "single-active" accordion where only one section is open at a time. Should users be able to open multiple sections freely?
-
-**Drew's Response:** I like being able to jump through the sections freely I think.
-**Action taken** (Iteration 18): Implemented multi-open accordion. Sections now toggle independently — clicking one doesn't close others. Guard prevents closing ALL sections (at least one stays open). Error handling is additive — opens the error section without closing others.
-
 ### Q1: Design reference — are there sites you love the look of?
 Are there specific websites or apps whose design you love and want PathForge to feel like? Any visual references would help guide the aesthetic direction.
 
@@ -61,3 +55,10 @@ Research into Linear, Vercel, and Raycast showed that command palettes (Cmd+K / 
 
 **Drew's Response**: Add to the backlog as a lower priority item.
 **Action taken** (Iteration 17): Added "Cmd+K command palette" to the Backlog — Future section in BACKLOG.md.
+
+### Q7: Build page accordion — should users be able to open multiple sections at once?
+
+The current implementation uses a "single-active" accordion where only one section is open at a time (like Typeform/Vercel setup wizards). This keeps the page clean and guides users sequentially. However, some users might want to reference Section 1 while filling in Section 2, or jump between sections freely. An alternative is "multi-open" mode where clicking a section toggles it independently. Which feels more right for PathForge's audience?
+
+**Drew's Response:** I like being able to jump through the sections freely I think.
+**Action taken** (Iteration 18): Implemented multi-open accordion. Sections now toggle independently — clicking one doesn't close others. Guard prevents closing ALL sections (at least one stays open). Error handling is additive — opens the error section without closing others.

@@ -33,12 +33,17 @@
   --color-accent-800: #1E40AF;
   --color-accent-900: #1E3A5F;
 
-  /* Light surface palette */
-  --color-surface-900: #ffffff;
-  --color-surface-800: #ffffff;
-  --color-surface-700: #f9fafb;
-  --color-surface-600: #e5e7eb;
-  --color-surface-500: #9ca3af;
+  /* Neutral surface palette — cooler, more sophisticated */
+  --color-surface-50: #fafafa;
+  --color-surface-100: #f4f4f5;
+  --color-surface-200: #e4e4e7;
+  --color-surface-300: #d4d4d8;
+  --color-surface-400: #a1a1aa;
+  --color-surface-500: #71717a;
+  --color-surface-600: #52525b;
+  --color-surface-700: #3f3f46;
+  --color-surface-800: #27272a;
+  --color-surface-900: #18181b;
 }
 
 /* Sharp edges globally */
@@ -47,21 +52,29 @@
 }
 
 /* ─── Design Tokens ───
- * Transitions: all interactive hover/focus states use 200ms ease
- * Spacing: 4/8/16/24/32/48/64px (Tailwind 1/2/4/6/8/12/16)
- * Chips: sm = px-2 py-0.5 | md = px-3 py-1.5
- * Buttons: sm = px-4 py-2 | md = px-5 py-2.5 | lg = px-8 py-3.5
+ * Transitions: all interactive hover/focus states use 150ms ease
+ * Spacing: 4/8/12/16/20/24/32/48/64px
+ * Chips: sm = px-2 py-0.5 | md = px-3 py-1
+ * Buttons: sm = px-3 py-1.5 | md = px-4 py-2 | lg = px-6 py-3
  */
 
-/* Scrollbar styling */
+/* Smoother scrollbar */
 ::-webkit-scrollbar {
-  width: 8px;
+  width: 6px;
 }
 ::-webkit-scrollbar-track {
-  background: #f1f5f9;
+  background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: #cbd5e1;
+  background: #d4d4d8;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #a1a1aa;
+}
+
+/* Base body background */
+body {
+  background-color: #fafafa;
 }
 
 /* Pipe animation */
@@ -76,13 +89,13 @@
 }
 
 @keyframes fadeInUp {
-  from { opacity: 0; transform: translateY(30px); }
+  from { opacity: 0; transform: translateY(16px); }
   to { opacity: 1; transform: translateY(0); }
 }
 
 @keyframes cardSlideIn {
-  from { opacity: 0; transform: translateY(40px) scale(0.97); }
-  to { opacity: 1; transform: translateY(0) scale(1); }
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 @keyframes typewriter {
@@ -95,11 +108,11 @@
 }
 
 .animate-fade-in-up {
-  animation: fadeInUp 0.6s ease-out both;
+  animation: fadeInUp 0.4s ease-out both;
 }
 
 .animate-card-slide-in {
-  animation: cardSlideIn 0.5s ease-out both;
+  animation: cardSlideIn 0.35s ease-out both;
 }
 
 /* Subtle pulse for pipe connector nodes */
@@ -121,9 +134,9 @@
 .skeleton-shimmer {
   background: linear-gradient(
     90deg,
-    #f0f0f0 25%,
-    #e8e8e8 37%,
-    #f0f0f0 63%
+    #e4e4e7 25%,
+    #d4d4d8 37%,
+    #e4e4e7 63%
   );
   background-size: 200% 100%;
   animation: shimmer 1.8s ease-in-out infinite;
@@ -132,6 +145,6 @@
 @media (prefers-reduced-motion: reduce) {
   .skeleton-shimmer {
     animation: none;
-    background: #f0f0f0;
+    background: #e4e4e7;
   }
 }

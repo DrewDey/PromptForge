@@ -13,12 +13,24 @@ The Build page currently shows all 3 sections at once (Project Basics, Build Jou
 **Drew's Response:**
 Go ahezd and implement those collapsible sections and improve how you see fit.
 
-**Action taken** (Iteration 16): Noted — collapsible sections for the Build page are now a priority. Next iteration touching the Build page should implement progressive disclosure (accordion sections).
+**Action taken** (Iteration 16): Noted — collapsible sections for the Build page are now a priority.
+**Action taken** (Iteration 17): Implemented. Build page now has single-active accordion with 3 collapsible sections, completion indicators, scroll anchoring, and full accessibility (aria-controls, focus-visible, keyboard navigation).
 
 ---
 
 ### Q6: Header — should we add a Cmd+K command palette?
 Research into Linear, Vercel, and Raycast showed that command palettes (Cmd+K / Ctrl+K) are a defining feature of modern dev tools. Adding a small "Cmd+K" hint button in the header would signal "this is a technical tool" and provide keyboard-first navigation for power users. However, it's a meaningful engineering investment (search index, action registry, keyboard handling) and may be premature before the core pages are fully polished. Should we add this to the backlog? If so, how high priority?
+
+**Drew's Response:**
+Ho ahead and add to the backlog as a lower priority item.
+
+**Action taken** (Iteration 17): Added "Cmd+K command palette" to the Backlog — Future section in BACKLOG.md as a lower priority item.
+
+---
+
+### Q7: Build page accordion — should users be able to open multiple sections at once?
+
+The current implementation uses a "single-active" accordion where only one section is open at a time (like Typeform/Vercel setup wizards). This keeps the page clean and guides users sequentially. However, some users might want to reference Section 1 while filling in Section 2, or jump between sections freely. An alternative is "multi-open" mode where clicking a section toggles it independently. Which feels more right for PathForge's audience?
 
 **Drew's Response:**
 

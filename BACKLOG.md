@@ -108,6 +108,7 @@ These are queued but not yet prioritized for hourly iterations.
 
 ## Backlog — Future
 
+- **Cmd+K command palette**: Keyboard-first navigation for power users. Search projects, navigate pages, trigger actions. Signals "this is a technical tool." Lower priority per Drew.
 - Private collections / saved searches
 - Team features / organizations
 - API access for developers
@@ -125,6 +126,7 @@ These are queued but not yet prioritized for hourly iterations.
 
 | Date | Item | Summary |
 |------|------|---------|
+| 2026-04-16 | Build page — progressive disclosure accordion sections (Drew's request), completion indicators, scroll anchoring, a11y fixes |
 | 2026-04-16 | Header refinement — accessibility (contrast, focus indicators, ARIA, touch targets), unified orange active states, Build CTA with orange accent, shadow dark/light transition |
 | 2026-04-16 | Build page — from form to builder (hero title, step cards, submit refinement) | Borderless Notion-style hero title, step cards as building blocks (shadow, reorder, grip handle), prompt/result tinted sections, mode toggle "Recommended" badge, adaptive submit button with completion summary |
 | 2026-04-16 | Browse page — featured card distinction, card hierarchy, filter bar polish | Featured cards with orange left border + badge + text-xl title, consolidated single-row card footer, segmented sort toggle, search focus glow, section headers for featured/all |

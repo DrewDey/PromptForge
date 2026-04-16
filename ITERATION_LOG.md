@@ -5,6 +5,50 @@
 
 ---
 
+## 2026-04-16 — Iteration 17: Build Page — Progressive Disclosure with Collapsible Accordion Sections
+
+**Audit findings** (top problems identified):
+1. All 3 sections visible at once creates "form wall" — cognitive overload on first impression. Steps already had accordion pattern but parent sections didn't.
+2. No section-level completion indicators — users couldn't tell when a section was done without scrolling through everything.
+3. No scroll anchoring — expanding/collapsing sections with no auto-scroll disoriented users.
+4. Section dividers (border-t-2) were visual noise without semantic meaning — redundant with numbered section headers.
+5. Submit button buried at bottom — users who'd completed sections couldn't find it without full scroll.
+6. GripVertical drag handle on step cards was misleading — suggested drag-and-drop but only arrow-button reorder existed.
+7. SectionHeader buttons had no focus-visible indicator — keyboard users couldn't see focus position.
+8. No aria-controls linking section headers to their content panels.
+
+**Research insights**:
+- **Single-active accordion** (Linear/Typeform): Only one section expanded at a time guides users through logical sequence, reducing visual footprint and maintaining focus.
+- **Checkmark badge + summary text in collapsed headers** (Notion/Figma Community): Shows completion state at a glance without reopening, letting users navigate with confidence.
+- **Numbered badges with state coloring** (Vercel setup wizard): Orange for active, green for complete, muted for pending — combines spatial awareness with completion feedback.
+- **ChevronRight with 90° rotation** (modern accordion best practices): Clean, professional expand/collapse affordance with 200ms transition.
+- **Progressive disclosure reduces cognitive load** (NN Group): Show essentials first, reveal on demand — transforms "form wall" into guided builder flow.
+
+**Design brief** (3 key goals):
+1. Transform 3-section form wall into single-active accordion — only one section expanded at a time, auto-collapse when switching
+2. Add completion indicators to section headers — green checkmark + "Complete" badge when done, summary of entered data when collapsed (e.g., "My Project · Coding & Development")
+3. Fix accessibility gaps — focus-visible on section headers, aria-controls/id linking, remove misleading GripVertical drag handle
+
+**What was implemented**:
+- **Collapsible SectionHeader component**: Refactored from static display to interactive button with `aria-expanded`, `aria-controls`, `focus-visible:outline-brand-orange`. Shows numbered badge (orange=active, green=complete, muted=pending), title, subtitle when expanded, summary text when collapsed, and ChevronRight icon with 90° rotation.
+- **Single-active accordion state**: New `activeSection` state (default: 1). Only one section content panel visible at a time. Clicking a new section auto-collapses the previous one. At least one section always remains open (no all-collapsed state).
+- **Section completion logic**: `section1Complete` checks title+description+story+category+difficulty. `section2Complete` checks at least one filled step (multi-step) or prompt content (single). Section 3 is all optional fields.
+- **Collapsed section summaries**: Section 1 shows project title + category. Section 2 shows "X of Y steps filled". Section 3 shows tools + tags preview.
+- **Scroll-into-view on expand**: `toggleSection()` uses `setTimeout` + `scrollIntoView({ behavior: 'smooth', block: 'start' })` to anchor the newly opened section.
+- **Error-aware section navigation**: On submit validation failure, auto-opens the section containing the first error field, then scrolls to the error after 100ms delay for section expansion.
+- **Section container styling**: Expanded sections get `border-surface-200 shadow-sm bg-white`. Collapsed sections get `border-surface-100 bg-surface-50/50` with subtle distinction.
+- **Form spacing**: Reduced from `space-y-8` to `space-y-3` since sections now have their own borders and padding.
+- **Removed GripVertical drag handle**: Was misleading (no drag-drop support). Arrow up/down buttons remain for reorder.
+- **Removed section dividers**: `border-t-2 border-surface-200` lines between sections are gone — the accordion containers provide their own visual boundaries.
+- **Added aria-controls + panel IDs**: Each SectionHeader button has `aria-controls="section-{n}-panel"` linking to the content div's `id="section-{n}-panel"`.
+- **Files changed**: `src/app/prompt/new/page.tsx`
+
+**Review outcome**: Approved with nits. Reviewer confirmed all 6 design brief items implemented. Nits addressed: (1) Added `focus-visible:outline-2 focus-visible:outline-brand-orange focus-visible:outline-offset-2` to SectionHeader button — fixed. (2) Removed misleading GripVertical drag handle icon — fixed. (3) Added `aria-controls`/`id` associations for WAI-ARIA accordion compliance — fixed. (4) Remaining minor nits (gray-* vs surface-* inconsistency in Section 3, computeErrors() in render path) noted but not blocking.
+
+**What's next**: Build page collapsible sections are now implemented per Drew's request (Q5). Next priority should be Project detail page (#4) or Seed content overhaul (#6). Also note: several prior iteration changes to browse page, globals.css, PromptCard, CLAUDE.md, and ITERATION_GUIDE.md were uncommitted and are included in this commit.
+
+---
+
 ## 2026-04-16 — Iteration 16: Header Refinement — Accessibility, Active States, CTA Hierarchy, Dark/Light Transition
 
 **Audit findings** (top problems identified):

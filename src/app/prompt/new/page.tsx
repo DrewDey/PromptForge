@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { ArrowLeft, Plus, Trash2, ChevronDown, ChevronUp, LogIn, FileText, GitBranch, Check, AlertCircle } from 'lucide-react'
+import { ArrowLeft, Plus, Trash2, ChevronDown, ChevronUp, LogIn, FileText, GitBranch, Check, AlertCircle, ArrowUp, ArrowDown, ChevronRight } from 'lucide-react'
 import { getModelsByProvider, getModelName } from '@/lib/models'
 import { submitProject } from '@/lib/actions'
 import ImageUpload from '@/components/ImageUpload'
@@ -23,17 +23,53 @@ const categories = [
 
 type Step = { title: string; content: string; result_content: string; description: string }
 
-function SectionHeader({ number, title, subtitle }: { number: number; title: string; subtitle: string }) {
+function SectionHeader({ number, title, subtitle, isExpanded, isComplete, summary, onClick }: {
+  number: number
+  title: string
+  subtitle: string
+  isExpanded: boolean
+  isComplete: boolean
+  summary?: string
+  onClick: () => void
+}) {
   return (
-    <div className="flex items-start gap-4 mb-6">
-      <div className="w-9 h-9 bg-brand-blue text-white text-sm font-bold flex items-center justify-center flex-shrink-0 mt-0.5">
-        {number}
+    <button
+      type="button"
+      onClick={onClick}
+      aria-expanded={isExpanded}
+      aria-controls={`section-${number}-panel`}
+      className="w-full flex items-center gap-4 px-5 py-4 cursor-pointer group transition-colors duration-200 focus-visible:outline-2 focus-visible:outline-brand-orange focus-visible:outline-offset-2"
+    >
+      <div className={`w-9 h-9 text-sm font-bold flex items-center justify-center flex-shrink-0 transition-colors duration-200 ${
+        isExpanded
+          ? 'bg-brand-orange text-white'
+          : isComplete
+            ? 'bg-green-500 text-white'
+            : 'bg-surface-200 text-surface-500 group-hover:bg-surface-300'
+      }`}>
+        {isComplete && !isExpanded ? <Check className="w-4 h-4" /> : number}
       </div>
-      <div>
-        <h2 className="text-xl font-bold text-gray-900">{title}</h2>
-        <p className="text-sm text-gray-500 mt-0.5">{subtitle}</p>
+      <div className="flex-1 text-left min-w-0">
+        <div className="flex items-center gap-2">
+          <h2 className={`text-lg font-bold transition-colors duration-200 ${
+            isExpanded ? 'text-gray-900' : 'text-gray-700 group-hover:text-gray-900'
+          }`}>{title}</h2>
+          {isComplete && !isExpanded && (
+            <span className="text-xs font-medium text-green-600 bg-green-50 px-2 py-0.5">Complete</span>
+          )}
+        </div>
+        {isExpanded ? (
+          <p className="text-sm text-surface-500 mt-0.5">{subtitle}</p>
+        ) : summary ? (
+          <p className="text-sm text-surface-400 mt-0.5 truncate">{summary}</p>
+        ) : (
+          <p className="text-sm text-surface-400 mt-0.5">Click to expand</p>
+        )}
       </div>
-    </div>
+      <ChevronRight className={`w-5 h-5 text-surface-400 flex-shrink-0 transition-transform duration-200 ${
+        isExpanded ? 'rotate-90' : 'group-hover:text-surface-600'
+      }`} />
+    </button>
   )
 }
 
@@ -77,6 +113,9 @@ export default function SubmitProjectPage() {
   // Image state (preview only for now)
   const [resultImages, setResultImages] = useState<{ file: File; preview: string; caption: string }[]>([])
   const [stepImages, setStepImages] = useState<Record<number, { file: File; preview: string; caption: string }[]>>({})
+
+  // Section accordion state
+  const [activeSection, setActiveSection] = useState(1)
 
   // Submission state
   const [submitting, setSubmitting] = useState(false)
@@ -142,6 +181,17 @@ export default function SubmitProjectPage() {
     setSteps(updated)
   }
 
+  function moveStep(index: number, direction: -1 | 1) {
+    const newIndex = index + direction
+    if (newIndex < 0 || newIndex >= steps.length) return
+    const updated = [...steps]
+    const temp = updated[index]
+    updated[index] = updated[newIndex]
+    updated[newIndex] = temp
+    setSteps(updated)
+    setExpandedStep(newIndex)
+  }
+
   function validateForm(): Record<string, string> {
     const errors = computeErrors()
     setValidationErrors(errors)
@@ -154,10 +204,20 @@ export default function SubmitProjectPage() {
 
     const errors = validateForm()
     if (Object.keys(errors).length > 0) {
-      // Scroll to first error using the freshly computed errors (not stale state)
+      // Open the section containing the first error
       const firstErrorKey = Object.keys(errors)[0]
-      const el = document.querySelector(`[data-field="${firstErrorKey}"]`)
-      el?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+      const section1Fields = ['title', 'description', 'story', 'category', 'difficulty', 'customModel']
+      const section2Fields = ['promptContent', 'steps']
+      if (section1Fields.includes(firstErrorKey)) {
+        setActiveSection(1)
+      } else if (section2Fields.includes(firstErrorKey)) {
+        setActiveSection(2)
+      }
+      // Scroll to first error after section expands
+      setTimeout(() => {
+        const el = document.querySelector(`[data-field="${firstErrorKey}"]`)
+        el?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+      }, 100)
       return
     }
 
@@ -270,6 +330,35 @@ export default function SubmitProjectPage() {
       ? 'border-red-400 focus:border-red-500 focus:ring-red-200/50'
       : 'border-gray-300 focus:border-brand-orange focus:ring-brand-orange/20'
 
+  // Section completion checks
+  const section1Complete = !!(title.trim() && description.trim() && story.trim() && categorySlug && difficulty)
+  const section2Complete = isChain
+    ? steps.some(s => s.title.trim() && s.content.trim())
+    : !!promptContent.trim()
+  const section3Complete = false // Section 3 is all optional fields — never "complete" per se
+
+  // Section summaries for collapsed state
+  const section1Summary = title.trim()
+    ? `${title.trim()}${categorySlug ? ` · ${categories.find(c => c.slug === categorySlug)?.name || ''}` : ''}`
+    : undefined
+  const section2Summary = isChain
+    ? `${filledSteps} of ${totalSteps} step${totalSteps !== 1 ? 's' : ''} filled`
+    : promptContent.trim() ? 'Prompt added' : undefined
+  const section3Summary = [
+    tools.trim() ? `Tools: ${tools.trim().split(',').slice(0, 2).join(', ')}` : '',
+    tags.trim() ? `Tags: ${tags.trim().split(',').slice(0, 2).join(', ')}` : '',
+  ].filter(Boolean).join(' · ') || undefined
+
+  function toggleSection(section: number) {
+    if (activeSection === section) return // Keep at least one section open
+    setActiveSection(section)
+    // Scroll the newly opened section into view
+    setTimeout(() => {
+      const el = document.querySelector(`[data-section="${section}"]`)
+      el?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    }, 50)
+  }
+
   return (
     <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
       <Link href="/browse" className="text-sm text-gray-500 hover:text-gray-900 flex items-center gap-1 mb-6 transition-colors duration-200">
@@ -277,12 +366,8 @@ export default function SubmitProjectPage() {
         Back to browse
       </Link>
 
-      <h1 className="text-3xl font-bold text-gray-900 mb-2">Share a Project</h1>
-      <p className="text-gray-600 mb-3">
+      <p className="text-sm text-surface-500 mb-8">
         Share what you built with AI — the prompts, the process, and the results.
-      </p>
-      <p className="text-xs text-gray-400 mb-8">
-        Fields marked with <span className="text-brand-orange">*</span> are required.
       </p>
 
       {error && (
@@ -292,24 +377,34 @@ export default function SubmitProjectPage() {
         </div>
       )}
 
-      <form onSubmit={handleSubmit} noValidate className="space-y-8">
+      <form onSubmit={handleSubmit} noValidate className="space-y-3">
 
         {/* ═══════ SECTION 1: PROJECT BASICS ═══════ */}
-        <section>
-          <SectionHeader number={1} title="Project Basics" subtitle="What did you build and in what domain?" />
+        <section data-section="1" className={`border transition-all duration-200 ${activeSection === 1 ? 'border-surface-200 shadow-sm bg-white' : 'border-surface-100 bg-surface-50/50'}`}>
+          <SectionHeader
+            number={1}
+            title="Project Basics"
+            subtitle="What did you build and in what domain?"
+            isExpanded={activeSection === 1}
+            isComplete={section1Complete}
+            summary={section1Summary}
+            onClick={() => toggleSection(1)}
+          />
 
-          <div className="space-y-5">
-            {/* Title */}
+          {activeSection === 1 && <div id="section-1-panel" className="px-5 pb-5 space-y-5">
+            {/* Hero title — borderless, Notion-style */}
             <div data-field="title">
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Project Title <RequiredDot />
-              </label>
               <input
                 type="text"
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
-                placeholder="e.g., Complete Brand Identity Package for My Bakery"
-                className={`w-full bg-white border text-gray-900 placeholder-gray-400 px-4 py-2.5 text-sm focus:outline-none focus:ring-1 transition-colors duration-200 ${fieldBorder('title')}`}
+                placeholder="Name your project..."
+                aria-label="Project title"
+                className={`w-full bg-transparent text-2xl sm:text-3xl font-bold text-gray-900 placeholder-gray-300 py-2 border-b-2 focus:outline-none transition-colors duration-200 ${
+                  validationErrors.title
+                    ? 'border-red-400 focus:border-red-500'
+                    : 'border-transparent focus:border-brand-orange'
+                }`}
               />
               <FieldError message={validationErrors.title} />
             </div>
@@ -396,16 +491,22 @@ export default function SubmitProjectPage() {
                 <FieldError message={validationErrors.customModel} />
               </div>
             )}
-          </div>
+          </div>}
         </section>
 
-        {/* Section divider */}
-        <div className="border-t-2 border-gray-200" />
-
         {/* ═══════ SECTION 2: YOUR BUILD JOURNEY ═══════ */}
-        <section>
-          <SectionHeader number={2} title="Your Build Journey" subtitle="Show how you built it — the prompts and results at each step." />
+        <section data-section="2" className={`border transition-all duration-200 ${activeSection === 2 ? 'border-surface-200 shadow-sm bg-white' : 'border-surface-100 bg-surface-50/50'}`}>
+          <SectionHeader
+            number={2}
+            title="Your Build Journey"
+            subtitle="Show how you built it — the prompts and results at each step."
+            isExpanded={activeSection === 2}
+            isComplete={section2Complete}
+            summary={section2Summary}
+            onClick={() => toggleSection(2)}
+          />
 
+          {activeSection === 2 && <div id="section-2-panel" className="px-5 pb-5">
           {/* Mode toggle — prominent visual choice */}
           <div className="grid grid-cols-2 gap-3 mb-6">
             <button
@@ -420,7 +521,10 @@ export default function SubmitProjectPage() {
             >
               <GitBranch className={`w-5 h-5 flex-shrink-0 ${isChain ? 'text-brand-orange' : 'text-gray-400'}`} />
               <div>
-                <div className={`text-sm font-semibold ${isChain ? 'text-gray-900' : 'text-gray-600'}`}>Multi-step</div>
+                <div className={`text-sm font-semibold flex items-center gap-2 ${isChain ? 'text-gray-900' : 'text-gray-600'}`}>
+                  Multi-step
+                  <span className="text-[10px] font-medium uppercase tracking-wider text-brand-orange bg-brand-orange/10 px-1.5 py-0.5">Recommended</span>
+                </div>
                 <div className="text-xs text-gray-500">Show each prompt→result</div>
               </div>
             </button>
@@ -489,14 +593,18 @@ export default function SubmitProjectPage() {
                 const isPartial = !!(step.title.trim() || step.content.trim()) && !isFilled
 
                 return (
-                  <div key={idx} className={`bg-white border overflow-hidden transition-all duration-200 ${isExpanded ? 'border-brand-orange/40 shadow-sm' : 'border-gray-200'}`}>
+                  <div key={idx} className={`border overflow-hidden transition-all duration-200 ${
+                    isExpanded
+                      ? 'border-brand-orange/40 shadow-md bg-white'
+                      : 'border-surface-200 shadow-sm bg-surface-50 hover:shadow-md hover:border-surface-300'
+                  }`}>
                     {/* Step header */}
                     <button
                       type="button"
                       onClick={() => setExpandedStep(isExpanded ? -1 : idx)}
                       aria-expanded={isExpanded}
-                      className={`w-full flex items-center justify-between px-4 py-3 transition-colors duration-200 cursor-pointer ${
-                        isExpanded ? 'bg-primary-50' : 'bg-gray-50 hover:bg-gray-100'
+                      className={`w-full flex items-center justify-between px-4 py-3.5 transition-colors duration-200 cursor-pointer ${
+                        isExpanded ? 'bg-primary-50' : 'hover:bg-surface-100'
                       }`}
                     >
                       <div className="flex items-center gap-3">
@@ -507,7 +615,7 @@ export default function SubmitProjectPage() {
                               ? 'bg-green-500 text-white'
                               : isPartial
                                 ? 'bg-brand-orange/20 text-brand-orange'
-                                : 'bg-gray-200 text-gray-500'
+                                : 'bg-surface-200 text-surface-500'
                         }`}>
                           {isFilled && !isExpanded ? <Check className="w-3.5 h-3.5" /> : idx + 1}
                         </span>
@@ -518,28 +626,39 @@ export default function SubmitProjectPage() {
                           {/* Completion badge on collapsed cards */}
                           {!isExpanded && (
                             <span className={`block text-xs mt-0.5 ${
-                              isFilled ? 'text-green-600' : isPartial ? 'text-brand-orange' : 'text-gray-400'
+                              isFilled ? 'text-green-600' : isPartial ? 'text-brand-orange' : 'text-surface-400'
                             }`}>
                               {isFilled ? 'Complete' : isPartial ? 'In progress' : 'Click to edit'}
                             </span>
                           )}
                         </div>
                       </div>
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-1">
+                        {/* Reorder controls */}
                         {steps.length > 1 && (
-                          <button type="button" onClick={(e) => { e.stopPropagation(); removeStep(idx) }} className="text-gray-400 hover:text-red-500 p-1 transition-colors duration-200" title="Remove step">
+                          <>
+                            <button type="button" onClick={(e) => { e.stopPropagation(); moveStep(idx, -1) }} disabled={idx === 0} className="text-surface-400 hover:text-gray-700 p-1 transition-colors duration-200 disabled:opacity-30 disabled:cursor-not-allowed" title="Move up">
+                              <ArrowUp className="w-3.5 h-3.5" />
+                            </button>
+                            <button type="button" onClick={(e) => { e.stopPropagation(); moveStep(idx, 1) }} disabled={idx === steps.length - 1} className="text-surface-400 hover:text-gray-700 p-1 transition-colors duration-200 disabled:opacity-30 disabled:cursor-not-allowed" title="Move down">
+                              <ArrowDown className="w-3.5 h-3.5" />
+                            </button>
+                          </>
+                        )}
+                        {steps.length > 1 && (
+                          <button type="button" onClick={(e) => { e.stopPropagation(); removeStep(idx) }} className="text-surface-400 hover:text-red-500 p-1 transition-colors duration-200" title="Remove step">
                             <Trash2 className="w-4 h-4" />
                           </button>
                         )}
-                        {isExpanded ? <ChevronUp className="w-5 h-5 text-gray-500" /> : <ChevronDown className="w-5 h-5 text-gray-400" />}
+                        {isExpanded ? <ChevronUp className="w-5 h-5 text-surface-500" /> : <ChevronDown className="w-5 h-5 text-surface-400" />}
                       </div>
                     </button>
 
                     {/* Expanded step form */}
                     {isExpanded && (
-                      <div className="p-4 space-y-4 border-t border-gray-200">
+                      <div className="p-5 space-y-5 border-t border-surface-200 bg-white">
                         <div>
-                          <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wide mb-1">
+                          <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wide mb-1.5">
                             Step Title <RequiredDot />
                           </label>
                           <input
@@ -547,23 +666,24 @@ export default function SubmitProjectPage() {
                             placeholder="e.g., Brand Discovery, Initial Draft, Refinement..."
                             value={step.title}
                             onChange={(e) => updateStep(idx, 'title', e.target.value)}
-                            className="w-full bg-white border border-gray-300 text-gray-900 placeholder-gray-400 px-3 py-2 text-sm focus:outline-none focus:border-brand-orange focus:ring-1 focus:ring-brand-orange/20 transition-colors duration-200"
+                            className="w-full bg-white border border-surface-200 text-gray-900 placeholder-surface-400 px-3 py-2.5 text-sm focus:outline-none focus:border-brand-orange focus:ring-1 focus:ring-brand-orange/20 transition-colors duration-200"
                           />
                         </div>
                         <div>
-                          <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">
-                            Brief Description <span className="text-gray-400 font-normal normal-case">(optional)</span>
+                          <label className="block text-xs font-semibold text-surface-500 uppercase tracking-wide mb-1.5">
+                            Brief Description <span className="text-surface-400 font-normal normal-case">(optional)</span>
                           </label>
                           <input
                             type="text"
                             placeholder="What was the goal of this step?"
                             value={step.description}
                             onChange={(e) => updateStep(idx, 'description', e.target.value)}
-                            className="w-full bg-white border border-gray-300 text-gray-900 placeholder-gray-400 px-3 py-2 text-sm focus:outline-none focus:border-brand-orange focus:ring-1 focus:ring-brand-orange/20 transition-colors duration-200"
+                            className="w-full bg-white border border-surface-200 text-gray-900 placeholder-surface-400 px-3 py-2.5 text-sm focus:outline-none focus:border-brand-orange focus:ring-1 focus:ring-brand-orange/20 transition-colors duration-200"
                           />
                         </div>
-                        <div>
-                          <label className="text-xs font-semibold text-brand-orange uppercase tracking-wide mb-1 block">
+                        {/* Prompt section — visually distinct */}
+                        <div className="bg-surface-50 border border-surface-200 p-4">
+                          <label className="text-xs font-semibold text-brand-orange uppercase tracking-wide mb-2 block">
                             Prompt <RequiredDot />
                           </label>
                           <textarea
@@ -571,19 +691,20 @@ export default function SubmitProjectPage() {
                             placeholder="The prompt you used at this step..."
                             value={step.content}
                             onChange={(e) => updateStep(idx, 'content', e.target.value)}
-                            className="w-full bg-white border border-gray-300 text-gray-900 placeholder-gray-400 px-3 py-2 text-sm font-mono focus:outline-none focus:border-brand-orange focus:ring-1 focus:ring-brand-orange/20 transition-colors duration-200"
+                            className="w-full bg-white border border-surface-200 text-gray-900 placeholder-surface-400 px-3 py-2.5 text-sm font-mono focus:outline-none focus:border-brand-orange focus:ring-1 focus:ring-brand-orange/20 transition-colors duration-200"
                           />
                         </div>
-                        <div>
-                          <label className="text-xs font-semibold text-green-600 uppercase tracking-wide mb-1 block">
-                            Result <span className="text-gray-400 font-normal normal-case">(optional — text, screenshots, or both)</span>
+                        {/* Result section — visually distinct */}
+                        <div className="bg-green-50/50 border border-green-100 p-4">
+                          <label className="text-xs font-semibold text-green-600 uppercase tracking-wide mb-2 block">
+                            Result <span className="text-surface-400 font-normal normal-case">(optional — text, screenshots, or both)</span>
                           </label>
                           <textarea
                             rows={4}
                             placeholder="What did the AI produce at this step?"
                             value={step.result_content}
                             onChange={(e) => updateStep(idx, 'result_content', e.target.value)}
-                            className="w-full bg-white border border-gray-300 text-gray-900 placeholder-gray-400 px-3 py-2 text-sm focus:outline-none focus:border-brand-orange focus:ring-1 focus:ring-brand-orange/20 mb-3 transition-colors duration-200"
+                            className="w-full bg-white border border-green-200 text-gray-900 placeholder-surface-400 px-3 py-2.5 text-sm focus:outline-none focus:border-green-400 focus:ring-1 focus:ring-green-200/40 mb-3 transition-colors duration-200"
                           />
                           <ImageUpload images={stepImages[idx] ?? []} onChange={(imgs) => setStepImages({ ...stepImages, [idx]: imgs })} label="Screenshots" />
                         </div>
@@ -603,16 +724,22 @@ export default function SubmitProjectPage() {
               </button>
             </div>
           )}
+          </div>}
         </section>
 
-        {/* Section divider */}
-        <div className="border-t-2 border-gray-200" />
-
         {/* ═══════ SECTION 3: DETAILS & PUBLISH ═══════ */}
-        <section>
-          <SectionHeader number={3} title="Details & Publish" subtitle="Add tags, tools, and your overall result." />
+        <section data-section="3" className={`border transition-all duration-200 ${activeSection === 3 ? 'border-surface-200 shadow-sm bg-white' : 'border-surface-100 bg-surface-50/50'}`}>
+          <SectionHeader
+            number={3}
+            title="Details & Publish"
+            subtitle="Add tags, tools, and your overall result."
+            isExpanded={activeSection === 3}
+            isComplete={section3Complete}
+            summary={section3Summary}
+            onClick={() => toggleSection(3)}
+          />
 
-          <div className="space-y-5">
+          {activeSection === 3 && <div id="section-3-panel" className="px-5 pb-5 space-y-5">
             {/* Tools */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Tools & APIs Used <span className="text-gray-400 font-normal">(optional)</span></label>
@@ -638,20 +765,40 @@ export default function SubmitProjectPage() {
               </p>
               <textarea rows={4} value={finalResult} onChange={(e) => setFinalResult(e.target.value)} placeholder={isChain ? 'After all the steps, the final outcome was...' : 'The final result was... We saw a 23% improvement in...'} className="w-full bg-white border border-gray-300 text-gray-900 placeholder-gray-400 px-4 py-2.5 text-sm focus:outline-none focus:border-brand-orange focus:ring-1 focus:ring-brand-orange/20 transition-colors duration-200" />
             </div>
-          </div>
+          </div>}
         </section>
 
         {/* Submit */}
-        <div className="border-t-2 border-gray-200 pt-6">
+        <div className="pt-6">
+          {/* Completion summary */}
+          <div className="flex items-center justify-between mb-4 text-sm">
+            <span className="text-surface-500">
+              {isChain
+                ? `${filledSteps} of ${totalSteps} step${totalSteps !== 1 ? 's' : ''} complete`
+                : promptContent.trim() ? 'Prompt added' : 'Add your prompt'
+              }
+            </span>
+            {Object.keys(computeErrors()).length === 0 && (
+              <span className="text-surface-400 flex items-center gap-1">
+                <Check className="w-3.5 h-3.5 text-green-500" /> Ready to publish
+              </span>
+            )}
+          </div>
           <button
             type="submit"
             disabled={submitting}
-            className="w-full bg-brand-orange text-white py-3.5 font-medium text-base hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed active:opacity-80 focus-visible:outline-2 focus-visible:outline-brand-orange focus-visible:outline-offset-2"
+            className={`w-full py-3.5 font-medium text-base transition-all duration-200 focus-visible:outline-2 focus-visible:outline-brand-orange focus-visible:outline-offset-2 ${
+              submitting
+                ? 'bg-surface-300 text-surface-500 cursor-not-allowed'
+                : title.trim() && (isChain ? filledSteps > 0 : promptContent.trim())
+                  ? 'bg-brand-orange text-white hover:opacity-90 active:opacity-80'
+                  : 'bg-surface-200 text-surface-500 border-2 border-surface-300 hover:border-surface-400 hover:text-surface-600'
+            }`}
           >
-            {submitting ? 'Submitting...' : 'Submit for Review'}
+            {submitting ? 'Submitting...' : 'Submit Project'}
           </button>
-          <p className="text-xs text-gray-400 text-center mt-2">
-            Your project will be reviewed by an admin before appearing publicly.
+          <p className="text-xs text-surface-400 text-center mt-2">
+            Projects are reviewed before appearing publicly.
           </p>
         </div>
       </form>

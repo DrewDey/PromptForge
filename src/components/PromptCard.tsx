@@ -38,10 +38,24 @@ export default function PromptCard({ prompt, featured = false }: { prompt: Promp
           </div>
         )}
 
-        {/* Top row: Category + Step count */}
-        <div className="flex items-center gap-2 flex-wrap mb-2">
+        {/* Title — primary focal point */}
+        <h3 className={`font-semibold text-surface-900 group-hover:text-brand-orange transition-colors duration-200 leading-snug ${
+          featured ? 'text-xl mb-2' : 'text-base mb-1.5'
+        }`}>
+          {prompt.title}
+        </h3>
+
+        {/* Description */}
+        <p className={`text-surface-500 line-clamp-2 leading-relaxed ${
+          featured ? 'text-sm mb-4' : 'text-[13px] mb-3'
+        }`}>
+          {prompt.description}
+        </p>
+
+        {/* Category + Step count — secondary metadata row */}
+        <div className="flex items-center gap-2 flex-wrap mb-4">
           {prompt.category && (
-            <span className="text-[11px] font-semibold uppercase tracking-wider text-surface-500">
+            <span className="text-[11px] font-medium text-surface-500">
               {prompt.category.icon} {prompt.category.name}
             </span>
           )}
@@ -52,20 +66,6 @@ export default function PromptCard({ prompt, featured = false }: { prompt: Promp
             </span>
           )}
         </div>
-
-        {/* Title */}
-        <h3 className={`font-semibold text-surface-900 group-hover:text-brand-orange transition-colors duration-200 mb-1.5 leading-snug ${
-          featured ? 'text-xl' : 'text-[15px]'
-        }`}>
-          {prompt.title}
-        </h3>
-
-        {/* Description */}
-        <p className={`text-surface-500 line-clamp-2 leading-relaxed ${
-          featured ? 'text-sm mb-5' : 'text-[13px] mb-4'
-        }`}>
-          {prompt.description}
-        </p>
 
         {/* Step flow visualization */}
         {hasSteps && (

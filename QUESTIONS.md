@@ -8,6 +8,14 @@
 
 ## Open Questions
 
+### Q10: Browse page cards — should cards show a thumbnail/preview image when available?
+
+Currently, project cards are text-only (title, description, category, step flow visualization, metadata). Iteration 20 improved the hierarchy so titles lead, but the cards still lack any visual "hook" — there's no screenshot or preview image to make someone stop scrolling. Adding an image thumbnail at the top of each card (when a project has uploaded images) would make the grid feel more like a gallery and help projects "sell themselves." However, it would also make cards taller, reduce the number visible above the fold, and require that we prioritize getting the image upload pipeline working. Should we: (A) keep text-only cards for now and focus on other pages, (B) add placeholder/decorative images to make cards more visual, or (C) prioritize wiring up real image uploads so cards can show actual project screenshots?
+
+**Drew's Response:**
+
+---
+
 ### Q9: Seed content quality — are the filled-in project results convincing enough?
 
 Iteration 19 filled in all 10 steps that previously had empty results (including the SaaS Dashboard which had ALL steps empty). The content includes actual code snippets, email templates, structured documents, and migration plans. However, these are generated examples — they're designed to look realistic but aren't from actual user projects. Two questions: (1) Does the level of detail feel right, or should some results be shorter/longer? (2) Should we prioritize getting REAL projects from actual users (even if just Drew's own AI projects) to replace some of the seed data, or is realistic generated content good enough for launch?

@@ -5,6 +5,54 @@
 
 ---
 
+## 2026-04-16 — Iteration 20: Browse Page — Card Hierarchy, Spacing Rhythm, Interactive States
+
+**Audit findings** (top problems identified):
+1. Card typography hierarchy is inverted — uppercase category label (11px, semibold, tracking-wider) competes with title (15px), causing user's eye to land on metadata first instead of project name
+2. Spacing rhythm is broken — filter toolbar uses `p-5` (20px) which breaks the 8px grid, card grid `gap-4` (16px) feels cramped relative to toolbar breathing room
+3. Sort button active state too subtle — white bg on light gray surface barely distinguishable; no non-color indicator for active tab
+4. Filter chips lack mobile tap feedback — no `active:` state for touch, X dismiss icon at 60% opacity too subtle
+5. Search focus ring nearly invisible — 8% opacity orange shadow on light bg imperceptible to keyboard users
+6. Empty state low contrast — white bg with light gray icon and medium gray heading doesn't command attention
+7. Category filter buttons below 44px touch target on mobile
+
+**Research insights**:
+- **Vercel two-line card pattern**: Title first and prominent, description truncated to 1-2 lines, metadata compact below — keeps scanning fast across a grid
+- **Linear active filter indicators**: Background color change + positional indicator (bottom border) makes active state unmistakable without relying solely on color
+- **Consistent card heights** (all platforms): Enforce 2-line description truncation, uniform metadata placement — prevents "jagged row" problem
+- **Product Hunt/Vercel featured distinction**: Size contrast between featured (2-col) and regular (3-col) creates natural visual hierarchy
+- **Sharp active filter chips** (Linear): Clear affordance with background change, dismiss controls clearly visible at rest
+
+**Design brief** (3 key goals):
+1. Fix card hierarchy: title first → description → category/steps as secondary metadata row. Demote category from uppercase/semibold to lowercase/medium
+2. Snap all spacing to 8px grid: toolbar p-5→p-6, grid gap-4→gap-6, filter buttons px-2.5 py-1.5→px-3 py-2, section margins to mb-6
+3. Make all interactive states unmistakable: orange bottom-border on active sort, active:bg on filter buttons, stronger filter chip dismiss, focus:ring on search
+
+**What was implemented**:
+
+*PromptCard (`src/components/PromptCard.tsx`):*
+- **Title-first hierarchy**: Moved `<h3>` title above description, category+steps moved below as secondary metadata row
+- **Title size bump**: Regular cards from `text-[15px]` to `text-base` (16px) for clearer dominance
+- **Category demotion**: Removed `uppercase tracking-wider font-semibold`, now `font-medium text-surface-500` — visually distinct from title without shouting
+- **Spacing tightened**: Description margin reduced (`mb-5`→`mb-4` featured, `mb-4`→`mb-3` regular) to keep card compact with new layout order
+
+*Browse page (`src/app/browse/page.tsx`):*
+- **Spacing rhythm**: Toolbar `p-5`→`p-6` (24px), grid `gap-4`→`gap-6` (24px), section headings `mb-4`→`mb-6`, result count `mb-5`→`mb-6`, sort area `gap-3`→`gap-4`
+- **Filter button sizing**: All category and difficulty buttons `px-2.5 py-1.5`→`px-3 py-2` (exceeds 44px touch target)
+- **Mobile tap feedback**: Added `active:bg-surface-100` to all filter buttons and `active:bg-brand-orange/25` to active filter chips
+- **Sort active indicator**: Added `border-b-2 border-b-brand-orange` on active sort tab + `border-b-2 border-b-transparent` on inactive (prevents layout shift)
+- **Inactive sort text**: `text-surface-400`→`text-surface-500` for better contrast
+- **Sort tab padding**: `py-1`→`py-1.5` for better touch targets
+- **Search focus ring**: Replaced `focus:shadow-[0_0_0_3px_rgba(232,122,44,0.08)]` with `focus:ring-2 focus:ring-brand-orange/15` — more visible and reliable
+- **Filter chip dismiss**: X icon opacity `opacity-60`→`opacity-75`, chip backgrounds `orange/8`→`orange/10`, borders `orange/15`→`orange/20`
+- **Empty state**: bg-white→`bg-surface-50`, icon `surface-400`→`surface-300` (more prominent), heading `surface-700`→`surface-900`, padding `py-12`→`py-16`
+
+**Review outcome**: Approved with nits. Reviewer confirmed all changes trace to the design brief with no drift. Nits: (1) category metadata initially set to `surface-400` — fixed back to `surface-500` for readability while keeping visual demotion through removing uppercase/tracking. (2) Search focus ring at 15% could go to 20-25% — acceptable since solid border change is primary indicator. (3) Sort tab border-b-2 handled correctly with transparent inactive state to prevent layout shift.
+
+**What's next**: Browse page still has room for improvement (card image thumbnails, further featured card differentiation). Build page (#2) gray-*→surface-* migration is also ready. Seed content SQL (seed-fix.sql) rewrite to match mock-data.ts quality is a separate tracked item.
+
+---
+
 ## 2026-04-16 — Iteration 19: Seed Content Overhaul — Fill All Null Result Steps
 
 **Audit findings** (top problems identified):
@@ -715,6 +763,16 @@
 # Plain English Summary (for Drew)
 
 > What's actually changed on the site, in normal human language. Newest at the top. Let me know when you've reviewed and I'll clear the old stuff.
+
+### Browse page cards and filters are easier to scan and use (April 16 — Iteration 20)
+
+The browse page got a focused hierarchy and interaction pass. Three main changes:
+
+**Cards now lead with the project title, not the category.** Before, the first thing your eye hit on each card was "🎨 DESIGN" or "💰 FINANCE" in bold uppercase — the category label was visually shouting louder than the actual project name. Now the title comes first and is slightly larger. The category is still there, but it's demoted to a quieter line below the description. When you're scanning a grid of 12+ cards, your eye now catches project names first, which is what you actually care about.
+
+**Everything is more evenly spaced.** The filter toolbar, card grid, and section headers were using a mix of 16px, 20px, and random gaps that felt slightly off. Now everything snaps to a clean 24px rhythm — the toolbar padding, the gaps between cards, the space above section headers. It's subtle but the page feels more "designed" and less thrown together.
+
+**Filter controls give better feedback.** The sort toggle (Newest/Popular) now shows a little orange line under whichever is active — before, the active one was just slightly darker text on a slightly lighter background (too subtle). All the category and difficulty filter buttons now briefly darken when you tap them on mobile (before, there was zero visual feedback that your tap registered). The active filter chips (the orange pills that appear when you filter by category or difficulty) are slightly more visible with a stronger border, and the X to dismiss them is easier to see.
 
 ### Every project now has complete step-by-step results (April 16 — Iteration 19)
 

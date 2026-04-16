@@ -64,7 +64,7 @@ export default async function BrowsePage({
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         {/* Search + Filters toolbar */}
-        <div className="bg-white border border-surface-200 p-5 mb-6">
+        <div className="bg-white border border-surface-200 p-6 mb-6">
           {/* Search bar */}
           <form className="mb-4">
             <input type="hidden" name="category" value={activeCategory} />
@@ -77,7 +77,7 @@ export default async function BrowsePage({
                 name="q"
                 defaultValue={params.q ?? ''}
                 placeholder="Search projects..."
-                className="w-full bg-surface-50 border border-surface-200 pl-10 pr-4 py-2.5 text-sm text-surface-900 placeholder-surface-400 focus:outline-none focus:border-brand-orange focus:bg-white focus:shadow-[0_0_0_3px_rgba(232,122,44,0.08)] transition-all duration-200"
+                className="w-full bg-surface-50 border border-surface-200 pl-10 pr-4 py-2.5 text-sm text-surface-900 placeholder-surface-400 focus:outline-none focus:border-brand-orange focus:bg-white focus:ring-2 focus:ring-brand-orange/15 transition-all duration-200"
               />
             </div>
           </form>
@@ -89,10 +89,10 @@ export default async function BrowsePage({
               <SlidersHorizontal className="w-3.5 h-3.5 text-surface-400 shrink-0" />
               <Link
                 href={buildUrl({ category: '' })}
-                className={`text-[12px] font-medium px-2.5 py-1.5 border transition-all duration-200 ${
+                className={`text-[12px] font-medium px-3 py-2 border transition-all duration-200 ${
                   !activeCategory
                     ? 'bg-surface-900 text-white border-surface-900'
-                    : 'bg-surface-50 text-surface-600 border-surface-200 hover:border-surface-400 hover:bg-white'
+                    : 'bg-surface-50 text-surface-600 border-surface-200 hover:border-surface-400 hover:bg-white active:bg-surface-100'
                 }`}
               >
                 All
@@ -101,10 +101,10 @@ export default async function BrowsePage({
                 <Link
                   key={cat.id}
                   href={buildUrl({ category: cat.slug })}
-                  className={`text-[12px] font-medium px-2.5 py-1.5 border transition-all duration-200 ${
+                  className={`text-[12px] font-medium px-3 py-2 border transition-all duration-200 ${
                     activeCategory === cat.slug
                       ? 'bg-surface-900 text-white border-surface-900'
-                      : 'bg-surface-50 text-surface-600 border-surface-200 hover:border-surface-400 hover:bg-white'
+                      : 'bg-surface-50 text-surface-600 border-surface-200 hover:border-surface-400 hover:bg-white active:bg-surface-100'
                   }`}
                 >
                   {cat.icon} {cat.name}
@@ -120,10 +120,10 @@ export default async function BrowsePage({
                   <Link
                     key={d.value}
                     href={buildUrl({ difficulty: d.value })}
-                    className={`text-[12px] font-medium px-2.5 py-1.5 border transition-all duration-200 ${
+                    className={`text-[12px] font-medium px-3 py-2 border transition-all duration-200 ${
                       activeDifficulty === d.value
                         ? 'bg-surface-900 text-white border-surface-900'
-                        : 'bg-surface-50 text-surface-500 border-surface-200 hover:border-surface-400 hover:bg-white'
+                        : 'bg-surface-50 text-surface-500 border-surface-200 hover:border-surface-400 hover:bg-white active:bg-surface-100'
                     }`}
                   >
                     {d.label}
@@ -131,7 +131,7 @@ export default async function BrowsePage({
                 ))}
               </div>
 
-              <div className="sm:ml-auto flex items-center gap-3">
+              <div className="sm:ml-auto flex items-center gap-4">
                 {hasActiveFilters && (
                   <Link
                     href="/browse"
@@ -144,16 +144,16 @@ export default async function BrowsePage({
                 <div className="flex items-center gap-0.5 border border-surface-200 bg-surface-50 p-0.5">
                   <Link
                     href={buildUrl({ sort: 'newest' })}
-                    className={`px-3 py-1 text-[12px] font-medium transition-all duration-200 ${
-                      activeSort === 'newest' ? 'text-surface-900 bg-white shadow-sm' : 'text-surface-400 hover:text-surface-700'
+                    className={`px-3 py-1.5 text-[12px] font-medium transition-all duration-200 ${
+                      activeSort === 'newest' ? 'text-surface-900 bg-white shadow-sm border-b-2 border-b-brand-orange' : 'text-surface-500 hover:text-surface-700 border-b-2 border-b-transparent'
                     }`}
                   >
                     Newest
                   </Link>
                   <Link
                     href={buildUrl({ sort: 'popular' })}
-                    className={`px-3 py-1 text-[12px] font-medium transition-all duration-200 ${
-                      activeSort === 'popular' ? 'text-surface-900 bg-white shadow-sm' : 'text-surface-400 hover:text-surface-700'
+                    className={`px-3 py-1.5 text-[12px] font-medium transition-all duration-200 ${
+                      activeSort === 'popular' ? 'text-surface-900 bg-white shadow-sm border-b-2 border-b-brand-orange' : 'text-surface-500 hover:text-surface-700 border-b-2 border-b-transparent'
                     }`}
                   >
                     Popular
@@ -171,35 +171,35 @@ export default async function BrowsePage({
             {activeCategoryName && (
               <Link
                 href={buildUrl({ category: '' })}
-                className="inline-flex items-center gap-1.5 text-[12px] font-medium bg-brand-orange/8 text-brand-orange border border-brand-orange/15 px-2.5 py-1 hover:bg-brand-orange/15 hover:border-brand-orange/30 transition-all duration-200"
+                className="inline-flex items-center gap-1.5 text-[12px] font-medium bg-brand-orange/10 text-brand-orange border border-brand-orange/20 px-2.5 py-1 hover:bg-brand-orange/20 hover:border-brand-orange/40 active:bg-brand-orange/25 transition-all duration-200"
               >
                 {activeCategoryName}
-                <X className="w-3.5 h-3.5 opacity-60 hover:opacity-100" />
+                <X className="w-3.5 h-3.5 opacity-75 hover:opacity-100" />
               </Link>
             )}
             {activeDifficulty && (
               <Link
                 href={buildUrl({ difficulty: '' })}
-                className="inline-flex items-center gap-1.5 text-[12px] font-medium bg-brand-orange/8 text-brand-orange border border-brand-orange/15 px-2.5 py-1 hover:bg-brand-orange/15 hover:border-brand-orange/30 transition-all duration-200"
+                className="inline-flex items-center gap-1.5 text-[12px] font-medium bg-brand-orange/10 text-brand-orange border border-brand-orange/20 px-2.5 py-1 hover:bg-brand-orange/20 hover:border-brand-orange/40 active:bg-brand-orange/25 transition-all duration-200"
               >
                 {activeDifficulty.charAt(0).toUpperCase() + activeDifficulty.slice(1)}
-                <X className="w-3.5 h-3.5 opacity-60 hover:opacity-100" />
+                <X className="w-3.5 h-3.5 opacity-75 hover:opacity-100" />
               </Link>
             )}
             {params.q && (
               <Link
                 href={buildUrl({ q: '' })}
-                className="inline-flex items-center gap-1.5 text-[12px] font-medium bg-brand-orange/8 text-brand-orange border border-brand-orange/15 px-2.5 py-1 hover:bg-brand-orange/15 hover:border-brand-orange/30 transition-all duration-200"
+                className="inline-flex items-center gap-1.5 text-[12px] font-medium bg-brand-orange/10 text-brand-orange border border-brand-orange/20 px-2.5 py-1 hover:bg-brand-orange/20 hover:border-brand-orange/40 active:bg-brand-orange/25 transition-all duration-200"
               >
                 &ldquo;{params.q}&rdquo;
-                <X className="w-3.5 h-3.5 opacity-60 hover:opacity-100" />
+                <X className="w-3.5 h-3.5 opacity-75 hover:opacity-100" />
               </Link>
             )}
           </div>
         )}
 
         {/* Result count */}
-        <div className="flex items-center justify-between mb-5">
+        <div className="flex items-center justify-between mb-6">
           <p className="text-[13px] text-surface-500">
             <span className="font-semibold text-surface-700">{prompts.length}</span>{' '}
             {prompts.length === 1 ? 'project' : 'projects'}
@@ -217,9 +217,9 @@ export default async function BrowsePage({
 
         {/* Results */}
         {prompts.length === 0 ? (
-          <div className="text-center py-12 sm:py-16 bg-white border border-dashed border-surface-300">
-            <FolderOpen className="w-10 h-10 text-surface-400 mx-auto mb-3" />
-            <p className="text-base font-semibold text-surface-700 mb-1">No projects found</p>
+          <div className="text-center py-16 sm:py-20 bg-surface-50 border border-dashed border-surface-300">
+            <FolderOpen className="w-10 h-10 text-surface-300 mx-auto mb-4" />
+            <p className="text-base font-semibold text-surface-900 mb-1">No projects found</p>
             <p className="text-sm text-surface-500 mb-6 max-w-sm mx-auto">
               {params.q
                 ? `No results for "${params.q}". Try a different search term.`
@@ -240,11 +240,11 @@ export default async function BrowsePage({
             {/* Featured projects (top 2, shown only when no filters) */}
             {showFeatured && featuredPrompts.length > 0 && (
               <div className="mb-8">
-                <div className="flex items-center gap-2 mb-4">
+                <div className="flex items-center gap-2 mb-6">
                   <Sparkles className="w-4 h-4 text-brand-orange" />
                   <h2 className="text-sm font-semibold text-surface-700">Featured Projects</h2>
                 </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   {featuredPrompts.map((prompt, idx) => (
                     <div key={prompt.id} className="animate-card-slide-in" style={{ animationDelay: `${idx * 60}ms` }}>
                       <PromptCard prompt={prompt} featured />
@@ -256,13 +256,13 @@ export default async function BrowsePage({
 
             {/* Section label for regular grid when featured is shown */}
             {showFeatured && gridPrompts.length > 0 && (
-              <div className="flex items-center gap-2 mb-4">
+              <div className="flex items-center gap-2 mb-6">
                 <h2 className="text-sm font-semibold text-surface-700">All Projects</h2>
               </div>
             )}
 
             {/* Main grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {gridPrompts.map((prompt, idx) => (
                 <div key={prompt.id} className="animate-card-slide-in" style={{ animationDelay: `${(idx + (showFeatured ? 2 : 0)) * 40}ms` }}>
                   <PromptCard prompt={prompt} />

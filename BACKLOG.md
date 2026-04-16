@@ -21,7 +21,7 @@ MVP is live at https://prompt-forge-sandy.vercel.app. Auth, browse, project deta
 
 These changes are a starting point. Iterations should build on them, not revert them.
 
-**Last updated**: 2026-04-16 (Iteration 23 — Landing problem-card hierarchy: "Blank Chat Tax" promoted to primary; auth pages gray→surface migration + button-spec unification)
+**Last updated**: 2026-04-16 (Iteration 25 — User profile page redesign: killed gradient-banner SaaS header + migrated last public-facing `gray-*` tokens)
 
 ---
 
@@ -95,7 +95,7 @@ After the individual pages are improved:
 
 These are queued but not yet prioritized for hourly iterations.
 
-- **Image upload persistence**: Wire ImageUpload component to Supabase Storage so project screenshots actually save
+- **Image upload persistence** (Drew confirmed priority — Q10 answered "C"): Wire ImageUpload component to Supabase Storage so project screenshots actually save. Once live, the Browse page cards should gain a thumbnail preview slot at the top so cards can sell the project visually — this is the "gallery feel" unlock for Browse.
 - **Project editing**: Let authors edit their submitted projects
 - **Forking/remixing**: Let users clone a project as a starting point for their own version
 - **Comments/discussions**: Threaded comments on project detail pages
@@ -126,6 +126,8 @@ These are queued but not yet prioritized for hourly iterations.
 
 | Date | Item | Summary |
 |------|------|---------|
+| 2026-04-16 | User profile page — dev-tool identity row, GitHub-cadence stat tiles, palette migration | Killed 2018-era gradient-banner + overlapping-avatar SaaS header; replaced with clean identity row (square brand-orange monogram + Linear-style inline meta line: Joined · N projects · Top category). Stat cards migrated from centered `bg-gray-50` pastel tiles to GitHub-style left-aligned numeric tiles with Upvotes highlighted in brand-orange as the eye-guide accent. Section heading upgraded `text-lg font-semibold` → `text-xl font-bold`; heading + right-aligned count on one baseline. Empty-state CTA aligned to landing primary spec (`font-bold`, `duration-150`, `min-h-11`, `focus-visible`). Loading skeleton structure-matched + monogram tinted `bg-brand-orange/40` to prevent color pop. Zero `gray-*` classes remain in `src/app/user/[username]/`. |
+| 2026-04-16 | Footer dark-bookend redesign + full public-palette migration | Footer swapped from light `bg-gray-50` 4-col Mailchimp footer to dark `bg-surface-900` footer (mirrors Header → "dark bookend" visual symmetry). Every remaining `gray-*` token eliminated from public non-admin code: Skeleton, CategoryCard, VoteBookmarkButtons, landing loading, project detail loading, user profile loading, layout body. Shimmer animation annotated with surface-* mappings. Footer links got focus-visible outlines (dark-bg a11y). |
 | 2026-04-16 | Landing problem-card hierarchy + auth page design system consistency | "Blank Chat Tax" promoted to full-width primary card (border-l-4 brand-orange, text-2xl font-black, "The root problem" eyebrow); three siblings demoted to 3-col grid with surface-400 dots + p-5. Auth pages fully migrated gray-* → surface-* (zero gray-* classes remain); auth submit buttons aligned to landing primary spec (font-bold, duration-150, focus-visible ring, min-h-11); auth link font-weight harmonized to font-semibold. |
 | 2026-04-16 | Landing page — screenshot-driven overhaul: removed 5 between-section pipe connectors, killed green leak (flow diagram + Proven Results card), migrated gray-* → surface-*, killed tagline chip, solid-orange H1, consolidated hero subtitle, py-20 standardized, min-h-11 secondary CTAs. Also added mandatory screenshot step (Step 1.5 + Step 6) to ITERATION_GUIDE and SKILL per Drew's direction. |
 | 2026-04-16 | Build page — surface-* token migration, interactive control sizing (p-2 touch targets), progress bar upgrade (h-2, green at 100%), ImageUpload responsive grid + mobile remove button |

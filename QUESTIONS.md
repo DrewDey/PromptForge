@@ -8,6 +8,36 @@
 
 ## Open Questions
 
+### Q15: User profile — should "Upvotes" be accent-highlighted in brand-orange, or should all three stat values be neutral?
+
+Iteration 25 redesigned the profile page stat tiles (Projects / Upvotes / Saves). All three render as GitHub-style left-aligned numeric tiles, but I highlighted the **Upvotes** value in `text-brand-orange` as a single eye-anchor — the idea being that "upvotes received" is the most meaningful signal of community validation on a maker-showcase platform, and a single accent on three otherwise-identical tiles gives the page a focal point rather than three equal-weight mini-cards. This wasn't in the original design brief; the reviewer flagged it as a defensible judgment call but worth surfacing to you.
+
+- **(A) Keep Upvotes accent-orange** — current state. Single focal point, reinforces the "community recognition" framing, orange-usage-with-purpose rather than decoration.
+- **(B) All three neutral (surface-900)** — let numeric magnitude itself be the differentiator. More Linear/Vercel — they rarely use accent color on body stats, only on CTAs.
+- **(C) Projects gets the accent instead** — Projects is arguably the more truthful "what this user has done" signal; Upvotes is derivative. An early-stage platform has more stake in promoting *sharing* than *validation*.
+
+**Drew's Response:**
+
+
+---
+
+### Q14: Dark Footer — bookend with Header, or too heavy?
+
+Iteration 24 swapped the Footer from a light `bg-gray-50` 4-column generic footer to a dark `bg-surface-900` footer that mirrors the dark Header. Rationale: creates a "dark bookend" visual symmetry (dark top, light content, dark bottom), makes orange accents pop, signals premium dev-tool (Linear/Vercel pattern). BUT — this drastically changes the final visual impression of every single page on the site. There's a real chance that:
+
+- **(A) Keep dark** — It matches Header, feels like Linear/Vercel/Raycast, brand pops against dark. Current state.
+- **(B) Lighter surface-50** — Softer, less visual weight, lets the content be the climax of every scroll. A "footnote" footer, not a "bookend."
+- **(C) Minimal Linear-style single row** — Kill the columns entirely. One centered row: logo + 4 small links + copyright. Most confident, most premium, but least discoverable (people can't find the Categories taxonomy from every page).
+
+I went with (A) because Drew's design direction says "dark/neutral tones, minimal but premium" and the Header is already dark — matching it felt correct. But (C) is the most Linear-y / Vercel-y move and Drew may prefer it.
+
+**Drew's Response:**
+
+
+---
+
+## Answered Questions
+
 ### Q13: Problem-card hierarchy — is "Blank Chat Tax" actually the root insight, or should a different card be primary?
 
 Iteration 23 promoted "Blank Chat Tax" to the dominant primary problem card on the landing page, with the three others ("Hidden Craftsmanship", "Weak Reproducibility", "Lost Branches") demoted to a supporting 3-col row below. The reasoning: "you open a new chat and rebuild something someone else already figured out" reads as the *cause*, while the other three read as *consequences* of that cause (nobody sees others' work → hidden craftsmanship; can't recreate results → weak reproducibility; alternative paths thrown away → lost branches). But this is my interpretation from the copy, not a product decision you made. Three possible futures:
@@ -17,6 +47,9 @@ Iteration 23 promoted "Blank Chat Tax" to the dominant primary problem card on t
 - **(C) No hierarchy, just better equal cards** — maybe all four really are peer problems and the old 2x2 was right; we'd need a different fix for the "all-identical cards" complaint
 
 **Drew's Response:**
+You make the determination here and think about what would be best. I trust you.
+
+**Action taken** (Iteration 24): Kept (A). The iteration 23 implementation stands — "Blank Chat Tax" as the dominant primary card with a `border-l-4 border-l-brand-orange` eyebrow + `font-black text-2xl` title + "The root problem" eyebrow. The three sibling cards remain demoted to the 3-col grid below with muted `surface-400` dots. Trusted judgment call per Drew.
 
 ---
 
@@ -30,6 +63,9 @@ Three options for next time:
 - **(C) Remove it** — Let "Build paths, not prompts." + the supporting paragraph stand alone, and invest the saved vertical space in a larger / more visual Popular Build Paths grid (the actual product)
 
 **Drew's Response:**
+We can just do A, keep it as is for now.
+
+**Action taken** (Iteration 24): No change needed — the diagram stays as cleaned up in iteration 22.
 
 ---
 
@@ -38,6 +74,9 @@ Three options for next time:
 On the detail page (where people view finished projects), prompt blocks use a dark terminal-style background and result blocks use a blue-tinted background. On the Build page, we currently use a light surface-50 tint for prompts and a green-50 tint for results — which feels more like "editing mode." Should we bring the dark code-editor aesthetic into the Build page too (at least for the prompt textareas), or does the lighter "editing" feel make more sense when people are actively typing? There's a tension between "preview what it'll look like" and "comfortable editing environment."
 
 **Drew's Response:**
+I mean, feel free to look at it and make the determination as to what you think is best and most professional and production ready. You can make the determination here by looking at it.
+
+**Action taken** (Iteration 24): Acknowledged. Next iteration that touches the Build page will make the call — current hypothesis is to keep the lighter "editing" tint (dark editors are harsher on long-form typing; most modern product editors like Linear's issue creation, Notion's block editor, and Vercel's settings screens stay light). Will be re-evaluated when Build page is next in scope.
 
 ---
 
@@ -46,14 +85,17 @@ On the detail page (where people view finished projects), prompt blocks use a da
 Currently, project cards are text-only (title, description, category, step flow visualization, metadata). Iteration 20 improved the hierarchy so titles lead, but the cards still lack any visual "hook" — there's no screenshot or preview image to make someone stop scrolling. Adding an image thumbnail at the top of each card (when a project has uploaded images) would make the grid feel more like a gallery and help projects "sell themselves." However, it would also make cards taller, reduce the number visible above the fold, and require that we prioritize getting the image upload pipeline working. Should we: (A) keep text-only cards for now and focus on other pages, (B) add placeholder/decorative images to make cards more visual, or (C) prioritize wiring up real image uploads so cards can show actual project screenshots?
 
 **Drew's Response:**
+C.
+
+**Action taken** (Iteration 24): Noted. This requires wiring `ImageUpload` to Supabase Storage — a Core Features item in the Next Sprint. The hourly iteration system is design-only (no backend work), so Q10 is blocked until Next Sprint work begins. Adding a prominent call-out to BACKLOG.md Next Sprint so it isn't forgotten. Browse card thumbnail slot can then be added with real data.
 
 ---
 
 ### Q9: Seed content quality — are the filled-in project results convincing enough?
-
 Iteration 19 filled in all 10 steps that previously had empty results (including the SaaS Dashboard which had ALL steps empty). The content includes actual code snippets, email templates, structured documents, and migration plans. However, these are generated examples — they're designed to look realistic but aren't from actual user projects. Two questions: (1) Does the level of detail feel right, or should some results be shorter/longer? (2) Should we prioritize getting REAL projects from actual users (even if just Drew's own AI projects) to replace some of the seed data, or is realistic generated content good enough for launch?
 
 **Drew's Response:**
+I'm honestly not seeing this. So, um, I mean the content should include all of that stuff, but I'm not seeing it. I think we should, um, I don't know. I'm assuming it's not realistic enough, but it needs to be realistic. Just, um, I don't know. We need to do a better year, but I can't see it, so I don't really know what it looks like, so I'll just move on because I don't know exactly what you're referencing with this.
 
 ---
 
@@ -62,10 +104,9 @@ Iteration 19 filled in all 10 steps that previously had empty results (including
 The step-by-step prompt blocks now use a dark terminal-style background (`surface-900` / near-black) with light text, making them look like code editor / terminal output. Results use a lighter blue-tinted background to create clear input→output directionality. This is a significant visual shift from the previous all-white layout. Does this feel right for PathForge's audience (mix of technical and non-technical users), or is the dark prompt styling too intimidating for beginners?
 
 **Drew's Response:**
+This is fine.
 
 ---
-
-## Answered Questions
 
 ### Q1: Design reference — are there sites you love the look of?
 Are there specific websites or apps whose design you love and want PathForge to feel like? Any visual references would help guide the aesthetic direction.

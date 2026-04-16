@@ -40,9 +40,9 @@ export function SkeletonText({
 /** Skeleton matching PromptCard structure — step flow bar, badges, title, description, footer */
 export function SkeletonCard() {
   return (
-    <div className="bg-white border border-gray-200 overflow-hidden">
+    <div className="bg-white border border-surface-200 overflow-hidden">
       {/* Step flow mini-visualization placeholder */}
-      <div className="bg-gray-50 border-b border-gray-200 px-5 py-3 flex items-center gap-1.5">
+      <div className="bg-surface-50 border-b border-surface-200 px-5 py-3 flex items-center gap-1.5">
         {[1, 2, 3].map(i => (
           <div key={i} className="flex items-center gap-1.5">
             <SkeletonBox className="w-6 h-6" />
@@ -80,7 +80,7 @@ export function SkeletonCard() {
         </div>
 
         {/* Footer: author + stats */}
-        <div className="flex items-center justify-between pt-3 border-t border-gray-100">
+        <div className="flex items-center justify-between pt-3 border-t border-surface-100">
           <div className="flex items-center gap-1.5">
             <SkeletonBox className="w-5 h-5" />
             <SkeletonBox className="h-3.5 w-20" />

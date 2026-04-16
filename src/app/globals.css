@@ -125,7 +125,13 @@ body {
   animation: pulseSubtle 3s ease-in-out infinite;
 }
 
-/* ─── Skeleton shimmer animation ─── */
+/* ─── Skeleton shimmer animation ───
+ * Uses the canonical surface-200 → surface-300 → surface-200 sweep so the
+ * shimmer matches the migrated palette rather than drifting into raw hex.
+ * Values kept as literals (not var()) because some browsers don't interpolate
+ * CSS vars inside linear-gradient color stops reliably — the values match
+ * --color-surface-200 and --color-surface-300 in the @theme block above.
+ */
 @keyframes shimmer {
   0% { background-position: -200% 0; }
   100% { background-position: 200% 0; }
@@ -134,9 +140,9 @@ body {
 .skeleton-shimmer {
   background: linear-gradient(
     90deg,
-    #e4e4e7 25%,
-    #d4d4d8 37%,
-    #e4e4e7 63%
+    #e4e4e7 25%,  /* surface-200 */
+    #d4d4d8 37%,  /* surface-300 */
+    #e4e4e7 63%   /* surface-200 */
   );
   background-size: 200% 100%;
   animation: shimmer 1.8s ease-in-out infinite;
@@ -145,6 +151,6 @@ body {
 @media (prefers-reduced-motion: reduce) {
   .skeleton-shimmer {
     animation: none;
-    background: #e4e4e7;
+    background: #e4e4e7; /* surface-200 */
   }
 }

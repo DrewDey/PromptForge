@@ -5,6 +5,174 @@
 
 ---
 
+## 2026-04-16 — Iteration 25: User Profile Page — Dev-Tool Identity Row + GitHub-Cadence Stat Tiles + Last Public-Palette Holdout
+
+**Picked the top unblocked item** — iteration 24's "what's next" flagged the user profile page as the #1 candidate: 19 raw `gray-*` tokens remaining + content polish opportunity. Browse page thumbnails (Q10 "C") still blocked until backend sprint. Reusable Button primitive deferred — profile page regression was the more visible win.
+
+**Housekeeping note**: Iteration 24's file changes were never committed — working tree still had Footer, Skeleton, CategoryCard, VoteBookmarkButtons, loading files, layout.tsx, and globals.css uncommitted when this iteration started. Bundled them into iteration 25's commit rather than leaving orphaned, and noted the combined scope in the commit message.
+
+**Audit findings** (Agent 1 — UX audit of `src/app/user/[username]/page.tsx` + `loading.tsx` + palette tokens + PromptCard + landing/browse reference pages):
+
+1. **Palette regression (HIGH PRIORITY)**: 12+ raw `gray-*` tokens across the page — header card border, avatar bg, h1/username/bio text, all three stat cards (`bg-gray-50 border-gray-100`), section heading, empty state. Skeleton already migrated in iteration 24 → content pops to wrong palette on hydration.
+2. **Stats feel disconnected SaaS**: Centered `text-center` pastel tiles on `bg-gray-50` read as "incidental summary" rather than scannable facts. No hover, no interaction affordance, no dev-tool character.
+3. **Section heading too quiet**: `text-lg font-semibold text-gray-900 mb-4` is body-weight typography; doesn't signal "start of new section." Browse page uses stronger weights.
+4. **Empty-state CTA undersized**: `font-medium`, `duration-200`, no `focus-visible`, no `min-h-11` — drifts from landing primary button spec.
+5. **Gradient banner + overlapping avatar**: 2018-era Facebook/LinkedIn pattern. The `bg-gradient-to-r from-brand-orange to-brand-blue` banner is the whole page's wow attempt but reads dated.
+6. **`topCategory` buried**: Real personality data (user's most-used category) is shown as a 12px chip in the meta line rather than foregrounded.
+7. **Loading ↔ content parity broken**: Skeleton uses `border-surface-200` while the real page uses `border-gray-200` — colors literally shift on hydration.
+8. **Generic dev-tool personality missing**: Profile doesn't answer "what has this user built?" at a glance. No pinned, no activity proxy, no eye-anchor.
+
+**Research insights** (Agent 2 — GitHub, Product Hunt maker profiles, Linear, Dribbble):
+
+1. **GitHub's tight stat cadence**: left-aligned icon+label row, big numeric value, no gratuitous color tiles.
+2. **Pinned grid with metadata on card**: Don't hide meta behind hover — put category, step count, upvotes on the card so users get the answer immediately. Already what PromptCard does — profile should re-use it cleanly.
+3. **Linear's single-line meta**: "Founding member · Joined 2023 · 142 issues" — one scan line rather than a chip cloud. Fits sharp-corner aesthetic.
+4. **Product Hunt maker metrics over follower counts**: A maker platform shows what you built, not your follower graph — PathForge already aligned.
+5. **Avoid the GitHub contribution graph sprawl**: For a low-volume project-showcase site, a heatmap of sparse data looks empty. Skip it.
+
+**Design brief** (3 goals):
+
+1. **Kill all `gray-*` / raw palette drift** on the profile page. Migrate `bg-gray-*`, `border-gray-*`, `text-gray-*` → `surface-*` equivalents. `duration-200` → `duration-150`. Zero `gray-*` classes in className strings after.
+2. **Replace the gradient-banner SaaS header with a dev-tool identity row**: square brand-orange monogram tile (sharp corners — reinforces the brand's sharp-corner rule), large name (`font-black`), @username (`surface-500 font-medium`), bio at readable width, and a **single Linear-style inline meta line**: `Joined {month year} · N projects · Top: {category}`. Side-by-side at desktop, stacks at `<sm`.
+3. **Tighten stat tiles to GitHub cadence + upgrade section header + align empty-state CTA**: Left-aligned `bg-white border-surface-200` tiles, icon+label row on top (`text-[11px] font-bold uppercase tracking-wider text-surface-500`), numeric value below (`text-2xl font-black`). Highlight Upvotes in `text-brand-orange` as the single eye-anchor. Section heading `text-xl font-bold` + right-aligned tabular count on the same baseline. Empty-state CTA: `font-bold`, `duration-150`, `min-h-11`, `focus-visible:outline-2 focus-visible:outline-brand-orange focus-visible:outline-offset-2` — matching landing primary button spec verbatim.
+
+**What was implemented**:
+
+*`src/app/user/[username]/page.tsx`* — full rewrite:
+- Identity row section (`<section className="bg-white border border-surface-200 p-6 sm:p-8 mb-8">`) with `flex-col sm:flex-row` layout.
+- Square monogram avatar: `w-16 h-16 sm:w-20 sm:h-20 bg-brand-orange flex items-center justify-center shrink-0` with `font-black text-white` letter. `aria-hidden="true"` since name is in adjacent `<h1>`.
+- Name `<h1>`: `text-2xl sm:text-3xl font-black text-surface-900 leading-tight`.
+- @username: `text-sm text-surface-500 font-medium mt-0.5`.
+- Bio: `text-[15px] text-surface-700 mt-3 max-w-2xl leading-relaxed` — constrained read width.
+- Inline meta line: `flex flex-wrap items-center gap-x-4 gap-y-1.5 mt-4 text-xs text-surface-500` with 3.5px icons + `aria-hidden` decoratives. Top category emoji wrapped in `aria-hidden` `<span>` (screen readers get the category name text only, not "sparkles emoji").
+- Singular/plural: `{N} {N === 1 ? 'project' : 'projects'}`.
+- Extracted `StatTile` helper — `{icon, label, value, accent?}` props. Shared styling: `bg-white border border-surface-200 p-4 hover:border-surface-300 transition-colors duration-150`. Value typography `text-2xl font-black tabular-nums` (one step smaller than H1 so name stays visual anchor — review nit #2).
+- Section heading upgraded `text-lg font-semibold` → `text-xl font-bold`, added right-aligned "{N} total" count on the same `items-baseline` flex line.
+- Empty state: `bg-surface-50 border border-dashed border-surface-300 p-10 sm:p-12 text-center`. Plus icon container kept (good). CTA matches landing primary spec verbatim.
+- Wrapped logical regions in `<section>` tags (was `<div>`) + `aria-label="Profile statistics"` on stats grid.
+- All durations `200` → `150`.
+
+*`src/app/user/[username]/loading.tsx`* — structure-matched rewrite:
+- Identity row with left-aligned monogram box, name/handle/bio/meta stack.
+- Monogram placeholder: `bg-brand-orange/40` (not the default skeleton gray) so the tile color doesn't pop when content hydrates (review nit #4).
+- Stat tiles: `bg-white border-surface-200 p-4` (matches page), icon+label row on top, value below — same geometry as real tiles.
+- Section header row: two `SkeletonBox`es on an `items-baseline justify-between` flex — matches page's heading + count layout.
+
+**Review outcome**: **Approve with nits.** Independent reviewer confirmed:
+- Zero `gray-*` in className strings (only a docstring comment reference).
+- Primary button spec match verified token-by-token against landing L56.
+- All decorative icons `aria-hidden="true"`; exactly one `<h1>`, one `<h2>`.
+- Sharp-corner rule held (zero `rounded-*` classes).
+- Loading ↔ page geometry parity confirmed.
+
+*Nits addressed (fixed before closing out):*
+- **Nit #2 — stat value size collided with H1**: Both were `text-2xl sm:text-3xl`. Reduced stat values to flat `text-2xl` so the name remains the clear page anchor. Added inline comment explaining the hierarchy choice.
+- **Nit #4 — loading monogram color pop**: Replaced generic `SkeletonBox` with a `bg-brand-orange/40` square so the real brand-orange tile doesn't flicker in on hydration.
+- **Nit #1 — "browse page parity" claim was loose**: Softened the docstring to say the direction is aligned, not strict parity (browse uses `text-sm font-semibold` for in-grid labels, not `text-xl font-bold`).
+
+*Nits acknowledged (not fixed — deferred to Drew via new Q15):*
+- **Nit #3 — `accent` prop was a judgment call, not in the brief**: Highlighting Upvotes in brand-orange is defensible as the eye-anchor, but worth flagging. Added to QUESTIONS.md as Q15.
+
+**Verification:**
+- `npx tsc --noEmit` — clean, zero errors (this is the reliable signal; Vercel builds from clean state).
+- `npm run build` blocked by known `.next` cache `.fuse_hidden*` EPERM issue (documented sandbox limitation across iterations 22–24).
+- Screenshot visual audit deferred — Chrome MCP unreachable in autonomous scheduled task (same fallback as iteration 24). Live site hits 200 on the /user/admin path, but deployed build predates this iteration. When next Drew session runs Chrome MCP, a before/after screenshot pass on the profile page would validate the identity-row treatment.
+
+**What's next** (ranked):
+1. **Reusable Button primitive** — the button-system consistency story has now spread across landing + auth + user-profile CTAs, each copying the primary spec inline. A `<Button variant="primary|secondary|ghost">` component would prevent future drift and is overdue per iterations 23–25's "what's next."
+2. **Admin UX palette migration** — `src/app/admin/*` + `AdminPromptRow.tsx` (~47 `gray-*` instances). Lower visible priority than public pages, but necessary for a clean design-system migration.
+3. **Seed project content overhaul (BACKLOG #6)** — the biggest unaddressed sprint item. Drew said the content is worthless; iterations 19+ touched it but Drew's Q9 response ("I'm honestly not seeing this") suggests it hasn't landed. Needs a focused iteration + a deploy to see it live.
+4. **Browse page thumbnails (Q10 "C")** — still blocked by ImageUpload → Supabase Storage (Next Sprint backend work).
+
+---
+
+## 2026-04-16 — Iteration 24: Footer Dark-Bookend Redesign + Full Public-Palette Migration
+
+**Drew's responses acted on (Q10, Q11, Q12, Q13):**
+- **Q13** (problem-card hierarchy): Drew trusted my determination — iteration 23's "Blank Chat Tax" as primary stands. Moved to Answered.
+- **Q12** (flow diagram): Drew chose "A, keep it as is" — no change needed. Moved to Answered.
+- **Q11** (Build code-editor style on Build page): Drew deferred to my judgment when next touching Build. Noted in Answered; will decide next time Build is in scope (current hypothesis: keep lighter editing tint — long-form typing + Linear/Notion/Vercel parallel).
+- **Q10** (browse thumbnails): Drew chose "C" (wire real image uploads). Blocked by "no backend" iteration rule. Flagged in BACKLOG Next Sprint with priority note; will be unlocked with ImageUpload → Supabase Storage work.
+
+**Visual-audit note:** Chrome MCP was unreachable in this session. Per ITERATION_GUIDE fallback policy, proceeded with a code-only audit; flagged in log rather than silently skipping. When Chrome MCP returns online, an after-screenshot pass on the deployed change would validate the dark-footer decision.
+
+**Audit findings** (Agent 1 — UX audit of Footer + Skeleton + CategoryCard + VoteBookmarkButtons + all loading.tsx):
+
+1. **Footer palette mismatch (highest-impact leak):** Footer uses `bg-gray-50 / border-gray-200 / text-gray-400-500` while the rest of the migrated app uses `surface-*`. Footer appears on *every* page → 100% coverage of visual inconsistency. Footer also a generic 4-column light-gray Mailchimp block clashing with the dark Header.
+2. **Skeleton + every loading.tsx carries `border-gray-*`:** 20+ borders across 4 loading files use raw gray tokens. Skeletons are the first thing every user sees during navigation → undermines design-system coherence.
+3. **CategoryCard, VoteBookmarkButtons:** Raw `gray-*` on landing and every project card / detail page.
+4. **Shimmer animation:** `#e4e4e7`/`#d4d4d8` hex coincidentally matches `surface-200`/`surface-300` but uses raw values without mapping — fragile if scale shifts.
+5. **Layout body:** `text-gray-900` on `<body>` still unmigrated — the one token every child page inherits.
+
+**Research insights** (Agent 2 — Linear, Vercel, Raycast, Stripe, Supabase footer patterns):
+
+- **Pattern 1 — Dark minimal row (Linear):** Single centered row, logo + location + 4 links. Signals confidence but sacrifices taxonomy discoverability.
+- **Pattern 2 — Sectioned dark grid (Raycast/Supabase):** Multi-column on dark, optional newsletter hook. Preserves discoverability, scales with brand.
+- **Pattern 3 — Borderless minimal:** Thin border-top, no bg change, single line. Ultra-light but loses "bookend" effect with dark Header.
+- **Pattern 4 — Asymmetric anchor (Stripe):** Brand mark + tagline split from link columns. Reinforces brand identity on dark.
+
+**Design brief** (3 goals):
+
+1. **Eliminate `gray-*` from all non-admin public-facing components and loading states** — Footer, Skeleton, CategoryCard, VoteBookmarkButtons, landing loading, project detail loading, user profile loading, layout body. Out of scope: `src/app/user/[username]/page.tsx` (content polish, separate iteration) and `src/app/admin/*` (admin UX, separate concern).
+2. **Upgrade Footer to Pattern 2 dark-bookend** — `bg-surface-900` matching Header, 12-col grid with brand + 2 link columns + bottom bar. NOT Linear's single-row minimal (PathForge is pre-launch and needs category taxonomy exposure). Deferred minimal version to a future iteration once the site has more organic discovery.
+3. **Annotate shimmer animation** — preserve literal hex (CSS vars inside `linear-gradient` color stops have browser interop quirks) but inline-comment the `surface-200` / `surface-300` mappings for self-documentation.
+
+**What was implemented:**
+
+*Footer (`src/components/Footer.tsx`):*
+- Full rewrite. `bg-surface-900 text-surface-300 border-t border-surface-800` — dark bookend.
+- Logo treated with `brightness-0 invert opacity-95` for legibility on dark (reasonable single-asset reuse; acknowledged in review as a hack-that-works — a dedicated `logo-dark.svg` is a future improvement).
+- Tagline: `text-surface-400`, readable constrained width (`max-w-md`).
+- 12-col grid: `md:col-span-5` brand + `md:col-span-3 md:col-start-7` Platform + `md:col-span-3` Categories (column 6 left as intentional gutter, creating breathing room).
+- Section labels: `text-[11px] font-bold uppercase tracking-widest text-surface-500` (muted on purpose — labels, not CTAs).
+- Link treatment: `text-surface-300 hover:text-brand-orange` + `focus-visible:outline-2 focus-visible:outline-brand-orange focus-visible:outline-offset-2` on every link (added after review nit — dark bg a11y).
+- Bottom bar: `© {year} PathForge` + brand dots with `aria-hidden="true"`.
+
+*Skeleton (`src/components/Skeleton.tsx`):* `border-gray-200 / 100` + `bg-gray-50` → `border-surface-200 / 100` + `bg-surface-50`. SkeletonCard structure preserved.
+
+*CategoryCard (`src/components/CategoryCard.tsx`):* Full token sweep + added `focus-visible:outline-2 focus-visible:outline-brand-orange focus-visible:outline-offset-2` + normalized `duration-200` → `duration-150`.
+
+*VoteBookmarkButtons (`src/components/VoteBookmarkButtons.tsx`):* Both size variants. `border-gray-200` → `border-surface-200`, `text-gray-400/500` → `text-surface-400/500`, `duration-200` → `duration-150`. Pre-existing amber/primary inconsistency flagged by reviewer but left (pre-existing, out of scope for a palette migration).
+
+*Landing loading (`src/app/loading.tsx`):* 7 instances migrated. Pipe skeleton bg, problem-card bg, section header border.
+
+*Project detail loading (`src/app/prompt/[id]/loading.tsx`):* 11 instances migrated. Step nodes, step-header bg, prompt/result block bgs, vertical pipe, related-projects divider.
+
+*User profile loading (`src/app/user/[username]/loading.tsx`):* 4 instances migrated. Profile card border, stat card bg/border.
+
+*Layout (`src/app/layout.tsx`):* Body `text-gray-900` → `text-surface-900`.
+
+*globals.css:* Shimmer animation preserved (literal hex values), annotated with inline `/* surface-200 */` / `/* surface-300 */` comments plus a header comment explaining why CSS vars aren't used inside `linear-gradient`.
+
+**Review outcome**: **Approve with nits.** Reviewer confirmed:
+- Zero `gray-*` in className strings across all scoped files (comments are fine).
+- Footer dark-bookend contrast ladder works (`surface-500` labels, `surface-400` tagline, `surface-300` links, `brand-orange` hover).
+- Shimmer annotation is honest — acknowledged the CSS-var-in-gradient quirk.
+- Grid math reads cleanly, mobile stacking correct.
+- `duration-200` → `duration-150` tightening is consistent, not gratuitous.
+
+*Nits addressed:*
+- **Nit — focus-visible on Footer links (fixed before commit):** Reviewer flagged that Footer links on dark bg need explicit focus-visible outlines (default browser outline is nearly invisible on near-black). Added `focus-visible:outline-2 focus-visible:outline-brand-orange focus-visible:outline-offset-2` to all 7 Footer links via `replace_all`.
+
+*Nits acknowledged (not fixed):*
+- **VoteBookmarkButtons amber/primary-600 mismatch** — compact variant uses `text-primary-600` + `text-amber-600`/`fill-amber-500` while large variant uses `brand-orange` / `brand-blue`. Pre-existing drift, not introduced by this iteration. Should converge in a future "VoteBookmarkButtons systemization" pass.
+- **Footer logo `brightness-0 invert opacity-95`** — works for the current single-color mark; a dedicated `logo-dark.svg` is the right long-term fix but unnecessary now.
+
+**Verification:**
+- `npx tsc --noEmit` — clean, zero errors (reliable signal; Vercel builds from clean state).
+- `npm run build` blocked by known `.next` cache `.fuse_hidden*` permission issue (documented sandbox limitation from prior iterations).
+- After-screenshot pass deferred — Chrome MCP unreachable this session.
+
+**What's next:**
+- Next iteration candidates (ranked):
+  1. **User profile page (`src/app/user/[username]/page.tsx`)** — 19 `gray-*` instances + content polish (stat card aesthetics, profile header treatment). This is the last public-facing page with raw gray tokens.
+  2. **Admin UX migration** — AdminPromptRow + admin/page + admin/layout + admin/loading. ~47 `gray-*` instances. Lower priority since admin-only, but necessary for a complete design-system migration.
+  3. **Reusable Button primitive** — the button-system consistency story is still spread across pages. A single `<Button variant="primary|secondary|ghost">` primitive would prevent future drift. Called out in iteration 23's "what's next" too.
+  4. **Browse page thumbnails** — blocked until ImageUpload → Supabase Storage is wired (Next Sprint per Q10).
+- Drew's Q10 "C" answer is flagged prominently in BACKLOG so the next sprint picks it up without re-prompting.
+
+---
+
 ## 2026-04-16 — Iteration 23: Landing Problem-Card Hierarchy + Auth Page Design System Consistency
 
 **Audit findings** (top problems identified across two parallel audit areas):
@@ -958,6 +1126,22 @@ Drew asked: "Would you be able to add two instructions to take screenshots of ev
 # Plain English Summary (for Drew)
 
 > What's actually changed on the site, in normal human language. Newest at the top. Let me know when you've reviewed and I'll clear the old stuff.
+
+### The Footer got a real makeover, and loading screens + cards stopped looking mismatched (April 16 — Iteration 24)
+
+Two big changes this round, both about visual consistency across the whole site.
+
+**The Footer is now dark — and it matches the Header.** The old footer was a light gray block at the bottom of every page with a "Platform" column, a "Categories" column, and a tiny logo. It looked like a generic startup footer that came with a template. The real problem: our Header is near-black, and the old footer was light gray, so every page felt unbalanced — dark at the top, content in the middle, then a soft gray hug at the bottom. It didn't feel like a premium dev tool, it felt like a homework project.
+
+Now the Footer uses the same near-black color as the Header. This creates a "dark bookend" effect — dark at top, content in the middle with orange accents popping against the white, dark at bottom. It's the pattern Linear and Vercel use, and it immediately makes the whole site feel more considered and high-end. The logo got treated to show up cleanly on dark, the link columns still expose the categories so people can find Productivity/Coding/Marketing/Finance from any page, and links now have proper keyboard-focus outlines in our orange brand color (that was a missing accessibility detail).
+
+**Every remaining "old gray" on public pages is gone.** Over the past dozen iterations we've been migrating from raw Tailwind gray colors to a custom "surface" palette that's cooler and more sophisticated. But a handful of components kept slipping through the cracks — the loading skeletons you see while a page is loading, the category cards on the home page, the upvote/bookmark buttons, the user profile loading screen. Each of these used the old grays, which meant if you navigated quickly, you'd briefly see a palette seam as you moved between pages.
+
+All of that is now unified. Loading screens, category cards on the home page, upvote/bookmark buttons, every placeholder — they all speak the same palette. This is the kind of thing that's invisible when it's working right, but would nag at you forever if it weren't.
+
+**What's explicitly still on the old palette:** The user profile page (the page you see when you click someone's username) and the admin dashboard. Both need their own focused pass — the profile page is content-heavy so it deserves a real design review, and the admin dashboard is only visible to you, so it's lower priority.
+
+**One practical note on your Q10 answer ("C" — prioritize wiring image uploads so cards show screenshots):** I flagged this prominently in the backlog. It's the right move, but it requires actual backend work (wiring the image uploader to Supabase Storage), and the hourly iteration system is design-only. Once you're ready to unblock backend work, this is the first Core Feature queued up — and when it ships, the Browse page cards will get a thumbnail slot at the top, which is the "gallery feel" unlock you've been asking for.
 
 ### The landing page finally has a "main" problem — and the auth pages join the design system (April 16 — Iteration 23)
 

@@ -42,7 +42,7 @@ export default function PromptDetailLoading() {
         </div>
 
         {/* Grouped metadata */}
-        <div className="flex items-start gap-6 flex-wrap pt-5 border-t border-gray-200">
+        <div className="flex items-start gap-6 flex-wrap pt-5 border-t border-surface-200">
           <div className="flex items-center gap-2">
             <SkeletonBox className="h-7 w-24" />
             <SkeletonBox className="h-7 w-20" />
@@ -61,7 +61,7 @@ export default function PromptDetailLoading() {
           <SkeletonBox className="w-5 h-5" />
           <SkeletonBox className="h-6 w-28" />
         </div>
-        <div className="border-l-4 border-gray-200 p-6 sm:p-8 bg-gray-50/50">
+        <div className="border-l-4 border-surface-200 p-6 sm:p-8 bg-surface-50/50">
           <SkeletonText lines={4} widths={['100%', '95%', '100%', '50%']} />
         </div>
       </section>
@@ -79,19 +79,19 @@ export default function PromptDetailLoading() {
 
         <div className="relative">
           {/* Vertical pipe placeholder */}
-          <div className="absolute left-[23px] top-2 bottom-2 w-[3px] bg-gray-200/50" />
+          <div className="absolute left-[23px] top-2 bottom-2 w-[3px] bg-surface-200/50" />
 
           <div className="space-y-10">
             {[1, 2, 3].map(step => (
               <div key={step} className="relative pl-16">
                 {/* Step node — 48px to match real */}
-                <div className="absolute left-0 top-3 w-[48px] h-[48px] bg-gray-200 flex items-center justify-center z-10">
+                <div className="absolute left-0 top-3 w-[48px] h-[48px] bg-surface-200 flex items-center justify-center z-10">
                   <SkeletonBox className="w-5 h-5" />
                 </div>
 
-                <div className="border border-gray-200 overflow-hidden">
+                <div className="border border-surface-200 overflow-hidden">
                   {/* Step header */}
-                  <div className="bg-gray-50 px-5 py-3 border-b border-gray-200">
+                  <div className="bg-surface-50 px-5 py-3 border-b border-surface-200">
                     <div className="flex items-center gap-2">
                       <SkeletonBox className="h-3 w-20" />
                       <SkeletonBox className="h-4 w-32" />
@@ -99,23 +99,23 @@ export default function PromptDetailLoading() {
                   </div>
 
                   {/* Prompt section */}
-                  <div className="p-5 border-l-4 border-gray-200">
+                  <div className="p-5 border-l-4 border-surface-200">
                     <div className="flex items-center justify-between mb-3">
                       <SkeletonBox className="h-3 w-16" />
                       <SkeletonBox className="h-6 w-14" />
                     </div>
-                    <div className="p-4 bg-gray-50/40 border border-gray-100">
+                    <div className="p-4 bg-surface-50/40 border border-surface-100">
                       <SkeletonText lines={3} widths={['100%', '90%', '70%']} />
                     </div>
                   </div>
 
                   {/* Result section */}
-                  <div className="p-5 border-l-4 border-gray-200 bg-gray-50/20 border-t border-gray-100">
+                  <div className="p-5 border-l-4 border-surface-200 bg-surface-50/20 border-t border-surface-100">
                     <div className="flex items-center justify-between mb-3">
                       <SkeletonBox className="h-3 w-14" />
                       <SkeletonBox className="h-6 w-14" />
                     </div>
-                    <div className="p-4 bg-gray-50 border border-gray-100">
+                    <div className="p-4 bg-surface-50 border border-surface-100">
                       <SkeletonText lines={2} widths={['100%', '55%']} />
                     </div>
                   </div>
@@ -127,7 +127,7 @@ export default function PromptDetailLoading() {
       </section>
 
       {/* Related projects */}
-      <section className="mt-16 pt-10 border-t border-gray-200">
+      <section className="mt-16 pt-10 border-t border-surface-200">
         <div className="flex items-center justify-between mb-6">
           <SkeletonBox className="h-5 w-40" />
           <SkeletonBox className="h-4 w-16" />

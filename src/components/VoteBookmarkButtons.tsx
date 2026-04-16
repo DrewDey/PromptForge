@@ -64,10 +64,10 @@ export default function VoteBookmarkButtons({
         <button
           onClick={handleVote}
           disabled={!isLoggedIn}
-          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-sm font-medium transition-colors duration-200 ${
+          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-sm font-medium transition-colors duration-150 ${
             voted
               ? 'bg-brand-orange/10 border-brand-orange/50 text-brand-orange'
-              : 'bg-white border-gray-200 text-gray-500 hover:border-brand-orange/50 hover:text-brand-orange'
+              : 'bg-white border-surface-200 text-surface-500 hover:border-brand-orange/50 hover:text-brand-orange'
           } ${!isLoggedIn ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
           title={isLoggedIn ? (voted ? 'Remove upvote' : 'Upvote') : 'Log in to upvote'}
         >
@@ -77,10 +77,10 @@ export default function VoteBookmarkButtons({
         <button
           onClick={handleBookmark}
           disabled={!isLoggedIn}
-          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-sm font-medium transition-colors duration-200 ${
+          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-sm font-medium transition-colors duration-150 ${
             bookmarked
               ? 'bg-brand-blue/10 border-brand-blue/50 text-brand-blue'
-              : 'bg-white border-gray-200 text-gray-500 hover:border-brand-blue/50 hover:text-brand-blue'
+              : 'bg-white border-surface-200 text-surface-500 hover:border-brand-blue/50 hover:text-brand-blue'
           } ${!isLoggedIn ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
           title={isLoggedIn ? (bookmarked ? 'Remove bookmark' : 'Bookmark') : 'Log in to bookmark'}
         >
@@ -96,8 +96,8 @@ export default function VoteBookmarkButtons({
       <button
         onClick={handleVote}
         disabled={!isLoggedIn}
-        className={`flex items-center gap-1 text-sm transition-colors duration-200 ${
-          voted ? 'text-primary-600 font-medium' : 'text-gray-400 hover:text-primary-600'
+        className={`flex items-center gap-1 text-sm transition-colors duration-150 ${
+          voted ? 'text-primary-600 font-medium' : 'text-surface-400 hover:text-primary-600'
         } ${!isLoggedIn ? 'cursor-default' : 'cursor-pointer'}`}
       >
         <ArrowUp className={`w-3.5 h-3.5 ${voted ? 'text-primary-600' : ''}`} />
@@ -106,8 +106,8 @@ export default function VoteBookmarkButtons({
       <button
         onClick={handleBookmark}
         disabled={!isLoggedIn}
-        className={`flex items-center gap-1 text-sm transition-colors duration-200 ${
-          bookmarked ? 'text-amber-600 font-medium' : 'text-gray-400 hover:text-amber-600'
+        className={`flex items-center gap-1 text-sm transition-colors duration-150 ${
+          bookmarked ? 'text-amber-600 font-medium' : 'text-surface-400 hover:text-amber-600'
         } ${!isLoggedIn ? 'cursor-default' : 'cursor-pointer'}`}
       >
         <Bookmark className={`w-3.5 h-3.5 ${bookmarked ? 'fill-amber-500' : ''}`} />

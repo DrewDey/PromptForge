@@ -5,6 +5,55 @@
 
 ---
 
+## 2026-04-16 — Iteration 21: Build Page — Surface Token Migration, Interactive Controls, Progress Bar
+
+**Audit findings** (top problems identified):
+1. Build page uses ~40 raw `gray-*` Tailwind classes instead of the design system's `surface-*` palette — visually disconnected from the rest of the redesigned site
+2. Step card reorder/delete buttons have ~20px touch targets (p-1, w-3.5 icons) — well below 44px mobile minimum, with weak hover feedback (`hover:text-gray-700`)
+3. Progress bar at h-1.5 with `text-xs font-medium text-gray-600` label is nearly invisible — doesn't celebrate completion or motivate the user
+4. Mode toggle buttons lack `cursor-pointer` and have minimal inactive hover states (`hover:border-gray-300 hover:bg-gray-50`)
+5. Add Step button's 40% opacity border blends into the background — low discoverability
+6. Section headers at `text-lg` compete with step card headers at same visual weight
+7. Error message spacing too tight (`mt-1`) with small icon (`w-3`)
+8. ImageUpload remove button hidden on mobile (opacity-0 without touch fallback), grid not responsive
+
+**Research insights**:
+- **Linear's consistent token usage**: Every interactive surface uses the same neutral palette — no mixing of color systems. Creates a "designed" feel vs "assembled from parts"
+- **Typeform's inviting interactions**: Dashed borders that solidify on hover signal "drop zone" / "add here" — makes creation feel inviting rather than mechanical
+- **Vercel's micro-progress**: Clear celebration at milestones (checkmarks, color shifts) motivates completion without feeling like a checklist
+- **PatternFly inline edit patterns**: Larger touch targets with hover backgrounds make controls feel robust and discoverable
+
+**Design brief** (3 key goals):
+1. Migrate ALL gray-* → surface-* throughout Build page + ImageUpload for design system consistency
+2. Strengthen progress bar (h-2, bolder labels, green celebration at 100%) and step completion feedback
+3. Improve interactive control sizing (p-2 touch targets) and feedback (brand-colored hovers, cursor-pointer, dashed→solid Add Step)
+
+**What was implemented**:
+
+*Build page (`src/app/prompt/new/page.tsx`):*
+- **Complete gray-* → surface-* migration**: All ~40 gray-* classes replaced with surface-* equivalents. Labels `text-gray-700` → `text-surface-700`, inputs `border-gray-300` → `border-surface-200`, placeholders `placeholder-gray-400` → `placeholder-surface-400`, descriptions `text-gray-500` → `text-surface-500`
+- **Transition normalization**: All `duration-200` → `duration-150` per design token spec
+- **Section header hierarchy**: Promoted from `text-lg` to `text-xl` to clearly differentiate from step card headers. Added `hover:bg-surface-50` for better affordance
+- **Progress bar upgrade**: `h-1.5` → `h-2`, label from `text-xs font-medium text-gray-600` to `text-sm font-semibold text-surface-700`, 100% celebration with green bar + "All steps complete" text
+- **Reorder/delete controls**: `p-1` → `p-2` (32px+ touch targets), icons `w-3.5` → `w-4`, hover states `hover:text-gray-700` → `hover:text-brand-orange hover:bg-surface-100`, delete gets `hover:bg-red-50`, disabled state `disabled:opacity-30` → `disabled:text-surface-200 disabled:cursor-not-allowed`
+- **Mode toggle**: Added explicit `cursor-pointer` to both buttons, `border-gray-200` → `border-surface-200`, text classes migrated
+- **Add Step button**: `border-brand-orange/40` → `border-dashed border-brand-orange/50` idle, `hover:border-brand-orange hover:border-solid` on hover. Plus icon gets `group-hover:scale-110` micro-animation
+- **Form spacing**: Inter-section `space-y-3` → `space-y-4`, step cards `space-y-3` → `space-y-4`
+- **Error messages**: `mt-1` → `mt-2`, icon `w-3` → `w-3.5`, `gap-1` → `gap-1.5`
+- **Success state**: Emoji replaced with green check icon in square container for cross-platform consistency
+
+*ImageUpload (`src/components/ImageUpload.tsx`):*
+- **Token migration**: All `gray-*` → `surface-*` (labels, borders, backgrounds)
+- **Responsive grid**: `grid-cols-2` → `grid-cols-1 sm:grid-cols-2` for mobile
+- **Remove button**: Always visible on mobile (`opacity-100 sm:opacity-0 sm:group-hover:opacity-100`), `bg-black/50` → `bg-surface-900/60`, slightly larger (`w-6 h-6` → `w-7 h-7`)
+- **Upload button**: Added `cursor-pointer`, increased padding `py-2` → `py-2.5`
+
+**Review outcome**: Approved with nits. One functional nit fixed: dead `group-hover` class on GitBranch icon (parent lacked `group` class — removed the orphan class). Reviewer confirmed zero gray-* classes remain, all changes trace to the brief, accessibility attributes preserved, and mobile responsiveness improved.
+
+**What's next**: Build page still needs live preview and further polish (#2 in backlog). Browse page card thumbnails and seed content SQL rewrite remain tracked. Header refinement (#3) is also ready.
+
+---
+
 ## 2026-04-16 — Iteration 20: Browse Page — Card Hierarchy, Spacing Rhythm, Interactive States
 
 **Audit findings** (top problems identified):
@@ -763,6 +812,12 @@
 # Plain English Summary (for Drew)
 
 > What's actually changed on the site, in normal human language. Newest at the top. Let me know when you've reviewed and I'll clear the old stuff.
+
+### Build page looks polished and consistent with the rest of the site (April 16 — Iteration 21)
+
+The Build page was still using the old gray color palette while the rest of the site had moved to the new cooler zinc-based palette. It was like one room in a house that hadn't been repainted. Now all ~40 gray references have been swapped to the design system's surface tokens, so the Build page feels like part of the same product as the Browse and Detail pages.
+
+Three interaction improvements: The little arrow buttons for reordering steps and the trash icon for deleting them were tiny and hard to tap on mobile. They're now bigger with better hover effects (they turn orange when you hover). The progress bar showing "2 of 3 steps filled" was barely visible — now it's taller with bolder text, and when you complete all steps it turns green and says "All steps complete" instead of just showing 100%. The "Add Step" button now has a dashed border that solidifies when you hover over it, making it feel more inviting to click.
 
 ### Browse page cards and filters are easier to scan and use (April 16 — Iteration 20)
 

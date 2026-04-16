@@ -38,9 +38,9 @@ function SectionHeader({ number, title, subtitle, isExpanded, isComplete, summar
       onClick={onClick}
       aria-expanded={isExpanded}
       aria-controls={`section-${number}-panel`}
-      className="w-full flex items-center gap-4 px-5 py-4 cursor-pointer group transition-colors duration-200 focus-visible:outline-2 focus-visible:outline-brand-orange focus-visible:outline-offset-2"
+      className="w-full flex items-center gap-4 px-5 py-4 cursor-pointer group transition-colors duration-150 focus-visible:outline-2 focus-visible:outline-brand-orange focus-visible:outline-offset-2 hover:bg-surface-50"
     >
-      <div className={`w-9 h-9 text-sm font-bold flex items-center justify-center flex-shrink-0 transition-colors duration-200 ${
+      <div className={`w-9 h-9 text-sm font-bold flex items-center justify-center flex-shrink-0 transition-colors duration-150 ${
         isExpanded
           ? 'bg-brand-orange text-white'
           : isComplete
@@ -51,8 +51,8 @@ function SectionHeader({ number, title, subtitle, isExpanded, isComplete, summar
       </div>
       <div className="flex-1 text-left min-w-0">
         <div className="flex items-center gap-2">
-          <h2 className={`text-lg font-bold transition-colors duration-200 ${
-            isExpanded ? 'text-gray-900' : 'text-gray-700 group-hover:text-gray-900'
+          <h2 className={`text-xl font-bold transition-colors duration-150 ${
+            isExpanded ? 'text-surface-900' : 'text-surface-700 group-hover:text-surface-900'
           }`}>{title}</h2>
           {isComplete && !isExpanded && (
             <span className="text-xs font-medium text-green-600 bg-green-50 px-2 py-0.5">Complete</span>
@@ -66,7 +66,7 @@ function SectionHeader({ number, title, subtitle, isExpanded, isComplete, summar
           <p className="text-sm text-surface-400 mt-0.5">Click to expand</p>
         )}
       </div>
-      <ChevronRight className={`w-5 h-5 text-surface-400 flex-shrink-0 transition-transform duration-200 ${
+      <ChevronRight className={`w-5 h-5 text-surface-400 flex-shrink-0 transition-transform duration-150 ${
         isExpanded ? 'rotate-90' : 'group-hover:text-surface-600'
       }`} />
     </button>
@@ -80,8 +80,8 @@ function RequiredDot() {
 function FieldError({ message }: { message?: string }) {
   if (!message) return null
   return (
-    <p className="text-xs text-red-600 mt-1 flex items-center gap-1">
-      <AlertCircle className="w-3 h-3 flex-shrink-0" />
+    <p className="text-xs text-red-600 mt-2 flex items-center gap-1.5">
+      <AlertCircle className="w-3.5 h-3.5 flex-shrink-0" />
       {message}
     </p>
   )
@@ -258,16 +258,16 @@ export default function SubmitProjectPage() {
   if (isLoggedIn === false) {
     return (
       <div className="max-w-md mx-auto px-4 py-20 text-center">
-        <LogIn className="w-10 h-10 text-gray-400 mx-auto mb-4" />
-        <h1 className="text-xl font-bold text-gray-900 mb-2">Log in to share a project</h1>
-        <p className="text-gray-600 text-sm mb-6">
+        <LogIn className="w-10 h-10 text-surface-400 mx-auto mb-4" />
+        <h1 className="text-xl font-bold text-surface-900 mb-2">Log in to share a project</h1>
+        <p className="text-surface-600 text-sm mb-6">
           You need an account to submit projects to PathForge.
         </p>
         <div className="flex items-center justify-center gap-4">
           <Link href="/auth/login" className="bg-brand-orange text-white px-5 py-2.5 text-sm font-medium hover:opacity-90 transition-opacity">
             Log in
           </Link>
-          <Link href="/auth/signup" className="text-gray-500 hover:text-gray-900 text-sm font-medium">
+          <Link href="/auth/signup" className="text-surface-500 hover:text-surface-900 text-sm font-medium transition-colors duration-150">
             Sign up
           </Link>
         </div>
@@ -277,16 +277,18 @@ export default function SubmitProjectPage() {
 
   // Loading auth state
   if (isLoggedIn === null) {
-    return <div className="max-w-2xl mx-auto px-4 py-20 text-center text-gray-400">Loading...</div>
+    return <div className="max-w-2xl mx-auto px-4 py-20 text-center text-surface-400">Loading...</div>
   }
 
   // Success
   if (submitted) {
     return (
       <div className="max-w-2xl mx-auto px-4 py-20 text-center">
-        <div className="text-5xl mb-4">🔥</div>
-        <h1 className="text-2xl font-bold text-gray-900 mb-2">Project Submitted!</h1>
-        <p className="text-gray-600 mb-6">
+        <div className="w-14 h-14 bg-green-500 text-white flex items-center justify-center mx-auto mb-4">
+          <Check className="w-7 h-7" />
+        </div>
+        <h1 className="text-2xl font-bold text-surface-900 mb-2">Project Submitted!</h1>
+        <p className="text-surface-600 mb-6">
           Your project has been submitted for review. An admin will approve it shortly.
         </p>
         <div className="flex items-center justify-center gap-4">
@@ -310,7 +312,7 @@ export default function SubmitProjectPage() {
               setHasAttemptedSubmit(false)
               setValidationErrors({})
             }}
-            className="text-gray-500 hover:text-gray-900 text-sm font-medium"
+            className="text-surface-500 hover:text-surface-900 text-sm font-medium transition-colors duration-150"
           >
             Submit Another
           </button>
@@ -328,7 +330,7 @@ export default function SubmitProjectPage() {
   const fieldBorder = (fieldKey: string) =>
     validationErrors[fieldKey]
       ? 'border-red-400 focus:border-red-500 focus:ring-red-200/50'
-      : 'border-gray-300 focus:border-brand-orange focus:ring-brand-orange/20'
+      : 'border-surface-200 focus:border-brand-orange focus:ring-brand-orange/20'
 
   // Section completion checks
   const section1Complete = !!(title.trim() && description.trim() && story.trim() && categorySlug && difficulty)
@@ -369,7 +371,7 @@ export default function SubmitProjectPage() {
 
   return (
     <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
-      <Link href="/browse" className="text-sm text-gray-500 hover:text-gray-900 flex items-center gap-1 mb-6 transition-colors duration-200">
+      <Link href="/browse" className="text-sm text-surface-500 hover:text-surface-900 flex items-center gap-1 mb-6 transition-colors duration-150">
         <ArrowLeft className="w-4 h-4" />
         Back to browse
       </Link>
@@ -385,10 +387,10 @@ export default function SubmitProjectPage() {
         </div>
       )}
 
-      <form onSubmit={handleSubmit} noValidate className="space-y-3">
+      <form onSubmit={handleSubmit} noValidate className="space-y-4">
 
         {/* ═══════ SECTION 1: PROJECT BASICS ═══════ */}
-        <section data-section="1" className={`border transition-all duration-200 ${openSections.has(1) ? 'border-surface-200 shadow-sm bg-white' : 'border-surface-100 bg-surface-50/50'}`}>
+        <section data-section="1" className={`border transition-all duration-150 ${openSections.has(1) ? 'border-surface-200 shadow-sm bg-white' : 'border-surface-100 bg-surface-50/50'}`}>
           <SectionHeader
             number={1}
             title="Project Basics"
@@ -408,7 +410,7 @@ export default function SubmitProjectPage() {
                 onChange={(e) => setTitle(e.target.value)}
                 placeholder="Name your project..."
                 aria-label="Project title"
-                className={`w-full bg-transparent text-2xl sm:text-3xl font-bold text-gray-900 placeholder-gray-300 py-2 border-b-2 focus:outline-none transition-colors duration-200 ${
+                className={`w-full bg-transparent text-2xl sm:text-3xl font-bold text-surface-900 placeholder-surface-300 py-2 border-b-2 focus:outline-none transition-colors duration-150 ${
                   validationErrors.title
                     ? 'border-red-400 focus:border-red-500'
                     : 'border-transparent focus:border-brand-orange'
@@ -419,7 +421,7 @@ export default function SubmitProjectPage() {
 
             {/* Description */}
             <div data-field="description">
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-surface-700 mb-1">
                 Short Description <RequiredDot />
               </label>
               <textarea
@@ -427,23 +429,23 @@ export default function SubmitProjectPage() {
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 placeholder="One or two sentences about what you built and the result"
-                className={`w-full bg-white border text-gray-900 placeholder-gray-400 px-4 py-2.5 text-sm focus:outline-none focus:ring-1 transition-colors duration-200 ${fieldBorder('description')}`}
+                className={`w-full bg-white border text-surface-900 placeholder-surface-400 px-4 py-2.5 text-sm focus:outline-none focus:ring-1 transition-colors duration-150 ${fieldBorder('description')}`}
               />
               <FieldError message={validationErrors.description} />
             </div>
 
             {/* The Story */}
             <div data-field="story">
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-surface-700 mb-1">
                 The Story <RequiredDot />
               </label>
-              <p className="text-xs text-gray-500 mb-1.5 block">What did you build and why? What problem were you solving?</p>
+              <p className="text-xs text-surface-500 mb-1.5 block">What did you build and why? What problem were you solving?</p>
               <textarea
                 rows={4}
                 value={story}
                 onChange={(e) => setStory(e.target.value)}
                 placeholder="Tell the story of your project — what you needed, why you used AI, and how it went..."
-                className={`w-full bg-white border text-gray-900 placeholder-gray-400 px-4 py-2.5 text-sm focus:outline-none focus:ring-1 transition-colors duration-200 ${fieldBorder('story')}`}
+                className={`w-full bg-white border text-surface-900 placeholder-surface-400 px-4 py-2.5 text-sm focus:outline-none focus:ring-1 transition-colors duration-150 ${fieldBorder('story')}`}
               />
               <FieldError message={validationErrors.story} />
             </div>
@@ -451,10 +453,10 @@ export default function SubmitProjectPage() {
             {/* Category, Difficulty, Model */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div data-field="category">
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-surface-700 mb-1">
                   Category <RequiredDot />
                 </label>
-                <select value={categorySlug} onChange={(e) => setCategorySlug(e.target.value)} className={`w-full bg-white border text-gray-900 px-4 py-2.5 text-sm focus:outline-none focus:ring-1 transition-colors duration-200 ${fieldBorder('category')}`}>
+                <select value={categorySlug} onChange={(e) => setCategorySlug(e.target.value)} className={`w-full bg-white border text-surface-900 px-4 py-2.5 text-sm focus:outline-none focus:ring-1 transition-colors duration-150 ${fieldBorder('category')}`}>
                   <option value="">Select</option>
                   {categories.map(cat => (
                     <option key={cat.slug} value={cat.slug}>{cat.name}</option>
@@ -463,10 +465,10 @@ export default function SubmitProjectPage() {
                 <FieldError message={validationErrors.category} />
               </div>
               <div data-field="difficulty">
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-surface-700 mb-1">
                   Difficulty <RequiredDot />
                 </label>
-                <select value={difficulty} onChange={(e) => setDifficulty(e.target.value)} className={`w-full bg-white border text-gray-900 px-4 py-2.5 text-sm focus:outline-none focus:ring-1 transition-colors duration-200 ${fieldBorder('difficulty')}`}>
+                <select value={difficulty} onChange={(e) => setDifficulty(e.target.value)} className={`w-full bg-white border text-surface-900 px-4 py-2.5 text-sm focus:outline-none focus:ring-1 transition-colors duration-150 ${fieldBorder('difficulty')}`}>
                   <option value="">Select</option>
                   <option value="beginner">Beginner</option>
                   <option value="intermediate">Intermediate</option>
@@ -475,8 +477,8 @@ export default function SubmitProjectPage() {
                 <FieldError message={validationErrors.difficulty} />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Model Used</label>
-                <select value={modelId} onChange={(e) => setModelId(e.target.value)} className="w-full bg-white border border-gray-300 text-gray-900 px-4 py-2.5 text-sm focus:outline-none focus:border-brand-orange focus:ring-1 focus:ring-brand-orange/20 transition-colors duration-200">
+                <label className="block text-sm font-medium text-surface-700 mb-1">Model Used</label>
+                <select value={modelId} onChange={(e) => setModelId(e.target.value)} className="w-full bg-white border border-surface-200 text-surface-900 px-4 py-2.5 text-sm focus:outline-none focus:border-brand-orange focus:ring-1 focus:ring-brand-orange/20 transition-colors duration-150">
                   <option value="">Select model</option>
                   {Object.entries(modelsByProvider).map(([provider, models]) => (
                     <optgroup key={provider} label={provider}>
@@ -492,10 +494,10 @@ export default function SubmitProjectPage() {
 
             {modelId === 'other' && (
               <div data-field="customModel">
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-surface-700 mb-1">
                   Model Name <RequiredDot />
                 </label>
-                <input type="text" value={customModel} onChange={(e) => setCustomModel(e.target.value)} placeholder="Enter the model name" className={`w-full bg-white border text-gray-900 placeholder-gray-400 px-4 py-2.5 text-sm focus:outline-none focus:ring-1 transition-colors duration-200 ${fieldBorder('customModel')}`} />
+                <input type="text" value={customModel} onChange={(e) => setCustomModel(e.target.value)} placeholder="Enter the model name" className={`w-full bg-white border text-surface-900 placeholder-surface-400 px-4 py-2.5 text-sm focus:outline-none focus:ring-1 transition-colors duration-150 ${fieldBorder('customModel')}`} />
                 <FieldError message={validationErrors.customModel} />
               </div>
             )}
@@ -503,7 +505,7 @@ export default function SubmitProjectPage() {
         </section>
 
         {/* ═══════ SECTION 2: YOUR BUILD JOURNEY ═══════ */}
-        <section data-section="2" className={`border transition-all duration-200 ${openSections.has(2) ? 'border-surface-200 shadow-sm bg-white' : 'border-surface-100 bg-surface-50/50'}`}>
+        <section data-section="2" className={`border transition-all duration-150 ${openSections.has(2) ? 'border-surface-200 shadow-sm bg-white' : 'border-surface-100 bg-surface-50/50'}`}>
           <SectionHeader
             number={2}
             title="Your Build Journey"
@@ -521,35 +523,35 @@ export default function SubmitProjectPage() {
               type="button"
               onClick={() => setIsChain(true)}
               aria-pressed={isChain}
-              className={`flex items-center gap-3 p-4 border-2 text-left transition-all duration-200 ${
+              className={`flex items-center gap-3 p-4 border-2 text-left cursor-pointer transition-all duration-150 ${
                 isChain
                   ? 'border-brand-orange bg-primary-50 shadow-[inset_4px_0_0_var(--color-brand-orange)]'
-                  : 'border-gray-200 bg-white hover:border-gray-300 hover:bg-gray-50 hover:shadow-sm'
+                  : 'border-surface-200 bg-white hover:border-surface-300 hover:bg-surface-50 hover:shadow-sm'
               }`}
             >
-              <GitBranch className={`w-5 h-5 flex-shrink-0 ${isChain ? 'text-brand-orange' : 'text-gray-400'}`} />
+              <GitBranch className={`w-5 h-5 flex-shrink-0 transition-colors duration-150 ${isChain ? 'text-brand-orange' : 'text-surface-400'}`} />
               <div>
-                <div className={`text-sm font-semibold flex items-center gap-2 ${isChain ? 'text-gray-900' : 'text-gray-600'}`}>
+                <div className={`text-sm font-semibold flex items-center gap-2 ${isChain ? 'text-surface-900' : 'text-surface-600'}`}>
                   Multi-step
                   <span className="text-[10px] font-medium uppercase tracking-wider text-brand-orange bg-brand-orange/10 px-1.5 py-0.5">Recommended</span>
                 </div>
-                <div className="text-xs text-gray-500">Show each prompt→result</div>
+                <div className="text-xs text-surface-500">Show each prompt→result</div>
               </div>
             </button>
             <button
               type="button"
               onClick={() => setIsChain(false)}
               aria-pressed={!isChain}
-              className={`flex items-center gap-3 p-4 border-2 text-left transition-all duration-200 ${
+              className={`flex items-center gap-3 p-4 border-2 text-left cursor-pointer transition-all duration-150 ${
                 !isChain
                   ? 'border-brand-orange bg-primary-50 shadow-[inset_4px_0_0_var(--color-brand-orange)]'
-                  : 'border-gray-200 bg-white hover:border-gray-300 hover:bg-gray-50 hover:shadow-sm'
+                  : 'border-surface-200 bg-white hover:border-surface-300 hover:bg-surface-50 hover:shadow-sm'
               }`}
             >
-              <FileText className={`w-5 h-5 flex-shrink-0 ${!isChain ? 'text-brand-orange' : 'text-gray-400'}`} />
+              <FileText className={`w-5 h-5 flex-shrink-0 transition-colors duration-150 ${!isChain ? 'text-brand-orange' : 'text-surface-400'}`} />
               <div>
-                <div className={`text-sm font-semibold ${!isChain ? 'text-gray-900' : 'text-gray-600'}`}>Single prompt</div>
-                <div className="text-xs text-gray-500">One prompt, one result</div>
+                <div className={`text-sm font-semibold ${!isChain ? 'text-surface-900' : 'text-surface-600'}`}>Single prompt</div>
+                <div className="text-xs text-surface-500">One prompt, one result</div>
               </div>
             </button>
           </div>
@@ -558,33 +560,33 @@ export default function SubmitProjectPage() {
           {!isChain ? (
             <div className="space-y-5">
               <div data-field="promptContent">
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-surface-700 mb-1">
                   The Prompt You Used <RequiredDot />
                 </label>
-                <textarea rows={8} value={promptContent} onChange={(e) => setPromptContent(e.target.value)} placeholder="Paste the prompt you used to create this project..." className={`w-full bg-white border text-gray-900 placeholder-gray-400 px-4 py-2.5 text-sm font-mono focus:outline-none focus:ring-1 transition-colors duration-200 ${fieldBorder('promptContent')}`} />
+                <textarea rows={8} value={promptContent} onChange={(e) => setPromptContent(e.target.value)} placeholder="Paste the prompt you used to create this project..." className={`w-full bg-white border text-surface-900 placeholder-surface-400 px-4 py-2.5 text-sm font-mono focus:outline-none focus:ring-1 transition-colors duration-150 ${fieldBorder('promptContent')}`} />
                 <FieldError message={validationErrors.promptContent} />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">The Result <span className="text-gray-400 font-normal">(optional)</span></label>
-                <p className="text-xs text-gray-500 mb-1.5 block">What did the AI produce? Share text, screenshots, or both.</p>
-                <textarea rows={6} value={resultContent} onChange={(e) => setResultContent(e.target.value)} placeholder="Paste or describe what the AI generated..." className="w-full bg-white border border-gray-300 text-gray-900 placeholder-gray-400 px-4 py-2.5 text-sm focus:outline-none focus:border-brand-orange focus:ring-1 focus:ring-brand-orange/20 mb-3 transition-colors duration-200" />
+                <label className="block text-sm font-medium text-surface-700 mb-1">The Result <span className="text-surface-400 font-normal">(optional)</span></label>
+                <p className="text-xs text-surface-500 mb-1.5 block">What did the AI produce? Share text, screenshots, or both.</p>
+                <textarea rows={6} value={resultContent} onChange={(e) => setResultContent(e.target.value)} placeholder="Paste or describe what the AI generated..." className="w-full bg-white border border-surface-200 text-surface-900 placeholder-surface-400 px-4 py-2.5 text-sm focus:outline-none focus:border-brand-orange focus:ring-1 focus:ring-brand-orange/20 mb-3 transition-colors duration-150" />
                 <ImageUpload images={resultImages} onChange={setResultImages} label="Screenshots" />
               </div>
             </div>
           ) : (
-            <div className="space-y-3" data-field="steps">
+            <div className="space-y-4" data-field="steps">
               {/* Step progress bar */}
               {totalSteps > 0 && (
                 <div className="mb-4">
-                  <div className="flex items-center justify-between mb-1.5">
-                    <span className="text-xs font-medium text-gray-600">
-                      {filledSteps} of {totalSteps} step{totalSteps !== 1 ? 's' : ''} filled
+                  <div className="flex items-center justify-between mb-2">
+                    <span className={`text-sm font-semibold ${progressPercent === 100 ? 'text-green-600' : 'text-surface-700'}`}>
+                      {progressPercent === 100 ? 'All steps complete' : `${filledSteps} of ${totalSteps} step${totalSteps !== 1 ? 's' : ''} filled`}
                     </span>
-                    <span className="text-xs text-gray-400">{progressPercent}%</span>
+                    <span className={`text-xs font-medium ${progressPercent === 100 ? 'text-green-500' : 'text-surface-400'}`}>{progressPercent}%</span>
                   </div>
-                  <div className="h-1.5 bg-gray-100 w-full overflow-hidden" role="progressbar" aria-valuenow={progressPercent} aria-valuemin={0} aria-valuemax={100} aria-label="Step completion progress">
+                  <div className="h-2 bg-surface-100 w-full overflow-hidden" role="progressbar" aria-valuenow={progressPercent} aria-valuemin={0} aria-valuemax={100} aria-label="Step completion progress">
                     <div
-                      className="h-full bg-brand-orange transition-all duration-300 ease-out"
+                      className={`h-full transition-all duration-300 ease-out ${progressPercent === 100 ? 'bg-green-500' : 'bg-brand-orange'}`}
                       style={{ width: `${progressPercent}%` }}
                     />
                   </div>
@@ -601,7 +603,7 @@ export default function SubmitProjectPage() {
                 const isPartial = !!(step.title.trim() || step.content.trim()) && !isFilled
 
                 return (
-                  <div key={idx} className={`border overflow-hidden transition-all duration-200 ${
+                  <div key={idx} className={`border overflow-hidden transition-all duration-150 ${
                     isExpanded
                       ? 'border-brand-orange/40 shadow-md bg-white'
                       : 'border-surface-200 shadow-sm bg-surface-50 hover:shadow-md hover:border-surface-300'
@@ -611,12 +613,12 @@ export default function SubmitProjectPage() {
                       type="button"
                       onClick={() => setExpandedStep(isExpanded ? -1 : idx)}
                       aria-expanded={isExpanded}
-                      className={`w-full flex items-center justify-between px-4 py-3.5 transition-colors duration-200 cursor-pointer ${
+                      className={`w-full flex items-center justify-between px-4 py-3.5 transition-colors duration-150 cursor-pointer ${
                         isExpanded ? 'bg-primary-50' : 'hover:bg-surface-100'
                       }`}
                     >
                       <div className="flex items-center gap-3">
-                        <span className={`w-7 h-7 text-xs font-bold flex items-center justify-center transition-colors duration-200 ${
+                        <span className={`w-7 h-7 text-xs font-bold flex items-center justify-center transition-colors duration-150 ${
                           isExpanded
                             ? 'bg-brand-orange text-white'
                             : isFilled
@@ -628,7 +630,7 @@ export default function SubmitProjectPage() {
                           {isFilled && !isExpanded ? <Check className="w-3.5 h-3.5" /> : idx + 1}
                         </span>
                         <div className="text-left">
-                          <span className="text-sm font-medium text-gray-900">
+                          <span className="text-sm font-medium text-surface-900">
                             {step.title || `Step ${idx + 1}`}
                           </span>
                           {/* Completion badge on collapsed cards */}
@@ -641,20 +643,20 @@ export default function SubmitProjectPage() {
                           )}
                         </div>
                       </div>
-                      <div className="flex items-center gap-1">
+                      <div className="flex items-center gap-0.5">
                         {/* Reorder controls */}
                         {steps.length > 1 && (
                           <>
-                            <button type="button" onClick={(e) => { e.stopPropagation(); moveStep(idx, -1) }} disabled={idx === 0} className="text-surface-400 hover:text-gray-700 p-1 transition-colors duration-200 disabled:opacity-30 disabled:cursor-not-allowed" title="Move up">
-                              <ArrowUp className="w-3.5 h-3.5" />
+                            <button type="button" onClick={(e) => { e.stopPropagation(); moveStep(idx, -1) }} disabled={idx === 0} className="text-surface-400 hover:text-brand-orange hover:bg-surface-100 p-2 transition-colors duration-150 disabled:text-surface-200 disabled:cursor-not-allowed disabled:hover:bg-transparent" title="Move up">
+                              <ArrowUp className="w-4 h-4" />
                             </button>
-                            <button type="button" onClick={(e) => { e.stopPropagation(); moveStep(idx, 1) }} disabled={idx === steps.length - 1} className="text-surface-400 hover:text-gray-700 p-1 transition-colors duration-200 disabled:opacity-30 disabled:cursor-not-allowed" title="Move down">
-                              <ArrowDown className="w-3.5 h-3.5" />
+                            <button type="button" onClick={(e) => { e.stopPropagation(); moveStep(idx, 1) }} disabled={idx === steps.length - 1} className="text-surface-400 hover:text-brand-orange hover:bg-surface-100 p-2 transition-colors duration-150 disabled:text-surface-200 disabled:cursor-not-allowed disabled:hover:bg-transparent" title="Move down">
+                              <ArrowDown className="w-4 h-4" />
                             </button>
                           </>
                         )}
                         {steps.length > 1 && (
-                          <button type="button" onClick={(e) => { e.stopPropagation(); removeStep(idx) }} className="text-surface-400 hover:text-red-500 p-1 transition-colors duration-200" title="Remove step">
+                          <button type="button" onClick={(e) => { e.stopPropagation(); removeStep(idx) }} className="text-surface-400 hover:text-red-500 hover:bg-red-50 p-2 transition-colors duration-150" title="Remove step">
                             <Trash2 className="w-4 h-4" />
                           </button>
                         )}
@@ -666,7 +668,7 @@ export default function SubmitProjectPage() {
                     {isExpanded && (
                       <div className="p-5 space-y-5 border-t border-surface-200 bg-white">
                         <div>
-                          <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wide mb-1.5">
+                          <label className="block text-xs font-semibold text-surface-700 uppercase tracking-wide mb-1.5">
                             Step Title <RequiredDot />
                           </label>
                           <input
@@ -674,7 +676,7 @@ export default function SubmitProjectPage() {
                             placeholder="e.g., Brand Discovery, Initial Draft, Refinement..."
                             value={step.title}
                             onChange={(e) => updateStep(idx, 'title', e.target.value)}
-                            className="w-full bg-white border border-surface-200 text-gray-900 placeholder-surface-400 px-3 py-2.5 text-sm focus:outline-none focus:border-brand-orange focus:ring-1 focus:ring-brand-orange/20 transition-colors duration-200"
+                            className="w-full bg-white border border-surface-200 text-surface-900 placeholder-surface-400 px-3 py-2.5 text-sm focus:outline-none focus:border-brand-orange focus:ring-1 focus:ring-brand-orange/20 transition-colors duration-150"
                           />
                         </div>
                         <div>
@@ -686,7 +688,7 @@ export default function SubmitProjectPage() {
                             placeholder="What was the goal of this step?"
                             value={step.description}
                             onChange={(e) => updateStep(idx, 'description', e.target.value)}
-                            className="w-full bg-white border border-surface-200 text-gray-900 placeholder-surface-400 px-3 py-2.5 text-sm focus:outline-none focus:border-brand-orange focus:ring-1 focus:ring-brand-orange/20 transition-colors duration-200"
+                            className="w-full bg-white border border-surface-200 text-surface-900 placeholder-surface-400 px-3 py-2.5 text-sm focus:outline-none focus:border-brand-orange focus:ring-1 focus:ring-brand-orange/20 transition-colors duration-150"
                           />
                         </div>
                         {/* Prompt section — visually distinct */}
@@ -699,7 +701,7 @@ export default function SubmitProjectPage() {
                             placeholder="The prompt you used at this step..."
                             value={step.content}
                             onChange={(e) => updateStep(idx, 'content', e.target.value)}
-                            className="w-full bg-white border border-surface-200 text-gray-900 placeholder-surface-400 px-3 py-2.5 text-sm font-mono focus:outline-none focus:border-brand-orange focus:ring-1 focus:ring-brand-orange/20 transition-colors duration-200"
+                            className="w-full bg-white border border-surface-200 text-surface-900 placeholder-surface-400 px-3 py-2.5 text-sm font-mono focus:outline-none focus:border-brand-orange focus:ring-1 focus:ring-brand-orange/20 transition-colors duration-150"
                           />
                         </div>
                         {/* Result section — visually distinct */}
@@ -712,7 +714,7 @@ export default function SubmitProjectPage() {
                             placeholder="What did the AI produce at this step?"
                             value={step.result_content}
                             onChange={(e) => updateStep(idx, 'result_content', e.target.value)}
-                            className="w-full bg-white border border-green-200 text-gray-900 placeholder-surface-400 px-3 py-2.5 text-sm focus:outline-none focus:border-green-400 focus:ring-1 focus:ring-green-200/40 mb-3 transition-colors duration-200"
+                            className="w-full bg-white border border-green-200 text-surface-900 placeholder-surface-400 px-3 py-2.5 text-sm focus:outline-none focus:border-green-400 focus:ring-1 focus:ring-green-200/40 mb-3 transition-colors duration-150"
                           />
                           <ImageUpload images={stepImages[idx] ?? []} onChange={(imgs) => setStepImages({ ...stepImages, [idx]: imgs })} label="Screenshots" />
                         </div>
@@ -726,9 +728,9 @@ export default function SubmitProjectPage() {
               <button
                 type="button"
                 onClick={addStep}
-                className="w-full flex items-center justify-center gap-2 text-sm font-semibold text-brand-orange bg-primary-50 border-2 border-brand-orange/40 px-4 py-3.5 hover:bg-primary-100 hover:border-brand-orange/60 active:bg-primary-200 transition-all duration-200 focus-visible:outline-2 focus-visible:outline-brand-orange focus-visible:outline-offset-2"
+                className="w-full flex items-center justify-center gap-2 text-sm font-semibold text-brand-orange bg-primary-50 border-2 border-dashed border-brand-orange/50 px-4 py-3.5 hover:bg-primary-100 hover:border-brand-orange hover:border-solid active:bg-primary-200 transition-all duration-150 focus-visible:outline-2 focus-visible:outline-brand-orange focus-visible:outline-offset-2 cursor-pointer group"
               >
-                <Plus className="w-4 h-4" /> Add Step {steps.length + 1}
+                <Plus className="w-4 h-4 transition-transform duration-150 group-hover:scale-110" /> Add Step {steps.length + 1}
               </button>
             </div>
           )}
@@ -736,7 +738,7 @@ export default function SubmitProjectPage() {
         </section>
 
         {/* ═══════ SECTION 3: DETAILS & PUBLISH ═══════ */}
-        <section data-section="3" className={`border transition-all duration-200 ${openSections.has(3) ? 'border-surface-200 shadow-sm bg-white' : 'border-surface-100 bg-surface-50/50'}`}>
+        <section data-section="3" className={`border transition-all duration-150 ${openSections.has(3) ? 'border-surface-200 shadow-sm bg-white' : 'border-surface-100 bg-surface-50/50'}`}>
           <SectionHeader
             number={3}
             title="Details & Publish"
@@ -750,28 +752,28 @@ export default function SubmitProjectPage() {
           {openSections.has(3) && <div id="section-3-panel" className="px-5 pb-5 space-y-5">
             {/* Tools */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Tools & APIs Used <span className="text-gray-400 font-normal">(optional)</span></label>
-              <input type="text" value={tools} onChange={(e) => setTools(e.target.value)} placeholder="e.g., Claude, Python, Google Sheets, Notion API" className="w-full bg-white border border-gray-300 text-gray-900 placeholder-gray-400 px-4 py-2.5 text-sm focus:outline-none focus:border-brand-orange focus:ring-1 focus:ring-brand-orange/20 transition-colors duration-200" />
+              <label className="block text-sm font-medium text-surface-700 mb-1">Tools & APIs Used <span className="text-surface-400 font-normal">(optional)</span></label>
+              <input type="text" value={tools} onChange={(e) => setTools(e.target.value)} placeholder="e.g., Claude, Python, Google Sheets, Notion API" className="w-full bg-white border border-surface-200 text-surface-900 placeholder-surface-400 px-4 py-2.5 text-sm focus:outline-none focus:border-brand-orange focus:ring-1 focus:ring-brand-orange/20 transition-colors duration-150" />
             </div>
 
             {/* Tags */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Tags <span className="text-gray-400 font-normal">(optional)</span></label>
-              <input type="text" value={tags} onChange={(e) => setTags(e.target.value)} placeholder="e.g., branding, small business, marketing" className="w-full bg-white border border-gray-300 text-gray-900 placeholder-gray-400 px-4 py-2.5 text-sm focus:outline-none focus:border-brand-orange focus:ring-1 focus:ring-brand-orange/20 transition-colors duration-200" />
+              <label className="block text-sm font-medium text-surface-700 mb-1">Tags <span className="text-surface-400 font-normal">(optional)</span></label>
+              <input type="text" value={tags} onChange={(e) => setTags(e.target.value)} placeholder="e.g., branding, small business, marketing" className="w-full bg-white border border-surface-200 text-surface-900 placeholder-surface-400 px-4 py-2.5 text-sm focus:outline-none focus:border-brand-orange focus:ring-1 focus:ring-brand-orange/20 transition-colors duration-150" />
             </div>
 
             {/* Final Result / Overall Outcome */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                {isChain ? 'Overall Outcome' : 'Final Result'} <span className="text-gray-400 font-normal">(optional)</span>
+              <label className="block text-sm font-medium text-surface-700 mb-1">
+                {isChain ? 'Overall Outcome' : 'Final Result'} <span className="text-surface-400 font-normal">(optional)</span>
               </label>
-              <p className="text-xs text-gray-500 mb-1.5 block">
+              <p className="text-xs text-surface-500 mb-1.5 block">
                 {isChain
                   ? 'Summarize the final outcome after all steps. Leave blank if your step results tell the full story.'
                   : 'Summarize the outcome. What did you end up with? Any metrics?'
                 }
               </p>
-              <textarea rows={4} value={finalResult} onChange={(e) => setFinalResult(e.target.value)} placeholder={isChain ? 'After all the steps, the final outcome was...' : 'The final result was... We saw a 23% improvement in...'} className="w-full bg-white border border-gray-300 text-gray-900 placeholder-gray-400 px-4 py-2.5 text-sm focus:outline-none focus:border-brand-orange focus:ring-1 focus:ring-brand-orange/20 transition-colors duration-200" />
+              <textarea rows={4} value={finalResult} onChange={(e) => setFinalResult(e.target.value)} placeholder={isChain ? 'After all the steps, the final outcome was...' : 'The final result was... We saw a 23% improvement in...'} className="w-full bg-white border border-surface-200 text-surface-900 placeholder-surface-400 px-4 py-2.5 text-sm focus:outline-none focus:border-brand-orange focus:ring-1 focus:ring-brand-orange/20 transition-colors duration-150" />
             </div>
           </div>}
         </section>
@@ -795,7 +797,7 @@ export default function SubmitProjectPage() {
           <button
             type="submit"
             disabled={submitting}
-            className={`w-full py-3.5 font-medium text-base transition-all duration-200 focus-visible:outline-2 focus-visible:outline-brand-orange focus-visible:outline-offset-2 ${
+            className={`w-full py-3.5 font-medium text-base transition-all duration-150 focus-visible:outline-2 focus-visible:outline-brand-orange focus-visible:outline-offset-2 ${
               submitting
                 ? 'bg-surface-300 text-surface-500 cursor-not-allowed'
                 : title.trim() && (isChain ? filledSteps > 0 : promptContent.trim())

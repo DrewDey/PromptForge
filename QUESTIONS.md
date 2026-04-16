@@ -8,6 +8,14 @@
 
 ## Open Questions
 
+### Q11: Build page — should step results use the same dark code-editor style as the detail page?
+
+On the detail page (where people view finished projects), prompt blocks use a dark terminal-style background and result blocks use a blue-tinted background. On the Build page, we currently use a light surface-50 tint for prompts and a green-50 tint for results — which feels more like "editing mode." Should we bring the dark code-editor aesthetic into the Build page too (at least for the prompt textareas), or does the lighter "editing" feel make more sense when people are actively typing? There's a tension between "preview what it'll look like" and "comfortable editing environment."
+
+**Drew's Response:**
+
+---
+
 ### Q10: Browse page cards — should cards show a thumbnail/preview image when available?
 
 Currently, project cards are text-only (title, description, category, step flow visualization, metadata). Iteration 20 improved the hierarchy so titles lead, but the cards still lack any visual "hook" — there's no screenshot or preview image to make someone stop scrolling. Adding an image thumbnail at the top of each card (when a project has uploaded images) would make the grid feel more like a gallery and help projects "sell themselves." However, it would also make cards taller, reduce the number visible above the fold, and require that we prioritize getting the image upload pipeline working. Should we: (A) keep text-only cards for now and focus on other pages, (B) add placeholder/decorative images to make cards more visual, or (C) prioritize wiring up real image uploads so cards can show actual project screenshots?

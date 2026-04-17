@@ -613,7 +613,7 @@ export default function SubmitProjectPage() {
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 placeholder="One or two sentences about what you built and the result"
-                className={`w-full bg-white border text-surface-900 placeholder-surface-400 px-4 py-2.5 text-sm focus:outline-none focus:ring-1 transition-colors duration-150 ${fieldBorder('description')}`}
+                className={`w-full bg-white border text-surface-900 placeholder-surface-400 px-4 py-2.5 text-sm focus:outline-none focus:ring-2 transition-colors duration-150 ${fieldBorder('description')}`}
               />
               <FieldError message={validationErrors.description} />
             </div>
@@ -629,7 +629,7 @@ export default function SubmitProjectPage() {
                 value={story}
                 onChange={(e) => setStory(e.target.value)}
                 placeholder="Tell the story of your project — what you needed, why you used AI, and how it went..."
-                className={`w-full bg-white border text-surface-900 placeholder-surface-400 px-4 py-2.5 text-sm focus:outline-none focus:ring-1 transition-colors duration-150 ${fieldBorder('story')}`}
+                className={`w-full bg-white border text-surface-900 placeholder-surface-400 px-4 py-2.5 text-sm focus:outline-none focus:ring-2 transition-colors duration-150 ${fieldBorder('story')}`}
               />
               <FieldError message={validationErrors.story} />
             </div>
@@ -640,7 +640,7 @@ export default function SubmitProjectPage() {
                 <label className="block text-sm font-medium text-surface-700 mb-1">
                   Category <RequiredDot />
                 </label>
-                <select value={categorySlug} onChange={(e) => setCategorySlug(e.target.value)} className={`w-full bg-white border text-surface-900 px-4 py-2.5 text-sm focus:outline-none focus:ring-1 transition-colors duration-150 ${fieldBorder('category')}`}>
+                <select value={categorySlug} onChange={(e) => setCategorySlug(e.target.value)} className={`w-full bg-white border text-surface-900 px-4 py-2.5 text-sm focus:outline-none focus:ring-2 transition-colors duration-150 ${fieldBorder('category')}`}>
                   <option value="">Select</option>
                   {categories.map(cat => (
                     <option key={cat.slug} value={cat.slug}>{cat.name}</option>
@@ -652,7 +652,7 @@ export default function SubmitProjectPage() {
                 <label className="block text-sm font-medium text-surface-700 mb-1">
                   Difficulty <RequiredDot />
                 </label>
-                <select value={difficulty} onChange={(e) => setDifficulty(e.target.value)} className={`w-full bg-white border text-surface-900 px-4 py-2.5 text-sm focus:outline-none focus:ring-1 transition-colors duration-150 ${fieldBorder('difficulty')}`}>
+                <select value={difficulty} onChange={(e) => setDifficulty(e.target.value)} className={`w-full bg-white border text-surface-900 px-4 py-2.5 text-sm focus:outline-none focus:ring-2 transition-colors duration-150 ${fieldBorder('difficulty')}`}>
                   <option value="">Select</option>
                   <option value="beginner">Beginner</option>
                   <option value="intermediate">Intermediate</option>
@@ -662,7 +662,7 @@ export default function SubmitProjectPage() {
               </div>
               <div>
                 <label className="block text-sm font-medium text-surface-700 mb-1">Model Used</label>
-                <select value={modelId} onChange={(e) => setModelId(e.target.value)} className="w-full bg-white border border-surface-200 text-surface-900 px-4 py-2.5 text-sm focus:outline-none focus:border-brand-orange focus:ring-1 focus:ring-brand-orange/20 transition-colors duration-150">
+                <select value={modelId} onChange={(e) => setModelId(e.target.value)} className="w-full bg-white border border-surface-200 text-surface-900 px-4 py-2.5 text-sm focus:outline-none focus:border-brand-orange focus:ring-2 focus:ring-brand-orange/20 transition-colors duration-150">
                   <option value="">Select model</option>
                   {Object.entries(modelsByProvider).map(([provider, models]) => (
                     <optgroup key={provider} label={provider}>
@@ -681,7 +681,7 @@ export default function SubmitProjectPage() {
                 <label className="block text-sm font-medium text-surface-700 mb-1">
                   Model Name <RequiredDot />
                 </label>
-                <input type="text" value={customModel} onChange={(e) => setCustomModel(e.target.value)} placeholder="Enter the model name" className={`w-full bg-white border text-surface-900 placeholder-surface-400 px-4 py-2.5 text-sm focus:outline-none focus:ring-1 transition-colors duration-150 ${fieldBorder('customModel')}`} />
+                <input type="text" value={customModel} onChange={(e) => setCustomModel(e.target.value)} placeholder="Enter the model name" className={`w-full bg-white border text-surface-900 placeholder-surface-400 px-4 py-2.5 text-sm focus:outline-none focus:ring-2 transition-colors duration-150 ${fieldBorder('customModel')}`} />
                 <FieldError message={validationErrors.customModel} />
               </div>
             )}
@@ -707,7 +707,7 @@ export default function SubmitProjectPage() {
               type="button"
               onClick={() => setIsChain(true)}
               aria-pressed={isChain}
-              className={`flex items-center gap-3 p-4 border-2 text-left cursor-pointer transition-all duration-150 ${
+              className={`flex items-center gap-3 p-4 border-2 text-left cursor-pointer transition-all duration-150 focus:outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange ${
                 isChain
                   ? 'border-brand-orange bg-primary-50 shadow-[inset_4px_0_0_var(--color-brand-orange)]'
                   : 'border-surface-200 bg-white hover:border-surface-300 hover:bg-surface-50 hover:shadow-sm'
@@ -726,7 +726,7 @@ export default function SubmitProjectPage() {
               type="button"
               onClick={() => setIsChain(false)}
               aria-pressed={!isChain}
-              className={`flex items-center gap-3 p-4 border-2 text-left cursor-pointer transition-all duration-150 ${
+              className={`flex items-center gap-3 p-4 border-2 text-left cursor-pointer transition-all duration-150 focus:outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange ${
                 !isChain
                   ? 'border-brand-orange bg-primary-50 shadow-[inset_4px_0_0_var(--color-brand-orange)]'
                   : 'border-surface-200 bg-white hover:border-surface-300 hover:bg-surface-50 hover:shadow-sm'
@@ -747,13 +747,13 @@ export default function SubmitProjectPage() {
                 <label className="block text-sm font-medium text-surface-700 mb-1">
                   The Prompt You Used <RequiredDot />
                 </label>
-                <textarea rows={8} value={promptContent} onChange={(e) => setPromptContent(e.target.value)} placeholder="Paste the prompt you used to create this project..." className={`w-full bg-white border text-surface-900 placeholder-surface-400 px-4 py-2.5 text-sm font-mono focus:outline-none focus:ring-1 transition-colors duration-150 ${fieldBorder('promptContent')}`} />
+                <textarea rows={8} value={promptContent} onChange={(e) => setPromptContent(e.target.value)} placeholder="Paste the prompt you used to create this project..." className={`w-full bg-white border text-surface-900 placeholder-surface-400 px-4 py-2.5 text-sm font-mono focus:outline-none focus:ring-2 transition-colors duration-150 ${fieldBorder('promptContent')}`} />
                 <FieldError message={validationErrors.promptContent} />
               </div>
               <div>
                 <label className="block text-sm font-medium text-surface-700 mb-1">The Result <span className="text-surface-400 font-normal">(optional)</span></label>
                 <p className="text-xs text-surface-500 mb-1.5 block">What did the AI produce? Share text, screenshots, or both.</p>
-                <textarea rows={6} value={resultContent} onChange={(e) => setResultContent(e.target.value)} placeholder="Paste or describe what the AI generated..." className="w-full bg-white border border-surface-200 text-surface-900 placeholder-surface-400 px-4 py-2.5 text-sm focus:outline-none focus:border-brand-orange focus:ring-1 focus:ring-brand-orange/20 mb-3 transition-colors duration-150" />
+                <textarea rows={6} value={resultContent} onChange={(e) => setResultContent(e.target.value)} placeholder="Paste or describe what the AI generated..." className="w-full bg-white border border-surface-200 text-surface-900 placeholder-surface-400 px-4 py-2.5 text-sm focus:outline-none focus:border-brand-orange focus:ring-2 focus:ring-brand-orange/20 mb-3 transition-colors duration-150" />
                 <ImageUpload images={resultImages} onChange={setResultImages} label="Screenshots" />
               </div>
             </div>
@@ -860,7 +860,7 @@ export default function SubmitProjectPage() {
                             placeholder="e.g., Brand Discovery, Initial Draft, Refinement..."
                             value={step.title}
                             onChange={(e) => updateStep(idx, 'title', e.target.value)}
-                            className="w-full bg-white border border-surface-200 text-surface-900 placeholder-surface-400 px-3 py-2.5 text-sm focus:outline-none focus:border-brand-orange focus:ring-1 focus:ring-brand-orange/20 transition-colors duration-150"
+                            className="w-full bg-white border border-surface-200 text-surface-900 placeholder-surface-400 px-3 py-2.5 text-sm focus:outline-none focus:border-brand-orange focus:ring-2 focus:ring-brand-orange/20 transition-colors duration-150"
                           />
                         </div>
                         <div>
@@ -872,7 +872,7 @@ export default function SubmitProjectPage() {
                             placeholder="What was the goal of this step?"
                             value={step.description}
                             onChange={(e) => updateStep(idx, 'description', e.target.value)}
-                            className="w-full bg-white border border-surface-200 text-surface-900 placeholder-surface-400 px-3 py-2.5 text-sm focus:outline-none focus:border-brand-orange focus:ring-1 focus:ring-brand-orange/20 transition-colors duration-150"
+                            className="w-full bg-white border border-surface-200 text-surface-900 placeholder-surface-400 px-3 py-2.5 text-sm focus:outline-none focus:border-brand-orange focus:ring-2 focus:ring-brand-orange/20 transition-colors duration-150"
                           />
                         </div>
                         {/* Prompt section — visually distinct */}
@@ -885,7 +885,7 @@ export default function SubmitProjectPage() {
                             placeholder="The prompt you used at this step..."
                             value={step.content}
                             onChange={(e) => updateStep(idx, 'content', e.target.value)}
-                            className="w-full bg-white border border-surface-200 text-surface-900 placeholder-surface-400 px-3 py-2.5 text-sm font-mono focus:outline-none focus:border-brand-orange focus:ring-1 focus:ring-brand-orange/20 transition-colors duration-150"
+                            className="w-full bg-white border border-surface-200 text-surface-900 placeholder-surface-400 px-3 py-2.5 text-sm font-mono focus:outline-none focus:border-brand-orange focus:ring-2 focus:ring-brand-orange/20 transition-colors duration-150"
                           />
                         </div>
                         {/* Result section — visually distinct */}
@@ -898,7 +898,7 @@ export default function SubmitProjectPage() {
                             placeholder="What did the AI produce at this step?"
                             value={step.result_content}
                             onChange={(e) => updateStep(idx, 'result_content', e.target.value)}
-                            className="w-full bg-white border border-green-200 text-surface-900 placeholder-surface-400 px-3 py-2.5 text-sm focus:outline-none focus:border-green-400 focus:ring-1 focus:ring-green-200/40 mb-3 transition-colors duration-150"
+                            className="w-full bg-white border border-green-200 text-surface-900 placeholder-surface-400 px-3 py-2.5 text-sm focus:outline-none focus:border-green-400 focus:ring-2 focus:ring-green-200/40 mb-3 transition-colors duration-150"
                           />
                           <ImageUpload images={stepImages[idx] ?? []} onChange={(imgs) => setStepImages({ ...stepImages, [idx]: imgs })} label="Screenshots" />
                         </div>
@@ -937,13 +937,13 @@ export default function SubmitProjectPage() {
             {/* Tools */}
             <div>
               <label className="block text-sm font-medium text-surface-700 mb-1">Tools & APIs Used <span className="text-surface-400 font-normal">(optional)</span></label>
-              <input type="text" value={tools} onChange={(e) => setTools(e.target.value)} placeholder="e.g., Claude, Python, Google Sheets, Notion API" className="w-full bg-white border border-surface-200 text-surface-900 placeholder-surface-400 px-4 py-2.5 text-sm focus:outline-none focus:border-brand-orange focus:ring-1 focus:ring-brand-orange/20 transition-colors duration-150" />
+              <input type="text" value={tools} onChange={(e) => setTools(e.target.value)} placeholder="e.g., Claude, Python, Google Sheets, Notion API" className="w-full bg-white border border-surface-200 text-surface-900 placeholder-surface-400 px-4 py-2.5 text-sm focus:outline-none focus:border-brand-orange focus:ring-2 focus:ring-brand-orange/20 transition-colors duration-150" />
             </div>
 
             {/* Tags */}
             <div>
               <label className="block text-sm font-medium text-surface-700 mb-1">Tags <span className="text-surface-400 font-normal">(optional)</span></label>
-              <input type="text" value={tags} onChange={(e) => setTags(e.target.value)} placeholder="e.g., branding, small business, marketing" className="w-full bg-white border border-surface-200 text-surface-900 placeholder-surface-400 px-4 py-2.5 text-sm focus:outline-none focus:border-brand-orange focus:ring-1 focus:ring-brand-orange/20 transition-colors duration-150" />
+              <input type="text" value={tags} onChange={(e) => setTags(e.target.value)} placeholder="e.g., branding, small business, marketing" className="w-full bg-white border border-surface-200 text-surface-900 placeholder-surface-400 px-4 py-2.5 text-sm focus:outline-none focus:border-brand-orange focus:ring-2 focus:ring-brand-orange/20 transition-colors duration-150" />
             </div>
 
             {/* Final Result / Overall Outcome */}
@@ -957,7 +957,7 @@ export default function SubmitProjectPage() {
                   : 'Summarize the outcome. What did you end up with? Any metrics?'
                 }
               </p>
-              <textarea rows={4} value={finalResult} onChange={(e) => setFinalResult(e.target.value)} placeholder={isChain ? 'After all the steps, the final outcome was...' : 'The final result was... We saw a 23% improvement in...'} className="w-full bg-white border border-surface-200 text-surface-900 placeholder-surface-400 px-4 py-2.5 text-sm focus:outline-none focus:border-brand-orange focus:ring-1 focus:ring-brand-orange/20 transition-colors duration-150" />
+              <textarea rows={4} value={finalResult} onChange={(e) => setFinalResult(e.target.value)} placeholder={isChain ? 'After all the steps, the final outcome was...' : 'The final result was... We saw a 23% improvement in...'} className="w-full bg-white border border-surface-200 text-surface-900 placeholder-surface-400 px-4 py-2.5 text-sm focus:outline-none focus:border-brand-orange focus:ring-2 focus:ring-brand-orange/20 transition-colors duration-150" />
             </div>
           </div>}
         </section>

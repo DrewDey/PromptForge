@@ -52,14 +52,14 @@ export default function AdminPromptRow({
           <div className="flex items-center justify-end gap-2">
             <button
               onClick={() => approvePrompt(prompt.id)}
-              className="flex items-center gap-1 text-xs font-medium text-green-700 hover:text-green-900 bg-green-50 hover:bg-green-100 px-2.5 py-1.5 transition-colors duration-200"
+              className="flex items-center gap-1 text-xs font-medium text-green-700 hover:text-green-900 bg-green-50 hover:bg-green-100 px-2.5 py-1.5 transition-colors duration-200 focus:outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-green-600"
             >
               <CheckCircle className="w-3.5 h-3.5" />
               Approve
             </button>
             <button
               onClick={() => rejectPrompt(prompt.id)}
-              className="flex items-center gap-1 text-xs font-medium text-red-700 hover:text-red-900 bg-red-50 hover:bg-red-100 px-2.5 py-1.5 transition-colors duration-200"
+              className="flex items-center gap-1 text-xs font-medium text-red-700 hover:text-red-900 bg-red-50 hover:bg-red-100 px-2.5 py-1.5 transition-colors duration-200 focus:outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-500"
             >
               <XCircle className="w-3.5 h-3.5" />
               Reject

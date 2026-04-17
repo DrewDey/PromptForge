@@ -69,7 +69,7 @@ export default function ImageUpload({
               <button
                 type="button"
                 onClick={() => removeImage(idx)}
-                className="absolute top-2 right-2 w-7 h-7 bg-surface-900/60 hover:bg-surface-900/80 flex items-center justify-center opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity duration-150"
+                className="absolute top-2 right-2 w-7 h-7 bg-surface-900/60 hover:bg-surface-900/80 flex items-center justify-center opacity-100 sm:opacity-0 sm:group-hover:opacity-100 sm:focus-visible:opacity-100 transition-opacity duration-150 focus:outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
               >
                 <X className="w-3.5 h-3.5 text-white" />
               </button>
@@ -78,7 +78,7 @@ export default function ImageUpload({
                 placeholder="Add a caption..."
                 value={img.caption}
                 onChange={(e) => updateCaption(idx, e.target.value)}
-                className="w-full px-2 py-1.5 text-xs border-t border-surface-200 focus:outline-none focus:bg-surface-50 transition-colors duration-150"
+                className="w-full px-2 py-1.5 text-xs border-t border-surface-200 focus:outline-none focus:bg-surface-50 focus:ring-2 focus:ring-brand-orange/20 focus:ring-inset transition-colors duration-150"
               />
             </div>
           ))}
@@ -89,7 +89,7 @@ export default function ImageUpload({
       <button
         type="button"
         onClick={() => fileInputRef.current?.click()}
-        className="flex items-center gap-2 text-sm text-surface-500 hover:text-brand-orange bg-surface-50 hover:bg-primary-50 px-3 py-2.5 border border-dashed border-surface-300 hover:border-brand-orange/40 transition-colors duration-150 w-full justify-center cursor-pointer"
+        className="flex items-center gap-2 text-sm text-surface-500 hover:text-brand-orange bg-surface-50 hover:bg-primary-50 px-3 py-2.5 border border-dashed border-surface-300 hover:border-brand-orange/40 transition-colors duration-150 w-full justify-center cursor-pointer focus:outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange"
       >
         <ImagePlus className="w-4 h-4" />
         Add Screenshot

@@ -16,9 +16,9 @@ Pick the top item in your queue, ship it, move it to the Done table with one lin
 
 Small, well-scoped, visible improvements. A human landing on the site should notice.
 
-1. **Focus-ring consistency audit.** Tab through Browse + Build + detail. Note any interactive element with missing, wrong-color, or inconsistent focus ring. Fix in one pass.
-2. **Typography scale pass on the detail page.** H1 title, H2 section headers, step labels, body, metadata — are the sizes + weights + tracking consistent? Tighten any outliers.
-3. **Landing "Why It Works" card copy.** The three cards (See Every Step / Fork & Adapt / Proven Results) read as generic feature bullets. Rewrite body copy to speak in the first person of someone forking tonight — concrete, not brochure.
+1. **Typography scale pass on the detail page.** H1 title, H2 section headers, step labels, body, metadata — are the sizes + weights + tracking consistent? Tighten any outliers.
+2. **Landing "Why It Works" card copy.** The three cards (See Every Step / Fork & Adapt / Proven Results) read as generic feature bullets. Rewrite body copy to speak in the first person of someone forking tonight — concrete, not brochure.
+3. **Focus-ring audit — second pass.** Iter 40 covered CopyButton, VoteBookmarkButtons, builder step controls. Still missing rings: AdminPromptRow approve/reject, ImageUpload add/remove/caption, `/prompt/new` chain/single toggle buttons. Also: form inputs on `/prompt/new` use `focus:ring-1` while `/auth/*` uses `focus:ring-2` — pick one and unify.
 
 ---
 
@@ -47,8 +47,8 @@ History older than this lives in `git log`.
 
 | Date | Change |
 |------|--------|
+| 2026-04-17 | Iter 40 — Focus-ring first pass: audited `focus:`/`focus-visible:` across src and found three interactive elements on priority pages shipping with zero focus ring — CopyButton (every code block on detail), VoteBookmarkButtons (detail header, both size variants = 4 buttons), and the builder step up/down/remove controls on `/prompt/new`. Added the site-standard `focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange` to all, with CopyButton's dark variant switching to `outline-white` (orange-on-orange would vanish against the CodeBlock header) and the step-remove button switching to `outline-red-500` (matches its destructive hover color). Remaining gaps filed as second-pass Polish item: AdminPromptRow, ImageUpload, chain/single toggles, and the ring-1 vs ring-2 input inconsistency. |
 | 2026-04-17 | Iter 39 — PromptCard long-title clamp: added `line-clamp-2` to the title h3 (both Featured and regular variants) so over-long project titles no longer push card heights out of grid alignment; ellipsis communicates truncation, computed style matches the already-proven description clamp. |
 | 2026-04-17 | Iter 38 — CodeBlock header chrome unified across prompt (orange) and result (blue): dark CopyButton now matches the label spec exactly (tracking-[0.14em] and text-surface-300), gains shrink-0 so the "Copy" chip holds its width on narrow mobile, and the header label also gains shrink-0 so "PROMPT"/"RESULT" can't collapse before the meta truncates. |
 | 2026-04-17 | Iter 37 — Landing final CTA rewritten for the visitor-with-tokens-and-no-idea: headline now "You've got the tools. / You've got tonight." with orange second line echoing the hero, subtext lands the "real thing by bedtime" promise, primary CTA inverted from signup-first to `/browse` (signup is friction before they've seen the product) and demoted to secondary link, Users icon swapped to Terminal to signal "at your desk with AI tools." |
 | 2026-04-17 | Iter 36 — Detail page meta row polish: byline collapsed to one line ("by Name · Date"), meta pills unified to one neutral spec (surface-50/surface-700/surface-200) with Category as the sole orange-tinted primary classifier, difficulty now just a colored dot on a neutral pill, redundant N-step chip removed (it duplicated the Build Path heading). |
-| 2026-04-17 | Iter 35 — Fork/remix affordance: dark CTA strip in the detail-page header with GitFork icon + "Use as starting point" orange button linking to `/prompt/new`; copy is explicit ("auto-prefill coming soon") so the placeholder doesn't mislead until Structural #5 wires real prefill. |

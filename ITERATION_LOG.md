@@ -4,6 +4,14 @@ Most recent first. Cap each entry at 3 sentences. Older history lives in `git lo
 
 ---
 
+## Iter 40 — 2026-04-17 — Focus-ring audit (first pass)
+
+Picked Polish #1 (focus-ring audit): grep across src showed the site-standard ring is `focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange` and is consistently applied on Header, Footer, PromptCard, CategoryCard, landing, browse, and the builder's section headers/add-step button — but three interactive clusters on priority pages shipped with *zero* focus ring: CopyButton (once per code block × 2 blocks per step = 6+ instances per detail page), VoteBookmarkButtons (both size variants, so 4 buttons), and the builder's per-step move-up / move-down / remove controls on `/prompt/new`. Added the standard ring to all, with two deliberate deviations: CopyButton's dark variant uses `outline-white` because `outline-brand-orange` would vanish against the orange CodeBlock header, and the step-remove button uses `outline-red-500` to match its destructive red hover (the move-up/down buttons keep the brand-orange ring to match their orange hover). Verified via Chrome MCP on `/prompt/...3312` (`focus-visible:outline-brand-orange` class found on vote + bookmark buttons, `focus-visible:outline-white` on the CopyButton; Tailwind-generated CSS rules for all three utilities confirmed present in the stylesheet), `/browse` and `/prompt/new` reload clean with zero console errors, `npx tsc --noEmit` passes.
+
+**Files touched:** `src/app/prompt/[id]/CopyButton.tsx`, `src/components/VoteBookmarkButtons.tsx`, `src/app/prompt/new/page.tsx`, `BACKLOG.md`, `ITERATION_LOG.md`.
+
+---
+
 ## Iter 39 — 2026-04-17 — PromptCard long-title line-clamp
 
 Picked Polish #1 (long-title truncation): the PromptCard title `<h3>` had no line-clamp, so a project with a title longer than ~60 chars would wrap to 3+ lines and push that card taller than its neighbours, breaking grid alignment on `/browse` and the profile pages. Added `line-clamp-2` (same utility already shipping on the description and OUTCOME pull-quote since iter 29) to the title, which Tailwind v4 resolves to `-webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden` — the computed style now matches the already-proven description clamp exactly, so long titles ellipsize cleanly on both Featured (`text-xl`) and regular (`text-base`) variants. Verified via Chrome MCP on `/browse` (20 cards / 2 featured, all h3s carry `line-clamp-2` with computed `webkit-line-clamp: 2 + overflow: hidden` matching the reference description clamp, zero console errors) and `/prompt/new` (login gate as expected); `npx tsc --noEmit` passes. Layout dimensions returned 0 under the Chrome extension's JS bridge (known iter-35 artifact), but computed-style matching the proven clamp + class presence is sufficient for this one-utility-class CSS change.

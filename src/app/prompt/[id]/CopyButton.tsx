@@ -35,11 +35,16 @@ export default function CopyButton({
   // Copy button width is fixed; label/meta in the header are free to shrink.
   const trackingCls = variant === 'dark' ? 'tracking-[0.14em]' : 'tracking-wider'
   const shrinkCls = variant === 'dark' ? 'shrink-0' : ''
+  // Focus ring matches the surface: brand-orange on light cards, white on the
+  // dark CodeBlock header where orange-on-orange would disappear.
+  const focusCls = variant === 'dark'
+    ? 'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white'
+    : 'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange'
 
   return (
     <button
       onClick={handleCopy}
-      className={`inline-flex items-center gap-1.5 text-[11px] font-mono font-semibold uppercase ${trackingCls} ${shrinkCls} px-2.5 py-1 border transition-all duration-200 ${
+      className={`inline-flex items-center gap-1.5 text-[11px] font-mono font-semibold uppercase ${trackingCls} ${shrinkCls} ${focusCls} px-2.5 py-1 border transition-all duration-200 ${
         variant === 'dark' ? darkCls : lightCls
       }`}
       title={copied ? 'Copied to clipboard!' : 'Copy to clipboard'}

@@ -831,16 +831,16 @@ export default function SubmitProjectPage() {
                         {/* Reorder controls */}
                         {steps.length > 1 && (
                           <>
-                            <button type="button" onClick={(e) => { e.stopPropagation(); moveStep(idx, -1) }} disabled={idx === 0} className="text-surface-400 hover:text-brand-orange hover:bg-surface-100 p-2 transition-colors duration-150 disabled:text-surface-200 disabled:cursor-not-allowed disabled:hover:bg-transparent" title="Move up">
+                            <button type="button" onClick={(e) => { e.stopPropagation(); moveStep(idx, -1) }} disabled={idx === 0} className="text-surface-400 hover:text-brand-orange hover:bg-surface-100 p-2 transition-colors duration-150 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange disabled:text-surface-200 disabled:cursor-not-allowed disabled:hover:bg-transparent" title="Move up">
                               <ArrowUp className="w-4 h-4" />
                             </button>
-                            <button type="button" onClick={(e) => { e.stopPropagation(); moveStep(idx, 1) }} disabled={idx === steps.length - 1} className="text-surface-400 hover:text-brand-orange hover:bg-surface-100 p-2 transition-colors duration-150 disabled:text-surface-200 disabled:cursor-not-allowed disabled:hover:bg-transparent" title="Move down">
+                            <button type="button" onClick={(e) => { e.stopPropagation(); moveStep(idx, 1) }} disabled={idx === steps.length - 1} className="text-surface-400 hover:text-brand-orange hover:bg-surface-100 p-2 transition-colors duration-150 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange disabled:text-surface-200 disabled:cursor-not-allowed disabled:hover:bg-transparent" title="Move down">
                               <ArrowDown className="w-4 h-4" />
                             </button>
                           </>
                         )}
                         {steps.length > 1 && (
-                          <button type="button" onClick={(e) => { e.stopPropagation(); removeStep(idx) }} className="text-surface-400 hover:text-red-500 hover:bg-red-50 p-2 transition-colors duration-150" title="Remove step">
+                          <button type="button" onClick={(e) => { e.stopPropagation(); removeStep(idx) }} className="text-surface-400 hover:text-red-500 hover:bg-red-50 p-2 transition-colors duration-150 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-500" title="Remove step">
                             <Trash2 className="w-4 h-4" />
                           </button>
                         )}

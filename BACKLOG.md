@@ -16,11 +16,10 @@ Pick the top item in your queue, ship it, move it to the Done table with one lin
 
 Small, well-scoped, visible improvements. A human landing on the site should notice.
 
-1. **CodeBlock header consistency.** The dark header bar from iter 31 — confirm the dot + label + meta + copy button all behave identically across prompt (orange) and result (blue) on mobile widths. Polish any asymmetry.
-2. **PromptCard long-title truncation.** Confirm titles longer than 2 lines clamp cleanly with ellipsis across Featured + regular card variants.
-3. **Focus-ring consistency audit.** Tab through Browse + Build + detail. Note any interactive element with missing, wrong-color, or inconsistent focus ring. Fix in one pass.
-4. **Typography scale pass on the detail page.** H1 title, H2 section headers, step labels, body, metadata — are the sizes + weights + tracking consistent? Tighten any outliers.
-5. **Landing "Why It Works" card copy.** The three cards (See Every Step / Fork & Adapt / Proven Results) read as generic feature bullets. Rewrite body copy to speak in the first person of someone forking tonight — concrete, not brochure.
+1. **PromptCard long-title truncation.** Confirm titles longer than 2 lines clamp cleanly with ellipsis across Featured + regular card variants.
+2. **Focus-ring consistency audit.** Tab through Browse + Build + detail. Note any interactive element with missing, wrong-color, or inconsistent focus ring. Fix in one pass.
+3. **Typography scale pass on the detail page.** H1 title, H2 section headers, step labels, body, metadata — are the sizes + weights + tracking consistent? Tighten any outliers.
+4. **Landing "Why It Works" card copy.** The three cards (See Every Step / Fork & Adapt / Proven Results) read as generic feature bullets. Rewrite body copy to speak in the first person of someone forking tonight — concrete, not brochure.
 
 ---
 
@@ -49,8 +48,8 @@ History older than this lives in `git log`.
 
 | Date | Change |
 |------|--------|
+| 2026-04-17 | Iter 38 — CodeBlock header chrome unified across prompt (orange) and result (blue): dark CopyButton now matches the label spec exactly (tracking-[0.14em] and text-surface-300), gains shrink-0 so the "Copy" chip holds its width on narrow mobile, and the header label also gains shrink-0 so "PROMPT"/"RESULT" can't collapse before the meta truncates. |
 | 2026-04-17 | Iter 37 — Landing final CTA rewritten for the visitor-with-tokens-and-no-idea: headline now "You've got the tools. / You've got tonight." with orange second line echoing the hero, subtext lands the "real thing by bedtime" promise, primary CTA inverted from signup-first to `/browse` (signup is friction before they've seen the product) and demoted to secondary link, Users icon swapped to Terminal to signal "at your desk with AI tools." |
 | 2026-04-17 | Iter 36 — Detail page meta row polish: byline collapsed to one line ("by Name · Date"), meta pills unified to one neutral spec (surface-50/surface-700/surface-200) with Category as the sole orange-tinted primary classifier, difficulty now just a colored dot on a neutral pill, redundant N-step chip removed (it duplicated the Build Path heading). |
 | 2026-04-17 | Iter 35 — Fork/remix affordance: dark CTA strip in the detail-page header with GitFork icon + "Use as starting point" orange button linking to `/prompt/new`; copy is explicit ("auto-prefill coming soon") so the placeholder doesn't mislead until Structural #5 wires real prefill. |
 | 2026-04-17 | Iter 34 — Detail page "feeds into next step" chip: between consecutive steps (when the prior step had a result) a small mono chip reads "step N result → step N+1 prompt," sitting on the spine between cards so the flow reads like watching the build. |
-| 2026-04-17 | Iter 33 — Browse empty state rebuilt as an invite: "No matches" notice + Clear filters, plus "Try a category" (6 shortcut pills) and "Popular right now" (top 3 PromptCards). Suggestions fetched only on the empty path. |

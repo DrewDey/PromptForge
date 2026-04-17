@@ -26,15 +26,20 @@ export default function CopyButton({
     : 'text-surface-500 hover:text-brand-orange bg-surface-50 hover:bg-surface-100 border-surface-200 hover:border-brand-orange/60'
 
   // Dark variant — sits inside the CodeBlock header chrome.
-  // Keep it quiet at rest so the label/dot lead the eye; lift on hover.
+  // Matches the label spec exactly (surface-300, tracking-[0.14em]) so the
+  // dot + label + copy button read as one row at rest; lifts on hover.
   const darkCls = copied
     ? 'bg-green-500/10 border-green-500/40 text-green-400'
-    : 'text-surface-400 hover:text-white bg-transparent hover:bg-surface-800 border-surface-700 hover:border-surface-600'
+    : 'text-surface-300 hover:text-white bg-transparent hover:bg-surface-800 border-surface-700 hover:border-surface-600'
+
+  // Copy button width is fixed; label/meta in the header are free to shrink.
+  const trackingCls = variant === 'dark' ? 'tracking-[0.14em]' : 'tracking-wider'
+  const shrinkCls = variant === 'dark' ? 'shrink-0' : ''
 
   return (
     <button
       onClick={handleCopy}
-      className={`inline-flex items-center gap-1.5 text-[11px] font-mono font-semibold uppercase tracking-wider px-2.5 py-1 border transition-all duration-200 ${
+      className={`inline-flex items-center gap-1.5 text-[11px] font-mono font-semibold uppercase ${trackingCls} ${shrinkCls} px-2.5 py-1 border transition-all duration-200 ${
         variant === 'dark' ? darkCls : lightCls
       }`}
       title={copied ? 'Copied to clipboard!' : 'Copy to clipboard'}

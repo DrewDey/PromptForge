@@ -44,7 +44,7 @@ export default function CodeBlock({
         <div className="flex items-center gap-2.5 min-w-0">
           <span className={`inline-block w-2 h-2 flex-shrink-0 ${dotClass}`} aria-hidden="true" />
           {label && (
-            <span className="text-[11px] font-mono font-semibold uppercase tracking-[0.14em] text-surface-300">
+            <span className="shrink-0 text-[11px] font-mono font-semibold uppercase tracking-[0.14em] text-surface-300">
               {label}
             </span>
           )}

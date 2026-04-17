@@ -4,6 +4,14 @@ Most recent first. Cap each entry at 3 sentences. Older history lives in `git lo
 
 ---
 
+## Iter 38 — 2026-04-17 — CodeBlock header chrome symmetry across prompt/result
+
+Picked Polish #1 (CodeBlock header consistency from iter 31): source review showed three asymmetries between the label and the dark CopyButton sitting in the same `text-[11px] font-mono font-semibold uppercase` header bar — label used `tracking-[0.14em]` but the button used `tracking-wider` (≈0.05em), label was `text-surface-300` but idle button was `text-surface-400`, and the button had no `shrink-0` so on narrow mobile the "Copy" chip could squeeze below the label (which itself had no `shrink-0`, so "PROMPT"/"RESULT" could truncate invisibly before the meta's `truncate` ever kicked in). Unified the dark CopyButton to the label spec (`tracking-[0.14em]`, `text-surface-300`, `shrink-0`) and added `shrink-0` to the CodeBlock header label so now the row collapses in the correct order on narrow widths: meta `step N` truncates first, label and copy button hold their widths, dot stays anchored. Verified via Chrome MCP on `/prompt/...3314` (3 steps → 6 code blocks, all 6 labels render `shrink-0 + tracking-[0.14em]`, all 6 copy buttons render `shrink-0 + tracking-[0.14em] + text-surface-300`); `/browse` (h1 "Browse Projects", 20 cards) and `/prompt/new` (login gate, expected) clean with zero console errors; `npx tsc --noEmit` passes.
+
+**Files touched:** `src/components/CodeBlock.tsx`, `src/app/prompt/[id]/CopyButton.tsx`, `BACKLOG.md`, `ITERATION_LOG.md`.
+
+---
+
 ## Iter 37 — 2026-04-17 — Landing final CTA speaks to the visitor-with-tokens
 
 Picked Polish #1 (landing "why PathForge" moment): the final CTA was the generic brochure exit ("Stop rebuilding from scratch / Join PathForge and start using proven AI build paths…") and sent the primary click to `/auth/signup` — signup is friction before a visitor has seen the product, so the CTA failed the vision-anchor test (someone sitting there with tools + time + no idea). Rewrote headline to "You've got the tools. / You've got tonight." (orange second line echoing the hero), dropped the subtext into "Open a build path, fork the prompts, swap in your context, and have a real thing to show by bedtime. No blank chat. No guessing what to build.", inverted the CTAs so the orange primary is now `Find tonight's build` → `/browse` and the secondary plain link is `or create a free account` → `/auth/signup`, and swapped the Users icon for Terminal to signal "at your desk with AI tools" instead of generic community. Verified via Chrome MCP on `localhost:3000`: accessibility tree shows region "You've got the tools.You've got tonight." with both links in correct order and href targets; `/browse` (h1 "Browse Projects", 0 console errors) and `/prompt/new` (login gate, expected) are clean; `npx tsc --noEmit` passes.
@@ -74,6 +82,3 @@ Added a left-bordered brand-orange pull-quote with an OUTCOME eyebrow + 2-line c
 
 ---
 
-## Iter 28 — 2026-04-16 — Seed content overhaul
-
-Rewrote `supabase/seed-fix.sql` with 20 real project build paths + 21 detailed prompt→result steps, ported verbatim from `mock-data.ts` (no `[PLACEHOLDER]` templates). Idempotent — safe to re-apply against a live Supabase. Data-only change; Drew needs to paste the SQL in the Supabase SQL Editor for it to show up on the live site.

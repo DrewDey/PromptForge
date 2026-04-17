@@ -203,7 +203,7 @@ export default async function HomePage() {
               </div>
               <h3 className="font-bold mb-2 text-surface-900">See Every Step</h3>
               <p className="text-sm text-surface-500 leading-relaxed">
-                Not just the final prompt &mdash; the full sequence. Each step shows the prompt used and the result it produced.
+                I can read every prompt they actually ran and the result it came back with. When mine goes sideways, I know which step to retune.
               </p>
             </div>
             <div className="bg-white border border-surface-200 p-6 hover:border-brand-blue hover:shadow-[4px_4px_0px_0px_rgba(59,143,228,0.15)] focus-visible:outline-2 focus-visible:outline-brand-blue focus-visible:outline-offset-2 transition-all duration-150 group">
@@ -212,7 +212,7 @@ export default async function HomePage() {
               </div>
               <h3 className="font-bold mb-2 text-surface-900">Fork &amp; Adapt</h3>
               <p className="text-sm text-surface-500 leading-relaxed">
-                Every build path is forkable. Take someone&apos;s proven process, customize it for your context, and publish your version.
+                I copy their whole chain into my editor, swap in my own topic and data, and ship my version by morning.
               </p>
             </div>
             <div className="bg-white border border-surface-200 p-6 hover:border-brand-orange hover:shadow-[4px_4px_0px_0px_rgba(232,122,44,0.15)] focus-visible:outline-2 focus-visible:outline-brand-orange focus-visible:outline-offset-2 transition-all duration-150 group">
@@ -221,7 +221,7 @@ export default async function HomePage() {
               </div>
               <h3 className="font-bold mb-2 text-surface-900">Proven Results</h3>
               <p className="text-sm text-surface-500 leading-relaxed">
-                Every path shows real outcomes &mdash; actual outputs, what worked, what didn&apos;t. No guessing if it&apos;ll work for you.
+                I see the actual output they got &mdash; not a pitch deck. If it worked for them, I already know what I&apos;m signing up for tonight.
               </p>
             </div>
           </div>

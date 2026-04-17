@@ -4,6 +4,14 @@ Most recent first. Cap each entry at 3 sentences. Older history lives in `git lo
 
 ---
 
+## Iter 42 — 2026-04-17 — Landing "Why It Works" card copy rewrite
+
+Picked Polish #1 (Why-It-Works card copy): the three cards under "Built for real workflows" were shipping generic brochure bullets — "Not just the final prompt…", "Every build path is forkable…", "Every path shows real outcomes…" — none of which landed the vision-anchor persona (visitor with AI tools and no clear idea, building tonight). Rewrote all three in first-person forker voice with concrete verbs and a time-frame that chains back to the hero's "got tonight" promise: See Every Step → "I can read every prompt they actually ran and the result it came back with. When mine goes sideways, I know which step to retune." Fork & Adapt → "I copy their whole chain into my editor, swap in my own topic and data, and ship my version by morning." Proven Results → "I see the actual output they got — not a pitch deck. If it worked for them, I already know what I'm signing up for tonight." Verified via Chrome MCP: on `/` all three new paragraphs render inside the Why-It-Works region (headings + matching body text via `read_page` on ref_70), `/browse` h1 + 20 cards intact, `/prompt/new` hits the expected login gate; pre-existing unconfigured-Supabase "Failed to fetch" exceptions on `/` and `/browse` are the same artifacts noted iter 41 — unrelated to copy-only changes; `npx tsc --noEmit` passes.
+
+**Files touched:** `src/app/page.tsx`, `BACKLOG.md`, `ITERATION_LOG.md`.
+
+---
+
 ## Iter 41 — 2026-04-17 — Typography scale pass on the detail page
 
 Picked Polish #1 (typography scale): H2 spec on the detail page was split across two voices — The Story and The Build Path used `text-xl font-black`, but The Prompt (single-prompt variant), The Result, and More-in-category shipped with the older `text-lg font-bold`, so section headers read at three different weights depending on where you scrolled. Unified all five H2s to `text-xl font-black text-surface-900`, bumped The Result's ArrowDown icon from `w-4` to `w-5` so its size now matches The Story's MessageSquare at the same heading size, and added the missing `text-base` to The Result's body paragraph so it parallels The Story's body spec exactly (both are now `text-surface-700 text-base leading-relaxed`). Verified via Chrome MCP on `/prompt/...3312` (no-steps → 4 H2s, all `text-xl font-black`) and `/prompt/...3314` (3-step → 5 H2s, all `text-xl font-black`); `/browse` (h1 "Browse Projects" + 20 cards) and `/prompt/new` (login gate, expected) clean; one `Failed to fetch` console exception on the detail page is the pre-existing unconfigured-Supabase artifact, unrelated to this change; `npx tsc --noEmit` passes.

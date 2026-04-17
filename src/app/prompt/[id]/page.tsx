@@ -3,9 +3,9 @@ import { notFound } from 'next/navigation'
 import { ChevronRight, Tag, Cpu, Wrench, MessageSquare, ArrowRight, ArrowDown } from 'lucide-react'
 import { getPromptById, getUserVotesAndBookmarks, getPrompts } from '@/lib/data'
 import { getModelName } from '@/lib/models'
-import CopyButton from './CopyButton'
 import VoteBookmarkButtons from '@/components/VoteBookmarkButtons'
 import PromptCard from '@/components/PromptCard'
+import CodeBlock from '@/components/CodeBlock'
 
 const difficultyConfig = {
   beginner: { bg: 'bg-green-50', text: 'text-green-700', border: 'border-green-200', dot: 'bg-green-500' },
@@ -193,7 +193,7 @@ export default async function PromptDetailPage({
                   </div>
 
                   <div className="border border-surface-200 overflow-hidden bg-white">
-                    {/* Step header — high contrast */}
+                    {/* Step header — high contrast, gives the card its identity */}
                     <div className="bg-surface-900 px-5 py-3">
                       <div className="flex items-center gap-2">
                         <span className="text-xs font-mono text-surface-400">
@@ -208,35 +208,31 @@ export default async function PromptDetailPage({
                       )}
                     </div>
 
-                    {/* Prompt section — input signal with code-editor aesthetic */}
-                    <div className="p-5 border-l-4 border-brand-orange">
-                      <div className="flex items-center justify-between mb-3">
-                        <span className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-widest text-brand-orange">
-                          <span className="w-2 h-2 bg-brand-orange" />
-                          Prompt
-                        </span>
-                        <CopyButton text={step.content} />
-                      </div>
-                      <pre className="text-sm whitespace-pre-wrap font-mono leading-relaxed bg-surface-900 text-surface-200 p-4 border border-surface-800">
-                        {step.content}
-                      </pre>
+                    {/* Prompt + Result — unified code-editor panels. Color signal
+                        now comes from the CodeBlock header dot (orange = input,
+                        blue = output), so the old eyebrow rows + accent borders
+                        were removed to keep a single visual rhythm per step. */}
+                    <div className="p-5 space-y-4">
+                      <CodeBlock
+                        code={step.content}
+                        label="prompt"
+                        variant="prompt"
+                        meta={`step ${idx + 1}`}
+                      />
+                      {step.result_content && (
+                        <div className="flex flex-col items-center gap-2">
+                          <ArrowDown className="w-4 h-4 text-surface-300" aria-hidden="true" />
+                          <div className="w-full">
+                            <CodeBlock
+                              code={step.result_content}
+                              label="result"
+                              variant="result"
+                              meta={`step ${idx + 1}`}
+                            />
+                          </div>
+                        </div>
+                      )}
                     </div>
-
-                    {/* Result section — output signal with blue accent (visually lighter than prompt) */}
-                    {step.result_content && (
-                      <div className="p-5 border-l-2 border-brand-blue bg-accent-50/40 border-t border-t-surface-100">
-                        <div className="flex items-center justify-between mb-3">
-                          <span className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-widest text-brand-blue">
-                            <ArrowDown className="w-3 h-3" />
-                            Result
-                          </span>
-                          <CopyButton text={step.result_content} />
-                        </div>
-                        <div className="text-sm text-surface-700 whitespace-pre-wrap leading-relaxed bg-white p-4 border border-accent-200">
-                          {step.result_content}
-                        </div>
-                      </div>
-                    )}
                   </div>
                 </div>
               ))}
@@ -248,18 +244,8 @@ export default async function PromptDetailPage({
       {/* Single prompt (no steps) */}
       {!hasSteps && prompt.content && (
         <section className="mb-12">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-bold text-surface-900">The Prompt</h2>
-            <CopyButton text={prompt.content} />
-          </div>
-          <div className="border border-surface-200 overflow-hidden">
-            <div className="bg-surface-900 px-4 py-2">
-              <span className="text-xs font-mono text-surface-400">prompt</span>
-            </div>
-            <pre className="text-sm whitespace-pre-wrap font-mono leading-relaxed bg-surface-900 text-surface-200 p-5">
-              {prompt.content}
-            </pre>
-          </div>
+          <h2 className="text-lg font-bold text-surface-900 mb-4">The Prompt</h2>
+          <CodeBlock code={prompt.content} label="prompt" variant="prompt" />
         </section>
       )}
 

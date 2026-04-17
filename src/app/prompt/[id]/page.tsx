@@ -1,7 +1,7 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { Fragment } from 'react'
-import { ChevronRight, Tag, Cpu, Wrench, MessageSquare, ArrowRight, ArrowDown } from 'lucide-react'
+import { ChevronRight, Tag, Cpu, Wrench, MessageSquare, ArrowRight, ArrowDown, GitFork } from 'lucide-react'
 import { getPromptById, getUserVotesAndBookmarks, getPrompts } from '@/lib/data'
 import { getModelName } from '@/lib/models'
 import VoteBookmarkButtons from '@/components/VoteBookmarkButtons'
@@ -152,6 +152,25 @@ export default async function PromptDetailPage({
               {prompt.tools_used.join(', ')}
             </span>
           )}
+        </div>
+
+        {/* Use-as-starting-point CTA (Polish #2 — placeholder).
+            The real fork-with-prefill flow is Structural #5; until then this styles
+            the affordance so the "I can build this tonight" moment has an obvious
+            next action. Destination is /prompt/new (blank draft); copy is explicit
+            about prefill being pending so it doesn't mislead. */}
+        <div className="mt-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 bg-surface-900 text-white px-5 py-4">
+          <div className="min-w-0">
+            <p className="text-sm font-semibold leading-tight">Inspired? Build your own version.</p>
+            <p className="text-xs text-surface-400 mt-0.5">Start a new draft from this blueprint — auto-prefill coming soon.</p>
+          </div>
+          <Link
+            href="/prompt/new"
+            className="inline-flex items-center justify-center gap-2 bg-brand-orange hover:bg-brand-orange-dark text-white text-sm font-semibold px-4 py-2 transition-colors duration-200 shrink-0 focus-visible:outline-2 focus-visible:outline-brand-orange focus-visible:outline-offset-2"
+          >
+            <GitFork className="w-4 h-4" aria-hidden="true" />
+            Use as starting point
+          </Link>
         </div>
       </header>
 

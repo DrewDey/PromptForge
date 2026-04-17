@@ -4,6 +4,14 @@ Most recent first. Cap each entry at 3 sentences. Older history lives in `git lo
 
 ---
 
+## Iter 36 — 2026-04-17 — Detail page meta row polish
+
+Picked Polish #1 (meta row "salad"): the header stacked 5 differently-styled pills (neutral category + colored difficulty + orange N-step + blue model + neutral tools) plus a two-line author block, which read as five competing voices — refactored to a clean artifact header by collapsing the byline to a single dot-separated line ("by Name · Date"), unifying all meta pills to one neutral spec (`bg-surface-50 text-surface-700 border-surface-200`) with small icons/dots signaling type, promoting Category to the sole orange-tinted primary classifier, reducing difficulty to just a colored 1.5px dot on a neutral pill, and removing the N-step path chip (it duplicated the "N steps" label on the Build Path section heading below). Verified via Chrome MCP on `/prompt/...3301` (beginner, no steps) and `/prompt/...3312` (intermediate, multi-step): byline reads "by Sarah Mitchell · Apr 16, 2026" and pills collapse from 5 to 4 (Category/Difficulty/Model/Tools) with difficulty dot rendering amber for intermediate; `/browse` (22 cards, h1 intact) and `/prompt/new` (login gate, expected) are clean and console is error-free. `npx tsc --noEmit` passes; no schema or dependency changes.
+
+**Files touched:** `src/app/prompt/[id]/page.tsx`, `BACKLOG.md`, `ITERATION_LOG.md`.
+
+---
+
 ## Iter 35 — 2026-04-17 — Fork/remix affordance on the detail page
 
 Picked Polish #2 (fork/remix audit): the detail page had no "Use as starting point" CTA, so the "I can build this tonight" moment had no next action — added a dark CTA strip inside the header (below the metadata band, before The Story) with a small copy block ("Inspired? Build your own version.") on the left and an orange `Use as starting point` button with a `GitFork` icon on the right, linking to `/prompt/new`; subtitle says "auto-prefill coming soon" so the placeholder doesn't promise prefill that Structural #5 hasn't built yet. Also dropped Polish #1 from the queue — PromptCard already renders the step-flow numbered chips (iter 29), so that item was stale; Polish #2 becomes the top item's slot and the queue renumbers from the next one. Verified `npx tsc --noEmit` passes and `npm run build` completes cleanly; Chrome MCP's JS view returned zero dimensions for all elements on both the target page AND the known-good `/browse` (mainH=1806 but h1 top/h=0 — a view artifact from `[BLOCKED: Cookie/query string data]`, not a render bug), so **Chrome unreachable — build-only verify** per SKILL.md; SSR curl confirms the CTA renders ("Use as starting point", "Inspired? Build your own version", "auto-prefill coming soon" all present in HTML).

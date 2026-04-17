@@ -9,9 +9,9 @@ import PromptCard from '@/components/PromptCard'
 import CodeBlock from '@/components/CodeBlock'
 
 const difficultyConfig = {
-  beginner: { bg: 'bg-green-50', text: 'text-green-700', border: 'border-green-200', dot: 'bg-green-500' },
-  intermediate: { bg: 'bg-amber-50', text: 'text-amber-700', border: 'border-amber-200', dot: 'bg-amber-500' },
-  advanced: { bg: 'bg-red-50', text: 'text-red-700', border: 'border-red-200', dot: 'bg-red-500' },
+  beginner: { dot: 'bg-green-500' },
+  intermediate: { dot: 'bg-amber-500' },
+  advanced: { dot: 'bg-red-500' },
 }
 
 export default async function PromptDetailPage({
@@ -90,24 +90,26 @@ export default async function PromptDetailPage({
         <h1 className="text-3xl sm:text-4xl font-black text-surface-900 mb-3 leading-tight">{prompt.title}</h1>
         <p className="text-surface-500 text-lg leading-relaxed mb-4">{prompt.description}</p>
 
-        {/* Author row — immediately after title for human connection */}
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-gradient-to-br from-brand-orange to-brand-blue flex items-center justify-center text-white text-sm font-bold flex-shrink-0">
+        {/* Byline row — single line, dot-separated, reads like a newsroom byline */}
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-5">
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="w-9 h-9 bg-gradient-to-br from-brand-orange to-brand-blue flex items-center justify-center text-white text-sm font-bold flex-shrink-0">
               {(prompt.author?.display_name || 'A')[0].toUpperCase()}
             </div>
-            <div>
+            <p className="text-sm text-surface-500 truncate">
+              <span className="text-surface-400">by </span>
               {prompt.author?.username ? (
-                <Link href={`/user/${prompt.author.username}`} className="text-sm font-semibold text-surface-900 hover:text-brand-orange transition-colors duration-200">
+                <Link href={`/user/${prompt.author.username}`} className="font-semibold text-surface-900 hover:text-brand-orange transition-colors duration-200">
                   {prompt.author.display_name ?? 'Anonymous'}
                 </Link>
               ) : (
-                <span className="text-sm font-semibold text-surface-900">Anonymous</span>
+                <span className="font-semibold text-surface-900">Anonymous</span>
               )}
-              <p className="text-xs text-surface-400">
+              <span className="text-surface-300 mx-2" aria-hidden="true">·</span>
+              <span className="text-surface-500">
                 {prompt.created_at ? new Date(prompt.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'Shared on PathForge'}
-              </p>
-            </div>
+              </span>
+            </p>
           </div>
           <VoteBookmarkButtons
             promptId={prompt.id}
@@ -120,35 +122,33 @@ export default async function PromptDetailPage({
           />
         </div>
 
-        {/* Metadata — compact band */}
-        <div className="flex items-center gap-2 flex-wrap pt-5 border-t border-surface-200">
+        {/* Metadata — unified pill spec. One orange-tinted Category (primary
+            classifier + link), then neutral pills with small icons/dots for
+            difficulty, model, tools. Removed the N-step chip (it duplicated
+            the "N steps" label on the Build Path section header below). */}
+        <div className="flex items-center gap-2 flex-wrap pt-5 border-t border-surface-200 text-xs">
           {prompt.category && (
             <Link
               href={`/browse?category=${prompt.category.slug}`}
-              className="inline-flex items-center gap-1.5 text-xs font-semibold bg-surface-100 text-surface-600 px-3 py-1.5 border border-surface-200 hover:border-brand-orange/50 hover:text-brand-orange transition-colors duration-200"
+              className="inline-flex items-center gap-1.5 font-semibold bg-brand-orange/10 text-brand-orange-dark px-2.5 py-1.5 border border-brand-orange/30 hover:bg-brand-orange/15 transition-colors duration-200"
             >
               <span>{prompt.category.icon}</span>
               {prompt.category.name}
             </Link>
           )}
-          <span className={`inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 border ${difficulty.bg} ${difficulty.text} ${difficulty.border}`}>
-            <span className={`w-1.5 h-1.5 ${difficulty.dot}`} />
-            {prompt.difficulty}
+          <span className="inline-flex items-center gap-1.5 font-medium bg-surface-50 text-surface-700 px-2.5 py-1.5 border border-surface-200">
+            <span className={`w-1.5 h-1.5 ${difficulty.dot}`} aria-hidden="true" />
+            <span className="capitalize">{prompt.difficulty}</span>
           </span>
-          {hasSteps && (
-            <span className="inline-flex items-center gap-1.5 text-xs font-semibold bg-brand-orange/10 text-brand-orange px-3 py-1.5 border border-brand-orange/30">
-              {prompt.steps!.length}-step path
-            </span>
-          )}
           {modelDisplay && (
-            <span className="inline-flex items-center gap-1.5 text-xs font-semibold bg-accent-50 text-brand-blue px-3 py-1.5 border border-accent-200">
-              <Cpu className="w-3 h-3" />
+            <span className="inline-flex items-center gap-1.5 font-medium bg-surface-50 text-surface-700 px-2.5 py-1.5 border border-surface-200">
+              <Cpu className="w-3 h-3 text-surface-400" aria-hidden="true" />
               {modelDisplay}
             </span>
           )}
           {prompt.tools_used && prompt.tools_used.length > 0 && (
-            <span className="inline-flex items-center gap-1.5 text-xs font-semibold bg-surface-50 text-surface-600 px-3 py-1.5 border border-surface-200">
-              <Wrench className="w-3 h-3" />
+            <span className="inline-flex items-center gap-1.5 font-medium bg-surface-50 text-surface-700 px-2.5 py-1.5 border border-surface-200">
+              <Wrench className="w-3 h-3 text-surface-400" aria-hidden="true" />
               {prompt.tools_used.join(', ')}
             </span>
           )}

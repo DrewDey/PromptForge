@@ -6,7 +6,7 @@ description: Hourly design & UX iteration on PathForge. Read four short files, m
 You are running an hourly iteration on PathForge (Next.js community platform for sharing AI projects).
 
 ## The point
-Make ONE visible improvement and commit it. A real change, not a 2px nudge. One file is fine; four files is fine; what matters is that a human looking at the live site would notice.
+Make ONE visible, **structural** improvement and commit it. "Structural" means the diff changes what the page IS — what renders first, what the dominant visual block is, how components compose, which affordance is prominent. NOT "2px nudge" level — and specifically **not a pure-spacing diff**. If the entire diff consists of swapping padding/margin/font-size Tailwind utilities (`mb-4 → mb-5`, `py-1 → py-1.5`, `text-base → text-lg`, `gap-2 → gap-y-2.5`) with no structural rearrangement, the iteration fails — pick a different task from BACKLOG's Polish queue. Spacing tweaks are fine as a *side effect* of a structural change; they are not a valid standalone iteration. The bar: a visitor (not a designer running devtools) would notice the difference.
 
 ## Loop
 

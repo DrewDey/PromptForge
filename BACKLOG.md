@@ -4,39 +4,59 @@ Live: https://prompt-forge-sandy.vercel.app
 
 ## How this file works
 
-Three queues. Iterations pick from the **Polish queue** only unless explicitly told otherwise. Structural items need product judgment, new dependencies, or schema changes — Drew + live-session work only. Drew actions are blocked on a non-code operation from Drew.
+Three queues. Iterations pick from the **Polish queue** only unless explicitly told otherwise.
 
-**Vision anchor:** PathForge serves someone sitting there with AI tools, time, and no clear idea what to build. Every polish item should make the "I can build this tonight" moment clearer, the build process feel alive, and the fork/remix affordance obvious. *Sitting next to someone building it*, not reading a case study.
+**Vision anchor:** PathForge serves someone sitting there with AI tools, time, and no clear idea what to build. Every item should make "look at what was built" the dominant moment, and "here's how it was built" a secondary layer you expand when you want it. Build-log / case-study aesthetic — NOT prompt-library aesthetic.
 
-Pick the top item in your queue, ship it, move it to the Done table with one line.
+**The grudge against padding work:** iters 43–48 shipped 2–8px spacing tweaks that no visitor would ever notice. That is officially over. If an iteration is about to commit a diff whose only change is `mb-X → mb-Y`, `py-A → py-B`, `text-base → text-lg`, or any pure-spacing / pure-type-size utility swap, the iteration fails. Pick a task below that touches the PAGE STRUCTURE — what renders first, what renders second, how components compose — not how much air is between them.
+
+Pick the top item in your queue. Ship it. Move to Done with one line.
 
 ---
 
-## Polish queue — routine-safe, frontend-design focus
+## Polish queue — VISION-ALIGNED STRUCTURAL TASKS
 
-Small, well-scoped, visible improvements. A human landing on the site should notice.
+Restocked 2026-04-17 after 16 iterations of spacing-polish drift. These tasks change what the page IS, not how it's spaced. Ordered by impact on the "this is a build showcase, not a prompt library" shift.
 
-1. **Breadcrumb → h1 top-gap vs header internal cadence.** After iter 48 locked the detail-page header ramp to a monotonic 12 → 20 → 24 → 24 → 24 (h1 `mb-3` → description `mb-5` → byline/pills/CTA plateau at 24px), the block *above* the h1 is now the outlier: breadcrumb nav sits at `mb-8` (32px) to the h1, while the tightest internal step is `mb-3` (12px). That asymmetric 32→12 pinch makes the title feel top-heavy against the breadcrumb. Either trim breadcrumb to `mb-6` (24px — matches the plateau) to give a consistent outer bracket, or leave it at 32px and accept the "nav separator" reading as intentional. Note: the header is still wrapped with its own `mb-10` (40px) to The Story, so the pattern there is already 32 (nav→h1) → 40 (header→story) — trimming breadcrumb would give 24 → 40 which also reads as a ramp.
+1. **Result-first step cards.** `src/app/prompt/[id]/page.tsx` step rendering (~line 207–278) currently shows `CodeBlock prompt (orange)` → arrow → `CodeBlock result (blue)` per step. Flip it: each step card leads with its RESULT — what came out of this step, rendered as the dominant content of the card. Then collapse the prompt behind a native `<details><summary>Show the prompt behind this step</summary>` disclosure. The visitor scanning the page sees a sequence of OUTPUTS with optional prompt-reveal, not a sequence of prompts-with-outputs-underneath. This one item does more for the vision than all 16 prior iterations combined.
+
+2. **Case-study hero above The Story.** Right now the detail page opens with breadcrumb → title → description → byline → pills → fork CTA → `<section>The Story</section>` (text-only orange bordered box). Insert a new hero block right after the fork CTA: a prominent "Final output" visual exhibit that renders `prompt.result_content` (or the final step's `result_content` if present) at larger typographic scale, on a distinctive surface (dark panel with subtle orange→blue gradient border, or a generous editorial card) — explicitly NOT styled like `CodeBlock`. Give it real above-the-fold weight (min-height, `text-lg` or larger prose, generous padding). The Story becomes backstory UNDER the hero.
+
+3. **Demote CodeBlock for natural-language content.** `src/components/CodeBlock.tsx` today wraps everything in a dark mono-font panel with a header dot, meta, copy button — the visual grammar of a code editor. But most PathForge step content is natural language. Add a `naturalLanguage` prop (or a new sibling `<Prose>` component). When true: render on a light editorial surface, serif-friendly body font (or at least a reading-weight sans — not monospace), still copyable (small ghost copy button top-right) but NOT in a code panel. Detect heuristically: default to `naturalLanguage=true` for step prompts/results UNLESS the content contains `\n\`\`\``, HTML tags, `{ }` braces above some density, or `;` line-ending density — the "this is literal code" signals. Apply the new variant across the detail page step renderings. Net effect: the page stops looking like a prompt library even before any structural flip.
+
+4. **Browse PromptCard: lead with output, not process.** `src/components/PromptCard.tsx` currently puts FEATURED pill → category → title → description → OUTCOME pull-quote → step-count/flow → difficulty/model/votes. The OUTCOME block is the closest thing to "what they made" and it's buried. Restructure: the card's dominant visual block is a "what they made" panel at the top (pull `prompt.result_content` or the final step's result, render in a distinctive frame — not the card's default neutral surface). Title/metadata/category all orbit THIS, not the other way around. Step-flow chips go below the fold inside the card or disappear entirely. The card must sell the PROJECT, not the step-count structure.
+
+5. **Visual build-progression strip above The Build Path.** Before the first step card in `prompt/[id]/page.tsx`, render a compact horizontal strip showing every step's title (or "Step N" if no title) connected by arrows, using the site's orange→blue gradient vocabulary. Each strip entry is a clickable anchor (`<a href="#step-N">`) that jumps to that step card. On wrap (narrow widths), collapse to vertical. At a glance the visitor should see the whole journey before reading any single step. Add `id="step-{N}"` to each step card for anchor targets.
+
+6. **Persistent fork/remix CTA.** The "Use as starting point" button currently sits inside the header block (~line 162–174 of `prompt/[id]/page.tsx`) and scrolls out of view. Make it persistent: on `lg+` widths, move it into a sticky right-rail sidebar next to the main content column (use a `grid-cols-[1fr_280px]` layout wrapper around the main body). On smaller widths, render as a sticky bottom bar with backdrop blur. The visitor should be able to hit "build my own version" from any scroll depth — this is the single most important button on the site and it disappears after 400px of scroll.
+
+7. **Purge "prompt" from step chrome vocabulary.** `CodeBlock` is invoked with `label="prompt"` and `label="result"` for step content (`prompt/[id]/page.tsx` lines 253–268). For the natural-language variant from #3, drop the label entirely or swap "prompt" for "ask" / "approach" / "brief." Similarly, the literal string "prompt" appears on the single-prompt branch at line 287 (`<h2>The Prompt</h2>`) — rename to "The Approach" or "The Ask." Reserve "prompt" ONLY for literal-code content.
+
+8. **Narrative step headers.** Step card headers currently render `Step 1/4` in mono on a dark bar (~line 234–246). For steps with author-provided titles, promote the title to the primary label and demote `1/4` to a right-aligned counter. For step cards WITHOUT titles, generate narrative labels rule-based by position: first step = "Setting the stage", last step = "Pulling it together", middle steps = "Building on it" / "Refining" / "Pushing further". Better to have evocative generated labels than neutral `Step N/M` mono counters — the latter reads as build-system documentation.
+
+9. **Reassess the "feeds into next step" chip and N-step chip.** Iter 34 added the `step N result → step N+1 prompt` chip between step cards. Iter 29 added a `N steps` chip on Browse cards. Both were meant to sell the narrative, but now read as process-diagram vocabulary (flowcharty, prompt-library-ish). Iteration decides per chip: if removing it makes the step flow cleaner and more editorial, drop it; if it genuinely communicates "this is a chained build," keep it but restyle away from the mono/chip aesthetic toward something more editorial (italic marginalia, typographic arrow, etc.). Document the judgment call in the iteration log.
+
+10. **The Story: from callout to editorial.** `prompt/[id]/page.tsx:183` renders The Story in `bg-primary-50/60 border-l-4 border-brand-orange p-6 sm:p-8` — a classic documentation-callout pattern ("heads up, important note!"). That tone does not match the "author telling you what they built" voice. Drop the orange-bordered callout box entirely and render The Story as generous editorial prose (larger serif-friendly body, `max-w-prose`, no box). OR: treat it like a magazine intro block — pull author avatar + name inline, large drop-cap-style first character on the body text. Move from "alert box" to "opening paragraph of a feature article."
 
 ---
 
 ## Structural queue — Drew + live-session only
 
-Items that need product calls, new dependencies, schema work, or UX judgment. Routine iterations **do not touch these**.
+Items that need Drew's product calls, new deps, schema work, or non-trivial UX spec.
 
-1. **Wire image uploads to Supabase Storage.** `ImageUpload` component exists but doesn't persist. Needs Storage bucket, signed-URL policy, RLS. Until this ships, no card can show a thumbnail.
-2. **Build page — finish the builder.** Drag-to-reorder steps (real grip handle replacing up/down arrows) + proper image drop zones on step Result blocks.
-3. **Browse card thumbnail slot.** Blocked on Structural #1. Card top becomes a 16:9 image when present.
-4. **CodeBlock line-number gutter + "treat as code" toggle.** Natural-language prompts wrap so line numbers misalign. Either add a real fenced-code renderer or expose a per-step toggle in the builder.
-5. **Fork / remix flow.** If one doesn't exist end-to-end (duplicate project → edit prompts → save as your own), spec and build. Core to the vision.
+1. **Wire image uploads to Supabase Storage.** `ImageUpload` component exists but doesn't persist. Needs Storage bucket, signed-URL policy, RLS. Until this ships, no card can show a thumbnail and no step can show a screenshot of the build — which cripples the "watching someone build" vision harder than any spacing issue.
+2. **Build page — finish the builder.** Drag-to-reorder steps (real grip handle) + image drop zones on step Result blocks. Pairs with #1.
+3. **Browse card thumbnail slot.** Blocked on #1. Card top becomes a 16:9 image when present — the card-level "look what they made" moment.
+4. **CodeBlock `showLineNumbers` wiring + code-vs-prose toggle in the builder.** Natural-language content shouldn't number; literal code should. Polish #3 handles the detection heuristic; structural work is the explicit builder-side toggle so authors can override.
+5. **Fork / remix flow — actual data wiring.** Polish #6 makes the CTA persistent; the real prefill-a-new-draft-from-this-project flow needs schema thought, copy-on-fork semantics, attribution. Spec before shipping.
 
 ---
 
 ## Drew actions
 
-Blocked on a non-code operation from Drew. Not an iteration target.
+Blocked on a non-code op from Drew. Not an iteration target.
 
-1. **Run the seed SQL on live Supabase.** `supabase/seed-fix.sql` — paste into Supabase SQL Editor. Until done, the live site still shows old/empty seed data and every design change is invisible on production.
+1. **Run the seed SQL on live Supabase.** `supabase/seed-fix.sql` — paste into Supabase SQL Editor. Until done, the live site shows old/empty seed data and every design change is invisible on production.
 
 ---
 
@@ -45,8 +65,8 @@ History older than this lives in `git log`.
 
 | Date | Change |
 |------|--------|
-| 2026-04-17 | Iter 48 — Detail-page title block ramp monotonicized: hero description `<p>` bumped `mb-4` → `mb-5` (16px → 20px) so the header now ramps h1 `mb-3` (12px) → description `mb-5` (20px) → byline `mb-6` (24px) → pill band `pt-6` (24px) → CTA `mt-6` (24px), turning the iter 47 16→24 step-jump into a clean 12→20→24 monotonic ramp that seats cleanly on the 24px plateau. Verified via Chrome MCP on `/prompt/...3314`: computed styles now read `h1 mb: 12px / desc mb: 20px / byline mb: 24px / pills pt: 24px / CTA mt: 24px`; `/browse` h1 "Browse Projects" + 22 card links intact; the one `Failed to fetch` console exception is the pre-existing unconfigured-Supabase artifact carried since iter 41 (unrelated to a CSS-only change); `npx tsc --noEmit` passes. |
-| 2026-04-17 | Iter 47 — Detail-page header byline→pills→CTA rhythm locked to a uniform 24px cadence: byline `mb-5` → `mb-6`, pill band `pt-5` → `pt-6`, CTA `mt-5` → `mt-6`, plus the pill flex row bumped from `gap-2` to `gap-x-2 gap-y-2.5` so wrapped pill rows have 10px of breathing room (vs the 8px column gap between adjacent pills) — they no longer squash the next block on multi-line wrap. Verified via Chrome MCP on `/prompt/...3314`: byline `margin-bottom: 24px`, pill band `padding-top: 24px / row-gap: 10px / column-gap: 8px / 4 pills`, CTA `margin-top: 24px` — all three resolve to matching 24px. `/browse` h1 + 22 card links intact; the one console `Failed to fetch` is the pre-existing unconfigured-Supabase artifact carried since iter 41; `npx tsc --noEmit` passes. |
-| 2026-04-17 | Iter 46 — Detail-page Tags row padding unified with metadata pills: Tags `#tag` chips were shipping at `px-2.5 py-1` while the metadata pill cluster (Category / Difficulty / Model / Tools) above them sat at `px-2.5 py-1.5`, so the two `text-xs` pill bands on the same page had different vertical rhythms (metadata ~28px tall vs Tags ~24px tall). Bumped Tags to `py-1.5` so both clusters now resolve to computed `padding-top/bottom: 6px` — verified via Chrome MCP on `/prompt/...3314` that all 5 Tag chips + the 4 metadata pills return matching `pt: 6px / pb: 6px`. `/browse` h1 + 22 card links intact; pre-existing unconfigured-Supabase `Failed to fetch` on `/browse` is the same artifact from iters 41–45; `npx tsc --noEmit` passes. |
-| 2026-04-17 | Iter 45 — The Story / The Result sibling box chrome unified: Story shipped with `bg-primary-50/60 border-l-4 border-brand-orange p-6 sm:p-8` and Result with the quieter `bg-accent-50/40 border-l-2 border-brand-blue p-6`, so after iters 41 (H2 unify) + 44 (body `max-w-prose` cap) the two sibling sections had matching H2s and matching body type but mismatched container chrome. Pushed Result up to Story's spec (both deserve equal narrative weight — setup + payoff): `border-l-2` → `border-l-4`, `p-6` → `p-6 sm:p-8`, `bg-accent-50/40` → `bg-accent-50/60`. Verified via Chrome MCP on `/prompt/...3314`: Story box computed `border-left-width: 4px / padding: 32px / bg alpha 0.6`, Result box now matches exactly (`4px / 32px / alpha 0.6`), `/browse` h1 + 22 card links intact, `/prompt/new` hits expected login gate; pre-existing unconfigured-Supabase `Failed to fetch` is the same artifact as iter 41–44; `npx tsc --noEmit` passes. |
-| 2026-04-17 | Iter 44 — Final Result body measure cap: capped the `<p>` inside The Result's blue-bordered box (was stretching to the full `max-w-4xl` container = long prose read as a wall) to `max-w-prose` (computed ~656px / ~65ch), then applied the same cap to The Story's body `<p>` so the two sibling sections stay parallel after iter 41 unified their H2 spec and body type spec. Verified via Chrome MCP on `/prompt/...3314` (both paragraphs resolve to `max-w-prose` in computed styles, classes `text-surface-700 text-base leading-relaxed whitespace-pre-line max-w-prose`), `/browse` h1 "Browse Projects" + 20 card links intact; pre-existing unconfigured-Supabase "Failed to fetch" on the detail page same artifact as iter 41–43; `npx tsc --noEmit` passes. |
+| 2026-04-17 | **BACKLOG restocked** — Polish queue rewritten around structural/vision-aligned tasks after 16 iterations of padding drift (iters 33–48); SKILL.md sharpened to explicitly ban pure-spacing diffs as iteration output. Next iteration will pull from the new queue. |
+| 2026-04-17 | Iter 48 — Detail-page title block ramp monotonicized: description `<p>` `mb-4` → `mb-5`. (The last padding-polish iteration before the queue reset.) |
+| 2026-04-17 | Iter 47 — Detail-page header byline/pills/CTA rhythm locked to uniform 24px cadence. |
+| 2026-04-17 | Iter 46 — Tags row padding unified with metadata pills (`py-1` → `py-1.5`). |
+| 2026-04-17 | Iter 45 — The Story / The Result sibling box chrome unified (border-l + padding + bg opacity). |

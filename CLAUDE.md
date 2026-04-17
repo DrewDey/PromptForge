@@ -109,33 +109,20 @@ Hosted on Vercel (auto-deploys from `main` branch). Environment variables `NEXT_
 
 ## Hourly Iteration System
 
-This project runs autonomous hourly iterations focused on **design overhaul and production readiness**. The current sprint is a major design overhaul — not small polish. No backend feature work during these iterations.
+This project runs autonomous hourly iterations focused on design and UX. Each iteration is a fresh Claude session; the full protocol lives in `SKILL.md` and must be followed.
 
-### How it works
-Every hour, a fresh Claude Cowork session opens this project and acts as a **product manager with engineers** — reviewing what's been done, picking the next priority, implementing it, and logging the work.
+### The one rule that matters
+**The only command an iteration ever asks Drew to run is `git push`.** Never `rm .git/index.lock`, never "paste this SQL into Supabase", never `npm install`, never "run these three commands locally". If an iteration would require Drew to do anything beyond pushing, it hasn't solved its own problem — it must commit via git plumbing and bypass whatever was blocking it. This is non-negotiable.
 
-### Files that drive the iteration system
-- **`BACKLOG.md`** — Prioritized work items. Iterations pick the top unblocked item from the current sprint. This is the single source of truth for "what to work on next."
-- **`ITERATION_GUIDE.md`** — The full process guide. Read this if you're a new iteration session and need to understand how to operate. **Contains the design direction and references — read it.**
-- **`ITERATION_LOG.md`** — History of what each iteration accomplished. Add your entry at the top when you finish.
-- **`QUESTIONS.md`** — Questions for Drew (the founder). Check for his responses at the start of each iteration and act on them. **When a question has been answered and acted on, move it from "Open Questions" to "Answered Questions"** with a summary of the action taken. Only genuinely unanswered questions stay in Open.
-- **`ITERATION_LOG.md`** also contains a **"Plain English Summary"** section at the very bottom. After each iteration, update this section with a non-technical description of what changed and why, written for Drew (a non-dev founder). Keep it cumulative — newest changes at the top of the summary. When Drew says he's reviewed, clear the reviewed items.
+### Files
+- `SKILL.md` — the iteration protocol. Read this first every session. Short on purpose.
+- `BACKLOG.md` — the next 5 items, plus the last 5 done. Older history is in `git log`.
+- `ITERATION_LOG.md` — 3-sentence cap per entry. Rolling window, not cumulative.
+- `QUESTIONS.md` — only open when an iteration genuinely can't make a call without Drew. Empty is a valid state.
+- `MEMORY.md` (in Cowork auto-memory) — Drew's feedback carried across sessions. If memory conflicts with a file in the repo, trust memory.
 
-### Iteration quick-start
-1. Read `BACKLOG.md` → pick the top unblocked item
-2. Read `QUESTIONS.md` → act on any responses from Drew
-3. Read `ITERATION_LOG.md` → see what was just done
-4. **Check Cowork auto-memory** (`MEMORY.md`) → it contains feedback from Drew and lessons learned. If memory conflicts with other instructions, **follow memory** — it reflects real issues that were hit.
-5. Do the work (design overhaul — be bold, not cautious)
-6. `npm run build` → must pass
-7. Commit, update BACKLOG.md + ITERATION_LOG.md
-8. Do NOT push — the sandbox cannot authenticate with GitHub. Drew handles `git push` manually.
-9. **Add at least one question to `QUESTIONS.md`** — every iteration makes assumptions or tradeoffs that Drew should know about. The bar for asking has been way too high (13 iterations, zero questions). Ask about design direction, content decisions, priority calls, things you assumed. If you truly made no assumptions, say so in the log.
-
-### Current focus: Design Overhaul Sprint
-The current sprint is about transforming PathForge from looking like a generic template to looking like a premium modern dev tool. Browse and Build pages are the #1 priority. Every iteration should make a dramatic, visible improvement. Think Linear, Vercel, Raycast.
-
-**Seed project content is also a priority.** Drew has flagged that the example projects in the platform are terrible — vague ideas, no real prompts, no images, no actual results. The design can be perfect but if the content inside the cards is garbage, the site still looks bad. See Backlog item #6 for full details. Iterations should tackle this alongside the design work.
+### Current focus
+Design/UX polish is largely done. The biggest remaining wins are structural: image upload persistence, applying the seed SQL to live Supabase, turning the Build page from a form into a builder. See `BACKLOG.md`.
 
 ## Current state
 

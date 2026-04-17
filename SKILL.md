@@ -20,10 +20,12 @@ Make ONE visible improvement and commit it. A real change, not a 2px nudge. One 
 
 ## Hard rules
 
-- No screenshots. Chrome MCP targets Drew's real browser — not the sandbox — and the handshake costs 20 min per session. If you want visual intuition, reason from the code.
+- **The only thing you ever ask Drew to run is `git push`.** Never `rm`, never `supabase sql`, never `npm install`, never "paste this config", never any other command. If completing the iteration would require Drew to run something else, you haven't finished the iteration — find another way (git plumbing, bypass the index, whatever). Drew has said this plainly: any instruction that asks him to do something other than push means the iteration failed.
+- **Commit via plumbing when the index is locked.** `git hash-object -w` → `git mktree` → `git commit-tree` → `echo <sha> > .git/refs/heads/main` works even when `.git/index.lock` and `.git/HEAD.lock` are FUSE-stuck from prior runs. Don't abandon a commit because `git add` failed.
+- No screenshots. Chrome MCP targets Drew's real browser — not the sandbox — and the handshake costs 20 min per session. Reason from the code.
 - No reviewer / audit / research sub-agents. They produce inflated certainty, not quality. Read the files yourself.
-- No dev server. Don't run `npm run dev`, don't rsync to a sibling directory, don't delete `.next.*` or `.gone` files — they're FUSE-locked from prior runs and Drew cleans them locally.
-- No pushing to GitHub. Sandbox can't authenticate.
+- No dev server. Don't run `npm run dev`, don't rsync to a sibling directory, don't delete `.next.*` or `.gone` files — they're FUSE-locked from prior runs.
+- No pushing to GitHub. Sandbox can't authenticate. Drew pushes, and that is the ONE thing he does.
 - Keep `ITERATION_LOG.md` entries to 3 sentences. Keep `BACKLOG.md` Done entries to one line. Keep `QUESTIONS.md` to actual decisions you can't make yourself — no "here are 4 options, which do you prefer."
 
 ## If the build is broken

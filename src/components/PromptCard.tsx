@@ -27,6 +27,27 @@
 // - Left-border + eyebrow mirrors the Featured card's left-border accent pattern, so cards
 //   without a Featured status still get a structural "spine" that differentiates the hook
 //   from the rest of the card.
+//
+// Iteration 30 (2026-04-16) — Featured-card orange audit (Q19 option B):
+// - After iter 29 the Featured card stacked FOUR competing brand-orange accents: (1) solid
+//   FEATURED pill, (2) 3px left-border bar, (3) step-number circles (bg-brand-orange/10 +
+//   text-brand-orange + border-brand-orange/30), (4) OUTCOME pull-quote left border +
+//   tint + orange eyebrow. The iter-29 reviewer flagged it as "at the ceiling" — any more
+//   orange (trending ribbon, thumbnail border, verified check) would tip the card gaudy.
+// - This iteration mutes the LEAST semantically loaded of the four: the step-number
+//   circles. They share color with three other accents but carry the least unique signal —
+//   the ChevronRight separators already communicate "sequence" and the "3 steps" chip in
+//   the metadata row already communicates count. Muting them to neutral surface chips
+//   (matching the non-Featured baseline's at-rest appearance) frees one orange slot for
+//   iter 30+ without removing any information.
+// - Featured step chips keep w-6 h-6 size (they're on a larger card), but move from
+//   orange-at-rest to surface-100/surface-500 at rest, and reveal a subtle orange tint on
+//   group-hover — same behavior as non-Featured cards. This unifies the step-flow
+//   visualization language across Featured and regular cards; the only remaining Featured
+//   differentiators are the status pill, left bar, and larger title/padding.
+// - Net effect: Featured cards now carry THREE orange hits (pill, left bar, OUTCOME) —
+//   each semantically distinct (status, bookend, payoff). That's the discipline Q19 was
+//   arguing for.
 
 import Link from 'next/link'
 import { ArrowUp, Bookmark, ChevronRight, Cpu, Layers } from 'lucide-react'
@@ -125,10 +146,8 @@ export default function PromptCard({ prompt, featured = false }: { prompt: Promp
           <div className="flex items-center gap-1.5 mb-4 overflow-hidden">
             {prompt.steps!.slice(0, featured ? 6 : 4).map((step, i) => (
               <div key={i} className="flex items-center gap-1.5 min-w-0">
-                <div className={`flex items-center justify-center text-[10px] font-semibold border shrink-0 transition-colors duration-150 ${
-                  featured
-                    ? 'w-6 h-6 bg-brand-orange/10 text-brand-orange border-brand-orange/30 group-hover:bg-brand-orange/15'
-                    : 'w-5 h-5 bg-surface-100 text-surface-500 border-surface-200 group-hover:bg-brand-orange/10 group-hover:text-brand-orange group-hover:border-brand-orange/20'
+                <div className={`flex items-center justify-center text-[10px] font-semibold border shrink-0 transition-colors duration-150 bg-surface-100 text-surface-500 border-surface-200 group-hover:bg-brand-orange/10 group-hover:text-brand-orange group-hover:border-brand-orange/20 ${
+                  featured ? 'w-6 h-6' : 'w-5 h-5'
                 }`}>
                   {i + 1}
                 </div>

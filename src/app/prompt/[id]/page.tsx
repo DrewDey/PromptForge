@@ -7,6 +7,33 @@ import { getModelName } from '@/lib/models'
 import VoteBookmarkButtons from '@/components/VoteBookmarkButtons'
 import PromptCard from '@/components/PromptCard'
 import CodeBlock from '@/components/CodeBlock'
+import Prose from '@/components/Prose'
+import { detectContentKind } from '@/lib/content-kind'
+
+/**
+ * Pick the right renderer for a step's payload. PathForge step content is
+ * mostly natural-language (the author's ask, the model's narrative reply),
+ * so we default to the light editorial <Prose> card. CodeBlock's dark
+ * mono panel is reserved for literal code/markup — snippets, JSON, HTML —
+ * where monospace + line-wrap chrome actually helps readability.
+ */
+function StepContent({
+  text,
+  label,
+  variant,
+  meta,
+}: {
+  text: string
+  label: string
+  variant: 'prompt' | 'result'
+  meta?: string
+}) {
+  const kind = detectContentKind(text)
+  if (kind === 'code') {
+    return <CodeBlock code={text} label={label} variant={variant} meta={meta} />
+  }
+  return <Prose text={text} label={label} variant={variant} meta={meta} />
+}
 
 const difficultyConfig = {
   beginner: { dot: 'bg-green-500' },
@@ -378,8 +405,8 @@ export default async function PromptDetailPage({
                     <div className="p-5 space-y-4">
                       {step.result_content ? (
                         <>
-                          <CodeBlock
-                            code={step.result_content}
+                          <StepContent
+                            text={step.result_content}
                             label="result"
                             variant="result"
                             meta={`step ${idx + 1}`}
@@ -393,8 +420,8 @@ export default async function PromptDetailPage({
                               <ChevronRight className="w-3.5 h-3.5 text-surface-400 transition-transform duration-200 group-open:rotate-90" aria-hidden="true" />
                             </summary>
                             <div className="p-3 pt-0">
-                              <CodeBlock
-                                code={step.content}
+                              <StepContent
+                                text={step.content}
                                 label="prompt"
                                 variant="prompt"
                                 meta={`step ${idx + 1}`}
@@ -403,8 +430,8 @@ export default async function PromptDetailPage({
                           </details>
                         </>
                       ) : (
-                        <CodeBlock
-                          code={step.content}
+                        <StepContent
+                          text={step.content}
                           label="prompt"
                           variant="prompt"
                           meta={`step ${idx + 1}`}
@@ -425,7 +452,7 @@ export default async function PromptDetailPage({
       {!hasSteps && prompt.content && (
         <section className="mb-12">
           <h2 className="text-xl font-black text-surface-900 mb-4">The Prompt</h2>
-          <CodeBlock code={prompt.content} label="prompt" variant="prompt" />
+          <StepContent text={prompt.content} label="prompt" variant="prompt" />
         </section>
       )}
 

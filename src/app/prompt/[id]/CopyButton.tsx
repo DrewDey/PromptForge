@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { Copy, Check } from 'lucide-react'
 
-type Variant = 'light' | 'dark'
+type Variant = 'light' | 'dark' | 'ghost'
 
 export default function CopyButton({
   text,
@@ -32,6 +32,15 @@ export default function CopyButton({
     ? 'bg-green-500/10 border-green-500/40 text-green-400'
     : 'text-surface-300 hover:text-white bg-transparent hover:bg-surface-800 border-surface-700 hover:border-surface-600'
 
+  // Ghost variant — for the Prose component. No background at rest so the
+  // button disappears into the white editorial surface; icon-only idle,
+  // label surfaces on hover. Border is hairline surface-200 so keyboard
+  // users can find it even before hover, but it doesn't compete with the
+  // prose body for attention.
+  const ghostCls = copied
+    ? 'bg-green-50 border-green-300 text-green-700'
+    : 'text-surface-400 hover:text-brand-orange bg-white/80 backdrop-blur-sm hover:bg-surface-50 border-surface-200 hover:border-brand-orange/50'
+
   // Copy button width is fixed; label/meta in the header are free to shrink.
   const trackingCls = variant === 'dark' ? 'tracking-[0.14em]' : 'tracking-wider'
   const shrinkCls = variant === 'dark' ? 'shrink-0' : ''
@@ -40,13 +49,15 @@ export default function CopyButton({
   const focusCls = variant === 'dark'
     ? 'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white'
     : 'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange'
+  const variantCls = variant === 'dark' ? darkCls : variant === 'ghost' ? ghostCls : lightCls
+  // Ghost idle hides the "Copy" word, keeps it on copied state so the
+  // feedback is obvious.
+  const showLabel = variant !== 'ghost' || copied
 
   return (
     <button
       onClick={handleCopy}
-      className={`inline-flex items-center gap-1.5 text-[11px] font-mono font-semibold uppercase ${trackingCls} ${shrinkCls} ${focusCls} px-2.5 py-1 border transition-all duration-200 ${
-        variant === 'dark' ? darkCls : lightCls
-      }`}
+      className={`inline-flex items-center gap-1.5 text-[11px] font-mono font-semibold uppercase ${trackingCls} ${shrinkCls} ${focusCls} px-2.5 py-1 border transition-all duration-200 ${variantCls}`}
       title={copied ? 'Copied to clipboard!' : 'Copy to clipboard'}
       aria-label={copied ? 'Copied to clipboard' : 'Copy to clipboard'}
     >
@@ -58,7 +69,7 @@ export default function CopyButton({
       ) : (
         <>
           <Copy className="w-3 h-3" />
-          Copy
+          {showLabel && 'Copy'}
         </>
       )}
     </button>

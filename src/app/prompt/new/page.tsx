@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { ArrowLeft, Plus, Trash2, ChevronDown, ChevronUp, LogIn, FileText, GitBranch, Check, AlertCircle, ArrowUp, ArrowDown, ChevronRight } from 'lucide-react'
+import { ArrowLeft, Plus, Trash2, ChevronDown, ChevronUp, LogIn, FileText, GitBranch, Check, AlertCircle, ArrowUp, ArrowDown, ChevronRight, Layers, Cpu, Eye } from 'lucide-react'
 import { getModelsByProvider, getModelName } from '@/lib/models'
 import { submitProject } from '@/lib/actions'
 import ImageUpload from '@/components/ImageUpload'
@@ -22,6 +22,178 @@ const categories = [
 ]
 
 type Step = { title: string; content: string; result_content: string; description: string }
+
+// Mirrors PromptCard's difficulty chip palette so the preview card reads the same
+// as the Browse grid's real cards.
+const difficultyPreviewConfig: Record<string, { label: string; color: string }> = {
+  beginner: { label: 'Beginner', color: 'text-emerald-600 bg-emerald-50 border-emerald-200' },
+  intermediate: { label: 'Intermediate', color: 'text-amber-600 bg-amber-50 border-amber-200' },
+  advanced: { label: 'Advanced', color: 'text-red-600 bg-red-50 border-red-200' },
+}
+
+/**
+ * BuilderPreview — a reactive mini-card that mirrors how the project will look on
+ * Browse. Kept inline in this file because it's tightly coupled to the form's
+ * local state and only used here. Structure intentionally parallels PromptCard
+ * (title / description / OUTCOME pull-quote / category · steps row / step-flow
+ * chips / footer with difficulty + model + vote counter) so "what the preview
+ * shows" and "what Browse shows" can't drift.
+ */
+function BuilderPreview({
+  title,
+  description,
+  categorySlug,
+  difficulty,
+  filledSteps,
+  totalSteps,
+  modelId,
+  customModel,
+  finalResult,
+  resultContent,
+  isChain,
+}: {
+  title: string
+  description: string
+  categorySlug: string
+  difficulty: string
+  filledSteps: number
+  totalSteps: number
+  modelId: string
+  customModel: string
+  finalResult: string
+  resultContent: string
+  isChain: boolean
+}) {
+  const categoryName = categories.find((c) => c.slug === categorySlug)?.name
+  const diffConfig = difficulty ? difficultyPreviewConfig[difficulty] : null
+  const modelDisplay =
+    modelId === 'other' ? customModel.trim() : modelId ? getModelName(modelId) : ''
+  const outcomePreview = (isChain ? finalResult : finalResult || resultContent).trim()
+  // In multi-step mode show FILLED steps (or total as a scaffold hint). In
+  // single-prompt mode there's no step flow to render.
+  const stepCount = isChain ? (filledSteps > 0 ? filledSteps : totalSteps) : 0
+  const hasAnyInput = !!(
+    title.trim() ||
+    description.trim() ||
+    categorySlug ||
+    difficulty ||
+    modelDisplay ||
+    outcomePreview ||
+    (isChain && filledSteps > 0)
+  )
+
+  return (
+    <div className="lg:sticky lg:top-6 space-y-3">
+      <div className="flex items-center justify-between">
+        <span className="inline-flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-[0.12em] text-surface-500">
+          <Eye className="w-3 h-3" aria-hidden="true" /> Live preview
+        </span>
+        <span className="hidden lg:inline text-[10px] text-surface-400">
+          How it appears on Browse
+        </span>
+      </div>
+
+      <div className="border border-surface-200 bg-white p-5 relative overflow-hidden">
+        {/* Top accent — the same hover-accent PromptCard reveals, shown statically
+            here so the preview carries a recognisable brand fingerprint even when
+            the form is empty. */}
+        <div className="absolute top-0 left-0 right-0 h-[2px] bg-brand-orange" />
+
+        <h3 className="font-semibold text-base leading-snug mb-1.5 text-surface-900">
+          {title.trim() || <span className="text-surface-300">Your project title</span>}
+        </h3>
+
+        <p className="text-[13px] text-surface-500 mb-3 leading-relaxed line-clamp-2">
+          {description.trim() || (
+            <span className="text-surface-300">A short description will appear here</span>
+          )}
+        </p>
+
+        {outcomePreview && (
+          <div className="border-l-2 border-brand-orange/50 bg-brand-orange/[0.03] pl-3 pr-2 py-1.5 mb-3">
+            <span className="block text-[9px] font-bold uppercase tracking-[0.12em] text-brand-orange mb-0.5">
+              Outcome
+            </span>
+            <p className="text-[12px] text-surface-700 leading-snug line-clamp-2">
+              {outcomePreview}
+            </p>
+          </div>
+        )}
+
+        <div className="flex items-center gap-2 flex-wrap mb-4 min-h-[16px]">
+          {categoryName ? (
+            <span className="text-[11px] font-medium text-surface-500">{categoryName}</span>
+          ) : (
+            <span className="text-[11px] font-medium text-surface-300">Category</span>
+          )}
+          {stepCount > 0 && (
+            <span className="text-[11px] font-medium text-surface-400 flex items-center gap-1 ml-auto">
+              <Layers className="w-3 h-3" aria-hidden="true" />
+              {stepCount} {stepCount === 1 ? 'step' : 'steps'}
+            </span>
+          )}
+        </div>
+
+        {stepCount > 0 && (
+          <div className="flex items-center gap-1.5 mb-4 overflow-hidden">
+            {Array.from({ length: Math.min(stepCount, 4) }).map((_, i) => (
+              <div key={i} className="flex items-center gap-1.5 min-w-0">
+                <div className="flex items-center justify-center text-[10px] font-semibold border shrink-0 bg-surface-100 text-surface-500 border-surface-200 w-5 h-5">
+                  {i + 1}
+                </div>
+                {i < Math.min(stepCount - 1, 3) && (
+                  <ChevronRight className="w-3 h-3 text-surface-300 shrink-0" aria-hidden="true" />
+                )}
+              </div>
+            ))}
+            {stepCount > 4 && (
+              <div className="flex items-center justify-center bg-surface-100 text-surface-500 text-[10px] font-semibold border border-surface-200 shrink-0 w-5 h-5">
+                +{stepCount - 4}
+              </div>
+            )}
+          </div>
+        )}
+
+        <div className="flex items-center justify-between gap-3 pt-3 border-t border-surface-100">
+          <div className="flex items-center gap-2 min-w-0">
+            {diffConfig ? (
+              <span className={`text-[11px] font-medium px-2 py-0.5 border shrink-0 ${diffConfig.color}`}>
+                {diffConfig.label}
+              </span>
+            ) : (
+              <span className="text-[11px] font-medium text-surface-300 px-2 py-0.5 border border-dashed border-surface-200 shrink-0">
+                difficulty
+              </span>
+            )}
+            {modelDisplay ? (
+              <span className="text-[11px] text-surface-400 flex items-center gap-1 min-w-0">
+                <Cpu className="w-3 h-3 shrink-0" aria-hidden="true" />
+                <span className="truncate">{modelDisplay}</span>
+              </span>
+            ) : (
+              <span className="text-[11px] text-surface-300 flex items-center gap-1 min-w-0">
+                <Cpu className="w-3 h-3 shrink-0" aria-hidden="true" />
+                <span className="truncate">model</span>
+              </span>
+            )}
+          </div>
+          <div className="flex items-center gap-2 text-[11px] text-surface-400 shrink-0">
+            <span className="flex items-center gap-1 tabular-nums" aria-label="Upvotes">
+              <ArrowUp className="w-3 h-3" aria-hidden="true" />
+              0
+            </span>
+          </div>
+        </div>
+      </div>
+
+      {!hasAnyInput && (
+        <p className="text-xs text-surface-400 leading-relaxed">
+          Fill in the form and your card preview will come to life here — exactly how it will look on the Browse grid.
+        </p>
+      )}
+    </div>
+  )
+}
 
 function SectionHeader({ number, title, subtitle, isExpanded, isComplete, summary, onClick }: {
   number: number
@@ -370,24 +542,36 @@ export default function SubmitProjectPage() {
   }
 
   return (
-    <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+    <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
       <Link href="/browse" className="text-sm text-surface-500 hover:text-surface-900 flex items-center gap-1 mb-6 transition-colors duration-150">
         <ArrowLeft className="w-4 h-4" />
         Back to browse
       </Link>
 
-      <p className="text-sm text-surface-500 mb-8">
-        Share what you built with AI — the prompts, the process, and the results.
-      </p>
+      {/* Page hero — the Build page had no H1, just stranded subtext. Gives the
+          page a proper anchor and sets up the two-column layout below. */}
+      <header className="mb-8 max-w-2xl">
+        <h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-surface-900 mb-2">
+          Build your project
+        </h1>
+        <p className="text-sm text-surface-500 leading-relaxed">
+          Share what you built with AI — the prompts, the process, and the results. Fill in the form; the card on the right shows what it will look like on Browse.
+        </p>
+      </header>
 
       {error && (
-        <div className="bg-red-50 border border-red-200 text-red-700 text-sm px-4 py-3 mb-6 flex items-start gap-2">
+        <div className="bg-red-50 border border-red-200 text-red-700 text-sm px-4 py-3 mb-6 max-w-2xl flex items-start gap-2">
           <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" />
           <span>{error}</span>
         </div>
       )}
 
-      <form onSubmit={handleSubmit} noValidate className="space-y-4">
+      {/* Two-pane builder on lg+: form on the left (kept at its original ~680px
+          max so no field gets unwieldy), live preview rail on the right. Mobile
+          stacks vertically (preview drops below the form so the first interaction
+          is always the form). */}
+      <div className="lg:grid lg:grid-cols-[minmax(0,1fr)_minmax(0,360px)] lg:gap-10 lg:items-start">
+      <form onSubmit={handleSubmit} noValidate className="space-y-4 max-w-2xl">
 
         {/* ═══════ SECTION 1: PROJECT BASICS ═══════ */}
         <section data-section="1" className={`border transition-all duration-150 ${openSections.has(1) ? 'border-surface-200 shadow-sm bg-white' : 'border-surface-100 bg-surface-50/50'}`}>
@@ -410,7 +594,7 @@ export default function SubmitProjectPage() {
                 onChange={(e) => setTitle(e.target.value)}
                 placeholder="Name your project..."
                 aria-label="Project title"
-                className={`w-full bg-transparent text-2xl sm:text-3xl font-bold text-surface-900 placeholder-surface-300 py-2 border-b-2 focus:outline-none transition-colors duration-150 ${
+                className={`w-full bg-transparent text-2xl sm:text-3xl font-bold text-surface-900 placeholder-surface-300 px-1 py-2 border-b-2 focus:outline-none transition-colors duration-150 ${
                   validationErrors.title
                     ? 'border-red-400 focus:border-red-500'
                     : 'border-transparent focus:border-brand-orange'
@@ -812,6 +996,25 @@ export default function SubmitProjectPage() {
           </p>
         </div>
       </form>
+
+        {/* Live preview rail — order-last on mobile so the form comes first; sticky
+            on lg so the preview stays in view as you scroll the long form. */}
+        <aside className="mt-10 lg:mt-0 order-last">
+          <BuilderPreview
+            title={title}
+            description={description}
+            categorySlug={categorySlug}
+            difficulty={difficulty}
+            filledSteps={filledSteps}
+            totalSteps={totalSteps}
+            modelId={modelId}
+            customModel={customModel}
+            finalResult={finalResult}
+            resultContent={resultContent}
+            isChain={isChain}
+          />
+        </aside>
+      </div>
     </div>
   )
 }

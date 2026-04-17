@@ -112,7 +112,7 @@ Hosted on Vercel (auto-deploys from `main` branch). Environment variables `NEXT_
 This project runs autonomous hourly iterations focused on design and UX. Each iteration is a fresh Claude session; the full protocol lives in `SKILL.md` and must be followed.
 
 ### The one rule that matters
-**The only command an iteration ever asks Drew to run is `git push`.** Never `rm .git/index.lock`, never "paste this SQL into Supabase", never `npm install`, never "run these three commands locally". If an iteration would require Drew to do anything beyond pushing, it hasn't solved its own problem — it must commit via git plumbing and bypass whatever was blocking it. This is non-negotiable.
+**An iteration finishes its own work — commit AND push.** Never tell Drew to `rm .git/index.lock`, "paste this SQL into Supabase", `npm install`, or "run these three commands locally". If an iteration would require Drew to do anything at all to close it out, it hasn't solved its own problem — it must commit via git plumbing, push directly, and bypass whatever was blocking it. (Earlier versions of this doc said Drew pushes manually; that was a Claude Cowork sandbox constraint. Claude Code pushes on its own.) The only time Drew runs something is for data/ops work that genuinely can't be done from the repo (e.g. pasting seed SQL into the live Supabase SQL Editor) — and even then, the iteration flags it as a Drew-action item in BACKLOG, never as a precondition for the commit.
 
 ### Files
 - `SKILL.md` — the iteration protocol. Read this first every session. Short on purpose.

@@ -1,13 +1,24 @@
 # dependencies
 /node_modules
 
-# next.js
-/.next/
-/.next-old/
+# next.js build output (covers .next-iter*, .next.old-*, .next.zzz-*, .next.moved-*, .next.attempt-*)
+/.next
+/.next-*
+/.next.*
 /out/
-
-# production
 /build
+
+# turbopack / sandbox session trash
+/sessions/
+/tmp/
+/dev/
+/pf-dist*
+*.gone
+*.gone.*
+
+# backup files from in-place iteration edits
+*.bak
+*.bak-*
 
 # misc
 .DS_Store
@@ -22,4 +33,5 @@ npm-debug.log*
 
 # typescript
 *.tsbuildinfo
+tsbuildinfo*
 next-env.d.ts

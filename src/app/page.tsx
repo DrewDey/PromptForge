@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { ArrowRight, GitFork, Users, TrendingUp, Eye } from 'lucide-react'
+import { ArrowRight, GitFork, Terminal, TrendingUp, Eye } from 'lucide-react'
 import { getPrompts } from '@/lib/data'
 import PromptCard from '@/components/PromptCard'
 
@@ -269,30 +269,36 @@ export default async function HomePage() {
       </section>
 
       {/* ═══════════ FINAL CTA ═══════════ */}
+      {/* Speaks to the visitor-with-tokens-and-no-idea. The prior copy
+          ("Stop rebuilding from scratch / Join PathForge…") was a generic
+          signup pitch; this lands the "I can build this tonight" moment
+          and sends them to /browse first — signup is friction before
+          they've seen the product. */}
       <section className="border-t border-surface-200">
         <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-20 text-center">
           <div className="w-12 h-12 bg-brand-orange/10 flex items-center justify-center mx-auto mb-6">
-            <Users className="w-6 h-6 text-brand-orange" />
+            <Terminal className="w-6 h-6 text-brand-orange" />
           </div>
-          <h2 className="text-3xl sm:text-4xl font-black mb-4 text-surface-900">
-            Stop rebuilding from scratch.
+          <h2 className="text-3xl sm:text-4xl font-black mb-4 text-surface-900 leading-tight">
+            You&apos;ve got the tools.<br />
+            <span className="text-brand-orange">You&apos;ve got tonight.</span>
           </h2>
           <p className="text-surface-500 mb-8 max-w-lg mx-auto leading-relaxed">
-            Join PathForge and start using proven AI build paths created by people who already figured it out.
+            Open a build path, fork the prompts, swap in your context, and have a real thing to show by bedtime. No blank chat. No guessing what to build.
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
             <Link
-              href="/auth/signup"
+              href="/browse"
               className="group bg-brand-orange text-white px-8 py-3.5 font-bold text-sm hover:bg-brand-orange-dark focus-visible:outline-2 focus-visible:outline-brand-orange focus-visible:outline-offset-2 transition-colors duration-150 inline-flex items-center gap-2 min-h-11"
             >
-              Get Started Free
+              Find tonight&apos;s build
               <ArrowRight className="w-4 h-4 transition-transform duration-150 group-hover:translate-x-0.5" />
             </Link>
             <Link
-              href="/browse"
+              href="/auth/signup"
               className="text-sm font-semibold text-surface-600 hover:text-brand-orange focus-visible:outline-2 focus-visible:outline-brand-orange focus-visible:outline-offset-2 transition-colors duration-150 px-4 min-h-11 flex items-center"
             >
-              or browse paths first
+              or create a free account
             </Link>
           </div>
         </div>

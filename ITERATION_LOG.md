@@ -4,6 +4,14 @@ Most recent first. Cap each entry at 3 sentences. Older history lives in `git lo
 
 ---
 
+## Iter 46 — 2026-04-17 — Detail-page Tags row padding unified with metadata pills
+
+Picked Polish #1 (Tags vs metadata pill vertical rhythm): the detail-page metadata pill cluster (Category / Difficulty / Model / Tools) shipped at `px-2.5 py-1.5` but the Tags `#tag` chips further down the page shipped at `px-2.5 py-1` — same `text-xs` type size but a shorter hit area, so the two pill bands read at different vertical rhythms on the same page. Bumped Tags to `py-1.5` so both clusters now match; verified via Chrome MCP on `/prompt/33333333-3333-3333-3333-333333333314` that all 5 Tag chips (`#reporting`, `#automation`, `#operations`, …) and the 4 metadata pills resolve to matching computed `padding-top/bottom: 6px`, `/browse` h1 "Browse Projects" + 22 card links intact; the one console `Failed to fetch` on `/browse` is the pre-existing unconfigured-Supabase artifact from iters 41–45, unrelated to a CSS-only change; `npx tsc --noEmit` passes. Follow-up filed as new Polish #1 — the detail-page header still has an uneven vertical cadence (byline `mb-5` → metadata `pt-5` → CTA `mt-5`) that can visually collapse when pills wrap to two lines, and needs a parallel spacing audit.
+
+**Files touched:** `src/app/prompt/[id]/page.tsx`, `BACKLOG.md`, `ITERATION_LOG.md`.
+
+---
+
 ## Iter 45 — 2026-04-17 — The Story / The Result sibling box chrome unified
 
 Picked Polish #1 (box chrome parallelism): Story shipped with `bg-primary-50/60 border-l-4 border-brand-orange p-6 sm:p-8` and Result with the quieter `bg-accent-50/40 border-l-2 border-brand-blue p-6`, so after iters 41 (H2) + 44 (body measure) the two sibling sections had matching H2s and matching body spec but mismatched container chrome — pushed Result up to Story's spec (both deserve equal narrative weight, setup + payoff) by bumping `border-l-2` → `border-l-4`, `p-6` → `p-6 sm:p-8`, and `bg-accent-50/40` → `bg-accent-50/60`. Verified via Chrome MCP on `/prompt/33333333-3333-3333-3333-333333333314`: Story box now computes `border-left-width: 4px / padding: 32px / bg alpha 0.6` and Result box matches exactly (`4px / 32px / alpha 0.6`), `/browse` h1 "Browse Projects" + 22 card links intact, `/prompt/new` hits the expected login gate; the one console exception (`Failed to fetch` on `/prompt/new`) is the pre-existing unconfigured-Supabase artifact noted iter 41–44, unrelated to a CSS-only change; `npx tsc --noEmit` passes. Follow-up filed as new Polish #1 — Tags row `py-1` chips and metadata pill `py-1.5` chips on the same detail page read at different vertical rhythms and should be unified on the next pass.

@@ -309,7 +309,7 @@ export default async function PromptDetailPage({
             <Link
               key={tag}
               href={`/browse?q=${encodeURIComponent(tag)}`}
-              className="text-xs bg-surface-100 text-surface-500 px-2.5 py-1 border border-surface-200 hover:border-brand-orange/50 hover:text-brand-orange transition-colors duration-200"
+              className="text-xs bg-surface-100 text-surface-500 px-2.5 py-1.5 border border-surface-200 hover:border-brand-orange/50 hover:text-brand-orange transition-colors duration-200"
             >
               #{tag}
             </Link>

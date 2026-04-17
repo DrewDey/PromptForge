@@ -181,7 +181,7 @@ export default async function PromptDetailPage({
           The Story
         </h2>
         <div className="bg-primary-50/60 border-l-4 border-brand-orange p-6 sm:p-8">
-          <p className="text-surface-700 text-base leading-relaxed whitespace-pre-line">{prompt.content}</p>
+          <p className="text-surface-700 text-base leading-relaxed whitespace-pre-line max-w-prose">{prompt.content}</p>
         </div>
       </section>
 
@@ -296,7 +296,7 @@ export default async function PromptDetailPage({
             The Result
           </h2>
           <div className="bg-accent-50/40 border-l-2 border-brand-blue p-6">
-            <p className="text-surface-700 text-base leading-relaxed whitespace-pre-line">{prompt.result_content}</p>
+            <p className="text-surface-700 text-base leading-relaxed whitespace-pre-line max-w-prose">{prompt.result_content}</p>
           </div>
         </section>
       )}

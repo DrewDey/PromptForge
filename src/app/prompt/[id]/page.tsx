@@ -88,7 +88,7 @@ export default async function PromptDetailPage({
       <header className="mb-10">
         {/* Title */}
         <h1 className="text-3xl sm:text-4xl font-black text-surface-900 mb-3 leading-tight">{prompt.title}</h1>
-        <p className="text-surface-500 text-lg leading-relaxed mb-4">{prompt.description}</p>
+        <p className="text-surface-500 text-lg leading-relaxed mb-5">{prompt.description}</p>
 
         {/* Byline row — single line, dot-separated, reads like a newsroom byline */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">

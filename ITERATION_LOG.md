@@ -4,6 +4,14 @@ Most recent first. Cap each entry at 3 sentences. Older history lives in `git lo
 
 ---
 
+## Iter 39 — 2026-04-17 — PromptCard long-title line-clamp
+
+Picked Polish #1 (long-title truncation): the PromptCard title `<h3>` had no line-clamp, so a project with a title longer than ~60 chars would wrap to 3+ lines and push that card taller than its neighbours, breaking grid alignment on `/browse` and the profile pages. Added `line-clamp-2` (same utility already shipping on the description and OUTCOME pull-quote since iter 29) to the title, which Tailwind v4 resolves to `-webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden` — the computed style now matches the already-proven description clamp exactly, so long titles ellipsize cleanly on both Featured (`text-xl`) and regular (`text-base`) variants. Verified via Chrome MCP on `/browse` (20 cards / 2 featured, all h3s carry `line-clamp-2` with computed `webkit-line-clamp: 2 + overflow: hidden` matching the reference description clamp, zero console errors) and `/prompt/new` (login gate as expected); `npx tsc --noEmit` passes. Layout dimensions returned 0 under the Chrome extension's JS bridge (known iter-35 artifact), but computed-style matching the proven clamp + class presence is sufficient for this one-utility-class CSS change.
+
+**Files touched:** `src/components/PromptCard.tsx`, `BACKLOG.md`, `ITERATION_LOG.md`.
+
+---
+
 ## Iter 38 — 2026-04-17 — CodeBlock header chrome symmetry across prompt/result
 
 Picked Polish #1 (CodeBlock header consistency from iter 31): source review showed three asymmetries between the label and the dark CopyButton sitting in the same `text-[11px] font-mono font-semibold uppercase` header bar — label used `tracking-[0.14em]` but the button used `tracking-wider` (≈0.05em), label was `text-surface-300` but idle button was `text-surface-400`, and the button had no `shrink-0` so on narrow mobile the "Copy" chip could squeeze below the label (which itself had no `shrink-0`, so "PROMPT"/"RESULT" could truncate invisibly before the meta's `truncate` ever kicked in). Unified the dark CopyButton to the label spec (`tracking-[0.14em]`, `text-surface-300`, `shrink-0`) and added `shrink-0` to the CodeBlock header label so now the row collapses in the correct order on narrow widths: meta `step N` truncates first, label and copy button hold their widths, dot stays anchored. Verified via Chrome MCP on `/prompt/...3314` (3 steps → 6 code blocks, all 6 labels render `shrink-0 + tracking-[0.14em]`, all 6 copy buttons render `shrink-0 + tracking-[0.14em] + text-surface-300`); `/browse` (h1 "Browse Projects", 20 cards) and `/prompt/new` (login gate, expected) clean with zero console errors; `npx tsc --noEmit` passes.

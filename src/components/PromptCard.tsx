@@ -92,8 +92,10 @@ export default function PromptCard({ prompt, featured = false }: { prompt: Promp
           </span>
         )}
 
-        {/* Title — primary focal point */}
-        <h3 className={`font-semibold text-surface-900 group-hover:text-brand-orange transition-colors duration-150 leading-snug ${
+        {/* Title — primary focal point. line-clamp-2 so over-long titles (iter-39 Polish #1)
+             can't push card heights out of grid alignment; the ellipsis communicates truncation
+             on both Featured (text-xl) and regular (text-base) variants. */}
+        <h3 className={`font-semibold text-surface-900 group-hover:text-brand-orange transition-colors duration-150 leading-snug line-clamp-2 ${
           featured ? 'text-xl mb-2' : 'text-base mb-1.5'
         }`}>
           {prompt.title}

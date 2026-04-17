@@ -200,6 +200,58 @@ export default async function PromptDetailPage({
             </p>
           </div>
 
+          {/* Build-path progression strip (iter 50 — Polish #4).
+              A bird's-eye of the whole journey before the reader commits to
+              any single step. Each chip is an in-page anchor to its step
+              card below (see scroll-mt-24 + id="step-N"). Uses the site's
+              orange→blue gradient vocabulary: the leftmost chip carries the
+              orange accent (origin), the rightmost carries blue (payoff),
+              middle chips interpolate. Arrows between chips communicate
+              chain-order; on narrow widths the flex wraps and an extra
+              row-gap keeps wrapped rows readable. Hidden when there's only
+              one step — no journey to summarise. */}
+          {prompt.steps!.length > 1 && (
+            <nav
+              aria-label="Build path"
+              className="mb-10 -mx-1 px-1 pt-4 pb-5 border-t border-b border-surface-200 bg-gradient-to-r from-brand-orange/[0.04] via-transparent to-brand-blue/[0.04]"
+            >
+              <p className="text-[11px] font-mono uppercase tracking-wider text-surface-400 mb-3 px-1">
+                Journey at a glance
+              </p>
+              <ol className="flex flex-wrap items-center gap-x-1.5 gap-y-2">
+                {prompt.steps!.map((step, idx) => {
+                  const isFirst = idx === 0
+                  const isLast = idx === prompt.steps!.length - 1
+                  // Orange for origin, blue for payoff, neutral in between.
+                  const accent = isFirst
+                    ? 'border-brand-orange/50 bg-brand-orange/5 text-brand-orange-dark hover:bg-brand-orange/10 hover:border-brand-orange'
+                    : isLast
+                    ? 'border-brand-blue/50 bg-brand-blue/5 text-brand-blue hover:bg-brand-blue/10 hover:border-brand-blue'
+                    : 'border-surface-200 bg-white text-surface-700 hover:border-surface-400 hover:bg-surface-50'
+                  const label = step.title?.trim() || `Step ${idx + 1}`
+                  return (
+                    <Fragment key={`strip-${step.id}`}>
+                      <li>
+                        <a
+                          href={`#step-${idx + 1}`}
+                          className={`group inline-flex items-center gap-2 border px-2.5 py-1.5 text-xs font-semibold transition-colors duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange max-w-[220px] ${accent}`}
+                        >
+                          <span className="font-mono text-[11px] opacity-70 shrink-0">{String(idx + 1).padStart(2, '0')}</span>
+                          <span className="truncate">{label}</span>
+                        </a>
+                      </li>
+                      {!isLast && (
+                        <li aria-hidden="true" className="text-surface-300">
+                          <ArrowRight className="w-3.5 h-3.5" />
+                        </li>
+                      )}
+                    </Fragment>
+                  )
+                })}
+              </ol>
+            </nav>
+          )}
+
           <div className="relative">
             {/* Vertical pipe — gradient from orange to blue */}
             <div className="absolute left-[23px] top-2 bottom-2 w-[2px] bg-gradient-to-b from-brand-orange via-brand-blue to-brand-orange opacity-40" style={{ animation: 'pipeDraw 1s ease-out forwards' }} />
@@ -223,7 +275,7 @@ export default async function PromptDetailPage({
                       </div>
                     </div>
                   )}
-                <div className="relative pl-16">
+                <div id={`step-${idx + 1}`} className="relative pl-16 scroll-mt-24">
                   {/* Step node — orange number anchor */}
                   <div className="absolute left-0 top-0 w-[48px] h-[48px] bg-brand-orange flex items-center justify-center z-10 shadow-sm">
                     <span className="text-base font-black text-white">{idx + 1}</span>

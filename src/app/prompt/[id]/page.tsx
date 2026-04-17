@@ -28,6 +28,26 @@ export default async function PromptDetailPage({
   const modelDisplay = prompt.model_used ? getModelName(prompt.model_used) : prompt.model_recommendation
   const difficulty = difficultyConfig[prompt.difficulty] || difficultyConfig.beginner
 
+  // Hero "Final output" exhibit (iter 51 — Polish #1).
+  // Prefer the project-level final result_content; if absent, fall back to
+  // the last step that actually produced a result. The hero is the dominant
+  // first moment of the page — "look what was built" — so we only render it
+  // when there is substantive output to show. When the hero sources from
+  // prompt.result_content we drop the legacy bottom "The Result" section to
+  // avoid duplicating the same payload twice on one page.
+  const lastStepWithResult = hasSteps
+    ? [...prompt.steps!].reverse().find(s => s.result_content?.trim())
+    : undefined
+  const heroContent = prompt.result_content?.trim() || lastStepWithResult?.result_content?.trim() || null
+  const heroSource: 'project' | 'step' | null = heroContent
+    ? prompt.result_content?.trim()
+      ? 'project'
+      : 'step'
+    : null
+  const heroStepIndex = heroSource === 'step' && lastStepWithResult
+    ? prompt.steps!.findIndex(s => s.id === lastStepWithResult.id)
+    : -1
+
   // Fetch related projects in the same category (for "More in this category" section)
   let relatedProjects: Awaited<ReturnType<typeof getPrompts>> = []
   if (prompt.category) {
@@ -174,7 +194,56 @@ export default async function PromptDetailPage({
         </div>
       </header>
 
-      {/* ─── The Story — most prominent content section ─── */}
+      {/* ─── Final output hero (iter 51 — Polish #1) ─────────────────────────
+          The case-study hero. Sits directly under the fork CTA and above The
+          Story, giving the page an unmistakable "look what was built" first
+          moment. Explicitly NOT styled like CodeBlock — this is an editorial
+          exhibit, not a code viewer. The frame is a hairline gradient border
+          (orange → neutral → blue) around a generous white interior; typeset
+          at reading-prose scale, not monospace. When the project-level
+          result exists this becomes the canonical display and the legacy
+          bottom "The Result" section is dropped. If there is no project-
+          level result, we fall back to the last step's result and tag the
+          eyebrow with a step-of-N meta so the reader knows where this
+          payload came from in the chain. */}
+      {heroContent && (
+        <section aria-labelledby="final-output-eyebrow" className="mb-12">
+          <div className="relative bg-gradient-to-br from-brand-orange/55 via-surface-200 to-brand-blue/55 p-[1.5px] shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
+            <div className="bg-white px-6 py-8 sm:px-10 sm:py-12 min-h-[220px] flex flex-col">
+              <div id="final-output-eyebrow" className="flex flex-wrap items-center gap-x-2.5 gap-y-1.5 mb-5">
+                <span className="inline-flex items-center gap-2">
+                  <span className="inline-block w-1.5 h-1.5 bg-brand-blue" aria-hidden="true" />
+                  <span className="text-[11px] font-mono uppercase tracking-[0.18em] text-surface-600 font-semibold">
+                    Final output
+                  </span>
+                </span>
+                {heroSource === 'step' && heroStepIndex >= 0 && (
+                  <>
+                    <span className="text-surface-300 text-xs" aria-hidden="true">·</span>
+                    <a
+                      href={`#step-${heroStepIndex + 1}`}
+                      className="text-[11px] font-mono text-surface-500 hover:text-brand-blue transition-colors duration-200"
+                    >
+                      from step {heroStepIndex + 1} of {prompt.steps!.length}
+                    </a>
+                  </>
+                )}
+                {heroSource === 'project' && (
+                  <>
+                    <span className="text-surface-300 text-xs" aria-hidden="true">·</span>
+                    <span className="text-[11px] font-mono text-surface-400">what they shipped</span>
+                  </>
+                )}
+              </div>
+              <p className="text-lg sm:text-xl text-surface-900 leading-[1.55] whitespace-pre-line max-w-prose font-normal">
+                {heroContent}
+              </p>
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* ─── The Story — backstory under the hero ─── */}
       <section className="mb-12">
         <h2 className="text-xl font-black text-surface-900 mb-4 flex items-center gap-2">
           <MessageSquare className="w-5 h-5 text-brand-orange" />
@@ -360,18 +429,10 @@ export default async function PromptDetailPage({
         </section>
       )}
 
-      {/* ─── Final Result ─── */}
-      {prompt.result_content && (
-        <section className="mb-12">
-          <h2 className="text-xl font-black text-surface-900 mb-4 flex items-center gap-2">
-            <ArrowDown className="w-5 h-5 text-brand-blue" />
-            The Result
-          </h2>
-          <div className="bg-accent-50/60 border-l-4 border-brand-blue p-6 sm:p-8">
-            <p className="text-surface-700 text-base leading-relaxed whitespace-pre-line max-w-prose">{prompt.result_content}</p>
-          </div>
-        </section>
-      )}
+      {/* Legacy bottom "The Result" section removed in iter 51. The hero block
+          at the top of the page now serves as the canonical Final output
+          display for prompt.result_content — keeping a second rendering here
+          was double-showing the same payload and diluting the hero's weight. */}
 
       {/* ─── Tags ─── */}
       {prompt.tags.length > 0 && (

@@ -4,6 +4,14 @@ Most recent first. Cap each entry at 3 sentences. Older history lives in `git lo
 
 ---
 
+## Iter 34 — 2026-04-17 — "Feeds into next step" chip on the detail page
+
+Picked Polish #1 (step progression visual); the spine, orange number nodes and in-step ArrowDown already existed, so the missing slice was the inter-step narrative — added a small mono chip between consecutive steps that reads "step N result → step N+1 prompt," rendered as a sibling of each step card via a Fragment so it sits on the spine between cards (only when the prior step actually produced a result). Also tightened step gap from `space-y-8` to `space-y-5` so the chip + steps read as one flowing build rather than separate documents. Verified via Chrome MCP on `/prompt/.../333314` (3-step path → 2 chips, correct text + order via accessibility tree) and `/prompt/.../333309` (1-step path → 0 chips); `/browse` and `/prompt/new` clean, `npx tsc --noEmit` passes, no console errors.
+
+**Files touched:** `src/app/prompt/[id]/page.tsx`, `BACKLOG.md`, `ITERATION_LOG.md`.
+
+---
+
 ## Iter 33 — 2026-04-17 — Browse empty state rebuilt as an invite
 
 Replaced the old "No projects found" dead-end panel (just an icon + Clear filters button) with a three-block invite: a compact "No matches" notice that keeps the Clear-filters CTA, a "Try a category" section of up to 6 category shortcut pills (excluding the currently-filtered one), and a "Popular right now" row showing the top 3 most-popular PromptCards. The suggestions are fetched only when `prompts.length === 0` so the happy path stays single-query, and the category shortcuts + PromptCards use the same pill/card specs as the rest of Browse so the invite doesn't read as a bolted-on widget. Verified visually via Chrome MCP on `/browse?q=zzz` (empty path) and `/browse` (happy path) plus `/prompt/new`; `npx tsc --noEmit` passes, no console errors.

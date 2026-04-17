@@ -23,7 +23,7 @@
 //   progressive-disclosure HTML still works if the JS fails to hydrate.
 
 import Link from 'next/link'
-import { Search, X, FolderOpen, SlidersHorizontal, Sparkles, Layers, ChevronDown } from 'lucide-react'
+import { Search, X, FolderOpen, SlidersHorizontal, Sparkles, Layers, ChevronDown, TrendingUp, ArrowRight } from 'lucide-react'
 import { getCategories, getPrompts } from '@/lib/data'
 import PromptCard from '@/components/PromptCard'
 import CategoryPopover from '@/components/CategoryPopover'
@@ -77,6 +77,18 @@ export default async function BrowsePage({
   const showFeatured = !hasActiveFilters && prompts.length >= 3
   const featuredPrompts = showFeatured ? prompts.slice(0, 2) : []
   const gridPrompts = showFeatured ? prompts.slice(2) : prompts
+
+  // Iter 33: empty-state suggestions. Only fetched when we're about to render the empty state,
+  // so the normal happy path stays single-query. Pulls the 3 most-popular approved projects
+  // (ignoring the user's filters, by design — the whole point is "step out of the dead end")
+  // plus up to 6 category shortcuts, preferring categories ≠ the currently-filtered one.
+  const isEmpty = prompts.length === 0
+  const suggestedPrompts = isEmpty
+    ? await getPrompts({ sort: 'popular', limit: 3 })
+    : []
+  const suggestedCategories = isEmpty
+    ? categories.filter(c => c.slug !== activeCategory).slice(0, 6)
+    : []
 
   return (
     <div className="min-h-screen">
@@ -273,22 +285,86 @@ export default async function BrowsePage({
 
         {/* Results */}
         {prompts.length === 0 ? (
-          <div className="text-center py-16 sm:py-20 bg-surface-50 border border-dashed border-surface-300">
-            <FolderOpen className="w-10 h-10 text-surface-300 mx-auto mb-4" aria-hidden="true" />
-            <p className="text-base font-semibold text-surface-900 mb-1">No projects found</p>
-            <p className="text-sm text-surface-500 mb-6 max-w-sm mx-auto">
-              {params.q
-                ? `No results for "${params.q}". Try a different search term.`
-                : 'No projects match your filters. Try broadening your selection.'}
-            </p>
-            {hasActiveFilters && (
-              <Link
-                href="/browse"
-                className="inline-flex items-center gap-1.5 bg-surface-900 text-white text-[13px] font-bold px-4 py-2 min-h-11 hover:bg-surface-800 transition-colors duration-150 focus-visible:outline-2 focus-visible:outline-brand-orange focus-visible:outline-offset-2"
-              >
-                <X className="w-3.5 h-3.5" aria-hidden="true" />
-                Clear filters
-              </Link>
+          /*
+            Iter 33 — Empty state rebuilt as an INVITE, not a dead end.
+            Before: one bordered panel with "No results" + "Clear filters" button. That's a
+            terminus — a visitor who landed here via a zero-result filter had nowhere to go
+            without manually resetting state. The whole point of Browse is "show me what I
+            could build tonight," so an empty result needs to reopen the paths, not close
+            them. New shape:
+              1. Compact "No matches" notice (keeps the acknowledgement) + Clear filters.
+              2. "Try a category" — up to 6 category shortcuts (excluding the currently-
+                  filtered one) rendered as the same pill spec as the popover grid.
+              3. "Popular right now" — top 3 most-popular approved projects rendered via
+                  the real PromptCard so the invite looks like the rest of the page, not a
+                  bolted-on widget. Fetched on-demand (only when prompts.length === 0).
+          */
+          <div className="space-y-10">
+            <div className="text-center py-10 sm:py-12 bg-surface-50 border border-dashed border-surface-300">
+              <FolderOpen className="w-10 h-10 text-surface-300 mx-auto mb-4" aria-hidden="true" />
+              <p className="text-base font-semibold text-surface-900 mb-1">No matches for those filters</p>
+              <p className="text-sm text-surface-500 mb-6 max-w-md mx-auto">
+                {params.q
+                  ? `Nothing matched "${params.q}". Reset the search and try one of the paths below.`
+                  : 'Nothing landed under this combination yet. Try one of the paths below.'}
+              </p>
+              {hasActiveFilters && (
+                <Link
+                  href="/browse"
+                  className="inline-flex items-center gap-1.5 bg-surface-900 text-white text-[13px] font-bold px-4 py-2 min-h-11 hover:bg-surface-800 transition-colors duration-150 focus-visible:outline-2 focus-visible:outline-brand-orange focus-visible:outline-offset-2"
+                >
+                  <X className="w-3.5 h-3.5" aria-hidden="true" />
+                  Clear filters
+                </Link>
+              )}
+            </div>
+
+            {suggestedCategories.length > 0 && (
+              <section aria-labelledby="empty-cat-heading">
+                <div className="flex items-baseline justify-between gap-3 mb-4">
+                  <h3 id="empty-cat-heading" className="text-lg font-bold text-surface-900 flex items-center gap-2">
+                    <SlidersHorizontal className="w-4 h-4 text-surface-400" aria-hidden="true" />
+                    Try a category
+                  </h3>
+                  <span className="text-[12px] font-semibold uppercase tracking-wider text-surface-400 tabular-nums">
+                    {suggestedCategories.length} shortcuts
+                  </span>
+                </div>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                  {suggestedCategories.map(cat => (
+                    <Link
+                      key={cat.id}
+                      href={`/browse?category=${cat.slug}`}
+                      className="group flex items-center gap-2 text-[13px] font-medium px-3 py-2.5 bg-white border border-surface-200 text-surface-800 hover:border-brand-orange hover:bg-brand-orange/5 transition-colors duration-150 focus-visible:outline-2 focus-visible:outline-brand-orange focus-visible:outline-offset-2"
+                    >
+                      <span aria-hidden="true" className="text-base leading-none">{cat.icon}</span>
+                      <span className="truncate">{cat.name}</span>
+                      <ArrowRight className="w-3.5 h-3.5 ml-auto text-surface-300 group-hover:text-brand-orange transition-colors duration-150" aria-hidden="true" />
+                    </Link>
+                  ))}
+                </div>
+              </section>
+            )}
+
+            {suggestedPrompts.length > 0 && (
+              <section aria-labelledby="empty-pop-heading">
+                <div className="flex items-baseline justify-between gap-3 mb-4">
+                  <h3 id="empty-pop-heading" className="text-lg font-bold text-surface-900 flex items-center gap-2">
+                    <TrendingUp className="w-4 h-4 text-brand-orange" aria-hidden="true" />
+                    Popular right now
+                  </h3>
+                  <span className="text-[12px] font-semibold uppercase tracking-wider text-surface-400 tabular-nums">
+                    Top {suggestedPrompts.length}
+                  </span>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+                  {suggestedPrompts.map((prompt, idx) => (
+                    <div key={prompt.id} className="animate-card-slide-in" style={{ animationDelay: `${idx * 60}ms` }}>
+                      <PromptCard prompt={prompt} />
+                    </div>
+                  ))}
+                </div>
+              </section>
             )}
           </div>
         ) : (

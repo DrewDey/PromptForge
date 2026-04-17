@@ -16,16 +16,15 @@ Pick the top item in your queue, ship it, move it to the Done table with one lin
 
 Small, well-scoped, visible improvements. A human landing on the site should notice.
 
-1. **Browse empty state.** When filters return zero results, the page should INVITE — "try these categories" or "most-remixed today" or similar — not just say "no results." Dead ends are the opposite of the visitor moment.
-2. **Detail page: step progression visual.** Currently step prompts + results are stacked CodeBlocks. Make the journey feel like watching a build: numbered steps, a connecting line/spine down the left, "result of step N feeds step N+1" visual cue. Sell the over-the-shoulder feeling.
-3. **Browse card: make the build process visible.** Right now cards show title/description/OUTCOME/step-count. Add a micro visual of the step flow (chips or dots showing step-type progression) so the card sells "I can see how they did this" before click.
-4. **Fork/remix affordance audit.** Does a "Fork this" or "Use as starting point" button exist on the detail page? If yes, is it prominent? If no, flag it as a polish-queue item for *styling a placeholder* until a real Fork flow lands (structural).
-5. **Detail page meta row polish.** Model used + tools used + votes + author + date — tighten the hierarchy. Right now it's a salad; make it feel like a clean artifact header.
-6. **Landing page "why PathForge" moment.** Does the landing copy speak to the visitor-with-tokens-and-no-idea? If it reads as generic "share your prompts" → rewrite one section to speak to the real use case.
-7. **CodeBlock header consistency.** The dark header bar from iter 31 — confirm the dot + label + meta + copy button all behave identically across prompt (orange) and result (blue) on mobile widths. Polish any asymmetry.
-8. **PromptCard long-title truncation.** Confirm titles longer than 2 lines clamp cleanly with ellipsis across Featured + regular card variants.
-9. **Focus-ring consistency audit.** Tab through Browse + Build + detail. Note any interactive element with missing, wrong-color, or inconsistent focus ring. Fix in one pass.
-10. **Typography scale pass on the detail page.** H1 title, H2 section headers, step labels, body, metadata — are the sizes + weights + tracking consistent? Tighten any outliers.
+1. **Detail page: step progression visual.** Currently step prompts + results are stacked CodeBlocks. Make the journey feel like watching a build: numbered steps, a connecting line/spine down the left, "result of step N feeds step N+1" visual cue. Sell the over-the-shoulder feeling.
+2. **Browse card: make the build process visible.** Right now cards show title/description/OUTCOME/step-count. Add a micro visual of the step flow (chips or dots showing step-type progression) so the card sells "I can see how they did this" before click.
+3. **Fork/remix affordance audit.** Does a "Fork this" or "Use as starting point" button exist on the detail page? If yes, is it prominent? If no, flag it as a polish-queue item for *styling a placeholder* until a real Fork flow lands (structural).
+4. **Detail page meta row polish.** Model used + tools used + votes + author + date — tighten the hierarchy. Right now it's a salad; make it feel like a clean artifact header.
+5. **Landing page "why PathForge" moment.** Does the landing copy speak to the visitor-with-tokens-and-no-idea? If it reads as generic "share your prompts" → rewrite one section to speak to the real use case.
+6. **CodeBlock header consistency.** The dark header bar from iter 31 — confirm the dot + label + meta + copy button all behave identically across prompt (orange) and result (blue) on mobile widths. Polish any asymmetry.
+7. **PromptCard long-title truncation.** Confirm titles longer than 2 lines clamp cleanly with ellipsis across Featured + regular card variants.
+8. **Focus-ring consistency audit.** Tab through Browse + Build + detail. Note any interactive element with missing, wrong-color, or inconsistent focus ring. Fix in one pass.
+9. **Typography scale pass on the detail page.** H1 title, H2 section headers, step labels, body, metadata — are the sizes + weights + tracking consistent? Tighten any outliers.
 
 ---
 
@@ -54,8 +53,8 @@ History older than this lives in `git log`.
 
 | Date | Change |
 |------|--------|
+| 2026-04-17 | Iter 33 — Browse empty state rebuilt as an invite: "No matches" notice + Clear filters, plus "Try a category" (6 shortcut pills) and "Popular right now" (top 3 PromptCards). Suggestions fetched only on the empty path. |
 | 2026-04-17 | Repo cleanup — pruned 449 Cowork ghost files + 1.3 GB on-disk junk, tightened `.gitignore`, fixed stale `.git/*.lock` files; SKILL.md gained a visual-verify gate via Chrome MCP; "Drew only pushes" rule dropped (Claude Code pushes itself). |
 | 2026-04-16 | Iter 32 — Build page gets a live preview rail: two-pane layout on `lg+`, sticky BuilderPreview mirrors the Browse PromptCard, page gains H1 hero. |
 | 2026-04-16 | Iter 31 — Code-block treatment for prompts + results: new `CodeBlock` shared component, dark chrome with dot/label/meta/integrated copy. |
 | 2026-04-16 | Iter 30 — Featured card orange audit: step-number circles unified with regular cards to drop Featured from 4 orange accents to 3. |
-| 2026-04-16 | Iter 29 — OUTCOME pull-quote on Browse cards; evergreen "Across N categories" subtext. |

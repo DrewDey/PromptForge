@@ -4,6 +4,14 @@ Most recent first. Cap each entry at 3 sentences. Older history lives in `git lo
 
 ---
 
+## Iter 45 — 2026-04-17 — The Story / The Result sibling box chrome unified
+
+Picked Polish #1 (box chrome parallelism): Story shipped with `bg-primary-50/60 border-l-4 border-brand-orange p-6 sm:p-8` and Result with the quieter `bg-accent-50/40 border-l-2 border-brand-blue p-6`, so after iters 41 (H2) + 44 (body measure) the two sibling sections had matching H2s and matching body spec but mismatched container chrome — pushed Result up to Story's spec (both deserve equal narrative weight, setup + payoff) by bumping `border-l-2` → `border-l-4`, `p-6` → `p-6 sm:p-8`, and `bg-accent-50/40` → `bg-accent-50/60`. Verified via Chrome MCP on `/prompt/33333333-3333-3333-3333-333333333314`: Story box now computes `border-left-width: 4px / padding: 32px / bg alpha 0.6` and Result box matches exactly (`4px / 32px / alpha 0.6`), `/browse` h1 "Browse Projects" + 22 card links intact, `/prompt/new` hits the expected login gate; the one console exception (`Failed to fetch` on `/prompt/new`) is the pre-existing unconfigured-Supabase artifact noted iter 41–44, unrelated to a CSS-only change; `npx tsc --noEmit` passes. Follow-up filed as new Polish #1 — Tags row `py-1` chips and metadata pill `py-1.5` chips on the same detail page read at different vertical rhythms and should be unified on the next pass.
+
+**Files touched:** `src/app/prompt/[id]/page.tsx`, `BACKLOG.md`, `ITERATION_LOG.md`.
+
+---
+
 ## Iter 44 — 2026-04-17 — Final Result (+ The Story) body paragraph measure cap
 
 Picked Polish #1 (Final Result body width + density): the `<p>` inside The Result's blue-bordered box was stretching to the full `max-w-4xl` container, so long prose read as a wall, and its sibling The Story — already typographically unified by iter 41 (H2) and sharing the same body type spec — had the same problem; capped both to `max-w-prose` (computed ~656px / ~65ch) so the two sibling sections keep parallel measure. Verified via Chrome MCP on `/prompt/33333333-3333-3333-3333-333333333314`: both paragraphs now resolve with class `text-surface-700 text-base leading-relaxed whitespace-pre-line max-w-prose` and computed `max-width: 656.094px` (the four H2s — The Story / The Build Path 3 steps / The Result / More in Productivity — still render clean), `/browse` h1 "Browse Projects" + 20 card links intact; pre-existing unconfigured-Supabase "Failed to fetch" on the detail page is the same artifact as iter 41–43, unrelated to a CSS-only change; `npx tsc --noEmit` passes. Follow-up filed as new Polish #1 — the box chrome (border-l-4 vs l-2, p-6 sm:p-8 vs p-6) still diverges between the two sibling sections and needs a one-direction parallel pass.

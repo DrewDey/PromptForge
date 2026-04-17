@@ -295,7 +295,7 @@ export default async function PromptDetailPage({
             <ArrowDown className="w-5 h-5 text-brand-blue" />
             The Result
           </h2>
-          <div className="bg-accent-50/40 border-l-2 border-brand-blue p-6">
+          <div className="bg-accent-50/60 border-l-4 border-brand-blue p-6 sm:p-8">
             <p className="text-surface-700 text-base leading-relaxed whitespace-pre-line max-w-prose">{prompt.result_content}</p>
           </div>
         </section>

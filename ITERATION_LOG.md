@@ -4,6 +4,14 @@ Most recent first. Cap each entry at 3 sentences. Older history lives in `git lo
 
 ---
 
+## Iter 47 — 2026-04-17 — Detail-page header byline→pills→CTA rhythm locked to 24px
+
+Picked Polish #1 (header vertical rhythm on multi-line pill wrap): the detail-page header was running a `mb-5` / `pt-5` / `mt-5` cadence around the pill band with a bare `gap-2` on the flex-wrap, so when the pills wrapped to two rows the 8px row-gap squashed the visual separation vs the clean 20px of breathing room the single-row case got. Locked all three tokens to 24px (`mb-5` → `mb-6` byline, `pt-5` → `pt-6` pill band, `mt-5` → `mt-6` CTA) and bumped the pill flex to `gap-x-2 gap-y-2.5` so wrapped pill rows have 10px of row gap (vs 8px between adjacent pills within a row) — tiny asymmetry but it's exactly the signal the wrapped-row case needed. Verified via Chrome MCP on `/prompt/33333333-3333-3333-3333-333333333314`: byline computes `margin-bottom: 24px`, pill band `padding-top: 24px / row-gap: 10px / column-gap: 8px / 4 pills`, CTA `margin-top: 24px`; `/browse` h1 "Browse Projects" + 22 card links intact; the one `Failed to fetch` console exception is the pre-existing unconfigured-Supabase artifact carried since iter 41, unrelated to a CSS-only change; `npx tsc --noEmit` passes. Follow-up filed as new Polish #1 — the title block above now ramps `mb-3 → mb-4 → mb-6` which reads as a step rather than a ramp against the 24px pill-cluster cadence, so either bump description to `mb-5` to re-monotonic the ramp or deliberately tighten h1+description as a "title group" separated from the meta group.
+
+**Files touched:** `src/app/prompt/[id]/page.tsx`, `BACKLOG.md`, `ITERATION_LOG.md`.
+
+---
+
 ## Iter 46 — 2026-04-17 — Detail-page Tags row padding unified with metadata pills
 
 Picked Polish #1 (Tags vs metadata pill vertical rhythm): the detail-page metadata pill cluster (Category / Difficulty / Model / Tools) shipped at `px-2.5 py-1.5` but the Tags `#tag` chips further down the page shipped at `px-2.5 py-1` — same `text-xs` type size but a shorter hit area, so the two pill bands read at different vertical rhythms on the same page. Bumped Tags to `py-1.5` so both clusters now match; verified via Chrome MCP on `/prompt/33333333-3333-3333-3333-333333333314` that all 5 Tag chips (`#reporting`, `#automation`, `#operations`, …) and the 4 metadata pills resolve to matching computed `padding-top/bottom: 6px`, `/browse` h1 "Browse Projects" + 22 card links intact; the one console `Failed to fetch` on `/browse` is the pre-existing unconfigured-Supabase artifact from iters 41–45, unrelated to a CSS-only change; `npx tsc --noEmit` passes. Follow-up filed as new Polish #1 — the detail-page header still has an uneven vertical cadence (byline `mb-5` → metadata `pt-5` → CTA `mt-5`) that can visually collapse when pills wrap to two lines, and needs a parallel spacing audit.

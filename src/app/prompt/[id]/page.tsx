@@ -91,7 +91,7 @@ export default async function PromptDetailPage({
         <p className="text-surface-500 text-lg leading-relaxed mb-4">{prompt.description}</p>
 
         {/* Byline row — single line, dot-separated, reads like a newsroom byline */}
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-5">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
           <div className="flex items-center gap-3 min-w-0">
             <div className="w-9 h-9 bg-gradient-to-br from-brand-orange to-brand-blue flex items-center justify-center text-white text-sm font-bold flex-shrink-0">
               {(prompt.author?.display_name || 'A')[0].toUpperCase()}
@@ -126,7 +126,7 @@ export default async function PromptDetailPage({
             classifier + link), then neutral pills with small icons/dots for
             difficulty, model, tools. Removed the N-step chip (it duplicated
             the "N steps" label on the Build Path section header below). */}
-        <div className="flex items-center gap-2 flex-wrap pt-5 border-t border-surface-200 text-xs">
+        <div className="flex items-center gap-x-2 gap-y-2.5 flex-wrap pt-6 border-t border-surface-200 text-xs">
           {prompt.category && (
             <Link
               href={`/browse?category=${prompt.category.slug}`}
@@ -159,7 +159,7 @@ export default async function PromptDetailPage({
             the affordance so the "I can build this tonight" moment has an obvious
             next action. Destination is /prompt/new (blank draft); copy is explicit
             about prefill being pending so it doesn't mislead. */}
-        <div className="mt-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 bg-surface-900 text-white px-5 py-4">
+        <div className="mt-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 bg-surface-900 text-white px-5 py-4">
           <div className="min-w-0">
             <p className="text-sm font-semibold leading-tight">Inspired? Build your own version.</p>
             <p className="text-xs text-surface-400 mt-0.5">Start a new draft from this blueprint — auto-prefill coming soon.</p>

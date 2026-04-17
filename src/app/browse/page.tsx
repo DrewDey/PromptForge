@@ -256,8 +256,17 @@ export default async function BrowsePage({
               </Link>
             </div>
           ) : (
-            <p className="text-sm text-surface-500">
-              Curated build paths across every category.
+            /*
+              No filters active — replace the old "Curated build paths across every category"
+              stranded subtext (iter 26) with a compact metadata summary. The stranded line
+              was a floating helper with no structural purpose; replacing it with the
+              categories/newest-author count gives the right-side an actual anchor that
+              responds to the state of the page.
+            */
+            <p className="text-sm text-surface-500 tabular-nums">
+              Across <span className="font-semibold text-surface-700">{categories.length}</span> categories
+              <span aria-hidden="true" className="text-surface-300 mx-2">·</span>
+              Community-curated
             </p>
           )}
         </div>

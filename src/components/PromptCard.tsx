@@ -14,6 +14,19 @@
 //   iter 26 reviewer specifically flagged that the promise of "one single line" was not yet
 //   visually delivered. Separators are `text-surface-300` (subtle but present) and hidden on
 //   mobile where the author span is also hidden so we don't get a leading orphaned dot.
+//
+// Iteration 29 (2026-04-16):
+// - Cards now surface the project OUTCOME — a 2-line line-clamp preview of `result_content`
+//   rendered as a left-bordered pull-quote with an "OUTCOME" orange eyebrow. Before, cards
+//   showed only the author's story (description) + metadata, so a scanner could see WHO
+//   built it but never got a glimpse of WHAT got built. With the iter-28 seed-content
+//   overhaul landing real outcomes in result_content ("$48,200 MRR", "closed $1.8M",
+//   "Warm Wheat #D4A843", "8% → 14% conversion"), this preview is the single biggest unlock
+//   for "cards need to sell the project" (BACKLOG #1). Only renders when `result_content`
+//   is present — gracefully omitted for seeds that don't have it, so the card still composes.
+// - Left-border + eyebrow mirrors the Featured card's left-border accent pattern, so cards
+//   without a Featured status still get a structural "spine" that differentiates the hook
+//   from the rest of the card.
 
 import Link from 'next/link'
 import { ArrowUp, Bookmark, ChevronRight, Cpu, Layers } from 'lucide-react'
@@ -71,6 +84,26 @@ export default function PromptCard({ prompt, featured = false }: { prompt: Promp
         }`}>
           {prompt.description}
         </p>
+
+        {/*
+          OUTCOME preview (iter 29) — the hook. Gives scanners a glimpse of WHAT got built,
+          not just WHO built it or WHAT model they used. Renders only when result_content
+          is populated so legacy/partial seeds don't render an empty frame.
+        */}
+        {prompt.result_content && (
+          <div className={`border-l-2 border-brand-orange/50 bg-brand-orange/[0.03] pl-3 pr-2 py-1.5 ${
+            featured ? 'mb-4' : 'mb-3'
+          }`}>
+            <span className="block text-[9px] font-bold uppercase tracking-[0.12em] text-brand-orange mb-0.5">
+              Outcome
+            </span>
+            <p className={`text-surface-700 leading-snug line-clamp-2 ${
+              featured ? 'text-[13px]' : 'text-[12px]'
+            }`}>
+              {prompt.result_content}
+            </p>
+          </div>
+        )}
 
         {/* Category + Step count — secondary metadata row */}
         <div className="flex items-center gap-2 flex-wrap mb-4">

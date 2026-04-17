@@ -283,7 +283,7 @@ export default async function PromptDetailPage({
       {/* Single prompt (no steps) */}
       {!hasSteps && prompt.content && (
         <section className="mb-12">
-          <h2 className="text-lg font-bold text-surface-900 mb-4">The Prompt</h2>
+          <h2 className="text-xl font-black text-surface-900 mb-4">The Prompt</h2>
           <CodeBlock code={prompt.content} label="prompt" variant="prompt" />
         </section>
       )}
@@ -291,12 +291,12 @@ export default async function PromptDetailPage({
       {/* ─── Final Result ─── */}
       {prompt.result_content && (
         <section className="mb-12">
-          <h2 className="text-lg font-bold text-surface-900 mb-4 flex items-center gap-2">
-            <ArrowDown className="w-4 h-4 text-brand-blue" />
+          <h2 className="text-xl font-black text-surface-900 mb-4 flex items-center gap-2">
+            <ArrowDown className="w-5 h-5 text-brand-blue" />
             The Result
           </h2>
           <div className="bg-accent-50/40 border-l-2 border-brand-blue p-6">
-            <p className="text-surface-700 leading-relaxed whitespace-pre-line">{prompt.result_content}</p>
+            <p className="text-surface-700 text-base leading-relaxed whitespace-pre-line">{prompt.result_content}</p>
           </div>
         </section>
       )}
@@ -321,7 +321,7 @@ export default async function PromptDetailPage({
       {relatedProjects.length > 0 && prompt.category && (
         <section className="mt-16 pt-10 border-t border-surface-200">
           <div className="flex items-center justify-between mb-6">
-            <h2 className="text-lg font-bold text-surface-900">
+            <h2 className="text-xl font-black text-surface-900">
               More in {prompt.category.icon} {prompt.category.name}
             </h2>
             <Link

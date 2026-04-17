@@ -4,6 +4,14 @@ Most recent first. Cap each entry at 3 sentences. Older history lives in `git lo
 
 ---
 
+## Iter 41 — 2026-04-17 — Typography scale pass on the detail page
+
+Picked Polish #1 (typography scale): H2 spec on the detail page was split across two voices — The Story and The Build Path used `text-xl font-black`, but The Prompt (single-prompt variant), The Result, and More-in-category shipped with the older `text-lg font-bold`, so section headers read at three different weights depending on where you scrolled. Unified all five H2s to `text-xl font-black text-surface-900`, bumped The Result's ArrowDown icon from `w-4` to `w-5` so its size now matches The Story's MessageSquare at the same heading size, and added the missing `text-base` to The Result's body paragraph so it parallels The Story's body spec exactly (both are now `text-surface-700 text-base leading-relaxed`). Verified via Chrome MCP on `/prompt/...3312` (no-steps → 4 H2s, all `text-xl font-black`) and `/prompt/...3314` (3-step → 5 H2s, all `text-xl font-black`); `/browse` (h1 "Browse Projects" + 20 cards) and `/prompt/new` (login gate, expected) clean; one `Failed to fetch` console exception on the detail page is the pre-existing unconfigured-Supabase artifact, unrelated to this change; `npx tsc --noEmit` passes.
+
+**Files touched:** `src/app/prompt/[id]/page.tsx`, `BACKLOG.md`, `ITERATION_LOG.md`.
+
+---
+
 ## Iter 40 — 2026-04-17 — Focus-ring audit (first pass)
 
 Picked Polish #1 (focus-ring audit): grep across src showed the site-standard ring is `focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange` and is consistently applied on Header, Footer, PromptCard, CategoryCard, landing, browse, and the builder's section headers/add-step button — but three interactive clusters on priority pages shipped with *zero* focus ring: CopyButton (once per code block × 2 blocks per step = 6+ instances per detail page), VoteBookmarkButtons (both size variants, so 4 buttons), and the builder's per-step move-up / move-down / remove controls on `/prompt/new`. Added the standard ring to all, with two deliberate deviations: CopyButton's dark variant uses `outline-white` because `outline-brand-orange` would vanish against the orange CodeBlock header, and the step-remove button uses `outline-red-500` to match its destructive red hover (the move-up/down buttons keep the brand-orange ring to match their orange hover). Verified via Chrome MCP on `/prompt/...3312` (`focus-visible:outline-brand-orange` class found on vote + bookmark buttons, `focus-visible:outline-white` on the CopyButton; Tailwind-generated CSS rules for all three utilities confirmed present in the stylesheet), `/browse` and `/prompt/new` reload clean with zero console errors, `npx tsc --noEmit` passes.

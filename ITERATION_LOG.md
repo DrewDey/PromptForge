@@ -4,6 +4,14 @@ Most recent first. Cap each entry at 3 sentences. Older history lives in `git lo
 
 ---
 
+## Iter 49 — 2026-04-17 — Result-first step cards (Polish #1 — first structural win post-reset)
+
+Picked Polish #1 from the newly-restocked queue: flipped the step rendering in `src/app/prompt/[id]/page.tsx` so each step card now leads with its RESULT as the dominant `CodeBlock` (blue header dot), with the prompt collapsed behind a native `<details><summary>Show the prompt behind this step</summary>` disclosure — fallback: if a step has no `result_content` yet, the prompt surfaces as the primary content since there's nothing else to lead with. Verified via Chrome MCP on `/prompt/...3314`: all 3 step bodies resolve to `[DIV (result, blue dot, label "result"), DETAILS (prompt)]` — flip confirmed; toggling `details.open = true` reveals the prompt CodeBlock inside with correct "prompt" label and the chevron gets the `group-open:rotate-90` class; `/browse` h1 "Browse Projects" + 22 card links intact; `/prompt/new` redirects to login-gate ("Log in to share a project") as expected; `npx tsc --noEmit` clean; the one Failed to fetch console exception on `/prompt/new` is the pre-existing unconfigured-Supabase artifact carried since iter 41. First structural (non-spacing) iteration since the grudge-reset — the detail page now reads as a sequence of OUTPUTS with optional prompt-reveal, exactly the "look what was built" → "here's how" layering the vision anchor calls for.
+
+**Files touched:** `src/app/prompt/[id]/page.tsx`, `BACKLOG.md`, `ITERATION_LOG.md`.
+
+---
+
 ## Iter 48 — 2026-04-17 — Detail-page title block ramp monotonicized
 
 Picked Polish #1 (title block vs header cadence mismatch from iter 47): the hero description `<p>` was still shipping `mb-4` (16px) while the byline/pills/CTA plateau below had been locked to 24px, so the header ramp read 12 → 16 → 24 → 24 → 24 — a step-jump into the plateau rather than a smooth ramp, picking default option A from the backlog item. Bumped description `mb-4` → `mb-5` so the ramp is now 12 → 20 → 24 → 24 → 24, monotonic and seating cleanly on the plateau (option A — the tighter "title group" reading was the alternative, but monotonicity matches the established pill/CTA cadence with no re-grouping). Verified via Chrome MCP on `/prompt/...3314`: computed `h1 margin-bottom: 12px / desc margin-bottom: 20px / byline margin-bottom: 24px / pill band padding-top: 24px / CTA margin-top: 24px`; `/browse` h1 "Browse Projects" + 22 card links intact; the one `Failed to fetch` console exception is the pre-existing unconfigured-Supabase artifact carried since iter 41 (CSS-only change, unrelated); `npx tsc --noEmit` passes. Follow-up filed as new Polish #1 — breadcrumb `mb-8` (32px) → h1 `mb-3` (12px) is now the outlier against the tightened ramp below, worth either trimming to 24px for a consistent outer bracket or leaving as a deliberate nav separator.

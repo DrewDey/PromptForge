@@ -196,7 +196,7 @@ export default async function PromptDetailPage({
               </span>
             </h2>
             <p className="text-sm text-surface-500">
-              Follow the prompts and results at each step of the build process.
+              See what came out of each step. Expand to reveal the prompt behind it.
             </p>
           </div>
 
@@ -245,29 +245,49 @@ export default async function PromptDetailPage({
                       )}
                     </div>
 
-                    {/* Prompt + Result — unified code-editor panels. Color signal
-                        now comes from the CodeBlock header dot (orange = input,
-                        blue = output), so the old eyebrow rows + accent borders
-                        were removed to keep a single visual rhythm per step. */}
+                    {/* Result-first step body (iter 49 — Polish #1).
+                        The RESULT is now the dominant content of each step
+                        card — what came out of this step leads, because the
+                        visitor is here to see what was built, not to read
+                        prompts. The prompt collapses behind a native
+                        <details> disclosure so it's one click away without
+                        stealing the visual field. Fallback: if the step has
+                        no result yet, the prompt surfaces as the primary
+                        content (nothing else to lead with). */}
                     <div className="p-5 space-y-4">
-                      <CodeBlock
-                        code={step.content}
-                        label="prompt"
-                        variant="prompt"
-                        meta={`step ${idx + 1}`}
-                      />
-                      {step.result_content && (
-                        <div className="flex flex-col items-center gap-2">
-                          <ArrowDown className="w-4 h-4 text-surface-300" aria-hidden="true" />
-                          <div className="w-full">
-                            <CodeBlock
-                              code={step.result_content}
-                              label="result"
-                              variant="result"
-                              meta={`step ${idx + 1}`}
-                            />
-                          </div>
-                        </div>
+                      {step.result_content ? (
+                        <>
+                          <CodeBlock
+                            code={step.result_content}
+                            label="result"
+                            variant="result"
+                            meta={`step ${idx + 1}`}
+                          />
+                          <details className="group border border-surface-200 bg-surface-50/60">
+                            <summary className="flex items-center justify-between gap-3 cursor-pointer list-none px-3.5 py-2 text-xs font-medium text-surface-600 hover:text-surface-900 hover:bg-surface-100 transition-colors duration-200 select-none">
+                              <span className="flex items-center gap-2">
+                                <span className="inline-block w-1.5 h-1.5 bg-brand-orange" aria-hidden="true" />
+                                Show the prompt behind this step
+                              </span>
+                              <ChevronRight className="w-3.5 h-3.5 text-surface-400 transition-transform duration-200 group-open:rotate-90" aria-hidden="true" />
+                            </summary>
+                            <div className="p-3 pt-0">
+                              <CodeBlock
+                                code={step.content}
+                                label="prompt"
+                                variant="prompt"
+                                meta={`step ${idx + 1}`}
+                              />
+                            </div>
+                          </details>
+                        </>
+                      ) : (
+                        <CodeBlock
+                          code={step.content}
+                          label="prompt"
+                          variant="prompt"
+                          meta={`step ${idx + 1}`}
+                        />
                       )}
                     </div>
                   </div>

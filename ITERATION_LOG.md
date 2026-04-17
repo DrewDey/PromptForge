@@ -5,6 +5,70 @@
 
 ---
 
+## 2026-04-16 — Iteration 29: Browse cards — OUTCOME preview pull-quote + right-side metadata swap
+
+**Picked the top unblocked item** — BACKLOG #1 ("Browse page — make it actually good") is still the lead of the Design Overhaul sprint. Iter 26 collapsed the filter toolbar, iter 27 swept reviewer nits, iter 28 landed real seed content in `seed-fix.sql`. The unfinished piece of #1 was the bullet "Cards need to sell the project: Show what was built, make people want to click." With iter-28's real seed now populated via `mock-data.ts` (localhost) — things like "closed $1.8M" in the financial-model project, "Warm Wheat #D4A843" in the bakery brand, "8% → 14% conversion" in the email sequence — cards had rich `result_content` available but were still surfacing only the author's setup story + metadata. Scanners saw WHO built it but not WHAT got built.
+
+**Process incident — surfaced early so future iterations learn:** I burned ~30 minutes of session time chasing a self-inflicted bug: `pkill -9 -f "next"` in my pre-screenshot cleanup was matching its own bash process (the command line contained the literal string "next"), hard-killing the whole bash call before the dev server could start. Every attempt returned exit 137 with no output, which I misread as a Turbopack/sandbox issue and spent cycles debugging memory limits, cgroups, FUSE permissions, fs-shims. The fix was dropping the pkill entirely — `ps aux` showed no lingering processes between calls (bwrap `--die-with-parent` already cleans the PID namespace). Lesson for iter 30+: `pkill -f "<pattern>"` where `<pattern>` appears in your own command line is a landmine; either narrow the pattern (`pkill -f "node.*next dev"`) or skip the cleanup when the sandbox already isolates processes.
+
+**Screenshot pipeline status:** Working. `/sessions/vigilant-adoring-pasteur/pf-work/shot3.mjs` is the reusable orchestrator — spawns `next dev --turbopack` via `spawn('node', [next-bin, 'dev', ...])`, waits for "Ready in" marker (~170ms), HTTP-probes the target URL, launches Playwright chromium, `domcontentloaded` + 1.5s settle + screenshot. Full /browse screenshot in ~3.2s warm. `rsync -a src/ pf-work/src/` between real-project edits and shot calls.
+
+**Visual capture (Step 2 + Step 6)**: Before and after PNGs at `/sessions/vigilant-adoring-pasteur/iter-screens/iter-29-{before,after}-browse-{full,viewport}.png` (and copies in `outputs/` so Drew can view them). Before state: cards end on a flat description; the right side of the "20 Projects" anchor shows a stranded "Curated build paths across every category." After: cards have a left-bordered pull-quote OUTCOME block below description; right side reads "Across **10** categories · Community-curated".
+
+**Design brief (2 tight goals, no scope creep)**:
+
+1. **Add an OUTCOME preview block to every Browse card that has `result_content`** — 2-line line-clamp preview rendered as a left-orange-bordered pull-quote (`border-l-2 border-brand-orange/50 bg-brand-orange/[0.03] pl-3 pr-2 py-1.5`) with an "OUTCOME" eyebrow (`text-[9px] font-bold uppercase tracking-[0.12em] text-brand-orange`). Renders only when `result_content` is populated so partial seeds degrade gracefully. Featured cards get `text-[13px]`; regular cards get `text-[12px]`.
+
+2. **Kill the stranded "Curated build paths across every category." subtext** on the result-count row (only shows when no filters are active). Replace with a compact "Across **N** categories · Community-curated" summary that ties to actual category count and is evergreen (the reviewer flagged "Updated weekly" was aspirational and would age into a lie).
+
+**What was implemented**:
+
+*`src/components/PromptCard.tsx`*:
+- New block between description `<p>` and the Category+Step-count row. Conditional on `prompt.result_content`. Styled as left-bordered tinted pull-quote with an "OUTCOME" eyebrow. Mirrors the Featured card's left-border accent pattern so the visual language is consistent.
+- Updated the file-top iteration comment block with an iter-29 section explaining the rationale and "OUTCOME eyebrow + tinted surface" spec.
+
+*`src/app/browse/page.tsx`*:
+- The `else` branch (no active filters) of the result-header's right rail now renders a `tabular-nums` span with `categories.length` + "Community-curated" text instead of the old "Curated build paths across every category" stranded copy.
+- Inline comment documents the iter-26 → iter-29 evolution so the next iteration can see the rationale.
+
+**Review outcome** (independent general-purpose agent, loaded all four before/after PNGs as images):
+
+**APPROVE WITH NITS. Ship it.**
+
+- *Hook delivery*: "Decisively yes. Before, Featured cards ended on a flat description — now they end on the payoff. That's the 'sell' the backlog has been asking for."
+- *Hierarchy*: "Correct. Title > description > OUTCOME (offset pull-quote, differentiated surface) > metadata. OUTCOME block reads as a distinct *artifact*, not a third paragraph."
+- *Orange discipline*: "Used well. Eyebrow is small caps, left border 2–3px. Echoes Featured's left accent rather than fighting it. Not over-used at grid scale."
+- *Visual improvement*: "Meaningful, bordering on dramatic for Featured. Cards now have a narrative arc (setup → payoff). Very Linear/Vercel changelog energy."
+- *Orange stacking risk on Featured cards*: 4 orange hits now (left bar, FEATURED pill, step numbers, OUTCOME border). "Still readable here, but at the ceiling." Next iteration should audit Featured holistically before adding more orange.
+- *"Updated weekly"* copy flagged as aspirational — addressed pre-commit by swapping to "Community-curated."
+
+**Verification:**
+- `npx tsc --noEmit` — clean (exit 0).
+- `npm run build` — not run (chronic FUSE EPERM on `.next/` for build output; Vercel builds from a clean checkout).
+- `npm run lint` — still blocked by path-with-space bug.
+- Visual audit: **passed** — 4 PNGs on disk, reviewer loaded all four as images and produced a paragraph-by-paragraph comparison.
+
+**Commit**: `1bdc25d` (clean two-file diff: `src/components/PromptCard.tsx`, `src/app/browse/page.tsx`). Drew handles `git push`.
+
+**Bookkeeping commit deferred to Drew.** BACKLOG.md + ITERATION_LOG.md + QUESTIONS.md updates are on disk (unstaged) but can't be committed from the sandbox — a stale `.git/HEAD.lock` + `.git/index.lock` took hold during my first commit attempt and the FUSE mount blocks unlink on them (EPERM even for the creating UID). Drew just needs to run locally: `rm "/Users/ddtuchfarber/Desktop/Business Ideas/Prompt Project Platform/.git/HEAD.lock" "/Users/ddtuchfarber/Desktop/Business Ideas/Prompt Project Platform/.git/index.lock" && cd "/Users/ddtuchfarber/Desktop/Business Ideas/Prompt Project Platform" && git add BACKLOG.md ITERATION_LOG.md QUESTIONS.md && git commit -m "iter 29: bookkeeping updates"`. Files on disk are final; only the commit step is blocked. Iter 28 hit the identical FUSE-EPERM blocker — filing this away as a recurring sandbox limitation, not a code problem.
+
+**Assumptions I made (Drew — flag anything you disagree with)**:
+
+1. Interpreted BACKLOG #1's "Cards need to sell the project" as the highest-value open bullet, given iters 26/27 already landed the filter-toolbar collapse and card footer dedupe. The alternative path (Q18's option A: reusable Button primitive, mobile filter UX on Browse, or Build page code-block treatment) is also valid — I picked the most *visible* iteration rather than the most *systematic* one because the Design Overhaul sprint brief emphasizes "dramatic, visible improvements."
+2. Put the OUTCOME block BETWEEN description and category-row, not after metadata. Rationale: result preview is a continuation of the narrative (setup → outcome → meta), not a supporting footnote. The reviewer agreed.
+3. Used `line-clamp-2` even on Featured cards (same as regular). Featured cards could fit 3 lines of outcome but I kept parity to avoid Featured drifting toward an "over-stuffed" feel. If Drew wants more Featured outcome visibility, `featured ? 'line-clamp-3' : 'line-clamp-2'` is a 1-line change for iter 30.
+4. Swapped "Updated weekly" → "Community-curated" per reviewer nit. This is evergreen and true. If the team later adds a real "freshness" signal (e.g. days since last project approval), it can replace this.
+5. Deferred the reviewer's "watch the nested-tint contrast on Featured cards" concern — the OUTCOME tint (`bg-brand-orange/[0.03]`) on a Featured card's tinted surface (`color-mix(in_srgb,var(--color-brand-orange)_3%,white)`) does sit on a warm ground. Pixel review showed readable on my headless render but low-gamut displays could regress. Iter 30 candidate.
+
+**What's next** (ranked):
+
+1. **Drew applies `seed-fix.sql` to live Supabase** (unchanged from iter 28). Live site still shows the garbage template seed until then.
+2. **Reusable Button primitive** (overdue from iters 23–27). Profile / auth / landing / Browse segmented / CategoryPopover all hand-roll the primary/segmented spec. One more iteration and the cost of a consistent change goes up.
+3. **Featured-card orange audit** (reviewer nit from iter 29). Featured cards now have 4 orange accents — left bar, FEATURED pill, step numbers, OUTCOME border. If iter 30 adds any more, the card will tip into gaudy. Worth a dedicated design review to decide which accents to drop or mute.
+4. **Build page code-block treatment** (Q11 open). Detail page uses dark terminal-style prompt blocks but Build page still uses a light "editing" tint. Drew gave "make the call" permission in iter 24; next iteration that touches Build should resolve it.
+
+---
+
 ## 2026-04-16 — Iteration 28: Seed Content Overhaul — Live-Site seed-fix.sql Rewritten With 20 Real Project Build Paths + 21 Detailed Steps (Ported From mock-data.ts)
 
 **The memory flag that's been flashing for six iterations finally got addressed.** Drew's auto-memory has two standing entries: "Seed content is garbage" and "Mock data is invisible on live site — must update seed-fix.sql + Supabase." Every recent design iteration has made the shell look more premium, but the live site's database seed (`supabase/seed-fix.sql`) still held 15 template-style placeholder prompts like "Monthly Budget Analyzer: [PASTE YOUR TRANSACTIONS HERE]" and "Cold Email Sequence Writer: [YOUR PRODUCT/SERVICE]." A first-time visitor on the deployed Vercel site sees those, not the 39 richer seeds in `src/lib/mock-data.ts` (which only render when the Supabase env vars are missing). The brief called out by Q17 was explicit: pick option A (full seed-content session), C (3–4 pilot projects), or B (keep stacking design wins). Iter 28 executed option A.
@@ -1333,6 +1397,20 @@ Drew asked: "Would you be able to add two instructions to take screenshots of ev
 # Plain English Summary (for Drew)
 
 > What's actually changed on the site, in normal human language. Newest at the top. Let me know when you've reviewed and I'll clear the old stuff.
+
+### Browse cards now actually sell the project — they show the OUTCOME, not just the setup story (April 16 — Iteration 29)
+
+**What actually changed.** Every project card on the Browse page that has a `result_content` field now shows a preview of the *outcome* — a two-line excerpt with a thin orange left-border, a tiny "OUTCOME" label above it, and a subtle orange tint on the background. It sits between the description and the category/step metadata, so a card's reading order is now: title → setup story → *what actually got built* → category/steps/author/votes. Before this, cards ended on a flat description — someone scrolling the grid could see WHO built it, WHAT category it was in, and WHAT model they used, but nothing about what the result actually was. Now, with iter-28's real seed content in place, cards surface things like "$48,200 MRR +12.5%", "Warm Wheat #D4A843", "8% → 14% trial conversion", "closed $1.8M" — at grid scale, without a click. That's the "cards need to sell the project" bullet that's been the open lead on BACKLOG #1 for weeks.
+
+**Also tidied up a stranded line on the Browse header row.** When no filters are active, the right side of the "20 Projects" anchor used to read "Curated build paths across every category." — which is a bit purple and also not quite accurate (we don't actually curate anything yet). I swapped it for "Across **N** categories · Community-curated" where N is the real count. The reviewer flagged the old copy, and more importantly flagged that I should *not* write "Updated weekly" because that would age into a lie if we ever stopped. "Community-curated" is evergreen.
+
+**On screenshots — the pipeline really is working now.** I burned about 30 minutes of this session chasing a self-inflicted bug (my pre-screenshot cleanup was killing its own bash process because the shell command contained the string "next" and `pkill -f "next"` matched itself). Once I deleted the cleanup step, screenshots worked on the first try — full Browse page at 1440×900 in about 3.2 seconds warm. Four PNGs on disk (before viewport + before full + after viewport + after full), all loaded as images by the independent reviewer who then did a paragraph-by-paragraph visual comparison. Verdict: **APPROVE WITH NITS. Ship it.** The nits are carried to iter 30 (they're not blocking this ship).
+
+**The one call-out.** Featured cards now have four orange accents stacked (left-bar, FEATURED pill, step numbers, OUTCOME border) and the reviewer said "still readable, but at the ceiling" — meaning iter 30 shouldn't casually add a fifth orange element without auditing what's really earning its spot. I added Q19 to the questions file asking which accent you'd prefer to mute before more orange goes on.
+
+**Verification.** TypeScript check clean. Committed as `1bdc25d` (two-file diff: `src/components/PromptCard.tsx`, `src/app/browse/page.tsx`). `git push` is on you.
+
+**What this does NOT change.** Build page, detail page, landing page — untouched. This was a Browse-only iteration, same as iter 26/27. Also, this only looks right on the live site once iter 28's `seed-fix.sql` is applied against Supabase (because the OUTCOME block only renders when `result_content` is populated, and the live site's old garbage seeds don't have real result_content).
 
 ### The live site's seed content got rewritten — it now holds 20 real project build paths with real prompts + real results, not placeholder templates (April 16 — Iteration 28)
 

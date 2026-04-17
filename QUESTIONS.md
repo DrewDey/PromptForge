@@ -8,6 +8,22 @@
 
 ## Open Questions
 
+### Q19: Featured cards now stack 4 orange accents — which should stay, which should mute?
+
+Iter 29 added an OUTCOME preview pull-quote with a brand-orange left border + tinted background to every card that has `result_content`. The independent reviewer flagged that Featured cards have now reached their *orange accent ceiling*: (1) the Featured left-bar (`border-l-[3px] border-l-brand-orange`), (2) the solid "FEATURED" pill (`bg-brand-orange text-white`), (3) the orange step-number circles in the step flow (`bg-brand-orange/10 text-brand-orange`), and (4) the new OUTCOME pull-quote left border + tint + eyebrow. Reviewer's exact phrase: *"Still readable here, but at the ceiling."* Before iter 30 (or any iteration) adds more orange — e.g., a "Trending" ribbon, a creator-verified check, an image-thumbnail outline — we should audit which accents truly *differentiate* and which are decoration-by-habit.
+
+- **(A) Keep all four on Featured, drop nothing** — the accents each semantically differentiate a different role (status, title-level badge, sequence, outcome). Trusting the reviewer's "at the ceiling" as a stop-adding signal, not a re-thin signal. Current state.
+- **(B) Mute the step-number circles on Featured** — they're the least semantically important accent (they mark sequence, which the `ChevronRight` separators already signal). Moving them to `bg-surface-100 text-surface-500 border-surface-200` (matching non-Featured cards) frees one slot for iter 30+ without losing info.
+- **(C) Mute the Featured left-bar, keep the solid pill** — the pill is the unambiguous status marker; the left-bar is reinforcement. Dropping the bar (or changing it to a thinner `border-surface-900`) gives Featured a cleaner "pill-only" status and frees TWO slots (bar + tinted-surface).
+- **(D) Keep left-bar + pill, mute the OUTCOME border and eyebrow on Featured only** — OUTCOME stays as a differentiated surface (tint only, no bar, no orange eyebrow) since the overall card is already Featured-tinted. This avoids the "nested orange tint" contrast concern the reviewer raised. Regular cards keep the full OUTCOME treatment.
+
+My default recommendation is **(B)** — step numbers are the least load-bearing accent, and iter 30's most likely next-orange is an image-thumbnail border or a "trending" signal, both more semantically valuable. But you may have opinions on the Featured visual language that I don't.
+
+**Drew's Response:**
+
+
+---
+
 ### Q18: After the seed-content overhaul, should iter 29 go back to design work or verify the SQL applied cleanly first?
 
 Iter 28 rewrote `supabase/seed-fix.sql` with 20 real project build paths + 21 steps (ported from `mock-data.ts`). The file on disk is ready, but it's a data change that only takes effect once you run the SQL in Supabase. There are two possible next-iteration shapes:
@@ -20,6 +36,8 @@ My default would be (A) because running the SQL is usually a five-minute task fo
 
 **Drew's Response:**
 
+
+**Action pre-emptively taken** (Iteration 29, no explicit response yet): Went with (A). Resumed the Design Overhaul sprint — added OUTCOME preview pull-quote to Browse cards + swapped stranded right-rail subtext. If Drew's answer lands as (B) or (C) for iter 30+, this iteration's work still stands; only the *next* iteration's shape would change. Leaving Q18 open because Drew hasn't weighed in yet.
 
 ---
 

@@ -2817,6 +2817,558 @@ One note on using this: when the eng team pushes back on anything Friday, route 
  $pf$Complete RFC in markdown — Context, Decision (Option A+ with 7 specific components), Alternatives (B / C / D with honest trade-offs and revisit conditions), Rollout (10-12 week phased plan with per-phase rollback), Open questions (4 real ones with proposed resolutions). Under 2 pages rendered. Ready to paste into Notion.$pf$);
 
 -- =========================================================================
+-- Project 0010 — Design (UX research synthesis: 12 interviews → exec deck)
+-- priya_creates · Claude 4.6 Opus · 4 steps · intermediate
+-- =========================================================================
+
+DELETE FROM prompt_steps WHERE prompt_id = '55555555-5555-5555-5555-555555550010';
+DELETE FROM prompts      WHERE id        = '55555555-5555-5555-5555-555555550010';
+
+INSERT INTO prompts (
+  id, title, description, content, result_content,
+  category_id, difficulty, model_used, model_recommendation,
+  tools_used, tags, status, author_id, vote_count, bookmark_count
+) VALUES (
+  '55555555-5555-5555-5555-555555550010',
+  $pf$12 user interviews → exec deck in an afternoon — a 4-prompt synthesis workflow that survived VP-Product pushback$pf$,
+  $pf$Finished a 12-person research round on our onboarding drop-off. Took Claude through extraction → JTBD reframe → recommendations-with-objections → 9-slide exec deck. The reframe step is what saved it — Claude pushed back on my first read of the data and was right.$pf$,
+  $pf$I'm the senior UX researcher on a B2B SaaS team (project management tool, ~8k seats). We'd been seeing a 34% drop-off between account creation and first real action, and leadership signed off on a qualitative round to figure out why. I ran 12 interviews over three weeks — PMs, team leads, one IT admin, one exec sponsor. Transcripts were in Dovetail.
+
+Synthesis is the part I've historically underinvested in. I'd come out of rounds with a pile of affinity-mapped themes that all sounded like "users are confused" and a set of recommendations that couldn't survive a single meeting with our VP Product, who is sharp and skeptical. This time I wanted the synthesis to hold up.
+
+Four prompts, sequential, each consuming the prior output. Used Claude 4.6 Opus — this is the kind of work where the model's ability to push back on my framing is the actual deliverable, not raw summarization throughput. Sonnet would've been faster and would've agreed with me more. That's exactly what I didn't want.$pf$,
+  $pf$Deck landed. VP Product's first question in the meeting was the objection I'd already scripted an answer for in step 3 ("why not just fix the activation email copy instead of the whole first-run flow?"), which was disorienting in a good way — the meeting went straight to "okay what's the scope of option 2" instead of litigating whether there was a problem.
+
+The turning point was step 2. My initial read of the 12 interviews was "users want more templates and better empty states" — which is what every designer always wants the answer to be, because it's the work we already know how to do. Claude surfaced that pattern and asked me to test it against a harder reframe: the drop-off wasn't about missing scaffolding, it was about users not knowing which of their existing tools this replaced. That reframe held up when I went back to the transcripts and counted — 9 of 12 interviewees had used some variation of "do I stop using [X] now?" language. I'd coded those statements under "tool migration" in Dovetail and not thought about them as central.
+
+Two things I'd do differently next round: (1) start Claude on the raw transcripts, not my pre-made summaries — the summarization pass I did first probably washed out exactly the kind of language Claude later flagged. (2) Run step 3's objection-generation earlier, like during recommendation drafting rather than after, so the objections can shape the recommendations instead of just defending them.$pf$,
+  '11111111-1111-1111-1111-111111111105',
+  'intermediate',
+  'claude-opus-4-6',
+  'Claude 4.6 Opus',
+  ARRAY['Claude','Dovetail','Figma','Notion'],
+  ARRAY['ux-research','synthesis','jtbd','b2b-saas','exec-communication','onboarding'],
+  'approved',
+  '22222222-2222-2222-2222-222222222204',
+  82, 44
+);
+
+INSERT INTO prompt_steps (id, prompt_id, step_number, title, content, result_content, description) VALUES
+
+-- Step 1 --
+('66666666-6666-6666-6666-6666666A0101',
+ '55555555-5555-5555-5555-555555550010',
+ 1,
+ $pf$Theme extraction from 12 interview summaries$pf$,
+ $pf$I just finished a round of 12 user interviews investigating onboarding drop-off on our B2B SaaS project-management tool. The question leadership asked was: "why do 34% of new workspace accounts never take a meaningful action after account creation?"
+
+I'm going to paste 12 interview summaries below. Each is 300-500 words, my own notes from the interview, organized roughly as: who they are, what they were trying to do when they signed up, what happened in their first session, what they did or didn't come back to, and the most memorable thing they said. These are my summaries, not full transcripts — I've already done a pass of condensation.
+
+What I want from you in this step: pull out the 5-8 most load-bearing themes. Not the 20 themes that technically appear. The ones that actually showed up in enough interviews and with enough signal that they'd earn space in a 9-slide exec deck. For each theme, tell me (a) how many of the 12 participants surfaced it, (b) one representative direct quote if I included one in the summary, (c) a one-line description of the theme in the interviewees' language, not design jargon.
+
+Don't give me "users are confused." If a theme is that generic, collapse it or break it into something specific enough to act on. And flag any theme where I'm probably over-coding — where I've bucketed things together that are actually two different problems.
+
+[12 interview summaries pasted here — Maria (product manager, 80-person marketing agency); Devon (team lead, construction firm); Priya (ops at a Y Combinator startup); Aaron (IT admin, 500-person school district); Rachel (VP Product, D2C brand); etc. — full text ~5,400 words]$pf$,
+ $pf$Working through the 12 summaries. Here are the themes I'd stake an exec deck on, ranked by signal:
+
+**Theme 1 — "Which of my existing tools does this replace?" (9 of 12)**
+*Representative quote (Devon, team lead):* "I kept opening [our current tool] in the other tab because I didn't know if this was supposed to replace it or sit next to it. By Thursday I just closed yours."
+This is the strongest pattern in the data and it shows up in nine different surface forms — "where do I put my existing projects," "do I stop using Asana now," "is this the source of truth now." I'd argue it's one theme, not nine, because the underlying user state is identical: they can't commit to the new tool until they understand the migration story, and nothing in your onboarding tells them.
+
+**Theme 2 — Setup tasks that feel like other people's work (7 of 12)**
+*Representative quote (Maria, PM at agency):* "It asked me to invite my team on screen three. I don't even know if I'm going to use this yet."
+Premature asks: invite teammates, set up integrations, configure notifications. Users interpret these as the tool assuming commitment they haven't made. Seven participants explicitly mentioned stalling at one of these gates.
+
+**Theme 3 — Templates that don't match the shape of their work (6 of 12)**
+*Representative quote (Rachel, VP Product):* "The 'marketing campaign' template had 14 fields I didn't need and none of the ones my team actually tracks."
+Template coverage is broad but shallow. Users see their category represented, pick the template, and then bounce off the mismatch. Worth flagging: two interviewees (Aaron, Devon) said the templates made them think the tool wasn't built for their industry.
+
+**Theme 4 — First meaningful action unclear (5 of 12)**
+*Representative quote (Priya, ops at startup):* "I kept waiting for something to tell me 'this is the thing you're supposed to do first.' It never came."
+After account creation there's no clear path to a first valuable action. Five users described a "now what" moment. This one's real but it's downstream of theme 1 — once users resolve the migration question, the "now what" usually resolves too.
+
+**Theme 5 — Admin/permission setup blocks single users (4 of 12)**
+This is specifically about the IT-admin and larger-company participants (Aaron, and three others in regulated industries). The setup flow assumes a user who can freely create workspaces; admins in their context can't. Smaller n but a clean signal within that segment.
+
+**Themes I'd deliberately NOT put in the deck:**
+- "Wanted more empty-state illustrations" (2 of 12) — real but small.
+- "Notifications too aggressive" (3 of 12) — real but downstream of theme 2 (they stalled before turning notifications on).
+- "Pricing page confusing" (2 of 12) — off-scope for onboarding drop-off research.
+
+**One flag on over-coding:** I think you may have bucketed theme 2 (premature asks) and theme 5 (admin permissions) closer than they deserve. They share a surface ("can't proceed past a gate") but the user states are different — theme 2 users could proceed, they chose not to. Theme 5 users actually couldn't. If the recommendations diverge (they will), these need to be separated early.$pf$,
+ $pf$Five themes with participant counts and representative quotes, ranked by signal; three themes explicitly excluded with reasons; one over-coding flag on themes 2 and 5. Ready for JTBD reframe in step 2.$pf$),
+
+-- Step 2 --
+('66666666-6666-6666-6666-6666666A0102',
+ '55555555-5555-5555-5555-555555550010',
+ 2,
+ $pf$JTBD reframe — collapse themes to jobs, push back on design-team bias$pf$,
+ $pf$Okay, I have my 5 themes from step 1. Before I draft recommendations I want to reframe this through a jobs-to-be-done lens, and I want you to push back on me.
+
+My instinct right now is to recommend work my design team already knows how to do — more templates, better empty states, richer first-run tutorials. That's suspicious. Every round of UX research I've ever done has somehow concluded that the solution is more design. That pattern is almost certainly me, not the data.
+
+Here's what I want you to do:
+1. Restate the 5 themes as underlying jobs — what the user is actually trying to get done, in their language, not ours.
+2. Tell me whether any of these jobs collapse into a single more fundamental job. I suspect themes 1 and 4 are the same job and I want your read.
+3. Most importantly: tell me where my framing is biased toward "design can fix this" solutions. Be specific. If there's a job here where the right answer is a product decision, a marketing decision, a sales-assisted-onboarding decision, or a "don't solve this, accept the cost" decision — say so. I need you to argue against the design-centric read.
+
+I'd rather be told I've been looking at this wrong than walk into the exec meeting with a pre-ordained answer.$pf$,
+ $pf$Good instinct to audit yourself here. Let me work through this in the order you asked.
+
+**Restated as jobs:**
+
+- Theme 1 → "Help me decide whether to commit to this tool over the one I'm already using." (job of *migration commitment*)
+- Theme 2 → "Let me evaluate this tool before I involve other people." (job of *solo evaluation*)
+- Theme 3 → "Show me this tool was built for work shaped like mine." (job of *category fit*)
+- Theme 4 → "Tell me what to do first so I can produce real value in one session." (job of *first value*)
+- Theme 5 → "Let me use this without needing org-level permissions I don't have." (job of *unblocked access*)
+
+**Collapses:**
+
+You asked about 1 and 4 — I'd push back on that collapse. Theme 1's job is *commitment* (do I switch?). Theme 4's job is *activation* (what do I do right now?). They feel similar because both end in "user doesn't do anything," but the intervention surface is different. You can answer theme 4 with a single "start here" card and not touch theme 1 at all. You cannot answer theme 1 with any amount of first-run UX — it requires a positioning decision about what this tool replaces.
+
+The collapse I *would* argue for: themes 2 and 3 both resolve into "let me assess fit privately." Solo evaluation and category fit are two surface forms of the same user question — "is this for me?" — which the tool can answer either by letting the user explore without asking things of them (theme 2) or by showing them their work represented (theme 3). One job, two levers.
+
+So I'd call this three jobs, not five: *migration commitment*, *private fit assessment*, *first value*. Theme 5 is a segment-specific variant, not its own job at scale.
+
+**Where your framing is biased toward design solutions — candidly:**
+
+**Job 1 (migration commitment) is not a design problem.** It's a positioning and marketing problem. The tool doesn't tell users what it replaces because *your company* hasn't committed to what it replaces. Your own website's comparison page — I'd bet — hedges. Nine out of 12 users couldn't resolve this from the product because the product is downstream of an unresolved marketing-level question. If your recommendation here is "add a migration wizard," you're designing your way around a decision your CMO should be making. The right recommendation might be "we need leadership alignment on the positioning statement, *then* design responds."
+
+**Job 2/3 (private fit assessment) is partially a design problem.** Better category templates, cleaner empty states — those help. But there's a deeper product decision underneath: should this tool allow *no-commitment exploration* at all (a read-only sandbox, or a pre-signup interactive demo), or is the current "create an account and start building" model the right one and you just need to make it lighter? That's a product-strategy question. Design can execute either answer but shouldn't pick which.
+
+**Job 3 (first value) is genuinely a design problem.** A "here's your first meaningful action" card, post-activation, lands entirely in your team's scope.
+
+**Segment-specific (theme 5) is a sales-assisted-onboarding question.** The admin/regulated-industry users can't be solved by self-serve onboarding improvements at all. If that segment is strategically important, you need a sales-led motion for them, not a redesigned signup flow. If it's not strategically important, accept the drop-off as a cost of being self-serve.
+
+**Direct answer to your question:** of the three real jobs, one is a marketing/positioning call, one is a product-strategy call you can inform but shouldn't make alone, and one is design's to own. Your deck is strongest if you present them that way rather than framing everything as a design initiative. It also gives the VP Product an honest menu of interventions instead of a single "let design fix it" ask — which is the kind of framing that tends to get half-funded and under-resourced because it overclaims scope.$pf$,
+ $pf$Collapses 5 themes to 3 jobs (migration commitment, private fit assessment, first value) plus one segment variant. Flags that the first job is a positioning/marketing decision and the second is a product-strategy decision — only the third is pure design scope. Reframes the exec deck as a menu of interventions with honest ownership, not a single design initiative.$pf$),
+
+-- Step 3 --
+('66666666-6666-6666-6666-6666666A0103',
+ '55555555-5555-5555-5555-555555550010',
+ 3,
+ $pf$Top-3 recommendations with quote evidence and pre-scripted VP-Product objections$pf$,
+ $pf$Building on step 2's three-jobs reframe, I need to write my top-3 recommendations for the exec deck. Here's my ask:
+
+For each of the three jobs (migration commitment / private fit assessment / first value), produce one recommendation I'd put in front of leadership. For each recommendation include:
+
+1. The recommendation itself — one sentence, action-oriented, identifying who owns the work (marketing, product, design, or cross-functional).
+2. Two or three pieces of evidence from the interviews — direct quotes where possible, participant IDs from step 1.
+3. The single sharpest objection our VP Product (Marcus) will raise. Marcus's pattern: he hates work that can't be cheaply validated, and he'll always ask "why not just [smaller version]?" Pre-script his objection verbatim in the voice of someone who doesn't want to fund a multi-quarter initiative.
+4. The honest 4-6 sentence answer to that objection. Not a defensive answer — a real one. If the honest answer is "you're right, we should do the smaller version first," say so.
+
+Order the three recommendations by expected impact, not by what's easiest to ship.$pf$,
+ $pf$**Recommendation 1 — Migration commitment (Marketing owns, Product supports)**
+
+*Recommendation:* Resolve and publish a single-sentence positioning statement on what this tool replaces, then update the signup flow, homepage, and comparison pages to reflect it. Marketing-owned, product-informed, 4-6 weeks.
+
+*Evidence:*
+- Devon (team lead): "I kept opening [our current tool] in the other tab because I didn't know if this was supposed to replace it or sit next to it."
+- Maria (PM, agency): "Your homepage made it sound like it does what Asana does and what Notion does. I need to know which one I'm supposed to stop using."
+- Count: 9 of 12 participants surfaced some version of this.
+
+*Marcus's objection (verbatim):* "We have a positioning statement. It's on the homepage. Are we really saying 34% of our drop-off is because users don't read the homepage? Why not just A/B test some clearer copy on the signup page first and see if that moves the number before we get marketing to rewrite the company narrative?"
+
+*Honest answer:* Partially yes — a copy test on the signup page is a reasonable first move and I'd support running it in parallel. But the evidence isn't that users didn't read the homepage; it's that the homepage is internally inconsistent. Three interviewees specifically named the comparison page as making them *more* confused, not less. A 2-week signup-copy test will probably move drop-off by 3-5 points if we're lucky. What won't move unless we fix the source is the pattern where users spend their first session mentally A/B-testing your tool against their existing one instead of using it. That's the ceiling on any downstream onboarding work we do.
+
+---
+
+**Recommendation 2 — Private fit assessment (Product-strategy call, Design executes)**
+
+*Recommendation:* Build a pre-signup interactive demo (no account required) that lets a user explore a pre-populated workspace shaped like their category. Product-strategy decision on scope; design executes once scoped. 8-12 weeks depending on scope.
+
+*Evidence:*
+- Rachel (VP Product at D2C brand): "The 'marketing campaign' template had 14 fields I didn't need and none of the ones my team actually tracks. I closed the tab."
+- Priya (ops at startup): "I wanted to just poke around before signing up. But I had to create an account to see anything."
+- Count: 6 of 12 for template mismatch; 7 of 12 for premature setup asks. These collapse to one job per step 2.
+
+*Marcus's objection (verbatim):* "A pre-signup interactive demo is a quarter of engineering work. Why not just make the first-run templates better and see if that closes the gap? We already have a templates system."
+
+*Honest answer:* Making templates better is a 4-6 week effort and it'll help, but it won't close the job. The job isn't "the template was wrong," it's "I needed to assess fit before committing — and creating an account is a commitment I wasn't ready to make." Better templates address the second half of that; they don't address the assessment-before-commitment pattern. If the choice is binary — better templates *or* a pre-signup demo — I'd actually recommend better templates first as the cheaper test, and only greenlight the demo if the template improvements move drop-off less than 8 points. That's a legitimate staged call.
+
+---
+
+**Recommendation 3 — First value (Design owns, ships fast)**
+
+*Recommendation:* Add a single "here's your first meaningful action" card, dynamically populated based on signup context, that appears post-activation and persists until completed. Design-owned, 3-4 week effort.
+
+*Evidence:*
+- Priya (ops at startup): "I kept waiting for something to tell me 'this is the thing you're supposed to do first.' It never came."
+- Aaron (IT admin): "There's no moment where the app says 'congrats, now do this.' I felt unparented."
+- Count: 5 of 12, with high consistency in language.
+
+*Marcus's objection (verbatim):* "Isn't this just a better onboarding checklist? We tried a checklist two years ago and shut it down because nobody completed it."
+
+*Honest answer:* Yes, it is a checklist — specifically, a one-item checklist, which is the thing that failed two years ago when we tried an eight-item checklist. The shape of the past failure argues *for* this recommendation, not against it. Eight items asked users to complete setup tasks (job 2 work), so users correctly interpreted the checklist as work we were asking of them. A single "do this one meaningful thing" card isn't a setup task — it's a prompt to the first action that produces visible value. Those are different artifacts even if they visually look similar. We can scope the first version tight enough to validate or kill cheaply: 3 weeks, one surface, one metric (activation-to-first-action conversion).
+
+---
+
+**Suggested deck ordering:** lead with recommendation 1 because it sets up the argument that onboarding drop-off has three distinct causes with three different owners. Recommendations 2 and 3 then slot into that argument naturally. Leading with 3 (the design-owned one) invites Marcus to treat the whole deck as a design initiative, which is the framing you wanted to avoid.$pf$,
+ $pf$Three ranked recommendations, each with owner, evidence quotes with participant IDs, a verbatim Marcus-voice objection, and an honest non-defensive answer including one case where the honest answer is "your smaller-version instinct is partly right — here's the staged call." Ordered by impact; deck-sequencing note explains why recommendation 1 leads.$pf$),
+
+-- Step 4 --
+('66666666-6666-6666-6666-6666666A0104',
+ '55555555-5555-5555-5555-555555550010',
+ 4,
+ $pf$9-slide exec deck with speaking notes — drafted for Monday$pf$,
+ $pf$Final step: turn the three recommendations into a 9-slide executive deck, with speaking notes for each slide. Audience: VP Product (Marcus), CEO, VP Engineering, Head of Marketing. 20-minute slot, 10 minutes of presenting and 10 of discussion.
+
+Constraints:
+- 9 slides hard cap. If it doesn't fit, it's not deck-ready.
+- Each slide should have a clear single-sentence takeaway in the speaker notes — what the audience should leave that slide believing.
+- No filler slides (no "About this research" or "Methodology" unless it earns its place).
+- Speaker notes should be 2-4 sentences max per slide — I read them live, they're not the deck.
+- The deck should make the three-owners framing from step 2 visible on the slide structure itself, not buried in one slide.
+
+Write the deck as markdown — slide number, title, 3-5 bullet body, then speaker notes below in italics. I'll translate to Figma.$pf$,
+ $pf$**Slide 1 — The finding**
+- 34% of new workspace accounts never take a meaningful action
+- 12 interviews, 3 weeks, mix of PMs / team leads / admins across 6 industries
+- The drop-off has three distinct causes — one is ours to design around, one is ours to decide, one is ours to position
+
+*Speaker notes: The audience should leave this slide knowing there are three causes, not one. That reframing is the entire deck. If they leave thinking "this is a design problem," we've lost.*
+
+---
+
+**Slide 2 — What we heard, in their words**
+- 9 of 12: "I didn't know which of my existing tools this was replacing."
+- 7 of 12: "It asked me to invite my team on screen three. I don't even know if I'm going to use this yet."
+- 5 of 12: "I kept waiting for something to tell me 'this is the thing you're supposed to do first.' It never came."
+- These aren't three complaints. They're three jobs users came to do and couldn't.
+
+*Speaker notes: Pure quotes. No interpretation yet. Let the room hear the users before we editorialize.*
+
+---
+
+**Slide 3 — Three jobs, three owners**
+| Job | Owner |
+| --- | --- |
+| Migration commitment | Marketing (Product supports) |
+| Private fit assessment | Product strategy (Design executes) |
+| First value | Design |
+
+*Speaker notes: This is the load-bearing slide. Every subsequent slide maps to one row. The goal is that by the end, nobody in the room thinks this is one initiative with one owner.*
+
+---
+
+**Slide 4 — Job 1: Migration commitment (Marketing)**
+- Users can't commit to our tool until they know what it replaces
+- Our positioning is internally inconsistent: homepage vs. comparison page vs. onboarding tell different stories
+- Recommendation: Marketing-owned positioning resolution, 4-6 weeks
+- Product supports with a signup-flow update once positioning lands
+
+*Speaker notes: If this lands, everything else is sequenced behind it. If Marcus pushes to run a signup-copy A/B test in parallel first — agree. It's a reasonable parallel move.*
+
+---
+
+**Slide 5 — Job 2: Private fit assessment (Product strategy)**
+- Users want to assess before committing — creating an account is the commitment
+- Template mismatch is a symptom; the real job is "let me explore shaped like me"
+- Two candidate interventions: better category templates (6 weeks) or pre-signup interactive demo (12 weeks)
+- Recommend: ship template improvements first, greenlight demo if drop-off doesn't move 8+ points
+
+*Speaker notes: This is the slide where we genuinely hand the decision to product. Come in ready to recommend but not ready to fight. The staged version is the honest ask.*
+
+---
+
+**Slide 6 — Job 3: First value (Design)**
+- Post-activation, users get no signal about what the valuable first action is
+- Single "your first meaningful action" card — dynamic, context-aware, persistent
+- 3-4 weeks, design-owned, ships on its own timeline
+- Pre-emptive answer to the "we tried checklists" objection: an 8-item setup checklist and a 1-item first-value card are different artifacts
+
+*Speaker notes: This is the only recommendation we can start next week. Name that explicitly.*
+
+---
+
+**Slide 7 — What we deliberately didn't recommend**
+- More empty-state illustrations (2 of 12 signal — real but small)
+- Notification system rework (3 of 12 — downstream of job 2)
+- Admin/IT sales-assisted onboarding (segment-specific — flagged for separate conversation)
+
+*Speaker notes: Naming what we excluded is more persuasive than defending what we included. Leaves the room with no "what about…" loose ends.*
+
+---
+
+**Slide 8 — Risks to this read**
+- 12 interviews is a small n. Quantitative validation should follow — activation-funnel event segmentation by signup source
+- Migration-commitment finding is directional until we instrument "returned to competitor tab" signal
+- None of the three interventions is reversible once positioning publishes — stage 1 is the point of no return
+
+*Speaker notes: The deck is stronger with this slide than without it. Marcus respects researchers who name their own uncertainty.*
+
+---
+
+**Slide 9 — The ask**
+- Approve Recommendation 3 (first value card) for start next sprint — 3-4 weeks, design-owned
+- Greenlight Recommendation 2 (better templates) as parallel product-track work
+- Schedule separate session on Recommendation 1 with Marketing leadership this quarter
+- I'll instrument the funnel validation over the next 4 weeks regardless of decisions above
+
+*Speaker notes: End with a concrete menu. The worst outcome is this meeting ending with "interesting research, let's discuss." The three bullets are three discrete decisions the room can make today.*
+
+---
+
+One note on the deck: I've written slide 9 as three separate asks on purpose. If Marcus approves recommendation 3 today and defers 1 and 2, that's still a win — you've moved the most shippable piece into motion and created a forcing function to keep talking about the other two.$pf$,
+ $pf$9-slide deck in markdown: finding → direct quotes → three-jobs-three-owners table → one slide per recommendation (4-6) → deliberate exclusions → risks-to-this-read → three-part ask. Speaker notes 2-4 sentences per slide, each with a single-sentence takeaway. Structured so the exec meeting ends with discrete decisions, not "interesting, let's discuss."$pf$);
+
+-- =========================================================================
+-- Project 0011 — Personal (Trip-planning: 30th-birthday Sequoia camping)
+-- lena_solopreneur · Claude 4.6 Sonnet · 3 steps · beginner
+-- =========================================================================
+
+DELETE FROM prompt_steps WHERE prompt_id = '55555555-5555-5555-5555-555555550011';
+DELETE FROM prompts      WHERE id        = '55555555-5555-5555-5555-555555550011';
+
+INSERT INTO prompts (
+  id, title, description, content, result_content,
+  category_id, difficulty, model_used, model_recommendation,
+  tools_used, tags, status, author_id, vote_count, bookmark_count
+) VALUES (
+  '55555555-5555-5555-5555-555555550011',
+  $pf$Planning a 6-person 30th-birthday Sequoia trip with Claude — the pushback on my backcountry instinct is what saved it$pf$,
+  $pf$Planned a 4-day group camping trip for my 30th. Six friends, mixed experience, two dietary constraints. Claude talked me out of the backcountry plan I had my heart set on (correctly), built a communal meal plan that didn't make the celiac friend feel sidecar'd, and gave me a gear-delegation matrix by experience tier. Everyone came back still friends.$pf$,
+  $pf$I turn 30 next month and instead of a party I wanted to do a long weekend camping trip with five close friends. Thursday to Sunday. I'm a decent backpacker — I've done a few overnighters on the PCT — but three of the six of us have never slept in a tent. One friend has celiac, one is vegetarian. Budget is flexible but not unlimited; nobody's spending $500 each on this.
+
+I'd already half-decided on a Sequoia backcountry trip (Mineral King area) because that's what I personally wanted to do. I knew, somewhere in the back of my head, that dragging three first-time campers into the backcountry on a permit-required trip was probably the wrong call. I wanted Claude to tell me that clearly before I talked myself into it.
+
+Three prompts, sequential. Claude 4.6 Sonnet all three — this isn't work that needed heavy reasoning, it needed a second opinion that wouldn't just validate me. The pushback on prompt 1 was the entire value of the exercise. If Claude had said "great idea, here's your permit process," I'd have led five friends into a trip that was going to end with someone miserable at 10,000 feet.$pf$,
+  $pf$Trip was last weekend. We stayed at Lodgepole car campground on Claude's rec and did two day hikes from basecamp — Tokopah Falls (easy, first-timer friendly) and part of the Lakes Trail (harder, optional for whoever wanted it). Three first-timers did the easy hike, two of us did the harder one, one friend read a book at camp. Everyone got what they wanted.
+
+The meal plan worked — communal dinners both nights that naturally met the celiac and vegetarian constraints without anyone eating a "special plate." The gear-delegation matrix meant nobody had to think about what to bring; they got a list of 4-6 items per person sized to their experience level. The "flags for things you'll forget" list at the end of prompt 3 caught two of them — I brought extra headlamps and a spare stove fuel canister that otherwise wouldn't have been on my list.
+
+What I didn't expect: the pushback in prompt 1 wasn't just "don't do backcountry." It was a reframe of what the trip was actually for (a group birthday, not a Lena wilderness trip) that shaped every subsequent decision. I'd been designing the trip for myself and claiming it was a group event. Getting that named early fixed more than the campsite choice.$pf$,
+  '11111111-1111-1111-1111-111111111110',
+  'beginner',
+  'claude-sonnet-4-6',
+  'Claude 4.6 Sonnet',
+  ARRAY['Claude','Recreation.gov','AllTrails'],
+  ARRAY['travel','camping','group-planning','dietary-constraints','birthday','sequoia'],
+  'approved',
+  '22222222-2222-2222-2222-222222222210',
+  56, 23
+);
+
+INSERT INTO prompt_steps (id, prompt_id, step_number, title, content, result_content, description) VALUES
+
+-- Step 1 --
+('66666666-6666-6666-6666-6666666B0101',
+ '55555555-5555-5555-5555-555555550011',
+ 1,
+ $pf$Route + campsite — and push back on my backcountry instinct$pf$,
+ $pf$I'm planning a 4-day camping trip for my 30th birthday. Thursday through Sunday, late May. Six people including me. I want to do something in Sequoia National Park because I love it there and haven't been in two years.
+
+Group composition:
+- Me: intermediate backpacker, a few PCT overnighters, comfortable with permits and backcountry
+- Friend A: intermediate, has done car camping many times, one backpacking trip
+- Friend B: never camped. Outdoorsy-adjacent (runs, hikes day hikes)
+- Friend C: never camped. Self-describes as "indoorsy." Willing but nervous
+- Friend D: never camped. Loves the idea but has a bad back
+- Friend E: intermediate, backpacked in college, not recently
+
+Dietary: one celiac (Friend C), one vegetarian (Friend D). Budget ~$300-400 per person all-in including gear rental if needed.
+
+My instinct is to do Mineral King — I've wanted to do the Sawtooth Pass / Monarch Lakes area, it's stunning, and the backcountry feels like a real trip. I know I could probably make this work with a lot of planning.
+
+I want you to tell me honestly whether that's the right call. Don't just validate me. If three first-timers plus a bad-back friend shouldn't be on a backcountry permit trip at 10,000 feet, say so clearly. Give me the real recommendation for this specific group, not the trip I want to go on.$pf$,
+ $pf$It's not the right call, and I don't think you need me to walk you through why in detail because you already know — you've flagged it yourself in the framing. Three first-timers and a friend with a bad back on a Sawtooth Pass trip is a trip where at least one of them is going to be miserable by hour six, and the person responsible for that misery is the birthday planner. That's not the weekend you want.
+
+The real question underneath: is this trip *your* 30th birthday trip or a *group* 30th birthday trip? Because those are different trips and they'd lead to different answers. Reading your group composition, I think this is the second one — you explicitly invited three people who've never camped — and the trip should be designed for them, not calibrated down from your Mineral King vision.
+
+Here's what I'd actually do:
+
+**Lodgepole Campground, car camping, 3 nights (Thu-Sun).** Reservable on recreation.gov, typically opens 6 months ahead so you're well within the window for late May. Sites are around $32/night. Car camping means:
+- Friend C and Friend D aren't sleeping in a tent in the backcountry on night one of their first camping trip.
+- Bad back gets a real sleeping pad, car-ferried cooler food, and the ability to bail to a hotel in Three Rivers if the night doesn't work.
+- You can do ambitious day hikes *from* basecamp without the commitment of a backcountry permit, and the day hikers can match their own ability.
+
+**Day hike menu, not a fixed itinerary:**
+- *Friday (arrival day):* nothing ambitious. Tokopah Falls (3.8 mi round-trip, easy, waterfall payoff) or General Sherman + Congress Trail loop if people want to see the big trees.
+- *Saturday (main day):* split the group. Ambitious option = Lakes Trail to Heather Lake (9 mi, ~2,200 ft gain, doable for you + Friend A + Friend E). Mellow option = Big Trees Trail + driving tour of Giant Forest. People self-select.
+- *Sunday (day before leaving):* easy morning hike or hang at camp. Nobody should be pushing hard on a travel-prep day.
+
+**Why specifically Lodgepole over Dorst or Potwisha:**
+- Elevation (6,700 ft) is real but not brutal — Dorst is similar, Potwisha is lower but hotter in late May.
+- Proximity to Giant Forest and Tokopah means the easiest hikes are right there, which matters for Friend C/D/B (the never-camped group).
+- Amenities matter more than you think for first-timers: flush toilets, potable water, a ranger station. Friend C's celiac means they're going to need access to their own food prep zone and a bear box, which Lodgepole has.
+
+**What you're giving up by not going backcountry:**
+- The "real trip" feeling. But I'd argue you're not giving that up, you're deferring it — you can plan a 2-person Mineral King trip with Friend A in September, which is better weather and a better partner for it anyway.
+
+**One thing to put in your calendar now:** book the site *tomorrow*. Late May Lodgepole fills early even 4 months out; if you wait a week the weekend you want will be gone.$pf$,
+ $pf$Rejects the Mineral King backcountry plan clearly, reframes trip as "group 30th, not Lena's wilderness trip." Recommends Lodgepole car camping 3 nights with a menu-style day-hike structure so experience tiers self-select. Flags the booking urgency.$pf$),
+
+-- Step 2 --
+('66666666-6666-6666-6666-6666666B0102',
+ '55555555-5555-5555-5555-555555550011',
+ 2,
+ $pf$Communal meal plan — celiac + vegetarian without sidecar'ing anyone$pf$,
+ $pf$Okay, booked Lodgepole for Thu-Sun. Now I need the meal plan.
+
+Six people, 3 nights / 3 breakfasts / 3 lunches / 3 dinners (Thursday dinner through Sunday breakfast). Constraints:
+- Friend C: celiac. Strict, medically serious, not a preference.
+- Friend D: vegetarian. Not vegan, eats eggs and dairy.
+- Everyone else: omnivore, no allergies.
+
+What I want to avoid: the pattern where Friend C and Friend D each get a "special plate" while the other four of us eat the real meal. I've been on that trip. It sucks. It makes the constraint-having friends feel like they're being accommodated rather than included.
+
+What I want instead: communal meals where the default is naturally celiac-safe and where the vegetarian can eat most of it with one simple add-on of protein for the rest of us. I'd rather eat naturally-GF meals for 3 days than try to maintain separate parallel meals.
+
+Give me a meal plan: 3 dinners, 3 breakfasts, 3 lunches. For each, tell me:
+- What it is
+- How it handles celiac + vegetarian naturally
+- Prep-ahead vs. prep-at-camp
+- Approximate cost for 6 people
+- Honest difficulty (we have two stoves and a single cast iron)
+
+Keep dinners the social highlight. Lunches can be low-effort. Breakfasts moderate.$pf$,
+ $pf$Designed around "default is celiac-safe, meat is the add-on." This flips the usual pattern and works for a group this size.
+
+**DINNER 1 (Thursday) — Tacos al pastor bowls**
+- Base: cilantro-lime rice + black beans + grilled peppers + onions. All GF by default, vegetarian complete.
+- Protein add-on: marinated pork shoulder for the omnivores (marinate at home in a ziploc, grill at camp).
+- Toppings: avocado, cilantro, lime, salsa, cotija, corn tortillas (GF!) on the side for whoever wants them.
+- Prep-ahead: marinate pork, pre-cook rice at home and reheat, wash/chop peppers at home.
+- Cost: ~$40. Camp difficulty: easy. One stove for rice reheat, grill or cast iron for pork + peppers.
+- *Why it works:* vegetarian version is the bowl without pork — it's not a stripped-down version, it's a complete dish. Celiac works because corn tortillas are naturally GF and everything else already is.
+
+**DINNER 2 (Friday) — Thai-ish coconut curry with rice**
+- Base: red curry with coconut milk, sweet potato, bell pepper, chickpeas, spinach. GF, vegetarian, hearty.
+- Protein add-on: pre-cooked shredded chicken stirred into individual servings for the omnivores.
+- Prep-ahead: chop all vegetables at home, pre-cook chicken, measure curry paste + coconut milk into a ziploc.
+- Cost: ~$35. Camp difficulty: moderate. Single pot on one stove, 35 min.
+- *Why it works:* curry is inherently a "protein-optional" dish. The vegetarian version is the default version. Nobody's eating a stripped-down meal. Chicken goes into individual bowls, not the pot, so no cross-contamination.
+
+**DINNER 3 (Saturday, birthday night) — Grilled steak + roasted veg + chimichurri, with grilled halloumi for the vegetarian**
+- This is the showpiece dinner. Break the pattern deliberately — vegetarian gets their own thing (halloumi) and that's fine because it's a *better* thing, not a lesser thing.
+- Sides (all GF): roasted potatoes, grilled zucchini + peppers, chimichurri, big salad.
+- Cost: ~$75 (splurge for birthday). Camp difficulty: moderate-to-hard. Cast iron for steak, foil packs for potatoes, grill zucchini over open fire.
+- *Why it works:* on the birthday night, honor the occasion. Halloumi grills beautifully and the vegetarian gets a meal they'll remember, not a consolation.
+
+**BREAKFASTS**
+
+*Thu AM (you're driving, eat on the road).* Skip camp breakfast, buy breakfast in Three Rivers en route.
+
+*Fri AM — Shakshuka with GF toast.* Eggs poached in tomato-pepper sauce, pan-toasted GF bread on the side (bring a dedicated small pan for GF toast to avoid cross-contamination). Vegetarian-complete, celiac-safe by default. ~$18, easy, 25 min.
+
+*Sat AM — Breakfast potatoes + eggs + bacon (separate pan for bacon).* Potatoes + peppers + onions in cast iron, eggs to order, bacon in its own pan. GF by default. Vegetarian skips bacon. ~$22, moderate, 40 min.
+
+*Sun AM (pack-out morning) — Overnight oats prepped at home.* Individual mason jars, made at home with GF oats for everyone (it's fine — GF oats taste identical). Cold, no cleanup, 0 minutes at camp. ~$15.
+
+**LUNCHES**
+
+*Thu lunch (driving) — buy sandwiches/salads en route.*
+
+*Fri lunch (hiking) — charcuterie + veg + fruit + GF crackers.* Assemble at camp before hike, pack in tupperware. No cook. Salami, cheese, olives, GF crackers (everyone just eats GF crackers, fine), carrots, hummus, apples. ~$30.
+
+*Sat lunch (hiking, main day)* — Peanut butter + banana + honey on GF tortillas, trail mix, jerky for omnivores. Lightweight, packable, no cook. ~$15.
+
+*Sun lunch (driving home) — you're already out of the park.*
+
+**Totals:** roughly $250 for food across 6 people / 3 full days ≈ $42/person. Well under budget.
+
+**The pattern across the plan:**
+1. Default-GF dishes where vegetables and starch are the base, meat is add-on.
+2. Celiac gets their own toast pan, bacon pan, and tortilla pack — not to separate them, to genuinely protect against cross-contamination, which celiac requires.
+3. On the birthday night, break the "default is vegetarian" pattern so the meat-eaters get a real steak dinner — but give the vegetarian something *equal*, not consolation.
+4. One serious cooking effort per day max. Breakfasts and lunches are assembly, not cooking.
+
+**One pre-trip note:** confirm with Friend C specifically about their celiac severity. Some celiacs need dedicated cookware; some are okay with a thoroughly-cleaned shared cast iron. That affects whether you need to buy or rent a second small pan. Don't guess — ask them directly a week before.$pf$,
+ $pf$Meal plan with default-GF communal base and meat-as-add-on pattern. Saturday (birthday) night breaks pattern intentionally — vegetarian gets grilled halloumi as an equal meal, not consolation. Breakfasts/lunches kept low-effort. Cost ~$42/person, well under budget. Includes cross-contamination protocol for celiac and a pre-trip ask about severity.$pf$),
+
+-- Step 3 --
+('66666666-6666-6666-6666-6666666B0103',
+ '55555555-5555-5555-5555-555555550011',
+ 3,
+ $pf$Gear delegation by experience tier + "Flags for Things You'll Forget"$pf$,
+ $pf$Last piece. I don't want to be the person who packed for everyone. I want a gear-delegation matrix where each friend gets a clear list of 4-6 items to bring, sized to their experience level. First-timers should not be figuring out which sleeping pad to buy.
+
+Group again:
+- Me + Friend A + Friend E (intermediate): can be trusted with real gear decisions
+- Friend B + C + D (first-timers): give them the minimum viable list, tell them exactly what to buy or rent
+
+Shared gear (tents, stoves, cookware, cooler, water containers): I'll handle the assignments for those among the intermediate folks.
+
+What I want from you:
+1. A gear-delegation matrix — for each friend, a bullet list of what they personally bring.
+2. A rental vs. buy call for the first-timers' big items (sleeping bag, pad, headlamp). They don't need to buy a $300 bag for their first trip.
+3. A "flags for things you'll forget" list — the things that every camping trip leader forgets until day 2. Cast a wide net here. I'd rather bring one thing I didn't need than be short one thing someone needed.$pf$,
+ $pf$**Gear delegation matrix**
+
+*You (Lena, trip lead):*
+- Your tent (you already own). Bring the 4-person for yourself + 1 other; the other intermediates bring a 2-person each.
+- Both stoves + fuel (verify canister levels, bring 1 spare).
+- Cast iron skillet + dedicated small GF-only pan.
+- Large cooler (the big one), pre-chilled 24 hrs before.
+- Headlamp + 2 spare batteries.
+- First aid kit + any personal meds.
+
+*Friend A (intermediate, car-camps often):*
+- Their 2-person tent + their own sleeping setup.
+- 5-gallon water jug (fill at Lodgepole potable spigot).
+- Cutting board + chef's knife + paring knife (kitchen gear, good ones from home).
+- Camp chairs x 3.
+- Dish bin + biodegradable soap + dish towel.
+
+*Friend E (intermediate, rusty):*
+- Their 2-person tent + their own sleeping setup.
+- Coffee setup (pour-over or moka pot + beans + filters + mugs x 6).
+- Bear-safe food storage tubs for anything that won't fit in the Lodgepole bear box.
+- Camp chairs x 3.
+- Lighter + waterproof matches + firewood (buy at Three Rivers en route, $10-15).
+
+*Friend B (first-timer, outdoorsy):*
+- Rent a sleeping bag + pad from REI Fresno ($30-40 total for the weekend). 30°F-rated bag is right for late May Lodgepole.
+- Headlamp — buy a Black Diamond Spot at REI, $40, will last them many trips.
+- Personal clothes (bring the list I send separately).
+- One 1L water bottle.
+- Rain jacket (they probably have one — if not, borrow from me).
+
+*Friend C (first-timer, indoorsy, celiac):*
+- Rent sleeping bag + pad from REI Fresno (same as above).
+- Headlamp — same buy.
+- Their own snacks, GF certified, that they trust. This is important. Don't let them rely on my meal plan for snacks — give them full control over their own between-meal food. It reduces their anxiety and ensures they always have a safe option.
+- Personal clothes + rain jacket.
+- One 1L water bottle.
+
+*Friend D (first-timer, bad back, vegetarian):*
+- Rent sleeping bag from REI Fresno, but buy their own sleeping pad. Bad back + rental foam pad = a miserable weekend. Spend $80-100 on a Therm-a-Rest Trail Scout or similar self-inflating pad — worth it even for one trip, and they'll use it again.
+- Headlamp — same buy.
+- Personal clothes + rain jacket.
+- One 1L water bottle.
+- A real camp pillow ($20, worth it for the back).
+
+**Rental vs. buy summary for first-timers:**
+- Rent: sleeping bag (don't buy for first trip), foam pad (if back isn't an issue).
+- Buy: headlamp ($40, universal utility), rain jacket (they likely own one), self-inflating pad for Friend D ($80-100 only).
+- Per first-timer out-of-pocket: ~$70 (rental + headlamp) or ~$150 for Friend D. Well under the budget.
+
+---
+
+**Flags for things you'll forget — cast a wide net**
+
+- **Dish soap + 2 sponges + a dedicated sponge for the celiac pan.** You'll remember soap, you'll forget the second sponge. Celiac cross-contamination often starts with a shared sponge.
+- **A dedicated trash bag system.** Big contractor bags, not kitchen bags. Plus a separate bag for recycling — Lodgepole has separate bins and you don't want to sort at pack-out.
+- **Hand sanitizer + paper towels.** The campground sinks are shared.
+- **Duct tape.** For tent repairs, blister prevention, sealing food bags. A small roll in the first aid kit.
+- **A real lighter + backup matches + a third backup.** Lighters fail wet.
+- **Sunscreen + bug spray.** Late May Sequoia has surprise mosquitoes near water.
+- **A small tarp + paracord.** For unexpected rain or shade over the picnic table. You will not regret bringing this and you will regret not.
+- **Folding saw or hatchet** for firewood processing (the bundled wood needs breaking).
+- **Extra headlamp batteries.** Everyone forgets. Bring a 4-pack.
+- **A camp pillow for yourself.** You think you don't need one, you do.
+- **Coffee filters if you're using pour-over.** The #1 most forgotten item in the history of group camping.
+- **Cash for the firewood vendor + campground host tips** (some sites do iron-ranger payment, Lodgepole is reservation, but still).
+- **A printed copy of the reservation confirmation + driving directions.** Cell service drops well before the park entrance.
+- **A plastic bin labeled "DIRTY"** for muddy boots and wet clothes on the drive home. You will be grateful Sunday afternoon.
+- **A birthday cake contingency.** It's your birthday. Decide in advance whether someone's smuggling in a small GF cake or whether you're all eating s'mores and calling it cake. Either is fine but don't let it be an uncertain thing on Saturday night.
+- **Pre-sent packing lists to the first-timers by Wednesday evening** — not the morning of. They need time to pack and to realize what they're missing.
+
+Last thing: two weeks out, send a single group text with: dates, meeting location, what to bring (the personalized lists), and Friend C's celiac protocol in writing so everyone understands cross-contamination rules. Then don't say more until the trip. Over-messaging a group trip creates anxiety; under-messaging after a clear briefing creates trust.$pf$,
+ $pf$Per-person gear lists (4-6 items each) scaled to experience. Rental vs. buy guidance for first-timers keeps out-of-pocket under $150. "Flags for things you'll forget" covers dish sponge for celiac pan, tarp, duct tape, coffee filters, printed reservation, dirty-clothes bin, and a birthday-cake contingency decision. Ends with a pre-trip comms protocol.$pf$);
+
+-- =========================================================================
 -- END OF FILE — append next project(s) below this line.
 -- Iterations working the Content queue: add 2–3 projects per iteration,
 -- appending below this comment. Do NOT rewrite existing projects.

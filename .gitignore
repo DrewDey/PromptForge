@@ -35,3 +35,6 @@ npm-debug.log*
 *.tsbuildinfo
 tsbuildinfo*
 next-env.d.ts
+
+# generated SQL chunks (regenerate locally via scripts/split-seed-chunks.py)
+/supabase/chunks/

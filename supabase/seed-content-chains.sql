@@ -5281,6 +5281,634 @@ Questions — come find me or ping me on Slack. I'd rather you ask than guess.
 **Note on the dual-deliverable design.** The partner memo and team-facing version are written at different altitudes but are consistent. The team-facing version does NOT name individuals, does NOT leak the Brightfield client name or the specific $41K hire cost, and does NOT commit to decisions that haven't been made. What it DOES do is name that hard things are being discussed (so silence doesn't create worse rumors), explicitly name what's NOT being discussed (the layoff rumor is the biggest one, addressed head-on), and give team members a concrete action (talk to your manager this week). The second one is the thing that matters most — telling people "something's happening" without giving them an action is how anxiety compounds.$pf$,
  $pf$Two deliverables. Partner memo is 2 pages: exec summary with total cost and coupling warning, inline utilization snapshot table with ⚠ markers, 150-word causal paragraph explaining why Team 2 and Team 5 are different problems despite similar headline numbers, 3 recommendations with disconfirmation criteria, risk watch flagging Team 4 and the NPS verification, 3 specific asks. Team-facing version is 400 words: names that hard things are being discussed, explicitly names the layoff rumor as NOT on the table, gives team members a concrete action (talk to your manager this week), commits to manager-led personal comms before broader rollout. Closing note distinguishes the altitudes — what the team-facing version deliberately excludes (individual names, specific costs, undecided decisions) vs what it includes (the layoff-rumor head-on address, the concrete action).$pf$);
 
+-- =========================================================================
+-- Project 55-0018 | Dashboard-redesign pre-crit — 3-pass Claude pressure-test | Priya Sharma | Design | 3 steps
+-- =========================================================================
+
+DELETE FROM prompt_steps WHERE prompt_id = '55555555-5555-5555-5555-555555550018';
+DELETE FROM prompts      WHERE id        = '55555555-5555-5555-5555-555555550018';
+
+INSERT INTO prompts (
+  id, title, description, content, result_content,
+  category_id, difficulty, model_used, model_recommendation,
+  tools_used, tags, status, author_id, vote_count, bookmark_count
+) VALUES (
+  '55555555-5555-5555-5555-555555550018',
+  $pf$Dashboard-redesign pre-crit — 3-pass Claude workflow that caught the critique I couldn't see myself$pf$,
+  $pf$I was about to walk into design review with a B2B analytics onboarding redesign that I liked. Used Claude 4.6 Opus over 3 prompts to pressure-test it first — diagnosis, alternatives, multi-persona pre-crit. Caught two load-bearing weaknesses I would have been blindsided by in the room. Shipped the revised flow; activation on the connect-data-source step went from 57% → 73% over six weeks.$pf$,
+  $pf$I'm a senior product designer at a Series B analytics tool (think a leaner version of Amplitude). Our activation step is "connect your first data source" — Segment, Snowflake, Postgres, or a flat CSV upload. Funnel data: 43% of signups drop off on this screen. Session replays show people click through, see the options, pick one, hit a config form, stall, abandon. The current design is a 4-step modal wizard (source → auth → table mapping → test query) that a PM built in 2024 before we had a design function.
+
+I spent two weeks on a redesign. Pulled it apart, talked to 8 users who had abandoned, shadowed 3 who succeeded. Came out with a single-page "connect in-place" flow that surfaces config defaults inline and delays auth until the user has committed to a source. I liked it. But I've been burned before by walking into design review with something I liked and discovering in the room that I had missed a whole category of objection.
+
+So before crit, I ran it through Claude 4.6 Opus over 3 prompts. Prompt 1 was diagnosis — I wanted Claude to identify structural problems in the current flow, not UI polish issues. Prompt 2 was a forcing function — give me three genuinely different alternatives with honest tradeoffs, not three variations on what I already had. Prompt 3 was the critical one: play three specific personas reading the revised spec (skeptical staff PM, overloaded platform engineer, the actual user type — a data analyst at a 200-person Series B) and tell me what each would push back on.
+
+4.6 Opus because the judgment calls here benefit from depth — "what's the load-bearing problem" and "how would this specific persona read this" aren't mechanical questions.$pf$,
+  $pf$Design review went 40 minutes and approved the revised spec with one tweak (a loading-state copy change flagged by the staff PM, which Claude's persona pass had also flagged in step 3 — so the PM's objection wasn't a surprise; I had already sketched the change). Previous design reviews on this flow had each been 90+ minutes.
+
+Six weeks post-ship, connect-data-source completion rate went from 57% → 73%. The biggest single lift was moving auth to step 2-of-2 instead of step 2-of-4 — users who had committed to a source and seen a working preview had a much higher tolerance for the OAuth handoff than users who hit auth as step 2 of an unknown-length wizard. The session replay data had hinted at this; Claude's step-1 diagnosis named it explicitly.
+
+What I'm keeping from the workflow: the multi-persona pre-crit. Pre-crit self-review is something designers say they do and mostly don't. The discipline of writing "I'm going to read this draft as a specific skeptical PM I have in mind" breaks the designer's-eye reading and finds real gaps. The engineer-persona catch on step 3 was the one I didn't expect — Claude flagged that the "inline defaults for table mapping" would require the backend to ship a schema-introspection endpoint we don't have yet, and that the timeline in the spec didn't account for that work. That's the kind of thing that turns into a "great design, can't ship" in crit.
+
+What I'd change next time: I'd run step 2 (alternatives) BEFORE I did my own two-week exploration, not after. Doing it after meant I was anchored on my existing design and Claude's alternatives read as "what if we did it like Priya's v1 but different" rather than three genuinely distinct philosophies. Starting-point-anchor is a real bias and the tool works better when you fight it.$pf$,
+  '11111111-1111-1111-1111-111111111105',
+  'intermediate',
+  'claude-opus-4-6',
+  'Claude 4.6 Opus',
+  ARRAY['Claude','Figma','Mixpanel','FullStory'],
+  ARRAY['design-crit','onboarding','activation','b2b-saas','ux-research','dashboard'],
+  'approved',
+  '22222222-2222-2222-2222-222222222204',
+  88, 42
+);
+
+INSERT INTO prompt_steps (id, prompt_id, step_number, title, content, result_content, description) VALUES
+
+-- Step 1 --
+('66666666-6666-6666-6666-666666120101',
+ '55555555-5555-5555-5555-555555550018',
+ 1,
+ $pf$Diagnosis — what is structurally wrong with the current connect-data-source flow$pf$,
+ $pf$I'm a senior product designer redesigning the "connect your first data source" onboarding step for our B2B analytics product (think Amplitude-but-leaner, Series B, ~200 paid accounts). 43% of signups drop off on this screen. I have funnel data, session replays on 47 abandoners, and structured interviews with 8 who abandoned + 3 who succeeded.
+
+The current design is a 4-step modal wizard:
+- Step 1: pick a source (Segment / Snowflake / Postgres / CSV upload — 4 cards, visual tiles)
+- Step 2: authenticate (OAuth for Segment/Snowflake, connection string + password for Postgres, file picker for CSV)
+- Step 3: table/schema mapping (pick which tables, map event name columns)
+- Step 4: test query + "we found N events" confirmation
+
+Session replay patterns from abandoners:
+- 62% abandon between step 1 and step 2 (before auth completes). Typical behavior: click source, see auth screen, close modal or navigate away. Replays show hesitation — cursor hovers over close button for several seconds before clicking.
+- 24% abandon on step 3. They complete auth but stall on table mapping. Replays show them scrolling the table picker repeatedly, clicking between options, then closing.
+- The 14% who abandon on step 4 are mostly a data problem, not a design problem — their warehouse has no events or events that don't match our schema assumptions.
+
+Interview quotes worth flagging:
+- "I didn't want to connect my prod Snowflake to a tool I hadn't tried yet." (4 of 8 abandoners said something like this)
+- "I wasn't sure what it was going to do with the tables I picked." (3 of 8)
+- "I thought I'd be able to try a demo first. I picked Postgres to see what happened and hit the password field and just bailed." (2 of 8)
+
+The 3 who succeeded all had their credentials ready before starting and worked at companies that had used similar tools before.
+
+I want you to diagnose the structural problems with this flow, not the UI-polish problems. "Step 2's button needs better copy" is not useful. I want the failure-mode-level answer. Walk through each failure pattern above, name what you think the root cause is, and rank by impact. Don't hedge.$pf$,
+ $pf$Four structural problems, ranked by impact on the 43% abandonment number:
+
+**1. Auth is positioned as step 2 of an unknown-length flow.** (Accounts for ~60% of the abandonment signal.) Users click a source tile, land on an OAuth-or-password screen, and have no evidence yet that continuing will produce value. They're being asked to authorize production data access to a tool they haven't seen work. The 4 of 8 interview quotes about "didn't want to connect prod" are a rational response to being asked for a high-trust action before the tool has earned trust. The session replay hesitation (cursor hovering on close) is the observable signature of the "this is further than I committed to going" moment.
+
+The load-bearing question is commitment escalation: each step in the wizard should ask for MORE trust than the previous one, but your step 2 (auth) is the highest-trust action in the entire flow. That's inverted. By the time a user sees the table-mapping step and the test-query step — which are LOWER-trust actions and could serve as trust-building demos — they've already been asked for the highest-trust thing.
+
+**2. The flow has no "show me what this does" state.** (~20% of the abandonment.) The Postgres-password quote is the clearest signal. That user tried to enter the flow as a demo path ("let me see what this does") and immediately hit a commitment wall. Your current flow has no answer to "what does this look like when it works?" — no sample dashboard, no demo dataset, no "connect a CSV of 100 rows to try it" path that an analyst can complete in 2 minutes without touching prod credentials.
+
+The 14% who succeed are the users who don't need this — they've used the category before and know what to expect. You're losing everyone who needs the tool to prove itself first.
+
+**3. The table-mapping step is asking for decisions users can't make.** (~20% of abandonment, concentrated in the step-3 drop.) The "wasn't sure what it was going to do with the tables I picked" quote is saying: this step asks me to commit to a mapping without telling me what the mapping affects downstream. Session replays show the pattern — repeated scrolling, clicking between options, closing. That's the signature of a user who is trying to figure out the right answer and has no basis to choose.
+
+The fix is either (a) ship with a default mapping inferred from schema introspection and let users correct it, or (b) defer the mapping decision until after the user has seen an empty dashboard and can understand what the mapping is for. Either move turns a decision-under-uncertainty into a correct-the-default action.
+
+**4. The CSV upload is hidden as one of four equivalent source tiles.** (Smaller impact on the % number but important for the demo path from problem 2.) CSV upload is structurally different from the other three sources — it's the only one that doesn't require credentials, and it's the obvious demo path. Treating it as a peer of Snowflake in the visual layout means users who WOULD demo with a CSV don't know that's an option, and users who WANT Snowflake have to look past a "lesser" option.
+
+**What I would NOT focus on:** step 4 abandonment (it's a data problem, not a design problem — those users need a better error message when no events are found, but fixing that won't move your activation number materially); the visual design of the source tiles (they're fine); the wizard-vs-page question until you've fixed problems 1-3.
+
+**One thing to verify before redesigning:** the 62% step-1→step-2 drop is massive. Pull the funnel by source. If Snowflake and Postgres drop much harder than Segment (OAuth, pre-auth'd via a platform users already trust) and CSV (no auth), that confirms problem 1 directly. If the drop is uniform across sources, problem 1 is still real but you should also check for a modal-context problem (are users losing the modal because of a notification, a tab switch, the close button being too close to the CTA).$pf$,
+ $pf$Structural diagnosis: auth-as-step-2 is the load-bearing failure (commitment escalation inverted); no demo path; table-mapping forces decisions without context; CSV upload hidden as equal peer. Ranked by impact, with a verify-first flag on by-source funnel split.$pf$),
+
+-- Step 2 --
+('66666666-6666-6666-6666-666666120102',
+ '55555555-5555-5555-5555-555555550018',
+ 2,
+ $pf$Three genuinely different alternatives — not three variations on the same idea$pf$,
+ $pf$Good. Your ranking matches what I thought but the commitment-escalation framing is sharper than mine. I did verify the by-source funnel split — Snowflake drops 71%, Postgres 65%, Segment 38%, CSV 22%. That confirms problem 1 directly and makes CSV-as-demo-path the obvious leverage.
+
+Now I want three genuinely different redesign approaches. Not three variations of the same philosophy. I want three distinct answers to the question "what is the FIRST thing a user should do in this flow," because each answer implies a different flow structure.
+
+For each approach, give me:
+(a) The philosophy in one sentence
+(b) The first screen the user sees, described in enough detail that I could sketch it
+(c) How auth gets introduced and when
+(d) The honest tradeoffs — what this approach gives up, what user type it serves worst, what engineering cost it implies
+(e) A one-line prediction about how the 43% abandonment number changes
+
+Please don't default to "progressive disclosure" for all three. I want real philosophical difference. Push me if my framing is limiting the options.$pf$,
+ $pf$Pushing back on the framing first: "what is the first thing a user should do" is good but slightly narrow. The more useful frame is "what does the user see BEFORE they're asked to do anything." That frame opens up a fourth approach I'll note at the end but won't fully develop.
+
+**Approach A — Demo-first with CSV as front door.**
+(a) Philosophy: the tool earns the right to ask for credentials by showing value first; CSV upload is promoted from peer tile to primary path.
+(b) First screen: a single-page flow with a 200-row CSV of sample events (pre-loaded, user downloads it in one click) and a drag-drop zone, paired with a secondary "Connect a production source" link below. Copy: "Try it in 60 seconds with sample data. Connect your warehouse when you're ready." The sample CSV produces a complete working dashboard the user can click around.
+(c) Auth introduced on a separate screen after the user has interacted with at least one chart on the sample dashboard — triggered by a "Replace sample data with your warehouse" CTA that appears on the dashboard after ~30 seconds.
+(d) Tradeoffs: gives up the speed of your 14% who already know what they want — they now have to click past the CSV demo or use the secondary link. Serves "I trust this category and want to get to work" users worst. Engineering cost is modest: you need a hosted sample dataset, the sample-to-live replacement flow, and the CSV upload pipeline already exists.
+(e) Prediction: abandonment drops to ~20-25%. Biggest win is on Snowflake/Postgres (the 71%/65% drops) because those users now have a demo path. Doesn't help Segment users much — they're already pre-auth'd and the CSV detour is a slight speedbump for them.
+
+**Approach B — Schema introspection with deferred mapping.**
+(a) Philosophy: users should never be asked to make configuration decisions before they've seen what the configuration affects; the tool's job is to guess the mapping and let the user correct after.
+(b) First screen: same 4 source tiles as today, but the subtitle under each changes to commit to the deferred-mapping contract — "We'll connect, infer your event tables, and show you a dashboard. You can refine the mapping after." Auth-first is preserved, but the step-3 "map your tables" screen is removed from the pre-dashboard flow entirely.
+(c) Auth is still step 2. The philosophy gives up on fixing problem 1 from step 1 of your diagnosis and instead fixes problem 3 (table-mapping context) plus gives users a visible payoff immediately post-auth.
+(d) Tradeoffs: gives up the "demo without auth" path — this approach assumes users are willing to auth if they trust the promise on the landing screen. Serves demo-hunters and low-trust users worst. Engineering cost is real: schema introspection for Snowflake (metadata queries), Postgres (information_schema), and Segment (catalog API) has to be robust enough that the inferred mapping is right 70%+ of the time, or you're worse than today.
+(e) Prediction: abandonment drops to ~28-32%. Kills the step-3 drop (24% of abandonment) but leaves a lot of the step-1→step-2 drop intact. Good if engineering can't afford the full demo-first path but wants a defensible single improvement.
+
+**Approach C — OAuth-only with warehouse-provider login.**
+(a) Philosophy: the commitment problem is solved by leveraging trust the user has already granted to their warehouse provider; the tool NEVER asks for a password, only OAuth from major providers, and the list of supported sources is intentionally narrowed.
+(b) First screen: "Sign in with Snowflake" / "Sign in with BigQuery" / "Sign in with Segment" as three branded OAuth buttons, plus a "Upload a CSV" secondary path. Postgres (password-based) is dropped from the primary flow — direct-DB users are routed to a different path (self-hosted docs + manual setup).
+(c) Auth IS the first action, but it's the lowest-friction possible version of auth — a single OAuth redirect, same as "Sign in with Google," using trust the user has already granted.
+(d) Tradeoffs: gives up the direct-Postgres path entirely for the primary flow, which is non-trivial — some of your customer base has Postgres as a primary analytics database. Serves Postgres-first users worst. Engineering cost is substantial: each OAuth integration is 1–2 weeks of real work, plus provider review, plus SSO edge cases. You also constrain your TAM — BigQuery and Redshift users become second-class until you ship their OAuth.
+(e) Prediction: abandonment drops to ~22-28% for the covered sources, but you lose ~15% of signups who are Postgres-primary and now have to follow a docs path. Net effect depends on your source mix — probably a win if Postgres is <30% of current signups, a loss if it's higher.
+
+**Fourth approach I won't develop: "No flow, just a landing dashboard."** Skip onboarding entirely. User signs up and lands directly on an empty dashboard with a persistent "Connect a source to populate" sidebar affordance. Connection happens asynchronously, triggered by whatever the user tries to do first. Philosophy: onboarding is coupling the user's first 60 seconds to something they don't care about (configuration). I'd consider this only if your dashboard is genuinely useful with a sample dataset pre-populated — otherwise it's worse than approach A. Flag it for future exploration; don't try to redesign to this without a real research pass.
+
+**My read on your design:** the inline-config one-page flow you've already built is Approach B plus some flavor of Approach A. The fact that I can't map it cleanly to a single philosophy is worth sitting with — it might mean your design is trying to get both wins, or it might mean it's diluted. Worth examining before pre-crit.$pf$,
+ $pf$Three philosophically distinct approaches with honest tradeoffs — demo-first with CSV, schema-introspection with deferred mapping, OAuth-only narrow-source — plus a "no flow, just dashboard" fourth Claude pushed back with. Claude flagged my existing design might be blending A+B and worth examining for dilution.$pf$),
+
+-- Step 3 --
+('66666666-6666-6666-6666-666666120103',
+ '55555555-5555-5555-5555-555555550018',
+ 3,
+ $pf$Pre-crit multi-persona pressure-test on the revised spec$pf$,
+ $pf$The dilution flag was correct. I went back, committed fully to Approach A (demo-first with CSV as front door), and stripped out the schema-introspection promises I had been hedging on. The revised spec is:
+
+- Landing: single page. Sample-CSV drag-drop zone dominant (60% of above-fold real estate). 200-row synthetic events file, downloadable in one click. Copy: "Try it in 60 seconds with sample data. Connect your warehouse when you're ready." Secondary link: "Connect a production source →" goes to the 3-tile source picker (Segment / Snowflake / Postgres).
+- Post-upload: sample dashboard renders in <3 seconds. 4 default charts (DAU trend, event volume, funnel, retention matrix). All interactive.
+- After 30s on the dashboard: a "Replace sample data with your warehouse" CTA appears in the top-right. Clicking routes to the existing 4-step wizard (source → auth → mapping → test query).
+- The production-source path from landing bypasses the wizard only for Segment (OAuth, low-friction). Snowflake and Postgres still go through the full wizard for now — schema introspection is a later project.
+- CSV upload for real data (not sample) lives inside the wizard at the source-picker step. Explicit "this is for production data" framing to distinguish from the sample-CSV landing path.
+
+Design review is tomorrow. I want you to pre-crit this by playing three specific personas in sequence, one at a time. For each, give me:
+- Who they are and what they care about in the room
+- 2-3 specific pushbacks they will raise
+- For each pushback, your read on whether I should change the design, defer it, or defend it (and what the defense sounds like)
+
+The three personas:
+
+1. **Skeptical staff PM.** 8 years at analytics companies. Cares about activation funnel metrics. Has seen a lot of redesigns that moved metrics temporarily and regressed. Defaults to "what does this do to the user who already knows what they want."
+
+2. **Overloaded platform engineer.** 3-year tenure, owns the warehouse-connection infra. Just finished a sprint migrating the Snowflake connector to a new driver. Cares about engineering scope and hidden work. Defaults to "what does this require us to build that we haven't accounted for."
+
+3. **The actual user — data analyst at a Series B.** 4 years of experience, at a company that has considered but not adopted 2 analytics tools in the past year. Cares about getting to a working dashboard without burning their afternoon. Defaults to "will this let me do my job or is it theater."
+
+Don't hedge. If a persona's pushback is fatal, say so.$pf$,
+ $pf$Going one at a time per your request. These are in order of how dangerous their pushback is to the current spec.
+
+---
+
+**Persona 1: Skeptical staff PM.**
+
+Who they are in the room: the person who is going to challenge whether this is a win for users who already know what they want, not just for the drop-off users. They've seen flows that optimized a top-of-funnel metric and regressed on something else that wasn't in the PRD.
+
+Pushback 1: **"What happens to the 14% who succeed today? They're your paying customers' future procurement-team users and you're making them click past a sample-CSV demo to get to their Snowflake connection."** This is the central activation-funnel PM concern and it is real. Your prediction in step 2 (~20-25% abandonment) assumes the 14% don't abandon at a higher rate because they now have an extra click, but it's not measured and is a real risk.
+My read: **change it.** Add a persistent "Skip the demo — connect a source directly" link in the top-right of the landing page, not just the below-sample secondary link. The secondary link below the CSV zone is findable but requires scrolling past the primary CTA for anyone on a laptop screen. A top-right link treats the "I know what I want" user as a first-class path, not a fallback. This change is <1 day of design work and removes the PM's strongest objection without compromising the philosophy.
+
+Pushback 2: **"Your 'activation' metric is now contaminated — someone uploading a sample CSV is counted as activated but they haven't actually connected their data. You've made the number look good without necessarily making the product adopted."** Valid concern. You'll need to define activation more precisely and probably track two metrics: sample-activated (uploaded a CSV, saw the dashboard) and production-activated (connected a real source and saw their own data).
+My read: **accept it and update the success criteria in the spec.** Don't defend "activation went from 57% to 73%" without disaggregating. Add a metrics section to the spec that names both numbers and predicts both. The PM will be right to push on this and you'll look better having already thought about it.
+
+Pushback 3: **"What does the 30-second delay on the 'Replace sample data' CTA do for users who want to skip the demo? They'll hit the dashboard and wonder why there's no way to leave it."** Valid but smaller. My read: **defer and fix in implementation** — show the CTA immediately for users who have clicked into the sample dashboard from the "I know what I want" path (tracked via a query param), and delay 30s only for users who uploaded via the drag-drop.
+
+---
+
+**Persona 2: Overloaded platform engineer.**
+
+Who they are in the room: the person asked "how long will this take" and who has to tell you it's longer than you think. Just finished a Snowflake driver migration and is burned out on connector work.
+
+Pushback 1: **"The hosted sample dataset isn't 'just a CSV' — it has to be a CSV that produces a working dashboard on upload, which means the sample events have to match whatever schema your dashboard charts assume. You're asking me to maintain a reference dataset that stays in sync with the default-chart configs."** This is load-bearing. Your current spec treats the sample CSV as a file; it's actually a contract between the onboarding team and the dashboard team, and it has maintenance cost.
+My read: **accept it and change the spec.** Write an explicit section on sample-dataset ownership — who owns the CSV, who owns keeping it in sync when default charts change, what the test coverage is. Propose the analytics team owns it and the design team is a stakeholder on schema changes. Without this, you're going to ship and watch the dashboard team add a chart that assumes a column your sample CSV doesn't have.
+
+Pushback 2: **"The 'Sign in with Segment' flow you showed in Approach C last week — that's still scoped, right? Because my calendar for next quarter doesn't have it."** They're anxious that demo-first quietly re-introduces OAuth work because you mentioned Segment could bypass the wizard.
+My read: **defend and clarify.** The current spec uses Segment's existing OAuth, which is already shipped. No new integration work. Say this explicitly in the "engineering scope" section of the spec so it reads "zero new connector work required."
+
+Pushback 3: **"The 'replace sample data with real data' transition — what happens to the user's view state? If they've built a custom chart on sample data, does that persist? Does it get broken when their real events don't match?"** Real engineering concern. My read: **defer to a later spec review but flag it as a known open question.** For v1, don't let users customize charts on sample data — the sample dashboard is read-only, customization unlocks after production connection. Add this constraint explicitly to the spec so it doesn't get lost.
+
+---
+
+**Persona 3: Data analyst user.**
+
+Who they are in the room: not literally in the room, but you should be reading the spec from their POV because your PM will ask "would THEY actually do this."
+
+Pushback 1: **"A sample CSV demo is theater. I've seen five of these. What I actually want is to paste a SQL query into your tool and see the dashboard on my real data in 30 seconds."** This is the hardest pushback because it's true for a specific user type — the analyst who already has a warehouse connection and wants the fastest possible path to their data. Your current flow does nothing for them; the sample CSV is worse than the current 4-step wizard for this user.
+My read: **this is the pushback your staff PM's pushback 1 is pointing at. The top-right "connect directly" link handles it partially.** The deeper fix is longer-term: ship a "paste a connection string" quick path for Postgres + a copy-paste Snowflake config for users who have the credentials on hand. Don't try to ship this for v1; add it as a committed v2 scope in the spec so the PM and analyst-proxy-users know it's coming.
+
+Pushback 2: **"What does the sample dashboard show me about whether your tool handles MY query patterns? If the sample is DAU/funnel/retention and I care about cohort LTV by acquisition channel, the sample proves nothing."** Real and genuinely hard. My read: **partially defensible, partially a real limit of the approach.** Defense: the sample is a smoke test, not a value proof; the "replace sample data with your warehouse" path is the real value proof. But the defense only works if the replace-sample path is smooth — which is still the 4-step wizard in v1 for Snowflake/Postgres. This is a real weakness and you should name it explicitly as a v1 limitation.
+
+**Most load-bearing finding across all three personas:** the staff PM's pushback 1 (the "I know what I want" user) IS the analyst's pushback 1 in different clothing. Both are pointing at the same missing path. The top-right "connect directly" link plus the v2 commitment to quick-connect flows covers it defensibly for v1. Add both to the spec before you walk in.
+
+**Two specific edits to make tonight before design review:**
+1. Add top-right "Connect a source directly" link to landing page mockup.
+2. Add spec section: success metrics disaggregated into sample-activated + production-activated; engineering-scope section clarifying zero new connector work; sample-dataset ownership section; v2 commitment to quick-connect paths for Snowflake + Postgres.$pf$,
+ $pf$Three-persona pre-crit: skeptical staff PM, platform engineer, data analyst user. Staff PM's "what about the 14% who succeed today" pushback was load-bearing — mitigated by adding a persistent top-right "Connect directly" link. Platform engineer caught the sample-dataset-as-contract ownership gap. Data analyst persona surfaced the real limit of the approach, fixable with a v2 commitment.$pf$);
+
+-- =========================================================================
+-- Project 55-0019 | 18-month engineering roadmap memo for the board | Derek Lawson | Strategy | 5 steps
+-- =========================================================================
+
+DELETE FROM prompt_steps WHERE prompt_id = '55555555-5555-5555-5555-555555550019';
+DELETE FROM prompts      WHERE id        = '55555555-5555-5555-5555-555555550019';
+
+INSERT INTO prompts (
+  id, title, description, content, result_content,
+  category_id, difficulty, model_used, model_recommendation,
+  tools_used, tags, status, author_id, vote_count, bookmark_count
+) VALUES (
+  '55555555-5555-5555-5555-555555550019',
+  $pf$18-month engineering roadmap memo for the board — 5-pass Claude workflow for a Series B health-tech CTO$pf$,
+  $pf$My Q3 roadmap memo got dismissed by the board as "vague optimism." Six weeks later I had to go back with an 18-month plan tied to our Series C raise. Used Claude 4.7 Opus over 5 prompts — honest-state, three-horizon framing, capacity modeling, board-objection steelman, final memo assembly. Board approved in 35 minutes. The memo is in the investor data room.$pf$,
+  $pf$I'm the CTO at a Series B health-tech company — 65 people, 28 in engineering, ~$18M ARR, primary product is a PHI-sensitive clinical-ops platform for small-to-midsize medical groups. Raised an $11M Series B 14 months ago, runway to Q3 2027 at current burn. Board wants us in market with a Series C by mid-2026.
+
+My Q3 roadmap memo got dismissed. Not rejected — dismissed. One board member (an operating partner at our lead) called it "a list of ambitions, not a plan." Fair. The memo was a 6-page doc that mixed committed Q4 work with aspirational 2027 ideas without distinguishing them, listed every initiative the team was excited about, and didn't tie capacity to outcomes. In hindsight it was a designed-by-committee artifact that optimized for "everyone on the eng leadership team feels represented" rather than "board can make a decision."
+
+Six weeks later I had to go back with an 18-month roadmap that would ALSO land in the Series C data room as one of the DD artifacts. Stakes were real. Board meeting was Wednesday; memo had to be in the pre-read by Friday before.
+
+Used Claude 4.7 Opus over 5 prompts spread across 2 days. 4.7 because the work is heavy-judgment: reading the current state honestly (not the LinkedIn-post version), committing to three time horizons with a "what we're saying no to" list, modeling 28 FTEs across four work categories with honest trade-offs, steelmanning three specific board members' objections before they said them, and assembling a 3-page memo that would earn the board's decision in 30 minutes.
+
+Prompt 1 was the honest-state pass — force myself to write down what was actually shipping, what was stuck, where the debt lived. No LinkedIn voice. Prompt 2 was the three-horizon commitment — H1 (next 6mo, committed), H2 (6-12mo, planned), H3 (12-18mo, scoped). Each horizon had to include an explicit say-no list. Prompt 3 was capacity modeling against the 28-FTE reality: feature work, platform/infra, reliability/oncall, debt paydown — give me the allocation, show the trade surface. Prompt 4 was the steelman: three specific board members I could name, each with different concerns, what their strongest objections would be, my honest answers including one "you're right, here's how I'd adjust." Prompt 5 was the final 3-page memo assembly.
+
+The board meeting took 55 minutes total, of which 35 on the roadmap, and approved. Operating partner who dismissed the last one called it "a real plan this time."$pf$,
+  $pf$Board approved the roadmap in 35 minutes. Three specific reactions worth noting: (1) the operating partner at our lead — the one who called Q3's memo "vague optimism" — said this version was "a real plan" and that the say-no list in H1 was the thing that changed his read. (2) Our independent director (ex-CTO of a mid-stage health-tech acquired last year) pushed hard on the platform-vs-feature split in the capacity model; my answer — that platform work in H1 was earmarked for the PHI data boundary RFC we'd already shipped, not speculative work — landed because it was concrete. (3) The growth-investor partner from our Series B lead pushed on the Series C readiness question; the memo's H2 section explicitly named Series C dependencies (audit trail completeness, multi-tenant scale story, SOC 2 Type 2 renewal), which satisfied that line of questioning without it becoming the whole conversation.
+
+What I'm keeping from this workflow: the say-no list in each horizon. Stating what we're NOT doing is harder than stating what we are doing. The Q3 memo failed because it never committed to not doing anything — which meant the board couldn't tell what we'd actually trade off under pressure. Every future roadmap memo I write will lead with the say-no list per horizon.
+
+Also keeping: the board-objection steelman in step 4. Before this memo, my default was to write the doc and hope the objections I hadn't thought about didn't surface in the room. Having written steelman objections and my honest answers before the meeting meant I knew which questions I could handle in 30 seconds and which needed a deeper prepared answer. The "you're right, here's how I'd adjust" answer — on the question about rolling the SOC 2 renewal into H1 instead of H2 — was the one that changed a line in the final memo. Better to find that edit in pre-crit than in the room.
+
+One honest thing I'd add: the capacity modeling in step 3 only works if you have accurate FTE-by-area allocation data to start with. We had that because of a 2025 time-tracking exercise that was separately useful for OKRs. Teams that don't track engineering time at least at the category level will find step 3 mostly hallucination. Build that data first if you don't have it.
+
+Memo is now a DD artifact in the Series C data room. First investor conversations starting next week.$pf$,
+  '11111111-1111-1111-1111-111111111109',
+  'advanced',
+  'claude-opus-4-7',
+  'Claude 4.7 Opus',
+  ARRAY['Claude','Notion','Linear','Google Docs'],
+  ARRAY['eng-roadmap','board-memo','series-c','cto','capacity-planning','health-tech'],
+  'approved',
+  '22222222-2222-2222-2222-222222222209',
+  112, 58
+);
+
+INSERT INTO prompt_steps (id, prompt_id, step_number, title, content, result_content, description) VALUES
+
+-- Step 1 --
+('66666666-6666-6666-6666-666666130101',
+ '55555555-5555-5555-5555-555555550019',
+ 1,
+ $pf$Honest-state pass — no LinkedIn voice, what's actually shipping vs stuck$pf$,
+ $pf$I'm the CTO at a Series B health-tech company, 28 engineers, PHI-sensitive clinical-ops platform for small-to-mid medical groups. Raised $11M 14 months ago. Board wants a defensible 18-month roadmap that supports a Series C raise by mid-2026. My last roadmap memo got dismissed as "vague optimism."
+
+Before I do any horizon-setting, I need to write down honestly where we actually are. I want you to help me do this — not draft it, but push me to be honest. I'll give you the inputs and I want you to tell me where I'm still LinkedIn-posting versus where I'm being real. Flag anywhere my description sounds like a pitch rather than a diagnosis.
+
+Here's what I would have written as the "current state" paragraph before this exercise:
+
+"Our engineering team is a high-performing 28-person org aligned on a shared PHI-safe architecture. We're shipping quickly against our 2025 roadmap and have strong platform foundations. We have opportunities to invest in scale and reliability as we prepare for Series C. Our team is energized and our velocity is accelerating."
+
+That paragraph is bad. It's defensive. It's how I would describe us to someone skeptical whose skepticism I was trying to deflect. Here's what I know to actually be true:
+
+**What's actually shipping:**
+- Core clinical-ops features are shipping on a 2-week cadence. 6 of the last 8 sprints hit committed scope.
+- We shipped the PHI data boundary RFC in Q2 (schema-level RLS + audit log + network isolation). That work landed on time and was a real platform win.
+- 4 customer deployments went live in Q3, all on the new PHI-safe architecture.
+
+**What's stuck or delayed:**
+- The scheduling-integration rewrite (replacing our 2022 monolith component with a service) was scoped for Q2 delivery. It's now Q4 and has slipped to Q1 2026. Two engineers have been on it continuously; both have said in 1:1s the original scope was wrong.
+- SOC 2 Type 2 renewal is behind. Auditor needs 3 control remediations we haven't started.
+- The observability overhaul — move from Datadog-only to Datadog + structured logging + distributed tracing — has been "in progress" for 3 quarters. Tracing isn't deployed in production yet.
+- We have 4 engineers who have told their managers they're actively exploring outside opportunities. Two are senior. No formal attrition yet, but the signal is real.
+
+**Where the tech debt lives:**
+- The 2022 scheduling monolith (same component as the stuck rewrite). Adding features to it costs 3-4x what greenfield features cost.
+- Our auth layer: three code paths for three customer types (single-clinic, multi-clinic, enterprise). Every new feature has to be aware of all three.
+- Test infrastructure: our integration test suite takes 47 minutes. Engineers routinely skip local runs and rely on CI, which bottlenecks deploys.
+- Our data-ingestion pipeline for EHR feeds has 6 partner-specific adapters with no shared abstraction. Adding a 7th partner is 4-6 weeks of work.
+
+**What I'm not sure about:**
+- Whether the 4 engineers exploring outside are a signal of comp lag, a signal of morale after the Q3 dismissal of the roadmap memo, or normal market churn for Series B health-tech. Probably a mix of all three.
+- Whether the scheduling rewrite slip is scope or performance. Both engineers are strong. I don't have a good answer.
+
+Walk through my inputs and tell me (a) what's still LinkedIn-voiced even after I tried to be honest, (b) what I'm likely minimizing, (c) what's missing that a skeptical reader (like our operating-partner board member) would ask about, and (d) what the honest 2-paragraph "current state" section of a board memo should actually say.$pf$,
+ $pf$You've done the hard part — naming the stuck items and the possible attrition signal. Most CTOs don't write those down even for themselves. The diagnosis below is more pointed than it would be if you hadn't already pushed yourself. A few places you're still soft:
+
+**Still LinkedIn-voiced:**
+- "6 of the last 8 sprints hit committed scope" — this is a win, but the framing is the PM version. The honest version is "2 of 8 sprints missed committed scope, both in features that depended on the scheduling rewrite." That reframing is worse for your read on velocity but it points directly at the scheduling-rewrite slip as a cross-cutting risk, not a contained one.
+- "Core clinical-ops features are shipping on a 2-week cadence." Cadence is a process observation. What's missing is whether those features are the right features. The Q3 roadmap dismissal suggests the board doesn't yet believe your feature selection is load-bearing on growth. I'd name this explicitly: "cadence is healthy; prioritization signal is weaker — the board has not yet seen a feature ship that they believe moved a commercial metric."
+- "All 4 deployments on the new PHI-safe architecture." True and good. But "4 deployments" is a small number at your ARR. A skeptical reader will ask what the cohort before that looked like. If 4 Q3 deployments is in line with Q1/Q2, say so; if it's a drop, you need to name that.
+
+**Things you are likely minimizing:**
+- The scheduling rewrite slip from Q2 → Q4 → Q1 2026 is a 9-month slip. You've framed it as scope wrong, but a 9-month slip on work by two strong engineers is a 2-sigma event — it means either the problem was much harder than anyone understood, or decisioning on the project has been broken (no one called the slip early, you didn't reset scope, the engineers were left to figure it out). Either explanation is material for a board memo. The honest version names the decisioning failure: "we failed to re-scope the project at the Q2 delay; the engineers have been pattern-matching the original scope without a structural reset for 6 months."
+- The 4 engineers exploring outside is likely underselling itself. In a 28-person eng org, 4 is 14%. Two of them senior. At Series B, senior attrition has second-order costs (institutional knowledge, platform ownership, recruiting pressure on remaining seniors). The "probably a mix of all three" hedge is the CTO-under-stress answer; a board memo needs a ranked read. My guess reading your inputs: comp lag is probably real (Series B comp against Series C+ market), but the Q3 dismissal of the roadmap memo creating a morale overhang is non-trivial. Name it directly and say what you'll do in the next 30 days.
+- "Observability overhaul in progress for 3 quarters" with "tracing not deployed in production yet" is a soft way of saying the project has stalled. The board will read it that way even if you don't. Either commit to it shipping in H1 or acknowledge it as a cancellation candidate.
+
+**What a skeptical board reader will ask that isn't in your inputs:**
+- What's your engineering attrition rate trailing 4 quarters, and how does it compare to your benchmarks (probably Series B health-tech is ~18% annualized industry baseline)? The "4 exploring" signal needs a base-rate anchor.
+- What fraction of your engineering capacity is spent on debt paydown vs feature work? You named the debt list but didn't quantify the drag. Ballpark: if scheduling-rewrite + observability + auth-cleanup is 6 FTEs for 3 quarters, that's a material capacity claim.
+- What's your shipping-to-contracted-revenue attach rate? Which features shipped in 2025 drove which new-logo wins or expansion revenue? If you can't tell a crisp story there, the board will suspect your feature selection isn't accountable to commercial outcomes.
+- What's the customer-impact story on the SOC 2 renewal lag? Does it block a specific deal or renewal?
+
+**Honest 2-paragraph current-state section:**
+
+> Engineering has 28 people, is shipping features on a 2-week cadence, and has delivered meaningfully on our PHI-safe platform architecture — the Q2 data-boundary work is our clearest platform win and is now running in production for all four Q3 deployments. Feature velocity masks two real risks: the scheduling-integration rewrite, scoped for Q2, has slipped to Q1 2026 and represents a decisioning failure I didn't correct at the original delay; and four engineers (two senior) are exploring outside roles, a 14% signal in a 28-person org that is most likely a mix of Series B comp lag against Series C+ market and morale overhang from the dismissed Q3 roadmap.
+>
+> Tech debt lives in three places that constrain the roadmap: the 2022 scheduling monolith (where the rewrite is stuck), the three-path auth layer that every new feature has to be aware of, and the EHR-adapter pipeline that costs 4-6 weeks per new partner. The SOC 2 Type 2 renewal is behind three controls. These aren't new; they were the backdrop of the Q3 memo. What changed is I'm treating them as first-class roadmap inputs rather than background conditions — the next sections commit to what ships, what's being deferred, and what capacity trade enables each.
+
+That paragraph reads harder than the original but it's what earns the right to the rest of the memo.$pf$,
+ $pf$Claude flagged 3 places I was still LinkedIn-voicing (sprint hit rate, feature selection, deployment count), 3 things I was minimizing (scheduling slip as decisioning failure, 14% attrition signal, observability stall), and 4 questions a skeptical board reader would ask that weren't in my inputs. The rewritten 2-paragraph current-state section names the scheduling slip as a decisioning failure I didn't correct — harder but earns the rest of the memo.$pf$),
+
+-- Step 2 --
+('66666666-6666-6666-6666-666666130102',
+ '55555555-5555-5555-5555-555555550019',
+ 2,
+ $pf$Three-horizon framing — H1 committed, H2 planned, H3 scoped, each with a say-no list$pf$,
+ $pf$Good. Current-state paragraph locked with your edits. Now horizon framing.
+
+I want three horizons:
+- **H1 (next 6 months, Nov 2025 → Apr 2026):** committed work. What we are promising to ship, with confidence bands. This is the window the board can hold us accountable to.
+- **H2 (Apr → Oct 2026):** planned work. What we intend to ship, dependent on H1 outcomes and Series C close. Flex here.
+- **H3 (Oct 2026 → Apr 2027):** scoped work. Ideas with size estimates, no commitment, directional.
+
+For EACH horizon, I need an explicit say-no list. What are we deliberately NOT doing in that horizon, and why. The Q3 memo failed because it had no say-no list and the board couldn't tell what we'd drop under pressure.
+
+Constraints shaping the horizons:
+- H1 must include: finish the scheduling rewrite (slip is public, shipping it is on the critical path to trust restoration), SOC 2 Type 2 renewal (3 controls), and shipping at least one feature that tells a commercial-outcome story (board needs to see feature-to-revenue attach).
+- H2 must include Series C-readiness work: multi-tenant scale story, audit trail completeness, SOC 2 Type 2 completion.
+- H3 is where the ambitious platform rewrites live — EHR-adapter pipeline abstraction, auth-layer consolidation. Board should see these named but should not expect them committed.
+
+Give me a draft of the three horizons with say-no lists. Push back on any horizon placement where you think I'm wrong. Don't be deferential — if H1 is too aggressive given the capacity model we'll do next, or H3 is overloaded with nice-to-haves, say so.$pf$,
+ $pf$Drafts below, then three specific pushbacks on your horizon placement.
+
+**H1 (Nov 2025 → Apr 2026): committed.**
+
+Ships:
+- Scheduling-integration rewrite — ships by Mar 2026. Explicit scope reset in first 4 weeks (re-specification + architecture review), then 4 months of delivery. Owner: existing 2 engineers + a third senior rotated in for the reset.
+- SOC 2 Type 2 renewal — 3 control remediations completed by Feb 2026, audit window Mar 2026, report by Apr 2026.
+- "Commercial story" feature — ONE feature shipped by Feb 2026 tied to a measurable commercial metric (my recommendation: the multi-location reporting rollup that three enterprise prospects have named as a procurement blocker; ship it to a named design-partner customer with a public outcome).
+- Observability decision — either commit tracing to production by Jan 2026 or formally cancel and reallocate the quarter's capacity. No more "in progress."
+- Attrition mitigation — compensation review completed and communicated by Dec 2025; retention commitments where warranted.
+
+Say-no list for H1:
+- No new customer-type expansion (no vertical market additions, no geographic expansion).
+- No greenfield platform work (auth consolidation, EHR-adapter abstraction — both deferred to H3).
+- No new feature categories beyond the commercial-story feature. Feature work is maintenance + the one flagship.
+- No AI/ML feature work shipped to customers (any exploration is contained R&D, not roadmap).
+
+**H2 (Apr → Oct 2026): planned.**
+
+Ships (conditional on H1 completion + Series C close):
+- Multi-tenant scale story — infrastructure work to support 3x current tenant count on the PHI-safe architecture. Ship by Aug 2026.
+- Audit-trail completeness — extend the immutable audit log to cover the 6 event types not yet in scope. Target Jun 2026.
+- SOC 2 Type 2 report — ongoing compliance maintenance, no new scope.
+- 2 features from the commercial-outcome queue — identified via H1 pipeline signal (don't pre-commit specifics; commit the slot count and the decisioning framework).
+- Customer-type expansion — ONE new vertical (multi-specialty practice management) with design-partner commitment in hand before starting.
+
+Say-no list for H2:
+- No international expansion (data residency work is H3 at earliest).
+- No platform rewrites (auth, EHR-adapter pipeline — still H3).
+- No new AI/ML customer-facing features unless market-forced.
+
+**H3 (Oct 2026 → Apr 2027): scoped.**
+
+Directional ideas with size estimates, no commitment:
+- EHR-adapter pipeline abstraction — ~2 FTE for 2 quarters, unlocks 50% faster partner onboarding.
+- Auth-layer consolidation — ~1.5 FTE for 2 quarters, reduces cross-cutting feature complexity ~20%.
+- Data-residency infrastructure for EU/Canada — ~3 FTE for 2 quarters, dependent on deal pipeline justifying it.
+- First customer-facing AI/ML feature — scope TBD, dependent on H2 R&D outcomes.
+
+Say-no list for H3:
+- No commitments until H1 outcomes are known. Horizon is scoped-not-committed deliberately.
+
+---
+
+**Three pushbacks on your horizon placement:**
+
+**Pushback 1: H1 is too aggressive.** You have 28 FTEs and you've committed to: scheduling rewrite (3 FTE × 5 months = ~15 FTE-months), SOC 2 remediations (2 FTE × 3 months = 6 FTE-months), commercial-story flagship feature (4 FTE × 3 months = 12 FTE-months), observability decision + ship (~2 FTE × 3 months = 6 FTE-months at minimum). That's ~39 FTE-months of committed work over a 6-month window that has ~168 FTE-months of total capacity (28 × 6). Fine on paper — until you subtract oncall/reliability baseline (~20%), maintenance/bugs (~15%), meetings and process overhead (~10%). That's 45% off-the-top, leaving ~92 FTE-months. Your committed work is 42% of remaining capacity. If anything slips 20% — and scheduling-rewrite slipping is your base rate — you're at 50%+ and crowding out feature maintenance. I'd recommend making the "commercial story" feature a smaller, higher-confidence ship (maybe the multi-location rollup is 2 FTE × 3 months, not 4 × 3) and pre-committing a buffer for scheduling-rewrite re-slippage.
+
+**Pushback 2: Observability is in the wrong category.** You have "either commit to production by Jan 2026 or formally cancel" in H1 ships. That's a decision, not a ship. The decision should happen in H1 weeks 1-4 (part of scope reset alongside scheduling), and H1's commitment should be either "tracing shipped by X" or "observability formally cancelled, capacity reallocated to Y." Don't let a project in the middle of its decision live in the "committed ships" list — it'll read as weakness.
+
+**Pushback 3: You're deferring auth consolidation to H3 but every new feature has to be aware of 3 auth paths. That's a tax on every H1 and H2 feature ship.** I understand why auth consolidation is in H3 (the opportunity cost of spending 1.5 FTE × 2 quarters is real), but the memo should explicitly name the tax and say what it buys. Something like: "Auth consolidation is scoped to H3; we estimate a 10-15% per-feature velocity tax from the current three-path auth through H1 and H2; we accept this because consolidation would cost us a full feature ship in 2026 we don't believe the business can afford to lose." Board reads that and knows you've made the trade consciously.
+
+**One thing I'd move:** The SOC 2 Type 2 report completion in H2 — is there a version where H1 commits to finishing the audit and H2 only handles maintenance? That would de-risk a Series C-readiness item into the committed horizon. Worth checking with your auditor timeline before finalizing.$pf$,
+ $pf$Three-horizon draft with say-no lists per horizon. Claude pushed back on H1 being over-committed (42% of remaining-capacity after off-the-top, with scheduling-rewrite slip risk crowding out feature maintenance), observability being miscategorized as a ship when it's still a decision, and the three-path auth tax needing explicit naming as a conscious H2/H3 trade. Also flagged SOC 2 completion might move from H2 to H1 to de-risk a Series C item.$pf$),
+
+-- Step 3 --
+('66666666-6666-6666-6666-666666130103',
+ '55555555-5555-5555-5555-555555550019',
+ 3,
+ $pf$Capacity modeling — 28 FTEs across 4 work categories, honest trade surface$pf$,
+ $pf$Both pushbacks 1 and 2 accepted. I shrunk the commercial-story feature to 2 FTE × 3 months (ship the narrower multi-location rollup) and moved observability to a decision-in-H1-weeks-1-4 with either a commit or cancellation, not a mid-horizon-ship. Checked with auditor: SOC 2 Type 2 report timeline CAN compress if we start remediations November instead of December, so I'm pulling report completion into late H1 (Apr 2026). That makes H2's SOC 2 line "maintenance only," which you recommended.
+
+Now I need the capacity model. I have 28 FTEs. I want to allocate them across four work categories over H1:
+1. Feature work (committed ships: scheduling rewrite, commercial-story flagship, feature maintenance on top of the 2-week cadence)
+2. Platform / infrastructure (PHI-safe platform maintenance, multi-tenant prep IF any fits in H1)
+3. Reliability / oncall / compliance (SOC 2 remediations + audit, oncall rotation, incident response, security)
+4. Debt paydown (observability decision + ship-or-cancel, attrition mitigation, anything else)
+
+Current allocation guess (before your modeling):
+- Feature work: 16 FTE (57%)
+- Platform: 3 FTE (11%)
+- Reliability/compliance: 5 FTE (18%)
+- Debt: 4 FTE (14%)
+
+I want you to build the real model. Start from my off-the-top assumptions (20% oncall/reliability baseline, 15% maintenance/bugs, 10% meetings/process). Convert to FTE-months over H1. Then show me the allocation that actually fits the committed work, and — this is the load-bearing ask — show me what moves if any single H1 commitment is under-delivered or over-delivered.
+
+What I want to be able to tell the board: "here's the capacity, here's where it goes, here's what we give up if scheduling slips again, here's what we gain if the commercial-story feature ships early." Real trade surface, not cartoonish.$pf$,
+ $pf$Starting from the off-the-top deductions, then the baseline allocation, then the trade surface with 4 specific perturbation scenarios.
+
+**Capacity baseline for H1 (6 months, 28 FTEs):**
+
+Gross: 28 × 6 = **168 FTE-months**.
+
+Off-the-top deductions (from your baseline assumptions, verified against your Q3 time-tracking exercise):
+- Oncall / on-duty reliability floor: 20% = **34 FTE-months**
+- Maintenance / bugs / incident response: 15% = **25 FTE-months**
+- Meetings / process / 1:1s / planning overhead: 10% = **17 FTE-months**
+- Recruiting / interviewing load (you're hiring 3 in H1 per the retention/backfill plan): ~5% = **8 FTE-months**
+
+**Total off-the-top: 84 FTE-months. Net discretionary: 84 FTE-months.**
+
+That's tighter than your pushback-1 calc because I added recruiting load and framed meetings on the higher end — CTOs routinely underestimate this. If your Q3 time-tracking data shows meeting overhead is lower (say 7-8%), flex the number up to ~88 FTE-months. Use the conservative 84 for board-facing commitment.
+
+**Discretionary allocation against committed work:**
+
+| Category | Work | FTE-months | % of discretionary |
+|---|---|---|---|
+| Feature work | Scheduling-rewrite delivery | 18 | 21% |
+| Feature work | Commercial-story flagship (multi-location rollup, revised scope) | 6 | 7% |
+| Feature work | Feature maintenance on 2-week cadence (incl. customer-requested small asks) | 22 | 26% |
+| Reliability / compliance | SOC 2 remediations (3 controls) | 6 | 7% |
+| Reliability / compliance | SOC 2 audit window + Type 2 report assembly | 4 | 5% |
+| Reliability / compliance | Security reviews, routine compliance | 2 | 2% |
+| Platform / infra | PHI-safe platform maintenance | 4 | 5% |
+| Platform / infra | Multi-tenant scale prep (spike only, no build — feeds H2) | 2 | 2% |
+| Debt | Observability: decision-and-execute or cancel-and-redirect | 6 | 7% |
+| Debt | Scheduling-rewrite scope reset (first 4 weeks of 3 FTEs) | 3 | 4% |
+| **Buffer** | Scheduling re-slip buffer + unexpected | **11** | **13%** |
+| **Total** | | **84** | **100%** |
+
+Observations worth naming in the memo:
+- Feature work is 54% of discretionary, not the 57% in your initial guess — close but the accurate number is lower because the flagship shrunk.
+- The buffer is 13% of discretionary, which is deliberate. Given scheduling-rewrite slip is your 2-sigma event, a buffer smaller than 10% would be irresponsible.
+- Scheduling-rewrite delivery is 21% of discretionary capacity alone. That's the single largest line and represents the concentration risk. The memo should name this explicitly.
+- Your initial "platform 11%" is actually 7% when you strip to true H1 platform work. The 2% multi-tenant spike is a pre-investment; the 4% is steady-state.
+
+**Trade surface — 4 perturbations the board will ask about:**
+
+**(a) Scheduling rewrite slips another 2 months.** Buffer absorbs ~6 FTE-months of the overage; the remaining ~6-10 FTE-months come from deferring the multi-tenant H1 spike (saves 2), narrowing feature maintenance (saves 4-6), and potentially pushing the commercial-story flagship by 4-6 weeks. If slip is worse than 2 months, you have to cancel observability entirely and redirect — that's the breakpoint. Name this to the board: "if scheduling slips >2 months from current commitment, observability is cancelled."
+
+**(b) Commercial-story flagship ships 4 weeks early.** Freed ~2 FTE-months. Best use: accelerate the multi-tenant spike from 2 → 4 FTE-months (de-risks H2) or start the H3 EHR-adapter abstraction scoping work a quarter early. Do NOT spend it on new feature work — the commitment said we're not doing new categories in H1.
+
+**(c) An enterprise deal demands a new feature category not in the plan.** This is the most likely real-world perturbation. Answer: the say-no list binds. If a deal is material enough to override H1's scope, that's an H1 re-plan event with board consultation, not a silent accept. Costing a new feature category at minimum viable is ~8-12 FTE-months, which comes entirely from either pushing the commercial-story flagship to H2 (saves 6) OR giving up the multi-tenant spike and buffer (saves 13). Both options visible and costed.
+
+**(d) Two of the at-risk senior engineers leave in H1.** Loss: ~10 FTE-months over H1 (assuming they leave at month 2 with a month of effective transition). Backfill: 2 senior hires take ~4 months to productive, so backfill recovers ~4 FTE-months. Net loss: ~6 FTE-months. Buffer + deferring multi-tenant spike covers it. Bigger concern: institutional knowledge on scheduling-rewrite and PHI-platform, which is why the attrition mitigation (comp review + retention commitments) is itself a committed H1 line.
+
+**One structural point for the board memo:** the trade surface above is what the Q3 memo was missing. Including it makes the roadmap legible to the board as a set of controlled trades, not a fixed list of promises. Name that explicitly in the memo's intro: "this roadmap is a committed allocation with named trade-offs, not a fixed list — the perturbation table below is how we've thought about what moves under pressure."$pf$,
+ $pf$Capacity model: 84 FTE-months discretionary after 84 off-the-top, allocated 54% feature / 14% reliability+compliance / 7% platform / 11% debt / 13% buffer. Four perturbation scenarios (scheduling slip, flagship early-ship, surprise deal, 2-senior attrition) with costed responses. The scheduling-rewrite concentration (21% of discretionary) and the >2-month-slip-cancels-observability breakpoint are the two numbers to put in the memo.$pf$),
+
+-- Step 4 --
+('66666666-6666-6666-6666-666666130104',
+ '55555555-5555-5555-5555-555555550019',
+ 4,
+ $pf$Board-objection steelman — three members, strongest pushback, honest answers$pf$,
+ $pf$Capacity model landed. Narrowed feature maintenance to 20 FTE-months (saved 2 FTE-months, added to buffer for a cleaner 15% number). Before I assemble the final memo, I want the pre-crit pass.
+
+Three board members I can name. I want you to steelman each one's strongest likely objection to the roadmap as drafted, then give me my honest answer — including any answer where the right response is "you're right and here's how I'd adjust the memo."
+
+Don't give me softball objections. I want the hardest version of each.
+
+**Member 1: The operating partner (our Series B lead).** 20 years of ops experience, dismissed Q3's memo as "vague optimism." Defaults to "show me how this is different from the last time you told me this." Worst case would be him reading the H1 section and saying "this looks like another list of things you'll probably miss."
+
+**Member 2: The independent director.** Ex-CTO of a mid-stage health-tech that was acquired 14 months ago. Deep technical depth. Defaults to "show me the platform math, not the feature math." Worst case would be her reading the capacity model and saying "your 13% buffer is a fig leaf given your scheduling slip history."
+
+**Member 3: The growth-investor partner from Series B lead.** Commercial background. Cares about Series C readiness and the commercial story. Defaults to "what does this roadmap do for the next raise." Worst case would be him reading H2 and saying "none of this tells me why a Series C investor would fund us at a step-up."
+
+Give me each member's steelman objection and my honest answer. Flag any case where my honest answer requires changing the memo itself.$pf$,
+ $pf$One at a time. All three have at least one edit that should go back into the memo.
+
+---
+
+**Member 1 — Operating partner. "This looks like another list of things you'll probably miss."**
+
+Steelman: "Derek, in Q3 you gave me a memo with a dozen ambitions, and I told you it wasn't a plan. Now you've given me five things in H1 with a buffer, and the biggest one is a project that's already slipped 9 months. The buffer is 15%. Your historical slippage on scheduling is 150%+. You've dressed up the same memo with a capacity model. What's actually different?"
+
+Honest answer: The memo IS different, and here's the one concrete structural change that makes it so — the scope-reset discipline in the first 4 weeks. In Q3 we committed to scheduling delivery without re-specifying scope after the original slip; we let two engineers keep pattern-matching the wrong problem for 6 months. H1 explicitly budgets 3 FTE-months of scope reset before the delivery clock starts, with an architecture review gate at week 4 that can kill or redirect the project. If the reset concludes the problem is structurally bigger than the current scope, we declare it and re-plan immediately — we don't quietly keep going. That discipline didn't exist in Q3.
+
+Second: the observability line is explicitly a decide-or-cancel in H1 weeks 1-4. The Q3 memo had "observability in progress" as a line item for three quarters running. Both of these are lessons from the Q3 failure mode, named and committed.
+
+Third: the perturbation table. It's there specifically so when something slips, we don't have a closed-door conversation about what moves — the moves are pre-committed and legible.
+
+**Edit to the memo:** call out these three structural differences EXPLICITLY at the top of H1, not as implicit features of the plan. Something like: "What's different from Q3's plan: scope-reset gates at H1 week 4, pre-committed decide-or-cancel on observability, and a documented perturbation table. These directly address Q3's failure modes." Makes the "what's different" question have a concrete answer before he asks it.
+
+---
+
+**Member 2 — Independent director (ex-CTO). "Your 13% buffer is a fig leaf given your scheduling slip history."**
+
+Steelman: "Derek, I've looked at your capacity table. The scheduling rewrite is 21% of discretionary. You've buffered 13-15%. Your slip history on scheduling is 150%+ — Q2 original, Q4 revision, Q1 2026 current target. For you to hit H1 with a buffer of 13%, you need scheduling to NOT slip. That is not a scenario. That is a miracle. Either your buffer number is wrong or your confidence in scheduling ship is miscalibrated. Which is it?"
+
+Honest answer: She's right that my buffer is not sized for the base rate of scheduling slip alone — it's sized for total slip across all lines. If I disaggregate: scheduling has ~18 FTE-months of delivery. A 25% slip (which is 2x historical trend for post-reset projects in our org) would consume ~4.5 FTE-months of buffer. Other lines historically slip 5-10%, adding another 3-4 FTE-months. So a "normal" H1 consumes roughly 8 of the 13 FTE-months of buffer. I've been calling this 15% buffer but I should call it "buffer sized to absorb expected slip across all committed work with 5-6 FTE-months of genuine surprise-absorption."
+
+Where she's also right: if scheduling slips at ITS historical rate (150%+), the buffer is inadequate and we'd hit the observability-cancellation breakpoint I named in step 3. I'd answer the objection directly — "the buffer is sized for expected slip, NOT for scheduling slipping at its historical rate; if scheduling slips >50%, observability is cancelled and buffer is redirected. That's the explicit pre-commitment, not a miracle scenario."
+
+**Edit to the memo:** the buffer line in the capacity table should be footnoted with the "what this buffer is and is not sized for" explanation. Two sentences. Stops the objection before it becomes a line of questioning.
+
+---
+
+**Member 3 — Growth-investor partner. "None of this tells me why a Series C investor would fund us at a step-up."**
+
+Steelman: "Derek, I read this as an operational plan. What I need for the Series C is a story about why this roadmap builds the company into something a C-round investor will pay more for. Your H2 has 'multi-tenant scale' and 'audit trail completeness' and one new vertical. Those are operational items. Where's the narrative about how your architecture is a moat? Where's the commercial logic for why a Series C investor should fund the auth consolidation you're pushing to H3? This reads like engineering strategy. I want product strategy tied to commercial outcomes."
+
+Honest answer: This one requires me to say "you're right, and here's how I'd change the memo." The current H2 section is operational and doesn't earn its commercial story. The real Series C narrative isn't "we'll scale multi-tenant" — that's a table-stakes readiness item. The real narrative is that the PHI-safe platform we shipped in Q2 is a structural differentiator for clinical-ops software: because schema-level RLS + immutable audit + network isolation is a foundation competitors built on Postgres-without-boundaries cannot add without rewriting, we have a 12-18 month head start on the compliance story that medium-sized medical groups increasingly demand. H2's multi-tenant scale work is what turns that head start into a rollout capability. The new vertical (multi-specialty practice management) is the first market that didn't exist for us at Series B because it requires the PHI-safe platform to be credible.
+
+He's right that the current memo doesn't tell this story. I've been framing the platform work as ops-hygiene rather than as the commercial asset it is.
+
+**Edit to the memo:** restructure the H2 intro paragraph from operational-readiness framing to commercial-narrative framing. Lead with "H2 converts the PHI-safe platform shipped in Q2 from a compliance foundation into a commercial asset" and then list the work as serving that narrative (scale, audit trail, new vertical) rather than as parallel operational items. This is a meaningful restructure — maybe 1 paragraph of rewrite — and it changes the memo from "operational plan" to "plan with a commercial thesis," which is what the growth-investor partner needs.
+
+---
+
+**Meta-observation across the three:** Members 1 and 2 are asking for honest operational discipline (visible lessons-learned, honest buffer math). Member 3 is asking for a narrative that sits on top of the operational plan. The memo will be stronger if it starts with the commercial narrative (answers #3 first), then presents the operational plan (answers #1 and #2), rather than presenting the operational plan and hoping the commercial story is implicit. Consider a 1-paragraph thesis paragraph at the top of the memo before H1 even starts.$pf$,
+ $pf$Three-member steelman: operating partner's "what's different from Q3" answer required naming the scope-reset and decide-or-cancel and perturbation-table changes explicitly; independent director's "buffer is a fig leaf" critique required a footnote disaggregating what the buffer is sized for; growth-investor's "where's the commercial story" critique required restructuring H2 from operational-readiness framing to PHI-safe-platform-as-commercial-asset framing. Meta: memo should lead with commercial thesis, then operational plan, rather than the reverse.$pf$),
+
+-- Step 5 --
+('66666666-6666-6666-6666-666666130105',
+ '55555555-5555-5555-5555-555555550019',
+ 5,
+ $pf$Final memo assembly — 3 pages, board pre-read, DD artifact$pf$,
+ $pf$All three edits accepted. Now assemble the final 3-page board memo. Constraints:
+- 3 pages maximum. Board members will read it Thursday before the Wednesday meeting.
+- Opens with a 1-paragraph commercial thesis, then the current-state section, then H1/H2/H3 with say-no lists, then the capacity model with perturbation table, then an open-questions section for the board to weigh in on.
+- Technical depth calibrated to the board — the independent director will understand architecture detail, the growth-investor partner won't. Write for the non-technical reader with footnote-depth for the technical one.
+- No corporate hedging language. No "we're excited to share." First person plural where appropriate ("we"), first person singular where ownership matters ("I").
+- Pre-crit edits from step 4 integrated: explicit "what's different from Q3" callout in H1, buffer footnote in capacity table, H2 rewritten as commercial-asset narrative.
+
+Deliver the full memo. Real assembly, not an outline.$pf$,
+ $pf$# Engineering Roadmap — 18 Months (Nov 2025 → Apr 2027)
+**Author:** Derek Lawson, CTO
+**Audience:** Board of Directors
+**For pre-read:** Wed Nov 12 board meeting
+
+---
+
+## Thesis
+
+The PHI-safe platform we shipped in Q2 is the architectural commitment that separates our product from clinical-ops software built on general-purpose Postgres. Over the next 18 months, we convert that platform from a compliance foundation into a commercial asset: first by restoring execution credibility in H1, then by scaling the platform and entering a new vertical in H2, then by making the platform a structural moat in H3. This memo commits the H1 trades explicitly, plans H2 against Series C close, and scopes H3 without committing.
+
+## Current State
+
+Engineering has 28 people, is shipping features on a 2-week cadence, and has delivered meaningfully on our PHI-safe platform architecture — the Q2 data-boundary work is our clearest platform win and is now running in production for all four Q3 deployments. Feature velocity masks two real risks: the scheduling-integration rewrite, scoped for Q2, has slipped to Q1 2026 and represents a decisioning failure I did not correct at the original delay; and four engineers (two senior) are exploring outside roles, a 14% signal in a 28-person org that is most likely a mix of Series B comp lag against Series C+ market and morale overhang from Q3.
+
+Tech debt lives in three places that constrain the roadmap: the 2022 scheduling monolith (where the rewrite is stuck), the three-path auth layer that every new feature has to be aware of, and the EHR-adapter pipeline that costs 4–6 weeks per new partner. SOC 2 Type 2 renewal is behind three controls. These are not new; the change is that I am treating them as first-class roadmap inputs rather than background conditions.
+
+## H1 — Nov 2025 → Apr 2026 (committed)
+
+**What's different from Q3's plan** — three structural changes address Q3's specific failure modes: a mandatory scope-reset gate in weeks 1–4 of H1 for both the scheduling rewrite and observability (the two multi-quarter slips); a pre-committed decide-or-cancel on observability with capacity reallocation rules; and a perturbation table (below) that pre-commits trade-offs under pressure rather than deferring them to closed-door conversation.
+
+**H1 ships:**
+- Scheduling-integration rewrite — delivered by Mar 2026 with explicit scope reset in weeks 1–4 gated by architecture review.
+- SOC 2 Type 2 renewal — 3 control remediations Nov/Dec 2025, audit window Feb/Mar 2026, Type 2 report by Apr 2026 (compressed from original H2 placement; pulled forward after auditor-timeline check).
+- Commercial-story feature: multi-location reporting rollup, shipped to a named design-partner customer, tied to measurable expansion-revenue metric by Feb 2026.
+- Observability: commit tracing to production by Jan 2026 OR formal cancellation with capacity redirect, decided by week 4.
+- Attrition mitigation: comp review and retention commitments completed by Dec 2025.
+
+**Say-no list (H1):** no customer-type expansion, no greenfield platform rewrites (auth consolidation, EHR-adapter pipeline — both deferred to H3), no new feature categories beyond the commercial-story feature, no AI/ML customer-facing work.
+
+## H2 — Apr → Oct 2026 (planned; conditional on H1 outcomes and Series C close)
+
+H2 converts the PHI-safe platform from a compliance foundation into a commercial asset. Multi-tenant scale infrastructure turns our architectural differentiation into rollout capability. Audit-trail completeness across six additional event types is the compliance surface large-group customers require for procurement. The first new vertical — multi-specialty practice management — is a market that did not exist for us at Series B because it requires the PHI-safe platform to be credible; we enter it with a design-partner commitment in hand before starting.
+
+**H2 ships:** multi-tenant scale to 3x current tenant count by Aug 2026; audit-trail completeness by Jun 2026; SOC 2 Type 2 maintenance only (renewed in H1); 2 features from the commercial-outcome queue selected against H1 pipeline signal; multi-specialty vertical with named design partner.
+
+**Say-no list (H2):** no international expansion, no platform rewrites (auth, EHR-adapter — still H3), no customer-facing AI/ML unless market-forced.
+
+## H3 — Oct 2026 → Apr 2027 (scoped; no commitment)
+
+Directional ideas with size estimates pending H1/H2 outcomes:
+- EHR-adapter pipeline abstraction (~2 FTE × 2 quarters; unlocks ~50% faster partner onboarding).
+- Auth-layer consolidation (~1.5 FTE × 2 quarters; reduces cross-cutting feature complexity ~20%). This is the eventual answer to the three-path auth tax that we are paying ~10–15% velocity on every H1/H2 feature ship — we have chosen to accept the tax through H2 rather than give up a commercial feature slot.
+- Data-residency infrastructure for EU/Canada (~3 FTE × 2 quarters; deal-pipeline-dependent).
+- First customer-facing AI/ML feature (scope TBD, dependent on H2 R&D).
+
+## Capacity Model (H1)
+
+| | FTE-months | % discretionary |
+|---|---|---|
+| Feature work (scheduling + flagship + maintenance) | 44 | 54% |
+| Reliability / compliance (SOC 2 + security) | 12 | 15% |
+| Platform (PHI maintenance + multi-tenant spike) | 6 | 7% |
+| Debt (observability decide-and-execute + scope reset) | 9 | 11% |
+| Buffer¹ | 11 | 13% |
+| **Discretionary total** | **82** | **100%** |
+
+¹ Buffer is sized to absorb expected slip across all committed lines with ~5–6 FTE-months of genuine surprise-absorption. It is NOT sized to absorb scheduling-rewrite slipping at its historical 150% rate; if scheduling slips >50%, observability is cancelled and its capacity is redirected — this is the pre-committed breakpoint, not a contingency to be re-decided in the moment.
+
+Off-the-top (not in the table above): 84 FTE-months (oncall, maintenance, meetings, recruiting load).
+
+## Perturbation Table (what moves under pressure)
+
+| Scenario | Response (pre-committed) |
+|---|---|
+| Scheduling rewrite slips 2 months | Buffer absorbs; multi-tenant H1 spike deferred to H2. |
+| Scheduling rewrite slips >2 months | Observability cancelled; capacity redirected to scheduling. |
+| Commercial-story feature ships 4+ weeks early | Accelerate multi-tenant spike; do NOT open new feature categories. |
+| Surprise enterprise-deal feature demand | Binds to say-no list. Material deals trigger H1 re-plan with board consultation. |
+| 2 senior engineers depart in H1 | ~6 FTE-months net loss after backfill; buffer + multi-tenant deferral covers. |
+
+## Open Questions for the Board
+
+1. **Observability decision gate:** we will decide commit-or-cancel in H1 weeks 1–4. Does the board want a formal check-in at week 4 or is the pre-committed rule enough?
+2. **New-vertical commitment:** H2's multi-specialty vertical is gated on a design-partner commitment. If the pipeline does not produce one by the H1/H2 transition, should we accelerate the EHR-adapter abstraction from H3 into H2 instead, or hold capacity for an alternate vertical?
+3. **Buffer sizing:** the buffer is sized for expected slip, not for scheduling's historical 150% rate. Would the board prefer a more conservative buffer (say 20%) at the cost of pushing the commercial-story feature to late H1 or early H2?
+
+---
+
+**On why this memo earns a different reception than Q3's.** Q3 listed a dozen ambitions with no say-no list, no capacity math, and no mechanism for what would move under pressure. This memo commits five things in H1 with a say-no list, a perturbation table, and named pre-commitments at decision breakpoints. The board's job reading it is not to trust that we will execute — it is to ratify the trades we have pre-committed to, and to flag anything in the open-questions section that changes the shape of the plan. That is what a roadmap memo should do.$pf$,
+ $pf$Final 3-page memo: thesis paragraph first, honest current-state paragraph, three horizons with say-no lists, capacity model with buffer footnote disaggregating sizing assumptions, perturbation table with 5 pre-committed scenarios, 3 open questions for the board to weigh in on. Integrated all three pre-crit edits from step 4: the "what's different from Q3" callout in H1, the buffer footnote, and the H2 restructure from operational-readiness to PHI-safe-platform-as-commercial-asset framing.$pf$);
+
 -- END OF FILE — append next project(s) below this line.
 -- Iterations working the Content queue: add 2–3 projects per iteration,
 -- appending below this comment. Do NOT rewrite existing projects.

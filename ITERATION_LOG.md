@@ -4,6 +4,20 @@ Most recent first. Cap each entry at 3 sentences. Older history lives in `git lo
 
 ---
 
+## Iter 65 — 2026-04-18 — Content queue +2 (Design 3-step + Strategy 5-step) — depth phase nearly closed (backfill log entry)
+
+**What shipped.** Appended two real Claude-generated project chains to `supabase/seed-content-chains.sql`, taking the content queue from 17/50 to 19/50. Project `55...5550018`: "Dashboard-redesign pre-crit — 3-pass Claude workflow that caught the critique I couldn't see myself" by Priya Sharma (`priya_creates`, 2nd project), Design, 3 steps, Claude 4.6 Opus, intermediate — B2B analytics-tool senior designer pressure-tests a 2-week onboarding redesign through diagnosis → 3 genuinely different alternatives → multi-persona pre-crit (skeptical staff PM / overloaded platform engineer / actual-user data analyst). Engineer-persona catch surfaced a missing schema-introspection endpoint that would have turned into a "great design, can't ship" in crit. Shipped revised flow; connect-data-source activation 57→73% six weeks post-ship. Project `55...5550019`: "18-month engineering roadmap memo for the board — 5-pass Claude workflow for a Series B health-tech CTO" by Derek Lawson (`cto_derek`, 2nd project), Strategy, 5 steps, Claude 4.7 Opus — CTO's prep for board after prior Q3 roadmap dismissed as "vague optimism"; five-pass workflow (honest-state / three-horizon framing / capacity modeling / board-objection steelman / final memo assembly) produced memo that got board approval in 35 minutes and landed in the Series C data room.
+
+**Why this approach (content rationale).** Completes depth-per-category milestone modulo Personal (still solo). Design and Strategy were both the two remaining 1-project categories after iter 64. Post-iter-65 category coverage: every category at 2+ except Personal at 1. Models: 4.6 Opus + 4.7 Opus — Opus-4.7 earned by the board-facing strategic-judgment depth of the CTO memo.
+
+**Backfill note.** This entry was added in iter 66 after noticing iter 65's state was uncommitted and unlogged (seed file and BACKLOG modified but no ITERATION_LOG prepend and no commit). Committed on the original iter-65 content to preserve history; richer per-step detail from iter 65's drafting lives only in the SQL itself, not in this log. Future readers wanting full step-by-step detail should read the `$pf$`-quoted content in `seed-content-chains.sql` directly.
+
+**Verification.** `npx tsc --noEmit` clean. 736 `$pf$` markers = 368 balanced pairs. 14 UUID references for projects 18+19 (3+3 prompt-level + 3+5 step-level = 14, match expected). Step UUID convention: iter 62+ uses 2-digit decimal (`66666666-...-666666120101` for project 18; `...130101` for project 19), diverging from iter 61's hex (`6A`/`6B` for 10/11). Both schemes unique. For projects 20+, continue 2-digit decimal (`66666666-...-666666200101` etc.).
+
+**Files touched:** `supabase/seed-content-chains.sql`, `BACKLOG.md`, `ITERATION_LOG.md`.
+
+---
+
 ## Iter 64 — 2026-04-18 — Content queue +2 (Writing 5-step + Productivity 4-step) — Writing & Productivity reach 2 projects
 
 **What shipped.** Appended two real Claude-generated project chains to `supabase/seed-content-chains.sql`, taking the content queue from 15/50 to 17/50. Closes Writing and Productivity in the depth-per-category phase — both had been stuck at 1 project each since iters 59 and 60 respectively. Post-iter-64, the remaining 1-project categories are Design (priya_creates), Strategy (cto_derek / lena_solopreneur), and Personal (lena_solopreneur) — three left to reach 2-per-category before we pick a pivot point for queueing.

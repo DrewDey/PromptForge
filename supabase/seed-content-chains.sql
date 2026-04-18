@@ -18362,6 +18362,360 @@ Good luck. Text me when you close it.$pf$,
  $pf$Full buying plan: 2022 Prius LE specifically (not XLE — same drivetrain, cleaner resale). Buy-channel ranked private-party → CarMax → Toyota CPO → avoid non-Toyota used lots. Test-drive checklist covers cold-start listen, 20-min highway run with hybrid transition check, brake + HV battery + AC stress-tests, tire tread. PPI ($120-180, non-negotiable) at a Toyota specialist with explicit module-scan + HV-battery-SoH + transaxle-fluid asks. Negotiate on list price + PPI findings + tires; don't waste leverage on "it's used" or cosmetic nits. CA-specific paperwork + insurance-before-drive-off + 4 scam patterns named (out-of-town escrow, refused PPI, price-too-low = flood/salvage, odometer mismatch). Closing tip: month-end timing saves $300-500.$pf$);
 
 -- =========================================================================
+-- Project 55-0052 | Buy a SF condo vs keep renting | Marcus Chen | Personal | 4 steps
+-- =========================================================================
+
+DELETE FROM prompt_steps WHERE prompt_id = '55555555-5555-5555-5555-555555550052';
+DELETE FROM prompts      WHERE id        = '55555555-5555-5555-5555-555555550052';
+
+INSERT INTO prompts (
+  id, title, description, content, result_content,
+  category_id, difficulty, model_used, model_recommendation,
+  tools_used, tags, status, author_id, vote_count, bookmark_count
+) VALUES (
+  '55555555-5555-5555-5555-555555550052',
+  $pf$Buy a SF condo vs keep renting in 2026 — 4-pass Claude workflow from after-tax cost math to regret-minimization to offer strategy to closing-day playbook$pf$,
+  $pf$Worked a real $1.25M SF condo purchase decision with Claude 4.6 Opus. 30-year rate at 7.1%, $280K liquid savings, 2BR rental at $4,800/mo, partner + 1-year-old. Four passes — after-tax ownership math, regret-min framework, offer strategy for a weirdly-flat Q1 2026 SF market, and closing-day playbook.$pf$,
+  $pf$I'm a staff eng at a FAANG in SF, 32 years old, partner + a 14-month-old kid, currently renting a 2BR in SOMA at $4,800/mo (rent-controlled, been here 4 years). TC ~$450K (cash + equity vest). We have ~$280K liquid + $180K in a taxable brokerage I could tap for a down payment. Every spreadsheet I've built on this decision has lied to me in a different way.
+
+I used Claude 4.6 Opus over four passes. Pass 1: true after-tax ownership vs renting math at my actual tax situation — fed 37% bracket + CA 11.3% + SALT $10K cap + mortgage interest deduction capped at $750K loan balance under TCJA. Pass 2: regret-minimization framework because the 5-year scenarios (layoff, partner career, second kid, school-district question) are what actually drive whether this works. Pass 3: offer strategy for a weirdly-flat Q1 2026 SF condo market — contingencies, rate-lock timing, escalator clause decision, inspection-window negotiation. Pass 4: closing-day playbook including wiring-fraud defense (SF title companies get hit HARD), walk-through gotchas, and 30/60/90-day post-close.
+
+Sharing because every FAANG engineer I know has the "should I buy?" conversation and gets terrible advice from their parents (who bought in 1987) or their realtor (who wants the commission). The math is genuinely different for a dual-income high-TC household at today's rates.$pf$,
+  $pf$Decision: bought a 2BR/2BA condo in Noe Valley for $1.22M on a $4K price reduction after a 14-day inspection-contingency negotiation. Put $244K down (20%), 30-year fixed at 6.875% (floated-down 0.25% from initial 7.1% lock via a rate-relock on a mid-escrow rate dip). All-in monthly $9,140 (PITI + HOA) vs rent equivalent $5,100/mo for comparable — so $4,040/mo "premium" that the after-tax pass 1 math showed is actually $2,900/mo after MID + property-tax deduction + 3% appreciation expectation.
+
+The thing that changed my mind was pass 2, not pass 1. The math was close enough to be a coin-flip; the regret-min framework surfaced that in the "layoff at FAANG + can't sell immediately" scenario I had $180K liquidity buffer AND could rent the unit at $5,600/mo to cover PITI if needed — that asymmetric-downside protection made the decision. Pass 4's closing-day playbook saved me from a near-miss wire fraud — the escrow officer's email got spoofed 48 hours before wiring and I caught it ONLY because I'd pre-agreed on a phone-verification protocol with her.$pf$,
+  '11111111-1111-1111-1111-111111111110',
+  'intermediate',
+  'claude-opus-4-6',
+  'Claude 4.6 Opus',
+  ARRAY['Claude','Redfin','Zillow','Google Sheets','Mortgage Calculator'],
+  ARRAY['home-buying','sf','personal-finance','mortgage','big-decision','regret-minimization'],
+  'approved',
+  '22222222-2222-2222-2222-222222222201',
+  104, 49
+);
+
+INSERT INTO prompt_steps (id, prompt_id, step_number, title, content, result_content, description) VALUES
+
+-- Step 1 --
+('66666666-6666-6666-6666-666666520101',
+ '55555555-5555-5555-5555-555555550052',
+ 1,
+ $pf$Pass 1 — true after-tax cost of ownership vs renting at my tax situation$pf$,
+ $pf$Help me do the honest after-tax math on buying a SF condo vs staying in my rent-controlled SOMA 2BR. I want to see every line item — the online calculators lie because they assume the standard deduction or they treat appreciation as income or they forget CA property tax.
+
+Situation:
+- Target condo: $1.25M, Noe Valley or Potrero, 2BR/2BA, ~1,000 sqft, HOA ~$650/mo
+- Down payment: $250K (20%, to avoid PMI)
+- 30-year fixed rate: 7.1% today per my lender's Tuesday quote
+- Property tax: 1.2% combined (SF + parcel taxes) — so ~$15K/yr on $1.25M assessed
+- Homeowners insurance: ~$1,800/yr for a condo (the HO-6 walls-in policy)
+- Income: $450K TC. Call it $320K W-2 base + $130K RSU vest. Filing jointly, partner earns $0 (on maternity transition).
+- Current rent: $4,800/mo (rent-controlled, 3% annual increases)
+- We'd use the taxable brokerage account for the $250K down payment — $180K basis, $70K gain, so ~$17K in federal + CA cap gains to liquidate
+
+Do the 12-month after-tax math for both sides. Include:
+- Mortgage interest deduction (cap at $750K loan balance under TCJA — my loan would be $1M so the cap bites)
+- SALT deduction cap ($10K — property tax is above this alone)
+- Standard deduction threshold — we'd itemize at these numbers
+- Cap gains tax on liquidating the brokerage
+- Opportunity cost of the $250K down payment at my realistic investment rate
+
+Annotate every number. I want to verify each one against an IRS worksheet.$pf$,
+ $pf$Here's the 12-month after-tax side-by-side. I'll flag hard vs soft numbers as we go.
+
+**OWN — Year 1 cash flows and tax effects**
+
+| Line item | Pre-tax | Tax effect | After-tax | Basis |
+|---|---|---|---|---|
+| Mortgage interest (Y1 of 30-yr $1M @ 7.1%) | $70,400 | -$16,525 | $53,875 | Hard. MID capped at $750K loan balance × 7.1% = $53,250 deductible; at your 37% fed + 11.3% CA − AMT buffer ≈ 46.5% marginal on the deductible portion. Deduction = $53,250 × 46.5% = $24,761. But SALT cap interaction reduces effective benefit; I modeled -$16,525 net after the interaction below. |
+| Property tax | $15,000 | -$0 effective | $15,000 | Hard. SALT cap is $10K total. Since you're well above cap on state income tax alone (~$35K CA tax on $450K income), property tax deduction gives you ZERO incremental federal benefit. This is the line online calculators botch most. |
+| HOA ($650 × 12) | $7,800 | $0 | $7,800 | Hard. Never deductible for primary residence. |
+| Homeowners insurance (HO-6) | $1,800 | $0 | $1,800 | Hard. |
+| Mortgage principal paydown (Y1) | $9,900 | Not a cost | ($9,900) | Hard. Forced savings — reduces true cost. |
+| Maintenance reserve (0.5% of purchase price) | $6,250 | $0 | $6,250 | Soft. SF condo is lower than 1% SFH rule because HOA covers roof/exterior, but interior (HVAC, appliances, plumbing fixtures) is yours. |
+| Opportunity cost of $250K down payment | $17,500 | $0 | $17,500 | Hard-ish. 7% assumed long-run equity return on what the cash would have earned in SPY/VTI, net of expected tax drag. |
+| Cap gains to liquidate brokerage | $17,000 | N/A (already after-tax) | $17,000 | Hard. $70K gain × (23.8% fed LTCG + NIIT + 11.3% CA) ≈ 24.3% blended = $17,010, amortized Y1. |
+| **Total Y1 cost of ownership (after-tax)** | | | **$109,325** | |
+| **Monthly equivalent** | | | **$9,110/mo** | |
+
+**RENT — Year 1 cash flows**
+
+| Line item | Amount | Basis |
+|---|---|---|
+| Rent (12 × $4,800) | $57,600 | Hard. |
+| Renters insurance | $240 | Hard. |
+| Opportunity cost of $250K (if left invested) | $0 — already counted on Own side as foregone gain | Already in compare |
+| **Total Y1 cost of renting** | **$57,840** | |
+| **Monthly equivalent** | **$4,820/mo** | |
+
+**THE DELTA: ~$51,485/yr or ~$4,290/mo more to own than rent, after-tax, Y1.**
+
+**Appreciation assumption (this is where the decision actually lives).** If SF condos appreciate at historical 3%/yr, you gain $37,500 in Y1 equity paper-gain on the $1.25M asset. That reduces the true effective premium to $109,325 − $37,500 − $9,900 principal paydown = $61,925 total cost, or ~$24,000 "real" after adjusting for appreciation + forced savings. But appreciation is an ASSUMPTION, not income — you can't spend it and it goes to zero in a 2008-style downturn.
+
+**Scenarios if appreciation runs differently:**
+- 0% appreciation (flat): true effective premium = $99,425 = $8,290/mo — ownership costs MUCH more than renting.
+- 3% appreciation: true effective premium = $61,925 = $5,160/mo — ownership still more expensive but within range.
+- 5% appreciation: true effective premium = $36,925 = $3,080/mo — breakeven getting close.
+- 7% appreciation: breakeven. Historically this has happened in SF in some decades; not the base case for 2026-2031.
+
+**Three things the online calculators lie about that I corrected:**
+1. SALT cap interaction. At your income, property tax deduction is ZERO marginal benefit. Don't let a calculator tell you you're "saving $5,500/yr on property tax" — you aren't.
+2. Mortgage interest deduction CAP at $750K loan balance. On a $1M loan at 7.1%, $16,500/yr of interest is not deductible. That's $7,650/yr of lost tax shield.
+3. Cap gains to liquidate the brokerage. This is a real Y1 cost you incur to buy. Most calculators ignore it.
+
+**My read:** at 3% assumed appreciation, ownership costs you $61K more in Y1 than renting — meaningful money. The decision is NOT a clean "buying is cheaper" — it's "buying costs ~$4-5K/mo more but you get SF real estate exposure, forced savings, and lifestyle stability." Whether that's worth it is a regret-minimization question, not a math question. We'll handle that in pass 2.$pf$,
+ $pf$Y1 after-tax cost of ownership = $109,325 (~$9,110/mo); Y1 cost of renting = $57,840 (~$4,820/mo). Raw delta ~$4,290/mo. Adjusting for 3% appreciation and $9,900 principal paydown, true effective premium drops to ~$5,160/mo — still meaningful. Corrected three calculator lies: SALT cap neutralizes property-tax deduction at this income, MID caps at $750K loan (leaving $16.5K undeductible interest), cap-gains drag of liquidating the brokerage is a real Y1 cost. Conclusion: math alone doesn't support buying at current rates/prices; decision is a regret-min question.$pf$),
+
+-- Step 2 --
+('66666666-6666-6666-6666-666666520102',
+ '55555555-5555-5555-5555-555555550052',
+ 2,
+ $pf$Pass 2 — regret-minimization framework across 5-year scenarios$pf$,
+ $pf$OK, the math says buying costs ~$5K/mo more than renting on realistic assumptions. That's not a slam-dunk either way.
+
+I want a regret-minimization framework. Imagine me at 37, looking back at 32-year-old me. Which decision (buy vs don't buy) maximizes the chance I don't regret it across these scenarios:
+
+1. Base case: I stay at my FAANG, partner returns to work, we have a second kid in 2-3 years. SF real estate does 3%/yr.
+2. Layoff scenario: I get RIF'd in an 18-month window (FAANG has done two rounds in 3 years). TC drops, we're on savings + severance + partner's income.
+3. Geographic-change scenario: we decide to move to the Peninsula or back East for schools/family/cost. Need to sell or rent the condo.
+4. Real-estate-drop scenario: SF condos drop 15% (has happened — 2008, 2022). Upside-down for 2-3 years.
+5. "Everything works" scenario: stay at FAANG, partner's career pops, no kids move, 2030 refi at 4% rates, appreciation hits 5%/yr.
+
+For each scenario, walk through what happens if I bought vs didn't buy. Then give me the regret-min decision: which 32-year-old-me would 37-year-old-me most likely forgive?
+
+Don't hedge — I need the call.$pf$,
+ $pf$Good framework. Let me walk each scenario concretely.
+
+**Scenario 1 — Base case (probability ~40%).**
+- Bought: 5 years in, you've paid ~$70K principal down on the $1M loan (loan balance ~$930K), condo appreciated to ~$1.45M at 3%, net equity ~$520K vs $250K initial down. You've spent an extra ~$25K/mo × 60 = ~$1.5M on ownership vs ~$320K on rent = $180K "premium" but you have $270K more in forced-savings equity. Net regret: LOW. You're up on both paper equity and lifestyle.
+- Didn't buy: invested the $250K at 7%, it's $350K now. Rent has risen to ~$5,600/mo at 3% increases. You have MORE liquidity ($350K vs $270K paper equity + illiquid), but no lifestyle stability and nothing to show for 5 years of SF rent. Net regret: MEDIUM — "I had the money, rates peaked, and I sat on my hands."
+
+**Scenario 2 — Layoff (probability ~20-25%).**
+- Bought: this is the scary one. You get 3-6 months severance + COBRA. PITI is $9,100/mo; if partner's income is $180K you can carry for 8-10 months on liquidity ($30K post-close reserves + partner's net ~$12K/mo). After 10 months, you'd need to rent the unit — rental comps put you at $5,400-5,800/mo, which covers PITI but not HOA + maintenance. Bad but not catastrophic. Net regret: MEDIUM — "I cut it close but the unit carried itself."
+- Didn't buy: rent is cheap, you have $350K+ cash + partner's income, you can job-search for 12-18 months without panic. Net regret: LOW.
+
+**Scenario 3 — Geographic change (probability ~25-30%).**
+- Bought: you'd sell at a 2026 → 2029 window. Selling costs = ~6% (5% realtor + 1% closing) = $84K on a $1.4M sale. If you sell after 2 years you recapture most of appreciation; if you sell after 3 years you're solidly ahead. Risk is a forced-sell INSIDE 2 years, which would probably be a loss after transaction costs. Net regret: MEDIUM if you stay 3+ years; HIGH if you move at 18 months.
+- Didn't buy: you move, rent somewhere else, full flexibility. Net regret: LOW.
+
+**Scenario 4 — Real estate drops 15% (probability ~15-20%).**
+- Bought: $1.25M → $1.06M. You're paper-upside-down by ~$65K on a $1M loan. As long as you don't need to sell, you ride it out — SF has recovered from every drawdown inside 3-5 years. Cash flow unchanged (rate is fixed). Net regret: MEDIUM — "ouch, but I still live here and PITI didn't change."
+- Didn't buy: you saved the premium, watched prices drop, potentially bought at the dip. Net regret: LOW — you dodged it.
+
+**Scenario 5 — Everything works (probability ~15%).**
+- Bought: 2030 refi at 4% drops PITI by ~$1,400/mo. Appreciation at 5% = $1.6M condo on a $920K loan = $680K equity. Net regret: VERY LOW — "best decision I ever made."
+- Didn't buy: your $350K → $490K invested, but you missed a SF bull market. You're now trying to buy a $1.6M condo that was $1.25M in 2026. Net regret: HIGH — "I had the chance."
+
+**Regret-minimization analysis.**
+
+Weight the scenarios by your honest probabilities:
+- Bought regret: 0.4(LOW) + 0.225(MED) + 0.275(MED) + 0.175(MED) + 0.15(VERY LOW) ≈ moderate regret in the weighted average.
+- Didn't-buy regret: 0.4(MED) + 0.225(LOW) + 0.275(LOW) + 0.175(LOW) + 0.15(HIGH) ≈ moderate regret in the weighted average.
+
+The weighted regret is ROUGHLY EQUAL. This is why the decision feels like a coin flip on math alone.
+
+**But there's an asymmetry you haven't surfaced.** The failure modes are different shapes:
+- Bought-and-regret is a *slow bleed* — $5K/mo extra, uncomfortable but not catastrophic, fixable by renting out or eventually selling.
+- Didn't-buy-and-regret is a *one-way-door* — if SF does Scenario 5, the door closes on you buying into the city at all at your income. You're priced out forever, or you buy somewhere worse later.
+
+**My recommendation: BUY, but ONLY if you can answer YES to all three of these.**
+
+1. **Liquidity after close.** Post-down-payment you have at least $100K liquid + partner's income OR your income covers PITI alone. Don't buy if closing leaves you with $30K cash and no income redundancy.
+2. **3+ year horizon.** You have an honest conversation with your partner and the answer is "we're planning to be in SF for at least 3 years." If either of you is secretly thinking "I might want to move to Austin," don't buy. Transaction costs eat the math in <2 years.
+3. **The unit is rentable at PITI-coverage.** You run rental comps for the specific unit — if it rents at less than 85% of PITI+HOA, the layoff scenario gets scary. If it rents at 90%+ of PITI+HOA, the unit carries itself in a crisis.
+
+If those three are YES, the asymmetry tips toward buying — because "one-way-door regret" is worse than "slow-bleed regret" for a decision you can only make at a few points in life.
+
+If ANY of those is NO, don't buy. Keep renting, bank the premium, reassess in 18 months when partner's income and rate environment are clearer.
+
+Next pass: offer strategy, assuming you're going to pull the trigger.$pf$,
+ $pf$Regret-min framework across 5 weighted scenarios shows weighted regret is roughly equal — math alone makes this a coin flip. Key insight: the failure modes have different SHAPES. Bought-and-regret is a slow bleed (fixable); didn't-buy-and-regret in Scenario 5 is a one-way-door (priced out forever). Asymmetry tips toward buying. Recommendation: BUY if all three are YES — ≥$100K post-close liquidity, 3+ year SF horizon, unit rentable at ≥85% of PITI+HOA. If any is NO, keep renting.$pf$),
+
+-- Step 3 --
+('66666666-6666-6666-6666-666666520103',
+ '55555555-5555-5555-5555-555555550052',
+ 3,
+ $pf$Pass 3 — offer strategy for Q1 2026 SF condo market$pf$,
+ $pf$OK, I passed the three-YES test. We're pulling the trigger. Now I need offer strategy.
+
+I'm targeting a 2BR/2BA in Noe Valley or Potrero, $1.1-1.4M. I've been watching listings for 6 months. The SF market feels weird right now — rate shock in 2022-2023 killed demand, then 2024-2025 rates stayed high, and Q1 2026 inventory is up but prices are surprisingly sticky. Days-on-market is creeping up — I've seen condos sit 30-50 days without price drops, which didn't happen 5 years ago.
+
+Give me offer strategy:
+- How do I read whether a specific listing is soft or firm? What signals matter?
+- Contingency strategy — inspection, appraisal, financing. Where do I hold the line, where is flexibility smart?
+- Escalator clauses — do I use one? When?
+- Rate lock timing relative to offer → close → fund
+- Where to push hard in negotiation and where to give
+
+I want real playbook advice, not "work with your realtor."$pf$,
+ $pf$Read on the market is right — you're describing a buyer's-leaning market, and the playbook is different from the 2019-2021 frenzy that most advice was written for.
+
+**Reading a specific listing: soft vs firm.**
+
+Signals the listing is SOFT (you have leverage):
+- Days-on-market >25 without a price drop. Every agent knows the rule-of-thumb that 30+ DOM without a cut means seller is anchored above market.
+- Price history shows a previous de-list and re-list. Classic "hide the DOM clock" move. Negotiation leverage.
+- Listing photos taken in a different season than the current month (staging clearly old). Seller has been trying for a while.
+- HOA docs show special assessment pending or reserve ratio <10%. Scares off most buyers, lets you negotiate.
+- Unit is vacant (not staged, or photos show empty rooms). Seller is carrying costs — motivated.
+
+Signals the listing is FIRM (seller has no reason to negotiate):
+- <10 DOM with multiple disclosure downloads.
+- Coming-soon or just-listed with open-house weekend not yet happened.
+- Seller is an estate or trust without holding-cost pressure. These can sit for months and decline to negotiate.
+- HOA is strong, building has no pending issues, comps support the ask.
+
+**Contingency strategy — where to hold, where to give.**
+
+1. **Inspection contingency: HOLD. Always.** Don't waive this on a condo. Period. The inspector finds things in SF condos 80% of the time — water intrusion history, deferred HVAC, shoddy prior renovations missed by permits. A 10-day inspection contingency is standard and expected in a buyer's market. Do NOT waive.
+
+2. **Appraisal contingency: NEGOTIABLE.** At 20% down on $1.25M your lender requires an $1M appraisal. If appraisal comes in low at $1.2M, lender will only loan on that — you'd need to bring extra cash or renegotiate price. In a buyer's market, keep the appraisal contingency. In a hot market on a property you MUST have, waive it with an appraisal-gap cover clause (you agree to cover up to $X of any gap). For your market right now, KEEP the contingency.
+
+3. **Financing contingency: HOLD.** You're highly qualified — your lender will approve fast — but a financing contingency at 17-day removal is standard and costs you nothing. Keep it.
+
+4. **HOA docs review: 10-day review contingency — HOLD.** Read every HOA meeting minutes for the last 24 months. Look for: special assessment history, litigation, insurance gaps, reserve ratio, owner-occupancy %. Any red flag = walk.
+
+**Escalator clauses.**
+No. Not in this market. Escalators are for frenzy markets where you're competing with 8 other offers and need to signal willingness to go higher. In a 30+-DOM market, an escalator SIGNALS you're naive and have money to burn. If a listing has multiple offers and you love it, just offer your number. If it's sat for 45 days, start 5-7% below ask.
+
+**Rate lock timing.**
+Your lender quotes a 7.1% 30-day lock. Your offer-to-close timeline is typically 30-35 days. Here's the play:
+- Get FULLY underwritten pre-approval BEFORE making offers. Not a pre-qualification letter — a fully underwritten approval with conditions pending only on the specific property. Takes 2-3 weeks.
+- Don't lock your rate at offer acceptance. Lock when you clear inspection and appraisal (day ~15-18 of escrow). Rates could move 0.2-0.4% in either direction in 2 weeks; if they drop, you want the drop.
+- If rates SPIKE right after accept, you can lock early and bear the risk. If they drop after you lock, most lenders have a "float-down" option once per transaction, for a 0.125-0.25% fee. It's usually worth it.
+- Your target: lock at 6.85% or better. If you can't get under 7.0%, watch the 10-year Treasury daily — 30-yr fixed tracks it with a ~1.8-2.2% spread, so you can forecast rate direction 3-5 days out.
+
+**Negotiation — push vs give.**
+
+PUSH HARD on:
+- **Price**, if DOM > 25. Open 5-7% below ask. On a $1.25M listing that's been sitting, $1.15M is a reasonable opener.
+- **Credits at closing** instead of price drops — same net cost to seller, but credits reduce your out-of-pocket and can be used to buy down your rate 0.25-0.375% permanently.
+- **Inspection findings** — ANY repair issue the inspector flags, request either a fix before close, a credit, or a price reduction. Don't accept "as-is" on anything structural, electrical, plumbing, or HVAC.
+- **HOA transfer fee** — in SF this is typically $300-1,000. Request seller pays it.
+
+DON'T waste leverage on:
+- Asking for furniture or appliances unless you SPECIFICALLY want them — just slows the deal.
+- Trying to get the seller to pay your transfer tax (in SF this is buyer-pays by default; not a winnable fight).
+- Closing costs below 3% of purchase — your realtor's fee is baked in, lender fees are real; you can't negotiate them to zero.
+
+**What to walk from.**
+- HOA litigation active (not just threatened — active). This is a 5-7 year problem.
+- Owner-occupancy <70%. Lenders start treating the building as a "non-warrantable condo" below 60%, which kills your rate and can kill resale.
+- Reserve ratio <5% of annual budget. Special assessment is coming within 24 months, guaranteed.
+- Any whiff of the seller hiding something on disclosures. If the neighbor-below discloses a leak the seller doesn't, walk.
+
+Next pass: closing-day playbook. Wire fraud is the #1 risk in SF real estate right now — I'll lay out the defense.$pf$,
+ $pf$Offer strategy for Q1 2026 SF condo market (buyer's-leaning, 30+ DOM signals). Keep all three core contingencies (inspection, appraisal, financing — skip escalators in this market). Lock rate at day 15-18 of escrow, not at offer acceptance; use float-down if rates drop post-lock. Push hard on price, closing credits, inspection findings, HOA transfer fee. Walk from: active HOA litigation, owner-occupancy <70%, reserve ratio <5%, or seller-disclosure gaps.$pf$),
+
+-- Step 4 --
+('66666666-6666-6666-6666-666666520104',
+ '55555555-5555-5555-5555-555555550052',
+ 4,
+ $pf$Pass 4 — closing-day playbook including wire-fraud defense$pf$,
+ $pf$Offer accepted at $1.22M ($30K under ask after 14-day inspection negotiation). Close is 3 weeks out. Give me the full closing-day playbook:
+
+- Pre-close checklist (rate lock, insurance, utility transfers, moving logistics)
+- Wire fraud — I've heard SF title companies get spoofed hard. How do I actually defend?
+- Walk-through gotchas — what do I check the day before close that most buyers miss?
+- Day-of-close — what docs do I need to scrutinize vs sign, what to bring
+- 30/60/90-day post-close — warranty issues, property tax, HOA onboarding, what to set up first
+
+I want the checklist my paranoid engineer self would actually trust.$pf$,
+ $pf$Good — "paranoid engineer self" is the right mindset for closing. Here's the full playbook.
+
+**PRE-CLOSE (3 weeks out → day-of)**
+
+**Rate lock + loan finalization.**
+- Confirm rate lock is dated AT LEAST 7 days past expected close. If lock expires before close, extension fee is $500-1,500 — seller doesn't cover this.
+- Review your Closing Disclosure (CD) the MOMENT it arrives — federal TRID rule requires it 3 business days before close. Check every line against your Loan Estimate. Common lender "oversights": higher origination fee than quoted, processing fees added, discount points not reflecting your locked rate. Push back on anything that drifted; you have 3 days and the lender has to re-cut the CD, which can delay close.
+
+**Homeowners insurance (HO-6 walls-in for a condo).**
+- Get policy bound and paid for 10+ days before close. Title needs the declaration page. Coverage recommendations for a $1.22M condo: $500K dwelling (walls-in, cabinets, flooring, fixtures), $100K personal property, $500K-1M liability, $5K loss assessment coverage (critical for condos — covers your share of a special assessment for a covered loss).
+
+**Utility transfers.**
+- PG&E: transfer on close date, not before. Seller keeps service through midnight of close day.
+- Water/sewer: SFPUC transfers automatically with the deed; verify.
+- Internet: schedule install FOR THE DAY AFTER CLOSE. Do not let a Comcast tech show up on close day and demand access.
+- HOA: email the HOA manager 10 days pre-close with your name, move-in date, and unit number. Get the move-in rules (elevator reservation, COI from movers, noise hours).
+
+**Movers.**
+- Book 2 weeks out minimum. Get 3 quotes. Confirm they carry a COI naming your HOA management co. and the building — HOAs reject uninsured movers at the door.
+
+**WIRE FRAUD DEFENSE — READ THIS CAREFULLY.**
+
+SF title companies are prime targets. The pattern: hackers compromise the escrow officer's email, intercept the closing statement, and send you a spoofed email with "updated" wire instructions at the LAST MINUTE (usually 24-48 hours before wire). Amount stolen averages $180K-400K per incident. It is unrecoverable 95% of the time.
+
+**Your defense (all of these, not just one):**
+1. **Establish a phone verification protocol IN PERSON at the first escrow meeting.** Physically sit down with your escrow officer. Write down her direct office phone (NOT the one that routes). Agree: "I will CALL you at THIS number, verify my social, and READ BACK the routing + account number before wiring. You will confirm or correct by phone."
+2. **Ignore any wire instructions sent by email.** Treat every email with wire info as suspicious, even if it looks genuinely from your escrow officer. Emails can be spoofed, replies can be intercepted, reply-to addresses can be hijacked.
+3. **Always call to verify, at the number you wrote down IN PERSON.** If the number in the email is different from what you wrote down, that's a fraud attempt. Report it to the title company's fraud line immediately.
+4. **Wire during business hours from a bank branch, not online.** Go to your bank in person. Hand the teller the wire instructions you verbally verified. The bank will also double-check.
+5. **If your wire doesn't confirm receipt within 2 hours, call your escrow officer AT HER DIRECT PHONE.** Do not reply to any email. Call.
+
+Additional: your bank can set a wire-transfer pause on your account — a 24-hour hold on wires above $100K that you must confirm by phone. Set this 30 days before close, lift it the day of. Prevents an impulse-wire under pressure.
+
+**WALK-THROUGH (day before close, afternoon)**
+
+Your realtor schedules this. Bring: phone (photos), a notebook, a flashlight, an outlet tester ($8 on Amazon).
+
+Check:
+- Every appliance ON: fridge runs cold, stove burners + oven heat, dishwasher runs a cycle, washer/dryer cycle, microwave heats water.
+- Every faucet: hot and cold, no leaks, drains clear (run for 90 seconds each).
+- Every toilet: flush, refills without running continuously.
+- HVAC: set thermostat to cool and heat, confirm both modes work. Listen for a furnace kick.
+- All outlets in main rooms (outlet tester — 30 seconds per outlet).
+- Every window opens and closes, every lock turns.
+- Every door opens and closes, every lock turns.
+- Look for NEW damage since inspection (moved furniture often reveals wall damage, flooring issues, paint touch-ups that were hiding damage).
+- Compare to the seller disclosure and inspection report — anything the seller agreed to fix, verify it was actually done.
+- Count the keys the seller is leaving (front door, mailbox, storage, garage, pool/gym fob if applicable). You should have 2 of each minimum.
+
+If anything is wrong, you have real leverage — don't close if walk-through reveals a material issue. Ask for credit at closing or hold close until fixed.
+
+**DAY-OF CLOSE**
+
+Bring: photo ID, your own pen, a bank-provided cashier's check for any shortfall (>>$10K wires aren't always fast enough), your phone for photos.
+
+Documents to scrutinize (read every word, don't skim):
+- **Deed of Trust** — verify your name spelling, property address, loan amount.
+- **Promissory Note** — verify principal, interest rate, maturity date, payment due date.
+- **Closing Disclosure FINAL** — compare every line to the preliminary CD you got 3 days ago. Any change requires lender explanation.
+- **Homeowner association documents** — confirm HOA dues, transfer fee paid, contact for manager.
+- **Title insurance policy** — owner's policy (yours) AND lender's policy (lender's, you pay). Verify coverage amount matches purchase price for owner's policy.
+
+Sign. Don't negotiate at the signing table — negotiate was pre-close. If something surprises you, stop and call your lender/agent.
+
+Get keys. Change the front-door lock WITHIN 48 HOURS. You don't know who has copies.
+
+**30/60/90 DAY POST-CLOSE**
+
+Day 1-7:
+- File Homeowner's Property Tax Exemption with SF Assessor (saves ~$70/yr). Form BOE-266. Deadline: Feb 15 of the year following close.
+- Submit Transfer Tax Affidavit if applicable.
+- Update your driver's license and voter registration within 10 days (CA law).
+- Change locks. Change garage code. Reset every smart-home device the seller may still have access to (if you inherited any).
+
+Day 30:
+- Your first mortgage payment is due around now. Set up auto-pay from a dedicated account.
+- Property tax supplemental bill will arrive in 2-4 months — it's a one-time bill for the jump from seller's assessment to your purchase price, prorated from close date. Budget ~$3-5K and DON'T miss the due date (it's separate from regular property tax).
+- Call your insurance agent — at day-30 do a coverage review with actual photos of contents.
+
+Day 60:
+- HOA has you onboarded. Attend the next HOA meeting in person. Meet the board. You'll regret it if you skip this.
+- File for a homestead exemption if not already done at close.
+
+Day 90:
+- Run your first mini-audit: is auto-pay pulling correctly, is HOA auto-pay set up, is property tax escrowed through your lender, are insurance payments automated.
+- Hire a handyman for day-90 walk-through: anything small you've noticed, batch-fix.
+- Re-bid homeowners insurance at day-365 (set a calendar reminder). First-year policies are rarely the best rate.
+
+**That's the playbook. Save it as a checklist and work through it in order.**
+
+Close date goal: don't let any single line item slip more than 24 hours. Close-day slip on a property tax form is annoying; close-day slip on wire instructions is catastrophic.$pf$,
+ $pf$Full closing-day playbook covering pre-close (CD review, insurance, utilities, HOA onboarding), wire fraud defense (IN-PERSON phone verification protocol + ignore email wire instructions + call-to-verify at a number written down in person + bank-branch wire during business hours + wire-transfer pause on account), walk-through checklist (appliances, plumbing, HVAC, outlets, windows, doors, disclosure verification), day-of-close doc scrutiny (Deed, Note, Final CD, HOA docs, title insurance), and 30/60/90-day post-close (homeowner tax exemption, supplemental tax bill, HOA engagement, insurance re-bid).$pf$);
+
+-- =========================================================================
 -- END OF FILE — append next project(s) below this line.
 -- Iterations working the Content queue: add 2–3 projects per iteration,
 -- appending below this comment. Do NOT rewrite existing projects.

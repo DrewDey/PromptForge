@@ -12796,6 +12796,779 @@ Budget estimate: phase 1 = 1 sprint (2 weeks), phase 2 = 3 sprints (6 weeks), to
  $pf$Eng handoff package delivered in the requested 4-section structure. Component API: TypeScript Toast interface with variants (success/error/warning/info/loading), CTA object with async onClick support, durationMs override (null for never-dismiss), loading-to-terminal transition via toast.update(id), ToastProvider wraps app root, useToast() hook gives imperative api. 10 usage examples cover the most common shapes including loading-to-success-or-error transition and bulk-partial-success warning pattern. 7 edge cases spec'd with concrete behavior: stack-overflow prioritizes error persistence, modal z-index coexistence preserves toast lifecycle, navigation preserves toast, debounced duplicates update existing timer (not stack), truncation at 80/200 chars with fallback to modal for genuinely-long content, bulk partial success uses warning (not success) to avoid hiding failures. 2-phase migration plan: phase 1 ships new component feature-flagged (1 sprint); phase 2 migrates 23 existing in 3 sprints prioritized by severity (sprint 1 = 7 critical-error miscategorizations, sprint 2 = 6 missing-states toasts, sprint 3 = timing fixes + deletes + remaining). Total budget estimate 8 weeks serial / 3 weeks parallel. Eng received handoff Friday 9am, shipped the system 9 days later; "something happened and I missed it" support tickets dropped ~35% in the first 2 weeks per Fullstory sampling.$pf$);
 
 -- =========================================================================
+-- Project 55-0038 | On-call rotation redesign after a rough Q1 — 147 pages, 3 exits, 2 citing burnout → new schedule + comp + escalation policy | Nina Kowalski | Productivity | 5 steps
+-- =========================================================================
+
+DELETE FROM prompt_steps WHERE prompt_id = '55555555-5555-5555-5555-555555550038';
+DELETE FROM prompts      WHERE id        = '55555555-5555-5555-5555-555555550038';
+
+INSERT INTO prompts (
+  id, title, description, content, result_content,
+  category_id, difficulty, model_used, model_recommendation,
+  tools_used, tags, status, author_id, vote_count, bookmark_count
+) VALUES (
+  '55555555-5555-5555-5555-555555550038',
+  $pf$On-call rotation redesign for a 40-engineer infra SaaS after 3 exits — 5-pass Claude workflow from Q1 incident audit to rolled-out rotation + comp + escalation policy$pf$,
+  $pf$Q1 at our Series B: 147 on-call pages across 12 weeks, 3 senior engineers gave notice, 2 cited on-call load in exits. CEO asked me to fix the rotation before Q2 kicks off. 5-pass workflow: diagnose beyond "volume was high" (distribution + alert quality + sleep-fear were the actual mechanisms), design 3 structural options and pick the overnight-comfort-pool split, pair it with a comp structure that survives CFO scrutiny, plan a 3-week rollout with opt-in mechanics, and write the all-eng comms memo + first-week support rituals so the rollout lands as "we heard you" instead of "here's another process change."$pf$,
+  $pf$How I spent a week redesigning on-call at our 48-person infra SaaS (40 in engineering) after a Q1 that broke our retention.
+
+Context: we ran a single-tier weekly rotation — 12-person pool (SRE + backend), each person primary for 1 week per quarter, no structured secondary, no comp, escalation ad-hoc via "ping the #oncall channel." Q1 had 147 pages over 12 weeks. Three senior engineers resigned in March. Two of the three exit interviews named on-call directly as a contributing factor. The CEO pulled me in: "Figure out the rotation before Q2 starts. We can't lose another Staff engineer."
+
+I did a 5-pass Claude workflow over 4 days. Pass 1 was the one that actually changed my mind — I went in thinking "we need fewer pages," came out realizing volume wasn't the real driver. 68% of Q1 pages hit between 10pm and 6am, 34% of pages were already-resolved-by-the-time-I-looked flapping alerts, and both exit notes used the phrase "sleeping in fear" rather than "too many pages." The data said the painful thing was unpredictable sleep disruption with zero compensation, not volume.
+
+Pass 2 designed three rotation structures and flagged the one Claude was about to let me pick (follow-the-sun) as infeasible given we're 1.2 regions. We landed on a primary weekly rotation PLUS a separate opt-in "overnight-comfort" pool of 4–5 engineers who cover 9pm–9am in exchange for compensation that reflects the sleep cost. This splits the rotation along the axis that's actually painful (sleep) instead of along the axis that's easy to balance (page count).
+
+Pass 3 built the comp structure + escalation policy. Primary pager gets a $500/week stipend, overnight-comfort engineers get $400/week plus $50 per overnight page. Escalation is deterministic now: 5-min ack on P1 or auto-page secondary, 30-min handoff to on-call manager if still unresolved. Weekend premium $150/day. PTO protected — you don't cover your own pager.
+
+Pass 4 did the rollout and CFO-prep. Net comp delta after removing the inflammatory "covering-your-own-pager while on PTO" expense was +$14.2K/quarter, and I got CFO sign-off in one meeting because I showed him the loaded cost of losing another $200K engineer.
+
+Pass 5 wrote the all-eng memo. Load-bearing move: the memo opens with "we heard you" and names the comp numbers in paragraph 2. The worst thing it could have done was bury the money in an appendix while opening with process language.
+
+New rotation started April 14. First week: 11 pages, 4 overnight. No ack misses. First-week retro surfaced one structural gap (runbook for the payment-proxy alert was wrong — the thing we should have fixed in Q1 and didn't). Q2 is 3 weeks in and on track to be 50-60% of Q1's page volume with the same headcount.$pf$,
+  $pf$5-pass workflow produced: (1) diagnosis that reframed the problem from "volume was high" to three distinct mechanisms — 68% of pages land 10pm-6am, 34% of pages are low-signal flapping alerts (payment-proxy + event-ingestor services = 58% of total), exit notes cite "sleeping in fear" not "too many pages"; (2) three rotation options designed and ranked — improved weekly with tiers (rejected, still solo-sleep-dread), follow-the-sun 3-region (infeasible, Claude's default answer but we're 1.2 regions), primary weekly + separate overnight-comfort opt-in pool (selected, splits along the axis that actually hurts); (3) comp structure — $500/week primary stipend, $400/week overnight-comfort with $50 per overnight page, $150/day weekend premium, deterministic 5-min P1 ack with auto-escalation, PTO protected; (4) 3-week rollout plan with overnight pool opt-in window week 1, CFO sign-off on $14.2K/quarter net comp delta week 2 (accepted in one meeting after framing against loaded cost of another $200K exit), new rotation starts week 3, daily 10-min check-ins week 4; (5) 400-word all-eng memo that opens with "we heard you" and names comp numbers in paragraph 2, plus first-week rituals including daily async check-in for 2 weeks + end-of-cycle retro feeding into Nina (not engineering manager) to remove the "bad team member" reporting dynamic. New rotation started April 14, first week 11 pages / 4 overnight / 0 ack misses; Q2 trending to 50-60% of Q1 page volume at same headcount.$pf$,
+  '11111111-1111-1111-1111-111111111107',
+  'intermediate',
+  'claude-opus-4-6',
+  'Claude 4.6 Opus',
+  ARRAY['Claude','PagerDuty','Linear','Google Docs','Notion'],
+  ARRAY['operations','on-call','team-health','compensation','process-design','sre'],
+  'approved',
+  '22222222-2222-2222-2222-222222222206',
+  103, 49
+);
+
+INSERT INTO prompt_steps (id, prompt_id, step_number, title, content, result_content, description) VALUES
+
+-- Step 1 --
+('66666666-6666-6666-6666-666666380101',
+ '55555555-5555-5555-5555-555555550038',
+ 1,
+ $pf$Diagnose Q1 on-call pain beyond "volume was high" — mechanism-level analysis from pages + survey + exit notes$pf$,
+ $pf$I run ops at a 48-person infra SaaS (40 in engineering). Q1 we had a rough on-call quarter: 147 pages over 12 weeks across a 12-person rotation, 3 senior engineers resigned in March, 2 of 3 exit interviews cited on-call as a contributing factor. CEO wants a fix before Q2 starts.
+
+I want to redesign the rotation but I don't want to default to "we had too many pages, reduce pages." I think there's a more specific mechanism and I want you to help me find it. I'm going to share three data sources and I want mechanism-level diagnosis, not summary.
+
+**Source 1: Q1 page distribution.** 147 pages. By time-of-day: 32 between 9am-5pm, 15 between 5pm-10pm, 100 between 10pm-6am. By day: 91 on weekdays, 56 on weekends. By service: payment-proxy 43, event-ingestor 42, checkout 18, auth 12, other 32. By resolution: 48 "already resolved by the time I looked" (flapping alerts), 67 "real issue, fixed in <30min," 24 "real issue, escalated or took >30min," 8 "false positive / no issue."
+
+**Source 2: Q1 on-call survey (19 of 12 rotation + 7 backup responders, anonymous, 12 questions).** Key open-ended responses:
+- "The pages themselves aren't the problem. Going to sleep knowing I might get paged is the problem. Sunday nights are worse than Tuesday nights."
+- "When my pager goes off at 2am my first thought is 'is this real or is it payment-proxy again.' 80% of the time it's payment-proxy again."
+- "I don't feel bad about the weeks I'm on-call. I feel bad about the 2 weeks leading up to it."
+- "No one escalates to the secondary because it feels like admitting you can't handle it."
+- 14 of 19 ranked "unpredictability of page timing" above "page volume" as the thing that made on-call hardest.
+- 8 of 19 reported losing sleep the week before their rotation starts (anticipatory).
+
+**Source 3: Two exit-interview notes that named on-call.** Both verbatim excerpts:
+- Engineer A: "It wasn't the pages. I can handle pages. It was the sleeping in fear of pages. I couldn't get out of the cycle — anxious the week before, exhausted the week of, recovering the week after."
+- Engineer B: "I didn't mind being paged. I minded that there was no compensation for it — not even the acknowledgment that losing sleep at 2am is a real cost."
+
+Task: identify the 3-5 actual mechanisms making Q1 on-call painful. Not just "volume." For each mechanism, cite which data points support it. Flag the load-bearing one. End with a specific reframe of the problem — what are we actually trying to solve, in one sentence.$pf$,
+ $pf$Five mechanisms in the data. Ordering matters — the list is roughly in order of how much weight each one is carrying.
+
+**1. Sleep-schedule destruction, not page volume (LOAD-BEARING).** 100 of 147 pages hit between 10pm-6am — 68% of total pages, but more importantly 68% of pages disrupt the sleep cycle. A weekly on-call rotation puts one engineer into sleep-interrupted nights 7 nights in a row. Survey response 1 ("the pages themselves aren't the problem, going to sleep knowing I might get paged is the problem") and exit note A ("sleeping in fear of pages") both name this explicitly. 14/19 ranked unpredictable timing above volume. This is the mechanism your current rotation structure is the wrong tool for — evenly distributing pages across 12 engineers is fine for page count, but it means every engineer has 7 consecutive sleep-disrupted nights every quarter. What hurts isn't total pages, it's sleep debt accumulation + anxiety from not knowing which nights will be interrupted.
+
+**2. Anticipatory stress (the weeks around the rotation are worse than the rotation itself).** 8/19 reported losing sleep the week BEFORE their rotation. Survey response 3 ("I don't feel bad about the weeks I'm on-call, I feel bad about the 2 weeks leading up to it") and exit note A (the "anxious-exhausted-recovering" 3-week cycle) both describe a quarterly rotation that effectively consumes 3 weeks per engineer, not 1. Your 12-person rotation with 4 quarters/year is technically 4 weeks on-call per person — but it's actually ~12 weeks of elevated-stress state per person per year.
+
+**3. Alert-quality erosion of trust in the pager.** 48/147 pages (33%) were already-resolved-by-the-time-I-looked flapping alerts; 8/147 were false positives. That's 38% of pages where the signal was wrong. Survey response 2 ("first thought is 'is this real or is it payment-proxy again'") names the consequence — engineers have learned to distrust the pager, which means genuine high-severity pages get read as probably-a-flap-again and response urgency drops. Two services (payment-proxy 43 + event-ingestor 42) account for 58% of all pages — the alert quality on those two services is the proximate fix for 85 pages/quarter.
+
+**4. No escalation norm, because escalating signals weakness.** Survey response 4 ("no one escalates to secondary because it feels like admitting you can't handle it") tells you your escalation is broken socially, not structurally. Technically you have secondary backup; culturally you don't. This matters because it means every engineer runs every page to completion alone, which compounds mechanism 1 (sleep destruction — you can't hand off at 3am and go back to sleep).
+
+**5. No compensation for sleep-disruption cost.** Exit note B is specific and worth quoting again: "I minded that there was no compensation for it — not even the acknowledgment that losing sleep at 2am is a real cost." This isn't about the money per se — it's about the signal that the company recognizes the cost exists. Engineers who got paged at 2am and then worked a normal day were effectively donating sleep to the company without acknowledgment. The absence of any comp reads as "this cost isn't real."
+
+**The reframe:** You are NOT trying to solve "we had too many pages." Reducing page volume by 30% would still have every engineer doing 7 consecutive sleep-interrupted nights per quarter with zero comp and anxiety spilling into 2 adjacent weeks. The actual problem is **your rotation structure forces every engineer to absorb unpredictable sleep disruption for a week per quarter with no comp, no reliable escalation, and an alert stream that's 38% low-signal.** The fix is structural: change who covers sleep hours, compensate for sleep disruption specifically, fix the alert quality on the two services driving 58% of pages, and make escalation a norm instead of a confession.
+
+Specifically for pass 2 rotation design, the constraint to satisfy is: no single engineer should be absorbing 7 consecutive nights of sleep-disruption risk. That rules out the obvious "weekly rotation with tiers" improvement and points toward splitting the rotation along the sleep axis — some version of separating daytime pager-holders from overnight pager-holders, with overnight being shorter shifts and/or a smaller opt-in pool with real compensation.$pf$,
+ $pf$Five mechanisms, ordered by weight: (1) LOAD-BEARING: sleep-schedule destruction — 68% of pages hit 10pm-6am and a weekly rotation forces 7 consecutive sleep-interrupted nights; (2) anticipatory stress spreads the on-call cost to 3 weeks per engineer not 1 (8/19 lose sleep the week before); (3) 38% of pages are low-signal (flapping alerts + false positives) with payment-proxy + event-ingestor driving 58% of total; (4) escalation is socially broken — engineers won't page secondary because it feels like admitting you can't handle it; (5) zero comp for sleep disruption reads as "this cost isn't real." The reframe: we are NOT trying to reduce page volume. We are trying to stop forcing every engineer to absorb 7 consecutive unpredictable sleep-interrupted nights per quarter with no comp and broken escalation. That rules out "weekly rotation with tiers" as a fix and points the pass-2 design toward splitting the rotation along the SLEEP axis (separate daytime from overnight coverage, smaller opt-in overnight pool with real comp) rather than the page-count axis.$pf$),
+
+-- Step 2 --
+('66666666-6666-6666-6666-666666380102',
+ '55555555-5555-5555-5555-555555550038',
+ 2,
+ $pf$Design 3 rotation structures that address the mechanisms — pick one with rationale$pf$,
+ $pf$Good, that reframe is the one I needed. Now design three rotation structures that address the mechanisms — specifically the sleep-destruction and no-escalation ones — and pick one.
+
+Constraints:
+- 12-engineer pool (SRE + backend). Roughly 2/3 US (split SF + NYC), 1/3 UK (one engineer).
+- Can't hire for this. Headcount stays flat through Q2.
+- Alert-quality fixes (payment-proxy, event-ingestor runbooks) are a parallel workstream — assume they get 40% better by end of Q2 but the rotation design shouldn't depend on it.
+- Comp is budget-available at ~$20K/quarter incremental, I'll model that in pass 3.
+
+For each option, give me: structure, how it addresses the mechanisms, what it breaks or makes worse, and implementation difficulty (what we'd have to change in PagerDuty + process).
+
+Then pick one with a one-paragraph rationale. Push back if I'm anchoring on the wrong option.$pf$,
+ $pf$Three options. I'm going to design each honestly — including the one I think is wrong — then pick.
+
+## Option A — Improved weekly rotation with real secondary + daily handoff
+
+**Structure.** Keep weekly primary (1 person, 7 days). Add structured secondary (2nd person on 15-min escalation). Add daily 9am async handoff: primary writes a 3-line summary of overnight pages, secondary reads before standup. Rotate through 12-person pool, 1 week each, 3 weeks between rotations.
+
+**Mechanism coverage.** Addresses #4 (escalation) by making secondary an expected part of the workflow, not a confession. Partially addresses #3 (alert quality) by making handoffs catch flapping-alert patterns earlier. Does NOT address #1 (sleep destruction) or #2 (anticipatory stress) — primary is still solo for 7 consecutive nights. Does NOT address #5 (comp).
+
+**What it breaks.** Nothing major — it's the cheapest option. But it leaves the load-bearing mechanism untouched, so engineers still lose sleep and still feel uncompensated.
+
+**Implementation difficulty.** Low. Existing PagerDuty schedule, add an escalation policy layer, write one runbook for the handoff ritual. Could be live Monday.
+
+## Option B — Follow-the-sun 3-region rotation
+
+**Structure.** Split the pager across 3 time zones. Pacific handles 9am-5pm PT, Eastern handles 5pm PT-12am PT (aligning with 8pm ET-3am ET), London handles 12am PT-9am PT (8am-5pm GMT). Page routing by time-of-day. No engineer is on the pager outside their working hours.
+
+**Mechanism coverage.** Solves #1 (sleep destruction) — every page lands on someone awake. Solves #2 (anticipatory stress) — nothing to anticipate. Indirectly helps #3 (alert quality, because daytime engineers write better runbooks). Addresses #4 (escalation across zones is normal). Leaves #5 (comp) open.
+
+**What it breaks.** **This option is infeasible for your org and I'm pushing back on it if you were anchoring on it.** You said 1/3 UK pool, but that's ONE engineer in the UK. You can't run a 40-hr/week coverage shift on one person — they'd be permanently on-call. You'd need 3 engineers per region minimum (vacation + sick coverage), so 9 engineers dedicated to shift coverage plus your 3 remaining engineers covering nothing. You'd also need to hire 2 additional UK engineers (contradicts your flat-headcount constraint) or 2 Asia-Pacific engineers (more time-zone spread, no existing network, likely 6+ months to hire into your stack). Follow-the-sun is a real model for orgs above ~80 engineers with established hubs in 3 regions. At your size it's a fantasy. Don't pick it.
+
+**Implementation difficulty.** Prohibitive (hiring dependency).
+
+## Option C — Primary weekly + opt-in overnight-comfort pool
+
+**Structure.** Two parallel rotations.
+- **Primary rotation**: 1 person per week, responsible for 9am-9pm pages (weekday + weekend). Full 12-person pool rotates through this weekly.
+- **Overnight-comfort pool**: 4-5 engineers opt in. They cover 9pm-9am pages on a 7-day rotation (1 week on, 3 weeks off if pool = 4). Opt-in is voluntary and renewable quarterly.
+
+Engineers not in the overnight pool are NEVER paged between 9pm-9am. Engineers in the overnight pool get comp (pass 3).
+
+**Mechanism coverage.**
+- #1 sleep destruction: solves it for the 7-8 engineers who opt out of overnight (zero sleep disruption from rotation) AND partially solves it for the 4-5 who opt in (sleep disruption is self-selected and compensated, not forced). This is the load-bearing move.
+- #2 anticipatory stress: solves for opt-outs; reduces for opt-ins (they know what they signed up for).
+- #3 alert quality: neutral. Parallel workstream.
+- #4 escalation: addressable via structured secondary within each rotation — still need to design this into the policy.
+- #5 comp: directly addressable — overnight-comfort pool gets paid, daytime primary gets paid less.
+
+**What it breaks.** You need 4-5 engineers to opt into overnight. If fewer than 4 opt in, the overnight pool becomes punitive (1-week-on, 1-week-off grind). Mitigation: set a floor of 4 opt-ins, if you can't hit it the comp rate goes up until you do. You also need to be honest that opt-ins may disproportionately come from a demographic that skews younger/unattached — watch for this not becoming "the junior engineers cover nights."
+
+Also: the daytime primary still gets paged on weekend days (9am-9pm Sat/Sun), which is a quality-of-life hit smaller than overnight but not zero. Pass 3 should compensate it separately.
+
+**Implementation difficulty.** Medium. Two PagerDuty schedules, routing rules by time-of-day, new comp workflow with payroll. 2-3 weeks to stand up.
+
+## Pick: Option C, with one hedge.
+
+Option C is the only one that directly addresses the load-bearing mechanism (sleep destruction) without depending on infeasible hiring or leaving the worst mechanism untouched. Option A is a real improvement but misses the point — your exit interviews were about sleep, not escalation. Option B is fantasy at your size.
+
+The hedge: Option C depends on getting 4+ engineers to opt into overnight at a comp rate you can afford. If pass 3 comp math can't clear 4 opt-ins at budget, fall back to a hybrid — Option A PLUS a lower-comp "overnight buddy" pool where the primary can delegate a specific night's pager to a buddy (e.g., someone on PTO recovery or someone who wants the extra cash that week). But design pass 3 against Option C first; only fall back if the comp math breaks.$pf$,
+ $pf$Three rotation options designed honestly. Option A (improved weekly + real secondary + daily handoff) addresses escalation and alert-quality handoffs but leaves sleep-destruction and anticipatory stress untouched — misses the load-bearing mechanism. Option B (follow-the-sun 3-region) is INFEASIBLE at this org size (1 UK engineer can't sustain 40hr coverage, needs 9 engineers across 3 hubs minimum, contradicts flat-headcount constraint) — pushed back explicitly on Claude's default answer and on user anchoring. Option C (primary weekly for 9am-9pm + opt-in overnight-comfort pool for 9pm-9am, 4-5 engineers rotating through overnight on comp) directly addresses the sleep-destruction mechanism by making overnight disruption self-selected and compensated instead of forced on everyone. Selected Option C with one hedge: if pass 3 comp math can't clear 4 overnight opt-ins at budget, fall back to hybrid (A + lower-comp opt-in buddy pool). Watch for demographic skew in overnight opt-ins.$pf$),
+
+-- Step 3 --
+('66666666-6666-6666-6666-666666380103',
+ '55555555-5555-5555-5555-555555550038',
+ 3,
+ $pf$Design the comp structure + escalation policy for Option C — must clear the 4-opt-in floor at ≤$20K/quarter$pf$,
+ $pf$Alright, Option C. Build the compensation and escalation policy.
+
+Constraints:
+- Budget: ~$20K/quarter incremental comp. I have CFO-headroom up to $25K/quarter if I can justify it.
+- Must clear the 4-opt-in floor — model what comp gets us to 4+ at reasonable probability.
+- Escalation policy needs to make secondary-paging a default, not a confession.
+- Response SLA per severity.
+- Weekend premium on daytime primary.
+- PTO: person on PTO is NEVER on pager. No "cover your own week."
+- Needs to be explainable to engineers in a 5-sentence paragraph, and to the CFO in a 5-line table.
+
+Give me: comp table, escalation policy, response SLAs by severity, PTO rules, and total Q2 cost breakdown (assume 13-week quarter, 4 overnight opt-ins, 12-person primary pool).$pf$,
+ $pf$## Comp structure
+
+Two tracks. Straightforward math; designed so overnight comp is clearly higher per-hour than daytime primary to reflect sleep cost.
+
+| Role | Stipend | Page premium | Weekend premium | Notes |
+|------|---------|--------------|-----------------|-------|
+| Primary (9am-9pm, 7 days) | $500 / week | — | +$150 per weekend day worked (pages or not) | Rotates through full 12-person pool, 1 wk per 13-wk qtr |
+| Overnight-comfort pool (9pm-9am, 7 days) | $400 / week on shift | $50 / page acknowledged between 9pm-6am | — (built into stipend) | Opt-in, quarterly renewal, floor 4 engineers |
+| Secondary backup (either rotation) | $100 / week | — | — | Named secondary — auto-escalation target |
+
+**Rationale on the numbers.**
+- Primary $500 covers 7-day business-hour ownership. Hourly equivalent ~$6/hr across the week; most of it sits idle and most pages hit overnight (which primary doesn't cover).
+- Overnight $400 stipend is base — per-page premium adds $50 per page between 9pm-6am. At Q1 rates (100 overnight pages / 13 wks), a full week on overnight would see ~7.7 pages average → ~$385 premium added on top. Total ~$785/wk for overnight, vs $500/wk for primary. The premium floor matters — otherwise a quiet overnight week would pay less than a busy primary week, which inverts the sleep-cost logic.
+- Page premium is 9pm-6am (not 9pm-9am) because 6am-9am pages are read as "waking up, about to start the day anyway" not "sleep destruction."
+- Weekend premium $150/day on primary reflects that daytime weekend coverage is real quality-of-life cost (can't fully disconnect on Saturday).
+- Secondary $100/week acknowledges the mild anticipatory load of being the escalation target without being the primary. Low but non-zero.
+
+## Q2 cost breakdown (13 weeks)
+
+| Line | Calc | Total |
+|------|------|-------|
+| Primary stipend | $500 × 13 wks × 1 person-at-a-time | $6,500 |
+| Overnight stipend | $400 × 13 wks × 1 person-at-a-time | $5,200 |
+| Secondary stipend (both rotations) | $100 × 13 × 2 | $2,600 |
+| Page premium overnight | ~60 overnight pages × $50 (assume 40% Q1 reduction from alert-quality work) | $3,000 |
+| Weekend primary premium | 26 weekend days × $150 | $3,900 |
+| **Total Q2** | | **$21,200** |
+
+Under the $25K cap, over the $20K guideline by $1,200. I'd leave this as-is — if Q2 alert-quality fixes land harder than the 40% assumption, the overnight page premium drops and we come in under $20K. If it lands softer, we spend an extra $1,500 and still clear. Worth it.
+
+**Offset: costs removed from current model.** We had an unstated "cover your own pager while on PTO" expense — people would come back from PTO with pager debt or we'd pay for last-minute swaps. Rough estimate: 2-3 swaps/qtr at $500-800 effective = $1,500-2,000. Plus the loaded cost of the 3 Q1 exits conservatively $300K+ in replacement + ramp time. The comp delta is a rounding error against retention.
+
+## Opt-in math (will we clear 4?)
+
+At $400/wk + $50/page stipend (~$785/wk expected), 1-in-4 weeks on overnight = $785/4 ≈ $196/wk annualized ≈ $10.2K/yr per opt-in engineer. Combined with "you never get paged outside your overnight weeks," this is a real offer for engineers who:
+- Want the extra cash (~$10K for ~13 weeks of on-shift time total, 52 on-shift weeks if 4 opt-ins annually)
+- Prefer predictable-on weeks to unpredictable-always weeks (engineers who already sleep light, night owls, etc.)
+- Are early-career or saving for a specific goal
+
+12-engineer pool, you need 4. Probability assessment: with comp at this level, I expect 5-6 opt-ins from a cold pitch, land at 4-5 after quarterly-renewal attrition. If the first quarterly opt-in window comes in under 4, bump overnight stipend to $450 and/or page premium to $60 for Q3 — you have the budget headroom.
+
+## Escalation policy
+
+Deterministic, no ambiguity. The goal is to make secondary-paging a default, not a confession.
+
+**Severity ladder (PagerDuty-native):**
+- **P1** (customer-facing outage, data loss risk, payment failures): 5-minute ack. Auto-escalates to secondary at 5 min. Auto-pages on-call manager at 15 min.
+- **P2** (customer-facing degradation, internal service down, elevated error rate): 15-minute ack. Auto-escalates to secondary at 15 min.
+- **P3** (concerning signal, capacity warning, non-customer-facing bug): 60-minute ack. Auto-escalates only if not acked by end of shift.
+
+**Handoff rules:**
+- Primary may hand off any P2/P3 to secondary after 30 min of active work. No judgment attached. The handoff note template is literally 3 lines: "State of investigation. What I tried. What I'd try next." Secondary picks up without discussion.
+- Primary MUST hand off if resolution requires >90 min continuous attention, no exceptions. This prevents the 3am "I'll just finish this one" that turns into 5am.
+- On-call manager gets auto-paged on any P1 > 15 min OR any page marathon where a single engineer has been active on-pager > 90 min across the shift.
+
+**PTO rule (explicit):**
+- Engineers on PTO are removed from both schedules for the full PTO period, no partial coverage, no self-cover. PTO coverage is handled by the schedule auto-filling from the pool at normal stipend rates. If the schedule can't fill a PTO gap from the pool (e.g., holiday week, everyone off), on-call manager covers AND gets full stipend + emergency premium (+$200).
+
+## The 5-sentence explanation for engineers
+
+"We split the rotation along the axis that was actually hurting people: overnight pages. The daytime pager (9am-9pm) rotates through everyone weekly at $500/week plus weekend premium. Overnight (9pm-9am) is a separate opt-in pool of 4+ engineers who want the extra pay and are comfortable with overnight shifts, at $400/week plus $50/overnight-page. If you don't opt into overnight, you will NEVER be paged between 9pm and 9am. Escalation to secondary is expected, not exceptional, and PTO is fully protected."
+
+## The 5-line table for the CFO
+
+| Item | Amount |
+|------|--------|
+| Q2 total new comp | $21,200 |
+| Estimated PTO-swap expense removed | ~$2,000 |
+| Net quarterly delta | +$19,200 |
+| Annualized | +$76,800 |
+| Retention breakeven | Avoiding 1 exit ($200K+ loaded cost) = 2.6 yrs of program at breakeven |$pf$,
+ $pf$Comp structure: primary $500/week (9am-9pm, 12-person pool, weekly rotation) + $150/day weekend premium; overnight-comfort pool $400/week stipend + $50/page premium (9pm-6am — not 9am because 6am-9am reads as waking-up-anyway) + 4-engineer opt-in floor with quarterly renewal; secondary $100/week in both rotations; page premium floor prevents quiet weeks paying less than busy primary weeks. Q2 total $21,200 (under $25K cap, $1.2K over $20K guideline — worth the headroom). Offset: ~$2K PTO-swap expense removed; net $19.2K/qtr = $76.8K/yr, breakeven against one avoided exit in 2.6 yrs. Opt-in math: $10.2K/yr annualized per opt-in engineer should clear 4-6 opt-ins; if <4 in Q2, bump to $450/$60 with existing budget headroom. Escalation: deterministic P1 (5-min ack, auto-escalate at 5 + auto-page manager at 15), P2 (15-min ack, auto-escalate at 15), P3 (60-min, escalate at end of shift); handoff to secondary expected after 30 min active work + MANDATORY at 90 min (prevents 3am "I'll just finish this one"). PTO: removed from both schedules, auto-fills from pool at normal stipend, on-call manager covers unfillable gaps at stipend + $200 emergency premium. 5-sentence explanation for engineers + 5-line CFO table both drafted.$pf$),
+
+-- Step 4 --
+('66666666-6666-6666-6666-666666380104',
+ '55555555-5555-5555-5555-555555550038',
+ 4,
+ $pf$Rollout plan — 3-week transition, CFO sign-off path, overnight opt-in mechanics, contingencies$pf$,
+ $pf$Good. Now plan the rollout. Constraints: today is March 27, current rotation ends Friday April 11, new rotation should start Monday April 14. CFO needs sign-off before comp can land. CTO is already aligned. Ops manager (me) runs the rollout.
+
+Need: week-by-week plan, explicit CFO meeting agenda, overnight opt-in mechanics (how we ask, what happens if we don't clear 4), who-writes-what runbook changes, communication cadence, what gets watched in week 1 of the new rotation, and 3 contingencies for things that could break.$pf$,
+ $pf$## 3-week rollout (Mar 27 → Apr 14)
+
+### Week of Mar 31 — CFO sign-off + overnight opt-in window
+
+**Monday Mar 31**
+- 1:1 with CFO. Agenda: (1) 5-line cost table from pass 3, (2) 3-exit retention context from Q1, (3) opt-in math showing budget headroom, (4) ask for sign-off by Wednesday EOD. Bring printed one-pager. Do not open with process change — open with "we lost 3 engineers, 2 cited on-call, here's the structural fix and here's what it costs."
+- Send all-eng pre-announcement on Slack: "Q2 on-call changes coming — real redesign, not another process. Details Friday. If you're interested in overnight pager for extra pay, keep an eye on the Friday post. No pressure."
+
+**Tuesday Apr 1**
+- CFO follow-up if Monday didn't close. If CFO pushes back on budget: walk through retention-cost math again, offer to tier-down the weekend premium ($150 → $125) as a negotiating concession that saves ~$650/qtr.
+
+**Wednesday Apr 2**
+- CFO sign-off target. Doc the final comp numbers in a Notion page linked to the rollout plan.
+
+**Thursday Apr 3**
+- Send formal all-eng doc: "Q2 on-call redesign." Includes: the diagnosis (mechanism-level, use pass 1's reframe verbatim — "we are not trying to reduce page volume, we are trying to stop forcing every engineer into 7 consecutive sleep-interrupted nights with no comp"), the rotation structure, the comp table, the escalation policy, and the 5-sentence summary. Ends with: "Overnight opt-in window opens tomorrow."
+
+**Friday Apr 4**
+- Overnight opt-in form opens. Anonymous to everyone except me. Closes Tuesday Apr 8 EOD. Ask captures: opt-in Y/N, preferred frequency (every 4 wks / every 6 wks / any), any hard-out weeks in Q2, quick note on motivation (cash / schedule fit / other — for my understanding, won't affect approval).
+
+### Week of Apr 7 — Close opt-ins + finalize schedule
+
+**Tuesday Apr 8 EOD** — opt-in window closes.
+
+**Wednesday Apr 9**
+- Count opt-ins. Decision tree:
+  - **≥4 opt-ins:** proceed. Build schedule.
+  - **3 opt-ins:** reopen window for 48 hours with bumped comp ($450/wk + $60/page for Q2 only, funded from budget headroom). Re-pitch in Slack — "we're one short of the opt-in floor."
+  - **<3 opt-ins:** fallback to hybrid (Option A + lower-comp overnight buddy pool). Delay rotation start to Apr 21. Re-scope with CTO.
+
+**Thursday Apr 10** — publish Q2 schedule. Both rotations. Visible in PagerDuty and in a Notion page with a readable week-by-week view.
+
+**Friday Apr 11** — last shift under old rotation. Outgoing primary does a full Q1 retro post (what I learned, what surprised me, runbook gaps I saw) — this feeds the parallel alert-quality workstream.
+
+### Week of Apr 14 — New rotation starts + daily check-ins
+
+**Monday Apr 14 9am** — new rotation live. Primary + overnight both active. Send Slack announcement tying the launch to the diagnosis ("starting today, no engineer outside the overnight pool will get paged 9pm-9am").
+
+**Daily 4pm for first 2 weeks** — I do a 5-min async Slack check-in with the active primary + active overnight engineer: "How's it going? Any structural issue — not talking about individual pages, talking about the rotation design — showing up yet?" Responses go to a private channel I monitor. Not engineering manager. Not CTO. Me. This is the feedback channel that doesn't feel like "complaining about my job."
+
+**Friday Apr 18 EOD** — week-1 retro doc. 4 questions: (1) did the daytime-only engineers actually get 0 overnight pages? (PagerDuty log will tell us — measurable.) (2) did the overnight engineers hit their page-premium expectations? (3) any ack missed? (4) any escalation-to-secondary happen, and did it feel normal?
+
+### Runbook changes
+
+I write:
+- PagerDuty schedules (2 rotations) + routing rules (time-of-day).
+- Escalation policy (Notion + PagerDuty policy).
+- Comp workflow (payroll integration — Ops has this).
+- Opt-in form + renewal process.
+
+CTO writes:
+- Handoff runbook template (the 3-line "state of investigation / what I tried / what I'd try next").
+- On-call manager escalation procedure.
+
+SRE lead writes (parallel workstream, not blocking):
+- Payment-proxy + event-ingestor alert-quality fixes. First pass due end of Apr. This is the 40% reduction assumption in the Q2 page-premium budget.
+
+## Contingencies
+
+### Contingency 1: CFO pushes back harder than expected
+- **Trigger:** CFO won't sign $21.2K Q2, wants <$18K.
+- **Response:** Tier down weekend premium to $100/day (saves $1,300/qtr), defer secondary stipend to Q3 pending proof of program efficacy (saves $2,600/qtr). New total $17.3K Q2. If CFO still pushes back, escalate to CEO — this is a retention fix, not a nice-to-have, and the Q1 loss already cost more than this program will cost for 2+ years.
+
+### Contingency 2: Opt-in window closes with <3 opt-ins
+- **Trigger:** Apr 8 EOD, only 2 opt-ins.
+- **Response:** Acknowledge in Slack honestly — "the overnight pool didn't clear. Here's the hybrid fallback." Go to Option A (improved weekly + real secondary + daily handoff) for Q2 with structured secondary at $100/wk and a "buddy-cover" option where any primary can hand off a specific night to a named buddy for a flat $75 per night covered. Revisit the overnight-pool idea at Q3 planning with fresh input.
+
+### Contingency 3: Week 1 of new rotation, an overnight engineer misses a P1 ack
+- **Trigger:** Apr 14-21, any overnight P1 unacked at 5 min with auto-escalation firing.
+- **Response:** Do NOT panic-redesign. Review with the engineer what happened (sleep, phone on silent, alert-fatigue) — could be 1 or all of the above. If the auto-escalation caught it, the system worked as designed. If secondary also missed it, THAT is a real structural issue — revisit escalation policy Monday Apr 21. One miss is data; a pattern of misses across 2 weeks is a redesign trigger.
+
+### Red flags I'll be watching for
+
+- Opt-in engineers clustered in a single demographic (junior, new-hire, or non-US). If this shows up, I'll have a 1:1 conversation and may cap opt-ins by tenure mix.
+- Specific services driving disproportionate overnight load even after alert-quality fixes. If payment-proxy still drives 40%+ of overnight pages in May, we have a product-quality issue the rotation redesign can't fix.
+- Anticipatory stress surviving the redesign (someone reports "I'm still losing sleep before my primary week even though I'm not on overnight"). If this shows up, the day-shift primary may still need to shorten from 7 days to 3-4 days for Q3.$pf$,
+ $pf$3-week rollout plan locked. Week of Mar 31: CFO 1:1 Monday opening with retention context + 5-line table (ask for sign-off by Wed EOD), all-eng pre-announcement Monday, formal doc Thursday, overnight opt-in window opens Friday Apr 4 and closes Tuesday Apr 8 EOD (decision tree: ≥4 proceed, 3 reopen with bumped comp, <3 fallback to hybrid). Week of Apr 7: opt-in count Wednesday, Q2 schedule published Thursday, outgoing-primary Q1 retro Friday feeding parallel alert-quality workstream. Week of Apr 14: rotation launches Monday 9am, daily 5-min async Slack check-in with active primary + overnight engineer routed to Nina's private channel (NOT engineering manager — removes "complaining about my job" dynamic), Friday week-1 retro covers 4 questions. Runbook ownership split: Nina writes PagerDuty schedules + routing + comp workflow + opt-in process; CTO writes handoff template + on-call-manager procedure; SRE lead owns parallel alert-quality fixes (40% reduction assumption). 3 contingencies: (1) CFO pushback → tier down weekend premium + defer secondary stipend, saves $3.9K/qtr → $17.3K total; (2) <3 opt-ins → hybrid fallback (Option A + buddy-cover flat $75/night); (3) week-1 P1 ack miss → don't panic-redesign, if auto-escalation caught it system works; pattern across 2 weeks is redesign trigger. Red flags to monitor: opt-in demographic clustering, specific services driving overnight load post-fix, anticipatory stress surviving the redesign (would trigger day-shift shortening from 7 to 3-4 days for Q3).$pf$),
+
+-- Step 5 --
+('66666666-6666-6666-6666-666666380105',
+ '55555555-5555-5555-5555-555555550038',
+ 5,
+ $pf$All-eng comms memo + first-week support rituals — must land as "we heard you" not "here's another process"$pf$,
+ $pf$Last step. Write the all-eng memo I send Thursday Apr 3. 400 words max. Signed by me and the CTO. Opens with "we heard you." Names the comp numbers in paragraph 2 (not buried in an appendix). Gives a named contact (me, direct Slack DM) for questions.
+
+Then describe the first-week support rituals — what I do, what the engineering managers do, what feedback channels exist, and what explicitly does NOT flow through engineering management (because survey response 4 told us escalation feels like admitting weakness to your manager).
+
+Tone: honest, short, no corporate padding. These engineers just watched 3 colleagues quit and they're tired.$pf$,
+ $pf$## Memo — Thursday April 3, all-engineering Slack + email
+
+---
+
+**Subject: On-call for Q2 — we heard you, and here's what's changing.**
+
+Team,
+
+Q1 was rough. We had 147 on-call pages in 12 weeks, lost three engineers in March, and two of those exit conversations named on-call directly. I've spent the last two weeks looking at the page data, the anonymous survey responses, and the exit notes. The clearest signal: the problem isn't page volume, it's that the current rotation forces every engineer into seven consecutive unpredictable overnights every quarter, with no compensation for the sleep disruption. Starting April 14, that changes.
+
+**What's changing.** Two rotations running in parallel.
+
+- **Daytime primary (9am–9pm, 7 days a week):** full 12-person rotation, one week per quarter. Paid **$500/week** plus **$150/day weekend premium** for any weekend day you're on shift. You will not be paged 9pm–9am.
+- **Overnight-comfort pool (9pm–9am, 7 days a week):** opt-in. Paid **$400/week** plus **$50 per page acknowledged between 9pm and 6am**. Quarterly renewal. Opt in voluntarily — and if you don't, you will never be paged overnight. Full stop.
+- **Secondary backup** in both rotations: $100/week. Paged automatically after 5 minutes on P1, 15 minutes on P2 — because escalating to your secondary should be how this works, not a confession that you couldn't handle it.
+
+**PTO is protected.** If you're on PTO, you are off the pager. Full stop. No self-cover, no "can you grab my Tuesday night." We'll auto-fill from the pool, and on-call manager covers anything we can't fill.
+
+**What's not changing, yet.** Alert-quality fixes on payment-proxy and event-ingestor (58% of Q1 pages between them) are a parallel workstream — SRE lead is driving it and the first pass lands end of April.
+
+**The overnight opt-in window opens tomorrow (Friday April 4).** Close date is Tuesday April 8 EOD. If you're interested, the form is [link]. We need at least four opt-ins to run this rotation — if you're curious but unsure, DM me and I'll walk through what it actually looks like week-to-week.
+
+**Ask me anything.** DM me on Slack. I'll answer any question — the comp math, how the schedule lands for your week, concerns about which demographic opts into overnight, whatever. This is the structural fix. If it doesn't land, I want to know in week one, not at the end of Q2.
+
+— Nina & [CTO]
+
+---
+
+## First-week support rituals
+
+**What I do.**
+- **Daily 5-minute async Slack check-in** with the active primary engineer and active overnight engineer for the first 2 weeks (Apr 14–Apr 25). One question: "Any structural issue showing up — not about individual pages, about the rotation design?" Thread in a private channel (#on-call-feedback-nina) that only I see.
+- **End-of-week-1 retro doc** (Apr 18 EOD) — public to engineering. 4 questions covered in pass 4. Data + qualitative side by side.
+- **End-of-Q2 full retro** (Jun 27) — program review with the CTO. Survey goes out Jun 20.
+
+**What engineering managers do.**
+- Normal 1:1s continue as-is. But — and this is the important part — engineering managers do NOT own the feedback channel on the rotation redesign. They own individual performance and team-level concerns. Structural feedback about the rotation itself flows through me. This is deliberate: survey response 4 was specific that escalating to secondary feels like admitting weakness to your manager, and the redesign can't land if "is this rotation working for you" is routed through the person who decides promotions.
+
+**What explicitly does NOT flow through engineering management:**
+- Requests to swap overnight-pool shifts.
+- Complaints about the rotation design or comp level.
+- Feedback on whether escalation-to-secondary is being used naturally or still feels like a confession.
+- Anonymous or semi-anonymous concerns about the program.
+
+All of those go to me directly. DM, private channel, in-person, whatever's comfortable.
+
+**What's measured in week 1:**
+- PagerDuty log: did any 9pm–9am page route to a daytime-only engineer? (Should be zero. Measurable.)
+- Ack times per severity. (Comparison baseline: Q1 averaged 7 min P1 ack; new target 4 min.)
+- Number of secondary-pages-engaged. (Comparison: Q1 had 3 across 12 weeks — "never, basically.")
+- Qualitative feedback from daily check-ins — counting "structural issue" mentions.
+
+**The one thing that would trigger a mid-quarter redesign:** if 2+ daytime-only engineers report anticipatory stress even though they're no longer doing overnight. That would mean the weekly day shift itself is too long, and we'd shorten to 3-4 days for Q3.$pf$,
+ $pf$Memo drafted at 398 words: opens with "we heard you" in line 1, surfaces the mechanism-level diagnosis ("problem isn't volume, it's forcing every engineer into 7 consecutive unpredictable overnights with no comp") in paragraph 2, names the comp numbers ($500/$150/$400/$50/$100) in paragraph 3 before any process language, PTO protection called out in its own line with "full stop" twice, explicit pointer to parallel alert-quality workstream, overnight opt-in window + contact. Signed by Nina + CTO. First-week support rituals: daily 5-min async Slack check-in routed to a private channel that ONLY Nina sees (not engineering manager, not CTO — removes the "admitting weakness to my manager" dynamic that killed escalation in Q1), end-of-week-1 retro public to engineering Apr 18, end-of-Q2 full program review Jun 27. Explicit delineation: engineering managers own individual performance + team concerns, structural rotation feedback routes through Nina. 4 measurable week-1 signals: zero daytime-only engineers paged 9pm-9am (PagerDuty log), P1 ack time target 4 min (vs Q1's 7), secondary-page engagement count (vs Q1's 3 in 12 weeks), qualitative "structural issue" count from daily check-ins. Mid-quarter redesign trigger: 2+ daytime-only engineers reporting anticipatory stress post-redesign would mean the 7-day day shift itself is too long and needs shortening to 3-4 days for Q3.$pf$);
+
+-- =========================================================================
+-- Project 55-0039 | Platform team formation — convincing the board to carve 7 engineers out of product squads after 3 quarters of cross-team blockers eating 25% of dev time | Derek Lawson | Strategy | 4 steps
+-- =========================================================================
+
+DELETE FROM prompt_steps WHERE prompt_id = '55555555-5555-5555-5555-555555550039';
+DELETE FROM prompts      WHERE id        = '55555555-5555-5555-5555-555555550039';
+
+INSERT INTO prompts (
+  id, title, description, content, result_content,
+  category_id, difficulty, model_used, model_recommendation,
+  tools_used, tags, status, author_id, vote_count, bookmark_count
+) VALUES (
+  '55555555-5555-5555-5555-555555550039',
+  $pf$Platform team formation proposal for the board — carving 7 engineers out of product squads after 3 quarters of cross-team blockers eating 25% of dev time — 4-pass Claude workflow from signals diagnosis to board memo + Q&A prep$pf$,
+  $pf$For 3 quarters, CI reliability + deploy tooling + observability have been chronic blockers across our 5 product squads. Time-allocation surveys say product engineers spend ~25% of their week on infra toil. I want to propose a dedicated 7-person platform team to the board — net zero headcount (carved from existing product teams), paid back by ~15-20% dev-time reclaim across the other 41 engineers within 12 months. 4-pass Claude workflow: (1) diagnose which signals make the case vs which ones sound convincing but don't hold up under CFO scrutiny, (2) compare 4 structural options (dedicated team / rotation / virtual team / hybrid) and pick dedicated with rationale, (3) draft a first-year roadmap with measurable success metrics per quarter, (4) write the 2-page board memo + pre-prep 8 likely board questions with answers.$pf$,
+  $pf$How I built the board proposal for a dedicated platform team at our 48-engineer Series B healthtech. Context: we've grown from 18 to 48 engineers over 2 years. Five product squads shipped the features that got us to Series B. What got us here is killing what comes next — cross-team infra work (CI reliability, deploy tooling, observability, dev environments) is currently owned by nobody, rotated through a 3-person "infra rotation" that never gets ahead of the backlog, and the cost is visible everywhere.
+
+Our last three quarterly developer surveys flagged the same top issue: "CI is unreliable and it's slow." Our CI pass-rate on main is 86% (industry good is 98%+). The average PR waits 14 min for a green build, 40% of which is re-runs of flaky tests. Our deploy process takes 14 minutes of engineer attention per deploy, and we deploy ~20 times a week. MTTR on customer-facing incidents is 47 minutes — mostly spent in the "where are the logs" phase, not the fix phase.
+
+Translated to dollars: 48 engineers × $220K loaded cost × 25% time in toil ≈ $2.64M/year of engineering capacity is being spent on CI waiting, deploy friction, log-hunting, and dev-environment maintenance. That's 12 FTE-equivalent of pure tax.
+
+The 4-pass workflow built the proposal from signals to board-ready memo. Pass 1 separated signals that actually hold up (MTTR, CI pass-rate, dev survey aggregates) from signals that feel convincing but CFO will tear apart (tickets-closed-per-sprint, engagement metrics). Pass 2 designed 4 structural options — dedicated team, rotation-based (what we do now), virtual team (10% of every engineer), hybrid (4 dedicated + 3 rotating) — and picked dedicated with a specific argument about why "virtual team" and "rotation" fail at our size. Pass 3 built a quarterly roadmap Q3-Q2-next-year with measurable outcomes per quarter (CI pass-rate 86→99, deploy time 14→4 min, MTTR 47→<20 min, dev-env-provision 2 hr → 15 min). Pass 4 wrote the 2-page board memo and drafted answers to the 8 board questions I expect, including the hardest one ("how do we know this won't just become a second bureaucracy").
+
+Board approved at the April 29 meeting. Platform team starts May 15, 7 engineers (4 from product squads, 3 from the infra rotation redirected). First roadmap milestone is CI pass-rate 92% by end of Q3.$pf$,
+  $pf$4-pass workflow produced: (1) signals diagnosis separating load-bearing evidence (CI pass-rate 86% vs 98%+ industry good, MTTR 47 min with 35 min in "where are the logs" phase, 3 consecutive quarterly dev surveys ranking CI #1 pain point, 25% of 48-engineer time in toil = $2.64M/yr = 12 FTE-equivalent tax) from signals CFO will tear apart (tickets-closed/sprint, engagement proxies, anecdotes without baseline); (2) 4 structural options ranked — dedicated (7 people, picked), rotation-based (current, rejected — rotations never build durable infra because ownership expires every 6 weeks), virtual team (10% of every engineer, rejected — "nobody's job is more important than their real job, so it becomes nobody's job"), hybrid 4+3 (rejected — rotating 3 keeps same ownership-expiry problem on the pieces they own); (3) first-year roadmap Q3-Q2 with per-quarter measurable outcomes — Q3 CI pass-rate 86→92%, flaky-test quarantine infra shipped, observability Sentry-to-Datadog consolidation; Q4 deploy time 14→4 min, one-click rollback, dev-env provision 2hr→15min; Q1 MTTR 47→<25 min via runbook-gen + log aggregation unification; Q2 internal developer portal (Backstage-adjacent) + on-call tooling + capacity planning signals; (4) 2-page board memo opening with "engineering-capacity tax" framing not "platform team is best practice," 8 board Q&A covering hardest objections (why not outsource, won't this become bureaucracy, how's success measured, what if product velocity drops, can we start smaller, why 7 not 4, how does this align with the AI-tools narrative, what happens in 18 months if unsuccessful). Approved April 29; team starts May 15 with 4 from product squads + 3 from infra rotation; first milestone Q3 CI pass-rate 92%.$pf$,
+  '11111111-1111-1111-1111-111111111109',
+  'advanced',
+  'claude-opus-4-7',
+  'Claude 4.7 Opus',
+  ARRAY['Claude','Notion','Linear','Miro','Google Docs'],
+  ARRAY['strategy','platform-engineering','org-design','board-comms','cto','engineering-leadership'],
+  'approved',
+  '22222222-2222-2222-2222-222222222209',
+  142, 71
+);
+
+INSERT INTO prompt_steps (id, prompt_id, step_number, title, content, result_content, description) VALUES
+
+-- Step 1 --
+('66666666-6666-6666-6666-666666390101',
+ '55555555-5555-5555-5555-555555550039',
+ 1,
+ $pf$Diagnose the signals — which evidence makes the case vs which sounds good but CFO will tear apart$pf$,
+ $pf$I'm CTO at a 48-engineer Series B healthtech and I want to propose a dedicated 7-person platform team to the board at our April 29 meeting. Before I build the case, I want to stress-test which evidence actually holds up.
+
+The evidence I have:
+- **CI metrics** (from our CI platform logs, last 90 days): pass-rate on main 86%, average PR wait time 14 min for green build, 40% of that wait is re-runs of flaky tests, top 20 flakiest tests are responsible for 60% of all flakes.
+- **Deploy metrics** (from deploy pipeline logs): average deploy takes 14 min of engineer attention (not wall-clock — actual engineer time watching logs, re-running, debugging), ~20 deploys/week, rollback requires manual SQL revert for DB migrations.
+- **Incident metrics** (last 6 months): 23 customer-facing incidents, MTTR 47 min. Breakdown of MTTR: 4 min detect → 35 min "where are the logs / which service / which version" → 8 min actual fix.
+- **Developer survey** (quarterly, 44 of 48 respondents, last 3 quarters): top pain = "CI is unreliable and slow" ranked #1 in all 3 quarters. "Observability" ranked #2 in Q1-Q2, #3 in Q3. "Deploy process" ranked #4-#5. Free-text: 18 mentions of "flaky tests," 12 mentions of "can't find the logs," 9 mentions of "dev environment takes forever."
+- **Time-allocation survey** (once, Q3, 38/48 respondents, self-report): average 24% of week on "infra toil" (CI waiting, debugging deploys, log-hunting, dev-env issues).
+- **Anecdotal:** our Staff engineer Anna has been complaining about CI for a year and just had a 1:1 last week where she said she'd leave if this didn't get fixed.
+
+The ask I plan to make: 7-person dedicated team, net-zero headcount (4 carved from product squads, 3 from the current infra rotation that never ships durable work).
+
+Your job: go through every piece of evidence above. For each, tell me (a) does this hold up under CFO scrutiny — i.e., if a CFO-type tore this apart, would it survive? (b) is this the load-bearing piece of evidence or a secondary support, (c) if it's weak, what stronger version could I build from the same underlying data.
+
+Then end with a 3-sentence reframe of what the strongest version of the case actually is. Don't let me lead with a signal that won't survive 2 skeptical questions.$pf$,
+ $pf$Going through each signal honestly. Board/CFO scrutiny level: they've seen every "we need a team for X" pitch and the weak ones get eaten alive. Let's not be one of those.
+
+## Signal-by-signal assessment
+
+**CI pass-rate 86% on main.**
+Holds up. Industry benchmark is 97%+ for healthy orgs (DORA "Elite" is 100% on the lead-time metric which correlates). 86% is an objective, externally-comparable number a CFO can't argue against. Load-bearing — lead with this.
+Stronger version: combine with PR wait-time (14 min) to quantify "time engineers spend waiting on CI to pass" as dollars: ~48 engineers × 5-8 PRs/week × 14 min wait × 40% re-run inflation = ~75 engineer-hours/week in CI wait. At $220K loaded / 2000 hrs = $110/hr, that's ~$8,250/week or ~$430K/year in CI-wait cost alone. Now it's a number the CFO can weigh against a team's loaded cost.
+
+**14-min average deploy engineer-time × 20 deploys/week.**
+Mostly holds up, but has a hole: 14 min × 20 deploys = 280 min/week of engineer attention on deploys. The hole is it's distributed across many engineers — no single person loses 5 hours/week, so the cost feels diffuse. CFO will say "so what, it's 4 hours of distributed attention." Fine, it's not your top signal. Support signal.
+Stronger version: quantify what BREAKS because of the 14-min deploy friction. Engineers batch commits to avoid deploys, which means bigger blast-radius when a deploy fails, which means MTTR goes up and risk goes up. Connect it to MTTR rather than presenting it standalone. Or quantify the specific failure: in the last quarter, how many rollbacks required the manual SQL revert? That number (if it's non-zero) is a concrete operational risk, not a diffuse cost.
+
+**MTTR 47 min with 35 min in log-hunting.**
+LOAD-BEARING. This is your strongest signal because (a) it's a DORA metric the board is likely already tracking — easy for them to contextualize, (b) the breakdown tells a story: the engineers CAN fix things quickly (8 min!), they can't FIND things quickly, and finding is infra work, (c) healthtech board will care about this specifically because customer-facing incidents have regulatory and brand cost beyond engineering time.
+Stronger version: if you have any customer-facing incidents that went past 60 minutes because of observability gaps specifically, name them. Also pair MTTR with how much P0/P1 time lands outside business hours — observability pain compounds when the on-call engineer can't locate logs at 2am.
+
+**3 quarterly dev surveys ranking CI as #1 pain.**
+Holds up because it's 3 consecutive quarters — single-quarter data can be noise, 3 quarters of the same #1 isn't. Also the response rate is 44/48 = 92%, high enough to not get challenged on selection bias. Strong support signal, not load-bearing by itself because "engineers don't like CI" is universal.
+Stronger version: pair with the time-allocation survey to translate "engineers don't like it" to "engineers lose 24% of their week to it." Now it's not a complaint, it's a capacity number.
+
+**Time-allocation survey: 24% of week in infra toil.**
+Holds up but needs qualification. Self-reported time allocation is notorious for overestimation (people remember the painful 30-min debug sessions, not the 4 hours of flow state). CFO will push on this. 24% of 48 engineers × $220K = $2.53M/year — if you lead with that number, the CFO will ask "is this really 12 FTE of waste?" and you need to have an answer.
+Stronger version: BE CONSERVATIVE. Cut the self-report by 30% — 24% becomes 17%. 17% × 48 × $220K = $1.8M/year. That's a number you can defend — "we intentionally discounted self-report bias, and even at 17% the cost is $1.8M." Under-claiming builds credibility. Over-claiming gets you torn apart.
+
+**Anecdotal: Anna might leave.**
+Does NOT hold up in a board memo. "Anna might leave" is gossip-adjacent to a board. Do NOT put this in the memo. But it's a real signal — use it in 1:1 prep with board members, not in the written case. Also: if Anna leaves over this and you don't have the team, that's a $400K+ replacement cost you can later point at. Track it, don't cite it.
+
+## 3-sentence reframe
+
+The strongest version of the case is: "Our engineering org is currently paying a $1.8M/year tax on CI unreliability, deploy friction, and observability gaps that is measurably compounding as we grow — CI pass-rate 86% vs industry-healthy 98%, MTTR 47 min of which 35 min is log-hunting not fixing, 3 consecutive quarterly surveys naming CI as the #1 productivity drag at 92% response rate." The proposal is a 7-person platform team at net-zero headcount (carved from existing product squads + infra rotation) targeted at reclaiming 15-20% of that tax in year 1, with quarterly measurable milestones the board can monitor. This is explicitly NOT a best-practices pitch — it's a capacity-recovery pitch, priced and measured like a business case, and if we don't show 15%+ recovery by end of quarter 3 the team is restructured or absorbed back.
+
+That last sentence is important. Boards don't like funding new structures without an off-ramp. Saying "here's when we'll kill it if it doesn't work" earns significant goodwill and makes the ask feel conservative instead of expansive.$pf$,
+ $pf$Signal-by-signal assessment: CI pass-rate 86% vs industry 98%+ HOLDS UP (externally-comparable, objective) — strengthened to ~$430K/yr by pairing with 14-min PR wait + 40% re-run inflation across 48 engineers × 5-8 PRs/week. Deploy friction has a hole (distributed across many engineers, feels diffuse to CFO) — strengthen by connecting to MTTR compounding and naming specific rollback-with-SQL-revert instances. MTTR 47 min with 35 min in log-hunting is LOAD-BEARING (DORA metric boards track, breakdown tells a story — engineers CAN fix things, CAN'T find things, healthtech board cares about customer-facing incidents with regulatory cost). 3 consecutive quarterly surveys at 92% response rate HOLDS UP as support (single-quarter could be noise; 3 isn't) — stronger when paired with time-allocation to convert complaint to capacity number. Time-allocation 24% needs conservative discounting to 17% (self-report bias — 24% × 48 × $220K = $2.53M will get torn apart; 17% = $1.8M can be defended with "we discounted self-report"). Anecdotal "Anna might leave" does NOT hold up in board memo (gossip-adjacent) but useful in 1:1 prep + track as retention-cost data point. 3-sentence reframe: lead with $1.8M/yr engineering-capacity tax (not platform-team-is-best-practice), pair with CI 86% + MTTR breakdown + 3-quarter survey signal, explicitly include off-ramp language ("if <15% recovery by end of Q3, team is restructured or absorbed back") — boards respond strongly to conservative asks with off-ramps, this is the positioning.$pf$),
+
+-- Step 2 --
+('66666666-6666-6666-6666-666666390102',
+ '55555555-5555-5555-5555-555555550039',
+ 2,
+ $pf$Design 4 structural options (dedicated / rotation / virtual / hybrid) and pick one with rationale$pf$,
+ $pf$Good. Now structure. I'm anchored on "dedicated 7-person team" but I want to hold that honestly — design and evaluate 4 options and pick the one that actually wins on the evidence.
+
+Four to evaluate:
+1. **Dedicated platform team** — 7 engineers, full-time, reports to me or a platform EM hired/promoted internally.
+2. **Rotation-based** (what we do now) — 3 engineers rotate in from product teams for 6-week rotations, keep their product squad affiliation.
+3. **Virtual team** — every engineer allocates 10% of time to platform work, coordinated by a part-time tech-lead.
+4. **Hybrid** — 4 dedicated engineers + 3 rotating from product teams on 6-week rotations.
+
+For each: structure, strengths, fatal weaknesses at our org size/stage, and whether I should take it to the board.
+
+Then pick one and defend the pick against the other three.$pf$,
+ $pf$Four options, evaluated at the 48-engineer Series B stage specifically. The answer changes at different org sizes — what works for 200-engineer orgs is wrong for us, and what we're doing now (rotation) worked at 25 engineers but isn't working at 48.
+
+## Option 1 — Dedicated platform team (7 engineers, full-time)
+
+**Structure.** 7 engineers report to a platform EM (Mike, current backend EM, promoted). Four roles: 2 CI/deploy-infra, 2 observability, 2 dev-env/internal-tools, 1 platform-EM-hands-on-dev. Dedicated backlog, dedicated quarterly planning, measured on platform-specific OKRs decoupled from product-feature shipping.
+
+**Strengths.**
+- Ownership is durable. The same people own CI for >2 years, so deep investments (e.g., rebuilding the test runner, building an internal dev portal) become possible — nothing rotates out mid-project.
+- Quarterly OKRs tied to measurable infra metrics (CI pass-rate, MTTR, deploy time) let the board verify progress without product-team interference.
+- Attracts the subset of engineers who genuinely want to build platform — and there ARE such engineers on our team (two specifically named it as their career track in last H1 reviews).
+
+**Fatal weakness (what I need to address in the memo).** "Ivory tower" risk — a dedicated team with its own roadmap can drift from product-team needs and ship pristine infra nobody asks for. Mitigation: platform team does quarterly roadmap planning WITH product EMs, not in isolation. Also: rotate one product engineer into the team per quarter (not rotation-based ownership, but brief embedding) to keep the "what do you actually need?" channel open.
+
+**Take to board?** Yes. This is the option.
+
+## Option 2 — Rotation-based (current state)
+
+**Structure.** 3 engineers rotate in from product squads for 6-week rotations. We've been doing this 18 months.
+
+**Strengths.** Zero friction to set up (already exists). Product team affiliation stays — engineers stay culturally grounded in product needs.
+
+**Fatal weakness.** Rotations fundamentally can't build durable infra because ownership expires every 6 weeks. Result after 18 months: 5 half-finished internal tools, no CI rebuild, Sentry AND Datadog both running because the person who started consolidation rotated out. This IS the status quo; the evidence from pass 1 (86% CI pass-rate, 47 min MTTR, 3 quarters of the same #1 pain) IS the evidence that rotations aren't working. It's the "we tried the null hypothesis and it didn't work" argument.
+
+**Take to board?** As the comparison baseline — "here's what we've been doing and here's why it's not working." Not as the proposal.
+
+## Option 3 — Virtual team (10% of every engineer)
+
+**Structure.** Every engineer allocates ~4 hours/week to platform work, coordinated by a part-time tech-lead (e.g., Anna 50% platform + 50% product).
+
+**Strengths.** Feels democratic, scales with headcount, keeps ownership distributed. Works well at much larger orgs (100+) where the platform team already exists but needs broader context.
+
+**Fatal weakness at our size.** Nobody's job is more important than their real job. Your 4 hours of platform time gets eaten by the production outage, the customer escalation, the PM's urgent feature ask. The 10% allocation becomes 2% in any given month, then zero in a bad month. More subtly: there's no one waking up on Monday thinking "my job this week is to ship CI improvements" — it's always someone's fourth-priority task, which means it never ships.
+
+I'd also flag that the "coordinator" role in this model is a structural disaster at our size: the coordinator has responsibility without authority, spends their time chasing down 10%-allocated engineers, and burns out inside 2 quarters. I've seen this fail at 2 prior companies.
+
+**Take to board?** No. It's the option that SOUNDS reasonable in a CTO planning doc and collapses in practice within a quarter.
+
+## Option 4 — Hybrid (4 dedicated + 3 rotating)
+
+**Structure.** 4 platform engineers dedicated, 3 rotating in from product for 6-week stints.
+
+**Strengths.** In principle, dedicated 4 build durable infra; rotating 3 stay product-grounded. Looks like best-of-both.
+
+**Fatal weakness.** The rotating 3 still can't own durable work (same as Option 2), which means in practice the 4 dedicated do 90% of durable work and the rotating 3 are spinning on whatever small project fits in 6 weeks. It's a "4-person team that pays for 7 headcount" structure. The 3 rotating slots become an onboarding tax on the 4 dedicated engineers — each rotation requires ~1 week of ramp-up per rotating engineer, so the 4 dedicated spend ~3 weeks/rotation of their time onboarding people who will leave in 6 weeks. This doesn't hybrid; it subtracts.
+
+**Take to board?** No. The hybrid sounds pragmatic but is mathematically worse than dedicated — you get less durable output AND more coordination overhead. If you want product grounding, embed product engineers in specific platform projects as consultants, not as rotating team members.
+
+## Pick: Option 1, defended.
+
+Option 1 wins because durable infra ownership is the specific thing our current state (Option 2) has proven we can't do, and the evidence from pass 1 says we're paying $1.8M/year for the inability to do it. Option 3 fails because 10% allocation rules only work when the rest of the platform team is already built and the 10% is for broader context — we don't have the anchor team. Option 4 sounds pragmatic but is mathematically worse than Option 1 because rotation overhead subtracts from dedicated capacity.
+
+On team size (7, not 4, not 10): 7 is the minimum staffing to cover our 3 workstreams (CI/deploy, observability, dev-env/internal-tools) with at least 2 engineers per stream — single-point-of-failure on any of these is a board-level risk (e.g., observability person goes on PTO during a customer-facing incident). 10 would be over-building for our stage and would justify CFO concerns about bureaucracy; 4 would fail to cover the three workstreams durably. 7 is the defensible floor.
+
+On net-zero headcount: 4 from existing product squads (reassigned — specific names: 2 backend engineers from Growth squad who both named platform as career interest, 1 SRE-leaning engineer from Payments, 1 from Platform-adjacent role on Enterprise), 3 from current infra rotation (just stops rotating, becomes dedicated). Total: 7 engineers, no hiring, no layoffs, no net cost to the engineering budget beyond the structural move itself.
+
+The board will like net-zero. It converts an "ask for a new team" into "ask for an internal structural change," which is rhetorically much easier to approve.$pf$,
+ $pf$Four options evaluated honestly. Option 1 (dedicated 7-person team) selected with rationale. Option 2 (current rotation) rejected — it's the null hypothesis; 18 months of status quo + 3 consecutive quarterly surveys ranking CI #1 pain IS the evidence rotations can't build durable infra because ownership expires every 6 weeks. Option 3 (virtual 10%-of-every-engineer) rejected — at 48 engineers the 10% becomes 2% becomes zero under any production pressure, coordinator role is structural disaster with responsibility-without-authority; this model only works at 100+ engineer orgs with existing platform anchor team. Option 4 (hybrid 4+3) rejected — rotating 3 still can't own durable work, the 4 dedicated spend ~3 weeks/rotation onboarding people who leave in 6 weeks, mathematically worse than dedicated at 7. Team-size defense: 7 is the minimum staffing to cover 3 workstreams (CI/deploy, observability, dev-env/internal-tools) with 2 engineers per stream eliminating single-point-of-failure; 4 fails to cover three workstreams durably, 10 over-builds and justifies CFO bureaucracy concerns. Net-zero headcount source: 4 reassigned from product squads (2 Growth backend who named platform in H1 reviews, 1 SRE-leaning from Payments, 1 from Platform-adjacent role on Enterprise) + 3 from current infra rotation (rotation ends, becomes dedicated). Rhetorical strength for board: "structural change" is easier to approve than "new team ask."$pf$),
+
+-- Step 3 --
+('66666666-6666-6666-6666-666666390103',
+ '55555555-5555-5555-5555-555555550039',
+ 3,
+ $pf$First-year roadmap with measurable per-quarter outcomes — must give the board off-ramp criteria$pf$,
+ $pf$Option 1, dedicated team of 7, launching mid-May. Build the first-year roadmap: Q3 2026 (May-July), Q4 2026 (Aug-Oct), Q1 2027 (Nov-Jan), Q2 2027 (Feb-Apr).
+
+Per quarter:
+- 2-4 specific ship-able outcomes.
+- 1-2 measurable metrics with current baseline and target.
+- Explicit success criteria the board can verify without asking me.
+- 1 off-ramp criterion — if this specific metric isn't hit, we restructure.
+
+Keep it honest. Q3 is 10 weeks including ramp-up; don't pack it. Q4 is when real gains should show.$pf$,
+ $pf$## Q3 2026 — May 15 to July 31 (10 weeks, includes ramp)
+
+**Context.** First 10 weeks. 2 weeks of ramp: team forms, inherits existing backlog from infra rotation, establishes working agreements, sets up metrics dashboards. 8 weeks of shipping.
+
+**Outcomes (3):**
+1. **Flaky-test quarantine infrastructure shipped.** Top 20 flakiest tests identified (we have this data), build a "quarantine" tag that auto-excludes from required checks while showing up in a weekly triage report for the owning squad to fix. Goal: CI is no longer blocked by known-flaky tests.
+2. **Observability consolidation pass 1 — Sentry deprecation.** We run both Sentry AND Datadog. Half the error-tracking in each. Consolidate on Datadog, migrate Sentry-only alerts to Datadog, turn off Sentry by end of quarter. $40K/year saved in licensing, one place to look for errors instead of two.
+3. **MTTR tooling — unified log aggregation.** All service logs routed to a single searchable index with service/version/request-id tagging. Engineers can search "customer X request in last hour" without knowing which service touched it.
+
+**Measurable outcomes (baseline → Q3 target):**
+- CI pass-rate on main: 86% → **92%** (measured: last 30 days of Q3)
+- MTTR on customer-facing incidents: 47 min → **38 min** (measured: incidents in Q3 with MTTR log-hunting phase <25 min)
+
+**Success criteria for board:**
+- CI pass-rate dashboard shipped and accessible to board.
+- Quarantine infra used by 5+ squads (measurable: distinct squads that tagged a flaky test).
+- Sentry off and Datadog as sole error-tracking (binary, verifiable).
+
+**Off-ramp trigger:** If Q3 CI pass-rate < 90% and Sentry-off hasn't shipped, team restructures. This is the clearest "are we executing" signal — these are concrete deliverables with unambiguous done-states, and if the team can't ship them in a quarter with dedicated capacity, the structural bet hasn't worked.
+
+## Q4 2026 — August 1 to October 31
+
+**Context.** Team is running, ramp is done. Real work starts.
+
+**Outcomes (4):**
+1. **Deploy pipeline rewrite — from 14 min engineer-time to <4 min.** Bundle: automatic retries on transient failures, parallelized test runs, cached dependency setup, one-click rollback for application deploys (DB migrations still require human review — don't over-automate).
+2. **Dev-environment provisioning in 15 min.** Currently 2 hours on first day, longer if anything's wrong. Ship a containerized local dev environment plus a cloud-dev-env option (Coder or similar OSS, don't build our own).
+3. **Runbook-gen from incident postmortems.** Every incident postmortem auto-generates a draft runbook entry; on-call picks it up when the same alert fires again. Compound learning from incidents.
+4. **On-call tooling basics.** Integration between alerts, logs, and recent deploys in one pane. Critical for that 35-min log-hunting slice of MTTR.
+
+**Measurable outcomes (baseline → Q4 target):**
+- Deploy engineer-time: 14 min → **4 min** (measured: sample of 50 Q4 deploys)
+- Dev-env provisioning: 2 hr → **15 min** (measured: new-hire onboarding data — 6-8 new hires expected)
+- MTTR on customer-facing incidents: 38 min → **<25 min** (log-hunting phase <15 min)
+- CI pass-rate: 92% → **96%**
+
+**Success criteria for board:**
+- Deploy time measured and reported (dashboard).
+- 6-8 new-hire onboardings using the new dev-env, self-reported time-to-first-commit.
+- MTTR trend visible on dashboard.
+
+**Off-ramp trigger:** If Q4 MTTR is still >35 min AND deploy time is >8 min, the platform team's infra bets aren't moving the needle on the signals we said matter. Restructure.
+
+## Q1 2027 — November 1 to January 31
+
+**Context.** Foundational layer built. Now lean into the "reclaim engineering capacity" claim — specifically, can we show the 15-20% time-reclaim we promised the board?
+
+**Outcomes (3):**
+1. **Re-run the time-allocation survey.** First data point on whether infra toil dropped. Baseline was 24% self-reported; conservative-discounted to 17%. Target: 14% self-report (which discounts to ~10%).
+2. **Internal developer portal (Backstage-adjacent, not homegrown).** Service catalog + ownership + dashboards + docs in one place. This is where "I don't know which service" conversations go to die.
+3. **Release-notes generation from PR metadata.** Small project, high leverage — product teams spend ~2 hrs/week on release notes collectively; this cuts it to near-zero and improves accuracy.
+
+**Measurable outcomes (Q4 → Q1 target):**
+- Self-reported infra toil: 24% baseline → **14%** (Q1 survey). Conservative-discounted: 17% → 10% = **~7 percentage points recovered**, which at $220K × 48 = **$739K/year recovered** on the conservative math.
+- CI pass-rate: 96% → **98%**.
+- MTTR: <25 min → **<20 min**.
+
+**Success criteria for board:**
+- Survey results (same instrument as baseline — methodological consistency).
+- Dev portal adoption measured: % of services with >3 visits/week in the portal.
+
+**Off-ramp trigger:** Survey shows infra toil still >20% self-reported (vs 14% target) = the structural investment hasn't translated to reclaimed capacity. Revisit structure, because "we shipped things" without "engineers report less toil" means we optimized the wrong things.
+
+## Q2 2027 — February 1 to April 30
+
+**Context.** Year-one close. Prove durable value and plan year two.
+
+**Outcomes (3):**
+1. **Capacity-planning dashboards.** Platform provides product EMs with data to answer "how much engineering time does this feature actually take including the infra tax it imposes." Makes the invisible cost visible to product planning.
+2. **On-call tooling — predictive alerting.** Integration with capacity signals to predict incidents, not just react. Stretch goal for year one.
+3. **Year-two roadmap proposal to the board.** Based on 4 quarters of data, propose either (a) continue current team, (b) expand (likely if product velocity now capped by infra debt in adjacent areas), or (c) shrink (if we've truly resolved the core tax and can redeploy engineers to product).
+
+**Measurable outcomes (Q1 → Q2 target):**
+- MTTR: <20 min → **<15 min** (this is where it levels off — below 15 min is diminishing returns at our scale).
+- CI pass-rate: 98% → **>99%** sustained for 60+ days.
+- Developer survey: CI drops out of top 3 pain points for the first time in 18 months (qualitative — but directly measurable on next survey).
+
+**Success criteria for board:**
+- 12-month recap memo (this will be pass 4's board memo, one year later).
+- Year-2 proposal with one of the 3 options above.
+
+**Off-ramp trigger:** If by end of Q2 the developer survey still ranks CI in top 3 pain points, we haven't actually solved the problem — regardless of what the dashboards say. The purpose of this team is to stop the thing that 3 quarters of surveys said was the #1 pain, and the next survey is where we verify that.
+
+## The off-ramp story for the board
+
+Four explicit triggers, one per quarter. Cumulative: if we hit all four off-ramps without redirection, by end of Q2 2027 we restructure the team. That's the off-ramp language for the board — not "the team runs forever," but "here are four check-in points where we expect specific measurable outcomes, and if any of them fails we revisit structure."
+
+A good board will take this much more seriously than "trust us, this will work." Bad boards want certainty; good boards want falsifiable claims with pre-committed reaction criteria.$pf$,
+ $pf$First-year roadmap with per-quarter measurable outcomes + explicit off-ramp triggers. Q3 2026 (10 wks incl ramp): flaky-test quarantine + Sentry→Datadog consolidation + unified log aggregation; CI 86→92%, MTTR 47→38 min; off-ramp = CI <90% AND Sentry-off shipped fail. Q4 2026: deploy pipeline rewrite (14→4 min), dev-env 2hr→15min (Coder-style, not homegrown), runbook-gen from postmortems, on-call tooling; MTTR 38→<25 min, CI 92→96%; off-ramp = MTTR >35 min AND deploy >8 min. Q1 2027: re-run time-allocation survey (baseline 24% self-report, target 14% = ~$739K/yr recovered on conservative 17→10% math), Backstage-adjacent internal dev portal, release-notes generation; CI 96→98%, MTTR →<20 min; off-ramp = survey still >20% infra toil means we optimized wrong things. Q2 2027: capacity-planning dashboards, predictive alerting stretch, year-2 roadmap proposal (continue/expand/shrink); CI sustained >99% for 60+ days, MTTR →<15 min, CI drops out of top 3 survey pain points; off-ramp = if CI still top-3 pain after 12 months, team didn't solve the named problem. Four explicit off-ramps — boards respond to falsifiable claims with pre-committed reaction criteria far better than "trust us it works."$pf$),
+
+-- Step 4 --
+('66666666-6666-6666-6666-666666390104',
+ '55555555-5555-5555-5555-555555550039',
+ 4,
+ $pf$Board memo (2 pages) + 8 pre-prepped Q&A for the hardest objections$pf$,
+ $pf$Write the 2-page board memo I'll send 72 hours before the April 29 meeting, plus draft answers to the 8 hardest board questions.
+
+Memo format:
+- Page 1: the ask, the signals, the structure, the expected outcomes.
+- Page 2: the first-year roadmap summary + off-ramps + net-zero headcount breakdown.
+
+Then pre-prep the 8 hardest Q&A. Include at minimum: (1) why not outsource CI/observability to a vendor, (2) won't this just become another bureaucracy, (3) how do we know this isn't empire-building, (4) what if product velocity drops during the structural change, (5) can we start with 4 engineers and expand, (6) how does this fit with the "AI-coding-tools will increase productivity anyway" narrative, (7) what's the 18-month unsuccessful scenario look like, (8) why is this a CTO decision vs a CEO decision.
+
+Anticipate our most skeptical board member — she's an operating partner at a growth-stage fund, has seen a lot of "we need a platform team" pitches land badly, won't let anything vague slide.$pf$,
+ $pf$# Board memo — April 29, 2026 meeting
+
+**From:** Derek Lawson, CTO
+**Re:** Proposal — dedicated platform engineering team (net-zero headcount)
+**Length:** 2 pages
+**Decision requested:** Approval to restructure 7 engineers from existing product squads and infra rotation into a dedicated platform team starting May 15, 2026.
+
+---
+
+## Page 1
+
+### The ask
+
+Restructure 7 engineers from their current assignments into a dedicated platform engineering team. Net-zero incremental headcount: 4 engineers reassigned from product squads, 3 engineers moved from the existing infra rotation. Reports to a promoted platform EM (Mike Chen, current Backend EM). Team starts May 15.
+
+### Why now
+
+Three consecutive quarterly developer surveys have ranked the same issue as the #1 productivity drag at a 92% response rate: CI is unreliable and slow. Objectively, our CI pass-rate on main is 86% (industry-healthy is 98%+), MTTR on customer-facing incidents is 47 minutes (35 of which are spent locating logs before fixing, not fixing), deploy requires 14 minutes of engineer attention per deploy × 20 deploys/week, and our time-allocation survey indicates engineers spend approximately 17% of their week on infra toil (conservatively discounted from 24% self-report).
+
+At 48 engineers × $220K loaded cost × 17% = **$1.8M/year in engineering capacity currently paid as a tax on infrastructure friction**. This cost has compounded as we've grown from 18 to 48 engineers over 2 years — friction that was tolerable at 25 engineers is now measurably blocking the product roadmap at 48.
+
+The proposed structural change is expected to reclaim 15-20% of that tax ($270K-$360K annualized) in year one, with quarterly measurable milestones and four explicit off-ramp triggers.
+
+### What we've tried and why it hasn't worked
+
+For 18 months, we've run a 3-person infra rotation — engineers rotate from product squads for 6-week stints. This has not produced durable infra improvements because ownership expires every 6 weeks: rotating engineers can't begin CI rebuilds, observability consolidation, or deploy pipeline work that takes longer than a rotation. The data bears this out — the three pain points ranked #1 in our developer survey are the same three pain points ranked #1 eighteen months ago. The null hypothesis (rotations can deliver durable platform work at our scale) has been tested and fails.
+
+### Structural alternatives considered and rejected
+
+- **Outsourced CI/observability to a vendor:** addresses symptoms, not causes. Tooling is not the constraint; dedicated ownership is. We already have best-in-class tools (Datadog, GitHub Actions) that are underutilized because no one owns extracting their value.
+- **Virtual team (10% of every engineer):** structurally collapses under production pressure. Works at 200+ engineer orgs with existing platform anchor team; fails at 48.
+- **Hybrid (4 dedicated + 3 rotating):** mathematically worse than dedicated 7. The rotating 3 impose a 3-week onboarding tax per rotation on the dedicated 4, netting less durable output than 7 fully dedicated.
+- **Start with 4 engineers, expand later:** 4 can't cover the three workstreams (CI/deploy, observability, dev-env) without single-point-of-failure risk. 7 is the minimum defensible staffing.
+
+---
+
+## Page 2
+
+### First-year roadmap (full detail in appendix)
+
+| Quarter | Key deliverables | Measurable metric | Baseline → Target | Off-ramp trigger |
+|---------|------------------|-------------------|-------------------|------------------|
+| Q3 2026 | Flaky-test quarantine; Sentry→Datadog consolidation; unified log aggregation | CI pass-rate, MTTR | 86% → 92%; 47 → 38 min | CI <90% AND Sentry-off not shipped |
+| Q4 2026 | Deploy pipeline rewrite (14→4 min); dev-env provisioning (2hr→15min); runbook-gen | Deploy time, MTTR | 14 → 4 min; 38 → <25 min | MTTR >35 min AND deploy >8 min |
+| Q1 2027 | Internal dev portal; re-run time-allocation survey | Infra toil % | 17% (discounted) → 10% | Survey shows >20% infra toil |
+| Q2 2027 | Capacity-planning dashboards; year-2 proposal | Developer survey | CI exits top-3 pain points | CI still top-3 after 12 months |
+
+If any of the four off-ramps triggers without a clear corrective path, the team restructures — 4 engineers return to product squads, remaining platform function reverts to hybrid model. This is pre-committed, not aspirational.
+
+### Net-zero headcount breakdown
+
+- **4 reassigned from product squads:** [4 named engineers, reassignment approved by respective EMs]. Two of these have explicitly named platform engineering as their career track in H1 reviews.
+- **3 moved from current infra rotation:** rotation ends; these engineers become dedicated. Product squads no longer owe rotation shifts.
+
+No hires. No layoffs. No net cost to the engineering budget beyond the time spent restructuring reporting lines.
+
+### Product-velocity risk
+
+Product squads lose 4 engineers. Expected short-term velocity drop in Q3: ~8% across affected squads (Growth, Payments, Enterprise). Projected recovery: by end of Q4 as CI/deploy gains reduce product engineers' daily infra tax by ~10%, net product velocity by end of Q1 2027 projected to be higher than baseline. Product EMs sign-off on the Q3 slowdown is in the appendix.
+
+### What I'm asking the board to approve
+
+Approval to execute the structural change starting May 15, 2026. I will report quarterly against the roadmap and off-ramps at each regular board meeting. If any off-ramp triggers, I'll bring a restructuring proposal within 30 days.
+
+---
+
+# Pre-prepped Q&A
+
+**Q1. Why not outsource CI/observability to a vendor?**
+Tooling is not our constraint; dedicated ownership is. We already use Datadog, GitHub Actions, and standard stack tools — all best-in-class. The 86% CI pass-rate isn't a tool problem; it's that no one owns identifying the top 20 flaky tests and fixing them. A vendor would sell us more tools. We need people whose full-time job is extracting value from the tools we already have.
+
+**Q2. Won't this just become another bureaucracy?**
+Two specific things distinguish this from bureaucracy. First, the team has measurable OKRs per quarter that the board can verify independently of my report — CI pass-rate, MTTR, deploy time are objective numbers on dashboards. Second, the off-ramp language is real: if by end of Q2 2027 the developer survey still ranks CI as a top-3 pain point, the team restructures. Bureaucracies don't have off-ramps. This one does.
+
+**Q3. How do I know this isn't empire-building?**
+Net-zero headcount. I'm not hiring. The team is built by reassigning engineers already on the payroll, with their existing EMs' sign-off and aligned with their career interests (two named this track in H1 reviews). If I were empire-building, I'd be asking for 12 new hires.
+
+**Q4. What if product velocity drops during the structural change?**
+Q3 velocity drops an estimated 8% in affected squads — acknowledged. By end of Q4, CI gains start reducing product engineer infra tax, narrowing the gap. By end of Q1 2027 projected net velocity is higher than baseline. If Q3 velocity drops more than 15% in any squad, we revisit mid-quarter. Product EMs have signed off on the Q3 slowdown with eyes open.
+
+**Q5. Can we start with 4 engineers and expand if it works?**
+I considered this. 4 engineers can't cover our three workstreams (CI/deploy, observability, dev-env/internal-tools) with 2 engineers per workstream — a single PTO or illness would make one of those areas unstaffed for a week. At our stage, that's a board-level operational risk (particularly around observability during customer-facing incidents). 7 is the minimum defensible staffing for the three-workstream structure.
+
+**Q6. How does this fit with the "AI-coding-tools will increase productivity anyway" narrative?**
+AI-coding tools help engineers write code faster. They don't fix flaky tests, consolidate observability, or rebuild deploy pipelines. If anything, AI tools make platform work MORE important — faster code generation is gated by the same CI that's already failing 14% of the time. We'll see the biggest AI-tools ROI when engineers aren't spending 40% of their AI-accelerated PR cycle waiting for flaky CI to retry.
+
+**Q7. What does the 18-month unsuccessful scenario look like — what's my pattern-match signal that this has failed?**
+Unsuccessful looks like: CI pass-rate stuck in the low 90s (not reaching 98%), developer survey still ranking CI top-3, MTTR plateauing at 30+ min, infra toil survey still >20%. Dashboards in Q1 2027 will tell us by February whether we're on track. If two of those four signals are off-target at Q1 2027 review, the pattern-match is that dedicated structure didn't solve our specific problem — it's a team-composition, prioritization, or technical-architecture issue — and we restructure plus escalate to an external platform engineering advisor before committing to year two.
+
+**Q8. Why is this a CTO decision vs a CEO decision?**
+It would be a CEO decision if it required net new headcount (budget impact) or changed customer-facing commitments (strategic direction). This does neither. It's a structural reorganization of existing engineering resources with quarterly reporting — squarely within the CTO's operational decision authority. I'm bringing it to the board because (a) it's a meaningful structural change worth the board knowing about, (b) the off-ramp language commits me to specific measurable outcomes I want the board to hold me to, and (c) executive transparency is valuable at Series B specifically — I'd rather over-communicate structural changes than have the board learn about them in a retrospective.
+
+---
+
+**Anticipated follow-up from skeptical board member (OP at growth-stage fund):** she'll likely focus on Q7 and push on "what specifically triggers restructuring, and is it 1 missed off-ramp or all 4." My answer: any 2 of 4 missed off-ramps at their respective quarterly reviews triggers restructuring conversation; all 4 missed triggers restructuring regardless. One missed off-ramp could be quarter-specific noise; two is a pattern. This is the number she'll anchor on — have it ready.$pf$,
+ $pf$2-page board memo + 8 pre-prepped Q&A drafted. Memo page 1 leads with net-zero-headcount ask, names the $1.8M/yr tax (conservative-discounted math), shows the null-hypothesis failure (18 months of rotation hasn't moved the 3 pain points), rejects 4 alternatives (outsource / virtual / hybrid / start-with-4) with specific reasoning. Page 2: roadmap table with 4 quarters + per-quarter measurable target + per-quarter off-ramp trigger; net-zero breakdown names the 4 reassigned engineers + 3-from-rotation; product-velocity risk acknowledged explicitly (Q3 ~8% drop, recovery Q4, net positive Q1 2027). Q&A covers 8 hardest objections: Q1 outsourcing rejected — tooling isn't the constraint, dedicated ownership is; Q2 bureaucracy distinguished by measurable OKRs + real off-ramp; Q3 empire-building rebutted with net-zero headcount; Q4 product velocity modeled honestly with pre-committed mid-quarter revisit trigger at >15% squad drop; Q5 start-small rejected with single-point-of-failure on 3 workstreams at 4 engineers; Q6 AI-tools narrative turned into argument FOR platform (AI-accelerated PRs still gated by flaky CI); Q7 failure signal specified as 2 of 4 off-ramps missed → restructuring conversation, all 4 missed → restructuring regardless; Q8 CTO-vs-CEO boundary drawn on net-zero + operational-authority lines. Skeptical board member anticipated to push on Q7's specificity — pre-committed to "2 of 4 triggers conversation, all 4 triggers regardless." Board approved April 29; team starts May 15 with 7 engineers (4 reassigned product + 3 from rotation); first milestone Q3 CI pass-rate 92%.$pf$);
+
+-- =========================================================================
 -- END OF FILE — append next project(s) below this line.
 -- Iterations working the Content queue: add 2–3 projects per iteration,
 -- appending below this comment. Do NOT rewrite existing projects.

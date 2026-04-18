@@ -19103,6 +19103,1282 @@ One more thing: after every loop (hire or no-hire), schedule a 20-minute RETRO w
  $pf$Full debrief protocol. Pre-debrief: each interviewer submits written scorecard (1-5 per axis + evidence + one-word vote + strongest-reason-to-go-opposite) BEFORE discussion. Debrief structure: silent read (5) → evidence-only round (20) → votes + opposite-reason round (15, anchor-killer) → open-discussion-no-new-evidence round (15) → decision (5). Rubric converts 4 votes to HIRE / NO-HIRE / more-data with explicit LEAN-NO default = NO-HIRE rule (written-upgrade override required to flip, not verbal pressure) — the fix for Derek's past hire-over-soft-no failures. CTO role: facilitator + veto-only-against-hire, not tie-breaker and not force-hire. Written record template + 90-day revisit + 2-week post-loop retro for rubric calibration.$pf$);
 
 -- =========================================================================
+-- Project 55-0054 | Win-back email sequence for 1,200 churned SaaS accounts | Sarah Mitchell | Marketing | 4 steps
+-- =========================================================================
+
+DELETE FROM prompt_steps WHERE prompt_id = '55555555-5555-5555-5555-555555550054';
+DELETE FROM prompts      WHERE id        = '55555555-5555-5555-5555-555555550054';
+
+INSERT INTO prompts (
+  id, title, description, content, result_content,
+  category_id, difficulty, model_used, model_recommendation,
+  tools_used, tags, status, author_id, vote_count, bookmark_count
+) VALUES (
+  '55555555-5555-5555-5555-555555550054',
+  $pf$Win-back sequence for 1,200 churned project-mgmt SaaS accounts — 4-pass Claude workflow from churn-reason segmentation to differentiated email copy to send-cadence design to recovery measurement$pf$,
+  $pf$Built a 4-email win-back sequence for a $79–299/mo project management SaaS with 1,200 churned accounts in the last 90-day cohort. 4-pass Claude 4.7 Opus workflow — segmented churn reasons from cancellation-survey free text, wrote differentiated copy for the two largest addressable segments, designed send cadence + deliverability guardrails for an aged list, and built the measurement plan that doesn't double-count organic returns.$pf$,
+  $pf$Client is a 4-year-old project-mgmt SaaS competing in the Asana / Monday / ClickUp space. $79 starter / $149 growth / $299 business per-seat. Last 90 days: 1,217 accounts churned (about 11% of the active base — high but not catastrophic for the segment). The CSM team has been doing one-off save calls but there's no programmatic win-back. CEO wants a sequence that recovers at least 5% of churned MRR (~$8K/mo) without burning the list.
+
+I ran 4 passes with Claude 4.7 Opus. Pass 1: take the cancellation-survey free-text responses (1,089 of 1,217 left a reason — 89% response rate because the cancel flow forced it) and bucket them into addressable vs not-addressable segments, with a fallback to email-content classification for the 128 silent cancellations. Pass 2: write the actual 4-email sequences differentiated by the top two addressable segments. Pass 3: cadence + deliverability — this is an aged list (some recipients last opened our email 6+ months ago) and we needed an IP-warming + suppression strategy that wouldn't tank our domain reputation. Pass 4: measurement plan that separates "they came back because of the campaign" from "they were going to come back anyway."
+
+Sharing because every B2B SaaS with $1M+ ARR has a churn cohort and almost nobody runs win-back well. Most win-backs are a single "we miss you 20% off" email blast — that's leaving 80% of recoverable revenue on the table.$pf$,
+  $pf$Sent the sequence over 4 weeks to the two addressable segments (840 of 1,217 accounts; held out the 377 not-addressable as a control). Reactivated 87 accounts (10.4% of the addressable cohort, 7.2% of the total churned cohort) — way ahead of the 5% MRR-recovery target. Recovered $11,640 in returning MRR (annualized $139K). The "feature-gap" segment (n=312) reactivated at 4.2% — the underperformer; "switched-to-competitor" (n=287) at 11.8%; "price/budget" (n=241) at 16.6% (the strongest, driven by the differentiated annual-billing offer in their sequence).
+
+Cost-per-reactivation: $14.30 (mostly CSM follow-up time on email replies; the email-tool spend was rounding error). Domain reputation never moved — Sender Score stayed 96+ across the campaign. Two key learnings: (1) the segmentation made a 3x reactivation difference vs. the prior single-blast control we ran in 2024 — most of that came from radically different value-prop emphasis per segment, NOT from discount level; (2) the 14-day silent gap between email 2 and email 3 outperformed the original 7-day cadence by 38% — probably because it gave space for the CSM follow-up calls to land before the next touch.$pf$,
+  '11111111-1111-1111-1111-111111111102',
+  'advanced',
+  'claude-opus-4-7',
+  'Claude 4.7 Opus',
+  ARRAY['Claude','Customer.io','Mailgun','HubSpot','Sender Score','GlockApps'],
+  ARRAY['win-back','churn-recovery','email-sequence','b2b-saas','segmentation','deliverability'],
+  'approved',
+  '22222222-2222-2222-2222-222222222202',
+  0, 0
+);
+
+INSERT INTO prompt_steps (id, prompt_id, step_number, title, content, result_content, description) VALUES
+
+-- Step 1 --
+('66666666-6666-6666-6666-666666540101',
+ '55555555-5555-5555-5555-555555550054',
+ 1,
+ $pf$Pass 1 — segment 1,217 churned accounts by cancellation-survey reason; identify which segments are economically addressable$pf$,
+ $pf$I have 1,217 accounts that churned in the last 90 days from our project-mgmt SaaS ($79 starter / $149 growth / $299 business per-seat). 1,089 of them left a free-text reason in the cancel-flow survey ("Why are you canceling?" required field, max 500 chars). The other 128 were silent cancellations.
+
+I'll paste a representative sample of 60 reasons below in the next message — but first, give me the framework I should use to bucket these. I want segments that are (a) ACTIONABLE for win-back — i.e. there's a plausible message that could change their mind — vs (b) DO-NOT-CONTACT segments where reaching out is going to make things worse. For each addressable segment, I want to know: typical message angle, expected reactivation rate range based on B2B SaaS norms, and what disqualifies an account from that segment even if their reason looks like it fits. Don't be vague — I want to be able to write a SQL query against the survey-reason field after this conversation and have unambiguous segment assignments.$pf$,
+ $pf$Here's the bucketing framework. I'll give you 7 buckets, ranked by expected win-back economics, with the address-or-don't logic baked in.
+
+**ADDRESSABLE (reach out — these are where the dollars are):**
+
+**1. Price / budget pressure (~20-25% of churn typically).** Pattern words: "too expensive", "can't justify the cost right now", "budget cut", "looking for cheaper", "free tier", "lost funding", "downsizing." Reactivation range: 12-18%. Message angle: differentiated annual-billing offer (16-20% off annual prepaid, NOT a monthly discount), or downgrade-to-starter offer for accounts that churned from growth/business tiers. **Disqualifier:** if they also said "AND your product wasn't worth even the cheaper price" — those go to bucket 3 (feature gap), not here. Pure price churn means they liked the product but couldn't pay; mixed price+value means a discount won't fix it.
+
+**2. Switched to a specific competitor (~15-20%).** Pattern words: "moved to [Asana / Monday / ClickUp / Linear / Notion / Trello / Jira]", "we use [X] now", "switched our team to". Reactivation range: 8-12%. Message angle: name the specific competitor in the email subject, lead with the 1-2 specific advantages your product has over THAT competitor (not a generic comparison page), offer a free 60-day "switch-back trial" with white-glove migration help. **Disqualifier:** if they switched 60+ days ago, they've already eaten the migration cost and are unlikely to re-migrate. Cap this segment at "churned within 60 days AND named a competitor."
+
+**3. Feature gap / product didn't meet their need (~25-30% — the largest bucket and the trickiest).** Pattern words: "missing X feature", "doesn't do Y", "we needed Z", "limited", "not enough integrations". Reactivation range: 3-6% (low — but the volume makes it worthwhile if you can match the gap to recently-shipped features). Message angle: ONLY contact accounts whose stated gap has been closed since they churned. Email cites the specific feature shipped, the date it shipped, and offers a 30-day free reactivation. **Disqualifier:** if their feature gap is something on the 12-month roadmap but not yet shipped, or worse, NOT on the roadmap — DO NOT contact. You'll just remind them why they left and burn the email permission.
+
+**4. Lifecycle / use-case ended (~10-15%).** Pattern words: "project finished", "no longer doing X", "team disbanded", "company shut down". Reactivation range: 2-4%. Message angle: 6-month-later "starting a new project?" check-in, soft tone, no discount. **Disqualifier:** "company shut down" goes to suppression, not this segment.
+
+**DO-NOT-CONTACT (suppress — reaching out makes things worse):**
+
+**5. Bug / outage / data-loss / support-failure churn (~5-8%).** Pattern words: "lost data", "outage", "support never responded", "broken", "buggy", "unreliable". DO NOT email. These accounts will reply with rage and tank your sender reputation. Route to the CSM team for a personal outreach OR full suppression — never an automated touch.
+
+**6. Acquired / merged / regulatory (~2-3%).** Pattern words: "acquired by [X]", "consolidated to parent company tools", "compliance requires [X]". Suppression-only — there's no marketing message that overrides a corporate IT decision.
+
+**7. Silent cancellations (no survey response, n=128).** Treat as a separate segment for the email-content-classifier pass — DO NOT bucket these into the verbal segments. Run a secondary classifier on their last 60 days of in-app behavior + email engagement to estimate which bucket they'd have fallen into, and only contact the ones that look like "Price/budget" or "Switched to competitor" — both of those buckets have positive expected value even if you're wrong about the segment.
+
+**Two segmentation rules to apply when you write the SQL:**
+- An account belongs to AT MOST one bucket. If the survey reason hits multiple patterns, priority order: 5 (suppress) > 6 (suppress) > 1 (price) > 2 (competitor) > 3 (feature) > 4 (lifecycle).
+- Any account whose CSM has had a save-call in the last 14 days is excluded from automated email entirely — they belong to the CSM motion.
+
+After bucketing, you'll likely find: ~60-70% addressable (buckets 1-4), ~10-15% suppression (buckets 5-6), ~10-12% silent (bucket 7 with selective contact). Drop the addressable buckets into Customer.io with separate sequences per bucket. Don't share sequences across buckets — that's the #1 reason most win-backs underperform: a single "we miss you" message tries to be relevant to all of these and ends up resonant with none.$pf$,
+ $pf$Bucketing framework: 7 segments — 4 addressable (Price/budget, Switched-competitor, Feature-gap, Lifecycle-ended), 2 do-not-contact (Bug/support failure, Acquired/regulatory), 1 silent-cancellation requiring behavioral classifier. Each addressable segment has a typical reactivation range (16% / 12% / 6% / 4%), a message angle, and a disqualifier rule (e.g., feature-gap segment ONLY emailed if the gap shipped post-churn). Priority hierarchy when survey text matches multiple patterns: suppress > price > competitor > feature > lifecycle. Excludes any account with a CSM save-call in last 14 days.$pf$),
+
+-- Step 2 --
+('66666666-6666-6666-6666-666666540102',
+ '55555555-5555-5555-5555-555555550054',
+ 2,
+ $pf$Pass 2 — write the 4-email sequences for the top two addressable segments$pf$,
+ $pf$Good. I ran the segmentation. Counts: Price/budget = 241, Switched-competitor = 287, Feature-gap = 312, Lifecycle = 174, Suppress = 89, Silent-but-contactable (after the behavioral classifier) = 114. Total addressable = 928. (CSM exclusion list removed 161 accounts.)
+
+The CEO wants me to focus on the top two by expected $$ recovered, which the math says is Price/budget (241 × 16% = ~38 reactivations × $1,800 ARR = $68K) and Switched-competitor (287 × 11% = ~32 reactivations × $1,800 ARR = $58K). Feature-gap is bigger raw count but the 4% rate kills the economics.
+
+Write me the actual 4-email sequence for BOTH of those segments. Each sequence: 4 emails over ~30 days. For each email, give me: subject line + 2 alternate subject lines for A/B test, preview text, full body copy, single primary CTA. Tone is professional B2B but warm — these are humans who used our product daily for an average of 14 months before churning. NOT desperate, NOT salesy. Reference what would be true for someone who churned 30-90 days ago. The CTA should be ONE thing per email (don't stack offers).
+
+Constraint: don't lead the first email with the discount/offer. Lead with reconnection or insight. Discounts come on email 3.$pf$,
+ $pf$Here are both 4-email sequences. Same skeleton (reconnect → context → offer → soft close) but radically different content per segment.
+
+---
+
+## SEGMENT A — PRICE / BUDGET (n=241)
+
+### Email 1 — Day 0 — "Reconnect, no ask"
+**Subject A:** What changed at [Company]?
+**Subject B:** Quick check-in — and a question
+**Subject C:** A favor to ask before you go
+**Preview:** Two minutes if you have them — no pitch attached.
+
+Hi [First name],
+
+Saw your [Company] account closed [X weeks/months] ago. No alarm bells on my end — happens, and the budget pressure write-in is something we've been hearing from a lot of teams in the same spot.
+
+Quick favor before I let you go for real: if you have two minutes, what would have made [Product] worth keeping at the price point you were on? Not asking for a generic "make it cheaper" — asking what the unlock would have been for your team specifically.
+
+I read every reply personally. It actually shapes what we ship next.
+
+Thanks,
+Sarah Mitchell
+Customer team @ [Product]
+
+**CTA:** Reply to this email (no button — it's a real person ask).
+
+---
+
+### Email 2 — Day 7 — "Context: what we hear from teams in your spot"
+**Subject A:** What 40+ teams told us about budget pressure
+**Subject B:** The thing nobody told you about [Product] pricing
+**Subject C:** A cheaper way to use [Product] (without losing what you had)
+**Preview:** Most teams don't know about this option until after they cancel.
+
+Hi [First name],
+
+After enough of these conversations, a pattern emerged that I want to put in front of you.
+
+Roughly 60% of teams who cancel for budget reasons were on monthly billing on the Growth or Business tier with usage that didn't match what they were paying for — usually 8-12 seats provisioned, only 4-5 actually active.
+
+The two things that almost always recover the math:
+
+**1.** Annual billing on your existing tier saves 17% off the rack rate (vs. the 5% the marketing site shows — there's a higher annual discount we don't publish that I can apply manually for accounts coming back from a recent cancel).
+
+**2.** Right-sizing seat count to active users only. We can pull your last 30 days of active-user data and tell you what the right number actually was. Most teams over-provisioned by 30-40%.
+
+If either of those changes the math, I can re-quote you in 5 minutes — no commitment to come back.
+
+Reply with "re-quote" and I'll pull your numbers.
+
+— Sarah
+
+**CTA:** Reply with "re-quote"
+
+---
+
+### Email 3 — Day 14 — "The offer"
+**Subject A:** Specific offer: 22% off annual + your old workspace restored
+**Subject B:** Restoring your workspace + 22% off — open through [Date]
+**Subject C:** Your data is still here. So is a better deal.
+**Preview:** Real numbers, no fine print games.
+
+Hi [First name],
+
+Here's a real offer. Open until [Date 14 days out]:
+
+- 22% off annual billing (vs. monthly equivalent), locked for the duration of the annual term
+- Your existing workspace, projects, and history restored exactly as you left them — nothing to migrate
+- Right-sized to your actual active-user count from the last 90 days you were on the platform
+
+For your prior usage profile, that's [$X/mo] effective vs. the [$Y/mo] you were paying. Annualized savings: [$Z].
+
+This isn't a "we miss you 20% off" blast. It's our standard cancel-recovery offer that applies when budget was the reason — which is what you told us. I want it to be a real number you can take to your CFO without it falling apart in fine print.
+
+Click here to reactivate at the new rate, or reply if you want to talk it through first.
+
+— Sarah
+
+**CTA:** Reactivate at 22% off (button)
+
+---
+
+### Email 4 — Day 28 — "Soft close"
+**Subject A:** Last note — and a fork in the road
+**Subject B:** I'll stop emailing after this one
+**Subject C:** Closing the loop on your [Product] account
+**Preview:** Either way, the door stays open.
+
+Hi [First name],
+
+I'll stop after this one — I know the inbox doesn't need another nudge.
+
+Two paths from here:
+
+**If now isn't the time** — totally fine. Your data stays in cold storage for 12 months from the cancel date. If something changes between now and then, reply to this thread and I'll restore everything for you, no need to start over.
+
+**If the offer in the last email is close but not quite right** — reply and tell me what'd make it a yes. I have some flexibility on the seat count, billing terms, and start date. Won't promise we can get there, but I'd rather know than guess.
+
+Either way, thanks for the time you spent on the product. We're better for the feedback you left in the cancel survey — already shipping changes against it.
+
+— Sarah
+
+**CTA:** Reply (no button).
+
+---
+
+## SEGMENT B — SWITCHED-TO-COMPETITOR (n=287)
+
+The full 4-email sequence is structurally identical but the content is radically different — these emails NAME the competitor, lead with 1-2 specific advantages your product has over THAT competitor, and offer a 60-day switch-back trial instead of a discount. Subject line for email 1: "Switched to [Competitor]? A note before we close the loop." Email 2 subject: "Three things [Product] does that [Competitor] doesn't" — with 3 specific feature/workflow advantages that you can't say generically; they have to be true and verifiable. Email 3 subject: "60-day switch-back trial + we'll migrate your [Competitor] data" — the offer is migration assistance, not a discount. Email 4: same soft-close template as Segment A.
+
+**Important:** the switched-competitor sequence requires you to maintain a battlecard of your real advantages over each named competitor (Asana, Monday, ClickUp, Linear, Notion, Trello, Jira). Generic "we have better collaboration" lines don't move anyone. If you can't name 3 specific things you do better than [Competitor X], suppress that subset of the segment and don't email — better to skip than to send a weak comparison email that confirms their decision to leave.
+
+**Two notes on copy choices:**
+
+1. **No emojis.** B2B audience, mid-funnel — emojis read as desperate here. The 2024 control with emojis underperformed the no-emoji variant by 12% on reply rate.
+2. **Sender = a real person, not "[Product] Team."** Reply rate doubles when From: is a named human. Use the CSM lead or marketing lead's actual name and signature. Bonus: real-name from-line keeps you out of bulk-promotional Gmail tabs more often.$pf$,
+ $pf$Two parallel 4-email sequences (Price/budget + Switched-competitor) with full copy for Price/budget and structural template + key differentiation principles for Switched-competitor. Each sequence: Day 0 reconnect (no offer, just a feedback ask), Day 7 context (insight that reframes their decision), Day 14 specific offer (annual billing rate-saver for Price; 60-day switch-back trial + migration help for Competitor), Day 28 soft close. Subject-line A/B/C variants for each email. Hard rules: no emojis (12% drop on reply rate vs. control), real-human From: name (doubles reply rate), don't lead with discount (email 1-2 reframe; email 3 makes the offer; email 4 closes the loop).$pf$),
+
+-- Step 3 --
+('66666666-6666-6666-6666-666666540103',
+ '55555555-5555-5555-5555-555555550054',
+ 3,
+ $pf$Pass 3 — send cadence + deliverability for an aged list (some recipients haven't opened in 6+ months)$pf$,
+ $pf$The sequences are written. Now I need to actually send them without nuking our domain reputation. The wrinkle: this is an aged list — the median "last email opened" date for these 928 addressable accounts is 84 days ago, and ~120 accounts haven't opened any email from us in 6+ months. We send normal product/marketing email from the same root domain (mail.[product].com). I do NOT want this campaign to crater our 96+ Sender Score and tank deliverability for the whole sending domain.
+
+Give me: (a) a pre-send list-hygiene step that reduces risk without throwing away too much volume; (b) a send schedule across the 4 weeks that warms gently rather than blasting; (c) IP / subdomain strategy — should I be sending this from a separate subdomain or risk the main one; (d) hard guardrails on bounce/complaint thresholds where I should pause the campaign mid-flight; (e) any specific deliverability checks to run before the first send. Be concrete on numbers.$pf$,
+ $pf$Yes — sending a re-engagement campaign at 928 addresses on an aged list from your main marketing domain is exactly how teams nuke their Sender Score. Here's the protocol that keeps you out of trouble.
+
+**(a) Pre-send list hygiene**
+
+Run all 928 addresses through this filter cascade BEFORE the first send:
+
+1. **Hard-bounce / role-account / typo-fix scrub** — push the list through NeverBounce or ZeroBounce ($0.005/address, ~$5 total). Drop hard bounces and role accounts (info@, support@, hello@) immediately. Expect 4-7% drop, leaving ~870 deliverable.
+
+2. **Re-engagement segment carve-out** — pull the 120 accounts with no opens in 180+ days into a separate "high-risk re-engagement" cohort. Do NOT include them in the main campaign send. They get either: (a) a single plain-text "are you still there?" email from a real person's address, no images, no tracking pixel, no link — and if no reply, suppress permanently; or (b) full suppression, period. The cost of including them in the main 4-email sequence isn't worth the marginal recovery.
+
+3. **Engagement-tier sort within the remaining ~750.** Bucket: (i) opened email in last 30 days = 320 accounts → safe-tier, full sequence; (ii) opened 31-90 days ago = 280 → medium-tier, full sequence but staggered start; (iii) opened 91-179 days ago = 150 → high-tier, 2-email sequence only (skip emails 2 and 4, send only 1 + 3). The 91-179 day cohort is high-risk; sending them 4 emails increases complaint odds without proportional reactivation lift.
+
+**(b) Send schedule across 4 weeks (warm-up structure)**
+
+Don't blast all 750 on Day 0. Stagger by tier and by daily volume:
+
+- **Day 0 (Tuesday, 10 AM ET):** Email 1 to safe-tier (320). 320 sends in one batch is fine for a warmed sending domain.
+- **Day 2 (Thursday):** Email 1 to medium-tier (280). Batch.
+- **Day 4 (Saturday — yes, Saturday is fine for B2B re-engagement, opens are higher):** Email 1 to high-tier 1-and-3 cohort (150).
+- **Day 7:** Email 2 to safe-tier (skip for high-tier).
+- **Day 9:** Email 2 to medium-tier.
+- **Day 14:** Email 3 to all three tiers, staggered by 2 days (safe → medium → high).
+- **Day 28:** Email 4 to safe-tier and medium-tier only.
+
+Total volume across 4 weeks: ~2,400 sends, peak day ~320. Manageable.
+
+**(c) Subdomain strategy**
+
+Send this campaign from a separate subdomain — `winback.[product].com` — not your main `mail.[product].com`. Set up SPF, DKIM, DMARC on the new subdomain. Warm it for 5-7 days BEFORE the campaign by sending small (50-100) batches of internal-team notifications or low-stakes transactional from it. This insulates your main marketing domain from any reputation hit if the campaign generates higher-than-normal complaints. Cost: 1-2 days of setup work, negligible ongoing.
+
+DMARC policy on the new subdomain: start at `p=none` for the first 14 days (monitor only), then move to `p=quarantine` once you confirm no auth failures. Don't go straight to `p=reject` — too aggressive for a new subdomain.
+
+**(d) Hard guardrails — pause the campaign at:**
+
+- **Hard bounce rate > 2%** on any single send. Pause and re-scrub.
+- **Spam complaint rate > 0.10%** (i.e., > 1 complaint per 1,000 sends). Industry catastrophic threshold is 0.30%; you want to pause well before that. At 0.10% on a 320-send batch, that's a single complaint — but in a warmup phase you should investigate before sending the next batch.
+- **Open rate < 8%** on Email 1 to safe-tier (where you'd expect 22-28%). This means deliverability is degraded — likely a content issue triggering spam filters. Pause and re-test.
+- **Sender Score drop > 3 points** week-over-week. Check daily during the campaign.
+
+**(e) Deliverability checks before first send**
+
+1. **Run the email through GlockApps inbox-placement test** ($0 with their free tier — 5 tests/mo). Sends a copy to test mailboxes across Gmail / Outlook / Yahoo / corporate Exchange and tells you % inbox vs spam vs missing. Target: 90%+ inbox placement on Email 1. If under 80%, fix content (image-to-text ratio, suspicious links, subject-line spam-trigger words) before sending live.
+
+2. **Run the SUBJECT lines through Mail-Tester** ($0). Target score 9+/10. The Email 3 subject "Specific offer: 22% off annual + your old workspace restored" — check if "% off" triggers any filter. Likely fine but worth verifying.
+
+3. **DKIM, SPF, DMARC alignment check on the new subdomain** before send. Use `mxtoolbox.com` or `dmarcian.com` lookups.
+
+4. **Postmaster Tools (Google) and SNDS (Microsoft) registration** for the new subdomain BEFORE first send. You want the dashboards live so you can monitor complaint rate and IP reputation in near-real-time during the campaign.
+
+One more thing: **suppress this list from your main marketing email automation for the duration of the campaign + 30 days after.** Don't have your weekly product newsletter hit these same addresses while the win-back is running. Double-touch in the same week from two different domains looks like a coordinated harassment campaign to filters and creates unnecessary unsubscribe / complaint pressure.
+
+If you do all of this, my expected risk on your main domain: zero observable change in Sender Score or inbox placement. Expected reactivation: in the 9-13% range across the addressable cohort (your earlier 16% / 11% projections by segment will cluster around this blended average after the high-tier carve-out).$pf$,
+ $pf$Cadence + deliverability protocol. Pre-send hygiene: NeverBounce scrub (-5% volume), carve out 120 6-month-dormant addresses to either a single plain-text "still there?" or full suppression, and tier the rest by last-open recency (320 safe / 280 medium / 150 high — high-tier gets only 2 of 4 emails). Stagger sends across 4 weeks with peak daily volume ~320, never blast. Send from a new winback.[product].com subdomain warmed for 7 days, with SPF/DKIM/DMARC set up; insulates main marketing domain. Hard pause guardrails: bounce >2%, complaint >0.10%, open rate <8% on Email 1 to safe-tier, Sender Score drop >3pts. Pre-flight: GlockApps inbox-placement test (target 90%+), Mail-Tester subject-line scoring, Postmaster Tools registered before first send. Suppress list from main marketing automation for campaign + 30 days after.$pf$),
+
+-- Step 4 --
+('66666666-6666-6666-6666-666666540104',
+ '55555555-5555-5555-5555-555555550054',
+ 4,
+ $pf$Pass 4 — measurement plan that doesn't double-count organic returns$pf$,
+ $pf$Sequence is built, sending starts next Tuesday. Last pass: design the measurement plan. The thing I'm worried about: some percentage of these 928 churned accounts would have come back ON THEIR OWN within the campaign window even if we sent zero emails — and I don't want to claim credit for those and then have the CFO blow up the program when the LTV numbers don't materialize.
+
+Give me: (a) a control structure that lets us isolate the campaign's incremental effect from organic recovery; (b) the specific metrics to report at week 1 / week 4 / week 8 / week 12, and which one is the single number I should defend to the CEO; (c) a definition of "successful reactivation" that doesn't game itself (e.g., they reactivate, get one charge, then churn again next month — does that count?); (d) attribution rules when an account replies to a CSM after getting an email — campaign credit, CSM credit, or shared; (e) a 3-month look-back protocol so we know whether the recovered MRR is real LTV or a sugar-rush.$pf$,
+ $pf$Measurement plan. The biggest mistake teams make on win-back attribution is "if they reactivate within 30 days of getting an email, the campaign gets credit" — that's a confounded count and it inflates the program ROI by 40-80% in most cases.
+
+**(a) Control structure**
+
+Hold out a randomized control group from the 928 addressable accounts. Recommended: 15% holdout = 139 accounts. Smaller than 15% and the statistical power is too weak to detect a 5-10pp lift; larger and you give up too much recoverable revenue.
+
+Critical: the holdout is RANDOMIZED across all four segment buckets in proportion to segment size. Don't hold out 15% of just one segment — that contaminates the comparison.
+
+The holdout receives ZERO campaign emails for the full 4-week campaign window + 8-week measurement window. They can still be contacted by the CSM team if they reach in (don't blow up the human relationships for a measurement protocol), but no automated touches and no manual marketing outreach.
+
+Reactivation rate in the test group minus reactivation rate in the holdout = incremental campaign effect. That's the only number that should be reported as "campaign-driven."
+
+Math at expected outcomes: if test group (789 accounts) reactivates at 11% and holdout (139 accounts) reactivates at 4% organically, incremental = 7pp × 789 = 55 incremental reactivations. That's the credit-able number, not 87.
+
+**(b) Metrics by checkpoint, and the single defendable number**
+
+| Week | Report metric | Why this metric here |
+|---|---|---|
+| Week 1 | Email-1 deliverability stats (inbox placement, open rate, complaint rate) | Proves the technical foundation worked; no reactivation data yet |
+| Week 1 | Reply rate to email 1 | Earliest signal of segment resonance — if reply rate < 1%, the targeting is off |
+| Week 4 | Reactivation rate (test) vs (control), by segment | First real campaign-effect read |
+| Week 4 | Incremental reactivations vs control | The "what did we cause" number |
+| Week 8 | Recovered MRR (incremental, gross) | First financial read |
+| Week 8 | Re-churn rate among reactivated accounts | Does this hold? |
+| Week 12 | **Net incremental MRR retained 90 days post-reactivation** | THE single defendable number |
+| Week 12 | Cost-per-net-retained-reactivation | ROI calc |
+
+**The one number I'd defend to the CEO at the 90-day review: "Net incremental MRR retained at 90 days post-reactivation, after subtracting the holdout's organic recovery."** Everything else is a leading indicator that doesn't survive contact with a CFO. You want that number to clear $7K/mo (the 5%-of-churned-MRR target) AFTER subtracting holdout-equivalent.
+
+**(c) Definition of "successful reactivation" — built to not game itself**
+
+A reactivation is counted in the success number ONLY IF:
+- Account is in active paid status (not trial, not churned-again) at Day 30 post-reactivation, AND
+- Has had at least one in-app session in the prior 7 days at the Day 30 checkpoint, AND
+- Is on a paid tier matching or exceeding their pre-churn tier (so a $299 → $79 downgrade-reactivation counts at the $79 rate, not their old MRR).
+
+Why these rules: (1) Day 30 paid-status check kills the "they reactivated, got one charge, churned next month" gaming. (2) The session-in-last-7-days at Day 30 kills "they reactivated and never logged in" — that's a billing artifact, not a recovered customer. (3) The tier match prevents inflating MRR-recovered numbers by counting downgraded reactivations at their old higher MRR.
+
+**(d) Attribution between campaign and CSM team**
+
+Three-rule waterfall, in priority order:
+
+1. **CSM-initiated outreach** (CSM emailed/called the account first, BEFORE the campaign email landed in their inbox): 100% CSM credit. These accounts should have been excluded from the campaign by the 14-day CSM-touched filter, but if any slipped through, this rule covers it.
+
+2. **Campaign-initiated, CSM-closed** (campaign email landed first, account replied or clicked, CSM took the conversation from there and closed the reactivation): 50/50 split between campaign and CSM. This is the most common case and trying to argue 100% one way will sour both teams.
+
+3. **Campaign-only, no CSM touch** (account self-served the reactivation through the email link): 100% campaign credit.
+
+Implement by tagging every reactivated account in HubSpot with the first-touch source (CSM-initiated / Campaign-initiated) AND the closing source (self-serve / CSM-assisted). The 50/50 split happens at reporting time, not in the CRM record.
+
+**(e) 90-day look-back protocol**
+
+At Day 90 post-reactivation, run this report on every reactivated account:
+
+- Active paid status: Y/N
+- MRR at Day 90 vs. MRR at reactivation: same / upgraded / downgraded / churned
+- In-app activity score (sessions × users × actions, normalized) vs. their pre-original-churn baseline — recovered to baseline, partial, or below
+- NPS / CSAT response if surveyed: score
+
+Define "real LTV recovery" as accounts that are still paid at Day 90 AND at activity score ≥ 60% of their pre-original-churn baseline. Anything below that is a "sugar rush" reactivation that came back briefly but isn't engaged.
+
+Expected outcome at well-run win-back: of 55 incremental reactivations, ~38-42 still paid at Day 90 (70-77% retention is normal), ~28-32 at activity ≥ 60% baseline (50-58%). The activity-recovery number is the truth-test for whether you actually recovered a customer or just bought a billing-cycle extension.
+
+Report this at the 90-day mark to the CEO with the test-vs-holdout comparison and the activity-recovery cohort. That's the credible number. If the program survives that scrutiny, you've earned the right to scale it; if not, you've learned more about your churn cohort than 99% of competitors ever do.$pf$,
+ $pf$Measurement plan. (a) 15% randomized holdout (n=139, stratified across all four segments) receives zero campaign touches; reactivation lift = test minus holdout, NOT raw reactivation count. (b) Metric cadence: Week 1 deliverability + reply rate, Week 4 incremental reactivations, Week 8 recovered MRR + re-churn rate, Week 12 the single defendable number — net incremental MRR retained at 90 days post-reactivation after subtracting holdout-equivalent organic recovery. (c) Reactivation counts only if paid AND active in last 7 days at Day 30 AND on tier ≥ pre-churn tier — kills the "one charge then churn" gaming. (d) Attribution waterfall: CSM-first = 100% CSM, campaign-first/CSM-closed = 50/50, campaign self-serve = 100% campaign. (e) Day 90 look-back classifies as real LTV recovery if paid + activity score ≥60% of pre-original-churn baseline (~50-58% of incremental reactivations typically clear this bar).$pf$);
+
+-- =========================================================================
+-- Project 55-0055 | Onboarding redesign for a B2B compliance SaaS — 19% activation → 30% target | Priya Sharma | Design | 5 steps
+-- =========================================================================
+
+DELETE FROM prompt_steps WHERE prompt_id = '55555555-5555-5555-5555-555555550055';
+DELETE FROM prompts      WHERE id        = '55555555-5555-5555-5555-555555550055';
+
+INSERT INTO prompts (
+  id, title, description, content, result_content,
+  category_id, difficulty, model_used, model_recommendation,
+  tools_used, tags, status, author_id, vote_count, bookmark_count
+) VALUES (
+  '55555555-5555-5555-5555-555555550055',
+  $pf$Onboarding redesign for a B2B compliance SaaS stuck at 19% activation — 5-pass Claude workflow from funnel diagnosis to redesigned setup to persona-tailored aha-moment to empty-state copy to instrumentation$pf$,
+  $pf$Activation rate at our compliance-monitoring SaaS sat at 19% (defined: connected one data source AND ran one scan within 7 days) and the exec ask was 30%. 5-pass Claude 4.6 Opus workflow — funnel teardown to find where the 81% drops off, redesigned 4-step setup to replace the 7-step legacy, persona-tailored aha-moment branching, empty-state and progressive-disclosure copy across 11 surfaces, and the instrumentation + experiment design to prove the lift.$pf$,
+  $pf$I lead design at a Series B compliance-monitoring SaaS — we scan customers' SaaS stacks (Slack, GitHub, AWS, GSuite, etc.) for SOC2/HIPAA/PCI control violations and generate evidence packets for auditors. ARR ~$14M, 320 customers, but our activation rate (defined precisely: connected at least one data source via OAuth AND ran at least one scan within 7 days of signup) is sitting at 19%. Industry benchmark for our category is 28-35%. Our CRO got an exec ask: get to 30% within two quarters or we're losing the budget for the second growth-eng squad.
+
+I ran 5 passes with Claude 4.6 Opus. Pass 1: funnel diagnosis — where in the existing 7-step setup does the 81% bleed out, and what does each drop-off pattern tell us about the cause? Pass 2: redesigned setup-flow concept — collapse to 4 steps with progressive disclosure, including the principles that determined what gets cut vs. moved later. Pass 3: persona-tailored "aha" moment — we have three rough buyer personas (Compliance Officer, Security Engineer, Auditor-Prep Generalist) and a one-size-fits-all aha is leaving 30%+ of activation lift on the table. Pass 4: empty-state and progressive-disclosure copy across 11 surfaces (the real grunt work — "you have 0 scans yet" copy, "connect another source" prompts, the dashboard zero-state, etc.). Pass 5: instrumentation and experiment design to actually prove the lift in a clean A/B test.
+
+Sharing because every B2B SaaS that requires data connections + setup work has this exact problem and most solve it with discount-the-pain hacks (concierge onboarding, 1:1 setup calls) that don't scale.$pf$,
+  $pf$6-week 50/50 A/B test on n=2,400 new signups. Activation: control 19.3% → variant 34.1% (absolute +14.8pp, relative +77%). Median time-to-first-scan: 11 min → 4 min. Setup-step completion rates: step 1 (94% → 97%), step 2 (71% → 89%), step 3 (52% → 78%), step 4 (38% → 71% — replaced the legacy step 4 entirely). Persona-tailored aha-moment branching contributed +5.2pp of the +14.8pp lift (isolated via second-tier A/B/C cell within variant). Time-to-second-scan dropped 4.2 days → 1.6 days (the deeper-engagement signal that the activation lift wasn't a vanity-metric trick). Customer-success-team contact volume during first 7 days dropped 41% (1.4 tickets/account → 0.83) — the empty-state copy work was load-bearing for self-serve. Shipping the variant to 100% of new signups in week 7. The CRO got the second growth-eng squad approved.$pf$,
+  '11111111-1111-1111-1111-111111111105',
+  'advanced',
+  'claude-opus-4-6',
+  'Claude 4.6 Opus',
+  ARRAY['Claude','Figma','Amplitude','Maze','LaunchDarkly','Linear'],
+  ARRAY['onboarding','activation','b2b-saas','first-run','progressive-disclosure','funnel-design'],
+  'approved',
+  '22222222-2222-2222-2222-222222222204',
+  0, 0
+);
+
+INSERT INTO prompt_steps (id, prompt_id, step_number, title, content, result_content, description) VALUES
+
+-- Step 1 --
+('66666666-6666-6666-6666-666666550101',
+ '55555555-5555-5555-5555-555555550055',
+ 1,
+ $pf$Pass 1 — funnel diagnosis: where does the 81% bleed out across our 7-step setup, and what does each pattern mean?$pf$,
+ $pf$Our activation funnel is broken and I need to find the right places to cut. Current 7-step new-signup setup, with completion rate at each step (Amplitude data, n=4,820 signups over 90 days):
+
+1. Email confirmation: 94%
+2. Org name + size + industry: 88%
+3. Invite teammates (skip available, but we nag): 71%
+4. Pick a compliance framework (SOC2 / HIPAA / PCI / multiple): 64%
+5. Connect first data source (OAuth modal opens 9 source choices): 38%
+6. Configure scan cadence + scope: 28%
+7. Trigger first scan: 19%
+
+Activation = step 7 reached within 7 days. So we're at 19% activation. The legacy product team's working theory is "users get fatigued by step 4 and leave" but I don't trust this read.
+
+I want you to look at this funnel like a UX researcher. For EACH drop-off (94→88, 88→71, 71→64, 64→38, 38→28, 28→19), give me: (a) the most likely root cause(s), (b) what user-research signal would confirm or refute that hypothesis (so I can validate before redesigning), (c) whether the step is necessary at all OR could be deferred to post-activation. Be opinionated — don't list 5 hypotheses with equal weight, tell me which is most likely.$pf$,
+ $pf$Looking at this funnel, three of the six drop-offs are diagnostic-rich and three are noise. Let me walk through each.
+
+**Step 1 → 2 (94 → 88, -6pp). Email confirmation friction. Likely noise.**
+6pp drop on email confirm is at the high end of normal but within range — typical B2B SaaS sees 5-10% drop here from typo'd emails, corporate filter blocks, and cold-feet abandonment. Most-likely cause: corporate spam filters blocking the verification email. Validation signal: check delivery logs for soft bounces and Postmaster Tools complaints. **Recommendation:** don't touch. The marginal 2-3pp recoverable here isn't where the leverage is.
+
+**Step 2 → 3 (88 → 71, -17pp). Invite teammates step. ⚠️ HIGHEST-LEVERAGE TARGET.**
+17pp drop here is huge and almost certainly comes from forcing the team-invite step BEFORE the user has experienced any value from your product. Most-likely cause: the user has zero context on whether your tool is useful yet, and you're asking them to expose it to their team — which feels premature and politically risky in a compliance buyer's org. Validation signal: session replay (Hotjar / FullStory) on the 17% who drop — I'd bet 60%+ are pasting then deleting emails, or sitting on the page for >45 seconds before bouncing. **Recommendation:** kill this step from the setup flow entirely. Move it to a post-activation prompt after the first successful scan ("invite teammates to review these findings with you"). The "skip available but we nag" framing is the worst of both worlds — it costs you 17pp without even getting the invite.
+
+**Step 3 → 4 (71 → 64, -7pp). Pick compliance framework. Diagnostic-medium.**
+7pp drop on framework selection is moderate and the cause is usually one of two things: (a) the user genuinely doesn't know which framework they're being audited against (junior buyer sent on a research expedition by their CISO), or (b) the framework picker requires too much commitment-feeling at this stage. Validation signal: look at the 64% who DID pick a framework — are they primarily picking "SOC2" because it's the safe default, or is there real distribution? If it's >70% SOC2, that's a tell that users are clicking the safe choice to escape the page. **Recommendation:** don't kill this step but make it lower-stakes — "What are you primarily working toward? You can change this later" with a "Help me decide" link. The framework choice DOES matter for the next step (it determines which data sources are most critical), but you're over-weighting how irreversible it feels.
+
+**Step 4 → 5 (64 → 38, -26pp). Connect first data source — 9 OAuth choices. ⚠️ THE BIGGEST LEAK.**
+26pp drop here is your single largest leak and it's almost certainly choice paralysis + OAuth permission scope anxiety. Most-likely cause: showing 9 source choices simultaneously means users have to pick an order, and the OAuth permission scopes for things like AWS or GitHub at install time are scary-looking ("read all repository contents" in particular). Many users will close the OAuth modal, intend to come back to it after talking to their security team, and never return. Validation signal: look at OAuth modal abandonment rate by source — I'd bet AWS and GitHub abandon at 60%+ while Slack and Google Workspace abandon at 20-30%. Also check: how many users CLICK an OAuth source then bounce within 90 seconds? **Recommendation:** for the redesign, lead with the source most likely to succeed (Google Workspace if they used a Google email to sign up, Slack if they're on a free Slack workspace, otherwise the source most aligned to the framework they picked in step 3). Pre-fill ONE recommended source. Defer the "connect more sources" expansion to post-activation.
+
+**Step 5 → 6 (38 → 28, -10pp). Configure scan cadence + scope. Likely deferable entirely.**
+10pp drop on scan-config is moderate and cause is over-asking before value. The user has connected one source but hasn't seen ANY scan output yet — and now you're asking them to make decisions about cadence (daily? weekly?) and scope (all controls? a subset?) without context. Validation signal: look at the 28% who completed this step — are 80%+ accepting your defaults? If yes, the screen exists only to slow them down. **Recommendation:** kill this step. Default to "scan now, then weekly" silently. Move scan-config to a settings page they discover after activation. ANY config choice you can pre-default at this stage, you should.
+
+**Step 6 → 7 (28 → 19, -9pp). Trigger first scan. Diagnostic-low — small problem.**
+9pp drop on the actual scan-trigger is interesting because the user has done 95%+ of the work already. Most-likely cause: scan startup time (if it takes >15 seconds, users wonder if it crashed) OR a permissions error from the OAuth scope being insufficient for the framework they picked. Validation signal: time-to-first-scan-result by source, plus error-rate by framework × source combination. **Recommendation:** show a real-time progress indicator + estimated completion (most users tolerate 30-60 sec wait if they see progress). Pre-validate OAuth scope against the framework BEFORE letting the user proceed — fail loudly at step 5 if scope is wrong, not silently at step 7.
+
+**The strategic read:** You can probably hit 30% activation by killing two steps (3 and 6) and radically simplifying step 5. That's where I'd focus the redesign. The 17pp + 26pp leaks at steps 3 and 5 are 53% of your total funnel loss — fix those two and you've moved the needle without redesigning everything.
+
+**Validation checklist before you start designing the new flow:**
+- Pull session replay for steps 3 and 5 drop-offs (target: watch 30 sessions of each)
+- Pull OAuth abandonment by source (data exists in your auth logs)
+- Pull framework distribution among completers vs. abandoners (Amplitude segment)
+- Run a 5-question survey to the 81% who didn't activate (Email: "What stopped you?" with one open-text — tag responses)
+
+Two days of validation before redesign is well worth it. The worst version of this redesign cuts the wrong steps because we trusted the funnel chart instead of the user behavior under it.$pf$,
+ $pf$Funnel diagnosis. Three of six drop-offs are diagnostic-rich, three are noise. Two highest-leverage targets: step 2→3 (-17pp on team-invite forced before value experience — recommendation: kill from setup, move to post-activation prompt), and step 4→5 (-26pp on 9-OAuth-source paralysis + permission-scope anxiety — recommendation: pre-pick one source aligned to user's email domain or framework, defer multi-source to post-activation). Steps 5→6 (-10pp scan-config) deferable entirely with silent defaults. Combined, killing steps 3 and 6 + simplifying step 5 likely closes 30+ of 81pp leak. Validation checklist before redesigning: session replay on steps 3+5 abandoners, OAuth abandonment by source, framework distribution among completers vs. abandoners, 5-question survey to non-activators.$pf$),
+
+-- Step 2 --
+('66666666-6666-6666-6666-666666550102',
+ '55555555-5555-5555-5555-555555550055',
+ 2,
+ $pf$Pass 2 — redesigned 4-step setup flow, with the principles that determined what gets cut$pf$,
+ $pf$Validated your hypotheses — session replay confirmed: step 3 abandoners are 67% pasting/deleting emails (politically uncomfortable forced-invite), step 5 abandoners are 58% closing the OAuth modal within 30 seconds (permission-scope anxiety, especially AWS at 71% abandon). Survey to non-activators: top three open-text responses were "wanted to talk to my security team first," "couldn't tell which source to start with," "didn't have time to set up everything in one sitting."
+
+Now design the new flow. Constraints: must collect framework choice (downstream code needs it), must connect at least one data source (no scan possible otherwise), must trigger at least one scan to count as activated. Everything else is on the table.
+
+For each new step, give me: the screen's job (in one sentence), the primary CTA, what gets deferred to post-activation and why that's safe, and the failure mode you're guarding against. Also: the design principles you used to decide what stayed in setup vs. moved to post-activation — I want to be able to defend the cuts to a PM who'll push back on every removed field.$pf$,
+ $pf$Here's the redesigned 4-step flow with the explicit principles guiding it.
+
+**The five design principles (defend these to PMs):**
+
+1. **Time-to-first-value is the only metric setup serves.** Every screen must measurably move the user closer to "I see a real scan result against my real data." Anything else is friction.
+2. **One decision per screen.** Multi-decision screens compound abandonment exponentially — a screen with 3 required choices abandons at roughly the SUM of each individual choice's abandon rate, not the average.
+3. **Defer everything that is reversible AND not-blocking.** A field that can be changed later AND isn't required for the next step belongs in settings, not setup. Test: "if the user picks the wrong value, can they fix it in 30 seconds in settings, with no negative consequence in between?" If yes → defer.
+4. **Fail loudly early, not silently late.** Permission-scope problems must surface at the OAuth click, not at the scan-trigger 4 screens later — late failures destroy the perception that the product works.
+5. **Pre-default everything you have signal on.** Email domain → framework guess. Email domain → suggested data source. Framework → required scopes. Hide the choice when the default is right 70%+ of the time; reveal it only when the user wants to override.
+
+**The new 4-step flow:**
+
+---
+
+**Step 1 — "What's your team working toward?"**
+*Job:* Framework selection (downstream-required).
+*Primary CTA:* Pick one. (4 options: SOC2, HIPAA, PCI-DSS, "Multiple / not sure yet")
+*What's deferred:* Org name (auto-filled from email domain via Clearbit-style lookup, editable inline), org size (deferred to settings — we don't actually use this until billing review), industry (deferred — only used for marketing segmentation).
+*Failure mode guarded:* The legacy step 2's "Org name + size + industry" was a 3-decision screen. We're cutting size and industry out and pre-filling org name. Cut field count: 4 → 1.
+*Behind-the-scenes:* Their selection sets up which data sources we recommend in step 2 and which scan controls run in step 4.
+
+---
+
+**Step 2 — "Connect your first data source"**
+*Job:* OAuth one source so we can scan against real data.
+*Primary CTA:* Connect [Google Workspace / Slack / GitHub / etc. — whichever is the smartest pre-pick].
+*Smart pre-pick logic:* Email domain ends in google.com / has Google login → Google Workspace. No Google → Slack (highest OAuth complete rate). Framework = SOC2 + larger company size signal → GitHub. Show this as "Recommended for [framework] →" with one big CTA, plus a smaller "Connect a different source" link below for the override case (~25%).
+*What's deferred:* Connecting additional sources (post-activation prompt: "Add 2 more sources to scan more controls →" appears AFTER the first scan completes), scan-cadence configuration (silently defaults to "scan now + weekly"), scan-scope configuration (silently defaults to "all controls for [framework]").
+*Failure mode guarded:* The legacy "9 OAuth choices" was the 26pp leak. The pre-pick + small "different source" link removes choice paralysis for the 75% who'd be happy with the default. Critical: pre-validate OAuth scope BEFORE the OAuth click — show inline what permissions we'll request and why, with a one-line plain-English explanation per scope ("read repo metadata — needed to check who can push to main"). Permission-scope anxiety is reduced 50%+ when users see the rationale upfront.
+
+---
+
+**Step 3 — "Scanning… here's what we found" (auto-progresses)**
+*Job:* Run the first scan immediately, in real time, with a progress indicator.
+*Primary CTA:* None — this is an auto-progress screen with a streaming results panel.
+*What's deferred:* Everything that's not "watch the first scan results stream in."
+*Failure mode guarded:* The 9pp leak from "trigger first scan" being a manual click. We removed the click. Scan kicks off the moment OAuth completes. The progress UI shows: "Scanning [source] for [framework] controls… 47 of 89 controls checked, 3 issues found so far →" with a real progress bar. Average scan time for first-source MVP scan is 38 seconds — well within the "watch the progress bar" tolerance window. If scan takes >90 seconds, switch to "We'll email you when it's done" with continued background processing.
+
+---
+
+**Step 4 — "Your first results — here's what to do next"**
+*Job:* Show 3-5 actual findings from the scan with severity scoring + a "what should I do about this" panel for each. Activation officially counted at this screen render.
+*Primary CTA:* "View all [N] findings →" leading to the dashboard.
+*What's deferred:* Inviting teammates (post-activation prompt 24-48 hours later), connecting more sources (post-activation prompt after they engage with at least one finding), scan-cadence/scope settings (settings page, discovered organically), evidence-packet generation (a feature reveal at day 7 if they have ≥10 findings reviewed).
+*Failure mode guarded:* The legacy flow ended at "first scan triggered" with no payoff visible to the user. The new flow ends at "you can SEE three real problems we found in your stack, and here's how to think about them" — that's the actual aha. The findings panel is the aha-moment; pass 3 will redesign exactly how it's tailored per persona.
+
+---
+
+**Cuts summarized for PM defense:**
+
+| Legacy step | Status | Defense |
+|---|---|---|
+| Email confirm | Kept (no change) | Below action threshold |
+| Org name + size + industry | Reduced to 1 (org name pre-filled, others moved to settings/billing) | Two of three fields are not used until weeks-later events; collecting upfront violates principle 3 |
+| Invite teammates | Removed from setup, moved to 48-hr post-activation prompt | Forced pre-value invite costs 17pp; deferred prompt converts at 35-45% (industry data) and the user has context |
+| Pick framework | Kept as step 1, lower-stakes phrasing | Required for downstream code paths; phrasing softened |
+| Connect data source | Kept as step 2, pre-picked + scope-explained | 26pp leak primarily caused by choice paralysis + scope anxiety; both addressed |
+| Scan cadence + scope | Removed entirely, silent defaults | Reversible in 30 seconds in settings; principle 3 says defer |
+| Trigger first scan | Removed entirely, auto-triggers | 9pp leak from a button click that adds zero value |
+
+**Net flow change:** 7 steps → 4 steps. Fields requested in setup: 8 → 2 (framework, data source). Decisions required to complete activation: 6 → 2.
+
+**The PM pushback you'll get and the answer:** "But we lose data about industry / company size / scan cadence preferences if we don't collect them upfront." Answer: we don't lose it — we DEFER it. Org size becomes a billing-time question. Industry becomes a settings prompt OR an inferred field via Clearbit. Scan cadence preferences come from what users actually toggle in settings (revealed preference > stated preference). The data we collected upfront in the legacy flow had ~20% accuracy anyway — half the org-size answers were "I don't know" and a quarter of the industry picks were "Other." We get higher-signal data by collecting it later, in context.$pf$,
+ $pf$Redesigned 4-step flow with 5 governing principles (TTFV is the only metric, one decision per screen, defer reversible non-blocking choices, fail loudly early, pre-default on signal). New flow: (1) framework pick (only required field), (2) connect smart-pre-picked data source with inline scope-rationale, (3) auto-streaming scan with progress UI, (4) first findings panel = activation moment. Cuts defended: org size + industry → settings/billing, invite teammates → 48hr post-activation prompt (industry data: 35-45% conversion in deferred slot), scan-cadence + scope → silent defaults reversible in settings, manual scan-trigger → auto-fires post-OAuth. Net: 7 steps → 4 steps, 8 fields → 2, 6 decisions → 2. PM defense for cuts: deferred data is higher-signal because it's collected in context (revealed > stated preference); legacy pre-asks were ~20% accurate anyway.$pf$),
+
+-- Step 3 --
+('66666666-6666-6666-6666-666666550103',
+ '55555555-5555-5555-5555-555555550055',
+ 3,
+ $pf$Pass 3 — persona-tailored aha-moment branching at step 4 (the findings panel)$pf$,
+ $pf$Step 4 ("Your first results") is the aha-moment screen and I don't want to ship a one-size-fits-all version. We have three rough buyer personas based on sales-call notes — Compliance Officer (the ICP, ~40% of paying logos), Security Engineer (~35%), Auditor-Prep Generalist (~25%). They want different things from the first findings view and serving them all the same generic "here are 5 issues, scored 1-10" panel is leaving conversion on the table.
+
+For each persona, give me: (1) what they're hoping to see at the aha moment (in their words, not ours), (2) the 1-2 specific finding TYPES that should be elevated for them (we have ~80 control types across the frameworks; the algorithm needs to pick which 3-5 to feature), (3) the framing copy / micro-copy that lands for them, (4) a non-aha — what would actively turn THIS persona off and how to suppress it, (5) the signal we'd use to detect which persona we're talking to (since they don't tell us upfront). Be opinionated.$pf$,
+ $pf$Three personas, three different aha moments. Each has a "what they came for" answer and a "what would turn them off" trap.
+
+**PERSONA A — COMPLIANCE OFFICER (~40% of logos)**
+
+*Profile:* Title typically Compliance Manager / Director of Compliance / Head of GRC. Often non-technical or semi-technical. Reports to legal or CFO, not engineering. Their job security depends on passing the audit, not on writing code. They're scared of two things: missing a control failure that the auditor catches, and being the bottleneck that makes engineering miss a release deadline.
+
+*What they're hoping to see at the aha:* "Here are the things you're definitely going to fail on, here's what audit evidence we already have for you, and here's how to talk to engineering about fixing the failures." They want a sense of CONTROL, not a sense of how complex compliance is.
+
+*Findings to elevate:* (1) Any control where you have COMPLETE audit evidence already collected — lead with this even though it's not a "failure," because it shows them the product is already doing work for them. (2) The single highest-severity FAILED control — but presented with a "next step: talk to [team that owns this]" framing, not a raw severity score that scares them. Skip the medium-severity findings entirely on the aha screen for this persona.
+
+*Framing copy that lands:* "Good news first — we already have audit evidence for [N] controls in your [framework] scope. You won't have to chase these down. ⚡ One thing needs immediate attention: [Highest-severity finding, plain-English]. We'll show you exactly what to send your security team about this." [Primary CTA: View your evidence dashboard →] [Secondary: Talk to the security team about this issue →]
+
+*Non-aha — turn-offs to suppress:* Raw CVSS scores, technical remediation steps that look like Stack Overflow ("Update the IAM policy on line 47 to deny..."), more than 5 findings shown at once, anything that frames the user as the person who needs to fix the technical issue (they don't fix it; they coordinate the fix).
+
+*Detection signal:* Sign-up email domain + LinkedIn enrichment job-title check (Clearbit + LinkedIn API). If "compliance" / "GRC" / "audit" / "risk" appears in the title, route to this persona. Confidence: 85%+ on title match. Backstop: if no title signal, look at the first source connected — Compliance Officers connect Google Workspace or Microsoft 365 first more often than the other personas (78% in our data).
+
+**PERSONA B — SECURITY ENGINEER (~35% of logos)**
+
+*Profile:* Title Security Engineer / SecOps Engineer / DevSecOps. Technical, comfortable in AWS console + GitHub + terminal. Reports to engineering or to a CISO. Often the one who actually fixes the issue. Skeptical of compliance-as-checklist tools and wants to see DEPTH and CORRECTNESS in the findings, not marketing.
+
+*What they're hoping to see at the aha:* "Show me real findings with the same depth a manual audit would produce. Don't insult me with severity-bucket-only scoring. Tell me the specific resource, the specific misconfiguration, and don't be wrong about the remediation." They want a sense of TECHNICAL CREDIBILITY.
+
+*Findings to elevate:* (1) The most technically NONTRIVIAL finding — something where the misconfiguration isn't obvious from a five-minute manual check. Even if it's not the highest severity. (Examples: an IAM role that's overly permissive via a transitive trust policy, an S3 bucket that's private but logs to a public bucket, a GitHub Action with secrets logged at debug level.) (2) The finding where your remediation suggestion is most VERIFIABLY CORRECT — show your work, cite the doc reference (AWS Security Hub control ID, NIST 800-53 control number, etc.).
+
+*Framing copy that lands:* "First scan turned up [N] findings across [sources]. Here are the 3 that aren't obvious from a manual review:" [Show 3 cards, each with: resource path, exact misconfig, severity score with CVSS breakdown, suggested remediation as a code diff or AWS CLI command, link to the underlying control reference.] [Primary CTA: View all findings →] [Secondary: Connect another source for fuller coverage →]
+
+*Non-aha — turn-offs to suppress:* Vague severity buckets ("High" / "Medium" without justification), generic remediation steps ("Review your IAM policies"), enterprise-marketing copy ("Enterprise-grade security at your fingertips"), patronizing explanation of what compliance frameworks are. They know.
+
+*Detection signal:* Title check for "security" / "secops" / "devsecops" / "infrastructure" / "platform engineer" → 80% confidence. Backstop signal: first source connected is GitHub or AWS (these correlate with this persona at 71% in our data) AND they completed OAuth scope review without bouncing (security-aware users don't get scope-anxious because they understand the request).
+
+**PERSONA C — AUDITOR-PREP GENERALIST (~25% of logos)**
+
+*Profile:* Title varies wildly — Founder / COO / Operations Lead / Director of Eng at small startups (under 50 employees). They are doing this because the company is going through SOC2 / HIPAA prep for the first time, and they got drafted into it because no one else has time. They are NOT a compliance specialist and they are NOT a security engineer. They are a smart generalist who needs the tool to teach them as it works.
+
+*What they're hoping to see at the aha:* "Just tell me what I need to know, and what I need to do, and what I can ignore. Don't make me feel dumb for not knowing what 'CC6.1' means." They want a sense of UNBLOCKING.
+
+*Findings to elevate:* (1) The 1-2 findings that are most COMMON for first-time audit-prep teams to hit — not necessarily the highest severity. Show the finding with a "you're not alone — 73% of first-time SOC2 teams hit this exact issue" social-proof line. (2) Categorize the rest of the findings into "Critical (you must fix before audit)", "Important (you should fix in next 30 days)", "Cleanup (do these whenever)" with a count of each. The key is REDUCING the cognitive load of 47 findings to 3 buckets.
+
+*Framing copy that lands:* "Welcome — here's what your first scan found, and here's how to think about it. You don't need to fix everything before your audit; you need to fix the right things. We've sorted [N] findings into 3 priority buckets:" [Three big bucket cards with counts. Below: "The most common issue first-time SOC2 teams see: [Common finding]. Here's how teams typically resolve it:" with a 2-step plain-English remediation.] [Primary CTA: Walk me through your action plan →] [Secondary: Show me everything in priority order →]
+
+*Non-aha — turn-offs to suppress:* Control IDs without translation ("CC6.1 violation" without "this means: someone outside your team can change production data"), 47-row tables of findings, anything that assumes prior compliance knowledge.
+
+*Detection signal:* Two combined signals: (a) company size <50 from Clearbit, (b) title NOT matching the Compliance Officer or Security Engineer keyword sets. If both true → 70% confidence on this persona. Backstop: low confidence default. This is the persona where being WRONG about detection is least costly because the framing is the most beginner-friendly anyway.
+
+---
+
+**Implementation note for the algorithm:**
+
+Don't design a hard 3-way branch. Design an aha-screen renderer that takes (persona, framework, scan_results) and produces a tailored screen. If persona detection confidence is <60%, default to the AUDITOR-PREP GENERALIST framing — it's the most accessible across all three personas and only mildly suboptimal for the others. Higher confidence → use the targeted framing.
+
+Test design for pass 5: A/B/C cell within the variant — A=one-size-fits-all aha, B=persona-tailored aha with full personalization, C=persona-tailored aha with low-confidence-default-to-Generalist. Hypothesis: B beats A by 4-6pp activation; C beats A by 3-5pp; B vs C tells us how much the targeting precision matters relative to the framing change alone.$pf$,
+ $pf$Persona-tailored aha-moment branching for step 4 across three buyer personas: Compliance Officer (~40%, wants control + audit evidence — elevate evidence-already-collected + single highest-severity item with "talk to team" framing, suppress raw CVSS), Security Engineer (~35%, wants technical credibility + depth — elevate nontrivial findings + verifiable remediation with control-reference citations, suppress vague severity buckets), Auditor-Prep Generalist (~25%, wants unblocking — elevate 1-2 most common first-time-audit findings with social proof + 3-bucket priority categorization, suppress unexplained control IDs). Persona detection: title-keyword + Clearbit job-title enrichment + first-source-connected pattern; <60% confidence defaults to Generalist framing (least costly to be wrong). Pass-5 A/B/C test design: one-size-fits-all vs. full personalization vs. low-conf-default — isolates targeting-precision effect from framing-change effect.$pf$),
+
+-- Step 4 --
+('66666666-6666-6666-6666-666666550104',
+ '55555555-5555-5555-5555-555555550055',
+ 4,
+ $pf$Pass 4 — empty-state and progressive-disclosure copy across 11 surfaces$pf$,
+ $pf$The 4-step flow is designed and the persona-aha is specced. Now I need to write the empty-state and progressive-disclosure copy across the 11 surfaces a new user touches in their first 7 days. This is the unglamorous grunt work but it's where activation either solidifies or breaks (CSM tickets in first 7 days are 41% caused by ambiguous empty-state copy in our data).
+
+The 11 surfaces:
+
+1. Step 4 first-findings panel when there are ZERO findings (clean scan)
+2. Dashboard zero-state when no second scan has run yet
+3. "Findings" page filtered view when filter returns zero results
+4. "Sources" page when only 1 source connected
+5. "Evidence" page when 0 evidence packets generated yet
+6. "Team" page when no teammates invited
+7. Settings → Notifications page on first visit
+8. The 48-hour post-activation "invite teammates" prompt
+9. The post-first-scan "connect more sources" prompt
+10. The day-7 "you have N findings — generate evidence packet?" prompt
+11. The "scan failed" error state for any source
+
+For each surface, write: the headline, the body (1-2 sentences), the primary CTA, and (if applicable) the secondary affordance. Voice: professional, warm, never patronizing, never marketing-y. Compliance audience — they're stressed, don't add to it.$pf$,
+ $pf$Here's the copy for all 11. Key voice principle: every empty state answers "what's supposed to be here, and what do I do about it?" Skip the "Oops!" / "Nothing here yet 👀" / "Let's get started!" garbage — compliance buyers find that condescending. Use a normal professional voice.
+
+---
+
+**1. Step 4 — clean-scan zero-findings (rare but possible)**
+*Headline:* No issues found in this scan.
+*Body:* That's great — but it usually means we should scan more controls. Connect another data source to expand coverage, or change your scan scope to include lower-severity controls.
+*Primary CTA:* Connect another source →
+*Secondary:* Adjust scan scope
+
+---
+
+**2. Dashboard zero-state — no second scan yet**
+*Headline:* Your dashboard updates after each scan.
+*Body:* Your last scan ran [time-ago] and found [N] issues. The next scheduled scan runs [next-scan-time]. You can also run a scan now.
+*Primary CTA:* Run scan now
+*Secondary:* View last scan results
+
+---
+
+**3. Findings page — filter returns zero results**
+*Headline:* No findings match these filters.
+*Body:* Try removing one filter, or look at all [N] findings without filters.
+*Primary CTA:* Clear filters
+*Secondary:* (none — keep it minimal)
+
+---
+
+**4. Sources page — only 1 source connected**
+*Headline:* You're scanning [Source name]. Most teams connect 3–4 sources for full [framework] coverage.
+*Body:* Adding [recommended next source for their framework] would unlock [N specific] additional controls. Setup takes about 2 minutes.
+*Primary CTA:* Connect [recommended source] →
+*Secondary:* See all sources
+
+---
+
+**5. Evidence page — 0 packets generated**
+*Headline:* Evidence packets bundle your scan history into auditor-ready documents.
+*Body:* You have [N] findings reviewed across [M] scans — enough to generate your first packet. Most teams wait until 30 days before audit, but you can generate one anytime.
+*Primary CTA:* Generate first evidence packet →
+*Secondary:* Learn what's in a packet
+
+---
+
+**6. Team page — no teammates invited**
+*Headline:* Working alone on [framework] prep?
+*Body:* You can invite teammates to view findings, assign owners to issues, and split the remediation work. Read-only invites are free; collaborator seats are billed at the workspace rate.
+*Primary CTA:* Invite teammates
+*Secondary:* (link) See seat pricing
+
+---
+
+**7. Settings → Notifications, first visit**
+*Headline:* Choose how you hear about new findings.
+*Body:* Default is a weekly summary email after each scheduled scan, plus immediate alerts for Critical-severity findings. You can change this anytime.
+*Primary CTA:* Save defaults
+*Secondary:* Customize per-finding-type
+
+---
+
+**8. 48-hour post-activation "invite teammates" prompt (modal or banner)**
+*Headline:* Two days in — want to bring in your team?
+*Body:* You've reviewed [N] findings so far. Inviting your security or eng lead lets them see context, claim ownership of issues, and unblock you on technical fixes.
+*Primary CTA:* Send invites
+*Secondary:* Maybe later (dismiss)
+*[Re-prompt logic: if dismissed, don't re-prompt for 14 days. Never more than 3 lifetime prompts.]*
+
+---
+
+**9. Post-first-scan "connect more sources" prompt (in-page card on findings view)**
+*Headline:* You're seeing findings from [Source]. We can also scan [List of next 2-3 recommended sources].
+*Body:* Each additional source surfaces a different set of controls. Adding [Top recommended] would catch issues like [1 specific example finding type] that single-source scans miss.
+*Primary CTA:* Add [Top recommended] →
+*Secondary:* Show all sources
+
+---
+
+**10. Day-7 "generate evidence packet" prompt (email + in-app)**
+*Email subject:* [N] findings reviewed — generate your first evidence packet?
+*Email body opener:* You've reviewed [N] of [M] findings this week, which is enough material to generate your first audit-evidence packet. Most teams generate one weekly during pre-audit prep, then bundle the latest one into the auditor handoff.
+*Primary CTA:* Generate packet (10 sec)
+*[Note: "10 sec" sets expectations correctly — packet generation is fast.]*
+
+---
+
+**11. Scan failed error state**
+*Headline:* Couldn't complete the scan for [Source].
+*Body (one of three, depending on error type):*
+- *Permission error:* "Looks like our access to [Source] was revoked or never had the right permissions. We need [specific scope] to run this scan."
+- *Source unreachable:* "We couldn't reach [Source]'s API. This usually means a temporary outage on their end — we'll retry automatically in 30 minutes. You can also retry manually."
+- *Quota / rate limit:* "We hit [Source]'s API rate limit during this scan. We'll automatically retry in [time]."
+*Primary CTA (varies):* Reauthorize [Source] / Retry now / (none for quota — auto-retry)
+*Secondary:* Get help from support
+
+---
+
+**Cross-cutting voice rules I applied:**
+
+1. **Never use "Oops!" / "Uh oh!" / "Nothing here!" / "Let's get started!" / "Welcome aboard!"** Compliance buyers find these patronizing. Plain professional language only.
+
+2. **Quantify everything.** "[N] findings" beats "some findings." "Most teams connect 3–4 sources" beats "you can connect more sources." Numbers signal that we know our product and our customers.
+
+3. **Always answer "what now?" not just "what is."** Every zero-state has a primary CTA. The Findings filter zero-state is the only one without a secondary because adding one would create choice noise on what should be a 2-second screen.
+
+4. **Be honest about effort.** "Setup takes about 2 minutes" / "Generate packet (10 sec)" — quantified time estimates increase CTA click-through 18-23% in our prior tests. People plan their attention; help them.
+
+5. **No emoji in compliance product copy.** I know it's a meme to use ⚡ and ✅ in onboarding flows; for this audience and this severity context, it reads as unserious.
+
+**Two follow-ups to flag for the launch retro:**
+
+- Surface 11 (scan-failed) is where we'll see the most ticket reduction — current copy is "Scan failed. Please try again." which is the worst possible empty state. Track tickets-related-to-scan-failures pre/post launch.
+- Surface 4 (Sources page with 1 source) is where the multi-source-recommendation logic from Pass 2 has to be SMART. If we recommend the wrong "next source" (i.e., one they don't have) we erode trust. Build a quiet override path: if user clicks the recommended-source CTA and abandons OAuth, downgrade that recommendation by 50% next time and surface the next-best.$pf$,
+ $pf$Empty-state + progressive-disclosure copy spec across 11 surfaces. Voice rules: no "Oops!"/"Welcome!" patronizing tone, always quantify (N findings, "2 minutes", "10 sec"), every state answers "what now?" not "what is," no emojis for compliance audience. Surfaces covered: zero-findings clean-scan (rare), dashboard zero-state, filter-no-results, single-source state with smart next-source recommendation, evidence-page first-packet, team-no-invites, notifications-first-visit, 48hr post-activation invite-prompt with 14-day re-prompt suppression + 3-lifetime cap, post-scan more-sources card, day-7 evidence-packet prompt (email + in-app), and scan-failed error state with three error-type-specific bodies (permission / unreachable / quota). Two launch-retro follow-ups flagged: surface 11 (scan-failed) is highest ticket-reduction target; surface 4 (single-source) needs smart override path if recommended-next-source OAuth gets abandoned (downgrade and re-rank).$pf$),
+
+-- Step 5 --
+('66666666-6666-6666-6666-666666550105',
+ '55555555-5555-5555-5555-555555550055',
+ 5,
+ $pf$Pass 5 — instrumentation + experiment design to prove the lift cleanly$pf$,
+ $pf$Final pass. The redesign is built and ready to go. Before we ship, design the instrumentation + experiment so we can defend the result. The previous time we shipped a "big onboarding redesign" the data team and the design team argued for 3 weeks about whether it actually moved the metric — partly because we'd shipped 4 other things during the same window and couldn't isolate.
+
+Specifically: (a) the LaunchDarkly flag setup — variant assignment, sticky cohorting, exclusions; (b) the events we need to instrument in Amplitude that don't exist today; (c) the sample-size + duration calculation for the test (we get ~400 signups/week); (d) the secondary metrics to watch for harm (don't want to win activation but tank a downstream metric); (e) the analysis cuts and the success criteria you'd commit to BEFORE the test starts — so we don't post-hoc rationalize. Be specific.$pf$,
+ $pf$Experiment design and instrumentation plan. The single biggest mistake teams make is not committing to success criteria upfront — let's not do that.
+
+**(a) LaunchDarkly setup**
+
+- **Flag name:** `onboarding-v2-flow` — boolean.
+- **Targeting:** 50/50 split via random user-key bucketing on signup-event user-key. Use the user-key (not session-key, not IP) so users get sticky assignment on day 1 and don't flip if they sign up on phone then continue on desktop.
+- **Sticky cohorting:** flag value persists for the full account lifetime (or until we deliberately reassign at flag retirement). Critical: do NOT use a date-based flip (e.g., "all users after Apr 15 get variant"). Date-based flips contaminate by mixing seasonality with treatment.
+- **Exclusions from the test:**
+  - Internal employee accounts (filter on email domain matching company domain list)
+  - Accounts created via the SSO/SAML enterprise signup flow (different flow entirely; pollutes results)
+  - Accounts where Clearbit company-size lookup is >5,000 employees (enterprise sales motion is different; small sample anyway)
+  - Trial-extension accounts (returning users from a prior expired trial — they've seen the old onboarding before, which biases their behavior)
+  - Any account where someone manually created via the admin tool (CSM-handled signups)
+- **Secondary cell (within the variant only) for persona-tailoring isolation:** A=one-size-fits-all aha (60% of variant), B=full-persona-tailored aha (30%), C=low-confidence-default-to-Generalist (10%). The 60/30/10 split lets the main test run with stat power on the headline comparison, and the secondary nested test answers "how much of the lift is the flow change vs. the persona aha."
+
+**(b) Events to instrument in Amplitude (gaps in current tracking)**
+
+Current tracking only fires on step-completion events. We need finer-grained events to actually understand behavior. New events to add:
+
+| Event | Properties | Why |
+|---|---|---|
+| `onboarding_step_viewed` | step_number, variant, persona_predicted, persona_confidence | Time-on-step calculation; current data only fires step_completed |
+| `oauth_modal_opened` | source, variant | Pre-OAuth-decision intent |
+| `oauth_modal_abandoned` | source, time_on_modal_seconds, variant | The 26pp leak diagnostic |
+| `oauth_scope_explainer_viewed` | source, variant | Did the new scope-rationale UI get read? |
+| `oauth_completed` | source, time_to_complete_seconds, variant | Conversion to authed |
+| `scan_started` | source, framework, scope, variant | Currently inferred |
+| `scan_first_finding_displayed` | scan_id, time_from_scan_start_seconds, finding_severity, variant | Real time-to-aha |
+| `findings_panel_viewed` | persona_used, finding_count, variant | Aha-screen render |
+| `findings_panel_cta_clicked` | which_cta, variant | Conversion off the aha |
+| `post_activation_prompt_shown` | prompt_type (invite_teammates, connect_more_sources, generate_packet), days_since_activation, variant | Deferred-prompt funnel |
+| `post_activation_prompt_action` | prompt_type, action (clicked, dismissed), variant | Deferred-prompt outcome |
+
+Two analytics gotchas to fix in current setup: (1) currently the `account_created` event fires twice in some browser configs (we track both client-side and server-side) — dedupe on server-side only for this experiment. (2) the existing `activation` event is computed in a nightly batch job, which means same-day activations are undercounted on day 0 — recompute hourly during the experiment.
+
+**(c) Sample size + duration**
+
+Power calc (using your 19% baseline, MDE = 5pp absolute lift to 24%, alpha 0.05, beta 0.20, two-sided): required sample per cell = ~1,160 users.
+
+At 400 signups/week with 50/50 split (200/cell/week) and the exclusion list trimming about 8% (mostly internal accounts and enterprise SSO), we get ~184 eligible signups per cell per week. Required cell size 1,160 / 184 = **6.3 weeks to MDE on the main effect**.
+
+Recommended runtime: **8 weeks**. Reasoning: 6.3 weeks gets statistical significance at the 5pp MDE, but the activation event is measured at 7-day post-signup so the LAST week of signups doesn't have full activation data. 8 weeks gives 7 weeks of signups with complete activation windows, plus a margin against weekly noise.
+
+For the nested A/B/C cell (60/30/10 within variant): with the 30% B cell at ~110 users/week, hitting MDE on B vs A within variant takes ~12 weeks. Plan: report the MAIN result at 8 weeks and tag the nested cell as "directional read; full result at 12 weeks." Don't let the secondary cell delay the main shipping decision.
+
+**Stop-rule:** if at week 4 the variant is showing >10pp absolute lift OR <0pp lift, stop early. Either of those signals is too large to be noise at this sample size and the cost of running longer (lost activation revenue OR sustained harm) outweighs the marginal certainty.
+
+**(d) Secondary metrics — guarding against winning the battle and losing the war**
+
+The activation lift is the headline. But these are the metrics we MUST watch in parallel — if any move adversely, we hold shipping until we understand why:
+
+| Metric | How measured | Harm threshold |
+|---|---|---|
+| 30-day-revenue-per-account | Sum revenue from all activated accounts at day 30, divided by total signups | If variant < control by > 5%, hold |
+| 30-day-retention | % of activated accounts with at least 1 session in days 24-30 | If variant < control by > 4pp, hold |
+| Quality-of-first-scan | Findings-reviewed / findings-shown ratio at day 7 | If variant < control by > 10%, hold (means we activated low-intent users) |
+| Customer-success ticket volume per account | Tickets opened in days 0-14 | If variant > control by > 20%, hold |
+| Day-30 paid conversion | % activated accounts that convert to paid by day 30 | If variant < control by > 3pp, hold |
+| Source-connection breadth at day 14 | Avg number of sources connected | If variant < control by > 0.5 sources, investigate (the deferred multi-source prompt should recover this; if it doesn't, that's a real concern) |
+
+**(e) Pre-committed success criteria — written before the test starts**
+
+We will SHIP THE VARIANT to 100% of new signups if and only if:
+1. **Activation lift ≥ 5pp absolute, p < 0.05** at 8 weeks.
+2. **No secondary metric crosses its harm threshold above** with p < 0.05.
+3. **No drop in 30-day paid-conversion rate** (we can absorb a 1-2pp dip but not >3pp).
+
+We will HOLD THE VARIANT and investigate if:
+1. Activation lift is 2-5pp (real but smaller than expected — investigate if the redesign is being undermined by something we didn't anticipate).
+2. Secondary metrics show one harm signal at p < 0.05 — do a 2-week investigation cycle, then re-decide.
+
+We will KILL THE VARIANT if:
+1. Activation lift is < 2pp at 8 weeks.
+2. Two or more secondary harm thresholds cross at p < 0.05.
+
+**Pre-committed analysis cuts (lock these in BEFORE looking at data):**
+
+- Headline: variant vs control on 7-day activation rate, full eligible cohort.
+- Cut by signup week (8 weekly slices) — looking for stability of effect, not week-by-week comparison.
+- Cut by predicted persona (Compliance / Security / Generalist) — does the lift hold across personas, or is it concentrated in one?
+- Cut by company-size band (1-10 / 11-50 / 51-500 / 501-5000) — does the lift hold across SMB and mid-market?
+- Cut by signup source (organic / paid / referral / inbound demo request) — does signup channel correlate with lift?
+
+Anything not in this pre-registered list is exploratory and labeled as such in the readout. We do NOT post-hoc cut data to find a story.
+
+**Final note: pre-mortem the ways this test could lie to us.**
+
+1. *Novelty effect:* the new flow is shinier and gets short-term lift that fades after 4 weeks. Defense: report 8-week persistence, not just 4-week peak.
+2. *Selection contamination:* if a marketing campaign launches mid-test and brings in low-quality traffic, both cells get hit BUT the variant might be more resilient to low-intent traffic (or less). Defense: tag traffic source on every signup; if a campaign launches, segment results to confirm both cells are seeing the same source mix.
+3. *Persona-detection confounding:* if persona detection works better for one cell than the other (e.g., variant uses persona-detection downstream and gets confounded with persona-confidence-rate), control for persona-confidence in regression. Pre-decide: include persona-confidence as a regression covariate.
+4. *Bucketing leakage:* user signs up on incognito then again with email — gets bucketed twice with different assignments. Defense: dedupe at user-key on the analysis side and keep only the FIRST observed assignment.
+
+This list isn't exhaustive but it covers the four ways our prior onboarding tests have failed to convince stakeholders. Pre-registering them is the cheap insurance.$pf$,
+ $pf$Experiment design + instrumentation. (a) LaunchDarkly flag with random-user-key 50/50 sticky cohort, exclusions for internal accounts/SSO/enterprise/trial-extensions/CSM-handled, nested 60/30/10 A/B/C within variant for persona-tailoring isolation. (b) 11 new Amplitude events to add (currently only step-completion fires; we need step_viewed, oauth_modal_opened/abandoned, scan_first_finding_displayed, findings_panel_viewed, post-activation prompt funnels) — plus fix two existing-tracking bugs (account_created double-fires, activation computed in nightly batch). (c) Power calc: 5pp MDE at 19% baseline needs 1,160/cell × 8 weeks at our 400-signup/week × 50/50 × 8% exclusions; nested A/B/C secondary-effect tagged "directional at 8wk, full at 12wk." Stop-rule: >10pp or <0pp at week 4. (d) Six secondary harm metrics with explicit thresholds: 30-day RPA, 30-day retention, quality-of-first-scan ratio, CS ticket volume, 30-day paid conversion, source-connection breadth. (e) Pre-committed criteria: ship if ≥5pp lift + no harm crossings; hold if 2-5pp; kill if <2pp. Pre-registered analysis cuts (week × persona × company-size band × signup-source) lock in BEFORE looking at data. Pre-mortem covers novelty effect, selection contamination, persona-detection confounding, bucketing leakage.$pf$);
+
+-- =========================================================================
+-- Project 55-0056 | Q2 OKR-setting workshop kit for 6 teams at a 50-person agency | Nina Kowalski | Productivity | 4 steps
+-- =========================================================================
+
+DELETE FROM prompt_steps WHERE prompt_id = '55555555-5555-5555-5555-555555550056';
+DELETE FROM prompts      WHERE id        = '55555555-5555-5555-5555-555555550056';
+
+INSERT INTO prompts (
+  id, title, description, content, result_content,
+  category_id, difficulty, model_used, model_recommendation,
+  tools_used, tags, status, author_id, vote_count, bookmark_count
+) VALUES (
+  '55555555-5555-5555-5555-555555550056',
+  $pf$Q2 OKR-setting workshop kit for 6 teams at a 50-person agency — 4-pass Claude workflow from facilitator script to KR quality rubric to alignment-check protocol to post-workshop refinement cadence$pf$,
+  $pf$Built a Q2 OKR-setting workshop kit for our 50-person agency after Q1 OKRs were vague aspirations nobody tracked. 4-pass Claude 4.6 Sonnet workflow — 90-min synchronous workshop facilitator script for any team lead to run cold, KR-quality rubric (specific/measurable/ambitious-but-achievable/leading-not-lagging), cross-team alignment-check protocol that catches conflicting priorities BEFORE the quarter starts, and async refinement-week cadence + mid-quarter check-ins that don't fall apart by week 6.$pf$,
+  $pf$I run ops at a 50-person creative + strategy agency. We have 6 teams (Strategy, Creative, Production, Account, Tech, Ops) and our Q1 OKRs were a disaster — 31 KRs across 6 teams, only 9 of them passed any quality bar (specific + measurable), and by week 8 of the quarter literally nobody had checked in on them. Our managing partner finally said "Q2, we're either doing OKRs properly or we're killing them." I have one shot to make this work.
+
+I ran 4 passes with Claude 4.6 Sonnet (this is workflow + facilitation, not heavy reasoning — Sonnet is the right tool). Pass 1: a 90-minute synchronous workshop facilitator script that any team lead can run cold (I can't be in 6 workshops in one week). Pass 2: a KR quality rubric with explicit pass/fail criteria — including the "leading vs lagging indicator" test that's the most-skipped check in OKR setting. Pass 3: cross-team alignment-check protocol that surfaces conflicting priorities BEFORE the quarter starts (Strategy and Creative had a head-on collision in Q1 over a launch deadline that everyone knew was coming and nobody flagged). Pass 4: post-workshop async refinement week + mid-quarter check-in cadence that survives past the first 3 weeks.
+
+Sharing because every agency / consultancy at our size struggles with OKRs and the McKinsey-style "OKR Best Practices" docs floating around the internet are written for FAANG companies with full-time program managers. This is the lean version that works for teams of 8 with no PMO support.$pf$,
+  $pf$All 6 teams ran the workshop in week 1 of Q2. 31 KRs total drafted across the 6 teams (averaged ~5 per team). After the refinement-week pass, 27 of 31 final KRs passed the quality rubric (87%, vs. 9 of 31 = 29% in Q1). The cross-team alignment-check caught 3 real conflicts — Strategy + Creative on a launch overlap, Production + Tech on a tooling-rollout dependency, Account + Ops on a billing-system migration window — all resolved in week 2 instead of erupting in week 8. Mid-quarter check-ins (week 6) had 100% team participation, vs. 17% in Q1. By end-of-quarter, KR completion rate hit 71% across teams (industry-typical OKR completion is 60-70%, where you AIM for 70% as the "ambitious-but-achievable" sweet spot). The managing partner extended the workshop kit to be the standard quarterly cadence going forward and asked me to write it up as the agency's playbook.$pf$,
+  '11111111-1111-1111-1111-111111111107',
+  'intermediate',
+  'claude-sonnet-4-6',
+  'Claude 4.6 Sonnet',
+  ARRAY['Claude','Notion','Miro','Slack','Google Docs'],
+  ARRAY['okrs','quarterly-planning','workshop-facilitation','agency','team-alignment','operating-cadence'],
+  'approved',
+  '22222222-2222-2222-2222-222222222206',
+  0, 0
+);
+
+INSERT INTO prompt_steps (id, prompt_id, step_number, title, content, result_content, description) VALUES
+
+-- Step 1 --
+('66666666-6666-6666-6666-666666560101',
+ '55555555-5555-5555-5555-555555550056',
+ 1,
+ $pf$Pass 1 — 90-minute workshop facilitator script that any team lead can run cold$pf$,
+ $pf$I need a tight, no-bullshit 90-minute workshop script for OKR-setting. Audience: a team of 5-10 people with their team lead facilitating. Most team leads have never facilitated an OKR workshop before — the script needs to be runnable cold with minimal prep (15 min the night before). Outcome: by end of 90 min, the team has drafted 3-5 KRs under one team Objective, with the work to refine them moved to the async refinement-week.
+
+Constraints I want enforced:
+- 90 min hard cap. We've all sat through 3-hour OKR workshops that produced worse outcomes than 90-min ones.
+- No participation from the managing partner / executives in the team workshop — this is the team's draft, not handed-down OKRs.
+- The Objective comes from the team's read of the company-level Q2 priority memo (which I'll give them 1 week before). They don't generate the Objective in the workshop; they translate it.
+- Each KR must be assigned a single owner (not "the team owns it" — that's how Q1 KRs went unchecked).
+
+Give me the minute-by-minute script: timing, what the facilitator says, what's on screen / Miro / whiteboard, and the explicit failure modes the script is preventing in each segment. I want this so detailed that a team lead can read it on their iPad while running the workshop and not need to improvise.$pf$,
+ $pf$Here's the 90-minute facilitator script. I'll go segment by segment with timing, screen content, what the facilitator says (verbatim where it matters), and the failure mode each segment prevents.
+
+**Pre-workshop (the night before, 15 min):**
+- Read the company Q2 priority memo (1 page, distributed 1 week prior).
+- Open the team's Q1 KRs and skim what hit / missed / went silent.
+- Open the workshop Miro template (one frame per segment — link in the kit).
+- Send Slack reminder: "Tomorrow 10-11:30, OKR workshop. Skim the Q2 memo if you haven't. Bring one Q1 lesson — what should we do differently this quarter?"
+
+---
+
+**SEGMENT 1 — Frame the work (0:00 – 0:10, 10 min)**
+
+*On screen:* Miro frame titled "Why we're here." Three bullets visible:
+- Q1 OKRs: 9 of 31 KRs passed quality. We're doing this differently in Q2.
+- Today: draft 3-5 KRs under one team Objective. Refine async next week.
+- 90 minutes. No grade-school exercises, no warm-ups, no breakouts under 5 people.
+
+*Facilitator says:*
+"Two minutes on context. Q1 OKRs didn't work — partly because we wrote vague KRs, partly because nobody owned them, partly because they sat in a Notion page nobody opened after week 2. Today we draft. Next week we refine asynchronously. The bar is: 3-5 KRs that you'd be willing to show our managing partner without flinching. That's it.
+
+I want one Q1 lesson from each person. Thirty seconds each. What should this team do differently this quarter? Go." [5 minutes — round-robin, no debate, just collect.]
+
+*Failure mode prevented:* skipping the "what we learned" surface lets people repeat Q1's specific mistakes. The 30-sec cap prevents this from becoming a venting session.
+
+---
+
+**SEGMENT 2 — Translate the company priority into a team Objective (0:10 – 0:25, 15 min)**
+
+*On screen:* The company Q2 priority memo (1 page) on the left half of the Miro frame. On the right: a single text field labeled "Our team's Objective for Q2 — one sentence."
+
+*Facilitator says:*
+"The company Q2 memo is on the left. Our job is to translate the slice that's OURS into one Objective that this team owns. Not the whole company priority — our team's piece of it. One sentence. Aspirational but concrete. Examples that work: 'Make our creative output the reason clients renew, not the reason they leave.' Examples that don't work: 'Be world-class at creative.' [Give a 5-min silent draft window. Each person writes their Objective candidate in a Miro sticky.] Now share — 30 sec per sticky, no edits yet. Then we converge: which two are closest? Pick one as the working draft. We will refine the words next week — what we want today is the SHAPE of the Objective."
+
+*Failure mode prevented:* OKR workshops collapse when they spend 60 minutes wordsmithing the Objective. The "shape, not exact words" framing keeps momentum.
+
+---
+
+**SEGMENT 3 — Draft KR candidates (0:25 – 1:00, 35 min) — THE CORE WORK**
+
+*On screen:* Working Objective at the top. Below it, a 4-column grid labeled with the KR Quality Rubric headings (which Pass 2 will fully spec): SPECIFIC / MEASURABLE / AMBITIOUS BUT ACHIEVABLE / LEADING NOT LAGGING.
+
+*Facilitator says (0:25):*
+"35 minutes here. Two stages: 12 min silent draft, 18 min group sharpen, 5 min owner assign.
+
+Silent draft: each person writes 2 KR candidates. They don't have to be perfect. They have to roll up to the Objective. They have to be measurable — if you can't put a number on it, it's not a KR yet. Twelve minutes. Go."
+
+*[12 minutes silent. Facilitator quietly writes 1-2 KR candidates of their own to add.]*
+
+*Facilitator says (0:37):*
+"Stop. Each person — read your two KRs. Group will challenge them on three things: is this ACTUALLY measurable, is this LEADING (something you do) or LAGGING (an outcome you only see at end of quarter), is this ambitious or just safe? Don't be precious — kill your KRs that don't survive the challenge. We'll converge on 3-5 KRs that survive."
+
+*[18 minutes. Facilitator's job: keep the round-robin moving (3 min per person), enforce the three challenge questions, consolidate duplicates on Miro as you go.]*
+
+*Facilitator says (0:55):*
+"We have [N] KR candidates. Five-minute owner assignment: every KR gets one named owner. Not 'the team' — one human. The owner doesn't do all the work, the owner is accountable for the number moving. Silent assignment: write your name on the KRs you'll own. If a KR has no name claimed, we kill it — un-owned KRs are how Q1 happened."
+
+*Failure mode prevented:* the three explicit challenges (measurable, leading, ambitious) catch the most common failures BEFORE refinement week. Single-owner rule kills the diffuse-responsibility pattern that ate Q1.
+
+---
+
+**SEGMENT 4 — Sanity check: dependency + capacity scan (1:00 – 1:20, 20 min)**
+
+*On screen:* Each surviving KR on a Miro card with owner name. To the right, two columns: "What other team are we depending on?" and "Confidence we can hit this (1-5)."
+
+*Facilitator says:*
+"Twenty minutes on the boring-but-essential work. For each KR, two questions: do we depend on another team to hit this — and if yes, has that team agreed yet? Second question: gut-check confidence on a 1-5 scale that we'll actually hit this. Not what we'd LIKE the answer to be — what we'd answer if a board member asked us. Round-robin per KR, owner answers first."
+
+*[Facilitator captures answers on Miro. Dependency answers go to Pass 3's alignment check. Confidence ratings: any KR averaging <2 gets flagged "too ambitious / unrealistic"; any averaging >4.5 gets flagged "probably not ambitious enough."]*
+
+*Failure mode prevented:* (1) un-flagged cross-team dependencies cause Q1-style mid-quarter collisions. (2) confidence score skewed >4.5 reveals KRs that are basically already-committed work being relabeled — those are not OKRs.
+
+---
+
+**SEGMENT 5 — Close: what happens next (1:20 – 1:30, 10 min)**
+
+*On screen:* Three bullets:
+- This week: each KR owner refines wording in Notion (Pass 4 cadence).
+- Next Friday: cross-team alignment-check meeting with one rep per team (Pass 3).
+- Mid-quarter check-in: week 6, 30 min per team with the managing partner.
+
+*Facilitator says:*
+"Three things happen between now and Q2 launch. KR owners — you have until Friday to refine your KR's wording in Notion using the rubric. Next Friday, one of you joins the cross-team alignment check — I'll send the calendar invite. Mid-quarter check-in is week 6 of the quarter, the partner will be there, it's 30 min, the bar is: are we on track, what's blocking, what changed.
+
+Last thing: take 60 seconds and write down the ONE thing about today's draft you're most worried about. Drop it in Slack #okrs-q2 by end of day. That's the KR most likely to get killed in refinement — better to surface it now than at the end of the quarter."
+
+*Failure mode prevented:* OKR workshops that don't end with explicit next-step ownership and dates are how the work dies between week 1 and the next quarter. Naming the next 3 milestones makes the workshop less of an event and more of a phase 1 of an ongoing process.
+
+---
+
+**Critical facilitation rules embedded throughout:**
+
+1. **Hard time-box each segment.** The script's 10/15/35/20/10 = 90 budget assumes the facilitator interrupts when a segment overruns by >2 min. If you let segment 3 sprawl to 50 min, you eat segment 4's dependency check — which is the whole point of Pass 3.
+
+2. **Silent drafting before group discussion in every generative segment.** Q1's groupthink came from people anchoring on the first idea spoken. Silent draft kills anchoring.
+
+3. **Single-owner rule is non-negotiable.** Any KR without a named owner by minute 60 dies on the spot. The team can re-draft an un-owned KR with an owner next week or it's dead.
+
+4. **No managing partner / exec presence in this workshop.** Their absence is structural — the team needs to be able to draft KRs that might be wrong without performing for the partner. Partner enters at the mid-quarter check-in (week 6).
+
+5. **The facilitator is a referee, not a participant.** Team lead writes their own KR candidates but doesn't anchor the room — they share LAST in the round-robin, not first. This is the single highest-leverage facilitation rule and the one most facilitators violate.
+
+The script is designed so that a team lead with zero facilitation training can run it from a printed copy in front of them. Test it once with a friendly team (your own) before sending it to the other 5 leads.$pf$,
+ $pf$90-minute workshop facilitator script (5 segments: frame work / translate company priority into team Objective / 35-min KR draft + sharpen + owner-assign / dependency-and-capacity scan / close with named next steps). Hard time-box each segment with explicit overrun rule (>2min interrupt). Silent-draft-before-group-discussion in every generative segment kills anchoring. Single-owner-per-KR rule is non-negotiable; un-owned KRs die at minute 60. No managing-partner/exec presence (structural — enables team to draft potentially-wrong KRs without performing). Team lead facilitator shares LAST in round-robins to avoid anchoring the room — highest-leverage facilitation rule. Three failure modes prevented per segment explicitly named so a never-facilitated-before team lead can run it cold from a printed script with 15 min prep.$pf$),
+
+-- Step 2 --
+('66666666-6666-6666-6666-666666560102',
+ '55555555-5555-5555-5555-555555550056',
+ 2,
+ $pf$Pass 2 — KR quality rubric with explicit pass/fail criteria including the leading-vs-lagging test$pf$,
+ $pf$Workshop script references the KR Quality Rubric — now I need to actually spec it. The rubric needs to be: (a) usable in real time during the workshop (a tired team lead can apply it on the fly), (b) usable in the async refinement week by KR owners, (c) the basis for the Q1 readout where we say 9 of 31 passed and 27 of 31 will pass in Q2.
+
+Four criteria I want enforced: SPECIFIC, MEASURABLE, AMBITIOUS BUT ACHIEVABLE, LEADING NOT LAGGING. For each, give me: (1) the test as a yes/no question (no "kind of"), (2) common failure pattern at our size of company, (3) example of a KR that passes, (4) example that fails on this criterion specifically, (5) the cheap fix to convert the failure into a pass when possible. Be concrete — I want this as a 1-page printable artifact.$pf$,
+ $pf$Here's the 1-page KR Quality Rubric. Each criterion has a single yes/no test, the most common failure pattern at agency-size companies, and a fix path.
+
+---
+
+## KR QUALITY RUBRIC — 4 CRITERIA, ALL 4 MUST PASS
+
+### 1. SPECIFIC
+
+*Test:* Could two different people, given only this KR, agree on whether it was met at end of quarter without any further conversation?
+
+*Common failure pattern:* "Improve client satisfaction." Anyone reading this would interpret "improve" differently — by 2%? By 20%? Across all clients or just retention-tier-1? Through what proxy?
+
+*Pass example:* "Increase quarterly client NPS from current baseline of 32 to 45+, measured by the existing post-engagement survey, across all clients with active engagements ≥ 60 days."
+
+*Fail example:* "Improve client satisfaction."
+
+*Fix path:* For every vague verb (improve, optimize, enhance, increase, grow), ask THREE questions: from what baseline, to what target, measured by what specific instrument. If you can't name all three in one sentence, the KR fails this test.
+
+---
+
+### 2. MEASURABLE
+
+*Test:* Is there a number, threshold, or yes/no state that can be observed at end of quarter from a system you ALREADY have access to (not a system you'd need to build)?
+
+*Common failure pattern:* "Build a culture of feedback." There's no system that produces a "culture of feedback" number. Even if there were, you'd be building it during the quarter.
+
+*Pass example:* "100% of team leads complete two structured 1:1 feedback conversations with each direct report by end of Q2, tracked in the existing 1:1 Notion template."
+
+*Fail example:* "Build a culture of feedback."
+
+*Fix path:* If your KR requires building a measurement system to measure itself, the KR is too aspirational for this quarter. EITHER add a "build the measurement system" KR for this quarter and target the cultural KR for next quarter, OR pick a proxy you can already measure (1:1 frequency, feedback survey response rate, manager-rated team-feedback-quality on existing perf review) and KR against that.
+
+---
+
+### 3. AMBITIOUS BUT ACHIEVABLE
+
+*Test:* When the team gut-checks their confidence (1-5) at the workshop, the average lands between 2.5 and 4.0. Outside that range = fail.
+
+*Common failure pattern (too low — score <2.5):* "Land 50 new logos this quarter" when last quarter was 8. The team will mentally write it off in week 2 and pursue safer work. KRs you don't believe in don't get worked.
+
+*Common failure pattern (too high — score >4.0):* "Hit $4.2M in Q2 revenue" when forecast already has you at $4.1M. This is just rebranding the forecast as an OKR. No team grew from setting OKRs that match what was already going to happen anyway.
+
+*Pass example:* "Land 14 new logos this quarter" (last quarter: 8, forecast Q2: 11, KR: 14 — stretch but believable).
+
+*Fail example (too low):* "Maintain at least 8 new logos" — this is not a goal, it's a defense.
+
+*Fail example (too high):* "Land 50 new logos" — pure aspiration.
+
+*Fix path:* If confidence averages <2.5, ask: what would have to be true for us to confidently hit this? If the answer involves multiple unrealistic assumptions, lower the bar. If it involves 2-3 specific actions the team controls, KEEP the KR but EXPLICITLY commit to those actions in the refinement week (and consider whether one of them should be its own KR).
+
+If confidence averages >4.0, ask: what's the version of this KR that scares us? Why didn't we write that one? Often the answer is "we'd lose face if we missed it" — and that's exactly the OKR you should have set.
+
+---
+
+### 4. LEADING, NOT LAGGING
+
+*Test:* Does the KR measure something the team CAN INFLUENCE through actions in the next 90 days, OR does it measure an outcome that's mostly determined by things outside the team's control?
+
+*Common failure pattern:* "Q2 revenue of $4.2M." Revenue is the lagging outcome of dozens of things — many of which are outside the team's quarter-by-quarter influence (deal cycles started months ago, market conditions, churn from prior quarters). Setting a revenue KR doesn't tell the team WHAT TO DO, just what they want at the end.
+
+*Pass example:* "Run a structured discovery call in week 1 of every active engagement (target: 100% of engagements; measured by # discovery calls logged in HubSpot / # active engagements)." This is leading — the team controls whether discovery calls happen — and it's tied to a revenue thesis (better discovery → better fit → better retention → better revenue).
+
+*Fail example:* "Increase ARR by 15%."
+
+*Fix path:* For every outcome KR, ask: WHAT BEHAVIOR drives this outcome that we can do this quarter? Replace the outcome with the behavior. If you can't identify the leading behavior, the KR is a wish, not an objective. (One exception: if the entire quarter's plan is to build the system that PRODUCES the lagging outcome — e.g., shipping a new pricing model with a revenue target — then the lagging outcome can be the KR but it MUST be paired with milestone KRs for the system being built.)
+
+---
+
+## APPLICATION GUIDANCE
+
+**During the 90-minute workshop:** apply the rubric in real time during Segment 3 sharpening. Each KR candidate gets 3 challenge questions (which are essentially criteria 1, 2, and 4). Confidence rating in Segment 4 covers criterion 3.
+
+**During the async refinement week:** KR owners self-apply the full 4-criterion rubric. The Notion KR template embeds the rubric as a checklist — owner must check all 4 boxes before the KR is "submitted."
+
+**At the readout:** count KRs that pass all 4 vs. KRs that fail any 1+. The Q1 baseline number (9 of 31 = 29%) is the bar to beat. Target 80%+ pass rate by end of refinement week.
+
+**Common multi-failure pattern at agency-size companies:** KRs that are vague AND lagging AND set at the floor of confidence. These are typically pasted in from last quarter or from a manager's calendar reminder. Kill them outright in Segment 3 and replace with one well-formed KR.
+
+---
+
+**Two notes for facilitators using this rubric:**
+
+1. The rubric is a quality gate, not a creative tool. Don't use it to GENERATE KRs — use it to evaluate and improve drafts. Generative tools (the workshop script, the Q2 priority memo) come first; the rubric is the filter.
+
+2. A KR can pass all 4 criteria and still be the wrong KR for the team's strategy. The rubric catches structural failures, not strategic ones. Strategic fit comes from the Objective being well-translated from the company priority memo (Segment 2) and from the dependency/capacity scan (Segment 4). The rubric is necessary, not sufficient.
+
+Print this on one page. Laminate it if your team is the kind that leaves things on desks. Refer to it during the workshop and during refinement week. The single biggest delta between Q1's 29% pass rate and Q2's 87% target is whether the rubric gets actually USED, not whether it exists.$pf$,
+ $pf$1-page KR Quality Rubric — 4 criteria all must pass. SPECIFIC: two strangers given the KR could agree on met/not-met at quarter-end without further conversation; fix vague verbs by naming baseline + target + measurement instrument. MEASURABLE: number observable from a system you already have (NOT one you'd build during the quarter); fix by either splitting into "build measurement system" + "measure" KRs across two quarters OR using an existing-system proxy. AMBITIOUS BUT ACHIEVABLE: workshop confidence rating 2.5–4.0 (lower = unbelievable, will be ignored; higher = re-branded forecast); fix path differs by direction. LEADING NOT LAGGING: measures behavior the team can influence in 90 days, NOT outcomes determined by upstream factors; fix by replacing outcome with the leading behavior that drives it (one exception: system-build quarters can have lagging KRs paired with milestone KRs). Application: real-time during workshop Segment 3, self-applied in refinement week (Notion checklist), counted at readout vs. Q1 9/31=29% baseline. The rubric is a quality gate not a generator — necessary, not sufficient.$pf$),
+
+-- Step 3 --
+('66666666-6666-6666-6666-666666560103',
+ '55555555-5555-5555-5555-555555550056',
+ 3,
+ $pf$Pass 3 — cross-team alignment-check protocol that surfaces conflicting priorities BEFORE the quarter starts$pf$,
+ $pf$Q1's biggest failure wasn't bad KRs in isolation — it was that Strategy and Creative had a head-on collision in week 7 over a launch deadline that, in hindsight, was visible from week 1 if anyone had bothered to compare the two teams' calendars. The dependency/capacity scan in Segment 4 of the workshop catches some of this within a single team, but cross-team conflicts only surface when teams talk to each other.
+
+Design the cross-team alignment-check meeting that happens at end of Workshop Week (Friday after the 6 individual workshops). Constraints: 60 minutes max — anything longer and we won't get the 6 leads in a room. One rep per team. Output: a written list of the conflicts surfaced + a named owner for resolving each one within the next 5 business days, before the quarter formally launches.
+
+Give me the meeting structure: pre-work, agenda, decision rules for handling a surfaced conflict, what happens if the room can't resolve a conflict in real time, and the artifact left at the end.$pf$,
+ $pf$Cross-team alignment check, 60 minutes, end of Workshop Week. Here's the structure.
+
+---
+
+**PRE-WORK (each team rep, 30 min the day before)**
+
+Each rep brings:
+1. Their team's draft Objective and 3-5 KRs (already in Notion from the workshop).
+2. A pre-filled "dependencies and asks" sheet — a single page per team that lists:
+   - For each KR: which other team are we depending on, and what specifically do we need from them, by when?
+   - Are there any team commitments we expect to MAKE this quarter that other teams haven't asked for yet? (e.g., "We're rolling out new Figma file structure — Creative team will need to migrate 30 active files in week 4.")
+3. A pre-filled "calendar conflicts" check — notable client-facing dates, internal launches, holidays, planned PTO clusters that intersect with the quarter.
+
+The pre-work doc template is in Notion — facilitator (me) sends the template Monday of workshop week, due end of day Thursday.
+
+---
+
+**MEETING STRUCTURE — 60 MIN**
+
+**0:00 – 0:05 (5 min) — Set context.**
+Facilitator (me): "We have 60 minutes. The goal isn't to align on strategy — that's done. The goal is to surface dependency mismatches and calendar collisions BEFORE they bite us in week 7 like Q1. Output: a written list of conflicts with named owners, due to resolve within 5 business days."
+
+**0:05 – 0:25 (20 min) — Round-robin: each team's KRs + their asks of other teams.**
+3 minutes per team, 6 teams. Each rep walks through:
+- Their team Objective in one sentence.
+- The 3-5 KRs (skim, don't deep-dive).
+- The 1-2 highest-leverage asks of other teams (the things that, if they don't happen, the KR misses).
+- The 1-2 commitments their team is making that other teams may not know about yet.
+
+While each rep is speaking, the other 5 reps and I are silently noting: anything that conflicts with their team's plan, anything their team is already doing that could help, anything that surprises them.
+
+Hard rule: NO INTERRUPTIONS during a team's 3 minutes. Notes only. Discussion comes next.
+
+**0:25 – 0:50 (25 min) — Surface the conflicts.**
+
+Each rep takes 60 seconds to name the conflicts they noticed:
+- "Strategy is asking Creative for the Q2 brand refresh draft by week 4 — Creative has the Vega launch deck on the same week and our KR confidence is already at 3."
+- "Production is rolling out the new tooling in week 6 — Tech's dependency on a stable production environment for the platform migration peaks in week 6 and 7."
+- "Account team's billing-system migration window is week 8 — Ops has a different migration in the same window that we hadn't coordinated."
+
+Conflicts get listed on a shared Miro board with these fields: who-vs-who, what's at stake, when does it bite, how serious (low / medium / high — based on whether either team's KR confidence drops below 2.5 if unresolved).
+
+I'll act as scribe, not arbiter. Reps add to the list; I capture verbatim.
+
+**0:50 – 0:60 (10 min) — Decisions or owners.**
+
+For each surfaced conflict:
+
+- **If the room can resolve it in real time** (usually true for calendar-collision cases — one team can move a date by a week with no KR impact): name the resolution + the person updating their KR doc by end of day. Move on.
+- **If the room CAN'T resolve in real time** (usually true for dependency conflicts that involve scope or capacity tradeoffs): name a single conflict-owner (one of the two team reps, by mutual agreement — usually the one whose KR is more at risk). The conflict-owner schedules a follow-up within 5 business days, gets to a decision, and posts the resolution to #okrs-q2 by next Wednesday. If they CAN'T resolve in 5 business days, the conflict escalates to the managing partner — but only after the two reps have demonstrably tried. 92% of these get resolved at the rep level if you give them the structure.
+
+---
+
+**DECISION RULES FOR HANDLING A CONFLICT**
+
+The 5 most common conflict patterns and how to resolve them:
+
+1. **Calendar collision (same week, two big launches):** lower-priority team moves their date. Priority is set by which team's KR has lower confidence — they have less slack to absorb the collision.
+
+2. **Dependency capacity mismatch (Team A asks Team B for something B doesn't have capacity for):** Team B explicitly drops the ask from their commitments and Team A adjusts the KR (lowers target, extends timeline, or kills it). Don't let an un-confirmed dependency sit in a KR — that's how Q1 happened.
+
+3. **Tooling / process change one team is making that affects another team's work:** announcing team owns a ramp plan with the affected team (training, migration window, fallback). 4-week minimum lead time on any tooling change that affects 2+ teams.
+
+4. **Headcount / shared resource conflict (e.g., two teams both want the new senior designer 60% of their time):** can't resolve at this meeting — escalate to the managing partner with a clear ask in writing within 48 hours. Don't let the room debate it.
+
+5. **Priority disagreement (one team thinks another team's priority is wrong):** OUT OF SCOPE for this meeting. Strategy is set. If a rep has a real strategic concern, raise it with the partner separately, not in this room. Allowing strategic-priority debate in this meeting blows up the timeline and undermines the workshop output.
+
+---
+
+**ARTIFACT LEFT AT END (the most important deliverable)**
+
+A 1-page Notion doc titled "Q2 Cross-Team Alignment — Conflicts and Resolutions" with this structure:
+
+```
+Date of meeting: [Date]
+Reps present: [6 names]
+
+CONFLICTS RESOLVED IN ROOM (N total):
+- [Conflict 1]: [Resolution]. Owner of update: [Name]. Due: end of day [Date].
+- [Conflict 2]: ...
+
+CONFLICTS WITH ASSIGNED OWNERS, RESOLVING BY [Date + 5 business days]:
+- [Conflict 3]: Owner: [Name]. Other party: [Name]. Resolution due: [Date].
+- [Conflict 4]: ...
+
+CONFLICTS ESCALATED TO MANAGING PARTNER:
+- [Conflict 5]: Reason for escalation: [Brief]. Submitted in writing: [Y/N + Date].
+
+DEPENDENCIES CONFIRMED (no conflict — flagging for visibility):
+- [Team A] depends on [Team B] for [thing] by [date]. Confirmed.
+- ...
+```
+
+This document is THE artifact. If we have it, the meeting succeeded. If we don't have it, the meeting was a chat.
+
+---
+
+**WHY THIS WORKS THAT Q1 DIDN'T:**
+
+Q1 had no equivalent of this meeting. Each team did their planning in isolation, KRs went into a Notion page, and conflicts emerged in real time during execution. The 60-min cross-team check is the cheapest possible insurance against the most common Q1 failure mode — and the pre-work (each team listing their dependencies and commitments in a structured way) is what makes the meeting fast enough to actually fit in 60 minutes.
+
+The "5 business days to resolve" SLA on assigned-owner conflicts is the load-bearing rule. Without it, conflicts get logged and forgotten. With it, the resolutions land BEFORE Q2 formally launches and the quarter starts with everyone aligned on real (not assumed) commitments.
+
+One thing to track in the Q2 retro: how many conflicts were surfaced at this meeting, how many resolved at the rep level vs. escalated, and how many that surfaced WERE NOT escalated but became real problems anyway. That last category is the diagnostic — meetings that surface a conflict but don't actually resolve it are worse than meetings that don't surface it.$pf$,
+ $pf$60-minute cross-team alignment-check meeting, end of Workshop Week, 1 rep per team. Pre-work (30 min each, due day before): pre-filled "dependencies and asks" sheet + "calendar conflicts" check. Meeting: 5min context, 20min round-robin (3min/team, no interruptions, others note silently), 25min surface conflicts on Miro with severity rating, 10min real-time resolution OR named conflict-owner with 5-business-day SLA. Decision rules for 5 common conflict patterns: calendar-collision (lower-confidence KR moves date), dependency-capacity-mismatch (drop or downscale the ask), tooling/process change (4-week lead time + ramp owner), headcount/shared-resource (escalate to partner in 48hrs), priority disagreement (out of scope — handle separately). Artifact: 1-page Notion doc with conflicts-resolved / owners-assigned / escalated / dependencies-confirmed sections. Q1 retro signal to track: surfaced-but-not-actually-resolved conflicts that became real problems anyway = the failure mode this protocol must catch.$pf$),
+
+-- Step 4 --
+('66666666-6666-6666-6666-666666560104',
+ '55555555-5555-5555-5555-555555550056',
+ 4,
+ $pf$Pass 4 — async refinement week + mid-quarter check-in cadence that survives past week 3$pf$,
+ $pf$Last pass. The workshop and alignment check are great in week 1 — but Q1's real failure was that NOTHING happened from week 3 onward. KRs went into Notion, nobody opened them, nobody talked about them, and the quarterly review at week 13 was an autopsy.
+
+Design: (a) the 5-day async refinement-week that converts workshop drafts into final KRs, (b) the mid-quarter cadence that keeps OKRs alive without being a meeting tax, (c) the explicit triggers that escalate when a KR is in trouble, (d) the end-of-quarter readout protocol that captures lessons WITHOUT becoming a 2-hour meeting nobody wants to attend.
+
+I want a cadence I could put on a calendar today and have it run in Q3 with zero re-design.$pf$,
+ $pf$Quarterly OKR cadence, end-to-end. Here's the calendar you can put in place today.
+
+---
+
+## (a) ASYNC REFINEMENT WEEK (Mon–Fri after Workshop Week)
+
+**Monday — KR owners refine wording (60 min self-paced)**
+Each KR owner pulls up their KR and the Quality Rubric. They self-apply all 4 criteria, edit the KR until all 4 pass, and submit by EOD Monday in Notion. The Notion template embeds the rubric as a checklist — submission requires all 4 boxes checked plus a 1-sentence "what I'd measure to know this is on track at week 6" note.
+
+**Tuesday — Team-lead 1:1 review (15 min per KR owner)**
+Team lead has a 15-min sync with each KR owner. Two questions only: "Does the wording pass the rubric?" and "What would have to go wrong for you to miss this?" Lead can push back on wording; cannot rewrite the KR (owner owns the wording).
+
+**Wednesday — Cross-team conflict resolutions due**
+Conflicts assigned at the alignment-check meeting must be resolved (or escalated) by EOD Wednesday — that's the 5-business-day SLA from Friday's alignment-check. Resolutions posted to #okrs-q2.
+
+**Thursday — Team lead final review + commitment**
+Team lead reads all 3-5 final KRs, gut-checks total team capacity (are we promising 5 KRs of work where the team realistically has 3 KRs of capacity?), and either commits or sends one KR back for re-scoping. By EOD Thursday, the team's Q2 OKRs are LOCKED.
+
+**Friday — Quarterly kickoff: 30 min agency-wide, partner present**
+Each team lead presents their Objective + 3-5 KRs in 4 minutes. No Q&A in this meeting (kickoff isn't the venue for re-debate). Followed by managing partner's brief sign-off + the partner's own one-page "what I'm watching this quarter" note.
+
+The kickoff matters because it's the first time the OKRs are visible cross-agency and the partner endorses them. Post-kickoff: every team's OKRs live in the same Notion page hierarchy; readable by anyone in the agency without permission requests.
+
+---
+
+## (b) MID-QUARTER CADENCE — LIGHTWEIGHT, NOT A MEETING TAX
+
+**Weekly — async KR owner check-in (15 min, Friday afternoon)**
+Each KR owner posts a short update in their team's Slack thread: red / yellow / green status + 1-2 sentences on what changed this week + what's blocking, if anything. Format is fixed (red/yellow/green emoji + sentence) so it scans in 30 seconds per team. Team lead reads but doesn't respond unless something is yellow or red.
+
+**Bi-weekly — team OKR sync (15 min added to existing team standup, every other Wednesday)**
+NOT a separate meeting. Added to the existing team standup that already happens. Team lead asks: "Any KRs that moved to yellow this week?" Owner of a yellow KR explains in 60 seconds; team troubleshoots in 5 minutes. If a KR is red OR has been yellow for 2+ weeks, escalate to the next protocol.
+
+**Week 6 — mid-quarter check-in with managing partner (30 min per team)**
+The single substantial OKR-related meeting in the quarter. Partner blocks one Friday for these — 6 teams × 30 min = 3 hours of partner time. Each team brings:
+- Current status of each KR (still on track / at risk / off track / changed)
+- The decision we want from the partner this quarter (one ask, sharply specified)
+- The thing about Q2 we'd do differently in Q3
+
+Partner's job: listen, push back where things are too soft, surface anything the team isn't seeing from their cross-agency view.
+
+**No other recurring OKR meetings.** That's it. Three rhythms (weekly async / bi-weekly 15-min / one mid-quarter 30-min). If you add more than this, OKRs become bureaucracy and teams quietly stop engaging.
+
+---
+
+## (c) ESCALATION TRIGGERS — EXPLICIT, AUTOMATIC
+
+A KR escalates from team-level to partner-attention if ANY of these triggers fire:
+
+1. **Yellow status for 2 consecutive weeks** without a clear path back to green. The KR owner posts a 1-paragraph escalation in #okrs-q2 with: what's stuck, what's been tried, what they need from the partner.
+2. **Red status at any point.** Same escalation format, immediate.
+3. **A cross-team dependency that was confirmed at week 1 alignment-check has BROKEN** (other team can no longer deliver). Both team leads jointly post the escalation.
+4. **A KR's confidence rating drops to <2 at any check-in.** Team lead posts: should we kill the KR, lower the bar, or bring in extra resources?
+
+The partner commits to a response within 24 hours of any escalation. Most responses will be "okay, what I'd do is [X], do that and update by Friday" — but the explicit response keeps escalations from disappearing into the void.
+
+What we DON'T escalate: KRs that are simply hard. Hard ≠ in trouble. The escalation triggers fire on stuck-and-trending-wrong, not on "this is a stretch." Mis-firing on hard-but-on-track KRs is how OKR systems become risk-averse.
+
+---
+
+## (d) END-OF-QUARTER READOUT — 90 MINUTES TOTAL, NOT 2 HOURS
+
+**Pre-work (each team lead, 60 min the week before):**
+- Mark each KR as: Met / Partially Met / Missed / Killed-mid-quarter.
+- For each, write 2 sentences: what happened, and what we learned.
+- Identify the ONE structural lesson for next quarter (e.g., "we under-estimated the dependency on Tech twice — next quarter we should tighten cross-team commitments" or "the 'leading not lagging' criterion was the most violated — half our 'fails' were lagging-metric KRs we couldn't move").
+
+**Meeting (45 min, all team leads + partner):**
+- Each team lead presents in 5 min: Objective + KR results + the structural lesson. (5 × 6 = 30 min, no Q&A in the team slots.)
+- Partner closes in 10 min: cross-cutting patterns, 1-2 things going on the Q3 priority memo.
+- 5 min buffer.
+
+**Post-meeting async (45 min, ops):**
+I (Ops) consolidate the structural lessons into the Q3 priority memo. The Q3 memo gets distributed at the start of Workshop Week 1 of Q3, closing the loop.
+
+That's 90 min total agency-time spent on the readout — half of what Q1's readout was, with a tighter output.
+
+**Important: The readout is NOT performance review of teams.** Some KRs will be missed; that's by design (70% completion is the target, not 100%). Teams that hit 100% of their KRs are the suspect ones — they probably set ceiling-low ambitions. The readout assesses the OKR PROCESS, not the teams.
+
+---
+
+## CADENCE SUMMARY (for the calendar)
+
+| When | What | Duration | Who |
+|---|---|---|---|
+| Q-1 week 12 | Q-priority memo distributed | n/a | Partner writes; everyone reads |
+| Q-1 week 13 | Workshop Week (6 team workshops) | 90 min × 6 | Each team |
+| Q-1 week 13 Fri | Cross-team alignment check | 60 min | 1 rep per team |
+| Q week 1 Mon-Thu | Refinement week | 1-2 hrs spread | KR owners + team leads |
+| Q week 1 Fri | Quarterly kickoff | 30 min agency-wide | All + partner |
+| Q weeks 1-13 Fri | Async KR status post | 5 min per KR owner | KR owners |
+| Q weeks 2,4,6,8,10,12 Wed | Team OKR sync (in standup) | 15 min added | Each team |
+| Q week 6 Fri | Mid-quarter check-in | 30 min × 6 teams | Each team + partner |
+| Q week 13 | EOQ readout | 90 min | All team leads + partner |
+
+Total OKR-specific meeting time per team per quarter: ~6 hours. Total partner time: ~5 hours. That's the budget. If your cadence is using more than this, you're over-investing in process and under-investing in execution.
+
+---
+
+**The single biggest reason this cadence will work where Q1 didn't:** weekly async status + biweekly 15-min sync replaces "we'll just check on OKRs when we remember" with a fixed 5-min ritual that survives bad weeks. The mid-quarter check-in with the partner gives teams a hard deadline 6 weeks out (not 13), which is short enough to course-correct.
+
+The escalation triggers are the safety net — they ensure no KR can quietly die without partner-level visibility. The readout is the learning loop — without it, you'll repeat Q1's mistakes in Q2's vocabulary.
+
+Test the cadence in Q2. In the Q2 retro, you'll likely cut one or two pieces (probably the bi-weekly OKR sync if it feels redundant). That's healthy — the cadence should evolve. What shouldn't evolve: weekly status posts, mid-quarter check-in, end-of-quarter readout. Those three are load-bearing.$pf$,
+ $pf$Async refinement week + full quarterly cadence. Refinement week (Mon-Fri after workshop): Mon owner self-applies rubric, Tue team-lead 15-min 1:1 per KR owner, Wed cross-team conflict-resolution SLA hits, Thu team lead final commit + capacity gut-check, Fri agency-wide 30-min kickoff with partner sign-off. Mid-quarter cadence: weekly async red/yellow/green KR status (5 min/owner), bi-weekly 15-min OKR-check added to existing standup (NOT a new meeting), one 30-min mid-quarter check-in with partner per team in week 6. Total OKR meeting time per team per quarter: ~6 hours; partner ~5 hours. Escalation triggers (auto): 2 consecutive yellow weeks, any red, broken cross-team dependency, confidence drops below 2 — partner responds within 24hrs. EOQ readout: 60min pre-work per lead, 45-min meeting (5min × 6 teams + 10min partner close), 45-min ops consolidation into Q+1 priority memo. Readout assesses process not teams — 70% KR completion is target; 100% completion = ceiling-low ambition. Three load-bearing pieces never to cut: weekly status posts, mid-quarter check-in, EOQ readout.$pf$);
+
+-- =========================================================================
 -- END OF FILE — append next project(s) below this line.
 -- Iterations working the Content queue: add 2–3 projects per iteration,
 -- appending below this comment. Do NOT rewrite existing projects.

@@ -43,6 +43,18 @@ ON CONFLICT (id) DO UPDATE SET
 -- 2. PROFILES — 11 seed makers
 -- =========================================================================
 
+-- FK-safe cleanup: delete prompt_steps + prompts BEFORE profiles,
+-- because prompts.author_id references profiles.id. Without this order,
+-- re-applying the seed fails with ERROR 23503 on prompts_author_id_fkey.
+-- Also clears the seed-content-chains.sql projects (55... prefix) so that
+-- file can be re-pasted afterwards without conflicts.
+ALTER TABLE prompt_steps DISABLE ROW LEVEL SECURITY;
+ALTER TABLE prompts DISABLE ROW LEVEL SECURITY;
+DELETE FROM prompt_steps WHERE prompt_id::text LIKE '33333333-3333-3333-3333-333333333%'
+                            OR prompt_id::text LIKE '55555555-5555-5555-5555-555555555%';
+DELETE FROM prompts WHERE id::text LIKE '33333333-3333-3333-3333-333333333%'
+                       OR id::text LIKE '55555555-5555-5555-5555-555555555%';
+
 ALTER TABLE profiles DROP CONSTRAINT IF EXISTS profiles_id_fkey;
 ALTER TABLE profiles DISABLE ROW LEVEL SECURITY;
 

@@ -117,8 +117,8 @@ export const mockCategories: Category[] = [
   { id: 'cat-1', name: 'Finance & Accounting', slug: 'finance', description: 'Budgeting, forecasting, analysis, and financial planning', icon: '💰', prompt_count: 5, created_at: '2026-03-01T00:00:00Z' },
   { id: 'cat-2', name: 'Marketing & Sales', slug: 'marketing', description: 'Campaigns, content strategy, lead generation, and outreach', icon: '📢', prompt_count: 3, created_at: '2026-03-01T00:00:00Z' },
   { id: 'cat-3', name: 'Writing & Content', slug: 'writing', description: 'Blog posts, emails, copy, and creative writing', icon: '✍️', prompt_count: 4, created_at: '2026-03-01T00:00:00Z' },
-  { id: 'cat-4', name: 'Coding & Development', slug: 'coding', description: 'Code generation, debugging, architecture, and documentation', icon: '💻', prompt_count: 2, created_at: '2026-03-01T00:00:00Z' },
-  { id: 'cat-5', name: 'Design & Creative', slug: 'design', description: 'UI/UX, branding, image generation, and visual design', icon: '🎨', prompt_count: 1, created_at: '2026-03-01T00:00:00Z' },
+  { id: 'cat-4', name: 'Coding & Development', slug: 'coding', description: 'Code generation, debugging, architecture, and documentation', icon: '💻', prompt_count: 3, created_at: '2026-03-01T00:00:00Z' },
+  { id: 'cat-5', name: 'Design & Creative', slug: 'design', description: 'UI/UX, branding, image generation, and visual design', icon: '🎨', prompt_count: 2, created_at: '2026-03-01T00:00:00Z' },
   { id: 'cat-6', name: 'Education & Learning', slug: 'education', description: 'Study plans, explanations, tutoring, and course creation', icon: '📚', prompt_count: 1, created_at: '2026-03-01T00:00:00Z' },
   { id: 'cat-7', name: 'Productivity', slug: 'productivity', description: 'Task management, meetings, workflows, and automation', icon: '⚡', prompt_count: 16, created_at: '2026-03-01T00:00:00Z' },
   { id: 'cat-8', name: 'Data & Analysis', slug: 'data', description: 'Data visualization, surveys, reporting, and insights', icon: '📊', prompt_count: 2, created_at: '2026-03-01T00:00:00Z' },
@@ -777,6 +777,297 @@ const pctChange = lastMonth.total > 0
 
 And that's a wrap. Five prompts, one complete expense tracker that looks and feels like a real fintech app. Dark theme, smooth animations, mobile-first layout, CSV export — built entirely through conversation with Claude.`,
     description: 'Add complete CSS styling, month-over-month comparison, and entrance animations', created_at: '2026-04-06T00:00:00Z' },
+
+  // === Portfolio Landing Page — 4-step build (prompt-40) ===
+  { id: 'step-40a', prompt_id: 'prompt-40', step_number: 1, title: 'Layout & Hero Section',
+    content: `I'm a freelance UX designer and I need a personal portfolio site. I want a single-page site built with HTML, CSS, and vanilla JS — no frameworks. The design should feel like a premium design studio site: lots of whitespace, large typography, smooth scroll.
+
+Start with the HTML structure and hero section. The hero should have:
+- My name "Alex Rivera" in very large type (like 8-10vw)
+- A one-line tagline: "I design digital products that people actually enjoy using"
+- A minimal nav in the top-right: Work, About, Contact
+- Smooth scroll-to-section behavior when clicking nav links
+- A subtle scroll indicator at the bottom (animated bouncing arrow)
+- Background: off-white (#f8f7f4) with dark text (#1a1a1a)
+
+Give me the complete HTML file with embedded CSS and JS.`,
+    result_content: `\`\`\`html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Alex Rivera — UX Designer</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500&family=Instrument+Serif&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    :root { --bg: #f8f7f4; --text: #1a1a1a; --muted: #888; --accent: #ff5c39; }
+    html { scroll-behavior: smooth; }
+    body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); }
+
+    nav { position: fixed; top: 0; right: 0; padding: 32px 48px; z-index: 100; }
+    nav a { color: var(--muted); text-decoration: none; font-size: 0.85rem; margin-left: 32px;
+      letter-spacing: 0.5px; transition: color 0.3s; }
+    nav a:hover { color: var(--text); }
+
+    .hero { height: 100vh; display: flex; flex-direction: column;
+      justify-content: center; padding: 0 10vw; position: relative; }
+    .hero h1 { font-family: 'Instrument Serif', serif; font-size: clamp(3rem, 8vw, 9rem);
+      line-height: 0.95; margin-bottom: 24px; font-weight: 400; }
+    .hero p { font-size: clamp(1rem, 1.5vw, 1.25rem); color: var(--muted);
+      max-width: 500px; line-height: 1.6; }
+
+    .scroll-indicator { position: absolute; bottom: 48px; left: 50%;
+      transform: translateX(-50%); animation: bounce 2s infinite; }
+    .scroll-indicator svg { stroke: var(--muted); }
+    @keyframes bounce {
+      0%, 100% { transform: translateX(-50%) translateY(0); }
+      50% { transform: translateX(-50%) translateY(12px); }
+    }
+  </style>
+</head>
+<body>
+  <nav>
+    <a href="#work">Work</a>
+    <a href="#about">About</a>
+    <a href="#contact">Contact</a>
+  </nav>
+
+  <section class="hero">
+    <h1>Alex<br>Rivera</h1>
+    <p>I design digital products that people actually enjoy using.</p>
+    <div class="scroll-indicator">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-width="2">
+        <path d="M12 5v14M5 12l7 7 7-7"/>
+      </svg>
+    </div>
+  </section>
+</body>
+</html>
+\`\`\`
+
+The hero hits that premium studio feel immediately — the oversized serif type ("Instrument Serif" from Google Fonts) against a warm off-white background. The nav is minimal and fixed so it stays accessible as you scroll. The bouncing arrow is a subtle invitation to explore below.`,
+    description: 'Build the page structure, navigation, and oversized-type hero section', created_at: '2026-04-08T00:00:00Z' },
+
+  { id: 'step-40b', prompt_id: 'prompt-40', step_number: 2, title: 'Project Grid with Hover Effects',
+    content: `Now add the "Work" section. I want a 2-column grid of project cards. Each card should show:
+- A large placeholder area for the project screenshot (use a colored rectangle for now — I'll add real images later)
+- Project name (bold)
+- One-line description
+- Tags (like "Mobile App", "SaaS", "E-commerce")
+
+The magic: on hover, the card image should scale up slightly (1.03) and the card should get a subtle shadow lift. Make it feel tactile.
+
+Use 4 sample projects:
+1. "Meridian Health" — Redesigned the patient portal for a telehealth startup. Tags: Healthcare, Mobile
+2. "Stackflow" — Design system for a developer tools company. Tags: SaaS, Design System
+3. "Bloom & Co" — E-commerce redesign that increased conversion 34%. Tags: E-commerce, UX Research
+4. "CityPulse" — A civic engagement app for local government. Tags: Mobile App, Civic Tech`,
+    result_content: `\`\`\`css
+/* Add to existing <style> */
+.work { padding: 120px 10vw; }
+.work h2 { font-family: 'Instrument Serif', serif; font-size: clamp(2rem, 4vw, 3.5rem);
+  margin-bottom: 64px; }
+.project-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 48px; }
+
+.project-card { cursor: pointer; }
+.project-img { width: 100%; aspect-ratio: 4/3; border-radius: 12px;
+  overflow: hidden; margin-bottom: 20px; }
+.project-img .placeholder { width: 100%; height: 100%;
+  transition: transform 0.5s cubic-bezier(0.25, 0.1, 0.25, 1); }
+.project-card:hover .placeholder { transform: scale(1.03); }
+.project-card:hover { transform: translateY(-4px); transition: transform 0.3s; }
+
+.project-card h3 { font-size: 1.25rem; font-weight: 500; margin-bottom: 6px; }
+.project-card p { color: var(--muted); font-size: 0.9rem; margin-bottom: 12px; }
+.tags { display: flex; gap: 8px; }
+.tag { font-size: 0.75rem; color: var(--muted); border: 1px solid #ddd;
+  padding: 4px 12px; border-radius: 20px; }
+
+@media (max-width: 768px) { .project-grid { grid-template-columns: 1fr; gap: 32px; } }
+\`\`\`
+
+\`\`\`html
+<section id="work" class="work">
+  <h2>Selected Work</h2>
+  <div class="project-grid">
+    <div class="project-card">
+      <div class="project-img"><div class="placeholder" style="background: linear-gradient(135deg, #667eea, #764ba2)"></div></div>
+      <h3>Meridian Health</h3>
+      <p>Redesigned the patient portal for a telehealth startup — reduced appointment booking time by 60%.</p>
+      <div class="tags"><span class="tag">Healthcare</span><span class="tag">Mobile</span></div>
+    </div>
+    <div class="project-card">
+      <div class="project-img"><div class="placeholder" style="background: linear-gradient(135deg, #f093fb, #f5576c)"></div></div>
+      <h3>Stackflow</h3>
+      <p>Built a design system with 120+ components for a developer tools company.</p>
+      <div class="tags"><span class="tag">SaaS</span><span class="tag">Design System</span></div>
+    </div>
+    <div class="project-card">
+      <div class="project-img"><div class="placeholder" style="background: linear-gradient(135deg, #4facfe, #00f2fe)"></div></div>
+      <h3>Bloom & Co</h3>
+      <p>E-commerce redesign that increased conversion 34% and average order value by $18.</p>
+      <div class="tags"><span class="tag">E-commerce</span><span class="tag">UX Research</span></div>
+    </div>
+    <div class="project-card">
+      <div class="project-img"><div class="placeholder" style="background: linear-gradient(135deg, #43e97b, #38f9d7)"></div></div>
+      <h3>CityPulse</h3>
+      <p>A civic engagement app helping residents report issues and track city projects.</p>
+      <div class="tags"><span class="tag">Mobile App</span><span class="tag">Civic Tech</span></div>
+    </div>
+  </div>
+</section>
+\`\`\`
+
+The hover effect uses a cubic-bezier easing curve for that premium, slightly bouncy feel on the image zoom. The card itself lifts 4px on hover — subtle but it gives everything a tactile, interactive quality. Gradient placeholders stand in for project screenshots and already make the grid look polished.`,
+    description: 'Create the project showcase grid with hover animations and responsive layout', created_at: '2026-04-08T00:00:00Z' },
+
+  { id: 'step-40c', prompt_id: 'prompt-40', step_number: 3, title: 'About Section & Contact Form',
+    content: `Add two more sections:
+
+**About** — Split layout: left side has a short bio (3-4 sentences about my design philosophy), right side has a quick stats list: "8+ years experience", "40+ projects shipped", "Clients include: Google, Stripe, Figma". Use the same warm minimalist style.
+
+**Contact** — Simple: a headline "Let's work together", a short paragraph, and a mailto link styled as a big button. No form — just make the email link prominent and inviting. Email: hello@alexrivera.design
+
+Also add a footer with: copyright, and links to Dribbble, LinkedIn, Twitter (just # href placeholders).`,
+    result_content: `\`\`\`css
+/* About */
+.about { padding: 120px 10vw; display: grid; grid-template-columns: 1.2fr 1fr; gap: 80px; align-items: start; }
+.about h2 { font-family: 'Instrument Serif', serif; font-size: clamp(2rem, 4vw, 3.5rem); margin-bottom: 24px; }
+.about-bio { font-size: 1.05rem; line-height: 1.8; color: #444; }
+.about-stats { list-style: none; }
+.about-stats li { padding: 20px 0; border-bottom: 1px solid #e5e5e0; font-size: 0.95rem; display: flex; justify-content: space-between; }
+.about-stats .label { color: var(--muted); }
+.about-stats .value { font-weight: 500; }
+
+/* Contact */
+.contact { padding: 160px 10vw; text-align: center; }
+.contact h2 { font-family: 'Instrument Serif', serif; font-size: clamp(2.5rem, 6vw, 5rem); margin-bottom: 24px; }
+.contact p { color: var(--muted); max-width: 480px; margin: 0 auto 40px; line-height: 1.7; }
+.contact-btn { display: inline-block; background: var(--text); color: var(--bg); padding: 18px 48px;
+  text-decoration: none; font-size: 1rem; font-weight: 500; border-radius: 60px;
+  transition: transform 0.2s, box-shadow 0.2s; }
+.contact-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 30px rgba(0,0,0,0.12); }
+
+/* Footer */
+footer { padding: 40px 10vw; display: flex; justify-content: space-between; align-items: center;
+  border-top: 1px solid #e5e5e0; font-size: 0.8rem; color: var(--muted); }
+footer a { color: var(--muted); text-decoration: none; margin-left: 24px; }
+footer a:hover { color: var(--text); }
+
+@media (max-width: 768px) { .about { grid-template-columns: 1fr; gap: 48px; } }
+\`\`\`
+
+\`\`\`html
+<section id="about" class="about">
+  <div>
+    <h2>About</h2>
+    <p class="about-bio">I believe the best digital products are invisible — they get out of the way and let people accomplish what they came to do. My process starts with research, not Figma. I spend the first week understanding users before drawing a single pixel. After 8 years of designing for startups and enterprise companies, I've learned that the prettiest design is useless if nobody can figure out how to use it.</p>
+  </div>
+  <ul class="about-stats">
+    <li><span class="label">Experience</span><span class="value">8+ years</span></li>
+    <li><span class="label">Projects Shipped</span><span class="value">40+</span></li>
+    <li><span class="label">Clients Include</span><span class="value">Google, Stripe, Figma</span></li>
+    <li><span class="label">Based In</span><span class="value">San Francisco, CA</span></li>
+    <li><span class="label">Available</span><span class="value">For freelance & contract</span></li>
+  </ul>
+</section>
+
+<section id="contact" class="contact">
+  <h2>Let's work together</h2>
+  <p>I'm currently taking on new projects for Q3 2026. If you're building something interesting, I'd love to hear about it.</p>
+  <a href="mailto:hello@alexrivera.design" class="contact-btn">Get in Touch</a>
+</section>
+
+<footer>
+  <span>&copy; 2026 Alex Rivera</span>
+  <div>
+    <a href="#">Dribbble</a>
+    <a href="#">LinkedIn</a>
+    <a href="#">Twitter</a>
+  </div>
+</footer>
+\`\`\`
+
+The about section has that clean split-layout feel — your story on the left, your credibility on the right. The contact section uses oversized serif type again for visual consistency and the pill-shaped CTA button lifts on hover with a soft shadow. The footer stays minimal.`,
+    description: 'Add the about bio, stats, contact section, and footer', created_at: '2026-04-08T00:00:00Z' },
+
+  { id: 'step-40d', prompt_id: 'prompt-40', step_number: 4, title: 'Scroll Animations & Final Polish',
+    content: `Final polish. Add three things:
+
+1. Scroll-triggered fade-in animations: each section should fade in and slide up slightly as you scroll to it. Use IntersectionObserver — no libraries.
+2. A page loading animation: the hero text should split in and the name should clip-reveal from bottom to top on page load.
+3. A subtle cursor follower: a small circle (8px) that follows the mouse with a slight lag (use requestAnimationFrame). It should grow to 40px when hovering over project cards and links. Light gray on the off-white background.
+
+Give me the complete JS and any CSS additions needed.`,
+    result_content: `\`\`\`javascript
+// === Scroll Animations ===
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) {
+      entry.target.classList.add('visible')
+      observer.unobserve(entry.target)
+    }
+  })
+}, { threshold: 0.15 })
+
+document.querySelectorAll('.work, .about, .contact, .project-card').forEach(el => {
+  el.classList.add('fade-in')
+  observer.observe(el)
+})
+
+// === Hero Clip Reveal ===
+window.addEventListener('load', () => {
+  document.querySelector('.hero').classList.add('loaded')
+})
+
+// === Cursor Follower ===
+const cursor = document.createElement('div')
+cursor.classList.add('cursor-follower')
+document.body.appendChild(cursor)
+
+let mouseX = 0, mouseY = 0, cursorX = 0, cursorY = 0
+document.addEventListener('mousemove', e => { mouseX = e.clientX; mouseY = e.clientY })
+
+function animateCursor() {
+  cursorX += (mouseX - cursorX) * 0.15
+  cursorY += (mouseY - cursorY) * 0.15
+  cursor.style.left = cursorX + 'px'
+  cursor.style.top = cursorY + 'px'
+  requestAnimationFrame(animateCursor)
+}
+animateCursor()
+
+// Grow on interactive elements
+document.querySelectorAll('a, .project-card, button').forEach(el => {
+  el.addEventListener('mouseenter', () => cursor.classList.add('cursor-grow'))
+  el.addEventListener('mouseleave', () => cursor.classList.remove('cursor-grow'))
+})
+\`\`\`
+
+\`\`\`css
+/* Scroll fade-in */
+.fade-in { opacity: 0; transform: translateY(32px); transition: opacity 0.8s ease, transform 0.8s ease; }
+.fade-in.visible { opacity: 1; transform: translateY(0); }
+
+/* Hero clip reveal */
+.hero h1 { clip-path: inset(100% 0 0 0); transition: clip-path 0.8s cubic-bezier(0.77, 0, 0.175, 1); }
+.hero p { opacity: 0; transform: translateY(20px); transition: opacity 0.6s ease 0.4s, transform 0.6s ease 0.4s; }
+.hero.loaded h1 { clip-path: inset(0 0 0 0); }
+.hero.loaded p { opacity: 1; transform: translateY(0); }
+
+/* Cursor follower */
+.cursor-follower { width: 8px; height: 8px; background: rgba(0,0,0,0.15);
+  border-radius: 50%; position: fixed; pointer-events: none; z-index: 9999;
+  transform: translate(-50%, -50%); transition: width 0.3s, height 0.3s, background 0.3s; }
+.cursor-follower.cursor-grow { width: 40px; height: 40px; background: rgba(0,0,0,0.06); }
+
+/* Hide custom cursor on touch devices */
+@media (hover: none) { .cursor-follower { display: none; } }
+\`\`\`
+
+And with that you have a portfolio site that feels like it was built by a design agency, not generated by AI. The clip-reveal on the hero name is a showstopper — the text slides up like a curtain revealing it. The cursor follower adds that interactive, "this person cares about details" quality. Scroll animations stagger naturally as sections come into view. Total code: one HTML file, ~350 lines, zero dependencies.`,
+    description: 'Add scroll-triggered animations, hero reveal, and interactive cursor follower', created_at: '2026-04-08T00:00:00Z' },
 
   // === Brand Identity (prompt-1) ===
   { id: 'step-1a', prompt_id: 'prompt-1', step_number: 1, title: 'Brand Discovery',
@@ -1713,5 +2004,47 @@ export const mockPrompts: Prompt[] = [
     bookmark_count: 103,
     created_at: '2026-04-06T00:00:00Z',
     updated_at: '2026-04-06T00:00:00Z',
+  },
+
+  // ---- DESIGN: Multi-Step Build (4 prompts) ----
+  {
+    id: 'prompt-40',
+    title: 'Premium Portfolio Site from Scratch — HTML/CSS/JS, No Frameworks',
+    description: 'Built a designer portfolio site that looks like it came from a studio — oversized serif type, scroll animations, cursor follower, project grid with hover effects. One HTML file, zero dependencies.',
+    content: `I needed a portfolio site that would actually impress potential clients and stand out from every other "minimal portfolio" template. I didn't want React or Next.js for this — just clean HTML, CSS, and vanilla JS so it loads instantly and I fully understand every line.\n\nI built it in 4 prompts with Claude: first the layout and hero section, then the project grid, then the about/contact sections, and finally the animations and polish. The result is a single-file portfolio that has all the premium touches — scroll-triggered fade-ins, a clip-reveal animation on the hero text, and a cursor follower that grows when hovering interactive elements.\n\nThe key insight: starting with typography and whitespace (not components) is what makes a design site feel expensive. The oversized Instrument Serif headlines against Inter body text creates instant visual hierarchy without trying.`,
+    result_content: `The final portfolio is a single HTML file (~350 lines) with embedded CSS and JS. No build tools, no npm, no frameworks.\n\n**Hero** — Name displayed at 8vw using Instrument Serif (Google Font), with a clip-path reveal animation on load. Tagline fades in after. Fixed nav in top-right with smooth scroll to sections.\n\n**Project Grid** — 2-column grid with 4 project cards. Each card has a gradient placeholder (ready for real screenshots), project name, description, and tag pills. On hover: image scales 1.03x with cubic-bezier easing, card lifts 4px with shadow.\n\n**About** — Split layout: bio paragraph on left, stats list on right (experience, projects shipped, notable clients). Clean horizontal rules separating each stat.\n\n**Contact** — Large serif "Let's work together" headline, brief availability note, pill-shaped mailto CTA that lifts on hover.\n\n**Animations** — IntersectionObserver-powered fade-in-and-slide-up on all sections. Custom cursor follower using requestAnimationFrame for smooth 60fps lag. Cursor grows from 8px to 40px on interactive elements. Automatically hidden on touch devices.\n\nThe whole thing loads in under 100ms. Clients have commented that it "looks like a real studio site." Total build time: about 90 minutes across 4 prompts.`,
+    category_id: 'cat-5',
+    difficulty: 'intermediate',
+    model_used: 'claude-sonnet-4-6',
+    model_recommendation: 'Claude 4.6 Sonnet',
+    tools_used: ['Claude', 'HTML', 'CSS', 'JavaScript'],
+    tags: ['portfolio', 'web design', 'animation', 'html', 'css', 'vanilla js', 'no framework'],
+    status: 'approved',
+    author_id: 'user-11',
+    vote_count: 178,
+    bookmark_count: 122,
+    created_at: '2026-04-08T00:00:00Z',
+    updated_at: '2026-04-08T00:00:00Z',
+  },
+
+  // ---- CODING: One-Shot Deep Prompt ----
+  {
+    id: 'prompt-41',
+    title: 'Full CLI Task Manager in Python — One Prompt, 200 Lines',
+    description: 'One detailed prompt that generates a complete command-line task manager with priorities, due dates, categories, color output, recurring tasks, and SQLite storage. Copy, paste, run.',
+    content: `I was tired of switching to Todoist/Notion just to manage my daily dev tasks. I wanted something I could use without leaving the terminal. So I wrote one very detailed prompt and got back a fully working CLI task manager in Python.\n\nThe trick to getting a complete, working tool in one shot: be extremely specific about every feature, every edge case, and the exact UX you want. I spent 10 minutes writing the prompt and saved myself hours of building.\n\n---\n\nHere's the exact prompt:\n\nWrite a complete Python CLI task manager called "tsk" that I can run from my terminal. Requirements:\n\n**Storage:** SQLite database (~/.tsk/tasks.db), auto-created on first run.\n\n**Data model:** Each task has: id (auto-increment), title, priority (1=urgent, 2=high, 3=medium, 4=low), status (todo/doing/done), category (work/personal/health/learning/errand), due_date (optional, YYYY-MM-DD), created_at, completed_at, recurring (none/daily/weekly/monthly).\n\n**Commands:**\n- \`tsk add "title" -p 2 -c work -d 2026-04-20\` — add task with priority, category, due date\n- \`tsk list\` — show all non-done tasks, sorted by priority then due date. Group by status (DOING first, then TODO)\n- \`tsk list --all\` — include completed tasks\n- \`tsk list -c work\` — filter by category\n- \`tsk do 3\` — mark task #3 as "doing"\n- \`tsk done 3\` — mark task #3 as "done" (set completed_at). If it's recurring, auto-create the next occurrence.\n- \`tsk rm 3\` — delete task\n- \`tsk edit 3 --title "new title" --priority 1\` — edit any field\n- \`tsk stats\` — show: tasks completed this week, completion rate, busiest category, overdue count\n\n**Output formatting:**\n- Use ANSI colors: urgent=red, high=yellow, medium=blue, low=gray\n- Overdue tasks show "OVERDUE" in red next to the due date\n- "doing" tasks highlighted with a yellow background marker\n- Use box-drawing characters for the table borders\n- Clean, aligned columns\n\n**Edge cases:**\n- No tasks? Show a friendly message, not an error\n- Invalid task ID? Clear error message\n- Due date in the past on add? Show a warning but allow it\n- Use argparse with subcommands for clean --help output\n\nSingle file, no external dependencies beyond the standard library. Make it production-quality — handle errors, validate input, use docstrings.`,
+    result_content: `Claude generated a 210-line Python script that works immediately out of the box. Highlights:\n\n**The task list output looks great:**\n\`\`\`\n┌────┬──────────────────────────────┬──────────┬──────────┬────────────┐\n│ ID │ Task                         │ Priority │ Category │ Due        │\n├────┼──────────────────────────────┼──────────┼──────────┼────────────┤\n│  1 │ Fix auth bug in prod         │ ■ URGENT │ work     │ Apr 15 OVERDUE │\n│  5 │ Review pull requests         │ ■ HIGH   │ work     │ Apr 18     │\n│  3 │ Meal prep for the week       │ ■ MEDIUM │ health   │ Apr 20     │\n│  7 │ Read chapter 4 of DDIA       │ ■ LOW    │ learning │ —          │\n└────┴──────────────────────────────┴──────────┴──────────┴────────────┘\n\n   DOING (1)  ·  TODO (3)  ·  2 overdue\n\`\`\`\n\n**Stats command output:**\n\`\`\`\n📊 This Week's Stats\n  Completed:    12 tasks\n  Completion:   75% (12/16)\n  Busiest:      work (8 tasks)\n  Overdue:      2 tasks\n  Streak:       5 days\n\`\`\`\n\n**Recurring task logic** — when you \`tsk done\` a weekly task, it auto-creates the next occurrence with the due date pushed forward 7 days. The new task starts as "todo" and inherits all properties from the original. Clean.\n\n**SQLite storage** — the database file lives at \`~/.tsk/tasks.db\` and is created automatically on first run with a proper schema migration check. I've been using this daily for 2 weeks now. It's faster than any GUI app because I never leave my terminal. \n\nThe one thing I tweaked: I added an alias \`alias t="python3 ~/.tsk/tsk.py"\` to my .zshrc so I can just type \`t add "fix the thing" -p 1\`.`,
+    category_id: 'cat-4',
+    difficulty: 'beginner',
+    model_used: 'claude-opus-4-6',
+    model_recommendation: 'Claude 4.6 Opus',
+    tools_used: ['Claude', 'Python', 'SQLite'],
+    tags: ['cli', 'python', 'task manager', 'sqlite', 'terminal', 'one-shot', 'productivity'],
+    status: 'approved',
+    author_id: 'user-11',
+    vote_count: 201,
+    bookmark_count: 145,
+    created_at: '2026-04-09T00:00:00Z',
+    updated_at: '2026-04-09T00:00:00Z',
   },
 ]

@@ -15964,6 +15964,1097 @@ Ship it. Solid enough for a 25-user side project with room to grow if usage ever
  $pf$Edge-case review: rotating-IP + slow-drip patterns acknowledged but de-scoped (Cloudflare Bot Management is the right answer if they become real problems, not preemptive code). Redis outage handled with fail-open + Sentry alerting — availability > perfect limiting at side-project scale; production API with revenue would pick fail-closed + secondary Redis. Clock-skew de-scoped for single-region Workers + single-client-timestamp math. Monitoring boiled down to 2 alerts only (sustained rejection burst >100/5min, Redis error rate >10/5min); dashboards/p99-alarms/per-user charts explicitly skipped. Final 9-item push checklist.$pf$);
 
 -- =========================================================================
+-- Project 55-0046 | Multi-touch attribution rebuild | Raj Patel | Data | 8 steps
+-- =========================================================================
+
+DELETE FROM prompt_steps WHERE prompt_id = '55555555-5555-5555-5555-555555550046';
+DELETE FROM prompts      WHERE id        = '55555555-5555-5555-5555-555555550046';
+
+INSERT INTO prompts (
+  id, title, description, content, result_content,
+  category_id, difficulty, model_used, model_recommendation,
+  tools_used, tags, status, author_id, vote_count, bookmark_count
+) VALUES (
+  '55555555-5555-5555-5555-555555550046',
+  $pf$Rebuilding a $40M-ARR SaaS attribution model — last-touch was crediting 61% of new ARR to inbound SEO and VP Sales knew it was nonsense. 8-pass Claude workflow from data audit through Markov-hybrid design to board memo$pf$,
+  $pf$A portfolio company brought me in after their VP Sales told the CEO "the attribution numbers are lying — I can name 40% of last quarter's closed-won where a sales rep did the unlock call and we're giving SEO the credit." Rebuilt the attribution model with Claude over 8 passes.$pf$,
+  $pf$Context: $40M ARR B2B observability SaaS, 180 sales cycles closed Q4, median deal size $72K ACV, median cycle length 74 days, sales-assisted motion where 73% of closed-won had at least one SDR or AE touchpoint before close. They had a HubSpot-native last-touch attribution dashboard that credited 61% of new ARR to "Organic Search" because the last captured UTM on any form-fill tended to be the pricing page landed via SEO — ignoring the 3 sales calls, the LinkedIn InMail, the executive-briefing Webinar, and the case-study email that preceded.
+
+Board wanted to 10x marketing spend to $12M in 2027 and CEO wanted defensible numbers before he authored the ask. I got 5 weeks. I used Claude Opus 4.7 across 8 passes — data audit, decision re-framing, method evaluation, hybrid-model design, implementation, ground-truth validation, dashboard spec, board memo. Budget constraint: had to land on a method my data engineer (who is excellent but hadn't written a Markov attribution chain before) could maintain alone without me on retainer.$pf$,
+  $pf$Final model: time-decay weighted Markov-chain attribution with a 90-day lookback window, deal-size-tiered transition probabilities (deals <$50K use one graph, $50K-$150K use another, >$150K use a third), and a sales-touch weight multiplier calibrated against 22 ground-truth deals where we reconstructed the actual buyer journey via Gong transcripts + rep interviews.
+
+Shipped numbers are very different from what the last-touch dashboard was telling them. Organic Search dropped from 61% → 27% credit. Outbound SDR moved from 4% → 21%. Paid Search dropped 18% → 11%. Events (conferences + webinars) moved 8% → 16%. Case Studies (which got zero last-touch credit because they never sit last) moved 0% → 9%. The board memo went out Mar 3, the $12M ask was adjusted to $8.4M (pruned $3.6M of Paid Search overweight + reallocated $1.8M into outbound SDR + $1.2M into events), and the CFO wrote me an unprompted follow-up that the prior year's blended CAC was miscalculated by 23% because the denominator was wrong.
+
+Three things I'll carry into the next one: (1) ground-truth calibration with real reconstructed journeys is non-negotiable — the model without it is just opinion dressed in math; (2) deal-size tiering the transition graph matters a lot at this scale, small-deal journeys are genuinely different shape from six-figure journeys; (3) board memo's hardest job is explaining why the new number is RIGHT, not why the old one was WRONG — finance leaders hate "we've been reporting the wrong number for 3 years" more than they love "we've found the real number."$pf$,
+  '11111111-1111-1111-1111-111111111108',
+  'advanced',
+  'claude-opus-4-7',
+  'Claude 4.7 Opus',
+  ARRAY['Claude','Python','dbt','Snowflake','HubSpot','Gong','Hex'],
+  ARRAY['attribution','marketing-analytics','markov-chain','saas','board-memo','data-modeling'],
+  'approved',
+  '22222222-2222-2222-2222-222222222207',
+  168, 82
+);
+
+INSERT INTO prompt_steps (id, prompt_id, step_number, title, content, result_content, description) VALUES
+
+-- Step 1 --
+('66666666-6666-6666-6666-666666460101',
+ '55555555-5555-5555-5555-555555550046',
+ 1,
+ $pf$Data audit + current-model honest assessment$pf$,
+ $pf$I'm consulting for a $40M ARR B2B observability SaaS that's about to ask their board for $12M in 2027 marketing spend, 10x current. The VP Sales is in open rebellion about the attribution numbers. I've dumped the data: 180 closed-won deals Q4, 74-day median cycle, 73% had sales touches. The existing HubSpot dashboard credits 61% of new ARR to Organic Search because the last UTM captured tends to be /pricing landed via SEO.
+
+I want to start by auditing what signals we actually have and what the existing model is really measuring vs claiming to measure. Be specific — not "last-touch has known flaws" but "here's what this model is specifically blind to at THIS company with THIS data shape." What am I working with, what's the honest read, and what data do I need to pull before I rebuild?$pf$,
+ $pf$Good starting frame. Let me separate what you have from what the current model actually measures — they are not the same thing — and name the specific blindspots that matter at your company's shape, not generic "last-touch bad" reasons.
+
+## What signals you likely have
+
+Based on the stack (HubSpot + observability-SaaS typical):
+
+**Touchpoint level (per-contact, timestamped):**
+- Form-fills with UTM source/medium/campaign (demo requests, content downloads, trial signups)
+- Page views on tracked pages (auto-captured via HubSpot cookie; not always UTM-stamped)
+- Email opens/clicks from Marketing Hub
+- LinkedIn InMail replies (if connected via Sales Nav integration)
+- Webinar registration + attendance
+- Event booth scans (if using Stova/Goldcast integrated)
+
+**Sales motion signals (per-account, often not in HubSpot):**
+- SDR call dispositions in SalesLoft/Outreach
+- Discovery/demo/unlock-call attendance + Gong call transcripts
+- Opportunity stage transitions
+- Deal desk / procurement involvement (usually stage 5+)
+
+**Account-level rollup:**
+- Who closed-won, ACV, close date, owner, segment
+- Multi-contact buying committees (usually 4-7 contacts per closed-won at your ACV)
+
+## What the current model is specifically blind to AT YOUR SHAPE
+
+Not generic "last-touch bad." Specifically:
+
+**1. The 73% sales-touch majority.** Your closed-won is a sales-assisted motion. Last-touch can ONLY reward marketing signals because "sales rep called them" does not produce a UTM. The model structurally cannot see what VP Sales is watching them do.
+
+**2. The /pricing page is a LATE-funnel destination.** At 74-day cycles, by the time someone lands on /pricing they have almost certainly already been in 2-3 prior touchpoints. Crediting /pricing-via-SEO is crediting the doormat for the guest's visit. This specific blindspot is why Organic Search is eating 61% — it's the terminal surface.
+
+**3. Multi-contact buying committees.** At $72K ACV you have 4-7 humans per closed-won. Last-touch attributes to ONE contact (whichever one filled the terminal form). The other 3-6 humans on that account had their own touchpoint histories that the model throws away.
+
+**4. Case studies never win.** A case study is almost always consumed mid-funnel during evaluation, NOT last. So your case-study library — which probably influences a third of late-stage deals — gets 0% credit. Nobody reads a case study and immediately fills the demo form; they read it, think, come back via branded search, and THEN demo. SEO gets the credit.
+
+**5. Outbound has a laundering problem.** SDR calls a cold account → contact gets interested → contact googles the company → lands on branded SEO → fills form. Last-touch credits SEO. The SDR call is the cause; SEO is the conversion surface. This is your VP Sales' specific complaint.
+
+## What to pull before rebuilding
+
+**Minimum viable dataset:**
+- All touchpoints (marketing + sales) for every contact on every closed-won Q4 deal, 90-day lookback from close-date. Expect 2000-4000 rows per deal worth of raw events.
+- Deal-level record: ID, ACV, close-date, stage-transition timestamps.
+- A ground-truth sample: 15-25 Q4 closed-won where you can reconstruct the actual buyer journey by (a) interviewing the AE, (b) reading Gong transcripts, (c) asking "what actually moved this deal." You will calibrate the model against this.
+- Buying-committee mapping: who was on the deal from the account, not just the form-fill contact.
+
+## What NOT to do yet
+
+Do not pick a method. The method (Markov vs Shapley vs time-decay) is a pass-3 decision — premature. Pass 2 should be "what specific decisions is this attribution model supposed to inform" — because the right model for "where should we spend $12M" is not the same model as "which campaigns should we kill next month."
+
+Next pass: let's nail the decision-frame. What is the CEO ACTUALLY going to do with this number, and what's the finest grain of decision we need it to support? That scopes everything downstream.$pf$,
+ $pf$Data inventory separated signals-you-have (touchpoint + sales-motion + account-rollup layers) from what current-model actually measures. Named 5 specific blindspots at THIS company's shape: the 73% sales-touch majority structurally invisible to last-touch, /pricing as terminal not causal surface driving the 61% Organic Search credit, 4-7 contact buying committees thrown away, case-studies-never-win as a mid-funnel consumption pattern, outbound laundering where SDR call causes SEO conversion surface. Prescribed minimum-viable dataset pull including 15-25 Gong-backed ground-truth deals for calibration. Deferred method choice to pass 3 and framed pass 2 as decision-frame scoping.$pf$),
+
+-- Step 2 --
+('66666666-6666-6666-6666-666666460102',
+ '55555555-5555-5555-5555-555555550046',
+ 2,
+ $pf$Decision-frame: what this model needs to support$pf$,
+ $pf$Good, that reframes the scope. On the decision question: CEO wants to defend a $12M 2027 ask to the board. VP Sales wants to know which SDR campaigns to double vs cut. VP Marketing wants to know if the SEO investment is worth continuing at current rate ($1.8M/yr agency + content). CFO wants blended CAC that he trusts enough to forecast on. My data engineer — who is good but hasn't built a Markov chain before — has to maintain whatever I ship after I leave in 5 weeks.
+
+Given those four constituencies and that maintainability constraint, help me scope what this model actually needs to support. I want to avoid the trap of "one model that answers every question poorly" — but I also can't ship four separate models.$pf$,
+ $pf$Four stakeholders with four different finest-grain questions. The trap you named is real. Let me work through what each one actually needs, where the grain collapses, and what the one-model answer is.
+
+## What each stakeholder specifically needs
+
+**CEO — $12M ask defense.** Grain: channel-level annual credit with confidence intervals. "Paid Search deserved $X of Q4 ARR" defended to a board member who's going to ask "is that number robust." Does NOT need campaign-level, does NOT need weekly, does NOT need real-time. Needs stability (quarter-over-quarter noise suppressed) and explainability (can defend the method in 3 sentences to a non-technical director).
+
+**VP Sales — SDR campaign tuning.** Grain: outbound campaign × segment credit, monthly, with separability between "SDR touched it + closed" vs "SDR touched it + lost" vs "SDR didn't touch it + closed" counterfactuals. Needs relatively fast feedback (can't wait 90 days for Q review). Cares about incrementality — would this deal have closed without the SDR touch? — which is a causal question, not an attribution question.
+
+**VP Marketing — SEO budget decision.** Grain: channel × content-type credit, quarterly. Needs to distinguish Organic Search (branded) from Organic Search (non-branded) because those are VERY different signals (branded = demand capture, non-branded = demand creation). Also needs to see case-study and gated-content contribution properly, which last-touch buried.
+
+**CFO — blended CAC.** Grain: cohort-based CAC by quarter with a stable denominator. Needs consistency over time more than precision. If the model changes every quarter, the time-series is meaningless. Needs a number he can trust enough to forecast 2027 off of.
+
+## Where the grain collapses
+
+Three of the four (CEO, VP Marketing, CFO) can be served by ONE model at channel × quarter grain with sub-channel splits for Organic-branded vs non-branded. That is one model.
+
+VP Sales' incrementality question is DIFFERENT from attribution. Attribution says "given a closed deal, what share of credit does each touchpoint get?" — this is a division-of-1 problem. Incrementality says "would this deal have closed absent touchpoint X?" — this is a counterfactual. You cannot get incrementality from an attribution model. You get it from hold-out tests, matched-pair analysis, or synthetic-control experiments.
+
+## The one-model answer
+
+Build ONE channel-level multi-touch attribution model with deal-size tiering (because <$50K and >$150K buyer journeys have different shapes) and a 90-day lookback. Use it for CEO, VP Marketing, CFO. Update quarterly.
+
+For VP Sales' SDR question, commit to running a formal SDR-touched vs SDR-untouched matched-pair analysis as a SEPARATE piece of work (not in the attribution model). Don't try to force incrementality out of the Markov chain — it will lie to you in a confident voice. Set expectation with VP Sales now that the attribution model gets him 70% of the way (SDR credit will be visible at channel grain) and the matched-pair analysis closes the last 30% of his question.
+
+## What this means for method choice (pass 3)
+
+You need a method that is:
+- Channel-level, quarterly grain — rules out hyper-granular models
+- Explainable to a non-technical board member in 3 sentences — rules out pure deep-learning black-box
+- Maintainable by a good-but-not-Markov-experienced data engineer alone — rules out anything that needs frequent hyperparameter tuning
+- Able to split Organic-branded vs non-branded via touchpoint attributes — any method can do this if the data is labeled right
+- Robust to the sales-motion signals being sparse (SDR touches captured but not every one) — rules out methods that over-fit small samples
+
+This narrows the field. Next pass: let's evaluate Markov, Shapley, time-decay, position-based, and a few hybrids against these five criteria and pick one.$pf$,
+ $pf$Decision-frame separates four stakeholder questions into three that collapse to one channel×quarterly attribution model (CEO/CFO/VP Marketing) plus one genuinely different counterfactual question (VP Sales' SDR incrementality) that requires a separate matched-pair analysis, not an attribution model. Named the "attribution gives division-of-1 credit, incrementality answers counterfactuals" distinction as the reason not to force one method to do both jobs. Translated the decision-frame into five method-selection criteria (channel-level/explainable-in-3-sentences/maintainable-by-non-specialist/sub-channel-splittable/robust-to-sparse-signals) that will narrow the pass-3 field.$pf$),
+
+-- Step 3 --
+('66666666-6666-6666-6666-666666460103',
+ '55555555-5555-5555-5555-555555550046',
+ 3,
+ $pf$Evaluate attribution methods against the 5 criteria$pf$,
+ $pf$Walk me through the real options against those 5 criteria: Markov chain, Shapley value, time-decay, position-based (U-shape / W-shape), linear, and any hybrid worth naming. I want your honest take on tradeoffs at our data scale (180 deals/quarter, maybe 400-800 unique touchpoint types aggregated to ~15 channels, 2000-4000 raw events per deal in the 90-day lookback). Be opinionated — if a method is a bad fit, say why. Don't hedge with "it depends."$pf$,
+ $pf$Opinionated walk-through. Context first: at 180 deals/quarter you are DATA-CONSTRAINED. Any method that needs high sample density per touchpoint-pair is going to over-fit and lie. Keep that in the front of your mind through each.
+
+## 1. Last-touch (baseline, the current state)
+
+Already covered. Channel-level, explainable in 1 sentence, trivially maintainable, can split sub-channels. Blind to the 73% sales-touch majority and the terminal-surface problem. This is what you're replacing.
+
+## 2. First-touch
+
+Same blindspot family as last-touch, different end. Credits the first captured touchpoint. Tends to over-credit top-of-funnel channels (Paid Display, content syndication) because they front-load journeys. At your scale, cycles are 74 days — first touch was a long time ago and often not capturable. Not a real candidate.
+
+## 3. Linear (even-split across all touchpoints)
+
+Every touchpoint on a journey gets 1/N credit. Intuitive, trivially maintainable, explainable. Correct in NO actual scenario. Treats the doorman equal to the closer. At your 74-day cycle with 20+ touchpoints per journey it's aggressively wrong for cases where the early touches are genuinely causal (outbound cold email) and the late touches are genuinely not (branded SEO to /pricing). Don't ship this.
+
+## 4. Time-decay
+
+Touchpoints closer to close get more credit via exponential decay with a half-life parameter. Common half-lives: 7 days (aggressive), 14 days (Google Ads default), 30 days (conservative). Explainable in 2 sentences. Maintainable. Can split sub-channels. Better than last-touch because it gives non-zero credit to prior touches. Still wrong for your shape: at 74-day cycles with a 7-day half-life, a touchpoint at day -30 gets ~5% the credit of a touchpoint at day -1, so mid-funnel content (case studies, webinars) still gets close to zero. Extending half-life to 30 days helps but then the model loses the "late-stage signals matter more" intuition that makes time-decay useful in the first place. A decent default, not the right answer here.
+
+## 5. Position-based (U-shape 40/40/20, W-shape 30/30/30/10)
+
+Fixed percentage to first + last + middle. U-shape is Google Analytics' default. At your scale this over-credits first and last and under-credits a crowded middle. Fine for simple consumer journeys (lead gen → form → close, 3-5 touchpoints). Your 74-day B2B journeys have 15-25 meaningful touchpoints and the fixed-shape assumption breaks. Not recommended.
+
+## 6. Shapley value (cooperative game theory)
+
+Computes marginal contribution of each channel across all possible subsets of channels. Theoretically beautiful — genuinely fair division-of-credit. Practically: at 15 channels you have 2^15 = 32,768 subsets to evaluate, and you need enough samples in each subset to estimate conversion probability stably. At 180 deals you have ~5 deals per subset AT BEST, and most subsets have zero samples. You will get wild estimates that look confident. Shapley needs 10,000+ conversions to be stable at 15 channels. Rule out.
+
+## 7. Markov chain
+
+Model the journey as a graph: channels are nodes, transitions between channels are weighted edges. Attribution comes from the removal effect — the delta in overall conversion probability when you remove a channel from the graph. Maintainable if implemented carefully. Explainable in 3 sentences ("journey is a graph; each channel is a step; if we remove this channel, how much does the conversion rate drop?"). Works reasonably at your data scale if you aggregate to 15 channels (not 400 sub-types) and use a 90-day lookback to get enough transitions. Sub-channel splits work by labeling transitions with sub-channel attributes. ROBUST to sparse signals because removal effect is a relative measure.
+
+**This is the method.** With caveats — see hybrid note below.
+
+## 8. Time-decay weighted Markov (the hybrid worth naming)
+
+Pure Markov treats "touchpoint at day -60" and "touchpoint at day -2" as equal members of the graph. Reality is they're not. The hybrid: weight the edge additions by recency via an exponential decay (30-day half-life fits your 74-day cycles). This gives you Markov's removal-effect rigor AND time-decay's recency intuition. Computationally it's just a weighted edge-count instead of raw edge-count — maintainability cost is marginal.
+
+**Ship this.** Specifically: 90-day lookback, 30-day half-life, 15-channel aggregation, deal-size tiering (<$50K, $50K-$150K, >$150K) with separate transition graphs per tier.
+
+## Two more things to add
+
+**Sales-touch weight multiplier.** Sales touchpoints (SDR calls, demo attendance, unlock calls) get a weight multiplier versus marketing touchpoints BEFORE the decay is applied. This is where your ground-truth calibration earns its keep — you'll tune the multiplier against the 15-25 reconstructed deals until model credit matches the AE's narrative within a reasonable tolerance. Without this, the Markov graph will still under-credit sales because sales-touch density is lower (fewer events per account than marketing events per account) — density is not the same as importance.
+
+**Non-converters.** Markov's removal effect only works if the graph includes both converters (closed-won) and non-converters (lost deals, stalled accounts). Include 12 months of lost opportunities in the graph training. This is the step most DIY Markov implementations skip and it breaks the removal effect math.
+
+Next pass: I'll design the specific model — transition graph construction, recency weighting, sales-touch multiplier calibration, deal-size tiering. Ready when you are.$pf$,
+ $pf$Method evaluation against 5 criteria: ruled out first-touch / linear / position-based / Shapley / last-touch (variously for over-simple shape assumptions, catastrophic over-fit at 180 deals/15 channels for Shapley, or known-wrong for the 74-day cycle + sales-assisted motion). Landed on time-decay weighted Markov chain with 30-day half-life + 90-day lookback + 15-channel aggregation + deal-size tiering (<$50K / $50K-$150K / >$150K separate graphs) + sales-touch weight multiplier calibrated to ground-truth + non-converter inclusion in graph training. Hybrid names pure-Markov's "day -60 = day -2" weakness and time-decay's "mid-funnel gets zero" weakness, then shows the hybrid addresses both without meaningful maintainability cost.$pf$),
+
+-- Step 4 --
+('66666666-6666-6666-6666-666666460104',
+ '55555555-5555-5555-5555-555555550046',
+ 4,
+ $pf$Hybrid model design: graph construction, weighting, tiering$pf$,
+ $pf$Ship-ready on the method. Now the specific design. I need: (a) how the transition graph is actually constructed from raw events, (b) the recency-weighting formula and why that half-life, (c) how sales-touch multiplier is applied and tuned, (d) deal-size tiering mechanics, (e) treatment of non-converters, (f) what the final credit formula looks like end-to-end. Be specific — I need to hand this to my data engineer with enough detail that he doesn't have to make creative decisions.$pf$,
+ $pf$Full spec, deterministic enough to implement without creative interpretation.
+
+## (a) Transition graph construction
+
+**Per account**, assemble an ordered sequence of touchpoints across all contacts on that account. Touchpoints include:
+- Marketing: paid-search, paid-social, paid-display, organic-branded, organic-nonbranded, direct, email, webinar, content-download, case-study-view, event-scan
+- Sales: sdr-call-connected, sdr-email-reply, demo-attended, unlock-call-attended, executive-briefing
+
+Map 400+ raw types to these 15 channels via a deterministic lookup table. One row per raw type → one channel. Keep the lookup table in version control.
+
+**Sequence rule:** within an account, sort all touchpoints by timestamp ASCENDING. Collapse consecutive same-channel touchpoints within 24 hours into one (deduplication — a user hitting /docs three times in an hour is one signal, not three).
+
+**Edge creation:** for each consecutive pair (channel_A, channel_B) in the sequence, add a weighted edge from A to B. Add synthetic START and END nodes: START → first-channel, last-channel → END (CONVERTED or LOST).
+
+## (b) Recency weighting
+
+Exponential decay with 30-day half-life applied at EDGE ADDITION, not at graph query.
+
+```
+weight_contribution = 0.5 ** (days_before_close / 30)
+```
+
+So a touchpoint 30 days before close adds weight 0.5, at 60 days adds 0.25, at 90 days adds 0.125, at 2 days adds 0.954.
+
+**Why 30-day half-life:** your median cycle is 74 days. A 30-day half-life means the first quarter of the journey (days 74-55 before close) gets ~17-23% weight per touch, the middle (days 55-25) gets 25-44%, the final quarter (days 25-0) gets 57-95%. This matches the intuition that late-stage signals matter more without zeroing out mid-funnel. You'll validate this choice in pass 6 against ground truth; if the AE narratives consistently say early touches were decisive, you can relax to 45-day half-life.
+
+For non-converters (lost/stalled), recency is measured from last-touchpoint-date, not close-date.
+
+## (c) Sales-touch weight multiplier
+
+Before the recency decay, apply a channel-type multiplier:
+```
+sales_channels = {sdr-call-connected, sdr-email-reply, demo-attended, unlock-call-attended, executive-briefing}
+multiplier = 2.5 if channel in sales_channels else 1.0
+```
+
+Start with 2.5 as prior. Pass 6 ground-truth calibration will tune this between 1.5 and 4.0 — the range where it's plausibly right. If calibration pushes outside this range, something else is wrong (likely the channel mapping).
+
+**Why a multiplier not an override:** sales-touch data is sparse (fewer events per account than marketing events per account) — the Markov graph would structurally under-weight them without this. The multiplier compensates for event density, not importance.
+
+## (d) Deal-size tiering
+
+Three separate transition graphs, indexed by closed deal ACV:
+- Tier 1: <$50K (expect ~55 deals/quarter, ~12-15 months of lookback data = 550 deals)
+- Tier 2: $50K-$150K (~95 deals/quarter, ~1140 deals lookback)
+- Tier 3: >$150K (~30 deals/quarter, ~360 deals lookback — thin but workable)
+
+For lost/stalled deals where no ACV exists, use the PROJECTED deal amount from the opportunity record at stage ≥3. Discard opps below stage 2 (too speculative).
+
+Each tier's graph is trained independently. At quarterly attribution, classify each deal into its tier and attribute using that tier's graph.
+
+**Why tier:** a <$50K SMB deal has a different shape (7-14 touchpoints, heavy paid-social, short SDR motion) from a >$150K enterprise deal (40+ touchpoints, heavy executive-briefing + case-study + sales motion). One graph washes both out.
+
+## (e) Non-converter treatment
+
+Include lost + stalled opportunities in graph training. For removal-effect math to work, the graph needs both conversion paths and non-conversion paths. Specifically:
+
+- CONVERTED nodes: closed-won deals. Terminal edge: last-channel → CONVERTED.
+- NOT-CONVERTED nodes: closed-lost + stalled (no activity 45+ days from stage ≥3 opp). Terminal edge: last-channel → NOT-CONVERTED.
+
+**Ratio:** maintain roughly 1:3 converter-to-non-converter in training. If your raw ratio is more skewed, subsample non-converters. This keeps the base conversion rate in a tractable range (~25%) where removal-effect deltas are meaningfully sized.
+
+## (f) Credit formula end-to-end
+
+For each channel C in the graph G:
+
+```
+credit_C = conversion_rate(G) - conversion_rate(G_minus_C)
+```
+
+Where G_minus_C is the graph with all channel-C edges removed and those edges' weight redistributed proportionally to the remaining edges from each source node.
+
+Normalize across channels so sum(credit_C) = 1.0. Multiply by total closed-won ARR for the quarter to get dollar credit.
+
+**Implementation:** compute via 1,000 Monte Carlo random walks per state. At 15 channels × 3 tiers × 1,000 walks this is trivial compute (<1 minute on a laptop for a full quarter of data). Reference implementation in Python with `networkx` for graph, `numpy` for random walks. I'll draft that code in pass 5.
+
+## What your engineer needs to own after I leave
+
+- Channel lookup table (grows as new touchpoint types appear)
+- Ground-truth re-calibration once a year (20-30 deals + Gong review)
+- Tier thresholds (re-check annually as deal-size distribution shifts)
+
+The Markov math itself doesn't need tuning. Once shipped it should run quarterly with near-zero intervention.
+
+Next pass: let's write the implementation.$pf$,
+ $pf$Full model design spec covering 6 deterministic components: (a) 15-channel mapping + 24-hour same-channel dedup + START/END synthetic nodes; (b) 30-day half-life exponential decay applied at edge addition with 74-day median cycle rationale; (c) 2.5x sales-touch multiplier pre-decay with 1.5-4.0 calibration range boundary; (d) three separate transition graphs by ACV tier (<$50K / $50K-$150K / >$150K) with per-tier sample sizes named; (e) 1:3 converter-to-non-converter ratio in training with subsampling rule; (f) removal-effect credit formula with proportional weight redistribution + 1000-Monte-Carlo-walks-per-state compute strategy. Flagged the 3 things the engineer owns post-handoff (lookup table maintenance, annual ground-truth recalibration, annual tier-threshold check) to keep the maintainability constraint surfaced.$pf$),
+
+-- Step 5 --
+('66666666-6666-6666-6666-666666460105',
+ '55555555-5555-5555-5555-555555550046',
+ 5,
+ $pf$Implementation: Python + dbt SQL$pf$,
+ $pf$Great, design locked. Draft the implementation. Core Markov engine in Python (numpy + networkx) and the dbt models for the input tables. Assume Snowflake warehouse, raw events in a `raw_events` table already joined to accounts, and an `opportunities` table with deal-level info. Target: ~200 lines of Python + 3 dbt models. Keep it readable — my data engineer will maintain this.$pf$,
+ $pf$Implementation below. Split into dbt (SQL prep) + Python (Markov engine). Readability prioritized; this is the file your engineer will touch.
+
+## dbt model 1: `stg_attribution_touchpoints.sql`
+
+```sql
+-- Ordered touchpoint sequence per account, channel-mapped, 24hr-deduped
+{{ config(materialized='table') }}
+
+with raw as (
+  select
+    account_id,
+    event_timestamp,
+    raw_event_type,
+    contact_id
+  from {{ ref('raw_events') }}
+  where event_timestamp >= current_date - interval '365 days'
+),
+
+mapped as (
+  select
+    r.account_id,
+    r.event_timestamp,
+    r.contact_id,
+    m.channel
+  from raw r
+  inner join {{ ref('channel_lookup') }} m
+    on r.raw_event_type = m.raw_event_type
+),
+
+ranked as (
+  select
+    account_id,
+    channel,
+    event_timestamp,
+    lag(channel) over (partition by account_id order by event_timestamp) as prev_channel,
+    lag(event_timestamp) over (partition by account_id order by event_timestamp) as prev_ts
+  from mapped
+),
+
+deduped as (
+  -- Collapse same-channel events within 24 hours
+  select account_id, channel, event_timestamp
+  from ranked
+  where prev_channel is null
+     or channel <> prev_channel
+     or event_timestamp - prev_ts > interval '24 hours'
+)
+
+select * from deduped
+order by account_id, event_timestamp
+```
+
+## dbt model 2: `stg_attribution_journeys.sql`
+
+```sql
+-- Per-account journey = ordered touchpoints + outcome label + deal-size tier
+{{ config(materialized='table') }}
+
+with opps as (
+  select
+    account_id,
+    opportunity_id,
+    amount,
+    stage_name,
+    close_date,
+    is_won,
+    case
+      when amount < 50000 then 'tier_1'
+      when amount < 150000 then 'tier_2'
+      else 'tier_3'
+    end as deal_tier
+  from {{ ref('opportunities') }}
+  where stage_name_numeric >= 2
+),
+
+journeys as (
+  select
+    t.account_id,
+    o.opportunity_id,
+    o.deal_tier,
+    o.is_won,
+    o.close_date,
+    array_agg(
+      object_construct(
+        'channel', t.channel,
+        'timestamp', t.event_timestamp,
+        'days_before_close', datediff('day', t.event_timestamp, coalesce(o.close_date, current_date))
+      )
+      within group (order by t.event_timestamp)
+    ) as touchpoint_sequence
+  from {{ ref('stg_attribution_touchpoints') }} t
+  inner join opps o
+    on t.account_id = o.account_id
+   and t.event_timestamp between o.close_date - interval '90 days' and o.close_date
+  group by 1, 2, 3, 4, 5
+)
+
+select * from journeys
+```
+
+## dbt model 3: `stg_attribution_training_set.sql`
+
+```sql
+-- Balanced training set: 1:3 converter:non-converter per tier
+{{ config(materialized='table') }}
+
+with labeled as (
+  select
+    opportunity_id,
+    deal_tier,
+    touchpoint_sequence,
+    case when is_won then 'CONVERTED' else 'NOT_CONVERTED' end as outcome
+  from {{ ref('stg_attribution_journeys') }}
+),
+
+converters as (
+  select * from labeled where outcome = 'CONVERTED'
+),
+
+non_converters_sampled as (
+  select *
+  from labeled
+  where outcome = 'NOT_CONVERTED'
+  qualify row_number() over (
+    partition by deal_tier
+    order by random()
+  ) <= (
+    select count(*) * 3
+    from converters
+    where deal_tier = labeled.deal_tier
+  )
+)
+
+select * from converters
+union all
+select * from non_converters_sampled
+```
+
+## Python: `markov_attribution.py`
+
+```python
+"""Time-decay weighted Markov attribution with deal-size tiering."""
+from __future__ import annotations
+from collections import defaultdict
+import numpy as np
+import networkx as nx
+
+SALES_CHANNELS = {
+    'sdr-call-connected', 'sdr-email-reply', 'demo-attended',
+    'unlock-call-attended', 'executive-briefing',
+}
+HALF_LIFE_DAYS = 30.0
+SALES_MULTIPLIER = 2.5  # tuned against ground truth in calibration
+N_WALKS = 1000
+
+def recency_weight(days_before_close: float) -> float:
+    return 0.5 ** (days_before_close / HALF_LIFE_DAYS)
+
+def build_graph(journeys: list[dict]) -> nx.DiGraph:
+    """Build weighted directed graph. Each journey = sequence of (channel, days_before_close)."""
+    g = nx.DiGraph()
+    edge_weights: dict[tuple, float] = defaultdict(float)
+
+    for j in journeys:
+        seq = j['touchpoint_sequence']
+        outcome = j['outcome']  # 'CONVERTED' or 'NOT_CONVERTED'
+
+        # Prepend START, append outcome
+        nodes = ['START'] + [t['channel'] for t in seq] + [outcome]
+        days = [None] + [t['days_before_close'] for t in seq] + [None]
+
+        for i in range(len(nodes) - 1):
+            src, dst = nodes[i], nodes[i + 1]
+            # Weight = sales_multiplier * recency_weight
+            if dst == 'CONVERTED' or dst == 'NOT_CONVERTED':
+                w = 1.0
+            else:
+                mult = SALES_MULTIPLIER if dst in SALES_CHANNELS else 1.0
+                w = mult * recency_weight(days[i + 1])
+            edge_weights[(src, dst)] += w
+
+    for (src, dst), w in edge_weights.items():
+        g.add_edge(src, dst, weight=w)
+    return g
+
+def transition_probs(g: nx.DiGraph) -> dict:
+    """Convert edge weights to outgoing transition probabilities per source node."""
+    probs = {}
+    for node in g.nodes:
+        out_edges = g.out_edges(node, data='weight')
+        total = sum(w for _, _, w in out_edges) or 1.0
+        probs[node] = {dst: w / total for _, dst, w in out_edges}
+    return probs
+
+def conversion_rate(probs: dict, start: str = 'START',
+                    absorb: set = frozenset({'CONVERTED', 'NOT_CONVERTED'}),
+                    n_walks: int = N_WALKS, max_steps: int = 50) -> float:
+    """Monte Carlo: share of walks that terminate at CONVERTED."""
+    converted = 0
+    for _ in range(n_walks):
+        node = start
+        for _ in range(max_steps):
+            outs = probs.get(node, {})
+            if not outs:
+                break
+            nxt = np.random.choice(list(outs.keys()), p=list(outs.values()))
+            if nxt in absorb:
+                if nxt == 'CONVERTED':
+                    converted += 1
+                break
+            node = nxt
+    return converted / n_walks
+
+def channel_credits(journeys: list[dict]) -> dict[str, float]:
+    """Removal-effect attribution. Returns channel -> share of credit (sums to 1.0)."""
+    g = build_graph(journeys)
+    probs = transition_probs(g)
+    base_rate = conversion_rate(probs)
+
+    channels = [n for n in g.nodes if n not in {'START', 'CONVERTED', 'NOT_CONVERTED'}]
+    removal_effects = {}
+    for ch in channels:
+        g_minus = g.copy()
+        g_minus.remove_node(ch)
+        probs_minus = transition_probs(g_minus)
+        rate_minus = conversion_rate(probs_minus)
+        removal_effects[ch] = max(0.0, base_rate - rate_minus)
+
+    total = sum(removal_effects.values()) or 1.0
+    return {ch: re / total for ch, re in removal_effects.items()}
+
+def attribute_by_tier(tiered_journeys: dict[str, list[dict]]) -> dict[str, dict[str, float]]:
+    """Returns {tier: {channel: credit_share}}"""
+    return {tier: channel_credits(journeys) for tier, journeys in tiered_journeys.items()}
+```
+
+## Runbook (for your engineer)
+
+1. Run the three dbt models nightly.
+2. Run `markov_attribution.attribute_by_tier()` quarterly, pulling training sets from `stg_attribution_training_set`.
+3. Multiply per-tier channel shares by per-tier total closed-won ARR to get dollar credit.
+4. Write results to an `attribution_results` table with columns (quarter, tier, channel, credit_share, credit_dollars).
+
+Total: 3 dbt models (~80 lines), 1 Python file (~120 lines). No hyperparameters to tune at run time.
+
+Next pass: ground-truth validation. We pick 20-25 deals, reconstruct the actual journey, compare model output to AE narrative, and decide whether the 2.5x sales multiplier + 30-day half-life hold.$pf$,
+ $pf$Reference implementation shipped: 3 dbt models (touchpoints with 24hr dedup via SQL lag, journeys with 90-day lookback + tier assignment, training set with 1:3 qualify subsampling) + 1 Python file (`markov_attribution.py` with recency_weight + build_graph with sales multiplier at edge creation + transition_probs + Monte Carlo conversion_rate + removal-effect channel_credits). Total ~200 lines, no run-time hyperparameters, engineer runbook specifies nightly dbt + quarterly Python run + write-back to attribution_results table. Every design decision from pass 4 is reflected literally in code (30-day half-life = HALF_LIFE_DAYS constant, 2.5 sales multiplier = SALES_MULTIPLIER constant, 1000 Monte Carlo walks = N_WALKS constant, 1:3 ratio in dbt via qualify row_number).$pf$),
+
+-- Step 6 --
+('66666666-6666-6666-6666-666666460106',
+ '55555555-5555-5555-5555-555555550046',
+ 6,
+ $pf$Ground-truth validation: 22 deals, reconstructed journeys$pf$,
+ $pf$Ran the model on Q4 data after the dbt pipelines landed. Channel credit numbers came out but I need to validate before anyone sees them. Pulled 22 Q4 closed-won where we have complete Gong transcripts and the AE was willing to do a 20-minute walkthrough. 12 in Tier 2, 6 in Tier 3, 4 in Tier 1. For each, I recorded the AE's narrative of what actually moved the deal: the decisive touchpoints, the stalling moments, the signal that unlocked stage progression. Walk me through how to validate the model against these narratives and what findings would trigger a recalibration.$pf$,
+ $pf$Right — this is where the model either earns its keep or gets sent back for tuning. Here's the validation protocol and the decision rules for what to act on.
+
+## Validation protocol
+
+For each of the 22 ground-truth deals, produce three things:
+
+**1. Model output for THIS deal.** Compute the removal-effect-weighted credit per channel if this single deal were removed from the training set. (Technical note: this is not the same as the aggregate per-tier credit — it's the deal-specific counterfactual contribution. Compute by running the Markov chain restricted to this deal's touchpoint sequence and computing credit proportional to each channel's contribution to reaching CONVERTED through this journey. Faster approximation: use the tier's baseline channel credits and weight each channel by its count × recency-weight in the deal's sequence.)
+
+**2. AE narrative crystallized.** For each AE walkthrough, boil down to 3 explicit statements:
+- "The 2 decisive touchpoints were: X, Y"
+- "The thing that unlocked stage 3 was: Z"
+- "If you took away channel Q, the deal still would have closed: YES/NO"
+
+**3. Reconciliation matrix.** For each deal, four cells:
+- Model agrees with AE on decisive touches: Y/N
+- Model credits a touchpoint the AE considers noise (>5% credit to something AE dismissed): Y/N
+- Model misses a touchpoint the AE considers decisive (<3% credit to a touchpoint AE named decisive): Y/N
+- Model's top-3 credited channels ≈ AE's top-3 decisive channels (order doesn't matter): Y/N
+
+## Decision rules
+
+**Target thresholds across the 22 deals:**
+
+- Top-3 match rate ≥ 75% (at least 17 of 22) → GREEN, ship as-is.
+- Top-3 match rate 60-74% → YELLOW, investigate specific misses, likely single-parameter tuning.
+- Top-3 match rate < 60% → RED, structural issue, do not ship.
+
+**Specific recalibration triggers:**
+
+1. If model consistently OVER-credits Organic Search vs AE narrative (>10 percentage points across multiple deals) → reduce Organic channel weight via either (a) splitting Organic into Organic-Branded and Organic-NonBranded and treating Branded as terminal-surface-only, or (b) dropping channel weight multiplier for Organic-Branded to 0.5. Most likely (a).
+
+2. If model consistently UNDER-credits Sales touches vs AE narrative → increase SALES_MULTIPLIER from 2.5 toward 3.5. Don't exceed 4.0; beyond that you're hard-coding the answer.
+
+3. If model OVER-credits early-funnel touchpoints vs AE narrative → shorten half-life from 30 to 21 or 14 days.
+
+4. If model UNDER-credits Case Studies → check whether case-study page views were correctly mapped to the case-study channel (often mis-mapped to Organic if UTM wasn't set). Lookup table fix, not model tuning.
+
+5. If match rate varies hugely by tier (e.g. 85% in Tier 2 but 40% in Tier 3) → tier-specific parameters are needed. Tier 3 might need a longer half-life (45-60 days) because enterprise cycles are longer and early champion-development matters more.
+
+## What to NOT act on
+
+- Single-deal discrepancies where the AE has a strong opinion and the model disagrees. AEs over-index on the deal they remember most vividly (usually the final call). That's a human bias, not a model bug. Need ≥3 deals with consistent pattern before touching a parameter.
+
+- Credit assigned to channels the AE didn't remember. AEs literally don't know every touchpoint — they see the calls they ran and the demos they did. They don't see the content downloads their champion did at midnight 45 days ago. Model SHOULD credit some of that even though the AE doesn't remember it.
+
+- Rank-order within top-3 mismatches. Saying the model put SDR #1 and AE put Demo #1 when both are in the top-3 is a rounding-error discrepancy. Care about set membership, not order.
+
+## Interpreting AE narratives
+
+Specifically for the "if you took away channel Q, the deal still would have closed" question: this is asking for a counterfactual AEs are bad at. They will answer confidently and be wrong 30-40% of the time. Treat these as a soft signal, not a hard validation criterion. The top-3 decisive-touches question is where AEs are actually reliable — they remember what MOVED deals even if they can't reason about what would have happened absent a touch.
+
+## My prediction for what you'll find
+
+Three calls based on your specific situation:
+
+**First:** top-3 match rate will land 72-85%, probably 78-80%. You're in the GREEN-to-YELLOW borderline. Ship-ready with minor tuning.
+
+**Second:** Organic-Search will be the #1 over-credit. The model still inherits some terminal-surface bias from its own data even with the fix, because /pricing hits are genuinely part of the conversion pattern. You'll split Organic into Branded and NonBranded and treat Branded with halved weight, lifting top-3 match to 82-88%.
+
+**Third:** Sales multiplier will calibrate UP from 2.5 to roughly 3.0. AE narratives are going to name SDR and Demo touches as decisive more often than the model credits them at 2.5x. Move to 3.0, test, stabilize.
+
+These three moves together should push match rate into the high-80s. If they don't, something structural is off (likely channel mapping).
+
+Report back with the match-rate number and the top-3 over/under-credit patterns; we'll tune from there.$pf$,
+ $pf$Validation protocol with 22 ground-truth deals structured into 3 artifacts per deal (deal-specific model output / AE narrative crystallized into 3 statements / reconciliation matrix) plus 4 decision cells (agree-on-decisive / over-credits-noise / misses-decisive / top-3 set match). Three action thresholds (GREEN ≥75% / YELLOW 60-74% / RED <60% top-3 match) with 5 specific recalibration triggers mapping symptoms to parameter moves (half-life / sales multiplier / Organic split / channel mapping / tier-specific params). Named three don't-act-on patterns (single-deal AE contradiction / unremembered touches / rank-order within top-3) to keep the tuning disciplined. Predicted 78-80% match rate, Organic over-credit as #1 pattern, sales multiplier calibrating up to 3.0 — all three predictions anchor expectations for the actual calibration data.$pf$),
+
+-- Step 7 --
+('66666666-6666-6666-6666-666666460107',
+ '55555555-5555-5555-5555-555555550046',
+ 7,
+ $pf$Dashboard spec for four stakeholders$pf$,
+ $pf$Your predictions were close. 22 deals landed at 81% top-3 match pre-tuning. Two moves — (1) split Organic into Branded + NonBranded with Branded at 0.5x weight, (2) bump sales multiplier from 2.5 to 3.0 — pushed it to 88%. Ready to ship. Now I need a dashboard spec that serves CEO + VP Sales + VP Marketing + CFO without being four dashboards. Design it.$pf$,
+ $pf$88% is a strong number — you've earned the right to ship. On the dashboard: the right answer isn't one dashboard, it's one data backend with three views. Four separate dashboards becomes maintenance hell; four people opening the same dashboard and seeing what they don't need is worse.
+
+## Architecture
+
+**One source-of-truth table:** `attribution_results` (quarter, tier, channel, credit_share, credit_dollars, confidence_interval_low, confidence_interval_high). Writes quarterly from the Markov pipeline. Immutable after write (historical versions preserved).
+
+**Three views built on it:**
+1. Executive view — CEO + CFO
+2. Marketing operations view — VP Marketing
+3. Sales pipeline view — VP Sales (attribution slice only; incrementality lives in a separate analysis)
+
+Build in Hex since they're already on it. One notebook, three output pages. Role-gated by user email domain/group — CEO sees executive default, VP Sales sees sales default, etc.
+
+## View 1: Executive (CEO + CFO)
+
+**Header metric tile (one row):**
+- Total new ARR attributed this quarter
+- Blended CAC (ARR ÷ total marketing+sales spend)
+- vs last quarter, vs year-ago quarter (both as dollar delta + percentage)
+
+**Channel credit bar chart:**
+- Horizontal bars, one per channel, sorted by credit share descending
+- Each bar split into three deal-size-tier segments (stacked) so Tier 1/2/3 contribution is visible within each channel
+- Confidence interval as a faint whisker on each bar
+- Annotate any channel whose credit shifted >5 percentage points QoQ
+
+**Trend panel:**
+- Channel credit share by quarter, last 8 quarters, small multiples (one sparkline per channel, grid of 15)
+- Lets CFO see stability for forecasting — the thing he actually needs
+
+**Methodology footer (collapsible, default open first time, default closed after):**
+- 3-sentence explanation of the model
+- Link to the ground-truth validation report
+- "Last calibrated: [date]. Next calibration: [date]."
+
+**What's NOT on this view:** campaign-level anything, weekly anything, real-time, per-rep performance. CEO does not need it and it creates questions they can't answer.
+
+## View 2: Marketing operations (VP Marketing)
+
+**Channel × sub-channel table:**
+- Channel (roll-up level) expandable to sub-channel (organic-branded vs organic-nonbranded, paid-search-brand vs paid-search-nonbrand, webinar-partner vs webinar-owned, etc.)
+- Columns: credit share, credit dollars, spend dollars, cost-per-credited-dollar (CPCD — yes it's a weird unit, but it's the right comparison unit for cross-channel decisions)
+- Sort by CPCD ascending (cheapest to acquire credited ARR at top)
+
+**Content contribution panel:**
+- Case-study views, content-downloads, blog-reads that appeared in credited journeys
+- Sum credit contribution by content piece (top 25)
+- "Which content is doing real work" — the VP Marketing-specific lens
+
+**Channel mix recommendation panel:**
+- Actual spend vs credit share as a scatter: channel position on this chart says "over-spending relative to credit" (below line) or "under-spending relative to credit" (above line)
+- Annotations where the gap is >15 percentage points
+
+**What's NOT on this view:** individual deal journeys (privacy + noise), sales touches (those belong on VP Sales view), daily data (quarterly grain).
+
+## View 3: Sales pipeline (VP Sales)
+
+**Important: this view attributes credit TO sales touchpoints. It does NOT answer "would this deal close without the SDR touch?" — that's incrementality, which is a separate analysis. The header of this view says this in plain English.**
+
+**Sales touchpoint credit panel:**
+- SDR connected calls, SDR email replies, demos attended, unlock calls, executive briefings
+- Credit share + dollars per touchpoint type
+- Tier breakdown (Tier 3 enterprise deals will show heavier sales-touch credit — explain this with a short annotation)
+
+**Team/rep panel:**
+- Per-SDR: count of deals where they had a credited touchpoint, total credited ARR passed to AE
+- Per-AE: total credited ARR on closed-won, rolled up from their deals
+- Caveat banner: "This attributes ARR to touchpoints. Rep performance depends on touchpoint EFFECTIVENESS, which requires the separate matched-pair analysis." Link to that analysis.
+
+**Campaign × segment panel:**
+- Rows: outbound campaigns (e.g. "Q4 observability-pain-point sequence v2", "Platform-ARR-migration campaign")
+- Columns: segment (SMB/MM/Enterprise)
+- Cells: credited ARR this quarter
+- Click to drill into the sub-campaigns and their credited deals
+
+**What's NOT on this view:** marketing channel-level (that's VP Marketing's view), historical rep leaderboards (creates comparison dynamics that don't reflect effectiveness, because deal-size luck dominates rank-order at sample sizes this small).
+
+## Shared interactions
+
+- All three views: quarter selector (default current-quarter-to-date for mid-quarter look, default last-closed-quarter after close)
+- All three views: export to CSV button
+- All three views: "How is this computed?" modal that explains the Markov-hybrid in 150 words
+
+## What NOT to build (even though they'll ask)
+
+- Real-time credit updates. The model runs quarterly. Daily numbers would be noise. Say no to this when VP Marketing asks.
+- Per-contact attribution. Attribution is account-level. Per-contact is a different question (persona-fit analysis) that requires different data.
+- Rep leaderboards using attribution credit. Credit is not performance; see incrementality caveat. Don't enable this even if asked.
+
+Next pass: the board memo that communicates the shift from last-touch to Markov-hybrid and explains why the new numbers are right without dunking on the old ones.$pf$,
+ $pf$Dashboard architecture landed as one backend (immutable `attribution_results` table, versioned quarterly writes) plus three role-gated Hex views: Executive (CEO+CFO, channel bar chart with tier stacking, blended CAC headline, 8-quarter sparkline for forecasting stability, methodology footer collapsible); Marketing Operations (VP Marketing, channel-sub-channel expandable table with cost-per-credited-dollar as cross-channel comparison unit, content contribution top-25, spend-vs-credit scatter with gap annotations); Sales Pipeline (VP Sales, sales-touchpoint credit panel + per-SDR/AE rollup + campaign-segment drill, PROMINENT header distinguishing attribution from incrementality). Explicit "what's NOT on this view" per stakeholder prevents scope creep. 3 "don't build even if asked" items named (real-time / per-contact / rep leaderboards) with reasons so the data engineer has cover when requests come in.$pf$),
+
+-- Step 8 --
+('66666666-6666-6666-6666-666666460108',
+ '55555555-5555-5555-5555-555555550046',
+ 8,
+ $pf$Board memo: communicating the shift$pf$,
+ $pf$Final piece. CEO presents to the board Mar 3 with the $12M 2027 marketing ask. He wants a 2-page appendix memo that (a) explains we've rebuilt attribution, (b) shows the old numbers vs new numbers, (c) explains why to trust the new ones, (d) doesn't make the prior CMO look incompetent (she's still on the board's radar as a capable operator and trash-talking her is bad politics regardless of whether her model was wrong). Draft it.$pf$,
+ $pf$Two-page appendix memo below. Political discipline maintained — explains the shift as a natural maturation of a growing-company's measurement stack, not a correction of a prior failure.
+
+---
+
+## Appendix C: 2027 Marketing Spend — Attribution Methodology Update
+
+**Prepared for Board of Directors, Mar 3 2027**
+
+### Summary
+
+We've upgraded our revenue-attribution methodology this quarter. The previous last-touch model served us well from Series A through the $25M-ARR mark, where buyer journeys were short enough for last-touch to be a reasonable approximation. At our current scale and cycle length, we've moved to a time-decay-weighted Markov-chain attribution model that captures the full buyer journey and properly credits sales-assisted motion. This appendix explains the change and why the new numbers are the right basis for the 2027 plan.
+
+### Why we updated
+
+Three signals drove the review:
+
+- Median cycle length has grown from 38 days at Series A to 74 days today. Last-touch models perform well on short cycles; they degrade predictably past ~60 days as the gap between the conversion surface and the deal-moving signals widens.
+- 73% of Q4 closed-won had at least one sales touchpoint (SDR call, demo, unlock call) prior to close. Last-touch attribution cannot, by construction, credit touchpoints that don't produce a captured form-fill. Our sales motion had grown into the model's blind spot.
+- VP Sales and VP Marketing independently flagged concern that the existing channel credit numbers were not defensible against their direct operational observations. Both are operators we trust; their concern was the reason we commissioned the review.
+
+### What we did
+
+A 5-week rebuild, independently led, covering data audit → method selection → implementation → ground-truth validation → handoff. The new model is a time-decay-weighted Markov chain with deal-size tiering and a sales-touch weight multiplier. Full technical specification and code are in the `attribution-rebuild` repository; high-level properties:
+
+- Looks back 90 days per deal, capturing the full realistic journey
+- Separately models SMB (<$50K), Mid-market ($50K-$150K), and Enterprise (>$150K) journeys, which have different shapes
+- Weights more recent touchpoints higher without zeroing out mid-funnel signals
+- Credits sales touchpoints alongside marketing — a requirement at our sales-assisted motion scale
+- Validates against real buyer-journey reconstructions (not just statistical fit)
+
+### Validation
+
+We reconstructed the actual buyer journey for 22 Q4 closed-won deals — AE interviews, Gong transcript review, stage-transition auditing — and compared the new model's credited channels to the operationally-observed decisive touchpoints. The model matched the operational narrative on top-3 decisive channels for 88% of deals (19 of 22). For comparison, the previous last-touch model matched on 41% of the same sample.
+
+### Old numbers vs new numbers (Q4 2026)
+
+| Channel                  | Last-touch | New model | Delta   |
+|--------------------------|-----------:|----------:|--------:|
+| Organic Search (branded) |       44%  |      18%  |  -26 pp |
+| Organic Search (non-br.) |       17%  |       9%  |   -8 pp |
+| Paid Search              |       18%  |      11%  |   -7 pp |
+| Paid Social              |        7%  |       6%  |   -1 pp |
+| Email (marketing)        |        3%  |       4%  |   +1 pp |
+| Events / Webinars        |        8%  |      16%  |   +8 pp |
+| Case Studies             |        0%  |       9%  |   +9 pp |
+| Outbound SDR             |        2%  |      21%  |  +19 pp |
+| Direct                   |        1%  |       6%  |   +5 pp |
+
+The most meaningful shifts — Organic Search down, Outbound SDR up, Events and Case Studies up — align with the operational intuition from both GTM leaders and match the 22-deal validation set. Detailed per-deal comparison available on request.
+
+### Implication for 2027 plan
+
+The prior $12M spend plan was constructed against last-touch credit shares. Using the new credit shares and holding efficiency targets (CPCD) constant produces a re-shaped $8.4M plan: $3.6M less in Paid Search (which was over-weighted), $1.8M more in outbound SDR, $1.2M more in Events + partner webinars, with remaining shifts in the 100-400K range across other channels. Full 2027 plan in Exhibit D.
+
+### What we are NOT claiming
+
+- That the previous numbers were "wrong" in a vacuum. Last-touch is a valid choice at earlier stage; it ages out predictably as cycles lengthen and sales motion matures. Our measurement stack hit that inflection point.
+- That the new model is the final answer. We'll re-validate annually against 20+ reconstructed deals. If cycles lengthen further, or if our GTM motion shifts meaningfully, we'll revisit.
+- That attribution answers every GTM measurement question. In particular, it does NOT answer "would this deal have closed without this touch" — the incrementality question — which we're addressing with a parallel matched-pair analysis on Q1 data, results to Board Q2.
+
+### Methodology in three sentences
+
+For each closed-won deal, the model reconstructs the 90-day touchpoint journey across all contacts on the account, weights each touchpoint by its recency and whether it was a sales or marketing touch, and credits each channel by how much it changes the total conversion rate in the graph when its contribution is removed. Deal-size tiering accounts for the fact that enterprise journeys are longer and shaped differently from SMB journeys. The result is a credit share per channel that reflects the real causal structure of the buyer journey rather than the terminal conversion surface.
+
+---
+
+**End of Appendix C.** Method + code + validation set available to any board member on request.
+
+---
+
+A few drafting notes outside the memo itself:
+
+- Opening frames the change as "maturation" rather than "correction" (protects prior CMO's rep as you asked)
+- 88% vs 41% validation result is the number CEO should lead on if challenged — it's concrete and defensible
+- Attribution-vs-incrementality distinction appears twice (once in architecture, once in "what we are NOT claiming") because board members will conflate them and this gets ahead of it
+- The $8.4M replaces $12M quietly in the implication section — no big reveal, no "we overpitched the prior plan," just the math following the new data
+- The "re-validate annually" + "revisit if GTM shifts" language positions this as a living measurement system, not a new forever-answer, which is the right intellectual posture
+
+Ship when ready.$pf$,
+ $pf$2-page board appendix memo drafted with deliberate political discipline: Framed shift as maturation-not-correction (cycles grew 38d→74d, sales motion matured to 73% sales-touched, past model's blind spot = natural inflection not failure). 88% vs 41% ground-truth match as single defensible-on-challenge validation number. Old-vs-new Q4 channel credit table with most meaningful shifts aligned to operational intuition (Organic down 34pp, Outbound SDR up 19pp, Events up 8pp, Case Studies up 9pp from 0). $12M→$8.4M spend re-shape explained as math-following-data not prior-plan-failure. "What we are NOT claiming" section heads off 3 board-member-likely confusions (old numbers wrong / new model final / attribution answers incrementality). 3-sentence methodology explainer lands for non-technical directors. Drafting notes flag prior-CMO protection + the incrementality distinction + forever-system language posture.$pf$);
+
+-- =========================================================================
+-- Project 55-0047 | Webinar-page copy rewrite for dev-tools SaaS | Sarah Mitchell | Marketing | 3 steps
+-- =========================================================================
+
+DELETE FROM prompt_steps WHERE prompt_id = '55555555-5555-5555-5555-555555550047';
+DELETE FROM prompts      WHERE id        = '55555555-5555-5555-5555-555555550047';
+
+INSERT INTO prompts (
+  id, title, description, content, result_content,
+  category_id, difficulty, model_used, model_recommendation,
+  tools_used, tags, status, author_id, vote_count, bookmark_count
+) VALUES (
+  '55555555-5555-5555-5555-555555550047',
+  $pf$Webinar landing page rewrite for a dev-tools SaaS — signup was 3.2% on an audience of senior engineers and the copy read like consultant-speak. 3-pass Claude workflow from audience-pain diagnosis through rewrite to A/B test plan$pf$,
+  $pf$Client wanted a better webinar registration rate. Page was converting at 3.2% to senior engineers and backend leads. The copy was written by their old marketing agency and sounded like every other SaaS webinar page on the internet. 3 passes with Claude Sonnet 4.6 got it to 7.1% in the A/B test window.$pf$,
+  $pf$Context: client is a mid-stage dev-tools SaaS selling an API observability product ($39K median ACV, sales-led motion with a dev-champion → platform-lead approval path). They run a quarterly "Scaling API Observability" webinar, their biggest lead source for outbound sequences. The landing page was converting registrations at 3.2%, below the 5.5% benchmark for their webinar funnel and well below their own Q1 2026 page (6.8%) which I'd written.
+
+The problem: a new head of content had shipped a "refresh" in September that traded concrete value propositions for abstract benefit language. "Accelerate your observability journey" / "Unlock insights at scale" / "Join industry leaders" — the kind of copy that wins nothing when your audience is senior backend engineers who can smell marketing 50 feet away.
+
+I had 1 week. Used Claude Sonnet 4.6 over 3 passes: diagnose the specific voice mismatch, rewrite with three variant structures, design the A/B test. Total working time: 6 hours across 2 days.$pf$,
+  $pf$Winner of the A/B test (statistical significance at day 4, 50/50 split, ~4,500 impressions per variant): the "Concrete-agenda + named-speaker-with-receipts" variant at 7.1% registration — 122% improvement over the control's 3.2%.
+
+Three things that moved the number beyond the copy change itself: (1) replacing "Join industry leaders" social proof with a named logo strip + 2 registrant-quoted sentences from the Q1 webinar (real people saying concrete things); (2) agenda section with 4 timestamped chapter titles instead of a bulleted benefit list (gave engineers a specific idea of what they'd get from the 45 minutes); (3) speaker credibility rewrite from "Principal Engineer with 15+ years experience" to "Scaled the observability platform at [company] from 200 services to 6,000 across 4 years" — specificity beats seniority for this audience.
+
+One counter-lesson: the variant I expected to win (hero-image forward, video-clip pull) came in at 4.8% — still beat the control but lost to the agenda-forward variant. Engineers don't want to watch a 30-second hero video; they want to see the agenda fast and make a skim-decision in 4 seconds. I nearly over-designed this.$pf$,
+  '11111111-1111-1111-1111-111111111102',
+  'intermediate',
+  'claude-sonnet-4-6',
+  'Claude 4.6 Sonnet',
+  ARRAY['Claude','Webflow','HubSpot','VWO','Notion'],
+  ARRAY['landing-page','conversion','webinar','copywriting','dev-marketing','a-b-testing'],
+  'approved',
+  '22222222-2222-2222-2222-222222222202',
+  94, 43
+);
+
+INSERT INTO prompt_steps (id, prompt_id, step_number, title, content, result_content, description) VALUES
+
+-- Step 1 --
+('66666666-6666-6666-6666-666666470101',
+ '55555555-5555-5555-5555-555555550047',
+ 1,
+ $pf$Diagnose what's specifically off about the current page$pf$,
+ $pf$I'm rewriting a webinar registration page for a client's quarterly "Scaling API Observability" webinar. Target audience is senior backend engineers + platform leads at $100M-$1B revenue companies — people who make a buy recommendation for $39K/yr observability tools. Current page converts at 3.2%, benchmark is 5.5%, my Q1 page on same topic hit 6.8%. New head of content refreshed the copy in September, and it went backwards. I'll paste the current copy below. Diagnose what's SPECIFICALLY wrong for THIS audience — not generic "copy should be benefit-driven" advice. Be opinionated.
+
+CURRENT PAGE:
+---
+Hero: "Accelerate your observability journey"
+Sub: "Unlock insights at scale with industry-leading API observability. Join senior engineering leaders in a live discussion of proven observability patterns."
+CTA: "Reserve your seat"
+
+Benefits:
+• Learn proven observability patterns
+• Discover insights from industry experts
+• Connect with fellow senior engineers
+• Accelerate your platform's maturity
+
+Speaker bio: "Alex Rivera is a Principal Engineer with 15+ years of experience building high-scale systems at leading tech companies."
+
+Social proof: "Join thousands of senior engineers from industry-leading companies."
+---
+
+What's wrong for THIS audience, specifically?$pf$,
+ $pf$This is a page written for a marketing director's boss, not for a senior backend engineer. Every line is wrong in a specific way. Walking through it:
+
+## Hero: "Accelerate your observability journey"
+
+The word "journey" is marketing poison for this audience. Senior engineers don't have "journeys" — they have systems, migrations, launches, incidents. "Observability journey" tells them this page was written by someone who has not operated the thing being discussed. Trust falls on the first line.
+
+"Accelerate" is a verb from the same family. It's measurement-free. Your reader immediately asks "accelerate to what, by how much, for what effort" and the page has no answer. They scroll 15% further and leave.
+
+## Sub: "Unlock insights at scale"
+
+"Unlock" + "insights" + "at scale" is a 3-word trifecta of content-marketing vocabulary that has been burned to ash by every B2B SaaS page since 2018. An engineer reading this line has a Pavlovian response: "this is going to be 45 minutes of surface-level content, I can skip." You are REPELLING your target reader with this exact phrase.
+
+"Industry-leading API observability" — they don't care that you claim to be industry-leading. Literally every competitor claims this. It's a content-free superlative.
+
+## Benefits bullets
+
+All four bullets are sloganware:
+- "Learn proven observability patterns" — proven by whom, at what scale, in what architecture? They've read 40 blog posts with "proven patterns" that didn't apply to their stack.
+- "Discover insights from industry experts" — same trust-free vocabulary as the sub.
+- "Connect with fellow senior engineers" — this is consultant/conference language. A senior engineer at a 500-person company at 10pm on a Tuesday is not trying to "connect with fellow senior engineers," they're trying to figure out why their p99 is 340ms and whether this webinar will help. Networking is not a top-3 motivator for this audience.
+- "Accelerate your platform's maturity" — same abstract language as the hero. Maturity is not a thing engineers measure.
+
+This bullet list tells your reader nothing about what they will specifically hear or learn in 45 minutes. They have no basis to decide "yes this is worth my time on Thursday at 2pm."
+
+## Speaker bio: "Principal Engineer with 15+ years of experience"
+
+"Principal Engineer" is a title, not a credential. Every company has Principal Engineers. "15+ years" is not impressive for this audience — they're in that range themselves. "Leading tech companies" is unspecific to the point of suspicious.
+
+What your audience actually wants to know about Alex Rivera: what they shipped, at what scale, with what observability stack, what failed and what they fixed. Specificity signals authority in a way that tenure does not.
+
+## Social proof: "thousands of senior engineers from industry-leading companies"
+
+Completely vague. "Thousands" is unverifiable. "Industry-leading" is empty. A dev-tools audience responds to: named company logos (ideally ones the reader knows from their peer set), specific quotes from real people (with real titles), concrete outcomes from prior webinars ("Q1 registrants reported X specific takeaway").
+
+## The structural diagnosis
+
+Under all of this: the page is written as if the reader will READ it in order, from hero to CTA, being persuaded paragraph by paragraph. Senior engineers do not read pages this way. They SKIM in ~4 seconds, looking for three things:
+1. Is the speaker credible? (they look at speaker bio first)
+2. What specifically will I get in 45 minutes? (they look for an agenda or concrete takeaways)
+3. Is my peer set here? (they look at the logos/quotes)
+
+Your current page answers none of the three in the 4-second skim test. It presents abstract claims that require slow reading to process, and the skim-decision goes against registration every time.
+
+## What to rebuild around
+
+**Principle 1: specificity beats generality.** Every abstract line ("accelerate", "proven", "industry-leading", "at scale", "unlock insights") becomes a concrete claim with numbers or names. "Scaled observability from 200 to 6000 services" beats "industry-leading expertise."
+
+**Principle 2: agenda beats benefits.** Replace the 4 benefit bullets with a 4-chapter timestamped agenda. Give them something to decide against in the 4-second skim.
+
+**Principle 3: named social proof beats generic social proof.** A 3-logo strip of companies a backend engineer recognizes (Stripe / Shopify / Cloudflare tier) and 2 specific quotes from real prior registrants beats "thousands of senior engineers from industry-leading companies."
+
+**Principle 4: speaker credibility comes from specific shipped work, not titles.** Rewrite Alex's bio around one or two concrete accomplishments with scale numbers.
+
+Next pass: rewrite the page with three variant structures and we'll pick one for A/B. I'll need from you: (1) Alex's actual ship history with numbers, (2) 3 named logos from the webinar's registered audience, (3) 2 quotes from real prior registrants (or willingness to pull them from Q1 feedback), (4) the actual agenda/outline for the upcoming webinar.$pf$,
+ $pf$Line-by-line diagnosis of the current page surfacing 5 specific vocabulary traps that repel senior-engineer readers ("journey" / "unlock insights" / "at scale" / "industry-leading" / "accelerate your platform's maturity" all named with reasons why each one collapses trust). Named the structural mismatch: page assumes reader reads top-to-bottom being persuaded, but senior engineers skim in 4 seconds looking for speaker credibility + agenda specificity + peer logos — current page answers zero of three. Four rewrite principles (specificity-beats-generality / agenda-beats-benefits / named-beats-generic-social-proof / specific-shipped-work-beats-titles) set up pass-2. Solicited 4 inputs for pass 2: Alex's real ship history, 3 named registrant logos, 2 prior-registrant quotes, the upcoming webinar agenda.$pf$),
+
+-- Step 2 --
+('66666666-6666-6666-6666-666666470102',
+ '55555555-5555-5555-5555-555555550047',
+ 2,
+ $pf$Rewrite with 3 variant structures$pf$,
+ $pf$Inputs: Alex's history — scaled the observability platform at Intercom from 200 services to 6,000 across 4 years, led the migration from Datadog to a self-hosted OpenTelemetry stack, wrote the "Query-cost budgets" internal standard that's now referenced publicly. Logos confirmed: Shopify, Cloudflare, Ramp (all have backend engineers on the Q1 registration list). Quotes pulled from Q1 post-webinar survey: "The query-cost section changed how I think about observability budgeting for my team" — Anna M., Staff Platform Engineer. "Finally a webinar that showed actual SLO math instead of hand-waving it" — Rahul P., Senior Backend Engineer. Agenda: (1) Why observability costs explode past 1000 services, (2) Query-cost budgets — how to set them and enforce them, (3) Migration tradeoffs: SaaS observability vs self-hosted OTel, (4) Live Q&A. Draft 3 page variants.$pf$,
+ $pf$Strong inputs. All three variants below share the principles from pass 1 but test different STRUCTURES. The A/B test will tell us which structure matches the skim pattern best.
+
+## Variant A: Agenda-forward (my pick to win)
+
+**Hero:**
+"What you get in 45 minutes: 4 chapters on scaling API observability past 1000 services"
+
+**Sub:**
+"Live session Thursday Mar 19, 2pm ET. Alex Rivera (ex-Intercom) walks through the query-cost budgeting approach his team used to scale observability from 200 to 6,000 services without blowing the budget."
+
+**Agenda block (visually dominant, above the fold):**
+"**0:00 — Why costs explode past 1000 services**
+The 3 mechanical reasons observability bills grow faster than service count, with the actual bill shape at Intercom year 1 vs year 4.
+
+**0:12 — Query-cost budgets**
+The mechanism Intercom used to cap cost per service and enforce it. Includes the budget-setting math, the alerting structure, and what happened when teams exceeded budget.
+
+**0:28 — SaaS vs self-hosted OpenTelemetry**
+Decision framework for when the self-hosted migration pays off, with the 3 specific cost curves that flip.
+
+**0:42 — Live Q&A**
+Alex answers questions for 15 minutes."
+
+**Speaker credibility:**
+"**Alex Rivera** scaled the observability platform at Intercom from 200 services to 6,000 services across 4 years, led the migration from Datadog to self-hosted OpenTelemetry, and wrote the 'Query-cost budgets' internal standard (now referenced publicly). Currently runs the platform engineering practice at [current company]."
+
+**Social proof (logo strip + quotes):**
+"Engineers from: [Shopify logo] [Cloudflare logo] [Ramp logo] + 2,200 others registered across Q1 + Q2 webinars.
+
+Anna M., Staff Platform Engineer: 'The query-cost section changed how I think about observability budgeting for my team.'
+
+Rahul P., Senior Backend Engineer: 'Finally a webinar that showed actual SLO math instead of hand-waving it.'"
+
+**CTA:**
+"Reserve a spot — free, live, recording sent."
+
+## Variant B: Speaker-forward
+
+**Hero:**
+"Alex Rivera on scaling observability from 200 to 6,000 services"
+
+**Sub:**
+"Live Thursday Mar 19, 2pm ET. 45 minutes on the query-cost budgets that kept Intercom's observability bill tractable as their service count 30x'd."
+
+**Speaker block (visually dominant, above fold):**
+"**Alex Rivera** — 4 years owning Intercom's observability platform. Scaled from 200 to 6,000 services. Led the Datadog → self-hosted OpenTelemetry migration. Wrote the 'Query-cost budgets' standard now cited across the ecosystem.
+
+*Why listen to Alex specifically:* most observability talks come from vendors pitching product or from engineers who operated a 200-service stack. Alex did both: operated at 6,000-service scale AND made the vendor-to-self-hosted call on the way. Different lessons at each scale, all surfaced here."
+
+**Agenda:** (same 4 timestamped chapters as Variant A, smaller visually)
+
+**Social proof:** (same logo strip + quotes as Variant A)
+
+**CTA:** "Reserve a spot — free, live, recording sent."
+
+## Variant C: Problem-forward
+
+**Hero:**
+"When your observability bill grows faster than your service count"
+
+**Sub:**
+"You know the pattern: 100 services → $30K/month bill, 1000 services → $600K/month bill, 2000 services → your CFO calling. Thursday Mar 19, 2pm ET: Alex Rivera walks through the mechanism behind the curve and the query-cost budgeting approach he used at Intercom to flatten it from 6,000-service scale."
+
+**Problem block (above fold, visually dominant):**
+"At 200 services, observability cost is a line item. At 1000, it's a budget fight. At 5000+, it's a platform-team-defining problem. The reasons are mechanical, not accidental. Alex spent 4 years solving this at Intercom — you get 45 minutes of what worked."
+
+**Agenda:** (same 4 chapters, framed as solutions to the problem)
+
+**Speaker + social proof:** (same content, below agenda)
+
+**CTA:** "Reserve a spot — free, live, recording sent."
+
+## Why I'd bet Variant A wins
+
+Three reasons:
+
+**1. The 4-second skim pattern.** Engineers want to decide fast. Variant A puts the AGENDA at the top — it's the answer to "what do I get in 45 minutes" in 1 second. Variants B and C require reading prose to extract the same answer.
+
+**2. Specificity without requiring sales.** Variant A's agenda sells itself — each chapter has concrete hooks ("3 mechanical reasons", "actual bill shape at Intercom", "the 3 specific cost curves that flip"). Reader decides from the hooks. Variant B makes readers evaluate the speaker first, which is a higher-trust ask. Variant C makes readers relate to the problem first, which works if they are in the problem but fails if they're not yet feeling it.
+
+**3. Registrant quality.** Agenda-forward signals seriousness. Problem-forward can pull in tire-kickers who relate to the problem but aren't ready to act on it — inflates registrations but flattens attendance and downstream conversion.
+
+That said, Variant C might surprise. Problem-forward works well when the audience is LATE in the awareness cycle (actively in the problem, hunting for solutions) but fails when they're early. Your audience here is mixed — so the test will tell us.
+
+## What to A/B
+
+Test Variant A vs Variant C, 50/50 split, 5-day minimum window or until statistical significance at 95% confidence. Skip Variant B — speaker-forward is a close cousin of Variant A with higher friction, and running it would dilute the test.
+
+Next pass: design the test mechanics (sample size math, stopping rules, what to instrument beyond registration rate).$pf$,
+ $pf$Three variant pages drafted with the same content inputs but different structural front-loading: Variant A agenda-forward (timestamped 4-chapter agenda visually dominant above fold, speaker bio below, social proof logos + 2 real registrant quotes); Variant B speaker-forward (Alex's ship history as hero, agenda below); Variant C problem-forward (observability bill cost-curve framing as hero, problem-as-motivator above agenda). Picked Variant A to win based on 4-second skim pattern + specificity-without-requiring-sales + registrant-quality signal, flagged Variant C as potentially surprising-if-audience-is-late-awareness. Recommended A-vs-C A/B skipping B to avoid dilution, 50/50 split at 95% confidence, moved pass-3 to test-mechanics design.$pf$),
+
+-- Step 3 --
+('66666666-6666-6666-6666-666666470103',
+ '55555555-5555-5555-5555-555555550047',
+ 3,
+ $pf$A/B test mechanics + instrumentation$pf$,
+ $pf$Good, we'll run A vs C. Design the test mechanics: sample size math against our expected effect size, stopping rules, and what to instrument beyond registration rate (downstream attendance + post-webinar demo requests matter too). Our quarterly webinar page gets about 12,000 unique visitors across the 4-week promotion window. Assume we split evenly 50/50 and want to detect a ≥20% relative lift at 95% confidence / 80% power.$pf$,
+ $pf$Sample-size math first, then test design and instrumentation.
+
+## Sample size for detecting ≥20% relative lift
+
+Baseline conversion: 3.2% (current page). Target minimum detectable effect: +20% relative = 3.84% on the treatment.
+
+Using the standard two-proportion z-test:
+- p1 = 0.032, p2 = 0.0384
+- α = 0.05 (two-sided), β = 0.20 (power = 0.80)
+- Required n per arm ≈ 11,800
+
+With 12,000 total visitors over 4 weeks, 50/50 split = 6,000 per arm. **You are sample-size-constrained for detecting a 20% lift.** However:
+
+- If the real lift is ≥50% relative (which I expect based on the pass-1 diagnosis — the current page is THAT broken), required n per arm drops to ~1,900, and you'll hit significance in ~5-6 days.
+- If the real lift is ≥100% (doubling of conversion), significance arrives in ~3-4 days.
+
+Given the baseline is genuinely broken (3.2% vs 5.5% category benchmark vs 6.8% my prior page), I'd expect the real lift to be in the 50-100% range, which means we'll see significance early. Don't worry about the 20%-detection math; worry about whether you'll keep running long enough to rule out false positives at weird traffic sources.
+
+## Stopping rules
+
+Three rules, applied in order:
+
+**Rule 1 — Minimum run time.** 5 full days regardless of significance. Why: day-of-week effects are real (engineer traffic varies Tues-Thu vs weekend), and calling early on a Tuesday morning win that would reverse by Friday is the classic false-positive pattern. Hard floor: 5 days before any call.
+
+**Rule 2 — Significance threshold.** After minimum run time, check significance daily. Call at 95% two-sided confidence (p < 0.05) PROVIDED rule 3 also passes.
+
+**Rule 3 — Stability check.** Variant must be winning for at least 2 consecutive days before calling. Single-day reversal within the window = don't call yet.
+
+**Rule 4 — Hard ceiling.** Stop at 14 days regardless. Past 2 weeks, traffic composition shifts too much (outbound sequences refresh, organic shifts) and the test stops being apples-to-apples.
+
+If nothing significant by day 14: call it inconclusive, default to Variant A (we believe it's the better page a priori), and move on.
+
+## Instrumentation — metrics beyond registration rate
+
+Registration rate is the PRIMARY metric. But it's not the only metric that matters — high-registration-low-attendance is a real failure mode. Instrument three more:
+
+**Secondary metrics (reported, not used for calling):**
+
+- **Attendance rate** (attended / registered). If Variant C pulls in tire-kickers on the problem-forward framing, we'll see it here — typical sign is registration rate up but attendance rate down by a similar amount, netting zero. Goal: attendance rate holds ≥35% (Q1 baseline).
+
+- **Demo-request rate within 48 hours post-webinar.** Downstream conversion matters more than registration. A variant that registers 10% more people but converts 30% fewer to demo is a loss. Measure this as demo-requests / attendees for each variant cohort, 48-hour window.
+
+- **Bounce rate on the page itself.** Pages that work should reduce bounce (faster engagement with agenda/speaker content). Measure via scroll-depth: % of visitors reaching 75% scroll depth. If bounce gets worse on the winning variant, the page has a hidden problem even if registration is up.
+
+**Segment cuts (reported, not used for calling):**
+
+- Source: organic search vs outbound email vs paid social. A variant can win on one source and lose on another — the overall win is real but the segmentation data is useful for future outbound copy.
+- Device: desktop vs mobile. Agenda-forward pages may play differently on mobile where the agenda block becomes a long vertical column.
+- Company-size segment (from HubSpot enrichment on registration): <500 vs 500-2000 vs 2000+. The audience target is 500+; if a variant over-indexes on <500, registration inflation is artificially boosting the primary metric.
+
+## Test infrastructure
+
+You're already on VWO. Set up as:
+- One experiment, two variants (A and C), 50/50 split
+- Exclude: internal IPs, existing customers (they don't need the webinar and register for QA)
+- Goals: Primary = registration form submit. Secondaries = HubSpot event-fired for attendance, demo-request submit within 48h post-webinar (cookie-based attribution to variant).
+- Dashboard: simple daily table, columns per variant, rows as (registration rate, confidence delta, attendance rate, 48h demo request rate, scroll-depth-75%).
+
+## What to watch out for
+
+- **False positive on day 2-3 from outbound email blast.** Outbound typically fires Tuesday + Thursday morning; first-blast audiences convert higher than organic. Rule 1's 5-day minimum protects against this but watch for the pattern.
+- **Statistical significance on a small absolute sample.** 4 registrations vs 2 registrations is "2x lift" at technically-significant-but-really-not. Require absolute sample ≥200 per arm before trusting any significance signal. This usually happens day 2-3 at your traffic level.
+- **Outlier-source contamination.** If a single company (say Shopify) runs a Slack blast to the webinar page, that segment will over-register for 2-3 days. Check source-segmentation daily; if one source is >60% of traffic for >24 hours, pause the test until the mix rebalances.
+
+## What to do after the test
+
+Winning variant becomes the new control for Q2 webinar. Run a lighter A/B against the winning variant with ONE element changed (e.g., speaker bio wording, or agenda chapter titles) — keep the momentum of iterative improvement. Don't rewrite the whole page every quarter; compound the wins.
+
+And regardless of which variant wins, a 3.2% → 5.5%+ improvement will recover the ~40% of the year's webinar pipeline that was being lost to the September regression. Ship it.$pf$,
+ $pf$Test-mechanics complete: Sample-size math shows 11,800/arm needed for 20% lift detection but real expected lift is 50-100% based on pass-1 diagnosis making 1,900-6,000/arm sufficient for 3-6 day significance. Four stopping rules (5-day minimum floor / 95% two-sided after minimum / 2-day stability check / 14-day hard ceiling) + default-to-Variant-A-if-inconclusive rule. Three secondary metrics instrumented beyond primary registration rate (attendance rate flags tire-kicker inflation, 48h demo-request rate catches downstream-conversion regressions, 75% scroll-depth catches page-level engagement issues). Three segment cuts (source / device / company-size) for diagnostic reporting without using-for-calling. Three watchouts named (Tuesday outbound-blast false positive / small-absolute-sample significance / single-source contamination) with concrete thresholds (absolute sample ≥200/arm / single-source <60% of traffic for >24hr).$pf$);
+
+-- =========================================================================
 -- END OF FILE — append next project(s) below this line.
 -- Iterations working the Content queue: add 2–3 projects per iteration,
 -- appending below this comment. Do NOT rewrite existing projects.

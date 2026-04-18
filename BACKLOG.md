@@ -4,13 +4,61 @@ Live: https://prompt-forge-sandy.vercel.app
 
 ## How this file works
 
-Three queues. Iterations pick from the **Polish queue** only unless explicitly told otherwise.
+Four queues. **Content queue is top priority** — iterations pull from it first. Polish queue is second. Structural + Drew actions are off-limits to unattended iterations.
 
 **Vision anchor:** PathForge serves someone sitting there with AI tools, time, and no clear idea what to build. Every item should make "look at what was built" the dominant moment, and "here's how it was built" a secondary layer you expand when you want it. Build-log / case-study aesthetic — NOT prompt-library aesthetic.
 
-**The grudge against padding work:** iters 43–48 shipped 2–8px spacing tweaks that no visitor would ever notice. That is officially over. If an iteration is about to commit a diff whose only change is `mb-X → mb-Y`, `py-A → py-B`, `text-base → text-lg`, or any pure-spacing / pure-type-size utility swap, the iteration fails. Pick a task below that touches the PAGE STRUCTURE — what renders first, what renders second, how components compose — not how much air is between them.
+**The grudge against padding work:** iters 43–48 shipped 2–8px spacing tweaks that no visitor would ever notice. That is officially over. If an iteration is about to commit a diff whose only change is `mb-X → mb-Y`, `py-A → py-B`, `text-base → text-lg`, or any pure-spacing / pure-type-size utility swap, the iteration fails. Pick a task that touches PAGE STRUCTURE (Polish) or generates REAL CONTENT (Content) — not how much air is between things.
 
 Pick the top item in your queue. Ship it. Move to Done with one line.
+
+---
+
+## Content queue — REAL Claude-generated prompt chains (APPROVED, ACTIVE)
+
+**Target:** 50 total projects in `supabase/seed-content-chains.sql`. **Currently at 1** (project `55...5550001`, Freelancer Tax Estimator, Jake Torres, Finance, 3 steps — Drew approved this on 2026-04-17 as the quality bar). Iterations append 2–3 more per firing until 50.
+
+### Quality bar — review project 0001 before starting
+
+Read `supabase/seed-content-chains.sql` end-to-end before drafting anything. You must match or beat it. Specifically:
+
+- **Prompts are verbose and contextual.** 80+ words. First-person voice. Explains what they're building, what constraints they have, their prior context, and specifies exactly what they want in the output. Reads like a real person who sat down to type a real ask, not a one-liner.
+- **Responses are substantive real artifacts.** 300–600 words per step result. Actual working code / real drafts / real calculations — NOT summaries of what an AI would produce. Annotate code with inline comments. Sanity-check math where applicable ("for $92k: federal ≈ $10,424, verify: 10% × 11,925 = ..."). Flag edge cases a CPA / engineer / writer / designer would actually appreciate.
+- **Chain coherence.** Step N+1's prompt references step N's output. Natural transitions ("Nice, that matches my mental math. Now add…", "Great. Last piece…", "Good catch on the ordering — here's why…"). A reader should follow the build without extra context.
+- **Real Claude voice.** Substantive, occasionally opinionated, doesn't hedge with "it depends." Mentions gotchas. Reads the way Claude actually responds when asked to do real work.
+
+### Constraints
+
+- **Varied chain lengths:** mix of 2-step, 3-step, 4-step, 5-step, up to 8-step. Don't ship a streak of same-length chains.
+- **Varied categories:** rotate through all 10 before repeating. Finance (3 ids: `...11101`), Marketing (`...11102`), Writing (`...11103`), Coding (`...11104`), Design (`...11105`), Education (`...11106`), Productivity (`...11107`), Data (`...11108`), Strategy (`...11109`), Personal (`...11110`). Aim for ~5 projects per category at 50.
+- **Match author to category fit:** `jakefinance` (Finance), `sarahgrows` (Marketing), `emwriter` (Writing), `marcusdev` or `cto_derek` (Coding), `priya_creates` (Design), `teacherben` (Education), `ops_nina` (Productivity), `dataraj` (Data), `cto_derek` or `lena_solopreneur` (Strategy), `lena_solopreneur` (Personal). Profile IDs in `supabase/seed-fix.sql` at `22222222-2222-2222-2222-22222222XXXX`.
+- **Varied Claude models:** rotate `claude-sonnet-4-6`, `claude-opus-4-6`, `claude-opus-4-7`. Sonnet for straightforward, Opus for heavier thinking. `model_recommendation` string should be the human-readable version ("Claude 4.6 Sonnet", "Claude 4.6 Opus", "Claude 4.7 Opus").
+- **UUID sequence:** continue from `55555555-5555-5555-5555-555555550001`. Next project is `...550002`, then `...550003`, etc. Steps use `66666666-6666-6666-6666-6666666XYSS` where X is the 2-digit project counter hex and SS is step 01+ (e.g. project 0002 step 1 = `66666666-6666-6666-6666-666666620101`).
+- **Realistic engagement counts:** `vote_count` 15–120, `bookmark_count` 5–60. Vary — don't make every project a hit.
+- **Tags:** 3–6 real tags per project. Don't pad with generic ones.
+- **Screenshot slots:** leave empty. Drew fills them once Structural #1 (image upload) lands.
+
+### Iteration work shape
+
+1. Read `supabase/seed-content-chains.sql` to see what's already there and what categories are covered.
+2. Pick 2–3 project ideas in categories that haven't been hit yet (or are under-represented). Pick varied chain lengths.
+3. For each project: draft the story / result_content at the prompt level; then generate each step's verbose prompt and real response. Don't cheat — actually generate the response as if you were Claude being asked the question cold.
+4. Append the new projects to `supabase/seed-content-chains.sql` ABOVE the `END OF FILE` marker comment. Do not modify existing projects.
+5. `npx tsc --noEmit` to make sure nothing downstream broke (should be no-op for SQL-only changes).
+6. Commit + push.
+7. Log entry in ITERATION_LOG.md notes which project IDs + categories + chain lengths landed, plus a brief note on quality choices (why this topic, what's strong about the chain).
+
+### What NOT to do
+
+- **No placeholder content** (`[RESULT HERE]`, `{TODO: fill in}`, etc). Every response must be real.
+- **No fake-looking numbers.** 2026 tax brackets must be plausible. A marketing email's company/product names must sound real, not "Acme Widget Corp."
+- **No modifying project 0001** or any prior iteration's projects. Append-only.
+- **No short, terse prompts.** "Build a blog post" is too thin. Prompts should sound like a human with context wrote them.
+- **No generic filler responses.** If you can't generate a real artifact for a prompt, rewrite the prompt until you can.
+
+### Done when
+
+`supabase/seed-content-chains.sql` contains 50 unique projects across 10 categories with varied chain lengths. Drew repastes the file into Supabase to see them live.
 
 ---
 

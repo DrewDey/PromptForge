@@ -12,19 +12,19 @@ Make ONE visible, **structural** improvement and commit it. "Structural" means t
 
 The routine is generous on time, not tight on cadence — each iteration has a full hour of wall-clock before the next fires. A **complete iteration** is ~15–25 minutes of real work, not a 2-minute drive-by. Before committing, confirm your iteration hits all five:
 
-1. **Reference-grounded.** For any visual/structural change, `WebFetch` at least one external reference page that embodies the target aesthetic and cite the specific pattern you're borrowing (or deliberately diverging from) in your log entry. Starting points:
+1. **Reference-grounded** *(Polish-queue iterations only; optional for Content-queue)*. For Polish-queue visual/structural changes, `WebFetch` at least one external reference page that embodies the target aesthetic and cite the specific pattern you're borrowing (or deliberately diverging from) in your log entry. Starting points:
    - `https://linear.app/changelog` — editorial timeline; output-as-hero
    - `https://vercel.com/templates` — gallery card treatment; large hero previews
    - `https://stripe.com/docs` or `https://read.cv` — build-log / case-study prose aesthetic
    - `https://dev.to` featured posts — magazine-article prose treatment
    
-   This directly closes the "words→pixels translation gap." Grounding design choices in a reference you can point at beats guessing from convention. If all three of your WebFetch attempts fail, note the attempts in the log and proceed — don't hard-halt the iteration.
+   This directly closes the "words→pixels translation gap." Grounding design choices in a reference you can point at beats guessing from convention. Content-queue iterations don't need external references — their grounding is real Claude generation, not external design aesthetic.
 
 2. **Design rationale in the log.** One paragraph: the approach you chose, at least one alternative you considered, why you went that way. Forces thinking; coding-only is how iterations drift back to convention.
 
 3. **Comprehensive implementation, not slices.** Ship desktop layout AND mobile responsive behavior AND empty state AND loading state (if applicable) AND interactive states (hover/focus/active) AND at least one edge case you actually thought about. Do NOT ship a desktop-only slice and leave mobile as "follow-on" — that's how halves accumulate and polish work creeps back.
 
-4. **Site-scope visual verify, not 2 pages.** Chrome MCP every page that renders the changed component, not just `/browse` and `/prompt/new`. If you touched `PromptCard`, hit `/browse`, category filters, `/prompt/[id]`'s "More in this category" section. If you touched `CodeBlock`, every page rendering it. Read console on each; note any regression before committing.
+4. **Site-scope visual verify, not 2 pages** *(Polish-queue iterations)*. Chrome MCP every page that renders the changed component, not just `/browse` and `/prompt/new`. If you touched `PromptCard`, hit `/browse`, category filters, `/prompt/[id]`'s "More in this category" section. If you touched `CodeBlock`/`Prose`/`StepContent`, every page rendering them. Read console on each; note any regression before committing. **For Content-queue iterations:** visual verify is not applicable (no UI change, only SQL rows that need a Drew paste to land). Replace with SQL structural review — confirm dollar-quoting balances, required columns are all present, UUIDs follow the conventions, no typos in INSERT field order. Note in the log that verification was "SQL structural review — awaiting Drew paste for live render."
 
 5. **Rich iteration log entry.** Include: what shipped (concrete diff summary), why this approach (1-para rationale from #2), references consulted (from #1), responsive/edge cases covered (from #3), verification coverage (from #4), and a `Follow-ups spotted:` bullet list noting 1–2 specific polish observations for future iterations. The old 3-sentence cap is lifted for structural iterations — write as much as the work deserves.
 
@@ -32,7 +32,7 @@ An iteration that skips any of the five ships smaller than it should. Use the wa
 
 ## Loop
 
-1. **Orient (5 min cap)** — Read `BACKLOG.md`, `ITERATION_LOG.md` top entry, `QUESTIONS.md`, `MEMORY.md`. All four are short on purpose. **Pick only from `BACKLOG.md`'s Polish queue** unless you're in a live session with Drew telling you otherwise — Structural items and Drew actions are off-limits to unattended iterations. If the top Polish item is larger than one iteration, carve off one visible slice.
+1. **Orient (5 min cap)** — Read `BACKLOG.md`, `ITERATION_LOG.md` top entry, `QUESTIONS.md`, `MEMORY.md`. All four are short on purpose. **Pick from BACKLOG's Content queue FIRST** (real Claude-generated prompt chains for `supabase/seed-content-chains.sql` — this is top priority, Drew approved the pattern on 2026-04-17 via project 0001). Only pick from the Polish queue when the Content queue hits 50 or is otherwise blocked. Structural items and Drew actions are off-limits to unattended iterations. If the top queue item is larger than one iteration, carve off one visible slice.
 
 2. **Change it** — Before writing code, do Depth floor #1 (reference fetch + cite) and #2 (design rationale draft). Then edit, implementing per Depth floor #3 (comprehensive — not slices). Follow existing patterns: Tailwind v4 (surface-* tokens, not raw gray-*), Next.js 16 App Router, data through `src/lib/data.ts`, brand orange `#E87A2C` and blue `#3B8FE4`, sharp corners, modern dev-tool aesthetic (Linear / Vercel / Raycast). No new dependencies. No schema changes.
 

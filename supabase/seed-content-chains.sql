@@ -18716,6 +18716,393 @@ Close date goal: don't let any single line item slip more than 24 hours. Close-d
  $pf$Full closing-day playbook covering pre-close (CD review, insurance, utilities, HOA onboarding), wire fraud defense (IN-PERSON phone verification protocol + ignore email wire instructions + call-to-verify at a number written down in person + bank-branch wire during business hours + wire-transfer pause on account), walk-through checklist (appliances, plumbing, HVAC, outlets, windows, doors, disclosure verification), day-of-close doc scrutiny (Deed, Note, Final CD, HOA docs, title insurance), and 30/60/90-day post-close (homeowner tax exemption, supplemental tax bill, HOA engagement, insurance re-bid).$pf$);
 
 -- =========================================================================
+-- Project 55-0053 | Hiring our first Staff Engineer | Derek Lawson | Strategy | 5 steps
+-- =========================================================================
+
+DELETE FROM prompt_steps WHERE prompt_id = '55555555-5555-5555-5555-555555550053';
+DELETE FROM prompts      WHERE id        = '55555555-5555-5555-5555-555555550053';
+
+INSERT INTO prompts (
+  id, title, description, content, result_content,
+  category_id, difficulty, model_used, model_recommendation,
+  tools_used, tags, status, author_id, vote_count, bookmark_count
+) VALUES (
+  '55555555-5555-5555-5555-555555550053',
+  $pf$Hiring our first Staff Engineer at a 45-person health-tech — 5-pass Claude workflow from leveling rubric to HIPAA-specific system-design prompt to debrief protocol that kills vibes voting$pf$,
+  $pf$Ran the first Staff Eng hire at our Series B health-tech with Claude 4.6 Opus as the thinking partner. Five passes: a leveling rubric sized to our 45-person / 11-engineer reality (not a FAANG port), a 4-station loop with calibration and fallback plans, a HIPAA/care-coordination-specific system-design prompt, 6 behavioral probes that force real staff-level signal, and a debrief protocol that replaces round-robin vibes with dissent-weighted decisions.$pf$,
+  $pf$I'm the CTO at a 45-person Series B health-tech (HIPAA-compliant care-coordination SaaS, 200K patients, ~1,800 clinics). Raised our B 18 months ago, now hiring our first Staff Engineer to anchor the Platform sub-team (4 eng — owns auth/permissions, event bus, PHI boundary). Reports to me, no direct reports initially, likely picks up the Platform lead role in 12 months. Band $270-340K cash + equity.
+
+I'd tried two previous approaches to the leveling rubric and both misfired. Attempt 1 — I ported the Google L5/L6 ladder verbatim. We interviewed 6 candidates; 4 got "peer yes" votes but during debrief I realized we'd been measuring "would survive a Google promo committee" instead of "would move the needle here." Too much weight on architectural abstractions that matter at Google scale but not at 11 engineers. Attempt 2 — I used Stripe's E4/E5/E6 ladder. Better written but Stripe's E5 scope maps to our CTO role, not a Staff IC — I'd be hiring myself again.
+
+Used Claude 4.6 Opus over 5 passes. Pass 1: leveling rubric calibrated to OUR size (45 people, not 5,000). Pass 2: interview loop design — 4 stations, who asks what, calibration bar, fallback plan. Pass 3: the actual system-design prompt the interviewers will use, HIPAA/care-coord-specific, not "design Twitter." Pass 4: 6 behavioral probes for the leadership station with follow-ups and scored signal, designed to kill fluffy "tell me about a time" answers. Pass 5: debrief protocol — how everyone scores, how we resolve dissent, how a soft-no gets weighted, how we kill the HR-pushed "hire if nobody says no" antipattern.
+
+Sharing this because first-Staff-hires at Series-B startups are where companies make their worst hiring mistakes. The FAANG rubric leak is real and expensive, and the debrief is where soft-no dissent gets smoothed over by whoever talks most. Claude was direct — Pass 1 called out the specific way I was going to over-index on architecture depth vs judgment under constraint, and Pass 5 named the exact failure mode of our last three senior hires (nobody wrote their NO down in time).$pf$,
+  $pf$Hired Sofia Nakamura from a Series C fintech — she'd been Principal there but was downgrading to Staff to match our scale and scope (her call, not ours). Loop ran 11 first-round candidates, 3 advanced to final onsite, 1 offer. Her offer closed at $312K cash + 0.35% equity after a 9-day negotiation.
+
+Two things the workflow actually got right. First, Pass 3's system-design prompt worked — the PHI-boundary framing forced real tradeoffs none of the generic "design a feed" prompts surface. We rejected 2 of the 3 finalists specifically because their system-design answers treated auth as a library call instead of a product boundary. Second, Pass 5's debrief protocol caught a real dissent signal I'd otherwise have smoothed over — Sarah on my platform team wrote "weak NO — thinks abstractly but couldn't tell me who'd own the migration plan on Monday morning" on one candidate. In my old debrief flow that would have been buried under 3 loud YES votes. We rejected that candidate; 6 weeks later we heard through backchannels he'd taken a similar role elsewhere and rage-quit in 8 weeks over the same issue Sarah named.$pf$,
+  '11111111-1111-1111-1111-111111111109',
+  'advanced',
+  'claude-opus-4-6',
+  'Claude 4.6 Opus',
+  ARRAY['Claude','Greenhouse','Notion','Google Docs'],
+  ARRAY['hiring','staff-engineer','interview-loop','leveling-rubric','debrief','series-b'],
+  'approved',
+  '22222222-2222-2222-2222-222222222209',
+  126, 58
+);
+
+INSERT INTO prompt_steps (id, prompt_id, step_number, title, content, result_content, description) VALUES
+
+-- Step 1 --
+('66666666-6666-6666-6666-666666530101',
+ '55555555-5555-5555-5555-555555550053',
+ 1,
+ $pf$Pass 1 — leveling rubric sized to a 45-person company, not FAANG$pf$,
+ $pf$I'm hiring our first Staff Engineer at a 45-person Series B health-tech and I need a leveling rubric that's honest about what Staff MEANS at our scale. I've tried two approaches and both misfired.
+
+Attempt 1: copied the Google L5/L6 rubric. Interviewed 6 candidates. 4 got peer-yes votes but in debrief I realized we were measuring "would survive a Google promo committee" — not "would move the needle here." Too much weight on architectural abstractions that matter at Google scale but not at our 11-engineer team.
+
+Attempt 2: Stripe's E4/E5/E6 ladder. Better-written but Stripe's E5 scope — "owns a major product area" — maps to our CTO role, not a Staff IC. I'd be hiring myself, not my right hand.
+
+Context:
+- 45 people total, 11 backend engineers (4 senior, 6 mid, 1 junior), plus me as CTO
+- HIPAA-compliant care-coordination SaaS, 200K patients, ~1,800 clinics
+- Platform sub-team (4 eng) is where this Staff will anchor — owns auth/permissions, the event bus, the PHI boundary
+- Reports to me, no direct reports initially, likely Platform lead in 12 months
+- Comp band: $270-340K cash + equity
+
+I need a concrete rubric across 4-6 dimensions that differentiates Staff from Senior and from Principal at OUR size. Give me specific behavioral exemplars under each level — "at Senior they X; at Staff they Y; at Principal they Z." Don't hedge with "it depends"; I need a rubric I can use in a debrief.
+
+Also: what are the 2-3 specific traps first-time hirers fall into writing a Staff rubric? I want to not write those.$pf$,
+ $pf$Here's a 5-axis rubric calibrated to a 45-person company. I'm skipping the Principal column where it doesn't meaningfully differ from Staff at your scale (Principal at 45 people is mostly a comp decision, not a work decision — I'll flag where it matters).
+
+**Axis 1 — Technical Depth**
+- *Senior:* Writes correct code for a well-specified problem. Can debug the team's stack deeply. Spots the obvious footguns.
+- *Staff:* Can read a problem and tell you the 2-3 ways it will fail in year 2. Has opinions about which parts of your stack are load-bearing and which are ornamental. When shown an unfamiliar system, can orient in 30 minutes and ask the 2 questions that would take you 2 hours to answer.
+- *Principal:* (At your scale: same as Staff plus industry pattern-matching — "I've seen 3 companies try this architecture and the failure mode is always X." Worth +$40K if genuine, not if resume-polish.)
+
+**Axis 2 — Scope of Influence**
+- *Senior:* Owns a well-defined feature or subsystem. Ships it. Hands off or maintains it.
+- *Staff:* Owns an AMBIGUOUS area where "what's the right thing to build" is half the job. Gets the right people to agree on which problem to solve before writing code. At your size: they're the person who kills a bad RFC before it gets 3 engineers deep.
+- The key test: Staff is measured in problems-correctly-scoped, Senior is measured in features-correctly-shipped. Different jobs.
+
+**Axis 3 — Ambiguity Navigation**
+- *Senior:* Given a vague ticket, asks clarifying questions and proceeds when the spec is clear.
+- *Staff:* Given a vague PROBLEM, reshapes it into 2-3 crisp options with tradeoffs, picks one, and writes down why. Is visibly uncomfortable with "let's just see how it goes" and will force a decision without being a jerk about it.
+
+**Axis 4 — Multiplier Effect on Others**
+- *Senior:* Mentors 1-2 juniors. Reviews code thoroughly.
+- *Staff:* Leaves artifacts behind that make the next 5 engineers faster — a migration guide, a decision record, a tightened code-review checklist, a test pattern others adopt. Measurable in "would the team notice if they left?" — the answer for Staff is "within 2 weeks, yes, distinctly."
+
+**Axis 5 — Judgment Under Constraint**
+- *Senior:* Given a deadline, ships the feature with appropriate cuts.
+- *Staff:* Given a deadline AND a budget AND a partial team, can tell you what to CUT and why — and has the social capital to make the cut stick when PM pushes back. The sentence "we're not building that part" should come out of their mouth naturally.
+
+**The 3 traps you're about to fall into:**
+
+1. *Copying FAANG scope language.* At Google, Staff = "owns a product area of 30+ engineers." At your 11-engineer company, that's the CEO. The right translation is "owns the hardest OPEN question on the platform roadmap" — where "open" means nobody has figured out the answer yet, not "big area."
+
+2. *Staff = Senior + nice to people.* This one kills companies. Staff is a DIFFERENT KIND of work, not extra seniority. If your best Senior would fit this role by doing more of what they already do, you don't have a Staff role, you have a Senior+ role. Don't mis-level the req.
+
+3. *"Can design anything" framing.* At your size, Staff isn't "can design any system" — it's "chooses WHICH system to design well, and why." The rubric should score problem SELECTION, not only solution quality. Ask in every debrief: "did they ever pick the wrong problem to solve, confidently and defensibly?"
+
+Use this rubric as a LITERAL scorecard — 1-5 on each axis. Hire-bar: 4+ on at least 3 axes including Ambiguity Navigation. No-hire: any axis scoring 2 or below regardless of the others.$pf$,
+ $pf$Leveling rubric across 5 axes (Technical Depth, Scope of Influence, Ambiguity Navigation, Multiplier Effect, Judgment Under Constraint) with Senior/Staff behavioral exemplars calibrated to a 45-person company scale. Plus 3 named traps first-time Staff-hirers fall into: copying FAANG scope language, treating Staff as Senior+nice, and the "can design anything" framing that scores solution quality instead of problem selection. Scoring bar: 4+ on 3 axes including Ambiguity Navigation, with hard floor of never-2-or-below on any axis.$pf$),
+
+-- Step 2 --
+('66666666-6666-6666-6666-666666530102',
+ '55555555-5555-5555-5555-555555550053',
+ 2,
+ $pf$Pass 2 — interview loop design: 4 stations, calibration, and fallback when an interviewer drops$pf$,
+ $pf$Good, I'm using that rubric. Now design the actual onsite loop.
+
+Constraints:
+- Half-day onsite (4 stations, 60 min each, with 15-min transitions)
+- My 4 senior engineers are the interview pool. They'll each own one station. None of them has run a Staff loop before; two have only interviewed at the Senior level.
+- I want to NOT be in the loop on any technical station — if I'm in the room I'll talk too much and bias the signal. I'll do a 30-min intro at the top (context on the role, team, comp band) and the 45-min closing conversation.
+- We get maybe 1 week to calibrate interviewers before the first onsite. Realistic, not "send them to a 2-day workshop."
+- Fallback matters: at a 45-person company at least one interviewer will have a real conflict on any given day. What's the plan if only 3 of 4 seniors are available?
+
+Give me:
+1. The 4 stations — what each tests, who from my team is the natural fit, and what NOT to test at that station (to avoid redundancy)
+2. The order, with a reason for the order
+3. A realistic 1-week calibration plan for the interviewers
+4. The fallback when only 3 of 4 seniors are available
+
+And if you see a mistake I'm about to make in this loop design, call it out.$pf$,
+ $pf$**The 4 stations**
+
+| # | Station | Duration | Owner (from your 4 seniors) | Tests (rubric axes) | Does NOT test |
+|---|---|---|---|---|---|
+| 1 | **Coding / Problem Reshape** | 60 min | Senior whose daily work is closest to the Platform code (your Platform senior, whoever that is) | Technical Depth + Ambiguity Navigation | Architecture; Leadership |
+| 2 | **System Design** | 60 min | Your most architecturally-opinionated senior — probably the one who owns the event bus today | Scope + Ambiguity Navigation + Judgment Under Constraint | Coding fluency; Leadership |
+| 3 | **Cross-Team Collaboration** | 60 min | Senior who's spent time working with Product/Design/Clinical — someone with external-surface experience | Multiplier Effect + Judgment Under Constraint | Deep technical depth |
+| 4 | **Leadership / Influence** | 60 min | Your most skeptical senior — the one who'd catch bullshit fastest | Multiplier Effect + Ambiguity Navigation + Scope | Technical correctness |
+
+The rule: every axis is tested by AT LEAST TWO stations. No single station can tank a candidate by itself on any axis — you need at least 2 stations converging on a weak signal to call it real. That's the anti-cherry-pick rule.
+
+**Order, with reasons**
+
+1. Coding first. Warms the candidate up on familiar ground. If they bomb this, you've saved 3 hours of everyone's time on a no-hire.
+2. System Design second. Requires the most cognitive load; the candidate is fresh but warmed up.
+3. Cross-Team Collaboration third. Break from heavy technical work. Relational rather than executive-function.
+4. Leadership last. By the time they're here they're tired, which is GOOD — you learn more about a Staff candidate from what they say when tired than when fresh. Plus your most-skeptical senior goes last so the fresh "impressed by technical depth" glow has worn off.
+
+Do NOT put System Design last — a tired candidate's design answer is a false-negative goldmine.
+
+**1-week calibration plan (realistic, not theatrical)**
+
+- **Day 1 (Monday, 60 min):** I run a calibration session with all 4 seniors. We walk through the rubric axis by axis. Each senior picks one engineer we already employ (could be themselves) and scores them against the Staff rubric. We compare. Goal: surface where interpretation differs — this is where loop calibration actually fails.
+- **Day 2 (Tuesday, 30 min each, 4 separate convos):** I meet 1-on-1 with each interviewer to go over their station brief. What to ask, what signals look like, how to probe without leading. Each interviewer writes 2-3 draft questions; I redline.
+- **Day 3 (Wednesday, 90 min):** Mock interview — one of my 4 seniors plays candidate, the other 3 rotate through the loop stations on them. Debrief identifies 2-3 leading questions and 1-2 questions that don't surface signal.
+- **Day 4 (Thursday):** Each interviewer revises their station brief based on the mock. I sign off.
+- **Day 5 (Friday):** Real candidate 1. After debrief, short retro — what signal did each station get, what did each station miss.
+
+If you can't do the full 5 days, the MOST load-bearing session is Day 1 — rubric calibration. Skip everything else before you skip that.
+
+**Fallback when only 3 of 4 seniors are available**
+
+The wrong answer: have one senior double up and run two stations. You burn them out and bias the signal because their frame is in both rooms.
+
+The right answer: pre-designate a backup interviewer from your 4 seniors for each station, pre-briefed. If a primary is out, the backup runs it. If TWO are out, you cancel and reschedule — running a 3-station Staff loop loses the anti-cherry-pick rule (one station's signal becomes decisive), which is worse than rescheduling.
+
+As a last resort, I'll step in for the Leadership station but NOT any technical station. Leadership is the lowest-bias station for me to cover (the other 3 interviewers will still have clean technical signal regardless of what I say).
+
+**Mistake you were about to make**
+
+You said "I'll do the 45-minute closing conversation." That's fine but the closing conversation should NOT be sales-y — it should ask ONE specific question: "What question are you still trying to answer about this job?" If their answer is a comp question, they're checked out. If it's about scope / autonomy / the team, that's your real signal on whether they're considering this seriously. Most CTOs turn the final session into a pitch. Don't. You're still gathering signal until they sign.$pf$,
+ $pf$4-station half-day loop (Coding → System Design → Cross-Team Collab → Leadership) with owners assigned from Derek's 4 seniors based on daily-work fit. Anti-cherry-pick rule: every rubric axis tested by at least 2 stations. Order reasoned from cognitive-load + skepticism-last. 1-week calibration plan anchored on Day 1 rubric calibration (load-bearing) + Day 3 mock interview. Fallback: pre-designated backup interviewer per station; if 2+ seniors out, reschedule. Caught the CTO's closing-conversation mistake — it should gather signal ("what question are you still trying to answer?"), not sell.$pf$),
+
+-- Step 3 --
+('66666666-6666-6666-6666-666666530103',
+ '55555555-5555-5555-5555-555555550053',
+ 3,
+ $pf$Pass 3 — write the system-design prompt: HIPAA-specific, forces real tradeoffs$pf$,
+ $pf$Station 2 (System Design) is where I've seen the most false positives historically. Candidates come in with a memorized "design Twitter / Uber / Instagram" routine and the interviewer can't tell whether they're actually thinking or pattern-matching. For Staff at OUR company I need a prompt that forces tradeoffs REAL to our space.
+
+Write me the actual 60-minute System Design prompt the interviewer will read to the candidate. Constraints:
+
+- Grounded in our product: HIPAA-compliant care-coordination SaaS. 200K patients, ~1,800 clinics, 2,000 care-team users. Multi-tenant (each clinic is a tenant).
+- Forces a PHI-boundary decision. I want to see whether they treat PHI as a library call or as a product boundary.
+- Forces a multi-tenant data-isolation decision. Not "describe sharding" but "how does tenant A's data CORRECTLY fail to leak into tenant B's view when a bug happens."
+- Includes a bolt-on requirement that appears 20 minutes in — to test how they handle scope change.
+- Realistic, not contrived. No "imagine 10 million users" when our actual scale is 200K.
+
+Also give me a rubric for what Senior vs Staff vs Principal answers look like on this specific prompt — so the interviewer can score consistently.$pf$,
+ $pf$**The prompt (what the interviewer reads to the candidate)**
+
+> "You're joining as Staff on our Platform team. Our first project together: we need to add a **patient-sharing workflow** — a care team at Clinic A needs to share a specific patient's record with a specialist at Clinic B for a consultation, with Clinic B's specialist getting time-boxed read access to Clinic A's record of that patient.
+>
+> Current state: each clinic is a tenant. Tenant-level data isolation is enforced in our Postgres layer via a `tenant_id` column on every PHI-bearing table plus row-level-security policies. Auth is Auth0, permissions are roles + scopes on a per-tenant basis. Event bus is Kafka. Audit log goes to a separate append-only store (HIPAA requirement — 6 year retention, tamper-evident).
+>
+> I'd like you to spend the next 50 minutes designing this. Tell me the data model, the access-control model, how the access is granted and revoked, how it gets audited, and how you'd test that tenant A's data doesn't leak into tenant B's view in the presence of bugs. Think out loud — I want to see the tradeoffs, not a clean answer.
+>
+> I'll ask questions as you go. Start wherever you want."
+
+**Bolt-on (drop at ~20 min mark):**
+
+> "One thing I forgot to mention: Clinic B's specialist might be in a jurisdiction with stricter PHI rules than Clinic A — for example, some state-level PHI laws treat certain categories (mental health, HIV status, substance abuse) differently. How does that affect your design?"
+
+This is the scope-change test. A Senior candidate handles this by adding a filter. A Staff candidate steps back and asks whether the sharing-by-default approach is correct at all, because now "shared record" has to be a projection of the source record with per-field jurisdiction-aware redaction — which is a DIFFERENT SYSTEM than what they started designing.
+
+**Rubric — what each level's answer looks like on this prompt**
+
+**Senior answer (score 3):**
+- Designs a `patient_shares` table with `(source_tenant_id, target_tenant_id, patient_id, expires_at, granted_by)`.
+- Access control: query-level check on the share table before returning records.
+- Auditing: mention it, probably suggest Kafka → audit store.
+- Multi-tenant isolation: "RLS enforces it at the DB layer."
+- Handles bolt-on: adds a jurisdiction filter, probably overconfidently ("we'd just add a category column").
+- **Missing:** doesn't treat the share as a PROJECTION (copy-on-share vs reference-on-share is a core tradeoff they never name). Doesn't think about what happens if Clinic A edits the record post-share. Doesn't think about revocation-in-flight (what if B has the record open when A revokes?).
+
+**Staff answer (score 4-5):**
+- BEFORE writing schema, asks: "Is this a reference, a projection, or a copy? What's the source-of-truth lifecycle?" Picks projection with explicit rationale (reference = tenant B reads live from A's DB, which breaks tenant isolation contract; copy = stale data risk; projection = source-of-truth stays with A, but B gets a filtered materialized view that updates on source change).
+- Access control: treats the share as a first-class resource with its own lifecycle, not a JOIN condition. The share has explicit creation, revocation, and expiry events on the event bus.
+- Multi-tenant isolation: names RLS as NECESSARY BUT NOT SUFFICIENT — because the share workflow intentionally crosses the tenant boundary, you can't just trust RLS; you need an explicit sharing-aware layer above it. Proposes a `shared_view_cache` with forced invalidation on revoke.
+- Audit: names the HIPAA Accounting of Disclosures requirement specifically (§164.528) — the audit log isn't "for us" it's a LEGAL ARTIFACT the patient can request. That reframes the logging requirement.
+- Bolt-on: pauses, says "this might change the design." Reshapes the projection to be jurisdiction-aware by policy, not by filter. Acknowledges this is now a meaningfully harder system and flags it as a scope negotiation with Product, not a side-feature.
+- **Key signal:** names at least 2 things they'd NOT build (e.g., no self-service sharing to arbitrary tenants, no "share forever" UX, no in-band access to PHI history — only projection-from-now).
+
+**Principal answer (score 5+, rare at your scale):**
+- Everything above, PLUS:
+- Frames the whole thing as a product-level boundary decision first: "Before I design the system, is this the right feature at all? The alternative is a consult-note workflow where Clinic B's specialist authors a note that gets attached to Clinic A's record, which is a DIFFERENT primitive with none of the cross-tenant leakage risk. Do we have signal that the sharing model is what clinicians actually want?"
+- This answer is either great or annoying depending on who's interviewing. For Staff at your scale, don't require it — but note it as a yellow flag if the candidate is AT that level.
+
+**Hard fail signals — regardless of anything else they say:**
+- Says "we'd just disable RLS for the sharing query" (they don't understand what RLS is for).
+- Suggests "let tenant B query tenant A's DB directly with a service account" (tenant boundary violation).
+- Treats audit logging as "just log it somewhere" without mentioning append-only / tamper-evidence / retention.
+- Does not ask any clarifying question in the first 10 minutes.
+
+Give this prompt to your System Design interviewer with the scoring rubric. After the interview, they write 3 sentences per rubric axis plus the score, and send to debrief BEFORE seeing anyone else's scores.$pf$,
+ $pf$Full 60-minute System Design prompt: cross-tenant patient-sharing workflow with PHI boundary + multi-tenant isolation + audit + bolt-on jurisdictional-PHI-rules scope change at 20min. Level-specific scoring rubric: Senior treats share as DB join, Staff treats share as projection with lifecycle + §164.528 Accounting of Disclosures awareness + explicit NOT-building list, Principal reshapes to product-level consult-note alternative first. Named 4 hard-fail signals (disable-RLS / cross-tenant DB access / naive audit / zero clarifying questions). Interviewer writes rubric scores BEFORE debrief to prevent anchoring.$pf$),
+
+-- Step 4 --
+('66666666-6666-6666-6666-666666530104',
+ '55555555-5555-5555-5555-555555550053',
+ 4,
+ $pf$Pass 4 — behavioral probes for station 4 that surface real staff-level signal$pf$,
+ $pf$Station 4 (Leadership) is where most loops collapse into "tell me about a time you handled conflict" / "tell me about a project you're proud of" vibes — and the signal is useless. My most-skeptical senior runs this station but she needs better questions than the generic ones.
+
+Design 6 behavioral probes, 60 minutes total (so about 8-9 minutes per probe including follow-ups). Each probe needs to:
+- Target specific rubric signal (Multiplier, Ambiguity, Scope, or Judgment)
+- Have 2-3 follow-up questions that push past the surface answer
+- Specify what a staff-level answer looks like vs a senior-level answer
+- Be hard to fake with prep
+
+Biggest trap I've seen: candidates who've been Staff at a big company have a polished answer to every behavioral question that sounds great but doesn't actually reveal how they think. I want probes that BREAK that script.$pf$,
+ $pf$Here are 6 probes. Each is designed to force a story that is SPECIFIC enough to either be real or to visibly collapse. The skeptic interviewing you is going to press on details — that's the anti-polish mechanism.
+
+**Probe 1 — Opinions, Strongly Held (Scope + Ambiguity, 8 min)**
+
+> "Tell me about a technical opinion you hold today that a reasonable engineer could disagree with. Not 'testing is important' — something specific. Then tell me about the time you held that opinion, pushed for it, and someone pushed back hard."
+
+Follow-ups:
+- "What did the person pushing back believe, and why did they believe it?" *(If they can't argue the other side charitably, it's a weak opinion they haven't actually tested.)*
+- "What would change your mind on this opinion today?" *(A staff answer names a SPECIFIC condition. A weak answer says "new data.")*
+- "How did the conversation end?"
+
+**Senior answer:** "I thought we should use Postgres over Mongo, we debated it, we ended up with Postgres, it worked out." Polished, no texture.
+**Staff answer:** "I thought we were overinvesting in extracting a service from the monolith. I argued we should stop the extraction, even though we were 3 months in, because the team boundary didn't actually exist yet. Half the team thought I was advocating for tech debt. We went back to the original monolith decision, I wrote a 4-page doc on what signal would mean we SHOULD extract — and when we did extract 8 months later, we used that doc. The engineer who'd argued hardest against me used it to argue for extraction when the signal was real." *(Specific. Names pushback. Names what changed their mind. Leaves an artifact.)*
+
+**Probe 2 — Writing Something Down (Multiplier, 10 min)**
+
+> "Walk me through a document or decision record you wrote in the last year that changed what someone else did. Not a design doc for your own project — something you wrote that INFLUENCED someone else's work."
+
+Follow-ups:
+- "What was the alternative — what would have happened if you hadn't written it?"
+- "What feedback did you get? What did you revise?"
+- "Where does that document live now?"
+
+**Signal to score for:** Staff candidates leave artifacts. The answer should name a specific doc (you should be able to tell what it was about) and describe the downstream effect on a DIFFERENT person's work. If they can't produce a specific artifact, they work like a Senior even if their title is Staff.
+
+**Probe 3 — Killing a Bad Project (Judgment, 8 min)**
+
+> "Tell me about a time you argued for stopping or dramatically scoping down a project that already had momentum."
+
+Follow-ups:
+- "Who was sponsoring it?"
+- "What was the counter-argument — the STRONGEST version of the case for continuing?"
+- "What actually happened?"
+
+**Signal to score for:** Real Staff answers have an edge of discomfort. They name a specific person who disagreed (often someone senior to them), describe the political cost, and describe the aftermath honestly — including if the decision was eventually second-guessed. If the candidate has never killed a project, they probably haven't been Staff in practice even if they had the title.
+
+**Probe 4 — Scoping Under Constraint (Judgment + Scope, 10 min)**
+
+> "Describe a project where the scope you agreed to was larger than what you had time and team for. Not 'we had to hustle to ship' — a project where you had to decide what to cut, and cutting was contentious."
+
+Follow-ups:
+- "Who owned the cut decision? Was it YOUR call or someone else's?"
+- "Walk me through how you communicated the cut."
+- "What did the PM / design counterpart say when you proposed the cut?"
+
+**Signal to score for:** Staff candidates name WHO owned the cut (often them, but sometimes explicitly handed to PM with their recommendation). They describe a specific CONVERSATION, not a Slack message. The cut list is specific.
+
+**Probe 5 — The Quiet Dissent (Multiplier + Scope, 8 min)**
+
+> "Tell me about a meeting where you realized partway through that you disagreed with the direction but weren't the loudest voice in the room. What did you do in the meeting, and what did you do after?"
+
+Follow-ups:
+- "If you said nothing in the moment, why not?"
+- "If you spoke up, how did you time it?"
+- "What happened in the 48 hours AFTER the meeting?"
+
+**Signal to score for:** This probe catches the "nice to people" trap from the rubric. A weak Staff candidate is someone who never surfaces dissent. A strong Staff candidate has a clear pattern of naming disagreement — maybe not loudly in the meeting, but with a specific follow-up behavior (a DM to the decision-owner, a short written dissent, a re-raise at the next meeting). Listen for the after-meeting behavior.
+
+**Probe 6 — Teaching Taste (Multiplier, 8 min)**
+
+> "Pick an engineer on your current or most recent team whose work got measurably better because of something you did. What specifically did you do? And how did you know it worked?"
+
+Follow-ups:
+- "What were they doing before that you wanted to change?"
+- "What was the first conversation like — did they agree with you?"
+- "How did you measure the change, even informally?"
+
+**Signal to score for:** Staff candidates have SPECIFIC engineers they can name and SPECIFIC interventions (code review patterns, pairing on a particular problem, a book recommendation that landed, a written feedback document). They describe resistance, not just agreement — real teaching has friction. If they can't name a specific engineer, they're describing their vibe, not their impact.
+
+**Anti-polish mechanics (tell your interviewer):**
+- After any answer that sounds too smooth, ask: "What went wrong in that story?" Most polished answers have sanded off the friction — ask for it.
+- If a candidate names a project but can't remember a specific date or person, the story is probably reconstructed. Not disqualifying, but a signal to probe harder.
+- If a candidate uses "we" more than "I" in all 6 probes, they're either uncomfortable taking credit (possible Staff, uncommon) or they didn't personally own any of it (more common — score down on Scope).
+- End with "which of these stories was hardest to tell?" The answer is often the most honest one.
+
+Score each probe 1-5 on the target rubric axis. Interviewer writes a 2-sentence rationale per probe before debrief.$pf$,
+ $pf$6 behavioral probes (60 min) for the Leadership station, each designed to break polished-candidate script through specificity and follow-up pressure. Probes target: opinions-strongly-held (Scope + Ambiguity), writing-that-influenced-others (Multiplier), killing-a-bad-project (Judgment), scoping-under-constraint (Judgment + Scope), quiet-dissent (Multiplier + Scope), teaching-taste (Multiplier). Each has 2-3 follow-ups + explicit Senior-vs-Staff answer contrast. Anti-polish mechanics: "what went wrong in that story?" / press for specific names and dates / watch "we" vs "I" ratio / end with "which was hardest to tell." Interviewer scores 1-5 per probe with written rationale before debrief.$pf$),
+
+-- Step 5 --
+('66666666-6666-6666-6666-666666530105',
+ '55555555-5555-5555-5555-555555550053',
+ 5,
+ $pf$Pass 5 — debrief protocol: how we score, resolve dissent, and kill vibes voting$pf$,
+ $pf$Last pass. The debrief is where my past senior hires went wrong — we did round-robin vibes voting ("I liked them," "Yeah me too," "Strong yes"), and dissent got smoothed over by whoever talked most. Twice in the last 18 months we hired someone over a soft-no from a senior, and both times that soft-no was the correct signal.
+
+Design the debrief protocol. Specifically:
+- How each interviewer arrives at the debrief (what they bring, in what format)
+- Decision rubric — how we go from 4 individual scores to a HIRE / NO-HIRE / more-data call
+- How we handle a soft-no (the "weak no" or "leaning no" vote) — this is where my loops have failed historically
+- How we resolve a split 2-2
+- What I, as CTO and hiring manager, am allowed to do — because "the CTO breaks ties" is an antipattern, and "hire if no one says outright no" is the HR-pushed antipattern I want killed
+
+Also: how do we avoid anchoring — the thing where whoever talks first sets the frame for the room? And what's the written record of the decision that gets kept?$pf$,
+ $pf$**Pre-debrief: what each interviewer brings**
+
+Each interviewer arrives with a **written scorecard completed BEFORE the debrief starts**. Non-negotiable. The scorecard is a template:
+- For each rubric axis they tested: score 1-5, plus 2-3 sentences of evidence.
+- A one-word summary vote: STRONG YES / YES / LEAN YES / LEAN NO / NO / STRONG NO. No neutral / "I dunno" allowed — if they genuinely can't decide, that's a LEAN NO by default (the asymmetric cost rule: a false hire costs more than a false reject at Staff level, so ambiguity defaults against).
+- One 1-sentence answer to: **"What's the strongest reason to REJECT this candidate, even if you voted yes?"** This is the anti-anchoring mechanic — forces every interviewer to have thought about the negative case even from the pro side. Similarly: "strongest reason to HIRE even if you voted no."
+
+Scorecards are submitted to a shared location BEFORE the debrief starts. Nobody sees anyone else's until the debrief opens.
+
+**Debrief structure (60 min, in this order)**
+
+1. **Silent reading (5 min).** Open all 4 scorecards. Everyone reads in silence. No discussion yet.
+
+2. **Round 1 — evidence only, no opinions (20 min).** Each interviewer takes 4 minutes: walks through their station's scores, reads their evidence sentences VERBATIM, does NOT share their overall vote yet. No interrupting. No "yeah I agree with that." Just evidence.
+
+3. **Round 2 — votes + strongest-opposite-reason (15 min).** Each interviewer reads their one-word vote AND their strongest-reason-to-go-the-other-way. Other interviewers can ask clarifying questions but not argue. The strongest-opposite-reason step is the main anchor-killer — it forces the room to hear the negative case from EVERY voter, not just the dissenter.
+
+4. **Round 3 — open discussion (15 min).** Now argue. But the rule is: no new information can be introduced that wasn't in someone's written scorecard. If something comes up that feels important but wasn't captured in writing, that's a RED FLAG that someone is reconstructing an impression, not reporting an observation. Ask them to point to the specific moment in the interview.
+
+5. **Decision (5 min).** I read the decision rubric (below) aloud and call the decision.
+
+**Decision rubric (from 4 votes to a decision)**
+
+- **STRONG YES × 4, or 3 STRONG YES + 1 YES:** Hire. No further discussion.
+- **4 YES or better (any mix of STRONG YES / YES), AND nobody has any LEAN NO or below:** Hire.
+- **Any single NO or STRONG NO vote:** No-hire, regardless of the other votes. A single confident no means someone saw something the others didn't. Ask them to articulate it for the record — but the decision is no-hire.
+- **Any LEAN NO vote:** Default is NO-HIRE. To override, the LEAN-NO voter must be actively convinced by at least one other interviewer — and the convincing has to be the LEAN-NO voter changing their written vote on their scorecard, not just "they convinced me." If the LEAN-NO voter does not upgrade their vote in writing, we're no-hire.
+- **Split 2-2 (two YES / two LEAN NO or worse):** More-data call. Schedule a 45-minute follow-up with the candidate — one interviewer who voted YES and one who voted NO co-interview. They go in agreeing on the 2-3 specific concerns to probe. If both walk out aligned either way, that's the decision. If they come out still split, the answer is no-hire. (Split 2-2 on a Staff candidate is a signal the candidate is miscommunicating or misdiagnosed, and both are expensive.)
+- **Split 3-1 in favor of yes, with the 1 being a LEAN NO or worse:** LEAN-NO rule applies. Default no-hire unless the LEAN-NO voter upgrades in writing.
+
+**How we handle a soft-no (the "weak no")**
+
+Here's the failure mode you named, and here's the fix: A weak NO in most loops gets eroded in discussion ("are you sure?" / "she was maybe just having an off day") and the candidate gets hired over it. The protocol above specifically prevents this. The LEAN-NO voter's concern becomes the DECIDING factor, not a variable to be negotiated down. The written-upgrade rule means they can't be verbally pressured — they have to actively change their scorecard to flip.
+
+Historically, this is the single highest-leverage debrief rule you can have. Your past hires-over-soft-nos failed because the soft no never had authority in the decision structure. Now it has veto-by-default.
+
+**What you (as CTO) are allowed to do**
+
+- Run the debrief meeting (facilitator, not voter with extra weight).
+- Ask clarifying questions in Round 2 and Round 4.
+- Call the decision per the rubric above — but NOT override it. "The CTO breaks ties" is the antipattern. If the rubric says split-decision → more data, you don't get to shortcut it.
+- You can ADD a vote ONLY on your closing-conversation signal — and that vote counts the same as any other (one of five, not tie-breaker).
+- If you disagree with the rubric's output, you can VETO a hire (but not force one). The asymmetry is intentional: the CTO can be the last line of defense against a bad hire, but cannot push a hire past an unresolved concern from the team.
+
+**Anti-anchoring and anti-HR-pattern**
+
+- Nobody shares their overall vote before silent reading. Anchoring prevention.
+- "Strongest reason to go the OTHER way" forces negative-case articulation from every voter. Anchoring killer.
+- No new evidence in Round 4 — prevents retconning impressions into justifications.
+- LEAN-NO default is NO-HIRE with written-upgrade override. This explicitly kills the "hire if nobody actively says no" pattern HR tends to push.
+
+**Written record**
+
+A template Notion doc (I'll create this): candidate name, date, loop composition, all 4 scorecards verbatim, the decision, the rationale (1-2 paragraphs), and — critically — the 2-3 specific concerns raised (even in a hire). The concerns get revisited at the candidate's 90-day review. This closes the feedback loop: you actually LEARN whether your loop was calibrated correctly.
+
+One more thing: after every loop (hire or no-hire), schedule a 20-minute RETRO with the 4 interviewers 2 weeks later. What did the loop miss? What did it over-index on? You calibrate the rubric faster through retros than through any single loop.$pf$,
+ $pf$Full debrief protocol. Pre-debrief: each interviewer submits written scorecard (1-5 per axis + evidence + one-word vote + strongest-reason-to-go-opposite) BEFORE discussion. Debrief structure: silent read (5) → evidence-only round (20) → votes + opposite-reason round (15, anchor-killer) → open-discussion-no-new-evidence round (15) → decision (5). Rubric converts 4 votes to HIRE / NO-HIRE / more-data with explicit LEAN-NO default = NO-HIRE rule (written-upgrade override required to flip, not verbal pressure) — the fix for Derek's past hire-over-soft-no failures. CTO role: facilitator + veto-only-against-hire, not tie-breaker and not force-hire. Written record template + 90-day revisit + 2-week post-loop retro for rubric calibration.$pf$);
+
+-- =========================================================================
 -- END OF FILE — append next project(s) below this line.
 -- Iterations working the Content queue: add 2–3 projects per iteration,
 -- appending below this comment. Do NOT rewrite existing projects.

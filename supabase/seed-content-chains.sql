@@ -11007,6 +11007,822 @@ The first one is the only one that matters for proving the model worked. The oth
  $pf$4-tier playbook with explicit owner + SLA + required actions per tier (deep-red = 48h CS Director + CRO involvement; red = 5-day CSM save play from 8-play library; yellow = no automation, watch-list only; green = AE expansion handoff). Volume expectations sized to actual CS bandwidth (5-10 deep-red, 25-35 red, 200-220 yellow). 7-week staged rollout: weeks 1-2 shadow mode w/ 30-account hand-validation, week 3 soft launch 2 CSMs, week 4 all 6 CSMs unenforced, weeks 5-6 playbook live, week 7 renewal-forecast integration. 5 measurement metrics with month 3 / month 6 targets — save-rate delta on red tier is the only one that proves model worked, others are operating-model health. "Model holiday" clause for product changes — re-validate before continuing CS action on stale score.$pf$);
 
 -- =========================================================================
+-- Project 55-0034 | IEP meeting prep day — 4 students, 2-hour block | Ben Okafor | Education | 4 steps
+-- =========================================================================
+
+DELETE FROM prompt_steps WHERE prompt_id = '55555555-5555-5555-5555-555555550034';
+DELETE FROM prompts      WHERE id        = '55555555-5555-5555-5555-555555550034';
+
+INSERT INTO prompts (
+  id, title, description, content, result_content,
+  category_id, difficulty, model_used, model_recommendation,
+  tools_used, tags, status, author_id, vote_count, bookmark_count
+) VALUES (
+  '55555555-5555-5555-5555-555555550034',
+  $pf$IEP meeting prep day — 4 students, 4 separate meetings, one 2-hour afternoon block. 4-pass Claude workflow from student-data synthesis to in-meeting cheat cards I can reference while parents are actually talking.$pf$,
+  $pf$The 4-pass prep workflow I now run on IEP meeting days — data synthesis, parent-context calibration, goal-drafting, and 1-page in-meeting reference cards. Cut prep from ~6 hours per meeting block to ~75 minutes, with noticeably better meetings.$pf$,
+  $pf$I teach 9th-grade biology at a public high school and I'm the general-ed teacher on the IEP team for 11 students across my sections. Once a quarter our district schedules "IEP meeting day" — the special-ed coordinator blocks an afternoon for 4-5 back-to-back parent meetings for students whose annual reviews fall in that quarter. This April I had 4 meetings scheduled Thursday 1-3pm, each 25 minutes.
+
+Pre-Claude the prep was brutal. For each student I'd pull their current IEP, their progress-monitoring data, my own grade-book and observation notes, the previous year's goals, and the school psychologist's most recent update. Synthesize into a coherent narrative, draft updated goals, anticipate what the parents would push on, and somehow walk into a 25-minute meeting able to speak about all of that without fumbling through a binder. 6 hours per quarter, most of it on Sunday, and I'd still walk into some meetings feeling under-prepped.
+
+This is the 4-pass workflow I now run — each pass focused on one discrete output, each feeding the next, and ending in a 1-page cheat card per student that's formatted to actually be usable in the meeting itself (not a 6-page doc I have to flip through). I ran it Tuesday evening for the Thursday meetings. Total time: 75 min. And the meetings went noticeably better — I was answering parents' actual questions without digging, and I caught two goal-drafting issues in pass 3 I would have shipped otherwise.$pf$,
+  $pf$Four 1-page in-meeting reference cards generated — one per student — each with (a) 3-sentence narrative spine I opened each meeting with, (b) current-goal progress table with RAG status, (c) 2-3 new goal drafts with measurable criteria, (d) 2 anticipated parent concerns pre-addressed. Meetings ran on time, no parent pushback on goal language, and the special-ed coordinator asked for a copy of the template to share with our team. 75 minutes of prep for what used to take 6 hours of Sunday.$pf$,
+  '11111111-1111-1111-1111-111111111106',
+  'intermediate',
+  'claude-opus-4-6',
+  'Claude 4.6 Opus',
+  ARRAY['Claude','Notion','Google Docs'],
+  ARRAY['education','iep','special-education','teacher-workflow','meeting-prep'],
+  'approved',
+  '22222222-2222-2222-2222-222222222205',
+  86, 41
+);
+
+INSERT INTO prompt_steps (id, prompt_id, step_number, title, content, result_content, description) VALUES
+
+-- Step 1 --
+('66666666-6666-6666-6666-666666340101',
+ '55555555-5555-5555-5555-555555550034',
+ 1,
+ $pf$Synthesize each student's data into a diagnostic spine$pf$,
+ $pf$I have 4 IEP annual-review meetings Thursday afternoon. For each student I need a tight diagnostic spine before I can draft goals or think about what parents will push on. I'll paste each student's data set below (current IEP goals with progress data, my grade-book, my observation notes, last year's goals and which hit/missed, school psych's most recent update).
+
+For each of the 4 students I need you to produce a 3-section spine:
+
+1. **Where they actually are.** Single paragraph, 4-6 sentences. Concrete and observational — not eval-language-heavy. What's the student's current academic+behavioral reality in my class, in their own terms. If the data contradicts the previous IEP's stated profile, say so explicitly.
+
+2. **Goal progress — what worked, what didn't, and why.** Table: each current goal, my honest RAG status (green/amber/red), and a 1-sentence reason. Reasons should be mechanism-level, not "needs more practice."
+
+3. **The load-bearing instructional decision for next year.** ONE decision per student. If I could only influence one thing about how this student is supported in 2026-27, what should it be, based on the data? This is the thing I'll anchor the new goals to.
+
+Data for student 1 — **Marcus J., grade 9, IEP eligibility: SLD in written expression, ADHD diagnosis (combined type):** [current IEP goals: (a) produce a 5-paragraph essay with organized topic sentences across 4 of 5 attempts — currently hitting 2/5, (b) use graphic organizer independently before drafting — currently prompted 80% of time, (c) revise own work for mechanical errors using a checklist — currently 60% accuracy post-revision]. Grade-book: biology quiz avg 78%, lab reports avg 62% (writing-heavy), in-class participation strong. Observation notes: actively engaged when content is visual or kinesthetic, disengages during sustained writing tasks, uses graphic organizer when I place it on his desk but doesn't retrieve one independently. School psych update (Feb 2026): WJ-IV Written Expression cluster 82 (low avg), Reading Comp 96 (avg), working memory index 85.
+
+Data for student 2 — **Aisha T., grade 9, IEP eligibility: SLD in math calculation, anxiety (primary dx, sec. eligibility):** [current IEP goals: (a) solve multi-step word problems using a structured 4-step protocol with 70% accuracy — currently 45%, (b) attend 90% of classes without leaving due to anxiety — currently 78%, (c) self-advocate by requesting extended time when needed — prompted 100% of time]. Grade-book: biology 88% (non-math content), strong on labs, strong on written responses. Observation notes: excellent conceptual understanding, lab partner by choice, freezes visibly when problems involve quantitative analysis (chi-square in genetics unit), has left class once in 9 weeks (down from weekly last year). School psych Feb 2026: WIAT Math Calculation 78, Math Reasoning 91, GAD-7 self-report moved 14→9 over the year.
+
+Data for student 3 — **Jordan P., grade 9, IEP eligibility: Other Health Impairment (seizure disorder, well-controlled on medication), executive function deficits:** [current IEP goals: (a) turn in 90% of assignments by due date — currently 71%, (b) use planner and check in with case manager 2x weekly — currently 1x weekly, (c) initiate work within 3 min of task start — currently 8 min avg]. Grade-book: biology 72%, missing 4 of 28 assignments, quiz/test performance 85% when in class. Observation notes: bright, curious, struggles with task initiation, often asks peers what page we're on 10 min after direction given, strong once he's started, medication timing matters — morning block is harder than afternoon. Seizure log: 2 breakthrough episodes this year, both at home, neurologist adjusted dose March.
+
+Data for student 4 — **Sofia R., grade 9, IEP eligibility: Autism Spectrum (Level 1), social communication goals:** [current IEP goals: (a) participate in structured group work with 2+ verbal contributions per class — currently 60% of classes, (b) initiate clarification-seeking when content is unclear rather than withdrawing — currently 30% prompted, (c) demonstrate flexibility when plans change by using 1 of 3 taught coping strategies — currently 40% independently]. Grade-book: biology 94%, top of my roster on content mastery, written work exceptional, lab work precise. Observation notes: profoundly capable academically, struggles in the 3-min open-discussion moments, chooses same lab partner every time (flexibility goal), reads social cues in me well but misses peer cues. School psych Feb 2026: cognitive assessment WAIS composite 127, no co-occurring academic eligibility, sensory profile updated — noise sensitivity moderate, fluorescent-light sensitivity high (explains preferred seat).
+
+Produce all 4 spines in one response, clearly separated.$pf$,
+ $pf$Four diagnostic spines. I'm being direct — you asked for mechanism-level, not softened.
+
+---
+
+### 1. Marcus J.
+
+**Where he actually is:** Marcus is a strong conceptual biology student masked by a written-expression disability the system keeps treating as a writing problem. He can explain photosynthesis verbally with 9th-grade precision; he can't produce 5 coherent written paragraphs about it without external scaffolding. The previous IEP framed this as a "writing skills" profile, but his Reading Comp at 96 and his in-class verbal participation tell a different story — the issue is specifically the executive demand of organizing his own thinking on paper, not language access. His 78% on visual quizzes vs 62% on writing-heavy lab reports is the same phenomenon. Nothing here looks like inattention per se; this looks like a kid who does the work when the structure is external and stalls when it's internal.
+
+**Goal progress:**
+
+| Goal | RAG | Reason |
+|---|---|---|
+| 5-paragraph essay 4/5 attempts | **red** | He can't generate the internal structure without the graphic organizer; the goal measures the wrong thing — we're grading the gap, not building it. |
+| Use graphic organizer independently | **amber** | He uses it when present. "Independently" here means "retrieves from folder" which is an organizational task, not a writing task; the goal conflates two skills. |
+| Revise own work with checklist | **amber** | 60% is real progress — the checklist works when he uses it; he uses it when handed it; this is the same executive-retrieval pattern. |
+
+**Load-bearing decision:** Stop treating the graphic organizer as a bridge to independence and treat it as a permanent accommodation. Shift the instructional energy to teaching him to use the organizer MORE fluently and to transfer from organizer to prose more cleanly, instead of fading the organizer. His working memory index of 85 means the "hold the structure in your head" expectation will always tax him; we should stop billing the extra effort as a goal failure.
+
+---
+
+### 2. Aisha T.
+
+**Where she actually is:** Aisha is a strong biology student whose anxiety has meaningfully improved this year (78%→better attendance, GAD-7 14→9) and whose remaining struggle is specifically co-located at math-heavy content, not general academic anxiety. She's doing the concept work at 88%+ and freezing at quantitative analysis — the chi-square in genetics was a visible moment. Her Math Reasoning at 91 vs Math Calculation at 78 is the pattern: she can think about math conceptually but the calculation-load triggers the freeze. Her self-advocacy is the emerging growth edge — last year's "100% prompted" on requesting extended time is now closer to 70% prompted in my observation, though we don't have formal data yet. This is a student who is actually on an upward arc; the goal language hasn't caught up with reality.
+
+**Goal progress:**
+
+| Goal | RAG | Reason |
+|---|---|---|
+| Multi-step word problems, 70% accuracy | **amber** | 45% is real gain over last year's 28% but the goal ceiling is wrong — 70% with calculation-heavy problems at her profile may be mis-calibrated; the question is whether calculation accuracy should factor at all or whether we measure the reasoning step and accommodate the calculation. |
+| 90% attendance without leaving | **green** | Huge gain. One exit in 9 weeks is practically the target. |
+| Self-advocate by requesting extended time | **amber** | The goal mis-measures what's happening — she's moved from 100% prompted to roughly 70% prompted but we're scoring as if prompted=failure. Need a gradient measure. |
+
+**Load-bearing decision:** Separate "can she do the reasoning" from "can she do the arithmetic" in how we measure math. The disability is in calculation; her reasoning is within the typical range. Next year's math-related goal should live in the reasoning space with calculation accommodated (calculator for multi-digit, formula sheet provided), so we stop scoring her against her disability and start measuring what we're teaching her.
+
+---
+
+### 3. Jordan P.
+
+**Where he actually is:** Jordan is a bright kid with a task-initiation wall that every academic measure passes through. When he's working, he performs at 85%+ on content (his quiz/test avg when present proves it); his 72% course grade is dragged down by 4 missing assignments and the minutes-lost at task initiation compounding daily. The seizure disorder is stable and not currently academically limiting; the executive-function piece is load-bearing. His morning-harder-than-afternoon pattern is medication-timing (confirmed by neurologist adjusting dose in March) — he's a person before 10am and a student after 10:30am. The 8-min-initiation-delay is not laziness; it's the cognitive onramp time his profile requires, and we've been pretending 3 min is realistic.
+
+**Goal progress:**
+
+| Goal | RAG | Reason |
+|---|---|---|
+| 90% assignments on time | **red** | 71% is where the work is; the target is aspirational without addressing the initiation mechanism; moving the number without fixing the mechanism won't generalize. |
+| Planner + 2x weekly case-manager check-in | **amber** | Hitting 1x weekly suggests the 2x is over-scheduled rather than a compliance failure; case manager confirmed he forgets the second one consistently — the check-in is the system-forgetting, not him. |
+| Initiate within 3 min | **red** | The 3-min target is wrong. His actual initiation curve is 8 min. We're not going to get to 3 through an IEP goal; we can accommodate the 8 and build from there. |
+
+**Load-bearing decision:** Build in a 5-min structured onramp as accommodation (written agenda on desk, first-step pre-written, timer cueing), measure initiation from end-of-onramp rather than from bell, and shift the goal to "initiates within 2 min of onramp end" (honest target). Pair with explicit medication-timing awareness in the schedule — avoid scheduling his most demanding academic tasks in first-period block when possible. The accommodation does the work; the goal measures what we can actually move.
+
+---
+
+### 4. Sofia R.
+
+**Where she actually is:** Sofia is academically the strongest student on my roster (94% biology, WAIS 127) with a social-communication profile that genuinely limits her in the open-discussion + flexibility moments of class, not in any academic way. The "choose same lab partner every time" is real but narrowly scoped — she's not refusing group work, she's seeking predictability in the partner dimension. Her clarification-seeking is where she's underperforming relative to where she could be — she'll withdraw when confused rather than ask, and with her cognitive profile that's a specific loss of access she shouldn't have to take. Her sensory profile (high fluorescent-light sensitivity, moderate noise) is a quiet driver — her preferred seat is deliberate and has never been flagged.
+
+**Goal progress:**
+
+| Goal | RAG | Reason |
+|---|---|---|
+| Group work, 2+ verbal contributions | **amber** | 60% of classes is solid; the remaining 40% correlate with specific discussion types (whole-class open discussion vs structured small-group) — the environment is more variable than the goal captures. |
+| Initiate clarification | **red** | 30% prompted is the load-bearing issue — she's losing access to content when she withdraws rather than asks, and with her cognitive ceiling this is the gap between her potential and her delivery. |
+| Flexibility — 1 of 3 coping strategies | **amber** | 40% is real; the "3 taught strategies" menu is working for her because she likes pre-taught options (pattern-consistent with her profile). |
+
+**Load-bearing decision:** Move the energy to clarification-seeking. It's the one goal where her current performance actively leaves capability on the table, and it's a skill with enormous transfer to college-prep and beyond. Build a structured "ask" protocol (she responds to protocols), make it teacher-cued initially, fade the cueing over the year, and pair with a partner-flexibility side goal that's quieter. The sensory accommodation for the preferred seat should move from informal to formal in the IEP.$pf$,
+ $pf$Four spines generated in one pass. Each has: (a) concrete current-state paragraph flagging contradictions with prior IEP framing, (b) goal-progress table with RAG + 1-line mechanism-level reason per goal, (c) ONE load-bearing instructional decision to anchor new goals. Key reframes surfaced: Marcus's writing issue is executive-retrieval not writing-skill (stop fading the organizer); Aisha's math goals scored her against her disability (separate reasoning from calculation); Jordan's 3-min initiation target is unrealistic (build a 5-min onramp as accommodation); Sofia's clarification-seeking is the load-bearing goal (costs her access given her cognitive ceiling). All four spines push back on previous-year framings I would have inherited without this exercise.$pf$),
+
+-- Step 2 --
+('66666666-6666-6666-6666-666666340102',
+ '55555555-5555-5555-5555-555555550034',
+ 2,
+ $pf$Calibrate for parent context — what each family is most worried about$pf$,
+ $pf$Now I need to calibrate for parents. My spines from step 1 are what I know as the teacher; the meeting is a conversation where parents arrive with their own worries and I need to meet them there before I can get to goal-drafting.
+
+For each of the 4 students, using (a) the spine from step 1, (b) what I know about the family from prior meetings / emails / conferences (details below), produce:
+
+1. **The parent's most likely top concern going into this meeting** — 1 sentence. Guess specifically, not generically ("grades" is not a useful answer — what specifically about grades).
+2. **Where my spine will potentially be HEARD differently than I mean it** — 1-2 sentences. Where could my framing land badly or be misread given what this family has already been through?
+3. **The bridge** — 1-2 sentences. How I can hold my spine AND meet the parent where they are, in a single move at the top of the meeting.
+
+Family context notes:
+
+Marcus J.'s parents — Dad is an engineer, Mom is a pediatric nurse. At last year's IEP they pushed HARD to get SLD recognized (spent 2 years advocating for the eval). Mom has expressed frustration at previous teachers who framed Marcus as "not trying" or "inconsistent." Dad wants to see academic rigor preserved — doesn't want accommodations that let Marcus off the hook. They want college prep.
+
+Aisha T.'s mom (single-parent household) — Mom works as a dental hygienist, 2 jobs, limited ability to be in school. Very anxious herself about Aisha's anxiety; last year was the first year Aisha didn't regress academically during the spring. Mom has said "I just want her to stay in class." She's been wary of any change that feels like "pushing too hard."
+
+Jordan P.'s parents — Dad is a firefighter, Mom is a stay-at-home parent who manages Jordan's medical care. The seizure disorder is primary identity in their communications with the school — the executive-function piece has been treated by the family as secondary ("Jordan's just scattered like his dad was"). They want the school to keep him medically safe and have been less engaged on academic planning.
+
+Sofia R.'s parents — Both work in tech; Sofia is their youngest of 3. They are well-informed and have pushed hard for general-education placement (successfully — she's fully mainstreamed). They read the research, they come with questions about specific strategies, and they can be wary of IEP goals that feel "deficit-focused" rather than strengths-based. Mom has a Master's in education from 15 years ago.$pf$,
+ $pf$Four parent-calibration reads.
+
+---
+
+### Marcus J.
+
+**Likely top concern:** That the school is going to again reduce Marcus to "he needs to try harder" dressed up in goal language, and that his 62% on lab reports is being used as evidence of effort when it's actually evidence of disability — especially after the 2-year fight they had to get the SLD recognized.
+
+**Where my spine may land wrong:** My "permanent accommodation" framing for the graphic organizer could read to Dad as reducing rigor — he's worried about college prep, and "permanent accommodation" can sound like "lowering the bar" if I don't frame it right. Separately, my "stop billing the extra effort as a goal failure" line, if said plainly, could land like I'm accusing the last team of doing exactly what Mom has been complaining about — which would make her allies in blaming, but then I own that accusation going forward and it poisons the team.
+
+**The bridge:** Open with: "I want to share something I saw this quarter that I think lines up with what you've been telling us for years — Marcus's biology understanding is genuinely 9th-grade-strong; what's taxing him is the executive piece, not the thinking, and I want to build next year's plan around that." That validates their long-standing frame (the school was missing the real issue) and reframes "accommodations" as "access to rigor" rather than "easier." Dad hears "we're protecting college prep"; Mom hears "we finally see your kid."
+
+---
+
+### Aisha T.
+
+**Likely top concern:** That any proposed change will destabilize the progress Aisha has made — Mom has been watching her daughter slip every spring for years and this year is the first the pattern broke; she'll be cautious about ANY modification that reads as "raising the bar" even if the data supports it.
+
+**Where my spine may land wrong:** My framing that the math calculation goal is "mis-calibrated" and we should "separate reasoning from calculation" could sound like I'm telling Mom we're going to stop measuring math — which could trigger "they're giving up on her" fear, especially because Mom worries about the long-term (she knows 9th grade math feeds 10th grade feeds college). The "accommodations" language is actually REASSURING to this family if framed correctly, but "changing the goal" is NOT reassuring unless I make clear we're raising our expectations on what we ARE measuring.
+
+**The bridge:** Open with: "Aisha has had the strongest year I've seen — not just staying in class, but showing me she can do the biology thinking at grade level. The place she's still working hard is the math-heavy parts, and I want to talk about measuring what she IS doing so we can build on it, instead of scoring her where the disability lives." That leads with gain (Mom's worry first), frames change as protecting progress rather than disrupting it, and signals "raising expectations on reasoning" rather than "giving up on math."
+
+---
+
+### Jordan P.
+
+**Likely top concern:** That a school meeting will again circle around school stuff (grades, planners, task initiation) when in their family's mental model, Jordan's real condition is the seizure disorder and everything else is softer — Mom may also be subtly worried about whether the March medication change is affecting school performance and not saying so.
+
+**Where my spine may land wrong:** My "the 3-min goal is wrong, he actually needs 8" framing could read as "the school has been scoring him against an unrealistic target all year" — which is true but lands as complaint. More importantly, the executive-function framing as load-bearing could feel like I'm pulling the family away from the medical frame they've organized around ("he's scattered like his dad"), and in this family the medical frame is emotionally protective — pushing against it without care will get received as minimizing the medical piece.
+
+**The bridge:** Open with: "I want to check in on how Jordan's doing medically first — I know the dose changed in March and I want to make sure we're supporting whatever you're seeing at home. Then I want to walk through something academic I've been seeing that I think dovetails with it." Leads with their frame (medical is primary), treats the executive-function piece as complementary (not corrective), and opens a door for Mom to share med-change observations she may not have volunteered. Do NOT frame executive-function as the "real" issue — frame it as one layer of Jordan's whole picture that we can support alongside the medical piece.
+
+---
+
+### Sofia R.
+
+**Likely top concern:** That the IEP is going to deficit-frame a kid who is functionally thriving — Mom has been watching for exactly this kind of language for years and Sofia's 94% and full gen-ed placement are (correctly) points of pride. They may also worry specifically that goals around "social communication" are going to try to change who Sofia IS rather than expand her access.
+
+**Where my spine may land wrong:** My framing that clarification-seeking is the "load-bearing issue" and "she's losing access to content when she withdraws" could sound to well-read parents like I'm pathologizing a preference — in this family's frame, if she withdraws rather than asks, that's her processing style, not a deficit. If I don't carefully frame this as "expanding her toolkit" rather than "fixing her behavior," Mom will push back hard and for a legitimate reason. I also need to be careful that the sensory-accommodation formalization doesn't read as "we're going to treat her differently" — it needs to read as "making explicit what's already working."
+
+**The bridge:** Open with: "Sofia's academic work this quarter has been some of the strongest in the class — I want to start there because it's real, and it's what's earning her the gen-ed placement you've worked hard to build. What I want to talk about is a narrow skill — specifically asking a question when she's stuck — that I think would expand her access to the content she's already mastering, not try to change how she learns." Frames the discussion as building on strength rather than fixing weakness, specifies the narrow skill so it can't be heard as "making her more social," and names the Mom's actual win ("the gen-ed placement you've worked hard to build") which signals respect for her advocacy.$pf$,
+ $pf$Four parent reads generated. Each has: (a) a specific top-concern guess rooted in family history rather than generic "grades"; (b) where my step-1 spine framing will land differently than I mean it given what the family has been through; (c) a 1-2 sentence bridge I can use to open the meeting that holds my content AND meets the parent. Key calibration moves: Marcus's family needs "protecting rigor" framing (not "accommodation"); Aisha's mom needs "measuring what she IS doing" framing (not "changing the goal"); Jordan's family needs medical-frame-first opening (not "the real issue is executive function"); Sofia's parents need "expanding access" framing (not "fixing behavior"). These are the sentences I'll actually say at the top of each meeting.$pf$),
+
+-- Step 3 --
+('66666666-6666-6666-6666-666666340103',
+ '55555555-5555-5555-5555-555555550034',
+ 3,
+ $pf$Draft updated IEP goals with measurable criteria$pf$,
+ $pf$Using the spines (step 1) + parent reads (step 2), draft updated IEP goals for each student. 2-3 goals each. Each goal needs:
+
+- **Specific language** — observable and measurable. Not "will improve" — measurable criteria.
+- **Measurement condition** — how we're collecting the data, by whom, at what interval.
+- **Annual target** — where we expect to be by next April.
+- **Mid-year checkpoint** — what we expect to see by end of Q2 that tells us we're on track.
+- **Accommodation separation** — any accommodations that SUPPORT the goal listed separately (so they don't silently count against the goal).
+
+Critical: I want goals that measure what we're actually teaching, not what the disability is. Goals should be ambitious but honest — I'd rather a parent see "exceeded target" than a year of "working toward goal." And flag anywhere you're guessing and would want me to clarify before the meeting.$pf$,
+ $pf$Goals drafts. I've pushed these toward the "measure what we teach" principle and flagged ambiguities.
+
+---
+
+### Marcus J. — Goals (2 goals + 2 accommodations)
+
+**Goal 1 — Written organization using graphic organizer + transfer to prose.**
+- *Language:* Given a biology or cross-curricular writing prompt of 3+ paragraphs and a pre-formatted graphic organizer, Marcus will independently populate the organizer (all required fields) and produce a written response in which 80% of organizer content appears in the prose, across 4 of 5 trials.
+- *Measurement:* Scored by me (biology) + English teacher (cross-curricular), monthly writing sample, rubric-scored.
+- *Annual target:* 4/5 trials meeting criteria by April 2027.
+- *Q2 checkpoint:* 3/5 trials with organizer-to-prose transfer ≥70% (we expect transfer quality to grow faster than frequency).
+- *Accommodations supporting this goal (not counted against it):* graphic organizer provided for all multi-paragraph writing tasks; extended time on writing-heavy assessments; access to speech-to-text for drafting stage.
+
+**Goal 2 — Self-monitored revision using mechanical-error checklist.**
+- *Language:* When provided with a completed draft and a 6-item mechanical-error checklist, Marcus will independently apply the checklist and correct 80% of identified errors across 4 of 5 trials.
+- *Measurement:* Scored by English teacher monthly, documented in IEP data log.
+- *Annual target:* 80% accuracy across 4/5 trials by April 2027.
+- *Q2 checkpoint:* 70% accuracy across 3/5 trials.
+
+**Note I'd flag before the meeting:** I dropped the standalone "5-paragraph essay independently" goal. The team may push back. My argument: that goal measures absence of support, not growth; Marcus's Q2/Q4 growth last year was on the organizer-assisted work, not on the independent work, and that's the growth we want to keep building. Want to confirm with the case manager before the meeting — she may want a version of the independent-writing goal preserved for the 10th-grade ELA placement conversation.
+
+---
+
+### Aisha T. — Goals (3 goals + 2 accommodations)
+
+**Goal 1 — Mathematical reasoning on multi-step problems (with calculation accommodated).**
+- *Language:* Given multi-step quantitative problems with a provided calculator and formula sheet, Aisha will correctly identify the problem-solving approach (step sequence) in 85% of trials across 4 consecutive weeks.
+- *Measurement:* Scored by math teacher + me (for biology quantitative content), weekly problem sets, rubric emphasizing approach-identification separate from final-answer accuracy.
+- *Annual target:* 85% accuracy on approach-identification by April 2027.
+- *Q2 checkpoint:* 75% across 4 weeks.
+- *Accommodations supporting this goal:* calculator provided for all quantitative assessments; formula sheet provided; multi-step problems broken into sub-prompts on assessments (not on practice work where the breakdown IS the teaching).
+
+**Goal 2 — Class attendance and sustained presence.**
+- *Language:* Aisha will attend 95% of scheduled class periods without leaving early due to anxiety-related distress across a 9-week grading period.
+- *Measurement:* Attendance records + teacher observation log, reviewed at each grading period.
+- *Annual target:* 95% by April 2027.
+- *Q2 checkpoint:* 92% by end of Q2 (she's at ~90% now).
+
+**Goal 3 — Self-advocacy: requesting extended time using a structured protocol.**
+- *Language:* When a timed assessment is announced, Aisha will independently request extended time (per her accommodation) using the 3-step protocol taught by the school counselor, within 24 hours of the assessment announcement, across 80% of opportunities.
+- *Measurement:* Tracked by counselor + teachers; opportunity counted each time a timed assessment is announced.
+- *Annual target:* 80% independent requests by April 2027.
+- *Q2 checkpoint:* 60% independent (she's at ~30% now — this is the growth edge goal).
+
+**Flag:** goal 3 depends on the counselor continuing to run the protocol-teaching sessions; if counselor caseload changes next year we need a backup owner. Confirm with case manager + counselor before meeting.
+
+---
+
+### Jordan P. — Goals (2 goals + 3 accommodations)
+
+**Goal 1 — Task initiation following structured onramp.**
+- *Language:* Given a written agenda on desk at class start with the first task-step pre-written and a 5-minute onramp timer, Jordan will begin sustained task work within 2 minutes of timer end across 80% of class periods.
+- *Measurement:* Teacher observation log, tracked during first 10 minutes of each class, sampled twice weekly.
+- *Annual target:* 80% across a 4-week sampling window by April 2027.
+- *Q2 checkpoint:* 65% across a 2-week sampling window.
+- *Accommodations supporting this goal:* written daily agenda on desk; first task step pre-written by teacher or pre-identified by Jordan during check-in; 5-minute onramp period at class start before sustained-work expectation begins.
+
+**Goal 2 — Assignment completion using planner + weekly case-manager check-in.**
+- *Language:* Jordan will turn in 85% of assignments by the due date, using a planner reviewed during a single weekly check-in with case manager.
+- *Measurement:* Grade-book review + case-manager log, reviewed monthly.
+- *Annual target:* 85% by April 2027.
+- *Q2 checkpoint:* 78% (he's at 71% now).
+- *Accommodations supporting this goal:* 1 grace-day allowance per assignment (pre-declared, no penalty); planner review with case manager 1x weekly (not 2x — the 2x is over-scheduled and has been failing).
+
+**Note:** I explicitly changed the check-in frequency from 2x weekly to 1x weekly. This is a scope reduction. Arguments for: 1x is honestly working, 2x has been failing all year, and scheduling against a consistent failure mode erodes trust in the IEP. Arguments against: the team may want to keep 2x as aspirational. I'd recommend 1x with the case manager empowered to add a second informal touch when she observes drift — that gives us the ceiling without the enforcement-failure pattern.
+
+**Flag for meeting:** medication-timing should probably be reflected in scheduling recommendations (e.g., avoid placing his most demanding academic tasks in first period), but this is a conversation-level recommendation, not a goal. Put this as a talking point, not a formal IEP line.
+
+---
+
+### Sofia R. — Goals (2 goals + 2 accommodations)
+
+**Goal 1 — Clarification-seeking using a structured protocol.**
+- *Language:* When content or instructions are unclear to Sofia (identified by Sofia or observed by teacher), Sofia will use the 3-step clarification protocol ("restate the confusion, name what's unclear, ask a specific question") to initiate clarification with the teacher within the same class period, across 70% of identified opportunities.
+- *Measurement:* Teacher observation log + weekly check-in with Sofia to self-report missed opportunities; rubric for what counts as a "identified opportunity" co-developed with Sofia and team.
+- *Annual target:* 70% by April 2027.
+- *Q2 checkpoint:* 50% (she's at ~30% prompted now, target is independent use so Q2 is the teaching-window).
+- *Accommodations supporting this goal:* teacher-cued prompt for the first 6 weeks (fading cues every 2 weeks); preferred seat formalized in accommodations (low-fluorescent-light zone, near teacher for easier cueing).
+
+**Goal 2 — Flexibility when routines or plans change.**
+- *Language:* When a class routine or plan changes (group assignment, lab partner, schedule shift), Sofia will independently select and apply 1 of 3 taught coping strategies within the class period, across 70% of opportunities.
+- *Measurement:* Teacher observation log + Sofia self-report.
+- *Annual target:* 70% by April 2027.
+- *Q2 checkpoint:* 60% (she's at 40% now — this goal is close to target already, less intensive growth edge).
+
+**Flag:** Sofia's parents may push back on goal 1 if the language reads deficit-framed. My draft specifically says "when content is unclear" (which is content-based, not social-based) and uses "initiate clarification" rather than "communicate more." Want to double-check with case manager that this language will land. The "formalize preferred seat" accommodation is a straightforward ask that the parents will probably appreciate — she's been using it informally all year.
+
+---
+
+**Across all four — meta-flags to confirm with case manager before meeting:**
+
+1. Jordan's grace-day allowance accommodation may need district sign-off. Confirm.
+2. Sofia's sensory accommodation formalization will need to be in the accommodations section explicitly — check that the 504-plan language our district uses is acceptable to pull into the IEP.
+3. Marcus's dropped "independent 5-paragraph essay" goal is the biggest team-level question. If case manager pushes to preserve it, fallback position is keep it as a stretch-goal with 2/5 trials rather than 4/5.
+4. Aisha's approach-identification-separate-from-calculation measurement may be new to our district's math team. Run by math teacher before meeting to confirm she's comfortable with the rubric shape.$pf$,
+ $pf$Goals drafted for all 4 students — 2-3 per student, each with measurable language, measurement owner + interval, annual target, Q2 checkpoint, and accommodations separated from goals (so accommodations don't silently count against goal measurement). Key design moves: Marcus's "independent 5-paragraph essay" goal dropped (measures disability, not teaching); Aisha's math goal measures approach-identification separately from calculation accuracy (the disability) with calculator + formula sheet as supporting accommodations; Jordan's check-in frequency honestly reduced from 2x to 1x weekly (not aspirational); Sofia's clarification goal language is content-based not social-based (to pre-empt deficit-framing pushback). 4 meta-flags surfaced to confirm with case manager before meeting — dropped-goal argument for Marcus, accommodation sign-offs for Jordan and Sofia, new measurement rubric for Aisha.$pf$),
+
+-- Step 4 --
+('66666666-6666-6666-6666-666666340104',
+ '55555555-5555-5555-5555-555555550034',
+ 4,
+ $pf$Generate 1-page in-meeting cheat cards — formatted for actual use$pf$,
+ $pf$Final pass: produce the in-meeting reference cards. ONE page per student, formatted so I can reference them WHILE parents are talking without flipping. I'll print them on half-sheets and clip them to the folder.
+
+Each card needs, in this order top-to-bottom:
+1. **Opening line** — the first sentence I'll say, verbatim, from the parent-bridge in step 2.
+2. **Narrative spine** — 3 sentences, max. The "where they actually are" paragraph compressed.
+3. **Current-goal progress table** — same as step 1, 1 line per goal.
+4. **New goal drafts** — each goal in 1 line. Measurement / checkpoint as subline if it fits.
+5. **Accommodations** — bulleted, 2-4 items.
+6. **Likely parent concern + bridge** — 1 line. My reminder to myself.
+7. **Things I need to confirm in-meeting** — 2-3 bullets of open questions to the family (meds, home routine, extracurricular plans) that the spine can't answer alone.
+
+Constraint: each card has to FIT on a printed half-page. Ruthless. If something can't fit, it goes in my binder, not on the card. The card is my eyes-up reference.
+
+One more request: across all 4 cards, flag if there's a timing issue with my Thursday 1-3pm block — 25 min per meeting is tight, which students will need more time, who can realistically be 20 min?$pf$,
+ $pf$Four cheat cards, half-page format. I'll keep each card tight.
+
+---
+
+### 📋 MARCUS J. — IEP Meeting Card
+
+**Opening:** "I want to share something I saw this quarter that I think lines up with what you've been telling us for years — Marcus's biology understanding is genuinely 9th-grade-strong; what's taxing him is the executive piece, not the thinking, and I want to build next year's plan around that."
+
+**Spine:** Strong conceptual biology student masked by SLD-Written Expression. Gap is executive retrieval of structure, not language or effort — his verbal explanation is grade-level, his prose collapses without scaffolding. Data: Reading Comp 96, Written Expression 82, WM 85.
+
+**Current goals:** (1) 5-para essay ind. — **red** (2/5) | (2) Org. independent — **amber** (20% prompted) | (3) Revise w/ checklist — **amber** (60%)
+
+**New goals:**
+- G1: Organizer + 80% organizer-to-prose transfer, 4/5 trials. Q2: 3/5 @ 70%.
+- G2: Self-monitored revision, 80% accuracy w/ checklist, 4/5 trials. Q2: 70% @ 3/5.
+
+**Accommodations:** graphic organizer for all multi-paragraph writing; extended time on writing assessments; speech-to-text for drafting.
+
+**Concern→bridge:** Family fought 2 yrs for SLD recognition; Dad wants rigor preserved. Hold: "accommodation = access to rigor," NOT "easier."
+
+**Confirm in-meeting:** (1) Dropped independent-essay goal — check parent reaction before finalizing. (2) 10th-grade ELA placement plans? (3) Home writing routine — any patterns they're seeing?
+
+---
+
+### 📋 AISHA T. — IEP Meeting Card
+
+**Opening:** "Aisha has had the strongest year I've seen — not just staying in class, but showing me she can do the biology thinking at grade level. The place she's still working hard is the math-heavy parts, and I want to talk about measuring what she IS doing so we can build on it."
+
+**Spine:** Strong bio student (88%+), freezes at quantitative work — Math Reasoning 91 vs Calculation 78. Anxiety meaningfully improved (GAD-7 14→9), one exit in 9 weeks (down from weekly). Self-advocacy is the growth edge.
+
+**Current goals:** (1) Multi-step word problems — **amber** (45%, was 28%) | (2) 90% attendance — **green** | (3) Self-advocate extended time — **amber** (~70% prompted, down from 100%)
+
+**New goals:**
+- G1: Reasoning — 85% approach-identification on multi-step problems w/ calc + formula sheet. Q2: 75%.
+- G2: 95% attendance w/o anxiety exit. Q2: 92%.
+- G3: Independent extended-time request via 3-step protocol, 80% of opps. Q2: 60%.
+
+**Accommodations:** calculator + formula sheet on all quantitative work; sub-prompts on assessments (not practice); counselor-run protocol sessions.
+
+**Concern→bridge:** Mom wariest of "pushing too hard" — any change reads as risk. Hold: "measuring what she IS doing" = raising expectations on reasoning.
+
+**Confirm in-meeting:** (1) Counselor continuity — will Ms. Chen run protocol next year? (2) Summer plan — any math tutoring? (3) 10th-grade math teacher placement — Mom may want input.
+
+---
+
+### 📋 JORDAN P. — IEP Meeting Card
+
+**Opening:** "I want to check in on how Jordan's doing medically first — I know the dose changed in March and I want to make sure we're supporting whatever you're seeing at home. Then I want to walk through something academic I've been seeing that I think dovetails with it."
+
+**Spine:** Bright, 85%+ on content when present. Task-initiation wall is academic constraint; seizure disorder stable on current dose. Morning-harder-than-afternoon is medication timing. 8-min initiation curve is real, not laziness.
+
+**Current goals:** (1) 90% assignments on time — **red** (71%) | (2) Planner + 2x weekly check-in — **amber** (1x hitting) | (3) Initiate in 3 min — **red** (8 min actual)
+
+**New goals:**
+- G1: Task initiation — begin sustained work within 2 min of onramp-end, 80% of periods. Q2: 65%.
+- G2: Assignment completion — 85% on time w/ planner + 1x weekly check-in. Q2: 78%.
+
+**Accommodations:** written daily agenda + pre-written first task step; 5-min onramp before sustained-work expectation; 1 grace-day per assignment (pre-declared, no penalty).
+
+**Concern→bridge:** Family's medical frame is primary + emotionally protective. Hold: executive-function is complementary, NOT the "real" issue.
+
+**Confirm in-meeting:** (1) March dose change — effects at home? (2) Scheduling — can we target demanding tasks for afternoon? (3) Weekend pattern — any home-side scaffolding that's working?
+
+---
+
+### 📋 SOFIA R. — IEP Meeting Card
+
+**Opening:** "Sofia's academic work this quarter has been some of the strongest in the class — I want to start there because it's real, and it's what's earning her the gen-ed placement you've worked hard to build. What I want to talk about is a narrow skill that I think would expand her access to the content she's already mastering."
+
+**Spine:** Academically top of roster (94%, WAIS 127). Social communication profile narrows in open-discussion + flexibility moments. Clarification-seeking is load-bearing — she withdraws when confused, losing access relative to capability. Sensory preferences (low-fluorescent seat) informal, should be formalized.
+
+**Current goals:** (1) Group work 2+ contributions — **amber** (60%) | (2) Clarification initiation — **red** (30% prompted) | (3) Flexibility w/ 3 strategies — **amber** (40%)
+
+**New goals:**
+- G1: Clarification protocol ("restate, name, ask") at 70% of identified opps. Q2: 50% (teaching window).
+- G2: Flexibility — 1 of 3 strategies at 70% of opps. Q2: 60%.
+
+**Accommodations:** preferred seat formalized (low-fluorescent, near teacher); teacher-cued clarification prompt for first 6 weeks (fading every 2).
+
+**Concern→bridge:** Parents scan for deficit-framing; Mom has Master's in ed. Hold: "expanding access," NOT "fixing behavior."
+
+**Confirm in-meeting:** (1) Flex goal — parents OK with current 3-strategy menu? (2) Sensory accommodation formalization — any additions (headphones option for lab noise)? (3) 10th-grade honors bio interest — does she want it?
+
+---
+
+### ⏰ Timing flag for Thursday 1-3pm block
+
+4 meetings, 25 min each = 100 min of meeting time, 20 min buffer across the block. Read:
+
+- **Marcus (~30 min likely):** The dropped-goal question will take discussion — Dad will push on rigor, Mom will have questions about "permanent accommodation" framing. Budget 30, schedule at 1:00 so I can run long if needed.
+- **Jordan (~30 min likely):** Parents haven't engaged deeply on academics before; this is the first meeting where we're surfacing executive-function as load-bearing. Medical check-in opening will take time if Mom has med-change observations. Budget 30, schedule at 1:30.
+- **Aisha (~20 min realistic):** Mom has job pressure, meetings with her historically run lean — she's quiet, attentive, not argumentative. Most of the work is "showing the year's growth" which is a positive conversation. Budget 20, schedule at 2:05.
+- **Sofia (~20 min realistic):** Parents are well-prepped, will bring specific questions, but they're efficient — they won't drag. The "expanding access" framing either lands or doesn't in the first 5 min; if it lands, the rest is cooperative. Budget 20, schedule at 2:30.
+
+**Recommend:** reorder your 1-3pm block to Marcus → Jordan → Aisha → Sofia (the hard ones first, with the efficient ones last as buffer). Tell the SpEd coordinator tomorrow if you can still adjust.$pf$,
+ $pf$Four printable half-page cheat cards generated + a timing reorder recommendation for the 1-3pm block. Each card has: opening line verbatim (from step 2's parent bridge), 3-sentence spine, current-goal progress table, new goal drafts w/ Q2 checkpoints, accommodations bulleted, concern→bridge reminder, 2-3 in-meeting confirmation questions I can't answer from data alone. Timing read: Marcus + Jordan will each run ~30 min (harder conversations, new framings); Aisha + Sofia should fit in 20 min each — recommended reordering Marcus→Jordan→Aisha→Sofia (hard first, efficient as buffer), confirmed with SpEd coordinator that evening. Actually used these in the meetings — no fumbling, answered parent questions without digging, all 4 meetings hit the opening bridge within the first 90 seconds. Total prep Tuesday evening: 75 min.$pf$);
+
+-- =========================================================================
+-- Project 55-0035 | LinkedIn thought-leadership series ghostwriting | Emily Zhao | Writing | 3 steps
+-- =========================================================================
+
+DELETE FROM prompt_steps WHERE prompt_id = '55555555-5555-5555-5555-555555550035';
+DELETE FROM prompts      WHERE id        = '55555555-5555-5555-5555-555555550035';
+
+INSERT INTO prompts (
+  id, title, description, content, result_content,
+  category_id, difficulty, model_used, model_recommendation,
+  tools_used, tags, status, author_id, vote_count, bookmark_count
+) VALUES (
+  '55555555-5555-5555-5555-555555550035',
+  $pf$Ghostwriting a 12-post LinkedIn thought-leadership series for a B2B SaaS CEO — 3-pass Claude workflow from 90-min discovery-call transcript to a 6-week publishing calendar$pf$,
+  $pf$How I turn a single 90-minute discovery call with a client executive into 12 LinkedIn posts of genuinely thought-leadership-y content — not "5 tips" filler. The 3-pass workflow I run on every new executive-ghostwriting engagement.$pf$,
+  $pf$I ghostwrite LinkedIn for 4 founder/CEO clients. The hardest part of the work — and the part I used to lose money on — is the intake. A new client signs a 6-month retainer, I do a 90-minute discovery call with them, and then I have to produce the first 4 weeks of content before the LinkedIn audience notices I've taken over the voice.
+
+Pre-Claude the pattern was: transcript → generic-sounding outline → draft 1 is bland → client hates draft 1 → emergency rewrite → deliver week 1 three days late. I'd lose 8-10 hours across the first two weeks of every new engagement.
+
+This is the 3-pass workflow I now run the day after the discovery call. Takes about 2.5 hours total. Pass 1 audits the transcript for the ACTUAL opinions, stories, and framings this exec holds that aren't already on the internet (discard the generic stuff even if they think it's their best material). Pass 2 maps 12 posts across 6 weeks, assigning each to a specific post "shape" and pairing shapes to the source material from pass 1. Pass 3 drafts 3 of the 12 posts in full + outlines the other 9, then does a critique read across all 12 for voice consistency and repetition.
+
+New client this month: Dana Vogel, CEO of Relayloom (the B2B SaaS GTM-automation company from my earlier cold-email work — different client engagement, same company). Discovery call done Tuesday, full series delivered Friday. 12 posts, 6 weeks of content, first week scheduled and live.$pf$,
+  $pf$12-post LinkedIn series delivered Friday: 3 posts drafted in full, 9 outlined at paragraph-level, organized into a 6-week publishing calendar. Dana approved 11 of 12 with light edits, asked to reshape 1 (the "controversy" post — her legal was uncomfortable with the specific competitor callout, which is fair; swapped for a category-level version). Week 1 of posts went live the following Monday; the "opinion" post on the shift from MQL to signal-based GTM got 3.2K impressions + 47 reactions + 11 comments including 2 from VPs of Sales at prospect accounts. Workflow time: 2h 20min day-of; old workflow was 8-10h spread across week 1.$pf$,
+  '11111111-1111-1111-1111-111111111103',
+  'intermediate',
+  'claude-sonnet-4-6',
+  'Claude 4.6 Sonnet',
+  ARRAY['Claude','Notion','LinkedIn','Otter.ai'],
+  ARRAY['writing','ghostwriting','linkedin','thought-leadership','content-strategy'],
+  'approved',
+  '22222222-2222-2222-2222-222222222208',
+  91, 38
+);
+
+INSERT INTO prompt_steps (id, prompt_id, step_number, title, content, result_content, description) VALUES
+
+-- Step 1 --
+('66666666-6666-6666-6666-666666350101',
+ '55555555-5555-5555-5555-555555550035',
+ 1,
+ $pf$Audit the discovery transcript — keep the real opinions, cut the generic$pf$,
+ $pf$I'm writing a LinkedIn thought-leadership series for Dana Vogel, CEO of Relayloom (B2B SaaS, GTM-automation space, Series B $24M ARR, 60-ish employees). Pasting below the full 90-min transcript from our discovery call Tuesday. She was prepared, had notes, rattled through 15+ topics she thinks would make good posts.
+
+Here's the problem: about 70% of what she pitched as "great post ideas" is generic LinkedIn consultant content. "Why MQLs are dead" — 400 other B2B CEOs have written that exact post this quarter. "The future of sales is AI-native" — same. If I write the posts she pitched, her feed will blend into the B2B SaaS LinkedIn background.
+
+I need you to audit the transcript and produce three outputs:
+
+1. **The actual opinions she holds.** Not the ones she offered as "what I think makes a good post" — the ones that came out when she was talking about her own company, her own mistakes, her own customers, her own decisions. Sometimes thrown away in a single sentence. I want these flagged even if she didn't mark them as important. 8-12 of them, quoted or near-quoted from the transcript, with the moment they came up.
+
+2. **The stories she told that aren't on the internet.** Specific moments from her career — decisions she made, calls she took, customers she lost, things that changed her mind. Separate from opinions. Brief summaries (2-3 sentences each). 5-8 of them.
+
+3. **The generic content to CUT.** The things she pitched as good post ideas that I should specifically NOT write because they're commodity LinkedIn content and will dilute her voice. Short list with 1-sentence reason per entry.
+
+[FULL 90-MIN TRANSCRIPT PASTED — Dana Vogel + me in a discovery call Tuesday 10am. Her prepared-notes topic list had 15 ideas. Transcript covers (a) her company history + path to the CEO seat, (b) what Relayloom does technically, (c) her views on go-to-market in 2026, (d) a detailed 12-min section about a churn incident last year where a key customer almost left because of a forecasting error, (e) a 10-min section on a board-level argument she had about hiring a CRO, (f) her views on AI in the B2B SaaS category broadly, (g) a throwaway 90-second story about firing a head of sales who she had hired and made her cry in the elevator, (h) her pitched post topics. Total transcript ~10,000 words — representative 90-min discovery call.]$pf$,
+ $pf$Transcript audit, three outputs.
+
+---
+
+### 1. The actual opinions she holds (10)
+
+These came out when she was talking about her own work, often in passing — not when she was "pitching post ideas."
+
+1. **"The MQL isn't dead, it's just been lying about what it was for the whole time."** (30-minute mark, talking about how Relayloom's own marketing team still scores leads.) This is sharper than "MQLs are dead" — it's an accusation the category has been dishonest, not a funeral. Different post.
+
+2. **"I don't trust any metric a sales leader controls both the numerator and the denominator of."** (22-min, about pipeline-coverage ratios). Opinionated, specific, and I've never seen it on LinkedIn in that form.
+
+3. **"The companies that are going to lose to AI in B2B SaaS aren't the ones that didn't adopt it. They're the ones who adopted it as a feature instead of as a replatforming."** (57-min, AI discussion.) Generic framing ("AI is transformative") would have been: bad. This framing (feature-vs-replatforming) is specific and defensible.
+
+4. **"Signal-based selling is only as good as the ops team behind it — most of the companies talking about it on LinkedIn don't have ops teams that can execute it."** (34-min, GTM views.) This is a contrarian take on a trending topic — she could own this category.
+
+5. **"I hired the wrong CRO for 11 months because the board wanted someone pedigreed and I wanted someone who'd shipped. They won. It cost us $3M."** (46-min, board argument section.) Opinion: pedigree-over-execution is a common board pathology. Also, this is a story + opinion in one — flag for the narrative post slot.
+
+6. **"The first-tier sales hire is always the one you have to fire. I've now fired three. I tell new founders: plan on it."** (64-min, firing-head-of-sales story.) Blunt, experience-grounded, and provocative enough to create engagement.
+
+7. **"Customer success is where you find out whether your product actually does what sales said it did."** (19-min.) Simple but load-bearing — she holds this strongly and it sets up the forecasting-error story from the churn incident.
+
+8. **"When the forecast is wrong it's almost never the forecasting model — it's the sales leader who knows what's happening and hasn't told anyone yet."** (40-min, churn-incident discussion.) This is direct enough to rile up a sales audience, which means engagement.
+
+9. **"The hardest part of being a Series B CEO is that everyone around you thinks the company is doing better than you know it is."** (81-min.) This is the most honest moment in the transcript. Emotional, not strategic — but authentic.
+
+10. **"Product-market fit isn't a moment, it's a surface. You can have PMF for one persona and not another and think you have it and be wrong."** (26-min.) Counter-framing — she's disagreeing with the "you know it when you see it" narrative without naming it.
+
+---
+
+### 2. The stories she told (6)
+
+Brief summaries — specific, named, un-generic.
+
+1. **The Oct '25 forecasting-error / near-churn incident.** One of her top-5 accounts almost churned because her CRO had been signaling "strong renewal" internally while the customer had been privately flagging product gaps to their CSM for three months. Dana only found out during a personal escalation call the customer requested with her. She fired the CRO within 30 days. Account saved, renewed at 60% of prior ACV. Load-bearing narrative post candidate.
+
+2. **Her first CEO board argument** (2024). Board wanted to hire a Salesforce-veteran CRO; Dana pushed for an internal promotion of the VP Sales who'd actually shipped the current model. Board won the argument and she hired the Salesforce vet. 11 months and $3M later, she fired him and promoted the VP. Story for "listen to your gut when it's about who executes" post.
+
+3. **The head-of-sales who cried in the elevator.** Dana had hired a head of sales at Series A, realized within 8 months he wasn't the right person (couldn't transition from a 3-person sales team to a 12-person one), fired him, and he broke down in the elevator after the meeting. She describes this as the moment she learned that firing someone isn't just the decision to fire — it's owning the shape of the relationship you built with them up to that moment. Deeply human, not a "I fired someone and it was good" post.
+
+4. **The early-customer call that changed the ICP.** Pre-Series-A, she took a call with a prospect who told her why they WEREN'T buying — "your product solves a problem for 50-person teams but you're selling to 500-person teams, and your pricing doesn't match." Dana changed the ICP that weekend. Textbook story for "the feedback that changed everything" post.
+
+5. **The 3am product-decision email.** She sent an email at 3am pushing back on her CPO's roadmap prioritization, explaining why the ops-automation layer needed to ship before the reporting upgrade. CPO disagreed, shipped reporting first, customer adoption of the reporting was flat. Post about "the fights worth having as a CEO."
+
+6. **The fundraise she almost didn't close.** Series B lead pulled their TS 4 days before close, Dana had to bridge-fund from existing investors in a weekend. She describes not telling her exec team until the following Monday, even though the company was 10 days from cash-out. Narrative post — but handle with care, has to be current-enough to be relevant without exposing too much.
+
+---
+
+### 3. What to CUT from her pitched list
+
+- **"Why MQLs are dead"** — commodity LinkedIn content; 400 variants already exist; her #1 opinion above ("MQLs are lying about what they were for") is a better version.
+- **"5 metrics every B2B CEO should track"** — listicle format, voice-dilutive, exactly the kind of post that makes an executive feed feel generic.
+- **"How AI is transforming B2B sales"** — too broad; opinion #3 (feature-vs-replatforming) is the specific post inside this vague one.
+- **"Why hiring is a CEO's most important job"** — true but clichéd; the stories in #2 are the ACTUAL version of this point.
+- **"Lessons from Series B"** — vague framing; the specific stories (fundraise, forecasting error, CRO hire) are stronger than any aggregated "lessons" post.
+- **"How I manage my time"** — do not write this post under any circumstances; it's the lowest-trust format on LinkedIn (every productivity take from a CEO reads as performance).
+
+One note: cutting these will feel to Dana like I'm rejecting her best ideas. I'd flag this before the first post goes live — something like "the stuff you pitched is the stuff every B2B CEO pitches, which is why we're not writing it; what you said in passing is the actually-interesting material." She'll either embrace that or push back; better to find out now.$pf$,
+ $pf$Transcript audit complete. 10 real opinions flagged (several from throwaway moments she didn't mark as important — "MQLs are lying about what they were for," "don't trust metrics a sales leader controls both numerator and denominator of," "feature-vs-replatforming for AI adoption"). 6 specific stories from her career pulled (forecasting-error/CRO-firing incident, early-customer ICP-change call, head-of-sales elevator moment, 3am product-decision email, Series B bridge-fund weekend, first board argument). 6 topics cut from her pitched list because they're commodity LinkedIn content — flagged that I'd tell her explicitly before publishing so she knows I'm rejecting her "best ideas" on purpose. This audit is the load-bearing step; the posts get written out of these 22 artifacts, not her original list.$pf$),
+
+-- Step 2 --
+('66666666-6666-6666-6666-666666350102',
+ '55555555-5555-5555-5555-555555550035',
+ 2,
+ $pf$Map 12 posts to a 6-week calendar with assigned post "shapes"$pf$,
+ $pf$Using the 10 opinions + 6 stories from step 1 as source material, design the 12-post arc. Two posts per week for 6 weeks.
+
+Constraints:
+
+- **Post shapes** — each post should be one of: *opinion* (sharp take, 180-220 words, no narrative), *story* (personal narrative, 240-300 words, specific names/numbers), *contrarian* (reframes a common view, 180-240 words), *data-forward* (leads with a specific stat or observation, 160-200 words), *question* (opens with a genuine question Dana wants feedback on, 140-180 words). No more than 2 of any single shape across the 12.
+
+- **Pace over 6 weeks** — week 1 should lead with her strongest material (opinion or story that establishes voice), week 2-3 expand the surface (variety in shape), week 4 can be a quieter/reflective week, week 5-6 should reinforce top posts from earlier + introduce the controversial takes if they're landing with audience.
+
+- **Pair shapes to source** — e.g., a sharp opinion works best with an opinion post, a specific story works best in story shape, etc. Don't cram a story into an opinion post or vice versa.
+
+- **Post-level specifics** — for each of the 12 give me: (a) post number + week, (b) shape, (c) source material from step 1 (opinion # or story #), (d) working headline/hook sentence, (e) 1-sentence "what this post is arguing/showing."
+
+Flag any post where I should run it by Dana's legal or PR first (anything citing real numbers, customers, employees, or calling out competitors by name).$pf$,
+ $pf$12-post calendar, 6 weeks, 2 posts/week.
+
+---
+
+### WEEK 1 — Establish voice
+
+**Post 1 (Week 1, Mon) — Opinion**
+- Source: Opinion #1 ("MQLs are lying about what they were for")
+- Hook: "The MQL isn't dead. It's just finally admitting what it's been the whole time."
+- Argument: MQLs aren't a measurement of buyer intent, they're a measurement of marketing's activity. That's a budget defense, not a pipeline instrument. Stop pretending.
+- **Flag:** high engagement risk — this is a fightable take. Pre-clear with Dana that she'll respond to comments for first 4 hours after posting.
+
+**Post 2 (Week 1, Thu) — Story**
+- Source: Story #4 (early-customer ICP-change call)
+- Hook: "Pre-Series A we lost a deal because a prospect told me the truth: 'your product solves a problem for 50-person teams but you're selling to 500-person teams.' I changed our ICP that weekend."
+- Argument: the feedback that changes your company usually comes from the deal you didn't close, not the ones you did. Specific story form — names Relayloom explicitly, references the actual ICP shift.
+- **Flag:** run by Dana to confirm the "50-person / 500-person" specifics — that mapping is public-ish but worth double-checking it's OK to name.
+
+---
+
+### WEEK 2 — Expand the surface
+
+**Post 3 (Week 2, Mon) — Contrarian**
+- Source: Opinion #4 ("signal-based selling is only as good as the ops team behind it")
+- Hook: "Every CEO on LinkedIn is talking about signal-based selling. Almost none of their companies can actually execute it."
+- Argument: the trend is real, the execution gap is wider than the discourse admits; most B2B SaaS companies under 100 employees don't have an ops team sized to act on signals in the window that makes signals useful. Reframes the trend as an operational problem, not a strategy problem.
+
+**Post 4 (Week 2, Thu) — Data-forward**
+- Source: Opinion #2 ("don't trust any metric a sales leader controls both numerator and denominator of")
+- Hook: "I now refuse to review a metric where my sales leader controls both the numerator and the denominator. Pipeline coverage, win rate on 'qualified' leads — these tell me about the sales leader, not about the business."
+- Argument: specific examples of metrics that fail this test + what to replace them with. Short, punchy, useful.
+
+---
+
+### WEEK 3 — Introduce the hard material
+
+**Post 5 (Week 3, Mon) — Story**
+- Source: Story #1 (Oct '25 near-churn incident)
+- Hook: "In October, I almost lost a top-five customer because my CRO had been telling me the renewal was strong while the customer had been privately flagging product gaps to our CSM for three months. I fired the CRO within 30 days."
+- Argument: the forecast isn't wrong because of the model — it's wrong because the person closest to the account knows something they haven't told you yet. Specific, blunt, names what happened.
+- **Flag:** run by PR + legal. Dana needs to confirm she's comfortable with the "fired within 30 days" public framing. The customer shouldn't be named. I'd frame "one of our top-five customers" and absorb any further specifics into the post only if Dana explicitly confirms.
+
+**Post 6 (Week 3, Thu) — Opinion**
+- Source: Opinion #3 (AI adoption — feature vs replatforming)
+- Hook: "The B2B SaaS companies that lose to AI aren't the ones that didn't adopt it. They're the ones that adopted it as a feature instead of a replatforming."
+- Argument: the category-defining move is rearchitecting your product and workflows around AI capabilities, not bolting on an "AI suggestion" box. Specific, differentiates from generic AI takes.
+
+---
+
+### WEEK 4 — Reflective week
+
+**Post 7 (Week 4, Mon) — Reflective / story-adjacent (reclassify as Story)**
+- Source: Story #3 (head-of-sales elevator moment)
+- Hook: "The hardest part of firing someone isn't the decision. It's owning the shape of the relationship you built with them up to the moment you had to."
+- Argument: reflective; doesn't have a sharp point, has a felt one. Dana processing what she learned from firing someone she'd hired 8 months earlier. Humanizing — rare for a CEO feed.
+- **Flag:** do not name the person fired. Generic "my first head of sales" framing. Run by Dana.
+
+**Post 8 (Week 4, Thu) — Question**
+- Source: Opinion #10 (PMF as a surface, not a moment)
+- Hook: "I've been thinking about product-market fit as a surface, not a moment. You can have it for one persona and not another and think you have it and be wrong. Is this a frame anyone else is using?"
+- Argument: genuine question; engagement-seeking in a legitimate way; invites the audience (other B2B CEOs) to share frames. Lower-calorie post that gives the feed a breather.
+
+---
+
+### WEEK 5 — Reinforce + controversy
+
+**Post 9 (Week 5, Mon) — Opinion (controversial)**
+- Source: Opinion #6 ("the first-tier sales hire is always the one you have to fire")
+- Hook: "The first-tier sales hire is always the one you have to fire. I've now fired three. To any founder reading this: plan on it."
+- Argument: direct, provocative, opinion-forward. This is the post that creates comments — both agreement and pushback. Will generate meaningful reach if posted after the softer Week 4.
+- **Flag:** legal comfort check. "I've fired three" is autobiographical, but Dana's earlier roles are searchable; confirm she's OK being that specific.
+
+**Post 10 (Week 5, Thu) — Story**
+- Source: Story #2 (first board argument over CRO hire)
+- Hook: "In 2024, my board wanted me to hire a pedigreed CRO. I wanted to promote the VP who'd actually shipped the model. Board won. It cost us $3M and 11 months."
+- Argument: board pathology is real; pedigree-over-execution is a common and expensive mistake. Specific numbers, specific framing.
+- **Flag:** "$3M" is a real cost that Dana cited. Double-check comfort with that specific number being public. Alternative framing: "low-seven-figures" if she wants softer.
+
+---
+
+### WEEK 6 — Reinforce + close
+
+**Post 11 (Week 6, Mon) — Contrarian**
+- Source: Opinion #7 + Opinion #8 (CS as truth-discovery layer + CRO-knows-before-forecast-fails)
+- Hook: "The customer success team is where you find out whether your product actually does what sales said it did. The forecast is where you find out whether your CRO will tell you when it doesn't."
+- Argument: paired contrarian takes; connects CS and forecasting as the two moments truth surfaces in a company. Builds on week 3's story (post 5) — late-cycle reinforcement of a theme the feed has now been introduced to.
+
+**Post 12 (Week 6, Thu) — Opinion (vulnerable)**
+- Source: Opinion #9 ("the hardest part of Series B CEO is that everyone thinks you're doing better than you know")
+- Hook: "The hardest part of being a Series B CEO is that everyone around you thinks the company is doing better than you know it is. That includes your board. Maybe especially your board."
+- Argument: the honest moment from the transcript; ends the series on authenticity rather than on sharpness. Good for the long-term voice — signals Dana's not just a takes-machine.
+- **Flag:** Dana should confirm she wants to close the series on this note. It's the most vulnerable post in the set. She may push it to Week 8 or move it earlier. Let her choose.
+
+---
+
+### Shape distribution (checking constraint):
+- Opinion: 4 (posts 1, 6, 9, 12) ✓ — skewed high but opinion is Dana's strongest shape per the transcript
+- Story: 4 (posts 2, 5, 7, 10) ✓
+- Contrarian: 2 (posts 3, 11) ✓
+- Data-forward: 1 (post 4) ✓
+- Question: 1 (post 8) ✓
+
+Slight violation of "no more than 2 of any shape" — opinion + story each hit 4. Argument for accepting: her strongest material in pass 1 was opinions and stories; data-forward and question shapes fit less of what she actually said. I'd run this constraint-break past you before finalizing — we could downshift post 6 or post 11 into a data-forward if we want strict constraint compliance, but the posts would be weaker.
+
+### Legal/PR flags to collect before publishing:
+1. Post 2 — confirm "50-person/500-person" ICP specifics are OK to name publicly.
+2. Post 5 — confirm "top-five customer" framing, "fired within 30 days" language; customer must not be named.
+3. Post 7 — generic "my first head of sales" framing required; cannot name the individual.
+4. Post 9 — confirm autobiographical "I've now fired three" given searchability.
+5. Post 10 — confirm "$3M" specific is OK; alternative "low-seven-figures" available.
+6. Post 12 — confirm tone is what Dana wants to close on.
+
+Recommend: send this calendar to Dana with the 6 flags as a single review email. She responds; I adjust in pass 3 and draft.$pf$,
+ $pf$12-post calendar mapped across 6 weeks. Week 1 establishes voice (strongest opinion + ICP-shift story); week 2 expands surface; week 3 introduces the harder material (churn/firing story + AI-replatforming take); week 4 is the reflective breather (elevator-fire story + genuine-question post); week 5 reinforces with controversy (first-tier-sales-hire + $3M CRO-hire story); week 6 closes with paired contrarian + vulnerable opinion. Shape distribution: 4 opinion / 4 story / 2 contrarian / 1 data-forward / 1 question — slight constraint violation (4 of opinion + story each, not ≤2); flagged as deliberate because Dana's strongest material from pass 1 was in those two shapes, downshifting would weaken posts. 6 legal/PR flags collected: 2 require number/customer confirmation, 2 require comfort-check on autobiographical specificity, 1 requires generic-framing on a fire story, 1 requires tone-comfort on the closing vulnerable post. Calendar goes to Dana as one email, flags resolved, pass 3 drafts from resolved version.$pf$),
+
+-- Step 3 --
+('66666666-6666-6666-6666-666666350103',
+ '55555555-5555-5555-5555-555555550035',
+ 3,
+ $pf$Draft 3 full posts + outline the other 9 + critique for voice consistency$pf$,
+ $pf$Assume Dana approved the calendar with the following responses on the flags:
+- Post 2: OK on "50-person / 500-person" ICP specifics.
+- Post 5: OK with "one of our top-five customers" framing + "fired the CRO within 30 days" language.
+- Post 7: generic framing confirmed.
+- Post 9: OK with "I've fired three" — her prior roles are actually less searchable than I assumed.
+- Post 10: requested "low-seven-figures" instead of "$3M."
+- Post 12: Dana wants to keep as closing post (good call, it's the moment).
+- One new request: swap post 9's specificity from "the first-tier sales hire" to "the first VP Sales hire" — she says it's more precise.
+
+Using the approved calendar:
+1. Draft 3 posts in FULL — pick the 3 highest-leverage posts (your call on which; I'd bet on post 1 for opener, post 5 for story heft, post 9 for controversy, but you decide).
+2. Outline the other 9 at paragraph level — first line + 3-4 body-beat bullets + close. Enough that I can draft them quickly week-by-week but I'm not doing them all now.
+3. Critique pass — read all 12 side by side and flag: (a) any two posts that will feel like the same post to a reader, (b) any voice inconsistencies across posts, (c) the ONE change across the set that would make the series noticeably stronger.
+
+Dana's voice per the transcript: direct, specific, unhedged, willing to be blunt, uses numbers when she has them, doesn't use consultant-speak ("strategic," "leverage," "best-in-class" — never). Short sentences mixed with 1-2 long analytical sentences. Zero emoji. No "Here's the thing:" or "Let me tell you a story" openers.$pf$,
+ $pf$Three full drafts + nine outlines + critique.
+
+---
+
+## THREE FULL DRAFTS
+
+### Post 1 (Week 1 Mon) — Opinion — 198 words
+
+The MQL isn't dead. It's just finally admitting what it's been the whole time.
+
+For 15 years we've treated marketing qualified leads as a pipeline instrument. Form fills plus a lead score plus a handoff to SDRs plus a coverage ratio. It was never a pipeline instrument. It was a budget-defense instrument — a way for marketing to point at activity when someone asked what they were buying.
+
+I'm not arguing against measuring marketing. I'm arguing against pretending the MQL measures buyer intent. It measures marketing's own activity, filtered through a scoring system marketing controls. It's an internally-facing number dressed up as an externally-facing signal.
+
+The interesting work now isn't "what replaces the MQL." It's admitting what the MQL was for, funding that work honestly under a different line item, and building a separate instrument for buyer intent that sales and marketing can't both be the numerator and the denominator of.
+
+Which is hard. Which is why the discourse prefers "MQLs are dead."
+
+---
+
+### Post 5 (Week 3 Mon) — Story — 287 words
+
+In October, I almost lost one of our top-five customers because my CRO had been telling me the renewal was strong while the customer had been privately flagging product gaps to our CSM for three months.
+
+I found out because the customer's VP of Operations scheduled a direct call with me and opened with "I want to be honest with you about where we are."
+
+By the time I hung up I knew three things. One: the CRO had seen the signals. Two: he hadn't told me. Three: the customer had already drafted the churn email and was looking me in the eye to decide whether to send it.
+
+We saved the account. It renewed at 60% of prior ACV, on a contract structure that was frankly generous on our side, and the customer is now one of our most engaged references. The CRO was gone within 30 days.
+
+The lesson I took from the week afterward isn't what you'd expect. It isn't about forecasting models. Every forecasting model I've ever used was technically working — the inputs were being fed, the ratios were being tracked, the dashboards were green.
+
+The lesson is that when the forecast is wrong, it's almost never the model. It's the person closest to the account who knows what's happening and hasn't told you yet. The forecast is only as honest as your sales leader's willingness to tell you about the deal that's wobbling. And some of them never will.
+
+If you're a CEO: you cannot out-dashboard this. You have to build a relationship where your sales leader's career advancement is tied to telling you bad news early, not late.
+
+---
+
+### Post 9 (Week 5 Mon) — Opinion — 184 words
+
+The first VP Sales hire is always the one you have to fire. I've now fired three. To any founder reading this: plan on it.
+
+Not because they're bad people. Usually they're good people who were the right hire for the stage you were at nine months ago and not the right hire for the stage you're at now. Sales leadership is one of the few roles where the job description changes every 12 months, and the person who thrived at 3 reps does not automatically thrive at 12.
+
+The trap is thinking you hired wrong. You didn't. You hired right for the company you had, and the company changed.
+
+The actual skill as founder is noticing the misalignment three months earlier than you're going to notice it, and having the conversation then. Not at month 9 when you're carrying a quota miss into a board meeting.
+
+I have never had that conversation early enough. Across three first VP Sales hires, I have always had it late. I am telling you to have it earlier than I did.
+
+---
+
+## NINE POST OUTLINES
+
+### Post 2 (Week 1 Thu) — Story
+- **Opener:** "Pre-Series A we lost a deal because a prospect told me the truth: 'your product solves a problem for 50-person teams but you're selling to 500-person teams, and your pricing doesn't match.' I changed our ICP that weekend."
+- **Body beats:** (1) the call — he was polite but specific; (2) the weekend — what I went through; (3) the Monday — told the team, repositioned the pitch; (4) the next 6 months — close rate changed within 90 days.
+- **Close:** the deal you lose teaches you more than the deal you won — but only if you can hear it without flinching.
+
+### Post 3 (Week 2 Mon) — Contrarian
+- **Opener:** "Every CEO on LinkedIn is talking about signal-based selling. Almost none of their companies can actually execute it."
+- **Body beats:** (1) the trend is real; (2) execution requires ops muscle most Series A/B companies don't have; (3) signals without ops = more data, no action; (4) the gap = where AI will or won't help, depending on where the missing layer actually is.
+- **Close:** the trend is ahead of the operating model. Catch up before you declare victory.
+
+### Post 4 (Week 2 Thu) — Data-forward
+- **Opener:** "I now refuse to review a metric where my sales leader controls both the numerator and the denominator."
+- **Body beats:** (1) pipeline coverage ratio — classic example, both sides are theirs; (2) win rate on "qualified" leads — same; (3) the replacement — metrics with an external denominator (bookings / market signals); (4) what to run your pipeline review on instead.
+- **Close:** if you can't triangulate the metric to something outside your own funnel, you're being sold back to yourself.
+
+### Post 6 (Week 3 Thu) — Opinion
+- **Opener:** "The B2B SaaS companies that lose to AI aren't the ones that didn't adopt it. They're the ones that adopted it as a feature instead of a replatforming."
+- **Body beats:** (1) feature-addition pattern — suggestion box, autocomplete, summarization; (2) replatforming pattern — workflow + data model rebuilt around AI capabilities; (3) why the first feels like adoption but isn't; (4) what replatforming actually costs and looks like.
+- **Close:** the question isn't did you ship AI — the question is what got thrown away when you did.
+
+### Post 7 (Week 4 Mon) — Story (reflective)
+- **Opener:** "The hardest part of firing someone isn't the decision. It's owning the shape of the relationship you built with them up to the moment you had to."
+- **Body beats:** (1) my first head of sales — had hired him personally; (2) the 8 months I spent not acknowledging he wasn't right; (3) the fire, the elevator after; (4) what I think about it two years later.
+- **Close:** the relationship doesn't end in the room where you deliver the news. It ends in how you own the 8 months you spent not telling them.
+
+### Post 8 (Week 4 Thu) — Question
+- **Opener:** "I've been thinking about product-market fit as a surface, not a moment. You can have it for one persona and not another and think you have it and be wrong."
+- **Body beats:** (1) the 'moment' framing — found it, done, scale; (2) the problem — PMF-for-whom; (3) our experience — had it for SMB, scaled to mid-market, PMF was not there yet; (4) is this a frame anyone else is using?
+- **Close:** genuinely asking. If your framing works better, I want to hear it.
+
+### Post 10 (Week 5 Thu) — Story
+- **Opener:** "In 2024, my board wanted me to hire a pedigreed CRO. I wanted to promote the VP who'd actually shipped our sales model. The board won the argument. It cost us low-seven-figures and 11 months."
+- **Body beats:** (1) the argument — they had their case, I had mine; (2) the compromise — hired the pedigreed person; (3) 11 months in — the mismatch was obvious; (4) the fire, promoted the internal VP, the VP is still here 18 months later.
+- **Close:** your board is optimizing for a risk-adjusted shortlist. You're optimizing for the execution of your specific model. Those aren't the same optimization. The board is often wrong. You still have to make the call.
+
+### Post 11 (Week 6 Mon) — Contrarian
+- **Opener:** "The customer success team is where you find out whether your product actually does what sales said it did. The forecast is where you find out whether your CRO will tell you when it doesn't."
+- **Body beats:** (1) CS as truth layer — post-sale conversations are the only unmediated channel; (2) forecast as truth layer — requires the sales leader to surface bad news; (3) these are the two moments where the company's self-story meets reality; (4) most dashboards optimize for neither.
+- **Close:** the CEO's job is to make both moments safe and expected, not rare and punished. If your CS team is defensive and your CRO only surfaces good news, you're running a story, not a company.
+
+### Post 12 (Week 6 Thu) — Opinion (vulnerable)
+- **Opener:** "The hardest part of being a Series B CEO is that everyone around you thinks the company is doing better than you know it is. That includes your board. Maybe especially your board."
+- **Body beats:** (1) the board sees a filtered version — pitch-deck-ified; (2) the team sees a filtered version — roadmap-ified; (3) the CEO sees the un-filtered version; (4) the gap between what you know and what they think is where loneliness lives.
+- **Close:** this isn't a complaint. It's the job description. What nobody tells you at funding close is that this gap doesn't get smaller as the company scales — it gets wider. Plan for that.
+
+---
+
+## CRITIQUE ACROSS ALL 12
+
+### (a) Posts that risk feeling like the same post
+
+**Posts 5 and 10 are close siblings.** Both are "I made a wrong call about a sales leader and it cost me." Post 5 is the CRO who didn't surface bad news; post 10 is the board-hired CRO who was the wrong profile. A reader encountering both within 3 weeks may blur them. **Recommendation:** emphasize the *distinct* mechanism more in each — post 5 is about *information flow* (the CRO knew and didn't say), post 10 is about *pedigree vs. execution* (the CRO was the wrong shape of person from hire). Add a one-line opener distinction: post 10 could start "This is a different fire. In 2024…" and name that it's a separate story.
+
+**Posts 3 and 11 are close.** Both are "the discourse around [trend] is ahead of the operating reality." Post 3 is signal-based selling, post 11 is CS + forecasting. Less risk because the topics are different, but the argument shape is the same. Accept as-is — the mechanism is Dana's consistent voice, not repetition.
+
+### (b) Voice inconsistencies
+
+Overall voice is tight — direct, specific, unhedged. Three flags:
+
+**Post 8 (question post) slightly breaks voice.** "Is this a frame anyone else is using?" is slightly softer than the rest of the set. Dana's voice in the transcript was not a "what do you think?" voice. Fix: keep the question but make it a confident-question. "Is anyone else framing PMF this way? Because I haven't seen it, and I'd like to know if I'm alone on it." — same question, sharper voice.
+
+**Post 6 closer ("the question isn't did you ship AI — the question is what got thrown away when you did") is pithier than the rest of the set.** Not a problem; just flag that it stands out. If Dana wants it sharper, leave it; if she wants consistency, soften.
+
+**Post 12 risks over-hedging with "This isn't a complaint. It's the job description."** In Dana's voice that reads as explaining-to-the-reader, which she doesn't do in the transcript. Fix: cut those two sentences. Let the post stand without the meta-framing. The final line ("It gets wider. Plan for that.") is already doing that work.
+
+### (c) The ONE change that would make the set noticeably stronger
+
+**Move post 12 to post 7's slot (Week 4 Monday) and move post 7 to post 12's slot (Week 6 Thursday).**
+
+Currently the set ramps to controversy in Week 5 and closes on vulnerability in Week 6. Flipping the Week 4 reflective post with the Week 6 vulnerable post does two things:
+
+1. The vulnerability post as the Week 4 reflective moment (the "breather") is actually more effective than the elevator-fire story — it's more universal (every CEO recognizes the "everyone thinks it's going better than I know" feeling) and less specific-story-dependent.
+
+2. The elevator-fire story as the Week 6 closer does more narrative work — it's the most human moment Dana has, and closing on it rather than on an opinion post sends readers off with the felt sense of who Dana is, which is what a thought-leadership series should build toward.
+
+This also tightens the series arc: weeks 1-3 are sharp takes, week 4 is honest vulnerability, weeks 5-6 ramp back up into opinions and close on story — symmetric structure instead of the current escalation-then-landing shape. **Recommend this swap.**$pf$,
+ $pf$Three full posts drafted (198/287/184 words — post 1 MQL-opinion, post 5 churn-incident story, post 9 VP-Sales-hire controversy). Nine outlined at opener + 3-4 body beats + close. Critique pass surfaced: (a) two post-pairs at risk of feeling like the same post — posts 5+10 (both CRO-fire stories, recommend explicit mechanism-differentiation opener on post 10); posts 3+11 (same argument shape, different topics — accepted as consistent voice not repetition); (b) three voice flags — post 8 question too soft (sharpen to confident-question); post 6 closer unusually pithy (flag, accept); post 12 over-hedges with meta-framing (cut two sentences); (c) load-bearing change: swap post 7 and post 12 positions — move vulnerability post to Week 4 as the reflective breather, close the series on Week 6 with the elevator-fire story because human closer builds felt-sense of Dana better than opinion closer. Dana approved 11 of 12, reshaped 1 (competitor-callout became category-level). Post 1 MQL opinion hit 3.2K impressions / 47 reactions / 11 comments including 2 VPs of Sales at prospect accounts.$pf$);
+
+-- =========================================================================
 -- END OF FILE — append next project(s) below this line.
 -- Iterations working the Content queue: add 2–3 projects per iteration,
 -- appending below this comment. Do NOT rewrite existing projects.

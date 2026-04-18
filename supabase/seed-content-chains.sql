@@ -2232,6 +2232,591 @@ You have a clean plan. Execute week 1 this week; momentum is half the value of t
  $pf$30-day plan, week by week: week 1 prep + segmentation; week 2 rewrite/publish/redirect; week 3 list migration + farewell email; week 4 cost reduction + calendar reminders. Farewell email drafted at voice-level (not generic template). Post-migration monitoring plan identifies 4 signals in priority order (GSC indexation, impressions/clicks on migrated posts, isolated Amazon commissions on the migrated pages with new tracking IDs, and the hidden risk — Site A's pre-existing core posts drifting as attention shifts). Explicit "stop and rethink" threshold: ±$50/mo on combined revenue by day 60 means migration is net-neutral and not worth further investment.$pf$);
 
 -- =========================================================================
+-- Project 55-0008 | Monday leadership-sync prep workflow | Nina Kowalski | Productivity | 3 steps
+-- =========================================================================
+
+DELETE FROM prompt_steps WHERE prompt_id = '55555555-5555-5555-5555-555555550008';
+DELETE FROM prompts      WHERE id        = '55555555-5555-5555-5555-555555550008';
+
+INSERT INTO prompts (
+  id, title, description, content, result_content,
+  category_id, difficulty, model_used, model_recommendation,
+  tools_used, tags, status, author_id, vote_count, bookmark_count
+) VALUES (
+  '55555555-5555-5555-5555-555555550008',
+  $pf$Monday leadership-sync prep — turned 90 min of Sunday scrolling into a 20-min Claude workflow$pf$,
+  $pf$Built a reusable prep workflow for my agency's Monday 9am leadership sync. Three inputs (Asana digest, #leadership Slack thread, my rough notes) → structured agenda + blockers + decisions-needed list. Took three Mondays of iteration before it actually landed.$pf$,
+  $pf$I run ops at a 50-person creative agency. Every Sunday night I'd spend roughly 90 minutes assembling Monday's leadership-sync agenda — scrolling the #leadership Slack channel, skimming the Asana project-status digest, chasing down which client issues from last week actually needed a leadership call, and trying to arrive with a list that wouldn't get derailed in the first 10 minutes of the meeting. It's the kind of work that doesn't feel important but eats my Sunday evenings.
+
+I wanted Claude to do the assembly, not the thinking. My inputs were already there — Asana's weekly digest lands in my inbox Friday afternoon, the #leadership Slack thread is just copyable text, and I already jot 10-15 lines of my own context during the week. The question was whether Claude could structure those three inputs into a coherent agenda + a blockers-escalation list + a decisions-needed list, consistently, without me having to babysit it.
+
+Three passes over three Mondays. Pass 1 was workflow design — figure out what the output shape should be before writing a prompt. Pass 2 built the actual production prompt template. Pass 3 was a dry-run on real data where Claude critiqued its own output after I flagged two things it missed, then shipped a v2 of the template. Used Sonnet 4.6 throughout — this is structured summarization, not heavy reasoning, so Opus would've been overkill.$pf$,
+  $pf$Workflow is now on its sixth Monday. Actual time: 18-22 minutes including pasting inputs and reviewing the output. That's down from ~90 minutes. More importantly, the meeting itself is tighter — first three weeks of running it, we cut the leadership sync from 75 minutes to 48 minutes because the agenda arrives pre-structured and the "wait what's the context on X" detours are mostly gone.
+
+Two things I didn't expect: (1) the "decisions needed" list has gotten me to stop making calls in DMs that should've been leadership-sync calls — seeing "awaiting leadership decision: 4 items" on the Monday doc every week made the pattern visible. (2) the workflow has become documentation — if I'm out, my second-in-command can run the same three inputs through the same prompt and get a meeting-ready doc. That was unintentional and is now the biggest ROI.
+
+What I'd tell another ops person: don't start by writing a prompt. Start by sketching the output shape you actually want your meeting to run from — the prompt falls out of that backwards.$pf$,
+  '11111111-1111-1111-1111-111111111107',
+  'beginner',
+  'claude-sonnet-4-6',
+  'Claude 4.6 Sonnet',
+  ARRAY['Claude','Asana','Slack','Notion'],
+  ARRAY['operations','meetings','workflow','agency','sop','leadership'],
+  'approved',
+  '22222222-2222-2222-2222-222222222206',
+  56, 31
+);
+
+INSERT INTO prompt_steps (id, prompt_id, step_number, title, content, result_content, description) VALUES
+
+-- Step 1 --
+('66666666-6666-6666-6666-666666680101',
+ '55555555-5555-5555-5555-555555550008',
+ 1,
+ $pf$Design the prep workflow — output shape first, prompt second$pf$,
+ $pf$I run ops at a 50-person creative agency and I want to stop spending my Sunday evenings assembling Monday's 9am leadership-sync agenda. Before I write a prompt, I want your help designing the workflow.
+
+My inputs (all available by Friday afternoon):
+1. Asana weekly digest email — project status changes, overdue tasks, milestones hit, team-level load heatmap. Maybe 2 pages of text.
+2. #leadership Slack thread — our private leadership channel, I can copy the last 7 days of posts. Usually 30-60 messages.
+3. My own notes — 10-15 bullet lines I jot during the week when I notice something (a client escalation, a hiring concern, a finance flag).
+
+Meeting attendees: 5 people — me (ops), our founder/CEO, head of accounts, head of creative, head of finance/admin. Meeting is 60 minutes, 9-10am Monday.
+
+What I DON'T want: a generic "weekly summary." What I DO want: a doc that the CEO can open at 8:58am and run the meeting from, with zero pre-reading required. Before we write the prompt, help me nail down the output shape. What three or four sections does this doc actually need? What's the right level of summarization? And what should I deliberately NOT include, because it's noise?$pf$,
+ $pf$Good move to design the output before the prompt — 80% of bad-AI-workflow complaints trace back to someone writing the prompt first. Let's work backwards from what makes your CEO open the doc and immediately run the meeting.
+
+Five leadership heads in 60 minutes is ~12 minutes of shared attention per person. The doc has to respect that budget. I'd argue for four sections, in this specific order, because the order is load-bearing:
+
+**1. "Running the agency this week" — 5 bullets max.**
+Not a status report. A scannable snapshot of what state the business is in right now. Example bullets: "3 projects behind schedule (2 on client-side delays, 1 on our side)", "Creative team at 94% utilization — 2nd consecutive week", "Two new client conversations warm, one at proposal stage". This section calibrates everyone. If it's longer than 5 bullets you're padding.
+
+**2. Decisions needed today — numbered, with owner and what a "yes" or "no" unlocks.**
+This is the section that earns the meeting its existence. Every item is a decision that couldn't be made in a DM and is actively blocking something. Format each as: the decision (one line), the context you need to make it (2 sentences max), the recommendation if there's an obvious one. Cap at 4 decisions — if there are more, some of them aren't actually decisions, they're discussion topics.
+
+**3. Escalations the CEO should know about — bulleted, grouped by client.**
+Client issues that haven't broken yet but are trending. The distinction from "decisions needed": these might become decisions but aren't yet. The CEO reads them to stay calibrated, not to act.
+
+**4. Parking lot — 1 line per item.**
+Things raised in Slack or the digest that don't rise to leadership-sync attention. This section is where most of the Slack thread ends up. It proves to the team that nothing got lost. You don't discuss this section in the meeting unless someone pulls from it.
+
+**What to deliberately exclude:**
+- Project status detail that's in Asana anyway — pointers to Asana are fine ("see Asana > ProjectX"), copy-paste is noise.
+- Individual contributor-level updates. Team-level only.
+- Financial numbers unless they're flagging something. "Revenue hit target" doesn't need 4 leaders' Monday.
+- Anything with "we discussed this last week." If it was discussed and didn't land, it's a decision (section 2), not a re-discussion.
+
+**One design note:** keep the doc to one page rendered. If your prompt is producing 2 pages, the summarization is too loose. Your CEO can read 1 page at 8:58; anything longer and the doc stops being useful.
+
+Once you ratify this output shape (or push back), the prompt template is a 20-minute job. The design is the hard part.$pf$,
+ $pf$Defines the doc as 4 sections in a load-bearing order — running state, decisions, escalations, parking lot — with explicit exclusions (project-level detail, contributor updates, re-discussions). One-page rendered ceiling. Prompt construction deferred to step 2.$pf$),
+
+-- Step 2 --
+('66666666-6666-6666-6666-666666680102',
+ '55555555-5555-5555-5555-555555550008',
+ 2,
+ $pf$Build the production prompt template$pf$,
+ $pf$Great — the four-section structure is right. "Decisions needed" being section 2 (not 3 or 4) is exactly the reframe I needed; in my old doc format that section was buried. Now let's write the actual prompt template I'll run every Monday.
+
+Build it so I can copy-paste my three inputs into clearly labeled slots, run the prompt, and get the doc in one pass. I want the prompt to handle the realistic edge cases: sometimes my personal notes are blank (I forget to jot things). Sometimes the Slack thread has a heated back-and-forth that isn't actually business-critical, it's just venting. Sometimes Asana will surface a milestone that looks scary but is totally expected (a project "turning red" on the timeline view because we intentionally added scope last week).
+
+Give me the prompt as production text I can paste into Claude every Monday, plus any framing instructions I should know about using it.$pf$,
+ $pf$Here's the production template. Paste as-is every Monday — only the three input blocks change. I've put the role framing, the output rules, and the edge-case handling in the prompt itself so you don't have to remember them.
+
+---
+
+**Template:**
+
+```
+You are preparing a Monday leadership-sync agenda for a 50-person creative agency.
+Attendees: CEO, head of ops (me), head of accounts, head of creative, head of finance.
+Meeting is 60 minutes. The doc you produce is what the CEO runs the meeting from — no pre-reading.
+
+Output exactly four sections, in this order, following these rules:
+
+## 1. Running the agency this week
+- Exactly 3–5 bullets. Never more.
+- Each bullet is a current-state observation, not an event log.
+- Team-level only. No individual contributors.
+- If Asana flags a project as at-risk, verify against my notes: sometimes a project turns red because we intentionally added scope. If my notes say a red project is expected, reflect that ("Project X on the timeline is intentionally red — scope addition last week, not a delivery risk").
+
+## 2. Decisions needed today
+- Numbered list, max 4 items.
+- Format each: (a) The decision in one line. (b) Context in ≤2 sentences. (c) If there's an obvious recommendation, include "Recommendation:" on a new line.
+- A "decision" means something blocked awaiting a leadership call — not a discussion topic. If something from inputs looks like a decision but the context shows it's a discussion, put it in section 4.
+
+## 3. Escalations the CEO should know about
+- Grouped by client name.
+- Each escalation: 1-2 sentences on state + what's trending.
+- Include only items that haven't broken yet but might within 2 weeks. Broken-already items belong in section 2.
+
+## 4. Parking lot
+- 1 line per item.
+- Everything from the Slack thread that was venting, side-discussion, or non-business-critical goes here.
+- Things raised in the digest that don't rise to leadership attention also go here.
+- If this section runs longer than 8 items, compress — group similar items under one line.
+
+**Handling my inputs:**
+- If my personal notes block is empty or says "none": proceed without them, but flag at the top of the doc "No personal notes this week — coverage is inputs-only."
+- If the Slack thread contains heated exchanges or venting, route to section 4 unless the underlying subject is genuinely business-critical. Your signal for "genuinely business-critical" is: would this item block a project, cost money, or affect a client relationship if unaddressed? If no to all three, it's venting.
+- If Asana flags a milestone that reads scary but my notes indicate it was expected, do NOT surface it in section 1 as at-risk.
+
+**Output length ceiling:** the entire doc, rendered, must fit on one page. If you're about to exceed that, cut section 4 first, then tighten section 3 bullets.
+
+---
+
+**INPUT 1 — Asana weekly digest:**
+[PASTE ASANA DIGEST HERE]
+
+**INPUT 2 — #leadership Slack thread (last 7 days):**
+[PASTE SLACK THREAD HERE]
+
+**INPUT 3 — My personal notes:**
+[PASTE NOTES HERE or write "none"]
+```
+
+---
+
+**A few notes on using it:**
+
+- The "running the agency this week" / "decisions needed" split is the one I'd watch most carefully. If Claude starts putting things in section 1 that should be decisions, your personal notes probably aren't doing enough work — specifically, when you have a decision needed, write it in your notes as "Decision needed: X." The explicit framing helps Claude route correctly.
+
+- On first run, the Slack-thread-routing rule will probably misclassify once or twice. Common failure: something that looks like a vent is actually a subtle escalation (someone airing frustration because a client relationship is quietly eroding). If you catch this, adjust input 3 on the next run — add a note flagging the thread. Don't rewrite the prompt for edge cases; adjust your notes to resolve the ambiguity.
+
+- Run it as a fresh Claude conversation every week. Don't try to maintain state across weeks. If the meeting produced outcomes that need to carry forward, you encode them in next week's personal notes.
+
+Ship this Monday, watch where it misfires, and refine on a real failure — not on a hypothetical one.$pf$,
+ $pf$Production-ready prompt template with explicit section specs (counts, formats, exclusions), three labeled input slots, and inline edge-case handling (empty notes, venting-vs-escalation, scary-but-expected Asana flags). One-page output ceiling is enforced in the prompt itself.$pf$),
+
+-- Step 3 --
+('66666666-6666-6666-6666-666666680103',
+ '55555555-5555-5555-5555-555555550008',
+ 3,
+ $pf$Dry-run on last Monday's data + critique + v2 refinement$pf$,
+ $pf$Ran the template on last Monday's real inputs. Two things went wrong:
+
+(1) Claude put "Malibu Coast rebrand — scope creep conversation" in Parking Lot when it should have been in Decisions Needed. The client wants us to add a packaging-design track for a fixed $18k and our creative director thinks it's under-priced. We need a leadership call on whether to counter or accept. Claude routed it to parking lot because the Slack thread was casual, but the underlying ask IS a decision.
+
+(2) Escalations section listed "Nordic Fit — production timeline slipping" as a watch item. In reality it already broke — their launch date slipped by 2 weeks and the contract has a penalty clause we're now exposed to. Claude undercalled the severity because my personal notes said "Nordic Fit — timeline concerns" (I was being vague). This should have been section 2 (decision: do we invoke force majeure?) or at minimum a harder call-out in section 3.
+
+What does this tell us about the prompt? And do you want to see the actual output — I can paste it if helpful.$pf$,
+ $pf$Don't paste the output — I can diagnose both failures from what you've told me and they reveal two different issues.
+
+**Failure 1 (Malibu Coast): a prompt bug.** This is my fault. The "venting-vs-escalation" routing rule was written with the assumption that a venting-toned Slack thread means venting-toned content. In practice, your agency's Slack culture is casual — real decisions get raised in casual tones. The rule filtered signal as noise. The fix is to tighten the routing criteria from "what's the tone" to "what's the underlying ask." Specifically: if any message in the thread contains a concrete financial or scope proposal from a client, it's NEVER parking lot, regardless of the surrounding chatter.
+
+**Failure 2 (Nordic Fit): an input bug.** Claude undercalled this because your notes said "timeline concerns," which is ambiguous. Under the current prompt rules, ambiguous severity defaults to the softer section. This is actually the correct default — Claude shouldn't escalate on guesses. The fix isn't the prompt; it's your input discipline. When a vague phrase could be "watch" or "broken," resolve the ambiguity in the notes, not the prompt.
+
+Here's the v2 prompt diff — only two changes, both in the handling-my-inputs block:
+
+**CHANGE 1 (add at the top of the Slack-routing section):**
+```
+- OVERRIDE: If any message in the Slack thread contains a specific client-initiated
+  financial or scope proposal (a dollar figure, a timeline change, a deliverable add/cut),
+  that item is ALWAYS a decision (section 2), regardless of the surrounding thread tone.
+  Casual tone does not downgrade it.
+```
+
+**CHANGE 2 (add at the bottom of the handling-my-inputs block):**
+```
+- When my personal notes flag a client issue with vague severity words ("concerns",
+  "watch", "not great"), do NOT guess severity. Place in section 3 (escalations) and
+  add "[sev-unclear — confirm at meeting]" to the end of the line. This signals that
+  the input was under-specified and surfaces it for human judgment.
+```
+
+**And one note on YOUR side:** update your personal-notes habit. For any client issue, write one of four severity tags — "[watch]", "[active issue]", "[broken]", "[decision-needed]". 2 seconds to type, kills the ambiguity class at the source. The prompt alone can't fix input discipline; the prompt + your writing it is what makes the workflow durable.
+
+With those two changes, rerun last week's inputs. If Malibu Coast moves to section 2 and Nordic Fit is either in section 2 (if your new notes say [broken]) or flagged in section 3 with the [sev-unclear] tag, the workflow's fixed for the failure modes you actually hit. Don't patch for hypothetical future misclassifications until you see them.
+
+One last thing: the fact that you noticed both failures on dry-run, not in the actual meeting, is the workflow working. The prep ran. The dry-run caught the misfires. That's the whole value of the Sunday-night time drop — you now have time to review BEFORE the meeting instead of assembling in a scramble.$pf$,
+ $pf$Diagnoses two distinct failure classes — prompt bug (tone-vs-content routing) vs. input bug (ambiguous severity). Ships v2 prompt with two targeted changes and a personal-notes severity-tag convention. Explicit note that prompt refinement is paired with input-discipline changes; prompt alone can't fix under-specified inputs.$pf$);
+
+-- =========================================================================
+-- Project 55-0009 | PHI data boundary RFC — Postgres monolith | Derek Lawson | Coding | 5 steps
+-- =========================================================================
+
+DELETE FROM prompt_steps WHERE prompt_id = '55555555-5555-5555-5555-555555550009';
+DELETE FROM prompts      WHERE id        = '55555555-5555-5555-5555-555555550009';
+
+INSERT INTO prompts (
+  id, title, description, content, result_content,
+  category_id, difficulty, model_used, model_recommendation,
+  tools_used, tags, status, author_id, vote_count, bookmark_count
+) VALUES (
+  '55555555-5555-5555-5555-555555550009',
+  $pf$PHI data boundary in our Postgres monolith — 5-round RFC before Friday's eng review$pf$,
+  $pf$Wrote an architecture RFC with Claude for a health-tech PHI-separation decision. 5 passes: honest read of both options, audit-log boundary design, pushback on "physical separation," migration plan, final RFC doc ready for Notion.$pf$,
+  $pf$I'm CTO at a 40-person health-tech startup. We run on Rails + Postgres, single instance, patient records in the same DB as everything else. We're at 40k patient records, projected 200k in 12 months. Our compliance consultant flagged that our BAA (Business Associate Agreement) might require "physical separation of PHI" and the eng team has been asking whether we should break patient-records into a separate service + DB with event-driven sync.
+
+I didn't want to walk into Friday's eng review with a recommendation I hadn't stress-tested. Used Claude Opus 4.6 over 5 rounds to pressure-test the architecture before I committed to a direction. This is exactly the work where Opus earns its keep — weighing compliance constraints against operational complexity, pushing back when I was reaching for the wrong abstraction, and keeping me honest when my lean was "do the bigger thing because it feels safer."
+
+The 5 rounds, in order: honest read of both options with me naming my lean. Audit-log boundary design. My pushback on whether this is enough given our BAA language. Migration plan with rollback. Final RFC doc.
+
+I walked into Friday's review with a clear recommendation (stay monolithic, add schema-level PHI boundary with RLS) and a doc that answered every question the team raised. Decision landed in 35 minutes.$pf$,
+  $pf$Team ratified the recommendation Friday. We're staying on a single Postgres instance with a new `phi` schema, RLS policies, isolated backup chain, and an immutable audit log. Migration is mid-flight — moved the first PHI table last Tuesday with the dual-read/dual-write pattern Claude specified; cutover target is 3 weeks out.
+
+Biggest unexpected win: the RFC itself. The doc Claude produced in the 5th round is the first architecture doc at this company that every engineer actually read before the meeting. Usually I'd write 3 pages, 1 person would actually read it, and we'd re-litigate everything in the meeting. This time the doc was tight, the alternatives section was honest (not "here are 3 strawmen I demolished"), and the open-questions section was real open questions. The engineer who was most skeptical of staying-monolithic ended up sending me a Slack message: "this is the first RFC here where I trusted the alternatives section."
+
+Takeaway I didn't expect: the highest-value Claude pass was round 3 (my pushback on "physical separation"). I was pattern-matching on industry orthodoxy — "PHI must be separate" — and Claude pushed back on what that ACTUALLY means under HIPAA vs. what the word "separation" means casually. If I'd done this alone, I would've over-architected.$pf$,
+  '11111111-1111-1111-1111-111111111104',
+  'advanced',
+  'claude-opus-4-6',
+  'Claude 4.6 Opus',
+  ARRAY['Claude','Postgres','Rails','Notion'],
+  ARRAY['architecture','hipaa','phi','postgres','rls','healthcare','rfc'],
+  'approved',
+  '22222222-2222-2222-2222-222222222209',
+  112, 58
+);
+
+INSERT INTO prompt_steps (id, prompt_id, step_number, title, content, result_content, description) VALUES
+
+-- Step 1 --
+('66666666-6666-6666-6666-666666690101',
+ '55555555-5555-5555-5555-555555550009',
+ 1,
+ $pf$Context dump + honest read — monolith or break out the PHI service?$pf$,
+ $pf$I'm CTO at a health-tech startup, 40 people, 3-person core engineering team. Stack: Ruby on Rails monolith, single Postgres 15 instance on AWS RDS (db.r6g.xlarge), Redis for job queue, SES for email. We handle patient intake, appointment scheduling, and clinician messaging for mid-sized primary care clinics. All data — patient records, appointment history, clinical notes, billing info, user accounts, audit logs — lives in one `public` schema in one Postgres database.
+
+Scale: 40,000 patient records today, projected 200,000 in 12 months. Peak traffic is ~180 req/s, mostly reads. Database is at ~14% CPU average, no concerning hotspots. HIPAA-covered entity, and we have signed BAAs with 22 clinic customers.
+
+Our compliance consultant reviewed our architecture last month and raised two concerns: (a) "PHI should be physically separated from non-PHI data" and (b) "audit trail for PHI access should be immutable and independent of application code." The team has been debating two directions:
+
+**Option A (stay monolithic):** Keep everything in one Postgres. Add row-level security, separate PHI-related tables under a schema, improve audit logging.
+
+**Option B (break out patient service):** Extract patient-records and clinical-notes into a separate Rails service with its own Postgres database. Event-driven sync for the small number of cross-service reads. Estimated 6-8 weeks of engineering work with our 3-person team.
+
+My personal lean is Option A. My anxiety is that I'm leaning A because it's less work, not because it's right. I want your honest read BEFORE I dig into implementation. What am I missing? What's the actual decision criterion here — not the obvious "compliance" answer, but the real one?$pf$,
+ $pf$Both options are viable. Your lean toward A is defensible, but not for the reason you think — and you're right to suspect your own lean. Let me reframe the decision, because the scale framing is a red herring.
+
+**Scale isn't the question.** 40k → 200k records is monolith-happy territory. Postgres on a db.r6g.xlarge with your traffic profile is nowhere near a limit that justifies the operational complexity of a second service. If scale were the only driver, this conversation wouldn't exist. You know this.
+
+**The real question is blast-radius of a compliance breach.** If a vulnerability in your Rails app — SQL injection, broken authorization, leaked credentials — exposes your database, what does the attacker get? In your current architecture, one broken query gets them everything. In Option B, one broken query on the clinician-messaging service gets them messages but not the underlying patient records, because the records DB isn't reachable from that service's Rails process. That's the real value proposition of Option B, and it has nothing to do with scale.
+
+**But Option B isn't the only way to reduce blast radius.** You can get most of the blast-radius reduction inside a single Postgres instance using a combination of:
+
+1. **Separate schema (`phi.*`) for patient data**, with ownership restricted to a dedicated DB role that the app assumes only for PHI-touching requests.
+2. **Row-level security policies** that tie every PHI-row read to an authenticated clinician-user session, enforced at the DB layer, not the app layer.
+3. **An immutable audit log** — either a separate schema with INSERT-only grants and a revoke on UPDATE/DELETE, or logical replication to a write-once store like S3 via pglogical + a Lambda.
+4. **Network-level isolation** — require all PHI-schema connections to come from a specific security group, disallowed from your public API process.
+
+That gets you ~80% of the practical blast-radius reduction of Option B at ~15% of the engineering cost, AND it leaves you a clean future-extraction path: if in 18 months you DO decide to break out the service, the schema boundary is already drawn and the migration is "point Rails at a different connection string," not "redesign the data model."
+
+**What I'd actually recommend:** Option A, but a stronger version than what your engineers are probably describing. Not just "add RLS," but: dedicated schema, dedicated DB role, RLS tied to authenticated sessions, immutable audit log, network-level isolation. Call this Option A+.
+
+**Where I'd push back on my own recommendation:** if your compliance consultant's advice on "physical separation" is coming from a specific BAA clause that uses the words "physical separation" as a legal requirement (not best-practice advice), Option A+ might not satisfy it and you need Option B. You haven't told me whether "physical separation" is a compliance-consultant best-practice or a BAA clause. That distinction matters more than anything else we've discussed.
+
+Before we go further: pull the BAA language and tell me what it literally says. That's the binary that collapses this decision.$pf$,
+ $pf$Reframes the decision from scale to blast-radius of breach. Argues for "Option A+" — single Postgres with dedicated schema, RLS, immutable audit log, network isolation — as ~80% of Option B's value at ~15% of the cost. Flags the binary question: is "physical separation" a BAA clause or consultant best-practice? Defers committing until that's resolved.$pf$),
+
+-- Step 2 --
+('66666666-6666-6666-6666-666666690102',
+ '55555555-5555-5555-5555-555555550009',
+ 2,
+ $pf$Design the audit-log boundary — schemas, RLS, immutable append-only$pf$,
+ $pf$The BAA language says "reasonable safeguards to ensure segregation of PHI from non-covered data" — NOT "physical separation." I think that supports Option A+. Let me park the compliance check for the next round and have you design the technical boundary.
+
+Give me the actual schema-level design: the `phi` schema layout, the RLS policies, the audit log table, the DB roles, and the grants. Concrete SQL, not a sketch. Assume our current patient-records tables are `patients`, `appointments`, `clinical_notes`, and `patient_messages` — all currently in `public`. We'll migrate them.$pf$,
+ $pf$Here's the boundary design. Four pieces: schemas, roles, RLS policies, audit log. SQL is production-shaped, not psuedocode.
+
+**1. Schemas and roles:**
+
+```sql
+-- Create the PHI schema
+CREATE SCHEMA phi;
+
+-- App-level roles (no humans log in as these)
+CREATE ROLE app_nophi NOLOGIN;   -- default role for most app operations
+CREATE ROLE app_phi   NOLOGIN;   -- elevated role assumed only for PHI access
+CREATE ROLE audit_writer NOLOGIN; -- only inserts into audit log
+
+-- Connection role the Rails app uses; it can SET ROLE to the above
+CREATE ROLE app_connection LOGIN PASSWORD '<secret>';
+GRANT app_nophi, app_phi, audit_writer TO app_connection;
+
+-- Default for app_connection is app_nophi — least privilege
+ALTER ROLE app_connection SET role = 'app_nophi';
+```
+
+In Rails, wrap every request that touches PHI with `SET LOCAL role app_phi;` at the start of the DB transaction, reverting to `app_nophi` at end. This makes "does this request touch PHI" an explicit, auditable decision in code — not an accident.
+
+**2. PHI schema grants:**
+
+```sql
+-- phi.* tables only accessible to app_phi role
+REVOKE ALL ON SCHEMA phi FROM PUBLIC;
+GRANT USAGE ON SCHEMA phi TO app_phi;
+-- Tables granted selectively (see below per-table)
+```
+
+**3. Example table + RLS policy (patients):**
+
+```sql
+CREATE TABLE phi.patients (
+  id           UUID PRIMARY KEY,
+  clinic_id    UUID NOT NULL,
+  mrn          TEXT NOT NULL,             -- medical record number
+  full_name    TEXT NOT NULL,
+  dob          DATE NOT NULL,
+  created_at   TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at   TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+ALTER TABLE phi.patients ENABLE ROW LEVEL SECURITY;
+ALTER TABLE phi.patients FORCE ROW LEVEL SECURITY;  -- apply to table owner too
+
+-- Policy: a row is visible only if the current session's clinic_id matches
+CREATE POLICY phi_patients_clinic_isolation ON phi.patients
+  FOR ALL TO app_phi
+  USING (clinic_id = current_setting('app.clinic_id', true)::uuid);
+
+GRANT SELECT, INSERT, UPDATE, DELETE ON phi.patients TO app_phi;
+```
+
+Before any PHI query, your Rails app does:
+```sql
+SET LOCAL role app_phi;
+SET LOCAL app.clinic_id = '<the-authenticated-clinic-uuid>';
+```
+Now every query is both role-scoped AND clinic-scoped. A bug that forgets the clinic_id setting returns zero rows, not the wrong clinic's data. That's the RLS guarantee you want.
+
+**4. Immutable audit log:**
+
+```sql
+CREATE SCHEMA audit;
+REVOKE ALL ON SCHEMA audit FROM PUBLIC;
+GRANT USAGE ON SCHEMA audit TO audit_writer, app_phi;
+
+CREATE TABLE audit.phi_access (
+  id            BIGSERIAL PRIMARY KEY,
+  occurred_at   TIMESTAMPTZ NOT NULL DEFAULT now(),
+  actor_user_id UUID NOT NULL,
+  actor_role    TEXT NOT NULL,
+  clinic_id     UUID,
+  action        TEXT NOT NULL,   -- 'read'|'insert'|'update'|'delete'
+  target_table  TEXT NOT NULL,
+  target_id     UUID,
+  request_id    TEXT,            -- Rails request id for correlation
+  metadata      JSONB
+);
+
+-- Append-only grants
+GRANT INSERT ON audit.phi_access TO audit_writer, app_phi;
+GRANT SELECT ON audit.phi_access TO app_phi;  -- for in-app audit surfacing
+-- Explicit REVOKE — no UPDATE, no DELETE, no TRUNCATE, ever
+REVOKE UPDATE, DELETE, TRUNCATE ON audit.phi_access FROM PUBLIC, app_phi, audit_writer;
+
+-- Prevent even the table owner from updating/deleting at the policy level
+CREATE POLICY phi_audit_no_mutate ON audit.phi_access
+  FOR UPDATE TO PUBLIC USING (false) WITH CHECK (false);
+CREATE POLICY phi_audit_no_delete ON audit.phi_access
+  FOR DELETE TO PUBLIC USING (false);
+ALTER TABLE audit.phi_access ENABLE ROW LEVEL SECURITY;
+ALTER TABLE audit.phi_access FORCE ROW LEVEL SECURITY;
+```
+
+The `FORCE ROW LEVEL SECURITY` is the load-bearing line — without it, the table owner bypasses RLS. Combined with the policy that makes UPDATE/DELETE return "denied" unconditionally, the rows are effectively immutable at the DB layer.
+
+**5. Triggers for auto-logging:**
+
+Attach an AFTER trigger to every `phi.*` table that inserts into `audit.phi_access`. Pull actor_user_id from `current_setting('app.user_id')`. This means you don't rely on application-level logging — the DB logs whether the app remembered to or not.
+
+**6. Backup isolation:**
+
+Separate pg_dump jobs per schema — `phi` and `audit` back up on their own cadence (daily encrypted with KMS, separate S3 bucket with separate IAM). If you ever need to wipe non-PHI data for testing, you restore `public` without touching `phi` or `audit`.
+
+That's the full boundary. If you want, I can draft the migration that moves your existing tables from `public` to `phi` with dual-read during the transition.$pf$,
+ $pf$Concrete schema-level design for PHI boundary inside single Postgres: `phi` + `audit` schemas, three DB roles (app_nophi/app_phi/audit_writer), RLS policies scoped by clinic_id session variable, FORCE ROW LEVEL SECURITY + REVOKE on UPDATE/DELETE for immutable audit log, separate backup job per schema. Rails app uses SET LOCAL role to make PHI-touching requests explicit.$pf$),
+
+-- Step 3 --
+('66666666-6666-6666-6666-666666690103',
+ '55555555-5555-5555-5555-555555550009',
+ 3,
+ $pf$Pushback — doesn't a single instance defeat the "segregation" requirement?$pf$,
+ $pf$Pushback. Our compliance consultant's response to Option A+ was "schema-level isolation inside a single Postgres isn't segregation; segregation means physical separation at the database instance level at minimum." She's citing industry norms, not a specific BAA clause. Before I push back on her, I want your honest read.
+
+Her argument in plain language: if someone gets a shell on the DB instance — via the RDS IAM credential being leaked, or a Postgres superuser compromise — schema isolation doesn't help. They get everything. Physical separation means different RDS instances, different IAM roles, different network paths. Is she right? And if she's partly right, what's the HONEST assessment of what schema-level buys you vs. what it doesn't?$pf$,
+ $pf$She's partly right. Let me separate what schema-level isolation actually protects against from what it doesn't, because the honest answer is "it depends on the attack vector."
+
+**What schema-level isolation protects against:**
+- SQL injection in your Rails app — an attacker running arbitrary SQL via an unsafe query. They hit role boundaries, RLS policies, GRANT limits. This is the MOST COMMON real-world breach vector, and schema-level handles it.
+- Broken authorization bugs in your app code — a clinician seeing another clinic's patient. RLS blocks this at the DB layer, even if your app code is wrong.
+- Operator error in application code — a junior engineer writing a query that accidentally joins across PHI and non-PHI tables. The role boundary forces explicit elevation.
+- Compromised application credentials (Rails app DB password leaks). The `app_nophi` role can't read PHI. Attacker with those creds gets limited blast radius.
+
+**What schema-level isolation does NOT protect against:**
+- RDS instance credential compromise (the master user). A superuser bypasses all role-based restrictions unless you've also configured `FORCE ROW LEVEL SECURITY` and revoked superuser access to PHI, which most orgs can't fully do because they need superuser for maintenance.
+- An attacker who gets a shell on the EC2/ECS instance running Rails. They read environment variables, find DB credentials, connect as `app_phi` legitimately. Schema isolation doesn't help because they're authenticating as a role that HAS PHI access.
+- Physical-disk-level compromise of the RDS underlying storage. Moot for RDS since AWS handles that, but theoretical.
+- Logical-replication-stream interception. If you have replicas, the replication protocol carries all schemas. An attacker on the replica network sees everything.
+
+**Where your compliance consultant is correct:** separate RDS instance + separate IAM role + separate VPC security group DOES reduce the blast radius of the RDS-master-credential compromise scenario. If someone phishes an engineer with RDS IAM perms, in a single-instance world they get everything; in a separate-instance world they get the non-PHI DB only.
+
+**Where I'd push back on her:** the RDS-master-credential compromise scenario is NOT the most likely breach vector for your company. For a 40-person startup with 3 engineers, your realistic threat model is:
+
+1. SQL injection in the Rails app (schema isolation handles this)
+2. Broken authorization bugs (RLS handles this)
+3. A developer committing credentials to a public repo (mostly handled by rotating + app_nophi default role)
+4. An engineer's laptop getting stolen with RDS IAM creds cached (partial — separate instance would help more)
+5. A phishing attack against an engineer with production access (same as #4)
+
+Threats 1-3 are by far the most common in the wild. Threats 4-5 are real but less common. Separate RDS instance makes threats 4-5 less bad AT THE COST of: (a) 2-3x the ops complexity (backups, migrations, failover), (b) cross-DB queries requiring dblink/FDW or application-level joins, (c) potential consistency issues across services, (d) ~$300-500/month additional infra cost for the second RDS instance.
+
+**My honest recommendation:**
+
+Stay with Option A+ AND add three things that specifically address the RDS-credential-compromise gap:
+
+1. **Separate IAM roles for PHI-schema operations.** Use IAM database authentication on RDS, with one IAM role that can generate auth tokens for `app_phi` and another for `app_nophi`. Rotate. The Rails app gets short-lived tokens from whichever role it needs. This gives you most of the "separate IAM" property she's asking for, inside a single instance.
+
+2. **Separate read replica for PHI with distinct network isolation.** If you need a read replica at all, put it in a subnet reachable only by specific services. This addresses the logical-replication-stream concern.
+
+3. **Quarterly access audit** — not a technical control, a process one. Every quarter, who has RDS console / IAM access gets reviewed and trimmed. In your size org, this should be 2 people max (you + one other).
+
+**When would I change my recommendation to Option B?** Three scenarios:
+- Your BAA clause language DOES say "physical separation" (you've confirmed it doesn't).
+- You're pursuing HITRUST certification or FedRAMP — some certifying bodies DO require separate instances for PHI regardless of BAA.
+- Your threat model shifts — you land a large enterprise customer whose security team explicitly requires separate instance, and it's a deal-gating requirement.
+
+If none of those three hold, separate RDS instance is over-architecture. Tell your compliance consultant: "Her industry-norm critique is valid for certification paths we're NOT pursuing. For our actual threat model and BAA language, Option A+ with IAM DB auth provides equivalent risk reduction at 15% of the ops cost. We'll revisit if we pursue HITRUST or land a customer that requires physical separation."
+
+That's the honest read. If you bring it to Friday's review, you'll own the decision with clear-eyed trade-offs rather than pattern-matching on industry norms.$pf$,
+ $pf$Separates what schema-level isolation protects against (SQL injection, authZ bugs, app-cred compromise — ~80% of real threats) from what it doesn't (RDS master compromise, engineer laptop theft). Recommends Option A+ with IAM DB auth for short-lived role-scoped tokens, addressing the RDS-credential gap without the ops cost of separate instance. Names the three scenarios that would flip the recommendation to Option B.$pf$),
+
+-- Step 4 --
+('66666666-6666-6666-6666-666666690104',
+ '55555555-5555-5555-5555-555555550009',
+ 4,
+ $pf$Migration plan — 4 phases with rollback + the 3 risks that would kill it$pf$,
+ $pf$That analysis is what I needed. I'm going into Friday with Option A+ and the IAM-DB-auth addition. Last ask before I draft the RFC: give me the migration plan. We have `patients`, `appointments`, `clinical_notes`, `patient_messages` in public today. 4 tables, ~40k patient rows, ~300k appointment rows, ~180k clinical notes, ~1.2M messages. No downtime budget (we have 24/7 clinic users). Give me phases, a rollback plan per phase, and the 3 specific risks most likely to kill the migration.$pf$,
+ $pf$Here's the 4-phase plan. Each phase is independently rollback-able — if any phase fails, you're in a safe state and can roll back without data loss or downtime.
+
+**Phase 0 — Prep (week 0, no data movement):**
+- Create `phi` schema, roles (`app_nophi`, `app_phi`, `audit_writer`), `audit.phi_access` table, RLS policies. All empty.
+- Deploy Rails code that knows about `phi.*` tables but doesn't use them yet. Add a feature flag `PHI_SCHEMA_ENABLED=false`.
+- IAM DB auth configured on RDS with role-scoped tokens. App still uses the master password; token path is plumbed but not active.
+- **Exit criterion:** all infra exists, production traffic unchanged, feature flag off.
+- **Rollback:** revert Rails deploy, drop schemas/roles. No data risk.
+
+**Phase 1 — Dual-write + shadow-read (weeks 1-2):**
+Pick the smallest table first: `patients` (40k rows). Not the largest — the smallest. You want to learn the migration mechanics on the table where mistakes are cheapest.
+
+- Migration: `INSERT INTO phi.patients SELECT * FROM public.patients` — one-shot, completes in seconds at this row count. Run inside a transaction.
+- Dual-write: Rails writes to BOTH `public.patients` and `phi.patients` on every insert/update/delete. Use a Rails model callback, NOT a DB trigger (triggers make rollback messier).
+- Shadow-read: under the feature flag, every read from `public.patients` ALSO reads from `phi.patients`, compares, logs discrepancies. Does NOT return the `phi` result yet — that's phase 2.
+- Run for a week, measure discrepancy rate. Target zero discrepancies for 72 consecutive hours before advancing.
+- **Exit criterion:** zero discrepancies sustained, RLS policies verified against real traffic (enable RLS on `phi.patients`; shadow queries confirm no access is denied wrongly).
+- **Rollback:** disable dual-write, drop `phi.patients`. `public.patients` is still authoritative.
+
+**Phase 2 — Cutover reads + still dual-write (week 3):**
+- Flip feature flag: Rails now reads from `phi.patients`, still writes to both.
+- Keep dual-write for a week. If something goes wrong, you can flip reads back to `public` instantly.
+- Watch error rates, query latency (RLS adds ~1-3ms), and — critically — any "row not found" errors that would indicate RLS is blocking legitimate reads.
+- **Exit criterion:** 72 hours clean at full read traffic from phi.
+- **Rollback:** flip feature flag. Reads return to `public`. Writes were going to both the whole time, so data's consistent.
+
+**Phase 3 — Stop dual-write, drop public table (week 4):**
+- Rails stops writing to `public.patients`. All reads and writes on `phi.patients` now.
+- Leave `public.patients` in place for 7 days as a safety net. Don't drop it.
+- **Exit criterion:** 7 days post-single-write with no production issues.
+- **Drop:** `DROP TABLE public.patients;`
+- **Rollback:** if something goes wrong in the 7-day window, restore dual-write from the last deploy (you have the code path still in the repo, just feature-flag it).
+
+**Repeat phases 1-3 for the remaining tables, in order: `patient_messages` → `clinical_notes` → `appointments`.**
+
+Messages next (largest table but simplest schema — good stress test). Clinical notes third (PHI-sensitivity highest; you want 2 successful migrations under your belt before this one). Appointments last because it has the most FK relationships to non-PHI tables — you'll have to convert some of those joins to application-level assembly.
+
+**Total timeline: 4 weeks × 4 tables = 16 weeks worst case. More realistic: 10-12 weeks because phases 1-3 can overlap across tables once you've proved the pattern.**
+
+**The 3 specific risks most likely to kill this:**
+
+1. **RLS policy bug that silently returns empty results instead of erroring.** If your `current_setting('app.clinic_id')` isn't being set correctly in some Rails code path (a background job, a rake task, a console session), RLS returns "no rows" rather than throwing. You'll see mysterious "can't find patient" bugs. **Mitigation:** in phase 1, add a raise-on-unset guard — a DB function `require_clinic_id()` that raises if the setting is null, called at the start of every PHI-touching request. Runs in phase 1 shadow-read so you catch every missing-setting code path BEFORE cutover. This is the #1 thing that ships bugs past QA.
+
+2. **Dual-write divergence from race conditions in concurrent updates.** Two requests update the same patient row simultaneously; one writes to `public` first, the other writes to `phi` first, and shadow-read logs it as a discrepancy. If you interpret every discrepancy as a real bug, you'll chase phantoms. **Mitigation:** wrap the dual-write in a single DB transaction with SELECT FOR UPDATE on `public.patients`. Serialize the writes at the row level. Eliminates race-condition false positives.
+
+3. **FK relationships from non-PHI tables to PHI tables break in phase 3.** `billing_entries.patient_id` references `public.patients(id)`. When you drop `public.patients`, the FK becomes orphan. **Mitigation:** before phase 3 for each table, run a validation: `SELECT 1 FROM information_schema.constraint_column_usage WHERE table_schema = 'public' AND table_name = '<table>' LIMIT 1` — if anything references the table you're about to drop, stop. Either drop the FK first (rarely the right answer) or redesign the reference (use a patient_uuid string, validated at application level, in the non-PHI table). This is the risk that most commonly stalls migrations at phase 3.
+
+**Dismiss-at-your-peril non-risk:** people will worry about query performance. At 40k patient rows with RLS, you'll add 1-3ms per query. Not a real concern. Worry about #1, #2, #3 instead.$pf$,
+ $pf$4-phase migration (prep → dual-write + shadow-read → cutover reads → stop dual-write + drop), each phase independently rollback-able, smallest-table-first ordering. Per-table 4 weeks; 4 tables = 10-12 weeks realistic. Three load-bearing risks: RLS silent-empty-returns (mitigated with raise-on-unset guard), dual-write race conditions (mitigated with SELECT FOR UPDATE), FK orphans in phase 3 (mitigated with pre-drop constraint check).$pf$),
+
+-- Step 5 --
+('66666666-6666-6666-6666-666666690105',
+ '55555555-5555-5555-5555-555555550009',
+ 5,
+ $pf$Write the RFC doc — markdown, ready for Notion$pf$,
+ $pf$Last pass. Turn everything we've worked through into a single RFC doc I can paste into Notion tomorrow morning. Sections: Context, Decision, Alternatives considered, Rollout plan, Open questions. Keep it tight — eng team will actually read this if it's under 2 pages rendered. Make the Alternatives section honest, not a strawman parade.$pf$,
+ $pf$```markdown
+# RFC-014: PHI Data Boundary — Schema-level isolation in Postgres
+
+**Author:** Derek Lawson
+**Status:** Proposed — for review at Friday eng sync
+**Date:** [fill in]
+
+## Context
+
+We store PHI (patient records, clinical notes, appointments, messages) in a single Postgres 15 RDS instance alongside non-PHI data. Current state: 40k patient records, projected 200k in 12 months. Our compliance consultant flagged two concerns in the Feb review: segregation of PHI from non-PHI data, and immutable audit trail for PHI access.
+
+Our BAA requires "reasonable safeguards to ensure segregation of PHI from non-covered data." It does NOT require physical instance separation. Scale is not a driver here — db.r6g.xlarge has headroom for 10x current load.
+
+The real decision driver is **blast radius of a compliance breach**. In today's architecture, one SQL-injection bug or compromised app credential exposes all data. We need a design that materially reduces that blast radius while respecting our 3-engineer team's capacity.
+
+## Decision
+
+**Adopt "Option A+": schema-level PHI boundary inside our existing Postgres instance, with IAM DB authentication for role-scoped short-lived credentials.**
+
+Specifically:
+1. New `phi` schema housing `patients`, `appointments`, `clinical_notes`, `patient_messages`.
+2. Three DB roles — `app_nophi` (default, no PHI access), `app_phi` (elevated, session-scoped), `audit_writer` (append-only audit access).
+3. Row-level security on all `phi.*` tables, scoped by `app.clinic_id` session variable.
+4. `audit.phi_access` table with `FORCE ROW LEVEL SECURITY` + revoked UPDATE/DELETE grants — immutable at the DB layer.
+5. Application-layer: Rails `SET LOCAL role app_phi` around PHI-touching request paths, making PHI access explicit and auditable in code.
+6. AWS IAM DB authentication for short-lived per-role tokens (replaces the master password for app connections).
+7. Schema-scoped backup jobs — `phi` and `audit` backed up separately with distinct KMS keys and S3 destinations.
+
+## Alternatives considered
+
+**Option B: Extract patient service to separate Rails service + separate RDS instance.** Legitimately better for RDS-master-credential-compromise threat vectors. But: ~6-8 weeks of engineering time from a 3-person team vs ~10-12 weeks for Option A+ with far less operational complexity after shipping. Option B adds dual-DB consistency burden, cross-service query complexity, ~$300-500/mo infra cost, and a second system to maintain. The threat-vector reduction (RDS IAM compromise scenarios) is real but addressed within Option A+ via IAM DB authentication at much lower cost. **Would revisit if:** BAA language changes to require physical separation, we pursue HITRUST/FedRAMP certification, or a deal-gating enterprise customer requires separate instance.
+
+**Option C: Stay as-is, add RLS and audit logging only.** Insufficient. Addresses authorization bugs but not the fundamental "everything in one schema" exposure — an SQL-injection bug or compromised credential still has unbounded blast radius. Rejected.
+
+**Option D: Application-layer encryption of PHI fields.** Considered for defense-in-depth. Rejected as the primary mechanism because key management for 40k+ records with search requirements introduces more complexity than it resolves. May revisit as an additive layer for specific high-sensitivity fields (SSN, detailed clinical notes) after this migration completes.
+
+## Rollout plan
+
+**10-12 weeks, 4 phases per table, 4 tables. Migration order: patients → patient_messages → clinical_notes → appointments.**
+
+- **Phase 0 (week 0):** Create schema, roles, audit table, RLS policies. Deploy dual-code-path under feature flag. Configure IAM DB auth.
+- **Phase 1 (per table, ~2 weeks):** Copy data to `phi.*`. Rails dual-writes to both. Shadow-reads from `phi.*`, compares, logs discrepancies. Exit: 72 hours clean.
+- **Phase 2 (per table, ~1 week):** Flip feature flag — reads from `phi.*`. Writes still dual. Exit: 72 hours clean at full read traffic.
+- **Phase 3 (per table, ~1 week):** Stop dual-writes. Wait 7 days. Drop `public.<table>`.
+
+Each phase is independently rollback-able. Rollback at any point = flip feature flag or revert Rails deploy. No data-loss scenarios.
+
+**Mitigations for the 3 known risks:**
+- RLS silent-empty bug: `require_clinic_id()` DB function raises if session var unset, called at start of every PHI request. Caught in phase 1 shadow-read.
+- Dual-write race divergence: `SELECT FOR UPDATE` + single-transaction dual-write.
+- FK orphans: pre-drop constraint check via `information_schema.constraint_column_usage`. Stop if anything references the table.
+
+## Open questions
+
+1. **Replica strategy.** Do we provision a read replica for `phi.*` queries (separate security group, isolated network)? Current load doesn't require it; question is whether the isolation is worth the added infra. **Proposed:** defer until after migration completes; evaluate at 100k records.
+
+2. **Audit log retention + archival.** `audit.phi_access` will grow ~2-5M rows/year at current scale. At what point do we move rows older than N days to S3 via logical replication? **Proposed:** partition by month starting now; revisit archival policy at 50M rows.
+
+3. **Rake tasks and background jobs that currently touch `public.patients`.** Need a full audit of non-web-request PHI access code paths before phase 1. **Owner:** [assign Friday.]
+
+4. **Disaster-recovery testing.** Current DR playbook assumes single-schema restore. Needs update for schema-scoped backups. **Owner:** [assign Friday.]
+
+---
+
+**Ask of this group:** decide today on Option A+. If approved, I'll open the Phase 0 tickets Monday and we'll target Phase 0 complete by end of next week.
+```
+
+That's the doc. Under 2 pages rendered (I checked — 1.7 pages in Notion's default width). Alternatives section names real trade-offs and real revisit-conditions for Option B, not strawmen. Open questions are genuine open questions with proposed resolutions and owners-to-assign, not rhetorical filler.
+
+One note on using this: when the eng team pushes back on anything Friday, route their concern to which section it falls into (context / decision / alternatives / rollout / open question). If it doesn't fit any of those, it's probably a question for a different RFC. That routing exercise keeps the review from dissolving into re-litigating Option B for 35 minutes.$pf$,
+ $pf$Complete RFC in markdown — Context, Decision (Option A+ with 7 specific components), Alternatives (B / C / D with honest trade-offs and revisit conditions), Rollout (10-12 week phased plan with per-phase rollback), Open questions (4 real ones with proposed resolutions). Under 2 pages rendered. Ready to paste into Notion.$pf$);
+
+-- =========================================================================
 -- END OF FILE — append next project(s) below this line.
 -- Iterations working the Content queue: add 2–3 projects per iteration,
 -- appending below this comment. Do NOT rewrite existing projects.

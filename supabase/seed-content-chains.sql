@@ -7996,6 +7996,963 @@ That's the full package. The board memo is intentionally short — Karen reads t
  $pf$Three deliverables drafted: (1) 1-page board memo with a 3-sentence read-out version at top, full reconciliation table in the appendix, plus the historical-overstatement note recommending a footnote in next 2 board reports rather than formal restatement — trend lines are unaffected, bias is consistent; (2) engineering fix spec covering all 4 bugs with file/line pointers, exact before/after SQL, dbt tests to add so they don't regress, and explicit P0/P1/P2 sprint priorities; (3) monthly tie-out process with $25K/$50K variance thresholds, dbt test that runs on the second business day after close, segment-breakdown diagnostic helper, and annual threshold re-validation. Memo lands at the right level — short enough that Karen reads the 3 sentences out loud, appendix is there for board members who want to dig.$pf$);
 
 -- =========================================================================
+-- Project 0026 — Coding (Auth0 → WorkOS migration for a Series B health-tech)
+-- cto_derek · Claude 4.7 Opus · 8 steps · advanced
+-- =========================================================================
+
+DELETE FROM prompt_steps WHERE prompt_id = '55555555-5555-5555-5555-555555550026';
+DELETE FROM prompts      WHERE id        = '55555555-5555-5555-5555-555555550026';
+
+INSERT INTO prompts (
+  id, title, description, content, result_content,
+  category_id, difficulty, model_used, model_recommendation,
+  tools_used, tags, status, author_id, vote_count, bookmark_count
+) VALUES (
+  '55555555-5555-5555-5555-555555550026',
+  $pf$Auth0 → WorkOS migration for a Series B health-tech — 8-pass Claude workflow from scoping through Saturday-cutover retrospective$pf$,
+  $pf$Auth0 came back with a 40% renewal hike on a $180K bill. We had 6 weeks, 3 enterprise SAML customers, 2 Okta-SCIM integrations, PHI-gated RBAC, and a hard no-downtime constraint. Used Claude 4.7 Opus across 8 passes: scoping → dependency inventory → vendor eval → dry-run findings → migration plan → cutover/rollback → comms → post-cutover retro. Migrated 12,400 users + 47 orgs with 4h 20min of planned off-hours downtime and zero customer-visible business-hours impact.$pf$,
+  $pf$I'm Derek, CTO at a Series B B2B health-tech platform — clinical operations software for mid-market hospital systems, 12,400 end users, 47 customer orgs, ~50-person eng team, SOC 2 Type II, HIPAA BAA in place.
+
+Auth0 has been our identity provider since 2021. Bill hit $182K/year at renewal. Account rep came back with a 40% increase on a 3-year commit, citing "platform reinvestment" and the enterprise-tier SKU we'd been grandfathered out of. The new number was $254K/year and they wanted a signature in 90 days.
+
+I had been quietly evaluating alternatives since Q3 when an enterprise customer asked for SCIM with a specific downstream workflow Auth0's SCIM tier made expensive. WorkOS was on the shortlist; Clerk and Ory too; self-hosting Keycloak was the "really?" option we didn't seriously want.
+
+The migration itself is not a one-person exercise — it's a staff-level project that would eat about 15% of one engineer's quarter plus my own cycles. But the upstream decisions (scoping, vendor eval, dry-run interpretation, cutover sequencing, comms) are where errors cascade. I wanted Claude 4.7 Opus to be my thinking partner across those 8 passes — specifically to push back on my instincts, surface the integrations I was going to miss, and red-team the cutover plan before it became a Saturday.
+
+What follows is the real 8-pass chain. Some of the specific numbers (users, orgs, downtime window, customer names) are real. The conversational style is mine — I write to Claude the way I'd brief a principal engineer I trust, not the way people usually prompt LLMs.$pf$,
+  $pf$Outcome: migrated 12,400 users and 47 orgs across a 6-week window. Saturday cutover took 4h 20min against a planned 3h — one SAML cert-fingerprint mismatch on customer BrightCare blew 40 minutes (we'd rotated fingerprints in WorkOS but their Okta ADMIN hadn't rotated the matching one on their side; fixed live). One race condition in dual-write produced 3 orphan user records we found Monday morning and reconciled manually. Zero customer-visible business-hours downtime. New annual spend: $48K WorkOS platform + $11K one-time implementation services, saving $195K/yr against Auth0's renewal quote.
+
+What Claude was load-bearing for: (1) step 2 surfaced THREE integrations I'd forgotten — a custom rule that enriched JWTs for a downstream billing microservice, a Twilio verify hook embedded in Auth0's MFA flow, and a legacy M2M client still used by a batch job. Had we not caught the M2M client, the Monday-morning overnight batch would have 401'd and I'd have been explaining a 3am page instead of telling this story. (2) Step 6's rollback trigger definition — we had a 2-hour rollback window that I had sloppily defined as "if things go wrong." Claude made me write 7 specific trigger conditions with numeric thresholds, and one of them (auth latency p99 > 800ms sustained 10min) fired at minute 28 and I almost rolled back. We investigated instead — it was a WorkOS region routing issue that cleared in 4min, well inside the rollback window — but the trigger discipline meant I wasn't debating it by vibes. (3) Step 8's retro pre-mortem framing caught a long-tail item: we still have 4 customer orgs on legacy M2M tokens that haven't rotated because their contact went dark; that's now a Q3 project with a specific trigger-action pair instead of a vague "follow up."
+
+What I'd tell the next person: identity migrations have a classic N-squared failure mode where the N-th integration you discover changes the plan for the (N-1) integrations you thought you understood. Invest disproportionately in step 2. I spent 2 days on dependency inventory; I should have spent 4.$pf$,
+  '11111111-1111-1111-1111-111111111104',
+  'advanced',
+  'claude-opus-4-7',
+  'Claude 4.7 Opus',
+  ARRAY['Claude','WorkOS','Auth0','Okta','Linear','GitHub','Datadog'],
+  ARRAY['auth','saml','scim','migration','identity','rollout','post-mortem','workos'],
+  'approved',
+  '22222222-2222-2222-2222-222222222209',
+  118, 58
+);
+
+INSERT INTO prompt_steps (id, prompt_id, step_number, title, content, result_content, description) VALUES
+
+-- Step 1 --
+('66666666-6666-6666-6666-666666260101',
+ '55555555-5555-5555-5555-555555550026',
+ 1,
+ $pf$Scope the migration — what's in, what's out, what's the real constraint set$pf$,
+ $pf$Before I pick a vendor or write a plan I want to scope this correctly. Help me think through what's actually in scope for an Auth0 → new-IdP migration for our setup and what I might be lumping in that shouldn't be in scope.
+
+Context:
+- Auth0 tenant has ~12,400 end users across 47 customer orgs
+- Multi-tenant SaaS (B2B), each customer org has its own SSO config
+- 6 enterprise customers using SAML (2 on Okta-SCIM, 1 on Azure AD SCIM, 3 SSO-only no SCIM)
+- 41 smaller customers on email/password + TOTP MFA
+- HIPAA: no PHI in the IdP itself, but user IDs are referenced in PHI audit logs
+- SOC 2 Type II renewal in October; auditor will care about this migration
+- Internal: 12 Auth0 Actions (post-login rules), 4 Auth0 APIs (M2M clients), branded login pages, custom email templates
+- Microservices downstream: ~14 services consume JWTs issued by Auth0
+
+Hard constraints:
+- No customer-visible downtime during business hours (we support 6am-8pm ET hospital ops)
+- Cannot force customers to re-enroll MFA
+- Cannot change public user-facing subdomain (auth.ourapp.com)
+- 6-week wall-clock window (current Auth0 contract expires in 7 weeks)
+
+What I want from you: help me separate THIS migration (the 6-week identity swap) from adjacent work I've been lumping in. I keep catching myself thinking "well while we're in there we could finally clean up..." — flag those and push them out. Also tell me what's load-bearing in scope that I might be treating as optional.$pf$,
+ $pf$You're right to worry about scope creep on this — auth migrations are a classic "while we're in there" trap and it's the single biggest reason they overrun.
+
+**Explicitly IN scope (don't cut these, they're load-bearing):**
+
+1. **All 47 customer orgs, end-to-end.** Can't phase by customer tier — you run Auth0 and the new IdP in parallel for weeks, which doubles your ops burden and creates duplicate-state bugs. One cutover, all orgs.
+
+2. **All 6 SAML configs with their specific ACS URLs, entity IDs, attribute mappings, and signing certs.** Any mismatch breaks that customer. For the 3 SCIM customers, the SCIM endpoints + bearer tokens need to be re-issued and the customer's side (Okta/AAD) needs to be updated by their admin — which is a coordinated handoff, not something you can do unilaterally.
+
+3. **All 12 Auth0 Actions/rules, audited for which ones are load-bearing.** My guess is most are either (a) claim enrichment for downstream services, (b) user-profile defaults, or (c) vendor-specific hacks. You need to categorize and port the load-bearing ones to the new IdP's equivalent (transforms, hooks, custom claims).
+
+4. **Branded login pages for the 47 customer subdomains.** Users will notice if the login page looks different.
+
+5. **M2M clients for batch jobs and service-to-service auth.** Easy to forget because they're not user-facing. Every one of them has a client_id/client_secret rotation that needs to happen in lock-step with the cutover.
+
+6. **JWT contract continuity.** Your 14 downstream services parse specific claims. If the new IdP issues JWTs with different claim names or shapes, every one of those services breaks. This is the single most important compatibility surface.
+
+7. **User ID continuity.** Your PHI audit logs reference auth user_ids. You cannot re-generate user IDs — the new IdP MUST accept your existing Auth0 user_ids as external identifiers.
+
+**Explicitly OUT of scope (push these to a follow-up):**
+
+1. **Finally implementing password rotation policy.** Tempting, but rotating passwords as part of migration means forcing 12,400 users through re-auth and triggering every MFA re-enrollment. Hard no.
+
+2. **Consolidating the 4 M2M clients down to 2.** Nice cleanup, unrelated to IdP swap.
+
+3. **Adding new MFA methods (WebAuthn, passkeys).** New feature. Do after the migration lands.
+
+4. **Re-designing the login page UX.** You have a week-4 temptation to redo the visual because the new IdP's pages are blank. Use the current brand as-is.
+
+5. **Moving the audit-log schema to de-identify user_ids.** That's a separate HIPAA-adjacent project with its own review.
+
+6. **Switching from email/password to magic links for smaller customers.** Nice for security, but it's a product change that needs customer comms and isn't required by the migration.
+
+**Load-bearing items you might be under-weighting:**
+
+1. **The 4 enterprise customers without SCIM (3 SSO-only + 1 Azure-AD-SCIM).** These are your highest-risk config carry-overs because you can't test them in production until cutover. Book dedicated sandbox time with each before the week-5 dry run.
+
+2. **Auth0 Actions that enrich JWTs.** Any missing claim at cutover breaks the downstream consumer. I'd ask you to dump the full list of Actions and their emitted claims before step 2, so we can catalog what contract each downstream service expects.
+
+3. **Cert rotations.** SAML signing certs have expiration windows. If any rotate during your 6-week migration, the customer's side needs to update in parallel. Check the expiration dates this week — not the week of cutover.
+
+4. **SOC 2 implications.** Changing a sub-processor during a Type II audit window has specific disclosure requirements. Talk to your auditor before week 3, not after.
+
+**Revised constraint set I'd write:**
+- 6-week wall clock
+- Zero business-hours customer-visible downtime
+- Saturday cutover window: 10pm ET - 6am ET next day (8 hours, plan for 3h, rollback budget 2h)
+- No forced MFA re-enrollment
+- JWT claim contract preserved exactly
+- User ID preserved exactly
+- All 47 orgs in one cutover (no phased per-tenant migration)
+- SOC 2 auditor notified by end of week 1
+
+Start step 2 with the Auth0 Actions dump + downstream service JWT-consumer inventory. That's the load-bearing dependency list — everything else reshapes around it.$pf$,
+ $pf$Scope defined. In: all 47 orgs, 6 SAML configs, 3 SCIM integrations, 12 Auth0 Actions audited for load-bearing ones, branded login pages, all M2M clients, JWT claim contract preserved, user ID preserved. Out: password rotation, M2M consolidation, new MFA methods, login-page redesign, audit-log schema cleanup, magic-links. Revised constraint set locks the Saturday cutover window (10pm-6am, 3h plan, 2h rollback). SOC 2 auditor notification flagged for week 1. Next step is the load-bearing dependency inventory: Auth0 Actions + downstream JWT-consumer contracts.$pf$),
+
+-- Step 2 --
+('66666666-6666-6666-6666-666666260102',
+ '55555555-5555-5555-5555-555555550026',
+ 2,
+ $pf$Load-bearing integration inventory — the stuff that will break at cutover if I miss it$pf$,
+ $pf$Per your step-1 guidance, I pulled the full list of Auth0 Actions and the 14 downstream services. Here's what I have — help me categorize and flag what I'm likely missing.
+
+**Auth0 Actions (post-login):**
+1. `enrich-jwt-with-org-claims` — adds org_id, org_tier, features[] array to access token
+2. `enrich-jwt-with-phi-scope` — adds phi_access:bool based on role (load-bearing for PHI route guard)
+3. `set-user-metadata-defaults` — fills in empty user_metadata on first login
+4. `sync-to-analytics` — sends login event to Segment
+5. `check-mfa-enrollment` — redirects to MFA setup if not enrolled and role is clinician
+6. `customer-specific-redirect` — one customer requires post-login redirect to their subdomain
+7. `deprecated-audit-log` — writes to a Stackdriver log that nobody consumes, marked deprecated 14 months ago
+8. `twilio-verify-hook` — custom MFA path for 1 customer using Twilio Verify instead of TOTP
+9. `enforce-ip-allowlist` — denies login from outside customer's allowed IP ranges for 4 enterprise customers
+10. `add-billing-claim` — adds billing_id to JWT (I DO NOT KNOW who consumes this)
+11. `m2m-audit-log` — writes M2M client tokens to audit DB
+12. `session-binding-debug` — added during an incident 6 months ago, has a TODO to remove
+
+**Downstream services consuming JWTs:**
+- 14 services, I have their names but I don't have a claim-by-claim map of what each one reads. I know `api-gateway` reads everything as a passthrough.
+
+**M2M clients:**
+- `reporting-batch` — runs nightly, reads from Stripe API via our backend
+- `data-pipeline` — streams events hourly to our warehouse
+- `internal-admin` — used by our CS team's tooling
+- `legacy-export` — I genuinely do not know who uses this. It last authenticated 6 days ago. Someone is using it.
+
+What I need: help me categorize these into must-port / conditional-port / retire, and tell me what I don't have inventoried that I need.$pf$,
+ $pf$This is a good list. The gaps are significant — you're missing the most dangerous category, which is "things your customers wired up that consume your JWTs." I'll get to that.
+
+**Auth0 Actions — categorized:**
+
+*MUST PORT (cutover-blocking):*
+- #1 `enrich-jwt-with-org-claims` — downstream services depend on org_id, org_tier, features[]. Claim shape must be preserved byte-for-byte.
+- #2 `enrich-jwt-with-phi-scope` — PHI route guard uses this. Miss this, clinicians lose PHI access at cutover. Map to WorkOS custom attributes + claim transform.
+- #5 `check-mfa-enrollment` — clinician MFA enforcement is compliance-load-bearing.
+- #6 `customer-specific-redirect` — specific customer's expectation. Port, validate with customer pre-cutover.
+- #8 `twilio-verify-hook` — NOT SUPPORTED out-of-box by most IdPs. WorkOS specifically does not support custom MFA providers the way Auth0 Actions do. This is the BIG one — you may need to keep Auth0 running for this one customer, OR convert them to TOTP/WebAuthn, OR build a proxy. Decision needs to be made in step 3 vendor eval because it may change the answer.
+- #9 `enforce-ip-allowlist` — 4 enterprise customers expect this. Verify WorkOS (or your chosen IdP) supports IP allowlists per-connection.
+
+*CONDITIONAL PORT:*
+- #3 `set-user-metadata-defaults` — figure out whether the defaults are still used. My guess: a couple are, rest are dead code. Audit the user_metadata keys.
+- #4 `sync-to-analytics` — can be ported, or can be moved to a frontend instrumentation layer. Consider moving it out of the auth flow entirely (cleaner, reduces coupling).
+- #10 `add-billing-claim` — YOU DO NOT KNOW WHO CONSUMES THIS. Before you do anything else, grep every service for `billing_id` in JWT parse code. Until you know, do not retire.
+- #11 `m2m-audit-log` — compliance/SOC2 relevant. Port, but audit schema may need updating.
+
+*RETIRE:*
+- #7 `deprecated-audit-log` — marked deprecated 14 months ago and nobody consumes it. Delete.
+- #12 `session-binding-debug` — was a temporary debug, no longer needed. Delete.
+
+**Downstream services — this is your biggest gap.**
+
+You said "I know api-gateway reads everything as a passthrough" but that's not enough. You need a claim-by-claim consumer map BEFORE cutover. Specifically: for each of the 14 services, grep for `jwt.decode`, `jwt_claims.`, `token.claims`, `req.user.`, and every claim name. Build a matrix: rows = services, columns = claims. I'd expect 20-30 claims total across the 12 Actions; some services read 3-5, some read 15+.
+
+This is the matrix that tells you whether you can safely port claim semantics. If service X reads `phi_access:bool` and service Y reads `permissions["phi_read"]:bool`, they're reading the same information two different ways and you need to keep both formats alive at cutover.
+
+**What you don't have inventoried and MUST add:**
+
+1. **Customer-consumed JWTs.** If ANY customer has integrated via your public API and parses your JWTs on their side (unusual but possible for BAA-covered integrations), changing claim shape breaks them. Check: do any customers use your OAuth-delegation flow? I'd want a yes/no from the account team by end of week 1.
+
+2. **Webhook-receiver endpoints that verify JWTs.** If you have any webhook endpoints that verify caller identity via JWT, those consumers need to trust the new IdP's JWKS URI. List every external webhook consumer.
+
+3. **The `legacy-export` M2M client.** "I don't know who uses this" is how you cause a P0. Before step 3, turn on detailed logging for 3 days and catch whatever's calling it. If it's nothing real, retire. If it's a vendor integration, you now know what you need.
+
+4. **Password hash format.** Auth0 hashes passwords with bcrypt but uses their internal salt format. Not all IdPs import bcrypt+Auth0-salts cleanly. WorkOS has an import flow; Clerk's is different. This is a vendor-eval input. Ask each vendor specifically whether they accept Auth0's bcrypt export format.
+
+5. **MFA secret migration.** Same question: does the new IdP accept Auth0's TOTP secret export? If not, you force MFA re-enrollment — which violates your scope constraint.
+
+6. **User metadata schema.** Auth0's `app_metadata` and `user_metadata` don't map to any other IdP's model cleanly. You need to either (a) flatten everything into the new IdP's attributes, (b) keep metadata in your DB and skip the IdP side entirely, or (c) use the new IdP's extensibility mechanism (WorkOS supports custom attributes; Clerk supports public_metadata/private_metadata). Pick one consistently.
+
+7. **Tenant-to-org mapping.** Auth0 has "Organizations" as a first-class concept. The new IdP may or may not. If they don't, you need to encode tenant membership in a claim or look up from your DB on every request — performance implication.
+
+**Revised inventory output for step 3:**
+- 6 must-port Actions
+- 4 conditional (3 after auditing)
+- 2 retire
+- 14-service × 30-claim consumer matrix (needs to be built — allocate 2 engineering days)
+- 1 outstanding mystery client (`legacy-export`) — 3-day log to identify
+- 4 new inventory items you didn't have: customer-consumed JWTs, webhook consumers, password hash format, MFA secret format
+
+**Call to action before step 3:** build the consumer matrix. Until you have it, any vendor choice is under-informed because you don't know your own claim contract.$pf$,
+ $pf$Actions categorized: 6 must-port, 4 conditional, 2 retire. Flagged the Twilio Verify hook (#8) as a potential vendor-eval determining factor — most IdPs don't support custom MFA providers like Auth0 Actions do. Critical gap identified: 14-service × 30-claim consumer matrix must be built before vendor eval — 2 engineering days. Identified 4 missing inventory items: customer-consumed JWTs, webhook consumers, password-hash import format, MFA-secret import format. `legacy-export` M2M mystery client: 3-day detailed logging before cutover decisions. Twilio Verify customer and billing_id claim consumer are the two specific unknowns to resolve this week.$pf$),
+
+-- Step 3 --
+('66666666-6666-6666-6666-666666260103',
+ '55555555-5555-5555-5555-555555550026',
+ 3,
+ $pf$Vendor evaluation — WorkOS vs Clerk vs Ory, pick a finalist$pf$,
+ $pf$Consumer matrix is built. 28 claims across 14 services, 7 load-bearing claims that must be preserved byte-for-byte. Twilio Verify customer: we reached them, they'll accept a TOTP migration with 45 days notice, so custom-MFA is no longer a vendor-eval hard requirement. `legacy-export` M2M: caught it — our own internal data-science team, not a customer. They'll move to the new client_id.
+
+Now vendor eval. Shortlist: WorkOS, Clerk, Ory (self-hosted Cloud). Rule out Keycloak self-host (too much ops burden for a 50-person eng team, not SOC-2-compliant out of the box).
+
+Help me compare honestly. I'm not looking for a marketing summary — I want the gotchas. Specifically: (a) Auth0 bcrypt password import, (b) TOTP secret import, (c) SAML config portability, (d) SCIM support per-connection, (e) user_id preservation as external identifier, (f) JWT claim customization for our 7 load-bearing claims, (g) pricing at our scale, (h) HIPAA BAA availability, (i) what breaks on the sharp edges of each.$pf$,
+ $pf$Good — Twilio-verify off the table makes this tractable. Here's the honest evaluation. I'll lead with the gotchas because that's what actually determines the decision.
+
+**WorkOS:**
+- (a) Password import: Yes, accepts Auth0's bcrypt+salt export format directly. Documented import flow, 2-3 days to process 12k users at their side.
+- (b) TOTP secret import: Yes. Their User Management accepts base32-encoded TOTP secrets on user import.
+- (c) SAML: This is their core strength. Per-org SAML connections, their Admin Portal lets customers self-serve config. Your 6 enterprise SAML configs port cleanly. ACS URLs, entity IDs, signing certs, attribute mappings all 1:1.
+- (d) SCIM: Per-connection SCIM with separate bearer tokens. Works with Okta, Azure AD, JumpCloud out of box. Your 3 SCIM customers port.
+- (e) User ID preservation: Yes — `external_id` field on every user, indexed, retrievable in JWT.
+- (f) JWT claim customization: Their JWTs are less flexible than Auth0's. You get a fixed set of claims + `metadata` field for custom claims. Your 7 load-bearing claims go in `metadata` as a JSON object, which means your downstream services need to read `claims.metadata.phi_access` instead of `claims.phi_access`. **This is a breaking change for consumers unless you route through a gateway-level token transform.**
+- (g) Pricing at 12,400 users + 6 SAML + 3 SCIM: roughly $48K/year on their published tiers. Less than a third of Auth0's renewal.
+- (h) HIPAA BAA: Yes, available on their Enterprise tier (which you'd be on anyway for the SCIM pricing).
+- (i) Sharp edges: The claim-shape change is the big one. Less flexibility in post-login customization — they have "actions" but the surface is narrower than Auth0's.
+
+**Clerk:**
+- (a) Password import: Yes, supports bcrypt migration. Batched import tool.
+- (b) TOTP secret import: Partial — their docs are less clear on this. You'd want to verify with their support before committing.
+- (c) SAML: Available on their Enterprise tier, but their SAML story is newer than WorkOS's and has fewer customer-managed-config affordances. For 6 SAML customers this works but is less turnkey.
+- (d) SCIM: Available on Enterprise tier. Less per-tenant isolation than WorkOS's model.
+- (e) User ID preservation: Yes, `externalId` field.
+- (f) JWT claim customization: More flexible than WorkOS — you can define claim shapes via session tokens. Your 7 load-bearing claims can be preserved exactly. This is a meaningful advantage.
+- (g) Pricing at 12,400 users + 6 SAML + 3 SCIM: roughly $65-75K/year on their Enterprise tier. Depends on negotiation.
+- (h) HIPAA BAA: Available, Enterprise tier.
+- (i) Sharp edges: Newer for B2B-SaaS-with-enterprise-customers use case. UI/UX is strong for consumer apps, less so for multi-tenant SAML/SCIM. Their Organization concept has rough edges around nested role hierarchies.
+
+**Ory Cloud (self-hosted via Ory Network):**
+- (a) Password import: Supports bcrypt import with custom configuration. More DIY.
+- (b) TOTP secret import: Supports but requires their Kratos configuration and a manual import flow.
+- (c) SAML: Supported via Ory Network, but SAML-per-org is a more manual configuration model than WorkOS. Your 6 SAML customers is workable but painful.
+- (d) SCIM: Ory's SCIM support is less mature than WorkOS's. You'd likely have to build more plumbing.
+- (e) User ID preservation: Supported, flexible.
+- (f) JWT claim customization: Most flexible of the three — you control the claim shape via Kratos webhooks.
+- (g) Pricing at your scale: $35-45K/year on their Cloud tier.
+- (h) HIPAA BAA: Available.
+- (i) Sharp edges: The biggest. Ory is lower-level — it's an auth platform where you compose your own flows, not a managed B2B-IdP. For a 50-person eng team doing this on a 6-week clock, Ory's flexibility becomes ops burden. You'd need a dedicated engineer on this for longer.
+
+**Recommendation: WorkOS.**
+
+Reasoning:
+- SAML/SCIM for B2B multi-tenant is their core product. Your 6 SAML + 3 SCIM customers port cleanly with minimum vendor-side work on your part.
+- Pricing is the best of the three at your scale.
+- HIPAA BAA is standard.
+- Their Admin Portal (customer-facing self-serve SAML config) is a meaningful product affordance for your enterprise customers — better experience than Auth0's equivalent.
+- Import flows for password/TOTP are documented and supported at your scale.
+
+**The load-bearing tradeoff:** The JWT claim shape change. Your 7 load-bearing claims will live inside `metadata` rather than as top-level claims. You have two options:
+
+1. Update all 14 downstream services to read `metadata.phi_access` instead of `phi_access`. This is ~14 PR-level changes, testable, and the right long-term shape.
+
+2. Put a token transformation at your API gateway layer that unwraps `metadata` into top-level claims before forwarding to downstream services. This keeps services untouched but adds gateway complexity.
+
+I'd recommend option 1. Gateway transforms are magic; explicit claim reads in each service are honest. Budget a week-4 sprint to make those 14 changes — they're all mechanical and parallelizable.
+
+**If WorkOS's claim shape is a dealbreaker**, fall back to Clerk. Budget $20K/year more and accept less-mature SAML-self-serve for enterprise customers.
+
+**Do NOT pick Ory for a 6-week migration.** It's the right answer for a team with identity as a core competency and 6 months. You have neither.$pf$,
+ $pf$WorkOS selected. Key tradeoff: JWT claim shape shifts (load-bearing claims move into `metadata` rather than being top-level) — 14 downstream services need a mechanical PR each to read `metadata.phi_access` instead of `phi_access`, budgeted as a week-4 sprint. Fallback if claim shape is a dealbreaker: Clerk ($20K/yr more, less-mature SAML self-serve). Ory ruled out — wrong for a 6-week clock with a 50-person team. Pricing lands at ~$48K/yr + $11K one-time services, saving $195K/yr vs Auth0 renewal quote. HIPAA BAA standard. Next: stand up WorkOS in a parallel sandbox and dry-run the full auth flow against one test customer org.$pf$),
+
+-- Step 4 --
+('66666666-6666-6666-6666-666666260104',
+ '55555555-5555-5555-5555-555555550026',
+ 4,
+ $pf$Dry-run findings — what broke when we tried to stand up WorkOS parallel$pf$,
+ $pf$We spent 4 days standing up WorkOS in a parallel dev environment and running a test customer org through the full flow. Here's what broke. Help me categorize by severity and figure out which are pre-cutover fixes vs which need architectural changes.
+
+1. Password import test: 50-user sample imported successfully. 2 users were flagged by WorkOS as "needs re-enrollment" — looking at them, both had legacy Auth0 social logins (Google) that never set a password. Expected.
+
+2. TOTP import test: 30-user sample imported, 28 worked. 2 users who had enrolled pre-2023 had a secret format WorkOS rejected. Auth0 changed their TOTP secret encoding in 2023. Need to identify all pre-2023 TOTP users (probably 300-500 of 12,400).
+
+3. SAML config port for test customer: Worked. Certificate rotation worked. One gotcha: WorkOS's ACS URL pattern is different from Auth0's. Customer's Okta-side "SSO URL" field needs to be updated at their end — which is a customer-side change on their IT team's schedule.
+
+4. JWT claim shape: Confirmed. `metadata.phi_access` is now the read path. PR'd the first service (`api-gateway`) and it worked. 13 more to go.
+
+5. Downstream service `billing-service` broke on cutover-test. Root cause: Auth0 Action `add-billing-claim` wasn't ported because we didn't know who consumed it. Billing service reads `billing_id` from JWT for tenant-scoped ledger lookups. Would have been a P0 at real cutover.
+
+6. Login page custom branding: Worked, but the logo upload requires a specific aspect ratio WorkOS enforces. Our logo asset needs to be regenerated.
+
+7. Clinician MFA enforcement: Ported from Auth0 Action #5 to WorkOS's MFA policy. Works, but the trigger is slightly different — Auth0 checks on every login, WorkOS can check on session-start. Edge case: a clinician role assigned mid-session doesn't trigger MFA until next session. Acceptable but document.
+
+8. IP allowlist for the 4 enterprise customers: Per-connection IP allowlists work in WorkOS but we hit a rate limit testing them. Talked to WorkOS support, they raised our limit.
+
+9. M2M `data-pipeline` client: Stood up new client, JWT format differs (WorkOS issues a different audience claim). Pipeline's JWT validation broke. 2-line fix in pipeline code.
+
+10. Custom redirect for the "#6" Auth0 Action customer: Ported, works, but WorkOS's post-login redirect is a URL-whitelist config rather than a programmatic hook. Customer needs to pre-register the redirect URL. Confirmed with customer, OK.
+
+Gotcha — we tried to test the SCIM provisioning for the Okta-SCIM customers and realized their admin needs to update the SCIM endpoint URL + bearer token on their side. Meaning SCIM cutover is not a one-sided flip — it requires customer-admin coordination within the cutover window. We can't assume all 3 SCIM customer admins will respond inside our window.$pf$,
+ $pf$Good dry run. Let me categorize by severity and resolution timeline.
+
+**P0 — must resolve pre-cutover, cutover-blocking if unresolved:**
+
+1. **Pre-2023 TOTP secret format (item 2).** Impact: 300-500 users lose MFA at cutover and must re-enroll. This VIOLATES your scope constraint ("Cannot force customers to re-enroll MFA"). Resolution: query Auth0's API for the enrollment date of each TOTP user; for pre-2023 enrollments, either (a) work with WorkOS to support legacy format, or (b) force those specific users to re-enroll 2 weeks before cutover with clear comms. Option (b) is more likely because WorkOS will not bend for 400 users. Budget: 1 engineering day + customer success coordination.
+
+2. **`billing-service` / `billing_id` claim (item 5).** Impact: Post-cutover, all billing lookups fail for all tenants. This is the P0 you caught — exactly the reason dry runs exist. Resolution: port `add-billing-claim` Action to WorkOS metadata. Add `billing-service` to the 14-service consumer matrix explicitly. 4 hours engineering.
+
+3. **SCIM customer-admin coordination (gotcha at end).** Impact: Any of 3 SCIM customers who don't coordinate in the cutover window lose SCIM provisioning until they do. Resolution: this is a comms issue, not a technical one. Schedule 1:1 calls with each of the 3 customer admins 2 weeks before cutover, lock them in for specific time slots during the Saturday window (you may need customer admins online at 11pm-1am Saturday). Budget: CS-led outreach plus pre-committed written escalation paths.
+
+**P1 — resolve pre-cutover, deliverable-impacting if missed:**
+
+4. **Legacy social-login users (item 1).** Impact: ~100-200 users with Google social-login will need to re-auth via WorkOS's Google connection instead of Auth0's. Resolution: configure WorkOS Google OAuth connection, test the identity linking flow (user with Auth0 Google → WorkOS Google should resolve to same user_id via email match). 1 day engineering + comms to those users.
+
+5. **13 remaining JWT consumer PRs (item 4).** Impact: Each unmigrated service breaks at cutover. Resolution: sprint it. 2-3 engineering days parallelized across 2-3 engineers.
+
+6. **M2M client JWT format mismatch (item 9).** Impact: data pipeline fails. Resolution: 2-line fix already identified. Apply and test.
+
+**P2 — can deprioritize to post-cutover:**
+
+7. **Logo aspect ratio (item 6).** Cosmetic. Resolution: regenerate asset before cutover. 30min.
+
+8. **MFA trigger timing difference (item 7).** Document as known-edge-case behavior in internal runbook. No user impact if documented.
+
+**Architectural changes needed:**
+
+None. Every item here is either a config fix, a port, or a comms coordination. This is actually a good dry-run result — no architectural surprises means the plan is sound.
+
+**Critical additions for the migration plan:**
+
+1. **SCIM cutover sub-window.** Your main window is 10pm-6am Saturday. For the 3 SCIM customers, you need a sub-window where their admins are available. Propose: 11pm-2am with one customer admin on standby for each of the 3. Buffer 30min rollback time for each customer-side update. If any customer admin doesn't respond in their slot, you have a pre-defined fallback: leave their SCIM pointed at Auth0 (temporarily) and migrate them in a follow-up window — but only if Auth0 tenant is not terminated yet (which is why the Auth0 contract should not be wound down until all SCIM customers are confirmed migrated).
+
+2. **Legacy-TOTP pre-enrollment window.** 2 weeks before main cutover, send targeted email to all 300-500 pre-2023 TOTP users: "We're upgrading our MFA system — please re-enroll via this link." Measure completion daily. Follow up individually for non-responders in the final week.
+
+3. **Billing-service hotfix pre-cutover test.** Deploy the ported claim Action to WorkOS + update billing-service to read from metadata. Run a full billing lookup cycle in staging against WorkOS JWTs. 4-hour validation before Saturday.
+
+**Biggest lesson from this dry-run:**
+
+Item 5 — you did not know `billing-service` consumed `billing_id`. This is exactly the gap we flagged in step 2 ("#10 `add-billing-claim` — I DO NOT KNOW who consumes this"). The discipline of building the consumer matrix caught it. The fact that it was caught in dry run rather than at cutover is the entire reason dry runs exist. This is a process success; don't normalize it as luck.$pf$,
+ $pf$Dry-run produced 10 findings. Categorized: 3 P0 (pre-2023 TOTP format = 300-500 users need re-enrollment with 2-week notice, billing_id consumer caught, SCIM customer-admin coordination needed), 3 P1 (social-login linking, 13 remaining JWT consumer PRs, M2M fix), 2 P2 (cosmetic). Zero architectural surprises. Critical additions to plan: SCIM cutover sub-window 11pm-2am with customer admins on standby, legacy-TOTP 2-week pre-enrollment window with targeted email, billing-service hotfix pre-cutover test. Billing_id catch validates the consumer matrix discipline from step 2. Auth0 contract teardown cannot finalize until all SCIM customers confirmed migrated.$pf$),
+
+-- Step 5 --
+('66666666-6666-6666-6666-666666260105',
+ '55555555-5555-5555-5555-555555550026',
+ 5,
+ $pf$Data migration plan — users, passwords, MFA, org hierarchy, SCIM bearer tokens$pf$,
+ $pf$Now the actual data plan. I need to migrate ~12,400 users and 47 orgs with user_id preserved, passwords imported (bcrypt), MFA secrets imported (minus the pre-2023 re-enrollment cohort from step 4), and SCIM connections re-established with new bearer tokens. Help me draft the data plan with explicit steps, ordering, and rollback points at each phase.$pf$,
+ $pf$Here's the migration plan structured in phases with explicit ordering, checkpoints, and rollback gates. I'll mark each phase with a PASS/FAIL criteria and what rollback looks like if it fails.
+
+**Phase 1 — Week 3: Pre-migration data extraction and staging.**
+
+1.1 Export Auth0 full user dump (~12,400 records). Fields: user_id, email, bcrypt password hash, TOTP secret (base32), social connections, user_metadata, app_metadata, last_login, created_at.
+1.2 Export Auth0 full organization list (47 orgs). Fields: org_id, name, display_name, branding, connections[].
+1.3 Export SAML connection configs for the 6 enterprise customers. Export signing certs with fingerprints.
+1.4 Stage all exports in a secure bucket (encrypted at rest, access-limited to 3 engineers + CTO).
+1.5 Generate mapping files: `auth0_user_id → external_id`, `auth0_org_id → workos_org_id`.
+
+PASS: all exports complete, row counts match Auth0 reporting. FAIL rollback: re-export (no customer impact yet).
+
+**Phase 2 — Week 4: WorkOS import in staging.**
+
+2.1 Import user dump into WorkOS staging. Use their bulk-import API with external_id = auth0_user_id.
+2.2 Import org structure.
+2.3 Import TOTP secrets (excluding the pre-2023 cohort, who will re-enroll separately).
+2.4 Spot-check 50 users: can they sign in in staging with existing password? Is their TOTP working?
+2.5 Configure the 6 SAML connections. Send test SAML assertions from Okta/Azure AD sandboxes.
+2.6 Generate new SCIM bearer tokens for the 3 SCIM customers. Do NOT distribute yet.
+
+PASS: staging import complete, 50/50 spot-check users can sign in, 6/6 SAML connections return valid assertions. FAIL rollback: staging-only, no customer impact. Retry import.
+
+**Phase 3 — Week 5: Parallel-run in production (dual-write).**
+
+3.1 Import production user dump into WorkOS production tenant.
+3.2 Enable dual-write mode: new signups + password resets write to both Auth0 AND WorkOS.
+3.3 Monitor dual-write success rate for 48h. Target: 100% success rate on new writes.
+3.4 Begin the 14-service JWT-consumer PR sprint. Merge + deploy to staging for each. Run staging integration tests against WorkOS JWTs.
+
+PASS: 48h dual-write rate ≥99.9%, all 14 services deployed to staging with WorkOS JWTs passing integration tests. FAIL rollback: disable dual-write, revert staging deploys, delay cutover by 1 week.
+
+**Phase 4 — Week 5-6: Legacy-TOTP pre-enrollment window.**
+
+4.1 Email all pre-2023 TOTP users (estimated 300-500) with re-enrollment link pointing at a staging WorkOS MFA-setup flow.
+4.2 Track daily completion. Target: 70% by day 7, 90% by day 10.
+4.3 For users who don't re-enroll by day 12, schedule direct CS outreach.
+
+PASS: ≥95% re-enrolled by cutover Friday. FAIL rollback: the remaining <5% will force MFA re-enrollment at cutover — document as known impact in comms plan.
+
+**Phase 5 — Cutover Saturday (10pm ET):**
+
+5.1 T-60min: Final sync of any users created/updated since week 4 production import. Incremental delta.
+5.2 T-30min: All-hands Slack war room open. Pre-cutover health check.
+5.3 T-0: Switch DNS for `auth.ourapp.com` from Auth0 CNAME to WorkOS CNAME. Propagation window ~5-15min.
+5.4 T+15min: Verify all 14 downstream services are now receiving WorkOS JWTs. Any service still receiving Auth0 JWTs is an alert.
+5.5 T+30min: Coordinate with the 3 SCIM customer admins. They update their SCIM endpoint URL + bearer token on their side. Each customer has a pre-booked 30min window.
+5.6 T+60min: Deploy the 14 service PRs to production.
+5.7 T+90min: Run smoke tests across all 47 orgs (test login for 1 user per org, automated).
+5.8 T+120min: First rollback decision point — see step 6 for triggers.
+5.9 T+180min: Target cutover complete. Begin 4-hour soak window with enhanced monitoring.
+
+PASS: all smoke tests green, auth latency p99 < 400ms, no elevated error rates. FAIL: execute rollback per step 6.
+
+**Phase 6 — Post-cutover Monday through Week 8:**
+
+6.1 Monitor Monday morning peak traffic (typical 3-4x baseline from 6am-9am ET).
+6.2 Week-1: dual-write remains enabled with Auth0 as shadow. Compare write rates.
+6.3 Week-2: disable dual-write, Auth0 becomes read-only.
+6.4 Week-3: Final Auth0 account teardown. Cancel the renewal.
+
+PASS: 2 weeks of stable operation, zero cutover-related customer tickets. FAIL: keep Auth0 hot for extended soak period, investigate.
+
+**Rollback points:**
+
+- End of Phase 2: staging-only, no customer impact.
+- End of Phase 3: production dual-write active, but cutover not started. Rollback = disable dual-write, keep Auth0 as source of truth, reschedule.
+- Phase 5 mid-cutover: see step 6 — requires explicit rollback criteria.
+- Phase 6 Monday peak: if issues discovered, decision is roll-forward-fix vs roll-back. Depends on severity.
+
+**Data hygiene notes:**
+
+- The 12,400-user export contains email addresses and hashed passwords. Treat the staging bucket as PHI-adjacent even though it isn't PHI. Encrypted at rest, audit-logged access, 30-day retention max after cutover.
+- User IDs are referenced in PHI audit logs. Preserving them via `external_id` means no audit-log rewrite is needed.
+- bcrypt password hashes + Auth0 salts: confirm with WorkOS support that import format is exact. Run a 10-user test import first, verify those 10 can sign in with existing passwords, then proceed to full.
+- TOTP secrets are sensitive — treat like passwords, encrypted bucket, short retention.
+
+**What's NOT in this plan (intentional):**
+
+- Adding new MFA methods (out of scope, per step 1).
+- Fixing the audit-log user-id schema (separate project).
+- Retiring the 2 deprecated Auth0 Actions — those go in the teardown checklist post-cutover.
+
+**Next step (step 6):** define cutover rollback criteria with explicit numeric thresholds. The vague "if things go wrong, roll back" is what gets teams in trouble on cutover night.$pf$,
+ $pf$6-phase migration plan with PASS/FAIL criteria and rollback gates at each phase. Phases: (1) week-3 data extraction, (2) week-4 staging import + SAML config, (3) week-5 production parallel-run with dual-write + 14-service PR sprint, (4) week-5-6 legacy-TOTP pre-enrollment (target 95% by cutover Friday), (5) cutover Saturday 10pm with 9 sub-steps including SCIM customer coordination 11pm-2am, (6) post-cutover Monday through week 8 with staged Auth0 teardown. Rollback points defined at end of each phase. Data hygiene notes on staging bucket handling, bcrypt + TOTP secret sensitivity, user_id preservation via external_id. Next: define numeric rollback triggers for Saturday night.$pf$),
+
+-- Step 6 --
+('66666666-6666-6666-6666-666666260106',
+ '55555555-5555-5555-5555-555555550026',
+ 6,
+ $pf$Cutover rollback triggers — specific numeric thresholds that say "roll back now"$pf$,
+ $pf$Per your advice, I want explicit numeric rollback triggers for Saturday, not "if things feel wrong." Help me draft a trigger list with thresholds, durations, and the action each one triggers. Also help me think about which triggers are "investigate first" vs "immediate rollback."$pf$,
+ $pf$Yes — this is the exercise that separates a cutover that goes sideways from one that goes catastrophic. The goal is to have decisions pre-made so that at 2am in a war room you're executing, not debating. Here are the triggers:
+
+**Tier 1 — IMMEDIATE ROLLBACK (no discussion, execute playbook):**
+
+1. **Auth0 DNS does not propagate to WorkOS within 30 minutes.** Threshold: DNS propagation check via 5 geographically distributed resolvers returns >50% still pointing at Auth0 after T+30min. Action: revert DNS, abort cutover, investigate.
+
+2. **Login success rate drops below 85% for 10 consecutive minutes.** Threshold: `login_success / login_attempt` < 0.85 for 10min sustained. Action: revert DNS, re-enable Auth0, notify all customer admins via pre-drafted incident email.
+
+3. **Any PHI route guard returns false for a user who should have access.** Threshold: single occurrence confirmed via spot-check. Action: verify it's not a config bug; if it's a claim-shape issue affecting all users, immediate rollback. If single user, root-cause live, rollback if can't resolve in 15min.
+
+4. **More than 3 of the 47 org smoke tests fail.** Threshold: 3+ orgs return non-200 on smoke-test login within 5min of T+90min. Action: rollback.
+
+5. **Any customer reports inability to log in via their escalation channel (not just ticket queue).** Threshold: 1+ enterprise customer escalation during cutover window. Action: investigate first, rollback within 15min if not resolved.
+
+**Tier 2 — INVESTIGATE FIRST, ROLLBACK WITHIN 30 MIN IF NOT RESOLVED:**
+
+6. **Auth latency p99 exceeds 800ms sustained 10 minutes.** Threshold: p99 latency on `/auth/login` > 800ms for 10min sustained. Action: investigate vs WorkOS side (region routing, rate limiting, known WorkOS incident). If not self-resolving in 15min, escalate to WorkOS support. Rollback if not resolved at T+30min of trigger firing.
+
+7. **More than 5% of dual-write operations are failing.** Threshold: `dual_write_failure_rate > 0.05` sustained 15min. Action: investigate root cause (network, WorkOS ingestion, validation failure). Critical during Phase 3 (pre-cutover); post-cutover the dual-write is Auth0-as-shadow so failure is less urgent.
+
+8. **SAML assertion failures for any enterprise customer.** Threshold: SAML error rate > 10% for any specific customer connection for 10min sustained. Action: check cert fingerprints, ACS URL configuration, customer-side changes. These customers have dedicated escalation paths — use them.
+
+9. **SCIM provisioning failures for any of 3 SCIM customers.** Threshold: SCIM sync errors during customer-coordinated sub-window. Action: coordinate with customer admin, verify bearer token + endpoint URL. 30min resolution window; if not resolved, fallback is to leave that specific customer on Auth0 SCIM temporarily.
+
+10. **Error rate on any of 14 downstream services exceeds 2x baseline.** Threshold: service-level error rate > 2x its pre-cutover 24h baseline for 5min. Action: check the service's JWT parsing logic — most likely a claim-shape bug. If it's the shape bug, rollback may be necessary because every downstream service assumes the same contract.
+
+**Tier 3 — MONITOR, DOCUMENT, DON'T ROLLBACK:**
+
+11. Single-user login failures reported by support (not escalation). Monitor volume, don't react to individual.
+
+12. Slightly elevated auth latency (p99 between 400-800ms). Monitor, log, but don't rollback.
+
+13. Non-cutover-window issues reported (e.g., a customer reports something that's actually been broken for 3 days and they're noticing now). Triage normally, don't confuse with cutover.
+
+14. SAML cert fingerprint mismatch on a customer's side that their admin is actively fixing. If the customer admin is on a call with us and fixing, this is "in progress" not "failed" — monitor, give reasonable time.
+
+**Rollback playbook (execute if Tier 1 triggers or if Tier 2 not resolved):**
+
+1. Revert `auth.ourapp.com` DNS from WorkOS CNAME back to Auth0 CNAME. DNS TTL was set to 300s for cutover — propagation 5-15min.
+2. Re-enable Auth0 as primary IdP (it's been in dual-write mode, so state is fresh).
+3. Disable WorkOS as primary. Leave the WorkOS tenant intact for investigation.
+4. Re-deploy the 14 services with pre-cutover JWT parsing (Auth0 claim shapes). This is the slowest rollback step — estimate 20-30min to roll all 14 back if the PRs were merged sequentially.
+5. Send comms: incident email to customer admin escalation list, support team stands up triage, CEO/CRO notified.
+6. Post-rollback war room: root cause analysis, decide re-attempt timeline (minimum 1-week for any re-attempt, 2-week if issue was non-trivial).
+
+**War-room procedures:**
+
+- Fixed roles: Cutover captain (me, Derek), infra engineer monitoring latency + error rates, application engineer monitoring service health, CS lead monitoring customer signals, one person on standby for "thing we didn't expect."
+- Pre-drafted incident comms ready to send (internal, customer-escalation, public status page).
+- Decision authority: cutover captain has unilateral rollback authority for Tier 1 triggers. Tier 2 discussion is captain + infra engineer + application engineer consensus within 5min.
+- No rollback without explicit decision logged in war-room channel. Every rollback decision gets a sentence in Slack: "Rolling back because {trigger X} fired and not resolved. — Derek, {timestamp}."
+
+**The meta-rule:**
+
+Every trigger has a specific numeric threshold and a specific duration. "Things feel wrong" is not a trigger. "Error rate on service A is 4.2% vs baseline 1.8%, sustained 7 minutes and climbing" is a trigger. Pre-commit to the thresholds now; don't negotiate them at 2am.$pf$,
+ $pf$14 rollback triggers defined across 3 tiers: 5 Tier-1 immediate-rollback (DNS failure, <85% login success 10min, PHI guard failure, 3+ org smoke-test failures, enterprise escalation), 5 Tier-2 investigate-first-30min (p99 > 800ms, dual-write > 5% failure, SAML errors > 10%, SCIM failure, downstream service error 2x baseline), 4 Tier-3 monitor-only. Rollback playbook: DNS revert, Auth0 re-enable, 14-service redeploy (20-30min estimate), incident comms, root-cause analysis, 1-2 week re-attempt minimum. War-room roles fixed. Decision rule: cutover captain has unilateral Tier-1 authority; Tier-2 needs 5-min consensus. Every rollback logged with specific trigger + timestamp. Next: comms plan for customers, internal team, support, DPA.$pf$),
+
+-- Step 7 --
+('66666666-6666-6666-6666-666666260107',
+ '55555555-5555-5555-5555-555555550026',
+ 7,
+ $pf$Stakeholder comms plan — customers, internal, support, DPA implications$pf$,
+ $pf$Draft me the full comms plan. Six audiences: (1) all 47 customer orgs, (2) the 6 SAML enterprise customers specifically, (3) the 3 SCIM customers specifically, (4) the 300-500 legacy-TOTP users, (5) internal eng + CS team, (6) DPA/legal/SOC 2 auditor. For each, I want: what, when, via what channel, and who sends it.$pf$,
+ $pf$Comms is where most migrations under-deliver. The technical plan is usually solid; the comms plan is usually one email that goes out 3 days before cutover. Here's a full plan with the 6 audiences.
+
+**1) All 47 customer orgs — general awareness:**
+
+WHAT: We're upgrading our identity platform. No action needed from most users. MFA users will not need to re-enroll. Your login URL stays the same. One Saturday night window (2am-6am ET) where login may have a 5-minute interruption.
+
+WHEN:
+- Week -4: Advance notice email to customer primary contacts.
+- Week -2: Reminder with specific Saturday date + window.
+- T-24h: Final reminder.
+- T+0 (cutover day): Status page banner.
+- T+4h: All-clear status page + email to customer primary contacts.
+
+CHANNEL: Email to customer primary contacts (1 per org), status.ourapp.com banner during window, in-app notification on next login post-cutover.
+
+WHO SENDS: VP Customer Success for emails, automated status page.
+
+**2) 6 SAML enterprise customers — specific outreach:**
+
+WHAT: Your SAML connection will be migrated. Your SSO URL on your side (Okta/Azure AD) needs one field updated — we'll coordinate with your IT admin directly. No change to your user experience.
+
+WHEN:
+- Week -5: 1:1 call with each customer's IT admin to explain + schedule.
+- Week -3: Test SAML assertions in a sandbox with each customer (pre-validated).
+- Week -2: Send specific change instructions + the exact new URL they'll update.
+- Week -1: Confirm each has acknowledged and scheduled the 15-min change window.
+- Cutover Saturday 10:15pm: Coordinated change window with each customer's admin on standby.
+- Week +1: Follow-up confirming no issues.
+
+CHANNEL: Direct email + 1:1 video calls. These are high-touch.
+
+WHO SENDS: CTO (me) for kickoff, Customer Success Manager for coordination.
+
+**3) 3 SCIM customers — coordinated cutover:**
+
+WHAT: Your SCIM integration endpoint + bearer token will be updated. This requires you to update 2 fields in your identity provider (Okta/Azure AD) during our cutover window. We'll be on a call with you at your scheduled time.
+
+WHEN:
+- Week -5: Dedicated call with each customer's identity team.
+- Week -3: Sandbox SCIM provisioning test with each.
+- Week -2: Locked-in time slot for each during cutover window (e.g., Customer A at 11:00pm ET, Customer B at 12:00am, Customer C at 1:00am).
+- Week -1: Final logistics confirmed — joiner link, backup contact, escalation path.
+- Cutover Saturday: Live coordination during their slot.
+- Week +1: Validation that SCIM is provisioning correctly.
+
+CHANNEL: Direct video call during cutover + backup Slack Connect channel + phone numbers for escalation.
+
+WHO SENDS: CTO + Customer Success lead, both on every call.
+
+**4) 300-500 legacy-TOTP users — MFA re-enrollment:**
+
+WHAT: We're upgrading MFA. You need to re-enroll using a link in this email. Takes about 90 seconds. You'll need your phone to scan a QR code.
+
+WHEN:
+- Week -3: Initial email with re-enrollment link.
+- Week -2: Reminder if not completed.
+- Week -1: Second reminder if not completed.
+- Week -0.5: Direct CS outreach for remaining non-responders.
+- Anyone not re-enrolled by cutover: will be prompted on next login post-cutover (known impact, documented).
+
+CHANNEL: Transactional email with re-enroll link, in-app banner for logged-in non-re-enrollees.
+
+WHO SENDS: Automated transactional email, CS team for outreach.
+
+**5) Internal eng + CS team:**
+
+WHAT: Full migration plan, dry-run findings, cutover playbook, rollback triggers, on-call schedule.
+
+WHEN:
+- Week -6: All-hands eng share-out of plan.
+- Week -4: CS team training on talking points, known edge cases, escalation paths.
+- Week -2: Dry-run walkthrough live.
+- Week -1: Final go/no-go meeting.
+- Cutover weekend: war room + Slack channel.
+- Post-cutover: retro within 1 week.
+
+CHANNEL: Linear doc, recorded walkthrough video, Slack #identity-migration channel, live war room.
+
+WHO SENDS: CTO (me) for plan, VP Engineering for on-call schedule, VP CS for talking points.
+
+**6) DPA / legal / SOC 2 auditor:**
+
+WHAT: We are changing a sub-processor (from Auth0 to WorkOS). Both have HIPAA BAAs in place. Our DPA template needs updating. SOC 2 Type II in-flight — auditor needs to know within the change-management disclosure window.
+
+WHEN:
+- Week -8: Legal kickoff. Start the BAA signature with WorkOS. Update sub-processor list in DPA template.
+- Week -6: Notify SOC 2 auditor of in-progress migration.
+- Week -4: Auditor reviews change management documentation.
+- Week -2: Legal signs off that DPA template is updated; customers on existing DPAs need to be notified of the sub-processor change (may or may not require re-signature depending on DPA language — legal reviews).
+- Week -1: Customer notifications per DPA requirements go out.
+- Post-cutover: Auditor reviews post-cutover evidence, confirms controls remain operating.
+
+CHANNEL: Direct work with outside counsel + internal legal + auditor portal.
+
+WHO SENDS: General Counsel for customer notifications, CTO for auditor interactions.
+
+**Things I'd add to the comms plan:**
+
+- **Pre-drafted incident comms.** If we hit a Tier-1 rollback trigger at 1am, you need 3 emails pre-drafted: internal incident email, customer admin escalation email, public status page. Write these in week -1, don't compose at 2am.
+- **Customer admin "green light" check-in 2 hours before cutover.** Short email at 8pm cutover Saturday: "Cutover window begins in 2 hours. Please confirm you're available." Replies track who's online.
+- **Status page before, during, after.** Update states: "Scheduled maintenance upcoming" → "In progress" → "Completed" → "Operating normally." Each state has pre-drafted text.
+- **The "we're doing this because" question.** Customers will ask. Talking point: "We regularly evaluate our infrastructure partners. This migration reduces cost, improves our self-serve config experience for enterprise customers, and strengthens our SOC 2 posture. No customer feature is being changed." Rehearsed with CS.
+
+**What NOT to say:**
+
+- Don't mention Auth0's price hike publicly. That's internal context.
+- Don't describe WorkOS as "better" without specificity. Customers don't care; they care that their login still works.
+- Don't over-promise zero-downtime. Commit to the business-hours-zero-downtime constraint. Off-hours brief interruption is honest and accepted.$pf$,
+ $pf$Comms plan across 6 audiences with channels, timing, and sender assigned. All 47 orgs: email + status page, 4 touchpoints. 6 SAML enterprise customers: 1:1 high-touch video calls starting week -5. 3 SCIM customers: coordinated video calls during their locked-in cutover slots (11pm-2am sub-window). 300-500 legacy-TOTP users: 3-email cadence + CS outreach for non-responders. Internal team: full plan, dry-run video, war room, retro. DPA/legal/SOC 2: sub-processor change at week -8, auditor notification week -6, customer DPA notifications week -1. Pre-drafted incident comms ready for 2am war room. Key discipline: talking points NOT mentioning Auth0's price hike and NOT over-promising zero-downtime. Next: post-cutover retrospective with pre-committed triggers for long-tail follow-ups.$pf$),
+
+-- Step 8 --
+('66666666-6666-6666-6666-666666260108',
+ '55555555-5555-5555-5555-555555550026',
+ 8,
+ $pf$Post-cutover retrospective — what went wrong Saturday + trigger-action pairs for the long tail$pf$,
+ $pf$We're 10 days post-cutover. Here's what actually happened Saturday:
+- Cutover took 4h 20min (planned 3h).
+- BrightCare SAML cert fingerprint mismatch cost 40 min (their Okta admin hadn't rotated their matching fingerprint; fixed live).
+- Tier-2 trigger #6 (auth latency p99 > 800ms) fired at T+28min. Investigated — WorkOS region routing, cleared at T+32min. Almost rolled back.
+- Dual-write race condition produced 3 orphan user records. Found Monday morning, reconciled manually.
+- 96.2% of legacy-TOTP users re-enrolled pre-cutover. Remaining 3.8% were prompted at first login; zero support tickets about it.
+- 4 customer orgs still have legacy M2M tokens that haven't rotated because their contact went dark.
+
+Help me draft the retrospective and — specifically — the trigger-action pairs for follow-up so the 4 stale M2M orgs don't linger as "we'll get to it." Also what do I share publicly vs internally?$pf$,
+ $pf$Solid cutover. 4h 20min vs 3h planned is a +40% overrun, which is within a normal first-time-migration buffer. Let me structure the retro and the follow-up discipline.
+
+**Retrospective structure:**
+
+**What went well:**
+- The dry run caught `billing_id`. Without that catch, Monday morning is a billing-service P0 instead of a working platform.
+- Rollback triggers were pre-committed. When p99 latency fired at T+28min, the team investigated for 4 minutes and did NOT reflexively rollback. That discipline is load-bearing — many migrations die to false-positive rollback decisions.
+- Legacy-TOTP pre-enrollment hit 96.2%. Target was 95%. Comms executed.
+- SCIM customer coordination held. All 3 customer admins online in their slots, all executed cleanly.
+- Consumer matrix discipline (14 services × 28 claims) paid off. Zero claim-shape bugs at cutover.
+
+**What could have gone better:**
+
+1. **BrightCare cert mismatch (40min cost).** Root cause: our cert rotation was communicated to them but their IT admin didn't action it before cutover. We assumed "communicated" meant "confirmed actioned" when we should have pre-validated via a test SAML assertion with the new cert 48h before cutover. Action: add "48h pre-validation assertion for all SAML customers" to the next-cutover playbook.
+
+2. **Dual-write race condition → 3 orphan users.** Root cause: concurrent signup in the dual-write window where the Auth0 write succeeded and the WorkOS write timed out, but the retry succeeded creating a duplicate. We had single-record idempotency but not cross-system transaction discipline. Action: for future dual-write migrations, add write-level ordering guarantee OR accept post-cutover reconciliation as part of plan. Document as known dual-write pattern.
+
+3. **Auth latency p99 spike investigation took 4 minutes where 2 would have been better.** Root cause: WorkOS region routing issue was not in our runbook; we had to figure out in war-room it was vendor-side. Action: build a runbook section for "WorkOS-side incidents during cutover" with check commands + escalation contact.
+
+4. **4 customer orgs with stale M2M tokens.** This is the NOT-DONE from the migration. Those tokens will become dead weight and their customers will eventually have an unrelated issue that unexpectedly touches them.
+
+**Trigger-action pairs for the long tail:**
+
+This is the critical piece. Every unfinished migration has a stale-tokens / stale-configs tail. The way you prevent it becoming a P0 in 18 months is pre-committed triggers with actions — not "we'll follow up."
+
+1. **4 stale M2M customer orgs.**
+   - Trigger: Customer-success team pings each of 4 customers with deadline + escalation script, weekly for 4 weeks.
+   - Trigger: If no rotation by week-4 post-cutover, CTO (me) personally emails each customer's IT leadership with a 30-day deadline.
+   - Trigger: At 30 days post-personal-email with no rotation, legacy M2M token expires. Customer experiences integration failure. Pre-committed: we WILL let the token expire rather than extending indefinitely. Pre-committed comms ready for this scenario.
+   - Owner: VP Customer Success. Status in weekly CS leadership meeting until resolved.
+
+2. **Auth0 teardown.**
+   - Trigger: Week +4 post-cutover, all customers on WorkOS.
+   - Action: Disable Auth0 tenant (read-only initially for 2 weeks).
+   - Action: Week +6, formally cancel Auth0 contract. Document savings in quarterly finance review.
+   - Owner: CTO.
+
+3. **The 2 deprecated Auth0 Actions (#7 and #12).** Never ported, no equivalent in WorkOS, nobody consumes.
+   - Trigger: Week +2, confirm via code-search they have zero references.
+   - Action: Remove from any remaining migration scripts. No WorkOS equivalent needed.
+   - Owner: Platform engineer.
+
+4. **Dual-write monitoring period ends.**
+   - Trigger: Week +2 post-cutover, dual-write disabled, Auth0 becomes read-only.
+   - Action: Remove dual-write code paths from our auth layer. This is a ~1-day engineering task, but if not done explicitly, it becomes dead code that confuses future engineers.
+   - Owner: Platform engineer.
+
+5. **Enterprise SAML 48h pre-validation becomes standard.**
+   - Trigger: In the playbook for any future identity change (cert rotation, config update, re-signing).
+   - Action: 48h pre-validation via test assertion with customer-side.
+   - Owner: CTO documents, CS enforces.
+
+6. **Post-cutover soak findings.**
+   - Trigger: Weekly for 4 weeks, review auth-related support tickets for any pattern.
+   - Action: If a pattern emerges (e.g., "users on region X have higher failure rate"), investigate root cause.
+   - Owner: VP Customer Success reports to CTO weekly.
+
+**Internal retrospective (for eng + CS leadership):**
+
+- Full root-cause analysis of all 4 "what could have gone better" items.
+- $195K/year savings realized. Pay-back on migration effort (~$40K in engineering time): 2.5 months.
+- 2 new processes adopted: pre-cutover SAML validation, dual-write idempotency pattern.
+- 2 known-unresolved items: 4 stale M2M customers (tracked), dual-write dead-code removal (tracked).
+
+**Public retrospective (customer-facing, in newsletter or on public changelog):**
+
+KEEP IT SHORT. Customers don't want an engineering memoir. Something like:
+
+"Earlier this month we migrated our authentication platform. The cutover happened Saturday night October 12 and was completed without customer-visible business-hours impact. We wanted to note the migration completed successfully and thank customer admins from BrightCare, NovaHealth, and AtlantaRegional for their coordination during the cutover window. Our login experience is unchanged; our platform is now more configurable for enterprise customers who want self-serve SAML setup."
+
+What it does: confirms the event happened, thanks coordinators by name, mentions one benefit concretely, says nothing about Auth0 or why we left.
+
+What NOT to say publicly:
+- Don't mention Auth0 by name. Irrelevant to customers.
+- Don't describe the $195K savings. Irrelevant and potentially confusing ("were we overpaying?").
+- Don't say "zero downtime." You had a cert-mismatch incident. Say "no business-hours impact" which is true and sufficient.
+- Don't take a victory lap on duration. "4h 20min" is an engineering metric, not a customer metric.
+
+**Share internally with board / exec team:**
+
+- Savings: $195K/year (pay-back 2.5mo).
+- Strategic: unblocks Q1 enterprise customer requests (5 prospects in pipeline specifically asked about SAML self-serve).
+- Risk: 1 recoverable incident (cert-mismatch), 1 manual reconciliation (3 orphan users). No customer escalations.
+- Process wins: consumer matrix discipline, pre-committed rollback triggers.
+
+**The one sentence that should end the retrospective:**
+
+"This migration's success was primarily upstream — in steps 1, 2, and 6 of the planning workflow — and we underinvested in step 7's customer-side validation. That's the lesson for next time."$pf$,
+ $pf$Retrospective complete. Went-well: dry run caught billing_id, rollback triggers held discipline on p99 spike, 96.2% legacy-TOTP pre-enrollment, SCIM coordination clean, consumer matrix prevented claim-shape bugs. Could-have-gone-better: BrightCare cert mismatch (40min) — 48h pre-validation now standard; dual-write race (3 orphans) — reconciliation pattern documented; p99 investigation (4min not 2) — WorkOS-side runbook added; 4 stale M2M orgs. Trigger-action pairs defined for 6 long-tail items including the 4 stale M2M with pre-committed expiry at 30 days. Public retrospective kept short, thanking 3 customer admins by name, not mentioning Auth0 or savings. Internal share: $195K/yr savings, 2.5mo payback, unblocks 5 Q1 enterprise prospects. Closing line: "success was upstream in planning steps 1/2/6, underinvested in step 7's customer-side validation — lesson for next time."$pf$);
+
+-- =========================================================================
+-- Project 0027 — Productivity (Meeting transcript → actions in 8 minutes)
+-- ops_nina · Claude 4.6 Sonnet · 2 steps · beginner
+-- =========================================================================
+
+DELETE FROM prompt_steps WHERE prompt_id = '55555555-5555-5555-5555-555555550027';
+DELETE FROM prompts      WHERE id        = '55555555-5555-5555-5555-555555550027';
+
+INSERT INTO prompts (
+  id, title, description, content, result_content,
+  category_id, difficulty, model_used, model_recommendation,
+  tools_used, tags, status, author_id, vote_count, bookmark_count
+) VALUES (
+  '55555555-5555-5555-5555-555555550027',
+  $pf$Client standup transcript → action items, Slack post, and DM drafts — 2-pass Claude workflow I run every Monday$pf$,
+  $pf$Every Monday I run a 60-min standup with one of our 5 client teams. By Wednesday I'd forget half the decisions and someone would ask "who's owning X?" I built a 2-prompt Claude workflow against the Fathom transcript: step 1 extracts decisions, action items with owners and dates, blockers, open questions; step 2 turns it into the Slack post + individual DMs to owners + a client follow-up email. 8 minutes end-to-end, replaces ~45 min of my day.$pf$,
+  $pf$I'm Nina, ops manager at a 28-person agency. I run weekly standups with each of our 5 client teams. Agency work — the standup is where work gets committed, re-scoped, and occasionally reset entirely based on what the client did over the weekend.
+
+Before: I'd take notes in the meeting, then Monday afternoon I'd try to reconstruct who said they'd do what by when. By Wednesday the notes would be stale and someone would ask "wait, who's handling the X-thing?" and we'd all look at each other. Occasionally this would turn into a deliverable slipping, which is the bad kind of surprise to have at the Friday client check-in.
+
+After: Fathom records the meeting, I paste the transcript into Claude with a 2-step workflow. Step 1 structures the meeting — decisions, action items with owners and dates, blockers, open questions. Step 2 converts it to three outputs — Slack post for the team channel, individual DMs for action-item owners, and a follow-up email draft for the client. I review + edit for about 5 minutes, send, done.
+
+Claude 4.6 Sonnet because this is structured extraction from a transcript, not heavy judgment. The 2-step workflow is deliberate — one prompt that does extraction-and-formatting conflates two jobs and both come out worse. Doing extraction first, then formatting second, gives me a chance to catch misattributions before they go out.$pf$,
+  $pf$I've been using this every Monday for 3 months across all 5 client teams. Measurable wins: (1) Time dropped from ~45min of Monday-afternoon-me reconstructing notes to ~8min of review-and-send. (2) Action items with owners + dates are now the default shape, which means the Wednesday "wait who's on X" question stopped happening. (3) I caught two cases where I misattributed a commitment in the extraction pass — Claude pulled it from the transcript accurately, I'd misremembered who volunteered. That's the point of structured extraction; memory is worse than you think.
+
+What I'd tell the next ops person: the load-bearing thing is the TWO prompts, not one. If you ask Claude to "extract action items AND draft the Slack post" in one prompt, it front-loads the polish and backend-loads the accuracy. Do extraction first, review it, THEN ask for the formatted outputs. Takes 8 minutes instead of 5, prevents sending a DM to the wrong owner.$pf$,
+  '11111111-1111-1111-1111-111111111107',
+  'beginner',
+  'claude-sonnet-4-6',
+  'Claude 4.6 Sonnet',
+  ARRAY['Claude','Fathom','Slack','Gmail','Notion'],
+  ARRAY['meeting-notes','action-items','standup','workflow','weekly-ritual','agency-ops'],
+  'approved',
+  '22222222-2222-2222-2222-222222222206',
+  78, 32
+);
+
+INSERT INTO prompt_steps (id, prompt_id, step_number, title, content, result_content, description) VALUES
+
+-- Step 1 --
+('66666666-6666-6666-6666-666666270101',
+ '55555555-5555-5555-5555-555555550027',
+ 1,
+ $pf$Extract structured meeting summary from the Fathom transcript$pf$,
+ $pf$Here's the Fathom transcript from our 9am standup with the Brightfield client team (my team: me, Oliver - PM, Dana - senior designer, Alex - senior dev, Priya - QA lead; client side: Morgan - VP Marketing, Sam - product lead). Meeting was 58 minutes. Transcript is roughly 6,000 words.
+
+Extract the following, structured:
+
+1. **Decisions made** — anything where someone said "yes, we'll do X" or "we've decided to Y." Attribute to whoever owns the decision. Include context if the decision changes prior scope.
+
+2. **Action items** — who committed to do what by when. Format: Owner | Action | Due date | Context. If due date wasn't stated, say "not specified" — don't invent one.
+
+3. **Blockers raised** — anything someone said is blocking their progress. Who's blocked, what's blocking them, who's on the hook to unblock.
+
+4. **Open questions** — anything raised but not resolved. Who raised it, what's the question, what needs to happen to resolve.
+
+5. **Flags for me** — anything that looked like a disagreement, a surprise, or something I should follow up on separately. Don't overcall; only include things that a human reading the transcript would notice.
+
+Don't include small talk, meeting housekeeping, or anything irrelevant. If someone said something ambiguous ("I think I can probably get to it"), flag it as ambiguous rather than treating as a commitment.
+
+[TRANSCRIPT PASTED BELOW]
+[6,000 words of transcript content]$pf$,
+ $pf$Structured extraction from the Brightfield standup transcript:
+
+---
+
+**1. Decisions made:**
+
+- **Sam (client) + Oliver (PM):** The homepage redesign scope will NOT include the new video hero element discussed 2 weeks ago. Video production is delayed on their side and would push launch. Homepage launches with static hero, video added in a follow-up in 3-4 weeks. *This changes the Brightfield-homepage scope committed in week 38.*
+
+- **Morgan (client VP):** Approved the additional $4K for a custom illustration set for the product pages. Dana will source the illustrator (agency's preferred partner). Budget line goes against Q4 retainer overage, not a new PO.
+
+- **Oliver (PM) + Alex (dev):** Integration testing for the new pricing-tier logic will be pushed to Wednesday rather than Tuesday so QA has time to set up the Stripe sandbox properly. Morgan confirmed this is acceptable as long as it doesn't push the Thursday soft-launch.
+
+---
+
+**2. Action items:**
+
+| Owner | Action | Due date | Context |
+|-------|--------|----------|---------|
+| Dana | Source illustrator, get 3 options with style samples for Morgan | Thursday this week | $4K budget approved |
+| Alex | Finish pricing-tier logic integration, push to staging | Tuesday EOD | Enables Wed QA |
+| Priya | Set up Stripe sandbox test data + run integration tests | Wednesday | Blocks Thursday soft-launch |
+| Oliver | Send Morgan revised homepage spec (static hero only) + updated timeline | Monday EOD (today) | Scope change doc |
+| Nina | Reconcile Q4 retainer budget against $4K custom illustration + send summary to Morgan | Friday | Budget tracking |
+| Morgan (client) | Confirm homepage copy for the static hero by Tuesday | Tuesday | Alex needs copy for staging deploy |
+| Sam (client) | Send Alex the Stripe sandbox credentials | Tuesday AM | Priya's sandbox setup blocked on this |
+
+---
+
+**3. Blockers raised:**
+
+- **Priya blocked on:** Stripe sandbox credentials. Sam owns unblocking by Tuesday AM.
+- **Alex mentioned, not officially blocked:** Copy for the homepage static hero. Morgan owns by Tuesday.
+- **Dana mentioned:** "Still waiting on Oliver to confirm final product-page layout before she can brief the illustrator" — Oliver confirmed in the meeting he'd send Wednesday. Resolved live.
+
+---
+
+**4. Open questions:**
+
+- **Raised by Morgan:** Should the launch email go out Thursday (soft launch) or Friday (full launch)? No decision made. Needs alignment between Morgan, Oliver, and the content team by Wednesday.
+- **Raised by Oliver:** Do we want to A/B test the pricing page at launch, or go with Variant B outright? Sam wasn't sure, said "let me talk to our growth lead and get back to you this week." Owner: Sam. No firm date.
+- **Raised by Alex:** The legacy-cart abandonment flow isn't covered by the Thursday soft-launch scope — should it stay as-is or get patched? Deferred to a post-launch scope conversation. No urgency but don't forget.
+
+---
+
+**5. Flags for Nina:**
+
+- **Surprise:** Morgan mentioned offhand at minute 42 that "we're thinking about moving some of the performance-marketing work in-house next quarter." Not discussed further. This would affect the Brightfield retainer scope in Q1. Worth a 1:1 between you and Morgan this week to understand.
+- **Ambiguous commitment:** Alex said "I can probably also get to the checkout flow clean-up if I have time Thursday." That's not a commitment — don't list it as an action item. If you want it done, ask explicitly in DM.
+- **Possible disagreement, not escalated:** Dana and Oliver had a mild disagreement at minute 28 about whether the illustration style should be geometric-flat or hand-drawn. Dana said "fine, we'll go geometric" but her tone suggested she wasn't fully on board. Worth checking in with Dana 1:1 before the illustrator-sourcing brief goes out.
+- **Budget flag:** $4K custom illustration goes against Q4 retainer overage. Current overage is $2.8K already committed. Adding $4K puts Brightfield at $6.8K over Q4 retainer. You should confirm with agency leadership that this is acceptable before sending the email to Morgan.
+
+---
+
+End of extraction.$pf$,
+ $pf$Structured extraction from 58-min Brightfield standup: 3 decisions (homepage scope change, $4K illustration budget, integration testing push to Wednesday), 7 action items with owners + due dates, 3 blockers, 3 open questions, 4 flags for Nina (Morgan's offhand comment about moving perf-marketing in-house = potential retainer change in Q1; Alex's "probably can" on checkout flow flagged as ambiguous not a commitment; Dana/Oliver illustration-style mild disagreement for 1:1 follow-up; budget flag that $4K + existing $2.8K overage needs agency leadership sign-off). Due-dates respected as stated ("not specified" used where not stated).$pf$),
+
+-- Step 2 --
+('66666666-6666-6666-6666-666666270102',
+ '55555555-5555-5555-5555-555555550027',
+ 2,
+ $pf$Convert structured summary into Slack post, individual DMs, and client follow-up email$pf$,
+ $pf$Extraction looks right. One edit: the $4K budget flag — I already confirmed with agency leadership on Friday that up to $8K in Q4 overage is fine for Brightfield given they're renewing for Q1. So remove that from the flag section; not a problem.
+
+Now convert the extraction into three outputs:
+
+1. **Slack post** for our internal #brightfield-team channel. Concise, scannable, in the voice of someone who was in the meeting (I'm Nina). Action items should tag owners. Include the flags for Oliver (illustration style with Dana) and for me (Morgan's comment about perf-marketing in-house) at the bottom as "heads up" notes — the team should know but it doesn't need to be in the main body.
+
+2. **Individual DMs** to each action-item owner on our side (Dana, Alex, Priya, Oliver) with their specific action + due date + context. Short, direct, friendly. No formality. Each DM should end with a calendar-hold suggestion if the action deserves blocked time.
+
+3. **Client follow-up email** to Morgan and Sam. Recap the decisions, confirm the action items on each side, and explicitly note the open questions they owe us (launch email timing, pricing A/B decision). Professional but warm — Morgan's a good client, not stiff. Close with "let me know if anything doesn't match what you remember."$pf$,
+ $pf$Here are the three outputs:
+
+---
+
+**1. Slack post (#brightfield-team):**
+
+**Monday Standup Recap — Brightfield (9am)**
+
+**Decisions this week:**
+- Homepage launches with static hero (no video). Video becomes a follow-up in 3-4 weeks. Scope change doc coming from @Oliver.
+- $4K custom illustration set for product pages approved by Morgan. @Dana sourcing.
+- Integration testing moves to Wed (from Tue) to give QA clean sandbox setup time.
+
+**Who's doing what this week:**
+- @Dana — 3 illustrator options w/ style samples by Thursday
+- @Alex — pricing-tier logic to staging by Tue EOD; blocked on Sam sending Stripe sandbox creds Tuesday AM
+- @Priya — Stripe sandbox + integration tests Wednesday (blocked until Alex pushes)
+- @Oliver — revised homepage spec to Morgan by EOD today
+- Me — Q4 retainer reconciliation + summary to Morgan by Friday
+
+**Open on client side:**
+- Morgan: homepage static-hero copy by Tuesday
+- Sam: Stripe sandbox creds by Tuesday AM
+- Launch email timing (Thu soft vs Fri full) — Morgan/Oliver syncing by Wed
+- Pricing A/B — Sam checking w/ his growth lead
+
+**Heads-up:**
+- @Oliver — quick 1:1 with Dana before her illustrator brief? Sensed some lingering on geometric-vs-hand-drawn from today's call.
+- Team — Morgan mentioned offhand they're considering moving some perf-marketing in-house next quarter. Not a conversation for channel, but something I'll follow up on separately this week.
+
+Soft launch still Thursday. Full launch still Friday. 🚀
+
+---
+
+**2. Individual DMs:**
+
+**DM to @Dana:**
+> Hey — just formalizing from this morning. By Thursday this week: 3 illustrator options (the agency's preferred partners) with style samples for Morgan. $4K budget is approved, goes against Q4 overage so no new PO needed.
+>
+> Quick heads-up: Oliver's going to loop with you separately this week about the geometric-vs-hand-drawn direction — just wanted to flag I picked up on the convo not fully landing. No pressure, just wanted to make sure the brief reflects what you actually want to ship.
+>
+> Block 90 min on your cal Tue or Wed for the sourcing work?
+
+**DM to @Alex:**
+> Quick recap from standup: pricing-tier logic needs to be in staging by Tue EOD so Priya can run integration tests Wednesday. You're waiting on Sam for Stripe sandbox creds (he's sending Tuesday AM); ping me if he's late and I'll nudge.
+>
+> Also — I heard the "probably can get to checkout flow clean-up Thursday if I have time" comment. Not counting that as committed. If you want it in scope, let me know and I'll talk to Oliver about sequencing.
+>
+> Suggest blocking a focused 3-hour window Tuesday for the integration work.
+
+**DM to @Priya:**
+> Stripe sandbox + integration tests on Wednesday this week. You're blocked until Alex pushes pricing-tier logic to staging Tuesday EOD + Sam sends sandbox creds Tuesday AM — I'm tracking both and will flag if either slips.
+>
+> Soft launch Thursday depends on your Wednesday work, so this is on the critical path. If you hit anything weird with the Stripe sandbox setup, ping me or Alex fast — don't spend a half-day debugging alone.
+>
+> Block Wed morning on cal?
+
+**DM to @Oliver:**
+> Two things for you:
+>
+> 1) Revised homepage spec (static hero only, no video) — Morgan needs it by EOD today. Scope change doc + updated timeline.
+>
+> 2) Quick 1:1 with Dana sometime before her illustrator brief goes out — noticed the geometric-vs-hand-drawn thing didn't fully land. Worth checking in so the brief reflects where she actually is.
+>
+> The Wed launch-email-timing sync with Morgan — you leading that, right? Let me know if you want me on it.
+
+---
+
+**3. Client follow-up email (to Morgan + Sam):**
+
+Subject: Brightfield standup recap — 3 decisions, 2 open
+
+Hi Morgan, Sam —
+
+Quick recap from this morning so we're aligned:
+
+**Decisions this week:**
+- Homepage launches Thursday with the static hero — video moves to a follow-up in 3-4 weeks once your production is ready. Oliver is sending over the revised spec + updated timeline today.
+- The $4K custom illustration set for product pages is approved. Dana will come back Thursday with 3 illustrator options + style samples.
+- Integration testing shifts to Wednesday (from Tuesday) so Priya has clean sandbox setup time. Soft launch Thursday still on track.
+
+**On our side this week:**
+- Oliver: revised homepage spec to you today
+- Dana: illustrator options Thursday
+- Alex: pricing-tier logic to staging Tuesday EOD
+- Priya: integration tests Wednesday
+- Me: Q4 retainer + illustration budget reconciliation Friday
+
+**On your side this week:**
+- Morgan: homepage static-hero copy by Tuesday (Alex needs for staging deploy)
+- Sam: Stripe sandbox credentials to Alex by Tuesday AM
+
+**Open for us to align on by Wednesday:**
+- Launch email timing — Thursday with the soft launch, or Friday with the full launch? You two want to sync and land on one?
+- Pricing A/B — Sam was going to check with your growth lead on whether we A/B or go straight to Variant B. Either way works on our side; just let us know.
+
+Let me know if anything doesn't match what you remember — happy to adjust.
+
+Thanks,
+Nina
+
+---
+
+That's the full package. Slack post is scannable; DMs are specific and have calendar-block suggestions; client email confirms both sides' actions and names the two items they owe us without being pushy.$pf$,
+ $pf$Three outputs generated: (1) Slack post for #brightfield-team — scannable, tags owners, ends with heads-up notes on the Dana/Oliver illustration-style check-in + Morgan's perf-marketing-in-house comment being tracked separately. (2) Four individual DMs with specific actions, context, and calendar-block suggestions — Dana's DM includes the heads-up about Oliver's coming 1:1, Alex's DM explicitly un-commits the "probably can" checkout flow comment. (3) Client email to Morgan + Sam — recap of 3 decisions, lists our-side + their-side actions this week, names the 2 open questions they owe us, closes with "let me know if anything doesn't match what you remember." Total turnaround time 8 min including Nina's edits. Replaces ~45 min of reconstructing notes Monday afternoon.$pf$);
+
+-- =========================================================================
 -- END OF FILE — append next project(s) below this line.
 -- Iterations working the Content queue: add 2–3 projects per iteration,
 -- appending below this comment. Do NOT rewrite existing projects.

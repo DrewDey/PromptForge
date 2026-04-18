@@ -1,7 +1,7 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { Fragment } from 'react'
-import { ChevronRight, Tag, Cpu, Wrench, MessageSquare, ArrowRight, ArrowDown, GitFork } from 'lucide-react'
+import { ChevronRight, Tag, Cpu, Wrench, ArrowRight, ArrowDown, GitFork } from 'lucide-react'
 import { getPromptById, getUserVotesAndBookmarks, getPrompts } from '@/lib/data'
 import { getModelName } from '@/lib/models'
 import VoteBookmarkButtons from '@/components/VoteBookmarkButtons'
@@ -74,6 +74,15 @@ export default async function PromptDetailPage({
   const heroStepIndex = heroSource === 'step' && lastStepWithResult
     ? prompt.steps!.findIndex(s => s.id === lastStepWithResult.id)
     : -1
+
+  // The Story — split into editorial paragraphs (iter 54 — Polish #5).
+  // Authors separate paragraphs with a blank line ("\n\n"). Split here so
+  // the first paragraph can carry a drop-cap and subsequent paragraphs
+  // render as regular editorial body. Whitespace-only splits are dropped.
+  const storyParagraphs = (prompt.content ?? '')
+    .split(/\n\s*\n/)
+    .map(p => p.trim())
+    .filter(Boolean)
 
   // Fetch related projects in the same category (for "More in this category" section)
   let relatedProjects: Awaited<ReturnType<typeof getPrompts>> = []
@@ -270,16 +279,54 @@ export default async function PromptDetailPage({
         </section>
       )}
 
-      {/* ─── The Story — backstory under the hero ─── */}
-      <section className="mb-12">
-        <h2 className="text-xl font-black text-surface-900 mb-4 flex items-center gap-2">
-          <MessageSquare className="w-5 h-5 text-brand-orange" />
-          The Story
-        </h2>
-        <div className="bg-primary-50/60 border-l-4 border-brand-orange p-6 sm:p-8">
-          <p className="text-surface-700 text-base leading-relaxed whitespace-pre-line max-w-prose">{prompt.content}</p>
-        </div>
-      </section>
+      {/* ─── The Story — editorial feature body (iter 54 — Polish #5) ───
+          Removed: the `bg-primary-50/60 border-l-4 border-brand-orange` callout
+          box. That vocabulary reads as "documentation alert" — a heads-up
+          for a reader, not an author telling you why they built something.
+          The block dominating this page is already the gradient-framed Final
+          Output hero above; a second orange-bordered box stacked under it
+          made the page feel documentation-heavy and split the reader's
+          attention between two "important! look here" surfaces.
+
+          Now rendered as un-framed editorial prose. The h2 stays for
+          accessibility (outline/anchor landmark) but is demoted visually to
+          a mono eyebrow that matches the Final Output hero's eyebrow
+          vocabulary, signalling "this is a sibling block, continue reading"
+          rather than introducing a new UI affordance. The body splits on
+          blank-line boundaries so the FIRST paragraph carries a drop-cap
+          first letter (the reader's eye-anchor into the narrative) while
+          subsequent paragraphs read as plain feature-article body. Scale is
+          text-lg → sm:text-xl, leading 1.75, surface-800 — reading-prose
+          weight, not UI-chip weight. The drop cap is explicitly NOT wrapped
+          in a `<span>`; Tailwind's first-letter: utility targets the real
+          CSS `::first-letter` pseudo-element so the rest of the paragraph
+          flows around it naturally. */}
+      {storyParagraphs.length > 0 && (
+        <section aria-labelledby="story-eyebrow" className="mb-14">
+          <div className="flex items-center gap-2.5 mb-6">
+            <span className="inline-block w-1.5 h-1.5 bg-brand-orange" aria-hidden="true" />
+            <h2 id="story-eyebrow" className="text-[11px] font-mono uppercase tracking-[0.18em] text-surface-600 font-semibold">
+              The story
+            </h2>
+            <span className="text-surface-300 text-xs" aria-hidden="true">·</span>
+            <span className="text-[11px] font-mono text-surface-400">why they built it</span>
+          </div>
+          <div className="max-w-prose">
+            {storyParagraphs.map((para, i) => (
+              <p
+                key={i}
+                className={
+                  i === 0
+                    ? 'text-lg sm:text-xl leading-[1.75] text-surface-800 whitespace-pre-line first-letter:font-black first-letter:text-[3.5rem] sm:first-letter:text-[4rem] first-letter:text-brand-orange first-letter:mr-1.5 first-letter:float-left first-letter:leading-[0.85] first-letter:mt-1.5'
+                    : 'text-lg sm:text-xl leading-[1.75] text-surface-800 whitespace-pre-line mt-5'
+                }
+              >
+                {para}
+              </p>
+            ))}
+          </div>
+        </section>
+      )}
 
       {/* ─── Steps — the path (core differentiator) ─── */}
       {hasSteps && (

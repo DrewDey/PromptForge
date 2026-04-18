@@ -37,55 +37,37 @@ export function SkeletonText({
   )
 }
 
-/** Skeleton matching PromptCard structure — step flow bar, badges, title, description, footer */
+/** Skeleton matching PromptCard structure — outcome hero on top, then title, description, footer */
 export function SkeletonCard() {
   return (
     <div className="bg-white border border-surface-200 overflow-hidden">
-      {/* Step flow mini-visualization placeholder */}
-      <div className="bg-surface-50 border-b border-surface-200 px-5 py-3 flex items-center gap-1.5">
-        {[1, 2, 3].map(i => (
-          <div key={i} className="flex items-center gap-1.5">
-            <SkeletonBox className="w-6 h-6" />
-            {i < 3 && <SkeletonBox className="w-3 h-3" />}
-          </div>
-        ))}
-      </div>
-
       <div className="p-5">
-        {/* Category + Difficulty badges */}
-        <div className="flex items-center gap-2 mb-3">
-          <SkeletonBox className="h-5 w-20" />
-          <SkeletonBox className="h-5 w-16" />
+        {/* Outcome hero placeholder — matches the gradient-frame block */}
+        <div className="bg-surface-100 p-[1.5px] mb-4">
+          <div className="bg-white px-4 py-3.5 min-h-[120px] flex flex-col gap-2">
+            <SkeletonBox className="h-3 w-24" />
+            <SkeletonText lines={3} widths={['100%', '92%', '60%']} />
+          </div>
         </div>
+
+        {/* Category eyebrow */}
+        <SkeletonBox className="h-3 w-24 mb-1.5" />
 
         {/* Title */}
-        <SkeletonBox className="h-5 w-[85%] mb-2" />
+        <SkeletonBox className="h-4 w-[78%] mb-1" />
 
         {/* Description */}
-        <div className="mb-4">
-          <SkeletonText lines={2} widths={['100%', '70%']} />
+        <div className="mb-3.5">
+          <SkeletonText lines={2} widths={['100%', '65%']} />
         </div>
 
-        {/* Model + Tools row */}
-        <div className="flex items-center gap-3 mb-4">
-          <SkeletonBox className="h-5 w-24" />
-          <SkeletonBox className="h-5 w-20" />
-        </div>
-
-        {/* Tags */}
-        <div className="flex gap-1.5 mb-4">
-          <SkeletonBox className="h-5 w-14" />
-          <SkeletonBox className="h-5 w-16" />
-          <SkeletonBox className="h-5 w-12" />
-        </div>
-
-        {/* Footer: author + stats */}
+        {/* Footer: difficulty + model · author + stats */}
         <div className="flex items-center justify-between pt-3 border-t border-surface-100">
-          <div className="flex items-center gap-1.5">
-            <SkeletonBox className="w-5 h-5" />
+          <div className="flex items-center gap-2">
+            <SkeletonBox className="h-4 w-16" />
             <SkeletonBox className="h-3.5 w-20" />
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
             <SkeletonBox className="h-3.5 w-8" />
             <SkeletonBox className="h-3.5 w-8" />
           </div>

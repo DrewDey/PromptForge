@@ -3369,6 +3369,717 @@ Last thing: two weeks out, send a single group text with: dates, meeting locatio
  $pf$Per-person gear lists (4-6 items each) scaled to experience. Rental vs. buy guidance for first-timers keeps out-of-pocket under $150. "Flags for things you'll forget" covers dish sponge for celiac pan, tarp, duct tape, coffee filters, printed reservation, dirty-clothes bin, and a birthday-cake contingency decision. Ends with a pre-trip comms protocol.$pf$);
 
 -- =========================================================================
+-- Project 55-0012 | Reconstruction DBQ for mixed-skill APUSH | Ben Okafor | Education | 4 steps
+-- =========================================================================
+
+DELETE FROM prompt_steps WHERE prompt_id = '55555555-5555-5555-5555-555555550012';
+DELETE FROM prompts      WHERE id        = '55555555-5555-5555-5555-555555550012';
+
+INSERT INTO prompts (
+  id, title, description, content, result_content,
+  category_id, difficulty, model_used, model_recommendation,
+  tools_used, tags, status, author_id, vote_count, bookmark_count
+) VALUES (
+  '55555555-5555-5555-5555-555555550012',
+  $pf$Reconstruction DBQ for a split APUSH class — 4-pass unit design that didn't leave either half behind$pf$,
+  $pf$Planned a 5-day AP US History unit on Reconstruction using Claude 4.7 Opus over four rounds. My class splits roughly in half: twelve kids tracking for a 4 or 5 on the May exam, ten still building the source-analysis reps the DBQ demands. I wanted a week that stretched the top tier without losing the rest — and a DBQ they could all actually write.$pf$,
+  $pf$I teach two sections of AP US History at a Title I public high school in the Bay. Every year Reconstruction lands in late February — it's the unit where the DBQ skill gap shows most, because Reconstruction sources are rhetorically dense and the "continuity vs. change" prompt rewards kids who can read against the grain. My stronger students can do that. My struggling ones get stuck translating a Freedmen's Bureau letter and never reach analysis.
+
+Last year I taught this unit the same way I teach everything and the DBQ scores came back with the exact split I expected — top tier averaging 5.4/7, struggling tier averaging 2.1/7. Not acceptable. This year I used Claude 4.7 Opus over four rounds to rebuild it from scratch.
+
+Round one: map the 5-day arc so the DBQ skills build, not just the content. Round two: write the DBQ prompt and pick the seven sources, with built-in source-analysis scaffolding. Round three: differentiate — tier-1 packet with sentence-frame support, tier-2 packet with stretch annotations. Round four: build a day-3 formative check so I know by Wednesday whether to reteach before Friday's DBQ.
+
+What came out is a full unit kit: daily plan, DBQ with seven sources, two differentiated source packets, a mid-unit check, and a rubric that's IEP-compatible (observable behaviors, not "shows understanding" hand-waving). Took me one weekend instead of three.$pf$,
+  $pf$Ran the unit three weeks ago. DBQ scores: top tier averaged 5.8/7 (+0.4), struggling tier averaged 3.6/7 (+1.5). Nobody wrote a 0. Four kids in the struggling tier hit 4+, which has never happened in four years of teaching this unit.
+
+Two things Claude got right that I wouldn't have caught alone: (1) putting the Frederick Douglass "What the Black Man Wants" speech on DAY 2 instead of day 4 — it models the rhetorical move the DBQ wants them to make, so they see it before they're asked to do it. (2) A scaffolded "source triage" warm-up on day 3 where kids sort sources into "supports," "complicates," "contradicts" BEFORE trying to synthesize. That one 10-minute routine was the single biggest unlock for the struggling tier.
+
+Cost me one weekend of prep instead of three, and I'm reusing the DBQ scaffolding structure for Gilded Age next month.$pf$,
+  '11111111-1111-1111-1111-111111111106',
+  'intermediate',
+  'claude-opus-4-7',
+  'Claude 4.7 Opus',
+  ARRAY['Claude','Google Docs','Canvas LMS'],
+  ARRAY['education','high-school','apush','dbq','differentiation','lesson-planning'],
+  'approved',
+  '22222222-2222-2222-2222-222222222205',
+  58, 27
+);
+
+INSERT INTO prompt_steps (id, prompt_id, step_number, title, content, result_content, description) VALUES
+
+-- Step 1 --
+('66666666-6666-6666-6666-6666666C0101',
+ '55555555-5555-5555-5555-555555550012',
+ 1,
+ $pf$Map the 5-day arc — what's load-bearing for the DBQ vs. what can be skimmed$pf$,
+ $pf$I'm planning a 5-day AP US History unit on Reconstruction for two sections of 22 students each. Class is split roughly in half: twelve kids are tracking for a 4 or 5 on the May exam, ten are still building the source-analysis muscles the DBQ demands. Periods are 50 minutes.
+
+End-of-unit assessment is a full DBQ on the "continuity and change" prompt: "Evaluate the extent to which Reconstruction (1865–1877) fundamentally transformed the South." I want the whole week to build toward that, not just cram content.
+
+Give me a day-by-day 5-day arc where each day explicitly builds ONE of the DBQ skills (thesis, contextualization, evidence use, source analysis, complexity) while covering the content. For each day tell me: (1) the content focus, (2) the DBQ skill that day targets, (3) the key primary source I should anchor on, (4) the warm-up/closer format. Think about pacing — what MUST land and what can be homework-skim.$pf$,
+ $pf$Here's the arc. Core principle: don't save DBQ skills for a "DBQ day" at the end. Embed one skill per day, sequenced so each day's skill is the scaffolding for the next.
+
+**Day 1 — Contextualization (the "why now" muscle)**
+Content: the scope of the problem at war's end — 4 million formerly enslaved people, a physically destroyed South, an assassinated president, a Congress that hasn't decided what "the Union" even means yet.
+Skill target: contextualization. Kids walk in with "Reconstruction = post-war cleanup" and leave understanding it's a fight over who counts as an American.
+Anchor source: Lincoln's Second Inaugural (March 1865). Short. Rhetorically rich. Teaches contextualization by letting kids see Lincoln himself contextualizing.
+Warm-up: "One-sentence stakes" — kids write the single sentence that explains why Reconstruction matters to a Freedman in Georgia, a Planter in Alabama, and a Radical Republican in Boston. Closer: exit ticket asking them to contextualize ONE of the three perspectives in 3 sentences.
+
+**Day 2 — Thesis (arguing a position, not summarizing)**
+Content: the Reconstruction Amendments (13th, 14th, 15th) — what they did on paper vs. what enforcement looked like.
+Skill target: defensible thesis. This is where I front-load the Douglass "What the Black Man Wants" speech — it's a model of the rhetorical move I want them to make on the DBQ (taking a position and committing to it).
+Anchor: Douglass, "What the Black Man Wants" (1865).
+Warm-up: kids re-read their Day 1 exit ticket and convert it into a one-sentence ARGUMENT. Closer: thesis workshop on "To what extent did the 14th Amendment transform Southern society?" — they write one, trade with a partner, revise.
+
+**Day 3 — Source triage (the analysis skill, before synthesis)**
+Content: Black Codes, the Freedmen's Bureau, and the political reaction in Congress — 1866-ish snapshot.
+Skill target: source analysis + HIPP (Historical situation / Intended audience / Point of view / Purpose). This is the make-or-break day for the struggling tier. They need a reusable routine.
+Anchor: three sources compared side-by-side — a Mississippi Black Code excerpt, a Freedmen's Bureau labor contract, and a congressional Radical Republican speech.
+Warm-up: "source triage" — 10 minutes to sort the three into "supports my thesis," "complicates," "contradicts." No synthesis yet. Closer: one HIPP per source, 2-sentence max per box.
+
+**Day 4 — Complexity + counterargument (the 6th-point move)**
+Content: Reconstruction's retreat — Hayes-Tilden, the end of military occupation, the rise of Redeemers and the Klan.
+Skill target: complexity / counterargument. On the DBQ, this is the point most kids leave on the table. Teach it as "what would someone who disagreed with me say, and how does my argument hold up?"
+Anchor: a Redeemer newspaper editorial celebrating 1877, paired with an Ida B. Wells piece on lynching from the 1890s (showing the long arc).
+Warm-up: a rapid 5-minute "steelman" drill — kids argue the OPPOSITE of their Day 2 thesis. Closer: a 1-paragraph rebuttal embedded back into their original argument.
+
+**Day 5 — The DBQ itself, timed**
+Students get the DBQ prompt with the full source set (7 sources including everything they've seen during the week + 2 new ones to test transfer). 45 minutes, closed-resource but they can use their own annotated notes. Keep the "new sources" difficulty moderate — you're assessing synthesis, not introducing new content under timed pressure.
+
+**What to SKIM (don't try to cover):** Johnson's impeachment (mention it, don't drill it — it's rarely on the DBQ and it eats 20 minutes). Sharecropping mechanics beyond the basic definition (comes back in Gilded Age unit). Specific carpetbagger/scalawag biographies.
+
+**What MUST land:** the 13th/14th/15th distinction (Day 2), the HIPP routine (Day 3), and the "counterargument strengthens your argument" move (Day 4). Everything else is negotiable.
+
+One more thing: the Day 2 Douglass → Day 4 counterargument sequence is load-bearing. Don't rearrange.$pf$,
+ $pf$Day-by-day arc with each day targeting one DBQ skill (contextualization → thesis → source analysis → complexity → DBQ itself). Key move: Day 2 Douglass speech models the rhetorical position-taking before kids are asked to do it on Day 3. "What to skim" list prevents Johnson-impeachment content-creep.$pf$),
+
+-- Step 2 --
+('66666666-6666-6666-6666-6666666C0102',
+ '55555555-5555-5555-5555-555555550012',
+ 2,
+ $pf$Write the DBQ prompt + 7 scaffolded primary sources$pf$,
+ $pf$Great. Now write me the Day 5 DBQ.
+
+Prompt: "Evaluate the extent to which Reconstruction (1865–1877) fundamentally transformed the South."
+
+Give me 7 primary sources that work together for a DBQ:
+- Mix of document types (speech, amendment text, letter, editorial, image/map, statistic, testimony)
+- Range across 1865–1877 and a bit beyond
+- Cover both the "transformation" side AND the "continuity" side — the point of the prompt is that smart kids see both
+- Real sources (or real-sounding if paraphrased for clarity — flag anything paraphrased). Cite each with date + author/origin
+- For each source, give me (a) a 1-sentence context line, (b) the source text or paraphrase (100–200 words each), (c) a "Why this source is in the set" note for me (the teacher) — what DBQ skill it tests
+
+End with a brief "how I'd expect a 7/7 essay to use these sources" paragraph so I know what the ceiling looks like.$pf$,
+ $pf$**DBQ Prompt**
+Evaluate the extent to which Reconstruction (1865–1877) fundamentally transformed the South.
+
+(45 minutes. Use at least 6 of the 7 sources.)
+
+---
+
+**Source A — 14th Amendment, Section 1 (ratified 1868)**
+Context: the constitutional backbone of Reconstruction's legal transformation.
+Text (excerpt): "All persons born or naturalized in the United States, and subject to the jurisdiction thereof, are citizens of the United States and of the State wherein they reside. No State shall make or enforce any law which shall abridge the privileges or immunities of citizens of the United States; nor shall any State deprive any person of life, liberty, or property, without due process of law; nor deny to any person within its jurisdiction the equal protection of the laws."
+Why in set (teacher note): tests whether kids can distinguish LEGAL transformation from SOCIAL transformation. The strongest essays treat this as necessary but not sufficient.
+
+**Source B — Mississippi Black Code (1865)**
+Context: passed within months of the 13th Amendment; meant to replicate slavery's labor regime under new legal cover.
+Text (paraphrased excerpt, flagged): "Every freedman, free negro, and mulatto shall on the second Monday of January, 1866, and annually thereafter, have a lawful home or employment, and shall have a written evidence thereof... Any freedman... who shall quit the service of his employer before the expiration of his term of service, without good cause, shall forfeit his wages for that year."
+Why in set: the "continuity" anchor. Kids who only argue "transformation" have no way to explain this.
+
+**Source C — Letter from Jourdon Anderson to his former enslaver (August 1865)**
+Context: a formerly enslaved man in Ohio responds to his former enslaver's request that he return to work in Tennessee.
+Text (real — excerpt): "Sir: I got your letter, and was glad to find that you had not forgotten Jourdon... Although you shot at me twice before I left you, I did not want to hear of your being hurt... I want to know particularly what the good chance is you propose to give me. I am doing tolerably well here. I get twenty-five dollars a month, with victuals and clothing; have a comfortable home for Mandy... and the children — Milly, Jane, and Grundy — go to school and are learning well..."
+Why in set: primary-source voice, short, rhetorically sharp. Tests whether kids can read irony and extract argument from tone. This source favors the struggling tier because the HUMAN voice is accessible even when the historical argument is hard.
+
+**Source D — Sharecropping contract, Georgia (1870)**
+Context: sample labor contract showing the economic arrangement that replaced slavery across the post-war South.
+Text (paraphrased from actual contract, flagged): "The said freedman agrees to work faithfully and diligently under the direction of the said planter, providing his own labor. In return, the said freedman shall receive one-third of the crop harvested. The planter furnishes land, seed, tools, and mule. The freedman shall not leave the plantation during the term of the contract without written permission. Debts owed to the planter's store shall be deducted from the freedman's share at settlement."
+Why in set: continuity anchor at the economic level. Pairs with the Black Code to show how legal AND economic structures both constrained freedom.
+
+**Source E — Statistical table: Black voter registration and officeholders, selected Southern states (1867–1877)**
+Context: a numerical snapshot of Black political participation at its Reconstruction peak.
+Table (paraphrased — flagged as composite from Congressional records):
+| State         | Black registered voters, 1867 | Black state legislators, 1870 | Black state legislators, 1877 |
+|---------------|-------------------------------|-------------------------------|-------------------------------|
+| South Carolina| 80,550                        | 75                            | 6                             |
+| Mississippi   | 60,167                        | 40                            | 4                             |
+| Louisiana     | 84,436                        | 49                            | 5                             |
+Why in set: quantifies both the transformation (1867–70 numbers are historically unprecedented) AND the collapse (1877 numbers). Tests the "to what extent" part of the prompt.
+
+**Source F — Thomas Nast cartoon, "This Is a White Man's Government" (Harper's Weekly, September 5, 1868)**
+Context: political cartoon attacking the Democratic Party's alliance of ex-Confederates, Northern urban machines, and financial interests standing atop a fallen Black Union soldier.
+Description (for paraphrase purposes — the original is visual): the cartoon depicts three white men — a Confederate with a belt buckle reading "Lost Cause," an Irish gang member labeled "5 Points," and a wealthy figure labeled "5th Avenue" — with their feet on a bleeding Black Union veteran clutching an American flag and a ballot.
+Why in set: gives kids a VISUAL source (DBQ always has one) and a Northern perspective. Tests whether kids can read political cartoons as argument, not decoration.
+
+**Source G — Congressional testimony from a Black Mississippian to the Joint Select Committee on the condition of affairs in the late insurrectionary states (1871)**
+Context: congressional investigation into Klan violence in the post-war South.
+Text (paraphrased from real testimony, flagged): "They came to my house at night, about fifteen of them, wearing robes and hoods. They called me out and asked whom I had voted for. I said I voted the Republican ticket. They beat me with a stick of wood and told me next time I voted I would be killed. I have not been to the polls since."
+Why in set: the "retreat of Reconstruction" anchor. Pairs with Source E's 1877 numbers to explain HOW the political transformation was dismantled — not by law but by terror.
+
+---
+
+**What a 7/7 essay looks like (teacher ceiling note):**
+A top essay uses Sources A, E, and F to argue that Reconstruction produced genuine constitutional and political transformation, then uses Sources B, D, and G to argue that the transformation was systematically reversed by economic arrangements and extra-legal violence — and uses Source C to bridge the two, showing the human-scale transformation (a man who writes back, with agency, to his former enslaver) that persisted even as the political gains collapsed. The "to what extent" answer is something like: "Reconstruction fundamentally transformed the legal and constitutional framework of the South, but the economic and social transformations were contested, limited, and largely reversed by 1877."
+
+One more thing: if a kid cites only transformation OR only continuity, cap them at 4/7 no matter how well-written. The prompt's "to what extent" is LOAD-BEARING — it's explicitly asking for both sides.$pf$,
+ $pf$Seven sources covering 1865–1877 with both "transformation" and "continuity" sides represented. Each source tagged with the DBQ skill it tests and flagged for paraphrase honesty. 7/7 essay ceiling note gives Ben a grading anchor.$pf$),
+
+-- Step 3 --
+('66666666-6666-6666-6666-6666666C0103',
+ '55555555-5555-5555-5555-555555550012',
+ 3,
+ $pf$Differentiate the sources for the two skill tiers$pf$,
+ $pf$This is the whole reason I'm doing this. The top twelve can read a Freedmen's Bureau testimony cold; the struggling ten will bounce off it and miss the analysis question entirely.
+
+Take the same 7 sources from Step 2 and give me TWO versions of the source packet:
+
+**Tier 1 (scaffold-heavy — for the struggling ten):** same sources, but with (a) a 1–2 sentence gloss for any word that's not 9th-grade reading level, (b) a single guiding question after each source (1 question, not 4), (c) sentence-frame scaffolds for HIPP ("The historical situation of this source is ___. The intended audience is ___..."), (d) a "before you read" 1-sentence preview so they know what to listen for.
+
+**Tier 2 (stretch — for the top twelve):** same sources, but with (a) NO gloss, (b) a 2-layer question where the second layer pushes them toward historiography ("How would a historian writing in 1965 vs. 2015 read this source differently?"), (c) one EXTRA source (Source H) that isn't in the tier-1 packet — a W.E.B. Du Bois excerpt from Black Reconstruction that reframes the "failure" narrative.
+
+Critically: both tiers sit for the SAME DBQ on Day 5. I am NOT changing the assessment. I am changing the route they take to get there.$pf$,
+ $pf$Right — different scaffolding, same destination. Here's both packets.
+
+---
+
+**TIER 1 — Scaffold-heavy source packet**
+
+(For students still building HIPP fluency. Same 7 sources, with glosses + single guiding question + sentence frames.)
+
+**Source A — 14th Amendment, Section 1**
+*Before you read:* This is THE big legal change. Read for: what rights get promised, and to whom?
+*Text:* [same as Tier 2, with glosses below]
+Gloss: "privileges or immunities" = rights of citizenship. "due process" = fair legal procedure. "equal protection" = the law must treat you the same as everyone else.
+*Guiding Q (one question):* What specifically changed for formerly enslaved people under this amendment? Answer in 2 sentences.
+*HIPP frame:* "The historical situation of Source A is ___ [the end of the Civil War and the effort to define citizenship]. The intended audience is ___ [the state governments and the courts]. The point of view is ___. The purpose is ___."
+
+**Source B — Mississippi Black Code**
+*Before you read:* This is the South reacting to the 13th Amendment by writing NEW laws that keep the old system working.
+Gloss: "freedman" = formerly enslaved person. "forfeit his wages" = lose the money he earned.
+*Guiding Q:* How does the Black Code try to replicate slavery WITHOUT calling it slavery?
+
+**Source C — Jourdon Anderson letter**
+*Before you read:* This is a real letter from a formerly enslaved man who moved to Ohio. His old enslaver asked him to come back. He said no — with STYLE. Read for his tone. He's being polite on the surface and scathing underneath.
+Gloss: "victuals" = food. "tolerably" = reasonably.
+*Guiding Q:* What does Jourdon Anderson want his old enslaver to understand — without saying it directly?
+
+**Source D — Sharecropping contract**
+*Before you read:* This is how most formerly enslaved people actually worked after the war. Read for: who controls what?
+Gloss: "furnishes" = provides. "at settlement" = when the crop is sold at the end of the season.
+*Guiding Q:* Circle the three places in this contract where the planter controls the freedman's choices.
+
+**Source E — Voter registration table**
+*Before you read:* Numbers tell a story here. Compare 1870 and 1877.
+*Guiding Q:* In one sentence, what happened between 1870 and 1877?
+
+**Source F — Nast cartoon**
+*Before you read:* Political cartoons always have an argument. The cartoonist, Thomas Nast, is from the North and sympathizes with freedmen. Look at who he draws as the "villains" and who he draws as the victim.
+*Guiding Q:* What is Nast saying about who really holds power in the post-war South?
+
+**Source G — 1871 congressional testimony**
+*Before you read:* This is a real Black Mississippian testifying about Klan violence. Trigger-warning: the violence is graphic.
+Gloss: "polls" = voting place.
+*Guiding Q:* The 15th Amendment gave Black men the right to vote. Did Source G's witness actually have that right? Explain.
+
+**Tier 1 closing prompt (takes 5 minutes):** In 3 sentences, answer this — "Reconstruction changed SOME things and left OTHERS the same. Which source is your best evidence for each?"
+
+---
+
+**TIER 2 — Stretch source packet**
+
+(For students ready to engage historiography and synthesis across sources.)
+
+Sources A–G: same texts, no glosses. Questions are 2-layer:
+
+**Source A — 14th Amendment**
+Layer 1: What does this amendment promise?
+Layer 2: Legal historian Eric Foner argues the 14th Amendment's "privileges or immunities" clause was gutted by the Slaughter-House Cases (1873). What does that tell you about the distance between constitutional promise and constitutional enforcement?
+
+**Source B — Black Code**
+Layer 1: What does the Black Code regulate?
+Layer 2: The Black Codes were passed by legislatures elected during Presidential Reconstruction (before Congressional Reconstruction began in 1867). How does that timing complicate the narrative that Reconstruction "failed"?
+
+**Source C — Jourdon Anderson letter**
+Layer 1: What is Anderson's rhetorical strategy?
+Layer 2: A historian writing in 1905 (the Dunning School era) would read this letter as impertinent — evidence of why Reconstruction "went too far." A historian writing in 2015 would read it as dignified resistance. How does the SAME TEXT produce opposite interpretations?
+
+**Source D — Sharecropping contract**
+Layer 1: What does the planter control?
+Layer 2: Sharecropping has been described as "slavery by another name" AND as "a labor system freedmen actively negotiated for." Both are true. Which framing does this specific contract support more?
+
+**Source E — Voter registration table**
+Layer 1: What do the numbers show?
+Layer 2: If you're writing the "transformation" side of the DBQ, the 1870 numbers are your strongest evidence. If you're writing the "continuity" side, the 1877 numbers are your strongest. What does it mean that the SAME table supports both sides?
+
+**Source F — Nast cartoon**
+Layer 1: What is Nast's argument?
+Layer 2: Nast was deeply anti-Irish (note the "5 Points" figure). How does his racism against one group affect the moral force of his cartoon defending another?
+
+**Source G — 1871 testimony**
+Layer 1: What happened to the witness?
+Layer 2: Compare Source G's testimony style to Source C's letter. Both are Black voices from the Reconstruction era. Why does Source C sound confident and Source G sound traumatized? What changed in six years?
+
+**BONUS — Source H (tier 2 only): W.E.B. Du Bois, Black Reconstruction in America (1935)**
+"The slave went free; stood a brief moment in the sun; then moved back again toward slavery. The whole weight of America was thrown to color caste. The colored world went down before England, France, Germany, Russia, Italy, and America, and Reconstruction died."
+Layer 1: What is Du Bois's argument about Reconstruction's legacy?
+Layer 2: Du Bois wrote this in 1935, during Jim Crow. How does his 1935 context shape what he sees in 1865–1877? Is that a BIAS or a CLARITY?
+
+**Tier 2 closing prompt:** In one paragraph, argue whether Reconstruction is better described as a "failed revolution" or an "incomplete revolution." Use at least 4 sources.
+
+---
+
+**Note on differentiation design:** Both tiers see the same 7 core sources and sit for the same DBQ. The scaffolding difference is in the READING APPROACH, not the content. The tier-1 sentence frames are training wheels they can shed; by the second half of the year the frames should feel unnecessary to most of them. That's the goal — not a permanent track, a temporary scaffold.$pf$,
+ $pf$Two packets. Tier 1 adds glosses, single guiding questions, and HIPP sentence frames. Tier 2 strips glosses and adds historiography layer-2 questions plus a Du Bois bonus source. Both tiers sit for the same DBQ — scaffolding differs, destination doesn't.$pf$),
+
+-- Step 4 --
+('66666666-6666-6666-6666-6666666C0104',
+ '55555555-5555-5555-5555-555555550012',
+ 4,
+ $pf$Build the day-3 formative check + day-5 exit ticket + rubric$pf$,
+ $pf$Last pass. I need three things:
+
+1. A day-3 formative check (10 minutes, end of class) that tells me — by Wednesday — whether the HIPP routine has landed for the struggling tier. If it hasn't, I reteach Thursday morning BEFORE the counterargument lesson. If it has, I move on.
+
+2. A day-5 exit ticket separate from the DBQ itself — something kids hand in after the timed DBQ that captures metacognition (what was hard, what strategy they used). I want to see what they think they did, not just what they produced.
+
+3. A DBQ rubric that's IEP-compatible — observable behaviors, not "shows understanding of..." hand-waving. My IEP students and 504 kids need criteria their case managers can reasonably check. Use the College Board 7-point DBQ rubric as the scaffold but make each point OBSERVABLE in plain language.
+
+Keep it tight. Real teachers grade 44 of these. Don't give me a rubric with 23 indicators.$pf$,
+ $pf$All three, tight. You grade 44 of these.
+
+---
+
+**1. Day 3 Formative Check (10 min, end of class)**
+
+Give each student ONE source they haven't seen before in class — a short Freedmen's Bureau teacher's report, ~120 words. Same page for every student, same source. (Don't differentiate this — you need to see what they can do without tier scaffolding to know if HIPP has transferred.)
+
+Three prompts. Answer in full sentences on the back of the page:
+
+1. **Historical situation:** In one sentence, when and where is this source happening?
+2. **Purpose:** What was this source written FOR? (What outcome did the writer want?)
+3. **What this source tells you:** In 2–3 sentences, what does this source add to your understanding of Reconstruction?
+
+**How to grade (3 minutes/student max):**
+- All three answered in complete sentences, with specific detail → **landed**
+- Historical situation and Purpose attempted but vague, or "what it tells you" reverts to summary → **partial — reteach recommended for this kid**
+- One or more boxes blank, or answers are "idk" / one-word → **didn't land — pull into small group Thursday morning**
+
+**Decision rule you promised yourself:** if 6+ struggling-tier kids land in "didn't land," spend 15 min Thursday morning reteaching HIPP with a fresh source BEFORE the counterargument lesson. If fewer than 6, flag those specific kids for Friday DBQ support but move on with the planned lesson.
+
+---
+
+**2. Day 5 Exit Ticket (post-DBQ, 3 min)**
+
+Single index card. Three questions:
+
+1. Which source did you lean on most? Why?
+2. Which source confused you? (It's OK to say "all of them" if that's honest.)
+3. What strategy did you use when you ran into a source you didn't understand?
+
+**Why these three:** Q1 tells me which sources are doing the work in the student's head (often different from which sources I think are load-bearing). Q2 surfaces confusion I can address before the Gilded Age unit uses similar source types. Q3 is metacognition — a kid who can name their own strategy is actually using one. A kid who says "I just picked the easiest ones" is telling me they bailed, and that's also useful info.
+
+Budget 20 minutes the following Monday to read all 44. Sort into three piles: "strategy is working," "strategy is shaky," "no strategy." The "no strategy" pile is your small-group target for the next unit.
+
+---
+
+**3. DBQ Rubric (7 points, observable-behavior version, IEP-compatible)**
+
+**Point 1 — THESIS (1 pt)**
+✓ awarded if: the student writes a sentence that TAKES A POSITION on "to what extent" — not just restating the prompt. Look for a sentence that starts with a qualifier ("largely," "partially," "significantly") followed by a defensible claim.
+✗ not awarded if: the student only restates the prompt, or writes "this essay will discuss..." without taking a side.
+Observable behavior: can you underline the ONE sentence in the intro that commits to a position?
+
+**Point 2 — CONTEXTUALIZATION (1 pt)**
+✓ awarded if: there are at least TWO sentences somewhere in the essay (usually the intro) that describe relevant historical events OUTSIDE the time frame of Reconstruction itself (e.g., the Civil War's scale, the abolition movement, the Compromise of 1877 aftermath).
+✗ not awarded if: contextualization is one sentence OR only describes Reconstruction itself.
+Observable behavior: can you find 2+ sentences of outside context?
+
+**Point 3 — EVIDENCE (up to 3 pts, scored in order)**
+- 1 pt if student uses content from AT LEAST 3 sources accurately (not just cites — actually describes what the source says or shows).
+- 1 pt more if student uses 6+ sources accurately.
+- 1 pt more if student uses AT LEAST 1 piece of outside evidence (not from the source packet) that's relevant and accurate.
+Observable behavior: count the sources quoted/described. Count the outside facts. Mark each in the margin with "S" (source) or "O" (outside).
+
+**Point 4 — ANALYSIS of SOURCES (1 pt)**
+✓ awarded if: for at least 3 sources, the student explains WHY the source's perspective matters — using HIPP language explicitly (historical situation, audience, point of view, or purpose).
+✗ not awarded if: the student cites sources but never explains perspective ("Source A says... Source B says..." with no analytic move).
+Observable behavior: count HIPP moves. Need 3 to earn the point.
+
+**Point 5 — COMPLEXITY (1 pt) — hardest point**
+✓ awarded if: the student does ONE of these:
+- explicitly acknowledges a counterargument and responds to it
+- uses sources on BOTH sides of the "to what extent" question
+- qualifies their own thesis somewhere in the body ("however, in economic terms..." etc.)
+Observable behavior: underline the sentence where the student SHIFTS or COMPLICATES their argument. If you can't find one, no point.
+
+**Sanity cap (your own rule from Step 2): if a kid cites only transformation OR only continuity, they top out at 4/7 regardless.**
+
+---
+
+**One practical note:** I'd put the rubric on the BACK of the DBQ prompt handout. Kids should grade themselves before they turn it in. "Before you hand this in, underline your thesis sentence, count your sources, and count your HIPP moves. Total your own score. I'll check your math." Takes 2 min and it's the single highest-leverage move for raising the struggling-tier scores — they learn the rubric by USING it.$pf$,
+ $pf$Day-3 10-min formative check on HIPP with a clean "reteach vs. move on" decision rule for Thursday morning. Day-5 post-DBQ metacognition exit ticket (3 questions, 3 min). IEP-compatible 7-point rubric with observable behaviors not "shows understanding" language — includes self-grading step that doubles as rubric instruction.$pf$);
+
+-- =========================================================================
+-- Project 55-0013 | 18-month runway after Q1 miss | Jake Torres | Finance | 5 steps
+-- =========================================================================
+
+DELETE FROM prompt_steps WHERE prompt_id = '55555555-5555-5555-5555-555555550013';
+DELETE FROM prompts      WHERE id        = '55555555-5555-5555-5555-555555550013';
+
+INSERT INTO prompts (
+  id, title, description, content, result_content,
+  category_id, difficulty, model_used, model_recommendation,
+  tools_used, tags, status, author_id, vote_count, bookmark_count
+) VALUES (
+  '55555555-5555-5555-5555-555555550013',
+  $pf$18-month runway after an 18% Q1 miss — 5-pass scenario model and the board memo that went out Monday$pf$,
+  $pf$I'm CFO at a Series A SaaS company ($12M ARR pre-miss). Q1 came in 18% below plan. Ran five passes with Claude 4.6 Sonnet to model four cut scenarios to 18 months, figure out which one preserves the product roadmap, draft the board memo, and build the quarterly check-in framework. Board read it Monday. One ask was approved, one modified, one deferred — which is a decent outcome for a miss.$pf$,
+  $pf$Series A, $12M ARR at end of last quarter, 28% YoY growth through Q4. Q1 came in 18% below plan — new-logo bookings missed by ~$600K, net revenue retention held at 112%. Burn at close of Q1 was $1.1M/month, runway as of today is 14 months. Plan was 16 months at end of Q1, so the miss ate 2 months of runway in 90 days.
+
+I had three days before the scheduled board meeting to bring a point of view, not just numbers. I've done this exercise in Excel before and it always takes a full weekend and I end up biased toward whichever scenario I started from. This time I used Claude 4.6 Sonnet to force structure on the thinking.
+
+Five rounds: (1) honest read of the glidepath under the miss, (2) four cut scenarios modeled to 18 months, (3) pressure-test which cut preserves the product roadmap (because the real question isn't "how cheap can we get," it's "how do we make the most of the miss"), (4) board memo draft with three specific asks, (5) a quarterly signal framework so we're not re-litigating this every two months.
+
+Claude's most useful move was in round 3 — it reframed my "deep cut" scenario from "this saves the most money" to "this kills the roadmap item that drives NRR, which is the one metric that's still working." That reframe changed which scenario I recommended.$pf$,
+  $pf$The memo went to the board Monday. Three asks: (1) approve the "Reshape" scenario (the one that cuts sales headcount to match new-logo reality, preserves product, adds two months of runway). (2) approve $500K of discretionary spend on the post-sales expansion team (because NRR is the one thing still working — starve it and we have no recovery path). (3) defer the Series B timeline from Q4 this year to Q1 next year, fundraising against Q3 numbers not Q1 numbers.
+
+Board approved #1 as-is. Modified #2 to $350K with a gate at end of Q2. Deferred #3 without approval — the lead investor wants to see Q2 first. That's a fine outcome. The worst outcome would have been a blanket "cut 15%" that hit the one team making numbers, and the structured scenario work is what kept us out of that.
+
+What I took away: the "which scenario preserves the thing that's working" framing is the single question I wish I'd anchored on in previous plan resets. Filing it for next time.$pf$,
+  '11111111-1111-1111-1111-111111111101',
+  'advanced',
+  'claude-sonnet-4-6',
+  'Claude 4.6 Sonnet',
+  ARRAY['Claude','Google Sheets','Notion'],
+  ARRAY['finance','cfo','saas','runway','board-memo','scenario-planning'],
+  'approved',
+  '22222222-2222-2222-2222-222222222203',
+  94, 52
+);
+
+INSERT INTO prompt_steps (id, prompt_id, step_number, title, content, result_content, description) VALUES
+
+-- Step 1 --
+('66666666-6666-6666-6666-6666666D0101',
+ '55555555-5555-5555-5555-555555550013',
+ 1,
+ $pf$Honest read: current burn, current runway, what the 18% miss actually does to the glidepath$pf$,
+ $pf$I'm CFO at a Series A B2B SaaS company. Here's where we actually are after Q1.
+
+End of last quarter (Q4):
+- ARR: $12.0M
+- YoY growth: 28%
+- Burn: $980K/month
+- Cash: $18.4M
+- Runway: ~19 months at Q4 burn rate
+
+Q1 just closed:
+- New bookings plan: $3.3M (25% QoQ target)
+- New bookings actual: $2.7M (18% miss vs plan)
+- Net revenue retention: 112% (held — no compression)
+- ARR end of Q1: $12.45M (+3.75% QoQ, plan was +5.5%)
+- Burn in Q1: $1.1M/month (plan was $1.0M/month — we hired two engineers in January on the old plan)
+- Cash: $15.1M
+- Runway at current burn: 13.7 months
+
+Don't be diplomatic. Tell me what this actually means for runway planning. What are the non-obvious things I should see in these numbers that I might be missing because I'm close to them? I know the number and direction; I want the read.$pf$,
+ $pf$Three things that matter more than the 18% headline, in order.
+
+**1. You burned 2 months of runway in 90 days. That's the number the board will fixate on, not the 18% miss.**
+Runway dropped from 19 months to 13.7 months — a 5.3-month drop — in one quarter. Roughly 3.3 months of that is normal quarterly consumption (3 months of cash burned). The other ~2 months of runway loss is the miss-plus-overspend combination: you spent on the old plan ($1.1M/mo vs. $1.0M/mo planned, so $300K overspend) AND under-collected ($600K bookings miss, meaning ~$150K less ARR conversion in-quarter depending on your billing timing). On top of a lowered revenue base going forward, compounding.
+
+The board math they'll run in their heads: "two quarters like this and they're inside 12 months of runway, which is our Series B re-up danger zone." Your memo needs to pre-empt this with explicit scenarios showing the second miss quarter, not just this one.
+
+**2. The 112% NRR is buried under the bookings miss but it's the most important number on the page.**
+NRR holding at 112% while new-logo missed by 18% means: your product works, your ICP is right, and your expansion motion is healthy. The problem is top-of-funnel or sales execution, not product-market fit. That's a fundamentally better problem to have than "churn spiked" or "NRR compressed to 95%."
+
+The implication for scenario work: any cut that touches customer success, post-sales, or expansion-focused roles is cutting the one organ that's still functioning. Don't do it. Sales-side cuts to match new-logo reality is the defensible move; CS cuts to spread the pain evenly is not.
+
+This is the read I'd push hardest on with the board. Most CFOs in a miss situation instinctively go "cut 15% across the board" because it's politically clean. Don't do that. Cut where the plan was wrong (sales capacity vs. demand reality), not where the plan was right (expansion team sized to a 112% NRR motion).
+
+**3. The January hiring decision is a real problem — but a past one, not a present one.**
+You hired two engineers in January on the old plan. Q1 burn was $1.1M/mo vs. $1.0M planned — that's roughly consistent with two extra engineering heads at ~$50K/mo fully loaded. That hiring decision was made when the Q1 pipeline looked healthy; in hindsight it was wrong. But firing them now to claw back $1.2M of annual burn has costs: (a) severance and morale cost ~$100-200K, (b) eng velocity impact on whatever roadmap you're keeping, (c) a signal to the rest of the company that reads "we're in trouble."
+
+The right move is usually: don't lay them off, freeze the pipeline (no more hires without specific approval), and let Q2 tell you whether the January bet was wrong or just early. If Q2 misses again, revisit. If Q2 lands, you keep the capacity.
+
+**Non-obvious things in your numbers:**
+- Q1 NRR of 112% with new-logo missing means your ARR growth is increasingly back-loaded into expansion — which is lumpier and more concentration-risk-y. One lost big customer in Q2 and NRR drops to 102%. That concentration risk is worth diligencing before you recommend any cuts.
+- Your cash-to-ARR ratio went from $18.4M/$12.0M = 1.53x to $15.1M/$12.45M = 1.21x. That's the multiple Series B investors look at — "how much cash do they have per dollar of ARR to get to next milestone." 1.21x at a Series A is fine. 0.8x is a problem. You're not there yet but you're moving that direction.
+- Your implied ARR growth rate for the year went from ~28% to something closer to 20-22% if Q2 repeats Q1. The Rule of 40 board conversation is going to be: ARR growth + FCF margin ≥ 40. If you were at 28 + (-30) = -2 before and you're now at 22 + (-40) = -18, that's not a Series B-ready number. The scenario work has to show the path back to >0.
+
+Bottom line: your actual crisis isn't 13.7 months of runway. It's "if Q2 also misses, what does our Series B look like at Q3 numbers." Model that as the downside case, not an optimistic rebound.$pf$,
+ $pf$Honest read: 2 months of runway lost in 90 days is the number the board will fixate on. The 112% NRR is the most important number on the page and rules out across-the-board cuts. The January hires aren't the real problem — a Q2 repeat is. Sets up the scenarios to model the downside, not a rebound.$pf$),
+
+-- Step 2 --
+('66666666-6666-6666-6666-6666666D0102',
+ '55555555-5555-5555-5555-555555550013',
+ 2,
+ $pf$Four cut scenarios modeled to 18 months$pf$,
+ $pf$OK that's useful. Now model four scenarios out 18 months. I want to see runway, ARR trajectory, and burn by month for each.
+
+Assumptions for all four:
+- Start point: Q1 close, $12.45M ARR, $15.1M cash, $1.1M/mo burn
+- Q2 bookings land at 90% of reset plan (reset plan is 15% below original plan — so back off the 25% QoQ target to ~18% effective)
+- NRR holds at 112% (don't model compression in base case, but note the risk)
+- Gross margin 78% (don't touch)
+
+Four scenarios:
+1. **Hold** — no cuts, run the plan as-is with Q2 reset
+2. **Trim** — cut sales capacity to match new-logo reality; save ~$180K/mo by Q3
+3. **Reshape** — Trim + freeze hiring + renegotiate a couple of key vendor contracts; save ~$280K/mo by Q3
+4. **Deep** — Reshape + layoffs in engineering (the two January hires + 3 more) + CS cut of 1 role; save ~$480K/mo by Q3
+
+For each scenario give me: (a) runway at month 18, (b) the month you cross 12-month-runway threshold (Series B danger zone), (c) ARR at 18 months assuming Q2 reset plan holds, (d) one sentence on what each scenario COSTS strategically. Keep the numbers; skip the spreadsheet formatting.$pf$,
+ $pf$Here's the 18-month model for all four. Numbers rounded to the nearest $100K. Working assumptions documented at the bottom.
+
+---
+
+**SCENARIO 1 — HOLD (no cuts)**
+- Burn trajectory: $1.1M/mo Q2, $1.1M/mo Q3 (no optimization), $1.15M/mo Q4 (annual comp increases), $1.2M/mo after
+- ARR at month 18: ~$17.8M (reset-plan 18% growth compounding, NRR contribution)
+- Cash at month 18: **exhausted at month 14** (cash runs out in month 14, assuming no fundraise)
+- Month you cross <12 months runway: **TODAY** — you're already at 13.7 months. Hold means you cross 12-month threshold in ~6 weeks.
+- Strategic cost: signals to the team and the board that leadership doesn't respect the miss. Read by investors as "they don't know what to do."
+
+**SCENARIO 2 — TRIM (sales right-sizing only)**
+Action: lay off 3 AEs + 1 SDR in May, don't backfill the open AE req. Saves ~$180K/mo by Q3.
+- Burn: $1.1M Q2, $920K Q3, $940K Q4, $970K after
+- ARR at 18 months: ~$17.2M (-$600K vs Hold — smaller sales team converts marginally less of the pipeline, but most of the lost capacity was slack because of the miss)
+- Cash at month 18: ~$900K remaining — 1 month runway left
+- Month you cross <12 months: month 11 (about Feb of next year) — you stay above the threshold longer but only just
+- Strategic cost: you're right-sizing sales to actual demand. Defensible. No hit to product or expansion. But it doesn't give you enough room to raise on Q3 if Q3 misses.
+
+**SCENARIO 3 — RESHAPE (Trim + hiring freeze + vendor renegotiation)**
+Action: Trim actions + freeze all hiring for 2 quarters + renegotiate top-3 vendor contracts (we're overpaying on Datadog, Salesforce, and a legal retainer). Saves ~$280K/mo by Q3.
+- Burn: $1.1M Q2, $820K Q3, $840K Q4, $870K after
+- ARR at 18 months: ~$17.2M (same as Trim — no roadmap impact, so ARR trajectory holds)
+- Cash at month 18: ~$2.7M remaining — effective runway from month 18 at reshaped burn: 3 more months. Total effective runway: 21 months.
+- Month you cross <12 months: month 13 (about April next year) — buys you enough time to fundraise on Q3 numbers if Q3 is healthy
+- Strategic cost: low. Freezing hiring costs velocity on the 2H roadmap but doesn't kill anything. Vendor renegotiation is zero-cost execution work. This is the "obvious" move.
+
+**SCENARIO 4 — DEEP (Reshape + engineering RIF + 1 CS cut)**
+Action: Reshape + lay off the 2 January engineering hires + 3 more engineers (6 total = 20% of eng org) + cut 1 CS role. Saves ~$480K/mo by Q3.
+- Burn: $1.1M Q2, $620K Q3, $640K Q4, $670K after
+- ARR at 18 months: ~$16.4M (down $800K vs Trim/Reshape — because the roadmap impact shifts ~$600K of Q4-Q5 expansion revenue OUT of the window as feature shipping slows, and the CS cut likely compresses NRR to ~108% which costs another $200K)
+- Cash at month 18: ~$5.2M remaining — roughly 8 more months of runway at new burn. Total effective runway: 26 months.
+- Month you cross <12 months: month 22 (way in the future)
+- Strategic cost: high. You trade 5 months of runway for meaningful product velocity loss and CS compression. You're saving money by cutting the organs that are still working (expansion, product) because you can't stomach cutting only where the problem is (sales/plan). The 112% NRR likely compresses to ~108% because fewer CS touches per account and slower feature shipping. That's a -4 point NRR hit that costs you $500K-$800K of ARR over the window.
+
+---
+
+**SIDE-BY-SIDE AT MONTH 18:**
+
+| Scenario | Runway remaining | ARR | Effective months | Strategic damage |
+|----------|------------------|-----|------------------|------------------|
+| Hold     | cash out month 14| $17.8M (projected) | -4 | signals no plan |
+| Trim     | ~1 month          | $17.2M | +1 | low |
+| Reshape  | ~3 months        | $17.2M | +3 | low-medium (velocity) |
+| Deep     | ~8 months        | $16.4M | +8 | high (NRR + roadmap) |
+
+---
+
+**Assumptions I'm making that you should flag:**
+- Severance for the Deep scenario: 2 months base for engineers, 2 months base for CS — ~$450K one-time cost absorbed into Q2 burn. (Reshape has ~$180K one-time for the Trim layoffs.)
+- "Reset plan" growth of 18% QoQ assumes Q2 isn't another miss. If Q2 misses 15% vs. reset plan, every scenario loses 4-6 months of runway from these numbers.
+- NRR held at 112% for scenarios 1-3. For Deep, I'm modeling 108% from Q4 onward.
+- Series B timing not modeled — these are operating-only scenarios. Any scenario that crosses <9 months runway without a term sheet is a live crisis.
+
+**Read this table honestly:** Reshape is the dominant strategy on the "strategic damage vs. runway gained" curve. Deep costs more in ARR than it saves in cash when you extend the window to 24 months. Trim is Reshape without the free wins. Hold is not a strategy.$pf$,
+ $pf$Four scenarios out 18 months. Hold runs out of cash at month 14. Trim buys 1 month with low damage. Reshape buys 3 months with low damage — clearly dominant. Deep buys 8 months but costs $800K of ARR and compresses NRR by cutting the teams that are working. Table makes the tradeoffs legible.$pf$),
+
+-- Step 3 --
+('66666666-6666-6666-6666-6666666D0103',
+ '55555555-5555-5555-5555-555555550013',
+ 3,
+ $pf$Which cut actually preserves the product roadmap$pf$,
+ $pf$Reshape looks obvious but I want to stress-test it. My instinct is telling me Deep because it gets us closest to a self-sustaining position. But you flagged the NRR compression and the roadmap impact.
+
+Push on this: if we go Reshape, what's the Q3/Q4 roadmap actually look like, and what's the Series B story at 21 months of effective runway? Because if Reshape means we have a weaker product story in 9 months AND less runway than Deep, that's not clearly a win — that's just optimism dressed up as discipline.
+
+Steelman Deep. Then tell me honestly which one you'd actually recommend.$pf$,
+ $pf$Steelman for Deep, then the honest call.
+
+**The Deep case (the strongest version of it):**
+
+Deep's real argument isn't "save more money." It's "concentrate the pain into one quarter so you can tell a clean recovery story at Series B." The structure of the argument:
+
+1. Investors hate ambiguity. A company that does Trim or Reshape and then does another RIF in Q4 looks like management doesn't have conviction. A company that does Deep once and then ships product on the new burn for 12 months looks decisive. Narratively, one hard RIF is better than two medium ones.
+
+2. The roadmap cuts in Deep aren't random — if executed well, they're prioritization forcing functions. You lay off 5 engineers, you have 25 engineers, and those 25 work on the 3 features that matter most instead of the 7 features on the board-deck roadmap. The opportunity cost of bloat is underrated. Most Series A engineering orgs are 30% overstaffed relative to their ship rate.
+
+3. CS compression isn't guaranteed. If you cut 1 CS role but restructure the remaining team around top-20-account coverage instead of broad coverage, NRR might actually hold or improve because focus beats volume at this ARR band.
+
+4. 26 months of effective runway means you raise Series B from a position of optionality, not necessity. That's a 1.5-2x valuation uplift vs. raising at 13 months. The $800K of ARR Deep costs is outweighed by the valuation impact.
+
+That's the real case. It's not crazy.
+
+**Where the steelman breaks:**
+
+1. #1 assumes you can execute a clean Deep cut. In practice: eng RIFs of 20% during a miss quarter are morale disasters. The remaining engineers spend 6 weeks updating their LinkedIn, your top performers leave voluntarily by September, and you end up with a 25-engineer team that ships slower than the pre-cut 30-engineer team would have. This is the most common failure mode of "concentrate the pain" RIFs — it's not the cut itself, it's the diaspora it triggers.
+
+2. #2 about "forcing function prioritization" assumes you had a ranking of features that was simply being ignored. You almost certainly don't. You have a roadmap that reflects real customer commitments, and cutting eng doesn't reveal priorities — it reveals which customer promises you're now breaking. Some of those are expansion commitments. Cutting eng → breaking expansion commitment → NRR compresses. Circular.
+
+3. #3 is theoretically true but operationally optimistic. CS restructuring while you're doing an RIF means your CS leader is processing their own team's layoffs while being asked to redesign the segmentation model. They will do one of those things well. It won't be the redesign.
+
+4. #4 is the strongest argument but it assumes Series B happens cleanly. If Q3 misses, Deep still runs to month 22 before crisis and that's not a cleanup — that's a wind-down. Whereas Reshape misses Q3 → re-plan at 9 months → you're in the same spot Deep would have been with one more intermediate decision point.
+
+**The honest recommendation:**
+
+Go Reshape. Not because it's "safer" — that's lazy reasoning. Because:
+
+- The real question is "which move maximizes optionality at the next decision point." Reshape preserves the 112% NRR engine (which is your ONLY proven machine right now) and keeps the eng org intact, so if Q3 goes well you accelerate. If Q3 misses, you have 9-10 months of runway and a team that's still producing — plenty of time to do Deep then, with MORE information than you have now.
+
+- Deep locks you into a trajectory today based on one quarter of data. That's a bet with high conviction costs. Reshape is a bet with low conviction costs — it costs you 5 months of theoretical runway in the Deep case vs. keeping real option value.
+
+- Your Series B story on Reshape at month 21 is: "we missed Q1 by 18%, right-sized sales to reality, shipped on plan for Q2-Q4, and came into the raise with 112% NRR and $17M ARR." That's a raise-able story at a reasonable valuation. Deep's Q1-next-year story is: "we missed Q1, did a 20% RIF, shipped a slower roadmap, and here we are at $16M ARR with stressed NRR." Both stories can fundraise. Reshape's fundraises at a better multiple because product and CS both still look healthy.
+
+**The bolt-on recommendation that makes Reshape actually work:**
+
+Add a gate. Specifically: Reshape plus a formal Q2 checkpoint where IF bookings land below 90% of reset plan AND NRR drops below 110%, we execute a defined Deep-equivalent RIF within 30 days. You make the contingency plan NOW, announce to the board NOW, and then either execute it in July or you don't. This turns "optimistic Reshape" into "Reshape with a pre-committed backstop," which is the position you actually want to take into a board meeting.
+
+Do not do Deep right now. Do Reshape with a public gate.$pf$,
+ $pf$Steelmanned Deep hard — concentration of pain, forcing-function prioritization, valuation uplift from longer runway. Broke the steelman on execution risk (eng RIFs trigger diaspora), CS restructuring-during-layoffs math, and the 20-24 month Series B story. Recommendation: Reshape + a pre-committed Q2 gate that flips to Deep if bookings <90% of reset plan AND NRR <110%. That's Reshape with a backstop, not optimistic Reshape.$pf$),
+
+-- Step 4 --
+('66666666-6666-6666-6666-6666666D0104',
+ '55555555-5555-5555-5555-555555550013',
+ 4,
+ $pf$The board memo — 2-page draft with 3 asks$pf$,
+ $pf$Draft the board memo. 2 pages max. My board is 5 people — 2 investor-directors (Series A lead + seed lead), the CEO (also the founder), an independent director, me. The Series A lead is the most numerate; he'll zero in on the Q2 gate language and want it tight.
+
+Structure:
+- Situation (what happened in Q1)
+- Plan (Reshape + gate)
+- Three specific asks of the board
+- Risks + what we're watching
+
+Tone: direct, owns the miss, no blame. Assume they've read the financial package already — don't rehash numbers they have. Use numbers as evidence for claims, not as narrative. Board reads Sunday night for Monday meeting.$pf$,
+ $pf$Draft below. Two pages printed in 11pt. Numbers as evidence only.
+
+---
+
+**MEMO TO THE BOARD — Q1 RESET PLAN**
+From: [CFO]
+Date: [Pre-read for Monday board meeting]
+
+**1. Situation**
+
+Q1 closed 18% below plan on new bookings. NRR held at 112%. Burn ran 10% hot versus plan because we executed the January hiring on the original bookings assumption before Q1 sales data landed. Runway is now 13.7 months; the miss and overspend together cost us ~2 months of runway in one quarter.
+
+The miss is concentrated in new-logo acquisition. Every other part of the business is performing: NRR is holding, gross margin is on plan, churn ticked down 80bps, product usage metrics are flat-to-up. The diagnosis is not "the business is broken." It is "we built a sales-capacity plan for a Q1 pipeline that turned out softer than our pipeline coverage ratio implied." I own that. Our Q1 pipeline coverage was 3.2x, historically we need 3.8x for our conversion rate at this ARR band, and I signed off on the plan anyway.
+
+**2. Plan — "Reshape with a gate"**
+
+I'm recommending the Reshape scenario: right-size sales to actual demand (lay off 3 AEs and 1 SDR in the May cycle, do not backfill the open AE req), freeze all new hiring for two quarters pending plan review, and renegotiate our top-three vendor contracts (Salesforce, Datadog, our external counsel). Projected savings: $280K/month by Q3. Projected runway extension: ~3 months at steady burn, ~5 months including the vendor work flowing through.
+
+I explicitly considered deeper cuts — a 20% engineering RIF plus a CS reduction — and rejected them. The case against: our 112% NRR is the one thing working, and engineering and CS are the teams producing it. Cutting either accelerates our cash runway at the cost of compressing the only growth engine we currently have, which trades short-term optionality for long-term deterioration. The 18-month model I've attached shows Deep buying 5 additional months of runway at a cost of ~$800K in ARR and a likely 4-point NRR compression. That is not a good trade today.
+
+The word "today" is load-bearing. If Q2 repeats Q1, the trade changes. Which is why this plan has a gate.
+
+**The Q2 gate.** At the end of Q2, if new bookings land below 90% of our reset plan AND NRR drops below 110%, we execute a pre-committed deeper RIF within 30 days of the Q2 close. I've attached the Deep scenario specification as Appendix B — same numbers I'd execute in July with no further deliberation, pre-approved today by this board. This converts "let's see how Q2 goes" into a specific, dated decision rule with predetermined action.
+
+**3. Three asks**
+
+**Ask 1 — Approve the Reshape actions above** (severance and one-time costs ~$180K). I'd like to execute the sales RIF in the May cycle, which means communications the week of May 5th.
+
+**Ask 2 — Approve a $500K expansion team investment in Q2.** NRR is our one functioning engine; I want to double-check that we are not starving it for cash while we rebalance sales. $500K gets us one Enterprise CSM hire and a specialist engineer embedded with the expansion team for account-specific feature work. This is NOT growth spend — it's maintenance spend on the machine that's working.
+
+**Ask 3 — Defer the Series B timeline from Q4 of this year to Q1 of next year.** Fundraising on Q3 numbers (which will reflect one quarter of the reset plan executing cleanly) tells a better story than fundraising on Q1 numbers with two weeks of Q2 data. This is a timing change, not a strategy change. Reshape extends runway enough to absorb the shift; a Q1 raise of next year is comfortable, a Q4 raise this year is stressed.
+
+**4. Risks + what we're watching**
+
+- **Customer concentration risk in NRR.** Our 112% NRR includes three accounts that together represent 19% of ARR. One churn in that group drops NRR to ~105%, which flips the Q2 gate. I'm watching monthly usage and executive relationships on those three; Head of CS has weekly touch.
+
+- **Sales execution post-RIF.** A 3-AE reduction in a 12-AE org is 25%. Remaining team coverage model gets re-drawn; territories get reassigned. Historically this is where miss-chasing RIFs either stabilize or spiral. I've asked our VP of Sales for a 30-day ramp plan for the remaining reps, with Q2 pipeline generation targets built in.
+
+- **Macro signal in pipeline.** Our Q1 pipeline softened 8 weeks before the quarter closed. If the macro story is "enterprise software budgets compressed in Q1 and bounce back in Q2," our Q2 lands normally. If it's "budgets are structurally smaller for the year," we miss Q2 regardless of capacity. We won't know until late May.
+
+- **What would change my recommendation:** a single account churn above $400K ARR in Q2, OR a second 15%+ miss against reset plan, would cause me to recommend executing Appendix B's Deep plan before the scheduled gate date.
+
+**5. Open question for board discussion**
+
+Ask 2 is the least obvious of the three and I'd value board input. Counterargument to self: in a miss quarter, spending $500K on additional headcount looks tone-deaf externally (especially to the rank-and-file after we execute the sales RIF). The internal communications plan matters; I think we can frame "we're investing in our strongest team while right-sizing our weakest" honestly, but the team will be watching.
+
+---
+
+— [CFO]
+Attachments: Q1 financials (sent separately), 18-month scenario model, Appendix B (Deep plan specification)$pf$,
+ $pf$2-page board memo. Situation owns the miss (including the pipeline-coverage signoff). Plan recommends Reshape with a pre-committed Q2 gate converting "let's see" into a specific decision rule. Three asks: approve Reshape, approve $500K expansion spend, defer Series B timing. Risks section flags concentration risk + sales execution + macro + a specific "change my mind" trigger. Internal comms question teed up as open discussion.$pf$),
+
+-- Step 5 --
+('66666666-6666-6666-6666-6666666D0105',
+ '55555555-5555-5555-5555-555555550013',
+ 5,
+ $pf$Quarterly check-in framework — signals that trigger re-plan$pf$,
+ $pf$Last piece. Build me the quarterly signal framework. I want to walk into every future board meeting with the same dashboard: leading indicators, lagging indicators, and pre-committed decision rules tied to each.
+
+Keep it to 6-8 total signals. For each: what it measures, the leading vs lagging distinction, the level that's healthy, the level that triggers re-plan, and the SPECIFIC action that re-plan means for that signal. I don't want "we'll revisit" — I want "if signal X hits level Y, we take action Z."
+
+Framework needs to be usable by the CEO and the board, not just finance. Plain language. No ratio-of-ratio metrics.$pf$,
+ $pf$Six signals. Each with: definition, leading/lagging, healthy band, re-plan trigger, specific action. Designed to be legible to the CEO and the board without a finance translator.
+
+---
+
+**SIGNAL 1 — Pipeline coverage ratio (leading)**
+*What it measures:* Pipeline value for the CURRENT quarter divided by the quarterly bookings target.
+*Healthy:* ≥ 3.8x at start of quarter.
+*Re-plan trigger:* Drops below 3.2x by end of month 1 of the quarter.
+*Action:* Bookings capacity re-sizing within 30 days. Specifically: pause all sales hiring, move 20% of outbound-SDR capacity to pipeline-rescue on existing open opps, escalate to CRO for account-level attention on top-20 deals.
+
+*Why this signal:* This was the signal I missed in Q1 — we entered the quarter at 3.2x and convinced ourselves the conversion rate would stretch. It didn't. Pre-commit now to treat 3.2x as a trigger, not a concern.
+
+**SIGNAL 2 — NRR (lagging, but checked monthly)**
+*What it measures:* Net revenue retention on the trailing 12-month cohort.
+*Healthy:* ≥ 110%.
+*Re-plan trigger:* Drops below 108% for two consecutive months.
+*Action:* Emergency account review on any account showing expansion-to-flat signals (product usage, CSM health score, exec relationship change). CFO + Head of CS review top-20 accounts within 2 weeks. If the cause is macro (budget freezes across cohort), recommend Deep plan execution. If the cause is concentrated (1-3 accounts), targeted retention investment.
+
+**SIGNAL 3 — Cash runway (lagging)**
+*What it measures:* Months of cash at rolling 3-month trailing burn rate.
+*Healthy:* ≥ 15 months.
+*Re-plan trigger:* ≤ 10 months.
+*Action:* At 10 months, mandatory fundraise kickoff regardless of market conditions — pick up the phone and start term-sheet conversations within 2 weeks. Do not "wait for a better quarter." 10 months is the last defensible moment to begin a Series B process with optionality.
+
+*Why this signal:* "We'll raise when the numbers are better" is how companies end up raising at 6 months of runway with no leverage. Put a number on it, and respect it.
+
+**SIGNAL 4 — Burn multiple (trailing 90-day net burn ÷ trailing 90-day ARR added) (lagging)**
+*What it measures:* How many dollars you burn for each dollar of new ARR.
+*Healthy:* ≤ 2.0x.
+*Re-plan trigger:* > 2.5x.
+*Action:* If the burn multiple climbs because ARR added drops (numerator stable, denominator shrinks), the issue is go-to-market efficiency — trigger sales cost review. If it climbs because burn grows (numerator grows, denominator stable), the issue is spend discipline — trigger vendor + hiring review.
+
+*Why this signal:* Disaggregating burn multiple into "burn grew" vs. "ARR shrank" tells you WHERE to cut. It prevents the across-the-board RIF reflex.
+
+**SIGNAL 5 — New-logo win rate (leading, measured monthly)**
+*What it measures:* % of stage-4+ opportunities that convert to closed-won.
+*Healthy:* ≥ 22% (our historical average).
+*Re-plan trigger:* Drops below 18% for two consecutive months.
+*Action:* Competitive-loss postmortem on every sub-18% month — specifically comparing our win rate vs. each competitor. If losses concentrate on a single competitor, product + marketing emergency alignment within 30 days. If losses spread (budget-not-approved, no-decision), macro signal — no tactical fix, bias toward cutting sales capacity rather than investing in it.
+
+**SIGNAL 6 — Eng shipping cadence (leading)**
+*What it measures:* Number of major features shipped per quarter, against committed quarterly plan.
+*Healthy:* ≥ 80% of committed features shipping on time.
+*Re-plan trigger:* Below 65% for one quarter, OR below 75% for two consecutive quarters.
+*Action:* Eng leadership review with Head of Product — root-cause whether the issue is scope creep (trim scope), ambiguous priorities (formalize prioritization rubric), or true capacity shortage (revisit hiring freeze — because if eng is the bottleneck on expansion-driving features, it is paying for itself).
+
+*Why this signal:* This is the signal that protects against the "cut engineering in a miss quarter and then your NRR drops in two quarters" failure mode. Eng shipping IS a financial signal, not just an operational one.
+
+---
+
+**How to use the framework:**
+
+1. **Monthly ops review:** CFO reviews all 6 signals with CEO and functional leaders. Any signal at trigger level gets an action plan that week. No waiting for quarterly rhythm.
+2. **Quarterly board meeting:** Present the dashboard with 4-quarter rolling history for each signal. Re-plan triggers should be HIGHLIGHTED, not buried.
+3. **Decision audit:** Every board meeting, if any signal hit a trigger in the prior quarter, the memo explicitly states: "Signal X triggered on [date]. Action Y was taken. Outcome: [result]." This forces discipline on executing the pre-committed rules, not re-litigating them.
+
+**One thing I'm explicitly NOT putting on this list:** CAC payback. It's a useful metric but it's a ratio of ratios and by the time it moves meaningfully, the underlying signals (pipeline coverage, win rate, new bookings) have already told you the story. Signals should be things that move early. CAC payback is a summary of things that have already moved.
+
+**One thing I'd add in 12 months:** an "expansion pipeline coverage" ratio specifically for NRR-driving accounts. Right now expansion is lumpy and a 4-quarter trailing NRR captures it. At $25M+ ARR, expansion becomes enough of your growth that it deserves its own pipeline signal.$pf$,
+ $pf$Six signals (pipeline coverage, NRR, cash runway, burn multiple, new-logo win rate, eng shipping cadence) each with healthy band, trigger level, and specific pre-committed action. Framework converts "we'll revisit" into "if X then Y within Z days." Engineering shipping cadence deliberately included as a financial signal. CAC payback deliberately excluded as trailing. Ready for monthly ops + quarterly board use.$pf$);
+
+-- =========================================================================
 -- END OF FILE — append next project(s) below this line.
 -- Iterations working the Content queue: add 2–3 projects per iteration,
 -- appending below this comment. Do NOT rewrite existing projects.

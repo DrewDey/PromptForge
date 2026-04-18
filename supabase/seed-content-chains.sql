@@ -11823,6 +11823,979 @@ This also tightens the series arc: weeks 1-3 are sharp takes, week 4 is honest v
  $pf$Three full posts drafted (198/287/184 words — post 1 MQL-opinion, post 5 churn-incident story, post 9 VP-Sales-hire controversy). Nine outlined at opener + 3-4 body beats + close. Critique pass surfaced: (a) two post-pairs at risk of feeling like the same post — posts 5+10 (both CRO-fire stories, recommend explicit mechanism-differentiation opener on post 10); posts 3+11 (same argument shape, different topics — accepted as consistent voice not repetition); (b) three voice flags — post 8 question too soft (sharpen to confident-question); post 6 closer unusually pithy (flag, accept); post 12 over-hedges with meta-framing (cut two sentences); (c) load-bearing change: swap post 7 and post 12 positions — move vulnerability post to Week 4 as the reflective breather, close the series on Week 6 with the elevator-fire story because human closer builds felt-sense of Dana better than opinion closer. Dana approved 11 of 12, reshaped 1 (competitor-callout became category-level). Post 1 MQL opinion hit 3.2K impressions / 47 reactions / 11 comments including 2 VPs of Sales at prospect accounts.$pf$);
 
 -- =========================================================================
+-- Project 55-0036 | Cap-table cleanup before Series A — 9 SAFEs + a note + unpapered advisor grants → investor-ready picture | Jake Torres | Finance | 5 steps
+-- =========================================================================
+
+DELETE FROM prompt_steps WHERE prompt_id = '55555555-5555-5555-5555-555555550036';
+DELETE FROM prompts      WHERE id        = '55555555-5555-5555-5555-555555550036';
+
+INSERT INTO prompts (
+  id, title, description, content, result_content,
+  category_id, difficulty, model_used, model_recommendation,
+  tools_used, tags, status, author_id, vote_count, bookmark_count
+) VALUES (
+  '55555555-5555-5555-5555-555555550036',
+  $pf$Cap table cleanup before Series A — 9 SAFEs + a convertible note + unpapered advisor grants normalized into an investor-ready picture. 5-pass Claude workflow from raw doc dump to founder dilution memo$pf$,
+  $pf$The workflow I run when a founder client hands me their "cap table" and it's actually a Dropbox folder of SAFE PDFs, one convertible note, a Google Sheet of verbal promises, and three advisor-grant emails the lawyers haven't papered. Turns a doc dump into a clean pre/post cap table, full dilution breakdown across three Series-A scenarios, and a founder dilution memo the board can actually use — before the term sheet gets signed.$pf$,
+  $pf$Client is a healthtech Series A-about-to-close. The term sheet from the lead came in last Tuesday for $15M at $45M pre. The founder CEO sent me a Dropbox folder Wednesday and asked if I could "turn this into a clean cap table by Friday." The Dropbox had: 9 SAFE PDFs (3 post-money with caps, 4 pre-money with caps and discounts, 2 MFN-only no-cap-no-discount), 1 convertible note from 2023 accruing 8% interest, a messy Google Sheet listing angel-round promises and option-pool allocations with notes like "told Priya 0.5% in Slack last March," and 3 separate email threads with advisors promising grants (one signed consulting agreement, two just emails). No single source of truth. The lawyers had a partial cap table in Carta but it was missing the convertible note, had a wrong cap on one SAFE, and hadn't been updated since November.
+
+This is the exact situation I see every time a client goes from Series A-ish-seed chaos to Series A discipline. Pre-Claude the job was 3 days of careful spreadsheet work and 2 back-and-forths with the lawyers. Post-Claude it's a ~4-hour workflow where the AI does the mechanical conversion math and edge-case surfacing while I focus on the calls to the founder about ACTUAL vs PROMISED numbers. Five passes: (1) normalize the 14 instruments into one structured table; (2) model the SAFE/note conversion at three Series-A scenarios; (3) build the post-close cap table with full dilution breakdown; (4) sensitivity on option-pool top-up pre vs post; (5) draft the founder dilution memo with recommendation and negotiation levers.
+
+Delivered Friday 6pm. Founder called me Monday to say he used the memo's recommendation verbatim in a Sunday board call and the lead agreed to the option-pool-post-money structure, which kept his dilution 3.2pp lower than the lead's initial pre-money proposal.$pf$,
+  $pf$5-pass workflow delivered: (1) 14-instrument normalized table (9 SAFEs + 1 convertible note + 4 unpapered advisor/angel grants) with caps, discounts, MFN mechanics, accrued interest, and 2 math errors found in the lawyer's Carta (wrong cap on Cohort-2 SAFE, missing note interest accrual); (2) 3-scenario conversion model at $15M / $18M / $22M pre-money; (3) post-close cap table showing founder dilution from 71.2% to 43.8% base case with full stakeholder breakdown; (4) option-pool sensitivity showing 3.2pp founder dilution delta between pre-money and post-money pool top-up; (5) 4-page founder dilution memo with recommendation (negotiate option pool post-money, push back on 2 specific SAFE MFN interpretations) and 4 concrete negotiation levers ranked by dollar impact. Founder used the memo's recommendation in the Sunday board call. Lead agreed to post-money pool structure. Final founder dilution landed at 46.2% vs 43.0% if lead's pre-money pool had stuck — $1.6M delta at the $180M imagined next-round valuation.$pf$,
+  '11111111-1111-1111-1111-111111111101',
+  'advanced',
+  'claude-opus-4-7',
+  'Claude 4.7 Opus',
+  ARRAY['Claude','Carta','Excel','Google Sheets'],
+  ARRAY['finance','cap-table','safe','series-a','dilution','cfo'],
+  'approved',
+  '22222222-2222-2222-2222-222222222203',
+  118, 57
+);
+
+INSERT INTO prompt_steps (id, prompt_id, step_number, title, content, result_content, description) VALUES
+
+-- Step 1 --
+('66666666-6666-6666-6666-666666360101',
+ '55555555-5555-5555-5555-555555550036',
+ 1,
+ $pf$Normalize the 14 instruments into one structured table with caps, discounts, MFN mechanics, and accrued interest$pf$,
+ $pf$I'm a fractional CFO. A healthtech client just got a $15M/$45M-pre Series A term sheet and handed me a Dropbox of their historical fundraising docs. Nothing is in Carta accurately. I need to normalize everything into one table I can actually model against.
+
+Below are summaries of 14 instruments. Your job: parse each, tell me back in a single structured table what every instrument converts on, flag any MFN ambiguity, flag any math that looks wrong, and flag any instrument that needs lawyer clarification before I can model it. The table should have columns: instrument type, holder, principal / commitment, effective date, valuation cap, discount rate, MFN yes/no, post- or pre-money SAFE, any accrued interest as of today (2026-04-18), and a "notes" column for anything weird.
+
+The 14 instruments:
+1. 2022-06 SAFE, Holder: Axial Ventures seed fund, $500K, post-money cap $12M, 0% discount, MFN no.
+2. 2022-11 SAFE, Holder: Grid Seed Partners, $750K, post-money cap $14M, 0% discount, MFN no.
+3. 2023-02 SAFE, Holder: Redshift Capital, $1,000,000, post-money cap $15M, 0% discount, MFN no.
+4. 2023-05 SAFE, Holder: Park Lane Angels LLC (syndicate), $250K, pre-money cap $18M, 15% discount, MFN yes.
+5. 2023-05 SAFE, Holder: Individual Sam Park, $50K, pre-money cap $18M, 15% discount, MFN yes.
+6. 2023-08 SAFE, Holder: Brightline Strategic, $400K, pre-money cap $20M, 20% discount, MFN yes.
+7. 2023-08 SAFE, Holder: Individual Priya Mehta, $100K, pre-money cap $20M, 20% discount, MFN yes.
+8. 2023-12 SAFE, Holder: Individual David Lin, $150K, MFN-only (no cap, no discount), MFN yes.
+9. 2024-02 SAFE, Holder: Hellman Family Office, $250K, MFN-only (no cap, no discount), MFN yes.
+10. 2023-10 Convertible Note, Holder: Axial Ventures (bridge extension), principal $500K, interest 8% simple, cap $16M, discount 15%, maturity 2026-10-01, MFN no.
+11. Google-sheet angel-round allocation, Holder: Cohort-2 SAFE angels (Jordan Reyes $75K, Mira Evans $25K, Tanvi Okonkwo $50K), all identified as "same as Brightline 2023-08 terms" per founder Slack notes but never papered individually (founder says all 3 signed the Brightline template but the signed PDFs aren't in Dropbox, only the Slack confirmation).
+12. Advisor grant email, March 2024, 0.25% (on "current fully diluted basis"), 4-year vest with 12-month cliff, cliff would hit March 2025 — Holder: Dr. Elena Vasquez (clinical advisor). Signed advisor agreement PDF in Dropbox.
+13. Advisor grant Slack exchange, June 2024, "let's call it 0.50% for now, can revisit" — Holder: Omar Haddad. No signed advisor agreement. Vesting never specified.
+14. Advisor grant email exchange, September 2024, 0.35% with 2-year vest no cliff — Holder: Yuki Nakamura. No signed advisor agreement yet; founder says one was drafted but never sent for signature.
+
+Additional context: the lawyer's Carta is showing the Brightline 2023-08 SAFE at cap $18M (founder confirms the actual signed doc says $20M — the $18M entry in Carta is wrong). Carta also doesn't have the 2023-10 convertible note entered at all. I want you to assume the founder is right about what the signed docs say and model accordingly; flag the Carta discrepancies in the output.$pf$,
+ $pf$Normalized instrument table — 14 rows across 3 instrument types. Findings flagged inline.
+
+| # | Type | Holder | Principal | Date | Cap | Discount | MFN | SAFE style | Accrued interest (@2026-04-18) | Notes |
+|---|------|--------|-----------|------|-----|----------|-----|------------|-------------------------------|-------|
+| 1 | SAFE | Axial Ventures | $500,000 | 2022-06 | $12M | 0% | No | Post-money | — | Oldest post-money SAFE; will almost certainly hit cap at any reasonable Series A pre. |
+| 2 | SAFE | Grid Seed Partners | $750,000 | 2022-11 | $14M | 0% | No | Post-money | — | Also cap-binding in base case. |
+| 3 | SAFE | Redshift Capital | $1,000,000 | 2023-02 | $15M | 0% | No | Post-money | — | Same. Largest post-money SAFE. |
+| 4 | SAFE | Park Lane Angels | $250,000 | 2023-05 | $18M | 15% | Yes | Pre-money | — | MFN — must re-evaluate against Cohort-2 post-money SAFEs (rows 1-3). See MFN analysis below. |
+| 5 | SAFE | Sam Park | $50,000 | 2023-05 | $18M | 15% | Yes | Pre-money | — | Same terms as row 4. |
+| 6 | SAFE | Brightline Strategic | $400,000 | 2023-08 | $20M | 20% | Yes | Pre-money | — | **CARTA DISCREPANCY: Carta shows $18M, actual signed doc $20M. Correct in our model. Lawyer notification required.** |
+| 7 | SAFE | Priya Mehta | $100,000 | 2023-08 | $20M | 20% | Yes | Pre-money | — | Same as row 6. |
+| 8 | SAFE | David Lin | $150,000 | 2023-12 | MFN-only | MFN-only | Yes | Pre-money | — | MFN mechanic: converts on best terms of subsequent SAFE. Needs clarification — see flags. |
+| 9 | SAFE | Hellman FO | $250,000 | 2024-02 | MFN-only | MFN-only | Yes | Pre-money | — | Same as row 8. |
+| 10 | Note | Axial Ventures | $500,000 | 2023-10 | $16M | 15% | No | n/a | **$100,548** (8% simple × 30.5 months) | **CARTA DISCREPANCY: missing from Carta entirely. Principal + interest = $600,548 converts.** Maturity 2026-10-01 — Series A closes before maturity so no default-mechanics concern. |
+| 11 | SAFE cohort | Reyes/Evans/Okonkwo | $150,000 total | 2023-08 | $20M | 20% | Yes | Pre-money | — | **BLOCKER: signed PDFs not in Dropbox. Modeling assumes Slack-confirmed Brightline template. Lawyer must confirm before close.** |
+| 12 | Advisor grant | Vasquez | 0.25% FD | 2024-03 | — | — | — | n/a | — | Signed agreement. Cliff hit 2025-03. 13.5/48 months vested = **0.0703% vested**, 0.1797% unvested. Goes in option pool. |
+| 13 | Advisor grant | Haddad | 0.50%? | 2024-06 | — | — | — | n/a | — | **BLOCKER: no signed agreement, no specified vesting. Cannot model. Needs papering BEFORE Series A close or explicit founder decision to write off.** |
+| 14 | Advisor grant | Nakamura | 0.35% | 2024-09 | — | — | — | n/a | — | **BLOCKER: never sent for signature. Same path as #13 — needs papering or writedown.** |
+
+### MFN analysis (rows 4, 5, 6, 7, 8, 9, 11)
+
+MFN provisions convert each MFN-SAFE on the best terms available in any subsequent SAFE. The "best terms" calculation here is the binding issue:
+
+- Rows 4–7 (pre-money caps $18M / $20M with 15%/20% discounts) need to be re-evaluated against rows 1–3 (post-money caps $12M–$15M, no discount). **Post-money vs pre-money is NOT a direct comparison**; conversion math differs. Post-money caps cap the dilution on all prior SAFEs collectively, pre-money caps don't. Typical MFN clauses let the holder pick the better economic outcome, not the better label. The Cohort-2 SAFE holders will almost certainly invoke MFN to convert on post-money cap terms (which are lower caps → more shares per dollar). **Model both: honor MFN = they get the post-money cap conversion of Redshift/Grid/Axial (whichever is binding at the Series A price).**
+
+- Rows 8–9 (MFN-only): these convert on the most-favorable subsequent terms. Same post-money-cap outcome. Likely binding: either the $12M Axial cap or whichever SAFE yields the lowest price-per-share at Series A. Model all three post-money caps and pick cheapest per holder.
+
+### Math that looks wrong / needs lawyer attention
+
+1. **Carta Brightline cap $18M → $20M** — correct in model, flag to lawyer as formal amendment needed before close. Founder should send signed SAFE PDF to Carta team.
+2. **Carta missing convertible note ($500K + $100.5K interest)** — $600.5K instrument unaccounted for. Lawyer should enter immediately.
+3. **Cohort-2 SAFEs (row 11) unpapered** — $150K total at stake. If founders can't produce signed copies before close, the lead will require these to be papered with whatever terms were offered OR written down to zero. Do NOT count these as binding obligations yet; model as "likely $150K at Brightline terms" in base case with a sensitivity showing them at zero.
+4. **Haddad + Nakamura advisor grants (rows 13–14) unpapered** — 0.85% combined. These do NOT exist legally. Two options: (a) paper them now with vesting schedules, which adds 0.85% to option pool burn before Series A close; (b) founder has explicit "we're writing these off" conversations with both. I'd recommend option (b) — Haddad's Slack exchange is too ambiguous to paper cleanly, and Nakamura's draft agreement was never sent which is usually a signal.
+
+### Blockers I'm escalating to the founder today:
+1. Get signed Cohort-2 PDFs (row 11) or accept writedown.
+2. Decide Haddad + Nakamura: paper or write off.
+3. Direct the lawyers to correct Carta for rows 6 and 10.
+
+Will model rows 11, 13, 14 at base-case assumption (Cohort-2 binding at Brightline terms, Haddad/Nakamura written off) with sensitivities in step 4.$pf$,
+ $pf$Normalized table delivered — 14 instruments parsed into one structured table with caps, discounts, MFN mechanics, accrued interest, conversion style. Found 3 real issues beyond the obvious: (a) Carta's Brightline cap wrong ($18M vs signed $20M), (b) $600.5K convertible note missing from Carta entirely ($500K principal + $100.5K accrued 8% interest), (c) 3 unpapered instruments (Cohort-2 $150K SAFE cohort, Haddad 0.50% advisor grant, Nakamura 0.35% advisor grant) that need founder decisions before close. MFN analysis surfaced that 5 pre-money-cap SAFEs + 2 MFN-only SAFEs will almost certainly convert on the post-money caps from Axial/Grid/Redshift — different math than a literal pre-money cap read. 3 blockers escalated to founder today. Base case for modeling: Cohort-2 binding at Brightline terms, Haddad/Nakamura written off.$pf$),
+
+-- Step 2 --
+('66666666-6666-6666-6666-666666360102',
+ '55555555-5555-5555-5555-555555550036',
+ 2,
+ $pf$Model SAFE + note conversion at 3 Series-A scenarios ($15M / $18M / $22M pre)$pf$,
+ $pf$Using the normalized table from step 1 (base case: Cohort-2 binding at Brightline terms, Haddad/Nakamura written off, Carta corrections applied), model the conversion of all SAFEs + the convertible note at three Series-A scenarios:
+
+- **Base case (term-sheet):** $45M pre-money, $15M primary, $60M post-money, $3.00 Series A price-per-share (assume 20M fully diluted pre-round, so 5M new shares at $3.00 = $15M).
+- **Upside scenario:** $54M pre-money, $18M primary, $72M post-money (term sheet bump if founder pushes; ~20% higher pre).
+- **Bear scenario:** $40M pre-money, $15M primary, $55M post-money (what the lead might fall back to if diligence surfaces concerns; ~11% lower pre).
+
+For each scenario, tell me the conversion outcome for every instrument: which mechanism fires (cap vs discount vs MFN-substitution vs straight principal-to-shares for the note), the effective price-per-share each holder gets, total shares issued to each holder, and total dilution from SAFE+note conversion expressed as a % of pre-money FD.
+
+Also flag any scenario-specific weirdness. In particular I want to know: in the bear scenario, does anyone's MFN actually hurt them (i.e., the as-written pre-money cap would have been better than MFN-to-post-money)?
+
+Format the output as a scenario-by-scenario breakdown. Keep the math visible — I want to be able to audit by hand.$pf$,
+ $pf$Conversion math across three Series-A scenarios. Assumptions locked: 20M pre-round fully-diluted shares; Series A primary calculated by dividing $ raised by the Series A PPS; SAFE+note conversion prices-per-share derived from the relevant cap divided by pre-round FD.
+
+### Base case — $45M pre / $15M primary / $60M post / $3.00 PPS
+
+Post-money SAFEs (rows 1-3) and post-money equivalents via MFN (rows 4-9, 11) all convert at their respective post-money caps divided by 20M FD.
+
+| Holder | Cap | PPS | $ | Shares | % of pre-money FD |
+|--------|-----|-----|---|--------|-------------------|
+| Axial (row 1) | $12M | $0.60 | $500,000 | 833,333 | 4.17% |
+| Grid (row 2) | $14M | $0.70 | $750,000 | 1,071,429 | 5.36% |
+| Redshift (row 3) | $15M | $0.75 | $1,000,000 | 1,333,333 | 6.67% |
+| Park Lane (row 4, MFN → $12M) | $12M | $0.60 | $250,000 | 416,667 | 2.08% |
+| Sam Park (row 5, MFN → $12M) | $12M | $0.60 | $50,000 | 83,333 | 0.42% |
+| Brightline (row 6, MFN → $12M) | $12M | $0.60 | $400,000 | 666,667 | 3.33% |
+| Priya M. (row 7, MFN → $12M) | $12M | $0.60 | $100,000 | 166,667 | 0.83% |
+| David Lin (row 8, MFN-only → $12M) | $12M | $0.60 | $150,000 | 250,000 | 1.25% |
+| Hellman (row 9, MFN-only → $12M) | $12M | $0.60 | $250,000 | 416,667 | 2.08% |
+| Cohort-2 (row 11, MFN → $12M) | $12M | $0.60 | $150,000 | 250,000 | 1.25% |
+| **SAFE subtotal** | | | **$3,600,000** | **5,488,124** | **27.44%** |
+| Axial Note (row 10) — cap $16M | $16M | $0.80 | $600,548 | 750,685 | 3.75% |
+| **Total SAFE + Note** | | | **$4,200,548** | **6,238,809** | **31.19%** |
+
+**Check the discount mechanism on the note:** 15% discount on $3.00 PPS = $2.55. Cap-implied PPS = $0.80. Cap is binding (lower PPS = more shares = better for holder). Note converts on cap. Confirmed.
+
+**Check the discount on pre-money-cap SAFEs (rows 4, 6) at the as-written terms, to confirm MFN is actually better:**
+- Row 4 Park Lane: cap $18M → PPS $0.90, OR 15% discount → PPS $2.55. Cap binding → $0.90. MFN post-money → $0.60. **MFN improves $0.90 → $0.60 = better for holder. Confirmed.**
+- Row 6 Brightline: cap $20M → PPS $1.00, OR 20% discount → PPS $2.40. Cap binding → $1.00. MFN → $0.60. **MFN improves $1.00 → $0.60. Confirmed.**
+
+### Upside case — $54M pre / $18M primary / $72M post / $3.60 PPS
+
+SAFE conversions identical in SHARE count (caps don't move) but different % of pre-money because pre-money FD is the same 20M. Dilution math:
+
+- Total SAFE shares: 5,488,124 (unchanged).
+- Note interest accrual still at $100,548 (doesn't change with valuation).
+- Total SAFE+Note shares: 6,238,809 = 31.19% of 20M pre-money FD.
+
+**The interesting question here is whether MFN still helps.** At $3.60 PPS:
+- Row 4 Park Lane as-written: cap $0.90, discount $3.06. Cap binding → $0.90. MFN post-money $0.60. MFN still better.
+- Row 6 Brightline: cap $1.00, discount $2.88. Cap binding → $1.00. MFN $0.60. MFN still better.
+
+MFN holds across all pre-money-cap SAFEs at upside case. No switch.
+
+**What moves for founder in upside case:** new money buys fewer shares per dollar ($18M / $3.60 = 5M new shares vs $15M / $3.00 = 5M — identical). Pre-money ownership preserved at 20M. Series A investor still lands at 5M / 31.24M FD post = 16.00% vs base case 5M / 31.24M = 16.00%. **No difference to founders from the SAFE holders' perspective in this scenario — founders benefit only from the higher pre giving them a higher paper valuation on their remaining stake.**
+
+### Bear case — $40M pre / $15M primary / $55M post / $2.67 PPS
+
+This is where MFN can flip on some holders. PPS is $2.67. Recheck as-written caps:
+
+- Row 4 Park Lane: cap $0.90, discount 15% → $2.27. **Discount binding now, not cap.** As-written effective PPS $2.27. MFN post-money → $0.60. **MFN still much better** ($2.27 vs $0.60). Confirmed.
+- Row 6 Brightline: cap $1.00, discount 20% → $2.14. Discount binding as-written → $2.14. MFN $0.60. **MFN still better.**
+
+MFN still helps everyone in bear case. **No MFN flip.** This is the "founder-unfriendly" confirmation: MFN is always binding for these holders at any reasonable Series A price, because the post-money caps ($12M–$15M) are simply below the Series A PPS by enough that discounts on higher-cap pre-money SAFEs can't catch up.
+
+**Answer to your explicit question:** No, in the bear scenario no one's MFN hurts them. MFN to the Axial $12M post-money cap is unambiguously the best conversion for every pre-money-cap SAFE holder.
+
+### Scenario-specific weirdness / flags
+
+1. **The Axial $12M post-money cap is the MFN anchor across all scenarios.** Axial (row 1) is the single instrument driving the conversion price for 7 other SAFE holders. If the lead raises a diligence issue about the Axial terms — it's the oldest/cheapest cap — the MFN cascade is exposed. I'd flag to the founder before he mentions the Axial SAFE prominently in diligence.
+
+2. **Convertible note interest keeps accruing until close.** If Series A slips from target April 30 close to late May close, add $4,110 interest (8% × ~30 days × $500K). Trivially small but worth flagging.
+
+3. **The 7-holder MFN cascade is audit-worthy.** In practice, the lawyers will send the MFN claim letter to each holder and each will confirm they want post-money-cap terms. Two risks: (a) one holder claims the cap-with-discount was better under a different interpretation and refuses to amend — flag as 1% risk, not material; (b) two of the MFN-only holders (rows 8, 9) might argue for even-better terms if a subsequent round has been discussed — but per the founder there's no post-SAFE round before the Series A, so MFN anchors on the Axial $12M.
+
+4. **If Cohort-2 can't be papered (step 1 blocker), the SAFE subtotal drops by 250,000 shares (1.25% of pre).** Founder's dilution improves by 0.39pp in base case. Modest but non-zero.
+
+Ready for step 3 post-close cap table with this conversion schedule locked.$pf$,
+ $pf$Three-scenario conversion math complete. Base case ($45M pre / $3.00 PPS): SAFEs convert to 5,488,124 shares at effective PPS $0.60–$0.75 (27.44% of pre-money FD); convertible note converts to 750,685 shares at $0.80 (3.75%); total SAFE+note dilution 31.19%. Upside ($54M pre): identical share count (caps don't move with pre-money), founder-valuation benefit only. Bear ($40M pre): no MFN flip — post-money cap still binding for all holders because Axial's $12M cap is below every reasonable Series A PPS. Key insight: the Axial $12M post-money cap is the MFN anchor for 7 other SAFE holders, which makes Axial's terms the load-bearing instrument for the whole cascade; flagged to founder for diligence prep. No hidden MFN traps. 1.25% dilution exposure to Cohort-2 paper-or-writedown decision.$pf$),
+
+-- Step 3 --
+('66666666-6666-6666-6666-666666360103',
+ '55555555-5555-5555-5555-555555550036',
+ 3,
+ $pf$Build the post-close cap table with full dilution breakdown$pf$,
+ $pf$Using the base-case conversion math from step 2 ($45M pre / $15M primary / $3.00 PPS), build the complete post-close cap table. Show me every stakeholder bucket with: pre-round shares, SAFE/note conversion shares, Series A new shares, option-pool top-up shares, post-close shares, post-close %.
+
+The lead term sheet specifies a 15% post-money option pool (unallocated, fully diluted). Per the term sheet this pool is created PRE-MONEY from existing shareholders. Model this first; we'll do the post-money alternative in step 4.
+
+Pre-round cap table (20M FD total):
+- Founder A (Sam Okonkwo, CEO): 8,800,000 common
+- Founder B (Lia Reyes, CTO): 6,400,000 common
+- Employee option pool (current, allocated): 2,400,000 (1,800,000 vested / 600,000 unvested)
+- Employee option pool (current, UNallocated): 2,200,000
+- Advisor Vasquez (row 12, vested portion only counted for base): 14,060 (0.0703% of 20M)
+- Advisor Vasquez unvested: 35,940 (0.1797% of 20M)
+- Total: 19,864,000 allocated + 136,000 rounding/reserved = 20,000,000 FD
+
+Show the cap table in the order: Founder A, Founder B, Employee pool (vested options + unallocated), Advisor Vasquez (vested + unvested), Axial (row 1 SAFE), Grid, Redshift, Park Lane, Sam Park, Brightline, Priya Mehta, David Lin, Hellman, Cohort-2 SAFE, Axial Note, Series A investor (lead + co-investors, don't break out), New option pool top-up.
+
+Make sure the math reconciles: post-close total shares × Series A PPS should equal the post-money valuation ($60M).$pf$,
+ $pf$Post-close cap table, base case, pre-money option pool structure.
+
+### Pre-round share count: 20,000,000
+
+### SAFE+Note conversion shares (from step 2): 6,238,809
+
+### Series A new shares: $15,000,000 / $3.00 = 5,000,000
+
+### Option pool math (pre-money structure):
+
+Target: 15% of post-money fully diluted. Post-money FD = 20,000,000 + 6,238,809 + 5,000,000 + new_pool_shares.
+
+Let new_pool_shares = X. Then: X / (20,000,000 + 6,238,809 + 5,000,000 + X) = 0.15
+X = 0.15 × (31,238,809 + X)
+X = 4,685,821 + 0.15X
+0.85X = 4,685,821
+X = 5,512,731
+
+**BUT** the term sheet says pool is created PRE-MONEY. That means the 5,512,731 shares come from dilution of pre-round holders only (founders, existing pool, advisors), not from Series A investor or SAFE holders. Functionally: the 5,512,731 is carved out of the 20M pre-round count BEFORE the post-money conversion, which means it effectively inflates the pre-money FD from 20M to 25,512,731 for SAFE conversion purposes.
+
+**This matters for SAFEs.** Pre-money-cap SAFEs aren't affected (they're MFN'd to post-money caps, which are dollar-cap-based not share-based). Post-money-cap SAFEs (Axial/Grid/Redshift) also aren't affected — post-money caps are "cap dollar value / post-money FD" which is definitional. So SAFE share counts stay at 5,488,124 + Note at 750,685.
+
+Actually let me verify: the post-money cap mechanic converts at cap / (pre-money FD INCLUDING pool top-up). If the pool top-up is pre-money, it's included in the pre-money FD. So:
+
+- Axial Post-money SAFE at $12M cap: convert at $12M / (20M + 5,512,731) = $12M / 25,512,731 = $0.4704 per share. NOT $0.60.
+
+**I had this wrong in step 2.** Post-money SAFE caps bake the option pool top-up into the denominator *when the top-up is pre-money*. Let me redo.
+
+### Revised SAFE+Note share counts (pre-money pool structure)
+
+New effective PPS under post-money cap with pool baked in:
+- Axial $12M cap: $12M / 25,512,731 = $0.4704
+- Grid $14M cap: $14M / 25,512,731 = $0.5488
+- Redshift $15M cap: $15M / 25,512,731 = $0.5879
+
+MFN holders cascade to the cheapest (Axial) → $0.4704.
+
+Note $16M cap: $16M / 25,512,731 = $0.6271.
+
+Recalculating shares:
+- Axial SAFE: $500,000 / $0.4704 = 1,062,921 shares (was 833,333)
+- Grid: $750,000 / $0.5488 = 1,366,618 (was 1,071,429)
+- Redshift: $1,000,000 / $0.5879 = 1,700,827 (was 1,333,333)
+- Park Lane MFN: $250,000 / $0.4704 = 531,460 (was 416,667)
+- Sam Park MFN: $50,000 / $0.4704 = 106,292 (was 83,333)
+- Brightline MFN: $400,000 / $0.4704 = 850,336 (was 666,667)
+- Priya Mehta MFN: $100,000 / $0.4704 = 212,584 (was 166,667)
+- David Lin MFN: $150,000 / $0.4704 = 318,876 (was 250,000)
+- Hellman MFN: $250,000 / $0.4704 = 531,460 (was 416,667)
+- Cohort-2 MFN: $150,000 / $0.4704 = 318,876 (was 250,000)
+- **SAFE subtotal: 6,999,250 shares** (was 5,488,124 — **+1,511,126 shares or +27.5%**)
+- Axial Note: $600,548 / $0.6271 = 957,691 shares (was 750,685)
+- **Total SAFE + Note: 7,956,941 shares** (was 6,238,809 — **+1,718,132**)
+
+**This is the meat of the dilution story.** The pre-money option pool doesn't just dilute founders by 5.5M shares — it also inflates the pre-money FD that post-money-cap SAFEs convert against, which pulls in ANOTHER 1.7M shares of SAFE dilution beyond what a naive read produces. Founder A's share of loss: (5,512,731 + 1,718,132) × (8.8M / 20M founder-split) × this is getting complex — show in final table.
+
+### Final post-close cap table, base case, PRE-MONEY pool
+
+Total FD post-close = 20,000,000 + 7,956,941 + 5,000,000 = 32,956,941. Reconciling: does that × $3.00 = $60M? → $98.87M. **Not matching the $60M post-money.** Something's off.
+
+The issue: post-money valuation is $60M = 20M shares × $3.00 base, but post-money FD is 32.96M shares. The "post-money valuation" in a term sheet is typically $ × post-money FD, so $60M / 32,956,941 = $1.82 PPS — not $3.00.
+
+Let me reset. The term sheet says $45M pre, $15M primary, $60M post. Standard venture math: Series A PPS = pre-money / pre-money FD = $45M / 25,512,731 (including pre-money option pool) = $1.7639 PPS. Series A shares = $15M / $1.7639 = 8,504,535 shares. Now let me reconvert SAFEs on post-money caps (which are $cap / post-money FD):
+
+Post-money FD = pre-money FD + Series A new shares = 25,512,731 + 8,504,535 = 34,017,266.
+
+SAFE conversion PPS:
+- Axial $12M post-money cap: $12M / 34,017,266 = $0.3528
+- Grid $14M: $14M / 34,017,266 = $0.4116
+- Redshift $15M: $15M / 34,017,266 = $0.4409
+- MFN cascade: $0.3528 (Axial)
+- Note $16M: $0.4703
+
+Recalc shares:
+- Axial SAFE: $500K / $0.3528 = 1,417,234
+- Grid: $750K / $0.4116 = 1,822,157
+- Redshift: $1M / $0.4409 = 2,267,995
+- Park Lane MFN: $250K / $0.3528 = 708,617
+- Sam Park MFN: $50K / $0.3528 = 141,723
+- Brightline MFN: $400K / $0.3528 = 1,133,787
+- Priya Mehta MFN: $100K / $0.3528 = 283,447
+- David Lin MFN: $150K / $0.3528 = 425,170
+- Hellman MFN: $250K / $0.3528 = 708,617
+- Cohort-2 MFN: $150K / $0.3528 = 425,170
+- SAFE subtotal: 9,333,917
+- Note: $600,548 / $0.4703 = 1,276,939
+- Total SAFE+Note: 10,610,856
+
+But this is iterative: the SAFE shares also count in post-money FD. This is the chicken-and-egg problem of post-money SAFEs + pre-money option pool. The correct solve requires treating the post-money FD as a function of SAFE shares which depend on post-money FD. Let me set up the system.
+
+Let P = post-money FD. P = 20M + pool_shares + SAFE_shares + note_shares + A_shares. Pool_shares = 0.15 × P → pool = 0.15P. A_shares = $15M / PPS, PPS = $45M / (20M + pool_shares). So PPS is fixed once pool_shares fixed: PPS = $45M / (20M + 0.15P).
+
+Actually the cleanest way is: set pool to be 15% of the TARGET post-money FD. Solve simultaneously. Industry practice: use a cap-table tool like Carta's model or an iterative Excel. For this memo, what matters is the directional answer.
+
+**Shortcut: lead's intent is 15% of post-money unallocated pool. With pre-money structure, pool dilutes ONLY existing pre-round holders. Post-money structure, pool dilutes ALL holders (SAFEs, Series A, and pre-round) pro-rata. The step 4 sensitivity will contrast these explicitly. For step 3 base case I'll lock the numbers at first-order approximation (pool = 5,512,731 from the first loop) and flag that the true answer requires iteration.**
+
+### Final post-close cap table (first-order, pre-money pool — flagged as approximation):
+
+| Stakeholder | Pre-round shares | Conversion | Series A | Pool top-up | Post-close shares | Post-close % |
+|-------------|-----------------|------------|----------|-------------|-------------------|--------------|
+| Founder A (Sam Okonkwo) | 8,800,000 | — | — | (2,425,602) | 6,374,398 | 19.34% |
+| Founder B (Lia Reyes) | 6,400,000 | — | — | (1,764,074) | 4,635,926 | 14.07% |
+| Existing emp pool — allocated | 2,400,000 | — | — | (661,528) | 1,738,472 | 5.27% |
+| Existing emp pool — unallocated | 2,200,000 | — | — | (606,400) | 1,593,600 | 4.83% |
+| Advisor Vasquez (vested + unvested) | 50,000 | — | — | (13,781) | 36,219 | 0.11% |
+| *Pre-round subtotal after pool carve* | 19,850,000 | — | — | (5,471,385) | 14,378,615 | 43.63% |
+| Pool top-up (new, unallocated) | — | — | — | 5,512,731 | 5,512,731 | 16.73% |
+| Axial SAFE | — | 1,062,921 | — | — | 1,062,921 | 3.23% |
+| Grid SAFE | — | 1,366,618 | — | — | 1,366,618 | 4.15% |
+| Redshift SAFE | — | 1,700,827 | — | — | 1,700,827 | 5.16% |
+| Park Lane SAFE (MFN) | — | 531,460 | — | — | 531,460 | 1.61% |
+| Sam Park SAFE (MFN) | — | 106,292 | — | — | 106,292 | 0.32% |
+| Brightline SAFE (MFN) | — | 850,336 | — | — | 850,336 | 2.58% |
+| Priya Mehta SAFE (MFN) | — | 212,584 | — | — | 212,584 | 0.65% |
+| David Lin SAFE (MFN) | — | 318,876 | — | — | 318,876 | 0.97% |
+| Hellman SAFE (MFN) | — | 531,460 | — | — | 531,460 | 1.61% |
+| Cohort-2 SAFE (MFN) | — | 318,876 | — | — | 318,876 | 0.97% |
+| Axial Note | — | 957,691 | — | — | 957,691 | 2.91% |
+| Series A investor | — | — | 5,000,000 | — | 5,000,000 | 15.17% |
+| **TOTAL** | 19,850,000 | 7,956,941 | 5,000,000 | 0 (net) | **32,956,941** | 100.00% |
+
+### Key observations
+
+1. **Founder A dilution: 8,800,000 / 20,000,000 = 44.00% pre-round → 19.34% post-close.** Loss: 24.66pp.
+2. **Founder B dilution: 6,400,000 / 20,000,000 = 32.00% pre-round → 14.07% post-close.** Loss: 17.93pp.
+3. **Combined founder: 71.20% → 33.41% = 37.79pp lost.** The memo framing: founders give up 38 points of equity in this round, of which ~20 points go to the new option pool and SAFEs combined (most from pre-money pool amplifying SAFE dilution), and ~15 points go to the Series A investor.
+4. **Series A investor at 15.17%** — the lead is paying $15M for 15.17% — implied valuation $98.87M, which is way off the claimed $60M post-money. **This is the pre-money pool problem exposed.** The lead will not accept a 15.17% stake for a $60M post-money claim. Either the pool structure changes OR the SAFE/note conversion math compresses. The industry-standard outcome is that the lead insists on iterative solve that lands at something closer to 20% for the lead and higher overall dilution for pre-round holders.
+5. **Reconciliation fails** ($60M claimed post-money vs $98.87M implied from our math). This is EXACTLY the negotiation flag for step 5: the lead's term sheet as written, combined with the SAFE stack as papered, doesn't reconcile. The post-money pool alternative (step 4) eliminates ~half of this gap because the pool dilutes SAFEs too.
+
+Flagging this as the load-bearing insight of the engagement: **the term sheet numbers and the SAFE stack are internally inconsistent until the pool structure is negotiated**. Step 4 will quantify the founder-dilution delta between the two pool structures.$pf$,
+ $pf$Post-close cap table built. Base case with PRE-MONEY 15% option pool: founders go 71.2% → 33.4% (-37.8pp), of which ~20pp to pool+SAFE amplification and ~15pp to Series A. **Load-bearing finding: the term sheet as written doesn't reconcile with the SAFE stack.** The lead is claiming $60M post-money but our math implies $98.87M post-money given pre-money pool structure pulling SAFE dilution upward. Series A investor lands at 15.17% for $15M (implied $98.87M post) rather than the claimed 20.83% at $60M post. This is the single most important finding in the engagement — the pool-structure question is not a cosmetic negotiation, it's the reconciliation problem that needs solving before close. Step 4 will contrast pre-money vs post-money pool structures and quantify founder-dilution delta.$pf$),
+
+-- Step 4 --
+('66666666-6666-6666-6666-666666360104',
+ '55555555-5555-5555-5555-555555550036',
+ 4,
+ $pf$Sensitivity — option pool pre-money vs post-money + founder dilution delta$pf$,
+ $pf$Given step 3's reconciliation finding: model the post-money option pool alternative explicitly and quantify the founder-dilution delta.
+
+In the post-money structure, the 15% pool is created AFTER the Series A closes and dilutes ALL shareholders proportionally (founders + existing pool + advisors + SAFE holders + Series A investor + note holder). This is founder-favorable because it spreads pool dilution across new and old holders. The lead's term sheet currently specifies pre-money pool — this is the standard lead-favorable default.
+
+Model post-money pool and contrast pre-money vs post-money structures. Show:
+1. Post-close cap table under post-money pool structure.
+2. Founder dilution delta in percentage points between the two.
+3. Dollar-equivalent delta at an imagined $180M next-round (Series B) valuation, so the founder understands the real $ impact.
+4. Additional sensitivity: how does the delta change if Cohort-2 is written down to zero (i.e., step 1's papering blocker fails)?
+
+I also want a brief note on how a sophisticated lead will likely respond to a pool-restructure ask. Is this a "no, that's the deal" or is it "we can do 12% instead of 15% to meet you halfway"?$pf$,
+ $pf$Pool-structure sensitivity, base-case conversion + reconciled math.
+
+### Post-money option pool structure, base case
+
+Under post-money: pool = 15% of post-money FD, created AFTER close, dilutes everyone. The SAFE/note caps now convert at $cap / (pre-money FD before pool) — i.e., $12M / 20M = $0.60 PPS for Axial, back to our original step 2 numbers. SAFE+Note conversion = 6,238,809 shares (as originally modeled).
+
+Pre-pool post-close FD = 20,000,000 + 6,238,809 + 5,000,000 = 31,238,809. Pool = 15% × post-pool-post-close → pool / (31,238,809 + pool) = 0.15 → pool = 5,512,731 shares. Same pool size as pre-money structure (which makes intuitive sense — 15% of same target FD). Post-close FD = 36,751,540.
+
+But now pool dilutes EVERYONE proportionally, not just pre-round holders.
+
+| Stakeholder | Pre-pool shares | After 15% proportional pool dilution | Post-close % |
+|-------------|-----------------|---------------------------------------|--------------|
+| Founder A | 8,800,000 | 7,480,000 | 20.35% |
+| Founder B | 6,400,000 | 5,440,000 | 14.80% |
+| Existing emp pool allocated | 2,400,000 | 2,040,000 | 5.55% |
+| Existing emp pool unallocated | 2,200,000 | 1,870,000 | 5.09% |
+| Advisor Vasquez | 50,000 | 42,500 | 0.12% |
+| New pool top-up | 0 | 5,512,731 | 15.00% |
+| Axial SAFE | 833,333 | 708,333 | 1.93% |
+| Grid SAFE | 1,071,429 | 910,714 | 2.48% |
+| Redshift SAFE | 1,333,333 | 1,133,333 | 3.08% |
+| Park Lane MFN | 416,667 | 354,167 | 0.96% |
+| Sam Park MFN | 83,333 | 70,833 | 0.19% |
+| Brightline MFN | 666,667 | 566,667 | 1.54% |
+| Priya Mehta MFN | 166,667 | 141,667 | 0.39% |
+| David Lin MFN | 250,000 | 212,500 | 0.58% |
+| Hellman MFN | 416,667 | 354,167 | 0.96% |
+| Cohort-2 MFN | 250,000 | 212,500 | 0.58% |
+| Axial Note | 750,685 | 638,082 | 1.74% |
+| Series A investor | 5,000,000 | 4,250,000 | 11.57% |
+| **TOTAL** | 31,238,809 | **36,751,540** | **100.00%** |
+
+Wait — Series A investor at 11.57%? The lead would reject this too. Post-money pool dilutes the lead's share, which no lead accepts. Standard resolution: the lead requires that the pool be sized SO THAT post-close the lead gets 15M/$60M = 25% OR the lead negotiates to mean the pool is "15% of post-money FD calculated pre-pool" which is what was modeled in step 3.
+
+**What actually happens in negotiation:** post-money pool reconciles the $60M post-money target because $15M / $60M = 25% and the lead gets their intended % with lower pool burn falling on founders. Let me redo with the lead's actual intent in mind: lead wants 25% post-close for $15M at $60M post. So lead's shares = 25% × post-close FD. Everything else falls out.
+
+### Reconciled pre-money pool scenario (lead-insists-on-$60M-post-money reconciliation)
+
+Let PC = post-close FD. Lead = 0.25 × PC. Pool = 0.15 × PC. SAFE+Note shares convert against $cap / (20M + pool_shares) which depends on PC.
+
+Iterate (3 passes converges):
+- Trial 1: PC = 30M → pool = 4.5M → pre-money FD = 24.5M → Axial PPS = $12M/24.5M = $0.4898 → Axial SAFE = 1,020,833 shares. SAFE subtotal (all MFN'd): $3.6M / $0.4898 = 7,350,000 shares. Note: $16M/24.5M = $0.6531 → 919,494 shares. Series A = 0.25 × PC. Pre-round = 20M. Total = 20M + 4.5M + 7.35M + 0.92M + Series A. Set 0.25PC = Series A → Solve: PC = 20M + 4.5M + 8.27M + 0.25PC → 0.75PC = 32.77M → PC = 43.7M. Way off 30M guess.
+- Trial 2: PC = 43.7M → pool = 6.55M → pre-money FD = 26.55M → Axial PPS = $0.4520 → SAFE = 7,965,000. Note = $0.6027 → 996,345. 0.75PC = 20M + 6.55M + 8.96M → PC = 47.35M.
+- Trial 3: PC = 47.35M → pool = 7.10M → pre-money FD = 27.10M → Axial PPS = $0.4428 → SAFE = 8,131,000. Note = $0.5905 → 1,017,061. 0.75PC = 20M + 7.10M + 9.15M → PC = 48.34M.
+- Trial 4: PC = 48.34M → pool = 7.25M → pre-money FD = 27.25M → converging. Use PC = 48.5M.
+
+At PC = 48.5M: pool = 7.275M shares, SAFE = 8,156K shares, Note = 1,021K, Series A = 12.125M, pre-round = 20M. Sum = 48.577M ✓ rough convergence.
+
+Founder A post-close: 8.8M / 48.5M = **18.14%**. Founder B: 6.4M / 48.5M = **13.20%**. Combined: **31.34%**.
+
+### Reconciled post-money pool scenario
+
+Lead gets 25% by construction. Pool = 15% by construction. SAFEs convert against pre-money FD of 20M (pool is post-money, not baked in). SAFE+Note = 6,239K shares.
+
+PC such that: 20M + 6,239K + Series A + pool = PC; Series A = 0.25 PC; pool = 0.15 PC.
+So: 26,239K + 0.25 PC + 0.15 PC = PC → 0.60 PC = 26,239K → PC = 43,732K.
+Series A = 10,933K shares, pool = 6,560K shares.
+
+Series A PPS = $15M / 10,933K = **$1.372**. Post-money = 43.73M × $1.372 = **$60.0M** ✓ reconciles.
+
+Founder A: 8.8M / 43.73M = **20.12%**. Founder B: 6.4M / 43.73M = **14.64%**. Combined: **34.76%**.
+
+### Founder dilution delta
+
+| Scenario | Founder A % | Founder B % | Combined % | Delta vs post-money |
+|----------|-------------|-------------|------------|---------------------|
+| Pre-money pool (reconciled) | 18.14% | 13.20% | 31.34% | — |
+| Post-money pool (reconciled) | 20.12% | 14.64% | 34.76% | **+3.42pp combined** |
+
+**Founder combined dilution delta: 3.42 percentage points favoring post-money pool.** Founder A individually gains 1.98pp, Founder B gains 1.44pp.
+
+### Dollar-equivalent at imagined $180M Series B
+
+At $180M next-round valuation:
+- Pre-money pool: founder combined 31.34% × $180M = **$56.4M paper value**
+- Post-money pool: founder combined 34.76% × $180M = **$62.6M paper value**
+- **Delta: $6.2M** combined, split ~58/42 by founder ownership ratio = **$3.6M Founder A / $2.6M Founder B**.
+
+### Cohort-2 writedown sensitivity
+
+If Cohort-2 (row 11) can't be papered and writes down to zero: SAFE subtotal loses $150K / $0.4428 = ~339K shares in pre-money scenario, ~318K in post-money scenario. Founder combined dilution improves by 0.23–0.27pp across both scenarios. Not material to the pool-structure decision. **Recommend: not worth delaying close over — if papering by Friday isn't realistic, write off.**
+
+### How will the lead respond to a post-money pool ask?
+
+**Likely a firm no at 15% post-money, negotiable at a compromise.** The lead's position:
+- Post-money pool structure dilutes the lead's % unless sized exactly to deliver 25%-to-lead. Sophisticated leads know this math; unsophisticated leads don't.
+- The industry-standard counter: pool size becomes negotiable. 13% post-money ≈ 15% pre-money in founder impact. **I'd push for 13% post-money as the opening counter** and settle at 13.5% post-money if the lead digs in.
+- Some leads will accept post-money structure outright if the founder frames it correctly — specifically, if the founder argues "we'll size the pool for 18-month runway, which is 13%, not 15%, and make it post-money." Tying pool size to concrete hiring plans (not arbitrary 15%) is the pattern that wins this negotiation.
+
+**Bottom line for the memo:** $3.4pp combined founder dilution difference = $6.2M at projected Series B valuation. Worth a 1-hour board call and a 48-hour negotiation cycle. High-leverage.$pf$,
+ $pf$Pre-money vs post-money pool sensitivity modeled with reconciled math. Delta: **3.42pp combined founder dilution favoring post-money pool structure** (Founder A +1.98pp, Founder B +1.44pp). Dollar-equivalent at imagined $180M Series B: **$6.2M paper value delta** ($3.6M Founder A / $2.6M Founder B). Pool-structure is the single highest-leverage negotiation lever in the term sheet — worth fighting for. Industry-standard counter: ask for post-money 13% tied to concrete 18-month hiring plan; settle at 13.5% post-money. Leads who understand the math will concede to post-money with sized-down pool; leads who don't, will concede outright. Cohort-2 writedown only 0.23-0.27pp — not material to pool decision, recommend writing off rather than delaying close over papering. Ready to draft the founder dilution memo.$pf$),
+
+-- Step 5 --
+('66666666-6666-6666-6666-666666360105',
+ '55555555-5555-5555-5555-555555550036',
+ 5,
+ $pf$Draft the founder dilution memo — 3-scenario, 4 negotiation levers ranked$pf$,
+ $pf$Draft the founder dilution memo to Sam Okonkwo (CEO) and Lia Reyes (CTO). This gets read by them + potentially shared with a trusted investor director + read by the founders during the Sunday board call before Monday's term-sheet countersigning.
+
+Structure:
+1. **One-paragraph bottom-line.** Current term sheet dilutes founders 71.2% → X.Y% — whether to sign as written or negotiate.
+2. **Three-scenario comparison.** As-written pre-money pool / negotiated post-money pool / no-deal (side-by-side table). Paper values at projected $180M Series B.
+3. **4 specific negotiation levers** ranked by dollar impact. For each: the ask, the likely lead response, the recommended final landing position, and estimated dollar impact.
+4. **What to say in the Sunday board call.** 3-4 sentences the CEO can read verbatim if it helps.
+5. **Remaining blockers that need to close before countersignature.** 1-2 lines each.
+
+Tone: direct, numbers-forward, no hedging. Assume both founders are technical but not finance-fluent — explain "post-money pool structure" once, clearly, without condescending. 4-page target.$pf$,
+ $pf$# Memo: Series A dilution analysis + negotiation plan
+
+**To:** Sam Okonkwo, Lia Reyes
+**From:** Jake Torres, CFO
+**Re:** Lead term sheet ($15M @ $45M pre / $60M post) — recommend negotiate, don't sign as-written
+
+## Bottom line
+
+As written, the term sheet takes you from 71.2% combined ownership to **31.3%** combined post-close. That is in the range of normal for Series A dilution from a SAFE-heavy seed stack, but the specific structure proposed is 3.4pp more dilutive than the alternative structure a sophisticated lead would accept if you ask. That 3.4pp is worth ~$6.2M in paper value at a projected Series B valuation of $180M. **Recommend: don't countersign Monday. Take 48-72 hours to negotiate pool structure and 2 specific SAFE MFN interpretations. Expected landing: combined founder ownership of 34.8% instead of 31.3%.**
+
+## Three scenarios — combined founder ownership post-close
+
+| Scenario | Pool structure | Founder A (Sam) | Founder B (Lia) | Combined | Paper value @ $180M Series B |
+|----------|----------------|-----------------|-----------------|----------|------------------------------|
+| Term sheet as-written | Pre-money 15% | 18.14% | 13.20% | **31.34%** | $56.4M |
+| Recommended negotiation | Post-money 13% | 20.58% | 14.97% | **35.55%** | $64.0M |
+| Walk-away (no deal) | n/a | 44.00% | 32.00% | 76.00% | n/a (no Series B implied) |
+
+"Walk-away" exists only to show where you'd be without the round — not an actual option given the operating plan requires the $15M. Use it only as context.
+
+Delta from "as-written" → "recommended negotiation": **+4.21pp combined founder ownership, ~$7.6M paper value.** (Step 4's 3.4pp was the 15%-pre vs 15%-post comparison; if we also push pool size down to 13% post-money tied to actual 18-month hiring plan, we gain another 0.79pp on top.)
+
+## What is "post-money option pool structure" and why does it matter
+
+The lead's term sheet says "15% unallocated option pool post-money." The industry reads this two ways. Lead-favorable (default, what the lead likely meant): the pool is created pre-money — i.e., carved out of your pre-round share count before SAFEs convert and before the lead buys in. This inflates the pre-money fully diluted count, which amplifies SAFE conversion dilution (because our post-money-cap SAFEs convert against pre-money FD including pool), which eats founder shares twice — once for the pool itself, once for the amplified SAFE conversion.
+
+Founder-favorable alternative: pool created post-money — i.e., after the round closes, dilutes everyone proportionally, including the Series A investor and the SAFE holders. Same target 15% pool. Different math. Same dollar outcome for the lead if the pool is correctly sized down (hence the 13% recommendation — 13% post-money ≈ equivalent option-hire capacity to the lead's 15% pre-money proposal, because post-money pool applies to a larger denominator).
+
+The term sheet as written doesn't specify which structure. You push for the founder-favorable one in the next 48 hours.
+
+## 4 negotiation levers ranked by $ impact
+
+### Lever 1: Pool structure pre-money → post-money
+- **Ask:** "Restructure the 15% unallocated pool as post-money, sized to 13% tied to our 18-month hiring plan (12 eng, 4 GTM, 2 product, 2 ops)."
+- **Likely lead response:** 60% they accept with minor pushback on the 13% vs 15% ("we'd like 14"). 30% they accept the structure change but dig in on 15%. 10% they reject the structure change outright — this is the unsophisticated-lead response and you should push back immediately citing that this is standard Series A negotiation.
+- **Recommended landing:** 13.5% post-money. Fallback: 14% post-money.
+- **Dollar impact at landing:** +3.4pp to +4.2pp combined founder ownership = $6.1M to $7.6M at $180M Series B.
+- **Status:** load-bearing ask. Do not sign without resolving this one.
+
+### Lever 2: SAFE MFN cascade — re-read the Axial post-money cap
+- **Ask:** confirm in writing that the MFN-eligible SAFE holders (rows 4, 6, 8, 9, 11) are cascading to the Axial $12M post-money cap. Two of these (rows 8, 9) are MFN-only, so the lawyers need to issue MFN election letters. If those letters aren't delivered by close, the SAFE holders may have claims against your cap table later.
+- **Likely lead response:** "this is a legal cleanup, your counsel handles it." True. But the lead does care about post-close cap table integrity; request that the lead's counsel review the MFN election letters before close.
+- **Recommended landing:** MFN election letters sent to rows 4, 6, 8, 9, 11 this week, countersigned by Friday. Attach to closing docs.
+- **Dollar impact:** low direct impact, high legal risk avoidance. ~$200K in future litigation exposure if a disgruntled SAFE holder claims miscalculation post-close.
+- **Status:** high confidence win, low negotiation cost.
+
+### Lever 3: Pool allocation window — 24-month not 18-month hiring plan
+- **Ask:** "We'll agree to 13.5% pool if it's sized for 24 months of hiring rather than 18."
+- **Likely lead response:** 50/50 acceptance. Leads optimize for pool top-ups in future rounds — they'd rather you come back to them for pool top-up at Series B than carry extra pool now. But a 2-year pool at the same % saves founders from a mid-cycle top-up negotiation.
+- **Recommended landing:** accept lead's pushback if they dig in — this is a fallback ask, not a load-bearing one.
+- **Dollar impact:** trivial at Series A (same pool %). Meaningful if it prevents a 3-4% pool top-up between Series A and Series B that would come out of founders.
+- **Status:** low-effort ask, moderate-payoff, skip if lead resists.
+
+### Lever 4: Information rights + board composition
+- **Ask:** keep board at 3 (2 founders + 1 lead) rather than 5 (which is typical). Lead takes observer seats for co-investors.
+- **Likely lead response:** pushback. Leads usually want 2 investor seats + 1 independent + 2 founders. Your leverage here is weaker given the term sheet is at market.
+- **Recommended landing:** 3-seat board (2 founder + 1 lead) with 2 observer seats for significant co-investors. Information rights standard.
+- **Dollar impact:** 0 on cap table but meaningful on operational control. Especially matters for future CRO/VP Sales hire debates (cf. Lena Morales's pre-deal memo I've shared separately).
+- **Status:** secondary ask, don't fall on sword over it.
+
+## What to say on the Sunday board call — verbatim-ready
+
+"We've modeled the term sheet and want to come back with two specific counters before Monday. One: we're restructuring the 15% pool as post-money at 13% sized to our 18-month plan. This is standard for Series A negotiation and preserves roughly three-and-a-half points of combined founder ownership. Two: our SAFE stack has MFN provisions that we want the lead's counsel to review via formal election letters this week — this protects the cap table we're signing. Everything else we're OK with. Plan to respond to the lead Monday morning; countersign Tuesday or Wednesday."
+
+If the lead-side board director pushes back on the pool structure: "This is a founder-favorable interpretation that sophisticated leads routinely accept. We're not asking for above-market terms; we're asking for one of two market-standard structures, in the direction that preserves 3-4 points of founder ownership."
+
+## Remaining blockers before countersignature
+
+1. **Cohort-2 SAFE papering (Blocker A from step 1).** $150K at stake. If papering fails by Friday, write down to zero — 0.23pp dilution improvement to founders, not worth delaying close. Decision: **paper by Friday, else write off.**
+2. **Haddad + Nakamura advisor grants (Blocker B from step 1).** 0.85% combined. Neither has a signed agreement. Two options: paper them now with current vesting clock (adds 0.85% to pool burn) or have direct conversations with both that we're not papering. **Recommendation:** direct conversations. Haddad's Slack exchange is ambiguous; Nakamura's agreement was drafted but never sent (that's a signal). I'll draft the outreach notes.
+3. **Carta corrections (Blocker C from step 1).** Brightline cap $18M → $20M; enter convertible note $500K + accrued $100.5K. Both need lawyer + Carta team action. Email thread open; expecting resolution Wednesday.
+
+All three blockers are Wednesday-close-of-day. None of them should delay Monday-morning term-sheet response. Term sheet countersignature targets Wednesday evening.
+
+— Jake$pf$,
+ $pf$4-page founder dilution memo delivered: bottom-line recommendation (don't sign Monday, negotiate post-money pool structure 48-72h); three-scenario table showing 31.3% as-written vs 35.6% recommended vs 76% walk-away (context only); plain-language explainer of pre-money vs post-money pool structure; 4 negotiation levers ranked by $ impact with ask / likely-response / recommended-landing / impact per lever (pool structure = load-bearing, SAFE MFN = legal hygiene, 24-month vs 18-month pool = fallback, board composition = secondary); verbatim Sunday-call language for CEO; 3 remaining blockers categorized by decision deadline. Founder used the memo's recommendation verbatim on Sunday. Lead agreed to post-money pool structure Monday; pool sized at 13.5% (landed at midpoint). Final founder dilution: 46.2% vs the 43.0% if lead's pre-money 15% had stuck — $3.2pp difference, ~$1.6M paper value at imagined Series B. Haddad + Nakamura direct conversations went smoothly (both understood). Cohort-2 papered Thursday. Carta corrected Wednesday. Term sheet countersigned Wednesday 7:30pm.$pf$);
+
+-- =========================================================================
+-- Project 55-0037 | Toast / snackbar system for a B2B analytics product — 23 inconsistent notifications → shippable 4-variant spec | Priya Sharma | Design | 3 steps
+-- =========================================================================
+
+DELETE FROM prompt_steps WHERE prompt_id = '55555555-5555-5555-5555-555555550037';
+DELETE FROM prompts      WHERE id        = '55555555-5555-5555-5555-555555550037';
+
+INSERT INTO prompts (
+  id, title, description, content, result_content,
+  category_id, difficulty, model_used, model_recommendation,
+  tools_used, tags, status, author_id, vote_count, bookmark_count
+) VALUES (
+  '55555555-5555-5555-5555-555555550037',
+  $pf$Toast / snackbar system for a B2B analytics product — 3-pass Claude workflow turning 23 inconsistent existing notifications into a 4-variant spec eng can ship in a week$pf$,
+  $pf$How I went from "our toasts are a mess, can you fix them?" to a shippable eng-ready spec in one afternoon. 3 passes: inventory + miscategorization audit, 4-variant system design with timing/positioning/stacking/a11y, then the eng handoff package with component API + edge cases + migration plan. Beginner-friendly because it's one contained component — but the design discipline is real.$pf$,
+  $pf$Product designer at a B2B analytics SaaS. Our toast notifications have been accruing ad-hoc for about 2 years — 23 different toasts across the product, built by 5 engineers, with inconsistent styling, timing, positioning, and (worst) categorization. Some errors are shown as neutral info, some success states disappear in 2 seconds (too fast to read), two "undo" actions exist but look different, and one critical-error toast is styled identically to a success one so users miss it.
+
+I brought this up in design standup last week. The eng manager said: "If you can give us a spec we can implement, we'll carve out a sprint." So I have a Friday deadline to produce something shippable.
+
+This is my 3-pass Claude workflow on it. Pass 1: inventory the 23 existing toasts, categorize them into success/error/warning/info, flag miscategorizations (the real work — a third are in the wrong category), flag ones missing states entirely (loading, dismissal, action). Pass 2: design the 4-variant system with one shared visual language (spacing, type scale, positioning) and 3 load-bearing divergences (color, icon, CTA treatment) — plus timing, stacking, keyboard/a11y, dismissal semantics. Pass 3: eng handoff package — component API with TypeScript props, usage examples for the 10 most-common cases, edge cases (what happens when 5 toasts stack, what happens mid-navigation, what happens if a toast fires while a modal is open), and a 2-phase migration plan so eng doesn't have to replace all 23 at once.
+
+Total time: 3 hours Thursday afternoon. Eng got the spec Friday 9am. They shipped the system 9 days later.$pf$,
+  $pf$3-pass workflow delivered: (1) audit table of all 23 toasts showing 8 miscategorized (mostly errors styled as neutral info + 2 critical-errors that looked like success), 6 missing loading/dismissal states, 4 with dismissal timing too fast for critical content; (2) 4-variant system spec with shared visual language (same type/spacing/positioning across variants) and 3 per-variant divergences (color ramp, icon, CTA treatment) + timing rules (errors manual-dismiss, success 5s auto, warning 7s auto, info 4s auto) + stacking rules (max 3 visible, bottom-anchored, new pushes old down) + full keyboard and screen-reader behavior; (3) eng handoff with TypeScript Toast component API, 10 common-case usage examples, 7 edge cases with pre-specified behavior (stack overflow, mid-navigation dismissal, modal interaction, offline retry, bulk operation completion, undoable actions, long-content truncation), and 2-phase migration plan (phase 1 = route all new toasts through the new component; phase 2 = replace the 23 existing over 3 sprints ordered by visibility). Shipped by eng 9 days after handoff. Post-launch: support ticket volume for "something happened and I missed it" dropped ~35% in the first 2 weeks per Fullstory sampling.$pf$,
+  '11111111-1111-1111-1111-111111111105',
+  'beginner',
+  'claude-sonnet-4-6',
+  'Claude 4.6 Sonnet',
+  ARRAY['Claude','Figma','TypeScript','Notion'],
+  ARRAY['design','ux','component-design','design-system','accessibility','notifications'],
+  'approved',
+  '22222222-2222-2222-2222-222222222204',
+  64, 28
+);
+
+INSERT INTO prompt_steps (id, prompt_id, step_number, title, content, result_content, description) VALUES
+
+-- Step 1 --
+('66666666-6666-6666-6666-666666370101',
+ '55555555-5555-5555-5555-555555550037',
+ 1,
+ $pf$Audit 23 existing toasts — categorize, flag miscategorizations, flag missing states$pf$,
+ $pf$I'm doing an audit of our B2B analytics product's toast notifications to design a consolidated system. I went through every flow and inventoried 23 distinct toasts currently live. I need you to help me categorize and flag problems.
+
+Below is my inventory with the toast message, trigger, current visual style (color + icon + timing), and a short note on what I observed in usage. Take each toast and output: (a) your recommended category — one of Success / Error / Warning / Info / Loading — (b) whether its current style matches the category you recommend, (c) whether it's missing a critical state (dismissal, undo, loading), (d) one specific observation about what's wrong that a user would notice.
+
+Then summarize: how many in each category, how many miscategorized, how many missing states.
+
+### Inventory
+
+1. "Dashboard saved." → style: green / checkmark / 2s auto-dismiss / triggered on dashboard save button.
+2. "Export failed. Try again later." → style: gray / info-circle / 3s auto-dismiss / export button when S3 write fails.
+3. "You don't have permission to do that." → style: gray / info-circle / 4s auto-dismiss / any restricted action.
+4. "Row deleted." → style: green / checkmark / 2s auto-dismiss / row delete action. No undo.
+5. "Changes saved." → style: green / checkmark / 1.5s auto-dismiss / inline edit save.
+6. "Connection lost. Reconnecting..." → style: yellow / warning-triangle / no dismiss / websocket disconnect.
+7. "Report generated." → style: green / checkmark / 3s auto-dismiss / report generation complete. "View" CTA shown.
+8. "Failed to load data. Refresh the page." → style: red / X-icon / 5s auto-dismiss / data-fetch error.
+9. "Your session will expire in 2 minutes." → style: yellow / warning-triangle / no auto-dismiss / 2-min pre-expiry.
+10. "Session expired. Please log in." → style: gray / info-circle / 5s auto-dismiss / session expiry.
+11. "Settings updated." → style: green / checkmark / 2s auto-dismiss / settings page save.
+12. "Invite sent to 3 teammates." → style: green / checkmark / 3s auto-dismiss / team-invite action.
+13. "Invite failed. Check emails and try again." → style: gray / info-circle / 4s auto-dismiss / team-invite failure (partial or full).
+14. "Saved as draft." → style: blue / info-circle / 2s auto-dismiss / auto-save on report editor.
+15. "Widget copied to clipboard." → style: green / checkmark / 2s auto-dismiss / widget copy action.
+16. "Could not copy widget." → style: gray / info-circle / 3s auto-dismiss / clipboard API failure.
+17. "Processing..." → style: blue / spinner / no dismiss / long-running query.
+18. "Query returned 10,000+ rows. Results truncated." → style: yellow / warning-triangle / 6s auto-dismiss / query truncation.
+19. "Filter applied." → style: blue / info-circle / 1.5s auto-dismiss / filter change.
+20. "No results found." → style: gray / info-circle / 4s auto-dismiss / empty search.
+21. "Document imported successfully." → style: green / checkmark / 3s auto-dismiss / CSV upload complete.
+22. "CSV upload failed. File over 50MB." → style: gray / info-circle / 4s auto-dismiss / upload size limit.
+23. "Sync in progress. You can continue working." → style: blue / info-circle / 4s auto-dismiss / background sync start.$pf$,
+ $pf$Audit complete. Went toast-by-toast, then summary.
+
+### Per-toast analysis
+
+| # | Message | Recommended category | Style matches? | Missing states | User-visible problem |
+|---|---------|---------------------|----------------|----------------|----------------------|
+| 1 | Dashboard saved | Success | ✓ | — | 2s is too fast for users who look away briefly after clicking save — they miss confirmation. |
+| 2 | Export failed | **Error** | **✗ currently styled neutral gray** | Retry action | Users misread as "info" and don't realize the export didn't happen. Critical failure state buried in neutral visual. |
+| 3 | No permission | **Warning** (closer to Error for destructive actions) | **✗ currently neutral gray** | — | Neutral gray reads as "FYI" — users repeat the action thinking nothing happened. |
+| 4 | Row deleted | Success | ✓ | **Undo action missing** | Destructive action with no undo. Users who clicked wrong row have no recovery. Compounds when rows have long labels (hard to be sure you're deleting the right one). |
+| 5 | Changes saved | Success | ✓ | — | 1.5s too fast. Users typing fast will miss confirmation entirely. |
+| 6 | Connection lost, reconnecting | Warning-transitioning-to-Loading | Partial — warning yellow OK, spinner missing | Transition to success when reconnected | Current toast "stuck" visually with no confirmation when reconnection succeeds. Users don't know if they're back online. |
+| 7 | Report generated | Success with action | ✓ | — | Good example of success + CTA pattern. Use as template. |
+| 8 | Failed to load data | **Error** | ✓ | Retry action | Message says "refresh page" but doesn't offer a retry button. Users have to go to browser refresh which loses state. |
+| 9 | Session expiring in 2 min | **Warning** | ✓ | Extend-session action | No action button — user has to navigate away and back to reset session. Common pattern: "Keep working" button that pings session-refresh endpoint. |
+| 10 | Session expired | **Error** | **✗ currently neutral gray** | — | Session expiry is a hard failure (user loses unsaved work). Neutral styling hides the severity. |
+| 11 | Settings updated | Success | ✓ | — | 2s timing fine for lightweight confirmations. |
+| 12 | Invite sent to 3 teammates | Success | ✓ | — | Good — specifies count. |
+| 13 | Invite failed | **Error** | **✗ currently neutral gray** | Partial-failure detail | The message "check emails and try again" is ambiguous when it's a partial failure (some invites sent, some failed). Needs to distinguish. |
+| 14 | Saved as draft | Info | ✓ | — | Info is right — it's a background confirmation, not a user-requested action. |
+| 15 | Widget copied | Success | ✓ | — | Fine. |
+| 16 | Could not copy widget | **Error** (minor) | **✗ currently neutral gray** | — | Low-severity error but should still be red so user understands copy didn't happen before pasting. |
+| 17 | Processing... | **Loading** (distinct category) | Partial — blue + spinner OK, but category is wrong | Completion transition | No "complete" toast when processing finishes. Users don't know when to look at the result. |
+| 18 | Query returned 10,000+ rows truncated | Warning | ✓ | — | Timing 6s good for message of this length. Keep. |
+| 19 | Filter applied | Info | **✗ — this shouldn't be a toast at all** | — | 1.5s toast for an action whose result is immediately visible in the table. Delete this toast; filter change is self-evident in the UI. |
+| 20 | No results found | **This shouldn't be a toast** | **✗** | — | This is an empty-state, not a toast. Handle in the search results area, not as a disappearing notification. |
+| 21 | Document imported | Success | ✓ | View/Open CTA | Good message, missing "View" action that parallels toast #7 (report generated). Consistency opportunity. |
+| 22 | CSV upload failed | **Error** | **✗ currently neutral gray** | — | Hard failure styled as info. Also: "File over 50MB" should be part of the error (it is) but should be explicit about what to do (compress? split?). |
+| 23 | Sync in progress | Info | ✓ | — | Info is right. Consider no-auto-dismiss with manual close since "you can continue working" implies user should see it for a while. |
+
+### Summary
+
+**Current category distribution:**
+- Green/success styling: 10 toasts (1, 4, 5, 7, 11, 12, 15, 21 → actual success; 0 miscategorized)
+- Red/error styling: 1 toast (8 → actual error; 0 miscategorized)
+- Yellow/warning styling: 3 toasts (6, 9, 18 → all correct)
+- Gray/info styling: 8 toasts (3, 10, 13, 14, 16, 20, 22, 23 → but 6 of 8 miscategorized — should be error or warning, not neutral info). Plus toasts 2 with gray is also miscategorized.
+- Blue/info styling: 4 toasts (14, 17, 19, 23 → 14 and 23 correct as info; 17 is loading-category-needed; 19 shouldn't be a toast).
+
+**Miscategorized: 8 toasts out of 23 (35%)**. All 8 are hard errors or warnings styled as neutral info. Category breakdown of miscategorizations:
+- Errors styled as info: toasts 2, 10, 13, 16, 22 (5 toasts)
+- Warnings styled as info: toast 3 (no permission)
+- Mis-use of toast format: toasts 19, 20 (should not be toasts at all — one is self-evident, one is an empty state)
+
+**Missing states: 6 toasts** — 4 (undo for row delete), 6 (success-transition for reconnect), 8 (retry action), 9 (extend-session action), 17 (completion transition), 21 (View CTA for parity with toast 7).
+
+**Timing too fast for critical content: 3 toasts** — 1 (2s dashboard save for a user looking away), 5 (1.5s inline save), 19 (should be deleted anyway).
+
+### The load-bearing finding
+
+The real issue isn't that we have 23 toasts — it's that we've been using "neutral gray info-circle" as the default style for anything the eng team wasn't sure how to categorize. Half of our errors are styled as info. Users are learning that "gray toast" means "nothing important happened." When a genuine gray-info toast appears, it gets ignored. When a gray-styled-error appears, it gets misread. This is a trust problem, not a styling problem — and fixing it means we have to commit to making errors look like errors, loudly, consistently.
+
+Recommend pass 2 design the 4-variant system with:
+1. **Clear, distinctive visual for errors** — red + X-icon + bold headline.
+2. **Kill the neutral-gray default** entirely — every toast is explicitly success/error/warning/info/loading.
+3. **Retire toasts 19 and 20** — non-toast UX patterns.
+4. **Standardize retry, undo, and view-result CTAs** across the 4 categories.$pf$,
+ $pf$Audit surfaced 3 load-bearing findings: (1) 8 of 23 toasts are miscategorized — all in the same direction (errors and warnings styled as neutral gray info-circles) — meaning users have learned to ignore gray toasts AND that gray-styled errors are getting missed; (2) 6 toasts are missing critical states (undo on row delete, retry on load error, extend-session on expiry warning, completion transition after loading, success transition after reconnect, View CTA for parity with existing report-complete toast); (3) 2 toasts shouldn't be toasts at all (filter-applied is self-evident in the UI, no-results-found is an empty-state). The fix isn't "prettier toasts" — it's committing to making errors look like errors and killing the neutral-gray default we've been using when unsure. 4-variant system spec (pass 2) needs: clear distinctive visual for errors (red + X + bold), no neutral-gray default category, standardized retry/undo/view CTAs across variants, clear timing rules per category, and explicit transitions for loading-to-complete.$pf$),
+
+-- Step 2 --
+('66666666-6666-6666-6666-666666370102',
+ '55555555-5555-5555-5555-555555550037',
+ 2,
+ $pf$Design the 4-variant system — shared visual language + 3 per-variant divergences + timing/stacking/a11y$pf$,
+ $pf$Using the audit from step 1, design the 4-variant toast system (Success / Error / Warning / Info) + a separate Loading state. I want a full component spec, not mockups — I'll produce the Figma file from this.
+
+Constraints:
+- **Shared visual language across all variants**: same type scale, same horizontal padding, same positioning, same icon size, same dismiss-close-button treatment. A user scanning the screen should read any toast as "a toast from the same product."
+- **3 per-variant divergences**: (a) color ramp — background + text + border, (b) icon (checkmark / X / triangle / info-circle / spinner), (c) CTA treatment (primary / secondary / text-button / none depending on variant).
+- **Timing rules per variant**: errors should be manual-dismiss only (never auto-disappear); success short (5s); warning longer (7s); info medium (4s); loading = no dismiss, must transition to success/error on completion.
+- **Stacking rules**: max 3 visible at once, bottom-right anchored on desktop, bottom-center on mobile. New toasts push old down. Old toasts either auto-dismiss or queue out.
+- **Keyboard / a11y**: focus behavior, screen-reader announcement (politeness level per variant — errors assertive, others polite), dismiss via Escape.
+- **Dismissal semantics**: auto-dismiss timer vs manual close (X button) vs implicit dismiss (on next toast arrival).
+- **Response format:** spec-document style. Assume I'm handing this to eng Friday morning.$pf$,
+ $pf$# Toast system spec
+
+## 1. Shared visual language
+
+All 4 variants (+ Loading) use the same base container.
+
+- **Container:** 320–480px width (responsive to content, min 320 / max 480), 56px min height, 4px border-radius, 0px sharp corners per brand, subtle drop shadow (Y-offset 4, blur 16, opacity 12%).
+- **Horizontal padding:** 16px left for icon, 16px between icon and text, 12px right for dismiss button, 16px for CTAs if present.
+- **Vertical padding:** 16px top and bottom.
+- **Type:** headline 14px/20 semibold, body 13px/18 regular. Color on headline + body differs per variant; type scale constant.
+- **Icon:** 20×20px, positioned vertically centered with headline baseline.
+- **Dismiss close button (when present):** 16×16px X, top-right, 4px tap target inset (24×24px total), stroke color same as body text color per variant.
+- **CTA buttons:** 32px height, 12px horizontal padding, 13px semibold, sharp-corner per brand.
+- **Positioning:** bottom-right desktop (24px inset from right and bottom); bottom-center on mobile (<640px width, 16px horizontal inset, 16px bottom).
+- **Motion:** slide up from 12px below with 250ms cubic-bezier(0.2, 0.0, 0.0, 1.0) ease-out on enter; slide down 150ms on exit. Reduced-motion: fade only, 150ms.
+- **Stack spacing:** 12px between toasts in a vertical stack.
+
+## 2. Per-variant divergences
+
+### Success
+- **Colors:** bg #F0FAF4 (very light green), border 1px #84D6A3, icon #1F8A4F, headline #0E5C34, body #1F4D33.
+- **Icon:** Checkmark (filled circle background #1F8A4F, white check stroke inside).
+- **CTA:** Text-link style only (e.g., "View" for success-with-action like report generated). Color #1F8A4F.
+- **Dismiss:** auto-dismiss 5s, manual X always available, implicit dismiss on next toast (if stack full).
+
+### Error
+- **Colors:** bg #FEF2F2 (very light red), border 1px #F37573, icon #D02424, headline #831313, body #5B0E0E.
+- **Icon:** X (filled circle background #D02424, white X stroke inside).
+- **CTA:** Secondary-button style (e.g., "Try again"), color text matches headline #831313, border #D02424, bg transparent.
+- **Dismiss:** **manual only**. Never auto-dismisses. Stack rules apply (pushed down when new toast arrives, but not auto-queued out).
+- **Special: polite-assertive dual behavior** — error toasts set aria-live=assertive to announce immediately to screen readers.
+
+### Warning
+- **Colors:** bg #FFF8EC (very light amber), border 1px #F5C454, icon #B3700C, headline #6E450A, body #4A3008.
+- **Icon:** Warning-triangle (filled triangle #B3700C, white exclamation inside).
+- **CTA:** Secondary-button style (e.g., "Keep working" for session warning). Border #B3700C, text headline-color.
+- **Dismiss:** auto-dismiss 7s (longer than success — warnings need more read-time), manual X, implicit dismiss OK.
+
+### Info
+- **Colors:** bg #EEF4FC (very light blue), border 1px #7DB4E8, icon #2968B5, headline #1A3D6E, body #1C3E62.
+- **Icon:** Info-circle (filled circle #2968B5, white "i" inside).
+- **CTA:** Optional text-link (rare; most info is stateless). Color #2968B5.
+- **Dismiss:** auto-dismiss 4s, manual X, implicit dismiss OK.
+
+### Loading (5th state — behaves differently)
+- **Colors:** bg #F5F5F7 (very light neutral), border 1px #C9CDD4, icon #4A5260, headline #1A1F2B, body #3A4150.
+- **Icon:** Spinner (20px, rotating, same #4A5260 stroke).
+- **CTA:** none.
+- **Dismiss:** no auto-dismiss, no manual X. **Transitions to success or error variant on completion** — same toast node, different variant. Swap animation 200ms cross-fade.
+
+## 3. Timing rules per variant
+
+| Variant | Auto-dismiss | Manual X | On stack-overflow | Notes |
+|---------|--------------|----------|-------------------|-------|
+| Success | 5s | ✓ | oldest-dismissed | Longer than current 1.5–2s — fixes the "too fast" feedback from audit |
+| Error | ∞ (never) | ✓ required | stays, new ones stack above | User must explicitly dismiss. Critical. |
+| Warning | 7s | ✓ | oldest-dismissed | Long read-time for content like "session expiring" |
+| Info | 4s | ✓ | oldest-dismissed | Short but readable |
+| Loading | ∞ until complete | ✗ | non-stackable (queues) | Transitions on completion |
+
+## 4. Stacking rules
+
+- **Max visible: 3.** 4th toast queues; queue drains as visible toasts dismiss.
+- **Order: bottom-up.** Newest at bottom; older toasts push up. Users expect "latest = closest to where action happened = bottom."
+- **When stack full + new arrives:** Success/Warning/Info oldest auto-dismisses. Error toasts in stack never auto-dismiss; they stay until manual close. If 3 errors already stacked, new non-error toast queues; new error stacks above (up to a visual cap of 5 errors; beyond 5, queue).
+- **When modal is open:** toasts stack below the modal dialog z-index. User sees toasts in modal context but modal receives focus priority. On modal close, pending queued toasts flush.
+
+## 5. Keyboard and accessibility
+
+- **Role:** `role="status"` for Success / Info / Warning, `role="alert"` for Error.
+- **aria-live:** `polite` for Success / Info / Warning, `assertive` for Error. Loading uses `polite` (changes to assertive on transition-to-error).
+- **Focus behavior:** toast appearance does NOT steal focus (users don't want to lose caret/selection). But **Error toasts that include a CTA** include `tabindex="0"` on the CTA so users can Tab to it after current action.
+- **Keyboard dismiss:** **Escape dismisses the most recently focused toast CTA OR the topmost visible toast** if no toast CTA is focused. Does not dismiss on Escape if user is in an input field (common a11y failure to avoid).
+- **Screen-reader announcement format:** `"{Variant name}: {headline}. {body}"` — e.g., "Error: Export failed. Try again later." Announce via aria-live region, not inline DOM reading.
+- **Reduced motion:** respect `prefers-reduced-motion: reduce` — drop slide animation, use 150ms fade only. Auto-dismiss timers unchanged.
+- **Color contrast:** all variants meet WCAG AA on both background ratios (bg-to-text ≥ 4.5:1 verified on palette above).
+
+## 6. Dismissal semantics — 3 paths
+
+1. **Auto-dismiss:** variant-specific timer (5s/7s/4s/∞).
+2. **Manual close:** X in top-right, 16×16 target with 24×24 tappable area, keyboard-accessible via tab-and-enter OR Escape.
+3. **Implicit dismiss:** when stack is full and a new non-error arrives, the oldest non-error fades out (150ms). Users who want to keep a toast should manually pin (not in v1; flag for v2).
+
+## 7. What to DELETE from current system
+
+- Toast #19 ("Filter applied") — action is self-evident in the UI. Remove.
+- Toast #20 ("No results found") — this is an empty-state, belongs in the search-results area. Remove from toast inventory; handoff to empty-states project (or inline on search page).
+
+## 8. What changes for every existing toast
+
+Every toast in the 23-item inventory gets:
+- Recategorized per step 1 audit (8 category corrections).
+- Retimed per variant timing rule (3 too-fast ones get 5s or longer).
+- Missing states added: undo for row-delete (toast #4), retry for failed load (toast #8), extend-session for expiry warning (toast #9), completion transition for processing (toast #17), success-transition for reconnect (toast #6), View CTA for document imported (toast #21).
+
+## 9. Pre-implementation check
+
+Before building, verify with eng:
+- Existing toast component: is there a single component to replace or multiple? (Determines migration shape.)
+- z-index stack: confirm 900 (above content, below modal at 1000, below tooltip at 1100).
+- Error aria-live="assertive" is respected by VoiceOver / NVDA in their current test setup.
+
+Ready to ship to eng as the component spec.$pf$,
+ $pf$4-variant system spec complete. Shared visual language: 320-480px container, sharp corners per brand, 16px padding pattern, 13/14px type scale, 20px icon, bottom-right desktop / bottom-center mobile, 250ms slide-up enter / 150ms exit (with reduced-motion fade fallback). Per-variant divergences: Success (green, checkmark, text-link CTA, 5s auto), Error (red, X, secondary-button CTA, **manual-dismiss-only** — never auto-disappears, aria-live=assertive), Warning (amber, triangle, secondary-button CTA, 7s auto), Info (blue, info-circle, optional text-link, 4s auto), Loading (neutral, spinner, no CTA, transitions to success/error on completion with 200ms cross-fade). Stacking: max 3 visible bottom-up, errors stay on stack-overflow while non-errors oldest-dismisses. Full keyboard+a11y spec with role+aria-live per variant, Escape-dismiss that doesn't fire in input fields, WCAG-AA color contrast verified. Explicit deletes: toasts 19+20 not-a-toast-pattern. Ready for pass 3 eng handoff package.$pf$),
+
+-- Step 3 --
+('66666666-6666-6666-6666-666666370103',
+ '55555555-5555-5555-5555-555555550037',
+ 3,
+ $pf$Eng handoff — component API, 10 usage examples, 7 edge cases, 2-phase migration plan$pf$,
+ $pf$Using the spec from step 2, write the eng-ready handoff package. I'll drop this into our Notion as-is Friday morning. Four sections:
+
+1. **Component API**: a TypeScript interface for the Toast component — props, types, callbacks. Assume React. Include a `useToast()` hook for imperative usage (`toast.success("..."), toast.error("...")`, etc.) since that's the common pattern in our codebase.
+
+2. **10 common-case usage examples** mapped to the audit's 23 toasts — show the hook call for each. Pick 10 that represent the most common shapes (success with no CTA, success with CTA, error with retry, error with no action, warning with action, info short, loading-to-success transition, etc.).
+
+3. **7 edge cases** with pre-specified behavior: (a) stack overflow when all 3 slots are errors, (b) toast fires while a modal is open, (c) toast fires then user immediately navigates away, (d) network drops during loading toast, (e) duplicate toast fires (same message within 500ms), (f) very long content (over 200 chars), (g) bulk operation completion (e.g., "5 of 7 imports succeeded").
+
+4. **2-phase migration plan** so eng doesn't have to replace all 23 toasts at once — phase 1 new component gated behind feature flag, route all new toasts through it; phase 2 replace the 23 existing in 3 sprints prioritized by visibility/severity.
+
+Keep it eng-pragmatic. No marketing language. Assume the eng reading this writes TypeScript daily and doesn't need hand-holding on React.$pf$,
+ $pf$# Toast system — eng handoff
+
+## 1. Component API
+
+```ts
+// Toast variants
+type ToastVariant = 'success' | 'error' | 'warning' | 'info' | 'loading';
+
+// Toast CTA (optional action)
+interface ToastCTA {
+  label: string;
+  onClick: () => void | Promise<void>;
+  // loading state during async onClick
+  loading?: boolean;
+}
+
+// Toast config
+interface ToastOptions {
+  variant: ToastVariant;
+  headline: string;
+  body?: string;
+  // CTA: button or text-link depending on variant
+  cta?: ToastCTA;
+  // override default timing; null = never auto-dismiss
+  durationMs?: number | null;
+  // override default dismissable-manually
+  dismissible?: boolean;
+  // for loading toasts: a ref used to complete/fail later
+  id?: string;
+  // optional callback when toast dismisses (any reason)
+  onDismiss?: (reason: 'auto' | 'manual' | 'stack-overflow' | 'transition') => void;
+}
+
+// Imperative hook
+interface UseToast {
+  success: (opts: Omit<ToastOptions, 'variant'>) => string; // returns id
+  error: (opts: Omit<ToastOptions, 'variant'>) => string;
+  warning: (opts: Omit<ToastOptions, 'variant'>) => string;
+  info: (opts: Omit<ToastOptions, 'variant'>) => string;
+  loading: (opts: Omit<ToastOptions, 'variant'>) => string;
+  // dismiss by id
+  dismiss: (id: string) => void;
+  // transition loading -> success/error (same toast node)
+  update: (id: string, opts: Omit<ToastOptions, 'id'>) => void;
+}
+
+export function useToast(): UseToast;
+
+// Provider component (wrap app root)
+export function ToastProvider({ children }: { children: React.ReactNode }): JSX.Element;
+```
+
+Default timing (overridable): success 5000, error null, warning 7000, info 4000, loading null.
+
+## 2. 10 common-case usage examples
+
+```ts
+const toast = useToast();
+
+// 1. Success, no CTA (dashboard save, settings save, etc.)
+toast.success({ headline: 'Dashboard saved' });
+
+// 2. Success, with View CTA (report generated, document imported)
+toast.success({
+  headline: 'Report generated',
+  cta: { label: 'View', onClick: () => router.push(`/reports/${id}`) }
+});
+
+// 3. Error, with retry CTA
+toast.error({
+  headline: 'Export failed',
+  body: 'Try again in a moment.',
+  cta: { label: 'Try again', onClick: () => retryExport() }
+});
+
+// 4. Error, no action (session expired, CSV upload too large)
+toast.error({
+  headline: 'Session expired',
+  body: 'Please log in again.'
+});
+
+// 5. Warning, with action (session expiring in 2 min)
+toast.warning({
+  headline: 'Your session will expire in 2 minutes',
+  cta: { label: 'Keep working', onClick: () => refreshSession() }
+});
+
+// 6. Warning, no action (query truncation)
+toast.warning({
+  headline: 'Query returned 10,000+ rows',
+  body: 'Results truncated. Refine your query to see more.'
+});
+
+// 7. Info, short (saved as draft)
+toast.info({ headline: 'Saved as draft' });
+
+// 8. Loading -> Success transition
+const id = toast.loading({ headline: 'Processing query...' });
+try {
+  const result = await runQuery();
+  toast.update(id, { variant: 'success', headline: 'Query complete', cta: { label: 'View results', onClick: () => showResult(result) } });
+} catch (err) {
+  toast.update(id, { variant: 'error', headline: 'Query failed', body: err.message, cta: { label: 'Try again', onClick: () => retryQuery() } });
+}
+
+// 9. Destructive success with undo (row delete)
+toast.success({
+  headline: 'Row deleted',
+  cta: { label: 'Undo', onClick: () => undoDelete(rowId) },
+  durationMs: 8000 // longer window for undo
+});
+
+// 10. Bulk partial success
+toast.warning({
+  headline: 'Sent 3 of 5 invites',
+  body: '2 addresses were invalid. Fix and try again.',
+  cta: { label: 'Review', onClick: () => openInviteErrors() }
+});
+```
+
+## 3. 7 edge cases — pre-specified behavior
+
+| # | Case | Behavior |
+|---|------|----------|
+| 1 | Stack overflow — 3 errors already visible, new toast arrives | Non-error: queues (not shown) until an error dismisses; error: stacks above (cap 5 errors max visible, 6th queues). |
+| 2 | Toast fires while modal is open | Toast renders at z-index 900, below modal (z-index 1000). User sees it peripherally. On modal close, toast continues normal lifecycle (does not reset timer). |
+| 3 | Toast fires, user navigates away within 1s | Toast continues rendering on new route (provider is app-root-scoped). Timer keeps running. Manual dismiss on new route works normally. |
+| 4 | Network drops during a loading toast | Loading toast is not aware of network state. App code should use `toast.update(id, { variant: 'error', headline: 'Connection lost' })` on network-drop detection. Do not auto-timeout loading toasts after N seconds; the app caller owns lifecycle. |
+| 5 | Duplicate toast — same headline fires within 500ms | Debounce: second call updates the existing toast's timer (resets auto-dismiss clock) rather than stacking. Compare `(variant, headline)` tuple for dedup key. After 500ms, treated as new toast. |
+| 6 | Very long content (headline > 80 chars or body > 200 chars) | Headline truncates with ellipsis at 80 chars; body truncates at 200 chars with ellipsis. `title` attribute shows full text on hover. If the content is genuinely long-form, it probably shouldn't be a toast — prefer a modal or inline message. |
+| 7 | Bulk operation — 5 of 7 succeeded | Use warning variant (not success — silently hiding 2 failures is misleading). Headline: "Sent 5 of 7". Body: "{reason for failure}, see details". CTA: "Review" → opens details panel. |
+
+## 4. 2-phase migration plan
+
+### Phase 1 — ship new component (1 sprint)
+
+Build the `Toast` + `ToastProvider` + `useToast` per spec. Gate behind feature flag `toast_v2`. Route all **new** toasts through the hook from ship date onward. Existing 23 toasts stay on old system until phase 2.
+
+Acceptance criteria:
+- All 5 variants render correctly (Storybook stories for each).
+- Keyboard + screen-reader tested on VoiceOver + NVDA.
+- Stack rules work in a manual test (3 successes + 1 error + 1 new info).
+- Loading-to-success transition animates cleanly.
+- Feature flag gates correctly.
+
+### Phase 2 — migrate existing 23 toasts (3 sprints, prioritized by severity)
+
+**Sprint 1 — critical error miscategorizations (7 toasts):**
+Toast #2 (Export failed), #3 (No permission), #10 (Session expired), #13 (Invite failed), #16 (Copy widget failed), #22 (CSV upload failed), #8 (Failed to load data — add retry). These are the trust-eroding ones. Fixed first.
+
+**Sprint 2 — missing states (6 toasts):**
+Toast #4 (row delete — add undo), #6 (reconnect transition to success), #9 (session expiring — add Keep working CTA), #17 (processing — add completion transition), #21 (document imported — add View CTA). These close the UX gaps that cause support tickets.
+
+**Sprint 3 — standardize timing + deletes + remaining migrations (10 toasts):**
+Fix too-fast toasts (#1, #5). Delete toasts #19 and #20 per spec. Migrate remaining toasts with no changes (#7, #11, #12, #14, #15, #18, #23) to the new component for consistency.
+
+After sprint 3, flip feature flag to always-on + remove old toast module.
+
+## 5. Open questions for sync
+
+- Current toast component location? (determines whether to deprecate in place or coexist in two libraries.)
+- Is there a Storybook set up for components already? (preferred for visual-regression tests.)
+- Any a11y test suite (Axe, Pa11y) wired into CI? (for regression on WCAG AA contrast ratios.)
+
+Budget estimate: phase 1 = 1 sprint (2 weeks), phase 2 = 3 sprints (6 weeks), total 8 weeks if eng runs phase 2 as single track or 3 weeks if phase 2 runs in parallel with one eng per sprint.$pf$,
+ $pf$Eng handoff package delivered in the requested 4-section structure. Component API: TypeScript Toast interface with variants (success/error/warning/info/loading), CTA object with async onClick support, durationMs override (null for never-dismiss), loading-to-terminal transition via toast.update(id), ToastProvider wraps app root, useToast() hook gives imperative api. 10 usage examples cover the most common shapes including loading-to-success-or-error transition and bulk-partial-success warning pattern. 7 edge cases spec'd with concrete behavior: stack-overflow prioritizes error persistence, modal z-index coexistence preserves toast lifecycle, navigation preserves toast, debounced duplicates update existing timer (not stack), truncation at 80/200 chars with fallback to modal for genuinely-long content, bulk partial success uses warning (not success) to avoid hiding failures. 2-phase migration plan: phase 1 ships new component feature-flagged (1 sprint); phase 2 migrates 23 existing in 3 sprints prioritized by severity (sprint 1 = 7 critical-error miscategorizations, sprint 2 = 6 missing-states toasts, sprint 3 = timing fixes + deletes + remaining). Total budget estimate 8 weeks serial / 3 weeks parallel. Eng received handoff Friday 9am, shipped the system 9 days later; "something happened and I missed it" support tickets dropped ~35% in the first 2 weeks per Fullstory sampling.$pf$);
+
+-- =========================================================================
 -- END OF FILE — append next project(s) below this line.
 -- Iterations working the Content queue: add 2–3 projects per iteration,
 -- appending below this comment. Do NOT rewrite existing projects.

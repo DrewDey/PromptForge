@@ -18126,6 +18126,242 @@ Three sentences. No adjectives. No "exciting opportunity" language. Names the re
  $pf$Pass 4 converted the decision into executable commitments. Three conversations scoped with surface-question vs real-question framing — the wife conversation explicitly targeted the want-to-want vs actual-want gap from Pass 3; the CEO conversation was designed as a signal-detection test (does the role meet him back), not a threat; the ex-VP conversation was about preserving the relationship and optionality while delivering a clean no. Day-by-day timeline deliberately includes unstructured-off blocks on Sat-Sun because Derek noted he drifts back to reactivity in unstructured time. Commitment device is structural: a shared-with-wife Notion doc + a 30-min-conversation rule for reversal + a dated 2028-09 check-in calendar reminder — prevents drift-based reversal while keeping the door genuinely open for material change. The 3-sentence statement names the trigger ("text from an old colleague on a Tuesday") it's designed to defuse, which is what makes it usable vs aspirational.$pf$);
 
 -- =========================================================================
+-- Project 55-0051 | Civic keep-or-replace decision | Lena Morales | Personal | 3 steps
+-- =========================================================================
+
+DELETE FROM prompt_steps WHERE prompt_id = '55555555-5555-5555-5555-555555550051';
+DELETE FROM prompts      WHERE id        = '55555555-5555-5555-5555-555555550051';
+
+INSERT INTO prompts (
+  id, title, description, content, result_content,
+  category_id, difficulty, model_used, model_recommendation,
+  tools_used, tags, status, author_id, vote_count, bookmark_count
+) VALUES (
+  '55555555-5555-5555-5555-555555550051',
+  $pf$Replace my 12-year-old Civic or keep it? — 3-pass Claude workflow from true-cost math to decision framework to private-party buying plan$pf$,
+  $pf$Worked a real decision with Claude 4.6 Sonnet: my 2014 Civic just hit 142K miles and quoted $1,900 for a timing-chain repair. Keep it or replace with a used Prius? Three passes — cost math, decision framework, buying plan.$pf$,
+  $pf$I run a two-niche-site + Etsy business out of Oakland. My 2014 Honda Civic has 142K miles and my mechanic just quoted a $1,900 timing-chain repair, plus a forecast of "2-3 more big jobs in the next 24 months." Every solopreneur article says "keep your old car forever" — but I wanted an actual decision, not vibes.
+
+I used Claude 4.6 Sonnet over three passes. Pass 1: real cost-to-keep vs cost-to-replace math for MY situation ($88K/yr take-home, zero car debt, $22K emergency fund, 22K miles/year driving pattern). Pass 2: decision framework that surfaced the thing the math couldn't — opportunity cost of the cash tied up in a used purchase, and the risk-regime comparison (known repair pain vs low-probability higher-severity used-car failures). Pass 3: if-buying execution plan — trim choice, private-party vs CarMax vs Toyota CPO, specific stress-tests on the test drive, what to have the PPI mechanic check, what to negotiate hard and what NOT to waste leverage on, CA paperwork checklist, and scam patterns to walk from.
+
+I'm sharing this because "keep your old car" isn't universally right. For me, with 22K miles/year from solopreneur errands + client drives + Etsy supply runs, the repair trajectory was real. Claude did not hedge — Pass 2 ended with a one-question decision test that flipped "this is a math decision" into "this is a cash-allocation decision," and that was the move.$pf$,
+  $pf$Decision landed: sold the Civic private-party for $7,200, bought a 2022 Prius LE from a 1-owner private-party seller for $21,400. Net cash out $14,200. Three months in: gas spend dropped from $240/mo to $72/mo, and total cost-per-month (including $260 depreciation reserve) is about $95 LOWER than keeping the Civic would have been once the next two repairs hit.
+
+The surprise was Pass 2 — I went in thinking this was a cost-math decision; it was actually about whether I trusted my mechanic's 24-month repair forecast AND whether I had a concrete business use for $21K in the next 6 months. Claude's one-question framing made that visible. The buying plan in Pass 3 saved me another ~$2,300 vs the CarMax listing I'd been eyeing — private-party with a proper PPI is genuinely not that hard.$pf$,
+  '11111111-1111-1111-1111-111111111110',
+  'beginner',
+  'claude-sonnet-4-6',
+  'Claude 4.6 Sonnet',
+  ARRAY['Claude','Google Sheets','Carfax'],
+  ARRAY['car','decision','personal-finance','solopreneur','cost-analysis','used-car'],
+  'approved',
+  '22222222-2222-2222-2222-222222222210',
+  93, 41
+);
+
+INSERT INTO prompt_steps (id, prompt_id, step_number, title, content, result_content, description) VALUES
+
+-- Step 1 --
+('66666666-6666-6666-6666-666666510101',
+ '55555555-5555-5555-5555-555555550051',
+ 1,
+ $pf$Pass 1 — true-cost math: keep the Civic vs buy a used Prius$pf$,
+ $pf$I need help making a real cost decision about my car, and I want you to do the math with me, not around me.
+
+Situation:
+- 2014 Honda Civic EX, 142K miles, I've owned it since 2019 (bought at 68K miles)
+- I live in Oakland, CA, drive ~22K miles/year (solopreneur — niche sites + Etsy shop, lots of errands and occasional client drives)
+- Mechanic I trust (used him 6 years) says: $1,900 timing-chain job NOW, and given miles + driving pattern, "expect 2-3 more $1,500-$2,500 jobs in the next 24 months — water pump, suspension components, probably the AC compressor"
+- Current insurance: $92/mo (full coverage)
+- Gas: ~$240/mo at current prices (car gets ~30 mpg combined)
+- Registration: $340/yr
+
+I'm considering replacing it with a 2021-2023 Toyota Prius (used, around 30-40K miles, target price $20-23K). I have $22K in an emergency fund and I can afford to pay ~$18K cash + finance $5K over 24 months if needed, but I'd rather minimize debt.
+
+Do the cost math for me, side by side, for the next 24 months:
+- COST TO KEEP the Civic (include the timing chain + an expected-value estimate of the "2-3 more repairs", gas, insurance, registration, depreciation from current $7K private-party value)
+- COST TO REPLACE with a used Prius at $21,500 cash (include depreciation, gas at Prius MPG, insurance delta, registration, and assume minimal repairs for a car at 30-40K miles)
+
+Annotate your math so I can verify. Be honest about where the estimates are soft.$pf$,
+ $pf$Here's the 24-month side-by-side. I'll be explicit about which numbers are hard vs soft.
+
+**KEEP THE CIVIC (24 months)**
+
+| Line item | Amount | Basis |
+|---|---|---|
+| Timing chain repair (now) | $1,900 | Hard — quoted by your mechanic |
+| Expected future repairs (24 mo) | $4,500 | Soft — E[2.5 × $1,800] using midpoint of mechanic's $1,500-2,500 range |
+| Gas (24 mo × $240) | $5,760 | Hard — based on your current spend |
+| Insurance (24 mo × $92) | $2,208 | Hard |
+| Registration (2 years × $340) | $680 | Hard — drops with age but slowly |
+| Depreciation ($7,000 → ~$4,200) | $2,800 | Soft — 2014 Civic private-party value drops ~20%/yr past 140K miles |
+| **TOTAL cost to keep, 24 mo** | **$17,848** | |
+| Monthly equivalent | $744/mo | |
+
+The repair expected-value line is where this breaks if your mechanic's forecast is optimistic. If the next 24 months hits 2 repairs not 2.5, subtract $900. If it hits 3 plus an AC compressor (~$1,400), add $1,400. Realistic range: $16,500-$19,300.
+
+**REPLACE WITH USED PRIUS (24 months, $21,500 cash out)**
+
+| Line item | Amount | Basis |
+|---|---|---|
+| Depreciation ($21,500 → ~$17,200) | $4,300 | Hard — 2021-2023 Prius drops ~10%/yr at 30-40K mile start |
+| Gas (22K mi ÷ 52 mpg × $4.60/gal × 2 yr) | $3,894 (~$162/mo) | Hard — Gen 4 Prius averages 52 MPG combined |
+| Insurance delta (+$38/mo for newer car) | +$912 over 24 mo | Soft — call your carrier for exact; usually $30-45/mo up |
+| Registration (Year 1 ~$520, Year 2 ~$480 on newer car) | $1,000 | Hard — CA VLF scales with value |
+| Expected repairs (24 mo at 30-60K miles) | ~$500 | Soft — 12V battery or one minor service |
+| Opportunity cost of $21,500 cash | $1,720 at 4% HYSA (24 mo) | Hard — this is REAL money you're forgoing |
+| **TOTAL cost to replace, 24 mo** | **$12,326 + $1,720 opp cost = $14,046** | |
+| Monthly equivalent | $585/mo | |
+
+**Bottom line: the Prius costs ~$159/month LESS than keeping the Civic over 24 months, even after opportunity cost of the cash.** The delta is dominated by three things: gas savings ($1,866 over 24 mo — $240/mo → $162/mo × 24), zero timing-chain + zero future-repair tax ($6,400 saved), and the Civic's continued depreciation ($2,800 lost whether you drive it or not).
+
+**Where I'd push back on myself:**
+- My repair forecast is your mechanic's, not mine. If you think he's pessimistic, the Civic case tightens. But he's been right for 6 years — that's a strong prior.
+- I used $7,000 private-party NOW for the Civic. If you wait 24 months, you'll net ~$4,200 — a real $2,800 cost of delay.
+- I did NOT include the timing-chain repair in the Prius case (because the Civic case has it). If you keep AND don't do the repair, the car is unsafe in 4-8 months — that's a false option; it's not a real lever.
+- The opportunity-cost line assumes HYSA. If you'd deploy that cash into the business instead, the real opportunity cost is much higher — we'll surface that in pass 2.
+
+Next pass: decision framework — because the math says "replace" but the math is only half the question.$pf$,
+ $pf$Side-by-side 24-month cost table with hard-vs-soft annotations. Keeping Civic ≈ $744/mo; replacing with 2022 Prius ≈ $585/mo even including $1,720 opportunity cost of the cash at 4% HYSA. Three drivers of the delta named: gas savings, zero repair tax at 30-60K miles, and Civic's ongoing depreciation. Flagged where estimates are soft (future-repair EV, insurance delta, HYSA-only opportunity-cost assumption) and set up pass 2 to handle the business-use opportunity-cost case.$pf$),
+
+-- Step 2 --
+('66666666-6666-6666-6666-666666510102',
+ '55555555-5555-5555-5555-555555550051',
+ 2,
+ $pf$Pass 2 — decision framework: what the cost math doesn't capture$pf$,
+ $pf$Nice, that matches my gut. But I want to pressure-test before I drop $21K.
+
+Do a decision framework pass. Specifically, help me surface the things the pure cost math doesn't capture:
+- Risk profile: am I trading "known low-grade repair pain" for "unknown failure in a used Prius"?
+- Opportunity cost: is $21K cash out the right move when my business is still growing and I might want that cash for inventory or a site acquisition in the next 12 months?
+- Flexibility: do I value being debt-free and stress-free on the car, or does a newer car actually give me flexibility (more comfortable for client drives, lower breakdown risk on trips)?
+- The thing I'm NOT thinking about — flag at least one consideration I haven't asked about.
+
+Then give me a recommendation. Don't hedge — tell me what you'd do in my shoes, and why.$pf$,
+ $pf$Four lenses, then a call.
+
+**1. Risk profile — this is the REAL question, not the math.**
+
+Your cost math rests on your mechanic's 2-3-repairs forecast. His prior is strong, but a used Prius has its own failure modes worth naming: the HV (hybrid) battery at 100-150K miles is a $2,500-3,500 job, and the inverter on Gen 4 models had a known weakness up to ~2018 (mostly resolved by 2021+, but pull a CARFAX/VIN TSB history on any specific car). A 2022 Prius at 30-40K miles is low-risk, but "low-risk" is not "zero-risk."
+
+Compared directly: known pain (Civic, already in the failure regime) vs low-probability higher-severity pain (used Prius, not yet in the failure regime). I think the Civic risk is HIGHER — not lower — because it's already past the inflection. Buying a Prius at 30-40K miles buys you ~4 quiet years at your 22K/yr driving pattern before it approaches its own risk regime. That's real optionality.
+
+**2. Opportunity cost of $21K — the question you should be asking yourself.**
+
+You said business is growing. What's the expected return on $21K deployed into:
+- **Inventory for the Etsy shop:** if your gross margin is 35% and you'd turn it 4×/year, that's ~$29K gross profit/yr on $21K — crushing my 4% HYSA assumption from pass 1.
+- **A site acquisition:** at 3× annual profit multiples, $21K buys you a $7K/yr profit site — 33% yield.
+
+If either of those is a realistic 12-month use, the true opportunity cost is FAR higher than my $1,720 HYSA line. That flips the math.
+
+Counter: if you DON'T have a specific deployment lined up, the $21K sitting in the HYSA is earning 4% and carrying zero operational value. Cash is only worth its opportunity cost when you actually deploy it. Undeployed cash is just a hedge against unknown future need — that hedge has value, but it's not 33%.
+
+**3. Flexibility — the lens that tilts me toward "replace."**
+
+You said "solopreneur errands + client drives + Etsy supply runs." A breakdown during an Etsy fulfillment crunch (Q4, holiday surge, Mother's Day, etc.) costs you real money — missed deliveries, rushed rental ($60-80/day), a pissed-off customer who leaves a 3-star review on a shop where a 4.9 is the baseline. The Civic at 142K miles WILL strand you at some point in the next 24 months; that's the implication of your mechanic's forecast. A 2022 Prius at 30K miles almost certainly will not.
+
+This lens has an asymmetric payoff: the downside of a breakdown during a critical window is much worse than the upside of keeping the cash is good. Risk-adjusted, this pushes toward replace.
+
+**4. The thing you're not asking about: decision-carry cost + the "what if I'm wrong" symmetry.**
+
+Two points here. First, every week you don't decide, you're burning $70-80 in effective carry (depreciation + the pending repair sitting there). A 6-week deliberation that ends in "keep" still costs you $450+ in carry and dead brain cycles. Don't treat indecision as free.
+
+Second: if you replace and it turns out the Civic would have been fine, you "lose" some cash (capped, knowable). If you keep and the mechanic's forecast is right, you lose cash AND you eat the 2am-tow stress AND you probably replace in 14-18 months anyway at a worse used-car price point. Asymmetric downside favors the reversible-ish decision (replace now, always sellable).
+
+**My recommendation: REPLACE. But ONLY if you don't have a concrete business use for the $21K in the next 6 months.**
+
+Here's the one-question test: if a $21K Etsy-inventory expansion or niche-site acquisition came across your desk this quarter, would you actually pull the trigger? If YES — keep the Civic, do the $1,900 repair, accept the repair tax, deploy the cash into the business. If the honest answer is "probably not for another 9-12 months" — buy the Prius. Don't let optionality you wouldn't exercise cost you $159/month AND peace of mind AND a 2am tow during holiday rush.
+
+Next pass: the buying plan — specific trim, private-party vs CarMax vs Toyota CPO, what to stress-test, what to negotiate, scam patterns to walk from.$pf$,
+ $pf$Decision framework surfaces what pass 1 missed: risk-regime comparison (known vs unknown failure), real opportunity cost of $21K if a business deployment is realistic in 6-12 months, asymmetric flexibility payoff during Etsy crunch windows, and decision-carry cost. Recommendation: replace UNLESS you have a concrete near-term business use for the $21K. Reduces the messy framework into one actionable question: "would I actually pull the trigger on a $21K inventory/site deployment this quarter?" — yes = keep; no = buy.$pf$),
+
+-- Step 3 --
+('66666666-6666-6666-6666-666666510103',
+ '55555555-5555-5555-5555-555555550051',
+ 3,
+ $pf$Pass 3 — buying plan: private-party vs CarMax, what to stress-test$pf$,
+ $pf$Great, ran the question honestly — no serious acquisition on my radar before Q3. I'm pulling the trigger on the Prius.
+
+Give me an actionable buying plan:
+- 2021-2023 Prius LE or XLE: which trim, why
+- Private-party seller vs CarMax vs dealer used-lot: pros/cons for each, what you'd actually recommend given I'm not a car person
+- Before buying: what to stress-test on the test drive + what to have the pre-purchase inspection (PPI) mechanic check specifically
+- What to negotiate hard, and what NOT to waste my leverage on
+- Paperwork: what to bring, what to verify, what scam patterns to watch for
+
+Be specific. I want a checklist, not generic advice.$pf$,
+ $pf$Here's the plan end-to-end. I'll be opinionated because you asked.
+
+**TRIM: 2022 Prius LE (not XLE).**
+
+The LE has the same drivetrain and same 52 MPG as the XLE. The XLE adds heated seats, better LED headlights, and a larger touchscreen — none of which matter for errands and occasional client drives in Oakland weather. The LE also has a cleaner resale curve (fewer trim-specific problems to explain at sale time). Target: 2021-2023 LE, under 45K miles, 1-2 owners on Carfax, no accidents. Budget $20K-23K out the door.
+
+**WHERE TO BUY — recommended order:**
+
+1. **Private-party (Facebook Marketplace, Craigslist) — FIRST CHOICE.** Saves $2K-3K vs CarMax on the same car. Downside: you do the PPI coordination and the DMV paperwork. Both are manageable. Filter hard: 1 owner, service records present, no accidents, seller responsive, willing to meet at their mechanic's shop for the PPI.
+
+2. **CarMax — FALLBACK if private-party wears you out after 3-4 weekends.** Pays a premium (~$2,500) for no-haggle + 7-day return + basic warranty. Worth it if you're hunting and not finding. Their reconditioning is genuinely competent.
+
+3. **Toyota dealer used lot — ONLY if they have a Toyota Certified Pre-Owned (TCPO) Prius.** TCPO comes with a 12-mo/12K comprehensive warranty + 7-yr/100K powertrain warranty and a thorough 160-point inspection. Worth a $1,500-2,500 premium if you want max peace of mind. Non-certified dealer used = worst of all worlds (dealer markup without CarMax's guarantees).
+
+4. **AVOID: non-Toyota used-car lots.** Markup without inspection rigor. The listings look similar online; the quality isn't.
+
+**TEST DRIVE CHECKLIST:**
+
+- Cold start (arrive before the seller warms it up; ask them not to pre-run it): listen for any grinding or hesitation at first key-on. A 12V click is normal; grinding is not.
+- Drive at least 20 minutes, include highway. Hybrid system should transition smoothly between engine and motor; hesitation or shudder at 35-45 mph suggests inverter or transaxle fluid issue.
+- Brake hard from 45 mph, twice. Regen braking should feel firm and linear; pulsing = warped rotors (~$400).
+- Check the HV battery status screen in settings. Should show green at full charge after 20-min drive. Yellow or red bars = major red flag, walk.
+- AC on full cold for 10 minutes. Cabin should be genuinely cold. Weak AC = compressor replacement, ~$1,200.
+- Listen at every speed for rattles. Gen 4 Prius is QUIET from factory — any rattle is a clue about prior impact or loose trim.
+- Check tire tread with a quarter (Washington's head upside down; head should be partially covered). Near-bald tires = $800 you'll spend within 90 days.
+
+**PRE-PURCHASE INSPECTION ($120-180, non-negotiable):**
+
+Any seller who refuses PPI is hiding something — walk. Take the car to a Toyota specialist (not a generic chain like Midas). Tell the mechanic specifically to:
+- Scan ALL modules for stored + pending codes (hybrid, not just engine)
+- Measure HV battery state-of-health (requires Techstream or equivalent — NOT just OBD-II)
+- Inspect inverter coolant (color, level, last service)
+- Check transaxle fluid (should be clean red; brown = overdue / worn)
+- Inspect all 4 brakes for pad life + rotor thickness
+- Lift and check undercarriage for rust (Oakland is mild but worth checking if the car came from out of state — Carfax will tell you)
+- Road test for hybrid system transitions
+
+You want: "HV battery at 85%+ SoH, all modules clear, no deferred maintenance flags." Anything worse = lower offer or walk.
+
+**NEGOTIATE HARD ON:**
+
+- **Asking price.** Listings sit 2-4 weeks in the used-Prius market. Anything listed >10 days is soft. Offer $1,500-2,500 below ask and let them counter.
+- **PPI findings:** any deferred maintenance totaling $600+ comes off the price dollar-for-dollar. "Needs brakes in 5K miles" = $400 off. Bring a printed PPI summary to the final negotiation.
+- **Tire condition if under 5/32".**
+
+**DO NOT WASTE LEVERAGE ON:**
+
+- Asking for a discount "because it's used." Amateur.
+- Nit-picking cosmetic flaws the photos already showed. You agreed to the car you saw.
+- Trying to get mats/extras thrown in. Won't happen, pisses them off before the real negotiation.
+
+**PAPERWORK CHECKLIST (California):**
+
+- **Bring:** cashier's check for the agreed amount + $500 buffer cash for unexpected DMV fees, your driver's license, your insurance agent's phone number on speed-dial.
+- **Verify in person:** title is clean (no active lienholder printed, or a bank lien-release letter is in hand), VIN on the title matches VIN on the dash plate + driver's door jamb + engine block (3 places — 30 seconds each).
+- **Get from seller:** original title signed over to you, current registration, any maintenance records, smog certificate (seller's responsibility in CA, valid within 90 days).
+- **Complete within 10 days:** REG 262 (statement of facts) and REG 227 (transfer form) at the DMV.
+- **Add to insurance BEFORE driving off.** Call your agent from the parking lot; get a binder number before you pull away.
+
+**SCAM PATTERNS TO WALK FROM:**
+
+- Seller "out of town, I'll ship via eBay Motors / third-party escrow." Never real. Walk.
+- Seller refuses PPI, or insists only on "their mechanic, trust me." Walk.
+- Price significantly below market (>15% under comparable listings) = flood car, salvage title, or stolen. Check Carfax and physically inspect the title.
+- Odometer reading doesn't match most recent service record mileage. Federal crime to roll back. Walk.
+
+One extra thing: buy at month-end. Private sellers are slightly more motivated at month-end (usually rent/utility pressure), and dealers are pushing to close monthly volume quotas. You'll often save an extra $300-500 on the same car.
+
+Good luck. Text me when you close it.$pf$,
+ $pf$Full buying plan: 2022 Prius LE specifically (not XLE — same drivetrain, cleaner resale). Buy-channel ranked private-party → CarMax → Toyota CPO → avoid non-Toyota used lots. Test-drive checklist covers cold-start listen, 20-min highway run with hybrid transition check, brake + HV battery + AC stress-tests, tire tread. PPI ($120-180, non-negotiable) at a Toyota specialist with explicit module-scan + HV-battery-SoH + transaxle-fluid asks. Negotiate on list price + PPI findings + tires; don't waste leverage on "it's used" or cosmetic nits. CA-specific paperwork + insurance-before-drive-off + 4 scam patterns named (out-of-town escrow, refused PPI, price-too-low = flood/salvage, odometer mismatch). Closing tip: month-end timing saves $300-500.$pf$);
+
+-- =========================================================================
 -- END OF FILE — append next project(s) below this line.
 -- Iterations working the Content queue: add 2–3 projects per iteration,
 -- appending below this comment. Do NOT rewrite existing projects.

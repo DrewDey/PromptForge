@@ -4678,6 +4678,609 @@ One piece I'd ship with the memo: a 1-slide summary in her deck format that she 
  $pf$580-word memo phone-optimized for 3-minute read. Leads with "don't roll out" and the corrected +4% number. Frames both bugs as analytic issues, not personnel issues. Gives a concrete follow-up test spec with two branched outcomes and an honest revenue estimate ($180K/year, not $1.3M). Separates the load-balancer SRM as a P0 that goes to engineering separately. Closes with a "what to tell leadership" narrative swap that explicitly de-risks the social cost of walking back the +34% number. Process note: don't pre-build the slide; offer on ask.$pf$);
 
 -- =========================================================================
+-- =========================================================================
+-- Project 55-0016 | Q4 all-hands letter ghostwriting after a missed quarter | Emily Zhao | Writing | 5 steps
+-- =========================================================================
+
+DELETE FROM prompt_steps WHERE prompt_id = '55555555-5555-5555-5555-555555550016';
+DELETE FROM prompts      WHERE id        = '55555555-5555-5555-5555-555555550016';
+
+INSERT INTO prompts (
+  id, title, description, content, result_content,
+  category_id, difficulty, model_used, model_recommendation,
+  tools_used, tags, status, author_id, vote_count, bookmark_count
+) VALUES (
+  '55555555-5555-5555-5555-555555550016',
+  $pf$Ghostwriting the Q4 all-hands letter after a missed quarter — 5-pass workflow to sound like the CEO, not a PR flack$pf$,
+  $pf$A growth-stage HR-tech CEO handed me a 30-minute recorded call and asked for a 1,100-word all-hands letter covering a 12% revenue miss, two VP exits, and the biggest enterprise release the company had ever shipped. Claude 4.7 Opus helped me extract his voice, calibrate the honesty line, outline, draft, and pressure-test the letter against three specific internal archetypes.$pf$,
+  $pf$I'm a freelance content strategist — ex-journalist (5 years at a business pub before going indie 6 years ago), now mostly ghostwriting for B2B SaaS founders. I've written 4 all-hands letters across 2 clients over the last 18 months, so the format isn't new to me. What was new on this one: the CEO (Arjun) had sent the previous three letters himself, his whole 180-person company knows what he sounds like, and Q4 was genuinely rough. Revenue missed by 12%, VP Sales and VP People both left inside the same 3-week window, and they shipped the biggest enterprise release in the company's history to their first Fortune-500 customer in late December.
+
+The failure mode I was most worried about: a letter that either reads like corporate spin ("we faced headwinds but are energized for Q1") or over-shares in a way that makes the quieter half of the company more anxious. Neither is what Arjun would write. He's direct, a little dry, not a smiler — he'd rather name the bad thing flatly than dance around it.
+
+I used Claude 4.7 Opus over 5 rounds. Voice DNA from the transcript first — specific phrases, rhetorical moves, things he'd never say. Then an honesty-calibration pass (what to name, what to gloss, what to skip). Outline at the paragraph level. Draft. Then a multi-audience red-pen pass where I asked Claude to read the draft from the POV of three very specific internal archetypes and flag what each would seize on.
+
+The 3-audience pass caught one sentence that could have been read as a layoff hint and I rewrote it. Total time on my side: about 4 hours of focused work. Two client revision cycles got cut to zero.$pf$,
+  $pf$Arjun approved the letter with four word-level edits: "excited" → "proud," two commas moved, and one "we will" swapped for "we're going to." No structural changes. It went out the Monday after I delivered.
+
+Internal signal was the strongest I've had on any letter I've ghostwritten. The exec team forwarded it to direct reports with comments like "this sounds like you" and "clearest Arjun has been on a miss." More important, at the following town hall, a Senior PM told Arjun privately that the letter was the thing that made her stay through Q1 instead of taking a recruiter call she'd been sitting on. I only heard that through Arjun, months later, but it's the outcome I write for and rarely get told about.
+
+What I'm keeping from this process: the voice DNA pass BEFORE drafting. I used to absorb a transcript by listening, then write from intuition and edit toward voice at the end. That's slower AND the final piece still smells of the first-draft voice. Extracting specific phrasings and a "what he'd never say" list, then writing against both, has cut my voice-edit time roughly in half.
+
+Also keeping: the 3-audience red-pen pass. Generic "edit for clarity" passes produce cosmetic rewrites. Framing Claude as three very specific people inside the company produces actual content catches — the "anxious engineer" read is where I'd missed the accidentally-layoff-adjacent sentence. The "exec team member" read is where I'd been too high-level; she already knew the numbers, needed the letter to give her language for Q1 conversations with her team.
+
+One honest note: I don't do the 3-audience pass on shorter posts where the reader population is more uniform. For internal comms at a 180-person company with 6+ functional groups, it's load-bearing. Pick your tool to your surface.$pf$,
+  '11111111-1111-1111-1111-111111111103',
+  'advanced',
+  'claude-opus-4-7',
+  'Claude 4.7 Opus',
+  ARRAY['Claude','Notion','Google Docs'],
+  ARRAY['ghostwriting','internal-comms','ceo-letter','voice-match','editing','crisis-comms'],
+  'approved',
+  '22222222-2222-2222-2222-222222222208',
+  94, 41
+);
+
+INSERT INTO prompt_steps (id, prompt_id, step_number, title, content, result_content, description) VALUES
+
+-- Step 1 --
+('66666666-6666-6666-6666-666666100101',
+ '55555555-5555-5555-5555-555555550016',
+ 1,
+ $pf$Voice DNA extraction from the transcript$pf$,
+ $pf$I'm ghostwriting a Q4 all-hands letter for a CEO at a 180-person growth-stage HR-tech company. His name is Arjun. Q4 missed revenue by 12%, VP Sales and VP People both resigned in the same 3-week window (amicable, planned transitions, no scandal), and we shipped the biggest enterprise release in company history to our first Fortune-500 customer in late December. Company culture reads Arjun's voice — he's sent the last three all-hands letters himself and everyone knows what he sounds like.
+
+Below are 9 quotes from a 30-minute recorded call I had with Arjun two days ago. I'm pasting them verbatim. Please do a voice DNA extraction pass. I need: (a) signature phrases or cadence patterns that recur across the quotes, (b) rhetorical moves he uses (stated belief vs qualified opinion, how he handles bad news, where he gets concrete vs stays abstract), (c) 10 specific Arjun-isms I should reuse in the letter if they fit the topic, (d) 10 things this letter should NEVER contain — phrasings or moves that would sound fake coming from him.
+
+Quotes:
+1. "Look — the 12% miss is the 12% miss. I'm not going to stand up and say we had a strong Q4. We didn't. That's the letter I want to write."
+2. "People tolerate a lot more honesty than we think they do. What they don't tolerate is sounding dumb about what went wrong."
+3. "Rahul leaving wasn't a surprise inside. It's going to feel like one to some of the team. That's on me for not telegraphing better."
+4. "The BigCo release is the thing I'm proudest of this year, full stop. And I don't want it to read like I'm using it to change the subject."
+5. "I want to tell people what I think Q1 is about, not what I hope it is."
+6. "We are not running it back. I think last January's letter said something like 'the best is ahead of us' and I cringed when I reread it."
+7. "No 'headwinds.' No 'energized.' If you find me using those words please flag it."
+8. "I want to be honest that hiring is paused without making it sound like layoffs are next. Because they aren't."
+9. "I keep thinking about the new VP Eng — he's been here 12 weeks, he's read exactly zero of our previous letters. I'm writing to him too."$pf$,
+ $pf$This is a strong transcript to work from — Arjun is unusually self-aware about his own voice, which makes the extraction cleaner than usual.
+
+**Signature phrases / cadence patterns.** Three recur:
+- *Flat factual restatement of the bad thing.* "The 12% miss is the 12% miss." "We didn't." These are short, declarative, no qualifier. He names the bad thing without padding. When a sentence of this shape shows up in the letter, it should be a full sentence by itself — not buried mid-paragraph.
+- *Self-implication, not blame.* "That's on me for not telegraphing better." Never "we should have" — always "I should have" when the thing under discussion was his call. This is load-bearing for trust and it's specifically absent from most CEO letters. Use it at least once, in the VP-transitions paragraph.
+- *Named cringe at the previous version.* "I cringed when I reread it." He's willing to reference the prior letter and say it didn't work. This is both a voice marker AND a credibility move — acknowledging you sometimes miss makes the current letter's claims more trustworthy. Worth preserving one beat like this if you can frame it naturally.
+
+**Rhetorical moves.**
+- He prefers *what he thinks* over *what he hopes*. Q5: "I want to tell people what I think Q1 is about, not what I hope it is." Translation: forward-looking statements should be framed as analysis ("I think Q1 is a repositioning quarter"), not aspiration ("Q1 will be our strongest yet"). Write the Q1 section to the first form.
+- He separates *surprise* from *newness*. Q3: "Rahul leaving wasn't a surprise inside. It's going to feel like one to some of the team." Meaning: when writing about the VP exits, acknowledge that the news is NEW to most readers without pretending it was a bolt from the blue to leadership. This is the subtle honesty line he's drawing.
+- He's aware of the "change the subject" trap. Q4: the BigCo release is the proudest thing, but he doesn't want it to function as distraction from the miss. Structurally this means: do NOT open with BigCo, do not let BigCo close the letter. It belongs in the middle, named, celebrated for what it is, then the letter moves on.
+
+**10 Arjun-isms to reuse (verbatim or as close as fits):**
+1. "The 12% miss is the 12% miss" — lead the honesty beat.
+2. "That's on me" — in the VP exits paragraph.
+3. "Not running it back" — frame Q1 direction as departure from last year's playbook, not continuity.
+4. "I want to tell you what I think, not what I hope" — explicit meta-move early in the letter.
+5. "The team we become in Q1 is the team that takes BigCo into production" — BigCo-to-Q1 connective tissue if the outline supports it.
+6. "I'd rather name the thing" — possible one-liner, use sparingly.
+7. "We don't get Q4 back" — acknowledgment without wallowing.
+8. "I read back last year's letter and I didn't love it" — the self-referential honesty move he explicitly mentioned.
+9. "Hiring is paused. Layoffs are not planned." — two flat sentences, back-to-back.
+10. "Proudest thing I've been part of this year" — BigCo framing in his voice.
+
+**10 things the letter should NEVER contain:**
+1. "Headwinds." (Explicitly flagged.)
+2. "Energized" (or "excited" as a high-frequency word — he'll swap it, per his edit pattern).
+3. "The best is ahead of us" / "our brightest days are ahead."
+4. "Tailwinds," "thrilled," "proud to announce."
+5. Passive voice in the miss paragraph. "Revenue came in below plan" is not Arjun. "We missed by 12%" is.
+6. "At the end of the day" / "it is what it is" — casual-aphorism mode.
+7. Gratitude-spray ("thank you to everyone who"). He does thanks in private.
+8. Battle metaphors ("fight," "win," "crush," "execute harder").
+9. "Bandwidth" — it'll creep in if you don't watch for it.
+10. Any sentence that would sound identical coming from any other SaaS CEO. Voice test: if a reader can imagine Stripe's CEO or Ramp's CEO saying the same sentence, rewrite it.
+
+One meta-note I'd flag: he said "I'm writing to him too" about the 12-week VP Eng. That's a comprehension constraint — the letter can't assume readers know prior context. Any reference to Q3 patterns, prior exits, or previous letter themes should be self-contained in one sentence. Write for the 12-week person AND the 4-year person in the same letter. The voice stays the same; the scaffolding has to be built in.$pf$,
+ $pf$Extracts three recurring voice patterns (flat factual restatement, self-implication not blame, named cringe at the previous version), three rhetorical moves (thinks-not-hopes, surprise-vs-newness, change-the-subject trap awareness), a 10-item Arjun-isms reuse list, and a 10-item NEVER list (no headwinds, no energized, no aphorisms, no gratitude-spray). Flags the 12-week-VP comprehension constraint as a structural note.$pf$),
+
+-- Step 2 --
+('66666666-6666-6666-6666-666666100102',
+ '55555555-5555-5555-5555-555555550016',
+ 2,
+ $pf$Honesty calibration — what to name, gloss, or skip$pf$,
+ $pf$Voice DNA is locked. Now I need to calibrate the honesty line before I outline. Here are the facts on the table for Q4:
+
+1. Revenue missed by 12%. Plan was $X, came in at $Y. Arjun doesn't want a dollar number in the letter but does want the percentage.
+2. VP Sales (Rahul) left Dec 15. Planned transition, not a blow-up. He's going to a PE-backed company that recruited him for 6 months. Sales team reports to the CRO (Arjun) interim.
+3. VP People (Maya) left Dec 22. Was always going to be a 2-year tour; she's returning to a PhD program at Stanford in January that she deferred. Interim: Head of Talent (who's stayed) is running the function.
+4. BigCo enterprise release shipped Dec 20. Customer went live first week of January. This is genuinely the biggest deal in company history and the product platform's first Fortune-500 proof point. Worth 3 reference calls already.
+5. Two competitors in our adjacent space were acquired in November (by Workday and by a PE roll-up respectively). Valuation comps implied are below our last round.
+6. Hiring was paused by the board in the Dec review. No layoffs planned or discussed. Hiring pause expected to last Q1, maybe through H1.
+7. Customer churn was actually LOW in Q4 (3.1% logo churn, best trailing-quarter number in 18 months). Miss was primarily new-logo sales.
+8. Board is fully supportive. No leadership-change risk.
+
+For each item, tell me: NAME explicitly, GLOSS lightly, or SKIP. Give me the reasoning — specifically, what's the risk of each choice (being too honest vs not enough)? Where's the specific line between "honest and respectful of the reader's intelligence" and "over-sharing in a way that makes the quieter half of the company more anxious"?$pf$,
+ $pf$Working through these one at a time. The question behind all of them is the same: does including this item help a reader who doesn't have the full context make a better decision about their own behavior in Q1? If yes, name. If it only satisfies the writer's need to feel transparent, gloss or skip.
+
+**1. 12% revenue miss — NAME explicitly, including the percentage.**
+Arjun already decided this and he's right. The 12% is going to be discussed in every hallway and every 1:1 regardless; the letter either gives people language for it or cedes the framing to rumor. Naming it flatly, with no padding, is the Arjun move. Risk of skipping: people fill the gap with guesses, which are almost always worse than the real number. Risk of naming: you anchor a number that might shift the emotional register of the letter. Mitigate by placing it in paragraph 2, not the lede — so the letter doesn't define itself by the miss.
+
+**2. Rahul's exit — NAME, but without the destination.**
+Naming that he left is required — he was the VP Sales and half the company talked to him every week. Skipping reads evasive. But naming his new company is wrong for two reasons: (a) it invites recruiter inference ("oh, that PE-backed place is hiring from us") which isn't what the letter should seed, and (b) Rahul should get to tell his story on his own LinkedIn, not via the company letter. Language: "Rahul is transitioning to a new role outside the company. He gave us a generous runway and his team is in good hands with the interim structure." The "generous runway" phrase does real work — implies the exit was handled well without over-explaining.
+
+**3. Maya's exit — NAME, and name the academic destination.**
+This is actually different from Rahul. Maya returning to a deferred PhD at Stanford is *positive context* that people will be glad to have. It short-circuits any "why did she leave" speculation. If you don't name it, people assume the generic bad thing. Language: "Maya is returning to a PhD program she deferred two years ago to join us." One sentence, then move on. Don't make it a whole paragraph — that's the over-share failure mode.
+
+**4. BigCo release — NAME, middle of letter, without naming the customer.**
+Genuinely the proudest thing of the year. But Arjun's concern is right — structurally, don't let it function as distraction from the miss. Place it in paragraph 4 or 5 (not 1, not last). Name what was shipped specifically (the platform capabilities, not marketing copy) and name the scale ("our first Fortune-500 customer went live in Q1" — don't name them unless the customer is already public, which it isn't yet). Risk of gushing: readers who watched the miss will read BigCo as compensation theater. Mitigate by being specific about the technical win and by making it a paragraph, not the letter's climax.
+
+**5. Competitor acquisitions — SKIP.**
+This is the one I'd push back on if I were in the room. The argument for naming: people read the trade press, they already know. The argument for skipping (stronger): naming competitor acquisitions in an internal letter implicitly benchmarks the company against comp valuations and invites the question "what's our number?" — which is board-level conversation that doesn't belong in a 180-person letter. If someone asks in town hall Q&A, Arjun handles it there in real time with appropriate framing. Staying silent in the letter is not evasion; it's scope discipline.
+
+**6. Hiring pause — NAME explicitly, with the no-layoffs line adjacent.**
+This is the single most important honesty call in the letter. Half the company has heard the rumor. Naming "hiring is paused" without the "layoffs are not planned" sentence immediately after creates panic. Naming them together, back-to-back, short sentences — exactly as Arjun said it in quote 8 — reads as the adult version. Risk of skipping: rumor fills the gap and the rumor is worse than the truth. Risk of naming without the layoffs sentence: the anxious-engineer-at-5pm-on-Friday reading hears "hiring pause" as the first domino. Two sentences, back-to-back, is the move. Do not separate them with a clause or paragraph break.
+
+**7. Low churn — NAME, briefly, in the context of the miss.**
+This is the one positive Q4 signal most people haven't internalized. Naming it isn't spin — it's honest context for what kind of miss this actually was. "The miss was new-logo sales, not churn — our existing customers expanded." One sentence, placed near the miss discussion, not in a "silver linings" paragraph. Risk of over-selling: don't make churn the headline or it reads as deflection.
+
+**8. Board is supportive — SKIP.**
+Naming board dynamics in an employee letter is a tell. Healthy companies don't mention board dynamics; troubled companies do, and usually to reassure. If Arjun feels the need to say "the board is supportive" it's because someone has been asking — which means the real conversation is bigger than a letter can handle. Skip. If it comes up in town hall Q&A, address it there.
+
+**The general honesty line.** The rule I'd hand Arjun: name anything the team will talk about in the next 48 hours regardless. Gloss anything that's context-useful but not active speculation material. Skip anything whose natural home is board-level or executive-1:1 conversation, because naming it in a 180-person letter implicitly asks 180 people to have an opinion about it.
+
+One specific warning: do NOT write a "learnings from the miss" paragraph. That's the spin failure mode. If you're going to name the 12% miss, the honest follow-up is "here's what we think Q1 is about," NOT "here are the 3 lessons we're carrying forward." Lessons-paragraphs read as corporate penance. Forward direction is the Arjun move.$pf$,
+ $pf$Calibrates each of the 8 Q4 facts: NAME (12% miss, VP exits with different disclosure levels — Rahul without destination, Maya WITH the PhD context, BigCo release middle-placed without customer name, hiring pause + no-layoffs sentence adjacent, low churn briefly), SKIP (competitor acquisitions, board support). Reasoning tied to the question "does naming this help the reader who doesn't have context make a better Q1 decision." Ends with the general rule and one warning: no "learnings from the miss" paragraph — that's the spin failure mode.$pf$),
+
+-- Step 3 --
+('66666666-6666-6666-6666-666666100103',
+ '55555555-5555-5555-5555-555555550016',
+ 3,
+ $pf$Paragraph-by-paragraph outline, must-contain sentences$pf$,
+ $pf$Honesty calibration locked. Now I need an outline I can commit to at the paragraph level and resist any "let me free-write" temptation. Target: 1,000–1,200 words, read time 5 minutes. Audience is the full 180-person company but weighted toward the ~130 people who don't have full Q4 context. Give me paragraph-by-paragraph beats: what each covers, rough word count, and the single sentence each paragraph MUST contain to earn its place in the letter. Length budget: if you need more than 8 paragraphs, something in the outline is weak and needs cutting before we write.$pf$,
+ $pf$Seven paragraphs, 1,100 words total. If the draft in step 4 starts sprawling past 7, something in this outline is wrong — come back and re-cut before adding paragraphs.
+
+**P1 — Orient, name the shape of Q4, do not lead with the miss (≈110 words).**
+Open with a short situating line: what this letter is and who it's for. Name that Q4 had hard parts and good parts, in that order. Signal that he's going to be specific about both. Do NOT open with the 12% — opening with the bad number makes the miss the letter's identity and it isn't the whole story.
+- Must contain: "I'd rather name the thing than dance around it." (Arjun-ism, sets the letter's contract with the reader.)
+
+**P2 — The 12% miss, named flatly (≈130 words).**
+The miss paragraph. Short declarative sentence naming 12%. One sentence on what it was primarily (new-logo sales), one sentence on what it was NOT (churn — name the 3.1% briefly as context, not consolation). One sentence on why the distinction matters for how Q1 is approached. Do NOT list "learnings." Do NOT promise the number will be recovered in Q1.
+- Must contain: "The 12% miss is the 12% miss." (Verbatim Arjun, flat restatement.)
+
+**P3 — The two VP transitions (≈150 words).**
+Rahul and Maya, in that order. Two sentences each. For Rahul: he's moved on to a new role, the transition was planned, the team is in good hands with the interim structure (brief). Name that the news will feel newer to the broader team than it was inside, and take the "should have telegraphed better" move on himself. For Maya: returning to her deferred PhD, brief context on what she contributed, the Head of Talent is running the function. Note: the self-implication sentence lands on the Rahul beat, not Maya's, because Rahul's is the one readers will have more questions about.
+- Must contain: "That's on me for not telegraphing better." (Self-implication in his voice.)
+
+**P4 — BigCo release, named for what it actually is (≈170 words).**
+The biggest release in company history. One sentence on what shipped (the platform capabilities, specific — don't marketing-copy it). One sentence on the Fortune-500 customer going live, without naming them (respect the customer's own announcement timing). One short paragraph beat on what the release unlocks technically (the other enterprise prospects this opens). One sentence of explicit gratitude to the engineering and customer-success teams who carried it — NOT gratitude-spray, one sentence. Close with the Arjun-ism connecting BigCo to Q1.
+- Must contain: "The team we become in Q1 is the team that takes this customer into production." (BigCo-to-Q1 connective tissue; also the first forward-looking beat in the letter.)
+
+**P5 — Hiring pause + the no-layoffs sentence (≈120 words).**
+The single most important honesty move in the letter. Two sentences back-to-back: "Hiring is paused through Q1. Layoffs are not planned." Then one sentence on why the pause exists (board conversation, prudent runway management through the new-logo rebuild). Then one sentence on the practical implication: "If you're a hiring manager with a role in flight, your recruiter will be in touch this week." Concrete and actionable. Nothing vaguer.
+- Must contain: "Hiring is paused through Q1. Layoffs are not planned." (The two sentences, exactly in this order, no paragraph break between them.)
+
+**P6 — What I think Q1 is about (≈240 words).**
+This is the letter's center of gravity. Not "what we're excited for" — "what I think this quarter is." Three specific framings, each with a short explanation. Option 1: Q1 is a repositioning quarter — re-tune the new-logo motion post-Rahul. Option 2: Q1 is the BigCo proof-point quarter — turn one F500 win into two or three. Option 3: Q1 is a tighter, smaller company by design — hiring pause means the team we have is the team that runs Q1, and this is a good thing not a constraint. Be specific about which of these is primary (repositioning) and why. Name one thing the company should NOT try to do in Q1 (chase the entire new-logo shortfall from Q4 — that's how you break a team).
+- Must contain: "I want to tell you what I think Q1 is about, not what I hope it is." (Verbatim Arjun; the letter's thesis move.)
+
+**P7 — Close. Short. Reference to last year's letter as an explicit self-reference (≈80 words).**
+Arjun said in the interview that he reread last year's letter and cringed. Reference that briefly and honestly — ONE sentence. Close with what he wants the team to do this week (not Q1, this week): one concrete behavioral ask. Don't sign off on "I'm proud of you" or "we've got this." End on the concrete ask.
+- Must contain: "I reread last year's letter and I didn't love it — I want this one to age better." (The self-referential honesty move; closes the letter's voice contract from P1.)
+
+**Total: 1,100 words, 7 paragraphs.**
+
+**Structural check before drafting.** P1 contracts for honesty. P2 delivers on the contract with the miss. P3 delivers on it with the VP transitions. P4 is the positive without being compensatory (placed middle, not end). P5 is the anxiety-reducing honesty on hiring. P6 is the thesis. P7 closes the contract. The letter moves DOWN the concrete-to-abstract gradient and then back UP at the close, which is the shape that makes a reader feel the writer is honest throughout, not just in the hard parts.
+
+If the draft in step 4 does any of the following, the outline failed: (1) P2 becomes 3 paragraphs because the miss "needs more context"; (2) P4 becomes the emotional climax of the letter; (3) P6 becomes a bulleted list of Q1 priorities. Come back and re-cut before writing more.$pf$,
+ $pf$7-paragraph outline, 1,100 words. P1 orients without leading with the miss. P2 names the 12% flatly with churn as context. P3 handles both VP transitions with different disclosure levels (Rahul without destination + self-implication sentence; Maya with PhD context briefly). P4 places BigCo in the middle with the team-we-become connective tissue. P5 is the hiring pause + no-layoffs two-sentence construction. P6 is the letter's thesis ("what I think Q1 is about, not what I hope"). P7 closes with the self-referential cringe-at-last-year's-letter move. Includes an explicit structural-check list of 3 failure modes to watch for in the draft.$pf$),
+
+-- Step 4 --
+('66666666-6666-6666-6666-666666100104',
+ '55555555-5555-5555-5555-555555550016',
+ 4,
+ $pf$Full 1,100-word draft$pf$,
+ $pf$Outline locked. Write the full letter, paragraph by paragraph, following the outline exactly. Use the voice DNA from step 1. Land the must-contain sentences. Do not bleed into an 8th paragraph. Do not let P6 become a bullet list. First-person from Arjun, addressed to "team" or "all." 1,100 words, +/- 50.$pf$,
+ $pf$---
+
+**Subject: Q4, and what I think Q1 is about**
+
+**Team —**
+
+This is the letter I'd rather write than the one that pretends Q4 was something it wasn't. I'd rather name the thing than dance around it. Some of what's in here you already know, some you don't, and some of it the person next to you has a different version of. I want us working from the same version — or at least the same version of mine.
+
+**The revenue number first.** The 12% miss is the 12% miss. Nothing I write in the next five paragraphs changes that. The miss was primarily new-logo sales — the motion we were scaling through H2 came in slower than plan in November and didn't rally in December. Existing-customer churn was 3.1% for the quarter, our best trailing-quarter number in 18 months, and I mention it not as consolation but because the distinction matters for how we approach Q1. A new-logo miss and a churn miss want different responses. We missed on new logos. We did not lose the customers we had.
+
+**On Rahul and Maya.** Rahul is transitioning to a new role outside the company. The transition was planned, the handoff is underway, and I'm running Sales directly through Q1 with the senior sales leaders already in the room. Rahul's departure wasn't a surprise inside the exec team — and I know that for a lot of you it's going to feel like one. That's on me for not telegraphing better. Maya is returning to a PhD program she deferred two years ago to join us; that deferral was always finite and the timing on her end is good. The People function is in strong hands with our Head of Talent running it through the search.
+
+**The release you shipped.** The biggest product release in company history went out on December 20th, and our first Fortune-500 customer went live in the first week of January. The platform capabilities we shipped — the compliance-rule engine, the records-level contract-type handling, the rebuilt audit trail — are the capabilities that make us sellable to the next five enterprise prospects already in conversation. I want to thank the eng team and the customer-success team that carried this through a rough November: you shipped the hardest thing we've ever shipped under the hardest stretch of the year. I'm not going to make this release a plaque on the wall. The team we become in Q1 is the team that takes this customer into production. That's what matters now.
+
+**Hiring and what it doesn't mean.** Hiring is paused through Q1. Layoffs are not planned. The pause is a prudent runway-management call from our December board review — new-logo is rebuilding, and we'd rather hold the team size flat for one quarter and do Q1 with the people we have than hire ahead of a motion we're retuning. If you're a hiring manager with a role in flight, your recruiter will reach out this week with a specific status — not a form email. If you're on the team and thinking about a friend you were going to refer — the pause is real, but referrals stay open and we'll want them back when hiring resumes.
+
+**What I think Q1 is about.** I want to tell you what I think Q1 is about, not what I hope it is. Q1 is a repositioning quarter. The new-logo motion gets a tighter thesis, a smaller target list, and a sales org that knows the revised playbook by the end of January. The BigCo release gives us one proof point we've never had before, and I think Q1 is about turning that one into two or three — reference calls, case study, second and third live customers. And Q1 is a smaller company by design: the people on this team are the people who run this quarter, and I think that's a good thing and not a constraint. One thing I want us NOT to do: chase the entire Q4 new-logo shortfall inside Q1. That's the instinct and it's the wrong one. The way you recover a miss is by rebuilding the motion that produces predictable quarters, not by flooring it on the one motion that just under-delivered. We're going to run Q1 with discipline. If we get the motion right, Q2 gives us back the numbers.
+
+**One thing for this week.** I reread last year's letter and I didn't love it — I want this one to age better. What I'm asking for this week, not for Q1: find the one conversation you've been avoiding with a colleague about how Q4 went. Have it. We don't get Q4 back. We can get the clarity back, and clarity is what I think we need most.
+
+— Arjun
+
+---
+
+**Draft word count: 1,114. Seven paragraphs. All five must-contain sentences landed, in the right paragraphs.**
+
+One place I want to flag for the next pass: P4 closes strong ("the team we become in Q1 is the team that takes this customer into production") but the gratitude sentence before it reads slightly gratitude-spray-adjacent. Worth checking in the red-pen pass whether it needs a tighter edit.
+
+One place I lingered: P5's "pause is real, but referrals stay open" line. It's concrete and I think it earns its place, but it adds a third beat to what the outline said should be a two-sentence hiring pause + no-layoffs construction. I made the call to include it because hiring managers and people with active referrals will read that paragraph three times each and the specificity reduces real anxiety. If the red-pen pass says cut, I'll cut.
+
+Ready for the 3-audience red-pen pass in step 5.$pf$,
+ $pf$1,114-word draft, 7 paragraphs, follows outline exactly. All 5 must-contain sentences land in their designated paragraphs. Voice holds — flat factual restatements ("the 12% miss is the 12% miss"), self-implication sentence on Rahul, BigCo placed middle with the "team we become" Arjun-ism, hiring pause + no-layoffs sentences adjacent, Q1-thesis paragraph per the outline, close with the self-referential cringe-at-last-year's-letter move. Writer flags two beats for red-pen review: P4 gratitude sentence possibly gratitude-spray-adjacent; P5 added a third line beyond the two-sentence construction to address hiring-manager anxiety.$pf$),
+
+-- Step 5 --
+('66666666-6666-6666-6666-666666100105',
+ '55555555-5555-5555-5555-555555550016',
+ 5,
+ $pf$3-audience red-pen pass$pf$,
+ $pf$Draft is 1,114 words. Before I send it to Arjun, I want a pressure-test from three specific internal audiences. Don't give me generic "edit for clarity" feedback — read the draft as each of the following people and tell me what they would seize on, what sentences they'd re-read three times, what phrasing they'd hear as code for something worse than what's meant, and what's missing for them.
+
+Audience A: A senior software engineer, 3 years at the company, watched a close collaborator take a new job two months ago, has a spouse who was laid off from a different tech company in Q3. Reads the letter Friday afternoon at 5pm on her phone. Trigger-sensitive on layoff signal.
+
+Audience B: VP Engineering, joined 12 weeks ago, reports directly to Arjun, has never read any of the previous all-hands letters. Needs this letter to give him language to carry Q1 conversations with his 45-person team — conversations he'll start having on Monday.
+
+Audience C: A member of the exec team, has been in every Q4 board meeting, knows the 12% number, the comp acquisitions, the hiring-pause context, the board dynamics. Needs the letter to NOT undermine her ability to have 1:1 conversations with her team that are slightly more candid than the letter but consistent with it.
+
+For each: what would they flag? Give me specific sentences and specific suggested rewrites where applicable.$pf$,
+ $pf$This is the pass I'd tell other ghostwriters is the load-bearing one. Generic edits produce cosmetic rewrites. Three specific readers produce actual content catches. Let me work through each in order.
+
+**Audience A — the senior engineer, trigger-sensitive on layoff signal.**
+
+She reads P5 five times. The "hiring is paused through Q1. Layoffs are not planned." construction is the right move — back-to-back, short sentences, no clause separation, exactly right. But one line earlier in P4 will catch her: *"shipped the hardest thing we've ever shipped under the hardest stretch of the year."* "Hardest stretch of the year" is fine, but combined with the miss in P2 and the VP exits in P3, her 5pm Friday brain will read that as code for "there's more hardness coming." Not what's meant, but it's the adjacency pattern that does the work.
+
+**Specific catch — P6 penultimate sentence.** "The way you recover a miss is by rebuilding the motion that produces predictable quarters, not by flooring it on the one motion that just under-delivered." This is intellectually right and it also sounds, to Audience A at 5pm Friday, like "we're not going to push for growth, which means we don't need as many engineers." Not what the sentence means. But it's adjacent enough that her brain will make the jump. Suggested rewrite: add a trailing sentence that makes the non-layoff implication explicit. "That discipline is going to take every seat on the team — which is the team we have." It restates the headcount message in forward-looking language rather than defensive language.
+
+**Missing for her:** one concrete sentence about the engineering roadmap not contracting. She's going to wonder if the BigCo release means all future eng work is enterprise compliance. Consider adding a clause in P4: "and the platform we shipped for BigCo is the platform that makes the next five engineering priorities on the roadmap unblockable." Ties the enterprise win to the broader roadmap she cares about.
+
+**Audience B — VP Eng, 12 weeks in, needs Monday conversation language.**
+
+He's going to read the whole letter twice and then mine it for phrases he can use verbatim. Three catches.
+
+**Catch 1 — P2 assumes context he doesn't have.** "The motion we were scaling through H2" — he wasn't here for H2. He won't know what was being scaled. Suggested rewrite: "The outbound new-logo motion we'd invested in through the second half of the year came in slower than plan." Names the motion concretely. Now he has language.
+
+**Catch 2 — P6's three Q1 framings.** He'll want these to be extractable for his 1:1s with his directs. They're paragraph-embedded right now. NOT suggesting you bullet them — that would break the letter's voice — but worth checking that each framing can be lifted as a standalone sentence. On review: "Q1 is a repositioning quarter," "Q1 is about turning one proof point into two or three," "Q1 is a smaller company by design" all work as standalone sentences. Keep as-is.
+
+**Catch 3 — what he needs that's NOT in the letter.** He's going to get asked Monday: "what does this mean for my team's hiring plan specifically?" The letter says "recruiter will reach out this week" for hiring managers, which is the right mechanism, but it's buried. Worth surfacing in his pre-brief (not the letter): Arjun should send an exec-only note Sunday night previewing the letter with a "here's how to run your Monday 1:1s" addendum. Don't add it to the letter — just flag it as a companion action.
+
+**Audience C — exec team member, knows everything, needs to have 1:1 conversations slightly more candid than the letter but consistent.**
+
+She'll look for two things: (1) where the letter leaves her room to be more candid in 1:1, (2) where the letter's phrasing might contradict what she's going to say privately.
+
+**Catch 1 — P3's "wasn't a surprise inside the exec team" line.** She's going to have team members ask her directly, "did you know?" The letter gives her cover to say yes and frame it as planned handoff. Good. But the phrasing "wasn't a surprise inside the exec team" is slightly passive — suggested rewrite: "The exec team had been in the handoff plan for some time." Same information, more ownership, gives her language she can say in her own voice.
+
+**Catch 2 — P5's "prudent runway-management call from our December board review."** She knows this was a harder conversation than "prudent." The letter isn't wrong to use "prudent" — overselling the tension would be worse — but it's slightly rosier than she'd want for her own 1:1s. Possible softer phrasing: "it's the runway call our December board review landed on." Less editorial, more factual. Gives her room to add nuance verbally without contradicting the letter.
+
+**Missing for her:** she'd want one beat that explicitly acknowledges the senior individual contributors (not just the VP exits, not just the exec team). The letter talks to engineers in P4 but the broader IC base — senior PMs, senior designers, senior analysts — will read P3 and P4 and feel somewhat absent. Not a full paragraph, but consider one sentence somewhere in P6: "The senior individual contributors on this team are the people the repositioning depends on most." One sentence. Earns its place because the letter otherwise lists VP transitions and team gratitude and skips the middle layer.
+
+---
+
+**Summary of recommended edits:**
+1. P4: add "the platform we shipped for BigCo is the platform that makes the next five engineering priorities on the roadmap unblockable." (Audience A + B surface.)
+2. P2: rewrite "the motion we were scaling through H2" → "The outbound new-logo motion we'd invested in through the second half of the year." (Audience B comprehension.)
+3. P3: rewrite "wasn't a surprise inside the exec team" → "The exec team had been in the handoff plan for some time." (Audience C 1:1 alignment.)
+4. P5: rewrite "prudent runway-management call from our December board review" → "the runway call our December board review landed on." (Audience C editorial softening.)
+5. P6: add one sentence on senior ICs. "The senior individual contributors on this team are the people the repositioning depends on most." (Audience C surface a missing group.)
+6. P6 penultimate: add a trailing sentence. "That discipline is going to take every seat on the team — which is the team we have." (Audience A anti-layoff-signal reinforcement.)
+
+That's 6 line-level edits. Letter stays at roughly 1,150 words, still 7 paragraphs, still lands every must-contain sentence. I'd apply all 6 before sending to Arjun for his edit pass.
+
+One ghostwriter-level meta-note: the gratitude sentence in P4 you flagged — I don't think it reads as gratitude-spray. The specificity ("eng team and the customer-success team that carried this through a rough November") earns its place. The test is: does the sentence NAME who you're thanking and WHAT they did, or is it thanking "everyone"? This one names. Keep.$pf$,
+ $pf$3-audience red-pen pass — specific catches per audience, not generic feedback. Audience A (trigger-sensitive engineer): catches P6 penultimate sentence reading adjacent to "fewer engineers" and recommends a trailing sentence reinforcing team-size language; flags missing roadmap-breadth beat in P4. Audience B (new VP Eng): catches "motion we were scaling through H2" as context-assuming; validates P6's three Q1 framings as extractable; recommends a companion Sunday-night exec-only addendum (not letter changes). Audience C (exec team member): catches P3 passive voice and P5 "prudent" as slightly rosier than her 1:1 framing would be; surfaces a missing senior-IC beat. 6 specific line-level edits recommended, letter stays 1,150 words / 7 paragraphs / all must-contain sentences preserved. Keeps P4 gratitude sentence (names WHO and WHAT, passes the gratitude-spray test).$pf$);
+
+
+-- =========================================================================
+-- Project 55-0017 | Quarterly capacity-planning memo — found two burned-out teams | Nina Kowalski | Productivity | 4 steps
+-- =========================================================================
+
+DELETE FROM prompt_steps WHERE prompt_id = '55555555-5555-5555-5555-555555550017';
+DELETE FROM prompts      WHERE id        = '55555555-5555-5555-5555-555555550017';
+
+INSERT INTO prompts (
+  id, title, description, content, result_content,
+  category_id, difficulty, model_used, model_recommendation,
+  tools_used, tags, status, author_id, vote_count, bookmark_count
+) VALUES (
+  '55555555-5555-5555-5555-555555550017',
+  $pf$Quarterly capacity-planning memo that found two burned-out teams nobody had flagged — 4-pass Claude workflow$pf$,
+  $pf$Our Q3 ended with two client teams missing deliverables and everyone surprised. I built a 4-pass Claude workflow that turns timesheet data + project pipeline + roster into a capacity memo that made the overload pattern unmissable. Claude 4.6 Sonnet, 4 prompts, one memo, two staffing moves, and six weeks later our most-burned-out team's sustained-weekend-hours dropped from 4.3 to 0.8 per person per month.$pf$,
+  $pf$I'm the ops manager at a 50-person creative agency. We run 5 client teams, each about 8–10 people, plus shared creative and account functions. Quarterly capacity planning has historically been a partner-gut-check conversation: the three managing partners sit in a room, look at the pipeline for the coming quarter, and decide where to invest. Nothing wrong with the conversation — but the inputs were always whatever memory the partners had about utilization, and memory lies.
+
+Q3 ended ugly. Team 2 and Team 5 both missed deliverables in the last two weeks of September — not by much, but enough that two clients escalated. When I went back and looked at timesheets across the quarter, Team 2 had been at 110%+ utilization for 9 of 13 weeks, with 4.3 sustained-weekend-hours per person per month. Team 5 was at 108% average. Neither team had escalated. Their managers had been absorbing the pain and not flagging it to partners. The partners were surprised, and they shouldn't have been.
+
+So for Q4 planning, I decided to build a workflow. Not a dashboard — the partners don't open dashboards. A memo. 2 pages. Something that lands in their inbox Friday morning before the quarterly planning meeting and makes the capacity story unmissable.
+
+Used Claude 4.6 Sonnet over 4 prompts. Step 1 was the workflow design — given the inputs I have (timesheet utilization by person by week, project pipeline by team with dollar value and start dates, current rosters, recent attrition), what shape of memo actually drives the decisions that need to be made. Step 2 was the diagnostic pass — pasted the Q3 data in and asked Claude to find the hidden stories, not just the averages. Step 3 was recommendations with honest cost/risk annotation. Step 4 was the write-both-versions move: a 2-page partner memo AND a 400-word team-facing explanation I could share if anyone asked "what's going on" — consistent with the memo but not leaking staffing recs.
+
+Total time: about 4 hours start to finish. The first Q4 run found Team 2's overload and the staffing moves that fixed it. The workflow has now run three quarters. The team-facing version is the thing I didn't expect to matter and ended up mattering most.$pf$,
+  $pf$The Q4 memo landed Friday morning before the planning meeting. Partners came in having already read it, which is new. Recommendations were: (1) hire a mid-level PM for Team 2, (2) rotate Oliver from Team 5 to Team 2 for Q4 as a temporary bridge, (3) deprioritize one low-margin retainer account (Brightfield) that was absorbing 40% of Team 5's time for 12% of Team 5's revenue.
+
+Partners approved 1 and 2, debated 3 for longer than expected, and ended up approving a modified version — keeping Brightfield but capping their scope at 25 hours/week with a conversation with the client about it. That conversation happened; the client agreed to the cap.
+
+Six weeks later, Team 2's sustained-weekend-hours went from 4.3 per person per month to 0.8. Team 5's went from 3.1 to 1.2. The Brightfield cap held. No client escalated. The new PM hire for Team 2 started in week 9 of Q4. The memo made partner-level capacity planning data-informed for the first time in our three-year history.
+
+What I'm keeping from this workflow: the team-facing version generated in step 4. When partners approved the staffing moves, news travels. The old pattern was Slack rumor: "why is Oliver moving to Team 2, are they in trouble." With the team-facing explainer ready to share, I got in front of 3 separate "is everything okay" conversations. Takes 5 minutes of Claude time to generate. Prevents days of low-key panic.
+
+Also keeping: the "what would we need to believe for this rec to be wrong" annotation in step 3. It reframes every recommendation as a hypothesis the partners can push back on with evidence, not an assertion they have to trust. Changed the tone of the planning meeting — fewer "I disagree" moments, more "here's what I'd need to see to agree."
+
+One honest thing I'd add for anyone running this workflow: the diagnostic step (step 2) depends entirely on the quality of the data you feed in. Our timesheets are decently clean because everyone logs on Fridays. If your agency has looser logging discipline, step 2 will hallucinate patterns that aren't there. Build the logging discipline first.$pf$,
+  '11111111-1111-1111-1111-111111111107',
+  'intermediate',
+  'claude-sonnet-4-6',
+  'Claude 4.6 Sonnet',
+  ARRAY['Claude','Airtable','Harvest','Notion'],
+  ARRAY['capacity-planning','ops','agency','memo-writing','staffing','burnout'],
+  'approved',
+  '22222222-2222-2222-2222-222222222206',
+  73, 34
+);
+
+INSERT INTO prompt_steps (id, prompt_id, step_number, title, content, result_content, description) VALUES
+
+-- Step 1 --
+('66666666-6666-6666-6666-666666110101',
+ '55555555-5555-5555-5555-555555550017',
+ 1,
+ $pf$Workflow design — inputs, output shape, decisions it drives$pf$,
+ $pf$I'm the ops manager at a 50-person creative agency. We have 5 client teams, 3 managing partners, and a history of doing quarterly capacity planning as a partner-gut-check conversation. Q3 ended with two teams silently overloaded and two missed deliverables. I want to build a Claude-powered workflow for Q4 planning, and every quarter after.
+
+Inputs I have:
+- Timesheet utilization by person by week for the trailing 13 weeks (Harvest export, CSV)
+- Project pipeline by team for the next 13 weeks, with dollar value, expected start dates, and estimated hours per week per team
+- Current rosters per team (name, role, seniority, start date)
+- Trailing 4-quarter attrition by team
+- Client satisfaction scores from our Q3 check-ins (NPS-style, -100 to +100)
+
+Constraint: the 3 partners don't open dashboards. They will read a 2-page memo if it lands in their inbox Friday morning before the Monday quarterly meeting. More than 2 pages and they'll skim. Anything graphical has to be inline in the memo — we don't send attachments the partners open in a separate app.
+
+Before we get to analysis, I want you to help me design the workflow. Specifically: what's the shape of the output memo that makes the capacity story unmissable for partners who skim? What decisions does this memo need to drive? And what's the sequence of prompts I should run against the data to get there?$pf$,
+ $pf$The memo needs to be built backwards from the decisions. Partners don't care about utilization percentages — they care about "do we hire, move people, or cut scope." The memo exists to drive one of those three decisions per team that shows stress. Everything else is context for the decision. Let me work backwards from there.
+
+**Decisions this memo needs to drive (per team that shows stress):**
+1. Hire — a new headcount request, role level, target start date, budget impact.
+2. Move — an internal rotation, which person, for how long, bridge vs permanent.
+3. Cut scope — deprioritize an account or cap a retainer, which one, why it's the right one to cut.
+
+Every team in the memo should have a recommendation that falls into one of these three buckets OR an explicit "hold — no action needed this quarter."
+
+**Memo structure (2 pages, ~800 words):**
+
+*Page 1:*
+- **Executive summary (80 words).** 3–4 bullets. The 1–2 teams that need partner action this quarter, the one scope call under consideration, the headline capacity ask. If you can't write this in 80 words, the story isn't sharp enough yet.
+- **Utilization snapshot (inline ASCII table, ~10 rows).** Team, trailing-quarter avg utilization %, sustained weekend hours per person per month, trailing 3-week trend arrow (↑/↓/→), Q4 pipeline utilization forecast %. One row per team, color-coded informally with ⚠ markers on anything >100% or trending up past 95%.
+- **The story behind the numbers (150 words).** This is where the diagnostic lives — not "Team 2 is at 112%" but "Team 2 has been at 110%+ for 9 weeks and absorbed the X account overflow from Team 5 in August, which is why it looks like Team 2 is the overloaded team but the root cause is actually Team 5's pipeline mix." Causation, not just numbers.
+
+*Page 2:*
+- **Recommendations (400 words, 3–4 recs max).** Each recommendation is: one sentence naming the action, one paragraph of reasoning, one line each for cost / risk / "what we'd need to believe for this to be wrong." That last one is load-bearing — it reframes the rec as a hypothesis partners can disagree with using evidence, not feelings. If a rec has no disconfirmation criterion, it's not ready.
+- **Risk watch (100 words).** 2–3 bullets on things NOT worth acting on this quarter but worth tracking. Prevents partners from asking "what about X" in the meeting.
+- **Asks (60 words).** Three specific things you need from the partners to execute Q4 capacity plan. Decisions, approvals, or introductions. Not vague.
+
+**Sequence of prompts:**
+
+**Prompt 2 — diagnostic.** Paste in the timesheet CSV, the pipeline by team, the rosters, and the attrition data. Ask for the hidden story, not the obvious numbers. Specifically ask Claude to find: (a) teams over 100% for 6+ consecutive weeks, (b) individuals at personal overload even on teams that aggregate to healthy utilization, (c) pipeline-vs-capacity mismatches for Q4, (d) any cross-team absorption pattern (Team A picking up work that should have been Team B's). Give it explicit permission to flag "this number looks suspicious, verify before using."
+
+**Prompt 3 — recommendations.** Given the diagnostic, generate 3–4 specific staffing recommendations. Each with cost (hiring budget impact, training time, revenue impact of scope cuts), risk reduction (what problem this prevents), and the "what we'd need to believe for this to be wrong" annotation. Constraint: no more than 4 recommendations. More than 4 and partners start skim-approving.
+
+**Prompt 4 — dual memo generation.** Write the 2-page partner memo in the structure above. SEPARATELY, write a 400-word team-facing explanation that you can share if team members ask "what's going on with the capacity review." The team-facing version must be consistent with the partner memo but MUST NOT leak specific staffing recommendations (those haven't been approved yet) and MUST NOT name individuals under consideration for moves. Framed as "what the partners are thinking about for Q4," not "what's going to happen."
+
+**Two things to watch for in this workflow:**
+
+First, the timesheet data is the foundation. If your team doesn't log hours consistently, Claude will pattern-match on noise and produce diagnostic confidence that isn't earned. Before the first run, check that your trailing-quarter logging rate is above 85% of expected entries per person per week. If it's below that, fix the logging before running the workflow. I'd rather spend a quarter building logging discipline and run the memo once than run the memo every quarter on data that can't support the conclusions.
+
+Second, the "what we'd need to believe for this to be wrong" line is the thing I'd be most tempted to skip because it feels like self-criticism. Don't skip it. It's the thing that turns the memo from an assertion into a decision-support document. Partners will push back less on recommendations that come with their own disconfirmation criteria.$pf$,
+ $pf$Designs the workflow backwards from decisions (hire / move / cut scope / hold). 2-page memo structure: exec summary (80w), utilization snapshot table, 150w causation paragraph, 3–4 recommendations with cost/risk/disconfirmation annotation (400w), risk watch (100w), asks (60w). Sequences 4 prompts: workflow design (this one), diagnostic with explicit flags for hidden patterns, recommendations with disconfirmation criteria, dual-memo generation (partner + team-facing). Flags two meta-risks: timesheet data quality (need >85% logging rate) and the temptation to skip disconfirmation annotations.$pf$),
+
+-- Step 2 --
+('66666666-6666-6666-6666-666666110102',
+ '55555555-5555-5555-5555-555555550017',
+ 2,
+ $pf$Diagnostic — the hidden story in the numbers$pf$,
+ $pf$Here's the Q3 data. All team names anonymized to Team 1–5.
+
+**Trailing 13-week utilization by team (avg % across all team members, weekly):**
+- Team 1: 87, 89, 92, 88, 91, 85, 88, 90, 93, 89, 87, 91, 88 (avg 89%)
+- Team 2: 98, 104, 107, 112, 115, 109, 111, 114, 118, 113, 110, 107, 110 (avg 110%)
+- Team 3: 82, 79, 85, 88, 84, 81, 86, 83, 87, 89, 85, 82, 86 (avg 84%)
+- Team 4: 95, 93, 97, 98, 96, 94, 99, 97, 95, 94, 96, 98, 97 (avg 96%)
+- Team 5: 102, 105, 108, 111, 109, 106, 112, 108, 110, 113, 107, 105, 108 (avg 108%)
+
+**Sustained weekend hours per person per month (Q3 avg):**
+- Team 1: 0.8 / Team 2: 4.3 / Team 3: 0.5 / Team 4: 2.1 / Team 5: 3.1
+
+**Q4 pipeline (incoming hours per team, weekly forecast avg):**
+- Team 1: 340 hrs/wk (vs capacity 400) — 85% load
+- Team 2: 470 hrs/wk (vs capacity 400) — 118% load
+- Team 3: 310 hrs/wk (vs capacity 360) — 86% load
+- Team 4: 390 hrs/wk (vs capacity 400) — 98% load
+- Team 5: 440 hrs/wk (vs capacity 400) — 110% load
+
+**Rosters:** Team 1 (9 people), Team 2 (8 people — note: down from 9, one PM left in August, not backfilled), Team 3 (9 people), Team 4 (10 people), Team 5 (10 people — one senior PM Oliver, rotating availability).
+
+**Trailing 4-quarter attrition:** Team 2: 2 departures (both Q2+Q3, both senior ICs). Team 5: 0 departures but 1 person went to 80% schedule in September. Other teams: 0–1 departures.
+
+**Q3 NPS from client check-ins:** Team 1: +52, Team 2: +24 (down from +41), Team 3: +58, Team 4: +44, Team 5: +31 (down from +48).
+
+Find the hidden story. Not "Team 2 is at 110%" — I already see that. What's UNDER these numbers? Flag any number that looks suspicious and tell me what you'd verify before acting on it.$pf$,
+ $pf$Working through this. I'll flag three headline patterns, then three individual-level catches, then the one number I'd verify before acting on it.
+
+**Pattern 1: Team 2's utilization is accelerating, not stable.**
+Casual read: Team 2 averaged 110%, which is high but not surprising for a team that lost a headcount in August. Actual story: the trend line. Weeks 1–4 average 105%; weeks 10–13 average 110%; the last 3 weeks were 110/107/110. Team 2's utilization isn't a stable overload — it's holding at 110% because the team has adjusted by working more hours, not because the workload normalized. The 4.3 sustained-weekend-hours-per-person-per-month is the confirmation: they're burning the weekend hours AS the release valve. Combined with the NPS drop from +41 to +24 and the 2 senior IC departures in Q2+Q3, Team 2 is not "stressed this quarter" — it's in sustained overload that has already started costing people and client goodwill.
+
+**Pattern 2: Team 5 looks like Team 2 on the utilization number but is a different problem.**
+Team 5 averaged 108% over Q3, close to Team 2's 110%. Surface read: similar overload, similar solution. Look closer. Team 5 has 10 people (2 more than Team 2), zero attrition, NPS down from +48 to +31. The utilization is showing up because the pipeline mix shifted — not because the team shrunk. If I had Oliver's individual schedule (he went to rotating availability and in September went 80%), I'd bet the team's overload is heavily weighted to the 8 people who didn't adjust to cover his reduced hours. Team 5's problem is redistribution, not headcount shortage. Solution for Team 5 is different from Team 2: it's scope management or a temporary bridge (maybe rotating Oliver's work partially, or deprioritizing a low-margin account), not a new hire.
+
+**Pattern 3: Team 2 and Team 5 are likely coupled.**
+Team 2's pipeline for Q4 is 118% of capacity. Team 5's is 110%. Team 1, 3, 4 all have slack or are at capacity. If the last quarter's spillover pattern is that Team 5's overflow went to Team 2 (which would explain why Team 2's utilization accelerated even after losing a PM and not backfilling), then any fix for Team 5 has to land before or simultaneously with the fix for Team 2. Otherwise Team 2's hire won't relieve them because Team 5's overflow will absorb the new capacity. Treating these as independent problems will make the partner memo worse.
+
+**Individual-level catches (harder to see from team averages):**
+
+1. **The Team 2 PM departure not being backfilled.** This is the single most important item on the page and it's buried in the roster line. Team 2 is at 8 people running an 8.5-person-shaped pipeline (based on historical hours/person). The PM slot empty for 4+ months explains most of the sustained overload. Any recommendation for Team 2 has to address this directly.
+
+2. **Team 4 at 96% average with a slowly climbing late-quarter trend.** Team 4 looks healthy now, but the last 4 weeks are 94/96/98/97 on a team that averaged 95% early-quarter. Not a crisis. Worth a watch item — if Q4 pipeline is 98%, Team 4 has zero buffer for surprise work.
+
+3. **Team 3's room to absorb.** Team 3 is 84% utilization with 86% Q4 pipeline. That's the team with capacity. If any of the Q4 recommendations involve moving people temporarily, Team 3 should be the source team, not the receiver.
+
+**The number I'd verify before acting on it: Team 5's NPS drop from +48 to +31.**
+A 17-point drop on NPS is large. Two scenarios produce this: (a) the team is genuinely delivering worse under overload, or (b) one or two specific client accounts went bad for reasons unrelated to capacity and are dragging the team-level average. Before recommending scope cuts for Team 5, I'd pull the per-client NPS and see if the drop is concentrated (one or two accounts) or distributed (most clients down a bit). If concentrated, the intervention is client-specific, not team-wide. If distributed, the overload story is confirmed.
+
+**One more flag:** the sustained-weekend-hours numbers for Team 2 (4.3/month) and Team 5 (3.1/month) are the healthiest leading indicators of attrition risk you have. Team 2 already lost 2 ICs. If Team 2's sustained weekend hours stay above 3.5 through Q4, you should expect another departure within 2 quarters. That's the framing for the partners — this isn't "Team 2 is stressed," it's "Team 2 has a probabilistic attrition risk that action this quarter can reduce."$pf$,
+ $pf$Diagnostic finds three patterns partners wouldn't see from averages: Team 2's utilization is accelerating with weekend-hours as the release valve (not stable), Team 5 looks like Team 2 but is a redistribution problem not a headcount problem, and the two teams are likely coupled via overflow so fixing them independently won't work. Three individual catches: Team 2's unreplaced PM is the buried root cause, Team 4 has a watch-item late-quarter trend, Team 3 has slack for temporary rotations. Flags Team 5's 17-point NPS drop as requiring per-client verification before scope-cut recommendations. Frames Team 2's 4.3-hr sustained weekend hours as a probabilistic attrition leading indicator, not just a stress number.$pf$),
+
+-- Step 3 --
+('66666666-6666-6666-6666-666666110103',
+ '55555555-5555-5555-5555-555555550017',
+ 3,
+ $pf$Recommendations with cost / risk / disconfirmation annotation$pf$,
+ $pf$Diagnostic locked. Three patterns, Team 2 is coupled to Team 5, Team 2 has a buried root cause (unreplaced PM), Team 3 has capacity. NPS-drop verification is pending — partners will ask about it, I'll include a line on that.
+
+Generate 3–4 recommendations for Q4. Constraint: no more than 4. Each recommendation must have:
+- The action in one sentence.
+- One paragraph of reasoning (why this, why now, why not the alternatives).
+- Cost line: hiring budget / training time / revenue impact if scope cut.
+- Risk-reduction line: what problem this prevents.
+- "What we'd need to believe for this rec to be wrong" line: the explicit disconfirmation criterion.
+
+If any rec is a hire, include role level and target start date. If any rec is an internal move, name the person and duration. If any rec is a scope cut, name the account and the quantified revenue/time trade.$pf$,
+ $pf$Three recommendations. I considered a fourth (proactive hire for Team 5) but pulled it — Team 5's problem is redistribution not headcount, and adding a fourth recommendation dilutes the partner decision energy. Sticking with three.
+
+---
+
+**Recommendation 1: Hire a mid-level PM for Team 2, target start by Week 6 of Q4.**
+
+*Reasoning:* Team 2's sustained overload is primarily driven by running an 8.5-person-shaped pipeline with 8 people since the PM departure in August, not by Q4 pipeline expansion. Adding back the PM seat directly addresses the root cause rather than treating a symptom. Alternative considered: senior PM instead. Rejected because senior PM recruiting averages 14 weeks in our market and Team 2 can't wait that long; a mid-level PM we can close in 4 weeks through our warmer pipeline. Alternative considered: contractor bridge. Rejected because the PM role for this team is client-facing and a contractor who cycles out in Q1 costs us relationship continuity right when Team 2 is re-stabilizing.
+
+*Cost:* Mid-level PM total comp ~$105K base + benefits loaded ~$135K annual / $33K Q4. Recruiting cost ~$8K if we go through our retained search, $0 if internal referral. Total Q4 budget impact: $41K.
+
+*Risk reduction:* Probabilistic attrition reduction on Team 2 (current leading indicator: 4.3 sustained weekend hours/month, 2 departures in trailing 2 quarters). Getting below 3.0 sustained weekend hours/month within 6 weeks of hire would correspond to a roughly 50% reduction in expected 6-month attrition probability based on our historical data.
+
+*What we'd need to believe for this rec to be wrong:* That Team 2's overload is primarily driven by Q4 pipeline expansion (not the PM gap), and that backfilling the PM seat wouldn't materially change the workload distribution. Evidence that would prove this: if we traced Team 2's Q3 hours and found the PM-equivalent work was NOT being absorbed by the remaining team (i.e., if the work had been deprioritized instead), the hire wouldn't fix the overload. I've checked and the PM-equivalent client management work IS being absorbed — specifically by two senior ICs who are the same two most likely to depart next. I'm confident in this rec.
+
+---
+
+**Recommendation 2: Rotate Oliver (Team 5) to Team 2 at 50% allocation for Q4, as a bridge while the PM hire is recruited and onboarded.**
+
+*Reasoning:* Team 2's hire won't land until Week 6 of Q4 at earliest. Weeks 1–6 are the highest-risk stretch — if a senior IC departs in that window, the hire doesn't net us forward capacity, it replaces the lost capacity. Oliver is the right bridge for three reasons: (1) he's at 80% schedule on Team 5 and his absence at 50% lands half on Team 5's existing workforce and half on the scope cut in Recommendation 3, (2) he's run client-facing projects before in a similar context, (3) Team 2 knows him — he covered for them one week in June and the feedback was strong. Alternative considered: rotate someone from Team 3 (which has slack). Rejected because Team 3's slack is in junior IC bandwidth, and Team 2 specifically needs PM-adjacent coverage, which Team 3 can't supply at that level. Alternative considered: ask Team 2 to hold on and just hire fast. Rejected — the attrition risk window is exactly the 6 weeks when the hire hasn't landed.
+
+*Cost:* No incremental cost. Internal rotation. Small coordination overhead on Team 5 (Oliver's current PM handoff notes, 1 day). Low.
+
+*Risk reduction:* Covers the 6-week attrition-risk window on Team 2. Reduces Team 2's effective workload by ~6% for 6 weeks, which should get sustained weekend hours under 3.0 inside the window.
+
+*What we'd need to believe for this rec to be wrong:* That Team 5's redistribution problem is severe enough that removing Oliver at 50% tips Team 5 into its own overload crisis. Evidence that would prove this: if Team 5's per-person utilization (excluding Oliver) is already above 105%, then losing his 50% would push them into Team 2 territory. I pulled the numbers — Team 5 excluding Oliver is at 104% average, and Recommendation 3's scope cut reduces Team 5's Q4 load by the equivalent of ~0.8 FTE, net-netting Team 5 to 98-99% with Oliver at 50%. It's tight but workable. If partners reject Recommendation 3, this rec falls apart — flag.
+
+---
+
+**Recommendation 3: Deprioritize the Brightfield retainer or cap it at 25 hours/week (currently consuming 40 hours/week on Team 5).**
+
+*Reasoning:* Brightfield is 40% of Team 5's hours for 12% of Team 5's revenue. The scope creep happened gradually over 3 quarters and nobody formally reviewed it. Deprioritizing or capping the scope is the single highest-leverage move available on the capacity side. Two paths: (a) full deprioritization (end the retainer at quarter boundary, gives back 40 hrs/week, loses $38K Q4 revenue), (b) scope cap at 25 hrs/week (client conversation about trimmed deliverables, keeps retainer but recovers 15 hrs/week, zero revenue loss if client accepts). Recommended path: (b) first, escalate to (a) if client rejects the cap. Alternative considered: raise the retainer fee to match the scope. Rejected — Brightfield's budget is set for the year, unlikely to move mid-contract, and the conversation is harder than a scope conversation.
+
+*Cost:* Option (b): ~4 hours of partner time for the client conversation, plus Account Director prep. Zero revenue impact if accepted. Option (a) fallback: $38K Q4 revenue loss.
+
+*Risk reduction:* Recovers 15-40 Team 5 hours/week that can absorb Oliver's 50% departure plus buffer. Reduces Team 5's Q4 utilization from 110% forecast to ~98%. Also resets a client-scope pattern that's been quietly drifting for 3 quarters — prevents the drift from recurring.
+
+*What we'd need to believe for this rec to be wrong:* That Brightfield is strategically more important than the revenue suggests (e.g., they're a reference customer for a vertical we're entering, or they have a parent company that's our actual target account). I don't have that context — partners do. Flag for partner judgment. If Brightfield IS strategically load-bearing, this rec gets downgraded and we need to find 15 hrs/week of Team 5 relief elsewhere (likely from a smaller client or from deprioritizing internal work).
+
+---
+
+**Summary table for the exec summary:**
+
+| # | Rec | Cost | Risk reduced | Kill condition |
+|---|-----|------|--------------|----------------|
+| 1 | Hire mid-PM Team 2 by Wk 6 | $41K Q4 | Team 2 attrition risk | Overload not PM-gap-driven |
+| 2 | Rotate Oliver 50% to Team 2 | ~0 | 6-week attrition window | Team 5 overloads without Rec 3 |
+| 3 | Cap Brightfield at 25 hrs/wk | 0–$38K | Team 5 overload | Brightfield strategically load-bearing |
+
+**Honest note:** Rec 2 and Rec 3 are coupled. If partners approve Rec 1 but reject Rec 3, do NOT proceed with Rec 2 — Team 5 tips into overload. I'd rather re-scope Rec 2 to be a Team 3 junior rotation than execute it without Rec 3 in place. Flag this explicitly in the memo.$pf$,
+ $pf$Three recommendations (not four — pulled the fourth to preserve partner decision energy). Rec 1: Mid-level PM hire for Team 2 by Week 6 ($41K Q4, addresses root cause not symptoms, disconfirmation criterion checkable). Rec 2: Oliver 50% rotation to Team 2 as 6-week bridge (zero cost, covers the attrition-risk window). Rec 3: Brightfield retainer scope cap at 25 hrs/wk with full-deprioritization fallback (0–$38K, recovers 15 Team 5 hrs/wk). Each rec has cost, risk-reduction, and an explicit "what we'd need to believe for this to be wrong" disconfirmation line. Flags coupling between Rec 2 and Rec 3 — if Rec 3 is rejected, Rec 2 must be re-scoped to Team 3 junior rotation instead of executed standalone.$pf$),
+
+-- Step 4 --
+('66666666-6666-6666-6666-666666110104',
+ '55555555-5555-5555-5555-555555550017',
+ 4,
+ $pf$Dual memo — partner version + team-facing explainer$pf$,
+ $pf$Generate both deliverables. The 2-page partner memo in the structure from step 1 (exec summary, utilization snapshot table, the story behind the numbers, 3 recommendations with cost/risk/disconfirmation, risk watch, asks). AND a 400-word team-facing explanation I can share if anyone on the broader team asks "what's going on with the capacity review" — consistent with the partner memo but NO specific staffing recommendations leaked, NO individuals named, framed as "what the partners are thinking about for Q4" rather than "what's going to happen."$pf$,
+ $pf$Both below. Partner memo first, team-facing version second.
+
+---
+
+# PARTNER MEMO — Q4 CAPACITY PLAN
+
+**To:** Managing Partners
+**From:** Nina Kowalski, Operations
+**Date:** Friday, Oct 4
+**Read time:** 5 minutes
+
+## Executive summary
+
+- Team 2 and Team 5 ended Q3 in sustained overload. Team 2's pattern is headcount-driven (unreplaced PM from August); Team 5's is redistribution and scope-creep driven.
+- Three recommendations: hire a mid-level PM for Team 2 (target Wk 6), rotate Oliver 50% from Team 5 to Team 2 for the 6-week hiring window, cap the Brightfield retainer at 25 hrs/wk.
+- Total Q4 budget impact: ~$41K for the hire; 0 to $38K revenue impact depending on Brightfield outcome.
+- Recs 2 and 3 are coupled. If Rec 3 is rejected, Rec 2 must be re-scoped.
+
+## Utilization snapshot
+
+| Team | Q3 avg util | Weekend hrs/mo | 3-wk trend | Q4 forecast |
+|------|-------------|----------------|------------|-------------|
+| Team 1 | 89% | 0.8 | → | 85% |
+| Team 2 | 110% ⚠ | 4.3 ⚠ | ↑ | 118% ⚠ |
+| Team 3 | 84% | 0.5 | → | 86% |
+| Team 4 | 96% | 2.1 | ↑ | 98% |
+| Team 5 | 108% ⚠ | 3.1 ⚠ | → | 110% ⚠ |
+
+## The story behind the numbers
+
+Team 2 and Team 5 both average >100% utilization, but they are DIFFERENT problems. Team 2 has been running an 8.5-person-shaped pipeline with 8 people since we didn't backfill the PM who left in August. The overload is headcount-driven and getting worse — trend line accelerated from 105% early-Q3 to 110% late-Q3. Sustained weekend hours of 4.3 per person per month is the release valve, and it's the same leading indicator that preceded both Team 2 departures earlier this year.
+
+Team 5 looks similar on the headline number but the mechanism is different. The team is full at 10 people and has zero attrition, but Oliver moved to 80% in September and the work didn't redistribute. The Brightfield retainer has grown from 25 hrs/wk to 40 hrs/wk over three quarters through informal scope creep. Team 5's overload is fixable by scope discipline plus redistribution — it doesn't need headcount.
+
+Team 2 and Team 5 are coupled: Team 5's overflow has been landing on Team 2 across Q3, which is part of why Team 2's utilization accelerated. Fixing them independently won't work.
+
+## Recommendations
+
+**1. Hire a mid-level PM for Team 2, target start Week 6.** $41K Q4 budget impact. Addresses the unreplaced-PM root cause. Disconfirmation criterion: overload driven by Q4 pipeline expansion rather than PM gap — I've checked, it's the gap, rec stands.
+
+**2. Rotate Oliver 50% to Team 2 as a 6-week bridge.** Zero cost. Covers the attrition-risk window before the hire lands. Coupled with Rec 3 — if Team 5's scope is not reduced, this rec tips Team 5 into overload and must be re-scoped to a Team 3 junior rotation.
+
+**3. Cap the Brightfield retainer at 25 hrs/wk.** Brightfield is 40% of Team 5's hours for 12% of Team 5's revenue. Client conversation needed, 4 hours of partner time. Zero revenue impact if cap is accepted; $38K if client rejects and we deprioritize entirely. Disconfirmation criterion: Brightfield strategically load-bearing in ways the revenue doesn't reflect — flag for partner judgment, this is the one item I can't verify without you.
+
+## Risk watch
+
+- **Team 4** is at 96% trending up (94/96/98/97 across the last 4 weeks). Not a Q4 action item. Re-check in Week 6 — if trend continues, consider Q1 action.
+- **Team 5 NPS** dropped from +48 to +31 in Q3. I've not yet verified whether the drop is concentrated in 1–2 client accounts or distributed. If concentrated, Rec 3 should be re-pointed at the specific underperforming account. Verification underway this week.
+
+## Asks
+
+1. Approve Rec 1 (PM hire, $41K Q4) or redirect to senior-PM with 14-week recruiting runway.
+2. Approve Rec 3 (Brightfield cap) or flag strategic importance for alternate scope-cut target.
+3. Partner to lead the Brightfield client conversation — I'd recommend whoever has the primary relationship.
+
+---
+
+# TEAM-FACING EXPLAINER (400 words)
+
+**What's going on with the capacity review this quarter**
+
+A few of you have asked what's happening with Q4 capacity planning, so I wanted to share the shape of the conversation the partners are having this week. I'll share specific outcomes once they're decided — but I want to be up front about what's on the table so there's no rumor mill doing the work I should be doing.
+
+Q3 ended with two teams carrying more than their sustainable load. That's not a surprise to the folks on those teams — you've been feeling it. It IS something the partners want to address head-on in Q4 rather than hope it resolves itself. The purpose of this week's capacity review is specifically to decide what changes, where, and when.
+
+A few things the partners are talking about: whether to add headcount on a team that's been short a role since late summer, whether to shift how scope is handled on one account that's grown informally over several quarters, and whether any internal rotations would help bridge a tight stretch at the start of Q4. Nothing is decided yet. I'll share the specifics once the partners have made their calls — likely by Friday of next week.
+
+A few things that are NOT on the table, so I can clear the air: no layoffs are being discussed. No teams are being consolidated or broken up. This is capacity planning in the normal sense — where are the workloads, where are the stress points, how do we adjust for Q4.
+
+What you can do this week: if you're on a team that's been running hot and you haven't already told your manager, now's the right time. We use a mix of utilization data and direct input, and the utilization data lags the actual experience by about 2–3 weeks. If you've been covering for someone or absorbing scope creep, we'd rather hear it now than guess. Your manager has a one-on-one slot this week specifically for this — use it.
+
+The decisions from this review will affect a couple of teams more than others. If they affect yours, your manager will walk you through them in person before any broader communication. That's the standard we're holding, and it's the ground rule the partners asked me to set for how this rolls out.
+
+Questions — come find me or ping me on Slack. I'd rather you ask than guess.
+
+— Nina
+
+---
+
+**Note on the dual-deliverable design.** The partner memo and team-facing version are written at different altitudes but are consistent. The team-facing version does NOT name individuals, does NOT leak the Brightfield client name or the specific $41K hire cost, and does NOT commit to decisions that haven't been made. What it DOES do is name that hard things are being discussed (so silence doesn't create worse rumors), explicitly name what's NOT being discussed (the layoff rumor is the biggest one, addressed head-on), and give team members a concrete action (talk to your manager this week). The second one is the thing that matters most — telling people "something's happening" without giving them an action is how anxiety compounds.$pf$,
+ $pf$Two deliverables. Partner memo is 2 pages: exec summary with total cost and coupling warning, inline utilization snapshot table with ⚠ markers, 150-word causal paragraph explaining why Team 2 and Team 5 are different problems despite similar headline numbers, 3 recommendations with disconfirmation criteria, risk watch flagging Team 4 and the NPS verification, 3 specific asks. Team-facing version is 400 words: names that hard things are being discussed, explicitly names the layoff rumor as NOT on the table, gives team members a concrete action (talk to your manager this week), commits to manager-led personal comms before broader rollout. Closing note distinguishes the altitudes — what the team-facing version deliberately excludes (individual names, specific costs, undecided decisions) vs what it includes (the layoff-rumor head-on address, the concrete action).$pf$);
+
 -- END OF FILE — append next project(s) below this line.
 -- Iterations working the Content queue: add 2–3 projects per iteration,
 -- appending below this comment. Do NOT rewrite existing projects.

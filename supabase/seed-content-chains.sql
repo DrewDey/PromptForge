@@ -4080,6 +4080,604 @@ Framework needs to be usable by the CEO and the board, not just finance. Plain l
  $pf$Six signals (pipeline coverage, NRR, cash runway, burn multiple, new-logo win rate, eng shipping cadence) each with healthy band, trigger level, and specific pre-committed action. Framework converts "we'll revisit" into "if X then Y within Z days." Engineering shipping cadence deliberately included as a financial signal. CAC payback deliberately excluded as trailing. Ready for monthly ops + quarterly board use.$pf$);
 
 -- =========================================================================
+-- Project 55-0014 | Pricing page rewrite for a PLG SaaS | Sarah Mitchell | Marketing | 3 steps
+-- =========================================================================
+
+DELETE FROM prompt_steps WHERE prompt_id = '55555555-5555-5555-5555-555555550014';
+DELETE FROM prompts      WHERE id        = '55555555-5555-5555-5555-555555550014';
+
+INSERT INTO prompts (
+  id, title, description, content, result_content,
+  category_id, difficulty, model_used, model_recommendation,
+  tools_used, tags, status, author_id, vote_count, bookmark_count
+) VALUES (
+  '55555555-5555-5555-5555-555555550014',
+  $pf$Pricing page rewrite for a PLG data-prep SaaS — from a wall of copy to one scroll that answers "what does this cost?" before the fold$pf$,
+  $pf$Client's pricing page was generating 40+ "what does this actually cost?" support tickets a month on a product with a free tier. Rewrote it in three passes with Claude Opus 4.7: diagnose why the current page was failing, draft the new page end-to-end, then ship the launch plan (A/B test spec, announcement post, sales enablement diff).$pf$,
+  $pf$I'm a freelance marketing consultant and this was for a PLG client — a data-prep tool for analysts, Series A, 4,200 active free users, ~$85K MRR on paid. Their head of growth came to me with a specific complaint: their pricing page was somehow generating MORE "what does this actually cost?" conversations with sales than their competitor's page that listed "Contact us" and no numbers. That's not supposed to be possible. Their page had a full pricing table, a "compare plans" section, and a FAQ. But visitors were bouncing to intercom at a 7% rate after landing on pricing — every visitor bouncing to support was a visitor who didn't self-serve to a plan.
+
+Three passes with Opus 4.7, which I pick over Sonnet for this kind of work because pricing copy has a lot of load-bearing judgment calls that benefit from heavier reasoning. Pass 1 was a diagnosis of the current page — I pasted the full copy and Claude walked through every section identifying what was breaking. Pass 2 was the full rewrite based on the diagnosis. Pass 3 was the launch plan: A/B test spec, internal announcement for sales, and the FAQ diff for the support team.
+
+Whole project took me about 4 hours of actual work, maybe half the time this kind of rewrite takes me solo.$pf$,
+  $pf$New page is running as the B variant against the old page for 14 days starting Monday. Early signal (first 5 days): intercom handoff rate from /pricing dropped from 7.1% to 2.3%. Self-serve conversion (free → paid) up from 1.1% to 1.8%. Time-on-page dropped from 3:40 to 1:55 — which the growth head initially worried about, but the conversion metrics argue it's people deciding faster, not disengaging.
+
+Two observations that surprised me. First: the single biggest lift came from moving pricing numbers ABOVE the fold with one-line plan descriptions, which every conversion-rate-optimization piece tells you to do but the client had resisted because "our tiers need context." They didn't — visitors resolve context once they see the numbers, not before. Second: the FAQ section in the rewrite is shorter than the old one (6 questions vs. 14), and the intercom volume on pricing questions is way down. More FAQ wasn't helping; cleaner FAQ with ONLY the real blockers was.
+
+What I'd tell another marketer: resist the urge to let the product team load the pricing page with "explanations." A pricing page isn't a feature tour. The answer the visitor came for is always "what does it cost and what do I get." Lead with that; everything else earns a link, not a section.$pf$,
+  '11111111-1111-1111-1111-111111111102',
+  'intermediate',
+  'claude-opus-4-7',
+  'Claude 4.7 Opus',
+  ARRAY['Claude','Notion','Figma','Google Optimize'],
+  ARRAY['marketing','saas','pricing','conversion','copywriting','plg'],
+  'approved',
+  '22222222-2222-2222-2222-222222222202',
+  74, 41
+);
+
+INSERT INTO prompt_steps (id, prompt_id, step_number, title, content, result_content, description) VALUES
+
+-- Step 1 --
+('66666666-6666-6666-6666-6666666E0101',
+ '55555555-5555-5555-5555-555555550014',
+ 1,
+ $pf$Diagnose the current pricing page — why are visitors bouncing to support?$pf$,
+ $pf$I need your help diagnosing a broken pricing page. Client is a PLG data-prep SaaS — think "Airbyte for analysts." Four plans: Free, Pro ($29/seat/mo), Team ($79/seat/mo), Enterprise (contact sales). Target buyer is an analyst or small data team, not a procurement-led buy.
+
+The problem: their pricing page has a 7.1% intercom-handoff rate. Of every 100 visitors, 7 click the support widget and ask variants of "how much does this actually cost" or "which plan do I need." That's absurd for a page that literally lists prices. Their sales team is spending hours a week on pricing questions from people who should be self-serving.
+
+I'm going to paste the current page copy below. I want your diagnosis: what specifically is failing, ranked by impact. Don't give me generic CRO advice — I want section-by-section critique tied to why each problem drives a support ticket or a bounce. At the end, summarize the top 3 most damaging issues.
+
+Here's the current copy:
+
+---
+
+**HEADLINE:** "Pricing that grows with your team."
+
+**SUBHEAD:** "Start free. Upgrade when you're ready to unlock the full power of [Product]'s data prep, workflow automation, and team collaboration."
+
+**HERO CTA:** "See all plans ↓" (anchor link to plan table below)
+
+**MID-SECTION (before the plan table):** Three-column feature grid showing "What you get with [Product]" — icons for "Powerful transformations", "Enterprise-grade security", "Team collaboration". Roughly 60 words of copy per column.
+
+**PLAN TABLE:** Four columns (Free, Pro, Team, Enterprise). 23 feature rows with checkmarks. Features include things like "Unlimited transformations", "Row-level lineage", "SSO", "Custom retention policies". No prices at the top of the columns — the prices ($0, $29, $79, Contact) are in row 1 of the table.
+
+**BELOW THE TABLE:** "Still not sure? Chat with our team." with a prominent "Talk to sales" CTA button.
+
+**FAQ:** 14 questions. Mix of "what's included", "how does billing work", "do you offer discounts for nonprofits", "is there an annual discount", "what's the difference between Pro and Team", "can I upgrade later", etc.
+
+**FOOTER CTA:** "Ready to get started?" + "Start free" and "Talk to sales" buttons.
+
+---
+
+Diagnose it. Where's this page losing people?$pf$,
+ $pf$This page is doing three things wrong, and each one maps directly to the "what does this actually cost" support tickets you're seeing. Let me walk through it.
+
+**The headline is an aspiration, not a value prop, and the subhead doubles down.** "Pricing that grows with your team" answers a question nobody asked. A visitor on /pricing has exactly one question: what does it cost and what do I get? Your headline should resolve that question in the first three seconds. The subhead then lists three noun phrases (data prep, workflow automation, team collaboration) that are also on the homepage, the features page, and probably the blog. The visitor didn't come to /pricing to re-read the features tour. This is noise where signal should be.
+
+**The "See all plans ↓" anchor link is the tell.** You have a CTA asking the visitor to scroll to content that should already be visible. Anchor-link CTAs on a pricing page are almost always a symptom of the fold being wasted on something other than prices. If the visitor has to click something to see numbers, numbers are buried, and burying numbers is the #1 driver of intercom-handoff tickets on pricing pages. This single design choice is probably 40% of your problem.
+
+**The mid-section feature grid is a feature tour in pricing clothing.** "What you get with [Product]" — if the visitor is on /pricing, they already decided they want the product. They're now evaluating fit. The feature grid recapitulates marketing content and pushes the actual pricing further down. Cut it entirely. It's not just neutral real estate; it's negative real estate, because it tells the visitor "we'd rather sell you one more time than show you the price."
+
+**The plan table buries the prices in row 1.** This is the most fixable piece. Prices should sit in the column header, in a dominant type size, above a one-line plan description ("For individual analysts", "For data teams of 3-15", etc). The way you have it, the visitor's eye lands on column headers that say "Free / Pro / Team / Enterprise" — which are marketing labels, not information. They scan down, hit 23 rows of checkmarks, and have to mentally parse which column they're in to find their price. Many won't; they'll bounce to intercom.
+
+**23 feature rows is too many.** A feature comparison table is supposed to disambiguate the two plans a visitor is torn between — usually Pro vs Team, or Team vs Enterprise. When you list every feature in every plan, you're optimizing for a compliance audit, not a purchase decision. Cut to the 8-10 features that actually differ meaningfully between plans. Put "see full feature list" as a link beneath.
+
+**The FAQ has 14 questions — most of them are not real blockers.** "Do you offer nonprofit discounts" is in the 2% tail. "Can I upgrade later" is answered by "start free" — nobody hesitates to start free because they're worried about being locked in. Meanwhile "what's the difference between Pro and Team" is a real purchase blocker and it's buried as question #7. Ruthlessly cut to the 5-6 FAQs that are actual sales blockers. An over-long FAQ signals "we haven't thought hard about what confuses people," and it does confuse them — the more options, the more visitors reach for intercom instead of reading them.
+
+**The "Still not sure? Chat with our team" CTA between the plan table and the FAQ is actively generating your support tickets.** You're explicitly inviting a visitor who hasn't decided yet to click intercom. That's a self-inflicted wound. Move any "contact sales" CTA to only exist in the Enterprise column of the plan table, where it's the actual correct path. Everywhere else, the CTA should be "start free" — because for a PLG product with a free tier, the answer to "I'm not sure" is "try it," not "talk to us."
+
+---
+
+**Top 3 most damaging issues, ranked:**
+
+1. **Prices aren't above the fold.** Subhead + anchor CTA + feature grid push actual pricing numbers below the scroll. This single issue is the primary driver of the intercom-handoff rate. Fix: numbers in column headers, column headers above the fold, no mid-section feature grid.
+
+2. **Misplaced "talk to sales" CTAs.** You're explicitly inviting undecided visitors to chat, then wondering why they chat. Kill the mid-page "still not sure" CTA. Move contact-sales to Enterprise-column only.
+
+3. **FAQ bloat masking real blockers.** 14 FAQs with the wrong ones prominent. Cut to 5-6 that address actual purchase blockers (Pro vs Team difference, seat definition, annual discount, what happens at free-tier limits, cancellation terms).
+
+Do the rewrite next. These three fixes alone should move your intercom-handoff rate under 3% without changing a single feature or price.$pf$,
+ $pf$Section-by-section diagnosis identifying seven specific failures — aspirational headline, anchor-link CTA hiding prices, unnecessary feature grid, buried prices in plan-table rows, 23-row feature bloat, FAQ with wrong questions prominent, and misplaced "talk to sales" CTA generating support tickets. Closes with a 3-item impact-ranked shortlist: prices above the fold, kill the mid-page sales CTA, cut the FAQ to real blockers.$pf$),
+
+-- Step 2 --
+('66666666-6666-6666-6666-6666666E0102',
+ '55555555-5555-5555-5555-555555550014',
+ 2,
+ $pf$Rewrite the full page — hero, plan table, FAQ, CTAs$pf$,
+ $pf$The diagnosis is right on every count. The client's head of growth pushed back softly on "cut the feature grid" — his argument was "our tiers need context." I argued back with your point that visitors resolve context once they see numbers, not before. He agreed to try it.
+
+Now I need the full rewrite. Produce complete copy for the new page: headline + subhead, the four plan cards (with prices, one-line plan descriptions, 4-6 included bullets each, and the correct CTA per plan), a tightened feature-comparison table (only differentiated features), 6-question FAQ answering the real blockers, and footer CTA.
+
+Target audience stays the same: analysts and small data teams, self-serve buyer on Free/Pro/Team, procurement-involved on Enterprise. Tone: direct, practical, no marketing fluff. Style reference: Linear's or PostHog's pricing page — information-dense, confident, zero hand-holding.
+
+Give me the full copy. I'll hand it to their designer as-is.$pf$,
+ $pf$Full rewrite below. I've kept the four-plan structure but every other element is new or recomposed. The headline and plan-card structure are load-bearing — those are the ones to protect if the client tries to negotiate individual pieces.
+
+---
+
+**HEADLINE (above-the-fold, dominant):** Simple pricing for analysts and data teams.
+
+**SUBHEAD (one line, below headline):** Start free. Upgrade per seat when your team needs more.
+
+**— No hero CTA button. No anchor link. The plan cards sit immediately below. —**
+
+---
+
+**PLAN CARDS (four columns, prices in dominant type, description + bullets + CTA per card):**
+
+**Free**
+$0
+For trying [Product] on your own projects.
+- 3 active workflows
+- 10K rows per month
+- Community support
+- Single user
+
+[CTA: Start free →]
+
+**Pro**
+$29 / seat / month
+For individual analysts who need more than free.
+- Unlimited workflows
+- 5M rows per month per seat
+- Row-level lineage
+- Email support (48h)
+- Up to 3 seats
+
+[CTA: Start free, upgrade anytime →]
+
+**Team** (recommended — subtle outline or accent, not a screamer badge)
+$79 / seat / month
+For data teams sharing workflows and reviewing each other's work.
+- Everything in Pro
+- Shared workspaces + review comments
+- 25M rows per month per seat
+- Priority email support (24h)
+- Slack integration
+- Audit log (90 days)
+
+[CTA: Start 14-day Team trial →]
+
+**Enterprise**
+Custom
+For organizations with SSO, procurement, or compliance needs.
+- Everything in Team
+- SSO (SAML, Okta, Azure AD)
+- Custom row limits
+- Dedicated success manager
+- SOC 2 Type II report + DPA
+- Audit log (unlimited retention)
+
+[CTA: Talk to sales →]
+
+---
+
+**BELOW THE CARDS — tightened comparison table (collapsed by default, "See full plan comparison ↓" to expand):**
+
+Only 9 rows, all differentiated features:
+
+| | Free | Pro | Team | Enterprise |
+|---|---|---|---|---|
+| Monthly rows | 10K | 5M / seat | 25M / seat | Custom |
+| Max seats | 1 | 3 | 15 | Unlimited |
+| Shared workspaces | — | — | ✓ | ✓ |
+| Row-level lineage | — | ✓ | ✓ | ✓ |
+| Slack integration | — | — | ✓ | ✓ |
+| SSO | — | — | — | ✓ |
+| Support SLA | Community | 48h | 24h | 4h + DSM |
+| Audit log retention | — | — | 90 days | Custom |
+| DPA + SOC 2 | — | — | — | ✓ |
+
+---
+
+**FAQ (6 questions — real purchase blockers only):**
+
+**How do I know if I need Pro or Team?**
+If it's just you, you need Pro. If more than one person is writing or reviewing workflows, you need Team — the shared-workspace feature is the entire reason Team exists. The row limit is rarely the deciding factor; the collaboration layer is.
+
+**What counts as a "seat"?**
+Anyone who logs in and creates or edits workflows. View-only access to shared workspaces doesn't count against seats on Team plans — your stakeholders can review runs without a paid seat.
+
+**Do you offer an annual discount?**
+Yes — 20% off list price when billed annually. It's not shown above because we don't want to clutter the cards; it's applied in the checkout flow when you select "bill annually."
+
+**What happens when I hit the free-tier row limit?**
+Your workflows pause until the next month or until you upgrade. Nothing gets deleted and you don't get surprise-billed. You can switch to Pro at any point and picked-up data processes immediately.
+
+**Can I cancel anytime?**
+Yes. Month-to-month plans can be canceled anytime and take effect at the next billing cycle. Annual plans don't auto-renew if you cancel before the renewal date.
+
+**How is Enterprise priced?**
+Based on row volume and seat count, usually with a platform fee for SSO and the DSM. Budget for $25K+/year — below that, Team is the better fit.
+
+---
+
+**FOOTER CTA:**
+
+Ready to try it?
+[Start free] [Talk to sales]
+
+— End of page. No additional sections. —
+
+---
+
+**A note on what I cut from the old page and why:**
+
+- The homepage-style feature grid is gone. On /pricing the visitor already wants the product; stop re-selling it.
+- Every FAQ below the real-blocker 6 is gone. "Do you offer nonprofit discounts" goes in a separate /discounts page linked from the footer.
+- The mid-page "Talk to sales" CTA is gone. Contact-sales now lives only in the Enterprise card.
+- The "Enterprise-grade security" bullet point on the homepage feature grid doesn't appear here at all — Free/Pro/Team visitors don't buy on security bullets. The procurement buyer hits the Enterprise card and sees SOC 2 + DPA listed there, where it's actually purchase-relevant.
+
+The rewrite answers "what does this cost and what do I get" within one viewport on every screen size. Everything else is opt-in.$pf$,
+ $pf$Complete replacement copy — new headline/subhead, four plan cards with dominant prices and correct CTA per tier, 9-row differentiated comparison table (collapsed by default), 6-question FAQ covering actual purchase blockers, and a lean footer CTA. Explicit note on what's deliberately cut and why — feature grid gone, non-blocker FAQs gone, mid-page "Talk to sales" gone, security bullets moved to Enterprise-card-only.$pf$),
+
+-- Step 3 --
+('66666666-6666-6666-6666-6666666E0103',
+ '55555555-5555-5555-5555-555555550014',
+ 3,
+ $pf$Launch plan — A/B test setup, sales announcement, support FAQ diff$pf$,
+ $pf$Copy is approved. Designer will have the page ready Thursday. Two things left:
+
+(1) A/B test spec. Client uses Google Optimize. I need a clean spec the growth head can hand to the data team — primary metric, secondary metrics, segmentation, sample size, what "winning" means, when we stop. Their monthly traffic to /pricing is ~14,000 unique visitors. Current free-to-paid conversion from /pricing is 1.1%, paid-to-sales-call is 0.8%.
+
+(2) Sales + support enablement. Sales team (3 AEs) needs to know what changed and what to expect in their pipeline. Support team needs a quick FAQ diff so they stop answering questions the new page answers. Keep both internal and short — the goal is "read once, done."
+
+Ship both. Then I'm out.$pf$,
+ $pf$Here's both. I've written them tight so they get read.
+
+---
+
+**1. A/B TEST SPEC — /pricing page rewrite**
+
+**Hypothesis:** The rewritten /pricing page will reduce intercom-handoff rate, increase self-serve conversion (free tier starts from /pricing), and shorten time-to-decision. We expect the effect to be visible within 7-10 days at current traffic levels.
+
+**Variants:**
+- **Control (A):** Current /pricing page (unchanged).
+- **Treatment (B):** Rewritten page per the approved copy doc.
+
+**Traffic split:** 50/50, randomized at session level, sticky for 30 days (so a visitor doesn't bounce between variants).
+
+**Primary metric:** Free-tier signup conversion from /pricing. Currently 1.1%. Minimum detectable effect at 80% power: +0.4pp (i.e., detect 1.1% → 1.5%+). At 14K/month traffic with 50/50 split, we hit the MDE in ~10 days.
+
+**Secondary metrics (tracked, not deciding):**
+- Intercom-handoff rate from /pricing (currently 7.1%). Expect to drop.
+- Paid-conversion rate from /pricing via Pro/Team trial CTAs. Expect to rise.
+- /pricing → Enterprise "Talk to sales" rate. Expect to rise modestly (because the CTA is now correctly placed where the procurement buyer lands).
+- Time on page. Will drop — this is EXPECTED and is NOT a failure signal.
+- Bounce rate. Should be roughly unchanged. If it spikes, investigate.
+
+**Segmentation to track (do not use for go/no-go, just for learning):**
+- Mobile vs desktop — rewrite should perform directionally better on mobile because the old page's fold-below-fold problem was worse there.
+- Paid vs organic traffic source.
+- Returning vs new visitors.
+
+**"Winning" definition:** Primary metric lift ≥ +0.3pp at p < 0.05 AND intercom-handoff rate does not rise.
+
+**Stopping rule:** Run for minimum 14 days. Do not stop early even if results look good by day 5 — early-stop bias is real and the secondary metrics (especially time-to-decision by segment) need the full window to stabilize.
+
+**Rollback condition:** If intercom-handoff rate rises by >1pp or primary metric drops by >0.2pp with p<0.1, stop the test and revert. Neither is expected.
+
+---
+
+**2. SALES TEAM ENABLEMENT (email to 3 AEs) — "/pricing page changes — what to expect this sprint"**
+
+Hi team,
+
+Launching a rewritten /pricing page Monday as an A/B test (50/50). Three things to know:
+
+1. **Prices now sit above the fold.** Most visitors will resolve the "which plan" question without talking to us. Expect a modest drop in inbound "which plan should I be on" chats, and a modest rise in inbound chats explicitly about Enterprise (SSO, compliance, procurement).
+
+2. **"Talk to sales" CTA now lives only in the Enterprise column.** If you see anyone reaching out through intercom asking about Pro or Team pricing, route them to the self-serve trial — do not take that call, it's not an Enterprise motion. The page is now written to send self-serve buyers to self-serve and Enterprise buyers to you.
+
+3. **New FAQ explicitly says "Enterprise budget is $25K+/year, below that Team is the better fit."** This is deliberate. We're seeing too many <$15K deals eat AE pipeline hours. Expect fewer small-Enterprise inquiries. If anyone DOES inquire sub-$25K, the move is Team pricing + a gentle education on the tier.
+
+Any pushback, reply this thread before Friday and I'll take it to growth.
+
+— Sarah
+
+---
+
+**3. SUPPORT TEAM FAQ DIFF (Intercom saved replies — remove / add)**
+
+**REMOVE these saved replies** (questions the new page answers itself):
+- "What's the difference between Pro and Team?" — answered in FAQ Q1.
+- "What counts as a seat?" — answered in FAQ Q2.
+- "What happens when I hit the free-tier limit?" — answered in FAQ Q4.
+- "Is there an annual discount?" — answered in FAQ Q3.
+- "Can I cancel?" — answered in FAQ Q5.
+
+**ADD these saved replies** (new edge cases the page may surface):
+- "Why doesn't the comparison table show every feature?" — Reply: "We cut the comparison table to only features that differ between plans. The full feature list lives at /features. If there's a specific feature you're trying to find, reply here and I'll confirm which plan it's on."
+- "My nonprofit/student discount" — Reply: "We do offer both — it's at /discounts. Want me to send you the link?"
+- "Enterprise pricing ballpark" — Reply: "Enterprise pricing typically starts at $25K/year — it's based on your row volume and seat count. If your budget's below that, Team is likely the better fit. Want me to set up a call with sales to scope?"
+
+**Expect overall /pricing-tagged intercom volume to drop by ~60%** within the first week. That's the point. If volume STAYS high, escalate to growth — it means the rewrite isn't landing and we need to rethink.
+
+---
+
+That's everything. Test goes live Monday, 14-day minimum run, reconvene on [Monday + 15 days] to read results and decide on full cutover. Good luck — this is a solid rewrite and I expect it to win.$pf$,
+ $pf$Launch package: A/B test spec with primary/secondary metrics, segmentation, explicit "winning" definition and stopping rule; 3-paragraph sales email flagging self-serve routing discipline and the $25K+ Enterprise floor; support-team Intercom saved-reply diff removing 5 now-answered FAQs and adding 3 new-edge-case replies. Closes with a specific rollback condition and a reconvene date.$pf$);
+
+-- =========================================================================
+-- Project 55-0015 | Suspicious 34% A/B test lift — 4-pass investigation | Raj Patel | Data | 4 steps
+-- =========================================================================
+
+DELETE FROM prompt_steps WHERE prompt_id = '55555555-5555-5555-5555-555555550015';
+DELETE FROM prompts      WHERE id        = '55555555-5555-5555-5555-555555550015';
+
+INSERT INTO prompts (
+  id, title, description, content, result_content,
+  category_id, difficulty, model_used, model_recommendation,
+  tools_used, tags, status, author_id, vote_count, bookmark_count
+) VALUES (
+  '55555555-5555-5555-5555-555555550015',
+  $pf$Suspicious 34% checkout-conversion lift — 4-pass A/B test investigation before I blessed the rollout$pf$,
+  $pf$Client's growth team ran a checkout-page A/B test and celebrated a +34% conversion lift. Before I signed off on rollout, I ran four passes of diagnostics with Claude Opus 4.6: sanity-check the spec, dig into SRM and segments, re-run the stats properly, write the decision memo. Real lift turned out to be about 5%, not 34% — and the fix was a Simpson's paradox in the segmentation.$pf$,
+  $pf$I freelance as a data consultant for a handful of e-commerce clients. This one was a DTC skincare brand, ~$14M in annual run-rate, running a checkout-page A/B test: removing a third-party trust-badge row vs. keeping it. The growth PM sent me the results with a "we're rolling this out tomorrow, wanted your blessing" note. The headline number was +34% conversion on the treatment (badges removed). For context, that's absurd — realistic checkout-page A/B tests lift 1-8%. A 34% lift means either the prior control was catastrophic (it wasn't — they'd tested it to baseline a month earlier) or the experiment had a data quality problem.
+
+Four passes with Opus 4.6 over about 3 hours. Pass 1 was a read of the experiment spec + surface numbers — Claude flagged six things worth checking before touching the data. Pass 2 was SRM (sample ratio mismatch) analysis and segment decomposition — which is where we found the real problem. Pass 3 was the corrected statistical analysis with the right segmentation. Pass 4 was the decision memo I sent the PM.
+
+I picked Opus 4.6 over Sonnet because the statistical reasoning in pass 2 and 3 has real judgment calls — picking the right multiple-testing correction, deciding when Simpson's paradox matters vs. doesn't, how to talk about confidence intervals to a non-stats audience. That's exactly the work that pays for the extra capability.$pf$,
+  $pf$Real lift, corrected: +4.8% conversion on mobile Safari users only. On every other browser/device combo the treatment was statistically indistinguishable from control (p > 0.3). Net business impact: ~$180K/year in incremental revenue if rolled out to all traffic, versus the ~$1.3M/year the original "+34% overall" number implied. Order of magnitude off.
+
+The cause was a Simpson's paradox. The test had a traffic routing issue at the load-balancer level that was over-assigning mobile Safari to the treatment bucket (74% of mobile Safari traffic ended up in treatment vs. the intended 50%). Mobile Safari users also happened to convert at a higher baseline rate than any other segment due to the brand's instagram-ad-driven acquisition skew. So the treatment bucket got over-weighted on the highest-converting segment, inflating the aggregate number to +34%.
+
+What I sent the PM: roll out the treatment, but roll it out only to mobile Safari for a true re-measurement period, and flag the load-balancer routing bug to engineering. She was initially frustrated — $1.3M is a lot of projected revenue to lose on paper — but four months later told me it saved her from an embarrassing board slide. What I'd tell another data person: the right response to a too-good-to-be-true number is always "trust nothing, check everything." Growth teams don't want you to slow them down; they want you to NOT let them celebrate a phantom.$pf$,
+  '11111111-1111-1111-1111-111111111108',
+  'advanced',
+  'claude-opus-4-6',
+  'Claude 4.6 Opus',
+  ARRAY['Claude','SQL','Python','Snowflake'],
+  ARRAY['data','ab-testing','statistics','experimentation','simpsons-paradox','srm'],
+  'approved',
+  '22222222-2222-2222-2222-222222222207',
+  91, 54
+);
+
+INSERT INTO prompt_steps (id, prompt_id, step_number, title, content, result_content, description) VALUES
+
+-- Step 1 --
+('66666666-6666-6666-6666-6666666F0101',
+ '55555555-5555-5555-5555-555555550015',
+ 1,
+ $pf$Sanity-check the test spec and surface numbers — what would you check before touching the data?$pf$,
+ $pf$I freelance as a data consultant. One of my clients — a DTC skincare brand, ~$14M ARR — just sent me A/B test results with a "we're rolling this out tomorrow, bless it" note. The PM wants a thumbs up.
+
+The test: checkout page, treatment removes a third-party trust-badge row (Verisign, BBB, "100% secure checkout" icons) above the credit-card input. Control keeps the badges. Hypothesis: badges add visual noise and slightly lower perceived trust by flagging "why would they need to reassure me?"
+
+Traffic: ~280K sessions in the 14-day test, split 50/50. Primary metric: checkout completion rate (of sessions that reached the /checkout page, % that completed the purchase).
+
+Results they sent:
+- Control: 4.8% checkout completion (6,720 conversions / 140,000 sessions)
+- Treatment: 6.4% checkout completion (8,960 conversions / 140,000 sessions)
+- "Lift: +34%, p < 0.001"
+
+A 34% lift on a checkout-page UI change is implausible. I've been doing this 8 years, never seen a legit double-digit lift on a checkout UI test that replicated on rollout. My gut says this is a data or experiment-setup problem, not a real effect.
+
+Before I pull any data: what would you check, specifically? Rank by likelihood of being the actual issue.$pf$,
+ $pf$Your gut's right. A 34% lift on a checkout trust-badge removal is ~5x the ceiling of what's plausible for this kind of change, and the published literature on trust-badge experiments (Shopify, Baymard Institute, Good UI) shows effects in the ±2-5% range with high variance. Before touching the data, here's what I'd check, ranked by likelihood:
+
+**1. Sample ratio mismatch (SRM) — highest likelihood.** The reported numbers are conveniently 140,000 / 140,000, which the PM probably reported as "50/50." But real A/B test traffic splits are almost never exactly even — the expected variance on 280K sessions at a 50/50 split is ±~350 per bucket at 3σ. If the actual raw numbers before reporting were, say, 120,000 control / 160,000 treatment, that's a 43/57 split and a screaming SRM. SRMs are the #1 cause of inflated lift numbers in my experience. Check: raw session counts by variant before any aggregation. Chi-square test on the split vs. expected 50/50.
+
+**2. Traffic composition imbalance between buckets.** Even if the raw split is 50/50, the COMPOSITION of traffic could be skewed. If the treatment bucket is over-represented on a high-converting segment (e.g., returning customers, mobile users, Instagram-ad traffic) and under-represented on a low-converting one, the aggregate lift is a weighted-average artifact — Simpson's paradox territory. Check: conversion rate by variant, WITHIN each of these segments: device (mobile/desktop/tablet), traffic source (paid social, organic, direct, email), returning vs. new visitor, browser. If the treatment lift exists primarily or entirely within one segment AND that segment is over-represented in treatment, you've found your explanation.
+
+**3. Experiment contamination.** Was the test actually randomized at the session level, or at the page level? If it was page-level (visitor sees treatment on /checkout but control on /cart), carryover effects matter. Worse: if the randomization was on session start but the session spans multiple days, users might have been re-bucketed — returning users over-counting in whichever bucket loaded first. Check: bucket assignment stability per user_id, and whether any user_id appears in BOTH buckets.
+
+**4. Instrumentation or tracking bug in treatment.** Did removing the trust-badge row affect anything else on the page — script load order, event-firing timing, the placement of the "complete purchase" button? If the treatment also accidentally sped up the page load by 400ms, you're measuring page-speed effects, not trust-badge effects. Check: compare page-load times between variants (from frontend analytics or server logs). Any difference > 50ms is suspicious.
+
+**5. Novelty / day-of-week effect.** The test ran 14 days, which is fine for a steady-state signal. But if traffic composition varied across the run (weekends skew one way, Black Friday-ish promotional days skew another) and the randomization wasn't stratified by day, you could see spurious lift. Check: daily conversion rate by variant across all 14 days. The lift should be roughly constant. If it appears/disappears on specific days, investigate what changed.
+
+**6. Metric definition drift.** What exactly counts as a "session that reached /checkout"? Is it a pageview, a specific event, a user-id? If the treatment removed an element that happened to be below-the-fold on mobile and the pageview event fired slightly differently, the denominator between variants may not be comparable. Check: session count methodology. Confirm both variants use the same event trigger and the same deduplication logic.
+
+---
+
+**My strongest prior:** it's #1 (SRM) or #2 (segment imbalance via Simpson's), and these often co-occur. A load-balancer or traffic-routing bug can cause #1, which cascades into apparent #2 because load balancers often route on IP-based heuristics that correlate with segment (e.g., residential vs. mobile-carrier IP ranges).
+
+Start with #1 — pull the raw session counts by variant, run a chi-square against 50/50. If that's clean, move to #2. Don't bother with #3-6 until you've ruled out the top two; they're real but comparatively rare. Report back and we'll go from there.$pf$,
+ $pf$Ranks six pre-data checks by likelihood: SRM first, segment composition imbalance second (explicitly flagging Simpson's paradox), then contamination, instrumentation bugs, day-of-week confounds, metric-definition drift. Names "load-balancer routing correlated with segment" as the specific co-occurrence pattern to watch for. Explicit instruction to resolve #1 and #2 before investigating anything else.$pf$),
+
+-- Step 2 --
+('66666666-6666-6666-6666-6666666F0102',
+ '55555555-5555-5555-5555-555555550015',
+ 2,
+ $pf$SRM check + segment decomposition — found it$pf$,
+ $pf$Pulled the raw numbers. SRM first:
+
+- Control bucket: 136,118 sessions
+- Treatment bucket: 143,882 sessions
+- Chi-square against expected 50/50: χ² = 210.8, p ≈ 5e-48
+
+That's a catastrophic SRM. Actual split is 48.6% / 51.4%, not 50/50. So the PM's "140K / 140K" was a rounded number, not the real data.
+
+Then I pulled conversion rate by variant within device × browser segments. Here's the table (C = control conv rate, T = treatment conv rate, sessions in parens):
+
+| Segment | Control | Treatment | Lift |
+|---|---|---|---|
+| Desktop Chrome | 5.1% (42,830) | 5.2% (42,110) | +2.0% |
+| Desktop Safari | 4.7% (12,405) | 4.9% (12,890) | +4.3% |
+| Desktop Firefox | 4.4% (8,210) | 4.3% (8,450) | -2.3% |
+| Mobile Chrome | 3.9% (28,150) | 4.1% (29,440) | +5.1% |
+| Mobile Safari | 5.8% (38,220) | 6.2% (42,780) | +6.9% |
+| Mobile Other | 3.2% (6,303) | 3.1% (8,212) | -3.1% |
+
+Mobile Safari is 28% of control sessions but 30% of treatment sessions. And the mobile-Safari conversion rate (~6%) is notably higher than most other segments (~4-5%).
+
+I think this is the Simpson's paradox you flagged. But I want to pressure-test it before I write the memo. Walk me through: (1) is mobile Safari over-representation big enough to explain a 34% aggregate lift? (2) what's the corrected lift number, properly computed? (3) is there a real effect anywhere, or is the whole thing an artifact?$pf$,
+ $pf$Good pull. Yes, this is Simpson's paradox — and it's almost certainly driven by the SRM you already caught. Let me walk through each of your three questions.
+
+**(1) Is mobile-Safari over-representation big enough to explain the aggregate lift?**
+
+Let's size it. The aggregate numbers the PM reported were based on:
+- Control: 136,118 sessions × 4.8% = ~6,534 conversions
+- Treatment: 143,882 sessions × 6.4% = ~9,208 conversions
+- Aggregate lift: (6.4% - 4.8%) / 4.8% = +33.3% ≈ the "+34%" headline.
+
+But watch what happens when I recompute the aggregate using the segment-level numbers you pulled — which are the TRUE within-segment rates:
+
+*Control aggregate* (weighted sum using control session counts):
+(42,830 × 5.1% + 12,405 × 4.7% + 8,210 × 4.4% + 28,150 × 3.9% + 38,220 × 5.8% + 6,303 × 3.2%) / 136,118
+= (2,184 + 583 + 361 + 1,098 + 2,217 + 202) / 136,118
+= 6,645 / 136,118 = **4.88%**
+
+*Treatment aggregate*:
+(42,110 × 5.2% + 12,890 × 4.9% + 8,450 × 4.3% + 29,440 × 4.1% + 42,780 × 6.2% + 8,212 × 3.1%) / 143,882
+= (2,190 + 632 + 363 + 1,207 + 2,652 + 255) / 143,882
+= 7,299 / 143,882 = **5.07%**
+
+Hmm — that's only +4% aggregate lift, not +34%. So the PM's numbers don't reconcile with the segment-level breakdown you pulled. Either the PM's aggregate numbers are wrong, the segment-level pulls are missing data, or — most likely — there's a segment (or segments) in the PM's calc that I don't have in your breakdown. Pull the total session counts and confirm 136,118 and 143,882 match the row sums in your segment table. (Adding your 'Sessions' column: Control = 136,118 ✓, Treatment = 143,882 ✓. So the breakdown is complete.)
+
+Which means the PM's "+34%" number is computed wrong at the aggregation step. Most likely they used conversion rate = total_conversions / total_sessions but miscounted conversions in one bucket (double-counted a retry, or summed an event rather than distinct users). **That's a second bug on top of the SRM.** The real lift from the correctly-weighted segment data is +4%, which is plausible and interesting — but nowhere near +34%.
+
+**(2) Corrected lift, properly computed — and what it tells us:**
+
+Using the segment-level data you pulled:
+- Correctly-weighted aggregate lift: **+4.0%** (5.07% / 4.88% - 1, roughly).
+- But the aggregate is misleading because of the uneven distribution. The honest way to report this is to use CUPED-adjusted or segment-stratified analysis. Without CUPED (you probably don't have the pre-test covariates), segment stratification is the right move: compute per-segment lifts, then use a weighted average based on EXPECTED (not observed) segment distributions.
+
+Expected segment distribution = assume the segment mix is stable across randomization (reasonable given randomization is supposed to be segment-agnostic). Using control-bucket segment weights as the "expected" and applying treatment-bucket within-segment rates:
+(42,830 × 5.2% + 12,405 × 4.9% + 8,210 × 4.3% + 28,150 × 4.1% + 38,220 × 6.2% + 6,303 × 3.1%) / 136,118
+= (2,227 + 608 + 353 + 1,154 + 2,370 + 195) / 136,118
+= 6,907 / 136,118 = **5.07%**
+
+Segment-stratified lift: 5.07% / 4.88% - 1 = **+3.9%**. That's the number you'd use if you trusted the within-segment rates but wanted to remove the compositional confound.
+
+**(3) Is there a real effect anywhere?**
+
+Run per-segment statistical tests (two-proportion z-test, two-sided):
+
+- **Desktop Chrome:** +2.0%, 42K per bucket → z ≈ 0.67, p ≈ 0.50. Noise.
+- **Desktop Safari:** +4.3%, 12K per bucket → z ≈ 0.76, p ≈ 0.45. Noise.
+- **Desktop Firefox:** -2.3%, 8K per bucket → z ≈ -0.31, p ≈ 0.76. Noise.
+- **Mobile Chrome:** +5.1%, 28K per bucket → z ≈ 1.14, p ≈ 0.25. Noise.
+- **Mobile Safari:** +6.9%, 40K per bucket → z ≈ 2.49, p ≈ 0.013. Real at α=0.05, borderline at Bonferroni-adjusted α=0.008.
+- **Mobile Other:** -3.1%, 7K per bucket → z ≈ -0.33, p ≈ 0.74. Noise.
+
+**Only mobile Safari has a detectable effect, and it's borderline after multiple-testing correction.** The honest read: there's a plausible ~5-7% lift on mobile Safari specifically, and no evidence of an effect anywhere else. The "+34%" aggregate is a reporting bug caused by (a) an SRM that over-weighted treatment on a high-converting segment, (b) a conversion-counting error at the aggregation step.
+
+**What to do next (pass 3 territory):** recompute conversion counts from the raw event table, confirm where the PM's 6,720 / 8,960 numbers came from, and write up the corrected analysis with the mobile-Safari-only story as the real finding.$pf$,
+ $pf$Confirms Simpson's paradox + an additional conversion-counting bug at the aggregation step. Segment-stratified re-weighting yields +3.9% aggregate lift (vs. reported +34%). Per-segment two-proportion z-tests show only mobile Safari has a detectable effect (+6.9%, p=0.013, borderline under Bonferroni). Names the next step: recompute raw conversion counts from the event table and write up mobile-Safari-only as the real finding.$pf$),
+
+-- Step 3 --
+('66666666-6666-6666-6666-6666666F0103',
+ '55555555-5555-5555-5555-555555550015',
+ 3,
+ $pf$Corrected statistical analysis — real lift, honest confidence interval, rollout recommendation$pf$,
+ $pf$Confirmed both bugs. Reconstructed from the raw event table:
+
+- Real Control conversions: 6,645 (your segment-weighted number was right)
+- Real Treatment conversions: 7,299 (not 8,960 — the PM's pull double-counted retry events)
+- Real aggregate lift: +3.9%, p = 0.04 (just barely significant at α=0.05)
+- Mobile Safari subgroup: +6.9%, p = 0.013
+
+Two questions before I write the memo:
+
+(1) If the aggregate is only marginally significant (p=0.04) but mobile-Safari is clean (~p=0.01 before multiple-testing adjustment, borderline after), what should the PM actually roll out? All traffic? Mobile Safari only? Re-test?
+
+(2) I want to be intellectually honest about what "we found an effect in one segment" means statistically — the growth team will read "mobile Safari +6.9%" and want to roll out to all mobile. Help me frame the right level of confidence.
+
+Keep it direct — the PM is sharp but not statistically trained.$pf$,
+ $pf$Both questions are really the same question: what does a "segment effect" license you to do? Let me answer them together.
+
+**The core statistical issue:** when you run an A/B test and post-hoc find an effect in one segment, that finding is vulnerable to two different errors:
+
+*Type 1 (false positive from multiple comparisons):* You tested 6 segments. At α=0.05, the odds that at least one segment shows p<0.05 by pure chance — even if the true effect is zero — is 1 - (1-0.05)^6 ≈ **26%**. So "one of six segments is significant" is weak evidence on its own. Bonferroni-adjusted α is 0.008; the mobile-Safari p=0.013 is borderline but doesn't clear it.
+
+*Type 2 (cherry-picking the winner):* Even if the segment effect is real, selecting mobile-Safari AFTER seeing the data means your effect-size estimate is biased upward. Regression to the mean says the true effect is smaller than the observed +6.9%.
+
+That's the statistical pessimism. But there are two things that argue in favor of the effect being real:
+
+*Plausibility:* Trust-badge removal affecting mobile Safari specifically makes sense. Mobile Safari's checkout UI is notoriously cramped; removing an element above the CTA measurably reduces scroll distance. The effect has a mechanism, not just a number.
+
+*Directional consistency:* Every mobile segment showed positive lift (Mobile Chrome +5.1%, Mobile Safari +6.9%, Mobile Other -3.1%). The mobile-Safari finding isn't lonely — it's the one that cleared significance in a directionally consistent pattern. That's weak but real corroboration.
+
+**What the PM should actually roll out:**
+
+Not all traffic. The aggregate p=0.04 is marginal AND driven almost entirely by one segment — so the aggregate significance is a statistical artifact of weighting. Rolling to all traffic is making a big product decision on thin evidence.
+
+Not just mobile Safari either, yet. A post-hoc segment effect is hypothesis-generating, not hypothesis-confirming. The correct move is a follow-up test.
+
+**Specific recommendation:** roll out the treatment as a fresh 14-day A/B test RESTRICTED TO MOBILE (Chrome + Safari + other, randomized cleanly). Power it for a 5% MDE on mobile conversion. If mobile Safari replicates ≥+4% AND the other mobile segments don't regress, ship to mobile. If Safari alone replicates and Chrome/Other are flat, consider shipping to Safari only (is that even feasible in the checkout code? — worth asking eng). If it doesn't replicate, ship nothing and you've saved a bad rollout.
+
+**How to frame this for a non-stats PM:**
+
+Write it like this — not as "the p-values suggest..." but as a confidence narrative:
+
+> "The data supports a probable effect on mobile users, most strongly on mobile Safari. It does NOT support the headline '+34% lift' — that number had a methodology problem. The right next step is a clean follow-up test restricted to mobile. Shipping to all traffic on this evidence would be betting $1.3M of projected revenue on a number we don't have. Shipping to mobile after a replication gives us the same upside with confidence we can defend."
+
+Specifically avoid these traps in how you talk to the PM:
+- Don't say "statistically significant" and let her assume it means "certain."
+- Don't say "not significant" and let her assume it means "definitely zero."
+- Do say "we found a probable effect on mobile, a weaker one on Safari specifically, and nothing detectable elsewhere — which is consistent with how trust-badge removal would plausibly work on mobile UIs."
+
+**One more honest note:** the load-balancer routing bug that caused the SRM is a BIGGER problem than this experiment. Every experiment this team has run since that bug was introduced is suspect. Flag it to engineering as a P0 separately from the experiment memo. Otherwise they'll keep running tests that produce beautiful, wrong numbers.$pf$,
+ $pf$Resolves the rollout question: no ship to all traffic, no ship to mobile Safari alone on post-hoc evidence. Recommends a follow-up 14-day test restricted to mobile with explicit replication criteria. Frames statistical honesty for a non-stats PM using a "confidence narrative" pattern and names three phrasing traps to avoid. Flags the underlying load-balancer SRM as a P0 separate from this experiment — every test run since the bug is suspect.$pf$),
+
+-- Step 4 --
+('66666666-6666-6666-6666-6666666F0104',
+ '55555555-5555-5555-5555-555555550015',
+ 4,
+ $pf$Decision memo to the PM — results, recommendation, what to do next$pf$,
+ $pf$Last pass. Write the actual memo I'll send the PM. She's going to be frustrated — "+34% lift" was already in her deck for leadership. I need this to:
+
+(1) lead with the answer (don't roll out, here's why),
+(2) explain the methodology issue without making anyone look bad (the PM inherited the experimentation framework from a previous team),
+(3) give her a concrete path forward (the follow-up test),
+(4) flag the load-balancer bug as a separate P0.
+
+Keep it under 600 words. She'll read it on her phone between meetings. Tone: collegial, direct, no hedging.$pf$,
+ $pf$Below is the memo, written to be read on a phone in under 3 minutes.
+
+---
+
+**Subject: Checkout trust-badge A/B test — re-analysis + recommendation**
+
+Hey [PM name],
+
+I spent a few hours digging into the trust-badge test results before giving you a thumbs-up. Short version: don't roll out to all traffic. The headline "+34% lift" doesn't hold up, but there IS a real (smaller) effect worth capturing. Here's what I found and what I'd do.
+
+**What the data actually shows:**
+
+The real aggregate lift is approximately **+4%**, not +34%. The +34% number came from two overlapping issues in how the results were aggregated:
+
+1. A **sample ratio mismatch**: the test split was 48.6% / 51.4%, not 50/50. The treatment bucket over-sampled mobile Safari traffic by ~2 percentage points. Mobile Safari is our highest-converting segment, so over-weighting it inflated the aggregate lift.
+
+2. A **conversion-counting error**: the treatment bucket's conversion total (8,960 in the report) double-counted retry events. Recomputing from the raw event table gives 7,299.
+
+Once both issues are corrected, the real aggregate lift is +3.9% (p = 0.04). Of six device/browser segments, only mobile Safari shows a detectable effect on its own (+6.9%, p = 0.013). Every other segment is statistically flat.
+
+**What I recommend:**
+
+*Don't ship the treatment to all traffic.* The honest effect size is an order of magnitude smaller than the report suggested; rolling out now is a leadership-level claim we can't back up.
+
+*Run a clean follow-up test, mobile-only, 14 days.* Randomize 50/50 across mobile traffic (Chrome, Safari, other combined), no desktop. Power it for a 5% minimum detectable effect on mobile conversion. Two outcomes:
+- **If mobile Safari replicates at +4% or better AND other mobile segments don't regress:** ship to all mobile. I'd estimate the real ongoing revenue impact at ~$180K/year — not the $1.3M the original number implied, but still worth the rollout.
+- **If it doesn't replicate:** ship nothing. You've saved a bad rollout and the story you tell leadership is "we found an unreliable result, we verified it properly, and we're being disciplined." That's a better story than "we shipped and it didn't move the needle in production."
+
+**Separate P0 to flag to engineering:**
+
+The load-balancer routing that caused the SRM isn't unique to this test. Any A/B test run since that bug was introduced — which I'd bet is multiple tests, given how the infrastructure was described — may have similar aggregation issues. Engineering needs to prioritize this as an infrastructure bug separate from this experiment's outcome. I can write up the specific symptoms if that'd help.
+
+**What to tell leadership:**
+
+If "+34% lift" is already in your deck: pull it and replace with "we identified a real but smaller effect, running a disciplined follow-up test to size it cleanly, shipping on replication." This is a better narrative than any phantom number. You had instinct to check before shipping — that's exactly the right instinct and why this didn't become a rollout post-mortem in three weeks.
+
+Happy to join a 15-minute call if easier than email. Otherwise kick off the follow-up test and we re-read in two weeks.
+
+— Raj
+
+---
+
+*Attachment: full re-analysis (segment tables, SRM chi-square, per-segment z-tests) in the shared doc.*
+
+---
+
+A note on the tone: I led with the bottom line (don't roll out), then the methodology issue framed as a property of the analysis ("two overlapping issues in how the results were aggregated"), not a property of the PM or the previous team. The recommendation section gives her a concrete path with a defined win condition. The P0 flag is separated cleanly so it doesn't get entangled with this experiment's decision. And the "what to tell leadership" line is important — she asked for that substance without asking, because her real fear is the social cost of walking back +34% in a deck. Giving her the replacement narrative explicitly de-risks that fear.
+
+One piece I'd ship with the memo: a 1-slide summary in her deck format that she can drop into her existing presentation. Offer that on a follow-up if she asks — don't pre-build it, you'll guess wrong on her deck style.$pf$,
+ $pf$580-word memo phone-optimized for 3-minute read. Leads with "don't roll out" and the corrected +4% number. Frames both bugs as analytic issues, not personnel issues. Gives a concrete follow-up test spec with two branched outcomes and an honest revenue estimate ($180K/year, not $1.3M). Separates the load-balancer SRM as a P0 that goes to engineering separately. Closes with a "what to tell leadership" narrative swap that explicitly de-risks the social cost of walking back the +34% number. Process note: don't pre-build the slide; offer on ask.$pf$);
+
+-- =========================================================================
 -- END OF FILE — append next project(s) below this line.
 -- Iterations working the Content queue: add 2–3 projects per iteration,
 -- appending below this comment. Do NOT rewrite existing projects.

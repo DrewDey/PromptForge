@@ -9715,6 +9715,713 @@ Go/no-go between waves: each wave is independently gated. Wave 2 doesn't ship if
  $pf$Ship spec delivered across 4 sections: Figma file organization (5 pages, `EmptyState` component with 4 dot-nested variants in axon-ds, clear naming convention); wave-by-wave eng handoff notes with net-new vs updated components + QA checklist + feature-flag rollout; 3-wave rollout plan over 6 weeks with measurement + rollback trigger per wave; 5 open questions/risks with concrete recommendations. Key calls: force-fit explore/queries filtered-away into pattern 2 for v1 (defer filter-editor affordance to v1.1, don't delay wave 2 for a 5th pattern); dark-mode variants punt to wave 4; drop 3 low-traffic permission-denied states from wave 3 if Chris needs cushion on the 40-FTE-day budget. Measurement thresholds tied directly to the activation (41% → target 58%), FullStory bounce, and support-ticket metrics from step 2.$pf$);
 
 -- =========================================================================
+-- Project 0030 — Strategy ($1.1M acquisition offer decision workflow)
+-- lena_solopreneur · Claude 4.7 Opus · 7 steps · advanced
+-- =========================================================================
+
+DELETE FROM prompt_steps WHERE prompt_id = '55555555-5555-5555-5555-555555550030';
+DELETE FROM prompts      WHERE id        = '55555555-5555-5555-5555-555555550030';
+
+INSERT INTO prompts (
+  id, title, description, content, result_content,
+  category_id, difficulty, model_used, model_recommendation,
+  tools_used, tags, status, author_id, vote_count, bookmark_count
+) VALUES (
+  '55555555-5555-5555-5555-555555550030',
+  $pf$$1.1M strategic acquisition offer for my niche newsletter — 7-pass Claude workflow from current-state audit to pre-call counter-offer memo$pf$,
+  $pf$A career-services holding company offered $1.1M to acquire NorthernSignal, my 3.5-year-old subscription newsletter + template library for scientists transitioning from academia to industry. $418K ARR subscription + $72K sponsorship = $490K annual revenue, solo-operated + 1 part-time editor. 7-pass Claude workflow with Opus 4.7: state audit, 3-scenario DCF if I stay solo, decode the buyer's offer math, BATNA audit, counter-offer structure with walk-away, post-close survival plan, 1-page pre-call memo for Friday.$pf$,
+  $pf$I'm Lena. I run NorthernSignal, a paid newsletter + template/resource library for scientists transitioning out of academia into industry (biotech, data, pharma, policy). Started 3.5 years ago when I was post-doc and watching everyone around me fumble the transition. Now: 2,100 paying subs at $199/yr = $418K ARR subscription + $72K annual sponsorship revenue from 5 anchor sponsors (CRO, biotech recruiter, career-coaching firm, two grad-school-alternative companies) = $490K revenue. Costs: $38K editor (part-time), $14K infra + tools, $8K misc. Net ~$430K. Solo-run otherwise.
+
+Monday morning I got an acquisition offer from Meridian Career Partners, a holding company that owns 4 other career-transition properties (finance → founder, consultant → operator, academic → government, etc.). Offer: $1.1M, structure "to be negotiated." They want a call Friday.
+
+I'm not the stereotype who immediately says yes or immediately says no. I want to actually think about this — not from a "maximize price" frame but from a "what life do I want in 2028" frame. 7-pass Claude workflow, Opus 4.7 because this is multi-step judgment with real numbers and I need the deepest reasoning budget I've ever run.
+
+Why 7 passes and not fewer: each pass produces a distinct artifact I'll reference in a different conversation (with my partner, with a lawyer, with the buyer). Merging passes means collapsing a transition that matters — e.g., merging the BATNA audit into the counter-offer is how you end up anchored to the buyer's number instead of your own.$pf$,
+  $pf$Counter-offered $1.45M with $1.0M cash at close + $450K earnout over 24 months tied to revenue retention + list growth. Buyer came back at $1.38M / $1.0M cash / $380K earnout. Signed Tuesday at $1.4M flat — $1.0M cash + $400K earnout over 18 months (accelerated from 24) with the 60% hit-rate clauses Claude suggested, narrow non-compete scoped to "paid newsletter for academic-to-industry life-sciences transitions" only, and an 18-month Editor-at-Large role capped at 8 hrs/week. Net take after tax + fees projected ~$1.02M assuming full earnout.
+
+What mattered most: Pass 3 (decoding the buyer's math). Once I saw that $1.1M was their floor not their ceiling — they project a 3-4x in 5 years and their IRR models tolerate $1.4-1.5M at close — I stopped feeling like the counter was risky. I was just asking for the band they'd already priced into their own model.
+
+Second-most important: Pass 6 (post-close survival plan). Without it I'd have signed a standard 24-month full-time editor contract that would've made the earnout cash functionally equivalent to salary. The 8-hrs/week cap + narrow non-compete is what lets me actually start the next thing in 2026 — which is the real reason I'm selling.
+
+What I'd tell another solopreneur: don't skip the BATNA audit. Pass 4 is where I stopped telling myself "I could grow to $1.5M in 2 years solo." The honest math (60% probability at best, with my second site already taking 12 hrs/week competing for focus) is what made the deal feel like a win instead of a settle.$pf$,
+  '11111111-1111-1111-1111-111111111109',
+  'advanced',
+  'claude-opus-4-7',
+  'Claude 4.7 Opus',
+  ARRAY['Claude','Notion','Google Sheets','Stripe','ConvertKit'],
+  ARRAY['m&a','acquisition','solopreneur','negotiation','exit','newsletter','earnout','strategy'],
+  'approved',
+  '22222222-2222-2222-2222-222222222210',
+  112, 61
+);
+
+INSERT INTO prompt_steps (id, prompt_id, step_number, title, content, result_content, description) VALUES
+
+-- Step 1 --
+('66666666-6666-6666-6666-666666300101',
+ '55555555-5555-5555-5555-555555550030',
+ 1,
+ $pf$Honest current-state audit before any negotiation math$pf$,
+ $pf$Before I touch any valuation math I want a brutally honest audit of NorthernSignal's current state — not what I'd put in a pitch deck but what I'd write down alone.
+
+Revenue: $418K subscription ARR (2,100 subs × $199/yr, ~94% annual plan, ~6% monthly), $72K sponsorship (5 anchors: $15K CRO, $18K biotech recruiter, $12K career-coaching, $14K grad-school-alt A, $13K grad-school-alt B). All sponsors have ≥2-year relationships. Two renewed 30 days ago.
+
+Costs: $38K editor (Nadia, 12 hrs/wk, 3 years, handles sponsorship fulfillment + 1 newsletter/week editing), $14K infra ($6K ConvertKit, $3K Stripe, $2K Notion + Zapier, $3K misc tools), $8K misc (legal $2K, accounting $2K, travel to 2 conferences $4K). Net ~$430K.
+
+Growth: list +38% YoY (now 8,200 free + 2,100 paid). Conversion rate from free→paid trending down — was 17% in year 1, 11% now. Churn: 14% annual on paid (stable 3 years).
+
+My workload: ~22 hrs/wk actively on NorthernSignal (down from 35 at peak) + 12 hrs/wk on my second site (Etsy analytics dashboard for makers) + some time on consulting work.
+
+Things I'd rather not admit: (a) I'm approaching a ceiling on solo operator — growth rate has decelerated 2 years running; (b) my sponsor pipeline is strong but concentrated (top 2 = 45% of sponsorship); (c) I haven't launched a new product (cohort, course) in 18 months — the template library is carrying that slot; (d) I'm slightly burned out on the topic but you can't say that out loud.
+
+What I want: identify what's load-bearing in my $490K that ANY buyer would price in, what they'd ignore or undervalue, and which 3-4 numbers I should stress-test before we build a DCF in pass 2. Don't skip the boring stuff — if my churn number is off by 2% that changes the DCF materially.$pf$,
+ $pf$The audit splits cleanly. **What a buyer prices in (liquid):** recurring subscription revenue with 14% churn is 2-3x multiple territory in niche-content M&A — that's ~$1.0-1.3M on ARR alone. Sponsorship renewing at 80%+ is worth another $140-215K (2-3x on $72K). Template library: $20-40K if it's documented-enough to transfer.
+
+**What they'd undervalue:** (a) your personal editorial brand — five newsletters in this niche are commoditized; yours has topical authority from the academic→industry transition specifically lived through. A buyer who doesn't have you writing loses ~15% of list engagement within 6 months (industry benchmark for sold newsletters without the founder continuing). (b) Your hiring-panel network — sponsors renew because you personally broker intros; that's not priced as an asset because it's not transferable by paper. (c) Long-tail sponsorship pipeline (3 prospects in talks per your Notion) that won't close before signature and won't credit to you post-close.
+
+**What they'd ignore entirely:** Etsy-dashboard site's negative contribution (takes 12 hrs/wk away from NorthernSignal — flip side, freeing that capacity is a post-sale gain for YOU, not priced in the offer).
+
+**3 numbers to stress-test before DCF:**
+
+1. **Churn rate.** 14% annual stated. Reality check: look at cohort retention not aggregate. If year-1 cohorts retain 82% and year-2+ retain 93%, the blended is misleading — new subs churn heavily but established ones don't. Buyers model on blended. Pull the cohort curve from ConvertKit or Stripe.
+
+2. **Free→paid conversion decline.** 17% → 11% across 3 years. Is this a list-quality decline (free list bulked with less-committed subs) or a product-fit decline (the paid tier is less differentiated vs year 1)? The diagnosis matters for DCF — list-quality decline is fixable with list hygiene; product-fit decline implies a 2-year plateau.
+
+3. **Sponsorship concentration risk.** Top 2 = 45% of $72K = $32K. If either doesn't renew, revenue drops 6.5%. Have you asked both for renewal intent? If not, ask this week — before Friday's call, ideally — because the answer changes the DCF bear-case.
+
+**Proceed with pass 2 when:** (i) cohort-retention curve pulled, (ii) 2 anchor sponsors asked for renewal intent (yes/maybe/no), (iii) free→paid conversion diagnosed as list-quality vs product-fit. Until those, the DCF is directional not load-bearing.$pf$,
+ $pf$Honest audit separates what any buyer will price (ARR + sponsorship) from what they'd undervalue (personal brand, broker-network) from what they'd ignore (second-site opportunity cost). 3 numbers flagged for stress-test before DCF: cohort-retention curve beneath the 14% blended churn, free→paid conversion decline diagnosis (list quality vs product fit), top-2 sponsor renewal intent confirmed verbally before Friday's call. DCF is directional until those land.$pf$),
+
+-- Step 2 --
+('66666666-6666-6666-6666-666666300102',
+ '55555555-5555-5555-5555-555555550030',
+ 2,
+ $pf$3-scenario DCF if I keep operating solo through 2028$pf$,
+ $pf$Following up on pass 1. I pulled cohort retention from Stripe — year-1 cohorts at 79% retention, year-2+ at 91%. Blended at 14% churn is actually slightly optimistic; real steady-state churn is closer to 9% on established subs + 21% year-1, so as my new-sub rate grows, blended will get worse before better. Conversion decline is mostly list-quality (lead magnets have attracted free-list subs less aligned with paid ICP in the last 18 months). Both top-2 sponsors confirmed renewal intent for 2026 (CRO firm already verbal, biotech-recruiter strong maybe — 70% confidence per our last call 6 weeks ago).
+
+Now build a 3-year DCF (2026/2027/2028) under bear/base/bull if I keep operating solo. I want the math explicit — I'll use this to compare against the $1.1M offer PV. Use 10% discount rate. Assume modest growth scenarios, not hockey sticks. I'm a solo operator — any model that requires hiring 2 people to pencil is not a real scenario.
+
+Constraints on scenarios:
+- Bear: my energy wanes, list quality continues to drift, churn creeps up, no new product launched
+- Base: steady-state — list growth 25% YoY, paid conversion stable at 11%, sponsorship grows 10% YoY
+- Bull: I put in the energy to launch ONE new product (cohort or course) at $599 mid-2026, list-hygiene improvement lifts conversion to 14%, sponsorship grows 15% with 1 net-new anchor
+
+For each scenario, show: ARR end-of-year, sponsorship revenue, gross revenue, operating cost (assume editor scales +5%/yr, infra +10%/yr), net earnings, cumulative NPV at 10% discount.
+
+Flag honestly: risks I'm under-pricing, probability-weighting of bear/base/bull, whether any of these would clear $1.1M PV (the buyer's offer number).$pf$,
+ $pf$Let me build this explicit. Base assumptions: starting ARR $418K, sponsorship $72K, cost $60K.
+
+**Bear (30% probability):** List growth decelerates to 15% YoY. Churn blended creeps to 16% (new-sub mix effect). Conversion drops from 11% → 9%. Sponsorship flat, lose 1 anchor in 2027 (-$15K).
+
+| Year | ARR end | Sponsorship | Gross | Costs | Net | Discounted @ 10% |
+|------|---------|-------------|-------|-------|-----|------------------|
+| 2026 | $425K | $72K | $497K | $63K | $434K | $395K |
+| 2027 | $412K | $57K | $469K | $66K | $403K | $333K |
+| 2028 | $398K | $57K | $455K | $70K | $385K | $289K |
+
+Cumulative NPV bear: **$1.017M**. At bear, you roughly match the $1.1M offer at PV, with 3 more years of your life spent.
+
+**Base (50% probability):** List growth 25% YoY. Churn stays 14%. Conversion stable 11%. Sponsorship +10%/yr. No new product.
+
+| Year | ARR end | Sponsorship | Gross | Costs | Net | Discounted |
+|------|---------|-------------|-------|-------|-----|------------|
+| 2026 | $468K | $79K | $547K | $63K | $484K | $440K |
+| 2027 | $521K | $87K | $608K | $66K | $542K | $448K |
+| 2028 | $576K | $96K | $672K | $70K | $602K | $452K |
+
+Cumulative NPV base: **$1.34M**. Clears $1.1M but by ~$240K over 3 years of solo effort.
+
+**Bull (20% probability):** Product launch mid-2026 at $599, assume 420 sales year 1 = $252K one-time + reorder tail. List hygiene lifts conversion to 14%. Sponsorship +15%/yr, 1 net-new anchor $16K in 2027.
+
+| Year | ARR end | Sponsorship | Product | Gross | Costs | Net | Discounted |
+|------|---------|-------------|---------|-------|-------|-----|------------|
+| 2026 | $520K | $83K | $252K | $855K | $75K | $780K | $709K |
+| 2027 | $610K | $111K | $340K | $1,061K | $82K | $979K | $809K |
+| 2028 | $705K | $128K | $405K | $1,238K | $90K | $1,148K | $863K |
+
+Cumulative NPV bull: **$2.38M**. Clears $1.1M comfortably — but requires launching the product you haven't launched in 18 months.
+
+**Probability-weighted NPV:** 0.3 × $1.017M + 0.5 × $1.34M + 0.2 × $2.38M = **$1.45M**.
+
+**Under-priced risks:**
+- **Single-point-of-failure.** You're the single writer + broker. Any 4-month break (health, burnout, family) compresses bear-case list growth to 0 and accelerates churn — shaves ~$180K off bear NPV, $260K off base. Your PW NPV is probably closer to $1.35M after honest health risk weighting.
+- **List-quality drift acceleration.** If free→paid conversion continues the 18%→11% trajectory, 2028 could hit 8%, dragging base 2028 gross by ~$40K.
+- **M&A window risk.** Buyer holding companies' appetite cycles with private-credit availability. If Meridian-type buyers exit the market 2026-2027 (has happened twice in newsletter M&A since 2019), your 2028 exit multiple could drop from 2.5x to 1.5x — reducing terminal value by $350K+.
+
+**Read:** $1.1M is close to your bear NPV ($1.017M) and well below your base ($1.34M). On paper, base looks like "hold" math. But health + M&A-window risks meaningfully compress the base scenario in ways buyers don't face. PW NPV of $1.45M with your risks loaded is closer to $1.25M, making $1.1M a fair-but-not-generous floor — a counter in the $1.4-1.5M range is numerically defensible, not greedy.$pf$,
+ $pf$3-scenario DCF built: bear NPV $1.017M / base $1.34M / bull $2.38M, probability-weighted at 30/50/20 = $1.45M. Under-priced risks (single-point-of-failure, list-quality drift, M&A window cycle) compress PW to ~$1.25M when loaded honestly. $1.1M offer sits between bear and base — a fair floor, not generous. $1.4-1.5M counter is numerically defensible. DCF sets the anchor for counter-offer math in pass 5.$pf$),
+
+-- Step 3 --
+('66666666-6666-6666-6666-666666300103',
+ '55555555-5555-5555-5555-555555550030',
+ 3,
+ $pf$Decode the buyer's offer math — why $1.1M, not $900K or $1.5M$pf$,
+ $pf$Meridian Career Partners owns 4 properties: a consultant→operator newsletter, a finance→founder community, an academic→gov-policy list, and a grad-school-alternative Discord-based community. My contact is their "Head of Acquisitions" — they acquired 2 of those 4 properties, built the other 2 in-house. Stated offer: $1.1M. Their email said "happy to discuss structure." That's the flexibility tell.
+
+Reverse-engineer why $1.1M specifically. What does their internal model look like? What are they betting on? What's the floor their IRR model would tolerate vs the ceiling? What are the structural moves they'd want to bundle in (earnout shape, non-compete, my role post-close, transfer of sponsorship relationships) and why?
+
+I want to understand what $1.1M buys THEM so I can figure out what range is truly negotiable and what isn't. Specifically:
+- What multiple of revenue/SDE are they likely anchoring to, and why that specific multiple?
+- What do they believe they can do with NorthernSignal post-close that I can't do solo?
+- What's their worst-case scenario (if I'm right about the property) and what's their upside?
+- Where is the offer genuinely flexible vs where is it anchored?$pf$,
+ $pf$Let's walk through their model honestly.
+
+**Multiple math:** $1.1M on $490K revenue = 2.24x revenue. For niche-subscription-newsletter M&A at this ARR/growth/margin profile, 2.0-2.8x is the fair band. Their $1.1M is at the 30th percentile of fair — conservative but not insulting. Two things to infer: (a) they have a band, not a ceiling — they're anchored to multiple, not a round number; (b) $1.1M rather than $1.0M or $1.2M is probably reverse-engineered from a target IRR on an assumed integration synergy, not a pure multiple.
+
+**Integration synergy they'd model:** Meridian's existing 4 properties share ~35K total list. NorthernSignal adds 10,300 unique-to-them (probably 85%+ novel, life-sciences is distinct from their other verticals). They'll cross-promote, which for newsletter M&A typically adds 8-15% to list growth on the acquired property and 2-5% on the existing properties. Back-of-envelope: +$40-70K annual revenue on NorthernSignal from cross-promote + $25-40K annual on their existing 4 from NS inclusion = $65-110K annual integration synergy. They'd model that compounding to $250-400K over 3 years of property-level earnings.
+
+**Their internal math is probably:**
+- $1.1M acquisition cost
+- $65K integration cost (legal + tech + editorial handoff) = ~$1.165M all-in
+- Year-3 property EBITDA target (with synergy): $540K × integration lift + sponsor bundling = $610K
+- Exit multiple at year-5: 2.5-3x = $1.5-1.8M property exit
+- Cash-on-cash IRR: 30-35% over 5 years
+
+That's their model. Your $1.1M is their FLOOR, not their ceiling. They can absorb $1.4M without breaking the IRR math — $1.4M at 30% IRR over 5yrs still returns $2.6M, well inside their property fund's target. Above $1.5M their IRR compresses toward 25% and they'd need structural carves (earnout-heavy, long non-compete) to hit return targets.
+
+**What they'd structurally want (and why):**
+1. **Earnout tied to retention + growth.** Protects them against the "Lena leaves, churn spikes" scenario that erodes their integration thesis. Typical structure: 30-40% of total purchase tied to 12-24 month performance. Your leverage: insist on metrics you influence, not ones you don't.
+2. **18-24 month editorial commitment.** Property value drops 15% if you exit at close (industry benchmark). They want you writing + brokering sponsors for ≥18 months.
+3. **Non-compete.** Standard 18-36 months, broad by default — they'll draft "newsletter business" or "career-transition content." Your push: narrow to "paid newsletter for academic-to-industry life-sciences transitions" specifically — preserves your ability to build the next thing.
+4. **Sponsor intro clause.** They'll want your personal intros to 5 anchor sponsors at renewal conversations for 12 months. Fair ask, low cost to you.
+
+**Where they're genuinely flexible vs anchored:**
+- **Total price:** flexible $1.0-1.4M, anchored beyond $1.5M. Their IRR model has real headroom to $1.4M.
+- **Cash vs earnout split:** flexible — they'd prefer earnout-heavy, you'd prefer cash-heavy. 65/35 split on $1.4M is meeting in the middle.
+- **Non-compete breadth:** flexible on scope, anchored on duration. They need ≥18 months; scope is negotiable to specific sub-niche.
+- **Role + commitment:** flexible on title + hours if you're willing to commit to 18 months. They'd take "Editor-at-Large, 8 hrs/wk" if the continuity risk is mitigated.
+
+**Read for Friday's call:** their $1.1M is the opening anchor, not a line. $1.4M is inside their model. Counter at $1.45M with structural language they can accept (earnout for performance metrics you can influence + 18-month commitment + narrow non-compete) and you're negotiating within the band they've already priced.$pf$,
+ $pf$Buyer's $1.1M reverse-engineered: 2.24x revenue at 30th percentile of fair band, anchored to multiple × integration IRR target not round number. Their all-in model tolerates $1.4M at 30% IRR; $1.5M compresses toward 25% needing structural carves. Flexibility map: price flexible to $1.4M / anchored beyond $1.5M; cash-earnout split flexible; non-compete scope flexible, duration anchored ≥18mo; role flexible if 18-mo commitment. Counter at $1.45M sits inside their model.$pf$),
+
+-- Step 4 --
+('66666666-6666-6666-6666-666666300104',
+ '55555555-5555-5555-5555-555555550030',
+ 4,
+ $pf$BATNA audit — can I realistically grow solo to a $1.5M exit in 2 years?$pf$,
+ $pf$Pass 2 gave me probability-weighted $1.45M NPV on a 3-year hold. Pass 3 said their offer is a floor not ceiling. Before I counter I need to honestly audit my BATNA: if I walk from this deal, what's the realistic path to a $1.5M exit in 24 months? Or a $2M exit in 36? Or stay the course?
+
+Don't tell me what I want to hear. Actually model what would need to be true for each BATNA to succeed, what the probability-weighted EV is, and where the honest failure modes are.
+
+Constraints on the audit:
+- My second site (Etsy-analytics dashboard for makers) genuinely takes 12 hrs/wk. Ignoring that is fantasy — either I shut it down or acknowledge I'm operating at 22+12=34 hrs/wk on two properties while doing M&A analysis on the third.
+- I've been building for 3.5 years; I have data on my own energy cycle and I'm honest about the fact that I'm not writing as hungrily as I was 18 months ago.
+- M&A-window risk is real (pass 2 flagged it). A 2028 exit faces different market conditions than 2026.
+
+What are the 3-4 BATNA paths, and what's the honest EV of each?$pf$,
+ $pf$Four BATNA paths, honestly.
+
+**BATNA A: Accept $1.1M / no counter.** Trivially dominated — pass 3 established $1.4M is in their model. Including only for completeness. EV = $1.1M.
+
+**BATNA B: Counter at $1.4-1.5M, close 2026.** Most likely outcome (70%) is close at $1.35-1.45M with earnout hit rate 70%. EV: $1.35M cash + $400K × 0.7 earnout = $1.35M + $280K = **$1.63M gross** (pre-tax, pre-fees). Net ~$1.15M after 25% combined tax + $60K fees. Probability of deal falling apart if you push counter: 20% (buyer passes, small chance they re-engage in 6 months at lower). EV with deal-break risk: 0.7 × $1.63M + 0.2 × 0 + 0.1 × $1.1M = **$1.25M gross / $910K net**.
+
+**BATNA C: Stay solo, 2-year grow-to-$720K-revenue play, exit 2028.** Target $1.5M sale price = 2.1x on $720K revenue. Requires: (a) list grow 30% YoY for 2 years while conversion stabilizes at 11% — hard, running against current decline trajectory; (b) launch product (course/cohort) at mid-2026 hitting $200K annual contribution — you haven't launched in 18 months, honest probability of on-target launch: 45%; (c) sponsorship grow to $110K from $72K — requires 1-2 new anchors, pipeline has 3 prospects, probability of 2 converting: 50%; (d) you don't burn out across 24 more months — health-risk probability of a 4+ month break: ~30%. Compound probability of ALL four: 0.7 × 0.45 × 0.5 × 0.7 = **11%**. Even if you hit 2 of 4, you probably land at $580-640K revenue and a $1.1-1.25M exit — the same range as today's offer, in 2 years.
+
+EV math for C: 11% × $1.5M + 40% × $1.15M + 49% × $0.95M (miss scenarios cluster low because M&A window risk applies) = **$1.09M EV over 2 years**. Discounted to today at 10%: $901K. This is worse than BATNA B.
+
+**BATNA D: Stay solo, 3-year growth play, exit 2029.** Gives you more runway for the product launch. But M&A window risk is material at 3 years — 40% probability the buyer pool contracts and you face 1.5x multiples instead of 2-2.5x. If that happens, 2029 exit on $820K revenue at 1.5x = $1.23M, barely better than today. Compound probability + discount rate make this EV $850-950K, strictly dominated by B.
+
+**Under-priced risk in C and D — opportunity cost.** If you walk from B to chase C or D, you're committing to 2-3 years on NorthernSignal. That's 2-3 years of NOT building whatever you'd build instead. Your stated frustration with the topic and your track record of launching things (you've launched 3 properties in 5 years) strongly suggests your opportunity cost of staying is higher than the DCF shows. Each year on NS is probably $80-150K of forgone revenue on a next thing, plus the compounding skill/network gain. Loading opportunity cost at even $100K/yr compresses C's EV to ~$700K and D's to ~$550K.
+
+**Honest read:** BATNA B dominates at EV $910K net. C and D sit at $700-901K gross-of-opportunity-cost, $550-801K net-of-opportunity-cost. The "keep operating solo" path only wins in the bull scenario (bull revenue growth + bull M&A window + bull health), which is 11-20% of outcomes depending on assumption rigor.
+
+**What this means for the counter:** you have more leverage than BATNA A suggests but less than "hold out for $1.7M" would require. Counter at $1.45M with walk-away at $1.25M cash + $200K guaranteed earnout. You're pricing your deal-break risk honestly and using the upper band of their flexibility zone.$pf$,
+ $pf$BATNA audit: accept-as-is ($1.1M) dominated; counter-and-close ($1.25M gross EV / $910K net) dominates; stay-solo-2yr ($1.09M pre-opportunity / $700K loaded) and stay-solo-3yr (M&A window risk kills it) both strictly dominated when opportunity cost loaded at $100K/yr. Bull-case solo hold wins only 11-20% of outcomes. Counter at $1.45M with walk-away $1.25M cash + $200K guaranteed earnout sits in the defensible zone.$pf$),
+
+-- Step 5 --
+('66666666-6666-6666-6666-666666300105',
+ '55555555-5555-5555-5555-555555550030',
+ 5,
+ $pf$Counter-offer structure + specific walk-away number$pf$,
+ $pf$Pass 4 set the numerical anchor. Now give me the concrete counter-offer to send (or speak to) on Friday, with structure, justifications I can cite, and a pre-committed walk-away number.
+
+Components to specify:
+1. Total counter price + rationale I can articulate without saying "Claude told me"
+2. Cash-at-close / earnout split with earnout metrics
+3. My BATNA walk-away number (the specific line below which I'd rather not close at all)
+4. Specific negotiation leverage to cite in the conversation (why I'm asking for this not that)
+5. What to concede if they push back, in priority order$pf$,
+ $pf$Here's the concrete counter.
+
+**Total counter: $1.45M.**
+
+Structure:
+- **Cash at close: $1.0M**
+- **Earnout: $450K over 24 months**
+  - $200K tied to revenue retention: ≥88% of pre-close ARR at month 12; ≥92% at month 24. Paid $100K/$100K on hit.
+  - $150K tied to paid-list growth: ≥10% net-new paid subs over 24 months cumulative. Paid $75K at month 12, $75K at month 24, with 60% hit-rate clauses so partial-credit tier kicks in at 70% of target.
+  - $100K tied to sponsor-anchor retention: ≥4 of 5 current anchors renew through month 18. Paid $100K at month 18 on hit.
+
+**Rationale you articulate:**
+
+*On price:* "$1.45M reflects 3x on ARR + 2.5x on sponsorship, which is in-band for comparable acquisitions in niche subscription content over the last 24 months. My cohort-retention math (year-2+ at 91%) supports the higher multiple vs blended-churn naive look."
+
+*On split:* "Cash-heavy at close reflects that you're buying the business and the operator goodwill separately; the earnout is for the growth thesis, not the base business."
+
+*On earnout metrics:* "I want metrics tied to what I actually influence — retention, list growth, sponsor relationships. Integration-dependent metrics (tech synergies, cross-promote performance from your properties) aren't mine to drive."
+
+**Walk-away: $1.25M cash + $200K guaranteed earnout = $1.45M total with 90% hit probability.** Below this, the probability-weighted net after tax + fees compresses below $900K and the dominance over BATNA C (stay solo) erodes. Do not close below $1.25M cash even with rich earnout stacked on — cash is certain, earnout is not.
+
+**Specific negotiation leverage:**
+
+1. **Sponsor pipeline cite.** "Two of my five anchor sponsors renewed 30 days ago; top 2 confirmed verbal renewal for 2026. The sponsor relationships are load-bearing and transfer mostly through me; that value is worth 2.5-3x on $72K, ~$180-215K, which is real to your integration model."
+
+2. **List novelty cite.** "List overlap with your 4 properties is under 15% per reverse-lookup — ~85% novel audience. Cross-promote lift for you is 5-8% on your existing list revenue, which at your scale is $40-60K/yr. That's value you're buying, not value I'm giving away."
+
+3. **Continuity offer.** "I'm willing to stay 18 months Editor-at-Large at 8 hrs/week, which protects the continuity risk you're pricing into the $1.1M. That continuity is worth ~$150K of property value per industry benchmarks."
+
+4. **Clean book cite.** "Accrual clean, 5 years of QuickBooks + reconciled ConvertKit exports, zero litigation, all sponsor contracts documented, editorial calendar 6 months forward-planned. Due diligence will be quick — which has NPV to you in reduced transaction cost and time-to-integration."
+
+**Concede order if they push back (priority, least painful first):**
+
+1. **Drop total to $1.4M** — stay with $1.0M cash / $400K earnout. This is ~7% give, inside the band.
+2. **Shift $50K from cash to earnout** — $950K cash / $500K earnout. Painful but earnout structure is already tied to metrics you influence.
+3. **Extend earnout period to 30 months** — protects you vs them if they want 36, costs you 6 months of uncertainty.
+4. **Sponsor-anchor intro clause** — commit to personal intros at renewal for 12 months. Costs you time but protects their sponsor-retention earnout tier.
+5. **Accept 24-month editorial commitment** (vs 18) — last resort. Each 6 months beyond 18 is ~$75K of your opportunity cost; only concede if total deal moves +$75K+ for it.
+
+**Do NOT concede:**
+- Below $1.25M cash at close (walk-away line)
+- Broad non-compete beyond "paid newsletter for academic-to-industry life-sciences transitions"
+- Earnout metrics tied to integration-dependent outcomes (their tech, their sales cycle)
+- Editorial commitment >24 months total
+- Personal guarantee on sponsor renewals (make introductions, don't guarantee outcomes)
+
+**Order of presentation Friday:** lead with $1.45M total + structure. Let them react. If they anchor to $1.1M + "we can be flexible on structure," redirect to "price first, then structure" — do not let them move the conversation into earnout/metrics debate before price is in a band you can live with.$pf$,
+ $pf$Counter-offer locked: $1.45M total, $1.0M cash at close + $450K earnout split 200K retention / 150K list growth / 100K sponsor anchor, 24-month term with partial-credit tiers. Walk-away: $1.25M cash + $200K guaranteed earnout, below which probability-weighted net erodes BATNA dominance. 4 negotiation-leverage cites (sponsor pipeline, list novelty, continuity offer, clean book). 5-step concede order (drop to $1.4M → shift cash-to-earnout → extend earnout → anchor-intro clause → extend role). 5 hard noes (cash floor, non-compete breadth, earnout metrics, role duration, sponsor-outcome guarantees).$pf$),
+
+-- Step 6 --
+('66666666-6666-6666-6666-666666300106',
+ '55555555-5555-5555-5555-555555550030',
+ 6,
+ $pf$Post-close survival plan — role, non-compete, earnout mechanics, escape valve$pf$,
+ $pf$If we sign, I need the post-close life designed BEFORE the term sheet is drafted. Two sins I want to avoid: (a) signing a standard 24-month full-time editor contract that turns the earnout cash into disguised salary and eats the actual reason I'm selling (free time to build the next thing); (b) signing a broad non-compete that precludes whatever I'd start in 12 months.
+
+Design the post-close framework:
+1. My role + title + workload — what I'm saying yes to, what I'm saying no to
+2. Non-compete — specific scope + duration + exclusions
+3. Earnout mechanics — what metrics I can influence, how measurement works, dispute process
+4. Working-capital + reps — buyer protection that doesn't over-expose me
+5. Escape valve — what triggers mutual termination and what happens to outstanding earnout
+
+Also: what should my lawyer specifically look for / push on in the drafting?$pf$,
+ $pf$Post-close framework, organized how the term sheet should read.
+
+**1. Role + commitment.**
+- **Title: Editor-at-Large** (deliberately NOT Editor-in-Chief — implies writing-contributor, not managing-editor; keeps you out of integration-ops meetings that eat your time).
+- **Duration: 18 months** with option to renew 6 months at mutual agreement.
+- **Workload cap: 8 hrs/week** measured in time-tracking (Toggl or equivalent), reconciled monthly. Explicit clause: "if average weekly hours exceed 8 across any rolling 8-week window, executive shall reduce scope or increase hourly compensation at blended $250/hr." This is the load-bearing clause — without it "8 hrs/week" drifts to 15 by month 6.
+- **Scope:** (a) 1 newsletter/week editorial review + byline, (b) anchor-sponsor renewal intros, (c) transition continuity support, (d) monthly editorial-direction sync. Explicitly excluded: new-subscriber acquisition, tech/infrastructure work, Meridian's other-property work, editorial of Meridian's other properties.
+- **Compensation:** $75K annualized for 18-month role (~$48/hr on 30 hrs/mo). Separate from earnout. This is "you stay, we pay for time" — it's not part of purchase-price economics.
+
+**2. Non-compete.**
+- **Scope: paid newsletter for academic-to-industry life-sciences transitions.** Narrow by design. Does NOT preclude: podcasts in adjacent spaces, consulting with individual scientists, other-industry career-transition newsletters (e.g., postdoc→government, postdoc→data-engineering explicitly carved out), online courses, books.
+- **Duration: 18 months post-close.** Matches role duration — if you extend role, NCC does not auto-extend.
+- **Geographic: US + UK.** Not global — Meridian doesn't operate EU properties; broad geo is overreach.
+- **Exclusions to codify:** (a) consulting/advising individual scientists on their transitions (1:1 work), (b) writing non-commercial content (personal blog, guest essays on Substack without monetization), (c) employment by non-competing companies in the space (e.g., biotech recruiter can hire you as a consultant), (d) any new niche site/business outside the narrow scope.
+
+**3. Earnout mechanics.**
+- **Measurement:** monthly report to you, signed by Meridian's CFO. You get read-access to the metrics dashboard.
+- **Dispute process:** any metric variance >5% flagged for 30-day cure; if not cured, mutual review with independent accountant (your cost + theirs split). This prevents the classic earnout trick of "we revised metric X retroactively."
+- **Acceleration triggers:** (a) Meridian materially restructures NorthernSignal (brand deprecation, editorial pivot, anchor-sponsor changes) → earnout accelerates at 80% of target values, paid out at 12 months. (b) Meridian sells NorthernSignal within 24 months → earnout accelerates at 100%.
+- **Non-achievement protection:** earnout CANNOT be reduced or withheld for actions Meridian takes unilaterally (pricing change, paywall restructure, editorial direction shift) without mutual agreement.
+- **Currency:** cash, not stock/equity. Do not accept equity-denominated earnout unless Meridian is public.
+
+**4. Working-capital + reps.**
+- Normal 12-month working-capital minimum ($120K ≈ 3 months operating cost).
+- Reps: standard — you warrant no material litigation, no undisclosed liabilities, clean books. Include seller-friendly: reps survive 18 months, capped at $150K (15% of cash-at-close), excluding fraud.
+- Escrow: 10% of cash-at-close ($100K) held 18 months. Standard; do not let them push for 20%.
+- **Tax structure:** push for asset sale if possible for you (depends on LLC structure — your accountant's call). Meridian may push stock sale for liability transfer. This trade-off is worth $80-120K in after-tax depending on basis; negotiate it.
+
+**5. Escape valve (mutual termination clause).**
+- **Trigger:** if editorial direction material-change (defined: paywall >$249, editorial cadence <1/wk, rebrand, >2 anchor sponsors drop due to Meridian actions) happens without mutual consent, you can exercise termination.
+- **On termination:** you retain cash already paid; outstanding earnout accelerates at 60% of target values and pays within 30 days; non-compete terminates; you're free.
+- **Cooling period:** this clause only activates 4 months post-close (prevents frivolous exit); inactive after month 18.
+
+**What your lawyer should specifically push on:**
+
+1. **"Material change" definition in escape-valve clause** — Meridian's lawyer will try to leave this vague. Pin it to the specific 4 triggers listed above, each measurable. Vague "material change" is unenforceable.
+
+2. **Earnout metric definition language.** Retention % needs precise definition: paid subs end-of-month vs start-of-period, treatment of refunds, treatment of plan changes (annual→monthly counted as retained or churned?). Get every edge case defined.
+
+3. **Non-compete carve-outs in writing.** The podcast + 1:1 consulting + non-monetized blog exclusions will be the first things Meridian's lawyer strikes. Your lawyer's job is to put them back in and survive 2-3 rounds of drafting.
+
+4. **Escrow release schedule.** Meridian's lawyer will push for hold-back to indemnity survival (18 mo). Your lawyer pushes for 50% at 12 mo, 50% at 18 mo.
+
+5. **Post-close IP clarity.** NorthernSignal's template library + archive IP transfers. But YOUR personal-brand IP (your name, your likeness, your future writing voice) stays with you. Get this written — Meridian's default drafting may grab "likeness in marketing materials for the acquired property in perpetuity" which is absurd at year 4.
+
+6. **Confidentiality scope.** Standard NDA + non-disparagement — fine. But do NOT accept a blanket "confidentiality about the transaction terms" clause that prevents you from writing about the process later (anonymized or 2-year delayed). If you want to tell this story on a podcast in 2027, don't sign it away in 2026.$pf$,
+ $pf$Post-close framework designed across 5 dimensions. Role: Editor-at-Large, 18mo, 8hr/week cap with hour-tracking clause that reprices scope if exceeded, $75K role comp separate from earnout. Non-compete: narrow to paid academic-to-industry-lifesci-newsletter only, 18mo, US+UK, 4 explicit carve-outs (1:1 consulting, podcasts, non-monetized blog, adjacent verticals). Earnout: monthly measured, 80%-accelerate on restructure / 100% on resale, cash only, dispute escalation. Working capital: 12mo min $120K, escrow 10% / 18mo, asset-sale push for tax. Escape valve: 4 specific material-change triggers, 60% earnout acceleration + NCC termination, 4-month cooling. Lawyer-focus list: material-change definition, retention math edge cases, NCC carve-out survival, escrow schedule, personal-brand IP retention, confidentiality-not-blanket.$pf$),
+
+-- Step 7 --
+('66666666-6666-6666-6666-666666300107',
+ '55555555-5555-5555-5555-555555550030',
+ 7,
+ $pf$1-page pre-call memo for Friday — position, listen-fors, red lines, decision tree$pf$,
+ $pf$Friday's call is 60 minutes. I want a 1-page memo I can have in front of me during the call — not a script, a reference. Opening position, 3 things to listen for in their response, my red lines, a decision tree for the 4 most likely responses from them, and post-call next steps.
+
+Keep it to what I'd actually glance at mid-call — not exhaustive, not rehearsed-sounding. Language I can say out loud in my voice, not corporate-slide-deck.$pf$,
+ $pf$**NorthernSignal / Meridian — Friday call prep**
+
+**Preferred outcome:** sign term sheet for $1.4-1.45M at 18-mo Editor-at-Large role, narrow NCC.
+**Acceptable outcome:** term sheet for $1.3M+ cash + earnout structure on metrics I influence.
+**Walk-away:** below $1.25M cash at close, or broad NCC they won't narrow.
+
+---
+
+**OPENING (minute 1-5):**
+*"Thanks for the offer Monday. I spent time with it. Before we go into structure I want to share where I landed on total price, because I think if we can find alignment there, structure becomes easier."*
+
+*"I'm countering at $1.45M. The rationale is pretty concrete: 3x on ARR + 2.5x on sponsorship is in-band for comparable acquisitions, and my year-2+ cohort retention at 91% supports the higher multiple vs naive blended-churn. Sponsor pipeline and list-novelty versus your existing properties add real value to your integration thesis that I think $1.1M undervalues."*
+
+*"Structure-wise: $1.0M cash at close, $450K earnout over 24 months tied to retention, list growth, and sponsor-anchor metrics I can influence."*
+
+Pause. Let them respond.
+
+---
+
+**LISTEN FOR (in their response):**
+
+1. **Urgency tell:** do they have a timeline pressure? Language like "we'd love to close by end of Q2" or "our fund deployment window" = they have a clock. That's price leverage for me. Language like "we're not in a rush" = they'll push on structure more than price.
+
+2. **Flex on earnout tell:** do they push back on structure ("we'd want more in earnout") or on price ("$1.45M is too high")? Push on structure = price is roughly fine and we're haggling tactics. Push on price = I need to work them up through my concede order.
+
+3. **Integration-plan tell:** how specific are they about what they'd do with NorthernSignal? Specific plan (cross-promote cadence, sponsor bundling) = high motivation, weaker walk probability. Vague plan = they may walk, I'm at more risk.
+
+---
+
+**RED LINES (don't cross mid-call):**
+- Cash at close <$1.25M
+- NCC scope broader than "paid newsletter for academic-to-industry life-sciences transitions"
+- Earnout tied to integration metrics (their tech, their sales)
+- Editorial commitment >24 months
+- Stock/equity earnout currency
+
+---
+
+**DECISION TREE — 4 most likely responses:**
+
+**If they say "$1.45M is too high, we can do $1.2M":**
+→ *"I hear you on the gap. Where I'd push back: my cohort retention at 91% for established subs isn't priced into $1.2M. Walk me through the math — what multiple are you anchored to, and what do you see that justifies below 2.5x revenue?"* — force them to argue numerically. Then counter at $1.38M / $1.0M cash / $380K earnout.
+
+**If they say "We can do $1.3M but need more in earnout":**
+→ Good signal — price in band. Counter-structure: $1.35M total / $0.975M cash / $375K earnout. Redirect: *"Shift from $1.0M cash to $975K I can work with; shifting below $950K compresses the cash-at-close below the threshold where this deal dominates my hold-solo alternative."*
+
+**If they say "Let's talk structure first":**
+→ Redirect: *"I hear you — but price shapes structure. I can't design an 18-month Editor-at-Large role at 8 hrs/week against $1.1M the same way I would against $1.4M. Can we agree on a price band first, then I'll build the structure around it?"*
+
+**If they say "$1.1M is firm, we can't move":**
+→ *"Then I think we're probably not going to get to a deal today, and that's okay. Can we keep the door open for Q3? I want to be honest that I'd rather hold at my base DCF than close below $1.25M."* Then email follow-up Tuesday reopening at $1.35M if I haven't heard.
+
+---
+
+**POST-CALL NEXT STEPS:**
+- Immediately: 15-minute debrief note — verbatim quotes I remember + my reading of urgency/flex/integration tells
+- Within 2 hours: email Meridian summary of where we landed + next-step ask
+- Tuesday if no response: follow-up email reopening at $1.35M or requesting specific written reasoning on their floor
+- Thursday if still no progress: engage M&A lawyer for term-sheet drafting if we're moving forward, or terminate conversation cleanly if not
+
+---
+
+**The phrase NOT to use Friday:** "I've been going back and forth on this." Signals indecision + optionality they can exploit. Use: "I spent time with it and landed here" — signals deliberation + arrived. Words matter.$pf$,
+ $pf$Pre-call memo shipped. Opening position ($1.45M counter + rationale + structure). 3 listen-fors (urgency / flex / integration-plan tells, each with decoder). 5 red lines (cash floor, NCC breadth, metric alignment, role duration, currency). Decision tree for 4 likely responses: price-pushback (counter at $1.38M with multiple-math force), mixed price-structure ($1.35M / $975K cash), structure-first redirect, firm-$1.1M walk. Post-call next steps (15-min debrief + 2-hr summary + Tue follow-up + Thu lawyer-or-terminate). Language tells: avoid indecision-signals; "spent time with it and landed here" > "went back and forth."$pf$);
+
+-- =========================================================================
+-- Project 0031 — Personal (Trading 2014 Accord for used EV — 3-pass framework)
+-- lena_solopreneur · Claude 4.6 Opus · 3 steps · beginner
+-- =========================================================================
+
+DELETE FROM prompt_steps WHERE prompt_id = '55555555-5555-5555-5555-555555550031';
+DELETE FROM prompts      WHERE id        = '55555555-5555-5555-5555-555555550031';
+
+INSERT INTO prompts (
+  id, title, description, content, result_content,
+  category_id, difficulty, model_used, model_recommendation,
+  tools_used, tags, status, author_id, vote_count, bookmark_count
+) VALUES (
+  '55555555-5555-5555-5555-555555550031',
+  $pf$Trading my 2014 Accord for a used EV — 3-pass Claude workflow on TCO, tax credits, and shopping tactics before a test drive this weekend$pf$,
+  $pf$My 2014 Honda Accord has 143K miles and just quoted $3,200 for transmission service. I've been thinking about swapping to a used EV instead of sinking more into the Accord. 3-pass Claude workflow: full 5-year TCO comparison (keep Accord vs used EV vs new-car lease), used-EV federal tax credit + CA incentives + financing, and a shopping + test-drive checklist for the 2021-2022 Model 3 vintage I'm leaning toward.$pf$,
+  $pf$I'm Lena. My 2014 Honda Accord has 143K miles and I just got quoted $3,200 for transmission service plus recommended timing-belt + brake work totaling another $2,400 — so I'm staring at a $5,600 car-health decision today. Car has been reliable but it's the last year before Honda refreshed the platform and the fuel economy is terrible (27 MPG combined in real-world SF-Bay-Area driving).
+
+I've been noodling on swapping to a used EV for ~18 months but never committed. The transmission quote is forcing the call. Three paths I'm weighing:
+
+1. Keep the Accord — do the $5,600 in repairs, drive it to 200K+ miles hoping nothing else goes.
+2. Used EV — probably a 2021-2022 Tesla Model 3 in the $24-32K range, or a used Chevy Bolt EUV in the $18-22K range.
+3. New-car lease — $350-450/mo on something practical (Corolla Hybrid, Prius).
+
+I'm a solopreneur running NorthernSignal. I drive maybe 11,000 miles/year, 70% city + 30% road trips (visiting parents in Sacramento, trips to Tahoe). Budget is fine but I don't love writing a $28K check — I'd rather know the math is right than move fast.
+
+3-pass Claude workflow with Opus 4.6. Opus because I want it to push back on my assumptions (specifically: am I talking myself into the EV because I want one, or is the math actually there). Sonnet tends to reinforce what you're already leaning toward; Opus will tell me if my reasoning is wonky.$pf$,
+  $pf$Bought a 2022 Tesla Model 3 Long Range with 51K miles for $27,800 from a CarMax in San Jose. Used-EV federal credit: $4,000 applied at transaction (dealer is registered, car qualified at $25K cap — CarMax had it listed $28,500 and I negotiated to $27,800 with the credit eligibility preserved). CA CVRP: didn't qualify (income capped at $135K single, I'm over). Net out-of-pocket after credit: $23,800 + $1,850 tax/registration/DMV = $25,650. Financed $20K at 7.1% APR on 60 months through a credit union (cheaper than CarMax financing). Monthly $397.
+
+The math tightens vs my original estimate by a few hundred in my favor: 5-year TCO comes out $12.4K total (fuel $2.8K, insurance +$900/yr, tires $1.4K at 60K miles, registration savings, net of residual value estimate $8,500 at 5-yr/110K-mile mark). Accord kept path would have been $19.2K TCO (all the deferred-maintenance I didn't do, plus the timing-belt/transmission/brake bundle, plus fuel). Net savings over 5 years: ~$6.8K, plus I'm driving an EV instead of a 15-year-old ICE. New-car lease would have been $24-29K over 5 years with no residual capture — worst TCO of the three.
+
+What I'd tell another solopreneur considering this: pass 3's test-drive checklist saved me from buying the second-candidate car. The Model 3 I actually bought had 89% battery health at 51K miles (excellent). The one before it had 81% at 38K miles, which reads "fine" until you realize that's ~8% higher degradation than spec cohort — indicator of harsh charging history. Walked away. Without the checklist I'd have bought the first one.$pf$,
+  '11111111-1111-1111-1111-111111111110',
+  'beginner',
+  'claude-opus-4-6',
+  'Claude 4.6 Opus',
+  ARRAY['Claude','CarGurus','Carvana','CarMax'],
+  ARRAY['ev','car-shopping','tco','solopreneur','personal-finance','tesla'],
+  'approved',
+  '22222222-2222-2222-2222-222222222210',
+  58, 26
+);
+
+INSERT INTO prompt_steps (id, prompt_id, step_number, title, content, result_content, description) VALUES
+
+-- Step 1 --
+('66666666-6666-6666-6666-666666310101',
+ '55555555-5555-5555-5555-555555550031',
+ 1,
+ $pf$5-year TCO: keep Accord vs used EV vs new-car lease$pf$,
+ $pf$Build a concrete 5-year TCO comparison for my three options. I want actual numbers not vibes.
+
+Inputs:
+- 11,000 mi/yr, 70% city / 30% road trip
+- Current gas ~$4.60/gal SF Bay Area, home electricity $0.38/kWh (PG&E E-TOU-D off-peak $0.31)
+- Current Accord insurance: $1,420/yr
+- Current Accord registration: $120/yr
+- Candidate used EV: 2021-2022 Tesla Model 3 Long Range, ~$28K, or 2022 Bolt EUV, ~$20K
+- Candidate lease: Toyota Corolla Hybrid, ~$320/mo on 36-mo lease with $2,500 down
+- I'd hold whatever I buy for 5 years
+
+For each path: upfront cost, fuel/energy cost, insurance (estimate EV delta), maintenance, registration, tire costs at 60K miles, residual value at year 5, total 5-year TCO. Then a plain read of which is cheapest, which is worst, and the gotchas I should investigate before committing to the EV path.$pf$,
+ $pf$Here's the math. I'll be explicit about assumptions so you can adjust if any are wrong.
+
+**Path A: Keep Accord (do the $5,600 service bundle, drive to 200K+).**
+
+- Upfront: $5,600 (transmission + timing belt + brakes) + estimated $1,800-2,400 in deferred repairs over 5 years (water pump, AC, catalytic converter at 180K is common on this gen, tie-rods, struts) = ~$7,800
+- Fuel: 11,000 mi / 27 MPG × $4.60/gal = $1,874/yr × 5 = **$9,370**
+- Insurance: $1,420/yr × 5 = $7,100
+- Registration: $120/yr × 5 = $600
+- Tires at 60K miles (you're at 143K now, will hit 198K in 5yr): need 1 new set around year 2-3 = $700
+- Residual at year 5 / 198K miles: ~$2,500-3,500 private party (it's a 2014 Accord with 200K miles — realistic)
+- **5-yr TCO net of residual: $7,800 + $9,370 + $7,100 + $600 + $700 - $3,000 = $22,570**
+
+**Path B: Used 2022 Model 3 Long Range (~$28K).**
+
+- Upfront: $28,000 - $4,000 federal used-EV credit (if car + dealer + your AGI qualify — pass 2 will verify) = $24,000 out-of-pocket + $2,100 tax/reg/DMV = $26,100
+- Energy: 11,000 mi / 4.0 mi/kWh (Model 3 LR real-world) × $0.31/kWh off-peak home = $853/yr × 5 = **$4,265.** If you don't get solar/off-peak and pay full $0.38: $1,045/yr × 5 = $5,225.
+- Insurance: Model 3 insurance runs ~1.5-2x Accord; estimate $2,400/yr × 5 = $12,000 (delta +$4,900 vs Accord)
+- Registration: CA EV reg fees similar to ICE; ~$140/yr × 5 = $700
+- Maintenance: minimal — tires, cabin air filter, wiper blades. Expect $1,400 for 1 tire replacement at ~50K added miles (you'll be at 102K). No oil changes, no transmission service. ~$2,000 total 5-yr maintenance including tire.
+- Battery degradation: 2022 Model 3 LR starts at 358 mi range. Expect 6-10% degradation over 5 years / 55K added miles = 322-336 mi at year 5. Not material for 11K mi/yr usage.
+- Residual at year 5 / ~102K miles: 2027 resale of 2022 Model 3 LR with ~100K miles = ~$14,000-16,500 based on current 5-year-old Model 3 market. Use $15,000 conservatively.
+- **5-yr TCO net of residual: $26,100 + $4,265 + $12,000 + $700 + $2,000 - $15,000 = $30,065**
+
+Wait — that's higher than Accord path. Re-check: the $4,900 insurance delta is the single biggest swing. Without it: $25,165. With lower end ($2,100/yr EV insurance — plausible if you shop), the delta is $3,400 → $28,565. Insurance quote shopping materially changes this.
+
+**Path B-alt: Used 2022 Bolt EUV (~$20K).**
+- Upfront: $20,000 - $4,000 credit - $3,500 CA CVRP (income-capped but check your AGI) = $12,500 + $1,800 tax/reg = $14,300 if you qualify for both; $16,500 if only federal.
+- Energy: 11,000 mi / 3.9 mi/kWh × $0.31 = $874/yr × 5 = $4,370 (similar to Model 3)
+- Insurance: Bolt insurance ~1.2x Accord = $1,700/yr × 5 = $8,500
+- Other: +$700 reg, +$1,400 tires, +$500 other
+- Residual at year 5 / ~102K miles: $9,000-11,000 (Bolts depreciate harder than Teslas but start cheaper)
+- **5-yr TCO net of residual: $14,300 + $4,370 + $8,500 + $700 + $1,400 - $10,000 = $19,270**
+
+**Path C: New Toyota Corolla Hybrid lease, $320/mo × 36 mo + $2,500 down, roll into new lease at month 36.**
+- 5-year lease-cycle cost: $2,500 (down) + $320 × 36 + $2,500 (renewal down) + $340 × 24 (typical 5-10% renewal uplift) = $2,500 + $11,520 + $2,500 + $8,160 = $24,680
+- Fuel (52 MPG hybrid): 11,000/52 × $4.60 = $973/yr × 5 = $4,865
+- Insurance: $1,550/yr × 5 = $7,750
+- Registration: $160/yr × 5 = $800
+- Residual: **$0 (lease — no residual capture)**
+- **5-yr TCO: $24,680 + $4,865 + $7,750 + $800 = $38,095**
+
+**Comparison (5-yr TCO low to high):**
+1. **Bolt EUV: $19,270** (if both credits apply)
+2. **Accord keep: $22,570**
+3. **Model 3 LR: $28,565-30,065** (wide range on insurance)
+4. **Lease: $38,095**
+
+**The plain read:**
+- Bolt wins on math if both credits apply. You probably only get the federal $4K (CVRP income-capped at $135K; solopreneur income likely over).
+- With federal-only: Bolt at ~$22,770 ties Accord. The EV win is qualitative (driving a 3-year-old car vs a 14-year-old car with increasing repair lottery) + emissions + performance.
+- Model 3 LR is $6-7K more expensive than Bolt but you're buying a lot more car (range, performance, software). The insurance delta is the hidden killer — get 3 insurance quotes BEFORE committing.
+- Lease is strictly dominated. Don't lease unless you value predictability over dollars.
+
+**Gotchas to investigate before committing:**
+1. **Used-EV federal credit eligibility.** Car must be ≤$25K MSRP (this is the critical gate — Model 3 LR at $28K fails this, Bolt at $20K passes). Dealer must be licensed for the credit transfer. Pass 2 investigates. If $28K Model 3 doesn't qualify, either you negotiate to $25K or lose $4K — changes the math.
+2. **Battery degradation on used Model 3.** 2021-2022 vintage has been running 3-4 years. Cold-weather and harsh-charging cars can show 15%+ degradation at 60K miles. Pass 3 covers test-drive checklist.
+3. **Insurance shopping.** The $4,900 Model 3 insurance delta is based on typical quotes but varies 30-40% across carriers. Quote 3 carriers with your driving record + zip + VIN before committing.
+4. **Home charging setup.** If you don't have a NEMA 14-50 outlet in your garage, add $800-1,500 for installation (or use ~$150 Level 1 trickle charging on 120V, which takes 40+ hours for a full charge — workable if you drive <30 mi/day).
+5. **CA CVRP income cap.** If your 2024 AGI was ≤$135K single, you qualify for $3,500 additional. Likely not, but check your return.
+
+Proceed to pass 2: used-EV credit eligibility deep-dive + financing options.$pf$,
+ $pf$5-year TCO comparison: Bolt EUV $19,270 (if both credits) / Accord keep $22,570 / Model 3 LR $28,565-30,065 depending on insurance / Corolla lease $38,095 (strictly dominated). Bolt wins on pure math; Model 3 qualitatively superior but $6-7K premium mostly driven by insurance delta (shop 3 carriers before committing). Lease never wins. 5 gotchas flagged for pass 2-3: used-EV credit $25K car-price cap (Model 3 LR likely fails), battery degradation, insurance shopping, home-charging install, CA CVRP income check.$pf$),
+
+-- Step 2 --
+('66666666-6666-6666-6666-666666310102',
+ '55555555-5555-5555-5555-555555550031',
+ 2,
+ $pf$Used-EV federal credit + state/local incentives + financing options$pf$,
+ $pf$Pass 1 flagged the $25K MSRP cap as a real risk for the Model 3 path. Dig into the used-EV federal credit specifically — what are the actual qualifying criteria, how does the dealer-transfer mechanic work, what happens if I buy from a private seller vs dealer, what's the AGI cap on buyer side.
+
+Also: CA incentives beyond the CVRP (which I'm probably income-capped out of), any PG&E EV rebates I should grab, and financing — credit union vs dealer vs HELOC at current rates. I own my condo, HELOC is an option if it's cheapest.
+
+Finally: what paperwork + timeline do I need to actually execute this in the next 4 weeks?$pf$,
+ $pf$Let me walk through each piece.
+
+**Used-EV federal tax credit (Section 25E / "Previously-Owned Clean Vehicle Credit"):**
+
+Qualifying criteria (all must be true):
+1. **Vehicle sale price ≤ $25,000.** Hard cap, includes accessories and delivery but excludes tax, title, registration. This is the one that kills the $28K Model 3 LR unless you negotiate down — or find a $24,500 Model 3 SR+ (shorter range, ~272 mi). Bolt EUV at $20K clears easily.
+2. **Model year at least 2 years prior to sale year** (2026 sale = 2024 or older model; not an issue for you).
+3. **First qualified transfer** since Aug 16, 2022 — i.e., car has not been claimed for this credit before. Check VIN history on the Qualified Manufacturer report.
+4. **GVWR < 14,000 lbs.** Both candidates fine.
+5. **Sold by a licensed dealer** — NOT a private seller. This is the critical gate. Private-party purchase = no credit, no exceptions.
+6. **Dealer is registered with IRS Energy Credits Online portal** — most big used-car dealers (CarMax, Carvana, Vroom) are registered. Smaller independent dealers may not be. Ask before test drive: "Are you registered for the used-EV credit transfer?"
+
+Buyer AGI cap (MAGI):
+- Single: $75,000
+- Head of Household: $112,500
+- Married joint: $150,000
+- Lookback rule: current year OR prior year, whichever is lower.
+
+For you as a solopreneur with NorthernSignal income — **your AGI likely exceeds $75K single.** If so, you do NOT qualify for the used-EV credit, period. This is the showstopper.
+
+**But: credit transfer loophole.** If you buy at a registered dealer and elect to transfer the credit to the dealer at time of sale (as a price reduction), the IRS does the AGI check against the year in which you'd claim. If you elect transfer, you effectively get $4,000 off at purchase. IRS reconciles AGI at tax filing — and if you fail the AGI test, **you owe the $4,000 back on your next tax return.** So: if you take the transfer, plan for a $4,000 tax liability next April unless your AGI comes in under cap.
+
+**Translation for you:** the federal credit is likely a "claw-back at tax time" for solopreneurs with NS-level income. Net-zero economics, deferred cost. Don't price it into your TCO math unless your CPA confirms AGI will be <$75K single in 2025 OR 2026.
+
+**State + local incentives:**
+
+- **CA CVRP** ($2,000-$4,500 on new EVs, used-EV rebate program ended in 2023). Not available on used.
+- **CA Clean Vehicle Assistance Program (CVAP)** — grants up to $5,000 for used EV if income ≤ 400% federal poverty line (~$62K single). You're likely over. Not applicable.
+- **BAAQMD Clean Cars for All** — replace pre-2006 ICE with up to $12,500 toward clean vehicle; income-capped. Not applicable (your Accord is 2014).
+- **PG&E Pre-Owned EV Rebate: $1,000** for used EV (2019+ model year), no income cap. **You DO qualify for this.** Apply within 180 days of purchase. Real $1,000.
+- **PG&E Home Charging rebate: $500** for installing a Level 2 charger at home. Apply separately.
+- **Federal charging station credit (30C): 30% of cost up to $1,000** for home EV charger + install, for low-income communities (census-tract-based). Check if your address qualifies.
+
+**Realistic net subsidy you'll actually bank:**
+- Federal used-EV credit: $0 (AGI disqualified for outright claim; clawback if transferred)
+- PG&E used-EV rebate: **$1,000** (real)
+- PG&E charging rebate: **$500** (real)
+- Charger 30C federal: $500-1,000 conditional on census tract
+
+Expected: **~$1,500-2,500 in real subsidies.** Re-run TCO: Model 3 LR at $28K pre-subsidy, $25.5-26.5K after real subsidies — the $4,000 federal credit you hoped for probably doesn't land.
+
+**Financing comparison (5-yr, $20K loan):**
+
+Current market (March 2026 approximate):
+- **Credit union auto loan (SF Bay):** 6.5-7.4% APR, 60-mo, for 720+ credit scores. Monthly ~$393-400.
+- **Bank auto loan:** 7.5-8.2%. Monthly ~$400-408.
+- **CarMax / Carvana in-house:** 8.5-10.5%. Monthly ~$411-430.
+- **Tesla direct financing:** 7.2-7.9% (varies with credit).
+- **HELOC on condo:** 7.8-9.2% variable, no fees if existing HELOC; deductible interest if used for home improvements (NOT a car — car use is NOT deductible even with HELOC collateral).
+
+**Recommendation:** credit union (Alliant, PenFed, SF Fire Credit Union) for best rate. Pre-qualify BEFORE dealer visit — dealer finance will try to match or beat; your walk-away leverage is "I have a 7.1% approval from credit union already."
+
+HELOC is worse: same rate range, no tax advantage for car purchase, and you're putting your home on the collateral for depreciating transportation. Don't.
+
+**Paperwork + timeline to execute in 4 weeks:**
+
+**Week 1 (this week):**
+- [ ] Credit union pre-approval — Alliant online, 48-hour turn. Target: $22K pre-approved at 7.1%.
+- [ ] Insurance quotes — 3 carriers (Geico, State Farm, USAA if eligible, Progressive). Give your current VIN + driving record. Get written quote, 10 days valid.
+- [ ] Confirm PG&E account — verify you have NEMA 14-50 in garage OR get electrician quote for install (~$800-1,500 depending on panel distance).
+
+**Week 2:**
+- [ ] Test drive 2-3 candidates per pass 3 checklist.
+- [ ] Pull CARFAX + dealer service history on your top candidate.
+- [ ] Ask dealer: registered for IRS Energy Credits Online? (Determines if $4K credit even an option.)
+
+**Week 3:**
+- [ ] Negotiate + close. Use credit-union pre-approval as financing leverage.
+- [ ] If credit transfer at dealer: note that you'll owe the $4K at tax time if AGI>$75K. Decide if taking the transfer + banking the deferred-payment float is worth it (probably yes if you invest the $4K at >7% for 14 months).
+- [ ] Sign + take delivery.
+
+**Week 4:**
+- [ ] Submit PG&E Pre-Owned EV Rebate (form + proof of purchase).
+- [ ] Schedule L2 charger install if not already in place.
+- [ ] Insurance swap from Accord to new car.
+- [ ] Sell / trade Accord separately — CarMax appraisal vs private party Facebook Marketplace (~$4-5K delta private vs trade).
+
+**One more consideration:** the deferred-payment arbitrage on federal credit transfer. If the dealer is registered and you take the transfer, you reduce purchase price by $4,000 today. You owe $4,000 at tax filing ~14 months later (April 2027 if you buy March 2026). If you invest that $4,000 in a 4.5% HYSA for 14 months, you earn ~$210. Not life-changing but real. If you're confident AGI will be over cap, treat the transfer as a no-interest $4K loan from IRS for 14 months.$pf$,
+ $pf$Used-EV federal credit requires dealer sale + ≤$25K car price + AGI ≤$75K single — solopreneur likely disqualified on AGI. Credit-transfer loophole gives $4K off at purchase but IRS claws back at tax filing if AGI-over-cap. Real subsidies: PG&E used-EV $1,000 + PG&E charger $500 + conditional charger 30C = $1,500-2,500 actual. Financing: credit union 6.5-7.4% wins; HELOC strictly worse for car purchase. 4-week execution path: week 1 pre-approval + insurance quotes + charging check, week 2 test drives + CARFAX + credit-transfer-eligibility ask, week 3 close + delivery, week 4 rebate filing + charger install + insurance swap + Accord disposition.$pf$),
+
+-- Step 3 --
+('66666666-6666-6666-6666-666666310103',
+ '55555555-5555-5555-5555-555555550031',
+ 3,
+ $pf$Shopping targets + negotiation tactics + test-drive checklist$pf$,
+ $pf$Pass 2 confirmed Model 3 LR at $28K likely loses the federal credit (price cap + AGI), which tightens the gap with Bolt EUV. I'm still leaning Model 3 — range + software + resale strength matter to me — but I want to be rigorous on the specific car, not the abstract category.
+
+Give me: (a) the specific shopping targets (year, trim, mileage band, expected price range) for Model 3 candidates in SF Bay Area, (b) negotiation tactics — what to anchor to, what dealer-specific leverage I have, (c) test-drive checklist I can run in 30-40 minutes that actually catches problems. Not a generic "check the tires" list — Tesla-specific things that matter on 2021-2022 vintage.
+
+Also: what to walk away from, no matter how much I like the car.$pf$,
+ $pf$Shopping targets + tactics + checklist.
+
+**Specific shopping targets (SF Bay Area, March 2026):**
+
+- **2022 Model 3 Long Range, 40-65K miles, $25,500-30,500.** Sweet spot. Battery health should be ≥87%. Avoid cars with >60K miles without battery-health documentation.
+- **2022 Model 3 Performance, 30-50K miles, $29,000-34,000.** Stronger resale; performance brakes + tires wear faster so factor +$500/yr maintenance.
+- **2021 Model 3 Long Range, 50-75K miles, $23,000-27,500.** Saves $3-4K vs 2022 but loses ~$2K at resale in 2029. Net small win only if battery health is documented ≥85%.
+- **Avoid: 2020 or earlier Model 3.** MCU issues more common, pre-HW3 compute, less range.
+- **Avoid: 2021-2022 Standard Range Plus (SR+).** Range only 263 mi, LFP battery on 2022 SR+ specifically — tolerates 100% charging well, but the range difference vs LR is significant for your Tahoe trips.
+
+**Dealer channels ranked:**
+1. **CarMax.** Registered for IRS credit transfer. 7-day return policy. Price non-negotiable ($200-500 flex at best). Stable inventory, no surprises. Best for buyers who don't want to haggle.
+2. **Carvana.** Similar to CarMax — no negotiation, 7-day return, registered for credit. Delivery option. Good inventory across regions.
+3. **Tesla-direct used.** Tesla sells inspected used from its own network. No price negotiation but includes 1-yr/10K-mi limited warranty which is real value ($800-1,200). Tesla IS registered for the credit but Tesla's inventory is often above $25K — confirm.
+4. **Independent used-car dealer (Tesla-specialized, e.g., Enterprise Car Sales, AutoNation Tesla).** Price negotiable ($500-2,000 flex) but quality varies. ALWAYS check if IRS-registered for credit.
+5. **Private seller.** Cheapest nominal price but: NO federal credit, no return policy, no warranty. Only makes sense if price is $2,500+ below dealer comps AND battery health is documented.
+
+**Negotiation tactics:**
+
+- **Anchor to dealer comps.** Pull 3-5 comparable listings from CarGurus (has "Deal Ratings"), Carvana, Tesla-direct. Screenshot and bring to negotiation. *"Your listing is at $28,900; CarMax has the same trim at 48K miles for $27,400, Carvana 52K for $26,900. I'm at $27,000 on yours."*
+- **Battery health as leverage.** If the car is at 88% SOH (not documented, use Tesla app or third-party scanner at test drive): *"Battery health at 88% is 3% below the spec cohort average. Accounting for $800/yr range-loss value over 5 years = $500 off this price."* Dealers often don't have this data; you surfacing it is informational leverage.
+- **Registration + DMV fee push.** These are small but real ($250-450). Some dealers eat them to close.
+- **Pre-approved financing is your best leverage.** Walk in with credit union approval. Let them attempt to beat. If they don't: use THEIR financing department's failure as a credit to request $300-500 off price.
+- **Time-of-month and time-of-quarter matter.** Last 3 days of month, last 5 days of quarter, dealers close deals. Inventory pressure = $500-1,500 flex.
+- **Do NOT finance add-ons at dealer.** Extended warranties, paint protection, GAP insurance, tire/wheel protection — all $1,200-3,500 with 200%+ markups. Decline all. If you want an extended warranty, buy third-party after (Endurance, Carchex) for 40% less, or just self-insure the $1,200.
+
+**Test-drive checklist — Tesla 2021-2022 specific, 30-40 minutes:**
+
+**Before you leave the lot (10 min):**
+- [ ] **Battery State of Health (SOH).** Open Tesla app connected to the car, or use the screen's Service menu (depending on firmware). Record the estimated full-charge range. Compare to EPA rating for trim/year:
+  - 2022 LR: EPA 358 mi. 88%+ is healthy, 85-87% is acceptable, <85% walk.
+  - 2022 Perf: EPA 315 mi. 88%+ healthy.
+  - 2021 LR: EPA 353 mi. Same thresholds.
+- [ ] **Odometer vs year.** 2022 at 65K+ miles or 2021 at 80K+ miles = higher wear. Factor into price.
+- [ ] **Tires.** Tesla 18-19" tires wear in 25-35K miles. Check tread depth with a quarter (Washington's head: ≥2/32"). New tire set = $1,100-1,600. If tires are at 3/32" and you're buying at dealer-ask, negotiate $800 off.
+- [ ] **Interior condition — front seat bolster specifically.** Model 3 driver-seat bolster wears faster than stitch-rest of car. Visible wear under 40K miles = either high-mileage in reality vs odometer, or harsh driver. Red flag for overall mechanical treatment.
+- [ ] **Charge port + trunk latch.** Both are common-fail components. Both should operate smoothly first time. Sticking = $250-600 repair.
+- [ ] **CARFAX + Tesla service history.** Accidents, battery/drive-unit replacements, software updates. Tesla service history (ask dealer to pull; if they can't, call Tesla directly with VIN) tells you warranty-event history. Any battery or drive-unit replacement is actually a POSITIVE — means car got new major component.
+
+**Test drive (15-20 min — loop with city streets + highway + one stop-go-stop sequence):**
+- [ ] **Regen-brake feel.** Should be smooth, not jerky. Uneven regen signals motor controller issue ($800+ fix).
+- [ ] **Steering wheel alignment and wheel-vibration above 60 mph.** Vibration = alignment ($120) or worse, warped rotor ($400).
+- [ ] **Autopilot lane-keep** (engage on highway). Wobble, sudden disengages, false-positive phantom braking: phantom braking specifically on 2021-2022 vintage was addressed by firmware; should be rare on current firmware. 1 phantom-brake on a 15-min drive is acceptable; 2+ = walk.
+- [ ] **Acceleration ramp, 0-60.** Model 3 LR should hit 60 in 4.2s (2022) or 4.4s (2021). Sluggish launch, drive unit hesitation, or noise during acceleration = drive-unit issue ($2,500+ fix post-warranty).
+- [ ] **Screen responsiveness.** Swipe between map/music/climate rapidly. Any stutter, black-out, delay = MCU issue. 2021+ MCU issues are rare but exist. Walk if so.
+- [ ] **A/C.** Set to 60°F max cooling. Air at vents should hit cold in <90 seconds. Slow cooling = refrigerant level or compressor issue ($500-1,200).
+- [ ] **All door handles.** Each presents and retracts. Sticking handle = $350 per handle to fix.
+
+**Post-drive (5-10 min):**
+- [ ] **Underneath the car.** Drips, rust on battery pack, undercarriage damage from curb strikes. Curb rash on wheels is cosmetic; battery damage is a show-stopper.
+- [ ] **Rear trunk + frunk.** Latch, liner condition, water ingress (check seals for mold).
+- [ ] **HV fast-charge port.** Ask dealer for a brief Supercharger session to confirm port function if possible. Or ask to charge to 80% during your time if waiting for paperwork — gives you 30 min of data.
+
+**Walk away from, no matter how much you like the car:**
+- Battery SOH <85%
+- >2 previous owners (typical 2021-2022 has 1-2)
+- Prior salvage/rebuilt title
+- Flood history (check CARFAX keywords)
+- Any undisclosed accident with frame damage
+- Any battery or motor replacement where the replacement part wasn't Tesla-OEM
+- Evidence of aftermarket FSD "unlock" that was later removed (Tesla tracks this; you'll find out post-purchase and be unhappy)
+- Seller unable to produce full CARFAX + Tesla service history in <5 minutes of asking
+- Firmware 8+ versions behind current (signals vehicle in storage for months — possible battery degradation from storage conditions)
+- Paint mismatched between panels (repaint from unrecorded accident)
+- Window tint non-OEM that obscures driver assist cameras
+
+**One more thing:** take a friend or partner for second-opinion on test drive. You'll fall in love with the first acceptable car. They won't. They'll notice the bolster wear you missed and the stutter you dismissed. Use them.$pf$,
+ $pf$Shopping targets locked: 2022 Model 3 LR at 40-65K mi / $25.5-30.5K is the sweet spot; 2021 saves $3-4K but loses $2K at resale net. Channels ranked: CarMax/Carvana/Tesla-direct (stable, credit-registered) beat independent dealers (negotiable but variable quality), beat private (no credit, no warranty). Negotiation: anchor to 3-5 dealer comps, use battery-health as informational leverage, decline all F&I add-ons, use credit-union pre-approval to drive 0.5-1% rate drop or $300-500 price cut. Test-drive checklist: 10 min pre-drive (battery SOH ≥85%, tires, bolster, CARFAX), 15-20 min drive (regen, alignment, Autopilot, acceleration, screen, AC, handles), 5-10 min post (underneath, trunk, HV port). 10 walk-away criteria including SOH <85%, salvage, multi-owner, unrecorded accident, firmware 8+ behind.$pf$);
+
+-- =========================================================================
 -- END OF FILE — append next project(s) below this line.
 -- Iterations working the Content queue: add 2–3 projects per iteration,
 -- appending below this comment. Do NOT rewrite existing projects.

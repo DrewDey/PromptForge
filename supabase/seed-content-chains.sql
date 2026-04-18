@@ -10422,6 +10422,591 @@ Also: what to walk away from, no matter how much I like the car.$pf$,
  $pf$Shopping targets locked: 2022 Model 3 LR at 40-65K mi / $25.5-30.5K is the sweet spot; 2021 saves $3-4K but loses $2K at resale net. Channels ranked: CarMax/Carvana/Tesla-direct (stable, credit-registered) beat independent dealers (negotiable but variable quality), beat private (no credit, no warranty). Negotiation: anchor to 3-5 dealer comps, use battery-health as informational leverage, decline all F&I add-ons, use credit-union pre-approval to drive 0.5-1% rate drop or $300-500 price cut. Test-drive checklist: 10 min pre-drive (battery SOH ≥85%, tires, bolster, CARFAX), 15-20 min drive (regen, alignment, Autopilot, acceleration, screen, AC, handles), 5-10 min post (underneath, trunk, HV port). 10 walk-away criteria including SOH <85%, salvage, multi-owner, unrecorded accident, firmware 8+ behind.$pf$);
 
 -- =========================================================================
+-- Project 55-0032 | Case study → LinkedIn carousel + email + blog teaser | Sarah Mitchell | Marketing | 3 steps
+-- =========================================================================
+
+DELETE FROM prompt_steps WHERE prompt_id = '55555555-5555-5555-5555-555555550032';
+DELETE FROM prompts      WHERE id        = '55555555-5555-5555-5555-555555550032';
+
+INSERT INTO prompts (
+  id, title, description, content, result_content,
+  category_id, difficulty, model_used, model_recommendation,
+  tools_used, tags, status, author_id, vote_count, bookmark_count
+) VALUES (
+  '55555555-5555-5555-5555-555555550032',
+  $pf$Repurposing a 2,400-word client case study into a 5-slide LinkedIn carousel, a 180-word email, and a blog teaser — 3-pass workflow for Friday deliverable$pf$,
+  $pf$One client case study, three repurposed assets (LinkedIn carousel + nurture email + blog teaser), shipped in under two hours. The pattern I now run for every new case study client.$pf$,
+  $pf$I have a roster of 6 retainer clients and roughly half of them give me one new case study a quarter that they want sliced into 3-4 distribution channels. Pre-Claude I'd block 4-5 hours per case study because I'd over-rewrite each variant — a LinkedIn carousel isn't a shortened blog post, and an email isn't a long subject line, and I'd keep restarting until each one felt right.
+
+This workflow is the version I now run end-to-end in 90-120 min per case study. It's deliberately accessible — no fancy prompt engineering, just (a) extract the load-bearing facts so I'm not retyping them three times, (b) draft each variant with Claude knowing the output spec for that channel, (c) one critique pass where I ask Claude to read all three side by side and flag where they disagree or repeat each other.
+
+The client (Folderkit, a doc-collaboration startup) gave me the source case study about an enterprise-services firm that cut their proposal-creation time from 11 hours to 90 min. My job was the carousel, an email for their nurture sequence, and a 60-90 word teaser block for their blog index page. Done in 1 hour 50 min total. Old workflow would have been 4+.$pf$,
+  $pf$Three deliverables shipped to the client by 4:15pm Friday: 5-slide LinkedIn carousel (text + slide-by-slide visual direction notes for the designer), 178-word nurture email (subject + body + CTA), and an 84-word blog teaser block. Client approved with 1 small edit (swapped one stat in the carousel). The carousel hit 14K impressions and 91 reactions in week one, ~3x their previous case study post — Folderkit's marketing lead asked me to repeat the workflow on the next two case studies.
+
+The bigger win is the workflow generalizes. I've now run this exact 3-pass loop on case studies for two other clients with no modification — the channel specs are stable, the case-study material varies, the prompts barely change. About 60% time savings on a recurring deliverable.$pf$,
+  '11111111-1111-1111-1111-111111111102',
+  'beginner',
+  'claude-sonnet-4-6',
+  'Claude 4.6 Sonnet',
+  ARRAY['Claude','Notion','LinkedIn'],
+  ARRAY['marketing','case-study','repurposing','linkedin','email','content-ops'],
+  'approved',
+  '22222222-2222-2222-2222-222222222202',
+  78, 34
+);
+
+INSERT INTO prompt_steps (id, prompt_id, step_number, title, content, result_content, description) VALUES
+
+-- Step 1 --
+('66666666-6666-6666-6666-666666320101',
+ '55555555-5555-5555-5555-555555550032',
+ 1,
+ $pf$Extract the spine — load-bearing facts and the ONE story arc$pf$,
+ $pf$I'm repurposing a client case study into 3 distribution assets (LinkedIn carousel, nurture email, blog teaser). Before I draft anything I want a clean spine I can keep referring back to so I'm not retyping the source material three times.
+
+Pasting the full 2,400-word case study below. I need you to extract:
+1. The 5-7 load-bearing FACTS (numbers, named outcomes, customer quotes that actually carry weight). Skip the marketing fluff and the polite framing.
+2. The ONE story arc this case study is really about — in one sentence. Resist the temptation to give me 3 "themes." If I had to put one bumper-sticker on this case study, what is it?
+3. The 2-3 things that are mentioned in the source but should NOT be in any of the repurposed versions because they require too much context to pay off in a short format.
+
+Source case study:
+
+[FULL 2,400-WORD CASE STUDY PASTED — Folderkit + Caldera Strategy Group, an 80-person enterprise services consultancy. Caldera's lead consultants were spending 11 hours per proposal across 4-5 reviewers and 3 review rounds. After implementing Folderkit's collaborative editor + their proposal template library, average proposal time dropped to 90 minutes, with 1 review round, and proposal win rate went from 23% to 38% over the 6-month measurement period. CFO Maria Reyes is quoted on the time savings ($1.4M/yr in consultant hours redirected to billable work). Lead account exec Jordan Park is quoted on the win-rate jump ("we're being faster and the proposals themselves are tighter — clients are saying so"). Implementation took 4 weeks; the friction point was getting partners to abandon their personal Word templates, solved via a 2-hour internal workshop and a "template freeze" Friday. Mention also of a side benefit: junior associates were learning faster because they could see senior partners' edits in real-time. Full source omitted here for brevity — assume it's the standard polished marketing case study with intro, problem, solution, results, quote, conclusion structure.]$pf$,
+ $pf$Extracted spine for Folderkit × Caldera.
+
+**5 load-bearing facts:**
+
+1. **11 hours → 90 minutes per proposal.** This is the headline. ~88% time reduction. Don't dress this up — it works on its own.
+2. **23% → 38% proposal win rate** over 6-month measurement window. This is the better number actually, because it goes to revenue not just cost.
+3. **$1.4M/yr in consultant hours redirected to billable work.** CFO Maria Reyes's framing. Convert "hours saved" into "dollars" — this is the C-suite line.
+4. **3 review rounds → 1 review round.** This is the *why* behind the time savings. Not just a faster editor — fewer rounds because everyone is editing the same doc instead of routing versions.
+5. **4-week implementation, 1 friction point: partner buy-in on abandoning personal Word templates.** Solved via 2-hour workshop + "template freeze" Friday. This is the credibility detail — they're not pretending it was frictionless.
+
+**The ONE story arc, one sentence:**
+
+> *Caldera stopped routing proposal drafts and started co-editing them — and that one change cut creation time 88%, doubled review velocity, and lifted win rate by 15 points.*
+
+The arc is **co-editing, not "we got faster software."** That's the framing every variant should hold. "Faster software" is generic and forgettable; "stopped routing, started co-editing" is concrete and reframes the buyer's mental model.
+
+**Things to leave OUT of repurposed versions:**
+
+- **The junior-associate-learning-from-senior-edits side benefit.** It's a real win in the source but it requires too much setup ("here's how proposal mentorship usually works in consulting...") to land in 5 slides or a 180-word email. Save it for sales conversations. It would be a great Q&A moment, not a hook.
+- **The 2-hour workshop / template freeze Friday detail.** Same problem — it's a credibility detail that pays off in a long-form blog post or sales call but eats word count without selling the headline in short formats. The blog teaser can hint at "implementation took 4 weeks" but shouldn't go further.
+- **Jordan Park's "clients are saying so" quote.** It's a soft quote — "saying so" is hearsay-flavored without specifics. Maria Reyes's CFO quote with the dollar number is sharper. Use Maria, not Jordan, when picking ONE quote per asset.
+
+**One thing the source under-sells that I'd push harder:** the 23%→38% win-rate jump is buried in a paragraph. That's the number that justifies the whole investment to anyone outside ops. Lead with it on the carousel; lead with the 88% time number on the email (different audiences, different numbers).$pf$,
+ $pf$Extracted: 5 load-bearing facts (11hr→90min, 23%→38% win rate, $1.4M redirected, 3 rounds→1 round, 4-week implementation w/ partner-template friction). One-sentence arc: "Stopped routing drafts, started co-editing — cut time 88%, lifted win rate 15 pts." 3 things to drop in repurposed versions: junior-associate side benefit (too much setup), workshop/template-freeze detail (eats word count), Jordan Park's soft quote (use Maria's CFO quote instead). Important reframing note: lead with win-rate on carousel (revenue audience) but with time savings on email (ops audience) — different numbers for different rooms.$pf$),
+
+-- Step 2 --
+('66666666-6666-6666-6666-666666320102',
+ '55555555-5555-5555-5555-555555550032',
+ 2,
+ $pf$Draft all three variants in one pass with explicit channel specs$pf$,
+ $pf$Now draft all 3 variants using the spine from step 1. I want them in one response so I can read them side-by-side. Channel specs:
+
+**LinkedIn carousel (5 slides):**
+- Slide 1: hook — should stop the scroll. Number-driven. NOT "Here's how Caldera transformed their workflow."
+- Slides 2-4: the change. Each slide should be one idea, max 30 words.
+- Slide 5: the takeaway / soft CTA. NOT "Want to learn more?" — give them something they can take away regardless of whether they click.
+- For each slide, also write a one-line visual direction note for our designer (e.g., "big number on dark bg," "before/after split," etc.)
+
+**Nurture email (175-200 words):**
+- Subject line + 2 alt subject lines (so client can A/B if they want)
+- Body: opens with a specific scenario the reader will recognize, not "Hi {first_name}, I wanted to share..."
+- One stat (the 88% time one — this is the ops/IC audience for Folderkit's nurture list, not the C-suite)
+- ONE clear CTA: read the full case study, link goes to their site
+
+**Blog teaser (60-90 words):**
+- Goes on Folderkit's blog index page, above the fold of the case study card
+- Reads as standalone, not "click to read more"
+- ONE pull-quote from Maria
+- Should make someone who DOESN'T click still walk away with the takeaway
+
+Use my voice — direct, no jargon, no "transform" or "leverage" or "synergy." Folderkit's brand voice is plainspoken and a little dry. Match it.$pf$,
+ $pf$All three drafts.
+
+---
+
+**LINKEDIN CAROUSEL — 5 slides**
+
+**Slide 1 (hook):**
+> Caldera Strategy Group cut proposal creation from 11 hours to 90 minutes.
+>
+> Win rate went from 23% to 38%.
+>
+> They didn't change their pricing, their pitch, or their team.
+*Visual: big number "11h → 90min" centered on dark background, brand-orange accent. No imagery.*
+
+**Slide 2 (the wrong frame):**
+> The fix wasn't "faster software."
+>
+> It was: stop routing drafts. Start co-editing them.
+*Visual: split-screen showing Word docs flying around with arrows on the left vs. one centered doc with cursors on the right. Subtle.*
+
+**Slide 3 (the mechanism):**
+> 5 reviewers, 3 review rounds, 11 hours.
+>
+> 5 reviewers, 1 review round, 90 minutes.
+>
+> The reviewers didn't change. The routing did.
+*Visual: two stacked rows showing 5-person, 3-loop vs. 5-person, 1-loop. Clean diagram, no chrome.*
+
+**Slide 4 (the bigger number):**
+> Time saved isn't the headline.
+>
+> Caldera redirected $1.4M of consultant hours into billable client work — and lifted their proposal win rate 15 points in 6 months.
+>
+> "We're being faster and the proposals themselves are tighter." — Maria Reyes, CFO
+*Visual: pull-quote treatment, Maria's name + role under it. Brand-orange quote mark.*
+
+**Slide 5 (takeaway):**
+> If your team is routing drafts in 2026, you're paying for the routing.
+>
+> Audit one proposal cycle next week. Count the hours spent on version reconciliation, not writing. That's the number.
+*Visual: solid background with the takeaway sentence centered. No CTA button on this version — Folderkit is testing CTA-less close vs. CTA close, this is the no-CTA variant.*
+
+---
+
+**EMAIL (178 words)**
+
+**Subject:** How Caldera cut proposal time 88% (and what they didn't change)
+**Alt subject 1:** 11 hours to 90 minutes — same team, same pricing
+**Alt subject 2:** The proposal-routing tax (and how to stop paying it)
+
+**Body:**
+
+> If you're an ops lead at a services firm, you've probably done this math: a senior consultant's hour is billed out at $400+, and your proposal cycles eat 8-15 of those hours per deal. Multiply that by your deal count.
+>
+> Caldera Strategy Group did the math and didn't like the answer. Their proposals were taking 11 hours each — most of it routing drafts between 4-5 reviewers across 3 review rounds.
+>
+> They didn't change their team, their pricing, or their pitch. They changed the routing.
+>
+> After 4 weeks of implementation: proposal time dropped from 11 hours to 90 minutes. One review round instead of three. Same reviewers, just editing in the same place instead of routing versions.
+>
+> Read the full case study — including the one friction point that almost stalled it (and how Caldera's COO solved it in a 2-hour workshop):
+>
+> **[Read the Caldera case study →](link)**
+
+---
+
+**BLOG TEASER (84 words)**
+
+> Caldera Strategy Group spent 11 hours on every proposal — most of it routing drafts between 5 reviewers across 3 review rounds. After 4 weeks on Folderkit, their average proposal takes 90 minutes and goes through 1 review round. Same team, same reviewers, same standards. "We're being faster and the proposals themselves are tighter," says CFO Maria Reyes — who also tracked $1.4M of consultant time redirected to billable client work in the first 6 months.
+
+---
+
+**One note on consistency across the three:** I deliberately used "co-editing" framing on the carousel (visual format makes the routing-vs-co-editing distinction land), the "ops math" framing on the email (the ops/IC audience cares about hours-and-dollars), and the "same team, same standards" framing on the blog teaser (a casual scroll past the blog index doesn't have time for the mechanism — just the comparison). All three roll up to the spine but emphasize different facets.$pf$,
+ $pf$3 variants drafted from the same spine, each tuned to its channel. Carousel leads with the time→win-rate combo and uses the routing/co-editing reframe across slides 2-3. Email opens with the ops-math scenario the audience will recognize and uses the 88% number for the IC audience. Blog teaser is a standalone 84-word read with Maria's CFO quote pulled in — works without a click. Designer notes attached per slide. Subject + 2 alts on the email. Deliberately different facets per channel rather than the same content trimmed shorter.$pf$),
+
+-- Step 3 --
+('66666666-6666-6666-6666-666666320103',
+ '55555555-5555-5555-5555-555555550032',
+ 3,
+ $pf$Critique pass — read all three side by side, flag conflicts and tightening opportunities$pf$,
+ $pf$Now read all three variants from step 2 as if you're an editor seeing them for the first time. Flag:
+
+1. Anywhere the three variants CONTRADICT each other (different framings of the same fact, different stat emphasis, voice mismatches that would make a reader who sees two of them feel disoriented).
+2. Anywhere any single variant is doing too much — sentences I should cut, words that don't earn their place, claims that hedge.
+3. The ONE thing across all three that, if I changed it, would make the package noticeably stronger. Not three things. One.
+4. Anything Folderkit's marketing lead is likely to push back on (this is a B2B SaaS marketing team, they'll be conservative about claims and want everything sourceable).$pf$,
+ $pf$Critique.
+
+**1) Contradictions / inconsistencies across the three:**
+
+- **The "$1.4M" dollar number appears in the carousel slide 4 and the blog teaser, but NOT in the email.** This is fine if intentional (the email is for the IC/ops audience and the dollar number is a CFO frame), but worth being deliberate about. A reader who sees both the LinkedIn post and the email will notice the email is missing the more impressive number. **Recommend:** keep as-is, but document the choice for Folderkit so they don't "fix" it after the first batch.
+
+- **"4 weeks of implementation"** is in the email body but not the carousel or blog teaser. The email leans on it for credibility ("after 4 weeks of implementation"). The blog teaser would benefit from the same beat — right now it implies the change happened instantly. **Recommend:** add ", in 4 weeks of implementation" to the blog teaser between "Folderkit" and the period.
+
+- **Voice match is mostly OK** but the carousel slide 5 ("If your team is routing drafts in 2026, you're paying for the routing") is a touch sharper than the email's "You've probably done this math." The carousel's edge is appropriate for LinkedIn — keep it, don't sand it down to match.
+
+**2) Cuts and tightening per variant:**
+
+- *Carousel slide 1:* "They didn't change their pricing, their pitch, or their team." → cut "the team" or "their pricing" — three negations is one too many for slide 1 attention. Recommend: "They didn't change their pricing or their pitch." (Pulls one less word, lands harder.)
+- *Carousel slide 4:* "And lifted their proposal win rate 15 points in 6 months" — "their" is a free word. Drop to "lifted proposal win rate 15 points in 6 months."
+- *Email opening:* "If you're an ops lead at a services firm, you've probably done this math" — strong, keep it.
+- *Email second sentence of last paragraph:* "After 4 weeks of implementation: proposal time dropped from 11 hours to 90 minutes." — "of implementation" is process-jargon. Recommend: "After 4 weeks: proposal time dropped from 11 hours to 90 minutes."
+- *Blog teaser:* tight already. The only tightening would be "spent 11 hours on every proposal" → "spent 11 hours on each proposal" — but this is taste not substance.
+
+**3) The ONE thing that would make the package noticeably stronger:**
+
+> **Move Maria's CFO quote out of carousel slide 4 and into a dedicated slide 5, demoting the current "audit one proposal cycle" takeaway to a footer line.**
+
+Currently the carousel has Maria's quote crammed into slide 4 with the dollar number. It works, but the quote is doing double duty and gets read fast. A standalone quote slide — Maria's name, her role, the quote, brand treatment — gives the proof its own beat and is what people screenshot and re-share on LinkedIn. The "audit one proposal cycle" takeaway can move to a smaller text block at the bottom of the quote slide or onto a 6th slide if Folderkit's carousel template allows.
+
+This is a real lift for Folderkit's reach metrics specifically — quote-slide screenshots travel further than takeaway-line screenshots in B2B LinkedIn data. If you can only make one change, make this.
+
+**4) Likely Folderkit pushback:**
+
+- **"Win rate went from 23% to 38%"** on slide 1 — they may want a footnote or a "*measured over 6 months, n=Caldera proposals submitted in the period" qualifier. B2B SaaS marketing teams get nervous about unqualified percentage claims. Pre-empt by including the qualifier in the slide 1 designer notes ("small footnote: '6-month measurement window'").
+- **"$1.4M of consultant time redirected to billable work"** — they'll want to confirm Maria has signed off on that number publicly (the source case study quotes her, but they may want her to re-approve the LinkedIn-public version). Flag this in the deliverable handoff.
+- **"They didn't change their pricing, their pitch, or their team"** — the marketing lead may want to soften "their team" to avoid implying Folderkit replaces team capability. Recommend the cut from item 2 above also handles this — drop "their team," keep "pricing" and "pitch."
+- **The email subject line "How Caldera cut proposal time 88%"** — % claims in subject lines sometimes hit spam filters. Suggest the alt subject 1 ("11 hours to 90 minutes — same team, same pricing") as the safer primary, with the 88% as the A/B challenger.
+
+**One last meta-note:** all three variants intentionally avoid the words "transform," "leverage," "unlock," and "synergy" per your brief. Worth calling out in the deliverable so Folderkit knows this was deliberate, not an oversight on word choice.$pf$,
+ $pf$Critique flagged: 2 inconsistencies worth addressing (add "4 weeks" to blog teaser; document the deliberate $1.4M omission from email so client doesn't "fix" it), 4 line-level tightening cuts (drop "their" twice, drop "of implementation" in email), and ONE meaningful structural change — promote Maria's CFO quote to its own carousel slide because B2B LinkedIn quote-slides screenshot/share at meaningfully higher rates than takeaway-line slides. Pre-empted 4 likely client pushbacks: footnote the 23%→38% claim with measurement window, confirm Maria's $1.4M public-quote approval, soften "team" to avoid replace-the-team implication, swap email subject primary to alt 1 (% in subject lines is a deliverability risk).$pf$);
+
+-- =========================================================================
+-- Project 55-0033 | Customer health score from scratch | Raj Patel | Data | 4 steps
+-- =========================================================================
+
+DELETE FROM prompt_steps WHERE prompt_id = '55555555-5555-5555-5555-555555550033';
+DELETE FROM prompts      WHERE id        = '55555555-5555-5555-5555-555555550033';
+
+INSERT INTO prompts (
+  id, title, description, content, result_content,
+  category_id, difficulty, model_used, model_recommendation,
+  tools_used, tags, status, author_id, vote_count, bookmark_count
+) VALUES (
+  '55555555-5555-5555-5555-555555550033',
+  $pf$Customer health score from scratch — 4-pass Claude workflow turning 14 product-usage signals into a single 0-100 number CS will actually act on$pf$,
+  $pf$Built a customer health score for a $24M ARR vertical SaaS where the existing model was "the CSM's gut and the renewal date." Real signal weights, real calibration against 18 months of churn outcomes, and a 4-tier action playbook CS adopted in week one.$pf$,
+  $pf$Got brought in by Stagecraft (vertical SaaS for live-event production teams, ~340 mid-market accounts, $24M ARR) after their post-pandemic gross retention slipped from 91% to 84% in 4 quarters. The CRO's brief: "we don't see churn coming until 30 days out, when it's too late to do anything." They had a Salesforce field called "Health Score" that was a manual color (red/yellow/green) the CSM updated quarterly. Every CSM had a different mental model. Renewal-prediction was effectively coin-flip past 60 days out.
+
+I worked with Claude 4.7 Opus across 4 passes over a week. First pass surfaced the 14 product-usage and account signals worth scoring against, and forced the question "healthy = doesn't churn, or healthy = expands?" — they'd been conflating both. Second pass built the actual scoring model: weighted-signal 0-100 number with logistic-regression-derived weights from 18 months of historical churn, calibrated so the score's distribution matches CS intuition (no model has credibility on day one if it tells you 60% of accounts are at risk). Third pass pressure-tested by simulating against held-out churn cohort and tuning the score thresholds. Fourth pass landed the operational integration — what each tier triggers in CS workflow, who owns the action, and the sandbox/staged-rollout plan so CS doesn't get a Monday-morning firehose.
+
+This isn't an ML moonshot — it's a calibrated, auditable scoring layer the team can defend in a renewal forecast meeting. That was the brief.$pf$,
+  $pf$Score went live in CS workflow week 6 of the engagement. By month 3: 60-day churn-prediction recall improved from 47% to 81% (held-out test cohort). CS team reports save-rate on "yellow-tier" accounts up from 18% to 41% — mostly because they're seeing them 90 days earlier and the playbook gives them a starting move instead of "schedule a check-in." Gross retention recovered from 84% to 89% over the 2 quarters following rollout — not all attributable to the score, but the CRO points to it as the inflection. Stagecraft kept me on a part-time retainer to maintain the model and add an expansion-prediction layer next.
+
+Bigger lesson for me as a freelance data person: the model itself was 30% of the value. The 70% was forcing the operating-model conversation in pass 4 — what each score band MEANS for what CS does on Monday. A score nobody acts on is a dashboard widget.$pf$,
+  '11111111-1111-1111-1111-111111111108',
+  'intermediate',
+  'claude-opus-4-7',
+  'Claude 4.7 Opus',
+  ARRAY['Claude','Snowflake','dbt','Salesforce','Looker'],
+  ARRAY['data','health-score','churn','customer-success','saas','retention'],
+  'approved',
+  '22222222-2222-2222-2222-222222222207',
+  94, 47
+);
+
+INSERT INTO prompt_steps (id, prompt_id, step_number, title, content, result_content, description) VALUES
+
+-- Step 1 --
+('66666666-6666-6666-6666-666666330101',
+ '55555555-5555-5555-5555-555555550033',
+ 1,
+ $pf$Inventory the signals + define what "healthy" actually means$pf$,
+ $pf$I'm building a customer health score for Stagecraft (vertical SaaS for live-event production teams, $24M ARR, ~340 mid-market accounts, gross retention slipped 91%→84% over 4 quarters). The existing "score" is a manual red/yellow/green CSMs update quarterly, with no shared definition.
+
+Before I write any model, I want to do this right. Help me with two things:
+
+(1) Inventory the signals worth scoring against. We have product telemetry (logins, feature usage by surface, project counts, render-job volume, integration connections, error rates, support-ticket volume), account-level data (contract value, contract length, # of seats provisioned vs activated, exec sponsor identified, NPS responses), and CS-system data (last QBR date, last support escalation, open opportunities). Don't give me a 50-item list — give me the 12-15 signals that historically predict the outcome we care about and explain why each one belongs.
+
+(2) Force me to answer: are we scoring "healthy = won't churn" or "healthy = will expand"? These produce DIFFERENT models. We've been conflating them. Pick a stance, defend it, and tell me the cost of being wrong.
+
+This is for the model design — not for the rollout to CS yet. Be opinionated.$pf$,
+ $pf$On (2) first, because it's the load-bearing decision.
+
+**Score the won't-churn outcome, not the will-expand outcome.** Stand on this. The reasoning:
+
+- **Stagecraft's pain is gross retention, not net.** You moved from 91% to 84% gross. Net retention masking aside, the bleeding is at renewal, not at the expansion conversation. A model that predicts expansion has nothing to say about the 16% you're losing.
+- **Will-churn signals are denser and earlier.** Product-engagement degradation, support-escalation patterns, and exec-sponsor changes telegraph 60-180 days out. Will-expand signals (consumption growth, multi-team usage, exec sponsorship strengthening) are real but tend to lag the actual decision and are noisier in a $24M ARR mid-market book where many accounts are simply "stable, will renew at flat."
+- **Cost of being wrong, expansion-direction:** you score an account "healthy" because it's expanding rapidly, miss the churn signal in the contracting other-half-of-the-account, and lose a $180K logo because the model said green. Bad day.
+- **Cost of being wrong, churn-direction:** you score an expanding account "yellow" because some product-usage signal degraded; CS reaches out with a save play; the worst case is an awkward call. Recoverable.
+
+Build the v1 as a churn-risk score. Layer expansion-probability as a separate v2 if and when CRO wants to pivot from defense to offense. Don't build the chimera.
+
+**Now (1), the signal inventory.** 14 signals, ranked roughly by my prior on predictive lift before we fit weights:
+
+**Tier A — high prior signal (4):**
+
+1. **30-day login frequency, unique-user weighted.** Not raw logins; unique users. A 12-seat account where the same admin logs in daily but the other 11 went dark is more at risk than the raw count suggests. Weight: high.
+2. **Active-feature breadth — count of distinct surfaces touched in 30 days.** Stagecraft has ~8 production surfaces (cue editor, asset library, render queue, integrations, etc.). Accounts using 1-2 are "thin-rooted" — easier to rip out. Accounts using 5+ have switching cost.
+3. **Render-job volume trend, 90-day vs prior 90.** The render queue is your value-delivery moment. A 40%+ drop in render volume quarter-over-quarter is the strongest leading indicator of "they're testing alternatives" or "the contract owner left." Don't average — use the trend slope.
+4. **Exec sponsor change in last 90 days.** Pull from CRM or LinkedIn-monitoring if you have it. New exec sponsor = renewal-risk regardless of product signals. This is the single loudest non-product signal in B2B SaaS churn data, often missed because it's not in the product DB.
+
+**Tier B — moderate prior signal (6):**
+
+5. **Seat activation rate** (provisioned vs activated, 30-day). Accounts at <50% activation 90+ days post-onboarding are red. Accounts above 80% are stable.
+6. **Support-ticket volume DELTA, 30-day vs 90-day baseline.** Absolute volume is noisy (some accounts just file lots of tickets); the delta vs baseline catches "something changed."
+7. **Open P1/P2 support escalations** (specifically escalated, not all tickets). Two in 60 days is a yellow flag; three is red.
+8. **Days-since-last-QBR.** Past 180 days = QBR cadence broken, account is drifting in CS attention.
+9. **NPS response trend** (when they respond — many won't). A drop of 2+ points across 2 surveys is meaningful; a single low score is noise.
+10. **Integration connection count.** Each connected integration (Salesforce, Slack, etc.) is switching-cost. Going from 4 → 1 in a quarter is a strong red — they're decoupling.
+
+**Tier C — low-but-include signal (4):**
+
+11. **Contract value & length.** Not predictive of churn directly but a control variable — high-value short-contract accounts deserve a different threshold than low-value annual.
+12. **Time-to-renewal.** Not a predictor; an action-trigger field. The score should be the predictor; renewal date determines urgency.
+13. **Recent feature-flag exposure to a known-buggy release.** Pull from your release-management system. Accounts that hit the bad release in the last 30 days have artificially-degraded other signals — confound to control for.
+14. **CSM-assigned-segment + tenure.** New CSMs (under 90 days on account) under-score risk because they don't have baseline. Use as a confidence modifier, not a feature.
+
+**What I excluded and why:**
+
+- Generic "logins-per-day" without unique-user weighting (already covered in #1, naive version is misleading).
+- "Feature requests filed" — counts engagement-from-frustration with engagement-from-investment, can't tell them apart cleanly without text classification.
+- "Marketing email engagement" — too noisy and contaminated by job changes.
+- Anything social-listening-based for v1 — directionally interesting, not reliable enough at 340 accounts.
+
+**One last note on framing:** you'll be tempted to add signals because someone in CS says "we should track X." Resist. 14 signals at 340 accounts is already at the edge of where logistic regression will give you stable weights without overfitting. Adding 5 more pet signals will reduce model quality, not improve it. The hard part of v2 isn't adding features — it's removing ones that aren't paying for themselves.$pf$,
+ $pf$Decision locked: score won't-churn, not will-expand (defended on grounds of where Stagecraft is bleeding + signal density + asymmetric cost of error). 14-signal inventory ranked Tier A (4 high-prior — login uniqueness, feature breadth, render-volume trend, exec-sponsor change), Tier B (6 moderate — seat activation, ticket-volume delta, P1/P2 escalations, days-since-QBR, NPS trend, integration count), Tier C (4 control/modifier — contract value, time-to-renewal, buggy-release exposure, CSM tenure). Excluded 4 tempting signals with reasons. Hard constraint flagged: at 340 accounts, 14 signals is near the overfitting edge — resist adding pet features.$pf$),
+
+-- Step 2 --
+('66666666-6666-6666-6666-666666330102',
+ '55555555-5555-5555-5555-555555550033',
+ 2,
+ $pf$Build the scoring model — weighted aggregation, calibration approach$pf$,
+ $pf$Now build the actual scoring model. Constraints:
+
+- Output is a single 0-100 number per account, refreshed daily.
+- Should be auditable — a CSM has to be able to ask "why is account X at 42?" and get a clear breakdown.
+- 18 months of historical data available. Roughly 60 churn events in that window across the 340-account base. Small-N, so I want to be careful about overfitting.
+- Calibration matters. The score's DISTRIBUTION needs to match CS intuition or they won't use it. If the model says 60% of accounts are at risk on day one, the model is dead even if statistically correct.
+
+Walk me through:
+1. Should I use weighted-sum-of-signals or fit a logistic regression? Pros/cons given the 60-event sample size.
+2. How to derive weights given 60 events.
+3. The calibration approach — how to map model output to a 0-100 scale that CS will trust.
+4. The "explainability" structure — what does the breakdown look like when a CSM asks "why 42?"$pf$,
+ $pf$**1) Weighted-sum vs logistic regression at 60 events.**
+
+Both work, but the right answer is: **fit a logistic regression to derive informed weights, then deploy as a weighted sum.** Hybrid approach. Reasoning:
+
+- **Pure weighted-sum with hand-picked weights** is fast and explainable but you're guessing at weight magnitudes. With 60 events you actually have signal — use it.
+- **Pure logistic regression in production** is mathematically clean but the score "21% probability of churn in 90 days" is harder for CS to act on than "63 out of 100." Also, the per-account inference path is opaque without extra explainability work.
+- **Hybrid**: fit logistic on the 18-month historical data, extract the standardized coefficients as your weight magnitudes, then deploy a deterministic weighted-sum scorer. You get model-derived weights AND CS-readable scores AND an auditable per-account breakdown. The weights stay stable until you re-fit (quarterly).
+
+The 60-event sample size is small but workable for a regularized logistic with 14 features. Use L2 regularization (ridge), not L1 (which will zero out features and rob you of explainability). Lambda chosen via 5-fold CV. Don't go fancier — XGBoost on 60 events is overfitting theater.
+
+**2) Deriving weights from 60 events.**
+
+Concrete process:
+
+```python
+# Pseudocode for the fitting step
+import pandas as pd
+from sklearn.linear_model import LogisticRegression
+from sklearn.preprocessing import StandardScaler
+from sklearn.model_selection import StratifiedKFold, cross_val_score
+
+# X: 14 signal columns, rolled up to account-month observations
+# y: binary, did this account churn in the next 90 days
+# (340 accounts × 18 months = ~6,120 obs; ~60 positive)
+
+X_scaled = StandardScaler().fit_transform(X)
+clf = LogisticRegression(penalty='l2', C=0.5, class_weight='balanced')
+# C=0.5 is moderate regularization; tune via CV
+# class_weight='balanced' handles the ~1% positive rate
+scores = cross_val_score(clf, X_scaled, y, cv=StratifiedKFold(5),
+                         scoring='roc_auc')
+print(f"CV AUC: {scores.mean():.3f} ± {scores.std():.3f}")
+clf.fit(X_scaled, y)
+weights = dict(zip(feature_names, clf.coef_[0]))
+```
+
+Sanity-check: target AUC 0.75-0.85 for a v1 churn model in this domain. Below 0.70 means your signals are weaker than you thought (re-examine pass 1). Above 0.90 on 60 events smells like leakage — re-check your feature engineering for "did anything happen 30 days before the labeled churn date that's actually causal of the churn label" (e.g., support-ticket volume includes the actual cancellation ticket).
+
+Then translate the coefficients into integer point weights for the deployed scorer. Round to multiples of 5 (e.g., `login_uniqueness: 18 → 20pts`, `render_volume_trend: 14 → 15pts`). Why round: makes the breakdown human-readable in the CSM UI. The precision loss is rounding-error in the second decimal of AUC.
+
+**3) Calibration to a 0-100 scale CS will trust.**
+
+This is where most health scores die. The model says "84% of accounts have score < 50" but CS knows from intuition that maybe 25% of the book is genuinely at-risk. Ship that and CS will say "the model thinks everyone is dying" and ignore it.
+
+Two-step calibration:
+
+- **Step A: rank-based mapping.** Take raw weighted-sum outputs across all 340 accounts. Sort. Map percentiles to score bands so the *distribution* matches a defensible target. Target distribution I'd start with: ~10% red (0-39), ~25% yellow (40-69), ~65% green (70-100). This roughly matches the 16% gross-churn rate doubled-for-leading-indicator-buffer, plus a yellow band for "watch."
+- **Step B: anchor with CS gut-check.** Sit with 2-3 senior CSMs, look at the top 20 highest-risk accounts the model produced. They should agree with 14-16 of them. If they only agree with 6, the model has a feature-engineering problem. If they agree with 19, the model is just confirming what they already knew (no marginal value). 14-16 is the sweet spot — confirms intuition + surfaces 4-6 they hadn't been worried about. Those 4-6 are where the score earns its keep.
+
+Don't tune the model to match CSM gut — tune the *score band thresholds* to match. The model's ranking is the science; the bands are the operationalization.
+
+**4) Explainability — the "why 42?" breakdown.**
+
+When a CSM clicks an account, show:
+
+```
+Account: Brightline Productions
+Health Score: 42  (Yellow tier — at-risk)
+
+Top contributing factors (negative):
+  -22 pts  Render-job volume down 47% in last 90 days vs prior 90
+  -18 pts  Login uniqueness: 2 active users out of 14 seats (last 30d)
+  -10 pts  Days since last QBR: 213 (target: <120)
+   -7 pts  P1 escalation open: "Cue editor crash on macOS Sonoma" (open 41 days)
+
+Positive factors:
+   +12 pts  Integrations connected: Salesforce + Slack + Frame.io (no decoupling)
+    +6 pts  NPS last response: 8 (stable from prior 8)
+
+Tier modifier:
+    +0 pts  Contract value: $84K/yr (mid-band, no modifier)
+
+Confidence: HIGH (CSM has owned account 14+ months)
+Renewal: 87 days
+```
+
+This format is what CS will actually use. The key design choice: lead with the negative drivers (that's what triggered the alert) but show positives so the CSM can speak fluently in the save call ("I see your team's render volume is down — what changed? Note we're seeing your integrations stayed strong, which suggests you're using us less, not switching off..."). The negatives tell them WHAT to dig into; the positives tell them HOW to frame the conversation.
+
+**One more thing on calibration:** ship v1 with a "shadow mode" of 2 weeks where the score is computed and visible to YOU but not surfaced to CS. Use the 2 weeks to: (a) catch any data-pipeline issues with the daily refresh, (b) hand-validate 30 accounts, (c) confirm the daily score volatility isn't pathological (a healthy account shouldn't whipsaw 80→45→75 day-to-day; if it does, your trend-window features are too short). Only after shadow week 2 do you turn it on for CS.$pf$,
+ $pf$Model architecture: hybrid — fit L2-regularized logistic on 18 months / 60 events to derive weights, deploy as deterministic weighted-sum 0-100 scorer (model-quality + CS-readability + auditability). Target AUC 0.75-0.85; flag leakage if >0.90. Round model coefficients to integer point weights (5-pt buckets). 2-step calibration: rank-based percentile mapping to ~10/25/65 red/yellow/green bands, then anchor with 2-3 senior CSMs against top-20-highest-risk list (sweet spot: agree on 14-16, surface 4-6 new). Per-account explainability = top negative drivers + positive factors + tier modifier + confidence + renewal — designed so CSMs can both diagnose AND frame the save call. 2-week shadow mode mandatory before CS-facing rollout.$pf$),
+
+-- Step 3 --
+('66666666-6666-6666-6666-666666330103',
+ '55555555-5555-5555-5555-555555550033',
+ 3,
+ $pf$Pressure-test against held-out churn cohort + tune thresholds$pf$,
+ $pf$Built the v1 model per your spec. Held out the most recent 6 months of churn (18 events) as a test set, fit on the first 12 months (42 events). Initial results:
+
+- AUC on holdout: 0.79
+- Recall at score < 40 threshold (red tier): 0.61 (11 of 18 churned accounts caught at red tier 60+ days before cancellation)
+- Precision at red tier: 0.34 (~2 of 3 red-tier accounts did not actually churn)
+
+Two things bugging me:
+
+(a) The 11/18 recall at red feels low — 7 churned accounts were yellow or green at the 60-day mark. I want to understand what we missed.
+(b) The 0.34 precision feels acceptable for a leading-indicator score (CS would rather false-positive than miss a real churn) but I want a defensible answer when the CRO asks "why are 2 in 3 of your 'at risk' accounts not actually at risk?"
+
+Help me diagnose (a) and frame (b). Also: are the band thresholds (red <40, yellow 40-69, green ≥70) right, or should I shift them?$pf$,
+ $pf$Both questions are fundamentally about what the score is FOR. Let me work through (a) first because it's substantive, then (b) which is a framing question, then thresholds.
+
+**(a) The 7 misses — diagnose by archetype.**
+
+Pull the 7 missed accounts and look at WHY they were yellow/green at the 60-day mark. In my experience with similar small-cohort-churn models, the 7 misses split into 3-4 archetypes:
+
+1. **Sudden-event churn (~2-3 of 7 typically).** Acquisition, restructure, budget freeze. Decision is exogenous to product usage. The account was genuinely healthy until the parent company made a decision unrelated to your product. **No product-signal model will catch these.** Accept this is a 10-15% irreducible miss rate. Don't try to tune the model harder; you'll just degrade other accounts to chase noise.
+
+2. **Slow-burn-then-cliff churn (~2 of 7 typically).** Account was using the product fine, exec sponsor left in month 4, stayed "fine on paper" because the other users didn't know to stop using it, then the new exec did a tools audit at month 7 and cut you. The signal is the exec change in month 4 — but if that month 4 fell *outside* the 60-day prediction window for these 7 accounts, the model couldn't pick it up. **Action:** widen the exec-sponsor-change feature window from 90 days to 180 days. This will help catch this archetype next time.
+
+3. **"Worked perfectly, didn't renew" (~1-2 of 7 typically).** Heavy product usage, integrations strong, no escalations — and they cancelled because they built it in-house, switched to a free competitor, or the renewal-owner decided they "didn't need a vendor for this anymore." This is the hardest miss because there's no signal. **Action:** none for v1. v2 might pull in win-rate-of-renewal-conversation-by-CSM as a signal but that's a different model.
+
+4. **Data-pipeline gaps (~0-1 of 7).** Always check this. Is one of the 7 missed accounts on a custom contract that doesn't get exported to your warehouse the same way? Did one switch SSO providers and now your login telemetry is broken for them specifically? Pull the raw data for each of the 7 and check for any "the model never had the data" cases.
+
+**Concrete thing to do today:** spin up a quick notebook, pull the 7 missed accounts, manually classify them into these archetypes. Report the split back to the CRO. The framing "5 of 7 misses are theoretically un-catchable, 2 of 7 we'll catch in v1.1 with a wider sponsor-change window" is a much stronger story than "we missed 7 and are looking at it."
+
+**(b) Framing 0.34 precision to CRO.**
+
+The CRO's instinct will be "67% false positive rate, this model is broken." That instinct is wrong but you have to land the right one. The right framing:
+
+> "A leading-indicator churn score is a recall-priority instrument, not a precision-priority instrument. We are deliberately tuned to surface accounts to CS earlier, when intervention is still possible. Of 100 accounts the model flags red, ~34 will churn without intervention, ~66 will be saveable with a CS save play. The 66 are not 'wrong' — they're the accounts where we got there in time. The success metric is not 'red-tier accuracy' — it's 'churn rate among red-tier accounts that received a save play vs. red-tier accounts that didn't.' We'll measure that delta starting at month 3 of rollout."
+
+Then: commit to that delta-metric explicitly. If by month 6 the save-play-vs-no-save-play delta on red-tier accounts isn't at least 15-20 percentage points, the score really IS broken and you'll know. But framed this way, the 0.34 is a feature, not a bug.
+
+Pre-empt the follow-up question: "what's the precision on yellow tier?" Answer it now. Yellow should be lower precision and higher recall — it's the "watch this" tier, not the "intervene now" tier. Don't try to make yellow precise; that defeats its purpose.
+
+**Threshold tuning.**
+
+Three things to consider:
+
+- **Shift red threshold up to <45?** Doing so would catch ~2 of the 7 missed accounts (at AUC 0.79, ~2 of 7 misses are within 5 score points of the threshold). Cost: precision drops from 0.34 to ~0.27, and you flag ~13% of book as red instead of ~10%. **My call:** don't shift yet. Keep red <40 in v1. Catching those 2 with a shifted threshold isn't worth the precision hit AND noise increase to CS workload. Re-evaluate after 90 days of rollout when you have actual save-play outcomes.
+- **Shift yellow threshold down to 35-69?** This compresses red to <35 and widens yellow. Reduces red-tier workload and gives CS a bigger "watch" pool. **My call:** no, keep red <40. Compressing red to <35 makes recall WORSE on the most actionable tier. Don't.
+- **Add a "deep-red" tier under 20?** For the worst 2-3% of book where the playbook is "exec involvement now." Most CS orgs benefit from this. **My call:** yes, add. Deep-red <20, red 20-39, yellow 40-69, green ≥70. Cheap to add, gives CS a clear escalation trigger.
+
+**One last thing on testing.** You're using a temporal holdout (last 6 months for test) — good, that's the right choice over random k-fold for time-series-flavored data. But: when you re-fit the model quarterly, use a rolling 18-month window with the most recent 6 months always held out, not an expanding window. Stagecraft's product changed over the period (you mentioned new release surfaces); features from 2 years ago may not behave the same way as features from this quarter. Rolling window keeps the model anchored in the current product reality.$pf$,
+ $pf$Diagnosed the 7 misses by 4 archetypes (sudden-event ~irreducible, slow-burn-then-cliff fixable by widening sponsor-change window 90→180d, "worked-and-didn't-renew" no signal, data-pipeline gap always-check). Framing for CRO: 0.34 precision is a recall-priority feature not a bug — success metric is save-rate-delta on red-tier accounts intervened vs not, not red-tier accuracy itself. Threshold call: keep red <40 v1 (don't chase the 2 catchable misses at precision-cost), add deep-red <20 tier for exec-escalation, leave yellow alone. Rolling 18-month window for quarterly re-fits, not expanding — Stagecraft product changed over period.$pf$),
+
+-- Step 4 --
+('66666666-6666-6666-6666-666666330104',
+ '55555555-5555-5555-5555-555555550033',
+ 4,
+ $pf$Operational integration — CS playbook, ownership, staged rollout$pf$,
+ $pf$Last pass. The model is good (AUC 0.79, holdout-validated, calibrated). Now the part that actually determines whether this works: how does it land in CS workflow on Monday morning?
+
+Constraints from the CS team:
+- 6 CSMs, ~55 accounts each. They cannot manage a daily firehose of "new at-risk" alerts.
+- They want to know: which accounts to look at, what to do first, who owns the next step.
+- The CRO is going to ask weekly "which deep-red accounts moved tier this week and why?"
+- We need to NOT break the existing renewal forecast process — that goes to the board quarterly.
+
+Build me:
+1. The action playbook per tier (deep-red <20, red 20-39, yellow 40-69, green ≥70). What does each tier TRIGGER in CS workflow? Who owns it? What's the SLA?
+2. The staged rollout plan — week-by-week, including the 2-week shadow mode you mentioned in pass 2.
+3. The handful of measurement metrics we'll track to know if this is working at month 3 and month 6.
+
+Be specific. "CS reviews the account" is not a playbook step.$pf$,
+ $pf$**1) Action playbook per tier.**
+
+Designed around two principles: (a) the score should reduce CS cognitive load, not add to it — the playbook tells them WHAT to do, not just who's at risk; (b) ownership is unambiguous, so nothing slips between CSM and the rest of the org.
+
+**Deep-red (<20)** — "executive intervention, immediate."
+
+- **Trigger:** account drops below 20 OR enters deep-red from red within last 7 days.
+- **Owner:** CSM + their CS Director.
+- **SLA:** action within 48 business hours of tier entry.
+- **Required actions:**
+  1. CSM pulls account context (last QBR notes, last 3 support tickets, exec sponsor status, contract terms, renewal date) — 30 min.
+  2. CS Director joins CSM for an internal 30-min "save plan" sync within 48h. Output: written save plan with 3 specific moves and timeline.
+  3. CS Director or CRO directly emails the customer's exec sponsor to request a 30-min strategic review. Frame is "checking in on success against your team's goals," not "we noticed you're churning."
+  4. If exec doesn't respond in 5 business days: escalate to CRO for direct outreach.
+- **Volume expectation:** 5-10 accounts at any time across the book. Manageable.
+
+**Red (20-39)** — "CSM-owned save play."
+
+- **Trigger:** account enters red tier OR has been red for 14+ days.
+- **Owner:** CSM.
+- **SLA:** save play kicked off within 5 business days.
+- **Required actions:**
+  1. CSM reviews score breakdown — top 3 negative drivers — and selects from a save-play library (8 pre-built plays, indexed to common driver patterns: "render volume drop," "exec sponsor change," "feature breadth thin," etc.).
+  2. CSM logs the chosen play in Salesforce (custom field added).
+  3. Scheduled customer touch within 10 business days (call, async loom, exec-to-exec intro — depends on play).
+  4. Re-score check at +30 days. If still red: escalate to deep-red protocol regardless of model tier movement.
+- **Volume expectation:** 25-35 accounts at any time. CSMs each handle 4-6.
+
+**Yellow (40-69)** — "monitor with light touch."
+
+- **Trigger:** none — no automated action on yellow tier entry. This is where most accounts live.
+- **Owner:** CSM (ambient awareness).
+- **SLA:** none.
+- **Required actions:**
+  1. Yellow tier accounts surface in CSM weekly review (Friday pipeline meeting), grouped by "moved into yellow this week" and "yellow for 60+ days."
+  2. The "yellow for 60+ days" group gets a quarterly QBR if not already scheduled.
+  3. NO new task creation per yellow account — explicitly. Yellow is a watch list, not a task list.
+- **Volume expectation:** 200-220 accounts. Most of book.
+
+**Green (≥70)** — "expansion exploration eligible."
+
+- **Trigger:** none for retention; surfaced to AE/CS jointly for expansion conversations.
+- **Owner:** Account Executive (with CSM context).
+- **SLA:** none.
+- **Required actions:**
+  1. Green-tier accounts surface in AE monthly book review, ranked by expansion-signal proxy (seat utilization, render volume growth, integration breadth).
+  2. AE picks top 5-10 to outbound for expansion conversations.
+  3. CSM provides context handoff in Salesforce; no new meetings required.
+- **Volume expectation:** 80-110 accounts. Healthy retention pool.
+
+**2) Staged rollout — week by week.**
+
+**Weeks 1-2: Shadow mode.**
+- Score computes daily. Visible only to me + CRO. Not in Salesforce. Not in CS workflow.
+- I hand-validate 30 accounts (10 red, 10 yellow, 10 green) against CSM gut-check via async survey ("does this score match your read of this account?").
+- Fix any data-pipeline issues surfaced. Confirm daily score volatility isn't pathological.
+- Output of week 2: go/no-go decision with CRO. If go, freeze model weights for the rollout period.
+
+**Week 3: Soft launch to 2 senior CSMs.**
+- Score visible to 2 hand-picked senior CSMs in Salesforce only. They're briefed but not held to playbook yet.
+- They send weekly feedback (15-min sync each Friday): does the score match their read? Are the breakdowns useful? What's confusing?
+- I tune the score breakdown UI based on feedback (NOT the model — model is frozen).
+
+**Week 4: Soft launch to all 6 CSMs.**
+- Score visible to all CSMs in Salesforce.
+- Playbook NOT yet enforced — surfaced in training materials and walked through in a 60-min team session.
+- Friday review meeting begins discussing red/yellow tier movements weekly.
+
+**Weeks 5-6: Playbook enforcement begins.**
+- Deep-red and red tier playbooks live. Save-play library shipped.
+- CRO starts receiving weekly "tier movement" digest (deep-red entrants, red→yellow recoveries, yellow→red drops).
+- First save-play outcomes start to be logged in Salesforce for measurement.
+
+**Week 7: Renewal forecast integration.**
+- Quarterly renewal forecast starts incorporating tier as a probability modifier (NOT as a sole predictor — CSM judgment still primary).
+- Document the explicit forecast methodology so the board sees consistency: "renewal probability = baseline x tier_modifier x CSM_override."
+
+**3) Measurement metrics for month 3 / month 6.**
+
+Five metrics. Don't add more.
+
+| Metric | Month 3 target | Month 6 target |
+|---|---|---|
+| **Save-rate delta on red tier (intervened vs not)** | +10pp | +15-20pp |
+| **60-day churn-prediction recall** | ≥70% | ≥80% |
+| **CSM weekly active engagement with score** (% logging save plays per their red-tier accounts) | ≥75% | ≥90% |
+| **Time-to-first-CSM-action** on new red-tier accounts (median business days) | ≤7 | ≤5 |
+| **CRO weekly digest read rate** | 100% | 100% |
+
+The first one is the only one that matters for proving the model worked. The others are health metrics for the operating model. If save-rate delta isn't meaningful by month 6, the score is decoration.
+
+**One final operational note:** add a "model holiday" clause. If anything material changes in the product (a major release, a pricing change, a contract-structure change), suspend the score for 2 weeks while you re-validate. Don't have CS acting on a stale model that doesn't know about a Tuesday product launch. Standing rule, written into the runbook, signed off by CS Director and you.$pf$,
+ $pf$4-tier playbook with explicit owner + SLA + required actions per tier (deep-red = 48h CS Director + CRO involvement; red = 5-day CSM save play from 8-play library; yellow = no automation, watch-list only; green = AE expansion handoff). Volume expectations sized to actual CS bandwidth (5-10 deep-red, 25-35 red, 200-220 yellow). 7-week staged rollout: weeks 1-2 shadow mode w/ 30-account hand-validation, week 3 soft launch 2 CSMs, week 4 all 6 CSMs unenforced, weeks 5-6 playbook live, week 7 renewal-forecast integration. 5 measurement metrics with month 3 / month 6 targets — save-rate delta on red tier is the only one that proves model worked, others are operating-model health. "Model holiday" clause for product changes — re-validate before continuing CS action on stale score.$pf$);
+
+-- =========================================================================
 -- END OF FILE — append next project(s) below this line.
 -- Iterations working the Content queue: add 2–3 projects per iteration,
 -- appending below this comment. Do NOT rewrite existing projects.

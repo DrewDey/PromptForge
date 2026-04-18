@@ -41,6 +41,30 @@ const difficultyConfig = {
   advanced: { dot: 'bg-red-500' },
 }
 
+/**
+ * Narrative fallback label for a step card header (iter 55 — Polish #2).
+ * When the author didn't name a step, we'd rather show an evocative "what
+ * this moment in the build is about" phrase than a neutral `Step N/M` mono
+ * counter. The counter still appears as a quiet right-aligned badge so the
+ * reader can orient position-wise without it claiming the primary label.
+ *
+ * Rules:
+ *  - Single-step project → "The build" (no narrative arc to label).
+ *  - First step → "Setting the stage".
+ *  - Last step (when total > 1) → "Pulling it together".
+ *  - Middle steps cycle through three verbs so 3+ consecutive middles don't
+ *    read as the same label: "Building on it", "Refining", "Pushing further".
+ *  - Cycle is keyed off middle-index (idx - 1) so step 2 always starts with
+ *    "Building on it", step 3 with "Refining", etc. — stable across renders.
+ */
+function narrativeStepLabel(idx: number, total: number): string {
+  if (total <= 1) return 'The build'
+  if (idx === 0) return 'Setting the stage'
+  if (idx === total - 1) return 'Pulling it together'
+  const middles = ['Building on it', 'Refining', 'Pushing further']
+  return middles[(idx - 1) % middles.length]
+}
+
 export default async function PromptDetailPage({
   params,
 }: {
@@ -111,7 +135,9 @@ export default async function PromptDetailPage({
   }
 
   return (
-    <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+    <>
+    <div className="mx-auto max-w-4xl lg:max-w-[1216px] px-4 sm:px-6 lg:px-8 py-10 lg:grid lg:grid-cols-[minmax(0,1fr)_288px] lg:gap-10">
+      <div className="min-w-0 pb-28 lg:pb-0">
       {/* Breadcrumb navigation */}
       <nav aria-label="Breadcrumb" className="mb-8">
         <ol className="flex items-center gap-1.5 text-sm">
@@ -210,24 +236,12 @@ export default async function PromptDetailPage({
           )}
         </div>
 
-        {/* Use-as-starting-point CTA (Polish #2 — placeholder).
-            The real fork-with-prefill flow is Structural #5; until then this styles
-            the affordance so the "I can build this tonight" moment has an obvious
-            next action. Destination is /prompt/new (blank draft); copy is explicit
-            about prefill being pending so it doesn't mislead. */}
-        <div className="mt-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 bg-surface-900 text-white px-5 py-4">
-          <div className="min-w-0">
-            <p className="text-sm font-semibold leading-tight">Inspired? Build your own version.</p>
-            <p className="text-xs text-surface-400 mt-0.5">Start a new draft from this blueprint — auto-prefill coming soon.</p>
-          </div>
-          <Link
-            href="/prompt/new"
-            className="inline-flex items-center justify-center gap-2 bg-brand-orange hover:bg-brand-orange-dark text-white text-sm font-semibold px-4 py-2 transition-colors duration-200 shrink-0 focus-visible:outline-2 focus-visible:outline-brand-orange focus-visible:outline-offset-2"
-          >
-            <GitFork className="w-4 h-4" aria-hidden="true" />
-            Use as starting point
-          </Link>
-        </div>
+        {/* The "Use as starting point" CTA moved to the sticky right-rail
+            sidebar on lg+ and to a fixed bottom bar on mobile (iter 55 —
+            Polish #1), so the single highest-intent button on the page
+            stays in view at every scroll depth. The sibling sidebar
+            <aside> below and the <nav aria-label="Project actions"> at
+            the end of this component render the action surface now. */}
       </header>
 
       {/* ─── Final output hero (iter 51 — Polish #1) ─────────────────────────
@@ -371,7 +385,12 @@ export default async function PromptDetailPage({
                     : isLast
                     ? 'border-brand-blue/50 bg-brand-blue/5 text-brand-blue hover:bg-brand-blue/10 hover:border-brand-blue'
                     : 'border-surface-200 bg-white text-surface-700 hover:border-surface-400 hover:bg-surface-50'
-                  const label = step.title?.trim() || `Step ${idx + 1}`
+                  // Strip label falls back through the same narrative vocabulary
+                  // as the step-card header (iter 55 — Polish #2), so the journey
+                  // preview and the step cards it anchors to read as a matched
+                  // set rather than drifting into "Step 1 / Step 2 / Step 3"
+                  // mono counters for untitled chains.
+                  const label = step.title?.trim() || narrativeStepLabel(idx, prompt.steps!.length)
                   return (
                     <Fragment key={`strip-${step.id}`}>
                       <li>
@@ -425,18 +444,43 @@ export default async function PromptDetailPage({
                   </div>
 
                   <div className="border border-surface-200 overflow-hidden bg-white">
-                    {/* Step header — high contrast, gives the card its identity */}
+                    {/* Step header — narrative-first (iter 55 — Polish #2).
+                        Promoted the author-supplied `step.title` to the primary
+                        label (sentence-cased, base-weight, white). When the
+                        author didn't provide a title, we generate an evocative
+                        narrative label by position (`narrativeStepLabel`) so
+                        the header reads as "a moment in the build" rather than
+                        as "system documentation" (Step 3/5). The numeric
+                        counter is demoted to a right-aligned monospace badge
+                        — present for orientation, quiet for hierarchy. Long
+                        titles truncate rather than wrap so the header stays at
+                        a consistent one-line bar height; the counter stays
+                        visible via `shrink-0`. Author-provided titles and
+                        generated labels share the same treatment on purpose —
+                        the page reads coherently whether a given project's
+                        author named every step or none. */}
                     <div className="bg-surface-900 px-5 py-3">
-                      <div className="flex items-center gap-2">
-                        <span className="text-xs font-mono text-surface-400">
-                          Step {idx + 1}/{prompt.steps!.length}
+                      <div className="flex items-center justify-between gap-4">
+                        <div className="min-w-0 flex-1 flex items-baseline gap-2.5">
+                          <span
+                            className="inline-block w-1.5 h-1.5 bg-brand-orange shrink-0 self-center"
+                            aria-hidden="true"
+                          />
+                          <h3 className="font-bold text-[15px] text-white truncate leading-tight">
+                            {step.title?.trim() || narrativeStepLabel(idx, prompt.steps!.length)}
+                          </h3>
+                        </div>
+                        <span
+                          className="text-[11px] font-mono text-surface-500 shrink-0 tabular-nums tracking-wider"
+                          aria-label={`Step ${idx + 1} of ${prompt.steps!.length}`}
+                        >
+                          {String(idx + 1).padStart(2, '0')}
+                          <span className="text-surface-700 mx-1" aria-hidden="true">/</span>
+                          {String(prompt.steps!.length).padStart(2, '0')}
                         </span>
-                        {step.title && (
-                          <span className="font-bold text-sm text-white">{step.title}</span>
-                        )}
                       </div>
                       {step.description && (
-                        <p className="text-xs text-surface-400 mt-1">{step.description}</p>
+                        <p className="text-xs text-surface-400 mt-1.5 pl-4">{step.description}</p>
                       )}
                     </div>
 
@@ -546,6 +590,98 @@ export default async function PromptDetailPage({
           </div>
         </section>
       )}
+      </div>
+
+      {/* ─── Persistent project-action rail (iter 55 — Polish #1) ─────────
+          Sticky right-rail on lg+. The "Use as starting point" CTA is the
+          single highest-intent button on the page — visitors who arrive
+          already inspired should be able to hit it without scrolling back
+          up. Below lg, the rail is hidden and its content is mirrored in
+          the fixed bottom bar outside this container. The rail also
+          carries a quiet meta line (difficulty, step count, model) so the
+          sticky surface doesn't read as a naked button — it reads as a
+          "this is what you're forking" action panel. */}
+      <aside className="hidden lg:block" aria-label="Project actions">
+        <div className="sticky top-16">
+          <div className="border border-surface-200 bg-white shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
+            <div className="bg-surface-900 text-white px-5 py-4">
+              <div className="flex items-center gap-2 mb-1">
+                <span className="inline-block w-1.5 h-1.5 bg-brand-orange" aria-hidden="true" />
+                <span className="text-[10px] font-mono uppercase tracking-[0.18em] text-surface-400 font-semibold">
+                  Your turn
+                </span>
+              </div>
+              <p className="text-sm font-semibold leading-snug">Inspired? Build your own version.</p>
+              <p className="text-xs text-surface-400 mt-1 leading-snug">
+                Start a new draft from this blueprint — auto-prefill coming soon.
+              </p>
+            </div>
+            <div className="px-5 py-4 space-y-4">
+              <Link
+                href="/prompt/new"
+                className="flex w-full items-center justify-center gap-2 bg-brand-orange hover:bg-brand-orange-dark text-white text-sm font-semibold px-4 py-2.5 transition-colors duration-200 focus-visible:outline-2 focus-visible:outline-brand-orange focus-visible:outline-offset-2"
+              >
+                <GitFork className="w-4 h-4" aria-hidden="true" />
+                Use as starting point
+              </Link>
+              <ul className="text-[11px] text-surface-500 space-y-1.5 pt-1 border-t border-surface-200/80">
+                <li className="flex items-center justify-between gap-3 pt-2">
+                  <span className="font-mono uppercase tracking-[0.14em] text-surface-400">Difficulty</span>
+                  <span className="inline-flex items-center gap-1.5 font-medium text-surface-700 capitalize">
+                    <span className={`w-1.5 h-1.5 ${difficulty.dot}`} aria-hidden="true" />
+                    {prompt.difficulty}
+                  </span>
+                </li>
+                {hasSteps && (
+                  <li className="flex items-center justify-between gap-3">
+                    <span className="font-mono uppercase tracking-[0.14em] text-surface-400">Chain</span>
+                    <span className="font-medium text-surface-700">
+                      {prompt.steps!.length} step{prompt.steps!.length > 1 ? 's' : ''}
+                    </span>
+                  </li>
+                )}
+                {modelDisplay && (
+                  <li className="flex items-center justify-between gap-3">
+                    <span className="font-mono uppercase tracking-[0.14em] text-surface-400">Model</span>
+                    <span className="font-medium text-surface-700 truncate max-w-[11rem]" title={modelDisplay}>
+                      {modelDisplay}
+                    </span>
+                  </li>
+                )}
+              </ul>
+            </div>
+          </div>
+        </div>
+      </aside>
     </div>
+
+    {/* ─── Mobile sticky bottom bar (iter 55 — Polish #1) ────────────────
+        Below lg the right-rail is hidden; the primary CTA resurfaces here
+        as a fixed bottom bar with backdrop blur so it sits over whatever
+        content is being read without obscuring more than its own strip.
+        z-40 keeps it above normal content but under the site header
+        (z-50). The main-column carries pb-28 on mobile so the tags and
+        related-projects sections aren't hidden behind this bar. */}
+    <nav
+      aria-label="Project actions"
+      className="lg:hidden fixed inset-x-0 bottom-0 z-40 border-t border-surface-800 bg-surface-900/92 backdrop-blur-md shadow-[0_-4px_20px_rgba(0,0,0,0.25)]"
+    >
+      <div className="max-w-4xl mx-auto px-4 py-3 flex items-center gap-3">
+        <div className="min-w-0 flex-1">
+          <p className="text-[13px] font-semibold text-white leading-tight truncate">Inspired? Build your own.</p>
+          <p className="text-[11px] text-surface-400 leading-tight truncate mt-0.5">
+            Start a draft — auto-prefill coming soon.
+          </p>
+        </div>
+        <Link
+          href="/prompt/new"
+          className="inline-flex items-center justify-center gap-1.5 bg-brand-orange hover:bg-brand-orange-dark text-white text-[13px] font-semibold px-3.5 py-2.5 transition-colors duration-200 shrink-0 focus-visible:outline-2 focus-visible:outline-brand-orange focus-visible:outline-offset-2"
+        >
+          <GitFork className="w-4 h-4" aria-hidden="true" />
+          Use this
+        </Link>
+      </div>
+    </nav>
+    </>
   )
 }

@@ -1,7 +1,7 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { Fragment } from 'react'
-import { ChevronRight, Tag, Cpu, Wrench, ArrowRight, ArrowDown, GitFork } from 'lucide-react'
+import { ChevronRight, Tag, Cpu, Wrench, ArrowRight, GitFork } from 'lucide-react'
 import { getPromptById, getUserVotesAndBookmarks, getPrompts } from '@/lib/data'
 import { getModelName } from '@/lib/models'
 import VoteBookmarkButtons from '@/components/VoteBookmarkButtons'
@@ -434,25 +434,20 @@ export default async function PromptDetailPage({
             <div className="absolute left-[23px] top-2 bottom-2 w-[2px] bg-gradient-to-b from-brand-orange via-brand-blue to-brand-orange opacity-40" style={{ animation: 'pipeDraw 1s ease-out forwards' }} />
 
             <div className="space-y-5">
-              {prompt.steps!.map((step, idx) => {
-                const prevHadResult = idx > 0 && !!prompt.steps![idx - 1].result_content
-                return (
-                <Fragment key={step.id}>
-                  {/* Inter-step "feeds into" cue — only when the previous step produced a result.
-                      Sells the over-the-shoulder narrative: the blue result that just came out
-                      of step N is what the author pasted in as step N+1's prompt. The chip
-                      sits on the spine between cards so the flow reads top-to-bottom. */}
-                  {prevHadResult && (
-                    <div className="relative pl-16">
-                      <div className="inline-flex items-center gap-1.5 text-[11px] font-mono text-surface-500 bg-white border border-surface-200 px-2 py-1 leading-none">
-                        <ArrowDown className="w-3 h-3 text-brand-blue" aria-hidden="true" />
-                        step {idx} result
-                        <ArrowRight className="w-3 h-3 text-surface-400" aria-hidden="true" />
-                        step {idx + 1} prompt
-                      </div>
-                    </div>
-                  )}
-                <div id={`step-${idx + 1}`} className="relative pl-16 scroll-mt-24">
+              {prompt.steps!.map((step, idx) => (
+                /* Inter-step "feeds into" chip removed in iter 82 (Polish #1
+                   reassessment). The chip used flowchart vocabulary
+                   ("step N result → step N+1 prompt") that read as
+                   process-diagram chrome on an editorial page, still said
+                   "prompt" instead of the iter-56 "ask" vocabulary, and
+                   duplicated work the Journey-at-a-glance strip above
+                   already does with explicit arrows. The visual chain is
+                   now carried by the gradient vertical pipe + numbered
+                   orange anchors + the Journey strip. Reference: Linear /
+                   Vercel / read.cv editorial layouts rely on vertical
+                   rhythm and numbered headers rather than explicit
+                   connector chips between sequential blocks. */
+                <div key={step.id} id={`step-${idx + 1}`} className="relative pl-16 scroll-mt-24">
                   {/* Step node — orange number anchor */}
                   <div className="absolute left-0 top-0 w-[48px] h-[48px] bg-brand-orange flex items-center justify-center z-10 shadow-sm">
                     <span className="text-base font-black text-white">{idx + 1}</span>
@@ -543,9 +538,7 @@ export default async function PromptDetailPage({
                     </div>
                   </div>
                 </div>
-                </Fragment>
-                )
-              })}
+              ))}
             </div>
           </div>
         </section>

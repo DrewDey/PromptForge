@@ -321,10 +321,10 @@ export default function SubmitProjectPage() {
     if (!story.trim()) errors.story = 'Tell the story of your project'
     if (!categorySlug) errors.category = 'Pick a category'
     if (!difficulty) errors.difficulty = 'Select a difficulty level'
-    if (!isChain && !promptContent.trim()) errors.promptContent = 'Enter the prompt you used'
+    if (!isChain && !promptContent.trim()) errors.promptContent = 'Enter the ask you used'
     if (isChain) {
       const hasFilledStep = steps.some(s => s.title.trim() && s.content.trim())
-      if (!hasFilledStep) errors.steps = 'Complete at least one step with a title and prompt'
+      if (!hasFilledStep) errors.steps = 'Complete at least one step with a title and ask'
     }
     if (modelId === 'other' && !customModel.trim()) errors.customModel = 'Enter the model name'
     return errors
@@ -517,7 +517,7 @@ export default function SubmitProjectPage() {
     : undefined
   const section2Summary = isChain
     ? `${filledSteps} of ${totalSteps} step${totalSteps !== 1 ? 's' : ''} filled`
-    : promptContent.trim() ? 'Prompt added' : undefined
+    : promptContent.trim() ? 'Ask added' : undefined
   const section3Summary = [
     tools.trim() ? `Tools: ${tools.trim().split(',').slice(0, 2).join(', ')}` : '',
     tags.trim() ? `Tags: ${tags.trim().split(',').slice(0, 2).join(', ')}` : '',
@@ -693,7 +693,7 @@ export default function SubmitProjectPage() {
           <SectionHeader
             number={2}
             title="Your Build Journey"
-            subtitle="Show how you built it — the prompts and results at each step."
+            subtitle="Show how you built it — the asks and responses at each step."
             isExpanded={openSections.has(2)}
             isComplete={section2Complete}
             summary={section2Summary}
@@ -719,7 +719,7 @@ export default function SubmitProjectPage() {
                   Multi-step
                   <span className="text-[10px] font-medium uppercase tracking-wider text-brand-orange bg-brand-orange/10 px-1.5 py-0.5">Recommended</span>
                 </div>
-                <div className="text-xs text-surface-500">Show each prompt→result</div>
+                <div className="text-xs text-surface-500">Show each ask→response</div>
               </div>
             </button>
             <button
@@ -734,8 +734,8 @@ export default function SubmitProjectPage() {
             >
               <FileText className={`w-5 h-5 flex-shrink-0 transition-colors duration-150 ${!isChain ? 'text-brand-orange' : 'text-surface-400'}`} />
               <div>
-                <div className={`text-sm font-semibold ${!isChain ? 'text-surface-900' : 'text-surface-600'}`}>Single prompt</div>
-                <div className="text-xs text-surface-500">One prompt, one result</div>
+                <div className={`text-sm font-semibold ${!isChain ? 'text-surface-900' : 'text-surface-600'}`}>Single ask</div>
+                <div className="text-xs text-surface-500">One ask, one response</div>
               </div>
             </button>
           </div>
@@ -745,15 +745,16 @@ export default function SubmitProjectPage() {
             <div className="space-y-5">
               <div data-field="promptContent">
                 <label className="block text-sm font-medium text-surface-700 mb-1">
-                  The Prompt You Used <RequiredDot />
+                  Your Ask <RequiredDot />
                 </label>
-                <textarea rows={8} value={promptContent} onChange={(e) => setPromptContent(e.target.value)} placeholder="Paste the prompt you used to create this project..." className={`w-full bg-white border text-surface-900 placeholder-surface-400 px-4 py-2.5 text-sm font-mono focus:outline-none focus:ring-2 transition-colors duration-150 ${fieldBorder('promptContent')}`} />
+                <p className="text-xs text-surface-500 mb-1.5 block">Paste what you said to the model.</p>
+                <textarea rows={8} value={promptContent} onChange={(e) => setPromptContent(e.target.value)} placeholder="Paste the ask you sent to the model..." className={`w-full bg-white border text-surface-900 placeholder-surface-400 px-4 py-2.5 text-sm font-mono focus:outline-none focus:ring-2 transition-colors duration-150 ${fieldBorder('promptContent')}`} />
                 <FieldError message={validationErrors.promptContent} />
               </div>
               <div>
-                <label className="block text-sm font-medium text-surface-700 mb-1">The Result <span className="text-surface-400 font-normal">(optional)</span></label>
-                <p className="text-xs text-surface-500 mb-1.5 block">What did the AI produce? Share text, screenshots, or both.</p>
-                <textarea rows={6} value={resultContent} onChange={(e) => setResultContent(e.target.value)} placeholder="Paste or describe what the AI generated..." className="w-full bg-white border border-surface-200 text-surface-900 placeholder-surface-400 px-4 py-2.5 text-sm focus:outline-none focus:border-brand-orange focus:ring-2 focus:ring-brand-orange/20 mb-3 transition-colors duration-150" />
+                <label className="block text-sm font-medium text-surface-700 mb-1">The Response <span className="text-surface-400 font-normal">(optional)</span></label>
+                <p className="text-xs text-surface-500 mb-1.5 block">What did the model send back? Share text, screenshots, or both.</p>
+                <textarea rows={6} value={resultContent} onChange={(e) => setResultContent(e.target.value)} placeholder="Paste or describe what the model responded with..." className="w-full bg-white border border-surface-200 text-surface-900 placeholder-surface-400 px-4 py-2.5 text-sm focus:outline-none focus:border-brand-orange focus:ring-2 focus:ring-brand-orange/20 mb-3 transition-colors duration-150" />
                 <ImageUpload images={resultImages} onChange={setResultImages} label="Screenshots" />
               </div>
             </div>
@@ -875,27 +876,27 @@ export default function SubmitProjectPage() {
                             className="w-full bg-white border border-surface-200 text-surface-900 placeholder-surface-400 px-3 py-2.5 text-sm focus:outline-none focus:border-brand-orange focus:ring-2 focus:ring-brand-orange/20 transition-colors duration-150"
                           />
                         </div>
-                        {/* Prompt section — visually distinct */}
+                        {/* Ask section — visually distinct */}
                         <div className="bg-surface-50 border border-surface-200 p-4">
                           <label className="text-xs font-semibold text-brand-orange uppercase tracking-wide mb-2 block">
-                            Prompt <RequiredDot />
+                            Your Ask <RequiredDot />
                           </label>
                           <textarea
                             rows={5}
-                            placeholder="The prompt you used at this step..."
+                            placeholder="Paste what you said to the model at this step..."
                             value={step.content}
                             onChange={(e) => updateStep(idx, 'content', e.target.value)}
                             className="w-full bg-white border border-surface-200 text-surface-900 placeholder-surface-400 px-3 py-2.5 text-sm font-mono focus:outline-none focus:border-brand-orange focus:ring-2 focus:ring-brand-orange/20 transition-colors duration-150"
                           />
                         </div>
-                        {/* Result section — visually distinct */}
+                        {/* Response section — visually distinct */}
                         <div className="bg-green-50/50 border border-green-100 p-4">
                           <label className="text-xs font-semibold text-green-600 uppercase tracking-wide mb-2 block">
-                            Result <span className="text-surface-400 font-normal normal-case">(optional — text, screenshots, or both)</span>
+                            The Response <span className="text-surface-400 font-normal normal-case">(optional — text, screenshots, or both)</span>
                           </label>
                           <textarea
                             rows={4}
-                            placeholder="What did the AI produce at this step?"
+                            placeholder="What did the model send back at this step?"
                             value={step.result_content}
                             onChange={(e) => updateStep(idx, 'result_content', e.target.value)}
                             className="w-full bg-white border border-green-200 text-surface-900 placeholder-surface-400 px-3 py-2.5 text-sm focus:outline-none focus:border-green-400 focus:ring-2 focus:ring-green-200/40 mb-3 transition-colors duration-150"
@@ -969,7 +970,7 @@ export default function SubmitProjectPage() {
             <span className="text-surface-500">
               {isChain
                 ? `${filledSteps} of ${totalSteps} step${totalSteps !== 1 ? 's' : ''} complete`
-                : promptContent.trim() ? 'Prompt added' : 'Add your prompt'
+                : promptContent.trim() ? 'Ask added' : 'Add your ask'
               }
             </span>
             {Object.keys(computeErrors()).length === 0 && (

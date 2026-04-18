@@ -20379,6 +20379,1012 @@ Test the cadence in Q2. In the Q2 retro, you'll likely cut one or two pieces (pr
  $pf$Async refinement week + full quarterly cadence. Refinement week (Mon-Fri after workshop): Mon owner self-applies rubric, Tue team-lead 15-min 1:1 per KR owner, Wed cross-team conflict-resolution SLA hits, Thu team lead final commit + capacity gut-check, Fri agency-wide 30-min kickoff with partner sign-off. Mid-quarter cadence: weekly async red/yellow/green KR status (5 min/owner), bi-weekly 15-min OKR-check added to existing standup (NOT a new meeting), one 30-min mid-quarter check-in with partner per team in week 6. Total OKR meeting time per team per quarter: ~6 hours; partner ~5 hours. Escalation triggers (auto): 2 consecutive yellow weeks, any red, broken cross-team dependency, confidence drops below 2 — partner responds within 24hrs. EOQ readout: 60min pre-work per lead, 45-min meeting (5min × 6 teams + 10min partner close), 45-min ops consolidation into Q+1 priority memo. Readout assesses process not teams — 70% KR completion is target; 100% completion = ceiling-low ambition. Three load-bearing pieces never to cut: weekly status posts, mid-quarter check-in, EOQ readout.$pf$);
 
 -- =========================================================================
+-- Project 55-0057 | Productize 3 years of one-off consulting into a $4,500 packaged offer | Lena Morales | Strategy | 4 steps
+-- =========================================================================
+
+DELETE FROM prompt_steps WHERE prompt_id = '55555555-5555-5555-5555-555555550057';
+DELETE FROM prompts      WHERE id        = '55555555-5555-5555-5555-555555550057';
+
+INSERT INTO prompts (
+  id, title, description, content, result_content,
+  category_id, difficulty, model_used, model_recommendation,
+  tools_used, tags, status, author_id, vote_count, bookmark_count
+) VALUES (
+  '55555555-5555-5555-5555-555555550057',
+  $pf$Productize 3 years of one-off consulting into a $4,500 packaged offer — 4-pass Claude workflow from scope crystallization to pricing psychology to delivery system to sales-page copy$pf$,
+  $pf$Converted three years of bespoke consulting proposals into a single $4,500 packaged "Etsy Shop Diagnostic" offer. 4-pass Claude 4.6 Opus workflow — scope crystallization against the 47 past engagements, pricing psychology with real anchors (not cost-plus math), a fixed delivery system that compresses 30-hour custom work into a 12-hour repeatable flow, and a sales page that converts without a sales call.$pf$,
+  $pf$I've been running solo consulting for Etsy shop owners for three years. I've done 47 engagements. Every single one started with a free 30-min call, a custom proposal that took me 2-3 hours to draft, a negotiation where I'd shave the price by 10-15%, and a scope that drifted during delivery because I never wrote hard boundaries into the proposal. Average engagement: $2,800, median delivery time: 34 hours of actual work, gross margin after my time: ~$65/hr. That's not a business. That's an expensive hobby.
+
+I want to productize. One fixed offer — the "Etsy Shop Diagnostic" — at a fixed price, with a fixed scope, a fixed delivery timeline, and a sales page that lets people buy without a call. Target: $4,500 price, 12-15 hours of delivery time, 90%+ gross margin, no custom proposals, no negotiation. The offer has to be good enough that the people who would have hired me for a $2,800 custom engagement would pay $4,500 for this instead — because it's better, faster, and priced against the business value, not my hourly rate.
+
+I ran 4 passes with Claude 4.6 Opus. Pass 1: scope crystallization — what ACTUALLY creates value across my 47 past engagements, what can I drop, what's non-negotiable. Pass 2: pricing psychology — anchors, comparison, the "$4,500 vs. a $2,800 custom proposal" positioning trap and how to avoid it. Pass 3: a fixed delivery system that turns 30 hours of custom work into 12 hours of repeatable work without making the output feel templated. Pass 4: sales-page copy that does the heavy lifting the sales call used to do.
+
+Sharing because every solo consultant I talk to is stuck in the same trap — custom proposals, negotiation, scope creep — and the "just productize" advice is useless without a worked example.$pf$,
+  $pf$Launched the packaged offer 6 weeks ago. Sold 11 diagnostics at $4,500 each ($49,500 gross). Delivery time averaged 13.4 hours — close to the 12-hour target. No custom proposals written; three prospects asked for a discount, I declined, two bought at full price, one walked. Sales page converts visitors-to-inquiry at 4.1% and inquiry-to-close at 67% (7 of 11 closes came inbound from sales page with zero sales call; 4 of 11 had a single 20-min scoping call that I now position as "already-bought onboarding" instead of a sales call). Gross margin per engagement: ~91% (vs. prior ~60% on custom). Most surprising outcome: the fixed scope actually made the deliverable BETTER, not worse — because I stopped rebuilding my analytical framework from scratch every engagement and invested that time into the template itself. Plan: expand to a second packaged offer ("Etsy Shop Relaunch" at ~$12K) in Q3 now that the diagnostic operates as the qualification funnel.$pf$,
+  '11111111-1111-1111-1111-111111111109',
+  'intermediate',
+  'claude-opus-4-6',
+  'Claude 4.6 Opus',
+  ARRAY['Claude','Notion','Stripe','Google Docs','Webflow'],
+  ARRAY['productization','solo-consulting','pricing','packaged-offer','sales-copy','solopreneur'],
+  'approved',
+  '22222222-2222-2222-2222-222222222210',
+  0, 0
+);
+
+INSERT INTO prompt_steps (id, prompt_id, step_number, title, content, result_content, description) VALUES
+
+-- Step 1 --
+('66666666-6666-6666-6666-666666570101',
+ '55555555-5555-5555-5555-555555550057',
+ 1,
+ $pf$Pass 1 — scope crystallization: what creates value, what to drop, what's non-negotiable$pf$,
+ $pf$Here's what I'm working with. I'm going to paste a summary of my last 47 engagements — what the client asked for, what I actually delivered, what the engagement landed on as the load-bearing insight, and the post-engagement outcome 90 days later where I have that data. Read it, then help me crystallize the fixed scope for a single productized "Etsy Shop Diagnostic."
+
+What I want from this pass:
+(1) The 3-5 deliverables that actually moved the needle in the majority of engagements — the ones where the client's 90-day metric improvement traces directly to that deliverable.
+(2) The deliverables I THOUGHT were central but were actually cosmetic — where the client said "yeah that was nice" but nothing changed.
+(3) The hard scope boundaries: what's explicitly NOT in this offer (so I can say "that's a separate engagement" without flinching).
+(4) The one insight that separates a $4,500 packaged offer from a $1,500 audit template — the thing that can't be commoditized.
+
+Don't just agree with me — push back if I'm keeping a deliverable for ego reasons instead of value reasons.$pf$,
+ $pf$Scope crystallization, based on the 47-engagement summary.
+
+**DELIVERABLES THAT MOVED THE NEEDLE (keep, non-negotiable):**
+
+1. **Listing-level revenue audit with ranked action list.** Across 41 of 47 engagements, the single highest-ROI artifact was ranking every listing by revenue-per-view and flagging the bottom-quartile listings as either "kill, cannibalizing search impressions" or "fix the 2-3 specific things holding it back." Clients who acted on this ranking saw a measurable GMV lift in 30-60 days. Clients who DIDN'T didn't. This is your core offer.
+
+2. **Search-query-to-listing-gap analysis.** Pulling the top 50-100 Etsy search queries driving traffic to the shop, identifying where the existing listings partially match but aren't optimized (wrong title ordering, missing tags, attribute mismatches), and writing specific rewrites. 34 of 47 engagements had this as the #2 impact artifact. Keep.
+
+3. **Pricing audit across the shop.** Not full pricing strategy — a pricing AUDIT. Where are listings mis-priced against the visible competitive set (5-15% under-market is the common pattern, leaving $2-5K/yr of margin on the floor for a mid-size shop). Which listings are ideal candidates for a 15-20% price test. Don't do the test; recommend the test + the tracking setup. 29 of 47 had this as impact artifact #3.
+
+4. **A single "first 30 days" action plan.** Not a 60-page strategy doc. One page. Ordered. With time estimates per action. This is what converts the diagnostic from "insightful report" into "actionable system." 44 of 47 engagements that saw 90-day outcome improvement cited this one-pager as the reason they actually did the work.
+
+**DELIVERABLES TO DROP (cosmetic, not load-bearing):**
+
+1. **Brand/voice analysis.** You've done this in 31 engagements. In exactly 2, it was the thing that moved the metric. The other 29 times, the client thanked you for the framework and then kept writing the same listings. Drop it.
+
+2. **Social-media-funnel recommendation.** Out of scope for a SHOP diagnostic. You are not an Instagram consultant. When clients ask for this, it pulls 4-6 hours of your time for something you're not even best-positioned to deliver. Explicit carve-out: "Social funnel strategy is a separate engagement I don't currently offer."
+
+3. **Photography audit.** This is a REFERRAL opportunity, not a deliverable. You're not a photographer. When listings have bad photos, the right answer is "here's a referral to [specific photographer] — her work typically pays for itself in 60 days." You don't need to audit the photos yourself.
+
+4. **Long written "brand strategy" narrative.** Cosmetic. Drop.
+
+**HARD SCOPE BOUNDARIES — what's explicitly NOT in this offer:**
+
+- No custom listing writes (you'll recommend rewrites in the gap analysis, but client writes them — or hires you separately at $X to execute).
+- No Instagram / TikTok / Pinterest audit.
+- No logo / brand-identity work.
+- No platform-migration advice (Shopify, WooCommerce, etc.) — Etsy-specific only.
+- No ongoing retainer implied. One engagement = 12-15 hours = diagnostic delivered = done.
+
+**THE LOAD-BEARING INSIGHT THAT CAN'T BE COMMODITIZED:**
+
+The listing-level revenue-per-view ranking is the core. Anyone can pull total-revenue-per-listing (Etsy shows it). Almost nobody looks at revenue-per-view — because it requires stitching Etsy's shop stats against listing traffic data in a spreadsheet, which is annoying enough that 90%+ of shop owners never do it. It's the single highest-signal diagnostic metric for Etsy specifically, and it's the thing a $19 "Etsy shop audit template" can't replicate. That's your moat.
+
+**HARD PUSHBACK:**
+
+You're keeping "brand/voice analysis" in your draft because you're good at it and it's the part of the work YOU enjoy — but the data says it's not the part that moves the client's number. A productized offer ruthlessly cuts the work that doesn't trace to outcome, even if it's the work you like doing. If you want to keep voice work in your practice, make it a $800 add-on, not part of the core $4,500 offer.$pf$,
+ $pf$Scope crystallization from 47-engagement data. Keep 4 load-bearing deliverables: (1) listing-level revenue-per-view ranking with ranked action list (impact in 41/47 engagements, the uncommoditizable moat), (2) search-query-to-listing-gap analysis with specific rewrites (34/47), (3) pricing audit against competitive set (29/47), (4) 1-page 30-day action plan (44/47 — converts "insightful report" to "actionable system"). Drop as cosmetic: brand/voice analysis (ego keep, moved metric in only 2/31), social-media funnel (out of scope, referral instead), photography audit (refer out), long brand strategy narrative. Hard carve-outs: no custom listing writes, no social audits, no logo/brand work, no platform migration, no retainer implied. Load-bearing moat: revenue-per-view per listing — nobody computes it because it requires stitching Etsy data, but it's the highest-signal Etsy-specific diagnostic metric. Direct pushback on keeping voice analysis for ego reasons — offer it as a separate $800 add-on if needed, not part of the core $4,500 scope.$pf$),
+
+-- Step 2 --
+('66666666-6666-6666-6666-666666570102',
+ '55555555-5555-5555-5555-555555550057',
+ 2,
+ $pf$Pass 2 — pricing psychology: $4,500 anchor, avoiding the "vs. my old custom proposal" trap$pf$,
+ $pf$Scope is locked from Pass 1. Now pricing. My instinct is to price at $4,500, but I have an anchoring problem — my old custom engagements averaged $2,800 and the Etsy shop owners I'm selling to have mental anchors from $200 template downloads and $500 Fiverr audits. How do I avoid the "why would I pay $4,500 when I can buy a $200 template" objection?
+
+Give me: (1) the pricing anchor I should be leading with on the sales page (what do I compare this to — NOT a $200 template, NOT my old custom proposals); (2) the specific "this pays for itself in X months" math I should do, and how to present it honestly without becoming one of those sleazy "this will 10x your revenue" sales pages; (3) how to handle the "can you do it for less" inbound email — with actual copy I can paste; (4) whether to offer a guarantee, and if so what kind; (5) any mistakes solo consultants make pricing their first productized offer that I should avoid. Be specific — I don't need pricing theory, I need the actual decisions for this specific case.$pf$,
+ $pf$Here are the five pricing decisions for the $4,500 Etsy Shop Diagnostic.
+
+**(1) THE ANCHOR — compare to a 20-hour agency engagement, NOT a template.**
+
+Your anchor should be: "A digital-commerce agency charges $12,000-$18,000 for a 20-hour shop audit. A $200 template gives you a framework but no analysis of your actual data. The Diagnostic is the middle path — the real analytical work, delivered by a specialist who has done this 47 times on Etsy shops specifically, for $4,500."
+
+This anchor does three things: (a) positions you AGAINST agencies, not against templates — different buyer mindset, different price tolerance; (b) makes $4,500 read as "the affordable option" rather than "the expensive option"; (c) signals that this is PROFESSIONAL WORK, not a download. Etsy shop owners who buy templates aren't your buyer. You're selling to shop owners doing $80K-$400K/year who need the analysis but can't swallow an agency's $15K + retainer structure.
+
+Do NOT anchor to your own prior $2,800 custom proposals. That's a backward-looking anchor only you can see. Buyers don't know what you used to charge.
+
+**(2) THE PAYBACK MATH — honest, specific, conservative.**
+
+Don't do "this will 10x your revenue." Do: "Across the 47 shops I've worked with, the median lift in quarterly revenue after implementing the diagnostic's action list was 12%. For a shop doing $80K/year, that's $9,600 annually. The diagnostic pays back in about 6 months at the median. Your number may be higher or lower — the action list tells you which levers you have."
+
+Three rules for this copy: (a) cite the median, not the best case — if you lead with "one client grew 340%," the savvy buyer tunes you out; (b) name the specific revenue range you're best at ($80K-$400K/year shops) — excluding shops where the offer doesn't fit is a trust-earner; (c) explicitly say the outcome varies and depends on implementation — this is both true and legally smart.
+
+**(3) THE "CAN YOU DO IT FOR LESS" EMAIL:**
+
+Copy you can paste:
+
+> Hi [Name] — thanks for the note. The Diagnostic is priced at $4,500 and I don't discount it. The scope, deliverables, and time commitment are fixed — the same for every shop — which is the thing that makes it work at that price. If the price doesn't fit your shop right now, I'd recommend:
+>
+> (1) Wait until you're doing $100K+/yr in GMV and the math is cleaner; or
+> (2) Grab my free "5 quick wins" PDF [link] — that'll give you the 3-4 easy things to try before investing in the full Diagnostic.
+>
+> Happy to revisit once your shop's at a scale where the Diagnostic is a clear yes. — Lena
+
+This email does three things simultaneously: (a) holds the price without apologizing; (b) doesn't burn the relationship — directs them to free content so they can come back later; (c) FILTERS. The right buyer doesn't ask for a discount. The buyer who asks is signaling they're either under-sized or price-shopping. Saying no to them is a service to both of you.
+
+**(4) GUARANTEE — yes, but scope it tight.**
+
+Offer: "If you implement the action list and don't see at least one revenue-moving insight you didn't already have, I'll refund $2,250 (50%) and keep the work." NOT a full refund. NOT "100% satisfaction guaranteed." The specific structure: (a) requires the client to implement, which filters tire-kickers; (b) 50% refund means you recover your time cost even if the guarantee triggers; (c) "at least one insight you didn't already have" is a low bar you'll almost always clear — but naming it explicitly reassures the skeptical buyer.
+
+Across 47 engagements, you'd have triggered this guarantee maybe twice. That's the correct rate — low enough to not be a cost, high enough that the guarantee is real.
+
+**(5) MISTAKES TO AVOID — specific to you:**
+
+(a) **Do not offer "payment plans" for a $4,500 offer.** Payment plans for this price point attract buyers who can't actually use the output (capital constrained, not committed). You'll spend more time chasing the back half of payments than doing the work. Full payment upfront, Stripe Checkout, done.
+
+(b) **Do not offer a "mini" or "lite" version at $1,500.** You'll cannibalize the main offer and the lite version will cost almost as much to deliver. If you want a lower-price entry, sell a $79 workbook — it should cost zero hours to deliver once written.
+
+(c) **Do not raise the price within the first 20 engagements.** You need to validate that $4,500 works across a range of shop sizes before you start "premium" tier experiments. If 80% of your first 20 close at full price with zero negotiation, that's a signal to raise — but earlier than that, price changes are noise.
+
+(d) **Do not discount for "case study rights."** Sleazy buyers know this script. Anyone who offers you a testimonial in exchange for a discount wasn't going to write one anyway. Case studies come from WOWED clients at full price, not discount-extracted ones.$pf$,
+ $pf$Pricing decisions for $4,500 Etsy Shop Diagnostic. (1) Anchor against 20-hour agency engagement ($12K-$18K), NOT templates — makes $4,500 read as "affordable middle path"; excludes template-buyer mindset. (2) Payback math: cite median 12% quarterly lift across 47 shops, payback ~6 months at $80K-$400K/yr range, explicitly varies — avoid "10x" sleaze by leading with median not best case. (3) Prepared "can you do it for less" response that holds price without apology, redirects to free content, filters out under-sized/price-shopping buyers. (4) Scoped guarantee: 50% refund ($2,250) if client implements and finds no new insight — requires implementation (filters tire-kickers), caps downside, explicit low-bar is reassuring. (5) Mistakes to avoid: no payment plans ($4,500 upfront Stripe), no $1,500 lite version (cannibalizes + costs similar to deliver), no price raises before 20 validated closes, no case-study-rights discounting (sleazy-buyer signal — case studies come from wowed-at-full-price clients).$pf$),
+
+-- Step 3 --
+('66666666-6666-6666-6666-666666570103',
+ '55555555-5555-5555-5555-555555550057',
+ 3,
+ $pf$Pass 3 — delivery system: 30-hour custom work → 12-hour repeatable flow$pf$,
+ $pf$Scope and price locked. The delivery economics only work if I can compress 30 hours of custom analytical work into ~12 hours per engagement — and the output has to feel personalized, not templated. Every previous engagement, I built my analytical framework from scratch; that's the waste.
+
+Design the delivery system. Specifically: (1) what runs on pre-built templates/scripts vs. what's still per-client analytical judgment, (2) the day-by-day workflow for a single engagement (from purchase to final handoff), (3) the tooling stack — I use Notion + Google Docs + Google Sheets today, I'm open to adding one more tool max, (4) the automation / pre-work that happens BEFORE the client even submits their shop data (the one-time investment that pays off across every future engagement), and (5) the handoff format that makes this feel like custom work even though 70% of the analytical skeleton is templated. Assume I have 8-10 hours of build time to invest in the system before the first engagement sells.$pf$,
+ $pf$Delivery system. Goal: 12-hour client-time per engagement, feels custom, templated analytical skeleton.
+
+**(1) TEMPLATES vs. PER-CLIENT JUDGMENT**
+
+**Templated (one-time build, reused every engagement):**
+- Google Sheets workbook with 7 pre-built tabs: Listing Revenue Audit, Search Query Gap, Pricing Audit, Competitive Reference Set, Action List, Revenue Projection, Summary. All formulas, charts, and conditional formatting built once. Client data pastes into raw-data tabs; analytical tabs auto-populate.
+- Google Docs report template with 12 fixed sections, each with a ~150-word scaffold describing what goes here. Per-client work is filling in the specifics, not writing structure.
+- A "Common Issues Library" Notion page listing the 40 most frequent findings across your 47 engagements, each with the recommended fix and a boilerplate paragraph. When a finding matches, you copy-paste the paragraph and edit 2-3 sentences for this shop's specifics. This is your biggest time-saver.
+- A 1-page Action List template with pre-structured columns: Action / Expected Impact / Time to Execute / Priority / Dependencies.
+
+**Per-client analytical judgment (NOT templated, still takes real time):**
+- Interpreting the revenue-per-view distribution — which shops have a long tail of bleeders vs. a few big wins vs. a flat middle, and what that pattern signals.
+- Picking the 3-5 listings to highlight as case-study examples in the report (the ones the client will see themselves in).
+- The pricing recommendation — templates can't replace judgment on which listings to test-raise and by how much.
+- The 30-day action list ordering — which two things to do first, which ones to defer, based on the specific shop's constraints (part-time vs. full-time, has help vs. solo, etc.).
+
+Rough time split: templated work eats 30 minutes per engagement (paste, auto-populate, skim for errors); judgment work eats 11-12 hours. That's where your brand value lives.
+
+**(2) DAY-BY-DAY WORKFLOW**
+
+- **Day 0 (client purchase):** Stripe receipt auto-triggers a Notion workflow that creates the client folder, emails the intake questionnaire + shop-data-request template, and schedules a 20-min scoping call at the client's pick of 3 slots. Total of your time: 0 min.
+- **Day 1-2 (client returns intake):** You spend 45 min reviewing intake + shop data. Run the scoping call (20 min). End of call, you tell the client the deliverable lands in 10 business days. Total of your time: 65 min.
+- **Day 3 (data extraction):** 30 min — paste Etsy stats exports into Sheets, run the revenue-per-view auto-population, sanity-check for obvious errors. Total: 30 min.
+- **Day 4-6 (core analysis — the bulk of real work):** 5-6 hours. Work through listing ranking judgment, search-query gap analysis, pricing audit, identifying the 3-5 case-study listings. Open the Common Issues Library and match findings. Total: 5-6 hrs.
+- **Day 7-8 (report writing):** 3-4 hours. Fill the Google Docs template, paste-and-edit from the Common Issues Library, write the action list specifically for this shop, finalize the revenue projection. Total: 3-4 hrs.
+- **Day 9 (delivery + walkthrough call):** 1 hour. 20 min prep, 30 min walkthrough call (recorded for client), 10 min send-off email. Total: 1 hr.
+- **Day 10-14 (Slack follow-up window):** Included 14 days of async follow-up — client can ask clarifying questions. Cap at 1 hour. Total: up to 1 hr.
+
+Total billable client-time per engagement: ~13 hours. Budget says 12; you'll overrun some, underrun others. Average will land in range.
+
+**(3) TOOLING STACK**
+
+Keep Notion + Google Docs + Google Sheets. Add ONE tool: **Loom** for the walkthrough video. Why: (a) replaces the "walkthrough call" for clients who prefer async, (b) recorded walkthrough becomes a template you can refine over time, (c) costs $10/mo. Anything more than that is over-engineering. No CRM, no project management tool — Notion is both.
+
+**(4) THE 8-10 HOUR PRE-WORK INVESTMENT**
+
+Allocate as follows:
+- 2 hrs: build the Google Sheets workbook with 7 tabs (this is your single highest-leverage artifact; invest here heavily).
+- 2 hrs: build the Google Docs report template with 12-section scaffolds.
+- 3 hrs: write the Common Issues Library (40 findings × ~150 words each = 6,000 words, your biggest time-saver over engagements 2-50).
+- 1 hr: build the intake questionnaire in Typeform or Notion Forms (20 questions max, half pre-filled from shop URL).
+- 1 hr: wire the Stripe-to-Notion automation with Zapier (optional — can do manually for first 5 engagements to validate before automating).
+
+Total: 9 hours. Amortized across 20 engagements: 27 minutes of pre-work per engagement. By engagement 50, it's 11 minutes.
+
+**(5) HANDOFF FORMAT — FEELS CUSTOM**
+
+Three things make a templated deliverable feel custom:
+- **The opening summary paragraph names specific things from THIS shop.** "Your shop's 14-listing catalog has a clear concentration pattern — three listings drive 61% of revenue, and two of those three have pricing issues..." — concrete specifics from the data. This opening paragraph takes 15 min to write and is what clients forward to their team.
+- **The 3-5 case-study listings in the report are from THIS shop and named.** When the client reads "your listing 'Minimalist Oak Desk Organizer'..." instead of "a sample listing," the report stops feeling templated.
+- **The action list has SPECIFIC next actions with SPECIFIC listings named.** "Week 1: rewrite the title of 'Minimalist Oak Desk Organizer' to front-load the keyword 'desk organizer' (currently buried in position 4)." Not "rewrite underperforming titles" — that one specific action.
+
+The rest of the report can be 70% templated scaffolding and the client will experience it as custom, because the things they READ CLOSELY are specific to their shop. That's the whole illusion.$pf$,
+ $pf$12-hour-per-engagement delivery system. Templated (30 min): 7-tab Google Sheets workbook, 12-section Google Docs report scaffold, 40-finding Common Issues Library with boilerplate paragraphs, 1-page Action List template. Per-client judgment (11-12 hrs): revenue-per-view distribution interpretation, 3-5 case-study listing selection, pricing recommendation, 30-day action list ordering. Day-by-day: Day 0 purchase-triggered Notion automation, Day 1-2 intake review + 20min scoping call, Day 3 data extraction (30min), Day 4-6 core analysis (5-6 hrs), Day 7-8 report writing (3-4 hrs), Day 9 walkthrough call (1hr), Day 10-14 async follow-up cap 1hr. Stack: Notion + Google Docs + Google Sheets + Loom (one new tool at $10/mo; no CRM, no PM tool). 8-10hr pre-work: 2hr Sheets, 2hr report scaffold, 3hr Common Issues Library (biggest leverage), 1hr intake, 1hr Stripe-Zap. Custom feel comes from 3 specific hooks: opening paragraph names this shop's specifics, 3-5 named case-study listings, action list names specific listings/actions — rest can be 70% templated and read as custom because what the client reads closely IS custom.$pf$),
+
+-- Step 4 --
+('66666666-6666-6666-6666-666666570104',
+ '55555555-5555-5555-5555-555555550057',
+ 4,
+ $pf$Pass 4 — sales page copy that replaces the sales call$pf$,
+ $pf$Last pass. I need sales page copy that closes the sale without a 30-min call. Every prior engagement started with "book a free intro call" — I want to eliminate that step for 60%+ of buyers. The page needs to do what a good sales call used to do: establish that I understand the buyer's actual problem, differentiate from templates and agencies, handle objections preemptively, and give a clear "click to buy" path.
+
+Write the sales-page structure + full copy for each section. Constraints: no fake scarcity, no countdown timers, no "only 3 spots left" when I have infinite capacity. No "imagine if..." openers. No "I used to be broke, then I figured out THE ONE WEIRD TRICK" founder story. Write like a professional talking to a professional — the buyer is a shop owner doing $80K-$400K/yr, they've been burned by agency pitches, they can smell sleaze. Trust the buyer's intelligence. Give me the full page copy I can paste into Webflow.$pf$,
+ $pf$Full sales page copy. Structured as 8 sections, written straight — no fake scarcity, no 10x claims.
+
+---
+
+**HERO**
+
+**Headline:** A shop diagnostic for Etsy sellers doing $80K–$400K/year who are tired of guessing what to fix.
+
+**Sub:** 47 engagements, one fixed scope, $4,500. No agency retainer, no custom proposal, no discovery call required.
+
+**CTA button:** Buy the Diagnostic — $4,500
+
+---
+
+**SECTION 1 — WHO THIS IS FOR (qualification as trust-builder)**
+
+**Heading:** This is for you if:
+
+- Your shop does $80K–$400K/yr in GMV.
+- You've been selling on Etsy for 18+ months (you have enough data to analyze).
+- You're the sole operator OR have a small team (1-3 people).
+- You're capable of executing a 30-day action list yourself — this is a diagnostic, not a done-for-you service.
+
+**Heading:** This is NOT for you if:
+
+- You're under $40K/yr — the math doesn't work, buy the [Quick Wins PDF] instead.
+- You're over $600K/yr — at that scale you need an agency, not a solo consultant.
+- You're looking for Instagram/TikTok strategy — that's not what this is.
+- You want someone to rewrite your listings for you — this gives you the list; you execute.
+
+---
+
+**SECTION 2 — THE PROBLEM (named specifically, no wallowing)**
+
+Most Etsy shop owners at your stage have the same three questions:
+
+1. Of my listings, which ones should I actually focus on — and which are silently hurting me?
+2. Am I priced right, or am I leaving money on the floor?
+3. What's the ONE thing I should do next week that would move my revenue?
+
+You can find partial answers in the $19-$200 audit templates. You can pay an agency $15,000+ to answer all three. This offer sits in the middle — real analytical work, shop-specific, done fast, priced like a tool rather than a retainer.
+
+---
+
+**SECTION 3 — WHAT YOU GET (concrete deliverables)**
+
+1. **Listing Revenue Audit** — every listing in your shop ranked by revenue-per-view, with the bottom-quartile flagged as either "kill" or "fix with these 2 specific things." This is the load-bearing diagnostic. Most shop owners have never seen this view of their own catalog.
+
+2. **Search Query Gap Analysis** — your top 50-100 Etsy search queries and where your listings are close-but-not-optimized. Specific title/tag rewrites for 10-15 listings.
+
+3. **Pricing Audit** — every listing cross-referenced against its visible competitive set. 5-10 specific pricing test recommendations.
+
+4. **30-Day Action List** — one page. Every action in priority order with time estimates. This is what makes the diagnostic actionable.
+
+5. **45-min Walkthrough (video + live if you want)** — recorded walkthrough of the full report so nothing falls through the cracks.
+
+6. **14 days of Slack follow-up** — ask clarifying questions while you implement.
+
+Delivered in 10 business days.
+
+---
+
+**SECTION 4 — WHY THIS vs. CHEAPER / MORE EXPENSIVE ALTERNATIVES**
+
+A digital-commerce agency charges $12,000–$18,000 for a comparable audit with a 6-8 week turnaround and a retainer attached. Audit templates cost $19-$200 and give you a framework but no analysis of your actual shop. This sits in the middle: the real work, 10-business-day turnaround, no retainer.
+
+What makes this different from what an agency does: I've done this specifically for Etsy shops, 47 times. An agency generalist spends half their engagement learning how Etsy's algorithm actually works. You're paying them for that learning. You're not paying me for that — I already know.
+
+What makes this different from a template: templates give you the questions to ask. This answers them, for your shop.
+
+---
+
+**SECTION 5 — WHAT HAPPENS AFTER YOU BUY**
+
+1. **Within 5 min of purchase:** intake form lands in your inbox (15-min to complete).
+2. **Within 2 business days:** 20-min scoping call to make sure I understand your shop's specifics. (Optional — you can skip if the intake form was thorough.)
+3. **Day 3-10:** I do the work. You do nothing.
+4. **Day 10-11:** full report delivered + 45-min walkthrough (live call OR recorded Loom, your choice).
+5. **Day 11-24:** 14-day Slack follow-up window while you implement.
+
+---
+
+**SECTION 6 — SAMPLE OUTPUT**
+
+[Embed a 3-page redacted sample from a prior engagement — with real data structure visible, client name and specifics redacted, showing: one page of revenue-per-view ranking, one page of search-gap analysis, one page of the action list. This is the single highest-converting section of any sales page for this kind of offer. Invest in making it good.]
+
+---
+
+**SECTION 7 — HONEST LIMITS (builds trust more than a guarantee does)**
+
+Things this diagnostic WILL NOT solve:
+
+- A shop with bad product-market fit. If you're selling something nobody wants, better listings won't fix that.
+- A shop with bad photos. I'll flag it; I'll refer you to a photographer I trust; I won't retouch your photos for you.
+- A shop in a category with a dominant 2-3 sellers controlling 80% share. The diagnostic gives you the best possible reading — but if the category structure is wrong for new entrants, that's bigger than this engagement.
+
+If any of those describe you, email me before you buy. I'll tell you honestly if the diagnostic is worth it for you or if you should hold off.
+
+---
+
+**SECTION 8 — GUARANTEE + FINAL CTA**
+
+Implement the action list in the 30 days after delivery. If you don't surface at least one revenue-moving insight you didn't already have, I'll refund $2,250 (50%) and the work is yours to keep.
+
+[CTA button: Buy the Diagnostic — $4,500]
+
+[Secondary small text under button: Questions that aren't answered here? Email lena@[domain]. I read them all.]
+
+---
+
+**STYLE NOTES for the whole page:**
+
+- Short paragraphs (max 3 sentences). Lots of white space.
+- Use specific numbers everywhere (47 engagements, $80K-$400K, 10 business days, $4,500, 12% median lift). Specificity is trust.
+- Every section can pass the "would a skeptical shop owner read this sarcastically?" test. If a sentence could be said with an eye-roll, rewrite it.
+- No stock photos, no testimonial carousels with fake names. If you have 2-3 real testimonials from past clients, use them with full name + shop name + permission. If you don't, ship the page without and add them after the first 3 engagements.
+- No chatbot, no popup, no "JOIN MY NEWSLETTER" interrupt. Every one of those kills conversion with the professional buyer.$pf$,
+ $pf$Full sales page copy in 8 sections. HERO: "A shop diagnostic for Etsy sellers doing $80K–$400K/yr who are tired of guessing what to fix. 47 engagements, one fixed scope, $4,500." Section 1 qualification (who this is for / NOT for — excluding under-$40K, over-$600K, social-strategy seekers, done-for-you seekers — exclusion is trust-builder). Section 2 problem named (3 specific questions shop owners have, no wallowing). Section 3 concrete deliverables × 6 (revenue audit, search-gap, pricing, action list, walkthrough, 14-day Slack). Section 4 anchor positioning vs $12K-$18K agency and $19-$200 template — middle path, Etsy-specialist vs agency-generalist. Section 5 concrete post-purchase workflow. Section 6 sample output embed (highest-converting section). Section 7 honest limits of what diagnostic won't solve (builds trust more than guarantee). Section 8 scoped 50% guarantee + final CTA. Style rules: short paragraphs, specific numbers everywhere, every sentence passes "could a skeptical shop owner sarcasm-read this," no stock photos / fake testimonials / chatbot / newsletter popup / countdown timers / 10x claims.$pf$),
+
+-- =========================================================================
+-- Project 55-0058 | Open-enrollment health insurance plan comparison for a freelancer | Jake Torres | Finance | 2 steps
+-- =========================================================================
+
+DELETE FROM prompt_steps WHERE prompt_id = '55555555-5555-5555-5555-555555550058';
+DELETE FROM prompts      WHERE id        = '55555555-5555-5555-5555-555555550058';
+
+INSERT INTO prompts (
+  id, title, description, content, result_content,
+  category_id, difficulty, model_used, model_recommendation,
+  tools_used, tags, status, author_id, vote_count, bookmark_count
+) VALUES (
+  '55555555-5555-5555-5555-555555550058',
+  $pf$Pick between 3 ACA marketplace health plans during open enrollment — 2-pass Claude workflow from true-cost math to HSA + tax-advantaged optimization$pf$,
+  $pf$Compared 3 ACA marketplace plans for a 34yo freelancer + spouse during 2026 open enrollment. 2-pass Claude 4.6 Sonnet workflow — (1) true-cost scenario math across low/typical/high usage years including premium + deductible + OOP-max + expected out-of-pocket, (2) HSA + premium-tax-credit reconciliation + 1099 deduction stack that changed which plan was cheapest once taxes were factored in.$pf$,
+  $pf$I'm a 34yo freelance software developer, my wife is 33 and part-time (no employer health coverage). We're in Colorado. 2026 is our second year on the ACA marketplace. I stared at the three shortlisted plans on Connect for Health Colorado for three evenings and kept getting confused because the premium-vs-deductible tradeoff isn't the whole story — there's also HSA eligibility, premium tax credits, and the fact that I'm a 1099 and can deduct health insurance premiums on my Schedule 1.
+
+The three plans I shortlisted:
+- **Plan A:** Silver HMO. $428/mo premium (post-subsidy), $6,200 deductible, $8,700 OOP max, no HSA eligibility.
+- **Plan B:** Bronze HSA-eligible HDHP. $267/mo premium (post-subsidy), $7,900 deductible, $8,700 OOP max, HSA eligible ($8,550 family contribution limit 2026).
+- **Plan C:** Silver HMO with expanded CSR (cost-sharing reduction) because our household AGI qualifies us just under 200% FPL. $387/mo premium, $2,900 deductible, $5,400 OOP max, no HSA eligibility.
+
+The naive comparison ("Plan B is cheapest premium") was obviously missing something. The ACA subsidy calculator on the state site only shows me the premium — it doesn't model total-cost or tax implications.
+
+I ran 2 passes with Claude 4.6 Sonnet. Pass 1: true-cost scenario math across 3 usage years (low / typical / high) that forced me to actually think about our expected medical spending, not just the sticker. Pass 2: HSA + premium tax credit + 1099 Schedule 1 deduction stack — which flipped one of the answers once I looked at after-tax cost, not sticker cost.
+
+Sharing because "how do I compare ACA plans" is where most freelancers give up and pick the cheapest premium, which is often the wrong answer.$pf$,
+  $pf$Enrolled in Plan B (the Bronze HDHP) after Pass 2 showed after-tax cost is actually LOWER than Plan C's CSR-Silver when you max out the HSA and take the 1099 premium deduction. Decision was NOT the Pass 1 answer (where Plan C won on low-and-typical usage years). Difference between naive-premium comparison and after-tax total-cost comparison: about $1,840/yr in my favor. Maxed HSA at $8,550 for 2026, set up auto-transfer monthly, moved it into a Fidelity HSA with an index-fund backing because I plan to pay current medical expenses out of cash flow and let the HSA grow as a stealth retirement account (HSAs are the only triple-tax-advantaged vehicle and most people leave them as low-yield cash accounts). Kept the Pass 1 worksheet and the Pass 2 after-tax model as a Google Sheet I'll re-run every October during open enrollment.$pf$,
+  '11111111-1111-1111-1111-111111111101',
+  'beginner',
+  'claude-sonnet-4-6',
+  'Claude 4.6 Sonnet',
+  ARRAY['Claude','Google Sheets','HealthCare.gov'],
+  ARRAY['health-insurance','open-enrollment','freelancer','hsa','aca','personal-finance'],
+  'approved',
+  '22222222-2222-2222-2222-222222222203',
+  0, 0
+);
+
+INSERT INTO prompt_steps (id, prompt_id, step_number, title, content, result_content, description) VALUES
+
+-- Step 1 --
+('66666666-6666-6666-6666-666666580101',
+ '55555555-5555-5555-5555-555555550058',
+ 1,
+ $pf$Pass 1 — true-cost scenario math across low / typical / high medical usage years$pf$,
+ $pf$Build me a true-total-cost comparison across all 3 plans for three usage scenarios: low (we're healthy, 3 annual physicals and 1 urgent care visit), typical (what we actually had in 2025: 3 physicals, 1 urgent care, my wife had an MRI for a back issue, ~$2,800 in medical bills billed to insurance pre-negotiation), and high (one of us has a surprise hospitalization landing near the OOP-max).
+
+For each plan × scenario, show: premium × 12, plus expected out-of-pocket spending against the deductible, coinsurance, and OOP max. Use the published plan details — 20% coinsurance after deductible unless a plan says otherwise, OOP max is the hard cap. Do NOT factor in HSA or taxes yet — that's Pass 2. I want the naive total-cost picture first, then we'll layer tax mechanics on top. Show the math step-by-step so I can sanity-check and re-run if our expected usage changes.$pf$,
+ $pf$True-cost comparison, no tax or HSA adjustments. Working in annual dollars.
+
+**Premium × 12 per plan (the floor — you pay this even in zero-usage years):**
+- Plan A (Silver HMO): $428 × 12 = $5,136
+- Plan B (Bronze HDHP): $267 × 12 = $3,204
+- Plan C (Silver with CSR): $387 × 12 = $4,644
+
+**Low usage scenario (3 physicals + 1 urgent care, ~$400 in billed charges total):**
+
+Physicals are ACA-preventive, covered at 100% regardless of deductible on ALL three plans — so no out-of-pocket for those. Urgent care $400 hits the deductible:
+- Plan A: premium $5,136 + $400 urgent care (below $6,200 deductible, full pay) = **$5,536**
+- Plan B: premium $3,204 + $400 (below $7,900 deductible, full pay) = **$3,604**
+- Plan C: premium $4,644 + $400 (below $2,900 deductible, full pay) = **$5,044**
+
+**Typical usage scenario (2025 actuals: 3 physicals + 1 UC + 1 MRI + specialist visits, ~$2,800 billed):**
+
+Physicals free. The $2,800 of non-preventive care hits the deductible on each plan:
+- Plan A: premium $5,136 + $2,800 (below $6,200 deductible) = **$7,936**
+- Plan B: premium $3,204 + $2,800 (below $7,900 deductible) = **$6,004**
+- Plan C: premium $4,644 + $2,800 (above $2,900 deductible by $-100 — wait, $2,800 is under $2,900 so full pay) = **$7,444**
+
+Minor note — if your actual billed was exactly $2,800, you're $100 under Plan C's deductible so no coinsurance activation. If billed comes in at $3,200 instead, Plan C flips: $2,900 deductible + 20% × $300 coinsurance = $2,960 out-of-pocket instead of $3,200. That's a meaningful sensitivity — ballpark $3,000+ billed and Plan C starts pulling ahead against Plan B on typical-year math.
+
+**High usage scenario (surprise hospitalization, say $48,000 billed charges hitting OOP max):**
+- Plan A: premium $5,136 + OOP max $8,700 = **$13,836**
+- Plan B: premium $3,204 + OOP max $8,700 = **$11,904**
+- Plan C: premium $4,644 + OOP max $5,400 = **$10,044**
+
+**Table summary — total cost per plan per scenario:**
+
+| Scenario | Plan A | Plan B | Plan C |
+|---|---|---|---|
+| Low | $5,536 | **$3,604** | $5,044 |
+| Typical | $7,936 | **$6,004** | $7,444 |
+| High | $13,836 | $11,904 | **$10,044** |
+
+**Interpretation — the Pass 1 naive answer:**
+
+Plan B wins LOW and TYPICAL. Plan C wins HIGH (because its $5,400 OOP max is the lowest). Plan A loses all three scenarios — it's dominated by the other two and shouldn't be in consideration.
+
+**The expected-value question:** if you weight scenarios by probability — say 50% low, 40% typical, 10% high — expected annual cost:
+- Plan B: 0.50 × $3,604 + 0.40 × $6,004 + 0.10 × $11,904 = $1,802 + $2,402 + $1,190 = **$5,394**
+- Plan C: 0.50 × $5,044 + 0.40 × $7,444 + 0.10 × $10,044 = $2,522 + $2,978 + $1,004 = **$6,504**
+
+Plan B is cheaper by ~$1,100/yr in expected value on naive math. BUT: (1) the $1,100 advantage evaporates in a high-usage year (you pay $1,860 MORE under B than C in a bad year); (2) this is before any HSA or tax adjustments. Pass 2 will flip some of this.
+
+**What you should do before Pass 2:**
+
+Sanity-check your probability weights. Are we really 50% likely to have a low-usage year? 2025 was typical; 2024 was also typical; you've never hit high. If your honest weighting is more like 30% low / 60% typical / 10% high, Plan B's lead narrows to ~$600/yr. If you're planning a pregnancy or have any known procedure on the horizon, shift heavier into typical/high. The Pass 1 answer is sensitive to those weights.$pf$,
+ $pf$Naive true-cost comparison before tax/HSA. Premiums × 12: A=$5,136, B=$3,204, C=$4,644. Three usage scenarios computed: Low (3 physicals + 1 UC + $400 billed): B $3,604, C $5,044, A $5,536. Typical (2025 actuals ~$2,800 billed): B $6,004, C $7,444, A $7,936 — sensitivity warning: at $3,000+ billed, Plan C's $2,900 deductible activates and C starts closing the gap. High (surprise hospitalization): C $10,044 wins due to lowest $5,400 OOP max, B $11,904, A $13,836. Plan A dominated across all scenarios — remove from consideration. EV with 50/40/10 weighting: Plan B $5,394 vs Plan C $6,504, Plan B leads by ~$1,100/yr naive but $1,860 worse in high-year. Check probability weights against 2024-2025 actuals — if honest split is 30/60/10, B's lead narrows to ~$600/yr.$pf$),
+
+-- Step 2 --
+('66666666-6666-6666-6666-666666580102',
+ '55555555-5555-5555-5555-555555550058',
+ 2,
+ $pf$Pass 2 — HSA + premium tax credit + 1099 Schedule 1 deduction stack$pf$,
+ $pf$Pass 1 said Plan B leads naive by ~$1,100 but Plan C wins high-usage year. Now factor in the tax side. Three things I know matter but don't know how to stack: (a) HSA contribution on Plan B is pre-tax — I can contribute up to $8,550 family and deduct it on Schedule 1, (b) I'm 1099 and can deduct health insurance premiums on Schedule 1 (self-employed health insurance deduction), (c) CSR reduction on Plan C already assumes our household AGI under 200% FPL — we project AGI around $84K which places us at ~185% FPL for a family of 2 in 2026.
+
+Walk me through the after-tax annual cost for Plan B vs Plan C (skip Plan A — dominated). Assume my marginal federal rate is 22%, CO state 4.4%, self-employment tax implicated in Schedule 1 deductions for the health insurance premium, and that we'd realistically contribute $6,000 to the HSA (can't hit $8,550 max on our cash flow). Also — if we switch to Plan B and the HSA, should we USE the HSA for current medical expenses or pay those from cash and let the HSA compound? Give me the after-tax numbers AND the "here's what I'd actually do" recommendation.$pf$,
+ $pf$After-tax math, Plan B vs Plan C, realistic assumptions.
+
+**Your effective marginal stack (for Schedule 1 deductions):**
+- Federal: 22%
+- CO state: 4.4%
+- SE tax on the deductible portion: self-employed health insurance deduction reduces AGI — but it does NOT reduce SE tax (because SE tax is calculated on net business income BEFORE the Schedule 1 adjustment). So for premium deductions, the marginal tax rate saved is federal + state = 26.4%.
+- HSA contributions via payroll don't apply to you (1099) — you'll contribute directly and deduct on Schedule 1. Same 26.4% applies. HSA deduction ALSO does not reduce SE tax.
+
+Note: this is the common 1099 confusion. The deductions help; they just don't help as much as you'd think if you mentally include SE tax (15.3% on top of income tax). I'm treating them at 26.4% marginal, not 41.7%.
+
+**Plan B after-tax (Bronze HDHP + HSA):**
+
+Premium $3,204/yr — fully deductible on Schedule 1 (self-employed health insurance deduction).
+- Tax saving: $3,204 × 26.4% = $846
+- Effective after-tax premium cost: $3,204 − $846 = **$2,358**
+
+HSA contribution $6,000 — fully deductible on Schedule 1.
+- Tax saving: $6,000 × 26.4% = $1,584
+- Effective out-of-pocket HSA cost: $6,000 − $1,584 = $4,416
+- But the $6,000 is yours — it's not SPENT, it's invested. So the tax savings are a real economic gain; the HSA principal is a neutral cash transfer (from your checking to your HSA).
+
+For the total-cost comparison, treat the HSA contribution this way: the $1,584 tax saving is real and reduces your effective cost; the $6,000 principal doesn't change your net worth (it just moves). So we subtract the $1,584 from your annual cost.
+
+Typical-year after-tax Plan B cost:
+- Pre-tax naive: $6,004 (premium $3,204 + $2,800 medical)
+- Minus premium deduction: −$846
+- Minus HSA tax saving: −$1,584
+- Plus: medical spending of $2,800 paid — BUT if paid from the HSA, it's paid with pre-tax dollars (additional saving of $2,800 × 26.4% = $739). HOWEVER — see recommendation at end on whether to do this. For now, assume we DO use the HSA for current medical spend: additional tax saving $739.
+- **Plan B typical-year after-tax: $6,004 − $846 − $1,584 − $739 = $2,835**
+
+**Plan C after-tax (Silver CSR, no HSA):**
+
+Premium $4,644/yr — fully deductible on Schedule 1.
+- Tax saving: $4,644 × 26.4% = $1,226
+- Effective after-tax premium: $4,644 − $1,226 = **$3,418**
+
+No HSA available on Plan C (it's not an HDHP).
+
+Typical-year after-tax Plan C cost:
+- Pre-tax naive: $7,444
+- Minus premium deduction: −$1,226
+- Medical $2,800 — paid with after-tax dollars (no HSA).
+- **Plan C typical-year after-tax: $7,444 − $1,226 = $6,218**
+
+**After-tax comparison (typical year):**
+
+- Plan B: **$2,835**
+- Plan C: **$6,218**
+
+Plan B is cheaper by **$3,383/yr** on an after-tax basis, typical-year. This is a massive reversal from Pass 1's $1,440 Plan-B-lead on pre-tax math — the HSA tax shield alone is doing $2,000+ of work per year.
+
+**High-usage year after-tax:**
+
+- Plan B: $11,904 − $846 (premium) − $1,584 (HSA) − $2,297 (HSA tax shield on $8,700 OOP × 26.4%) = $7,177 — but capped at HSA balance; if HSA only has $6,000 in it, you pay the remaining $2,700 out of pocket without tax shield. Realistic Plan B high-year: $11,904 − $846 − $1,584 − $1,584 (tax shield on $6,000 paid from HSA) − $0 (remaining $2,700 after-tax) = **$7,890**
+- Plan C: $10,044 − $1,226 = **$8,818**
+
+**Plan B wins high-year too** once HSA tax shield is counted — by ~$900.
+
+**Probability-weighted EV, after-tax (50/40/10):**
+- Plan B: 0.50 × ($3,604 − $846 − $1,584) + 0.40 × $2,835 + 0.10 × $7,890 = $587 + $1,134 + $789 = **$2,510**
+- Plan C: 0.50 × ($5,044 − $1,226) + 0.40 × $6,218 + 0.10 × $8,818 = $1,909 + $2,487 + $882 = **$5,278**
+
+**Plan B's after-tax EV advantage: $2,768/yr.** (Naive Pass 1 said $1,100.)
+
+**RECOMMENDATION — what I'd actually do:**
+
+1. **Pick Plan B.** After-tax, it wins every scenario. The HSA is the reason.
+
+2. **Do NOT use the HSA for current medical expenses.** Counterintuitive, but correct: the HSA is the only triple-tax-advantaged account in the US tax code (pre-tax contribution, tax-free growth, tax-free withdrawal for qualified medical). Pay current medical expenses from checking. Let the HSA invest in low-cost index funds (Fidelity, Schwab, or HealthEquity let you do this; most employer HSAs leave cash at 0.1% yield — don't do that).
+
+   Mechanically: save every medical receipt (pharmacy, copays, dental, vision, prescription glasses — all qualified). You can reimburse yourself from the HSA at ANY TIME IN THE FUTURE — even 30 years from now — for a qualified expense incurred while you had HDHP coverage. So a 2026 medical receipt can be reimbursed from a 2056 HSA balance. By then, that HSA dollar has compounded for 30 years tax-free.
+
+   This is a legitimate optimization that most HSA holders miss. Your "cost" today is paying $2,800 in medical from checking instead of from the HSA (giving up the $739 current tax saving we calculated). Your benefit is 30 years of tax-free compounding on that $2,800. At 7% real return, $2,800 compounds to $21,300 — call it ~$18,500 after assumed future tax-free withdrawal (vs. taxable brokerage where the gains would be capital-gains taxed). The ~$739 current saving is small next to ~$15,000 of future-value differential. Skip the immediate reimbursement.
+
+3. **Revisit every October.** Your FPL bracket changes with AGI. If your business income grows meaningfully in 2026, you may exit the CSR bracket entirely — which makes Plan C less competitive anyway and further cements Plan B's lead. Re-run this worksheet each year.
+
+4. **If you're planning a pregnancy in 2027:** the math flips temporarily. Pregnancy + delivery averages $18K-$30K billed, which blows through the OOP max. In a pregnancy year, Plan C's lower OOP max ($5,400 vs. $8,700) is worth about $3,300 — which beats the HSA tax shield math for that year. Open-enrollment 2027, re-run with pregnancy as the "typical" scenario.$pf$,
+ $pf$After-tax stack flips the Pass 1 answer. Marginal rate for Schedule 1 deductions: federal 22% + CO state 4.4% = 26.4% (NOT 41.7% — SE tax doesn't reduce with the self-employed health-insurance deduction). Typical-year after-tax: Plan B $2,835 vs Plan C $6,218 — Plan B cheaper by $3,383/yr (vs Pass 1 naive $1,440). High-year: Plan B $7,890 vs Plan C $8,818 — B wins by ~$900. EV (50/40/10) after-tax: B $2,510, C $5,278 — B advantage $2,768/yr. Recommendation: Plan B. Critical HSA optimization — do NOT pay current medical from HSA; pay from checking, save receipts, let HSA invest in index funds. Receipts can be reimbursed decades later for qualified expenses incurred while on HDHP. At 7% real, $2,800 of current medical compounds to $21K tax-free over 30 years — far beats $739 current tax saving. HSA is only triple-tax-advantaged US account; most holders waste it as cash at 0.1%. Revisit annually in October; if pregnancy planned, re-run because OOP-max gap ($8,700 vs $5,400) flips math for that year.$pf$),
+
+-- =========================================================================
+-- Project 55-0059 | Data-quality SLA dashboard rebuild after Q1 silent-failure incident | Raj Patel | Data | 5 steps
+-- =========================================================================
+
+DELETE FROM prompt_steps WHERE prompt_id = '55555555-5555-5555-5555-555555550059';
+DELETE FROM prompts      WHERE id        = '55555555-5555-5555-5555-555555550059';
+
+INSERT INTO prompts (
+  id, title, description, content, result_content,
+  category_id, difficulty, model_used, model_recommendation,
+  tools_used, tags, status, author_id, vote_count, bookmark_count
+) VALUES (
+  '55555555-5555-5555-5555-555555550059',
+  $pf$Data-quality SLA dashboard rebuild after Q1 silent-failure incident — 5-pass Claude workflow from incident RCA to SLO design to alerting cascade to stakeholder readout$pf$,
+  $pf$Rebuilt our data-quality monitoring after a Q1 incident where the exec KPI dashboard showed wrong numbers for 11 days because a silent schema-drift upstream broke a join. 5-pass Claude 4.7 Opus workflow — RCA-plus-failure-mode-mapping across 18 months of incidents, SLO design for 4 quality dimensions (freshness, completeness, accuracy, uniqueness), tiered alerting cascade, reverse-SLI instrumentation without a Monte Carlo disaster, stakeholder readout that got the platform team to fund two FTEs for data reliability.$pf$,
+  $pf$Background: I run analytics at a 180-person B2B SaaS. In Q1 we had a silent-failure incident that was embarrassing — an upstream schema change in our Salesforce sync added a new column that changed the default ORDER BY behavior on a downstream join, which meant our "active accounts" metric on the exec dashboard was showing accounts-by-creation-date instead of accounts-by-last-activity for 11 days before a CS lead caught it manually. Board meeting slides went out with the wrong numbers. CEO had to send a correction email.
+
+The root cause was obvious in hindsight (missing DQ monitoring on the join output). The harder question was WHY we didn't have it — and when I dug in, the answer was that our "data quality monitoring" was four dbt tests on PK uniqueness plus a single Monte Carlo alert that was so noisy everyone had muted it. So effectively: nothing.
+
+I ran 5 passes with Claude 4.7 Opus (this is heavy systems design + reasoning about failure modes, the right model for the work). Pass 1: full RCA on Q1 + failure-mode classification across the 14 data incidents we've had in the last 18 months — what broke, how we detected it (or didn't), how long to detect, what was the downstream impact. Pass 2: SLO design — 4 data-quality dimensions (freshness, completeness, accuracy, uniqueness), SLI definitions, SLO target setting, burn-rate alerting. Pass 3: the alerting cascade — 3 tiers (page, ticket, email digest) with specific routing rules that don't replicate the Monte Carlo noise problem. Pass 4: instrumentation plan — what gets measured where, the order we roll it out, which tables get monitoring and which don't (NOT everything; that's where we went wrong last time). Pass 5: stakeholder readout deck — the argument that this is an infra-funding question, not a BI-funding question, and the specific ask for 2 FTEs on a new Data Reliability sub-team.
+
+Sharing because most data-quality dashboards are built around vendor features, not around failure modes. This is the one we built around our actual failure modes.$pf$,
+  $pf$Shipped Phase 1 of the monitoring in 6 weeks: 14 critical tables instrumented with 4-dimension SLIs, 3-tier alerting cascade deployed, 87% reduction in alert volume from prior Monte Carlo config (went from ~340 alerts/week mostly muted to ~45 alerts/week almost all actioned). Two would-have-been silent failures caught in the first month — one was a similar schema-drift pattern to the Q1 incident, detected within 11 minutes instead of 11 days. Stakeholder readout (Pass 5) landed — VP Eng approved funding for 2 FTE on a new Data Reliability sub-team under platform (reporting line moved out of analytics, which was the right structural outcome — data reliability is an infra concern, not a BI concern). The SLO design doc (Pass 2) is now the template the platform team uses for new-table onboarding — every new table gets a freshness SLO assigned before it lands in production. Plan for Q3: extend monitoring to the remaining 38 non-critical tables at a lighter-weight tier.$pf$,
+  '11111111-1111-1111-1111-111111111108',
+  'advanced',
+  'claude-opus-4-7',
+  'Claude 4.7 Opus',
+  ARRAY['Claude','dbt','Snowflake','Monte Carlo','PagerDuty','Slack','Grafana'],
+  ARRAY['data-quality','slo','observability','incident-response','data-reliability','alerting'],
+  'approved',
+  '22222222-2222-2222-2222-222222222207',
+  0, 0
+);
+
+INSERT INTO prompt_steps (id, prompt_id, step_number, title, content, result_content, description) VALUES
+
+-- Step 1 --
+('66666666-6666-6666-6666-666666590101',
+ '55555555-5555-5555-5555-555555550059',
+ 1,
+ $pf$Pass 1 — Q1 RCA + failure-mode classification across 14 incidents, 18 months$pf$,
+ $pf$Before I design the new monitoring, I need to understand WHAT actually breaks. I'm pasting the incident log — 14 entries, Jan 2025 to Apr 2026, each with a short description, how it was detected, time-to-detect, downstream impact, and root cause. Plus the Q1 one-pager RCA for the ORDER BY incident that kicked this whole rebuild off.
+
+Do two things: (1) full post-mortem on Q1 — not just "missing monitoring" but the chain of decisions that meant monitoring wasn't there; what upstream process would have caught this; what would an SRE team with data-reliability mandate have done differently. (2) Classify the 14 incidents into failure modes — I want a small number of categories (4-6 ideal), each with the detection pattern that would catch it, the detection patterns that DON'T catch it (so I know what to rule out), and the base rate of each category in my data. Don't be polite about it — if the categorization says my current monitoring setup is optimized for the wrong things, say so.$pf$,
+ $pf$Here's the RCA and the failure-mode classification.
+
+**Q1 RCA — ORDER BY incident, full chain:**
+
+The immediate cause was a Salesforce sync that added a new column. The CDC pipeline picked it up fine. The downstream model `active_accounts_current` had an implicit ORDER BY behavior in its join that, with the new column present and without an explicit sort, returned rows in creation-date order instead of last-activity order.
+
+But the chain of decisions that let this happen was longer than the SQL bug:
+
+1. **No schema-drift gate upstream.** When Salesforce adds a column, your CDC happily ingests. Your dbt docs don't know. Your downstream models don't know. Industry practice is to fail the pipeline (or at least raise a loud warning) when a source schema drifts — you chose not to do this because you'd had false-positive flakiness 6 months ago and disabled the check. That decision should have had an expiration date and didn't.
+
+2. **No output-value monitoring on the critical metric.** The metric in question — "active accounts" — is on the CEO's dashboard. That puts it in the top 1% of metric criticality in your org. There was no daily check that the value was in a plausible range vs. historical. You had PK uniqueness tests on the underlying tables but NOT value-range tests on the output.
+
+3. **11-day detection gap.** The CS lead who caught it caught it accidentally during a customer call ("this dashboard says X, but I know that account churned last week"). There was no programmatic path to detection. Your Monte Carlo setup was running but alert-muted.
+
+4. **No incident-severity triage.** When it was caught, it took 4 hours to decide whether to send a correction email. Because there was no incident-response runbook for "executive metric was wrong for N days," the decision was ad hoc. In an SRE org, this would have been an SEV-1 (exec-visible blast radius) with an automatic runbook. In your org, it was a Slack thread.
+
+**What an SRE team with a data-reliability mandate would have done differently:**
+
+- Schema drift = pager. No exceptions. False positives are a cost of business; a silent exec-dashboard corruption for 11 days is an order of magnitude worse.
+- Top-N metrics (the 12-15 executive-level metrics) get output-value monitoring: daily snapshot + alert on >X% deviation from 7-day moving average, >Y% deviation from same-day-last-week, or absolute value outside a configured range.
+- Alert muting is a paged-to-approve operation — if an alert is firing enough that you want to mute it, that triggers a "reconfigure or delete" ticket. Muted-indefinitely alerts are technical debt that needs to be paid down weekly.
+- Every SEV-1-eligible incident has a pre-written runbook. The question at incident time is never "do we send a correction email?" — the runbook already answers that.
+
+Most of your failure mode isn't technical. It's organizational — you'd built tooling optimized for "detect obvious problems" but not for "detect the subtle corruption that changes an exec number by 8%."
+
+**Failure-mode classification — 14 incidents, 5 categories:**
+
+| Category | Count | % |
+|---|---|---|
+| Schema drift (upstream adds/renames/drops a column) | 5 | 36% |
+| Late-arriving data / freshness failures | 3 | 21% |
+| Silent value corruption (join bug, NULL-handling, ORDER BY, coalesce default) | 3 | 21% |
+| Duplicates / PK violations | 2 | 14% |
+| External source outage (API down, upstream system failure) | 1 | 7% |
+
+**Per-category detection patterns:**
+
+**1. Schema drift (36% — your biggest category).**
+- Detection that WORKS: source-side schema check at ingestion (fail the run on drift). Secondary: dbt source freshness with column-list assertions.
+- Detection that DOESN'T: PK uniqueness tests (drift doesn't violate keys). Monte Carlo statistical anomaly (drift often doesn't produce a statistical anomaly — the data still looks reasonable, just means something different).
+- Your current coverage: 0%. You disabled the schema-drift check 6 months ago.
+
+**2. Freshness (21%).**
+- Detection that WORKS: per-table freshness SLO with burn-rate alerting. dbt source freshness with pager-worthy thresholds for top-N tables.
+- Detection that DOESN'T: output-value checks (stale data often has the "right" value, just old).
+- Your current coverage: dbt source freshness set on 40% of sources, all at the same threshold regardless of criticality. Needs tiering.
+
+**3. Silent value corruption (21%) — Q1 belongs here.**
+- Detection that WORKS: output-value range checks + deviation-from-MA alerts on critical metrics. Requires knowing WHICH metrics are critical (you don't have this list formalized).
+- Detection that DOESN'T: PK uniqueness, row-count (corrupted data often has right count), schema validation.
+- Your current coverage: effectively 0% on business metrics. This is the category that caused the CEO-email incident.
+
+**4. Duplicates / PK (14%).**
+- Detection that WORKS: PK uniqueness tests. This is what dbt does well.
+- Your current coverage: strong. Don't change this.
+
+**5. External source outage (7%).**
+- Detection that WORKS: upstream health-check integration (API status, vendor status pages).
+- Your current coverage: 0%. Acceptable — base rate is too low to optimize for first.
+
+**BLUNT ASSESSMENT — where your current monitoring is wrong:**
+
+You have 4 dbt PK uniqueness tests + a Monte Carlo install. That covers category 4 (14% of incidents) well. It covers categories 1, 2, 3 poorly or not at all — which are 78% of your incidents. Monte Carlo is in theory designed for category 3 (value corruption) but in practice it's producing so much noise against an un-tiered target that it's alert-muted.
+
+Your monitoring is optimized for the categories you USED to care about (pre-incident: "are the tables clean?") not the categories that actually hurt you (post-incident: "are the outputs correct?"). The rebuild should flip that optimization: primary focus on schema drift + freshness + output-value corruption, with PK uniqueness as a solved-already baseline.$pf$,
+ $pf$Q1 RCA identifies 4-link chain beyond the immediate SQL bug: (1) disabled schema-drift gate (6-month-old false-positive response, no expiration), (2) no output-value monitoring on CEO-dashboard metric, (3) 11-day detection gap because Monte Carlo was alert-muted, (4) no severity-triage runbook meant 4hr ad-hoc decision on whether to send CEO correction. SRE-mandate team would pager on schema drift, output-value-monitor top-N exec metrics, require alert-muting to trigger reconfigure-or-delete ticket, pre-write runbooks for SEV-1-eligible incidents. Failure-mode classification across 14 incidents: 36% schema drift (biggest category, current coverage 0%), 21% freshness (coverage 40% un-tiered), 21% silent value corruption — Q1's category (coverage effectively 0% on business metrics), 14% duplicates/PK (coverage strong, don't change), 7% external outage (low base rate, skip for now). Per-category detection-works vs detection-doesn't patterns named explicitly. Blunt conclusion: current setup (4 dbt PK tests + muted Monte Carlo) covers 14% of incidents well; 78% of incidents (schema/freshness/corruption) are covered poorly or not at all. Rebuild should flip optimization from "are tables clean" to "are outputs correct."$pf$),
+
+-- Step 2 --
+('66666666-6666-6666-6666-666666590102',
+ '55555555-5555-5555-5555-555555550059',
+ 2,
+ $pf$Pass 2 — SLO design: 4 quality dimensions, SLI definitions, burn-rate alerting$pf$,
+ $pf$RCA is clear. Now design the SLO layer. Four dimensions I want: freshness, completeness, accuracy, uniqueness. For each, give me: (1) the SLI definition (what we're measuring, how we compute it, at what cadence), (2) the SLO target (what "good" looks like — with specific numbers not "high"), (3) how the SLO differs for tier-1 (exec-critical, 12 tables), tier-2 (team-critical, ~45 tables), tier-3 (internal-only, the rest), (4) burn-rate alerting — when does an SLO breach page vs. ticket vs. log.
+
+Non-negotiable: the targets have to be tight enough to catch the Q1 incident in <1 hour, loose enough that we're not paging on noise. Monte Carlo's 340-alerts-a-week failure is what I want to avoid.$pf$,
+ $pf$SLO design, 4 dimensions.
+
+**DIMENSION 1: FRESHNESS**
+
+- **SLI:** `(current_timestamp - max(updated_at)) / expected_update_interval` per table. A value of 1.0 = exactly on cadence; 1.5 = 50% late; 2.0 = a full cycle late.
+- **Cadence of measurement:** every 5 min for tier-1, every 30 min for tier-2, daily batch for tier-3.
+- **SLO targets:**
+  - Tier-1: 99.5% of measurements ≤ 1.25 over a rolling 30 days. (Translation: 99.5% of the time, a table is no more than 25% late.)
+  - Tier-2: 99% of measurements ≤ 1.5 over 30 days.
+  - Tier-3: 95% of measurements ≤ 2.0 over 30 days.
+- **Alert triggers:**
+  - Tier-1 FAST burn (2% of monthly budget in 1 hour): page.
+  - Tier-1 SLOW burn (10% of budget in 24 hr): ticket.
+  - Tier-2 FAST burn: ticket.
+  - Tier-2 SLOW burn: daily digest.
+  - Tier-3: weekly digest only, no paging.
+
+**DIMENSION 2: COMPLETENESS**
+
+- **SLI:** `row_count_today / expected_row_count(day_of_week, week_of_year)` where expected is a 90-day trailing median per-day-of-week with a ±2σ band.
+- **Cadence:** daily post-ingest snapshot per table.
+- **SLO targets:**
+  - Tier-1: row count within 90-day expected band 98% of days over rolling 30 days.
+  - Tier-2: within band 95% of days.
+  - Tier-3: within band 90% of days.
+- **Alert triggers:**
+  - Tier-1: row count more than 3σ outside expected band = page. More than 2σ = ticket.
+  - Tier-2: 3σ outside = ticket. 2σ outside = daily digest.
+  - Tier-3: weekly digest only.
+
+**Important note on completeness** — for tables that can legitimately have zero rows on some days (e.g. weekend billing cycles), the SLI needs a day-of-week awareness or you'll false-positive every Sunday. The 90-day median by day-of-week handles this.
+
+**DIMENSION 3: ACCURACY** — this is the category Q1 lived in.
+
+- **SLI (top-N metrics only):** value compared to historical baseline using a tiered check:
+  - Absolute-value-range check: is today's value within configured absolute bounds? (e.g., "active_accounts should be between 2,500 and 8,000.")
+  - Deviation-from-MA check: is today's value within ±X% of 7-day moving average?
+  - Deviation-from-same-weekday check: is today's value within ±Y% of same-weekday-last-week?
+- **Cadence:** daily post-ingest.
+- **SLO targets:**
+  - Tier-1: 100% of daily snapshots within absolute range; 99% within ±8% of 7-day MA; 98% within ±12% of same-weekday-last-week.
+  - Tier-2: within absolute range 99% of days; within ±15% MA 95% of days.
+  - Tier-3: no accuracy SLO (cost-benefit doesn't justify at tier-3).
+
+**Alert triggers:**
+- Tier-1 absolute range breach: page immediately. This is the Q1 catch.
+- Tier-1 MA deviation: ticket. (Not pageworthy — MA deviations are noisy.)
+- Tier-1 same-weekday deviation: daily digest.
+- Tier-2: ticket for absolute-range, daily digest for MA.
+
+**Key engineering choice** — accuracy SLOs require maintaining the top-N metrics list by hand. This is feature, not bug. The act of saying "this metric is tier-1" forces a conversation about criticality that your org has been avoiding. Start with the 12 metrics on the CEO dashboard + 8 on the VP Sales dashboard = 20 metrics with absolute-range checks. Expand from there.
+
+**DIMENSION 4: UNIQUENESS**
+
+- **SLI:** % of rows with duplicate PK per table per day.
+- **Cadence:** daily, embedded in the existing dbt runs.
+- **SLO targets:**
+  - Tier-1: 0.00% duplicates, zero tolerance.
+  - Tier-2: 0.00% duplicates, zero tolerance.
+  - Tier-3: 0.01% duplicates (small tolerance for legitimate edge cases like late-arriving records).
+- **Alert triggers:** ANY tier-1 or tier-2 PK violation = page. Tier-3 duplicate > 0.01% = ticket. Your existing dbt tests handle this; don't rebuild it.
+
+**BURN-RATE ALERTING PRINCIPLES (applies to all 4 dimensions):**
+
+Burn-rate alerting is from Google SRE — instead of alerting on each SLI breach, alert on the RATE at which you're consuming your error budget.
+
+- FAST burn: consuming 2% of monthly budget in 1 hour = page. (Means you'd blow the budget in 48hr at this rate.)
+- SLOW burn: consuming 10% of monthly budget in 6 hours = ticket.
+- INFORMATIONAL: 20% of budget consumed in 30 days = daily digest entry.
+
+This prevents the Monte Carlo noise pattern where every small anomaly pages. Only patterns that will actually exhaust the error budget fast enough to matter trigger a page.
+
+**TARGET-SETTING PRINCIPLE — start loose, tighten over 2 quarters:**
+
+Don't set your first-version SLOs based on aspiration. Set them based on what the last 90 days ACTUALLY looked like, plus 5-10% margin. You want first-month burn rate to be <50% of budget — if you're burning >50% in month 1, your SLO is too tight and you'll alert-fatigue your team.
+
+Quarter-by-quarter, tighten the SLOs as the underlying reliability improves. This is the SRE pattern and it works — the alternative (aspirational SLOs on day 1) produces the Monte Carlo outcome.$pf$,
+ $pf$4-dimension SLO design. FRESHNESS: SLI = lateness ratio, tier-1 99.5%≤1.25 at 5min cadence, tier-2 99%≤1.5, tier-3 95%≤2.0. COMPLETENESS: row count vs 90-day trailing-median-by-day-of-week ±2σ band (day-of-week awareness critical — avoids Sunday false positives), tier-1 98% of days in band, 3σ page / 2σ ticket. ACCURACY (Q1's category): tiered check — absolute-range + deviation-from-7d-MA + deviation-from-same-weekday-last-week, tier-1 100% absolute range + 99% ±8% MA, top-N metrics list maintained by hand (feature not bug — forces criticality conversation org has been avoiding), start with 12 CEO-dashboard + 8 VP-Sales-dashboard = 20 metrics. UNIQUENESS: 0.00% tolerance tier-1/2, 0.01% tier-3, existing dbt tests cover this. BURN-RATE ALERTING: FAST burn 2% of monthly budget in 1hr = page, SLOW 10% in 6hr = ticket, informational 20% in 30d = daily digest — prevents Monte Carlo noise pattern. Target-setting: set first-version SLOs based on last 90d actuals + 5-10% margin (not aspirational), tighten over 2 quarters as reliability improves. First-month burn should be <50% of budget or targets are too tight.$pf$),
+
+-- Step 3 --
+('66666666-6666-6666-6666-666666590103',
+ '55555555-5555-5555-5555-555555550059',
+ 3,
+ $pf$Pass 3 — 3-tier alerting cascade that doesn't replicate Monte Carlo's noise problem$pf$,
+ $pf$SLOs and burn rates designed. Now the alerting cascade. Monte Carlo failure was 340 alerts/week, mostly muted. I want a hard ceiling on alert volume — and specific rules for what goes to PagerDuty (wakes someone up), what goes to a Jira ticket (handled next business day), and what goes to a Slack digest (reviewed weekly).
+
+Give me: (1) concrete routing rules per alert source that map to the 3 tiers, (2) how we handle the "I want to mute this alert" case — the Monte Carlo failure was that alert-muting had no friction, (3) on-call rotation design for data — we don't have one today; analytics is 4 people plus me, platform is 8. How do we structure on-call without burning out a 5-person team? (4) the first-week alert-volume targets — what's the upper bound before I declare the config broken?$pf$,
+ $pf$Alerting cascade design, routing rules, mute-friction, on-call structure.
+
+**(1) ROUTING RULES PER ALERT SOURCE**
+
+Three tiers: PAGE (PagerDuty), TICKET (Jira auto-created, SLA 2 business days), DIGEST (Slack #data-quality-digest, reviewed in weekly data standup).
+
+**Alert source → tier mapping:**
+
+| Alert type | Tier-1 (exec-critical table) | Tier-2 (team-critical) | Tier-3 (internal) |
+|---|---|---|---|
+| Schema drift detected | **PAGE** | TICKET | DIGEST |
+| Freshness SLO fast-burn (2%/hr) | **PAGE** | TICKET | DIGEST |
+| Freshness SLO slow-burn (10%/6hr) | TICKET | DIGEST | DIGEST |
+| Completeness 3σ breach | **PAGE** | TICKET | DIGEST |
+| Completeness 2σ breach | TICKET | DIGEST | — |
+| Accuracy absolute-range breach | **PAGE** | TICKET | — |
+| Accuracy MA-deviation | TICKET | DIGEST | — |
+| PK uniqueness violation | **PAGE** | **PAGE** | TICKET |
+| External source outage (tier-1 dependency) | **PAGE** | TICKET | DIGEST |
+
+**Volume estimates based on last 90 days of synthetic runs:**
+- PAGE: target 4-6 per week. Anything over 10/wk = over-alerting, retune.
+- TICKET: target 15-25 per week.
+- DIGEST: target 50-150 entries per week (reviewed in batch — volume here is fine).
+
+**Critical design choice:** PAGEs should be scoped so that every single one results in an action within the hour. If >20% of PAGEs are being closed as "false positive" or "noise," the alert threshold is wrong and needs retuning THAT WEEK. This is the guardrail against Monte Carlo drift.
+
+**(2) MUTE FRICTION — the fix for Monte Carlo's failure**
+
+The Monte Carlo pattern: engineers could mute any alert from a web UI, nobody reviewed mutes, mutes accumulated, eventually everything was muted and no one noticed. Fix:
+
+- **No permanent mutes.** All mutes are time-boxed: max 7 days. After 7 days, the alert automatically un-mutes. If the underlying issue isn't fixed, you get paged again — at which point you either fix the issue or have a conversation about retuning.
+- **Muting requires a reason field.** The reason is surfaced in a weekly "muted alerts" Slack digest. Weekly data standup reviews this digest; anything muted for 3+ consecutive weeks triggers a retune-or-delete ticket.
+- **Muting >5 alerts in a week requires VP-Eng approval.** (This is annoying by design. The goal is to make mass-muting impossible to do silently.)
+- **Metadata:** every alert records its fire count and false-positive rate. Alerts with >30% false-positive rate over 30 days auto-create a retune ticket, regardless of whether they've been muted.
+
+**(3) ON-CALL STRUCTURE FOR A 5-PERSON ANALYTICS TEAM + 8-PERSON PLATFORM**
+
+You're a team of 5 + me. Pure analytics on-call is too thin (1-in-5 rotation, plus PTO risks, equals burnout). Don't replicate an SRE rotation in analytics. Instead:
+
+- **Tier-1 PAGE routes to the platform team's existing on-call rotation first.** Platform (8 people, 1-in-8 rotation) already has an on-call muscle. They triage the page, execute a pre-written runbook, and escalate to analytics only if it's a data-modeling question specifically.
+- **Analytics on-call is a "day-time secondary":** 9am-6pm weekdays, rotating weekly across the 5 analytics team members. Platform on-call can loop in the analytics day-time secondary during business hours for analytical judgment calls. Outside those hours, platform owns the full triage.
+- **Runbooks matter more than rotation size.** For the 20 tier-1 metrics, each has a pre-written runbook: "if this alert fires, check X, run Y, if still broken escalate to analytics with Z info." This is what lets platform (not analytics-specialist) handle 80%+ of pages without escalation.
+- **Compensation for on-call:** whatever platform gets today, analytics gets the same per shift (even though secondary is daytime-only). Otherwise you create a comp-inequity morale problem.
+
+**(4) FIRST-WEEK VOLUME CEILINGS (if exceeded, config is broken):**
+
+- **PAGEs:** <15 in week 1. <10 steady-state by week 4. If you hit 20+ in week 1, something is misconfigured; pause the rollout and retune before adding more tables.
+- **TICKETs:** <60 in week 1. <40 steady-state by week 4. If >100 in week 1, your tier-2/3 thresholds are too tight.
+- **DIGEST entries:** no ceiling (digest is batch-reviewed, high volume is fine). But: if >400/wk by week 4, the digest is too noisy to actually be read — tighten.
+
+**If you hit any ceiling, DO NOT respond by muting alerts.** Respond by retuning thresholds. This is the cultural reset — muting was the prior-era response; retuning is the new-era response.
+
+**What to do in week 1 — first-day checklist:**
+- Roll out monitoring on 5 of the 14 tier-1 tables first, not all 14.
+- Monitor alert volume for 3 days. If it's in range, add 5 more tables. Another 3 days. Then the final 4.
+- If at any point you hit the week-1 PAGE ceiling, stop. Retune. Don't add more tables.
+
+**The one metric that tells you this is working in 30 days:**
+
+Ratio of PAGEs resulting in an action taken (fix, retune, or documented-as-expected) vs. PAGEs closed as "ignore." Target: >85% action rate. Monte Carlo was at ~15% action rate (that's why everything got muted). 85%+ means the pages are real signal and the team will keep responding to them.$pf$,
+ $pf$3-tier alerting cascade. Routing matrix: schema drift tier-1 PAGE / tier-2 TICKET, freshness fast-burn tier-1 PAGE, accuracy absolute-range tier-1 PAGE, PK violation tier-1/2 PAGE. Volume targets: PAGE 4-6/wk (ceiling 10), TICKET 15-25/wk, DIGEST 50-150/wk. Every PAGE must result in an action within the hour; >20% false-positive rate triggers retune-that-week. Mute friction fix for Monte Carlo's failure: no permanent mutes (7-day max auto-unmute), reason field required and surfaced in weekly muted-alerts digest, muting >5 alerts/week requires VP-Eng approval, auto-retune ticket on alerts with >30% false-positive rate over 30 days. On-call: platform team (8-person, existing rotation) takes tier-1 PAGE first with pre-written runbooks per tier-1 metric, analytics 5-person team is daytime secondary 9am-6pm weekdays only, compensation-equal to platform. Runbooks matter more than rotation size — 80%+ of pages handled by platform without escalation when runbooks are good. First-week ceilings: <15 PAGEs, <60 TICKETs, digest uncapped. If ceilings exceeded, retune thresholds, DO NOT mute (the cultural reset from prior era). Rollout gradient: 5 tier-1 tables first, monitor 3 days, add 5 more. 30-day success metric: >85% PAGE-action rate (vs Monte Carlo's ~15%).$pf$),
+
+-- Step 4 --
+('66666666-6666-6666-6666-666666590104',
+ '55555555-5555-5555-5555-555555550059',
+ 4,
+ $pf$Pass 4 — instrumentation plan + rollout sequence: which tables get monitored, in what order$pf$,
+ $pf$Now the build plan. Across our warehouse we have 52 tables total. 14 tier-1 (exec or multi-team metrics), ~38 tier-2/3. Don't instrument everything — that's what blew us up last time. Give me: (1) the explicit list of criteria for what goes in tier-1 vs. tier-2 vs. tier-3, (2) the rollout sequence (6 weeks to Phase 1 — what ships when), (3) the dbt vs. external-tool split — we use dbt heavily, also have Monte Carlo already installed though I may deprecate it, (4) the tables we should NOT instrument (the "we're accepting this is unmonitored" list is important to name explicitly so we don't pretend otherwise), (5) the onboarding standard — when a new table lands in the warehouse next quarter, what's the mandatory monitoring it gets before going to production.$pf$,
+ $pf$Instrumentation plan + 6-week rollout.
+
+**(1) TIER CRITERIA (be specific — these should be mechanical, not judgment calls):**
+
+**Tier-1 (exec-critical, target: 12-15 tables):**
+- Table feeds a metric on CEO, CRO, CFO, CPO, or VP-Eng dashboard.
+- Table feeds a board-reported metric.
+- Table feeds a customer-facing SLA metric.
+- Table is a shared source-of-truth used by 3+ downstream consumers.
+- Breakage would be visible externally (to customers, investors, or public).
+
+Current count: 14. Names: `active_accounts_current`, `arr_waterfall_monthly`, `churn_events_daily`, `pipeline_coverage_current`, `product_mqls_weekly`, `feature_adoption_weekly`, `support_ticket_backlog`, `nps_rolling_30d`, `engineering_velocity_monthly`, `incidents_severity_weekly`, `customer_health_scores`, `revenue_recognition_monthly`, `cac_payback_cohort`, `gross_margin_monthly`.
+
+**Tier-2 (team-critical, target: 35-45 tables):**
+- Table feeds a team-owned dashboard used by a specific team for operating decisions.
+- Breakage affects one team's work but not external metrics.
+- ~38 tables currently qualify.
+
+**Tier-3 (internal / dev / infrequent use):**
+- All other tables. ~10-15 tables.
+- Breakage affects a small audience or an exploratory workflow.
+
+**(2) 6-WEEK ROLLOUT SEQUENCE**
+
+**Week 1:** Foundation.
+- Set up the schema-drift gate on top-5 upstream sources (Salesforce, Stripe, Segment, Pendo, Postgres CDC). This is highest leverage — catches 36% of incidents.
+- Write the top-N metrics list with stakeholders (12 CEO + 8 VP-Sales initially). Capture absolute-range bounds for each.
+- Stand up PagerDuty routing + Slack digest channel. Write runbook template.
+
+**Week 2:** Tier-1 freshness + completeness on 5 tables.
+- Pick 5 of 14 tier-1 tables (highest-volume, most-downstream-fanout first): `active_accounts_current`, `arr_waterfall_monthly`, `pipeline_coverage_current`, `customer_health_scores`, `churn_events_daily`.
+- Deploy freshness SLI + completeness SLI (day-of-week-aware). Wire to PagerDuty + Slack.
+- Monitor alert volume for 3 days. Retune if needed.
+
+**Week 3:** Tier-1 accuracy on the same 5 + freshness on the next 5.
+- Accuracy (absolute-range checks) on the first 5 tier-1 tables.
+- Freshness + completeness on 5 more tier-1 tables.
+- Write runbooks for the first 5 tables' metrics.
+
+**Week 4:** Remaining 4 tier-1 tables + retune pass.
+- Complete tier-1 coverage (14 tables total, all 4 dimensions).
+- Retune any alerts exceeding false-positive thresholds.
+- First full weekly digest + data standup review.
+
+**Week 5:** Tier-2 freshness + completeness on top 20 tables.
+- Start tier-2 coverage on the highest-usage team dashboards.
+- Skip accuracy checks at tier-2 (too expensive for marginal benefit; add selectively later).
+
+**Week 6:** Remaining tier-2 tables (~18) + documentation + handoff.
+- Complete tier-2 freshness + completeness coverage.
+- Document the full SLO system (Notion page linked from every dashboard).
+- Run the stakeholder readout (Pass 5).
+
+**Tier-3 is NOT in the 6-week plan.** Digest-only coverage comes in Q3 at the earliest, only after tier-1 and tier-2 are stable.
+
+**(3) dbt vs. EXTERNAL TOOLS SPLIT**
+
+- **dbt owns:** PK uniqueness tests (already there), row-count tests, source freshness, schema tests (column-list assertions, basic type checks). 80% of the instrumentation lives here because it's already in the modeling layer and versioned with the code.
+- **External tool owns:** burn-rate calculation + alerting routing. Options:
+  - Grafana + SQL queries → Grafana alerting. Cheap, already installed, good enough for tier-1. Recommended.
+  - Keep Monte Carlo for statistical anomaly detection on tier-1 accuracy only — the use case it's actually good at. Reduce scope dramatically from "monitor everything" to "top 20 metrics."
+  - Alternatively: deprecate Monte Carlo entirely, replace with custom SQL-based accuracy checks + Grafana alerts. Saves ~$30K/yr in licensing. Worth considering.
+
+**Recommendation:** keep Monte Carlo for 90 days in the scoped-down use case, evaluate at 90-day mark. If the scoped-down version is actioning <60% of its alerts, deprecate.
+
+- **PagerDuty owns:** on-call routing. No change.
+- **Slack owns:** digest delivery. New #data-quality-digest channel, read-only for most, write-access for the alert bots.
+
+**(4) TABLES WE ARE EXPLICITLY NOT INSTRUMENTING (the named dark zone):**
+
+Critical that this list is written down, not implicit.
+
+- All staging/intermediate tables (prefix `stg_`, `int_`): 23 tables. These are covered by dbt test assertions that run at model-build time. No runtime SLO.
+- Sandbox / dev tables: ~15 tables. Not production.
+- Ad-hoc analyst tables (user-specific schemas): ~40 tables. Not production.
+- Archived / deprecated tables: 7 tables. Scheduled for deletion.
+
+Total un-instrumented: ~85 tables. Documented in a Notion page titled "Un-instrumented tables — we accept we don't monitor these." This is a load-bearing document — without it, future teams won't know what's intentionally un-monitored vs. missed.
+
+**(5) NEW-TABLE ONBOARDING STANDARD:**
+
+When a new table is added to the production warehouse, the PR must include:
+- Tier classification (1 / 2 / 3) with rationale.
+- Expected update cadence (hourly / daily / weekly). Freshness SLI auto-derives from this.
+- Expected row-count distribution (or a note saying "no completeness SLO for this table" with rationale).
+- If tier-1: top-N accuracy specification (absolute-range bounds or explicit opt-out with sign-off).
+- Runbook link for the metric (if tier-1).
+
+Reviewer (platform or analytics lead) rejects the PR if any of the above is missing. This is the onboarding gate — without it, un-instrumented tables will sneak back into tier-1 territory within 6 months.
+
+**The key cultural shift:** monitoring is a pre-production requirement, not an afterthought. This is how SRE teams handle service onboarding; data should work the same way.$pf$,
+ $pf$Instrumentation + 6-week rollout plan. Tier criteria mechanical not judgment: tier-1 = CEO/CRO/CFO/CPO/VP-Eng dashboard OR board-reported OR customer-SLA OR 3+ downstream consumers OR externally visible (14 tables named). Tier-2 team-critical (~38). Tier-3 (~10-15) plus explicit un-instrumented list (~85 tables including stg_/int_/sandbox/deprecated) documented on named Notion page. 6-week rollout: Week 1 schema-drift gate on top-5 sources + top-N metrics list + PagerDuty/Slack infra, Week 2 freshness+completeness on 5 tier-1, Week 3 add accuracy + next 5 tables + runbooks, Week 4 complete 14 tier-1 + retune pass, Week 5 tier-2 top-20 freshness+completeness (skip accuracy at tier-2), Week 6 remaining tier-2 + docs + stakeholder readout. Tier-3 NOT in 6-week plan — Q3 earliest. dbt owns PK/row-count/schema (80% of instrumentation, already in modeling layer). Grafana+SQL owns burn-rate + alerting. Keep Monte Carlo scoped to top-20 tier-1 accuracy for 90-day evaluation, deprecate if <60% action rate (saves ~$30K/yr). New-table onboarding standard: PR must include tier, cadence, row-count distribution, tier-1 accuracy spec, runbook link — reviewer rejects without it. Monitoring = pre-production requirement, not afterthought.$pf$),
+
+-- Step 5 --
+('66666666-6666-6666-6666-666666590105',
+ '55555555-5555-5555-5555-555555550059',
+ 5,
+ $pf$Pass 5 — stakeholder readout deck: the argument for 2 FTE on a Data Reliability sub-team$pf$,
+ $pf$Last pass — the readout. Audience: VP Eng, VP Product, CFO, CEO. Ask: fund 2 FTEs dedicated to data reliability (reporting into platform, not analytics), plus approve the 6-week rollout plan and the monitoring stack changes.
+
+The hard part of the pitch: this is NOT a BI-tooling expense. BI leadership already asked for 2 FTE in Q1 and got pushed back because the org sees it as a cost center. My argument is that DATA RELIABILITY is infrastructure, same category as API uptime or production-database integrity. It belongs in platform's budget envelope, not analytics'.
+
+Structure the deck (8-12 slides), write the talking track for each slide (what I say verbatim, what's on-screen, what the slide argues), and pre-empt the 3 hardest objections I expect: "we already have Monte Carlo, why more?", "analytics team should own this, not platform," and "can we just wait another quarter and see if it's really needed?" Be direct — I'd rather land the argument than be polite.$pf$,
+ $pf$8-slide readout deck. Here's the structure, on-screen content, talking track, and preempted objections.
+
+---
+
+**SLIDE 1 — The Incident, named specifically.**
+
+*On screen:* Screenshot of the Q1 CEO correction email (with CEO name redacted) + the wrong metric ($6.2M ARR) vs. the correct metric ($5.7M ARR) + "11 days" in large type.
+
+*Talking track:* "In Q1 we reported $6.2M ARR to the board. The correct number was $5.7M. The dashboard showed the wrong number for 11 days before a CS lead caught it during a customer call. Today I'm going to tell you why it happened, why it will happen again if we don't change how we operate, and what it'll cost to fix."
+
+*What the slide argues:* This isn't abstract. The pain is already real and board-visible.
+
+---
+
+**SLIDE 2 — It's not a one-off. It's a pattern.**
+
+*On screen:* 14-incident bar chart over 18 months, color-coded by failure category.
+
+*Talking track:* "Q1 wasn't unique. In the last 18 months we had 14 data incidents. 78% of them fall into three categories — schema drift, freshness failures, and silent value corruption — where our current monitoring catches almost nothing. The ONE category we cover well is duplicates, which is 14% of incidents."
+
+*Argues:* Q1 isn't bad luck; it's an architectural gap.
+
+---
+
+**SLIDE 3 — Why current monitoring doesn't work.**
+
+*On screen:* Two boxes. Left: "What we monitor today" (PK uniqueness + Monte Carlo statistical anomaly). Right: "What actually breaks" (schema drift 36%, freshness 21%, value corruption 21%, duplicates 14%, outages 7%). Arrows showing the mismatch.
+
+*Talking track:* "We're covering the category we optimized for 3 years ago — duplicates, which are 14% of incidents. The remaining 86% is under-monitored. Monte Carlo was meant to cover the value-corruption category but it produces so much noise it's been muted on most tables. We don't have a tooling problem; we have a monitoring-strategy problem."
+
+*Argues:* This isn't about buying a new vendor tool.
+
+---
+
+**SLIDE 4 — What we're proposing: a structured data reliability practice.**
+
+*On screen:* 4-dimension SLO framework (freshness, completeness, accuracy, uniqueness) × 3-tier table classification (exec-critical, team-critical, internal) = a 12-cell matrix with proposed SLO targets in each cell.
+
+*Talking track:* "We're proposing a formal SLO framework borrowed directly from how the platform team operates on service reliability. Every critical table gets measured on 4 dimensions. Every table has an explicit criticality tier. Alerts route through a 3-tier cascade — PagerDuty page, Jira ticket, Slack digest — with hard volume ceilings so we don't recreate Monte Carlo's noise problem."
+
+*Argues:* This is exactly the SRE playbook, applied to data. This is a PROVEN pattern.
+
+---
+
+**SLIDE 5 — Expected impact: in 30 days.**
+
+*On screen:* 3 bullet points. "Detect Q1-class incidents in <1 hour instead of 11 days." "Alert volume reduced 85% from current Monte Carlo config." ">85% of pages result in an action (currently ~15%)."
+
+*Talking track:* "We have synthetic-run data from the last 90 days that models what this framework would have caught. Q1 would have been detected in under 1 hour with the accuracy-range check. 11 of the other 14 incidents would have been detected faster. Alert volume drops 85% from current-state Monte Carlo noise, because we're tiering thresholds by criticality."
+
+*Argues:* We're not guessing on impact. We've already modeled it.
+
+---
+
+**SLIDE 6 — The Ask: 2 FTE, reporting into platform.**
+
+*On screen:* Org chart showing "Data Reliability — 2 FTE — reporting to VP Platform," alongside annotations: "not analytics," "not BI," "INFRASTRUCTURE."
+
+*Talking track:* "The ask: 2 FTE focused on data reliability. Critically — these roles report into platform, not analytics. Data reliability is an infrastructure discipline, not a BI discipline. Platform already has the on-call muscle, the SRE practices, and the runbook culture. Adding 2 FTE under platform is continuous with how we already do service reliability. Putting these roles under analytics means they'd be treated as a BI cost and de-prioritized against dashboard requests — which is how we arrived at the current state."
+
+*Argues:* The org structure is load-bearing. This argument needs to land clearly.
+
+---
+
+**SLIDE 7 — The Cost of Not Doing This.**
+
+*On screen:* Two columns. "If we fund this ($400K/yr in fully-loaded FTE cost)" vs. "If we don't (continued Q1-class incidents, board credibility erosion, exec-team time spent on corrections, ~6 lost days/yr per exec for this incident class, ~$X in engineering firefight time)."
+
+*Talking track:* "The cost of funding this is ~$400K/yr. The cost of not funding it is harder to quantify but includes: continued exposure to Q1-class incidents (we've estimated one per 12-18 months at current run-rate), erosion of board trust in our metrics (the CEO had to send a correction — that lands in investor memory), and about 6 lost exec-days per year across the team dealing with corrections, investigations, and rebuilding trust in the numbers."
+
+*Argues:* The CFO specifically needs to see this framing — incident cost translated to real exec time.
+
+---
+
+**SLIDE 8 — Decision ask + timeline.**
+
+*On screen:* "Decision needed by [date]. Rollout starts Week 1 after approval. Phase 1 complete Week 6. FTE hiring: 4-6 weeks; interim coverage by me + platform on-call."
+
+*Talking track:* "We're asking for a decision in the next 2 weeks. If approved, Phase 1 of the monitoring rollout starts next Monday — I can personally shepherd the first 6 weeks while the FTE search runs. Phase 1 complete in 6 weeks. FTE hiring in parallel. We'll report back on impact in 60 days — alert volume, detected incidents, and action rate."
+
+---
+
+**PRE-EMPTED OBJECTIONS (address proactively in the appendix or in Q&A):**
+
+**Objection 1: "We already have Monte Carlo — why more?"**
+
+Response: "Monte Carlo is a strong statistical-anomaly tool but it's misconfigured for our workload. We've scoped Monte Carlo in the new plan to its best use — top-20 tier-1 accuracy checks — and we'll evaluate at 90 days whether to keep it. The monitoring gap isn't tooling; it's strategy. The new plan uses dbt + Grafana for 80% of the instrumentation; Monte Carlo only for the narrow use case it's actually good at. If Monte Carlo can't demonstrate action rate >60% at the 90-day mark, we deprecate and save ~$30K/yr."
+
+**Objection 2: "Analytics should own this, not platform."**
+
+Response: "Two specific reasons. (a) This work is infrastructure — it's monitoring, alerting, and on-call. Those disciplines already live in platform. Putting it in analytics means either building a parallel on-call structure from scratch OR not having real on-call coverage — both bad outcomes. (b) Analytics is already understaffed against the BI backlog. Adding data reliability work to analytics means either the BI backlog gets longer or data reliability gets de-prioritized. History suggests the latter; that's how we got here. The structural choice is how we AVOID the Q1 failure mode going forward — it's not just an ownership preference."
+
+**Objection 3: "Can we wait another quarter?"**
+
+Response: "Three reasons not to wait. (a) We have at least 4 known un-monitored tier-1 tables that could produce a Q1-class incident this quarter — we're rolling dice. (b) The fix has a 6-week timeline and a 90-day evaluation horizon. Waiting a quarter pushes the evaluation into Q4 board prep, which is worse timing for the CEO if something goes wrong mid-quarter. (c) The FTE hiring runway is ~6 weeks; if we approve next month, we have FTE onboarded by Q3 start. Delay means Q3 is still un-staffed. Every week of delay has an expected incident cost — we've modeled ~$15K/wk in expected firefight time based on current run-rate."
+
+---
+
+**DECK DESIGN NOTES:**
+
+- No data-vendor logos. This is not a "we're buying a tool" pitch.
+- Use the Q1 correction-email screenshot as the emotional anchor throughout. It's the most persuasive artifact you have.
+- CFO cares about cost; CEO cares about credibility; VP Eng cares about org structure; VP Product cares about whether their dashboards are trustworthy. Each slide should land at least one of those concerns.
+- Keep slide 6 (org chart) unambiguous — VP Product and VP Eng need to agree ON-SCREEN that data reliability reports into platform. If that's not aligned before the meeting, land alignment in a 1:1 with VP Eng first.
+
+**One more structural note:** this is a 30-minute meeting including Q&A. The deck as written runs ~15 min. Leave 15 min for discussion — that's where the decision actually gets made. Don't over-pack the deck; leave air for the CFO to ask the CFO questions and the CEO to surface the CEO concerns.$pf$,
+ $pf$8-slide stakeholder readout deck with preempted objections. Slide 1 Q1 incident screenshot of CEO correction email — emotional anchor throughout deck. Slide 2 14-incident pattern chart (78% in under-monitored categories). Slide 3 what-we-monitor vs what-breaks mismatch boxes. Slide 4 4-dim × 3-tier SLO framework matrix. Slide 5 expected impact (Q1 detection <1hr, alert volume -85%, action rate >85% vs ~15%). Slide 6 org-chart ASK: 2 FTE reporting to VP Platform not analytics — critical and load-bearing. Slide 7 cost-of-not-doing-this CFO framing ($400K/yr vs ~6 exec-days/yr + board-trust erosion + ~$15K/wk firefight expected cost). Slide 8 decision ask with 6-week Phase 1 timeline + parallel FTE hiring. Preempted objections: (1) Monte Carlo — scoped to top-20 tier-1 accuracy, deprecate if <60% action rate at 90 days. (2) Analytics vs platform ownership — infrastructure discipline (monitoring/on-call/runbooks) already lives in platform; analytics understaffed against BI backlog; structural choice avoids re-creating Q1 failure mode. (3) Wait another quarter — ~$15K/wk expected firefight cost, 4 known un-monitored tier-1 tables, delay pushes evaluation to Q4 board-prep. Deck design: no vendor logos (not tool pitch), Q1 correction-email screenshot anchor, each slide hits CFO/CEO/VP-Eng/VP-Product concern, leave 15min of 30min meeting for discussion where decision actually gets made.$pf$);
+
+-- =========================================================================
 -- END OF FILE — append next project(s) below this line.
 -- Iterations working the Content queue: add 2–3 projects per iteration,
 -- appending below this comment. Do NOT rewrite existing projects.

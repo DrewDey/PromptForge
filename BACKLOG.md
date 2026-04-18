@@ -42,7 +42,7 @@ Read `supabase/seed-content-chains.sql` end-to-end before drafting anything. You
 - **Match author to category fit:** `jakefinance` (Finance), `sarahgrows` (Marketing), `emwriter` (Writing), `marcusdev` or `cto_derek` (Coding), `priya_creates` (Design), `teacherben` (Education), `ops_nina` (Productivity), `dataraj` (Data), `cto_derek` or `lena_solopreneur` (Strategy), `lena_solopreneur` (Personal). Profile IDs in `supabase/seed-fix.sql` at `22222222-2222-2222-2222-22222222XXXX`.
 - **Varied Claude models:** rotate `claude-sonnet-4-6`, `claude-opus-4-6`, `claude-opus-4-7`. Sonnet for straightforward, Opus for heavier thinking. `model_recommendation` string should be the human-readable version ("Claude 4.6 Sonnet", "Claude 4.6 Opus", "Claude 4.7 Opus").
 - **UUID sequence:** continue from `55555555-5555-5555-5555-555555550001`. Next project is `...550002`, then `...550003`, etc. Steps use `66666666-6666-6666-6666-6666666XYSS` where X is the 2-digit project counter hex and SS is step 01+ (e.g. project 0002 step 1 = `66666666-6666-6666-6666-666666620101`).
-- **Realistic engagement counts:** `vote_count` 15–120, `bookmark_count` 5–60. Vary — don't make every project a hit.
+- **Engagement counts: ZERO.** `vote_count = 0`, `bookmark_count = 0` for every project. Drew's directive 2026-04-18: nothing implies anyone has touched the project. Real engagement accrues only from real users.
 - **Tags:** 3–6 real tags per project. Don't pad with generic ones.
 - **Screenshot slots:** leave empty. Drew fills them once Structural #1 (image upload) lands.
 

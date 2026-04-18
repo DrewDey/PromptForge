@@ -67,7 +67,7 @@ What I got out of running this: a clean mental model of how SE tax interacts wit
   ARRAY['tax','finance','freelance','react','self-employment','california'],
   'approved',
   '22222222-2222-2222-2222-222222222203',
-  42, 18
+  0, 0
 );
 
 INSERT INTO prompt_steps (id, prompt_id, step_number, title, content, result_content, description) VALUES
@@ -392,7 +392,7 @@ Lesson: for cold outbound, the positioning round is the highest-value part of th
   ARRAY['cold email','b2b','saas','outbound','copywriting','hr-tech'],
   'approved',
   '22222222-2222-2222-2222-222222222202',
-  78, 34
+  0, 0
 );
 
 INSERT INTO prompt_steps (id, prompt_id, step_number, title, content, result_content, description) VALUES
@@ -664,7 +664,7 @@ Total time: ~15 min back-and-forth with Claude Sonnet 4.6. Hook is clean enough 
   ARRAY['react','typescript','hooks','refactor','debounce','abortcontroller'],
   'approved',
   '22222222-2222-2222-2222-222222222201',
-  54, 27
+  0, 0
 );
 
 INSERT INTO prompt_steps (id, prompt_id, step_number, title, content, result_content, description) VALUES
@@ -957,7 +957,7 @@ What I got out of running this with Claude: the schema reconnaissance pass surfa
   ARRAY['sql','retention','cohort-analysis','postgres','data-analytics','b2b-saas'],
   'approved',
   '22222222-2222-2222-2222-222222222207',
-  103, 47
+  0, 0
 );
 
 INSERT INTO prompt_steps (id, prompt_id, step_number, title, content, result_content, description) VALUES
@@ -1369,7 +1369,7 @@ What I'm taking forward: the "same phenomenon, three entry-point ramps" structur
   ARRAY['lesson-planning','biology','differentiation','ngss','high-school','iep'],
   'approved',
   '22222222-2222-2222-2222-222222222205',
-  87, 52
+  0, 0
 );
 
 INSERT INTO prompt_steps (id, prompt_id, step_number, title, content, result_content, description) VALUES
@@ -1641,7 +1641,7 @@ Also keeping: the brutal self-edit pass framed as "Jessica Lessin reviewing a su
   ARRAY['copywriting','content-strategy','b2b','blog-post','editing','launch'],
   'approved',
   '22222222-2222-2222-2222-222222222208',
-  68, 29
+  0, 0
 );
 
 INSERT INTO prompt_steps (id, prompt_id, step_number, title, content, result_content, description) VALUES
@@ -1919,7 +1919,7 @@ Also keeping: the explicit "what would change your mind in either direction" che
   ARRAY['strategy','solopreneur','affiliate-marketing','niche-sites','decision-making','sunset'],
   'approved',
   '22222222-2222-2222-2222-222222222210',
-  94, 41
+  0, 0
 );
 
 INSERT INTO prompt_steps (id, prompt_id, step_number, title, content, result_content, description) VALUES
@@ -2264,7 +2264,7 @@ What I'd tell another ops person: don't start by writing a prompt. Start by sket
   ARRAY['operations','meetings','workflow','agency','sop','leadership'],
   'approved',
   '22222222-2222-2222-2222-222222222206',
-  56, 31
+  0, 0
 );
 
 INSERT INTO prompt_steps (id, prompt_id, step_number, title, content, result_content, description) VALUES
@@ -2466,7 +2466,7 @@ Takeaway I didn't expect: the highest-value Claude pass was round 3 (my pushback
   ARRAY['architecture','hipaa','phi','postgres','rls','healthcare','rfc'],
   'approved',
   '22222222-2222-2222-2222-222222222209',
-  112, 58
+  0, 0
 );
 
 INSERT INTO prompt_steps (id, prompt_id, step_number, title, content, result_content, description) VALUES
@@ -2850,7 +2850,7 @@ Two things I'd do differently next round: (1) start Claude on the raw transcript
   ARRAY['ux-research','synthesis','jtbd','b2b-saas','exec-communication','onboarding'],
   'approved',
   '22222222-2222-2222-2222-222222222204',
-  82, 44
+  0, 0
 );
 
 INSERT INTO prompt_steps (id, prompt_id, step_number, title, content, result_content, description) VALUES
@@ -3147,7 +3147,7 @@ What I didn't expect: the pushback in prompt 1 wasn't just "don't do backcountry
   ARRAY['travel','camping','group-planning','dietary-constraints','birthday','sequoia'],
   'approved',
   '22222222-2222-2222-2222-222222222210',
-  56, 23
+  0, 0
 );
 
 INSERT INTO prompt_steps (id, prompt_id, step_number, title, content, result_content, description) VALUES
@@ -3403,7 +3403,7 @@ Cost me one weekend of prep instead of three, and I'm reusing the DBQ scaffoldin
   ARRAY['education','high-school','apush','dbq','differentiation','lesson-planning'],
   'approved',
   '22222222-2222-2222-2222-222222222205',
-  58, 27
+  0, 0
 );
 
 INSERT INTO prompt_steps (id, prompt_id, step_number, title, content, result_content, description) VALUES
@@ -3756,7 +3756,7 @@ What I took away: the "which scenario preserves the thing that's working" framin
   ARRAY['finance','cfo','saas','runway','board-memo','scenario-planning'],
   'approved',
   '22222222-2222-2222-2222-222222222203',
-  94, 52
+  0, 0
 );
 
 INSERT INTO prompt_steps (id, prompt_id, step_number, title, content, result_content, description) VALUES
@@ -4112,7 +4112,7 @@ What I'd tell another marketer: resist the urge to let the product team load the
   ARRAY['marketing','saas','pricing','conversion','copywriting','plg'],
   'approved',
   '22222222-2222-2222-2222-222222222202',
-  74, 41
+  0, 0
 );
 
 INSERT INTO prompt_steps (id, prompt_id, step_number, title, content, result_content, description) VALUES
@@ -4432,7 +4432,7 @@ What I sent the PM: roll out the treatment, but roll it out only to mobile Safar
   ARRAY['data','ab-testing','statistics','experimentation','simpsons-paradox','srm'],
   'approved',
   '22222222-2222-2222-2222-222222222207',
-  91, 54
+  0, 0
 );
 
 INSERT INTO prompt_steps (id, prompt_id, step_number, title, content, result_content, description) VALUES
@@ -4717,7 +4717,7 @@ One honest note: I don't do the 3-audience pass on shorter posts where the reade
   ARRAY['ghostwriting','internal-comms','ceo-letter','voice-match','editing','crisis-comms'],
   'approved',
   '22222222-2222-2222-2222-222222222208',
-  94, 41
+  0, 0
 );
 
 INSERT INTO prompt_steps (id, prompt_id, step_number, title, content, result_content, description) VALUES
@@ -5013,7 +5013,7 @@ One honest thing I'd add for anyone running this workflow: the diagnostic step (
   ARRAY['capacity-planning','ops','agency','memo-writing','staffing','burnout'],
   'approved',
   '22222222-2222-2222-2222-222222222206',
-  73, 34
+  0, 0
 );
 
 INSERT INTO prompt_steps (id, prompt_id, step_number, title, content, result_content, description) VALUES
@@ -5318,7 +5318,7 @@ What I'd change next time: I'd run step 2 (alternatives) BEFORE I did my own two
   ARRAY['design-crit','onboarding','activation','b2b-saas','ux-research','dashboard'],
   'approved',
   '22222222-2222-2222-2222-222222222204',
-  88, 42
+  0, 0
 );
 
 INSERT INTO prompt_steps (id, prompt_id, step_number, title, content, result_content, description) VALUES
@@ -5533,7 +5533,7 @@ Memo is now a DD artifact in the Series C data room. First investor conversation
   ARRAY['eng-roadmap','board-memo','series-c','cto','capacity-planning','health-tech'],
   'approved',
   '22222222-2222-2222-2222-222222222209',
-  112, 58
+  0, 0
 );
 
 INSERT INTO prompt_steps (id, prompt_id, step_number, title, content, result_content, description) VALUES
@@ -5945,7 +5945,7 @@ What I'd tell the next person: don't start with "should I take this offer." Star
   ARRAY['career','job-offer','relocation','family','compensation','decision-making'],
   'approved',
   '22222222-2222-2222-2222-222222222203',
-  104, 51
+  0, 0
 );
 
 INSERT INTO prompt_steps (id, prompt_id, step_number, title, content, result_content, description) VALUES
@@ -6210,7 +6210,7 @@ The parent note in step 3 was the other load-bearing piece. I've written those n
   ARRAY['teaching','assessment','diagnostic','re-teach','parent-comms','9th-grade-biology'],
   'approved',
   '22222222-2222-2222-2222-222222222205',
-  72, 38
+  0, 0
 );
 
 INSERT INTO prompt_steps (id, prompt_id, step_number, title, content, result_content, description) VALUES
@@ -6522,7 +6522,7 @@ Fix was to gate the Pay button on `CardElement`'s `onReady` callback — `disabl
   ARRAY['playwright','flaky-tests','ci','debugging','e2e','race-conditions'],
   'approved',
   '22222222-2222-2222-2222-222222222201',
-  71, 29
+  0, 0
 );
 
 INSERT INTO prompt_steps (id, prompt_id, step_number, title, content, result_content, description) VALUES
@@ -6868,7 +6868,7 @@ What I'd tell the next CFO pressure-testing a product-led pricing proposal: don'
   ARRAY['pricing','saas','unit-economics','go-to-market','strategy','cfo','usage-based'],
   'approved',
   '22222222-2222-2222-2222-222222222203',
-  91, 58
+  0, 0
 );
 
 INSERT INTO prompt_steps (id, prompt_id, step_number, title, content, result_content, description) VALUES
@@ -7270,7 +7270,7 @@ The single most valuable pass was #2 — what NOT to say. Marcus had drafted his
   ARRAY['ghostwriting','crisis-comms','founder-letter','public-relations','executive-comms'],
   'approved',
   '22222222-2222-2222-2222-222222222208',
-  82, 41
+  0, 0
 );
 
 INSERT INTO prompt_steps (id, prompt_id, step_number, title, content, result_content, description) VALUES
@@ -7466,7 +7466,7 @@ The single most valuable pass was pass 1 — getting the full hypothesis space w
   ARRAY['mrr','revenue-reconciliation','dashboard-audit','finops','dbt','b2b-saas'],
   'approved',
   '22222222-2222-2222-2222-222222222207',
-  94, 52
+  0, 0
 );
 
 INSERT INTO prompt_steps (id, prompt_id, step_number, title, content, result_content, description) VALUES
@@ -8033,7 +8033,7 @@ What I'd tell the next person: identity migrations have a classic N-squared fail
   ARRAY['auth','saml','scim','migration','identity','rollout','post-mortem','workos'],
   'approved',
   '22222222-2222-2222-2222-222222222209',
-  118, 58
+  0, 0
 );
 
 INSERT INTO prompt_steps (id, prompt_id, step_number, title, content, result_content, description) VALUES
@@ -8748,7 +8748,7 @@ What I'd tell the next ops person: the load-bearing thing is the TWO prompts, no
   ARRAY['meeting-notes','action-items','standup','workflow','weekly-ritual','agency-ops'],
   'approved',
   '22222222-2222-2222-2222-222222222206',
-  78, 32
+  0, 0
 );
 
 INSERT INTO prompt_steps (id, prompt_id, step_number, title, content, result_content, description) VALUES
@@ -8984,7 +8984,7 @@ What I'd tell another marketer: don't let a single prompt try to do list-scoring
   ARRAY['abm','demand-gen','enterprise','campaign','outreach','b2b-saas','sales-enablement'],
   'approved',
   '22222222-2222-2222-2222-222222222202',
-  92, 44
+  0, 0
 );
 
 INSERT INTO prompt_steps (id, prompt_id, step_number, title, content, result_content, description) VALUES
@@ -9365,7 +9365,7 @@ What I'd tell another designer: run the inventory first, before you design anyth
   ARRAY['design','empty-states','ux','patterns','activation','b2b-saas','design-system'],
   'approved',
   '22222222-2222-2222-2222-222222222204',
-  68, 38
+  0, 0
 );
 
 INSERT INTO prompt_steps (id, prompt_id, step_number, title, content, result_content, description) VALUES
@@ -9752,7 +9752,7 @@ What I'd tell another solopreneur: don't skip the BATNA audit. Pass 4 is where I
   ARRAY['m&a','acquisition','solopreneur','negotiation','exit','newsletter','earnout','strategy'],
   'approved',
   '22222222-2222-2222-2222-222222222210',
-  112, 61
+  0, 0
 );
 
 INSERT INTO prompt_steps (id, prompt_id, step_number, title, content, result_content, description) VALUES
@@ -10167,7 +10167,7 @@ What I'd tell another solopreneur considering this: pass 3's test-drive checklis
   ARRAY['ev','car-shopping','tco','solopreneur','personal-finance','tesla'],
   'approved',
   '22222222-2222-2222-2222-222222222210',
-  58, 26
+  0, 0
 );
 
 INSERT INTO prompt_steps (id, prompt_id, step_number, title, content, result_content, description) VALUES
@@ -10452,7 +10452,7 @@ The bigger win is the workflow generalizes. I've now run this exact 3-pass loop 
   ARRAY['marketing','case-study','repurposing','linkedin','email','content-ops'],
   'approved',
   '22222222-2222-2222-2222-222222222202',
-  78, 34
+  0, 0
 );
 
 INSERT INTO prompt_steps (id, prompt_id, step_number, title, content, result_content, description) VALUES
@@ -10676,7 +10676,7 @@ Bigger lesson for me as a freelance data person: the model itself was 30% of the
   ARRAY['data','health-score','churn','customer-success','saas','retention'],
   'approved',
   '22222222-2222-2222-2222-222222222207',
-  94, 47
+  0, 0
 );
 
 INSERT INTO prompt_steps (id, prompt_id, step_number, title, content, result_content, description) VALUES
@@ -11035,7 +11035,7 @@ This is the 4-pass workflow I now run — each pass focused on one discrete outp
   ARRAY['education','iep','special-education','teacher-workflow','meeting-prep'],
   'approved',
   '22222222-2222-2222-2222-222222222205',
-  86, 41
+  0, 0
 );
 
 INSERT INTO prompt_steps (id, prompt_id, step_number, title, content, result_content, description) VALUES
@@ -11454,7 +11454,7 @@ New client this month: Dana Vogel, CEO of Relayloom (the B2B SaaS GTM-automation
   ARRAY['writing','ghostwriting','linkedin','thought-leadership','content-strategy'],
   'approved',
   '22222222-2222-2222-2222-222222222208',
-  91, 38
+  0, 0
 );
 
 INSERT INTO prompt_steps (id, prompt_id, step_number, title, content, result_content, description) VALUES
@@ -11851,7 +11851,7 @@ Delivered Friday 6pm. Founder called me Monday to say he used the memo's recomme
   ARRAY['finance','cap-table','safe','series-a','dilution','cfo'],
   'approved',
   '22222222-2222-2222-2222-222222222203',
-  118, 57
+  0, 0
 );
 
 INSERT INTO prompt_steps (id, prompt_id, step_number, title, content, result_content, description) VALUES
@@ -12392,7 +12392,7 @@ Total time: 3 hours Thursday afternoon. Eng got the spec Friday 9am. They shippe
   ARRAY['design','ux','component-design','design-system','accessibility','notifications'],
   'approved',
   '22222222-2222-2222-2222-222222222204',
-  64, 28
+  0, 0
 );
 
 INSERT INTO prompt_steps (id, prompt_id, step_number, title, content, result_content, description) VALUES
@@ -12834,7 +12834,7 @@ New rotation started April 14. First week: 11 pages, 4 overnight. No ack misses.
   ARRAY['operations','on-call','team-health','compensation','process-design','sre'],
   'approved',
   '22222222-2222-2222-2222-222222222206',
-  103, 49
+  0, 0
 );
 
 INSERT INTO prompt_steps (id, prompt_id, step_number, title, content, result_content, description) VALUES
@@ -13220,7 +13220,7 @@ Board approved at the April 29 meeting. Platform team starts May 15, 7 engineers
   ARRAY['strategy','platform-engineering','org-design','board-comms','cto','engineering-leadership'],
   'approved',
   '22222222-2222-2222-2222-222222222209',
-  142, 71
+  0, 0
 );
 
 INSERT INTO prompt_steps (id, prompt_id, step_number, title, content, result_content, description) VALUES
@@ -13603,7 +13603,7 @@ The 2-year lock was the concession that closed it. I got a below-market renewal;
   ARRAY['rent-negotiation','housing','san-francisco','personal-finance','comparables'],
   'approved',
   '22222222-2222-2222-2222-222222222201',
-  78, 34
+  0, 0
 );
 
 INSERT INTO prompt_steps (id, prompt_id, step_number, title, content, result_content, description) VALUES
@@ -13917,7 +13917,7 @@ Core lesson: the capacity audit in Pass 1 was the load-bearing pass. I went in a
   ARRAY['strategy','solopreneur','capacity-planning','community','post-acquisition','nc-compliance'],
   'approved',
   '22222222-2222-2222-2222-222222222210',
-  156, 73
+  0, 0
 );
 
 INSERT INTO prompt_steps (id, prompt_id, step_number, title, content, result_content, description) VALUES
@@ -14386,7 +14386,7 @@ Single most useful finding: the SECURE 2.0 update means sole-prop employee defer
   ARRAY['finance','taxes','retirement','1099','solo-401k','SEP-IRA'],
   'approved',
   '22222222-2222-2222-2222-222222222203',
-  89, 41
+  0, 0
 );
 
 INSERT INTO prompt_steps (id, prompt_id, step_number, title, content, result_content, description) VALUES
@@ -14667,7 +14667,7 @@ Kiran's brief to me for the Fund III commitment materials in June: "use the same
   ARRAY['writing','ghostwriting','vc','lp-letter','annual-letter','fund-ii'],
   'approved',
   '22222222-2222-2222-2222-222222222208',
-  126, 58
+  0, 0
 );
 
 INSERT INTO prompt_steps (id, prompt_id, step_number, title, content, result_content, description) VALUES
@@ -15012,7 +15012,7 @@ Most cited response from eng lead: "this is the first design handoff I've gotten
   ARRAY['design','information-architecture','settings','B2B','migration','telemetry'],
   'approved',
   '22222222-2222-2222-2222-222222222204',
-  134, 67
+  0, 0
 );
 
 INSERT INTO prompt_steps (id, prompt_id, step_number, title, content, result_content, description) VALUES
@@ -15632,7 +15632,7 @@ Pass 3 was the pass that mattered most from a "don't regret this in production" 
   ARRAY['coding','rate-limiting','redis','cloudflare-workers','api','hono','typescript'],
   'approved',
   '22222222-2222-2222-2222-222222222201',
-  97, 42
+  0, 0
 );
 
 INSERT INTO prompt_steps (id, prompt_id, step_number, title, content, result_content, description) VALUES
@@ -15994,7 +15994,7 @@ Three things I'll carry into the next one: (1) ground-truth calibration with rea
   ARRAY['attribution','marketing-analytics','markov-chain','saas','board-memo','data-modeling'],
   'approved',
   '22222222-2222-2222-2222-222222222207',
-  168, 82
+  0, 0
 );
 
 INSERT INTO prompt_steps (id, prompt_id, step_number, title, content, result_content, description) VALUES
@@ -16794,7 +16794,7 @@ One counter-lesson: the variant I expected to win (hero-image forward, video-cli
   ARRAY['landing-page','conversion','webinar','copywriting','dev-marketing','a-b-testing'],
   'approved',
   '22222222-2222-2222-2222-222222222202',
-  94, 43
+  0, 0
 );
 
 INSERT INTO prompt_steps (id, prompt_id, step_number, title, content, result_content, description) VALUES
@@ -17093,7 +17093,7 @@ Also: the department-chair memo structure from pass 4 — leading with "here's w
   ARRAY['assessment','item-analysis','biology','genetics','parent-communication','teacher-reflection','differentiation'],
   'approved',
   '22222222-2222-2222-2222-222222222205',
-  117, 58
+  0, 0
 );
 
 INSERT INTO prompt_steps (id, prompt_id, step_number, title, content, result_content, description) VALUES
@@ -17467,7 +17467,7 @@ The announcement pattern from pass 3 — framing the change as a team-wide ops p
   ARRAY['meetings','calendar-audit','productivity','ops','time-management','management'],
   'approved',
   '22222222-2222-2222-2222-222222222206',
-  104, 51
+  0, 0
 );
 
 INSERT INTO prompt_steps (id, prompt_id, step_number, title, content, result_content, description) VALUES
@@ -17891,7 +17891,7 @@ What I'd do differently: run Pass 1 BEFORE spending two nights on the spreadshee
   ARRAY['career','decision-making','cofounder','personal','regret-minimization','leadership'],
   'approved',
   '22222222-2222-2222-2222-222222222209',
-  118, 62
+  0, 0
 );
 
 INSERT INTO prompt_steps (id, prompt_id, step_number, title, content, result_content, description) VALUES
@@ -18156,7 +18156,7 @@ The surprise was Pass 2 — I went in thinking this was a cost-math decision; it
   ARRAY['car','decision','personal-finance','solopreneur','cost-analysis','used-car'],
   'approved',
   '22222222-2222-2222-2222-222222222210',
-  93, 41
+  0, 0
 );
 
 INSERT INTO prompt_steps (id, prompt_id, step_number, title, content, result_content, description) VALUES
@@ -18392,7 +18392,7 @@ The thing that changed my mind was pass 2, not pass 1. The math was close enough
   ARRAY['home-buying','sf','personal-finance','mortgage','big-decision','regret-minimization'],
   'approved',
   '22222222-2222-2222-2222-222222222201',
-  104, 49
+  0, 0
 );
 
 INSERT INTO prompt_steps (id, prompt_id, step_number, title, content, result_content, description) VALUES
@@ -18748,7 +18748,7 @@ Two things the workflow actually got right. First, Pass 3's system-design prompt
   ARRAY['hiring','staff-engineer','interview-loop','leveling-rubric','debrief','series-b'],
   'approved',
   '22222222-2222-2222-2222-222222222209',
-  126, 58
+  0, 0
 );
 
 INSERT INTO prompt_steps (id, prompt_id, step_number, title, content, result_content, description) VALUES

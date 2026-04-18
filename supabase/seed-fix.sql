@@ -106,7 +106,7 @@ INSERT INTO prompts (id, title, description, content, result_content, category_i
  $pf$The final brand guidelines document covered: brand story and mission, 5 personality traits with examples, voice guidelines with do's and don'ts, complete color palette (5 colors with hex codes), typography system (3 fonts), logo concept description, and social media photography rules. My designer said it was the most thorough creative brief she'd ever received from a client. The whole thing took about 2 hours start to finish.$pf$,
  '11111111-1111-1111-1111-111111111102', 'beginner', 'claude-sonnet-4-6', 'Claude 4.6 Sonnet',
  ARRAY['Claude'], ARRAY['branding','identity','bakery','design system','small business'],
- 'approved', '22222222-2222-2222-2222-222222222202', 83, 47),
+ 'approved', '22222222-2222-2222-2222-222222222202', 0, 0),
 
 -- 02 — YouTube Script (Writing, beginner)
 ('33333333-3333-3333-3333-333333333302',
@@ -116,7 +116,7 @@ INSERT INTO prompts (id, title, description, content, result_content, category_i
  $pf$Generated a 2,800-word script for "The 3-Folder System That Replaced My Entire Productivity Stack." Included: a 30-second cold open hook, 4 story beats with transitions, specific b-roll callouts, 2 audience interaction points, a sponsor integration slot, end screen CTA, and 3 thumbnail text options. I filmed it in one take using the script as my teleprompter notes. Video got 12K views — my best performing that month.$pf$,
  '11111111-1111-1111-1111-111111111103', 'beginner', 'claude-opus-4-6', 'Claude 4.6 Opus',
  ARRAY['Claude'], ARRAY['youtube','video script','content creation','productivity'],
- 'approved', '22222222-2222-2222-2222-222222222201', 95, 62),
+ 'approved', '22222222-2222-2222-2222-222222222201', 0, 0),
 
 -- 03 — Strength Training (Personal, beginner)
 ('33333333-3333-3333-3333-333333333303',
@@ -126,7 +126,7 @@ INSERT INTO prompts (id, title, description, content, result_content, category_i
  $pf$The program included: a 4-day Upper/Lower split, 3 mesocycles (weeks 1-4 hypertrophy, weeks 5-8 strength, weeks 9-12 peak), deload every 4th week, specific exercises with alternatives, warm-up protocols, RPE targets, and progressive overload rules. The nutrition section covered: calorie targets (2,650 maintenance, 2,900 lean bulk), macro split (180g protein, 350g carbs, 85g fat), meal timing, and a sample day. I've been running it for 6 weeks and my squat is up 25lbs.$pf$,
  '11111111-1111-1111-1111-111111111110', 'beginner', 'claude-opus-4-6', 'Claude 4.6 Opus',
  ARRAY['Claude'], ARRAY['fitness','training program','nutrition','health','personal'],
- 'approved', '22222222-2222-2222-2222-222222222201', 112, 78),
+ 'approved', '22222222-2222-2222-2222-222222222201', 0, 0),
 
 -- 04 — Review Analyzer (Data, intermediate)
 ('33333333-3333-3333-3333-333333333304',
@@ -136,7 +136,7 @@ INSERT INTO prompts (id, title, description, content, result_content, category_i
  $pf$The system processes ~500 reviews per run. Our first run showed: 68% positive, 14% neutral, 18% negative. Top complaints were assembly instructions (34% of negative reviews) and shipping damage on standing desks. Our product manager said it replaced a 4-hour-per-week manual process. The script is 120 lines of Python with zero dependencies beyond the standard library.$pf$,
  '11111111-1111-1111-1111-111111111108', 'intermediate', 'chatgpt-5-4', 'ChatGPT 5.4',
  ARRAY['ChatGPT','Python','Google Sheets'], ARRAY['python','sentiment analysis','automation','customer feedback','reporting'],
- 'approved', '22222222-2222-2222-2222-222222222203', 67, 39),
+ 'approved', '22222222-2222-2222-2222-222222222203', 0, 0),
 
 -- 05 — SaaS Onboarding Emails (Marketing, intermediate)
 ('33333333-3333-3333-3333-333333333305',
@@ -146,7 +146,7 @@ INSERT INTO prompts (id, title, description, content, result_content, category_i
  $pf$The sequence covers: Day 0 (welcome), Day 1 (team invite), Day 3 (feature highlight), Day 5 (customer story), Day 8 (objection handling), Day 11 (urgency), Day 14 (final push + 20% discount). Each email is under 150 words with a single CTA. After implementing in Mailchimp, our trial-to-paid conversion went from 8% to 14% in the first month.$pf$,
  '11111111-1111-1111-1111-111111111102', 'intermediate', 'chatgpt-5-4-thinking', 'ChatGPT 5.4 Thinking',
  ARRAY['ChatGPT','Mailchimp'], ARRAY['email marketing','SaaS','onboarding','conversion','drip campaign'],
- 'approved', '22222222-2222-2222-2222-222222222202', 74, 51),
+ 'approved', '22222222-2222-2222-2222-222222222202', 0, 0),
 
 -- 06 — SaaS Dashboard (Coding, advanced)
 ('33333333-3333-3333-3333-333333333306',
@@ -156,7 +156,7 @@ INSERT INTO prompts (id, title, description, content, result_content, category_i
  $pf$The final dashboard includes: responsive sidebar navigation, 4 KPI cards with sparklines and trend indicators (MRR, Active Users, Churn Rate, NPS), a 12-month revenue line chart with tooltips, a recent activity feed, and a full customer table (search, sort, pagination, status badges). Built in Next.js 14, TypeScript, Tailwind, Recharts. Clean enough to ship to production with minor tweaks — mostly just swapping mock data for real API calls.$pf$,
  '11111111-1111-1111-1111-111111111104', 'advanced', 'claude-opus-4-6-ext', 'Claude 4.6 Opus Extended',
  ARRAY['Claude','Next.js','Tailwind CSS','Recharts','TypeScript'], ARRAY['dashboard','react','nextjs','admin panel','charts','full-stack'],
- 'approved', '22222222-2222-2222-2222-222222222201', 134, 89),
+ 'approved', '22222222-2222-2222-2222-222222222201', 0, 0),
 
 -- 07 — Portfolio Rebalancer (Finance, advanced)
 ('33333333-3333-3333-3333-333333333307',
@@ -166,7 +166,7 @@ INSERT INTO prompts (id, title, description, content, result_content, category_i
  $pf$The finished spreadsheet has: automatic market value calculations, current vs target allocation %, drift detection with 2% threshold, specific trade recommendations ("BUY 12 shares of VTI"), unrealized gain/loss per position, tax-loss harvesting flags, estimated tax savings, and wash sale risk warnings. Saved me from a wash sale last month that would have cost $1,200 in lost deductions.$pf$,
  '11111111-1111-1111-1111-111111111101', 'advanced', 'chatgpt-5-4-thinking', 'ChatGPT 5.4 Thinking',
  ARRAY['ChatGPT','Google Sheets'], ARRAY['investing','portfolio','tax optimization','spreadsheet','personal finance'],
- 'approved', '22222222-2222-2222-2222-222222222203', 91, 58),
+ 'approved', '22222222-2222-2222-2222-222222222203', 0, 0),
 
 -- 08 — Competitive Landscape (Strategy, intermediate)
 ('33333333-3333-3333-3333-333333333308',
@@ -176,7 +176,7 @@ INSERT INTO prompts (id, title, description, content, result_content, category_i
  $pf$The report covered: market overview ($4.2B embedded payments market, 34% CAGR), 8 competitor profiles (Stripe Connect, Adyen, PayPal Commerce, Square, Payrix, Finix, Rainforest, WePay), feature comparison matrix, pricing model comparison, positioning map, gap analysis, and 5 strategic recommendations. Our investor said it was "one of the better competitive analyses" they'd seen from a seed-stage company. We closed $1.8M.$pf$,
  '11111111-1111-1111-1111-111111111109', 'intermediate', 'gemini-2-5-pro', 'Gemini 2.5 Pro',
  ARRAY['Gemini','Google Docs'], ARRAY['competitive analysis','fintech','startup','Series A','market research'],
- 'approved', '22222222-2222-2222-2222-222222222203', 56, 34),
+ 'approved', '22222222-2222-2222-2222-222222222203', 0, 0),
 
 -- 09 — Python Course (Education, intermediate)
 ('33333333-3333-3333-3333-333333333309',
@@ -186,7 +186,7 @@ INSERT INTO prompts (id, title, description, content, result_content, category_i
  $pf$The curriculum goes from "Hello, Python" (week 1) to a capstone finance CLI app (week 8). Each week has 2 lessons, a hands-on exercise, a mini-project, and a quiz. Mini-projects build in complexity: Mad Libs, Choose Your Own Adventure, Number Guessing Game, Contact Book, Unit Converter, Expense Logger, Weather App, Full Finance CLI. Students loved it — 85% completion rate, up from 60% with my old curriculum.$pf$,
  '11111111-1111-1111-1111-111111111106', 'intermediate', 'claude-opus-4-6', 'Claude 4.6 Opus',
  ARRAY['Claude','Jupyter Notebooks'], ARRAY['python','curriculum','teaching','beginner','course design'],
- 'approved', '22222222-2222-2222-2222-222222222205', 88, 63),
+ 'approved', '22222222-2222-2222-2222-222222222205', 0, 0),
 
 -- 10 — Fitness App UI (Design, intermediate)
 ('33333333-3333-3333-3333-333333333310',
@@ -196,7 +196,7 @@ INSERT INTO prompts (id, title, description, content, result_content, category_i
  $pf$The spec covered: a 10-color palette with hex + RGB, 6-step type scale with specific sizes and line heights, 8px spacing scale, component specs for 12 core components (buttons, cards, inputs, tabs, progress bars, workout cards, stat circles, nav bar, modals, toasts, avatars, badges), each with default/hover/pressed/disabled states, plus dark mode variants. Implementing the workout card component took 20 minutes instead of the usual 2 hours of guessing.$pf$,
  '11111111-1111-1111-1111-111111111105', 'intermediate', 'gemini-2-5-pro', 'Gemini 2.5 Pro',
  ARRAY['Gemini','Figma','React Native'], ARRAY['UI design','design system','mobile app','fitness','components'],
- 'approved', '22222222-2222-2222-2222-222222222204', 45, 31),
+ 'approved', '22222222-2222-2222-2222-222222222204', 0, 0),
 
 -- 11 — Notion Auto-Tagging (Productivity, advanced)
 ('33333333-3333-3333-3333-333333333311',
@@ -206,7 +206,7 @@ INSERT INTO prompts (id, title, description, content, result_content, category_i
  $pf$The system processes new Notion pages nightly: reads content via Notion API, sends it to Claude API for classification, gets back 2-4 tags from a fixed taxonomy (60 tags across 8 categories) plus a summary, then updates the Notion page properties. Processing 2,000 backlog pages cost about $3 in API calls. Now it handles 10-15 new pages daily for pennies. Classification accuracy is about 90%.$pf$,
  '11111111-1111-1111-1111-111111111107', 'advanced', 'claude-opus-4-6', 'Claude 4.6 Opus',
  ARRAY['Claude API','Python','Notion API'], ARRAY['automation','notion','knowledge management','API','productivity'],
- 'approved', '22222222-2222-2222-2222-222222222201', 103, 71),
+ 'approved', '22222222-2222-2222-2222-222222222201', 0, 0),
 
 -- 12 — Startup Financial Model (Finance, intermediate)
 ('33333333-3333-3333-3333-333333333312',
@@ -216,7 +216,7 @@ INSERT INTO prompts (id, title, description, content, result_content, category_i
  $pf$The model covered: monthly revenue projections with cohort-based growth, COGS breakdown, operating expenses by department, headcount plan, cash flow statement, runway calculation, key SaaS metrics (LTV, CAC, payback period, gross margin, NRR), and sensitivity analysis with 3 scenarios. Our lead investor called out the model quality during diligence. We closed $1.8M.$pf$,
  '11111111-1111-1111-1111-111111111101', 'intermediate', 'claude-opus-4-6', 'Claude 4.6 Opus',
  ARRAY['Claude','Google Sheets'], ARRAY['financial model','startup','SaaS','fundraising','pitch deck'],
- 'approved', '22222222-2222-2222-2222-222222222203', 79, 44),
+ 'approved', '22222222-2222-2222-2222-222222222203', 0, 0),
 
 -- 13 — Product Descriptions (Writing, intermediate)
 ('33333333-3333-3333-3333-333333333313',
@@ -226,7 +226,7 @@ INSERT INTO prompts (id, title, description, content, result_content, category_i
  $pf$Ran it on 50 products across 6 categories. Each description includes: a compelling headline, 3-4 sentence lifestyle description, bulleted features, materials and dimensions, care instructions, and search keywords. Our editor only needed to tweak 4 of 50. Average generation: 45 seconds per product. We saw a 23% increase in conversion rate on AI-written pages vs old manufacturer copy.$pf$,
  '11111111-1111-1111-1111-111111111103', 'intermediate', 'claude-sonnet-4-6', 'Claude 4.6 Sonnet',
  ARRAY['Claude','Shopify'], ARRAY['e-commerce','product descriptions','copywriting','shopify','bulk content'],
- 'approved', '22222222-2222-2222-2222-222222222202', 61, 38),
+ 'approved', '22222222-2222-2222-2222-222222222202', 0, 0),
 
 -- 14 — Weekly Status Report Automator (Productivity, intermediate)
 ('33333333-3333-3333-3333-333333333314',
@@ -236,7 +236,7 @@ INSERT INTO prompts (id, title, description, content, result_content, category_i
  $pf$The final prompt has three clearly marked paste zones (Harvest CSV, Monday.com CSV, Slack text). It parses everything and outputs: an executive summary that references specific numbers and project names (not generic), a team utilization table with 75% target comparison, project status sorted by risk level (filtered to active only), wins and blockers extracted from Slack, and a "number of the week" highlight. The report comes out under 500 words every time. My Friday reporting went from 3 hours to about 12 minutes (5 min gathering data, 2 min pasting, 5 min reviewing). CEO said the reports actually got better because the AI catches patterns I was missing.$pf$,
  '11111111-1111-1111-1111-111111111107', 'intermediate', 'claude-opus-4-6', 'Claude 4.6 Opus',
  ARRAY['Claude','Harvest','Monday.com','Slack'], ARRAY['reporting','automation','operations','weekly report','data parsing'],
- 'approved', '22222222-2222-2222-2222-222222222206', 118, 82),
+ 'approved', '22222222-2222-2222-2222-222222222206', 0, 0),
 
 -- 15 — Meeting Notes → Action Items (Productivity, beginner)
 ('33333333-3333-3333-3333-333333333315',
@@ -246,7 +246,7 @@ INSERT INTO prompts (id, title, description, content, result_content, category_i
  $pf$The system outputs: a 3-sentence summary formatted for Slack, a "Decisions Made" section with who decided what, an action items table (owner, deadline, context), and open questions that weren't resolved. For a 45-minute product team meeting, it correctly extracted 4 decisions, 6 action items, and 3 open questions. The two-pass approach for long meetings (segment by topic first, then extract) catches about 95% of action items vs maybe 70% when I was doing it manually. Team started calling it "the accountability bot" because nothing falls through the cracks anymore.$pf$,
  '11111111-1111-1111-1111-111111111107', 'beginner', 'claude-sonnet-4-6', 'Claude 4.6 Sonnet',
  ARRAY['Claude','Otter.ai','Slack'], ARRAY['meetings','action items','transcription','productivity','team management'],
- 'approved', '22222222-2222-2222-2222-222222222209', 142, 98),
+ 'approved', '22222222-2222-2222-2222-222222222209', 0, 0),
 
 -- 16 — Inbox Zero Triage (Productivity, beginner)
 ('33333333-3333-3333-3333-333333333316',
@@ -256,7 +256,7 @@ INSERT INTO prompts (id, title, description, content, result_content, category_i
  $pf$The system processes batches of 10-15 emails and outputs a daily summary ("14 emails: 2 respond today, 4 this week, 3 delegate, 3 read later, 2 ignore") followed by a table with category, priority (1-5), sender, subject, suggested action, and time estimate. The total estimated response time helps me see at a glance if my day is manageable. Best part: the delegate entries include specific instructions for my VA (e.g., "Jamie: slides are in Google Drive / Q1 Workshops / Bloom, send the final PDF"). My morning email routine went from 60 minutes of anxiety to 15 minutes of execution. I've been using it daily for 3 weeks straight.$pf$,
  '11111111-1111-1111-1111-111111111107', 'beginner', 'claude-sonnet-4-6', 'Claude 4.6 Sonnet',
  ARRAY['Claude','Gmail'], ARRAY['email','inbox zero','triage','daily routine','productivity'],
- 'approved', '22222222-2222-2222-2222-222222222208', 167, 112),
+ 'approved', '22222222-2222-2222-2222-222222222208', 0, 0),
 
 -- 17 — Morning Planning Prompt (Productivity, beginner)
 ('33333333-3333-3333-3333-333333333317',
@@ -266,7 +266,7 @@ INSERT INTO prompts (id, title, description, content, result_content, category_i
  $pf$The output is a clean daily plan with time blocks, tasks assigned to energy-appropriate slots, and overload warnings. Example output: "Today's Focus: Ship the Q2 roadmap and prep for the TrueNorth check-in." Then a schedule from 8am to 5pm with specific tasks in each block. The best feature is the warning system — last Tuesday it flagged that I had 7 hours of meetings and less than 45 minutes of focus time, and suggested rescheduling my 1:1 with a direct report. It was right. I've been using it daily for a month. I feel noticeably less stressed and I'm getting through my to-do list more consistently.$pf$,
  '11111111-1111-1111-1111-111111111107', 'beginner', 'chatgpt-5-4', 'ChatGPT 5.4',
  ARRAY['ChatGPT','Google Calendar','Todoist'], ARRAY['daily planning','time blocking','routine','focus','energy management'],
- 'approved', '22222222-2222-2222-2222-222222222209', 203, 145),
+ 'approved', '22222222-2222-2222-2222-222222222209', 0, 0),
 
 -- 18 — Notion Workspace Architecture (Productivity, intermediate)
 ('33333333-3333-3333-3333-333333333318',
@@ -276,7 +276,7 @@ INSERT INTO prompts (id, title, description, content, result_content, category_i
  $pf$The new architecture has 5 core databases (down from 15): Projects, CRM, Meeting Notes, Newsletter, and Notes. Each has carefully designed properties and multiple views for different contexts. The dashboard page shows today's meetings, active projects, pipeline status, newsletter progress, and a quick-capture button. The migration plan covered what to build first (the CRM, because everything relates to it), how to merge overlapping databases, and a checklist for each step with time estimates. Total migration took about 6 hours over a weekend. My weekly review on Fridays now takes 15 minutes instead of 45.$pf$,
  '11111111-1111-1111-1111-111111111107', 'intermediate', 'claude-opus-4-6', 'Claude 4.6 Opus',
  ARRAY['Claude','Notion'], ARRAY['notion','workspace design','organization','databases','knowledge management'],
- 'approved', '22222222-2222-2222-2222-222222222208', 156, 109),
+ 'approved', '22222222-2222-2222-2222-222222222208', 0, 0),
 
 -- 19 — Loom → SOP (Productivity, beginner) — approved but uses cat-7 productivity
 ('33333333-3333-3333-3333-333333333319',
@@ -286,7 +286,7 @@ INSERT INTO prompts (id, title, description, content, result_content, category_i
  $pf$From a 15-minute Loom about processing invoices (QuickBooks + Airtable), the system generated a professional SOP with: prerequisites, 13 numbered steps, 3 warning callouts, 2 edge case notes, estimated completion time (8 minutes per invoice), and a troubleshooting FAQ covering the 5 most common questions. The transcript was 2,400 words of meandering narration; the SOP is 800 words of crisp instructions. I've now converted 8 of our core processes this way. New hire onboarding time dropped from 3 days to 1.5 days because they can actually reference these docs instead of re-watching videos.$pf$,
  '11111111-1111-1111-1111-111111111107', 'beginner', 'claude-sonnet-4-6', 'Claude 4.6 Sonnet',
  ARRAY['Claude','Loom','Notion'], ARRAY['SOP','documentation','training','onboarding','operations'],
- 'approved', '22222222-2222-2222-2222-222222222206', 89, 64),
+ 'approved', '22222222-2222-2222-2222-222222222206', 0, 0),
 
 -- 20 — Client Proposal Generator (Strategy, intermediate)
 ('33333333-3333-3333-3333-333333333320',
@@ -296,7 +296,7 @@ INSERT INTO prompts (id, title, description, content, result_content, category_i
  $pf$The prompt generates: a 1-paragraph executive summary restating the client's problem in their own words, a detailed scope section with 3-5 workstreams (each with deliverables and milestones), a suggested timeline (usually 4-8 weeks), three pricing options (good/better/best — I always give options), payment terms, and a "Why Me" section with relevant experience. The output is about 1,500 words and reads like I wrote it, not a bot. My proposal turnaround went from 3-4 days to same-day. Close rate went from 35% to 50% — I think because clients get impressed by the fast turnaround and the quality of the scope breakdown.$pf$,
  '11111111-1111-1111-1111-111111111109', 'intermediate', 'claude-opus-4-6', 'Claude 4.6 Opus',
  ARRAY['Claude','Google Docs','Notion'], ARRAY['proposals','consulting','sales','client management','freelance'],
- 'approved', '22222222-2222-2222-2222-222222222208', 96, 71);
+ 'approved', '22222222-2222-2222-2222-222222222208', 0, 0);
 
 ALTER TABLE prompts ENABLE ROW LEVEL SECURITY;
 

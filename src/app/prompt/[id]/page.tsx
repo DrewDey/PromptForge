@@ -11,28 +11,43 @@ import Prose from '@/components/Prose'
 import { detectContentKind } from '@/lib/content-kind'
 
 /**
- * Pick the right renderer for a step's payload. PathForge step content is
- * mostly natural-language (the author's ask, the model's narrative reply),
- * so we default to the light editorial <Prose> card. CodeBlock's dark
- * mono panel is reserved for literal code/markup — snippets, JSON, HTML —
- * where monospace + line-wrap chrome actually helps readability.
+ * Pick the right renderer AND the right eyebrow label for a step's payload.
+ *
+ * PathForge step content is mostly natural language (the author's ask, the
+ * model's narrative reply), so we default to the light editorial <Prose>
+ * card. CodeBlock's dark mono panel is reserved for literal code/markup
+ * where monospace + line-wrap chrome actually helps.
+ *
+ * Labels are intentionally vocabulary-split by renderer (iter 56, Polish #1):
+ *  - Prose path → "ask" / "response" — conversational, editorial vocabulary
+ *    that reads as "a person said something, the model answered" rather
+ *    than as prompt-library chrome.
+ *  - Code path → "prompt" / "result" — the literal developer vocabulary
+ *    stays reserved for the cases where the payload actually is code, a
+ *    structured schema, or a fenced snippet the author wants treated as
+ *    verbatim input/output.
+ *
+ * `variant` still carries the semantic role (orange dot for input, blue
+ * dot for output). The callsite no longer passes a raw `label` string —
+ * the dispatcher owns the vocabulary so no future page can accidentally
+ * label natural-language prose as "prompt" again.
  */
 function StepContent({
   text,
-  label,
   variant,
   meta,
 }: {
   text: string
-  label: string
   variant: 'prompt' | 'result'
   meta?: string
 }) {
   const kind = detectContentKind(text)
   if (kind === 'code') {
-    return <CodeBlock code={text} label={label} variant={variant} meta={meta} />
+    const codeLabel = variant === 'prompt' ? 'prompt' : 'result'
+    return <CodeBlock code={text} label={codeLabel} variant={variant} meta={meta} />
   }
-  return <Prose text={text} label={label} variant={variant} meta={meta} />
+  const proseLabel = variant === 'prompt' ? 'ask' : 'response'
+  return <Prose text={text} label={proseLabel} variant={variant} meta={meta} />
 }
 
 const difficultyConfig = {
@@ -353,7 +368,7 @@ export default async function PromptDetailPage({
               </span>
             </h2>
             <p className="text-sm text-surface-500">
-              See what came out of each step. Expand to reveal the prompt behind it.
+              See what came out of each step. Expand to reveal the ask behind it.
             </p>
           </div>
 
@@ -498,7 +513,6 @@ export default async function PromptDetailPage({
                         <>
                           <StepContent
                             text={step.result_content}
-                            label="result"
                             variant="result"
                             meta={`step ${idx + 1}`}
                           />
@@ -506,14 +520,13 @@ export default async function PromptDetailPage({
                             <summary className="flex items-center justify-between gap-3 cursor-pointer list-none px-3.5 py-2 text-xs font-medium text-surface-600 hover:text-surface-900 hover:bg-surface-100 transition-colors duration-200 select-none">
                               <span className="flex items-center gap-2">
                                 <span className="inline-block w-1.5 h-1.5 bg-brand-orange" aria-hidden="true" />
-                                Show the prompt behind this step
+                                Show the ask behind this step
                               </span>
                               <ChevronRight className="w-3.5 h-3.5 text-surface-400 transition-transform duration-200 group-open:rotate-90" aria-hidden="true" />
                             </summary>
                             <div className="p-3 pt-0">
                               <StepContent
                                 text={step.content}
-                                label="prompt"
                                 variant="prompt"
                                 meta={`step ${idx + 1}`}
                               />
@@ -523,7 +536,6 @@ export default async function PromptDetailPage({
                       ) : (
                         <StepContent
                           text={step.content}
-                          label="prompt"
                           variant="prompt"
                           meta={`step ${idx + 1}`}
                         />
@@ -539,11 +551,16 @@ export default async function PromptDetailPage({
         </section>
       )}
 
-      {/* Single prompt (no steps) */}
+      {/* Single ask (no steps).
+          Heading follows the iter-56 vocabulary split: "The Ask" reads as
+          an editorial feature header (the author's question / brief),
+          matching the prose-path "ask" eyebrow inside the StepContent
+          card below. "The Prompt" is reserved for literal code payloads,
+          which is a different surface on a different page. */}
       {!hasSteps && prompt.content && (
         <section className="mb-12">
-          <h2 className="text-xl font-black text-surface-900 mb-4">The Prompt</h2>
-          <StepContent text={prompt.content} label="prompt" variant="prompt" />
+          <h2 className="text-xl font-black text-surface-900 mb-4">The Ask</h2>
+          <StepContent text={prompt.content} variant="prompt" />
         </section>
       )}
 

@@ -5909,6 +5909,586 @@ Off-the-top (not in the table above): 84 FTE-months (oncall, maintenance, meetin
 **On why this memo earns a different reception than Q3's.** Q3 listed a dozen ambitions with no say-no list, no capacity math, and no mechanism for what would move under pressure. This memo commits five things in H1 with a say-no list, a perturbation table, and named pre-commitments at decision breakpoints. The board's job reading it is not to trust that we will execute — it is to ratify the trades we have pre-committed to, and to flag anything in the open-questions section that changes the shape of the plan. That is what a roadmap memo should do.$pf$,
  $pf$Final 3-page memo: thesis paragraph first, honest current-state paragraph, three horizons with say-no lists, capacity model with buffer footnote disaggregating sizing assumptions, perturbation table with 5 pre-committed scenarios, 3 open questions for the board to weigh in on. Integrated all three pre-crit edits from step 4: the "what's different from Q3" callout in H1, the buffer footnote, and the H2 restructure from operational-readiness to PHI-safe-platform-as-commercial-asset framing.$pf$);
 
+-- =========================================================================
+-- Project 0020 — Personal (Cross-country job offer decision with family)
+-- marcusdev · Claude 4.6 Opus · 3 steps · intermediate
+-- =========================================================================
+
+DELETE FROM prompt_steps WHERE prompt_id = '55555555-5555-5555-5555-555555550020';
+DELETE FROM prompts      WHERE id        = '55555555-5555-5555-5555-555555550020';
+
+INSERT INTO prompts (
+  id, title, description, content, result_content,
+  category_id, difficulty, model_used, model_recommendation,
+  tools_used, tags, status, author_id, vote_count, bookmark_count
+) VALUES (
+  '55555555-5555-5555-5555-555555550020',
+  $pf$Should I take the Bay Area FAANG offer? — 3-prompt decision framework for a cross-country move with a family$pf$,
+  $pf$Got a staff-IC offer from a Bay Area FAANG worth ~40% more base than my Seattle role. Wife has a job here she loves, two kids in elementary school, we own our house. Used Claude 4.6 Opus to compile the real offer picture, model three household-financial scenarios honestly, then draft a remote-first counter. The counter landed; I stayed in Seattle with a ~22% comp bump from the threat of the offer.$pf$,
+  $pf$I'm a senior frontend engineer at a Seattle Series B, 6 years in, currently at roughly $215k base + $80k in liquid RSUs vesting. Wife is a pediatric OT, $115k, loves her team and a specific hospital she doesn't want to leave. Two kids, ages 6 and 9, both in a Seattle public school we chose the house for. We own the house, bought in 2021 at 3.1% fixed — that number matters later.
+
+Offer: staff-level frontend at a big Bay Area AI company. $310k base, $600k RSUs/4yr, sign-on $100k. Numerically it looks great. Emotionally it's been a month of "should we actually do this" conversations where neither of us felt we had a clear picture.
+
+I didn't want Claude to decide for us. I wanted Claude to make the decision *legible* — to separate the comp question from the move question from the career question, because when I thought about it in my head they all blurred together. Three prompts, sequential. 4.6 Opus because the judgment calls here are dense (housing-market-at-3.1%-locked-in trade-offs, wife's career continuity, kids' social disruption at specific ages) and I wanted the model to push back on my framing, not just arithmetic.
+
+Started by pasting the full offer letter text plus my current comp, asking Claude to tell me what was missing from the picture.$pf$,
+  $pf$Outcome: stayed in Seattle. Took the offer to my current VP, framed honestly ("I'm considering this; I'd rather stay if we can close most of the gap"), and walked away with a retention counter that took me to $265k base + an accelerated RSU refresher and a staff-level title bump on a 6-month clock. Net delta vs. Bay Area offer: about $80k/yr on paper, but when Claude ran the real household numbers in step 2, the Seattle-retention path cleared more dollars post-tax than the Bay Area path did, because of the 3.1% mortgage, my wife's continued income, and the California tax delta alone.
+
+What was load-bearing was step 1. I had been adding the offer's numbers in my head and comparing to my current base. Claude reminded me I was omitting about nine things: the sign-on is taxed at bonus rates, the RSU vesting cliff, the real cost of selling and rebuying a house in this market, my kids' mid-elementary move as a real developmental cost not a shrug, my wife's implied earning drop or career pause, and the "Bay Area FAANG staff in 2026" job market if the role doesn't work out in year 1. Step 2 put dollar figures on the ones that could be priced and named the ones that couldn't.
+
+What I'd tell the next person: don't start with "should I take this offer." Start with "what would I need to believe to take this offer" — the inverse question surfaces the assumptions instead of the number.$pf$,
+  '11111111-1111-1111-1111-111111111110',
+  'intermediate',
+  'claude-opus-4-6',
+  'Claude 4.6 Opus',
+  ARRAY['Claude','Google Sheets'],
+  ARRAY['career','job-offer','relocation','family','compensation','decision-making'],
+  'approved',
+  '22222222-2222-2222-2222-222222222203',
+  104, 51
+);
+
+INSERT INTO prompt_steps (id, prompt_id, step_number, title, content, result_content, description) VALUES
+
+-- Step 1 --
+('66666666-6666-6666-6666-666666200101',
+ '55555555-5555-5555-5555-555555550020',
+ 1,
+ $pf$Compile the full offer picture — what am I missing?$pf$,
+ $pf$Here's the offer letter text (pasted below) and my current comp. I want you to tell me what I'm missing from this picture. Not "what should I ask" — what parts of the real decision am I leaving out of my math because they're inconvenient or hard to price?
+
+**Offer (Bay Area FAANG, staff-level frontend IC):**
+- $310k base
+- $600k RSUs over 4 years, cliff at 1 year, quarterly thereafter
+- $100k sign-on, clawback if I leave before 2 years
+- Standard health/dental, 401k 6% match, unlimited PTO
+- Start date flexible within 60 days
+- Office-mandatory 3 days/week in SF Mission campus
+
+**My current (Seattle Series B):**
+- $215k base
+- $80k liquid RSU value vesting over next 24 months (secondary-market priced)
+- No cash bonus
+- Full remote
+- 6 years in, senior frontend, ~8 direct reports loosely, no formal manager title
+- 401k 4% match, standard benefits
+- Have ~$320k in paper RSUs from earlier grants, unknown liquidity date (company is Series B, no clear IPO path)
+
+**Household context:**
+- Wife: pediatric OT, $115k, won't relocate unless she has to. She does not have to.
+- Two kids, 6 and 9. Public school in Seattle, happy.
+- Own our house: $780k bought 2021, $640k remaining at 3.1% fixed, ~$3,200/mo PITI.
+- Both parents in Washington state (hers in Portland, mine in Spokane).
+
+I've been doing math in my head: $310k base vs. $215k base = $95k more per year. RSU delta is messier but on paper bigger.
+
+What am I leaving out?$pf$,
+ $pf$You're leaving out a lot, and some of it is pulling hard against the offer without showing up in the arithmetic. Nine things I'd separate and name explicitly before the next step:
+
+**1. Sign-on is taxed like a bonus.** $100k sign-on at California supplemental + federal supplemental ≈ $43-45k gross to net. Not $100k. And it's clawbacked if you leave inside 2 years, so it's not even fully yours until year 2 — treat it as a $50k/yr retention bonus, not a lump.
+
+**2. The RSU cliff and concentration risk.** $600k over 4 years is $150k/yr in steady state, but the first year you get $150k only if you hit the 1-year cliff. If you quit or are laid off in month 11 you get zero equity. Big-tech layoffs 2023-2025 hit staff-level frontend ICs at meaningful rates. This risk doesn't show up in "I compared base numbers."
+
+**3. California state income tax.** CA top marginal is 13.3% (you'd be well into the 11.3-12.3% bracket on this comp). Washington has zero state income tax. On $310k + RSU vest of ~$150k, state tax delta alone is roughly $45-55k/yr disfavoring California.
+
+**4. Your 3.1% mortgage is an unrepeatable asset.** You bought in 2021 at 3.1% on $640k. Current market rates are 6.5-7%. If you sell and rebuy anywhere (including Seattle again if it doesn't work out), you're looking at roughly $3,500-4,500/yr in extra interest per $100k of mortgage carried — and Bay Area housing will require 2-3x your current mortgage balance. The 3.1% lock is worth real money you don't get back.
+
+**5. Your wife's career.** She's $115k. If she stops working or reduces to part-time, that's a direct $80-115k/yr household hit. If she continues remote or finds Bay Area equivalent, California-licensing delay + job-search time + potential comp compression in a saturated urban OT market. Price the worst case (6 months of lost income) AND the steady state (equivalent role found). Don't assume she's a free variable.
+
+**6. Kids at ages 6 and 9.** The 9-year-old is at the age where social disruption has measurable academic and social-emotional cost. The 6-year-old is fine either way. This is not a shrug; it's a real cost that shows up as therapy, school-adjustment support, and your time. You don't have to price it as a dollar figure to put it on the scale.
+
+**7. Bay Area cost of living, specifically.** Rent on a 3BR in a school district you'd actually want: $5,500-7,500/mo. If you buy, you're looking at $1.8-2.5M for equivalent quality to your current house. Your PITI goes from $3,200 to ~$11,000-14,000/mo.
+
+**8. The "return to Seattle if it doesn't work" option.** If you move, sell, rebuy — and year 1 goes badly — coming back means buying back into Seattle at current rates, not 2021 rates. You can't roll back. This is a one-way door on the housing piece.
+
+**9. What you're optimizing for.** You're implicitly framing this as "is the money worth the move." The more honest framing is "what would have to be true for this to be right for us." If the answer is "I want a bigger problem to work on" or "I want to be near a specific technical community," that's valid but different from "the money's bigger." If the answer is mostly "the money's bigger," steps 2 and 3 should surface whether the money actually IS bigger after you price in everything above.
+
+Next step: take numbers 1, 2, 3, 4, 5, 7 (the priceable ones) and build a 3-scenario household spreadsheet. Price 6 and 8 as narrative, not as numbers. Then we can talk honestly about 9.$pf$,
+ $pf$Names 9 things missing from the naive base-to-base comparison — 6 priceable (sign-on tax treatment, RSU cliff risk, CA state tax delta, 3.1% mortgage lock-in, wife's career impact, Bay Area COL), 3 narrative (kids' mid-elementary social disruption, one-way-door housing math, what you're actually optimizing for). Sets up step 2 as a 3-scenario priced model with narrative callouts for the rest.$pf$),
+
+-- Step 2 --
+('66666666-6666-6666-6666-666666200102',
+ '55555555-5555-5555-5555-555555550020',
+ 2,
+ $pf$Household financial modeling — three scenarios with honest priors$pf$,
+ $pf$Good, that's more sobering than I expected. Build me the 3-scenario household model. Scenarios I want:
+
+- **A: Take the offer, wife quits or goes 0.5 FTE for 12 months, we rent in Bay Area.** Worst realistic case on her career side.
+- **B: Take the offer, wife finds equivalent OT role in Bay Area at $105k after 4 months of search, we rent year 1 and reassess.** Median expected case.
+- **C: Stay in Seattle, current role.** Baseline.
+
+For each: net take-home after federal + state + FICA + health + 401k, minus housing, minus childcare/after-school, minus one-time move cost (scenarios A and B only, amortized over 2 years). Assume 2026 federal brackets. Assume one kid now needs after-school coverage in either city ($950/mo Seattle, $1,400/mo Bay Area).
+
+I'll price the sign-on as $50k/yr retention-bonus-equivalent per your step 1 read. Price RSU vest as $150k/yr but discount year 1 by 30% to account for cliff risk, and discount all years by 10% for stock-price risk.
+
+Sanity check my numbers as you go — don't let me gloss.$pf$,
+ $pf$Building the model. California 2026 brackets assumed slightly trended from 2025; federal 2026 brackets at inflation-adjusted projection. All figures net household. I'm showing arithmetic so you can audit, not just a table.
+
+**Scenario A — Bay Area, wife 0.5 FTE for year 1**
+
+*Gross household income, year 1:*
+- Marcus base: $310k
+- Marcus sign-on (retention-equivalent): $50k
+- Marcus RSU vest (year 1, cliff-discounted 30%, stock-discounted 10%): $150k × 0.7 × 0.9 = $94.5k
+- Wife at 0.5 FTE: $57.5k
+- **Gross: $512k**
+
+*Federal tax (2026 projected brackets, MFJ, standard deduction $30.5k):*
+- Taxable: ~$481.5k
+- Federal: ~$102k (marginal brackets, simplifying — 10/12/22/24/32/35 to ~$481k taxable lands around $102k, verify: $94k at 24% bracket top + $24k at 32% bracket covering $383-487k range = ~$102k)
+- FICA/Medicare (Marcus only on wages, cap at $176k SS): ~$13.5k
+- California state tax: $481k taxable, effective ~10.5% MFJ = ~$50.5k
+- **Total tax: ~$166k**
+
+*Net: $512k − $166k = $346k*
+
+*Minus:*
+- Rent, 3BR decent school district: $6,800/mo × 12 = $81.6k
+- After-school care, 1 kid: $1,400 × 10 = $14k (summer camp separate, call it $4k)
+- Healthcare (FAANG-covered, $0 marginal)
+- 401k contribution (pre-tax, included): ignore as nets out
+- Move cost, amortized over 2yrs: $28k / 2 = $14k
+- Bay Area daycare/summer premium over Seattle: $6k extra
+
+*Household spendable: $346 − $81.6 − $14 − $4 − $14 − $6 = **$226.4k***
+
+**Scenario B — Bay Area, wife finds $105k OT role at month 4**
+
+*Gross household income, year 1:*
+- Marcus: $310k + $50k + $94.5k = $454.5k
+- Wife: $105k × 8/12 = $70k
+- **Gross: $524.5k**
+
+*Federal tax: ~$108k (similar math, slightly higher bracket exposure)*
+*FICA: Marcus ~$13.5k + Wife ~$5.4k = $18.9k*
+*California state: ~$524k taxable × ~10.5% = $55k*
+*Total tax: ~$182k*
+
+*Net: $524.5k − $182k = $342.5k*
+
+Minus same rent/after-school/amortized-move = $115.6k + extra cost deltas
+
+*Household spendable: **$222.9k***
+
+Huh — scenario B actually nets *slightly less* than A in year 1 because her income mostly funds California's share of the tax bill. She nets about $45k of her $70k gross. This is a real arithmetic result I'd double-check with your CPA, but the qualitative point stands: her Bay Area income in year 1 is substantially lower value per dollar than her Seattle income.
+
+**Scenario C — Stay in Seattle**
+
+*Gross household:*
+- Marcus: $215k base + RSU $40k/yr (half of $80k over 24mo, discounted 20% for Series-B liquidity uncertainty): $255k total
+- Wife: $115k full-year
+- **Gross: $370k**
+
+*Federal tax (MFJ, $370k taxable): ~$68k*
+*FICA: ~$19k*
+*Washington state tax: $0*
+*Total tax: ~$87k*
+
+*Net: $283k*
+
+*Minus:*
+- Mortgage PITI: $38.4k
+- After-school + summer, 1 kid Seattle prices: $11.4k + $3k = $14.4k
+- No move cost
+
+*Household spendable: $283 − $38.4 − $14.4 = **$230.2k***
+
+**The result, stark:**
+- A: $226.4k spendable
+- B: $222.9k spendable
+- C: $230.2k spendable (WINS on spendable dollars, year 1)
+
+Year 2+ shifts some — Bay Area RSU no longer cliff-discounted, wife presumably at full $105k — but the CA state tax + rent delta continues eating most of the advantage. Running the same model for year 3 steady-state, A drops out of consideration (wife returned to work), and B nets roughly $255k vs. C's $230k — about $25k/yr advantage, or $100k over the 4-year RSU window. That is the actual dollar difference after honest accounting.
+
+**Sanity-checks I'd flag:**
+- My federal and California rate estimates are rule-of-thumb. A CPA pass could move these by ±$5-8k per scenario. Doesn't change the qualitative ordering.
+- I didn't price the 3.1% mortgage lock-in as a dollar figure — it's a preserved asset worth roughly $15-20k/yr in forgone interest if you bought equivalent housing at current rates. Add that as a shadow cost to A and B.
+- Sign-on clawback risk: if Marcus leaves/is laid off in month 18, he owes back a pro-rated $50k of it. This is a real year-2 risk not priced in.
+- The Series-B RSU in C assumes eventual liquidity. If the company doesn't IPO or sell in 3-5 years, that $80k is much closer to $0.
+- I modeled after-school for one kid only; if the 6-year-old needs coverage too, add $11-17k/yr to both cities, disfavoring Bay Area marginally.
+
+**The non-priced stuff, still on the scale:**
+- Kids' social cost at 6 and 9 — unpriced, real.
+- Wife's career trajectory if she job-searches in Bay Area OT market — narrative cost.
+- Optionality: scenario C keeps the 3.1% mortgage, the wife's job, the school, and *the Bay Area offer as a redo in 2-3 years if this company doesn't liquidity-event.* That optionality has value not captured in these numbers.
+
+Before step 3: notice that the numbers aren't telling you to take the offer. They're telling you the dollar difference is much smaller than the headline $95k base delta suggests. Step 3 should be "what would it take to stay" — because the default on these numbers is stay.$pf$,
+ $pf$Three priced scenarios with arithmetic shown. A: $226.4k spendable year 1. B: $222.9k spendable year 1. C (stay): $230.2k spendable year 1. Year-3 steady state: B pulls ahead by ~$25k/yr, ~$100k over 4-year RSU window. Sanity-checks flagged (CPA pass, mortgage lock shadow cost, sign-on clawback risk, Series-B liquidity assumption, after-school for second kid). Surfaces that the numbers pull toward "stay" — so step 3 becomes "what would it take to stay."$pf$),
+
+-- Step 3 --
+('66666666-6666-6666-6666-666666200103',
+ '55555555-5555-5555-5555-555555550020',
+ 3,
+ $pf$Decision framework + counter-offer script targeting remote-first retention$pf$,
+ $pf$Agreed — the numbers lean stay. I want to use the offer as leverage to close the gap where I am. Draft me the conversation with my VP, and tell me what I'm allowed to ask for credibly.
+
+Context: I have a good relationship with my VP (Neha). She knows I'm not a chronic job-shopper. If I frame this honestly as "I'm considering, here's the delta, I'd rather stay," she has budget authority to push for a mid-year adjustment and there's a staff-track path she's mentioned before. I don't want to burn trust by bluffing. I'm prepared to actually leave if she can't move, but I'd rather not.
+
+Give me: (a) the ask (what's realistic to get); (b) the framing (how I open the conversation); (c) the failure modes (what NOT to do); (d) if she says no or a soft yes, what the tree looks like.$pf$,
+ $pf$You're approaching this the right way. Leverage that is honest lands differently than leverage that feels like a threat — Neha will read the difference in the first 30 seconds. Here's the full tree.
+
+**(a) What's realistic to ask for.**
+
+You have a credible outside offer of $310k base + $150k/yr RSUs + $50k/yr retention-equivalent on the sign-on. That's $510k/yr total comp on paper, though we established the spendable delta is smaller.
+
+Realistic asks, in order of likelihood:
+1. **Base adjustment to $255-270k.** Mid-cycle bumps to this level for a senior with 6 years and staff-track signal are inside normal compensation-band flexibility. You're asking for roughly 18-25% — big but not absurd for a retention against a specific market offer.
+2. **Accelerated RSU refresher.** Another $120-180k/4yr grant, front-loaded. This is the piece most companies have the most flexibility on because it doesn't touch the salary band and it's reversible (if you leave, you forfeit the unvested portion).
+3. **Staff-level title on a defined clock.** Neha mentioned this informally. Ask for it to be committed in writing with a 6-month performance-gate.
+4. **A written retention plan.** This signals to you AND to her that this isn't just a one-off bump — there's a 12-24 month trajectory.
+
+What's NOT realistic to ask:
+- $310k base match. Your current company's band for senior probably tops out around $235-260k. Asking them to exceed band is asking for an exception, and exception approvals require VP+ escalation you don't want to force.
+- A signing-bonus-equivalent cash retention. Few companies do these for counter-offers because they set a bad precedent. Don't ask.
+
+**(b) How to frame the opening conversation.**
+
+Ask for a 1:1 specifically, not in a regular standing. Book 45 minutes. Do it in person if you're on the office day, otherwise video.
+
+Open with this structure (roughly 2 minutes):
+
+> "Neha, I want to be straight with you about something before it becomes an awkward thing. I've been talking with [Company], they've made me an offer. I'm not shopping generally — I didn't reach out, they did — but the offer is real and I've taken it seriously enough to run real numbers on it. I wanted to tell you about it before I made a decision, not after, because I'd rather stay here if we can work out something reasonable. I know that's not a small ask, and I'm not trying to pressure you — I'm trying to give you the information so you can decide what's possible."
+
+Then pause. Let her react before going into specifics. She'll ask about the offer details — give the headline ($310k base, $600k RSUs/4yr, FAANG name) without over-selling. Do not oversell. The offer speaks for itself.
+
+Then — and this is the load-bearing move — name *why you'd rather stay* in concrete non-flattery terms:
+- The specific technical work you have here that you'd miss.
+- The team you've built relationships with.
+- The family-logistics preference for not moving.
+- The retained-optionality framing (you've been here 6 years, which is leverage *for* her, not just against her — stability matters to her budget fight too).
+
+Ask for a specific follow-up: "Can you get back to me in a week with what's possible on your side?" One week is standard for retention-counters. Two is too long and starts to look like she's stalling.
+
+**(c) Failure modes.**
+
+1. **Don't threaten.** "I need to know by Friday or I'm gone" converts a mutual-interest conversation into an adversarial one. The threat is implicit in "I have a real offer"; you don't need to make it explicit.
+2. **Don't inflate.** If the RSU figure on the offer is $600k/4yr, don't tell her it's $800k because you heard someone at the FAANG negotiated that high. If she verifies, you've burned credibility forever.
+3. **Don't negotiate down from your cap.** Decide your floor before the meeting — what's the minimum you'd actually stay for? — and don't disclose it. If she comes back at $240k and you'd have taken $230k, you take $240k quietly. Disclosing your floor is amateur-hour and costs you 5-10% real money.
+4. **Don't make it about Neha.** This isn't "I'm leaving unless you personally make this happen." It's "here's a situation; what's possible." The distinction matters because she needs to carry it to her own VP/finance, and she'll do that better if she doesn't feel personally cornered.
+
+**(d) The tree after her response.**
+
+- **She comes back with a strong counter** ($255k+ base, meaningful RSU refresher, title commitment): take it. You wanted to stay; they met you. Don't second-guess because the FAANG offer still technically has more dollars on paper.
+- **She comes back with a medium counter** ($235-250k base, modest refresher, no title commitment): this is the hardest case. Ask for the title commitment as a hard line — that's the trajectory piece. If she can't commit, your floor conversation becomes "is the comp alone enough to stay without the staff trajectory signal?" For most people it isn't. You may leave.
+- **She comes back with a soft yes** ("we're working on it, give me more time"): one more week. Not three. If the answer at week 2 isn't concrete, she's likely signaling that internal approvals aren't going to come through fast enough, and you have to choose.
+- **She comes back with no** ("we can't move mid-cycle"): leave. Take the offer. Without a counter, the retention signal is "this company doesn't invest in keeping staff-track senior engineers," and that's information about the next 2-3 years too.
+
+**One last thing about the script's tone.** The version of you that writes this conversation well is the version that already knows it could go either way and is okay with both outcomes. Any tightness or fear in the opening gets read as leverage-maneuvering and will make the conversation worse. Before the meeting, sit with the fact that you'd be fine either way — because the step 2 numbers say you would — and then have the conversation.$pf$,
+ $pf$Realistic-ask menu (base to $255-270k, RSU refresher $120-180k, staff title on 6-month clock, written retention plan) with explicit NOT-asks. Opening script in Marcus's voice — honest, no threat, specific non-flattery reasons to stay. Four failure modes named (threat, inflation, floor disclosure, personalizing). Full decision tree for VP's four possible responses, including the medium-counter case where absence of title commitment becomes the hard line. Closes with a tone note: the conversation works only if Marcus is genuinely okay with either outcome before walking in.$pf$);
+
+-- =========================================================================
+-- Project 0021 — Education (Mid-year "why did half the class bomb the unit test" diagnostic)
+-- teacherben · Claude 4.6 Sonnet · 3 steps · beginner
+-- =========================================================================
+
+DELETE FROM prompt_steps WHERE prompt_id = '55555555-5555-5555-5555-555555550021';
+DELETE FROM prompts      WHERE id        = '55555555-5555-5555-5555-555555550021';
+
+INSERT INTO prompts (
+  id, title, description, content, result_content,
+  category_id, difficulty, model_used, model_recommendation,
+  tools_used, tags, status, author_id, vote_count, bookmark_count
+) VALUES (
+  '55555555-5555-5555-5555-555555550021',
+  $pf$Half my 9th-grade bio class bombed the cellular respiration unit test — 3-prompt diagnostic workflow with re-teach plan$pf$,
+  $pf$15 of 28 students scored below 70% on the unit test I thought was reasonable. Used Claude 4.6 Sonnet over 3 prompts to diagnose what the score pattern actually tells me, design a 2-day re-teach with formative checks, and write a student-facing reflection + parent-comms note. Re-teach ran this week. Next assessment avg moved from 68% to 81%.$pf$,
+  $pf$I teach three sections of 9th-grade biology at a public school in Columbus. My last unit was cellular respiration — the same unit I used Claude with earlier this year for differentiated planning (project 0005 in this catalog). The lesson plan was good. The lab went well. But the unit test scores came in and 15 of 28 students in my period-2 class scored below 70%. Period 4 and period 6 did fine — 22 of 26 and 24 of 29 above 70%, respectively. So it's not the test. It's something about period 2 and this unit.
+
+My first instinct was "they didn't study." I've taught long enough to know that instinct is almost always wrong — or at least incomplete. I wanted Claude to help me diagnose what the actual pattern in the scores is, what re-teach would be worth doing in the 2 days I have before the next unit starts, and what to say to the students and their parents that doesn't feel like blame.
+
+Three prompts, Sonnet 4.6 because this is structured analytical work with a clear output shape — diagnosis, lesson plan, communication drafts. Opus would be overkill.$pf$,
+  $pf$Ran the re-teach this week. Two 45-minute periods: one on the ATP-yield arithmetic (where Claude identified the biggest conceptual gap), one on the glycolysis → Krebs → ETC flow with a physical model students built in groups. Formative check at the end of day 2 had 21 of 28 period-2 students at proficient or above on the same learning objectives that they'd bombed before. The re-quiz next week moved class average from 68% to 81%.
+
+What surprised me most was step 1's analysis. I'd assumed the students who scored low were the lower-performing students in general. Claude asked for individual scores and pattern-matched across question types, and the bottom-scoring group in period 2 included three students who were on-grade or above in every other unit this year. That shifted my whole read — this wasn't a "they didn't study" failure, it was a specific unit/class-period breakdown around ATP stoichiometry that I'd underestimated.
+
+The parent note in step 3 was the other load-bearing piece. I've written those notes before and they always come out either too defensive ("the test was hard") or too apologetic ("I'm going to re-teach"). Claude's version threaded a harder line — "here's what the data told me, here's what I'm doing, here's what I'd ask parents to do alongside" — which parents responded to much better. Three parents replied "thank you for the detail" rather than just acknowledging the note.$pf$,
+  '11111111-1111-1111-1111-111111111106',
+  'beginner',
+  'claude-sonnet-4-6',
+  'Claude 4.6 Sonnet',
+  ARRAY['Claude','Google Classroom','Google Forms'],
+  ARRAY['teaching','assessment','diagnostic','re-teach','parent-comms','9th-grade-biology'],
+  'approved',
+  '22222222-2222-2222-2222-222222222205',
+  72, 38
+);
+
+INSERT INTO prompt_steps (id, prompt_id, step_number, title, content, result_content, description) VALUES
+
+-- Step 1 --
+('66666666-6666-6666-6666-666666210101',
+ '55555555-5555-5555-5555-555555550021',
+ 1,
+ $pf$Diagnose the score pattern — what did period 2 actually miss?$pf$,
+ $pf$Period 2 tanked the cellular respiration unit test. Below are the per-student scores (anonymized as S1-S28), the per-question breakdown, and my question-level learning-objective map. Period 4 and period 6 did fine on the same test, so it's not the test.
+
+[Pastes: 28 student scores; 15-question test with per-question % correct for period 2 and period 4; LO map — Q1-4 cover glycolysis, Q5-8 cover Krebs, Q9-12 cover ETC, Q13-14 cover ATP-yield math, Q15 is a synthesis question.]
+
+Specifically I want to know:
+- Is there a pattern across which questions period 2 missed that tells me what concepts broke?
+- Are the low-scoring students the same ones who are generally lower-performing, or is this unit-specific?
+- What's the single highest-leverage re-teach I could do in 2 × 45 minutes before the next unit starts?
+
+Push back if my data is missing something I should have.$pf$,
+ $pf$Let me work through the pattern. The headline you're probably seeing ("period 2 bombed") is hiding what actually happened.
+
+**Pattern across questions:**
+
+Period 2 per-question correct% vs. period 4:
+- Q1-Q4 (glycolysis): P2 avg 71%, P4 avg 76% — small gap.
+- Q5-Q8 (Krebs): P2 avg 64%, P4 avg 72% — moderate gap.
+- Q9-Q12 (ETC): P2 avg 61%, P4 avg 74% — large gap.
+- **Q13-Q14 (ATP-yield math): P2 avg 38%, P4 avg 68% — huge gap, 30 points.**
+- Q15 (synthesis): P2 avg 52%, P4 avg 65% — moderate gap, but synthesis is downstream of everything else.
+
+Your load-bearing gap is **ATP-yield arithmetic**, not the conceptual biology. Period 2 got the words (glycolysis, Krebs, ETC) at nearly the same rate as period 4 on the low-cognitive-load questions, but when asked to calculate "2 ATP from glycolysis + 2 from Krebs + 28-32 from oxidative phosphorylation = 32-36 total" they fell off a cliff. Q13 specifically (asking students to sum net ATP across the three stages) was 9/28 correct. That's the single largest leverage point.
+
+**Student-level pattern:**
+
+The 15 students who scored below 70% overall in period 2 — I can see from your per-student per-question data that 12 of them missed Q13 AND Q14 specifically. Three of those 12 are students whose scores on your prior units (looking at the trailing averages you included) were above 80%. So this is NOT the same-kids-always-struggle pattern. You have three students who are generally proficient and specifically broke on ATP stoichiometry.
+
+That's important because it changes what the re-teach is for. If the low-scoring students were only your always-struggling cohort, you'd be doing differentiated remediation. But with three on-grade students in the low group, the unit itself taught ATP arithmetic inadequately in period 2 specifically — probably a pacing or scaffolding gap that happened in that period's instruction, not a content gap.
+
+**Follow-up hypothesis worth checking:**
+
+The fact that period 4 and period 6 didn't have this gap despite seeing the same material tells me the difference is probably in HOW the ATP math was presented in period 2 — did you run out of time on the stoichiometry walkthrough that day? Was that the lesson where the fire drill happened or the bell schedule was weird? If you can reconstruct what was different about that period's ATP lesson, it'll inform how you re-teach AND confirm whether it was a structural gap (worth extending the re-teach to all three classes prophylactically) or a one-period contingency (period 2 only).
+
+**Highest-leverage 2 × 45 re-teach:**
+
+Day 1 — ATP arithmetic, explicit and slow.
+- Open with a single equation on the board: glycolysis (2 ATP net) + Krebs (2 ATP per glucose, 2 glucose molecules worth from pyruvate) + oxidative phosphorylation (28-32 from ETC, depending on shuttle system) = 32-36 total per glucose.
+- Work through WHY each stage produces what it does — not just the numbers.
+- Have students do 3 worked examples of "given 5 glucose molecules fully oxidized, how many ATP?" (answer: 160-180).
+- Close with a 2-minute exit ticket: one problem like Q13, graded that night for formative signal.
+
+Day 2 — Whole-flow conceptual review using a physical model.
+- Students build a stages-of-respiration poster or foldable in groups of 3.
+- Each group presents one stage (glycolysis, Krebs, ETC) to the class in 2 minutes.
+- Final 15 minutes: 5-problem re-quiz covering Q13-Q14-style questions + two conceptual checks.
+
+The re-quiz grade replaces the worst 2 questions on the original test — signals to students that effort on the re-teach is real, not a courtesy.
+
+**What's missing from your data:**
+
+I can't see period 2's homework completion rates for this unit vs. other units. If period 2's homework completion on the ATP-math problem set was notably lower than period 4's, that's a direct confirmation of the "they didn't practice the math" hypothesis. Worth checking.$pf$,
+ $pf$Pattern analysis: ATP-yield math (Q13-14) is the 30-point gap, not conceptual biology. 12 of 15 low scorers missed Q13+Q14 specifically, and 3 of those 12 are generally on-grade students — so it's a unit-instruction breakdown, not a chronic-underperformer pattern. Follow-up hypothesis: what was different about period 2's ATP-math lesson day. Day-1 / day-2 re-teach plan with an exit ticket for formative signal. Flags missing data (homework completion rates per period) that would confirm the math-practice hypothesis.$pf$),
+
+-- Step 2 --
+('66666666-6666-6666-6666-666666210102',
+ '55555555-5555-5555-5555-555555550021',
+ 2,
+ $pf$Design the 2-day re-teach with formative checks$pf$,
+ $pf$Confirmed your hypothesis — I checked my gradebook and period 2's homework completion on the ATP-math problem set was 64%, vs. 87% for period 4. I also remembered that on the ATP-math day in period 2 we lost 12 minutes to a fire drill. So: instructional-gap plus practice-gap, confirming a unit-level breakdown for that period specifically.
+
+Build me the detailed lesson plans for both days. I need: objective, materials, timing blocks, student-facing language for key moments, formative-check rubric, and a homework problem set for day 1 → day 2.
+
+Constraints: 45-min periods, 28 students, one whiteboard, Chromebooks available but not strictly needed. I want to avoid re-teach feeling punitive.$pf$,
+ $pf$Here's the full two-day plan. I've written student-facing language where tone matters — copy it as-is or adjust.
+
+---
+
+**DAY 1 — The ATP arithmetic you didn't get the first time**
+
+*Learning objective.* Students will correctly calculate net ATP yield from aerobic cellular respiration, given the number of glucose molecules, and explain the contribution of each stage.
+
+*Materials.*
+- Whiteboard with markers (3 colors — use consistently: glycolysis blue, Krebs green, ETC red).
+- Student handout: the 3-stage ATP-math reference sheet (I've drafted one below).
+- Exit ticket: 1 problem, on paper.
+
+*Opening — 3 minutes.*
+
+Student-facing language, verbatim:
+
+> "I want to tell you something about the unit test. When I looked at the results, one specific type of question — the ATP math ones — went badly in this class and went fine in my other classes. That tells me something went wrong with how I taught it here, not with you. We're going to spend today and tomorrow fixing that. I'm not re-doing the whole unit. I'm doing the two days I should have done better the first time. Your re-quiz on Friday will replace your worst two original-test questions — so effort here matters."
+
+That opening is load-bearing. Do not skip it or paraphrase too casually. Acknowledging your own instruction gap openly does two things: it defuses the "my teacher thinks I'm dumb" read, and it models for students that looking at what went wrong and fixing it is normal adult behavior, not failure.
+
+*Explicit instruction block — 20 minutes.*
+
+Write on the board, left to right, in the three colors:
+
+**Glycolysis (blue): +2 ATP net**
+(above, smaller: -2 ATP invested, +4 ATP produced → net +2)
+
+**Krebs cycle (green): +2 ATP per glucose**
+(above, smaller: each pyruvate → 1 Krebs turn = 1 ATP; 2 pyruvate per glucose → 2 ATP)
+
+**Electron transport chain (red): +28-32 ATP**
+(above, smaller: from NADH and FADH₂ produced in stages 1 and 2; yield depends on shuttle system)
+
+**TOTAL per glucose: 32-36 ATP**
+
+Walk the class through each color slowly. For each stage, answer three questions out loud:
+1. What goes in? (glucose for glycolysis; pyruvate for Krebs; NADH+FADH₂ for ETC)
+2. What comes out? (pyruvate + 2 NADH; CO₂ + NADH + FADH₂; H₂O + lots of ATP)
+3. How much ATP specifically? Write the number.
+
+Key move: stop after each stage and ask one student to restate the ATP number and where it came from. Cold-call, don't wait for hands. This surfaces the specific students who had the gap.
+
+*Guided practice — 12 minutes.*
+
+Three problems, worked together on the board, students following along:
+
+**Problem 1:** "How many ATP from the complete aerobic oxidation of 1 glucose molecule? Show the three stages."
+Answer: 2 + 2 + 28 to 32 = 32-36 ATP. Accept either end of the range with the reasoning.
+
+**Problem 2:** "How many ATP from 3 glucose molecules, complete aerobic oxidation?"
+Answer: 3 × 32 to 3 × 36 = 96-108 ATP.
+
+**Problem 3:** "A cell does glycolysis on 4 glucose molecules but cannot access oxygen. How many ATP? Why?"
+Answer: 4 × 2 = 8 ATP (glycolysis only). Anaerobic conditions mean no Krebs and no ETC because ETC requires O₂ as final electron acceptor.
+
+*Closing — 10 minutes.*
+
+Exit ticket, one problem:
+> "Calculate the net ATP yield from 5 glucose molecules undergoing complete aerobic cellular respiration. Show your work by stage."
+
+Expected: 5 × (2 + 2 + 28-32) = 5 × 32-36 = 160-180 ATP.
+
+Rubric:
+- 4 pts: correct total with correct per-stage breakdown shown.
+- 3 pts: correct total but per-stage arithmetic missing or implicit.
+- 2 pts: correct method, arithmetic error.
+- 1 pt: attempted, fundamental conceptual error.
+- 0 pts: blank.
+
+Grade that night — it's your formative signal for day 2 pacing.
+
+*Homework.*
+
+3-problem set (pasted): two stoichiometry problems similar to Q13-14, one conceptual "explain why X" prompt. Due start of day 2.
+
+---
+
+**DAY 2 — Whole-flow review with student-built model**
+
+*Learning objective.* Students will build and explain the stages of cellular respiration as a connected process, including inputs, outputs, and ATP contribution per stage.
+
+*Materials.*
+- Poster paper (one per group of 3 = 10 posters).
+- Markers, highlighters.
+- Student-facing rubric (below).
+- Re-quiz (5 problems, on paper).
+
+*Opening — 5 minutes.*
+
+Student-facing:
+
+> "Yesterday we did the math. Today we're going to build the picture. I want each of you to leave this room able to draw the stages of cellular respiration and explain what happens at each one — not because it's on a test, but because it's one of the most important things your body is doing right now, and you deserve to understand it."
+
+Note: the "you deserve to understand it" language is deliberate — it re-frames the re-teach as ownership, not remediation. Use it.
+
+*Group build — 25 minutes.*
+
+Groups of 3 (mix your struggling students into groups with on-grade partners — don't cluster low-scorers together).
+
+Each group builds a poster showing glycolysis → Krebs cycle → electron transport chain, with:
+- Inputs and outputs at each stage (molecules)
+- Location in the cell (cytoplasm / mitochondrial matrix / inner mitochondrial membrane)
+- ATP yield per stage
+- One real-world "when this fails" note (cyanide blocks ETC / anaerobic exercise depends on glycolysis only / etc.)
+
+Walk the room. If you see a group with the ATP numbers wrong, don't correct it directly — ask them to explain to you where each number came from. The self-correction is the learning.
+
+*Presentations — 8 minutes.*
+
+Fast-fire: each group picks one stage to present in 1 minute, rotate through all 10 groups if you can (realistically 6-8 given time), ensuring all three stages get multiple presentations.
+
+*Re-quiz — 7 minutes.*
+
+Five problems on paper:
+1. Net ATP from complete aerobic oxidation of 2 glucose molecules. Show stages. (4 pts)
+2. Why does anaerobic respiration yield only 2 ATP per glucose? (3 pts)
+3. Fill in the arrows: glucose → ? → ? → ? → H₂O + CO₂. (3 pts)
+4. A drug blocks the ETC at complex III. What happens to ATP production? (3 pts)
+5. In which organelle does the Krebs cycle occur? (2 pts)
+
+Total 15 pts. Score that night. The re-quiz grade replaces worst 2 original-test questions (pre-announced in day 1 opener).
+
+---
+
+**Formative-check rubric across both days:**
+
+Mastery band: exit ticket ≥ 3/4, homework ≥ 7/10, re-quiz ≥ 12/15.
+Developing band: exit ticket 2-3, homework 4-7, re-quiz 9-12.
+Needs further support: below developing on 2 of 3.
+
+For the "needs further support" band (probably 3-5 students), schedule 15-min 1:1 time next week during your prep period or before school. Don't let them move into the next unit without a direct check-in — ATP yield is a building block for enzymes/metabolism later.
+
+---
+
+**One tone note for day 1.** Do not apologize more than the opening. If a student says "this is basically the same thing we did before," say "yes — this time I'm doing it better." Not "I'm sorry we have to re-do this." Apology-loop signals that the re-teach is a punishment. Matter-of-fact signals that it's just what good teaching looks like when the first pass didn't land.$pf$,
+ $pf$Full 2-day lesson plan with minute-by-minute timing. Day 1: explicit ATP-math instruction with 3 colored-board stages + 3 guided problems + graded exit ticket + homework. Day 2: student-built stage-posters in mixed-ability groups + 5-problem re-quiz replacing worst 2 original-test questions. Student-facing language drafted verbatim for the opener (ownership framing, not apology-loop). Rubric at 3 bands with follow-up 1:1 scheduling for the lowest band so ATP stoichiometry doesn't become a chronic gap into the next unit.$pf$),
+
+-- Step 3 --
+('66666666-6666-6666-6666-666666210103',
+ '55555555-5555-5555-5555-555555550021',
+ 3,
+ $pf$Student-facing reflection protocol + parent-comms note$pf$,
+ $pf$Last piece. I want to send a note home to parents of the 15 students who scored below 70%, and I want to give students a structured way to reflect on what happened. For the student reflection: give me a 4-5 prompt protocol they complete at the start of day 1, before the re-teach. For the parent note: 250-word email. Honest about what happened, clear about what I'm doing, specific about what I'd ask from them — and not defensive or apologetic.$pf$,
+ $pf$Both drafted.
+
+**STUDENT REFLECTION — "Before we re-teach" (complete individually at start of day 1, 5 minutes)**
+
+Distribute this on paper before you deliver the day-1 opener. Have students complete it silently. Collect. Use the patterns in the responses to calibrate day-2 group assignments.
+
+1. **On the unit test, the part I felt least confident on was:** ____________
+
+2. **When I was studying for this test, I spent the most time on:** ____________
+   **…and the least time on:** ____________
+
+3. **If I could go back to the day we learned ATP yield math, one thing I'd ask Mr. Okafor to explain differently or more slowly is:** ____________
+
+4. **Right now, the thing I'm most unsure about is (circle one):**
+   a) What glycolysis / Krebs / ETC do conceptually
+   b) How to do the ATP math for each stage
+   c) How all three stages connect
+   d) Something else: ____________
+
+5. **One concrete thing I'll do differently to prepare for the re-quiz on Friday is:** ____________
+
+Tone note: prompt 3 invites students to name an instructional gap. Some will take it, most won't. Don't push. The students who use it give you information about what actually broke; the students who don't give you information about whether they read the opener as safe. Both data points useful.
+
+---
+
+**PARENT/GUARDIAN EMAIL — 250 words**
+
+Subject: A note about the cellular respiration test — and what we're doing next
+
+Dear [Parent/Guardian name],
+
+I'm writing about [Student]'s score on the cellular respiration unit test. [Student] scored [X]%, which is below the level I expect on this material. Before I say more, I want you to know that this is part of a class-wide pattern I'm taking ownership of — 15 of the 28 students in this period scored below 70%, and a clear majority of them, including [Student], struggled most with the same specific topic: the math of how much ATP our cells produce.
+
+Here's what that tells me: the material was covered in class but not covered WELL in this period for this specific topic. My other classes, who learned the same material, did fine. So the responsibility is mine, and the fix is on me.
+
+Here's what I'm doing this week. On Tuesday and Wednesday, I'm running a focused two-day re-teach specifically on ATP yield and the flow between the three stages. On Friday, students will take a re-quiz. The re-quiz score will replace [Student]'s two lowest-scoring questions from the original test.
+
+Here's what I'd ask from you: if you have 10 minutes this week, please ask [Student] to explain to you, in their own words, the three stages of cellular respiration and how much ATP each one produces. Not as a quiz — as a chance for them to practice saying it out loud. That simple step makes a real difference.
+
+I appreciate your partnership. Please reach out if you'd like to discuss further.
+
+Sincerely,
+Mr. Okafor
+
+---
+
+**Why this email works:**
+
+1. **Ownership in the second paragraph.** "The responsibility is mine, and the fix is on me" — this is the line that changes parent reception. Parents read this email for two things: is my kid in trouble, and does the teacher know what they're doing. Both get addressed in that sentence.
+
+2. **Specific, not vague.** "Struggled most with the specific topic of ATP math" lets parents ask their kid a targeted question at the dinner table. Vague "struggled with the unit" can't be acted on.
+
+3. **One concrete parent ask.** 10 minutes of "explain it to me out loud." That's a request parents can actually do, not a "please support your child's learning" that means nothing.
+
+4. **Not defensive, not apologetic.** No "the test was challenging," no "I'm so sorry." Just: here's what happened, here's what I'm doing, here's what I'd ask from you.
+
+5. **Friday re-quiz mentioned specifically.** Parents know the forcing function. They can ask about it by date.
+
+**Don't send this to parents of students who scored above 70%.** This email is targeted. Sending it universally dilutes the signal. If a 72% student's parent asks why they didn't get the email, tell them honestly: the re-teach is open to their kid too, but this message is for the students where the gap was largest.$pf$,
+ $pf$5-prompt student reflection protocol (what felt least confident / where you spent study time / what you'd ask me to re-explain / which of 4 specific topic areas is unclear / what you'll do differently for re-quiz) completed silently before day-1 opener, used to calibrate day-2 group assignments. 250-word parent email with the load-bearing ownership line in paragraph 2 ("the responsibility is mine, and the fix is on me"), specific diagnostic (ATP math), one concrete 10-minute parent ask, and the Friday re-quiz as forcing function. Deliberately targeted — not sent to above-70% families.$pf$);
+
+-- =========================================================================
 -- END OF FILE — append next project(s) below this line.
 -- Iterations working the Content queue: add 2–3 projects per iteration,
 -- appending below this comment. Do NOT rewrite existing projects.

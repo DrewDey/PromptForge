@@ -8953,6 +8953,768 @@ That's the full package. Slack post is scannable; DMs are specific and have cale
  $pf$Three outputs generated: (1) Slack post for #brightfield-team — scannable, tags owners, ends with heads-up notes on the Dana/Oliver illustration-style check-in + Morgan's perf-marketing-in-house comment being tracked separately. (2) Four individual DMs with specific actions, context, and calendar-block suggestions — Dana's DM includes the heads-up about Oliver's coming 1:1, Alex's DM explicitly un-commits the "probably can" checkout flow comment. (3) Client email to Morgan + Sam — recap of 3 decisions, lists our-side + their-side actions this week, names the 2 open questions they owe us, closes with "let me know if anything doesn't match what you remember." Total turnaround time 8 min including Nina's edits. Replaces ~45 min of reconstructing notes Monday afternoon.$pf$);
 
 -- =========================================================================
+-- Project 0028 — Marketing (ABM expansion push for 30 target logos)
+-- sarahgrows · Claude 4.6 Opus · 6 steps · intermediate
+-- =========================================================================
+
+DELETE FROM prompt_steps WHERE prompt_id = '55555555-5555-5555-5555-555555550028';
+DELETE FROM prompts      WHERE id        = '55555555-5555-5555-5555-555555550028';
+
+INSERT INTO prompts (
+  id, title, description, content, result_content,
+  category_id, difficulty, model_used, model_recommendation,
+  tools_used, tags, status, author_id, vote_count, bookmark_count
+) VALUES (
+  '55555555-5555-5555-5555-555555550028',
+  $pf$ABM expansion push for 30 target logos at a Series B GTM-automation SaaS — 6-pass Claude workflow from account scoring to send-ready sequences$pf$,
+  $pf$Client had a 30-account Q4 ABM target list from their CS and sales teams but no plan for how to run it. 6-pass Claude workflow: score the list, build tiered messaging, design touch sequences per tier, draft bespoke tier-1 first-touches, red-pen everything, then the launch ops plan. Shipped in 6 hours of real work instead of the week they'd budgeted for an agency.$pf$,
+  $pf$I'm Sarah, freelance growth marketer. Client is Relayloom, a Series B GTM-automation SaaS (~$11M ARR, 160 customers). Their VP Marketing and VP Sales had sat together for a Q4 pipeline push and walked out with a 30-account target list — 3 tier-1 whales, 12 tier-2 mid-market, 15 tier-3 growth accounts — but no plan on HOW to run the campaign. Their CRO was nervous: "we have a list and a deadline; I need someone to tell me what we're doing." That's the job I got called in for.
+
+6-pass Claude workflow with Opus 4.6. Account-based campaigns have too many moving parts for a single prompt — you need to diagnose fit, build the message house, design touch sequences, draft the bespoke tier-1 emails, stress-test before anything ships, and lock in the ops plan. Each pass answers one question. Done in 6 hours of my time instead of the week they'd budgeted.
+
+Opus 4.6 over Sonnet because account scoring and messaging differentiation are judgment-heavy — you're making tradeoffs between completeness and conviction, and Sonnet hedges where Opus commits. Opus 4.6 specifically over 4.7 because the work is tactical-first — I don't need 4.7's deeper reasoning for what's ultimately a messaging exercise. My last pricing-page project (iter 63 territory) needed 4.7 because pricing copy has load-bearing judgment calls; this needed decisive prescription on the 14-day calendar.$pf$,
+  $pf$Campaign shipped on schedule. 14 days in: 23 of 30 accounts engaged at least once (reply, meeting booked, or demo requested), 8 meetings booked from tier-1 + tier-2, 2 tier-1 whales in active pipeline ($180K and $240K ACV). Not a home run on tier-3 — only 3 engagements and all template-feeling. Step 5's red-pen pass had flagged tier-3 as under-invested and VP Sales wanted to ship anyway; worth revisiting in a v2.
+
+What I'd tell another marketer: don't let a single prompt try to do list-scoring AND message-house AND touch-design. They're different work. The compounding win comes from separating them. By step 4 I had a message house and a per-tier touch plan, so writing the bespoke emails took 40 minutes because all the thinking was upstream. Step 5's red-pen is load-bearing — 3 of the 5 tier-2 opening lines had a "this is clearly mass-sent" tell that got caught before the sequence went into Outreach. Worth the 30 minutes every time.$pf$,
+  '11111111-1111-1111-1111-111111111102',
+  'intermediate',
+  'claude-opus-4-6',
+  'Claude 4.6 Opus',
+  ARRAY['Claude','Outreach','HubSpot','Apollo','LinkedIn Sales Navigator','Notion'],
+  ARRAY['abm','demand-gen','enterprise','campaign','outreach','b2b-saas','sales-enablement'],
+  'approved',
+  '22222222-2222-2222-2222-222222222202',
+  92, 44
+);
+
+INSERT INTO prompt_steps (id, prompt_id, step_number, title, content, result_content, description) VALUES
+
+-- Step 1 --
+('66666666-6666-6666-6666-666666280101',
+ '55555555-5555-5555-5555-555555550028',
+ 1,
+ $pf$Score and segment the 30-account target list — push back on the tier assignments$pf$,
+ $pf$Here's the 30-account Q4 target list CRO handed me, pulled from CS intelligence (existing customer referrals, product-signal matches) and sales outbound wishlist. I've included firmographics from Apollo + whatever signal data CS had.
+
+For each account I want:
+1. **Fit score (1-10)** — how closely they match our ICP: 100-500 person B2B SaaS, RevOps or GTM-ops function, inbound + outbound motion.
+2. **Timing score (1-10)** — signals that now is the right time: recent funding, hiring ramp, tool-stack signals (they rolled out a new CRM), competitor-customer leaks.
+3. **Suggested tier (1/2/3)** + rationale.
+4. **Flags** — accounts that CS or sales stuck on the list but don't actually fit; accounts where we have a warm existing relationship that changes the play.
+
+Don't just stamp the scores. Explain the call. If fit is 6/10 and timing is 9/10, say why — maybe they just hired a head of RevOps who is our power user.
+
+Push back if you disagree with the tier CRO assigned. He went off gut, which is fine, but I want a second read.
+
+[30 accounts pasted with firmographics + signal notes]$pf$,
+ $pf$Here's the scored list with my tier calls. I'm flagging 4 tier disagreements and 3 accounts to consider dropping.
+
+**Tier 1 (bespoke) — I agree with 2 of 3, move 1 down:**
+
+- **Vantagelake (fit 9, timing 9):** Kept tier-1. Posted a VP RevOps hire in August, an Outreach admin req in October, already running Salesforce + Outreach + Gong + Chili Piper + Gainsight + Catalyst. Classic "8 tools and no connective tissue" — our exact wedge.
+- **Northbeam (fit 9, timing 8):** Kept tier-1. Closed Series C in September, CS leader tweeted about SDR→AE handoff pain in mid-October. The tweet alone earns a bespoke touch — they've publicly named the problem we solve.
+- **MESHLINK (fit 6, timing 7):** **CRO put this in tier-1. Move to tier-2.** Headcount is right (380) but they're MarTech-adjacent and their GTM ops is a single person who owns events, not a function with budget authority. They'll take a meeting but won't buy Q4.
+
+**Tier 2 (near-bespoke) — I agree with 9 of 12, flag 3:**
+
+- **Move up from tier-3 to tier-2:** Harborline (RevOps lead started 6 weeks ago, aggressive hiring) and Cartwheel (ex-customer of our top competitor who went in-house 14 months ago — LinkedIn posts confirm regret).
+- **Flag to drop:** GryphonArc (tier-2 per CRO) — fit is 4/10. They're an agency, not a SaaS. Doesn't match our ICP and the signal that put them on the list (Apollo tagged them "GTM ops") is a false positive.
+
+**Tier 3 (templated) — I agree with 11 of 15, flag 2 more to drop:**
+
+- **Drop:** Pellion (180-person logistics SaaS, RevOps is outsourced) and Rigel (already a paying customer per HubSpot — somebody didn't dedupe the list).
+
+**Summary call:** recommend reshuffling to 2 tier-1 / 13 tier-2 / 12 tier-3 after drops, or 3 / 13 / 12 if you want to keep MESHLINK in tier-1 for relationship reasons. My vote: move MESHLINK down, keep the 2-whale bespoke investment focused.$pf$,
+ $pf$Scored and re-tiered the 30-account list. Pushed back on 4 of CRO's tier assignments: MESHLINK demoted tier-1→tier-2 (single-person GTM ops, no Q4 budget authority); Harborline + Cartwheel promoted tier-3→tier-2 (new RevOps lead / ex-competitor customer with confirmed regret signal). Flagged 3 accounts to drop outright: GryphonArc (agency not SaaS, Apollo false positive), Pellion (outsourced RevOps = no buyer), Rigel (already a paying customer per HubSpot — dedupe miss). Recommended final shape: 2 tier-1 / 13 tier-2 / 12 tier-3 after drops.$pf$),
+
+-- Step 2 --
+('66666666-6666-6666-6666-666666280102',
+ '55555555-5555-5555-5555-555555550028',
+ 2,
+ $pf$Build the message house — positioning statement + tier-specific angles$pf$,
+ $pf$Scores look right. CRO agreed to drop the 3 flagged accounts and move MESHLINK to tier-2 — ran it past him on Slack.
+
+Now build the message house. Need a central positioning statement for Relayloom plus three tier-specific angles. Constraint: tier-1 gets a bespoke first-touch per account, tier-2 gets a near-bespoke template with 3-5 variables, tier-3 gets a solid template.
+
+The message house should include:
+- **Core positioning** (one sentence — what we sell, to whom, why it's different)
+- **3 proof clusters** — evidence categories we can draw on (customer outcome / product capability / analyst mention)
+- **Tier-1 angle** — problem-narrative differentiated per account
+- **Tier-2 angle** — category-insight differentiated by sub-segment (early-stage RevOps / scaling RevOps / replatforming RevOps)
+- **Tier-3 angle** — capability-demo template
+
+Our current marketing page positioning: "Relayloom connects your GTM stack so your team can move faster." I'll paste the longer homepage copy below for reference.
+
+Push back if the current positioning is wrong or too soft — I think it might be.$pf$,
+ $pf$Push-back first: your current positioning is soft and generic. "Connects your GTM stack so your team can move faster" is every integration tool's positioning. Zapier, Workato, Tray — same pitch, different logos. You need something that names the specific pain your buyer is feeling.
+
+**Rewritten core positioning:**
+"Relayloom is the system of action for GTM teams that have 8 tools and no playbook. We turn the scattered activity across your CRM, engagement, and enablement stack into sequenced plays your reps actually run."
+
+That lands because it names the audience specifically ("8 tools and no playbook" is a phrase a VP RevOps has said out loud in the last 30 days) and claims a specific wedge ("system of action," which is distinct from "integration tool").
+
+**3 proof clusters:**
+1. **Customer outcomes** — (a) Vanta's SDR-to-AE handoff went from 4.1 days to 16 hours; (b) Klaviyo's RevOps team replaced 3 Zapier workflows + 1 dedicated RevOps hire with Relayloom sequences; (c) Ramp cut its tool-count from 11 to 6 in the GTM stack within 90 days of Relayloom.
+2. **Product capability** — native connectors to Salesforce, HubSpot, Outreach, Gong, Chili Piper, Gainsight, Catalyst; workflow editor that engineers respect (i.e., not a low-code toy); audit log + role-based permissions that pass SOC 2 review.
+3. **Analyst** — Forrester "Warm" in the Q3 RevOps Tech landscape; named by Gartner in the "Emerging" category for GTM orchestration in October.
+
+**Tier-1 angle (bespoke, per account):** lead with the specific pain signal you've already identified for each account ("I saw you hired a VP RevOps in August + an Outreach admin req last month — that's the moment this tool gets built"). Connect to "system of action" positioning. Soft ask: 20 min, CRO-to-leader peer call, no demo.
+
+**Tier-2 angle (near-bespoke template):** lead with the sub-segment insight ("The pattern we're seeing in scaling RevOps teams right now is that the SDR-to-AE handoff is where the new tool-count shows up as lost revenue"). 1-2 proof cluster items woven in. Ask: 20 min conversation with a customer from their sub-segment.
+
+**Tier-3 angle (templated):** lead with capability framing ("If you're running Salesforce + Outreach + Gong, there's usually a 3-hour-per-week ops tax we can eliminate"). Proof cluster 2 is primary. Ask: watch a 4-minute Loom that shows the specific workflow.
+
+The load-bearing call in this message house: **tier-1 leads with pain narrative, tier-3 leads with capability**. Inverting that kills the campaign. Tier-1 buyers don't need capability convincing; they need to feel understood. Tier-3 buyers don't know you yet; leading with their pain feels like projection.$pf$,
+ $pf$Message house locked with positioning reframe — pushed back on the current soft "connects your GTM stack" line and replaced with "system of action for GTM teams that have 8 tools and no playbook." 3 proof clusters identified (customer outcomes with 3 specific named examples, product capability with the connector list + audit log, Forrester Warm + Gartner Emerging analyst citations). Tier-1 angle = per-account pain narrative; tier-2 angle = sub-segment insight for early/scaling/replatforming RevOps teams; tier-3 angle = capability framing. Load-bearing rule: tier-1 leads with pain, tier-3 leads with capability — inverting kills the campaign.$pf$),
+
+-- Step 3 --
+('66666666-6666-6666-6666-666666280103',
+ '55555555-5555-5555-5555-555555550028',
+ 3,
+ $pf$Design per-tier touch sequences with trigger-based branches$pf$,
+ $pf$Message house is sharp. Agreed on the positioning reframe — "system of action for GTM teams that have 8 tools and no playbook" is the line we'll run with.
+
+Now design the touch sequences per tier. Constraints:
+
+- **14-day campaign window.**
+- **Tier 1:** bespoke first-touch email, LinkedIn voice note (CRO sends), second-touch email, meeting-booking direct ask. Pace: days 1 / 3 / 7 / 11.
+- **Tier 2:** near-bespoke first-touch email, LinkedIn connection request + note, second-touch email with case study, breakup email. Pace: days 1 / 2 / 8 / 14.
+- **Tier 3:** template first-touch email, follow-up email, breakup email. Pace: days 1 / 6 / 12.
+
+For each tier, give me:
+- **Channel + day sequence**
+- **What each touch DOES** (hook, proof, ask)
+- **Trigger-based branches** — if they open but don't reply / if they reply with objection X / if they engage but don't book / if someone else at the account replies
+
+Don't make this a generic "touch 1: soft, touch 2: value-add, touch 3: ask" — that's the shape but the hooks need to be specific to Relayloom's positioning and the tier angle.$pf$,
+ $pf$Sequences below, each with hooks, branches, and kill criteria.
+
+**Tier 1 (Vantagelake, Northbeam):**
+- **Day 1, email (CRO from-address):** Bespoke pain-narrative opener + "system of action" framing + 1 proof cluster item matched to their sub-segment + soft ask ("20 minutes, peer-to-peer, no demo deck").
+- **Day 3, LinkedIn voice note (CRO):** 45-second audio, references the email without re-pitching, adds "one thing I didn't put in the email — [specific observation about their hiring/tooling move]." Voice note is the unusual-channel move that earns a reply from a VP who doesn't reply to cold email.
+- **Day 7, email:** Second-touch if no reply yet. Different angle — switch from pain narrative to outcome narrative. Reference a specific customer at similar stage/ARR. Same soft ask.
+- **Day 11, email:** Direct meeting-booking ask with 3 proposed 30-min slots. If no reply, campaign exits and the account goes to a slow-drip nurture in HubSpot.
+
+**Tier 2 (13 accounts, 3 sub-segments):**
+- **Day 1, email:** Sub-segment insight opener + 1 proof cluster item + ask is "20 min with a customer from your sub-segment."
+- **Day 2, LinkedIn:** Connection request + 250-char note referencing the email without pitching.
+- **Day 8, email:** Case study share — specific customer story (270 words, not a PDF) + soft ask.
+- **Day 14, breakup email:** "Closing this thread unless you'd like to pick up — here's the 4-minute Loom if you'd rather self-serve."
+
+**Tier 3 (12 accounts):**
+- **Day 1, email:** Capability-framing opener + "3-hour ops tax" hook + 4-minute Loom link.
+- **Day 6, email:** Follow-up with a specific workflow example + ask to watch the Loom.
+- **Day 12, breakup email:** "Closing this — here's the Loom one more time in case the timing is better later."
+
+**Trigger-based branches (apply across tiers):**
+1. **Opens 3+ times, no reply (all tiers):** after 48 hours, send a 1-line email: "Noticed you came back to this — any questions I can answer?" Converts ~8% of hot opens in my experience.
+2. **Reply with objection "we already have [X tool]" (tier-2 + tier-3):** auto-responder with a 90-word reply explaining the coexistence play. Don't argue the replacement; name a specific workflow we add on top.
+3. **Reply with "wrong person" (all tiers):** thank them, ask for the right person, add the referral person as a new-contact tier-2 entry with reference to the original contact.
+4. **Someone else at the account replies (tier-1 + tier-2):** SDR (Kim) jumps in, references the primary contact, asks whether to loop them in. Preserves the CRO-to-leader play.
+5. **Engages but doesn't book (all tiers):** after engagement signal (reply, click, voice-note listen), if no meeting booked within 5 days, send a Calendly link directly — no more softening.
+
+**Kill criteria per tier:** tier-1 exits after day 11 with no engagement. Tier-2 exits after day 14. Tier-3 exits after day 12 OR after 72 hours if first-touch reply rate is below 3% across the full cohort (that's the threshold below which the template is clearly not landing and we risk training the list).$pf$,
+ $pf$3 tiered sequences designed with channel/day/intent per touch. Tier 1 = bespoke email → CRO LinkedIn voice note → outcome-angle email → direct booking ask. Tier 2 = near-bespoke email → LinkedIn connect → case-study email → breakup. Tier 3 = capability-framed email → Loom follow-up → breakup. 5 trigger-based branches apply across tiers (3+ opens with no reply, "we already have X tool" objection, "wrong person" referral, account-peer reply, engagement without booking). Kill criteria: tier-3 cohort-wide reply rate below 3% at 72 hours pulls the template before training the list to ignore.$pf$),
+
+-- Step 4 --
+('66666666-6666-6666-6666-666666280104',
+ '55555555-5555-5555-5555-555555550028',
+ 4,
+ $pf$Draft the 2 tier-1 bespoke first-touch emails (post-MESHLINK-demotion)$pf$,
+ $pf$Now write the 2 tier-1 bespoke first-touch emails (dropped to 2 after MESHLINK moved to tier-2).
+
+**Vantagelake** — 280-person B2B SaaS (MarTech), hired a VP RevOps in August (Jamie Chen, ex-Segment), posted an Outreach admin req last month, running Salesforce + Outreach + Gong + Chili Piper + Gainsight + Catalyst + 2 others we know of.
+
+**Northbeam** — 420-person B2B SaaS (FinOps), closed $60M Series C in September, CS leader (Devon Ruiz) tweeted about "SDR-to-AE handoff pain" on October 14.
+
+Each email:
+- 110 words max
+- 1 subject line + 1 preview text (give me 2 subject-line variants per email for A/B)
+- Lead with what's specific about their situation, connect to "system of action" positioning
+- End with a soft ask — NOT "book a demo," more "worth 20 minutes"
+
+**Voice:** executive-peer. Our CRO (Matt Jepson) is the From address. No "I noticed" openers. No "Hope you're well."
+
+From addresses should feel like Matt actually typed them.$pf$,
+ $pf$Here are both emails with subject-line variants.
+
+---
+
+**VANTAGELAKE — to Jamie Chen, VP RevOps**
+
+*Subject A:* "Jamie — the moment this tool gets built"
+*Subject B:* "8 tools at Vantagelake, no connective playbook"
+*Preview:* "You hired the role. Now the stack gets messy."
+
+Jamie —
+
+Hiring an Outreach admin 6 weeks after a VP RevOps hire is the exact moment most of our customers decide they need a system of action on top of the stack, not another point tool.
+
+We work with RevOps teams that have 8+ GTM tools and no playbook — Vanta, Klaviyo, Ramp. The pattern is consistent: the SDR-to-AE handoff is where tool-count shows up as lost revenue. Ramp cut that handoff from 4 days to 16 hours in 90 days with us.
+
+Worth 20 minutes, peer-to-peer, no demo?
+
+— Matt Jepson, CRO, Relayloom
+
+*(108 words)*
+
+---
+
+**NORTHBEAM — to Devon Ruiz, VP CS**
+
+*Subject A:* "Devon — about that handoff pain"
+*Subject B:* "Northbeam's $60M + the SDR/AE gap"
+*Preview:* "Your October 14 tweet is the conversation we've been having with every Series C RevOps team."
+
+Devon —
+
+Your tweet on October 14 about SDR-to-AE handoff pain is the exact conversation we're having with every Series C RevOps team right now. It's the point in company growth where the tool-count that was a minor ops tax at 200 people becomes a daily revenue leak at 400.
+
+We built Relayloom as the system of action on top of the stack. Ramp used us to move that specific handoff from 4 days to 16 hours in 90 days. Happy to share the playbook directly — no deck, no demo.
+
+20 minutes next week?
+
+— Matt Jepson, CRO, Relayloom
+
+*(107 words)*
+
+---
+
+Both lead with the specific signal (VP RevOps + Outreach admin hire for Vantagelake; the tweet for Northbeam), connect to the "system of action" positioning, and use the Ramp 4-days→16-hours outcome as the specific proof point. Both end with the soft peer ask, not a demo ask.
+
+**Note on voice:** deliberately avoided "I noticed your company..." (tells as scraped) and "Hope you're well" (tells as form). Also avoided any hedging verbs ("might be worth," "could be interesting") — VPs don't reply to hedges.$pf$,
+ $pf$2 bespoke tier-1 emails drafted (Vantagelake → Jamie Chen, VP RevOps + Northbeam → Devon Ruiz, VP CS) — each at 107-108 words with CRO Matt Jepson as from-address. Both lead with the specific signal (VP RevOps + Outreach admin req for Vantagelake; October 14 tweet for Northbeam), connect to "system of action" positioning, use Ramp's 4-days→16-hours outcome as proof, close with 20-minute peer ask (not demo). 2 subject-line variants per email. Deliberately avoided "I noticed" openers and hedging verbs.$pf$),
+
+-- Step 5 --
+('66666666-6666-6666-6666-666666280105',
+ '55555555-5555-5555-5555-555555550028',
+ 5,
+ $pf$Red-pen the sequences — 3 roles: skeptical prospect, VP Sales, compliance$pf$,
+ $pf$Now red-pen everything. Play three roles:
+
+1. **Skeptical prospect** receiving the tier-2 template in their inbox Tuesday 8am. Where do they smell "clearly mass-sent"? Specifically: the "I noticed your company just..." style tells, generic-to-category proof points, fake-scarcity asks.
+
+2. **Our VP Sales (Elena Park).** She'll push back on anything that promises too much, quotes a capability we don't actually have, or sets up her AEs to lose a demo because the email over-promised.
+
+3. **Compliance / legal.** Are we making claims that need citation? Referencing customers in a way that could be traced? CAN-SPAM + GDPR body/footer compliance?
+
+For each role: specific edits with before → after, not "this feels off."
+
+Kill anything that should be killed outright.$pf$,
+ $pf$Red-pen results, role-by-role.
+
+**Skeptical prospect (tier-2 templates):**
+
+1. **Before:** "We've helped teams like yours cut handoff lag by 40%."
+   **After:** "One of our customers — a 350-person fintech at a similar Series C stage — moved their SDR-to-AE handoff from 4 days to 16 hours in 90 days."
+   *Why:* "teams like yours" is the universal mass-send tell. Specific customer archetype + specific outcome reads as not templated.
+
+2. **Before:** "Only 10 meetings available for our Q4 RevOps cohort — reply by Friday."
+   **Kill entirely.** Fake scarcity on an ABM touch destroys the executive-peer voice. Tier-2 buyers are sophisticated; they'll see this and flag the whole sequence as SDR-grade.
+
+3. **Before (tier-3):** "If you're running Salesforce + Outreach + Gong, you're probably losing 3 hours a week to ops tax."
+   **After:** "If your RevOps team is running Salesforce + Outreach + Gong, we typically see a 3-hour/week ops tax on the handoff between those three."
+   *Why:* "you're probably" projects; "we typically see" claims the pattern from our data.
+
+**VP Sales (Elena):**
+
+1. **Before (tier-2 case-study email):** "Cut your handoff time by 60%."
+   **After:** "One customer cut theirs by 60%; range across our customers is 20-60%."
+   *Why:* the 60% is cherry-picked. If an AE walks into a demo after the prospect expects 60% and we deliver a 25% case for their segment, we've lost the demo to our own email.
+
+2. **Before (tier-3):** "4-minute Loom shows you exactly how it works."
+   **After:** (no change to copy, but) the linked Loom is currently 7:40, not 4 min. **Fix the Loom before send.**
+   *Why:* Elena will flag this as credibility — if the first claim in the first email is wrong, nothing else is trusted.
+
+3. **Before (tier-1 email to Jamie):** "Every Series C RevOps team we talk to is having this conversation."
+   **After:** "Most Series C RevOps teams we've talked to this quarter are having a version of this conversation."
+   *Why:* "every" invites a single counter-example to discredit. "Most" + "a version of" is defensibly honest without softening the claim.
+
+**Compliance / legal:**
+
+1. **Before:** "Ramp cut their handoff from 4 days to 16 hours with us."
+   **Check:** is this a publicly stated Ramp outcome, or pulled from a private CS conversation? **If private: reframe as "one of our Series B fintech customers" with no name.**
+   *Why:* using a named customer outcome not in public materials is a CS trust break + potential MSA violation.
+
+2. **Missing:** GDPR unsubscribe footer on all tier-2 + tier-3 templates.
+   **Add:** standard 2-line footer with Relayloom postal address + one-click unsubscribe link routed to HubSpot.
+   *Why:* CAN-SPAM + GDPR body requirement. Tier-1 bespokes are arguably 1:1 correspondence, exempt. Tier-2 and tier-3 are templated and need the footer.
+
+3. **Before (tier-1 voice note script):** "I've been watching Vantagelake for a while."
+   **After:** "Your VP RevOps hire in August caught my attention."
+   *Why:* "watching for a while" reads as stalking-adjacent and could be uncomfortable for the recipient. Citing the specific public signal is cleaner.
+
+**Summary:** 3 kills (fake-scarcity ask, 60% outcome claim, "every" absolute), 4 specific rewrites, 1 added asset requirement (GDPR footer), 1 pre-launch check (verify the Ramp outcome is public before sending).$pf$,
+ $pf$Red-pen across 3 roles caught 4 specific issues to edit + 3 to kill outright + 1 pre-launch verification needed. Skeptical-prospect pass killed the fake-scarcity "only 10 meetings" ask and rewrote "teams like yours" to specific-customer-archetype framing. VP Sales pass caught cherry-picked 60% outcome claim and a Loom-duration credibility break. Compliance pass flagged the named Ramp outcome as requiring public-materials check before send, surfaced missing GDPR unsubscribe footer on tier-2/3 templates, softened the voice note script's "watching for a while" language. Estimated 30 minutes of writer time to implement all edits.$pf$),
+
+-- Step 6 --
+('66666666-6666-6666-6666-666666280106',
+ '55555555-5555-5555-5555-555555550028',
+ 6,
+ $pf$Launch ops plan — calendar, CRM staging, measurement, kill/scale triggers$pf$,
+ $pf$We're go on the copy after the red-pen edits. Now the ops plan so this ships Monday and doesn't explode.
+
+Build:
+
+1. **Sequencing calendar** — day-by-day for 14 days showing which tier gets which touch on which day. Call out days where tiers overlap and could overload replies to Matt (CRO) or Elena (VP Sales).
+
+2. **CRM/Outreach staging** — list structure (tags, custom fields, branching), sequence setup per tier, asset ownership. Assume: me (Sarah), Matt, Elena, and one SDR (Kim Rodriguez) who'll manage replies.
+
+3. **Measurement plan** — metrics we're watching, thresholds for "working" vs "pull it," daily vs weekly cadence. Budget is effectively $0 (no paid) so this is purely sequence performance.
+
+4. **Kill/scale triggers** — specific numeric thresholds. If tier-1 reply rate is below X after 72 hours, we adjust. If tier-3 is below Y after 7 days, we kill it.
+
+5. **Pre-launch checklist** — what has to be true by Friday EOD for Monday AM send.$pf$,
+ $pf$Launch ops plan, 5 components.
+
+**1. Sequencing calendar (14 days):**
+
+| Day | Tier 1 (2) | Tier 2 (13) | Tier 3 (12) | Reply-load risk |
+|-----|------------|-------------|-------------|-----------------|
+| 1 Mon | Email (Matt) | Email | Email | High — 27 sends |
+| 2 Tue |  | LinkedIn connect |  | Low |
+| 3 Wed | LI voice note (Matt) |  |  | Low |
+| 6 Sat |  |  | Follow-up email | Medium (weekend reply risk) |
+| 7 Sun | Email (Matt) |  |  |  |
+| 8 Mon |  | Email (case study) |  | High — 13 sends |
+| 11 Thu | Direct booking ask |  |  |  |
+| 12 Fri |  |  | Breakup email |  |
+| 14 Sun |  | Breakup email |  |  |
+
+**Overlap callouts:** Day 1 has all 3 tiers sending — 27 outbound. Kim (SDR) clears Matt's and Elena's inboxes after hour 4, triages replies to owner. Day 8 overlaps tier-2 second-touch with residual tier-1 direct asks coming in; Kim holds tier-2 reply responses for 4 hours on day 8 so tier-1 doesn't get starved.
+
+**Saturday tier-3 follow-up** is deliberate — B2B ABM Sunday-evening/Monday-morning opens are the best window for tier-3 because competitor sends are quieter. Risk: reply lands on weekend and dies.
+
+**2. CRM/Outreach staging:**
+
+- **Tags in HubSpot:** `abm_q4_campaign`, plus tier tag (`abm_tier1` / `abm_tier2` / `abm_tier3`).
+- **Custom fields:** `signal_source` (text), `tier_sub_segment` (picklist: early-revops / scaling-revops / replatforming-revops / na), `red_pen_cleared` (boolean).
+- **Outreach sequences:** 3 sequences set up (one per tier), branching handled via Outreach workflow — tier-2 sub-segment variables populated via HubSpot sync on sequence entry.
+- **Asset ownership:** Sarah owns copy + Loom asset; Kim owns Outreach sequence build + HubSpot tag import + reply triage; Matt owns tier-1 voice notes + bespoke emails; Elena owns objection-reply scripts review.
+
+**3. Measurement plan:**
+
+| Metric | Target (green) | Amber | Red |
+|--------|----------------|-------|-----|
+| Tier-1 first-touch reply rate @ 72h | ≥25% (1 of 2) | n/a — small N | 0% |
+| Tier-2 first-touch reply rate @ 72h | ≥10% | 5-10% | <5% |
+| Tier-3 first-touch reply rate @ 72h | ≥5% | 3-5% | <3% |
+| Tier-2 open rate @ 48h | ≥55% | 40-55% | <40% |
+| Meeting-booking rate (tier-1+2 combined) | ≥15% by day 14 | 8-15% | <8% |
+| Intercom / reply volume per day | ≤8/day for Kim | 8-15 | >15 (pull SDR backup) |
+
+Cadence: Kim reports metrics daily at 5pm for first 5 days, then every 2 days through day 14. Sarah reviews with Matt Tuesday + Friday.
+
+**4. Kill/scale triggers:**
+
+- **Tier-3 kill:** reply rate <3% at 72h → pull remaining tier-3 sequence. Don't train the list.
+- **Tier-2 template adjustment:** open rate <40% at 48h → swap subject lines (have 2 alternates pre-approved from step 4's A/B variants).
+- **Tier-1 re-engagement:** if neither tier-1 account replies by day 7 → Matt sends a 1-line forward of a relevant blog post or industry news item, resets the timer.
+- **Scale trigger:** if tier-2 reply rate >15% at 72h → we know the segmentation is working; queue 20 more tier-2 accounts from the CS bench list for wave 2 in January.
+
+**5. Pre-launch checklist (Friday EOD):**
+
+☐ All red-pen edits from step 5 implemented in copy
+☐ Ramp outcome claim verified as public (or reframed as unnamed customer)
+☐ GDPR footer added to tier-2 + tier-3 templates
+☐ Loom asset re-recorded to 4 min (currently 7:40) and linked in tier-3 sequence
+☐ Outreach sequences QA'd by Kim — variable substitution tested on 3 dummy accounts per tier
+☐ HubSpot tags + custom fields populated for all 27 accounts
+☐ Matt's 2 tier-1 bespoke emails drafted in his inbox (not in Outreach — preserves 1:1 deliverability)
+☐ Matt's 2 LinkedIn voice notes recorded (draft), ready for day 3 send
+☐ Kim has reply-triage runbook with Matt + Elena's thresholds for escalation
+☐ Elena signed off on objection-reply scripts
+☐ Measurement dashboard live in HubSpot reports — 6 metrics above pulled automatically
+
+**Launch window:** Monday 8am ET send for tier-2 + tier-3 templates (Outreach). Tier-1 bespokes from Matt's inbox anytime Monday — he picks his own window. Kim is in the Outreach reply queue from 8am ET.$pf$,
+ $pf$Ops plan shipped: 14-day sequencing calendar (day 1 is highest-load with 27 outbound across tiers; Saturday tier-3 follow-up is deliberate weekend-quiet window). CRM/Outreach staging with tag structure + 3 sequences + asset ownership split across Sarah/Matt/Elena/Kim. Measurement plan with green/amber/red thresholds on 6 metrics, daily cadence for first 5 days. 4 kill/scale triggers with specific numeric cuts (tier-3 <3% at 72h = kill; tier-2 >15% at 72h = scale by queuing 20 more for wave 2). 11-item Friday-EOD pre-launch checklist including the Loom re-record from 7:40 to 4 min and GDPR footer addition.$pf$);
+
+-- =========================================================================
+-- Project 0029 — Design (Empty-state audit + system across 47 screens)
+-- priya_creates · Claude 4.6 Opus · 4 steps · intermediate
+-- =========================================================================
+
+DELETE FROM prompt_steps WHERE prompt_id = '55555555-5555-5555-5555-555555550029';
+DELETE FROM prompts      WHERE id        = '55555555-5555-5555-5555-555555550029';
+
+INSERT INTO prompts (
+  id, title, description, content, result_content,
+  category_id, difficulty, model_used, model_recommendation,
+  tools_used, tags, status, author_id, vote_count, bookmark_count
+) VALUES (
+  '55555555-5555-5555-5555-555555550029',
+  $pf$Empty-state audit and redesign across a 47-screen B2B analytics product — 4-pass Claude workflow from inventory to shipping spec$pf$,
+  $pf$Product had 47 screens and the empty states were a patchwork — some illustrated, most blank, a few with "No data" in 12pt gray. New VP Product asked the obvious "why does our empty dashboard list look like an error page?" question. 4-pass Claude workflow: inventory every empty state, diagnose which ones were hurting the funnel, design a 4-pattern system by category, ship spec with Figma org + eng handoff + 3-wave rollout.$pf$,
+  $pf$I'm Priya, senior product designer at Axonbridge (B2B analytics SaaS, Series B, ~1,400 customers). Our product has 47 distinct screens — not counting modals, drawers, and config surfaces — and the empty states were all over the place. Some had custom illustrations and tutorial CTAs from a 2023 design sprint that got 40% done before someone left. Most had nothing. A few had "No data yet" in 12pt gray.
+
+I got pulled into this because the new VP Product (6 weeks in) asked the obvious question nobody had asked: "why does our 'No dashboards yet' screen look like an error page?" He's right. Empty states are the single most load-bearing UI pattern for activation in an analytics tool — a new user lands on an empty dashboard list in the first 2 minutes, and that screen decides whether they ever build a dashboard.
+
+4-pass Claude workflow with Opus 4.6 over 2 afternoons. Pass 1: inventory every empty state in the product, classified by category. Pass 2: diagnose which are actively hurting activation or engagement, prioritize. Pass 3: design the new system — 4 patterns covering 4 empty-state categories with copy + visual + CTA treatment specified. Pass 4: ship spec — Figma organization, eng handoff, rollout sequence so we don't ship 47 screens at once.
+
+Opus 4.6 over 4.7 because the work is systematic taxonomy + pattern design, not deep reasoning. And Opus over Sonnet because design-systems work requires conviction about when to diverge from the pattern — the load-bearing move in an audit like this is saying "these two screens look similar but belong to different categories and should NOT share the pattern." Sonnet tends to blur those calls.$pf$,
+  $pf$Shipped in 3 waves over 6 weeks. Wave 1 (first-time states on 6 top-of-funnel screens): activation conversion — defined as "user creates their first dashboard within 7 days of signup" — went from 41% to 58% in the 4 weeks after shipping. Wave 2 (filtered-away states across 22 screens): reduced the rate at which users hit "no results" and bounced by ~30% based on FullStory session replay sampling. Wave 3 (error + permission-denied patterns across 19 screens): harder to measure but support tickets on "I can't find X" dropped ~20%.
+
+The call that mattered most: categorizing empty states into 4 distinct patterns instead of one universal one. A first-time state needs to SELL the feature — what it'll look like populated + a primary CTA. A filtered-away state needs to UNDO — explain the filter + one-click clear. An error state needs to RECOVER — what went wrong + what to try. A permission-denied state needs to ESCALATE — explain the permission + how to request access. Conflating them is what produces a "No data yet" screen that's useless in all 4 situations.
+
+What I'd tell another designer: run the inventory first, before you design anything. You'll find 5-7 screens that are the wrong category — a "filtered-away" state styled like an "error" state, or a "first-time" state that looks like "permission-denied." Those are the highest-leverage fixes because they're actively miscommunicating.$pf$,
+  '11111111-1111-1111-1111-111111111105',
+  'intermediate',
+  'claude-opus-4-6',
+  'Claude 4.6 Opus',
+  ARRAY['Claude','Figma','Linear','Maze','FullStory'],
+  ARRAY['design','empty-states','ux','patterns','activation','b2b-saas','design-system'],
+  'approved',
+  '22222222-2222-2222-2222-222222222204',
+  68, 38
+);
+
+INSERT INTO prompt_steps (id, prompt_id, step_number, title, content, result_content, description) VALUES
+
+-- Step 1 --
+('66666666-6666-6666-6666-666666290101',
+ '55555555-5555-5555-5555-555555550029',
+ 1,
+ $pf$Inventory every empty state in the product, classified by category$pf$,
+ $pf$I'm auditing empty states across our B2B analytics product. 47 screens total: dashboards (list / detail / builder), reports (list / detail / scheduler / export), data sources (list / detail / new), alerts (list / detail / builder), team + permissions (5 screens), profile + settings (6 screens), integrations (list / detail / 10 integration-specific config pages), and a catch-all "explore" section (8 screens for ad-hoc querying).
+
+I want you to enumerate every screen that COULD be empty and classify by category:
+
+1. **First-time empty** — user has never populated this yet (new account, no dashboards created).
+2. **Filtered-away empty** — there IS data but the user's current filter hid all of it.
+3. **Error empty** — request failed, data couldn't load.
+4. **Permission-denied empty** — data exists but user can't access.
+
+Some screens have multiple empty-state variants (dashboard list can be first-time OR filtered-away). Capture all variants.
+
+For each variant, note what currently lives there — I'll paste screen inventory with current-state notes. Flag where the CURRENT empty state is the WRONG category (e.g., a filtered-away state styled as a hard error).
+
+[47 screens with notes on current empty-state content]$pf$,
+ $pf$Here's the categorized inventory. Total: ~65 empty-state variants across 47 screens. 6 flagged as miscategorized (current state is the wrong empty-state category).
+
+**Category 1 — First-time empty (22 variants):**
+- dashboards/list, dashboards/detail (empty chart when no data source configured), dashboards/builder (empty canvas)
+- reports/list, reports/detail (report not yet run), reports/scheduler (no schedules created)
+- data-sources/list, data-sources/detail (configured but no sync yet)
+- alerts/list, alerts/detail, alerts/builder
+- team/members (solo account, no teammates invited), team/roles (no custom roles)
+- profile/api-keys (no keys generated), profile/notifications (no preferences set)
+- integrations/list (no integrations connected), integrations/detail (connected but not configured) — ⚠️ **currently styled as hard error, should be first-time**
+- explore/workspaces (no saved explorations), explore/queries (no query history), explore/pinned (no pinned queries)
+
+**Category 2 — Filtered-away empty (18 variants):**
+- dashboards/list (search + tag filters applied) — ⚠️ **currently shows "Something went wrong" — miscategorized as error**
+- reports/list (date range + status filter), reports/detail (chart data filtered out by dimension)
+- data-sources/list (filter by connector type with zero matches)
+- alerts/list (filter by status, severity, owner)
+- team/members (search by email with no matches), team/activity-log (filter by action type + date)
+- integrations/list (search), 8 integration-config pages with their own filter-empty states
+- explore/queries (search filter with no matches) — ⚠️ **has no empty state at all, just a blank grid, should show filtered-away pattern**
+- explore/workspaces (folder filter no matches)
+
+**Category 3 — Error empty (12 variants):**
+- dashboards/detail (chart failed to render), reports/detail (report generation failed)
+- data-sources/detail (sync failed, showing error banner)
+- integrations/detail (OAuth token expired) — ⚠️ **currently shows generic "No data" — should be error with specific OAuth refresh path**
+- alerts/builder (save failed)
+- explore/queries (query timeout or syntax error) — ⚠️ **currently shows "Something went wrong" with no recovery — should be error pattern with query preserved + retry**
+- profile/api-keys (regenerate failed), profile/notifications (save failed), settings/billing (billing API down)
+- team/members (invite send failed) — ⚠️ **currently reloads page with no indication the invite failed, silent — should be error empty**
+- integrations/list (fetch failed)
+
+**Category 4 — Permission-denied empty (13 variants):**
+- dashboards/detail (shared dashboard user can't access), dashboards/builder (no edit permission)
+- reports/detail (report in restricted workspace), reports/scheduler (no scheduling permission)
+- data-sources/list (viewer role, no data-source permissions), data-sources/new (no create permission)
+- alerts/detail (alert in another team's scope), alerts/builder (no create)
+- team/roles (viewer accessing admin-only screen), team/audit-log (admin-only)
+- integrations/new (admin-only)
+- settings/billing (admin-only)
+
+**Summary of miscategorized current states (6 screens):**
+1. `integrations/detail` unconfigured = styled as error, should be first-time.
+2. `dashboards/list` filtered = "Something went wrong", should be filtered-away.
+3. `explore/queries` filtered = no empty state at all, should be filtered-away.
+4. `integrations/detail` OAuth expired = generic "No data", should be error with specific recovery path.
+5. `explore/queries` query failed = generic error with no retry, should preserve query and offer retry.
+6. `team/members` invite failed = silent reload, should be error with visible failure + retry.
+
+These 6 are the audit's highest-leverage fixes — they're actively miscommunicating category. A user hitting `integrations/detail` unconfigured sees "error" and thinks the product is broken, not that they need to complete setup.$pf$,
+ $pf$Inventoried 65 empty-state variants across 47 screens, classified into 4 categories: 22 first-time, 18 filtered-away, 12 error, 13 permission-denied. Flagged 6 miscategorized current states — the audit's highest-leverage fixes because they're actively miscommunicating. Examples: integrations/detail unconfigured is styled as a hard error (should be first-time); dashboards/list filtered shows "Something went wrong" (should be filtered-away); explore/queries filtered has no empty state at all (blank grid). Inventory notes which variants have custom illustrations from the abandoned 2023 design sprint (6 screens) vs which have nothing (30+ screens).$pf$),
+
+-- Step 2 --
+('66666666-6666-6666-6666-666666290102',
+ '55555555-5555-5555-5555-555555550029',
+ 2,
+ $pf$Diagnose which empty states are actively hurting activation / engagement / support load$pf$,
+ $pf$Good inventory. The 6 miscategorized ones are the surprise — I knew about 2 of them, didn't realize `integrations/detail` OAuth and `explore/queries` failure paths were also miscategorized.
+
+Now prioritize. Which empty states are actively hurting us? Rank by expected impact on:
+
+- **Activation** (new users, first 7 days)
+- **Engagement** (existing users, weekly active)
+- **Support load** (tickets generated because the empty state doesn't explain itself)
+
+Data I have:
+- 72% of new signups land on the `dashboards/list` within their first 2 minutes.
+- FullStory session replay sampling shows 23% of users who hit a filtered-away state bounce from the product within 60 seconds.
+- Top-3 support ticket categories include "I can't find my report" (often a filter issue) and "why is the data empty" (often a first-time state).
+- Power users (daily active) rarely see empty states at all — except in the `explore` ad-hoc section.
+
+Don't give me a generic priority ranking — tell me WHICH empty states specifically will move the numbers. Also tell me which ones I can deprioritize — screens where "better empty state" is polish, not a real win.$pf$,
+ $pf$Priority ranking below. 8 screens are load-bearing, 10+ can safely deprioritize. Ship in 3 waves.
+
+**Load-bearing (top 8 — Wave 1 + 2):**
+
+1. **`dashboards/list` first-time** — 72% of new signups land here in first 2 min. Current state: "No data yet" in 12pt gray. This is the single highest-leverage screen in the product. Moves activation conversion directly. **Category: first-time. Wave: 1.**
+
+2. **`dashboards/list` filtered-away** — currently miscategorized as hard error ("Something went wrong"). Per FullStory, ~23% of users bouncing on filtered-away states come through this screen. Users searching for a dashboard that doesn't match their filter think the product broke. **Category: filtered-away. Wave: 1.**
+
+3. **`integrations/detail` unconfigured** — miscategorized as error. Happens to every new user who connects an integration and lands on its detail page before syncing data. Current state suggests the integration is broken; real state is "connection works, now finish setup." Drives ~12% of new-user support tickets. **Category: first-time. Wave: 1.**
+
+4. **`data-sources/list` first-time** — new users trying to understand what "data source" means in Axonbridge. Current state has no explainer, just an empty list. Pre-activation confusion. **Category: first-time. Wave: 1.**
+
+5. **`reports/list` filtered-away** — top-2 support ticket category is "I can't find my report." Most instances are a date-range filter hiding the report. Currently shows "No reports" with no filter reference. **Category: filtered-away. Wave: 2.**
+
+6. **`explore/queries` filtered-away** — power-user screen (the one place daily users hit empty states). Currently has NO empty state, just a blank grid. Power users hit blank grid, think the query history feature is broken, file a ticket. **Category: filtered-away. Wave: 2.**
+
+7. **`integrations/detail` OAuth expired** — miscategorized as generic error. Happens ~40x/week across the customer base. Current state doesn't show the recovery path. Each instance likely produces a support touch. **Category: error. Wave: 2.**
+
+8. **`alerts/list` first-time** — new-user activation for the alerts feature. Feature is underused; empty state that sells the feature would likely increase alerts/user metric. **Category: first-time. Wave: 2.**
+
+**Deprioritize (Wave 3 or later):**
+
+- `profile/api-keys`, `profile/notifications`, `settings/billing` empty states — users rarely land on these cold; when they do, they arrive with intent and can tolerate a 12pt-gray "No API keys yet."
+- `team/roles`, `team/audit-log` permission-denied states — low-traffic screens; add the permission-denied pattern but it's not moving numbers.
+- 8 integration-specific config pages' filter-empty states — tiny user population, each.
+- `dashboards/builder` and `reports/scheduler` first-time empties — users arrive here with intent after clicking "Create," so the "first-time" selling work has already been done upstream; a minimal empty state is sufficient.
+
+**Wave recommendation:**
+- **Wave 1 (first-time states on 6 top-of-funnel screens):** items 1, 3, 4, plus `reports/list` first-time, `alerts/list` first-time, `data-sources/detail` first-time. Targeting activation-conversion lift.
+- **Wave 2 (filtered-away across 22 screens + select errors):** items 2, 5, 6, 7, plus the rest of filtered-away states. Targeting engagement (reduce bounce from filtered-away) and support-load.
+- **Wave 3 (remaining error + all permission-denied):** items 8 + all remaining category-3/4 states. Targeting support-load on the long tail.
+
+**What I'd deprioritize explicitly:** any empty state where current-state is "12pt gray placeholder" on a low-traffic screen. The value of redesign is diagnostic quality + CTA conversion, not aesthetic polish — if nobody sees the screen, polish is wasted design-system budget.$pf$,
+ $pf$Priority ranking placed 8 load-bearing empty states in wave 1 + 2, with 10+ screens explicitly deprioritized to wave 3. Top 3 by expected impact: dashboards/list first-time (72% of new signups land here = primary activation lever); dashboards/list filtered-away (miscategorized as error, drives ~23% of filtered-away bounces); integrations/detail unconfigured (miscategorized, ~12% of new-user support tickets). Wave 1 focuses 6 top-of-funnel first-time states for activation lift; wave 2 targets filtered-away states for engagement + support load reduction; wave 3 cleans up error + permission-denied long tail. Low-traffic settings/profile empty states explicitly flagged to stay as minimal placeholders — polish budget is finite.$pf$),
+
+-- Step 3 --
+('66666666-6666-6666-6666-666666290103',
+ '55555555-5555-5555-5555-555555550029',
+ 3,
+ $pf$Design the 4-pattern system — layout, visual language, copy formula, CTA treatment$pf$,
+ $pf$Locked on the priorities. Now design the pattern system.
+
+4 patterns, one per category. For each pattern specify:
+
+1. **Layout grid** — what goes where (visual element, headline, body copy, CTA treatment).
+2. **Visual language** — when to use illustration vs icon vs no-visual.
+3. **Copy formula** — headline formula, body formula, CTA verb standard.
+4. **CTA treatment** — primary vs secondary vs none, what verb, what destination.
+
+Constraints:
+- Sharp corners (brand language, 0px border-radius).
+- Brand orange (#E87A2C) is the accent — use for primary CTAs, nothing else.
+- Neutral surface palette (zinc-based).
+- Illustrations are expensive — we have 4 in the design system (dashboard, report, alert, integration). Don't commission 47 new ones. For screens without a dedicated illustration, use a standardized icon treatment.
+
+For each pattern, give me:
+- Written spec a designer could execute from (layout, sizing, spacing in 4pt grid).
+- Example copy for one representative screen (e.g., dashboards/list first-time for pattern 1).
+- **Dos and don'ts** — WHAT NOT to put in this pattern that would confuse it with another category.
+
+Also: where should 2 patterns overlap visually (so users recognize "this is empty-state land") vs where should they DIVERGE so users know which category they're in?$pf$,
+ $pf$4-pattern spec below. Shared visual language: centered column, vertical rhythm on 8pt grid, max content width 480px, same headline type scale (text-2xl / 24px / weight 600). Diverging: CTA treatment, visual element, body tone.
+
+**Pattern 1 — First-time (SELL the feature):**
+
+*Layout (top to bottom, 32pt vertical spacing):*
+1. Illustration or icon (96x96 zinc-200 fill for icons, full color for the 4 dedicated illustrations).
+2. Headline (text-2xl / 24px / weight 600 / zinc-900).
+3. Body (text-base / 16px / weight 400 / zinc-600 / max 2 lines).
+4. Primary CTA button (h-10 / px-5 / bg brand orange #E87A2C / white text / 0px radius).
+5. Optional secondary link below CTA (text-sm / weight 500 / zinc-500 / underline on hover).
+
+*Copy formula:*
+- Headline: "[Verb] your first [object]" ("Build your first dashboard").
+- Body: 1 sentence that names the outcome + 1 sentence that names the next step ("Dashboards let your team track metrics that matter. Start with a template or build from scratch.").
+- CTA verb: action-specific — "Build," "Create," "Connect," "Invite." Never "Get started" or "Let's go."
+
+*Example (dashboards/list first-time):*
+> *[dashboard illustration]*
+> **Build your first dashboard**
+> Dashboards let your team track the metrics that matter most. Start from a template or build from scratch.
+> **[Build dashboard]** (primary, orange)
+> See a sample dashboard
+
+*Dos:* lead with outcome language ("track metrics that matter"); CTA destination goes straight to the builder, not a marketing page.
+*Don'ts:* no apology language ("No dashboards yet — that's okay!"); no fake scarcity ("Only 3 template spots left!"); no secondary CTA that competes with the primary (the secondary is a LINK, not a button).
+
+---
+
+**Pattern 2 — Filtered-away (UNDO the filter):**
+
+*Layout (32pt spacing):*
+1. Icon only — 64x64 standardized "filter" or "search" glyph in zinc-400. **No illustration.** This is the visual diverge from pattern 1.
+2. Headline (text-2xl / 24px / weight 600 / zinc-900).
+3. Body — 1 sentence referencing the filter + 1 sentence telling them what to do.
+4. Tertiary link "Clear filters" — text-sm weight 500 zinc-600 with underline, NOT a button.
+5. Optional: "Or [adjacent action]" secondary link.
+
+*Copy formula:*
+- Headline: "No [object] match your filters" ("No dashboards match your filters").
+- Body: names the current filter + restoration path ("You're filtering by 'owner: me' and 'tag: sales.' Adjust your filters to see more.").
+- CTA verb: "Clear filters" (tertiary link, not a primary button — the user's in a filtered state, not a first-time state).
+
+*Example (dashboards/list filtered):*
+> *[filter glyph]*
+> **No dashboards match your filters**
+> You're filtering by "owner: me" and "tag: sales." Adjust or clear your filters to see more dashboards.
+> Clear filters (tertiary link)
+
+*Dos:* name the specific filter values causing the empty state; make "Clear filters" one click.
+*Don'ts:* **no orange CTA button** — this is the #1 miscategorization risk. An orange button here makes the screen feel like a first-time state, user thinks they need to "create" something. Filter-empty states should feel LIGHT — they're a filter state, not a feature gap.
+
+---
+
+**Pattern 3 — Error (RECOVER):**
+
+*Layout (32pt spacing):*
+1. Icon only — 64x64 warning glyph in zinc-500 (NOT red). **No illustration.** Error states don't need to signal alarm; they need to signal recoverability.
+2. Headline (text-2xl / 24px / weight 600 / zinc-900).
+3. Body — 1-2 sentences. Specific to the error (not generic "Something went wrong"). Includes what the user can try.
+4. Secondary CTA button (h-10 / px-5 / bg-white / border zinc-300 / zinc-900 text / 0px radius) — typically "Retry" or "Refresh."
+5. Optional: link to support or docs for the specific error type.
+
+*Copy formula:*
+- Headline: specific to error type ("We couldn't load your dashboards," "Query failed," "Integration connection expired"). Never "Something went wrong."
+- Body: what went wrong + what to try ("This usually resolves on retry. If it keeps happening, your admin can check the integration in Settings.").
+- CTA verb: "Retry," "Refresh," "Reconnect" — action the user can actually take.
+
+*Example (explore/queries query failed):*
+> *[warning glyph, zinc-500]*
+> **Query failed**
+> Your query hit a timeout after 30 seconds. Try narrowing the date range or reducing the JOIN depth. Your query text is preserved below.
+> **[Retry query]** (secondary, white/border)
+> View query debug info
+
+*Dos:* preserve user's work when possible (their query text, their form input); use secondary button styling so this doesn't read as a first-time state.
+*Don'ts:* **no red** (signals panic); no orange CTA (confuses with first-time); no generic "Something went wrong" copy — it's the single worst error empty-state copy in the SaaS industry.
+
+---
+
+**Pattern 4 — Permission-denied (ESCALATE):**
+
+*Layout (32pt spacing):*
+1. Icon only — 64x64 lock or shield glyph in zinc-400.
+2. Headline (text-2xl / 24px / weight 600 / zinc-900).
+3. Body — 1 sentence explaining the permission + 1 sentence naming the path to access.
+4. Tertiary link "Request access" or "Contact your admin" — text-sm weight 500 zinc-600 with underline.
+5. Optional: which role has access, so user can articulate the request.
+
+*Copy formula:*
+- Headline: "You don't have access to this [object]" ("You don't have access to this dashboard").
+- Body: explains the permission + path ("This dashboard is restricted to the Sales team. Request access from your admin, or ask a Sales team member to share it with you.").
+- CTA: tertiary link — NOT a button. Permission-denied is a DEFER state, not an action state.
+
+*Example (dashboards/detail permission-denied):*
+> *[lock glyph, zinc-400]*
+> **You don't have access to this dashboard**
+> This dashboard is restricted to the Sales workspace. Ask your admin to add you, or request access directly.
+> Request access (tertiary link)
+
+*Dos:* name WHO has access (specific team / role); provide a concrete next step.
+*Don'ts:* no apology language ("Sorry, you can't see this!"); no orange CTA (confuses with first-time); no red (this isn't an error, it's a policy).
+
+---
+
+**Where patterns overlap visually:** shared vertical column, centered, same headline scale, same content width, same 8pt rhythm. A user landing on any empty state recognizes "this is an empty-state screen" in <1 second.
+
+**Where patterns DIVERGE (the load-bearing visual-signaling):**
+- **CTA treatment** — primary orange for first-time, tertiary link for filtered-away + permission-denied, secondary white/border button for error. Four different CTA signals = four different actions expected.
+- **Visual element** — illustration (when available) for first-time only; standardized icons for the other 3 patterns. Illustration signals "here's a feature to SELL"; icon signals "here's a state to RESOLVE."
+- **Headline specificity** — first-time uses generic verbs ("Build your first"); filtered-away, error, and permission-denied all reference specific user context (their filter, their error, their permission scope).
+
+**Load-bearing don't (across all 4 patterns):** never combine patterns. If a screen can be filtered-away OR error, pick one category per render. Two-state empty screens confuse users more than either category alone.$pf$,
+ $pf$4-pattern system designed with shared visual language (centered column, 8pt rhythm, 480px max width, same headline scale) plus 3 load-bearing divergences per category: CTA treatment (orange primary for first-time / tertiary link for filtered-away + permission-denied / white secondary for error), visual element (illustration only for first-time; icon for others), copy specificity (first-time uses generic verbs; other 3 reference specific user context). Each pattern has layout spec in 4pt grid, copy formulas with headline + body + CTA verb standards, dos/don'ts explicitly calling out the miscategorization risk (e.g., orange button on filtered-away = reads as first-time, which is what's broken today). Example copy provided for one representative screen per pattern.$pf$),
+
+-- Step 4 --
+('66666666-6666-6666-6666-666666290104',
+ '55555555-5555-5555-5555-555555550029',
+ 4,
+ $pf$Ship spec — Figma file organization, eng handoff per wave, 3-wave rollout plan$pf$,
+ $pf$Pattern system is locked. Now the ship spec so eng can execute and we don't ship 47 screens at once and regress something.
+
+Build:
+
+1. **Figma file organization** — page structure, component library additions (we use `axon-ds` internal library), variants for each pattern, which tokens we introduce new vs reuse. Naming conventions.
+
+2. **Eng handoff notes per wave** — what changes for each of the 3 waves, which components are net-new vs updated, what QA needs to check. Specific enough that our eng lead (Chris Nguyen) can estimate and sequence without 20 follow-up questions.
+
+3. **Rollout plan** — 3 waves over 6 weeks. For each wave: which screens, which behind a feature flag, rollback criteria, measurement we're watching to decide if we proceed to the next wave.
+
+4. **Open questions / risks** — places we're not sure yet. I already suspect the `explore` filtered-away state is different enough from standard filtered-away that it might warrant a 5th pattern — flag it and suggest whether to force-fit into the existing 4 or punt.
+
+Assume Chris's team has ~40 FTE-days over 6 weeks (he said "1 engineer mostly, maybe 1.5 during wave 2").$pf$,
+ $pf$Ship spec below, 4 sections.
+
+**1. Figma file organization**
+
+File: `Empty States System — Nov 2026`. 5 pages:
+
+- **00 Overview** — the 4-pattern summary table with visual samples, links to each pattern page. First page an engineer or PM lands on; single-page orientation.
+- **01 Patterns** — 1 frame per pattern (4 total). Each frame has the layout spec with measurement annotations, dos/don'ts callouts in the margin, and 3 example copies per pattern.
+- **02 Variants** — all 65 empty-state variants laid out per screen. Grouped by wave (wave 1 / wave 2 / wave 3 sections). Named `empty-state/<category>/<screen-path>` — e.g., `empty-state/first-time/dashboards-list`, `empty-state/filtered-away/reports-list`.
+- **03 Tokens** — new design tokens introduced: `--color-empty-state-icon-default` (zinc-400), `--color-empty-state-icon-warning` (zinc-500, not red), `--spacing-empty-state-block` (32pt). All other values reuse existing `axon-ds` tokens.
+- **04 Handoff Notes** — wave-by-wave section with eng-facing notes, component specs, QA checklist. Chris + his team land here.
+
+**Component library additions** (`axon-ds`):
+- New: `EmptyState` component with 4 variants (`first-time` / `filtered-away` / `error` / `permission-denied`) and variant-specific props (`illustration` prop only on first-time; `errorType` prop only on error).
+- Updated: none. All existing components untouched.
+- **Naming convention:** `EmptyState.FirstTime`, `EmptyState.FilteredAway`, `EmptyState.Error`, `EmptyState.PermissionDenied` (dot-nested variants, matching how we do `Button.Primary` / `Button.Secondary` today).
+
+**2. Eng handoff notes per wave**
+
+*Wave 1 (weeks 1-2):*
+- **Scope:** 6 first-time empty states on top-of-funnel screens (dashboards/list, data-sources/list + detail, reports/list, alerts/list, integrations/detail unconfigured).
+- **Net-new components:** `EmptyState.FirstTime` variant only. Props: `illustration` (enum: 'dashboard' | 'report' | 'alert' | 'integration' | null), `headline`, `body`, `primaryCTA` (label + onClick), `secondaryLink` (label + href, optional).
+- **Components updated:** none. Wave 1 replaces inline empty-state markup on 6 screens with the new component.
+- **QA per screen:** (a) new-user flow lands on the empty state (create fresh account, don't populate); (b) primary CTA destination is correct; (c) copy matches Figma exactly; (d) illustration loads (skip if viewport <640px, fallback to icon); (e) empty state disappears as soon as data populates.
+- **Feature flag:** `empty-states-v2-wave1`, per-user rollout. 10% → 50% → 100% over 5 days.
+
+*Wave 2 (weeks 3-4):*
+- **Scope:** 22 filtered-away states across list-view screens + 4 high-traffic error states (explore/queries fail, integrations/detail OAuth expired, dashboards/detail chart fail, reports/detail generation fail).
+- **Net-new components:** `EmptyState.FilteredAway`, `EmptyState.Error` variants. Props for filtered-away: `filters` (array of active filter descriptions), `onClearFilters` (callback). Props for error: `errorType` (enum: 'timeout' | 'auth-expired' | 'generic'), `onRetry` (callback).
+- **Components updated:** 22 list-view screens need to pass active filters into the empty-state component.
+- **QA:** (a) filter values display correctly in body copy; (b) clear-filters callback actually clears; (c) error retry callback works; (d) error patterns preserve user state where applicable (query text, form input).
+- **Feature flag:** `empty-states-v2-wave2`, same rollout schedule.
+
+*Wave 3 (weeks 5-6):*
+- **Scope:** remaining 8 error states + all 13 permission-denied states + any screens not yet touched.
+- **Net-new components:** `EmptyState.PermissionDenied`. Props: `objectType`, `accessGrantedBy` (role/team name), `onRequestAccess` (callback, optional).
+- **QA:** (a) permission-denied copy names the correct access-granting role; (b) request-access callback routes to the right destination; (c) all category-3 error states use specific error type, not generic.
+- **Feature flag:** `empty-states-v2-wave3`.
+
+**3. Rollout plan — measurement + rollback**
+
+| Wave | Duration | Measurement | Rollback trigger |
+|------|----------|-------------|------------------|
+| 1 | Weeks 1-2 (ship), weeks 3-6 (measure 4 weeks post-full) | Activation conversion: % of new signups creating first dashboard in 7 days | <38% sustained (current 41%) = rollback wave 1 |
+| 2 | Weeks 3-4 (ship), weeks 5-8 (measure) | FullStory bounce-from-filtered-away rate; support ticket volume on "I can't find X" | Either metric worse than baseline = rollback |
+| 3 | Weeks 5-6 (ship) | Support ticket volume on errors + permissions | Volume up at 2 weeks = rollback |
+
+Go/no-go between waves: each wave is independently gated. Wave 2 doesn't ship if wave 1 shows a regression in activation.
+
+**4. Open questions / risks**
+
+- **Explore filtered-away edge case:** `explore/queries` filtered-away is a power-user screen with different needs — heavy users want fast re-filtering, not "clear filters and start over." **Recommendation:** force-fit into pattern 2 for v1 (show active filters, offer clear-filters link) and ship a v1.1 in a separate sprint that adds an inline filter-editor affordance. Do NOT delay wave 2 to design a 5th pattern — the cost of delay exceeds the cost of a v1.1.
+- **Illustrations on mobile (<640px):** fallback to icon treatment. Needs design confirm that the 4 existing illustrations have acceptable icon-fallback mappings. **Action:** Priya confirms fallback mapping by end of week 1.
+- **Dark mode:** Axonbridge ships dark mode Q1 2027. All 4 patterns need dark-mode variants. **Punt to a wave 4 post-launch** — not blocking for wave 1-3.
+- **Animated illustrations:** someone asked about Lottie animations on first-time states. **Recommend against for v1** — animation on empty states competes with the CTA for attention. Revisit after 6-month engagement data.
+- **Copy maintenance:** 65 empty-state copy strings land in the product. Who owns copy updates post-launch? **Recommendation:** Priya owns the copy doc in Notion, PM Sam updates it on feature launches that affect empty-state copy. Link the Notion doc in the Figma file-overview page.
+
+**Chris's FTE estimate fit-check:** 40 FTE-days is tight but workable — wave 1 is ~10 days (6 screens + component foundation), wave 2 is ~18 days (22 screens + 2 new variants + active-filter plumbing), wave 3 is ~12 days (21 screens but most are small). If Chris wants a cushion, drop 3 of the wave-3 permission-denied states to a follow-on ticket — the low-traffic ones (team/roles, settings/billing, profile/api-keys permission states) can wait.$pf$,
+ $pf$Ship spec delivered across 4 sections: Figma file organization (5 pages, `EmptyState` component with 4 dot-nested variants in axon-ds, clear naming convention); wave-by-wave eng handoff notes with net-new vs updated components + QA checklist + feature-flag rollout; 3-wave rollout plan over 6 weeks with measurement + rollback trigger per wave; 5 open questions/risks with concrete recommendations. Key calls: force-fit explore/queries filtered-away into pattern 2 for v1 (defer filter-editor affordance to v1.1, don't delay wave 2 for a 5th pattern); dark-mode variants punt to wave 4; drop 3 low-traffic permission-denied states from wave 3 if Chris needs cushion on the 40-FTE-day budget. Measurement thresholds tied directly to the activation (41% → target 58%), FullStory bounce, and support-ticket metrics from step 2.$pf$);
+
+-- =========================================================================
 -- END OF FILE — append next project(s) below this line.
 -- Iterations working the Content queue: add 2–3 projects per iteration,
 -- appending below this comment. Do NOT rewrite existing projects.

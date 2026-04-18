@@ -927,6 +927,686 @@ Drop-in replacement for the inline useEffect in your 3 other components. Each ca
  $pf$Implements the hook with a latestQueryRef to gate stale responses, immediate-clear on below-minLength, surfaced error state, and a manual refetch handle — then shows SearchBar rebuilt as an 18-line consumer of the hook.$pf$);
 
 -- =========================================================================
+-- Project 55-0004 | Cohort retention from a messy events table | Raj Patel | Data | 5 steps
+-- =========================================================================
+
+DELETE FROM prompt_steps WHERE prompt_id = '55555555-5555-5555-5555-555555550004';
+DELETE FROM prompts      WHERE id        = '55555555-5555-5555-5555-555555550004';
+
+INSERT INTO prompts (
+  id, title, description, content, result_content,
+  category_id, difficulty, model_used, model_recommendation,
+  tools_used, tags, status, author_id, vote_count, bookmark_count
+) VALUES (
+  '55555555-5555-5555-5555-555555550004',
+  $pf$Cohort retention from a 14M-row events table — a 5-pass build with Claude 4.7 Opus$pf$,
+  $pf$A SaaS client handed me a 14M-row user_events table with no docs and asked "how is retention?". I used Claude across five passes to interpret the schema, define what an active user actually means, write the cohort SQL, QA my own query, and ship a Metabase-friendly version with parameters.$pf$,
+  $pf$I freelance as a data analyst — three weeks ago a B2B SaaS client (a small recruiting platform, ~8k accounts, ~40k seats) asked me a deceptively simple question: "how is retention?" They handed me a Postgres dump with one big table called `user_events` and roughly zero documentation. 14M rows, four years of history, two product rewrites in the middle.
+
+I'd normally spend a day just exploring before touching SQL. Instead I ran the whole thing through Claude 4.7 Opus across five passes — schema reconnaissance, defining what "active" means for this product, the actual cohort SQL, a self-review pass to catch the gotchas I usually miss the first time (timezones, double-counting, deleted users), and finally a Metabase-friendly version with parameters my client can re-run themselves.
+
+Total turnaround: about 90 minutes. The query I shipped runs in 2.4s on their warehouse and gives them weekly cohort retention curves they can break down by signup source, plan tier, and seat type. Posting the chain because the QA pass (step 4) is where Claude saved my client from a wrong number — I had a quiet timezone bug that would have inflated week-1 retention by ~6 points.$pf$,
+  $pf$Shipped: a single 78-line SQL query plus a Metabase-parameterized variant. Weekly cohort retention runs in 2.4s on their warehouse, broken down by signup_source, plan_tier, and seat_type. Findings I delivered to the client: week-1 retention is 71.3% (healthy), week-4 drops to 38.2% (concerning), and the 2024 product rewrite cohort actually retains 9pts BETTER than the 2023 cohort at week-12 — the rewrite worked, but nobody had ever measured it.
+
+What I got out of running this with Claude: the schema reconnaissance pass surfaced two dead event types (`legacy_login_v1`, `temp_session_ping`) that would have polluted my "active user" definition — I would have caught those eventually but maybe after one bad delivery. The QA pass (step 4) caught a real bug — I was joining on `created_at::date` without specifying timezone, and the events table was UTC while signups were stored in client local time (America/Chicago). Fixing it dropped week-1 retention from 77.4% to 71.3%. That's the difference between "we're killing it" and "we have an onboarding problem" — exactly the kind of error that gets a freelancer fired.$pf$,
+  '11111111-1111-1111-1111-111111111108',
+  'advanced',
+  'claude-opus-4-7',
+  'Claude 4.7 Opus',
+  ARRAY['Claude','PostgreSQL','Metabase','dbt'],
+  ARRAY['sql','retention','cohort-analysis','postgres','data-analytics','b2b-saas'],
+  'approved',
+  '22222222-2222-2222-2222-222222222207',
+  103, 47
+);
+
+INSERT INTO prompt_steps (id, prompt_id, step_number, title, content, result_content, description) VALUES
+
+-- Step 1 --
+('66666666-6666-6666-6666-666666640101',
+ '55555555-5555-5555-5555-555555550004',
+ 1,
+ $pf$Schema reconnaissance — what is this table actually telling me$pf$,
+ $pf$I'm a freelance data analyst and a B2B SaaS client just handed me a Postgres dump with one big table, `user_events`, and asked "how is retention?". They have ~8,000 accounts and ~40,000 seats across those accounts. Zero documentation. Two product rewrites in the table's history (mid-2023, late-2024 — they told me that much).
+
+Here's the DDL and 20 sample rows. Before I write any SQL, I want you to read this like a forensic analyst: tell me what you think this table is recording, what each event_type means based on context, which fields are unreliable or ambiguous, and where the gotchas are likely to bite me when I try to define an "active user."
+
+```sql
+CREATE TABLE user_events (
+  id            BIGSERIAL PRIMARY KEY,
+  user_id       UUID NOT NULL,
+  account_id    UUID,
+  event_type    TEXT NOT NULL,
+  event_payload JSONB,
+  client_ts     TIMESTAMP,            -- client-reported, no TZ
+  server_ts     TIMESTAMPTZ NOT NULL, -- UTC
+  source        TEXT,                 -- 'web' | 'api' | 'mobile' | NULL
+  app_version   TEXT
+);
+CREATE INDEX idx_ue_user_ts ON user_events (user_id, server_ts DESC);
+CREATE INDEX idx_ue_acct_ts ON user_events (account_id, server_ts DESC);
+```
+
+Sample event_types I see in the data: `login`, `logout`, `legacy_login_v1`, `session_start`, `session_end`, `page_view`, `temp_session_ping`, `feature_used`, `search_performed`, `candidate_added`, `candidate_messaged`, `pipeline_advanced`, `report_exported`, `seat_invited`, `seat_accepted`, `billing_view`, `password_reset`. (Counts vary wildly — `page_view` is 8M+ rows, `legacy_login_v1` is 240k.)
+
+Don't write SQL yet. Tell me what I should be careful about.$pf$,
+ $pf$Good — let's do the forensics before the SQL, otherwise you'll bake a mistake into a metric and the client will quote it back to you for a quarter.
+
+**What this table is.** A unified product-telemetry table, append-only, recording everything a user does in the recruiting platform. The dual timestamp (`client_ts` no-TZ, `server_ts` UTC) is the giveaway — somebody set this up expecting client clocks to drift but wanted server truth as the canonical source. Trust `server_ts`. Don't ever join on `client_ts` unless you have to reconstruct user-perceived ordering for a UX investigation.
+
+**Event-type taxonomy I'd build before defining "active":**
+
+- **Authentication noise:** `login`, `logout`, `legacy_login_v1`, `password_reset`, `temp_session_ping`. These are necessary plumbing but they are NOT engagement. A user who logs in and bounces is not retained — they're a tab.
+- **Session boundaries:** `session_start`, `session_end`. Useful for session-length but redundant for "did the user show up." Skip for cohort retention.
+- **Soft engagement:** `page_view`, `search_performed`, `billing_view`. They opened the app but didn't do work. Counts as "active" by a permissive definition; doesn't count by a strict one. Decision point — flag it.
+- **Real work (the gold):** `candidate_added`, `candidate_messaged`, `pipeline_advanced`, `report_exported`. These move the customer's actual job forward. THIS is what you want as the activity signal for a recruiting platform — a customer who logs in and does no candidate work is at risk regardless of login frequency.
+- **Account lifecycle:** `seat_invited`, `seat_accepted`. User-level events but they describe account growth, not user activity. Don't include in retention denominators.
+
+**The two events I'd quarantine immediately:**
+
+1. **`legacy_login_v1`** (240k rows). The name and the count tell the story — left over from the pre-2023-rewrite product. Confirm with the client, but I'd bet these were auto-emitted during a migration backfill, not real user logins. Including them in your "active user" definition will inflate retention for any cohort overlapping the migration window.
+2. **`temp_session_ping`** — sounds like a heartbeat the app emits while a tab is open. If it fires every N seconds, it'll absolutely dominate your activity counts and tell you nothing about engagement. Quarantine until proven otherwise.
+
+**Other gotchas before you write SQL:**
+
+- **`account_id` is nullable.** Some events have a user but no account — probably pre-account-creation flow (signup, email verify). Don't `INNER JOIN` to accounts blindly; you'll lose the signup funnel.
+- **Two product rewrites in the history.** Event types may have been renamed across rewrites. Before computing 4-year retention, ask the client if (e.g.) `candidate_added` was called something else in 2022. If yes, you'll need an event-type alias map.
+- **Client TS is no-TZ but server TS is UTC.** When you bucket by day for cohorts, decide which timezone the bucket lives in. The client is in Chicago — if you say "weekly cohort starting Monday" in UTC vs America/Chicago, you'll shift roughly 5% of week-boundary events into different buckets. Pick one explicitly.
+- **No soft-delete column.** You'll want to know whether dropped users still exist in this table or were hard-deleted. If hard-deleted, retention will look artificially good (the denominator is missing the people who left hardest).
+
+**My recommended next step:** confirm with the client that (a) `legacy_login_v1` and `temp_session_ping` should be excluded, (b) the canonical activity definition for "this user did real work this week" is "any of `candidate_added`, `candidate_messaged`, `pipeline_advanced`, `report_exported`", and (c) which timezone they want cohort weeks bucketed in. Then we can write SQL that means something.$pf$,
+ $pf$Reads the DDL + 20 sample rows like a forensic analyst, names the table's purpose, classifies the 17 event types into 5 functional buckets, flags two specific events (`legacy_login_v1`, `temp_session_ping`) to quarantine, and surfaces 4 other gotchas (nullable account_id, rewrite-era event renames, dual-timezone trap, missing soft-delete).$pf$),
+
+-- Step 2 --
+('66666666-6666-6666-6666-666666640102',
+ '55555555-5555-5555-5555-555555550004',
+ 2,
+ $pf$Decide what "active user" means + pick the cohort grain$pf$,
+ $pf$Confirmed with the client. They want to quarantine `legacy_login_v1` and `temp_session_ping`. They confirmed event-type names were stable across the rewrites (only the UI changed). Their business is in America/Chicago and they want weekly cohort buckets aligned to local Mondays.
+
+Now help me make two definitional calls I keep going back and forth on:
+
+1. **Active user definition.** Strict (any of: `candidate_added`, `candidate_messaged`, `pipeline_advanced`, `report_exported`) vs broad (any non-quarantined event). Strict measures real value delivered; broad measures opening the app. I lean strict but recruiting has a workflow where some weeks a user is screening candidates (lots of `page_view` + `search_performed`) and some weeks they're moving people through the pipeline. A strict-only definition might mark "screening weeks" as inactive even though the user is engaged.
+
+2. **Cohort grain.** User-level cohorts (each user's signup week) vs account-level cohorts (each account's signup week, retention measured at "did ANY seat on this account do work"). User-level is standard; account-level is what the client probably actually cares about because they sell account contracts.
+
+For each, give me the tradeoff in one paragraph and your recommendation. I want to ship a defensible answer to a non-technical client, not the most elegant model.$pf$,
+ $pf$Both calls are real and both have a defensible answer. Here's how I'd break it down for a client:
+
+**Active-user definition: go with a 2-tier definition, not strict OR broad.**
+
+The screening week problem you raised is correct — a strict definition will undercount engagement during research-heavy weeks, and your client will (rightly) push back when they see retention numbers that don't match their gut. But broad is worse: it lets a user who opened the billing page once count as active, which is the classic "MAU-inflated-to-show-the-board" pattern that destroys analyst credibility.
+
+The clean answer: **report two retention numbers side by side**.
+- **Engaged retention:** any of `candidate_added`, `candidate_messaged`, `pipeline_advanced`, `report_exported` in the bucket. This is "did real work."
+- **Active retention:** above OR (`search_performed` ≥ 2 in the bucket OR `page_view` ≥ 5 in the bucket). The thresholds keep accidental-tab visits out while letting real screening behavior count.
+
+Two columns next to each other, both labeled, no editorializing. The client can compare the gap — if Engaged is way below Active, they have a "users come but don't do work" problem. If they track together, the funnel is healthy. This also forecloses the "you cherry-picked the metric" objection because you reported both.
+
+**Cohort grain: account-level, full stop.**
+
+User-level cohorts are the academic-textbook answer; they're useful for studying individual user journeys (e.g., "do users who ship a candidate in week 1 retain better?"). But your client sells account contracts. The thing that determines whether they keep revenue is whether the ACCOUNT is alive — meaning ANY seat on the account did real work in the period. A user-level cohort will tell you "60% of users retained at week 4," which is fine for a product newsletter but doesn't answer the CFO's question.
+
+Account-level cohort: the cohort is the set of accounts whose first-ever event landed in week W. Retention at week N = fraction of those accounts where ANY seat did Engaged-tier activity in week W+N.
+
+One caveat to flag for your client: account-level retention will look HIGHER than user-level (the bar — "any seat" — is permissive). That's correct, but it can read as "the data analyst gave us flattering numbers." Pre-empt that — show user-level retention as a secondary chart so they see the gap and trust that you weren't trying to hide the harder number.
+
+**My final recommendation for what you ship:** account-level cohorts as the headline retention curve, with two columns (Engaged + Active) side by side. User-level retention as a secondary diagnostic chart. That's the version that survives a client meeting where the CRO and the CFO ask different questions.$pf$,
+ $pf$Recommends a 2-tier active definition (Engaged: candidate-action events; Active: above OR thresholded page_view/search_performed) reported side-by-side, plus account-level cohort grain as the headline metric with user-level as a secondary diagnostic — explicitly framed as the answer that survives a meeting with both the CRO and CFO.$pf$),
+
+-- Step 3 --
+('66666666-6666-6666-6666-666666640103',
+ '55555555-5555-5555-5555-555555550004',
+ 3,
+ $pf$Write the cohort retention SQL — production-ready Postgres$pf$,
+ $pf$Great — going with account-level cohorts and the 2-tier (Engaged + Active) reporting. Now write the actual SQL.
+
+Requirements:
+- Postgres 15 (CTEs, generate_series, FILTER clause are all fair game).
+- Output: one row per (cohort_week, weeks_since_signup, metric) with cohort_size and retained_accounts.
+- Quarantine `legacy_login_v1` and `temp_session_ping`.
+- Bucket weeks by America/Chicago Monday-start.
+- Compute both Engaged retention and Active retention in one query (don't make me run it twice).
+- Cap the analysis at 26 weeks since signup (no need for years-out tail).
+- Comment the load-bearing logic so I can explain it to the client.
+
+Aim for production-quality. I'll be running this against ~14M event rows so don't write something that does a full table scan per cohort.$pf$,
+ $pf$Here's the query. Should run in 2–4s on a warehouse-sized Postgres against 14M rows because the activity-buckets CTE is the only full scan and everything downstream joins on small intermediate sets.
+
+```sql
+-- =====================================================================
+-- Account-level weekly cohort retention, 2-tier (Engaged + Active)
+-- Bucket: America/Chicago, Monday-start
+-- Window: 26 weeks since signup
+-- =====================================================================
+WITH
+-- 1) Filter the noise once. Everything downstream reads from this.
+clean_events AS (
+  SELECT
+    account_id,
+    user_id,
+    event_type,
+    -- Anchor every event to the local Monday it falls on.
+    date_trunc('week', server_ts AT TIME ZONE 'America/Chicago')::date AS local_week
+  FROM user_events
+  WHERE account_id IS NOT NULL
+    AND event_type NOT IN ('legacy_login_v1', 'temp_session_ping')
+),
+
+-- 2) Per (account, week): did the account do any Engaged work?
+--    Did it cross the Active threshold? Compute both flags in one pass.
+account_week_activity AS (
+  SELECT
+    account_id,
+    local_week,
+    -- Engaged: any candidate-action or report event hit
+    BOOL_OR(event_type IN (
+      'candidate_added','candidate_messaged','pipeline_advanced','report_exported'
+    )) AS engaged,
+    -- Active: Engaged OR thresholded soft-engagement
+    (
+      BOOL_OR(event_type IN (
+        'candidate_added','candidate_messaged','pipeline_advanced','report_exported'
+      ))
+      OR COUNT(*) FILTER (WHERE event_type = 'search_performed') >= 2
+      OR COUNT(*) FILTER (WHERE event_type = 'page_view')        >= 5
+    ) AS active
+  FROM clean_events
+  GROUP BY account_id, local_week
+),
+
+-- 3) Each account's cohort = the local week of its first non-noise event.
+account_cohort AS (
+  SELECT
+    account_id,
+    MIN(local_week) AS cohort_week
+  FROM clean_events
+  GROUP BY account_id
+),
+
+-- 4) Cohort sizes: how many accounts started in each week.
+cohort_sizes AS (
+  SELECT cohort_week, COUNT(*) AS cohort_size
+  FROM account_cohort
+  GROUP BY cohort_week
+),
+
+-- 5) Join activity to cohort, compute weeks_since_signup, cap at 26.
+retention_long AS (
+  SELECT
+    ac.cohort_week,
+    -- Whole-week offset since the cohort started.
+    ((awa.local_week - ac.cohort_week) / 7)::int AS weeks_since_signup,
+    awa.engaged,
+    awa.active,
+    awa.account_id
+  FROM account_cohort ac
+  JOIN account_week_activity awa USING (account_id)
+  WHERE awa.local_week >= ac.cohort_week
+    AND awa.local_week <  ac.cohort_week + INTERVAL '27 weeks'
+)
+
+-- 6) Roll up: distinct accounts retained per cohort × week × metric.
+SELECT
+  rl.cohort_week,
+  rl.weeks_since_signup,
+  cs.cohort_size,
+  COUNT(DISTINCT rl.account_id) FILTER (WHERE rl.engaged) AS engaged_retained,
+  COUNT(DISTINCT rl.account_id) FILTER (WHERE rl.active)  AS active_retained,
+  ROUND(
+    100.0 * COUNT(DISTINCT rl.account_id) FILTER (WHERE rl.engaged) / cs.cohort_size,
+    2
+  ) AS engaged_retention_pct,
+  ROUND(
+    100.0 * COUNT(DISTINCT rl.account_id) FILTER (WHERE rl.active) / cs.cohort_size,
+    2
+  ) AS active_retention_pct
+FROM retention_long rl
+JOIN cohort_sizes cs USING (cohort_week)
+GROUP BY rl.cohort_week, rl.weeks_since_signup, cs.cohort_size
+ORDER BY rl.cohort_week, rl.weeks_since_signup;
+```
+
+**A few load-bearing notes:**
+
+- The `clean_events` CTE is the only full scan of `user_events`. Everything below it operates on (account, week) pairs, which collapses 14M rows into something on the order of (8k accounts × 200 weeks) ≈ 1.6M rows max — cheap.
+- `BOOL_OR(...)` and `COUNT(*) FILTER (...)` are both single-pass aggregates, so step 2 stays one scan over `clean_events` even though it computes two metrics.
+- The `account_cohort` CTE uses MIN on `local_week` — meaning the cohort is anchored to FIRST non-noise activity, not signup row. If your client's `accounts` table has a true `created_at`, you could swap to that — but anchoring to first-event keeps the query self-contained and avoids the "account exists but never logged in" cohort polluting week-0.
+- The 27-week interval upper bound is intentional: `weeks_since_signup` from 0 through 26 inclusive is 27 buckets.
+- `ROUND(..., 2)` on the percentage is for client readability. If you're feeding this into a chart, drop the round and let the viz handle precision.
+
+Run it and check three sanity values: (a) every cohort's week-0 engaged_retention_pct should be ≤ 100 (if it's > 100 you have an account with first-event NOT being its earliest event — bug); (b) the SUM of cohort_size across all cohort_weeks should equal the count of distinct account_ids in the table; (c) week-26 retention should be lower than week-0. If any of those fail, stop and re-read the CTEs.$pf$,
+ $pf$Production Postgres query: 6 CTEs that quarantine noise once, compute Engaged + Active flags per (account, week) in one pass, anchor each account to its first-event week as the cohort, cap at 26 weeks since signup, and return cohort_size + retained counts + percentages. Includes architecture notes (single full-scan, pair-collapse rationale, 27-week upper bound, ROUND for client readability) and three sanity checks to validate the output.$pf$),
+
+-- Step 4 --
+('66666666-6666-6666-6666-666666640104',
+ '55555555-5555-5555-5555-555555550004',
+ 4,
+ $pf$Self-review the query — find what I missed before I ship to the client$pf$,
+ $pf$I ran the query. Numbers came back. Week-0 engaged retention is 77.4% which feels high for a B2B SaaS recruiting platform — that would put them above Loom's published numbers. Before I ship this to the client, I want you to review your OWN query critically and tell me what's wrong with it. Be specific. I'd rather catch a bug now than have the CRO point one out in the meeting.$pf$,
+ $pf$You're right to be suspicious. 77.4% week-0 Engaged retention is suspiciously high — B2B SaaS week-0 is usually 60–72% even for healthy products. Reviewing my own query, I found one real bug and two conceptual choices worth re-examining.
+
+**Bug — timezone bucketing leak (this is the one that's inflating week-0):**
+
+The query buckets event timestamps using `date_trunc('week', server_ts AT TIME ZONE 'America/Chicago')`. That's correct — it shifts the UTC server_ts into local time before truncating. BUT `date_trunc('week', ...)` in Postgres returns a TIMESTAMP, and I'm casting to `::date` — which silently drops the timezone information and uses the SERVER's timezone for the date portion of the conversion. If your warehouse is set to UTC (which it almost certainly is), the round-trip is `UTC server_ts → Chicago local timestamp → TIMESTAMP without TZ → ::date interpreted in UTC again`.
+
+Net effect: events that happen Sunday evening Chicago time (which is Monday morning UTC) get bucketed to the WRONG week. A user who signs up Sunday 8pm Chicago and does work Sunday 8pm Chicago looks like a week-0-and-week-1 retained user instead of just week-0. That's pure double-counting on week-0 → week-1.
+
+**Fix:**
+```sql
+-- Before:
+date_trunc('week', server_ts AT TIME ZONE 'America/Chicago')::date
+
+-- After:
+(date_trunc('week', server_ts AT TIME ZONE 'America/Chicago'))::date
+-- equivalently and clearer:
+(server_ts AT TIME ZONE 'America/Chicago')::date
+  - EXTRACT(DOW FROM (server_ts AT TIME ZONE 'America/Chicago'))::int * INTERVAL '1 day'
+  + INTERVAL '1 day'  -- adjust DOW=0 (Sun) to Mon-anchored
+```
+
+Actually the cleanest fix is to do the cast AT TIMEZONE-aware:
+```sql
+date_trunc('week', server_ts AT TIME ZONE 'America/Chicago')::date
+-- becomes:
+(date_trunc('week', server_ts AT TIME ZONE 'America/Chicago') AT TIME ZONE 'America/Chicago')::date
+```
+
+Apply that change in `clean_events` and re-run. Expect week-0 Engaged retention to drop ~5–7 percentage points. If it lands around 70–72%, the bug is fixed and the new number is the truth.
+
+**Conceptual issue #1 — week-0 is not really "retention."**
+
+By construction, every account in the cohort has activity in their cohort week (that's how I defined the cohort). So week-0 retention is mathematically guaranteed to be 100% for the Engaged subset that defined it... EXCEPT my Engaged definition is narrower than the "any event" definition that anchored the cohort. So an account whose first-ever activity was a `page_view` (Active but not Engaged) anchors at that week with engaged=false, then maybe never does Engaged work — so week-0 Engaged is meaningfully < 100%. That's correct but it's confusing to explain.
+
+**Recommendation:** in the chart, label week-0 as "the signup week" not "week-0 retention." It's a baseline, not retention. Real retention starts at week 1.
+
+**Conceptual issue #2 — accounts with very recent signup will skew the recent cohorts.**
+
+An account that signed up 3 weeks ago can only contribute weeks 0, 1, 2. It cannot be "retained" at week 12 because the data physically doesn't exist yet. The query treats missing weeks as "not retained," which means recent cohorts will look like they have a cliff at the data boundary.
+
+**Recommendation:** add a filter so any (cohort_week, weeks_since_signup) bucket where `cohort_week + weeks_since_signup * 7 > MAX(local_week_in_data) - 6` is excluded from the chart. Or compute it in the SQL with a CTE that knows the data's max date and NULLs out incomplete buckets. I can write it if you want, but it's a charting-layer concern more than a SQL concern — Metabase has a "ignore nulls" toggle that handles it cleanly.
+
+**What I'd ship:** apply the timezone fix, re-run, expect ~71% week-0 Engaged, send the chart with the "signup week is baseline" label, and put the recent-cohort caveat in the chart footnote.$pf$,
+ $pf$Self-review catches one real bug (timezone double-bucketing in date_trunc::date round-trip — inflates week-0 retention by ~5-7pts) plus two conceptual issues (week-0 is mathematically baseline not retention; recent cohorts have data-boundary cliffs that read as retention drops). Provides the SQL fix and recommends labeling, charting, and footnote treatments.$pf$),
+
+-- Step 5 --
+('66666666-6666-6666-6666-666666640105',
+ '55555555-5555-5555-5555-555555550004',
+ 5,
+ $pf$Adapt the query for Metabase with parameters my client can change$pf$,
+ $pf$Bug fixed, week-0 dropped to 71.3% — much more believable. Now I want to ship this to the client as a Metabase question they can re-run themselves. Three things they need to be able to change without touching SQL:
+1. The cohort window (e.g., only show cohorts that started in the last 12 months)
+2. A filter on signup_source (web vs API vs mobile vs all)
+3. A filter on plan_tier (their accounts table has free / pro / enterprise tiers)
+
+The accounts table is `accounts (id UUID, plan_tier TEXT, signup_source TEXT, created_at TIMESTAMPTZ)`. Rewrite the query to use Metabase's `{{parameter}}` syntax (with the `[[...optional...]]` brackets so params can be left blank).$pf$,
+ $pf$Here's the Metabase-parameterized version. The three parameters use Metabase's optional-clause syntax `[[ ... ]]` so each filter only injects when the user sets a value.
+
+```sql
+WITH
+clean_events AS (
+  SELECT
+    ue.account_id,
+    ue.user_id,
+    ue.event_type,
+    (date_trunc('week', ue.server_ts AT TIME ZONE 'America/Chicago')
+       AT TIME ZONE 'America/Chicago')::date AS local_week
+  FROM user_events ue
+  JOIN accounts a ON a.id = ue.account_id
+  WHERE ue.account_id IS NOT NULL
+    AND ue.event_type NOT IN ('legacy_login_v1', 'temp_session_ping')
+    [[ AND a.signup_source = {{signup_source}} ]]
+    [[ AND a.plan_tier      = {{plan_tier}} ]]
+),
+
+account_week_activity AS (
+  SELECT
+    account_id,
+    local_week,
+    BOOL_OR(event_type IN (
+      'candidate_added','candidate_messaged','pipeline_advanced','report_exported'
+    )) AS engaged,
+    (
+      BOOL_OR(event_type IN (
+        'candidate_added','candidate_messaged','pipeline_advanced','report_exported'
+      ))
+      OR COUNT(*) FILTER (WHERE event_type = 'search_performed') >= 2
+      OR COUNT(*) FILTER (WHERE event_type = 'page_view')        >= 5
+    ) AS active
+  FROM clean_events
+  GROUP BY account_id, local_week
+),
+
+account_cohort AS (
+  SELECT account_id, MIN(local_week) AS cohort_week
+  FROM clean_events
+  GROUP BY account_id
+  HAVING TRUE
+    [[ AND MIN(local_week) >= {{cohort_start_date}} ]]
+),
+
+cohort_sizes AS (
+  SELECT cohort_week, COUNT(*) AS cohort_size
+  FROM account_cohort
+  GROUP BY cohort_week
+),
+
+retention_long AS (
+  SELECT
+    ac.cohort_week,
+    ((awa.local_week - ac.cohort_week) / 7)::int AS weeks_since_signup,
+    awa.engaged,
+    awa.active,
+    awa.account_id
+  FROM account_cohort ac
+  JOIN account_week_activity awa USING (account_id)
+  WHERE awa.local_week >= ac.cohort_week
+    AND awa.local_week <  ac.cohort_week + INTERVAL '27 weeks'
+)
+
+SELECT
+  rl.cohort_week,
+  rl.weeks_since_signup,
+  cs.cohort_size,
+  COUNT(DISTINCT rl.account_id) FILTER (WHERE rl.engaged) AS engaged_retained,
+  COUNT(DISTINCT rl.account_id) FILTER (WHERE rl.active)  AS active_retained,
+  ROUND(100.0 * COUNT(DISTINCT rl.account_id) FILTER (WHERE rl.engaged) / cs.cohort_size, 2) AS engaged_retention_pct,
+  ROUND(100.0 * COUNT(DISTINCT rl.account_id) FILTER (WHERE rl.active)  / cs.cohort_size, 2) AS active_retention_pct
+FROM retention_long rl
+JOIN cohort_sizes cs USING (cohort_week)
+GROUP BY rl.cohort_week, rl.weeks_since_signup, cs.cohort_size
+ORDER BY rl.cohort_week, rl.weeks_since_signup;
+```
+
+**Metabase parameter setup (configure in the question UI after pasting the SQL):**
+
+| Parameter            | Type           | Default        | Notes |
+|----------------------|----------------|----------------|-------|
+| `signup_source`      | Field Filter   | (none)         | Map to `accounts.signup_source` so Metabase auto-populates the dropdown with web / api / mobile / null. Optional. |
+| `plan_tier`          | Field Filter   | (none)         | Map to `accounts.plan_tier`. Optional. |
+| `cohort_start_date`  | Date           | 12 months ago  | Single date input. The HAVING clause means leaving it blank shows ALL cohorts; setting it shows only cohorts that started on/after that date. |
+
+**Why the `HAVING TRUE [[ AND ... ]]` pattern in `account_cohort`:**
+
+You can't put an optional Metabase clause directly after `GROUP BY` — the parser will choke if the optional doesn't expand. Anchoring with `HAVING TRUE` gives the optional something to tack onto, and `TRUE` evaluates trivially when the param is unset.
+
+**Two things to set on the Metabase question itself, not in SQL:**
+
+1. **Visualization → Line chart**, X = `weeks_since_signup`, Y = both `engaged_retention_pct` and `active_retention_pct` as separate series, breakout/series = `cohort_week`. This gives the standard cohort triangle as overlapping curves.
+2. **"Hide rows where retention is from incomplete cohort"** — add a chart-level filter `weeks_since_signup * 7 + cohort_week <= NOW()::date - 7`. Cleanest done in the viz layer, not SQL.
+
+**One ops note:** the JOIN to `accounts` in `clean_events` will full-scan `accounts` once per query run. Confirm `accounts.id` has a primary-key index (it should, but check on a client warehouse — I've seen worse).$pf$,
+ $pf$Adapts the production query to Metabase with three optional `[[{{parameter}}]]` filters (signup_source, plan_tier, cohort_start_date), uses the `HAVING TRUE [[AND ...]]` pattern to make the cohort-window optional, and includes the parameter-table config + chart-side viz advice + an ops note about the accounts.id index.$pf$);
+
+-- =========================================================================
+-- Project 55-0005 | Differentiated 9th-grade biology lesson | Ben Okafor | Education | 3 steps
+-- =========================================================================
+
+DELETE FROM prompt_steps WHERE prompt_id = '55555555-5555-5555-5555-555555550005';
+DELETE FROM prompts      WHERE id        = '55555555-5555-5555-5555-555555550005';
+
+INSERT INTO prompts (
+  id, title, description, content, result_content,
+  category_id, difficulty, model_used, model_recommendation,
+  tools_used, tags, status, author_id, vote_count, bookmark_count
+) VALUES (
+  '55555555-5555-5555-5555-555555550005',
+  $pf$Differentiated 9th-grade biology lesson on cellular respiration — tiered plan + lab rubric + exit ticket$pf$,
+  $pf$I teach 9th-grade biology to a class with three reading levels and four students on IEPs. Built one 50-minute lesson on cellular respiration that genuinely works for all three tiers, plus a 4-point lab rubric and a 5-question NGSS-aligned exit ticket. Three Claude passes, ~40 minutes total.$pf$,
+  $pf$I teach 9th-grade biology at a Title-I high school in Chicago. My 4th-period class has 28 students — 4 on IEPs (two with reading-level accommodations, one with extended time, one ELL who's at WIDA level 3), about 8 students reading at grade level, and the rest a mix above and below. The unit on cellular respiration always trips me up because the textbook treats it like a one-size lecture and half my class checks out by minute 12.
+
+I used Claude Sonnet 4.6 across three passes. First pass: build me ONE 50-minute lesson plan with three differentiation tiers (modified, on-grade, extension) so I'm not running three separate classes simultaneously — same content, three entry points. Second pass: build a 4-point lab rubric for the molasses-and-yeast fermentation activity that's IEP-friendly (clear behavior anchors, not vague "shows understanding"). Third pass: write a 5-question exit ticket aligned to NGSS HS-LS1-7, with a mix of recall and application items.
+
+Posting because the differentiation tier in step 1 — "same phenomenon, three entry-point ramps" — is a structure I've adapted for three other units now. It's not magic but it's a pattern that actually composes.$pf$,
+  $pf$Used the lesson Tuesday with my 4th-period class. Engagement was the highest I've seen on this topic — the molasses-and-yeast hook lasted past minute 12 (my usual checkout point) and kids were still asking "wait so why does the balloon inflate" at minute 35. Two of my IEP students used the modified tier handout independently for the first time this semester (usually they wait for me to come over). Exit ticket results: 24/28 hit 4/5 or 5/5, including 3 of the 4 IEP students.
+
+What I'm taking forward: the "same phenomenon, three entry-point ramps" structure from step 1 is the load-bearing piece. I've now built two more lessons (osmosis and DNA replication) on the same template — modified tier gets the visual + a fill-in-the-blank scaffold; on-grade gets the prompt cold; extension gets a "now connect this to..." hook. It composes. Also the 4-point rubric format from step 2 with explicit behavior anchors (not "shows understanding" — actually "writes a labeled equation including reactants and products") cut my grading time roughly in half because I'm not rewriting the same feedback 28 times.$pf$,
+  '11111111-1111-1111-1111-111111111106',
+  'beginner',
+  'claude-sonnet-4-6',
+  'Claude 4.6 Sonnet',
+  ARRAY['Claude'],
+  ARRAY['lesson-planning','biology','differentiation','ngss','high-school','iep'],
+  'approved',
+  '22222222-2222-2222-2222-222222222205',
+  87, 52
+);
+
+INSERT INTO prompt_steps (id, prompt_id, step_number, title, content, result_content, description) VALUES
+
+-- Step 1 --
+('66666666-6666-6666-6666-666666650101',
+ '55555555-5555-5555-5555-555555550005',
+ 1,
+ $pf$One 50-minute lesson, three differentiation tiers$pf$,
+ $pf$I teach 9th-grade biology, 28 students, mixed levels. 4 IEPs (2 reading-level mods, 1 extended time, 1 ELL at WIDA 3), maybe 8 on-grade, rest scattered above and below. Topic is cellular respiration — specifically, that glucose + oxygen produce ATP + CO2 + water, and that yeast does it without oxygen (fermentation) producing CO2 + ethanol. NGSS standard is HS-LS1-7.
+
+I want ONE 50-minute lesson plan with a single shared phenomenon (the hook) and ONE shared closing activity (an exit ticket I'll prompt separately), but THREE differentiated middle sections — Modified, On-Grade, Extension — that I can hand to small groups working in parallel. I have a TA who can float between groups for the middle 25 minutes.
+
+Constraints:
+- No expensive lab supplies. Molasses + yeast + balloons + warm water is what I have.
+- Modified tier needs visual scaffolds and lower reading load (max grade-5 reading level on handouts).
+- On-grade tier should match a textbook section.
+- Extension tier should push toward "explain WHY anaerobic happens when oxygen runs out" without going into the electron transport chain.
+- The whole thing has to fit in 50 minutes including transitions.
+
+Output as a structured plan I can print as a teacher-facing one-pager.$pf$,
+ $pf$Here's the lesson. Single phenomenon, three middle ramps, shared close. Times include transitions.
+
+---
+
+**LESSON: Why does the balloon inflate?**
+9th-Grade Biology · Cellular Respiration & Fermentation · NGSS HS-LS1-7
+50 minutes · 28 students · 1 teacher + 1 TA
+
+---
+
+**MINUTES 0–8 · Hook (whole class, shared)**
+
+Set up before students arrive: 4 stations, each with a 16-oz bottle containing warm water + 1 tbsp molasses + 1 packet active dry yeast. A balloon stretched over each bottle's neck. Started ~10 min before bell so the reaction is visibly underway as students walk in.
+
+Whole-class anchor question on the board: *"The balloon is inflating. Nothing is being added. Where is the gas coming from?"* Give 90 seconds of silent think-time, then 2 minutes turn-and-talk, then take 3 hands. Don't correct yet. Write the three most-different answers on the board. (You'll come back to them at minute 45.)
+
+**MINUTES 8–10 · Tier assignment + transition**
+
+Color-coded handouts on each table (you've pre-assigned which student gets which tier — don't make it visible whose tier is whose; print on identical paper and just hand them out). Explain: "Each handout walks you through the same question from a different angle. Work with your table. I'll be checking in. Mr./Ms. [TA] will too."
+
+---
+
+**MINUTES 10–35 · Differentiated middle (parallel groups)**
+
+**🟦 MODIFIED TIER (reading level ~grade 5, heavy visual)**
+
+Page 1 (visual): A labeled cartoon of a yeast cell. Arrow IN labeled "sugar". Arrow OUT labeled "gas (CO₂) + alcohol". Speech bubble from the yeast: "I eat sugar. I make gas. I do this when there's no oxygen."
+
+Page 2 (fill-in-the-blank): Three sentences with word bank.
+- "Yeast eats _____ to get energy." (sugar)
+- "When yeast does this without oxygen, it makes _____ gas." (CO₂ / carbon dioxide)
+- "The gas inflates the _____." (balloon)
+
+Page 3 (draw): Print box. "Draw what's happening inside the bottle. Use arrows for what goes IN and what comes OUT."
+
+TA cue: prompt students to say their answers out loud before writing. Accept verbal-only from the WIDA-3 student.
+
+**🟩 ON-GRADE TIER (matches Miller/Levine textbook section 9.3)**
+
+Page 1: 1-paragraph reading on cellular respiration (aerobic) — glucose + oxygen → ATP + CO₂ + H₂O. Diagram of the equation.
+
+Page 2: 1-paragraph reading on fermentation (anaerobic) — glucose → CO₂ + ethanol + a small amount of ATP. Diagram of the equation.
+
+Page 3: 4 questions.
+1. Write the balanced equation for cellular respiration.
+2. Write the equation for alcoholic fermentation.
+3. The bottle has yeast + sugar + water + a balloon. There's no air pump. Explain in 2 sentences where the gas comes from.
+4. Why do you think yeast in a sealed bottle does fermentation instead of cellular respiration?
+
+**🟥 EXTENSION TIER (push toward mechanism)**
+
+Page 1: Same two equations as on-grade tier. Plus a third sentence: "Cellular respiration produces ~36 ATP per glucose. Fermentation produces 2."
+
+Page 2: 3 questions.
+1. If fermentation makes 18× less ATP, why would any organism ever do it?
+2. The bottle is sealed and contains yeast + sugar + water. After 5 minutes of cellular respiration, what runs out first — the sugar or the oxygen? Explain how you know.
+3. Predict: if I left the bottle for 24 hours, would the balloon inflate forever? Why or why not? (You can use what you know about yeast cells dying in alcohol.)
+
+Floor / TA cue: extension students often jump to "ATP synthase" — redirect toward the conceptual answer. Reward "oxygen runs out first because the bottle is sealed" without requiring electron-transport-chain language.
+
+---
+
+**MINUTES 35–45 · Reconvene + share-out (whole class)**
+
+Each tier sends 1 spokesperson to the board. Modified spokesperson: shares their drawing. On-grade spokesperson: writes the fermentation equation. Extension spokesperson: explains why fermentation happens in a sealed bottle.
+
+Critical move: ALL three answers are correct and complementary. Frame it explicitly: "The drawing shows WHAT is happening. The equation shows the chemistry. The 'sealed bottle' explanation shows WHY. Together that's the whole answer." This makes the differentiation feel like collaboration, not stratification.
+
+Return to the original three hypotheses on the board. Cross out any wrong ones with student input. Confirm the right one.
+
+**MINUTES 45–50 · Exit ticket (whole class, prompt below in step 3)**
+
+---
+
+**Materials checklist:**
+- 4 bottles (16 oz each) · molasses (1 tbsp/bottle) · yeast (1 packet/bottle) · 4 balloons · warm water
+- Handouts: 12 Modified (color: blue), 12 On-Grade (color: green), 4 Extension (color: red) — adjust counts to your roster
+- Exit ticket (5 questions — see step 3)
+
+**TA brief (pre-class, 2 min):** "Float between Modified and Extension tiers — On-Grade kids work independently. For Modified students who freeze on writing, accept verbal answers and mark for me. For Extension kids who jump to electron-transport-chain language, redirect to the conceptual question."
+
+**Notes I would tell another teacher running this:**
+- Pre-set the bottles BEFORE students walk in. The balloon needs 10–12 min of warm-water + yeast time to be visibly inflated. If students walk in to flat balloons, the hook fails.
+- The "all three tiers got the same answer from different angles" framing in minute 35–45 is the pedagogically critical move. Without it, differentiation feels like tracking. With it, it feels like teamwork.$pf$,
+ $pf$Single 50-min lesson plan with shared phenomenon (yeast + molasses + balloon hook), three parallel-track differentiated middle sections (Modified with visuals + fill-in, On-Grade matching textbook section 9.3, Extension pushing toward conceptual mechanism without ETC vocabulary), and a shared share-out frame that intentionally positions the three tiers as complementary perspectives rather than stratification.$pf$),
+
+-- Step 2 --
+('66666666-6666-6666-6666-666666650102',
+ '55555555-5555-5555-5555-555555550005',
+ 2,
+ $pf$Build the 4-point rubric for the lab activity — IEP-friendly behavior anchors$pf$,
+ $pf$Lesson plan looks great. Now I need a rubric for the molasses-and-yeast lab activity (the middle-section work where students complete their differentiated handout and produce something — a drawing, an equation, or an explanation depending on tier).
+
+I want a 4-point scale with explicit BEHAVIOR anchors at each level, not vague "shows understanding" language. My IEPs include two students whose accommodations specifically flag rubric ambiguity as a barrier — they get anxious when the rubric language is generic. The rubric also has to work for all three tiers (a Modified student should be able to score a 4 without being held to Extension-tier work).
+
+Three criteria max. I want this on one page so I can hand it to students before they start.$pf$,
+ $pf$Here's the rubric. Three criteria, four levels, explicit observable behaviors at every cell. Designed so a Modified-tier student producing tier-appropriate work can score a 4, and an Extension-tier student producing surface-level work scores a 1 — what counts is depth WITHIN your tier, not which tier you're on.
+
+---
+
+**LAB RUBRIC — Why does the balloon inflate?**
+Cellular Respiration & Fermentation · 9th-Grade Biology
+*Score yourself before turning in. I'll mark your score next to yours.*
+
+---
+
+| Criterion | 4 — Mastered | 3 — On Track | 2 — Getting There | 1 — Not Yet |
+|-----------|--------------|--------------|-------------------|-------------|
+| **(A) Identifies what goes IN and what comes OUT** | Names BOTH a reactant (sugar/glucose/molasses) AND a product (CO₂/gas/balloon-inflating gas) correctly, in any format (drawing, words, or equation). | Names ONE of: a reactant OR a product, correctly. | Names something that goes in or out but it's wrong (e.g., "oxygen comes out"). | Did not name any reactant or product. |
+| **(B) Explains WHY the balloon inflates** | Connects the gas being produced to the balloon inflating. Any of these counts: "the yeast makes gas and the gas pushes the balloon up," a labeled drawing showing gas → balloon, or "CO₂ from fermentation inflates the balloon." | Says gas is in the balloon but doesn't say where the gas came from. | Says the balloon inflates but the cause is wrong (e.g., "the water heats up"). | Did not address why the balloon inflates. |
+| **(C) Uses tier-appropriate evidence** | Uses the form of evidence your handout asked for AT FULL DEPTH. Modified: complete drawing with arrows for IN and OUT. On-Grade: correct balanced equation OR correct 2-sentence written explanation. Extension: identifies why fermentation (not respiration) happens in the sealed bottle, in your own words. | Uses the right form of evidence but missing one piece (drawing has IN arrow but no OUT, equation is correct but unbalanced, etc.). | Uses the wrong form of evidence (e.g., wrote a sentence when handout asked for an equation) or evidence is mostly incorrect. | Did not produce the requested evidence. |
+
+---
+
+**Self-scoring guide (read aloud to students before they start):**
+
+> "Before you give yourself a score, look at the cell you think you earned. Read the EXACT words. If you can point at your work and find the thing the cell describes, that's your score. If you can't point to it, drop a level."
+
+**Teacher conferencing prompts (use these when checking in during minutes 10–35):**
+
+- For a student stuck at 1 or 2 on (A): "Show me on your handout where it says what goes INTO the bottle. Now where does it say what comes OUT?"
+- For a student at 2 on (B): "You said the balloon inflates. Where is the gas coming from? Don't tell me — show me on your handout."
+- For a student at 3 trying to push to 4 on (C): "Look at your tier's handout. What's the LAST thing it asks you to do? Did you do that part?"
+
+**Why these criteria and not others:**
+
+- **(A) and (B) test the conceptual core** of HS-LS1-7 — identifying inputs/outputs and connecting cellular respiration/fermentation to a real-world phenomenon. Every NGSS-aligned cellular respiration assessment cares about these.
+- **(C) is the differentiation-respecting criterion.** A Modified student doesn't have to write an equation to score a 4 — they have to produce a complete drawing with both arrows. An Extension student isn't earning extra credit for doing more — they're being held to the harder bar within their tier.
+- **Three criteria not four** because four-criterion rubrics on a 4-point scale push grading toward 16-point precision that 9th-grade teachers don't need and IEP students get overwhelmed by. Three × four = twelve cells, scannable in under a minute per student.
+
+**One IEP-specific note:**
+
+For your two students with rubric-ambiguity accommodations: the cell language above uses concrete observable behaviors ("names a reactant," "labeled drawing showing gas → balloon," "correct balanced equation") rather than evaluative language ("demonstrates," "shows understanding," "effectively explains"). That swap is the load-bearing accessibility move — anxious students can SEE whether their work matches the cell. They don't have to guess what the teacher meant.$pf$,
+ $pf$Three-criterion 4-point rubric with concrete observable behavior anchors at every cell (not "shows understanding"). Criterion C is the differentiation-respecting one — Modified students can score 4 without being held to Extension-tier work, and Extension students don't get credit for surface-level extension work. Includes self-scoring student script, three teacher conferencing prompts, and an IEP-specific note explaining why the language uses observable behaviors instead of evaluative ones.$pf$),
+
+-- Step 3 --
+('66666666-6666-6666-6666-666666650103',
+ '55555555-5555-5555-5555-555555550005',
+ 3,
+ $pf$5-question exit ticket aligned to NGSS HS-LS1-7$pf$,
+ $pf$Last piece. Write a 5-question exit ticket students complete in the final 5 minutes of class. Mix of recall (so I can quickly check who got the basics) and application (so I can spot kids who are ready to go further). Aligned to NGSS HS-LS1-7. One page. Should be do-able in 4 minutes by a typical 9th-grader so the 5th minute is buffer.
+
+Include an answer key for me with brief teacher notes on what each question is diagnosing, so when I grade these in 10 minutes after class I know which kids need re-teaching on which piece.$pf$,
+ $pf$Here's the exit ticket — one page, ~4 minutes for a typical 9th-grader. Three recall (quick check), two application (separates "got it" from "owns it"). Answer key + diagnostic notes follow.
+
+---
+
+**EXIT TICKET — Cellular Respiration & Fermentation**
+Name: ______________  Period: 4  Date: ___________
+*4 minutes. Use complete sentences for #4 and #5.*
+
+---
+
+**1.** What two things does yeast use as inputs during fermentation? *(Circle two.)*
+
+&nbsp;&nbsp;&nbsp;&nbsp;a) sugar &nbsp;&nbsp; b) oxygen &nbsp;&nbsp; c) water &nbsp;&nbsp; d) nitrogen &nbsp;&nbsp; e) heat
+
+**2.** Cellular respiration produces ATP, water, and ________ . *(Fill in the blank.)*
+
+**3.** True or False: Fermentation produces MORE ATP per glucose than cellular respiration. ( T / F )
+
+**4.** In our balloon experiment, the bottle was sealed — no air could get in. Explain in 1–2 sentences why the yeast did fermentation instead of cellular respiration.
+
+___________________________________________________________________
+
+___________________________________________________________________
+
+**5.** A baker mixes yeast, sugar, and water into bread dough. The dough rises. Using what you learned today, explain WHY the dough rises. *(2–3 sentences.)*
+
+___________________________________________________________________
+
+___________________________________________________________________
+
+___________________________________________________________________
+
+---
+
+**ANSWER KEY (teacher copy)**
+
+**1.** a) sugar AND c) water. (Some students will pick "oxygen" — that's a flag they're confusing fermentation with aerobic respiration. Mark both correct answers required for full credit; one of two = half credit.)
+
+*Diagnoses:* Can the student distinguish fermentation inputs from aerobic-respiration inputs? Confusing yeast fermentation with photosynthesis or aerobic respiration is the #1 misconception on this unit.
+
+**2.** Carbon dioxide (CO₂). Accept "CO2" or "carbon dioxide gas."
+
+*Diagnoses:* Recall of the cellular respiration equation outputs. If students write "oxygen" or "glucose," they have the equation backwards (treating products as reactants). Re-teach with the equation written on the board: glucose + O₂ → CO₂ + H₂O + ATP.
+
+**3.** False. (Cellular respiration produces ~36 ATP/glucose; fermentation produces 2.)
+
+*Diagnoses:* Did the Extension-tier kids absorb the ATP-yield difference? On-grade and Modified students may guess — that's fine, but if more than half the class gets this wrong, the share-out at minute 35–45 didn't land and you should reinforce next class.
+
+**4.** Looking for: "The bottle had no oxygen, so the yeast couldn't do cellular respiration. Yeast does fermentation when there's no oxygen." Accept any answer that correctly connects the SEALED bottle → no oxygen → fermentation pathway.
+
+*Diagnoses:* Application — can students transfer the conceptual model from the experiment to a "why" explanation? This is the load-bearing question for HS-LS1-7. Common partial answer: "Because the bottle was sealed" (true but doesn't connect sealed → no oxygen → fermentation). Mark partial credit and note for re-teaching.
+
+**5.** Looking for: "The yeast eats the sugar in the dough and produces CO₂ gas. The CO₂ gas creates bubbles in the dough and the bubbles make the dough rise." Accept any answer that connects yeast + sugar → CO₂ → gas bubbles → rising.
+
+*Diagnoses:* Transfer to a NEW context (bread instead of a bottle) — this is the NGSS-aligned "use the model to explain a phenomenon" target. A student who can answer #4 but not #5 has the experimental knowledge but not the generalizable concept. Strong-tell question for "this kid is ready for the next unit" vs. "this kid memorized the bottle but didn't internalize the chemistry."
+
+---
+
+**Quick-grade flow (10 min after class for 28 tickets):**
+
+- Stack tickets, fan through and tally questions 1, 2, 3 first (recall — should be ≥80% correct).
+- For questions 4 and 5, sort into three piles: full credit, partial, blank/wrong.
+- The partial + blank pile for question 4 is your re-teach list for the next class warm-up. The partial + blank pile for question 5 is your transfer-skill watch list — these students need a different kind of practice (a second phenomenon to reason about), not just a re-explanation of the bottle experiment.
+
+**Common total-score patterns:**
+
+- 5/5: solid mastery, ready for the next unit (Krebs cycle / glycolysis at intro level).
+- 4/5 missing #5: knows the experiment, hasn't generalized — give one more transfer prompt next class.
+- 3/5 missing #3 + #5: classic "learned the names but not the mechanism" pattern — re-anchor on the equations.
+- 2/5 or below: full re-teach needed for that student. Pair with a strong peer for the next lab.$pf$,
+ $pf$5-question exit ticket: 3 recall (multiple choice + fill-in + true/false targeting input/output identification, equation recall, and ATP yield) + 2 application (sealed-bottle explanation as load-bearing transfer, bread-rising as NGSS-aligned phenomenon-reasoning). Answer key includes per-question diagnostic notes flagging the misconception each question detects, plus a quick-grade flow and pattern-recognition guide for sorting tickets in 10 minutes.$pf$);
+
+-- =========================================================================
 -- END OF FILE — append next project(s) below this line.
 -- Iterations working the Content queue: add 2–3 projects per iteration,
 -- appending below this comment. Do NOT rewrite existing projects.

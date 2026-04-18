@@ -7240,6 +7240,762 @@ One thing to decide before sending: do you pre-share with VP Product 48 hours ah
  $pf$5-page exec memo drafted with exec summary leading with +$0.1M Y1 / +$2.2M Y2 recommendation; current-state tier table; hybrid structure and why (migrate where case is strong, not where it isn't); reconciliation section explicitly naming the VP Product deck's +$4.2M as her bull case at 21% compound probability not EV; rejection of overage-only on qualitative long-tail perception risk; rollout milestones with Month-6 sensitivity review and explicit rollback conditions; 5 open risks with mitigations; "credit to VP Product" note in risks section to preserve co-ownership. Tone: CFO partnering with VP Product post-alignment conversation, not fighting. Explicit closing recommendation to pre-share 48 hours ahead — exec-meeting surprises cost more relationship than they save in debate leverage.$pf$);
 
 -- =========================================================================
+-- Project 0024 — Founder's open letter after viral customer complaint thread
+-- =========================================================================
+
+DELETE FROM prompt_steps WHERE prompt_id = '55555555-5555-5555-5555-555555550024';
+DELETE FROM prompts      WHERE id        = '55555555-5555-5555-5555-555555550024';
+
+INSERT INTO prompts (
+  id, title, description, content, result_content,
+  category_id, difficulty, model_used, model_recommendation,
+  tools_used, tags, status, author_id, vote_count, bookmark_count
+) VALUES (
+  '55555555-5555-5555-5555-555555550024',
+  $pf$Founder's open letter responding to a viral customer complaint thread — 4-pass ghostwriting before posting$pf$,
+  $pf$A vet-clinic SaaS founder I write for had a major customer post a 16-tweet thread (1.2M views) about a 9-day partial outage. His instinct was a 1500-word technical postmortem; that would have made it worse. Used Claude 4.6 Opus over 4 passes to (1) diagnose what the thread was actually criticizing, (2) decide what NOT to say, (3) draft the response, (4) stress-test against three audience POVs. The letter posted at 380 words, the original customer quote-tweeted approvingly within 2 hours, 86% positive replies, zero contract losses.$pf$,
+  $pf$I'm a freelance content strategist for B2B SaaS founders, and I ghostwrite their public-facing executive comms — launch posts, all-hands letters, the awkward stuff like this. Last week I caught a hot one. My client Marcus runs VetOpsCloud, a $8M ARR clinic-management platform for veterinary practices. One of his bigger customers — a 14-clinic operator in Texas — had their operations director post a long, detailed Twitter thread about a 9-day partial outage in June. Their appointment scheduler module was intermittently failing during peak hours; they lost an estimated $84K in missed bookings and had staff working a Sunday morning manually phoning 200 clients. The thread had screenshots, dates, and direct quotes from VetOpsCloud's support replies. 1.2M views in 36 hours, competitor accounts amplifying it, and two trade-press newsletters in the vet industry started asking for comment.
+
+Marcus's instinct — and I love him for it but it would have torched the response — was to write a 1500-word incident postmortem with timeline, root-cause analysis, and a 5-point remediation plan. Engineer-brained. The thread is not asking for that. The thread is asking for something else and Marcus needed help seeing what.
+
+Used Claude 4.6 Opus across 4 passes. Pass 1: read the thread cold and tell me what it's actually criticizing — vs what Marcus thinks it's criticizing. Pass 2: explicit list of what NOT to say in the response and why. Pass 3: draft the letter at the right length. Pass 4: stress-test the draft against three distinct audience POVs (the original complainer, a watching prospect, a trade-press reporter looking for a quote).$pf$,
+  $pf$The letter went up at 380 words. Sarah Chen — the operations director who wrote the original thread — quote-tweeted it within 2 hours: "Appreciate the response from @MarcusReyes. Will be watching execution but this hit the right notes. The phone call this morning helped." 86% positive replies on the response post (sampled 200 of 410 within first day). Two trade-press newsletters quoted it; both pulled the line Claude predicted they would ("I was wrong to lean on our SLA when what Sarah needed was a phone call from me"). PetWell did not cancel and renewed three months later. No other customer churned that quarter citing the incident.
+
+The single most valuable pass was #2 — what NOT to say. Marcus had drafted his version and it included six things from the no-list (an SLA reference, an uptime percentage, a generic apology, the word "frustration," a credit offer with no relational framing, and a promise it wouldn't happen again). Cutting those was the difference between a defensive response and an accountable one.$pf$,
+  '11111111-1111-1111-1111-111111111103',
+  'intermediate',
+  'claude-opus-4-6',
+  'Claude 4.6 Opus',
+  ARRAY['Claude','Notion','Twitter'],
+  ARRAY['ghostwriting','crisis-comms','founder-letter','public-relations','executive-comms'],
+  'approved',
+  '22222222-2222-2222-2222-222222222208',
+  82, 41
+);
+
+INSERT INTO prompt_steps (id, prompt_id, step_number, title, content, result_content, description) VALUES
+
+-- Step 1 --
+('66666666-6666-6666-6666-666666240101',
+ '55555555-5555-5555-5555-555555550024',
+ 1,
+ $pf$Diagnose what the thread is actually criticizing$pf$,
+ $pf$I'm ghostwriting a public response for the founder of VetOpsCloud (vet-clinic SaaS, $8M ARR). Pasted below is the full 16-tweet thread from Sarah Chen, operations director at PetWell Veterinary Group (14 Texas clinics, ~$120K ARR with us). Thread is at 1.2M views, competitor accounts are amplifying, and trade press is starting to ask. The founder's instinct is to write a 1500-word technical postmortem covering timeline, root cause, and a 5-point remediation plan. I think that's the wrong artifact. Before I draft anything, I need you to read the thread carefully and tell me: what is this thread ACTUALLY criticizing — emotionally, not just literally — and what is it NOT criticizing? I want a clean separation so I know what the response has to address vs what it can leave on the table. Don't summarize the thread back to me; tell me what's underneath it.
+
+[16-tweet thread pasted: Sarah's clinic noticed Day 1 that the scheduler was randomly losing bookings during peak hours. Opened ticket. Got asked to clear cache. Tried again Day 2 — same issue. Opened second ticket. Got asked to try a different browser. Day 3 — Sarah's staff had to manually call ~200 clients to confirm their appointments because they couldn't trust the scheduler. Day 4 they discovered through a Reddit thread that other clinics were having the same issue. Day 5 they finally got an engineer on a call who acknowledged the platform issue. Days 6–9 partial degradation continued. Throughout: 5 separate support tickets, multiple cache-clear requests, a quote from VetOpsCloud support saying "this is within our SLA of 99.5% uptime so no credit applies." Sarah's framing is exhausted, not vindictive — but specific.]$pf$,
+ $pf$Read it twice. The literal grievances are what your founder is going to want to address — outage duration, ticket volume, root cause. Those are not the live wound. The live wound is a different shape and your response has to land there or it'll read as missing the point.
+
+**What the thread is actually criticizing — three things, ranked by emotional load:**
+
+**1. Feeling managed instead of helped (this is 60% of the energy in the thread).** Look at the cadence: she didn't post during days 1–3 when the outage was happening. She posted after a week of accumulated support interactions where she felt processed. The "asked to clear cache 4 times across 5 tickets" line is doing a lot of work — it signals that the support team was running a script, not engaging with her. The Reddit-discovery moment in Day 4 is the inflection point in the thread: that's where she stops describing a technical problem and starts describing a relational one. From that tweet onward, the language shifts from "the scheduler isn't working" to "you're treating us like a number." The SLA-quote screenshot is the kill-shot — she used your team's own words to prove the relational claim.
+
+**2. Lack of proactive ownership of business impact (~25%).** She mentions the $84K in lost bookings and the Sunday-morning all-hands phone-banking session, but she's not asking for $84K back. She's asking why she had to be the one to discover the outage, why she had to be the one to escalate, why she had to be the one to track it for 9 days. Founders sometimes hear "$84K lost" and reach for a credit. That would be a category error here. She's not in transactional mode; she's in trust-violation mode.
+
+**3. Fear that nothing will actually change (~15%).** The closing tweets aren't about June anymore — they're about whether she should switch platforms. That's a forward-looking concern. A response that only addresses what happened won't resolve it. She needs to see something that signals a different operating posture going forward, not just an apology for the past.
+
+**What the thread is NOT criticizing — and these are the trap doors your founder will fall into:**
+
+- **NOT criticizing technical incompetence per se.** Outages happen, and her audience knows that. She doesn't quote uptime numbers, she doesn't compare you to competitors on reliability, she doesn't name the underlying technology. A technical postmortem responds to a critique she didn't make and ignores the one she did.
+- **NOT criticizing your security or data handling.** No mention of breach, privacy, or data integrity. Don't preempt those — you'll surface fears that aren't there.
+- **NOT criticizing your product overall.** Tweet 4 explicitly says "we love the platform when it works." Don't apologize for the product; apologize for the relationship.
+- **NOT asking for a refund.** She's asking for accountability. If you offer money first, you've reframed her grievance as transactional and she'll feel diminished.
+- **NOT asking your support team to be fired.** She's not naming individuals. Don't throw the support team under the bus in the response — that's a different kind of breach.
+
+**The line your founder needs to internalize before drafting:** Sarah's grievance is that VetOpsCloud was more interested in defending its process than in helping her run her clinic. A 1500-word postmortem reinforces exactly that pattern — it's process-flavored. Whatever you write needs to demonstrate, in form and length and word choice, that the founder is now operating in a different mode. Short, named, accountable, future-oriented.$pf$,
+ $pf$Three things the thread is criticizing, ranked by emotional load: (1) feeling managed instead of helped — the cache-clear-4-times line and the SLA-quote screenshot are doing the heaviest work; (2) lack of proactive ownership of business impact — Sarah's not asking for the $84K back, she's asking why she had to be the one to discover and escalate; (3) fear nothing will change going forward. Five things the thread is NOT criticizing — technical competence, security, the product overall, refund request, support-team individuals. The trap-door for the founder: a 1500-word technical postmortem reinforces exactly the "more interested in process than in helping" pattern Sarah is criticizing. The response has to demonstrate, in form and length and word choice, that the founder is operating in a different mode now.$pf$),
+
+-- Step 2 --
+('66666666-6666-6666-6666-666666240102',
+ '55555555-5555-5555-5555-555555550024',
+ 2,
+ $pf$Decide what NOT to say (and why)$pf$,
+ $pf$Helpful. Before I draft, I want a structured no-list. Specifically: give me a list of things the response should NOT include, with a one-sentence reason for each. Then give me the things it MUST include — the affirmative moves that signal the different operating mode you described. I want this as a checklist I can hold the draft up against, including a checklist for Marcus to hold his own instinctive edits against. He's going to want to put things back in. I need ammo to push back when he does.$pf$,
+ $pf$Two lists. Hold the draft up against both before posting; if Marcus pushes to add anything from the no-list, the reason column is your script for the conversation.
+
+**No-list — 8 things to leave out, with reason:**
+
+1. **No technical root-cause detail.** Reason: nobody in the audience cares, and naming the failure mode reads as "look how complicated our problem was" — which sounds like deflection. The thread is not a technical critique. Save the postmortem for an internal status page or a dedicated incident report linked from a footer, not the body.
+
+2. **No SLA references, no uptime percentages.** Reason: this is the trigger of the original frustration. The screenshot of the support-team SLA quote is the most-amplified image in the thread. Mentioning SLA — even to apologize for hiding behind it — re-traumatizes the audience. Treat the SLA as a third rail.
+
+3. **No timeline reconstruction.** Reason: her grievance is that it FELT like 9 days because of the silence. Calling it "9 days" reminds her. Acknowledge that you were late, but don't enumerate the days.
+
+4. **No generic apology language.** Reason: "we're so sorry for the frustration this caused" is empty calories. "Frustration" specifically — strike that word from the entire response. It's the corporate apology word. She didn't use it once in 16 tweets. Match her register.
+
+5. **No promise that this won't happen again.** Reason: it will. Outages happen. Promising it won't is either a lie or sets up the next cycle. Promise the response will be different; promise the relationship will be different. Don't promise the underlying reality will be different.
+
+6. **No credit or refund mentioned in the public response.** Reason: if you lead with money, you've reframed her critique as transactional. If you don't acknowledge the financial impact at all, that's also bad. The right move: handle the credit privately via a phone call from Marcus, and reference the call in the public response without quoting the dollar amount. The public artifact is about accountability; the credit is about repairing the customer relationship — different artifacts, different channels.
+
+7. **No "the team" or "we" as the actor.** Reason: every time the response says "we" or "the team," it's the corporate mask going back on. Marcus needs to be the named subject of every commitment — first person, present tense, dated. "The team is committed to" is the exact register Sarah is criticizing.
+
+8. **No reference to the support-team individuals or any implied criticism of them.** Reason: throwing the support team under the bus reads as a different kind of breach to the audience — they'll wonder if Marcus would do the same to them in a tense moment. The public response owns the systemic failure, not the individual failure. Internal feedback to the support team is a different conversation entirely.
+
+**Must-include list — 6 affirmative moves:**
+
+1. **Name Sarah by first name. Name PetWell.** Reason: anonymity is a form of dismissal. Naming proves the response is about the actual person and the actual situation, not a generic statement adapted from a template.
+
+2. **Quote one specific moment from her thread back to her — verbatim or near-verbatim.** Reason: this is the unfakeable proof that Marcus actually read it. The Sunday-morning-phone-banking detail is the strongest candidate — it's emotionally textured and operationally specific. Sarah will know within 2 seconds whether Marcus read past the screenshots or not. This sentence is the trust-bridge for the rest of the letter.
+
+3. **Describe one specific operational change Marcus is making personally.** Not "we're hiring," not "we're investing in" — Marcus is doing something specific. The strongest move: a customer-impact role being filled by a specific date, with Marcus personally interviewing finalists. Concrete, dated, owned.
+
+4. **Give one concrete commitment with a date, not a vague timeframe.** Reason: "soon" and "in the coming weeks" are how the relationship got here. A date is a hostage to fortune — that's the point. It signals the founder is willing to be measured against a specific deliverable.
+
+5. **End with Marcus's direct phone number and email.** Reason: this is the asymmetric move. Founders rarely publish their phone number. Doing so signals a different operating mode at zero ongoing cost — most people who see it will not call, but they'll register that it's there. The few who do call will be high-signal customer conversations Marcus should be having anyway.
+
+6. **Keep it under 400 words.** Reason: length is itself a signal. A 1500-word postmortem says "let me explain my process to you." A 350-word letter says "I heard you, here's what I'm doing, here's how to reach me." The form has to match the content. If Marcus pushes to add a paragraph, ask him which existing paragraph he'll cut.
+
+**Pushback ammo for Marcus specifically.** He'll want to put back: the timeline ("transparency!"), the technical RCA ("trust through detail!"), the SLA acknowledgment ("legal said!"), the promise it won't happen again ("commitment!"), and the credit ("we owe them!"). For each, the script is the same: "Sarah's thread is not asking for that, and including it would actively undermine the response. The credit happens — by phone, before this posts. Everything else stays out of the public artifact."$pf$,
+ $pf$Eight things the response must NOT include — technical RCA, SLA references, timeline reconstruction, generic apology language (specifically the word "frustration"), promise it won't happen again, public credit/refund mention, "the team" or "we" as actor, criticism of support-team individuals — each with a one-sentence reason. Six affirmative moves the response MUST make — name Sarah and PetWell, quote one specific moment from the thread (Sunday-morning-phone-banking is the strongest candidate), one operational change Marcus is making personally, one concrete commitment with a date, end with Marcus's direct phone and email, under 400 words. Plus pushback ammo for Marcus on the five things he'll instinctively want to put back.$pf$),
+
+-- Step 3 --
+('66666666-6666-6666-6666-666666240103',
+ '55555555-5555-5555-5555-555555550024',
+ 3,
+ $pf$Draft the open letter at the right length$pf$,
+ $pf$Now draft the letter. Constraints from steps 1–2: under 400 words, first-person from Marcus, named (Sarah, PetWell), quotes the Sunday-phone-banking moment, owns the 9 days without listing them, one dated commitment, ends with Marcus's direct phone number and email. Tone: somebody who heard the criticism, not somebody who received it. Posting medium will be a single Twitter post (so it'll be screenshot-quoted as an image — assume the full text has to land in one read), with a thread reply linking to a public commitment page. Draft the post body itself — I'll handle the page copy separately.$pf$,
+ $pf$Here's the draft. Aimed for 380 words — gives Marcus 20 words of edit room without breaking the under-400 rule.
+
+---
+
+Yesterday I read Sarah Chen's full thread about her experience with our platform during the June outage. I'm Marcus, the founder of VetOpsCloud, and I owe Sarah, the team at PetWell, and our broader community a direct response.
+
+Sarah is right. About all of it.
+
+You shouldn't have had to find out about an outage by trying to use our product, and you definitely shouldn't have heard from us last. The thing that's stuck with me from her thread is the Sunday morning her staff spent calling 200 clients to confirm appointments because they couldn't trust our scheduler. That's not an inconvenience. That's a vet practice doing its job because we weren't doing ours.
+
+I was wrong to lean on our SLA when what Sarah needed was a phone call from me. We had a customer in trouble for nine days and our reflex was to defend our process instead of helping her. I'm sorry for that, and I'm responsible for it.
+
+Two things I'm doing about it:
+
+First, by August 15, I'll have hired a Customer Impact Officer reporting to me, whose only job is to flag and own situations like this when they're forming — not after they've made it to Twitter. I'm interviewing the finalists personally next week. When that role is filled, I'll post who it is.
+
+Second, I'm calling Sarah today, and any other PetWell customer or any other customer affected by the June outage. The credit conversation happens privately. The accountability conversation happens here, in public, because that's where the trust got broken.
+
+I'm not going to promise this never happens again — outages happen. I'm going to promise that the next time it does, your first message about it comes from us, not from your own team trying to use the product. That's the standard I'm holding myself to and the standard you should hold us to.
+
+If you're a current or prospective customer and you want to talk to me directly: marcus@vetopscloud.com or 512-555-0184. That's my real cell.
+
+Sarah, thank you for being clear. The thread was a gift even if it didn't feel like one to send.
+
+— Marcus Reyes
+Founder, VetOpsCloud
+
+---
+
+Word count: 380. Hits all six must-includes. Avoids all eight no-list items (no SLA defense — only the acknowledgment of having leaned on it, which is different; no timeline; no "frustration"; no credit dollar amount; no team-blame; first-person throughout; no "we are committed to"). The "Sarah, thank you for being clear" closing is a small risk — it could read as performative — but the "even if it didn't feel like one to send" qualifier earns it. If Marcus reads that line as too much, cut the whole closing sentence and end at the phone number.
+
+One specific concern to flag for stress-testing: the "She's right. About all of it." line is dramatic. It's also the single most quotable sentence in the letter and the one most likely to land in trade-press coverage. If Marcus is uncomfortable with that specific line being the headline of the next Vet Practice News article, weaken it to "Sarah is right about most of it" — but I'd push back on weakening. The unqualified version is what makes the rest of the letter credible.$pf$,
+ $pf$380-word draft posted as the response post body. Hits all six must-includes (Sarah named, PetWell named, Sunday-phone-banking quoted, customer-impact-officer commitment by Aug 15, Marcus's direct phone/email at the end, under 400 words). Avoids all eight no-list items — no SLA defense, no timeline reconstruction, no "frustration," no public credit amount, no team-blame, first-person throughout. Two flagged lines for the founder's call: the "Sarah is right. About all of it." line is the most quotable sentence and most likely to land in trade press; the closing "the thread was a gift" line is high-risk-high-reward and can be cut if it reads as performative.$pf$),
+
+-- Step 4 --
+('66666666-6666-6666-6666-666666240104',
+ '55555555-5555-5555-5555-555555550024',
+ 4,
+ $pf$Stress-test the draft against three audience POVs$pf$,
+ $pf$Last pass before Marcus posts. Read the draft from three different audience perspectives and tell me what each one would think, line-by-line where it matters: (1) Sarah Chen herself — does this read as performative or accountable? Will she respond, and if so how? (2) A prospect from a 22-clinic operator who's watching the situation play out before deciding whether to sign — does this make them more or less likely to sign? (3) A trade-press reporter for Vet Practice News looking for a quote — what's the headline they pull, and is there a damning sentence they could yank? Be specific. If any of the three POVs flags a specific edit, I want it.$pf$,
+ $pf$Three reads. The third one will surprise you.
+
+**POV 1 — Sarah Chen, the original complainant.**
+
+She'll read this twice. First read is fast — she's looking for the tells of a corporate response. Does it have the word "frustration"? No. Does it quote SLA terms? No. Does it talk about "the team" instead of naming someone? No. Those checks pass, so she keeps reading.
+
+Second read is slow. She's looking for the proof that Marcus actually read her thread. Lands on the Sunday-phone-banking line. That's the moment she decides this is real. Specific operational detail from her thread, not summarized — quoted. She'll register that he didn't pick the easiest detail (the dollar amount) — he picked the one that proves he read past the screenshots into the human cost. Trust-bridge holds.
+
+She has one likely reservation: the "I'm calling Sarah today" line. If Marcus has not actually called her by the time she reads this, the line lands as a public commitment that hasn't been honored, which is worse than not making it. **Edit suggestion: post this AFTER the call, not before.** Reorder the morning: Marcus calls Sarah at 8am, posts the letter at 10am with that line. Otherwise the post starts with a 2-hour countdown clock attached.
+
+She will respond. Likely a quote-tweet, measured, something like "Appreciate the response from @MarcusReyes — will be watching execution but this hit the right notes." She will not delete her original thread (don't ask). She may pin a short follow-up tweet referencing the response. Don't try to coordinate that — let her own her platform.
+
+One line she will quietly appreciate: "I'm not going to promise this never happens again — outages happen." That's the line that says Marcus isn't bullshitting. Cut at your peril.
+
+**POV 2 — Prospect from a 22-clinic operator watching this unfold.**
+
+This one's surprising. They're going to read this letter and become MORE likely to sign, not less. Here's why: they've watched dozens of vendor incidents play out on Twitter. Most go silent or post defensive boilerplate. A founder publishing his cell phone and naming a specific dated commitment is rare enough that it reads as accountability theater that's actually accountability. The asymmetric phone-number move does most of the work — even if they never call, they'll register that they could.
+
+One concern they'll have: "outages are routine here." The letter doesn't say "this was the first time" or "this is unusual" — it says outages happen. That neutral framing risks signaling that incidents like this are normal. **Edit suggestion: link to a public status page in the thread reply** (you mentioned you're handling page copy separately — make sure the page exists and is linked). The status page existing is itself a signal of operational maturity, even if the prospect never visits it.
+
+They will not respond publicly. They'll forward the letter to their procurement team with a one-line note: "Read this. They're worth a meeting." Marcus's sales team should expect a small bump in inbound from clinic-group operators who follow vet-tech Twitter, in the 48-72 hours after posting.
+
+**POV 3 — Trade-press reporter at Vet Practice News.**
+
+Headline they pull: **"VetOpsCloud Founder Marcus Reyes: 'I Was Wrong to Lean on Our SLA'"** — that's the line. It's quotable, it's an executive being honest in a way that's rare, and it's exactly the line the editor is going to want for click-through. Whether that's what Marcus wants as a headline is a real question — it commits him publicly to a posture that other vendors will use against him in competitive deals ("their own founder said they hide behind SLAs").
+
+Two damning sentences they could pull but probably won't:
+- "you shouldn't have had to find out about an outage by trying to use our product" — could be pulled out of context to sound worse than the thread, but it requires editorializing the reporter probably won't bother with.
+- "I'm responsible for it" — actually a positive quote, not damning. Unlikely to be re-framed.
+
+**The real risk in trade-press coverage isn't this letter — it's the followup story 6 weeks from now if the Customer Impact Officer hasn't been hired by August 15.** That's the story that hurts. The dated commitment is a feature, not a bug, but only if Marcus actually hits it. **Edit suggestion: nothing in the letter, but add to Marcus's task list — block calendar time the week of August 8 specifically for the hire decision so it doesn't slip. The press follow-up will be brutal if it does.**
+
+**Three concrete edits to incorporate before posting:**
+1. Reorder the morning: Marcus calls Sarah at 8am, then posts the letter at 10am. The "I'm calling Sarah today" line becomes "I called Sarah this morning."
+2. Add a thread-reply link to a public status page (make sure page exists and is genuinely useful, not a marketing artifact).
+3. Block-calendar the week of August 8 for the Customer Impact Officer hire decision to protect the dated commitment.
+
+The letter itself is in good shape. Ship it after the call.$pf$,
+ $pf$Three POV stress-tests — Sarah Chen reads it twice (fast scan for corporate-tells, slow read for proof Marcus actually read the thread; Sunday-phone-banking line is the trust-bridge); 22-clinic prospect becomes MORE likely to sign because the asymmetric phone-number move + dated commitment reads as rare accountability; trade-press headline they'll pull is "I Was Wrong to Lean on Our SLA" — Marcus needs to be okay with that being the public quote. Three concrete edits incorporated before posting: (1) reorder morning so Marcus calls Sarah at 8am and posts at 10am — "I'm calling Sarah today" becomes "I called Sarah this morning," (2) add thread-reply link to a real public status page (not marketing), (3) block-calendar the week of August 8 for the Customer Impact Officer hire decision so the dated commitment doesn't slip — the press follow-up if it does will be the brutal story.$pf$);
+
+-- =========================================================================
+-- Project 0025 — $340K MRR dashboard vs finance close gap (5-pass forensic)
+-- =========================================================================
+
+DELETE FROM prompt_steps WHERE prompt_id = '55555555-5555-5555-5555-555555550025';
+DELETE FROM prompts      WHERE id        = '55555555-5555-5555-5555-555555550025';
+
+INSERT INTO prompts (
+  id, title, description, content, result_content,
+  category_id, difficulty, model_used, model_recommendation,
+  tools_used, tags, status, author_id, vote_count, bookmark_count
+) VALUES (
+  '55555555-5555-5555-5555-555555550025',
+  $pf$Live MRR dashboard diverged from finance close by $340K six days before board — 5-pass forensic audit$pf$,
+  $pf$B2B SaaS client at $46M ARR. Their internal Looker "Live MRR" dashboard reported $4.21M, finance's quarter-close said $3.87M — $340K (8.1%) gap. CFO needed it reconciled in 6 days before board. Used Claude 4.7 Opus over 5 passes: enumerate the 14 ways MRR dashboards diverge from books, build a cheap-to-expensive investigation plan, find phase-1 issues ($251K of $340K), forensic the residual $89K, draft the board memo + dashboard fix spec. Closed the gap to <$2K, identified 4 distinct dashboard bugs, all overstating MRR.$pf$,
+  $pf$I'm a freelance data consultant. New client this quarter — Notebridge, $46M ARR doc-collaboration platform. Their CFO Karen called me with a problem: their internal "Live MRR" Looker dashboard says $4.21M MRR. Finance's quarter-close report (Stripe + NetSuite reconciled, tied out to bank deposits) says $3.87M. Gap is $340K, or 8.1%. Engineering swears the dashboard is correct ("we ingest Stripe webhooks live, the data is fresher than finance's"). Finance swears they're correct ("we tied out to actual money in the bank"). Board meeting is in 6 days. She needs the gap explained, the dashboard fixed if it's wrong, and a one-paragraph version she can read out loud to the board.
+
+This is a class of problem I've worked on enough that I knew the shape — MRR dashboards almost always overstate vs. finance, and the divergence is almost always 3–5 small bugs stacking, not one big one. But I had no familiarity with their specific stack (Stripe + NetSuite + dbt + Looker, 5,400 customers, mix of monthly/annual, mix of self-serve and PO-billed enterprise). I used Claude 4.7 Opus over 5 passes to compress what would have been a 3-week investigation into 6 days.
+
+Pass 1: enumerate the full hypothesis space — every reason MRR dashboards diverge from books, ranked by likelihood for a company at this scale and stack. Pass 2: build the investigation plan — cheap-to-expensive ordering of which queries to run, with the exact SQL templates. Pass 3: walk through phase-1 findings (3 issues, $251K of the $340K accounted for). Pass 4: forensic on the residual $89K, find 3 more issues, close the gap. Pass 5: draft the board memo, the dashboard fix spec for engineering, and the ongoing tie-out process.$pf$,
+  $pf$Closed the gap to $1.8K residual (rounding/FX, immaterial). Found 4 distinct dashboard bugs, all overstating MRR. In dollar order: $142K from annual prepay double-counting on month boundaries, $109K from downgrades not flowing through to the dashboard's last-invoice-amount lookup, $61K from refunds not subtracted, $24K from voided invoices grabbed mid-day before void. Plus $4K rounding/FX. Total $340K explained.
+
+Karen's board meeting went clean. The board approved the corrected forecast. Engineering shipped the four dashboard fixes within 2 weeks (one of them — the annual-prepay boundary bug — had been in the dbt model for 14 months and silently overstating MRR by ~3% the whole time, which means historical board reports off the dashboard had been wrong; we sent a separate note about that). Finance and engineering now run a monthly tie-out script I wrote with a $25K threshold for triggering investigation.
+
+The single most valuable pass was pass 1 — getting the full hypothesis space written down before touching a query. Without it I would have spent 4 days chasing the most-interesting hypothesis instead of the most-likely one, which is the failure mode of every forensic investigation I've done.$pf$,
+  '11111111-1111-1111-1111-111111111108',
+  'advanced',
+  'claude-opus-4-7',
+  'Claude 4.7 Opus',
+  ARRAY['Claude','Looker','dbt','Stripe','NetSuite','Snowflake'],
+  ARRAY['mrr','revenue-reconciliation','dashboard-audit','finops','dbt','b2b-saas'],
+  'approved',
+  '22222222-2222-2222-2222-222222222207',
+  94, 52
+);
+
+INSERT INTO prompt_steps (id, prompt_id, step_number, title, content, result_content, description) VALUES
+
+-- Step 1 --
+('66666666-6666-6666-6666-666666250101',
+ '55555555-5555-5555-5555-555555550025',
+ 1,
+ $pf$Enumerate the full hypothesis space — why MRR dashboards diverge from books$pf$,
+ $pf$I'm a freelance data consultant being brought in on a 6-day timeline. Client is Notebridge, $46M ARR B2B SaaS doc-collaboration platform. 5,400 customers — roughly 4,800 self-serve monthly/annual via Stripe, 600 enterprise via PO-based NetSuite invoicing. Stack is Stripe + NetSuite + Fivetran + dbt + Snowflake + Looker. Their "Live MRR" Looker dashboard reports $4.21M; finance's Q-close says $3.87M. Gap is $340K (8.1%). Before I touch a single query, I want a written-out, exhaustive hypothesis space — every reason MRR dashboards diverge from finance books in a company this shape, ranked by likelihood at this scale/stack and tagged by ease-of-disconfirm. I want this comprehensive enough that if I miss the actual cause, it's because I overlooked the hypothesis, not because the hypothesis wasn't on the list. The point of pass 1 is so I don't waste day 2 chasing the most-interesting hypothesis instead of the most-likely one.$pf$,
+ $pf$Right approach. The biggest mistake forensic data work makes is jumping into queries before naming the hypothesis space — you end up confirming the first plausible-looking thing and stop. Below is the comprehensive list. 14 sources, grouped by class, ranked within class by likelihood at Notebridge's scale and stack. Likelihood is qualitative (H/M/L) and disconfirm-cost is rough query-effort (cheap = single SQL query, medium = needs joins or sample audit, expensive = needs cross-system reconciliation or API pulls).
+
+**Class A — Timing differences (4 sources, almost always a contributor)**
+
+1. **Annual prepay amortization mistakes (H, cheap to disconfirm).** Customer pays $48K upfront for 12 months. Dashboard records $4K MRR for 12 months — but the recognition period boundaries are easy to mis-implement. Common bug: counting the first month twice when the contract starts mid-month and the dbt model uses inclusive boundaries on both sides. At your scale with annual mix probably 30–40% of customers, this is the single most likely contributor. Disconfirm: tie out total annual MRR (sum of customers on annual plans / 12) against actual annual revenue / 12.
+
+2. **Webhook lag / staleness (M, cheap).** Stripe webhook lag is usually <5 seconds but spikes during outages. Dashboard pulled at 11:59 PM might miss events that landed at 11:58:30. Usually small ($5–15K) but worth checking. Disconfirm: compare dashboard snapshot timestamp against latest Stripe event_id processed.
+
+3. **Period-boundary semantics (H, cheap).** Finance close uses calendar month boundaries (last day inclusive). Dashboard might use rolling 30 days, fiscal calendar, or first-of-month inclusive vs exclusive. Direction of error depends on month length and contract churn timing. Disconfirm: check the dbt model's WHERE clause on period boundaries; explicitly compare to finance's close definition.
+
+4. **Stripe-event-time vs invoice-period mismatch (M, medium).** Stripe event timestamp is when the charge processed. The invoice it represents covers a period that may straddle months (especially for upgrades / downgrades / mid-cycle billing). Dashboard might attribute the full charge to the event month; finance attributes per-day to the actual coverage period. At Notebridge's mix this could be $20–60K. Disconfirm: sample 50 mid-cycle invoices and check attribution.
+
+**Class B — Definitional differences (3 sources, common contributor)**
+
+5. **MRR includes vs excludes one-time charges (H, cheap).** Dashboard might sum "all subscription invoice line items" — sweeping in setup fees, one-time integration credits, professional services. Finance correctly excludes those from recurring revenue. At Notebridge with enterprise services, this could be substantial. Disconfirm: query Stripe line items by type, sum non-subscription line items in dashboard window.
+
+6. **Annual-as-MRR conversion methodology (M, cheap).** Dashboard might count an annual contract as full ARR / 12 = MRR; finance might recognize ratably starting from invoice date with proration. Slightly different numbers, especially for contracts started mid-month. Disconfirm: pick 10 annual customers, compute both ways, compare.
+
+7. **Credit / discount handling (H, medium).** Customer gets a 20% discount via Stripe coupon. Dashboard might pull the pre-discount subscription amount; finance posts the post-discount invoice amount. Easy bug to introduce in dbt if the source table joins to subscriptions table without joining to invoices. Likely $20–80K contributor at Notebridge. Disconfirm: identify all customers with active discounts; recompute MRR with vs without discount; compare to dashboard.
+
+**Class C — Data-source differences (3 sources, structural)**
+
+8. **Stripe API live vs Fivetran-synced lag (M, cheap).** Fivetran usually syncs Stripe every 5–15 minutes. If dashboard is built on Snowflake-via-Fivetran, it's 5–15 min behind real Stripe. Usually small contributor but matters at month-end if huge. Disconfirm: check Fivetran sync log for last sync timestamp vs Stripe API current state on a single high-velocity customer.
+
+9. **NetSuite enterprise customers missing from Stripe-only dashboard (H, cheap).** This is critical. Notebridge has 600 enterprise customers invoiced via PO through NetSuite, NOT Stripe. If the dashboard is built only on Stripe data, those 600 customers are entirely absent from the dashboard. **But the gap direction here is opposite: that would make the dashboard LOWER than finance, not higher.** Since you said dashboard is HIGHER ($4.21M vs $3.87M), this hypothesis predicts the WRONG direction — so either it's not the cause OR there's an offsetting overcounting bug. Worth confirming the dashboard does include NetSuite data. Disconfirm: check whether dbt model pulls from `netsuite_invoices` source or only `stripe_invoices`.
+
+10. **Connector-stale data (L, cheap).** Fivetran hits an error and silently re-syncs from a stale snapshot, leaving the dashboard with last-week's view of subscriptions. Rare but happens. Disconfirm: check Fivetran sync health for the last 30 days; check whether `_fivetran_synced` timestamps are recent on the relevant tables.
+
+**Class D — Real economic events the dashboard mis-counts (4 sources, the long-tail of investigation)**
+
+11. **Refunds not subtracted from MRR (H, cheap).** Customer disputes charge, gets refunded. Dashboard might still count the customer as paying — because the subscription is still active and the dashboard pulls "current subscription amount." Finance correctly nets refunds. At Notebridge this could be $20–80K depending on dispute volume. Disconfirm: query Stripe refunds in the last 30 days, sum, compare to whether dashboard MRR for affected customers includes or excludes the refunded amount.
+
+12. **Voided invoices counted in mid-day snapshots (M, medium).** Invoice created at 9am, voided at 3pm. Dashboard's daily snapshot at noon includes it; finance correctly excludes. At low volume this is small ($5–25K). Disconfirm: count Stripe invoices with status='void' created in the snapshot window, sum.
+
+13. **Downgrades not yet reflected in last-invoice-amount lookup (H, cheap).** Customer downgrades from $400/mo to $200/mo on day 15. Stripe issues a prorated invoice covering the cycle change in the next billing cycle. Dashboard's "current MRR per customer" lookup grabs the last invoice (still $400). Finance correctly shows new $200 MRR. At Notebridge with enterprise downgrades this could be substantial — easily $50–150K. Disconfirm: identify all customers with subscription_updated events in the last 30 days where new_amount < old_amount; check whether dashboard reflects new or old amount.
+
+14. **Free trials / paused subscriptions counted as paying (M, cheap).** Customer is in trial or has paused subscription. Dashboard might count them as full-MRR; finance correctly counts $0. Likely small at Notebridge unless there's been a recent trial-expansion experiment. Disconfirm: query subscriptions in trialing/paused status; check whether they appear in dashboard MRR with non-zero amount.
+
+**Recommended investigation order (cheap, high-likelihood first):**
+
+1, 13, 11, 7, 3, 9 (direction-check), 5, 12 → that's 8 hypotheses you can disconfirm or confirm in day 2 with a single laptop session and the read-only Snowflake creds. The remaining 6 fall out of that pass.
+
+**Direction-of-error gut check.** Dashboard is $340K HIGHER than finance. The hypotheses that would make dashboard higher: 1, 3, 4, 5, 6, 7 (depends on direction), 11, 12, 13, 14. The hypotheses that would make dashboard LOWER: 9 (NetSuite missing). At least one of (1, 13, 11, 7) is almost certainly the dominant contributor. My pre-investigation prior is that #1 (annual prepay amortization) is the largest single contributor at Notebridge's scale — likely $100–200K of the $340K — based on how often this specific bug shows up at SaaS in this revenue band.$pf$,
+ $pf$14 hypothesis sources for MRR-dashboard-vs-finance divergence, grouped into 4 classes — timing (4), definitional (3), data-source (3), and real-economic-events (4) — each ranked H/M/L likelihood at Notebridge's scale and tagged with disconfirm cost. Recommended cheap-and-likely-first investigation order: 1, 13, 11, 7, 3, 9, 5, 12. Direction-of-error gut check: dashboard is $340K HIGHER than finance, so #9 (NetSuite missing) is the wrong direction and either not the cause or offset by overcounting elsewhere. Pre-investigation prior: #1 (annual prepay amortization mistakes on month boundaries) is likely the dominant contributor at $100–200K based on how often this specific bug appears at SaaS in this revenue band.$pf$),
+
+-- Step 2 --
+('66666666-6666-6666-6666-666666250102',
+ '55555555-5555-5555-5555-555555550025',
+ 2,
+ $pf$Build the investigation plan with cheap-to-expensive SQL ordering$pf$,
+ $pf$Good. Now build me the actual investigation plan as queries. Cheap-to-expensive ordering, with the SQL I should run for each (Snowflake dialect, sources are `stripe_subscriptions`, `stripe_invoices`, `stripe_charges`, `stripe_refunds`, `stripe_subscription_items`, `netsuite_invoices`, plus the dbt models `mrr_daily`, `customers_current`, `revenue_recognition_monthly`). I want the queries cheap enough that I can knock all 8 high-priority hypotheses out in one laptop session today. For each query, also tell me what specific result would confirm vs disconfirm the hypothesis — I don't want to be staring at a number wondering what it means.$pf$,
+ $pf$Here's the investigation plan, in order. Each block has the hypothesis being tested, the query, and the interpretation rules. Run them top to bottom; don't skip ahead even if a query returns big numbers, because the second-order effects on later hypotheses depend on knowing the answer to earlier ones.
+
+**Tie-out baseline (run this first, before any hypothesis testing).**
+
+Establish the gap clearly with both sides quoted at the same instant.
+
+```sql
+-- A: Total dashboard MRR for the close period (last day of month at 23:59 UTC)
+SELECT SUM(mrr_amount) AS dashboard_mrr
+FROM mrr_daily
+WHERE snapshot_date = '2026-03-31';
+
+-- B: Total finance recognized revenue for the same period, monthly
+SELECT SUM(recognized_amount) AS finance_mrr
+FROM revenue_recognition_monthly
+WHERE period_start = '2026-03-01' AND period_end = '2026-03-31';
+
+-- Expected: A = $4,210,000, B = $3,870,000, gap = $340,000
+```
+
+Confirm the gap is what you were told. If it's different, you're chasing a different problem.
+
+**Investigation 1 — Hypothesis #1 (annual prepay amortization on month boundaries).**
+
+```sql
+-- Sum of MRR for customers on annual plans, dashboard side
+SELECT
+  c.customer_id,
+  c.plan_interval,
+  c.subscription_start_date,
+  m.mrr_amount AS dashboard_mrr,
+  c.annual_contract_value / 12.0 AS expected_mrr,
+  m.mrr_amount - (c.annual_contract_value / 12.0) AS variance
+FROM customers_current c
+JOIN mrr_daily m
+  ON m.customer_id = c.customer_id
+  AND m.snapshot_date = '2026-03-31'
+WHERE c.plan_interval = 'annual'
+  AND ABS(m.mrr_amount - (c.annual_contract_value / 12.0)) > 1
+ORDER BY ABS(variance) DESC;
+```
+
+Look for systematic positive variance — meaning dashboard MRR is consistently HIGHER than ACV/12. Confirm by checking subscription_start_date: if the variance correlates with mid-month start dates, that's the boundary-doubling bug. Specifically: customers with start_date between day 2 and day 28 of any month, showing a variance roughly equal to (ACV/12) × (days_remaining_in_start_month / 30). If 20+ customers show this pattern, you've found bug #1. Sum the variances — that's your dollar contribution to the gap.
+
+**Investigation 2 — Hypothesis #13 (downgrades not flowing through).**
+
+```sql
+-- Customers who downgraded in the last 60 days
+WITH downgrades AS (
+  SELECT
+    customer_id,
+    event_time,
+    LAG(amount) OVER (PARTITION BY customer_id ORDER BY event_time) AS old_amount,
+    amount AS new_amount
+  FROM stripe_subscription_items
+  WHERE event_type = 'subscription.updated'
+    AND event_time >= '2026-02-01'
+)
+SELECT
+  d.customer_id,
+  d.old_amount,
+  d.new_amount,
+  m.mrr_amount AS dashboard_mrr,
+  CASE
+    WHEN m.mrr_amount = d.old_amount THEN 'STILL_OLD'
+    WHEN m.mrr_amount = d.new_amount THEN 'CORRECT'
+    ELSE 'OTHER'
+  END AS dashboard_status
+FROM downgrades d
+JOIN mrr_daily m ON m.customer_id = d.customer_id AND m.snapshot_date = '2026-03-31'
+WHERE d.new_amount < d.old_amount
+ORDER BY (d.old_amount - d.new_amount) DESC;
+```
+
+If you see > 10 customers tagged 'STILL_OLD' with material variance, you've confirmed the bug. Sum (old_amount - new_amount) for STILL_OLD rows — that's the contribution.
+
+**Investigation 3 — Hypothesis #11 (refunds not subtracted).**
+
+```sql
+SELECT
+  r.customer_id,
+  SUM(r.amount) AS refunded_in_period,
+  m.mrr_amount AS dashboard_mrr,
+  inv.amount AS last_invoice_amount
+FROM stripe_refunds r
+JOIN mrr_daily m ON m.customer_id = r.customer_id AND m.snapshot_date = '2026-03-31'
+LEFT JOIN LATERAL (
+  SELECT amount FROM stripe_invoices
+  WHERE customer_id = r.customer_id
+  ORDER BY created_at DESC LIMIT 1
+) inv ON TRUE
+WHERE r.created_at >= '2026-01-01' AND r.created_at <= '2026-03-31'
+  AND r.status = 'succeeded'
+GROUP BY r.customer_id, m.mrr_amount, inv.amount
+ORDER BY refunded_in_period DESC;
+```
+
+If dashboard_mrr equals the pre-refund invoice amount for refunded customers (i.e., refunds aren't netted), sum refunded_in_period for those customers and you have your contribution.
+
+**Investigation 4 — Hypothesis #7 (credit/discount handling).**
+
+```sql
+-- Active discount/coupon customers; check whether dashboard reflects discounted amount
+SELECT
+  s.customer_id,
+  s.discount_percent,
+  i.amount AS post_discount_invoice,
+  i.amount / (1 - s.discount_percent / 100.0) AS pre_discount_implied,
+  m.mrr_amount AS dashboard_mrr,
+  CASE
+    WHEN ABS(m.mrr_amount - i.amount) < 1 THEN 'CORRECT_POST_DISCOUNT'
+    WHEN ABS(m.mrr_amount - (i.amount / (1 - s.discount_percent / 100.0))) < 1 THEN 'BUG_PRE_DISCOUNT'
+    ELSE 'OTHER'
+  END AS status
+FROM stripe_subscriptions s
+JOIN stripe_invoices i ON i.subscription_id = s.id
+  AND i.created_at = (SELECT MAX(created_at) FROM stripe_invoices WHERE subscription_id = s.id)
+JOIN mrr_daily m ON m.customer_id = s.customer_id AND m.snapshot_date = '2026-03-31'
+WHERE s.discount_percent > 0
+  AND s.status = 'active';
+```
+
+Count of BUG_PRE_DISCOUNT rows × average discount_amount = contribution.
+
+**Investigation 5 — Hypothesis #3 (period-boundary semantics).**
+
+Pull the dbt source for `mrr_daily.sql` and inspect the WHERE clause around the date filter. Specifically look for whether the model uses `>=` and `<=` on both ends (which double-counts boundary days), or `>=` and `<` (which is correct). Compare to the period definition `revenue_recognition_monthly` uses. If they diverge at boundaries, sum the boundary-day contributions for high-volume days.
+
+**Investigation 6 — Hypothesis #9 (NetSuite-only customers, direction check).**
+
+```sql
+SELECT COUNT(*) AS netsuite_only_customers,
+       SUM(monthly_amount) AS netsuite_only_mrr
+FROM netsuite_invoices ni
+WHERE ni.customer_id NOT IN (SELECT customer_id FROM stripe_subscriptions)
+  AND ni.invoice_date BETWEEN '2026-03-01' AND '2026-03-31';
+
+-- Then check whether mrr_daily includes them
+SELECT COUNT(*) AS netsuite_in_dashboard
+FROM mrr_daily m
+JOIN netsuite_invoices ni ON ni.customer_id = m.customer_id
+WHERE m.snapshot_date = '2026-03-31'
+  AND ni.customer_id NOT IN (SELECT customer_id FROM stripe_subscriptions);
+```
+
+If netsuite_only_customers > 0 and netsuite_in_dashboard = 0, the dashboard is missing those customers. Direction of impact: dashboard would be LOWER than finance, so this offsets some other overcounting bug. Net effect on the gap depends on magnitude.
+
+**Investigation 7 — Hypothesis #5 (one-time charges in MRR).**
+
+```sql
+SELECT
+  ili.invoice_item_type,
+  COUNT(*) AS line_items,
+  SUM(ili.amount) AS total_amount
+FROM stripe_invoice_line_items ili
+JOIN stripe_invoices i ON i.id = ili.invoice_id
+WHERE i.created_at BETWEEN '2026-03-01' AND '2026-03-31'
+GROUP BY ili.invoice_item_type
+ORDER BY total_amount DESC;
+```
+
+Look for non-subscription line item types — setup fees, one-time charges, professional services, customizations. If their sum is in dashboard MRR, that's the contribution.
+
+**Investigation 8 — Hypothesis #12 (voided invoices in mid-day snapshot).**
+
+```sql
+SELECT
+  customer_id, amount, status, created_at, voided_at
+FROM stripe_invoices
+WHERE status = 'void'
+  AND voided_at BETWEEN '2026-03-31 00:00:00' AND '2026-03-31 23:59:59'
+ORDER BY amount DESC;
+```
+
+If the daily snapshot ran at noon and voids happened in the afternoon, those invoices are in the snapshot. Check the snapshot run time in the dbt schedule.
+
+**Stop-and-reassess rules.** After running 1-4, sum the confirmed contributions. If they account for >90% of the $340K gap, you can stop early and skip 5-8 (move to writing up). If they account for <70%, you have a missing hypothesis — return to step 1's list and re-rank, paying attention to whichever Class D hypothesis (#11, 12, 13, 14) you haven't yet tested. If they account for 70-90%, finish the remaining queries — there's almost certainly a smaller contributor that explains the residual.$pf$,
+ $pf$Investigation plan as 8 sequential SQL queries with cheap-to-expensive ordering and explicit interpretation rules per query. Tie-out baseline first to confirm the $340K gap. Then hypotheses 1, 13, 11, 7, 3, 9 (direction check), 5, 12 in order. Each query has a confirm/disconfirm rule and a method to compute dollar contribution. Stop-and-reassess rules: if queries 1-4 explain >90% of the gap, stop early and write up; if <70%, go back to step 1's hypothesis list — there's a missed hypothesis; if 70-90%, finish the remaining 4 queries to find the residual contributor.$pf$),
+
+-- Step 3 --
+('66666666-6666-6666-6666-666666250103',
+ '55555555-5555-5555-5555-555555550025',
+ 3,
+ $pf$Findings phase 1 — three issues, $251K of the $340K accounted for$pf$,
+ $pf$Ran the queries. Pasting the relevant outputs below. Walk me through what you see — confirm which hypotheses are confirmed, calculate the dollar contributions, and tell me what's still unexplained.
+
+[Query 1 output: 187 annual customers; 142 of them show a positive variance; sum of variance = $142,300. Variance correlates with subscription_start_date being mid-month (day 5 to day 26). Pattern: variance ≈ (ACV/12) × (days_in_start_month - start_day) / 30 — which is the partial-first-month being added on top of the full first-month MRR.]
+
+[Query 2 output: 73 customers with downgrade events in last 60 days. 31 of them tagged STILL_OLD. Sum of (old_amount - new_amount) for STILL_OLD = $108,900.]
+
+[Query 3 output: 89 customers had successful refunds in the period totaling $147K. Of those, 41 still show full pre-refund MRR in dashboard. Variance for those 41 = $61,200.]
+
+[Query 4 output: 23 customers with active discounts. All 23 show CORRECT_POST_DISCOUNT. No bug here.]
+
+[Query 5 output: dbt model `mrr_daily.sql` uses BETWEEN for date filter, which is inclusive on both ends. revenue_recognition_monthly uses `>= start AND < next_period_start` (correct). Boundary day overlap exists but contribution is small — estimated $4K based on month-end activity volume.]
+
+[Query 6 output: netsuite_only_customers = 12, netsuite_only_mrr = $487K. netsuite_in_dashboard = 12. So they ARE in dashboard. No issue here. Hypothesis #9 ruled out.]
+
+[Query 7 output: non-subscription line items (one-time setup, services) = $89K total in period. Need to check whether these are in dashboard MRR.]
+
+[Query 8 output: 8 voided invoices in 24-hour window of 2026-03-31, sum $24,400. Snapshot ran at 12:00 UTC. Voids happened between 14:00 and 19:00 UTC — so they were in the noon snapshot.]$pf$,
+ $pf$Good data. Three confirmed hypotheses contributing $251.4K of the $340K gap. Two more confirmed but not-yet-quantified ($24K and possibly $89K). One ruled out. Walk-through:
+
+**CONFIRMED #1 — Annual prepay amortization on month boundaries: $142.3K.**
+
+This is the biggest contributor and the most embarrassing bug, because it's been sitting in the dbt model for what's likely a long time. The pattern is unambiguous: 142 of 187 annual customers (76%) show variance that correlates exactly with their subscription start date being mid-month. The math is the dbt model is recording the partial-first-month MRR (prorated for days remaining in the start month) AND ALSO the full first-month MRR — adding them together. Customer who started on day 10 of a 30-day month with $48K ACV: should show $4,000 MRR. Dashboard shows $4,000 + (4000 × 20/30) = $6,667. That extra $2,667 per customer × ~140 affected customers (averaging smaller) = $142K.
+
+This is bug #1, found in the `mrr_daily.sql` dbt model. Fix is one-line — remove the partial-month addition. But: this bug is NOT new. It's been in the model since whenever the annual-prepay logic was added. Which means historical board reports off this dashboard have been overstated by ~3% for as long as the bug existed. **Flag this for Karen separately from the gap memo. The historical overstatement is a different conversation than the close-period gap and matters for any board comparison-to-prior-period numbers.**
+
+**CONFIRMED #2 — Downgrades not flowing through to last-invoice-amount lookup: $108.9K.**
+
+31 of 73 recent downgraders (42%) still show old MRR. Pattern: customer downgrades on day 15, Stripe issues prorated invoice on day 30 covering the cycle change. Dashboard's "current MRR" lookup grabs the LAST invoice — which for these customers is still the pre-downgrade one because the downgrade-acknowledging invoice hasn't been issued yet. Finance correctly recognizes the new lower amount per-day from the downgrade event time forward.
+
+This is bug #2. Fix is in the `customers_current.sql` dbt model — change the MRR lookup to use the active subscription_item amount (queryable from `stripe_subscription_items` with status='active') rather than the last invoice. Slightly more complex query, but it's the correct semantics.
+
+**CONFIRMED #3 — Refunds not subtracted from MRR: $61.2K.**
+
+41 of 89 customers with refunds (46%) still show full pre-refund MRR. The dashboard treats subscription-active as monthly-amount-recognized, regardless of whether the customer was refunded. Finance correctly nets refunds against revenue.
+
+This is bug #3. Fix in `mrr_daily.sql` — subtract refund amounts in the same period from MRR. Edge case to handle: partial refunds (refunded $200 of a $400 charge) should reduce MRR by the partial amount, not zero out the customer.
+
+**Total phase 1: $142.3K + $108.9K + $61.2K = $312.4K of $340K. Residual = $27.6K.**
+
+Wait — let me recheck. $251K was my initial bucket, but if I include the $61.2K refund finding as phase 1 (since it came from query 3 which I said was in phase 1), the total is $312.4K.
+
+Actually, your question asked for the phase 1 walk-through and I think you may have been pre-categorizing query 3 as phase 2 in your head. Let me be precise about what's confirmed and what's residual:
+
+- **Phase 1 confirmed (queries 1, 2, 3): $312.4K** — annual prepay double-count + downgrades not flowing + refunds not subtracted.
+- **Phase 1 ruled out (queries 4, 6): $0** — discounts handled correctly, NetSuite customers correctly included.
+- **Phase 1 confirmed but not-yet-final (queries 5, 8): voided invoices $24.4K confirmed; period boundary $4K estimated.** Adding these: $312.4K + $24.4K + $4K = $340.8K. **The gap closes within $1K.**
+- **Phase 1 needs more digging (query 7):** non-subscription line items $89K total exist in period — need to check whether they're in dashboard MRR. If they are, that would PUSH the gap explanation OVER $340K, which means another bug (or a categorization error in my analysis above) is offsetting. If they're NOT in dashboard MRR, no contribution.
+
+**Action for phase 2:** verify query 7 (one-time charges) — are they in `mrr_daily` or excluded? That's the only remaining unknown, and depending on the answer either everything is explained or there's a counter-bug to find.
+
+**Initial assessment:** of the 14 hypothesis sources from pass 1, three are confirmed bugs contributing the bulk; two are confirmed but smaller (voided invoices, boundary semantics); two are ruled out (discounts, NetSuite); one needs verification (one-time charges). The remaining six (#2, 4, 6, 8, 10, 14) are not contributing material amounts at this point — query results don't show patterns matching them. You can mark those as cleared.
+
+The gap is essentially explained. Phase 2 is verification, not new investigation.$pf$,
+ $pf$Phase 1 walk-through: three confirmed bugs explaining $312.4K of $340K — annual prepay amortization double-count on month boundaries ($142.3K, single biggest contributor, the dbt model adds partial-first-month on top of full-first-month MRR), downgrades not flowing through to last-invoice-amount lookup ($108.9K, 31 of 73 downgraders still show old MRR), refunds not subtracted from MRR ($61.2K, 41 of 89 refunded customers still show full pre-refund amount). Voided invoices in mid-day snapshot ($24.4K) and period-boundary semantics ($4K) are also confirmed but smaller. Discounts and NetSuite-customer hypotheses ruled out. Critical flag: the annual prepay bug has been in the dbt model since the annual-prepay logic was added — historical board reports have been overstated by ~3% for as long as the bug existed; this is a separate conversation from the close-period gap memo. Phase 2 just needs to verify query 7 (one-time charges) — are they in dashboard MRR or correctly excluded.$pf$),
+
+-- Step 4 --
+('66666666-6666-6666-6666-666666250104',
+ '55555555-5555-5555-5555-555555550025',
+ 4,
+ $pf$Forensic the residual $89K — query 7 on one-time charges$pf$,
+ $pf$Ran query 7 follow-up. Pasting the result. Walk me through what this means and whether the gap is fully explained.
+
+[Query 7 follow-up: the $89K of one-time charges breaks down as: $52K setup fees from 14 enterprise customers, $31K professional services from 9 customers, $6K integration credits (negative line items / customer credits issued for service issues). Checked dashboard's `mrr_daily` for affected customers vs Stripe invoices: dashboard does NOT include setup fees or professional services for these customers — their dashboard MRR matches their RECURRING line-item amount. So one-time charges are correctly excluded from MRR by the dashboard. So query 7 contribution to the gap = $0.]
+
+[Additional spot-check I ran: confirmed Fivetran sync was current at snapshot time, not stale.]$pf$,
+ $pf$Good. The gap is fully explained, with one small residual that's noise rather than signal. Final accounting:
+
+**Confirmed contributions to the $340K gap (all overstating dashboard MRR):**
+
+| # | Bug | Amount | dbt model |
+|---|-----|--------|-----------|
+| 1 | Annual prepay amortization double-count on month boundaries | $142.3K | `mrr_daily.sql` |
+| 2 | Downgrades not flowing to last-invoice-amount lookup | $108.9K | `customers_current.sql` |
+| 3 | Refunds not subtracted from MRR | $61.2K | `mrr_daily.sql` |
+| 4 | Voided invoices counted in mid-day snapshot | $24.4K | `mrr_daily.sql` (snapshot timing) |
+| 5 | Period-boundary inclusive-on-both-ends BETWEEN | $4.0K | `mrr_daily.sql` |
+| | **Total confirmed** | **$340.8K** | |
+| | Reported gap | $340K | |
+| | Residual (rounding/FX) | $0.8K | |
+
+The $0.8K residual is well within rounding noise — Notebridge has ~30 EUR/CAD/AUD customers, each contributing a small FX delta to the daily snapshot vs. monthly close (FX rates differ slightly between the snapshot timestamp and finance's month-end rate). Not material, not investigation-worthy. Call it closed.
+
+**Important secondary findings to flag separately to Karen:**
+
+1. **Bug #1 has been in the model historically.** The annual-prepay double-count is not a new bug — it's been there since the annual-prepay logic was added, which a `git log` on `models/marts/mrr_daily.sql` will date. That means historical board MRR reports off this dashboard have been overstated by approximately the same percentage as currently — call it ~3% — for the duration of the bug. If the board has been comparing quarterly trends using this dashboard, the trend lines aren't wrong (the bias is consistent), but the absolute numbers were wrong. Karen needs to decide whether to restate prior board reports or note the correction going forward without restating. Not your call to make as a consultant; flag the option.
+
+2. **Bug #2 has compounding implications for forecast accuracy.** If downgrades aren't flowing through, the dashboard isn't just overstating MRR — it's also underestimating gross churn, which means net revenue retention (NRR) calculated off the dashboard is overstated. If Karen reports NRR to the board, she should use finance's NRR number, not the dashboard's, until the fix ships.
+
+3. **Bug #3 (refunds) has a tax/accounting wrinkle.** Refunds reduce GAAP revenue but don't always reduce billings. The dashboard MRR fix should match how finance treats them — which is net of refunds in the recognition month. Confirm the spec with the controller before engineering implements.
+
+4. **Bug #4 (voided invoices) is partially a process issue, not just code.** The 8 voided invoices in the snapshot window — why were they created and voided same-day? Worth a separate conversation with billing ops. If invoices are being created speculatively and voided when they don't apply, that's a billing workflow issue. The dashboard fix is to check void status at snapshot time; the upstream fix is to not create them speculatively. The latter is out of scope for the close-the-gap work but is worth flagging.
+
+5. **Bug #5 (boundary semantics) is the lowest-priority fix.** $4K on a $46M ARR base is noise. Worth fixing for correctness, but not urgent. Could defer to a later sprint.
+
+**Severity and priority for the engineering fix order:**
+
+- P0 (fix this week): #1 and #2 — these are the two big ones, both straightforward fixes, both impact the upcoming board report.
+- P1 (fix within 2 weeks): #3 and #4 — material but can wait briefly.
+- P2 (fix when convenient): #5 and the void-on-create workflow process question.
+
+**One thing I'd recommend before writing the board memo.** Re-run the corrected MRR calculation manually to double-check it matches finance's $3.87M within the residual. Specifically: take dashboard's $4.21M, subtract $340.8K from the bug stack, get $3.869M — which should match finance's $3.87M within $1K. If it doesn't, there's a sign error somewhere in my walkthrough. Run that check before the memo goes to Karen.$pf$,
+ $pf$Phase 2 confirms the gap is fully explained. Final accounting: 4 distinct dashboard bugs ($142.3K annual prepay double-count + $108.9K downgrade lookup + $61.2K refunds not subtracted + $24.4K voided-invoice snapshot timing) plus $4K period-boundary error = $340.8K total, residual $0.8K is FX rounding noise. Five secondary findings to flag separately to Karen — bug #1 is historical not new (board reports overstated ~3% for duration of bug, restatement decision is hers); bug #2 means dashboard NRR is also overstated; bug #3 has GAAP/billings nuance to confirm with controller; bug #4 has an upstream process issue (why are invoices being created and voided same-day); bug #5 is noise-level. Engineering fix priority: P0 #1 and #2 this week, P1 #3 and #4 within 2 weeks, P2 #5 + void-workflow. Verification step before memo: re-run corrected MRR manually to confirm $4.21M − $340.8K = $3.869M matches finance's $3.87M within $1K.$pf$),
+
+-- Step 5 --
+('66666666-6666-6666-6666-666666250105',
+ '55555555-5555-5555-5555-555555550025',
+ 5,
+ $pf$Draft the board memo + dashboard fix spec + ongoing tie-out process$pf$,
+ $pf$Verified — corrected dashboard reconciles to finance within $0.8K, gap closed. Three deliverables for Karen: (1) a 1-page board memo explaining the gap, the fix, and the corrected MRR — with a 3-sentence "what to read out loud to the board" version at the top; (2) the engineering fix spec covering all 4 bugs with file pointers, exact changes, and dbt tests to add so they don't regress; (3) the monthly tie-out process recommendation including the $25K threshold for triggering investigation. Draft all three.$pf$,
+ $pf$Three deliverables below.
+
+---
+
+**DELIVERABLE 1 — BOARD MEMO**
+
+**To:** Notebridge Board
+**From:** Karen Diaz, CFO
+**Re:** Q1 MRR reconciliation between dashboard and finance close
+**Date:** [date of board meeting]
+
+**For the board read-out (3 sentences):**
+
+Q1 MRR reconciliation identified four distinct bugs in our internal Live MRR dashboard that overstated MRR by $340K (8.1%) versus finance close. Corrected MRR for the close period is $3.87M, matching finance's reconciled number, and all four bugs have been root-caused with engineering fixes scheduled for the next two sprints. Going forward, finance and engineering will run a monthly tie-out script with a $25K variance threshold so any divergence is caught at month-end rather than at quarter-close.
+
+**Detail (for the appendix):**
+
+Six days ago we identified a $340K (8.1%) variance between our internal Live MRR Looker dashboard ($4.21M) and finance's quarter-close MRR ($3.87M). All variance was on the dashboard side — finance's number tied out to bank deposits and is correct. We engaged a data consultant to forensic the gap. The investigation identified four distinct dashboard bugs, each overstating MRR:
+
+| Bug | $ contribution | Fix |
+|-----|---------------|-----|
+| Annual prepay amortization double-counting on month-boundary contract starts | $142K | One-line dbt model fix, ships this week |
+| Customer downgrades not flowing through to dashboard's MRR lookup until next billing cycle | $109K | dbt model change, ships this week |
+| Refunds not subtracted from MRR | $61K | dbt model change, ships within 2 weeks |
+| Voided invoices counted in mid-day snapshot before they were voided | $28K | Snapshot timing change + workflow review, within 2 weeks |
+| Total | $340K | |
+
+Important historical note: bug #1 (annual prepay) has existed in the dashboard model since the annual-billing logic was implemented. This means historical MRR reports the board has seen off the dashboard have been overstated by approximately 3% for the duration of the bug. The trend lines are unaffected (the bias is consistent), but the absolute numbers were higher than reality. Recommend we report Q1 MRR going forward using the finance close number ($3.87M for Q1), with a one-time footnote in the next two board reports noting the prior-period adjustment. We are not recommending formal restatement — the variance is within normal monitoring tolerance and the trend story is unchanged.
+
+Process change: starting next month, finance and engineering will run a monthly automated tie-out between the dashboard and the finance close. Any variance over $25K triggers an investigation before the dashboard is used for any external reporting.
+
+---
+
+**DELIVERABLE 2 — ENGINEERING FIX SPEC**
+
+**Bug 1 — Annual prepay amortization double-counting (P0, this sprint)**
+
+File: `dbt/models/marts/mrr_daily.sql`
+Lines: 47–63 (the `annual_prepay_mrr` CTE)
+
+Current behavior: for annual contracts starting mid-month, the CTE sums two values — the prorated first-partial-month AND the full first-month MRR — instead of just the recurring monthly MRR.
+
+Change: remove the partial-month addition. The MRR for an annual contract should always be `annual_contract_value / 12.0`, regardless of when the contract started within a month. Proration is a finance-recognition concern, not an MRR concern.
+
+```sql
+-- BEFORE
+SELECT
+  customer_id,
+  (annual_contract_value / 12.0) +
+    ((annual_contract_value / 12.0) * (days_remaining_in_start_month / 30.0))
+    AS mrr_amount
+FROM annual_subscriptions
+
+-- AFTER
+SELECT
+  customer_id,
+  annual_contract_value / 12.0 AS mrr_amount
+FROM annual_subscriptions
+```
+
+Test to add in `schema.yml`:
+```yaml
+- name: mrr_matches_acv_div_12
+  description: Annual customers should always have MRR = ACV / 12
+  test:
+    dbt_expectations.expect_column_pair_values_a_to_be_equal_to_b:
+      column_A: mrr_amount
+      column_B: annual_contract_value / 12.0
+      tolerance: 0.01
+```
+
+**Bug 2 — Downgrades not flowing through (P0, this sprint)**
+
+File: `dbt/models/marts/customers_current.sql`
+Lines: 22–34 (the MRR lookup CTE)
+
+Current behavior: pulls last invoice amount as MRR. For customers who downgraded mid-cycle, the last invoice still reflects the old plan because the downgrade-acknowledging invoice hasn't been issued.
+
+Change: pull from active subscription items, not last invoice.
+
+```sql
+-- BEFORE
+SELECT customer_id, MAX(invoice_amount) AS mrr
+FROM stripe_invoices
+WHERE created_at = (latest invoice per customer)
+
+-- AFTER
+SELECT
+  s.customer_id,
+  SUM(si.unit_amount * si.quantity / si.price_interval_months) AS mrr
+FROM stripe_subscriptions s
+JOIN stripe_subscription_items si ON si.subscription_id = s.id
+WHERE s.status = 'active'
+  AND si.deleted_at IS NULL
+GROUP BY s.customer_id
+```
+
+Test to add: count of customers with `mrr_daily.mrr_amount` differing from active-subscription-item-sum by >$1 should be zero on every snapshot.
+
+**Bug 3 — Refunds not subtracted (P1, within 2 weeks)**
+
+File: `dbt/models/marts/mrr_daily.sql`
+New CTE: `customer_refunds_period`
+
+Add a CTE that sums refunds per customer in the snapshot's recognition period, then subtract from MRR:
+
+```sql
+WITH customer_refunds_period AS (
+  SELECT customer_id, SUM(amount) AS refund_amount
+  FROM stripe_refunds
+  WHERE created_at >= date_trunc('month', '{{ snapshot_date }}')
+    AND created_at <= '{{ snapshot_date }}'
+    AND status = 'succeeded'
+  GROUP BY customer_id
+)
+SELECT
+  m.customer_id,
+  m.mrr_amount - COALESCE(r.refund_amount, 0) AS mrr_amount
+FROM mrr_base m
+LEFT JOIN customer_refunds_period r ON r.customer_id = m.customer_id
+```
+
+Edge case: if refund_amount > mrr_amount (full refund of multi-month upfront), floor at 0 and flag the customer in a separate diagnostic table.
+
+Confirm with the controller that the refund-subtraction period matches finance's recognition rule before merging.
+
+**Bug 4 — Voided invoices in mid-day snapshot (P1, within 2 weeks)**
+
+Two changes:
+
+(a) Snapshot timing: move the `mrr_daily` snapshot from 12:00 UTC to 23:55 UTC so it runs after the day's voids have processed.
+
+File: `dbt/dbt_project.yml` (the schedule for `mrr_daily`)
+
+(b) Status check: in the source `stripe_invoices` query, add `WHERE status != 'void'` explicitly. Currently the model assumes invoices it pulls are non-void, which is true at the moment of pull but not as of the recognition period.
+
+(c) Workflow follow-up (separate ticket, owner: Billing Ops): investigate why invoices are being created and voided same-day. Likely a candidate-invoice workflow that should not be persisting until confirmed.
+
+**Bug 5 — Period-boundary semantics (P2, when convenient)**
+
+File: `dbt/models/marts/mrr_daily.sql`
+Change: `BETWEEN start AND end` → `>= start AND < next_start`. Standardize on half-open intervals across the codebase.
+
+---
+
+**DELIVERABLE 3 — MONTHLY TIE-OUT PROCESS**
+
+Owner: Finance + Data Engineering jointly.
+
+Cadence: monthly, on the second business day after month-close.
+
+Mechanism: dbt test `tie_out_dashboard_to_finance` (new model, runs as part of the monthly close pipeline). Computes:
+
+```sql
+SELECT
+  (SELECT SUM(mrr_amount) FROM mrr_daily WHERE snapshot_date = '{{ month_end }}') AS dashboard_mrr,
+  (SELECT SUM(recognized_amount) FROM revenue_recognition_monthly WHERE period_end = '{{ month_end }}') AS finance_mrr,
+  ABS(dashboard_mrr - finance_mrr) AS variance
+```
+
+Threshold rules:
+- Variance < $25K: log to monitoring, no action.
+- Variance $25K–$50K: alert to #data-eng channel; flag for next-week investigation.
+- Variance > $50K: alert to CFO + Data Eng lead; investigation before any dashboard-based external or board reporting.
+
+Diagnostic helper: a `mrr_variance_by_segment.sql` model that breaks the variance down by customer segment (annual vs monthly, enterprise vs self-serve, plan tier), so initial triage can identify the most-likely class quickly.
+
+Annual review: re-validate the threshold each January based on the prior year's variance distribution. If the company is now $200M ARR, $25K is too tight; recalibrate.
+
+---
+
+That's the full package. The board memo is intentionally short — Karen reads the 3-sentence version out loud, the table is for the appendix if anyone digs in, and the historical-overstatement note is the one paragraph she should not skip. The engineering spec is detailed enough that it can be picked up by an engineer who wasn't in this investigation. The tie-out process closes the loop so this doesn't recur.$pf$,
+ $pf$Three deliverables drafted: (1) 1-page board memo with a 3-sentence read-out version at top, full reconciliation table in the appendix, plus the historical-overstatement note recommending a footnote in next 2 board reports rather than formal restatement — trend lines are unaffected, bias is consistent; (2) engineering fix spec covering all 4 bugs with file/line pointers, exact before/after SQL, dbt tests to add so they don't regress, and explicit P0/P1/P2 sprint priorities; (3) monthly tie-out process with $25K/$50K variance thresholds, dbt test that runs on the second business day after close, segment-breakdown diagnostic helper, and annual threshold re-validation. Memo lands at the right level — short enough that Karen reads the 3 sentences out loud, appendix is there for board members who want to dig.$pf$);
+
+-- =========================================================================
 -- END OF FILE — append next project(s) below this line.
 -- Iterations working the Content queue: add 2–3 projects per iteration,
 -- appending below this comment. Do NOT rewrite existing projects.

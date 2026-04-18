@@ -17849,6 +17849,283 @@ Save this note in a doc called "calendar-audit-template.md" or similar. If you e
  $pf$Team-wide note drafted at ~220 words framing the audit as an operator-peer framework share rather than a management-announcement, with the 6-category framework inline (produces-decision / real-info-exchange / relationship-maintenance / status-broadcast / vent / no-clear-output) as the reusable artifact. "No expectation anyone else does this" disclaimer removes pressure so self-selection can surface the team members who'd actually benefit. Named "no agenda = no meeting" as a rule-of-thumb (not a mandate) — gives juniors air cover to push back on agenda-less invites using manager precedent. Annotated the deliberate cuts (no apology sentence, no overwhelmed-language, no bullet-list of specific cuts — those land via individual DMs), plus a meta-note recommending Nina save the note as a reusable template for future quarterly audits.$pf$);
 
 -- =========================================================================
+-- Project 55-0050 | Cofounder-offer decision workflow — 4-pass Claude chain | Derek Lawson | Personal | 4 steps
+-- =========================================================================
+
+DELETE FROM prompt_steps WHERE prompt_id = '55555555-5555-5555-5555-555555550050';
+DELETE FROM prompts      WHERE id        = '55555555-5555-5555-5555-555555550050';
+
+INSERT INTO prompts (
+  id, title, description, content, result_content,
+  category_id, difficulty, model_used, model_recommendation,
+  tools_used, tags, status, author_id, vote_count, bookmark_count
+) VALUES (
+  '55555555-5555-5555-5555-555555550050',
+  $pf$Cofounder offer vs staying CTO — 4-pass Claude workflow for the decision my spreadsheet couldn't answer$pf$,
+  $pf$Ten days to decide whether to leave a Series-B CTO seat for 9% cofounder equity at a YC AI-infra startup. Spent two nights alone with a spreadsheet and got nowhere — the math was tractable, the decision wasn't. Ran 4 passes with Claude Opus 4.7 to separate structure from scenarios from regret-minimization from what conversations I actually needed to have. Ended with a 2-week decision plan I could defend to my wife. Posting because the framework held up, and because nobody writes about this kind of decision honestly.$pf$,
+  $pf$Context: I'm CTO at a Series B health-tech company (280 people, ~$38M ARR, payer integrations and member-facing care-nav). 15 years in engineering, 4th year in this role. Comp is ~$1.4M TC on paper — roughly $380k cash, the rest ISOs against a last-round $420M valuation. About 48% of my ISOs are vested. Wife works 3 days/week (family medicine), two kids ages 8 and 11, Seattle mortgage at 3.1%, ~$1.2M liquid NW.
+
+Three weeks ago my former VP Eng — now CTO at a just-funded YC seed AI-infra startup (agent eval tooling, $4.5M raise from a top-tier fund) — texted me a cofounder offer. 9% equity (4-year cliff), $195k salary, CTO title, remote-first. He's been founding solo for 5 months and has three enterprise pilots signed. He wants me in as cofounder-engineer #1 with a decision in 10 days because they're closing a strategic angel and want the cap table clean.
+
+My current role isn't on fire. Runway is 22 months, last NPS cycle was fine, I like the CEO. But the platform work I care about most (the ML-driven member-routing layer) is mostly built and we're 18 months from a likely PE secondary — so the next 2 years of my life there is execution, not invention.
+
+Spent two nights alone with a decision matrix spreadsheet (risk-adjusted NPV across 3-year, 5-year, 10-year horizons). The numbers cluster closer together than I'd expected, and staring at them wasn't producing clarity. Switched to Claude Opus 4.7 across 4 passes — structure the decision, run scenarios, regret-minimization + 10-year frame, then translate into actual conversations and timeline. About 2.5 hours of Claude time over 3 evenings. Talked it through with my wife on night 3 with the artifacts open.$pf$,
+  $pf$Decision was: stay 8 more months, negotiate a 6-month focused sprint on the member-routing v2 launch, then re-evaluate. Not the answer I expected going in — I came in 60/40 toward leaving. Told my ex-VP three days ago; he took it well, left the door open, will backchannel in December.
+
+The surprise wasn't the outcome — it was how much of the hesitation I'd been carrying was financial anxiety that evaporated under actual scenario math (even the bear case for staying wasn't financially catastrophic; even the bull case for leaving wasn't financially transformative at my NW tier) and how much was about identity — "am I still someone who takes swings?" — which turns out to be the real decision and has nothing to do with this specific offer.
+
+Pass 1 (structure) forced the hidden variables onto the page. Biggest unlock: naming "founder identity capital" as a separate axis from equity value. At my NW, the monetary delta across all three paths at 3-year horizon is ±$800k — not nothing, but not life-changing. The non-monetary axes (agency, learning rate, family schedule stability, founder-identity stamp on my resume) were each larger swings than the money axis when I actually scored them. That reframe changed the whole shape of the decision.
+
+Pass 2 (scenarios) was the hardest to get honest. Opus kept initially sanding the bear cases. Had to explicitly prompt "I want the realistic downside, not the expected-value downside" to get useful scenarios where the startup raises a flat A at 18 months and my 9% gets meaningfully diluted in a bridge, or where the current company's PE secondary slips 12 months because payer regulations shift.
+
+Pass 3 (regret + 10-year) is the one I'd give anyone making this kind of decision. "Which version of yourself at 50 will you be most embarrassed to have been?" produced more signal than any NPV analysis. For me the answer wasn't "the version that played it safe" — it was "the version that took the swing because someone I respected texted him on a Tuesday, without doing the internal work first."
+
+Pass 4 (conversations + timeline) is what made this actually executable. Three conversations I needed to have in 10 days (wife — real budget and schedule talk, not just "what do you think"; CEO — what would a re-engagement actually look like; ex-VP — honest update without burning the relationship). Commitment device: a 3-sentence statement written down and shared with wife, so I couldn't drift.
+
+What I'd do differently: run Pass 1 BEFORE spending two nights on the spreadsheet. The numbers weren't the problem, and they aren't usually the problem for this kind of decision at this career stage — the structure is. Reach for the LLM first and the spreadsheet second.$pf$,
+  '11111111-1111-1111-1111-111111111110',
+  'intermediate',
+  'claude-opus-4-7',
+  'Claude 4.7 Opus',
+  ARRAY['Claude','Notion','Google Sheets','Obsidian'],
+  ARRAY['career','decision-making','cofounder','personal','regret-minimization','leadership'],
+  'approved',
+  '22222222-2222-2222-2222-222222222209',
+  118, 62
+);
+
+INSERT INTO prompt_steps (id, prompt_id, step_number, title, content, result_content, description) VALUES
+
+-- Step 1 --
+('66666666-6666-6666-6666-666666500101',
+ '55555555-5555-5555-5555-555555550050',
+ 1,
+ $pf$Structure the decision — force hidden variables onto the page$pf$,
+ $pf$I need help structuring a decision I'm making in the next ~10 days. I'm CTO at a Series B health-tech company (280 people, ~$38M ARR, $420M last valuation, 22 months runway, 48% of my ISOs vested, ~$380k cash comp + ISOs nominally worth ~$1M/yr at current mark). Offer on the table: cofounder-engineer at a YC seed AI-infra startup (agent eval tooling, $4.5M raise, 3 enterprise pilots), 9% equity on 4-year cliff, $195k cash, remote. The founder is my former VP Eng — I trust him, he's a strong CEO profile. I have a wife (family medicine, 0.6 FTE), two kids 8 and 11, Seattle mortgage at 3.1%, ~$1.2M liquid.
+
+I've spent two nights on a decision matrix spreadsheet (NPV comparisons, vesting adjustments, dilution scenarios) and I'm not getting clarity — the 3-year expected values cluster within ±$500k of each other. My instinct is that the money isn't actually the deciding variable but I don't know what IS.
+
+Don't answer the decision. Structure it. Specifically: what are ALL the axes I should be scoring each path on — money is one, but what else? Force the hidden variables onto the page. I especially want you to surface variables I'm LIKELY AVOIDING because they feel squishy or embarrassing to name. End with a scoring framework I can actually use — not a 20-row rubric, something like 5–7 axes with what "high/medium/low" means on each.$pf$,
+ $pf$You're right that the money isn't the deciding variable, and you're also right that you're probably avoiding the ones that matter. Let me name them directly, including the ones most people in your position duck.
+
+**The 7 axes I'd score each path on:**
+
+**1. Monetary expected value (3-year horizon, risk-adjusted).** You've already run this. Keep it in the framework because it's load-bearing at the floor — if any path is catastrophic, it's a veto. But at your NW and cash-comp level, the delta across paths is probably ±$800k by year 3. That's a real number, not a life-changing one. Weight: lower than you think it should be.
+
+**2. Agency / decision surface area.** How many decisions per day are YOU making at each path? CTO of a 280-person company: you're approving decisions, not making most of them. Cofounder at a seed-stage 6-person startup: you're making 40 decisions before lunch, half of which you don't have prior context for. This axis is often the one people realize too late they actually wanted more of. High/med/low: how often does the day end and you feel like you made something vs. reviewed something.
+
+**3. Learning rate.** Not "am I learning" (you always are) — how steep is the slope. Cofounder at a seed-stage AI infra startup forces a 2x learning rate for ~18 months. Staying CTO in year 4 of a relatively mature platform org is probably 0.5–0.8x your prior rate. This compounds hard across a career. High: weekly "I didn't know this existed" moments. Low: you could do this job on autopilot.
+
+**4. Family schedule stability.** The one you're probably most avoiding naming because it feels un-heroic to weight. Seed-stage cofounder for 18 months WILL break family schedule — you know this and you're minimizing it in your head. How often are you home for dinner under each path? What does a bad month look like (4 late nights a week? One trip? Three trips?) Your wife is 0.6 FTE and your kids are 8 and 11 — the youngest is 4 years from algebra, the oldest is 6 years from college applications. These are not infinite-game years. High/med/low: percentage of weeknights you expect to be home, percentage of weekends meaningfully present.
+
+**5. Identity capital — specifically, founder-stamp.** This is the axis almost nobody in your position names honestly. Being a "CTO" vs. being "cofounder / early-stage founder" are different career-identity stamps. At 45 vs 42, the gap matters more for what doors open next. This is NOT vanity — it's optionality. The cofounder label unlocks conversations you can't have as an employee-CTO. High: this decision meaningfully changes how future employers/investors/peers categorize you. Low: it doesn't.
+
+**6. Reversibility.** Can you undo each path in 12 months with your reputation and relationships intact? Leaving a CTO seat at a stable Series B for a YC seed cofounder slot is MOSTLY reversible (you can get a CTO-level role again in 12 months if the startup flames out) — but not always on the same footing, and your ex-VP relationship is permanent collateral. Staying put is fully reversible for 18 months, probably less reversible after that because the cofounder offer doesn't come twice. High: decision is undoable in <1 year. Low: it's a one-way door.
+
+**7. Spousal alignment.** Not "does she support me" — does she want this, or is she agreeing to it. These are different. Have you had a conversation where she names the real cost to her, and you name the real cost to you, and you've both priced it? If you haven't, that's the decision you're avoiding, not the 9% equity one. High: alignment is real and priced. Low: it's social politeness.
+
+**What you're likely avoiding:** I suspect you're over-weighting #1 (monetary EV — because spreadsheets are legible), under-weighting #2 (agency — because "I make more strategic decisions at the bigger company" is a story that doesn't survive contact with how you actually spend your Tuesdays), actively ducking #4 (family — because weighting it feels risk-averse in a way your self-image resists), and ducking #7 (spousal — because the conversation is harder than the spreadsheet).
+
+Score each path 1–5 on each axis, with weights. My prediction for your scores — don't trust this, score them yourself — is that the cofounder path wins on 2, 3, 5 and loses on 4, 6, 7, and ties 1. If I'm right, the decision turns on whether the #4/#7 conversations you haven't had yet unlock the cofounder path or veto it. Which means the next 72 hours is not about the decision — it's about those two conversations.$pf$,
+ $pf$Pass 1 forced 5 hidden axes onto the page that the spreadsheet had buried — agency, learning rate, family schedule, identity capital, spousal alignment. The reframe that broke the deadlock: at Derek's NW tier the monetary delta is ±$800k at 3 years (real but not transformative), while the non-monetary axes are each potentially larger swings. Critical line "what you're likely avoiding" forced the uncomfortable admission that the real decision was the two conversations (wife, CEO) Derek hadn't had yet, not the offer itself. Framework output is 7 axes with high/med/low anchors — small enough to actually use, not a 20-row rubric that never gets scored.$pf$),
+
+-- Step 2 --
+('66666666-6666-6666-6666-666666500102',
+ '55555555-5555-5555-5555-555555550050',
+ 2,
+ $pf$Realistic 3-year scenarios for each path — give me the bear cases honestly$pf$,
+ $pf$Now run 3-year scenario analysis for each of three paths: (A) STAY — keep CTO role, execute the member-routing v2 launch, ride to likely PE secondary in ~18 months; (B) LEAVE — accept the cofounder offer, 9% equity, go full-in; (C) PARTIAL — negotiate a focused 6-8 month sprint at current job then re-evaluate (may or may not be available — I'll need to ask).
+
+For each path, give me BASE / BEAR / BULL at the 3-year mark. Cover: likely financial outcome, career position, what my weekdays actually look like, family impact, health/stress, and what "I was wrong about" looks like.
+
+Important: I want the REALISTIC bear cases, not the expected-value bear cases. When I ran this mentally myself, the bears felt sanitized. I want you to name the specific failure modes. For LEAVE, that means things like "startup raises a flat A at 18 months and 9% dilutes to 5.4% in a bridge round" or "ex-VP and I disagree on GTM in month 7 and the relationship cracks." For STAY, that means things like "member-routing v2 misses Q4 and my relationship with the CEO becomes transactional" or "PE secondary slips 14 months because CMS policy shifts." For PARTIAL, name the scenario where the CEO reads "6-month sprint then re-evaluate" as "Derek's already half-out" and my influence at the leadership table erodes in month 4.
+
+Use a consistent structure so I can diff across paths. Don't hedge — I need the bears honest to make this usable.$pf$,
+ $pf$Here are the three paths at 3-year mark, with base / bear / bull that aren't sanitized.
+
+---
+
+**PATH A — STAY (CTO at current company)**
+
+*BASE case (you execute normally, market cooperates):* Member-routing v2 ships Q2 next year, drives a 12–18% lift in member acquisition efficiency. Company raises a $65M Series C at ~$600M or does the PE secondary at similar mark. Your unvested ISOs land, partial secondary liquidity lets you take $1.2–1.8M off the table. Role: still CTO, but increasingly "platform CTO" rather than "build CTO" — hiring, scaling, board prep. Weekdays: 40% internal meetings, 30% review/approve, 20% 1:1s, 10% IC-adjacent work. Family: stable, predictable, home for dinner 4/5 nights. Stress: background hum of accountability without acute spikes.
+
+*BEAR case:* Member-routing v2 slips from Q2 to Q4, then a January re-plan. Payer regulation shifts (CMS rate-adjustment methodology change) forces a pivot in the core routing logic. CEO doesn't fire you but becomes noticeably more transactional — you move from strategic confidant to execution lead in his head, and you feel it in how decisions route around you. PE secondary slips 14 months and takes a 25% haircut. Your vested-ISO liquidity at year 3 is ~$400k less than base. You're still CTO on paper but you've become a maintenance-mode executive. Career position: resume reads "5-year tenure, platform scaled, exit delayed" which is fine but you know the truth. What you were wrong about: underestimated how much your CEO relationship depended on shipping invention vs operations — the moment you stopped inventing, the relationship shifted.
+
+*BULL case:* v2 over-performs (18–25% efficiency lift), company does a strategic acquisition by a major payer at $800M–1.1B in month 22. Your ISO position lands $3.2–4.8M pre-tax. You exit well-regarded, can walk into any next CTO role or take 6 months off. Family in best shape of any path. What you were wrong about: underestimated the probability of an acquisition from a payer, which in retrospect was obvious because the routing tech is strategic to them.
+
+---
+
+**PATH B — LEAVE (cofounder at the AI infra startup)**
+
+*BASE case:* Startup raises a $15M Series A at $65–90M in month 14–18. 9% at $75M post-A equals $6.75M nominal, but you're hit with ~25% dilution to a 6.75% stake worth ~$5M on paper — illiquid, tax-inefficient, high execution risk still ahead. Weekdays: 60% IC-adjacent work (architecture, early code, customer deploys), 25% customer/partner, 15% hiring. Family: 2 late nights per week, one trip per month average, home for dinner 3/5 nights. Stress: elevated but energized, the good kind for 18 months. Career position: "cofounder of an AI infra company at A with $15M ARR trajectory" — identity capital meaningfully changed.
+
+*BEAR case:* Startup's three enterprise pilots convert to only one paying customer in the first 9 months. Your ex-VP and you disagree on GTM strategy in month 7 — he wants to push deeper enterprise, you see the signal in a PLG motion — and the disagreement doesn't resolve cleanly. Relationship fractures. Startup raises a FLAT Series A at $20M (same post as seed) in month 18 to extend runway, 9% dilutes to 5.4% in the bridge, worth roughly $1.1M paper. Month 22 you're doing the work of 2.5 people at $195k cash comp, your liquid NW has drawn down $280k from pre-startup burn-rate increases, and you're having the "is this working" conversation with yourself. Family: youngest is 10 now and you've missed 4 consecutive of her piano recitals because of customer escalations. Stress: acute, not background. What you were wrong about: overestimated the enterprise pipeline velocity (YC-fund-signal optimism), underestimated the co-founder relationship risk (you thought having worked with him prior inoculated against it — it doesn't, the dynamic is different when you're peers not boss/report).
+
+*BULL case:* PMF within 9 months, ARR crosses $8M by month 18, Series A at $180M post in month 15, B at $420M in month 30. Your 9% at the B, diluted to ~6.2%, is ~$26M paper. You're a known quantity in the AI-infra space, could raise your own fund or become a serial founder. Family: strained but proud, kids understand what you're doing. What you were wrong about: underestimated how fast AI infra would compound in 2026–2028 — you came in believing it was 60/40 for the category, it's actually 85/15.
+
+---
+
+**PATH C — PARTIAL (6–8 month sprint then re-evaluate)**
+
+*BASE case:* CEO agrees, lets you focus primarily on member-routing v2 for 6–8 months with reduced management load. You ship v2 on time or slightly early. In month 7 you have a clear-eyed conversation with yourself: either the v2 ship satisfies the "am I still inventing" itch and you re-commit for 18 more months, or it doesn't and you start an outside search with your head up. Cofounder opportunity is gone (your ex-VP filled the seat by month 3). Weekdays: 65% IC/architecture, 20% v2 team 1:1s, 15% leadership. Family: stable. Stress: low-mid, focused. You re-signed to yourself rather than the company.
+
+*BEAR case:* CEO hears "6-month sprint" as "Derek's already half-out." Your inclusion in strategic conversations (board prep, hiring plans, next-round strategy) quietly tapers starting month 3. You ship v2 on time but your influence at the leadership table has eroded — you're now a very senior IC with a CTO title, and you know it. By month 7 when you try to re-engage, the job has shrunk. You stay through vest cliffs and leave cleanly in month 14, but the last 7 months were demoralizing. What you were wrong about: underestimated how much a CEO reads any conditionality in a CTO as a flight risk, even when the conditionality is sincere and performance-neutral.
+
+*BULL case:* Focused sprint is the best 6 months of your tenure. v2 ships with a bigger lift than planned. CEO re-ups your scope, you negotiate a focused CTO role (invention-first, less operations) for the next 2 years. You leave the cofounder path on the table with grace, ex-VP understands, backchannel stays warm for future opportunities. Financial and career outcomes converge on Path A BULL. What you were wrong about: underestimated your own agency in negotiating your role — you could have asked for this a year ago.
+
+---
+
+**Diff across paths, key signal:** The monetary spread base-to-bull is widest on Path B (factor ~25x from bear to bull) and narrowest on Path A (factor ~12x). Family stability is highest on A and C and meaningfully lower on B. Identity-capital change is largest on B, smallest on A. The bear cases are NOT symmetric: A bear is "disappointing" (money left on table, role stalls), B bear is "painful" (relationship broken, NW actually drawn down, family strain), C bear is "demoralizing" (slow erosion of influence while still showing up).
+
+One thing worth staring at: in your PARTIAL base case, you re-sign to YOURSELF, not to the company. That might be the quietest important outcome in the whole analysis.$pf$,
+ $pf$Pass 2 produced the artifact that actually moved Derek off the fence — three paths × three cases, with bears that named specific failure modes rather than hand-waving "startup is risky." The LEAVE bear (ex-VP relationship fracture in month 7 + flat Series A dilution) was the scenario Derek had been suppressing; naming the specific trigger (GTM disagreement: enterprise vs PLG) made the risk legible and priceable rather than vague. PARTIAL bear (CEO reading "sprint then re-evaluate" as "half-out," influence erosion by month 4) was the honest naming he needed — most analyses sanitize this into "some relationship risk." The surprise finding in the base-case diff: PARTIAL's quiet upside is "you re-sign to yourself" rather than to the company, which became the anchor for Pass 3's 10-year frame.$pf$),
+
+-- Step 3 --
+('66666666-6666-6666-6666-666666500103',
+ '55555555-5555-5555-5555-555555550050',
+ 3,
+ $pf$Regret-minimization + 10-year frame — which version of me at 50 is most embarrassed?$pf$,
+ $pf$Drop the scenarios for a minute. I want to look at this from a different angle.
+
+Run a regret-minimization pass, but not the standard Bezos version — I want it tuned to MY specifics. I'm 42. Kids are 8 and 11. I've had one meaningful liquidity event already ($1.1M net in 2021 from a prior company's acquisition). My wife's career is stable and portable. My reputation in Seattle health-tech is strong; my reputation in AI infra is zero.
+
+Two questions I want you to really sit with:
+
+1. At 50 (8 years out), which version of me is most embarrassed to have been? The one who stayed safe and became a steady platform CTO, or the one who took the swing because his ex-VP texted him on a Tuesday without doing the internal work first, or the one who tried to split the difference with a PARTIAL plan? Don't default to the heroic "take the swing" answer — actually weigh them.
+
+2. What's the ACTUAL identity tension underneath this decision? I suspect it's not about equity or family schedule — I suspect it's about whether I'm still someone who does invention-first work or whether I've become someone who optimizes at scale, and whether I'm at peace with either identity. Name the tension bluntly.
+
+Also: if my wife were asked, separately from me, "which path does Derek actually want" — what do you think she'd say, and how should that inform whether the path I'm choosing is really my preference or my performance of a preference? Be direct.$pf$,
+ $pf$I'll sit with both questions and give you honest answers, not the heroic version.
+
+**Q1 — Which Derek at 50 is most embarrassed?**
+
+Not the one who stayed. Stayed-Derek at 50 is a successful platform executive with a likely $5–8M NW from a couple of good exits, two kids through college without debt, a marriage that didn't strain through his 40s. He's not embarrassed. He might occasionally wonder about the path not taken — but at 50, with a 17-year-old asking for college tour plans and a 14-year-old just starting to need him differently, he's unlikely to trade what he has for what he didn't try.
+
+Not the one who took the swing and it worked, obviously.
+
+The most embarrassed Derek-at-50 is the one who took the swing WITHOUT DOING THE INTERNAL WORK FIRST — and it didn't work. Specifically: the Derek who accepts the offer because his ex-VP texted him on a Tuesday, because it flatters his self-image of still-takes-swings, because saying no feels like accepting he's "just" a platform CTO now, and because he didn't do the harder work of asking whether he actually wants the day-to-day reality of seed-stage cofounding at 42 with two young kids. That Derek at 50 — if the startup flamed out at month 20 after the co-founder relationship cracked and the family absorbed 18 months of strain — has something real to answer for: not that he tried, but that he took a major decision reactively, from identity anxiety, not conviction.
+
+The second-most embarrassed Derek at 50 is the PARTIAL-path Derek whose influence eroded through timidity — who couldn't fully commit to either direction and let the decision make itself by drift. "I split the difference and lost on both sides" is a worse story at 50 than "I chose and it didn't work."
+
+The least embarrassed Derek at 50, in my read, is the one who stayed AND used the staying as a deliberate decision, not a default — who said out loud "I'm choosing family-schedule stability + completing the member-routing v2 invention work I care about + keeping the cofounder door warm for age 45 when the kids are less schedule-fragile" and then ACTUALLY did that instead of drifting through it.
+
+**Q2 — The actual identity tension.**
+
+You named it correctly and I think you already know the answer. The tension is: you built your professional identity in the 2010s as the person who makes things other people can't yet make. Every promotion, every job change, every outside validation has been rooted in "Derek builds invention." You became CTO at this company because of invention work at the prior one. You're now 4 years into a role where the invention work is ~60% done and the next 2 years are scaling operations — which is a different professional identity.
+
+The cofounder offer feels magnetic because it promises to restore you to invention-Derek. But here's the uncomfortable part: you're 42. Invention-Derek as a PRIMARY identity has an expiration date that's closer than you'd like. The more honest question isn't "am I still invention-Derek" — it's "am I ready to integrate invention-Derek into a larger professional identity that also includes scaling-Derek, mentor-Derek, operator-Derek, and eventually board-Derek?" That transition usually happens in the 40s for people on your career track, and people who refuse the transition often have strained second halves because they keep making decisions from a 32-year-old's identity structure.
+
+The cofounder offer isn't actually a test of whether you're still a swing-taker. It's a test of whether you can make a decision about your 40s from your 40s, not from your 30s.
+
+**The spousal question — would your wife say something different?**
+
+Yes. And you know it, which is why you asked.
+
+She'd probably say: "Derek wants to WANT the cofounder job more than he actually wants it. He's drawn to the story of saying yes — it makes him feel like himself. But when I watch him on the weekends with the kids, he's not the guy who'd trade 18 months of bedtimes for 9% equity in a company he hasn't started caring about yet. He's performing the choice he thinks he should want, and he's going to be sad if he talks himself into it."
+
+That's speculation on my part, obviously — I don't know her. But the reason the question is the right question is this: when there's a gap between what someone wants and what they'd perform wanting, the people who spend unstructured time with them often see it more clearly than they see it themselves. You should ask her directly, in a setup where she can answer honestly. Not "what do you think I should do" — ask "if you had to guess what I actually want, separate from what I'm performing, what would you guess?" That is the Pass-3 conversation, not Pass 4.
+
+**The framing I'd offer:** The decision is not "take the swing or play it safe." The decision is "do I have the emotional maturity at 42 to make this choice for REAL reasons, or am I about to make it for identity-anxiety reasons?" If you can answer that question with real conviction — for EITHER path — you'll be fine. If you can't, don't decide yet; get to a state where you can.$pf$,
+ $pf$Pass 3 is where the decision actually turned. The regret-minimization frame surfaced that the most embarrassed version of Derek-at-50 is not Stayed-Derek but Took-The-Swing-Reactively-Derek — the one who said yes from identity anxiety without doing the internal work. That reframe inverted the usual "YC always wins on regret-min" default. The identity-tension section named the 40s integration Derek had been avoiding: from primary-invention-identity to integrated-invention+scaling+mentorship identity, a transition his decision was really about. The spousal-asymmetry question ("what would she say separately from you") was the move that forced the Pass-4 conversation plan — because the honest answer was that his wife would see a gap between want-to-want and actual-want, and he had to close that gap before choosing.$pf$),
+
+-- Step 4 --
+('66666666-6666-6666-6666-666666500104',
+ '55555555-5555-5555-5555-555555550050',
+ 4,
+ $pf$Decision plan — 3 conversations + 2-week timeline + commitment device$pf$,
+ $pf$Okay. I think the answer is "stay, but deliberately — with a negotiated focused-sprint on v2 and a clear marker for re-evaluating at age 45 when the kids are more schedule-resilient." But I want to make sure this doesn't collapse back into drift.
+
+Give me the execution plan. Specifically:
+
+1. The THREE conversations I need to have in the next 10 days, with who, what the real question in each conversation is (not the surface question), and what a good-outcome vs bad-outcome looks like for each.
+
+2. A 2-week day-by-day timeline from today through decision, including what I'm doing on the days I'm NOT in a conversation (because unstructured time will let me drift back into reactivity).
+
+3. A commitment device — something concrete that prevents me from quietly reversing this decision in month 3 when the ex-VP pings again or when I have a bad week at current job. Not "journal about it," something structural.
+
+4. The 3-sentence statement I should write down, share with my wife, and refer back to when I wobble. Not aspirational mission-statement — the ACTUAL reasoning, in my voice, that I will recognize as true in 6 months.$pf$,
+ $pf$Here's the plan. All of it is operational, not aspirational.
+
+---
+
+**1. THE THREE CONVERSATIONS**
+
+**Conversation 1: With your wife. Night 3 (Wednesday).**
+
+Surface question: "What do you think I should do about the cofounder offer?"
+
+Real question: "If you had to describe what I actually want — separate from what I'm performing wanting — what would you say? And what's the ACTUAL cost to you and the kids if I take it?"
+
+Setup: After the kids are asleep, no phones, with a single sheet of paper on the table that has your Pass-1 scoring grid + Pass-2 scenario summary. Not a pitch deck — a working document you're both looking at together. Lead with: "I'm leaning stay. I want to make sure that's from conviction, not from anxiety. I need you to tell me honestly what you see."
+
+Good outcome: She names the gap between what-you-want-to-want and what-you-actually-want. She prices out the real cost of the LEAVE path for her and the kids, including things you haven't considered (your oldest's soccer travel schedule, her clinic's on-call rotation conflict). You both leave with the same picture of the decision.
+
+Bad outcome: She says "whatever you want" and the conversation stays at the surface. If this happens, STOP — you haven't had the conversation yet. Reschedule for the weekend with more setup.
+
+**Conversation 2: With your CEO. Day 5 (Friday).**
+
+Surface question: "Can I focus more on member-routing v2 for the next 6–8 months?"
+
+Real question: "If I commit to the platform work I actually want to do here, will you meet me with a re-scoped role that makes that possible, or am I about to discover that this role has become something I can't fully show up for?"
+
+Setup: Ask for a 45-min walk meeting, not a conference room. Frame as "I want to talk about where I should be pointing my attention for the next two quarters." Do NOT mention the outside offer. This isn't leverage — it's a test of whether the role can be what you want it to be without threat.
+
+Good outcome: He hears the request, gets slightly defensive for 4 minutes, then actually engages. You leave with a rough shape of what a focused-v2-sprint version of your job looks like, with follow-up in 10 days.
+
+Bad outcome: He receives the request as disengagement and the conversation becomes about your commitment. If this happens, note the signal — it tells you the role has already shifted out from under you, which is useful information even if uncomfortable.
+
+**Conversation 3: With your ex-VP. Day 9 (Tuesday, by text and then call).**
+
+Surface question: "What's your decision timeline again, I want to make sure I respect it."
+
+Real question: "How do I say no without damaging the relationship, and without closing the door on a version of this that might be right in 3 years?"
+
+Setup: Text first: "I've been doing the work on this decision. I want to jump on a 20-min call Tuesday evening — I have a real answer for you and I want to deliver it with care." Then on the call: be direct in the first 90 seconds. No hedging, no "this is so hard" preamble. Land the no, then spend the rest of the call genuinely engaging with what he's building because you actually respect him.
+
+Good outcome: He takes it cleanly, you offer to be an advisor or angel (small — $25k) as a relationship-preserving move, he accepts or declines, you both leave the relationship intact and the door open.
+
+Bad outcome: He takes it personally. If this happens, accept the cost — it's a real one, but the alternative (saying yes to preserve the relationship) is the textbook bad-reason decision you're trying to avoid.
+
+---
+
+**2. THE 2-WEEK DAY-BY-DAY**
+
+*Week 1:*
+- **Mon (today):** Finish this Claude session, clean up the artifacts into one doc. Share nothing with anyone yet.
+- **Tue:** Sit with Pass-3 output for 24 hours. DO NOT draft pros/cons lists. The analysis is done; you're not trying to do more of it.
+- **Wed:** Conversation 1 with wife. After, take 20 minutes alone to write down what she said that surprised you, in her words, not yours.
+- **Thu:** Integrate what you heard. If her input changed anything, update the scoring. If it confirmed, note it and move forward.
+- **Fri:** Conversation 2 with CEO. After, write a 1-page "what would this actually look like in practice" document for the focused-v2 scope.
+- **Sat–Sun:** Full off — do not think about this. Be with the kids. Go for a long run. Reset.
+
+*Week 2:*
+- **Mon:** Decision locked internally. You know the answer. Write the 3-sentence statement (below).
+- **Tue:** Conversation 3 with ex-VP. Deliver the no.
+- **Wed:** Tell your CEO the full picture — that you evaluated an outside opportunity, turned it down, and the v2 sprint conversation is connected to a deliberate re-commit. This reframes the Fri conversation and builds trust.
+- **Thu:** Put the decision + 3-sentence statement in a dated Notion doc. Share read-access with your wife.
+- **Fri:** Normal week. Begin the sprint.
+
+---
+
+**3. COMMITMENT DEVICE**
+
+A dated Notion doc titled "2026-04 Derek's Cofounder Decision — Reasoning of Record." Contains: your scoring grid, Pass-2 scenarios, Pass-3 regret-min conclusion, and your 3-sentence statement. Shared read-only with your wife. Rule: you cannot reverse the decision without a 30-minute conversation with her that explicitly walks through the doc and names what has materially changed since April. Not "I'm having a bad week at work" — something structural (leadership shakeup, product pivot, material NW change). This prevents drift-based reversal while leaving the door genuinely open if reality changes.
+
+Pair that with a calendar reminder for **2028-09-01** titled "Re-evaluate: kids 10 and 13, v2 at cruise altitude, am I integrated or am I bored?" This is the 2.5-year marker you named for yourself. Not a decision prompt — a check-in prompt.
+
+---
+
+**4. THE 3-SENTENCE STATEMENT**
+
+Here's a draft. Edit until it's in your actual voice; the point is that YOU will recognize it as true in 6 months.
+
+*"I'm staying because I'd rather finish member-routing v2 at a company I believe in, with stable family schedule for two important years of my kids' lives, than take a reactive swing at 9% equity from an offer that arrived by text on a Tuesday when I hadn't yet asked myself what I actually want at 42. I'm not saying no to invention work — I'm saying yes to integrating invention, scaling, and parenting into one life for the next 30 months, and letting the next swing happen from conviction, not from identity anxiety. If in September 2028 the work has gone stale and I haven't found a real new problem worth my attention, that's the signal to move — not a text from an old colleague."*
+
+Three sentences. No adjectives. No "exciting opportunity" language. Names the real reasoning (invention + family + identity-anxiety avoidance), names the escape condition (stale work by 2028-09), and explicitly disarms the trigger you're most vulnerable to (another text from an old colleague). The sentence you'll most want to revisit at month 8 is the middle one — "integrating invention, scaling, and parenting into one life." That's the sentence doing the work.$pf$,
+ $pf$Pass 4 converted the decision into executable commitments. Three conversations scoped with surface-question vs real-question framing — the wife conversation explicitly targeted the want-to-want vs actual-want gap from Pass 3; the CEO conversation was designed as a signal-detection test (does the role meet him back), not a threat; the ex-VP conversation was about preserving the relationship and optionality while delivering a clean no. Day-by-day timeline deliberately includes unstructured-off blocks on Sat-Sun because Derek noted he drifts back to reactivity in unstructured time. Commitment device is structural: a shared-with-wife Notion doc + a 30-min-conversation rule for reversal + a dated 2028-09 check-in calendar reminder — prevents drift-based reversal while keeping the door genuinely open for material change. The 3-sentence statement names the trigger ("text from an old colleague on a Tuesday") it's designed to defuse, which is what makes it usable vs aspirational.$pf$);
+
+-- =========================================================================
 -- END OF FILE — append next project(s) below this line.
 -- Iterations working the Content queue: add 2–3 projects per iteration,
 -- appending below this comment. Do NOT rewrite existing projects.

@@ -27191,6 +27191,576 @@ Put a recurring 90-day calendar reminder: "List hygiene check." Every 90 days, p
 
 
 -- =========================================================================
+-- Project 55-0076 | TypeScript compile 30s → 4min after monorepo refactor | Marcus Chen | Coding | 4 steps
+-- =========================================================================
+
+DELETE FROM prompt_steps WHERE prompt_id = '55555555-5555-5555-5555-555555550076';
+DELETE FROM prompts      WHERE id        = '55555555-5555-5555-5555-555555550076';
+
+INSERT INTO prompts (
+  id, title, description, content, result_content,
+  category_id, difficulty, model_used, model_recommendation,
+  tools_used, tags, status, author_id, vote_count, bookmark_count
+) VALUES (
+  '55555555-5555-5555-5555-555555550076',
+  $pf$TypeScript build went 30s → 4min after a monorepo split — finding the culprit$pf$,
+  $pf$We split our Next.js app into a pnpm monorepo with a shared `packages/core` lib. Cold tsc went from 30s to 4 min and CI started timing out. Over an afternoon with Claude Opus 4.6 I ran down the cause (a path-alias glob pulling in node_modules plus one circular type) and shipped a fix + a CI perf guard.$pf$,
+  $pf$Our team of four shipped a monorepo split last month — one `apps/web` Next.js app, one `packages/core` TS library with our shared domain types, Zod schemas, and a handful of utility fns. The refactor itself went clean. What nobody noticed until the week after: cold `tsc --noEmit` went from ~30s to 4 min on my M1, and our CI lane that ran full type-check started timing out at the 5 min job cap. HMR in dev was still snappy because Next's `ts-loader` is incremental — so the problem hid for a week until CI started failing.
+
+I spent a Saturday with Claude Opus 4.6 working the problem end to end. I'd never used tsc's `--generateTrace` before and the learning curve was steep, so having Claude walk me through what to look for was the difference between "guess at it" and "actually find it." Four rounds: diagnostic plan → running the trace and reading it → finding the real cause (two things stacking — a path glob and a circular generic) → fixing it and adding a CI guard so this can't happen again without someone noticing.
+
+This is specifically for someone who's comfortable with TypeScript but hasn't debugged a slow tsc before. I'd put it at intermediate — you need to know what `tsconfig.paths` does and be comfortable reading a JSON trace, but nothing here requires compiler-internals knowledge.$pf$,
+  $pf$Fix dropped cold tsc from 3m51s to 34s on my M1 (and 4m12s → 38s in CI). Two issues stacked: our `paths` alias `"@core/*": ["../../packages/core/src/*", "../../packages/core/node_modules/*"]` — I had added the node_modules line thinking it would help resolve transitive deps (it doesn't, tsc doesn't work that way), and it caused tsc to walk 8,400 files in `node_modules` as source. Second: a `type Deep<T> = T extends object ? { [K in keyof T]: Deep<T[K]> } : T` that we applied to our top-level schema — recursive mapped types over a 200-field object tree are ~O(n²) in the checker.
+
+The CI guard I added fails the build if `tsc --extendedDiagnostics` reports > 90s total time. Cheap, doesn't require a dedicated perf harness, and means the next person who adds a pathological type gets paged by CI before it ships.
+
+Biggest lesson: slow tsc is almost never "just a lot of code." It's almost always one of three things — paths globs pulling in `node_modules`, a recursive type with `infer` or mapped-type-over-mapped-type, or skipLibCheck being off on a dep with huge `.d.ts` files. The trace tool tells you which.$pf$,
+  '11111111-1111-1111-1111-111111111104',
+  'intermediate',
+  'claude-opus-4-6',
+  'Claude 4.6 Opus',
+  ARRAY['Claude','TypeScript','tsc','pnpm','Turborepo'],
+  ARRAY['typescript','build-performance','monorepo','tsc','debugging','ci'],
+  'approved',
+  '22222222-2222-2222-2222-222222222201',
+  0, 0
+);
+
+INSERT INTO prompt_steps (id, prompt_id, step_number, title, content, result_content, description) VALUES
+
+-- Step 1 --
+('66666666-6666-6666-6666-666666760101',
+ '55555555-5555-5555-5555-555555550076',
+ 1,
+ $pf$Diagnostic plan — where to start on a slow tsc$pf$,
+ $pf$I just inherited a monorepo slowdown from a refactor my team shipped last week. Context: Next.js 14 app (`apps/web`) + one shared TS lib (`packages/core`) in a pnpm workspace, turborepo for task orchestration. Before the split, `tsc --noEmit` ran in about 30s cold on my M1 Pro. After the split, it's 3m50s locally and CI is hitting the 5-min job timeout. HMR in Next's dev server is still fine — fast enough that nobody noticed until the CI type-check lane started failing.
+
+I don't want to guess at this. Walk me through an actual diagnostic plan — what to run first, second, third. Cover the common causes of slow tsc in order of probability so I can rule them in or out efficiently. Assume I know TypeScript well but haven't debugged a perf issue like this before. Include the exact commands. I'd rather read your whole plan and decide where to start than trial-and-error for three hours.$pf$,
+ $pf$Good problem to have a plan for before you start poking. Slow tsc almost always resolves to one of five things, and you can rule them in/out in about 30 minutes if you work in the right order.
+
+**The five likely causes, ordered by frequency in my experience:**
+
+1. **Paths aliases that resolve to too many files.** A `tsconfig.paths` entry with a wildcard pointing at a directory that includes `node_modules`, generated files, or a deep tree. tsc treats every matched file as compilation input — a misconfigured glob can 10-100x your input set silently.
+2. **`skipLibCheck: false` on a dep with large or broken `.d.ts` files.** Default is `false`. If any dep in your tree ships a 10k-line declaration file or has type errors of its own, you pay for checking them every run. Most large projects set `skipLibCheck: true` for this reason.
+3. **Include patterns pulling in build output or `dist`.** If you have a `**/*.ts` include and your lib now emits `.d.ts` to a path that matches, tsc reads both the source AND the emitted declarations.
+4. **A recursive generic type or heavy conditional type in a hot path.** `Deep<T>`, `DeepPartial<T>`, `UnionToIntersection<U>`, or a big discriminated union with lots of `infer` can explode check time. A single expensive type applied to a big object can dominate total time.
+5. **Project-references misconfigured.** If you split packages but didn't add `"references"` in tsconfig, tsc re-checks `packages/core` from source every time instead of using its emitted `.d.ts`.
+
+**Diagnostic order — run these, in this order:**
+
+**Step A (5 min) — get the raw timing.** From `apps/web`:
+```bash
+rm -rf tsconfig.tsbuildinfo
+npx tsc --noEmit --extendedDiagnostics | tail -30
+```
+
+`--extendedDiagnostics` prints a breakdown: files, lines, nodes, check time, parse time, memory. You're looking at the "Files" and "Lines" numbers. A reasonable Next app should be 1,500–4,000 files. If yours is 10k+, you almost certainly have cause #1 or #3. Also look at "Check time" vs "Parse time" — if check dominates (>70% of total), cause #4 is more likely; if parse dominates, it's #1 or #3.
+
+**Step B (5 min) — dump the file list.**
+```bash
+npx tsc --noEmit --listFiles | wc -l
+npx tsc --noEmit --listFiles | grep node_modules | wc -l
+```
+
+If the `node_modules` count is over a few thousand or anything non-`@types/*` / non-direct-dep shows up, you have a paths/include issue. (`@types/*` files are expected — they're your type defs.)
+
+**Step C (10 min) — generate a trace.** This is the money tool:
+```bash
+npx tsc --noEmit --generateTrace trace-out
+npx @typescript/analyze-trace trace-out
+```
+
+`analyze-trace` prints the top-cost files and types. If any single file is > 500ms or any type check is > 100ms, that's your hotspot. This is how you find cause #4.
+
+**Step D (only if A-C didn't find it) — check project references.** Look for a `"references": [{ "path": "../../packages/core" }]` in `apps/web/tsconfig.json`. If missing, that's cause #5. Add it + set `composite: true` on the referenced package.
+
+**What to do in the next half hour:**
+
+Run A. Paste me the full `--extendedDiagnostics` output. That alone narrows it to two of the five causes most of the time, and we'll know where to point the trace from B/C. Don't run C blind — it produces a 50-500MB JSON and the analyzer takes a few minutes; run it once you have a target.
+
+Budget: I'd expect us to have a suspect within an hour.$pf$,
+ NULL),
+
+-- Step 2 --
+('66666666-6666-6666-6666-666666760102',
+ '55555555-5555-5555-5555-555555550076',
+ 2,
+ $pf$Reading the trace — what the numbers mean$pf$,
+ $pf$OK, ran Step A. Here's the relevant bits from `--extendedDiagnostics`:
+
+```
+Files:                          11,847
+Lines of Library:               40,293
+Lines of Definitions:           712,804
+Lines of TypeScript:            42,186
+Lines of JavaScript:            0
+Lines of JSON:                  18
+Lines of Other:                 0
+Identifiers:                    6,281,420
+Symbols:                        3,847,291
+Types:                          2,186,053
+Instantiations:                 18,447,392
+Memory used:                    2,847,128K
+I/O Read time:                   7.42s
+Parse time:                     41.28s
+ResolveModule time:             18.94s
+ResolveTypeReference time:       2.11s
+ResolveLibrary time:             0.84s
+Program time:                   68.64s
+Bind time:                      14.28s
+Check time:                    148.21s
+transformTime time:              0.00s
+Total time:                    231.14s
+```
+
+And Step B:
+```
+$ npx tsc --noEmit --listFiles | wc -l
+   11847
+$ npx tsc --noEmit --listFiles | grep node_modules | wc -l
+   8426
+```
+
+Before the refactor I remember the file count was around 3,500. 11,847 is way off. 8,426 `node_modules` files also feels wrong — I don't think I should be type-checking that many transitive deps. Read this and tell me what we learned, and what to do next.$pf$,
+ $pf$Two clear signals in that output, and they rhyme:
+
+**File count jumped from 3,500 → 11,847, and 8,426 of those are `node_modules`.** That's the smoking gun for cause #1 or #3 from yesterday's plan — something is pulling a huge chunk of `node_modules` into the compilation input. A healthy Next.js app should have ~2,000-3,000 files total (mostly your source + `@types/*` for direct deps). 8,426 `node_modules` files means tsc is reading source `.ts`/`.tsx` inside transitive deps as compilation input, which is almost never what you want.
+
+**Check time is 148s (64% of total).** That's high in absolute terms but the more interesting signal is the ratio: parse (41s) + check (148s) = 189s on 712k lines of .d.ts. If we drop the file count back to ~3,500, both numbers should fall proportionally, probably to ~30s total. We'll know after the fix.
+
+**"Lines of Definitions: 712,804"** is the cleanest single-number confirmation. A typical Next app with standard deps is ~150-250k lines of definitions. 712k means you're pulling definitions from packages you shouldn't be.
+
+**Immediate next action — find what's pulling in `node_modules`.** Run this:
+```bash
+npx tsc --noEmit --listFiles | grep node_modules | awk -F/ '{print $1"/"$2"/"$3}' | sort | uniq -c | sort -rn | head -20
+```
+
+This bins the node_modules files by top-level package and shows the 20 biggest contributors. You're looking for one or two packages that are contributing thousands of files. Normal `@types/*` entries will show up but usually in the hundreds, not thousands. Something dominant like `node_modules/react-scripts` or `node_modules/aws-sdk` with 2k+ files is the thing to investigate.
+
+Once you've got that list, check two things:
+
+1. **tsconfig `paths` globs.** Open `apps/web/tsconfig.json` — any entry like `"@core/*": ["../../packages/core/**"]` where the glob could match `node_modules`? Or `"@utils/*": ["../../*"]`? A glob that's too wide is the most common culprit.
+2. **tsconfig `include` array.** Look for `"include": ["**/*.ts"]` without a matching `"exclude": ["node_modules", "**/dist"]`. In a monorepo, the default exclude of `node_modules` only excludes `node_modules` in the same directory as the tsconfig — not nested ones.
+
+**A trace would also show this definitively, but it's overkill here.** We know from the file count that the cause is "extra files being included." The trace is for "which types are slow to check" — that's a different problem.
+
+**What I'd predict:** paste me your `paths` and `include` in `apps/web/tsconfig.json`. 80% chance there's a glob that's matching `../../packages/core/node_modules/*` or equivalent. That one line, if present, could be the entire problem.$pf$,
+ NULL),
+
+-- Step 3 --
+('66666666-6666-6666-6666-666666760103',
+ '55555555-5555-5555-5555-555555550076',
+ 3,
+ $pf$Found it — paths glob + circular type$pf$,
+ $pf$Nailed it. Ran the awk pipeline:
+
+```
+   4218 node_modules/.pnpm/@aws-sdk
+   2107 node_modules/.pnpm/typescript-eslint
+    894 node_modules/@types/node
+    412 node_modules/@types/react
+    ...
+```
+
+`packages/core` happens to depend on `@aws-sdk/client-s3` (for a signed-URL util). That's the 4,218. The `paths` entry in `apps/web/tsconfig.json`:
+
+```json
+"paths": {
+  "@core/*": [
+    "../../packages/core/src/*",
+    "../../packages/core/node_modules/*"
+  ]
+}
+```
+
+I added the `node_modules/*` line a month ago thinking it would help resolve transitive deps — I remember it "fixed" an import error at the time. Apparently that was the wrong fix.
+
+Also ran `analyze-trace` on the trace anyway out of curiosity. Top cost: `DeepPartial<UserConfigSchema>` at 2.1s and `Deep<UserConfigSchema>` at 4.4s. `UserConfigSchema` is a Zod-inferred type with ~200 fields, 4 levels nested. The `Deep<T>` is something I wrote to make a recursive-readonly variant. Should I keep it? Any idea why it's so slow?
+
+Give me the fixes for both, and explain what went wrong with the `paths` glob so I don't do that again.$pf$,
+ $pf$Both causes, confirmed. Fix in order:
+
+**Fix #1 — remove the `node_modules` paths entry.**
+
+```json
+"paths": {
+  "@core/*": ["../../packages/core/src/*"]
+}
+```
+
+That's it. The deleted line was telling tsc "when someone imports `@core/foo`, also look in `packages/core/node_modules/foo`" — but because the `*` matches anything including deep paths like `aws-sdk/clients/s3/model/types`, tsc was pulling the entire `node_modules` tree under `packages/core` into the compilation input set. Every `.d.ts` in there got parsed and checked.
+
+**Why your "import error" went away when you added that line (the teachable moment):** you probably had a case where `packages/core` re-exported a type from `@aws-sdk/client-s3` and `apps/web` tried to `import type { S3Client } from '@core/s3'`. The real fix for that is either (a) have `packages/core` own the type rather than re-export it, or (b) add `@aws-sdk/client-s3` as a direct dep of `apps/web` so the resolver finds it normally. A paths glob into `node_modules` is not the right tool — you almost never want tsc to treat a nested package manager's storage as first-class source.
+
+**How tsc resolves imports — the rule you should remember:** tsc finds modules via the same algorithm as Node's resolver (walking up `node_modules` directories), THEN additionally via `paths` if configured. `paths` is a layer *above* the normal resolver, for workspace aliases. It's not a way to teach tsc about package storage layout. Every time someone uses a glob inside `paths` pointing at a directory that could contain real source files, they're setting up this trap.
+
+**Fix #2 — the `Deep<T>` type.**
+
+Post your definition, but I can predict the shape:
+
+```typescript
+type Deep<T> = T extends object
+  ? { [K in keyof T]: Deep<T[K]> }
+  : T;
+```
+
+A recursive mapped type like this is roughly O(n²) in checker work when applied to a deeply nested object type, because the checker expands every branch lazily and has to re-check constraints at each level. At 200 fields × 4 levels of nesting, you're looking at a few thousand instantiations for a single use site — and if you use `Deep<UserConfigSchema>` in five places (which, let me guess, you do because it's convenient), that multiplies.
+
+**Fix options, best to worst:**
+
+1. **Don't use it.** If `Deep<>` is a `DeepReadonly` variant, ask whether you actually need readonly-at-every-level or just at the top level. 90% of the time `Readonly<T>` at the top level is sufficient and the cost is trivial.
+2. **Precompute the expanded form once.** `type ReadonlyUserConfig = DeepReadonly<UserConfigSchema>` at one location, then use `ReadonlyUserConfig` everywhere else. tsc will cache the result. Saves most of the cost if you have many use sites.
+3. **Use `as const` at the value level** if what you really want is "this specific literal is immutable." Shifts the work out of the type system.
+
+**Expected result after both fixes:** file count drops to ~3,500, total time drops to 30-45s. `Check time` should drop from 148s to ~15-20s.
+
+Make the fixes, blow away `tsconfig.tsbuildinfo`, run `--extendedDiagnostics` again, and we'll confirm.$pf$,
+ NULL),
+
+-- Step 4 --
+('66666666-6666-6666-6666-666666760104',
+ '55555555-5555-5555-5555-555555550076',
+ 4,
+ $pf$The fix + a CI guard$pf$,
+ $pf$Both fixes applied. Deleted the `node_modules` line from paths, inlined `ReadonlyUserConfig` as a single type alias and updated the 6 use sites. Re-ran `--extendedDiagnostics`:
+
+```
+Files:                           3,421
+Lines of Definitions:          184,208
+Lines of TypeScript:            42,186
+Types:                          612,847
+Instantiations:                 1,284,392
+Parse time:                      8.12s
+Check time:                     14.28s
+Total time:                     34.47s
+```
+
+34s, from 3m50s. CI went from 4m12s to 38s. Massively under the 5-min timeout now.
+
+I want this not to happen again. Specifically I want a CI check that fails the build if tsc total time goes over some threshold — so if anyone on my team adds another `Deep<>`-style type or expands a paths glob, we see it in the PR instead of a month later. Help me design this. Not overengineered — I don't want a full perf harness. Just a smoke test that catches obvious regressions.$pf$,
+ $pf$Nice result. Here's the smallest-useful CI guard. Two files, 40 lines total, zero new deps.
+
+**`scripts/tsc-perf-guard.sh`:**
+
+```bash
+#!/usr/bin/env bash
+# Fails CI if tsc total time exceeds the threshold.
+# Run from the app root (where tsconfig.json lives).
+
+set -euo pipefail
+
+THRESHOLD_S=${TSC_PERF_THRESHOLD_S:-90}
+OUT=$(mktemp)
+trap "rm -f $OUT" EXIT
+
+# --extendedDiagnostics prints timing to stdout
+npx tsc --noEmit --extendedDiagnostics 2>&1 | tee "$OUT"
+
+# Grep the "Total time" line — format: "Total time:      34.47s"
+TOTAL=$(grep -E "^Total time:" "$OUT" | awk '{print $3}' | sed 's/s$//')
+
+if [ -z "$TOTAL" ]; then
+  echo "ERROR: could not parse Total time from tsc output"
+  exit 2
+fi
+
+# Use awk for float comparison (bash doesn't do floats)
+OVER=$(awk -v t="$TOTAL" -v th="$THRESHOLD_S" 'BEGIN { print (t > th) ? 1 : 0 }')
+
+if [ "$OVER" = "1" ]; then
+  echo ""
+  echo "❌ tsc total time ${TOTAL}s exceeds threshold ${THRESHOLD_S}s"
+  echo "   Something likely regressed. Run with --generateTrace to investigate:"
+  echo "     npx tsc --noEmit --generateTrace trace-out"
+  echo "     npx @typescript/analyze-trace trace-out"
+  exit 1
+fi
+
+echo "✅ tsc total time ${TOTAL}s (under ${THRESHOLD_S}s threshold)"
+```
+
+**CI wiring — add a step to your existing GitHub Actions `ci.yml`:**
+
+```yaml
+- name: TypeScript perf guard
+  working-directory: apps/web
+  run: ../../scripts/tsc-perf-guard.sh
+  env:
+    TSC_PERF_THRESHOLD_S: 90
+```
+
+**Why 90s as the threshold, when you're currently at 34s:**
+- Headroom matters. CI runners are slower than your M1 (typically 1.5-3x). If your local cold tsc is 34s, GitHub's `ubuntu-latest` will be 50-70s.
+- 90s gives 2-3x growth room before it fires — so normal codebase growth doesn't trip it, but a 10x regression (paths glob, recursive type) will.
+- Resist the urge to set it to 45s "to be strict." You'll get false positives on a loaded CI runner and start adding `continue-on-error` to get past them. The guard's job is to catch 10x regressions, not optimize every second.
+
+**Three tweaks to consider once this is in place:**
+
+1. **Track the trend, not just the ceiling.** After a month, replace the fixed threshold with "110% of the rolling 2-week average." Keeps the guard self-adjusting. Overkill for now — the fixed threshold is fine to start.
+2. **Run it on PRs, not just main.** The PR-level signal is what you want — catch regressions before they merge. Your existing CI config probably already handles this.
+3. **If someone legitimately needs to bump the threshold** (real codebase growth), make it a code change — `env.TSC_PERF_THRESHOLD_S: 120` in the workflow. Forces a PR review and a reason in the commit message. Don't let people bump it silently via a CI env secret.
+
+**A closing note for the postmortem.** The two causes here were independent — the paths glob and the `Deep<>` type. You only found them because we looked at *both* file count and trace output. If you'd stopped at "oh, it's the paths," you'd have shipped a 60s build instead of a 34s one and called it a day. The general lesson: when tsc is slow, there's usually more than one thing — run both `--extendedDiagnostics` and `analyze-trace`, because they measure different failure modes.
+
+Merge it, push it, move on. Nice work.$pf$,
+ NULL);
+
+
+-- =========================================================================
+-- Project 55-0077 | Rescue-dog adoption decision as a solopreneur | Lena Morales | Personal | 3 steps
+-- =========================================================================
+
+DELETE FROM prompt_steps WHERE prompt_id = '55555555-5555-5555-5555-555555550077';
+DELETE FROM prompts      WHERE id        = '55555555-5555-5555-5555-555555550077';
+
+INSERT INTO prompts (
+  id, title, description, content, result_content,
+  category_id, difficulty, model_used, model_recommendation,
+  tools_used, tags, status, author_id, vote_count, bookmark_count
+) VALUES (
+  '55555555-5555-5555-5555-555555550077',
+  $pf$Should I adopt a rescue dog as a solopreneur? — a three-round decision with Claude$pf$,
+  $pf$Been wanting a dog for five years. A friend flagged a 3yo terrier mix at a local rescue that seemed like a good fit. I run a one-person consulting practice from home and travel 4-6 times a year. Instead of spiraling, I walked through the decision with Claude Sonnet 4.6 over three rounds — honest pros/cons, budget reality, travel plan — and ended up adopting.$pf$,
+  $pf$I'm 32, self-employed, work from home running a one-woman strategy consulting practice (solo revenue ~$140K/yr, variable month-to-month). I travel 4-6 times a year — a few client onsites, a family trip, an annual solo backpacking week. Live in a 1BR with a shared yard in a dog-friendly small city.
+
+I've wanted a dog for five years but kept telling myself "when I'm more settled" or "when I have a partner." A friend who volunteers at a local rescue sent me a video of Mabel — 3yo terrier-mix, 28 lbs, surrendered from a family with allergies, known to be good with adults and other dogs, house-trained, listed as low-to-moderate energy. On paper a strong fit. Meet-and-greet scheduled for next Saturday.
+
+Rather than spiral (my default when making a big decision), I worked through it with Claude Sonnet 4.6 in three rounds on a Wednesday evening. Round 1: honest pros/cons and questions to ask the shelter. Round 2: full budget with realistic emergency scenarios. Round 3: the travel question — what a credible coverage plan actually looks like before I bring a dog home.
+
+Sharing because a friend who's thinking about the same thing asked me to write it up, and honestly the framing I got from round 1 (specifically, the distinction between "reasons I hesitate" vs "reasons this is wrong") saved me a month of circling.$pf$,
+  $pf$Adopted Mabel three weeks ago. The framework worked — the three rounds talked me out of one genuinely bad framing ("I'll figure travel out later") and into a specific, scheduled plan I could execute before bringing her home.
+
+Practical outcomes: year-1 budget landed at $3,840 (adoption $350, setup $620, annual vet + food + pet insurance $2,870 — see Round 2 math). Travel plan is a signed relationship with Hannah, a neighbor who boards 2 dogs max at a time, at $55/night — I booked her for my three upcoming trips before adoption. Built a $1,500 emergency-vet float in a separate savings account before Mabel came home. The "four deal-breakers in the first 30 days" list from Round 3 was the single most useful artifact — none of them hit, but I had the mental model ready if one did.
+
+One thing I got wrong in planning: I underestimated the first-two-weeks disruption to work. Even a house-trained adult dog takes a week to settle in, and I didn't block my calendar for it. Would add to my advice: actually block 10 working days as half-capacity when you bring a dog home, don't just plan to "work around it."
+
+The deeper outcome: I'd been waiting to adopt "until I was more settled," and the round-1 reframe from Claude — "reasons I hesitate are not the same as reasons this is wrong" — cut through five years of deferral in one sentence. Dog decisions aren't one-way doors; rescues take returns if it truly doesn't fit. The honest decision was whether I could responsibly commit to trying, which the math and the plan said I could.$pf$,
+  '11111111-1111-1111-1111-111111111110',
+  'beginner',
+  'claude-sonnet-4-6',
+  'Claude 4.6 Sonnet',
+  ARRAY['Claude'],
+  ARRAY['dog','pet-adoption','solopreneur','lifestyle-decision','personal'],
+  'approved',
+  '22222222-2222-2222-2222-222222222210',
+  0, 0
+);
+
+INSERT INTO prompt_steps (id, prompt_id, step_number, title, content, result_content, description) VALUES
+
+-- Step 1 --
+('66666666-6666-6666-6666-666666770101',
+ '55555555-5555-5555-5555-555555550077',
+ 1,
+ $pf$Honest pros/cons + questions for the shelter$pf$,
+ $pf$I'm 32, self-employed running a solo strategy consulting practice from home, and I've been wanting a dog for five years. A friend who volunteers at a local rescue sent me a video of a 3-year-old terrier-mix, 28 lbs, named Mabel. Surrendered from a family with newly-developed allergies. Listed as good with adults, good with other dogs, house-trained, low-to-moderate energy. Meet-and-greet is Saturday.
+
+My life: one-bedroom apartment with a shared fenced yard, solo income that varies $8-14K/month, no partner, no kids, I travel 4-6 times a year (3-5 days client trips, one 7-10 day personal trip, a solo backpacking week in summer). I work from home most days. I've had dogs as a kid but never as an adult.
+
+Instead of spiraling, I want to actually think about this cleanly. Help me. Do three things: (1) the real pros and cons for MY situation specifically, not a generic list; (2) name the "reasons I hesitate" that aren't actually good reasons to say no; (3) the 5-7 most important questions to ask shelter staff at the meet-and-greet so I can make a real call. Be direct — I don't need reassurance, I need a useful frame.$pf$,
+ $pf$I'll take all three, because they stack.
+
+**Pros, specific to you:**
+
+- **Working from home is a genuine structural fit.** Most dog-anxiety in adopters comes from "how long will she be alone" — for you, the default answer is 0-3 hours max on a typical day. Reverse this: your work style is one of the most dog-friendly employment situations there is. You'd be giving a dog more daytime human presence than 90% of homes.
+- **Mabel's profile matches your life.** 3 years old means past the puppy-destruction phase. 28 lbs is small enough for most travel logistics (flights, boarding, rentals) but big enough to go on real hikes. Low-to-moderate energy + good with other dogs + house-trained is a near-ideal starter-adult-dog profile.
+- **You actively want this.** Five years of wanting a specific thing is signal, not noise. Deferred wants this persistent tend to be real.
+
+**Cons, specific to you:**
+
+- **Income volatility ($8-14K/month) vs. pet-emergency math.** A real risk. A $4,000 emergency vet bill in a $8K month is materially different than in a $14K month. Plannable — see Round 2 when we get to it — but honest.
+- **Solo = single point of failure.** If you get the flu for a week, there's no partner to take the morning walk. You need a named backup person (neighbor, friend, dog-walker on retainer) before adoption, not after.
+- **Travel is real.** Not a dealbreaker, but 4-6 trips/year × $50-75/night boarding is a meaningful annual cost and a real planning load.
+- **Apartment living with a shared yard.** Shared yard isn't "your yard" — you still need to leash-walk for most needs. Fine, but plan accordingly.
+
+**Reasons you're hesitating that are NOT good reasons to say no:**
+
+1. *"I'll be more settled in a few years."* You said five years. You're already in your most settled phase (stable housing, stable income range, stable routines). Waiting for "more settled" is deferral, not planning. If this is how you think about it, you'll still be deferring at 37.
+2. *"What if I meet someone / have kids / move cities?"* These are all reasons to bring a dog along, not reasons to wait. Dogs go to weddings and move to new apartments. They don't invalidate future life changes.
+3. *"I'm worried I'll be a bad owner."* Almost every person who says this becomes a fine owner. The ones who should worry are the ones who don't ask the question. Your hesitation is evidence of conscientiousness, not unfitness.
+4. *"It's a big commitment."* It is. But you didn't ask "should I commit to a dog in the abstract" — you're asking about a specific dog whose profile matches your life. Abstract hesitation and specific decision are different problems.
+
+**Reasons that ARE legitimate reasons to say no** (so you can test them honestly):
+
+- You can't build a credible backup coverage plan for work-travel and illness — not "I'll figure it out," but named people who've agreed.
+- You can't afford a $3,000-$5,000 emergency vet bill without panic — including in a slow revenue month.
+- You notice during the meet-and-greet that Mabel specifically isn't a fit (pulls hard on leash, fearful, reactive in a way the listing didn't flag).
+
+**Questions for Saturday's meet-and-greet — the 7 that matter:**
+
+1. **Why was Mabel surrendered — the actual reason, in the family's own words.** Allergies is the listed reason; ask if there was anything else (behavior, energy mismatch, household change). Shelters sometimes soften listings. You want the real story.
+2. **What does "low-to-moderate energy" mean in practice?** Miles per day? Crazy for 30 minutes then couch? Energy labels vary wildly between shelters.
+3. **Any known anxiety, reactivity, resource-guarding, or fear triggers?** Ask directly, in those words. Good shelters appreciate the question.
+4. **How does she do alone?** Specifically: have they tested her alone in a quiet room for 2-4 hours? Separation anxiety is the #1 reason adult rescues get returned. You need to know.
+5. **How is she on leash, with strangers, with bikes, with other dogs she DOESN'T know?** Being "good with other dogs" in a rescue often means "good with HER kennel-mates." Real-world leash behavior is different.
+6. **What's her return policy?** Most rescues have one. Ask the window (30 days? lifetime?) and any conditions. This is not you planning to return her — it's confirming that the rescue has confidence in her fit and will support you if something genuinely doesn't work.
+7. **What does the vet record show, and is she up to date on shots, spayed, microchipped?** Basic. Get it in writing, get the rescue's vet's name.
+
+**One question to ask YOURSELF after the meet-and-greet, before you decide:**
+
+"Am I excited and a little nervous, or am I talking myself into it?" The first is normal and fine. The second is signal. Trust the distinction. You'll know which it is within five minutes of meeting her.$pf$,
+ NULL),
+
+-- Step 2 --
+('66666666-6666-6666-6666-666666770102',
+ '55555555-5555-5555-5555-555555550077',
+ 2,
+ $pf$Budget — year 1 + ongoing + emergency scenarios$pf$,
+ $pf$Good frame. I wrote down the seven questions and I'm going Saturday.
+
+Next piece I want to get honest about is money. You flagged income volatility — $8-14K/month — as a real risk. I want to see the actual dollar numbers so I can decide whether I can afford this, not vibes-afford but actually afford.
+
+Build me a realistic year-1 budget and ongoing annual budget for Mabel specifically (28 lbs, 3yo, no known health issues). Then run two or three "emergency" scenarios so I can see what a bad month looks like. I'd rather know the real number and commit to a savings buffer than get surprised in month 3. Don't pad numbers to be "safe" — give me realistic midpoints for someone in a small US city with average vet pricing.$pf$,
+ $pf$Here's the math, line-by-line, with sources and assumptions shown. Numbers are for a small US city (not NYC/SF), average vet pricing, reasonable-but-not-premium choices.
+
+**Year 1 — one-time setup + ongoing costs:**
+
+| Item | Cost | Notes |
+|------|------|-------|
+| Adoption fee | $350 | Typical shelter range $200-$450; often includes spay/neuter, microchip, initial shots |
+| Crate (36" wire) | $70 | One-time. Get the right size for her weight — 28 lbs = medium (36") |
+| Bed + blanket | $50 | Don't buy the $200 orthopedic first; rescues often prefer a familiar blanket anyway |
+| Collar, harness, leash, ID tag | $65 | Harness is worth $30 for a 28-lb terrier — terriers pull |
+| Bowls (food + water) | $20 | Stainless steel, not plastic |
+| Initial supply: food (2 weeks) | $45 | Match what shelter is feeding first, transition slowly |
+| Grooming supplies | $35 | Brush, nail clippers, pet-safe shampoo |
+| Baby gates (2) | $70 | Critical in a 1BR for the first month — control access |
+| Enzymatic cleaner + misc | $40 | Accidents happen even with a house-trained dog during transition |
+| Initial vet visit | $120 | Own-vet wellness check in week 1-2 |
+| **Setup subtotal** | **$865** | |
+
+**Ongoing annual (years 1+):**
+
+| Item | Annual Cost | Monthly | Notes |
+|------|-------------|---------|-------|
+| Food | $600 | $50 | Mid-tier kibble (not prescription, not bargain) — 28 lbs eats ~1 cup/day |
+| Treats | $180 | $15 | Including training treats |
+| Annual vet wellness + vaccines | $350 | $29 | Exam + distemper/parvo booster + lepto + bordetella + heartworm test |
+| Heartworm + flea/tick prevention | $260 | $22 | Year-round. Non-negotiable. |
+| Dental cleaning (every 18mo avg) | $400 | $33 | Pro-rated; $600 every 18 months |
+| Pet insurance | $480 | $40 | Accident + illness, $5K annual limit, $500 deductible. Strongly recommend for income-volatile owners. |
+| Grooming (every 8 weeks) | $360 | $30 | $60 × 6 appointments. Terrier coats need maintenance. |
+| License renewal | $20 | $2 | Varies by city |
+| Toys + chews (replaced) | $120 | $10 | You'll go through them |
+| Boarding (4 trips × 4 nights × $55) | $880 | $73 | **Your biggest variable — see Round 3 for plan** |
+| **Ongoing subtotal** | **$3,650** | **$304** | |
+
+**Year 1 total: $865 setup + $3,650 ongoing = $4,515.**
+
+**Steady-state ongoing: $3,650/year or ~$304/month.**
+
+That's about 2.5% of your annual income at the midpoint ($140K). For context, typical "discretionary pet spend" as a share of income is 1-3%. You're comfortably inside the normal band.
+
+**Three emergency scenarios:**
+
+**Scenario A: Minor ER visit ($600-$1,200).** Kennel cough that won't clear, a weekend foreign-body ingestion that resolves on its own, an ear infection needing meds. Roughly once every 18-24 months. Pet insurance covers it after deductible — out-of-pocket ~$500-700 first incident, then closer to $200 once deductible met for the year.
+
+**Scenario B: Moderate surgical issue ($2,500-$5,000).** Torn ACL, dental extraction with complications, mass removal + biopsy. Reasonably common (~1-in-3 dogs will have one of these over a 10-year lifespan). With insurance, out-of-pocket $500 deductible + 20% of remainder = ~$900-$1,400. Without insurance, you'd pay the full $2,500-$5,000.
+
+**Scenario C: Catastrophic — bloat, cancer, spinal injury ($5,000-$12,000+).** Rarer (~5% lifetime incidence) but possible. With $5K insurance cap, you'd hit cap and still pay $0-$7,000 out of pocket depending on severity. Without insurance, the full amount.
+
+**What this says about insurance for you specifically:**
+
+Given income volatility, I'd get insurance. Premium ($40/mo) is predictable; a $5K surprise in an $8K month is not. Insurance effectively converts variable risk to fixed monthly cost — which is exactly what someone with variable income should be doing across most risk categories. Start the policy within 14 days of adoption (most waiting periods are 14-30 days for illness coverage).
+
+**Buffer recommendation:**
+
+- **Separate savings envelope: $1,500.** Covers the $500 deductible + a surgery co-pay with some cushion. Fund it BEFORE Mabel comes home, not after.
+- **Top up to $2,500 over year 1** from monthly cashflow. Gets you to "one scenario B without touching operating cash" by month 12.
+- **Do not carry a pet emergency on a credit card.** That's the failure pattern you're trying to avoid. The envelope is the whole point.
+
+**What a bad month looks like with this plan:**
+
+$8K revenue month, Mabel has Scenario A. Fixed costs: $304 dog + $40 insurance premium (already baked into the $304 above, so don't double-count). Unplanned: $600 ER visit minus $420 insurance reimbursement after deductible = $180 real hit. You pay it from the envelope, refill the envelope next month. Total month impact: ~$180 + the stress of the vet visit. Not fun, but not a crisis.
+
+**What a bad month looks like WITHOUT the envelope and insurance:**
+
+Same scenario. $600 goes on a credit card at a moment you're already stressed about cashflow. You start thinking of Mabel as a financial mistake. That's the failure mode the envelope prevents.
+
+**My read: this is affordable.** The numbers work. Don't skip the insurance and don't skip the envelope; those two things convert "maybe-affordable" to "clearly-affordable." $3,650/year and a pre-funded buffer is a responsible plan, not a marginal one.$pf$,
+ NULL),
+
+-- Step 3 --
+('66666666-6666-6666-6666-666666770103',
+ '55555555-5555-5555-5555-555555550077',
+ 3,
+ $pf$Travel plan + deal-breakers to watch for$pf$,
+ $pf$Budget is doable. I've got the envelope math and I'll set up insurance.
+
+Last piece: travel. You flagged this as "the real one" and I want to actually nail it before I say yes. 4-6 trips a year, ranging from 3-day client trips to a 7-10 day solo backpacking week. I don't have family nearby. I have a few friends with dogs of their own.
+
+Help me build a real coverage plan — not "figure it out when the time comes" — and then give me a list of deal-breakers to watch for in the first 30 days so I know what would tell me this isn't working. The honest ones, not everything-is-fine ones.$pf$,
+ $pf$Good instinct to nail this BEFORE adoption. "I'll figure it out" is how adopters return dogs at month 4, and it's the single most predictable failure mode for your situation.
+
+**Travel coverage — build a real plan in three layers.**
+
+You need a primary, a backup, and a floor option. Name people. Get their agreement. In writing is nice; a text thread is fine.
+
+**Layer 1 — Primary: in-home boarding with a specific person.**
+
+Ideal match is a neighbor or close friend without dogs of their own (or with one compatible dog) who's willing to take Mabel in their home for multi-night trips. This is the best option for the dog by a wide margin — familiar routine, single caregiver, real bed, real walks.
+
+Action: identify 1-2 candidates THIS WEEK. A reasonable rate for in-home boarding is $45-65/night; offer the high end of that because (a) it cements the relationship and (b) it's still cheaper than commercial boarding. Budget in Round 2 assumed $55/night.
+
+If you don't have an obvious person: Rover.com has vetted in-home sitters. Read reviews, meet in person for a 30-min trial walk before your first real trip. Expect $55-85/night on Rover.
+
+**Layer 2 — Backup: commercial boarding facility you've vetted.**
+
+For when Layer 1 is unavailable. Research one facility in your city, tour it before you need it, do a one-night trial boarding at month 2. Look for: individual kennels (not communal), at least 2 supervised outdoor sessions daily, staff present overnight, willingness to administer meds if needed. Expect $50-80/night.
+
+Do NOT make your first use of commercial boarding a 7-day trip. A 1-night trial while you're local + reachable is a completely different experience for Mabel and reveals how the facility actually operates.
+
+**Layer 3 — Floor: dog-walker for 1-2 day trips.**
+
+Short trips (3-day client onsite, weekend wedding) don't need boarding. A trusted dog walker doing 2-3 visits/day ($25-35 each) is less disruptive for Mabel than boarding and usually cheaper. Establish this relationship first — it's easier to hire a walker than a boarder, and the walker can double as a short-trip solution AND a regular exercise-day helper in busy weeks.
+
+**Your annual travel as concrete math:**
+
+- 3 × client trips, 3 nights each = 9 nights. Primary (in-home) or Floor (walker visits if very short).
+- 2 × personal trips, 5 nights each = 10 nights. Primary.
+- 1 × backpacking week, 8 nights = 8 nights. Primary or Backup — backpacking is one Mabel can't come on, so plan early.
+
+Total: ~27 nights/year. At $55/night (your budget line): $1,485 — slightly above the $880 I put in Round 2. Correction: bump the annual budget line to $1,500 and year-1 ongoing to ~$4,300. Still inside affordable.
+
+**Schedule a dry run BEFORE adoption is final.**
+
+Do one 1-night in-home boarding with your primary person in month 1-2 after Mabel comes home. Reasons: (a) you find out if separation is going to be a problem before it matters; (b) Mabel learns the sitter's home is a safe place; (c) the sitter learns her routine in a low-stakes way.
+
+**A thing most people don't plan for: illness.**
+
+You flagged this as a solo-owner risk in Round 1. If you get a flu that genuinely flattens you for 3-4 days, Mabel still needs 3+ walks/day. Your plan: the same primary in-home person agrees to be available for "emergency morning-walk" coverage if you text by 7am saying you're sick. $25-30 per visit, pre-negotiated. Do not wait until you're sick to figure this out.
+
+**First 30 days — the deal-breakers worth watching for.**
+
+These are the honest ones. Most are recoverable with training; the LAST one is not. Keep this list on your phone.
+
+**1. Severe separation anxiety that doesn't fade.**
+
+Look like: destructive behavior (furniture, crate bars, doors), vocalization continuously for 2+ hours, elimination in the apartment when alone, self-harm (pawing, chewing herself). Some vocalization for the first 15-30 minutes for the first 1-2 weeks is normal. Constant full-throat barking for 3 hours at week 3 is not. Severe SA can be managed with training + meds but is expensive, exhausting, and not every dog responds. If it's not clearly improving by day 21-28, call the rescue and a behaviorist — in that order.
+
+**2. Reactivity to strangers or dogs that the rescue didn't flag.**
+
+Look like: lunging, snarling, sustained barking at people or dogs on walks. Occasional startle-bark at a bike? Normal terrier. Inability to walk half a block without a reactive episode? Different problem. Worth 4-6 sessions with a positive-reinforcement trainer ($80-120/session) before deciding. If it doesn't improve and you're in a 1BR in a walkable city, this is a genuine fit problem, not a training problem.
+
+**3. Food aggression / resource guarding against you.**
+
+Look like: freezing over food or a specific toy when approached, growling, snap. Some guarding against other dogs is workable. Guarding against humans, especially you, is a serious safety issue in a solo-owner household. Consult a behaviorist IMMEDIATELY — not "after a few weeks" — if you see this. This is the case where the rescue's return policy matters most.
+
+**4. Your own honest feeling at week 4, not week 1.**
+
+Everyone is exhausted at week 1. Week 4 is the real read. Question to ask yourself: "Do I look forward to seeing her when I walk in the door?" Not "am I tired from morning walks" — that's normal. But if the answer at week 4 is "honestly, no" — that's not a dog who's a fit for you and it's not fair to either of you. Rescues know this happens occasionally and most will facilitate a return without judgment. Returning a dog that genuinely isn't a fit is not a failure; forcing yourself to keep a dog you don't love is.
+
+**One last thing — 10 half-capacity working days.**
+
+Block your calendar for the first 10 business days after pickup at half capacity. Even a fully house-trained adult rescue takes 7-14 days to settle: shy eating, weird sleep, house accidents despite being trained, mild digestive issues. None of this is a problem; all of it eats into focused work hours. If you try to run a full consulting workload and a newly-adopted-dog week simultaneously, one of them suffers. Usually the work. Plan for it now.
+
+**Close:**
+
+Your plan is real. You have a named primary, a vetted backup, a floor, a sick-day backup, a dry run scheduled, an envelope funded, insurance lined up, and a 30-day watch list. If the meet-and-greet Saturday goes well and she shows you who she is — go. You're ready.$pf$,
+ NULL);
+
+
+-- =========================================================================
 -- END OF FILE — append next project(s) below this line.
 -- Iterations working the Content queue: add 2–3 projects per iteration,
 -- appending below this comment. Do NOT rewrite existing projects.

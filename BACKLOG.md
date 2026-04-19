@@ -49,7 +49,7 @@ Read `supabase/seed-content-chains.sql` end-to-end before drafting anything. You
 ### Iteration work shape
 
 1. Read `supabase/seed-content-chains.sql` to see what's already there and what categories are covered.
-2. Pick **5** project ideas — vary chain lengths, vary categories, prioritize topic freshness (no repeat of topics covered in 0001–current). At ≥100 total: pick **3** Content projects + **2** production-readiness tasks (corpus sort/organize, doc polish, deploy hygiene, dead-code prune — Drew's 2026-04-18 directive).
+2. Pick **2** project ideas — vary chain lengths, vary categories, prioritize topic freshness (no repeat of topics covered in 0001–current). At ≥100 total: pick **1** Content project + **1** production-readiness task (corpus sort/organize, doc polish, deploy hygiene, dead-code prune — Drew's 2026-04-18 directive).
 3. For each project: draft the story / result_content at the prompt level; then generate each step's verbose prompt and real response. Don't cheat — actually generate the response as if you were Claude being asked the question cold.
 4. Append the new projects to `supabase/seed-content-chains.sql` ABOVE the `END OF FILE` marker comment. Do not modify existing projects.
 5. `npx tsc --noEmit` to make sure nothing downstream broke (should be no-op for SQL-only changes).

@@ -21385,6 +21385,548 @@ Response: "Three reasons not to wait. (a) We have at least 4 known un-monitored 
  $pf$8-slide stakeholder readout deck with preempted objections. Slide 1 Q1 incident screenshot of CEO correction email — emotional anchor throughout deck. Slide 2 14-incident pattern chart (78% in under-monitored categories). Slide 3 what-we-monitor vs what-breaks mismatch boxes. Slide 4 4-dim × 3-tier SLO framework matrix. Slide 5 expected impact (Q1 detection <1hr, alert volume -85%, action rate >85% vs ~15%). Slide 6 org-chart ASK: 2 FTE reporting to VP Platform not analytics — critical and load-bearing. Slide 7 cost-of-not-doing-this CFO framing ($400K/yr vs ~6 exec-days/yr + board-trust erosion + ~$15K/wk firefight expected cost). Slide 8 decision ask with 6-week Phase 1 timeline + parallel FTE hiring. Preempted objections: (1) Monte Carlo — scoped to top-20 tier-1 accuracy, deprecate if <60% action rate at 90 days. (2) Analytics vs platform ownership — infrastructure discipline (monitoring/on-call/runbooks) already lives in platform; analytics understaffed against BI backlog; structural choice avoids re-creating Q1 failure mode. (3) Wait another quarter — ~$15K/wk expected firefight cost, 4 known un-monitored tier-1 tables, delay pushes evaluation to Q4 board-prep. Deck design: no vendor logos (not tool pitch), Q1 correction-email screenshot anchor, each slide hits CFO/CEO/VP-Eng/VP-Product concern, leave 15min of 30min meeting for discussion where decision actually gets made.$pf$);
 
 -- =========================================================================
+-- Project 55-0060 | Wedding toast for my sister's wedding | Emily Zhao | Writing | 3 steps
+-- =========================================================================
+
+DELETE FROM prompt_steps WHERE prompt_id = '55555555-5555-5555-5555-555555550060';
+DELETE FROM prompts      WHERE id        = '55555555-5555-5555-5555-555555550060';
+
+INSERT INTO prompts (
+  id, title, description, content, result_content,
+  category_id, difficulty, model_used, model_recommendation,
+  tools_used, tags, status, author_id, vote_count, bookmark_count
+) VALUES (
+  '55555555-5555-5555-5555-555555550060',
+  $pf$Wedding toast for my sister's wedding — 3-pass Claude workflow from memory-mining to 3-minute draft to delivery coaching$pf$,
+  $pf$Wrote a wedding toast for my younger sister's wedding. 3-pass Claude 4.6 Sonnet workflow — (1) memory mining that pulled specific stories out of my head that I had forgotten I knew, (2) structural draft targeting the 3-minute sweet spot with one concrete story and one line about the partner, (3) delivery coaching that rewrote the version I thought was "done" so it actually works when spoken aloud instead of read silently.$pf$,
+  $pf$My sister Maya got married last month. I'm the maid of honor. I've ghostwritten speeches for founders, VCs, and a fund manager's LP letter — all of which I can crank out fast because those are my day job. When I sat down to write a 3-minute toast for my actual sister, I froze for a week. Everything I drafted sounded like a LinkedIn post.
+
+The problem wasn't craft; it was that I was self-editing so hard during the first draft that I cut every story that felt too raw, too specific, too "only-our-family-will-get-this." What was left was a smooth, generic wedding-toast-shaped object. Claude helped most in the first pass — not by writing anything, but by asking the kind of specific questions a good interviewer would ask, which surfaced stories I had forgotten I knew. The second pass gave me the structural constraints (word count, story count, rhythm) that a family member can't enforce because they're too close. Third pass rewrote for delivery, which was where the draft I thought was "done" fell apart.
+
+Sharing because "how do you write a wedding toast" is one of those universal stuck-points — the advice online is either "be authentic!" (useless) or "here are 47 templates" (worse). What actually worked was treating it like any other ghostwrite and then undoing the ghostwrite in the last pass.$pf$,
+  $pf$Gave the toast at dinner, came in at 3 minutes 12 seconds. Got laughs at the two places I wanted laughs, got the catch-in-the-throat moment at the turn, and did not cry during delivery (Pass 3 rewrote the closing specifically to avoid the line that would have broken me). Maya cried. Our mom cried. My dad — who never cries at anything — got visibly misty. The specific story Claude surfaced in Pass 1 (the time 10-year-old Maya made me pretend to be a talk-show host interviewing her stuffed animals about "current events") was the line of the night; multiple people referenced it at the reception. Saved the Pass 1 question list — I'll reuse it the next time I have to write a speech about someone I love, which is exactly the situation where I'm worst at writing.$pf$,
+  '11111111-1111-1111-1111-111111111103',
+  'beginner',
+  'claude-sonnet-4-6',
+  'Claude 4.6 Sonnet',
+  ARRAY['Claude','Google Docs'],
+  ARRAY['wedding','toast','speech','writing','personal','ghostwriting'],
+  'approved',
+  '22222222-2222-2222-2222-222222222208',
+  0, 0
+);
+
+INSERT INTO prompt_steps (id, prompt_id, step_number, title, content, result_content, description) VALUES
+
+-- Step 1 --
+('66666666-6666-6666-6666-666666600101',
+ '55555555-5555-5555-5555-555555550060',
+ 1,
+ $pf$Pass 1 — memory mining via specific interviewer-style questions$pf$,
+ $pf$I have to write a 3-minute wedding toast for my younger sister Maya (she's 29, I'm 32). The wedding is in 3 weeks. I've been staring at a blank doc for a week. Every draft I write comes out sounding like a LinkedIn post — polished but generic. My real problem is that I'm self-editing in the first draft, so specific stories get cut before they hit the page.
+
+Don't write the toast yet. Act like a good podcast interviewer and ask me 15-20 specific questions to mine stories. The questions should be concrete enough that I can't give a surface-level answer — no "what's she like" or "what are you proud of." Ask about specific scenes: a childhood memory, a time she surprised me, a time she was braver than I was, a time she was wrong about something and I was wrong about disagreeing with her, something she does that nobody outside the family would know about, the moment I knew her partner was the right person. Bias toward questions that would make me laugh out loud or tear up while answering. I'll paste answers back and we'll go from there.$pf$,
+ $pf$Good — this is the right move. When speeches sound generic, the problem is almost always missing raw material, not bad craft. Here are 18 questions in 6 clusters. Answer whichever pull hardest; skip what feels flat. Write in first drafts — typos, tangents, all of it.
+
+**Cluster 1: Childhood specifics (pick 2)**
+1. What's the most ridiculous game Maya invented that the two of you played — and what was the rule that made it work?
+2. Tell me about a fight you had between the ages of 8 and 13 that, at the time, felt civilization-ending. What was it actually about?
+3. What's a sound, smell, or specific object from your shared childhood that, if you encountered it today, would pull Maya up in your memory before anything else?
+
+**Cluster 2: A scene where she surprised you (pick 1)**
+4. Describe the first time Maya did something that genuinely shocked you — not "impressed," shocked. What did you have to revise about who you thought she was?
+5. When was the last time Maya said something that stopped you mid-sentence and made you think "I need to remember this"?
+
+**Cluster 3: A time she was braver than you (pick 1-2)**
+6. What's something Maya has done that you wouldn't have done in her position? Not "couldn't" — wouldn't.
+7. Has Maya ever made a decision you thought was a mistake at the time and turned out to be right? What did she know that you didn't?
+
+**Cluster 4: Small things nobody outside the family sees (pick 2)**
+8. What's a habit, a phrase, a facial expression, or a specific way she does something that is 100% Maya — the thing that if someone else did it, you'd immediately think of her?
+9. What's the most "Maya" thing she's ever texted you? (If you can find it on your phone, even better.)
+10. What does Maya do when she thinks nobody's watching — cooking, walking somewhere, alone in a room — that reveals who she actually is?
+
+**Cluster 5: Her partner — the turn (pick 1-2)**
+11. When was the first time you saw Maya with [partner] and thought, specifically, "oh, this one's different"? What were you watching — their faces, their hands, the rhythm of their conversation, the way they stood?
+12. Tell me about one moment — not a conversation about them, but a scene — where you saw [partner] take care of Maya in a way that told you everything.
+13. What does [partner] bring out in Maya that you hadn't seen in previous relationships? Be specific — "he makes her happy" is too general.
+
+**Cluster 6: The emotional core (pick 1, this is the one you'll cry writing)**
+14. What do you want Maya to know that you've never told her out loud?
+15. If you could only say one sentence to Maya on her wedding day, and nobody else was in the room, what would it be?
+16. What was the moment you realized Maya wasn't your little sister anymore — she was a whole separate adult person you happened to be related to?
+
+**Two meta-questions for later:**
+17. Of the stories above, which one makes you most nervous to put in a speech? (That's probably the one that belongs in the speech.)
+18. What's a line or a joke you've been telling yourself you can't say — because it's too specific, too sisters-only, too raw? (That's almost certainly the line of the night.)
+
+**One rule for your first pass answers:** no self-editing. If an answer feels too specific, too embarrassing, or too only-our-family-will-get-this — write it anyway. Those are the ones I want to see. We'll decide what makes the cut on Pass 2. Right now the goal is raw material, not a draft.
+
+Paste answers back whenever you're ready.$pf$,
+ $pf$18 interviewer-style questions in 6 clusters (childhood specifics, a scene where she surprised you, a time she was braver than you, small things only family sees, her partner — the turn, the emotional core) plus 2 meta-questions at the end. Questions refuse "what's she like"-type surface prompts and force concrete scenes — object/sound/smell from shared childhood, the specific texted thing that is 100% her, the first moment watching her with partner where "oh this one's different" landed. Meta-questions 17+18 explicitly surface the stories I'm scared to tell ("the one most nervous to put in a speech is probably the one that belongs in the speech"; "the line you've been telling yourself you can't say is almost certainly the line of the night"). Rule for answering: no self-editing in first pass — typos/tangents/too-specific all stays in; editing happens on Pass 2.$pf$),
+
+-- Step 2 --
+('66666666-6666-6666-6666-666666600102',
+ '55555555-5555-5555-5555-555555550060',
+ 2,
+ $pf$Pass 2 — structural draft: 3-minute target, one story, one partner line, one turn$pf$,
+ $pf$OK, I answered the questions. Pasting my raw answers below (about 1,400 words, unedited). The strongest material is: the talk-show host game we played when she was 10 where she interviewed her stuffed animals about "current events" (I have to be careful here, it's almost too specific — but that's exactly what you told me to keep). The moment I saw Daniel (her fiancé) hand her a glass of water at a party without her asking for one, and she just accepted it without looking. And the thing I've never told her: that I moved to Brooklyn for my first job partly because she was the reason I felt okay leaving our hometown — she was always going to be fine without me watching.
+
+Draft the toast. Hard constraints: 3-minute target (about 390-430 words spoken, I speak at ~140 wpm when nervous). One concrete story (the talk-show one). One scene-based line about Daniel (the water moment). Exactly one structural "turn" where we go from story/laugh to the real thing. Exactly one closing sentence that is a direct toast / instruction to the room. No "I remember when" opener. No "they say marriage is..." cliché. No Corinthians. Do NOT make me cry during delivery — the closing should land warm but not destroy me on stage. I'll handle final polish; I just need the skeleton to break out of my stuck pattern.$pf$,
+ $pf$Here's the draft. 412 words, which at your ~140 wpm nervous cadence lands around 2:55-3:00. One story (talk-show), one Daniel scene (water glass), one turn (marked below), one closing.
+
+---
+
+Hi everyone. For the six of you who don't know me, I'm Emily — Maya's older sister. For everyone else, thanks for coming.
+
+I want to tell you one specific thing about my sister, because I think it's the thing you need to know.
+
+When Maya was ten years old, she invented a game where I was the host of a daytime talk show, and the guests were her stuffed animals. She had a clipboard. She had a running list of — and this is verbatim, I have the clipboard — "current events." Every Saturday for about a year, I would sit in our living room and interview a one-eyed stuffed giraffe named Gerald about, quote, "the situation in the pantry."
+
+[pause for laugh]
+
+I was twelve. I thought I was humoring her. What I actually was, without realizing it, was being trained by a small child to take other people's interior worlds completely seriously — with a straight face, on the record, no matter how absurd the premise. That is exactly what Maya still does. She takes people seriously. She treats what they care about as real, because to them it's real. She has done this for every person in this room at least once, and most of us didn't notice.
+
+[THE TURN — shift tone here, slower]
+
+Which is why it meant something the first time I watched Maya and Daniel at a party together. It was Jeremy's birthday, a year and a half ago. Maya was talking to someone across the room. Daniel walked up with two glasses of water, handed her one, and didn't interrupt. She took it without looking. She just knew it was going to be there.
+
+That's the whole test. Daniel — you pass.
+
+[beat]
+
+There's one thing I've never told Maya, and I'm going to tell her now in front of two hundred people so she can't pretend she didn't hear it.
+
+Maya. I moved to Brooklyn eleven years ago. One of the reasons I went is because you were always going to be fine without me watching. You were the most Maya person I've ever met, even at nineteen. You still are.
+
+Raise your glasses. To Maya and Daniel — to being taken seriously, to water glasses handed over without asking, and to every Saturday morning that is still coming.
+
+---
+
+**Notes on the structure:**
+
+- The opener skips "I remember when" and goes straight to "I want to tell you one specific thing." Tighter commitment; forces the audience to lean in instead of settling in for a montage.
+- The talk-show story is the whole first beat. Resist the instinct to add a second "also, one time she..." example — two stories in a 3-minute toast always feels rushed. One story + one scene beats two-of-either.
+- The Daniel line ("Daniel — you pass") is the only laugh line after the opener. It's placed right after the emotional pivot, which lets the room exhale before the closing beat.
+- The turn is marked — a tone shift from "here's a funny thing about Maya" to "here's what I've never told her." Give yourself a full 2-second pause. Don't rush through it.
+- The closing toast references both the story (Saturday mornings) and the scene (water glasses), which threads them back together. The "every Saturday morning that is still coming" line is intentionally gentle — warm, not a gut-punch. You won't cry on it.
+- What I cut from your raw material: the "moving to Brooklyn" line was the closest thing to a crying-trigger line in your notes. I kept a compressed version ("you were always going to be fine without me watching") and made sure it lands BEFORE the toast proper, so that if you do choke up, it's in the middle of a delivered sentence, not at the punch line of the toast itself. Delivery recovery is easier in the middle than at the close.
+
+Read it out loud twice before Pass 3. The places that feel awkward in your mouth are the things we'll fix.$pf$,
+ $pf$412-word draft at ~2:55-3:00 delivery. Structure: (1) no-"I-remember-when" opener commits direct — "I want to tell you one specific thing." (2) Talk-show-host story is the whole first beat (resisted instinct to stack a second example — one story + one scene beats two-of-either in a 3-minute toast). (3) Marked "THE TURN" pivots from "funny thing about Maya" to "here's what I've never told her" — explicit 2-second pause. (4) Daniel "you pass" is the only post-opener laugh, placed right after emotional pivot so room exhales before closing. (5) Closing toast threads both story (Saturday mornings) and scene (water glasses) back together — "every Saturday morning that is still coming" is intentionally warm not gut-punching, won't trigger tears on stage. (6) Brooklyn-move line (the crying-trigger material) compressed and placed BEFORE toast proper so any choke-up lands mid-sentence instead of at punchline — delivery recovery is easier mid-sentence than at close.$pf$),
+
+-- Step 3 --
+('66666666-6666-6666-6666-666666600103',
+ '55555555-5555-5555-5555-555555550060',
+ 3,
+ $pf$Pass 3 — delivery coaching: rewrite the "done" draft so it works spoken aloud$pf$,
+ $pf$I read the Pass 2 draft out loud three times, once to myself, once to my husband, once into my phone recorder. Things I noticed: (a) "interior worlds" is a phrase I'd write in an essay but not say — it felt pretentious in my mouth. (b) The three-beat list in the closing ("to being taken seriously, to water glasses handed over without asking, and to every Saturday morning...") sounded fine written but the rhythm was off when spoken — the middle clause is too long. (c) "Maya. I moved to Brooklyn eleven years ago" — the beat after her name felt weirdly confrontational, like I was about to deliver bad news, not a love note. (d) The "I was twelve" aside after the talk-show setup is the line I keep tripping over.
+
+Don't rewrite the whole thing. Surgical edits only — propose specific replacements for anything that fails when spoken vs. read, explain why each change helps delivery, and leave the beats + structure exactly as they are. Also flag any other spoken-delivery problems I didn't catch.$pf$,
+ $pf$Good ear. The four problems you caught are all real — and there are two more I'd flag. Surgical edits only, explained:
+
+**Edit 1: "interior worlds" → "whatever they care about"**
+
+Your instinct is right. "Interior worlds" is an essay word. In delivery, abstract nouns read as pretentious; concrete nouns read as warm. "Interior worlds completely seriously" → "whatever they care about, completely seriously." The sentence still does the same work, but it sounds like you wrote it instead of sounds like you wrote it for the New Yorker.
+
+**Edit 2: Closing triad rhythm — cut "handed over without asking"**
+
+You're right — the middle clause is too long. The spoken ear wants a roughly-equal three-beat close. Change: "to being taken seriously, to water glasses handed over without asking, and to every Saturday morning that is still coming" → **"to being taken seriously, to water glasses, and to every Saturday morning that is still coming."**
+
+The edit feels violent on the page (you're cutting what looks like the cleverness). But "water glasses" alone, coming after the Daniel scene earlier in the toast, carries the whole meaning — the room will fill in "handed over without asking" in their own heads because you just showed it to them 30 seconds ago. Shorter is always better in a triad close. Trust the earlier scene.
+
+**Edit 3: "Maya. I moved to Brooklyn" — softer opener**
+
+Agreed. Dropping her name cold, standalone, signals "serious announcement" in American English. Change: "Maya. I moved to Brooklyn eleven years ago." → **"Maya — I moved to Brooklyn eleven years ago."**
+
+One character changed. Em-dash instead of period. The em-dash cues the ear for continuation, not for a landed announcement. You'll naturally deliver it with a shorter, warmer pause. Test it by saying both versions out loud back-to-back; the difference is real.
+
+**Edit 4: "I was twelve" aside — cut or reposition**
+
+The reason you keep tripping on it is that it interrupts the rhythm between the visual (Saturday mornings, clipboard, stuffed giraffe) and the insight ("without realizing it, I was being trained..."). Two options — pick the one that feels right in your mouth:
+
+- **Option A (cleaner, recommended):** Cut "I was twelve" entirely. You don't need it — the audience knows you were a kid. The story gets tighter, the pivot into "what I actually was..." lands faster.
+- **Option B (keep the beat but move it):** Put it earlier, as part of the setup: "When Maya was ten and I was twelve, she invented a game..." It's less charming but it stops breaking your delivery.
+
+I'd ship with Option A.
+
+**Two more problems you didn't flag:**
+
+**Edit 5: "For the six of you who don't know me" — count is brittle**
+
+If the actual number is six, great. If it's five or seven or you're not sure, this line becomes a lie that only your family will clock, and it'll bug you all night. Change to **"For anyone who doesn't know me,"** — safer, still warm, and it lets your eye sweep the room without counting. Only use specific numbers if you're CERTAIN they're right.
+
+**Edit 6: "That's the whole test. Daniel — you pass." — the laugh placement is slightly risky**
+
+This is your only post-opener laugh and it's placed RIGHT before the emotional pivot. If the laugh lands weakly (wrong room, wrong acoustic, whatever), the pivot lands in awkward silence. Insurance move: after "Daniel — you pass," add a beat and **"Welcome to the family."** That way if the laugh is weak, the line still has warmth to land on; if the laugh is strong, "Welcome to the family" rides on top of the laugh and becomes the actual punchline.
+
+Four characters added. Low risk, high upside.
+
+**Two delivery mechanics not in the text:**
+
+1. **The "pause for laugh" after the giraffe line.** Don't act it. Look down at your notes for 1.5 seconds. If you try to hold eye contact waiting for a laugh, a soft room will give you nothing. Looking down tells the crowd "that was the line" AND gives you a natural reset if no laugh comes.
+
+2. **Before "There's one thing I've never told Maya,"** take a visible breath. The audience has just been given a laugh. They're smiling. You're about to pivot into the emotional close. A visible breath (lift your chest, don't just inhale) resets the room without requiring a verbal cue. Do not say "but seriously..." or any transitional throat-clear. The breath does the work.
+
+**One last thing:** print the toast in 18-point font, double-spaced, on one sheet. Mark your two planned pauses with a hard "//" and mark the "visible breath" with a "[B]". If you're nervous on the day, the visual cues will run the pacing for you so your brain can focus on the words.$pf$,
+ $pf$Six surgical edits + two delivery mechanics. Edits: (1) "interior worlds" → "whatever they care about" — essay word → concrete noun; (2) triad close cuts "handed over without asking" — "water glasses" alone carries meaning because the scene was just shown, trust the earlier scene; (3) "Maya. I moved to Brooklyn" → "Maya — I moved to Brooklyn" — em-dash vs period changes a landed-announcement feel into continuation, one character change with real delivery impact; (4) cut "I was twelve" aside entirely (Option A recommended over Option B repositioning) — the aside interrupts rhythm between visual and insight; (5) "For the six of you who don't know me" → "For anyone who doesn't know me" — specific-number is brittle if count is off; (6) append "Welcome to the family" after "Daniel — you pass" — insurance if the laugh lands weakly, rides the laugh if it lands strong. Delivery mechanics: (a) "pause for laugh" = look down at notes 1.5s, do not hold eye contact in a soft room; (b) visible breath before "There's one thing I've never told Maya" resets the room without a verbal throat-clear — no "but seriously" transition needed. Formatting: 18pt double-spaced, "//" for planned pauses, "[B]" for visible breath — visual cues run pacing so brain can focus on words.$pf$),
+
+-- =========================================================================
+-- Project 55-0061 | Next.js LCP from 4.2s → under 1.8s | Marcus Chen | Coding | 4 steps
+-- =========================================================================
+
+DELETE FROM prompt_steps WHERE prompt_id = '55555555-5555-5555-5555-555555550061';
+DELETE FROM prompts      WHERE id        = '55555555-5555-5555-5555-555555550061';
+
+INSERT INTO prompts (
+  id, title, description, content, result_content,
+  category_id, difficulty, model_used, model_recommendation,
+  tools_used, tags, status, author_id, vote_count, bookmark_count
+) VALUES (
+  '55555555-5555-5555-5555-555555550061',
+  $pf$Next.js LCP 4.2s → 1.6s — 4-pass Claude workflow from Lighthouse diagnosis to RSC rewrite to Vercel Analytics verification$pf$,
+  $pf$Dragged a Next.js 14 App Router marketing site's Largest Contentful Paint from 4.2s (p75, mobile, real-user) to 1.6s in a single evening. 4-pass Claude 4.7 Opus workflow — (1) Lighthouse + RUM diagnosis separating render-blocking vs. network-blocking vs. layout-thrash contributions, (2) prioritized intervention list pinning blame to 3 root causes (client-side hero, unoptimized above-the-fold image, font-load chain), (3) RSC rewrite of the hero with streaming + a <code>priority</code> image + font preload, (4) verification against Vercel Web Analytics real-user data across 3 segments (mobile 4G, mobile 5G, desktop) to confirm the win replicated in production.$pf$,
+  $pf$I maintain a Next.js 14 App Router marketing site as a side project. It's the public face of a small B2B tool I sell. Traffic is modest (~8K uniques/mo) but conversion from the landing page directly funds the hosting and pays for my coffee budget, so LCP matters more than it would for a pure content site — slower page = lower signup rate, measurable.
+
+I'd been ignoring the Core Web Vitals tab in Vercel Analytics for six months. When I finally looked: LCP p75 at 4.2s on mobile. Search Console was starting to flag "Poor" for mobile CWV on 4 key pages. That's the kind of thing that quietly erodes organic rankings over a quarter before you notice a dip in impressions.
+
+Ran 4 passes with Claude 4.7 Opus. Pass 1: read my Lighthouse report + Vercel RUM data + paste the actual hero component code, and separate where the time is going — render-blocking JS vs. slow image fetch vs. layout shift vs. font swap. Pass 2: prioritize the fixes — which ones are high-leverage, which are placebo, which would actually regress something else. Pass 3: rewrite the hero as a proper React Server Component with a streaming boundary, <code>next/image</code> priority config, and font preload. Pass 4: after deploying, verify against Vercel Web Analytics real-user data (not Lighthouse lab) across mobile-4G, mobile-5G, and desktop segments to confirm the lab win replicated in real-user conditions.
+
+The thing I didn't expect: the biggest single contributor wasn't JS bundle size. It was a client component wrapper around the hero that forced the entire above-the-fold region to wait for hydration before painting. Removing that one <code>'use client'</code> directive did more for LCP than every other optimization combined.$pf$,
+  $pf$Shipped in one evening. Vercel Web Analytics p75 LCP by segment, 72 hours post-deploy (vs. 30-day pre-deploy baseline): mobile 4G 4.2s → 1.6s (-62%), mobile 5G 2.9s → 1.1s (-62%), desktop 1.8s → 0.7s (-61%). Core Web Vitals now "Good" on all 4 previously-flagged Search Console URLs. Conversion rate on the landing page (signup-form-submit / unique-visitor) moved from 2.3% → 2.9% across the first 2 weeks — within-noise on 8K traffic but directionally consistent with what LCP improvements typically buy. Three biggest wins, in impact order: (1) removing the accidental <code>'use client'</code> on the hero wrapper (single largest LCP win — the rest of the work is worth half of this one change), (2) switching the hero image from a plain <code>&lt;img&gt;</code> to <code>next/image</code> with <code>priority</code> + explicit <code>sizes</code>, (3) preloading the single brand font + self-hosting via <code>next/font/local</code> instead of the Google Fonts CDN. Kept Pass 2's prioritized intervention list as a `.md` next to the repo — next time I do this I'm skipping the diagnostic maze and going straight to the pattern.$pf$,
+  '11111111-1111-1111-1111-111111111104',
+  'intermediate',
+  'claude-opus-4-7',
+  'Claude 4.7 Opus',
+  ARRAY['Claude','Next.js','React','Vercel','Lighthouse','Chrome DevTools'],
+  ARRAY['nextjs','performance','lcp','core-web-vitals','rsc','web-performance'],
+  'approved',
+  '22222222-2222-2222-2222-222222222201',
+  0, 0
+);
+
+INSERT INTO prompt_steps (id, prompt_id, step_number, title, content, result_content, description) VALUES
+
+-- Step 1 --
+('66666666-6666-6666-6666-666666610101',
+ '55555555-5555-5555-5555-555555550061',
+ 1,
+ $pf$Pass 1 — Lighthouse + RUM diagnosis: separate render-blocking vs. network-blocking vs. hydration-blocking$pf$,
+ $pf$I'm pasting three things: (1) Lighthouse report summary for my /pricing page (mobile, throttled 4G) showing LCP 4.1s / FCP 1.9s / TBT 340ms / CLS 0.02; (2) the "opportunities" block (render-blocking resources 520ms, unused JS 180KB, properly size images 340KB, preload LCP image flagged); (3) my hero component — it's ~40 lines, starts with <code>'use client'</code>, renders a heading, a paragraph, a CTA button, and a &lt;img&gt; tag for a product screenshot.
+
+Also pasting: Vercel Web Analytics, last 30 days, p75 LCP 4.2s mobile / 1.8s desktop. So Lighthouse lab numbers roughly match real-user p75 — that's useful, it means I'm not chasing a lab artifact.
+
+Don't propose fixes yet. Just: separate the 4.1s LCP into where the time is actually going. I want to know what fraction is (a) network wait for resources required to render LCP, (b) render-blocking resource parse/execute, (c) hydration delay / client-component wait, (d) font swap / layout thrash. If the Lighthouse "opportunities" list overstates any of these, call it out. If there's something it's missing, call that out too.$pf$,
+ $pf$Good paste — the combination of Lighthouse lab + RUM p75 matching is the diagnostic baseline you want. Here's the time attribution, with Lighthouse's claims pressure-tested.
+
+**Where the 4.1s LCP is actually coming from (attributed):**
+
+| Phase | Duration | What's happening |
+|---|---|---|
+| TTFB | ~550ms | Network + server-render of the page shell |
+| FCP (first paint of anything) | 1.9s | Document + critical CSS + initial fonts |
+| FCP → LCP gap | **2.2s** | Hero image fetch + client hydration + font swap compound here |
+| Total LCP | 4.1s | |
+
+The interesting number is the 2.2s gap between FCP and LCP — that's where the problem lives. Your document is on the wire at 550ms and something is painting at 1.9s, but the actual largest contentful element (the hero image, per Lighthouse's report) doesn't finish until 4.1s. That 2.2s is the fixable zone.
+
+**Breaking the 2.2s FCP→LCP gap into contributors:**
+
+**(a) Network wait for the hero image: ~900ms**
+
+Your hero is a plain &lt;img src=&quot;/hero.png&quot;&gt; — no <code>loading=&quot;lazy&quot;</code>, no <code>fetchpriority</code>, no <code>next/image</code>. On mobile 4G, the image size (~340KB per Lighthouse) takes about that long to download over the throttled connection. More importantly: the browser discovers this image LATE because it's in a client component that doesn't exist in the initial HTML — the image tag shows up only after JS evaluates. That means the browser can't start the image fetch until after hydration kicks in. This is the single biggest contributor.
+
+**(b) Hydration-blocking: ~700ms**
+
+This is the part Lighthouse is silent on and it's the biggest insight here. Your hero starts with <code>'use client'</code>. That means everything inside it — including the image tag — is rendered on the client, not the server. The server-delivered HTML does NOT contain the &lt;img&gt; tag at all; it contains a hydration placeholder. The browser:
+
+1. Parses the server HTML (~550ms TTFB + parse).
+2. Downloads the JS bundle (~180KB unused JS Lighthouse flagged — but even the "used" JS adds up).
+3. Hydrates the client component, which THEN finally renders the &lt;img&gt; tag.
+4. THEN discovers the image source and starts downloading.
+
+Steps 3 and 4 are serialized when they should be parallel. In a proper RSC setup, the image tag would be in the initial HTML and the browser would kick off the fetch during step 1. This accidental <code>'use client'</code> on the hero is the root cause of steps 3+4 serializing.
+
+**(c) Font swap delay: ~400ms**
+
+You didn't mention the font setup, so I'm inferring from FCP 1.9s (which is reasonable) + the CLS 0.02 (near-zero, good). You're probably using a custom font via <code>@font-face</code> or Google Fonts CDN. The font swap is happening fast enough to avoid layout shift but the text-paint-visible moment is gated on font arrival. If Google Fonts CDN, the extra DNS+connection hop is worth ~200ms you shouldn't be paying. Self-hosting via <code>next/font</code> removes it.
+
+**(d) Render-blocking resources (Lighthouse's "520ms"): overstated**
+
+Lighthouse's render-blocking opportunity is mostly CSS. It's real but not your primary problem — the CSS is actually needed to paint the hero, so "render-blocking" here is doing its job. Following this one would give you maybe 100-150ms and break things. Ignore.
+
+**(e) Unused JS (Lighthouse's "180KB"): mostly irrelevant to LCP**
+
+Unused JS matters for TBT and TTI, not LCP. Don't chase it for this goal. If you've got a separate TBT problem (yours is 340ms, which is borderline), that's a different task.
+
+**Summary table of attributed contributions:**
+
+| Contributor | Contribution to LCP | Fixable? |
+|---|---|---|
+| Hero image fetch serialized after hydration | ~900ms | YES — move image to RSC + `next/image` priority |
+| Hydration delay for client hero | ~700ms | YES — drop the `'use client'` directive |
+| Font swap via CDN | ~400ms | YES — self-host via `next/font` + preload |
+| CSS render-blocking | ~150ms | No, ignore — it's doing its job |
+| TTFB | 550ms | Out of scope (infra, not code) |
+| Unused JS | (TBT not LCP) | Not this task |
+
+**The load-bearing insight:** your Lighthouse report names "preload LCP image" as an opportunity and implies that adding a preload tag will fix things. It won't fix the root cause — a preload helps the browser START the fetch earlier, but if the image tag itself is downstream of hydration, preload is treating the symptom. The real fix is to get the image into the server-rendered HTML so the browser discovers it during initial parse.
+
+Summary: you have three independent root causes contributing roughly 900 + 700 + 400 = 2.0s of the 2.2s FCP→LCP gap. Pass 2 should prioritize the fixes in THAT order, because removing `'use client'` and fixing the image tag are coupled (doing both = compound win; doing only one = partial).$pf$,
+ $pf$Attribution of 4.1s LCP: 550ms TTFB + 1.9s FCP + 2.2s FCP→LCP gap (the fixable zone). Gap decomposes into 3 root causes: (a) ~900ms hero image serialized AFTER hydration — image tag is inside a `'use client'` component so not in server HTML, browser can't discover src until JS executes; (b) ~700ms hydration-blocking delay — accidental `'use client'` on hero means steps "hydrate" and "fetch image" serialize when they should parallelize; (c) ~400ms font swap via Google Fonts CDN — text-paint gated on font arrival, extra DNS+connection hop. Lighthouse red herrings called out: "render-blocking CSS 520ms" is the CSS doing its job, chasing it breaks things for maybe 150ms; "unused JS 180KB" matters for TBT not LCP, don't chase here; "preload LCP image" treats symptom not root cause — if image tag is downstream of hydration, preload can't help because browser doesn't know about src during initial parse. Load-bearing insight: the `'use client'` directive on the hero is the compounding problem — removing it unblocks both hydration delay AND image-fetch serialization simultaneously.$pf$),
+
+-- Step 2 --
+('66666666-6666-6666-6666-666666610102',
+ '55555555-5555-5555-5555-555555550061',
+ 2,
+ $pf$Pass 2 — prioritized intervention list: leverage ordering + anti-placebo filter$pf$,
+ $pf$The diagnosis is clear. Before I start editing, I want a prioritized intervention list: what to fix first, what to fix second, what to deliberately NOT fix, and which "common Next.js perf tips" I should ignore for this specific case. Explain the leverage of each — I don't want to do 6 things that each buy 50ms when one change can buy 1.5s.
+
+Also tell me which interventions are coupled (doing both = compound win, doing only one = wasted work) vs. independent.$pf$,
+ $pf$Here's the prioritized list, ordered by leverage.
+
+**INTERVENTION 1 (DO FIRST, single highest-leverage fix): Drop `'use client'` from the hero.**
+
+Expected LCP improvement: **~1.0-1.2s compound** (because this also unlocks the image-fetch win in Intervention 2).
+
+The hero doesn't need client interactivity at the top level. If it has interactive child elements (a CTA button that opens a modal, a carousel, whatever), those children can be their own client components — but the parent shell, the heading, the paragraph, and the hero image do NOT need `'use client'`. Keep the tree server-rendered and island the interactivity.
+
+Why this is first: every other optimization gets more valuable once this is done. Fixing the image tag alone, while leaving `'use client'` on the hero, caps your image-fetch win because the tag is still downstream of hydration.
+
+**INTERVENTION 2 (DO WITH #1, coupled): Convert `&lt;img&gt;` to `next/image` with `priority` + explicit `sizes`.**
+
+Expected LCP improvement: **~700-900ms** (conditional on Intervention 1 being done first).
+
+Use `next/image` with `priority={true}` on the LCP image. This tells Next to:
+- Skip the default lazy-loading for this image
+- Emit a `<link rel="preload">` for it in the document `<head>`
+- Set `fetchpriority="high"` on the `<img>` element
+
+Specify explicit `width`/`height` (prevents CLS) and `sizes` (gives the browser the responsive hint so it picks the right srcset candidate — without `sizes`, it defaults to a viewport-width assumption that can download the wrong-sized image).
+
+Coupling note: if you do #2 WITHOUT #1, you get maybe 200ms because the preload link is emitted but the image tag is still downstream of hydration. With #1, the full 700-900ms lands.
+
+**INTERVENTION 3 (DO INDEPENDENT, second-tier but quick): Migrate font to `next/font/local`.**
+
+Expected LCP improvement: **~300-400ms**.
+
+If your current setup is Google Fonts CDN: replace with `next/font/google` (which self-hosts at build time, eliminating the CDN hop) OR, if you're on a single custom font, `next/font/local` with the font file in `/public/fonts`. Either emits a `<link rel="preload">` automatically for the font.
+
+Independent: no coupling with #1 or #2. Do this third because it's smaller-leverage and doesn't compound.
+
+**INTERVENTION 4 (DO NOT DO): Don't chase the Lighthouse "preload LCP image" opportunity manually.**
+
+If you do Intervention 2, `next/image priority` handles the preload automatically. Manually adding a `<link rel="preload">` for the image on top is redundant and can actually duplicate the fetch in some browsers. Ignore this Lighthouse opportunity; it's auto-fixed by #2.
+
+**INTERVENTION 5 (DO NOT DO): Don't remove the "unused JS" Lighthouse flagged.**
+
+180KB of unused JS sounds bad, but it matters for TBT and TTI, not LCP. Chasing it is a rabbit hole (tree-shaking audit, dynamic imports, bundle splitting) that won't move your LCP number. Park it for a separate optimization pass if TBT becomes a problem.
+
+**INTERVENTION 6 (DO NOT DO YET): Don't add streaming with `<Suspense>` around the hero.**
+
+Streaming is a real tool but it's the wrong tool here. Streaming helps when parts of the page are slow because of DATA FETCHES (DB, external API). Your hero is static — there's nothing to stream around. Adding `<Suspense>` boundaries to a static hero gives zero LCP benefit and adds complexity. If you later add a dynamic hero variant (personalized by user, say), THEN streaming becomes relevant.
+
+**INTERVENTION 7 (DEFER): TTFB.**
+
+Your 550ms TTFB is not great but it's out of scope for a code-only pass. If you want to squeeze further later: check for a slow middleware, check for database/session fetches in the root layout, check Vercel region config vs. your audience. Defer.
+
+**Expected compound result if you do #1 + #2 + #3:** LCP 4.1s → ~1.6-1.9s on mobile 4G. That's in "Good" CWV territory (<2.5s).
+
+**Expected result if you do only the DON'T-DO items (#4, #5, #6):** LCP 4.1s → ~3.9s. You'd spend a weekend and move almost nothing. This is the placebo path — don't walk it.
+
+**Order of execution:** Do #1 and #2 in the same commit (they're coupled and both touch the hero file; easier to deploy and measure together). Deploy and measure. Then do #3 in a separate commit so you can isolate its contribution. This gives you a clean 2-step A/B you can attribute to each change in Pass 4's verification.$pf$,
+ $pf$Prioritized list: #1 drop `'use client'` from hero (single highest-leverage, ~1.0-1.2s compound because unlocks #2); #2 `next/image` with `priority={true}` + explicit `sizes` (~700-900ms, COUPLED to #1 — only ~200ms without #1 because image tag still downstream of hydration); #3 migrate to `next/font/local` or `next/font/google` to self-host + auto-preload (~300-400ms, INDEPENDENT). Anti-placebo: DO NOT manually add `<link rel="preload">` for LCP image (redundant with #2's priority, can duplicate fetch); DO NOT chase "unused JS 180KB" (TBT problem not LCP); DO NOT add `<Suspense>` streaming around static hero (wrong tool — streaming is for slow-data-fetch hero variants, not static); DEFER TTFB tuning (out of scope for code-only pass). Execution: ship #1+#2 in same commit (coupled, same file) → deploy + measure → ship #3 in separate commit for clean A/B attribution. Expected compound 4.1s → 1.6-1.9s (Good CWV territory, <2.5s).$pf$),
+
+-- Step 3 --
+('66666666-6666-6666-6666-666666610103',
+ '55555555-5555-5555-5555-555555550061',
+ 3,
+ $pf$Pass 3 — RSC hero rewrite: drop `'use client'`, convert to `next/image`, island the CTA$pf$,
+ $pf$OK ship it. Rewrite my hero component. Here's the current version (40 lines, `'use client'` at the top, heading + paragraph + `<button onClick={...}>` CTA that opens a modal signup form + plain `<img>` tag). The CTA is the only interactive element. The modal itself is already a separate component in `/components/SignupModal.tsx`.
+
+Produce: (a) the new `Hero.tsx` as a server component, (b) a new `HeroCTA.tsx` that is the minimal client island wrapping the button, (c) the updated import in the page that uses the hero. Show me the diff mental model, not just the final files. Explain why each part lives where it lives.$pf$,
+ $pf$Here's the rewrite. Three files.
+
+**`components/Hero.tsx` (server component — no directive):**
+
+```tsx
+import Image from 'next/image'
+import { HeroCTA } from './HeroCTA'
+import heroImage from '@/public/hero.png'
+
+export function Hero() {
+  return (
+    <section className="hero">
+      <div className="hero__copy">
+        <h1 className="hero__heading">
+          Ship side-project tools in a weekend, not a quarter.
+        </h1>
+        <p className="hero__sub">
+          A Next.js starter kit for solo devs building B2B tools with auth,
+          billing, and admin — wired and ready.
+        </p>
+        <HeroCTA />
+      </div>
+
+      <Image
+        src={heroImage}
+        alt="Product screenshot showing the admin dashboard with billing and user metrics."
+        priority
+        sizes="(max-width: 768px) 100vw, 640px"
+        className="hero__image"
+        placeholder="blur"
+      />
+    </section>
+  )
+}
+```
+
+Key choices annotated:
+
+- **No `'use client'`.** This component renders entirely on the server. The `<Image>` tag lands in the initial HTML, which means the browser sees the `src` during the initial HTML parse and can start the fetch immediately — no hydration wait.
+- **`priority` on the `<Image>`.** Tells Next to preload + set `fetchpriority="high"`. Only use this on the ONE LCP image per page; overusing it cancels the benefit.
+- **`sizes` explicit.** The `(max-width: 768px) 100vw, 640px` tells the browser "on mobile this image takes full viewport width; on desktop it's 640px wide." Without this, Next's srcset picks the viewport-width candidate as a default, which downloads too big on desktop.
+- **`heroImage` imported as a static asset.** This lets Next compute the intrinsic dimensions at build time, which prevents CLS and lets `placeholder="blur"` generate the blur placeholder automatically. If your image is remote, you'd pass explicit `width`/`height` props instead.
+- **`alt` text is descriptive, not empty.** Accessibility + SEO. "Product screenshot" alone is lazy; name what the screenshot SHOWS.
+
+**`components/HeroCTA.tsx` (client island — minimal):**
+
+```tsx
+'use client'
+
+import { useState } from 'react'
+import { SignupModal } from './SignupModal'
+
+export function HeroCTA() {
+  const [open, setOpen] = useState(false)
+
+  return (
+    <>
+      <button
+        type="button"
+        onClick={() => setOpen(true)}
+        className="hero__cta"
+      >
+        Get the starter kit →
+      </button>
+      {open && <SignupModal onClose={() => setOpen(false)} />}
+    </>
+  )
+}
+```
+
+Key choices:
+
+- **`'use client'` lives HERE, not on the parent.** This is the "islands" pattern. The client boundary is as small as it can be — only this button + modal-open state needs client JS. The rest of the hero (heading, paragraph, image) is server-rendered and doesn't wait for hydration.
+- **Minimal bundle contribution.** This component is tiny; the JS cost of hydration for this island is negligible compared to hydrating the whole hero.
+- **Conditional render of the modal** — `{open && <SignupModal />}` means `SignupModal` doesn't even ship to the client until the user clicks. If `SignupModal` is heavy (forms, validation lib, Stripe Elements), consider `next/dynamic` with `ssr: false` to code-split it out of the main bundle. I'd hold off on that until you measure `SignupModal`'s weight — premature unless it's >20KB.
+
+**`app/page.tsx` (or wherever the hero imports from):**
+
+```tsx
+import { Hero } from '@/components/Hero'
+// ...other imports
+
+export default function Page() {
+  return (
+    <>
+      <Hero />
+      {/* ... rest of the page ... */}
+    </>
+  )
+}
+```
+
+No change except that the `Hero` import now points to a server component. Because `Page` itself was already a server component (or should be — App Router default), the `Hero` integrates cleanly without wrapping it in a client context.
+
+**Mental model of the diff:**
+
+Before: `Page (RSC) → Hero (client, ENTIRE tree)` — everything waits on hydration.
+After: `Page (RSC) → Hero (RSC) → HeroCTA (client island)` — only the button waits on hydration; image and text paint immediately.
+
+This is the general RSC pattern: **push `'use client'` as deep as possible.** Every component above the client boundary gets to render on the server. Every component at or below the boundary hydrates on the client. The instinct to mark the top-level component as `'use client'` "just in case" is the single most common App Router perf mistake — it collapses the entire tree into a client render and kills the streaming and server-render benefits.
+
+**Font migration (Intervention 3, as a separate commit):**
+
+```tsx
+// app/layout.tsx
+import { Inter } from 'next/font/google'
+
+const inter = Inter({
+  subsets: ['latin'],
+  display: 'swap',
+  preload: true,
+  variable: '--font-inter',
+})
+
+export default function RootLayout({ children }: { children: React.ReactNode }) {
+  return (
+    <html lang="en" className={inter.variable}>
+      <body>{children}</body>
+    </html>
+  )
+}
+```
+
+`next/font/google` self-hosts the font at build time (eliminating the Google Fonts CDN roundtrip) and emits a `<link rel="preload">` automatically. `display: 'swap'` keeps FOIT from blocking paint. Remove any existing `<link href="https://fonts.googleapis.com/...">` tags from the old setup; they'll now be redundant and introduce the same CDN hop you're trying to remove.
+
+**Ship order (per Pass 2):** Commit 1 = `Hero.tsx` + `HeroCTA.tsx` + `page.tsx`. Deploy. Measure in Vercel Web Analytics for 24-48h. Commit 2 = font migration. Deploy. Measure again. This gives you the clean per-intervention attribution for Pass 4.$pf$,
+ $pf$Three files shipped. `Hero.tsx` is now a server component (no directive) — `<Image>` lands in initial HTML, browser discovers `src` during HTML parse, fetch starts immediately with no hydration wait. `priority` on the one LCP image per page (don't overuse — cancels benefit). `sizes="(max-width: 768px) 100vw, 640px"` explicit — without it, Next srcset defaults to viewport-width and downloads too-big on desktop. Static import of `heroImage` gives build-time intrinsic dimensions + enables `placeholder="blur"`. `HeroCTA.tsx` is the minimal client island — `'use client'` only wraps the button + modal-open state; rest of hero (heading/paragraph/image) stays server-rendered and skips hydration wait. Conditional `{open && <SignupModal />}` defers modal mount until click; defer `next/dynamic` split unless SignupModal >20KB (premature otherwise). General RSC pattern: push `'use client'` as deep as possible — every component above the client boundary stays server-rendered. Top-level `'use client'` "just in case" is THE most common App Router perf mistake. Font migration in separate commit: `next/font/google` with `display: 'swap'` + `preload: true` self-hosts at build time, eliminates Google Fonts CDN hop, emits automatic `<link rel="preload">`. Ship order: commit 1 = Hero+HeroCTA+page, deploy, measure 24-48h; commit 2 = font, deploy, measure — clean per-intervention attribution for Pass 4.$pf$),
+
+-- Step 4 --
+('66666666-6666-6666-6666-666666610104',
+ '55555555-5555-5555-5555-555555550061',
+ 4,
+ $pf$Pass 4 — verification against Vercel Web Analytics RUM: 3 segments, lab-vs-real reconciliation$pf$,
+ $pf$Deployed the hero rewrite Tuesday night, font migration Wednesday night. It's now Friday; I have 72 hours of post-deploy Vercel Web Analytics data. Numbers I'm seeing: mobile 4G p75 LCP 1.6s (was 4.2s), mobile 5G p75 LCP 1.1s (was 2.9s), desktop p75 1.0s (was 1.8s). Also: Tuesday's Vercel Analytics already showed the drop from the hero-only commit (mobile 4G hit 2.1s the day after commit 1); the font commit bought another 0.5s on mobile 4G.
+
+Tell me: (a) does this reconcile with your Pass 2 expectations, (b) what's the single biggest attribution surprise or validation in the data, (c) what should I watch over the next 2-4 weeks to make sure this doesn't silently regress, (d) what's the next highest-leverage performance work I could take on if I wanted to keep pushing (or should I stop here and ship other features).$pf$,
+ $pf$Ship validation across the board — this is the outcome Pass 2 predicted and the data is clean. Walking through your four questions.
+
+**(a) Reconciliation with Pass 2 expectations:**
+
+| Segment | Predicted post-fix LCP | Actual | Delta |
+|---|---|---|---|
+| Mobile 4G | 1.6-1.9s | 1.6s | At target |
+| Mobile 5G | — (didn't predict explicitly) | 1.1s | Proportional to 4G win |
+| Desktop | ~0.7-1.0s | 1.0s | At target |
+
+Pass 2 predicted "4.1s → 1.6-1.9s on mobile 4G" as the compound result of #1 + #2 + #3. Actual 1.6s lands at the favorable end of that range. Per-intervention attribution also matches prediction: you saw 4.2s → 2.1s from commit 1 alone (that's -2.1s, within the predicted ~1.7-2.1s range for #1+#2 coupled), then 2.1s → 1.6s from commit 2 (that's -0.5s, slightly above the predicted 0.3-0.4s range for #3). The font gave you a touch more than expected — consistent with Google Fonts CDN being worse on your particular mobile audience than the median.
+
+**(b) Biggest attribution surprise:**
+
+The commit 1 result (2.1s LCP after just #1 + #2) is the informative one. It tells you that the accidental `'use client'` + unoptimized `<img>` were responsible for ~2.1s of your 4.2s — literally half of your LCP was from those two mistakes on the hero component. Everything else combined (font, TTFB, CSS, network variance) accounts for the remaining 2.1s baseline, which is normal-ish for a mobile 4G site.
+
+The practical takeaway: **audit every other page for the same two mistakes before shipping new features.** If you have a `/pricing` page, a `/docs` landing, a blog index — each one might have the same client-component-on-the-hero pattern costing you ~2s. A 30-minute audit might be worth another 2s across 3-4 pages.
+
+The non-surprise but worth confirming: CLS stayed at 0.02 (good). The worry with moving to `next/image` + `next/font` is that you introduce a layout shift if sizing is wrong. You didn't — the `width`/`height` props on `<Image>` and the font preload both kept CLS in place.
+
+**(c) What to watch over the next 2-4 weeks (regression guards):**
+
+1. **Vercel Web Analytics p75 LCP, weekly, per segment.** You have the baseline now (1.6/1.1/1.0). If any segment drifts >20% upward, you've regressed — investigate immediately. Set a personal reminder to check Fridays for a month.
+
+2. **Lighthouse CI in GitHub Actions if you don't already have it.** Add `@lhci/cli` with a budget of LCP <2.5s on the pricing page. Fails the build if a PR would push LCP past threshold. This is your insurance against accidental `'use client'` regressions — it catches the thing you just fixed the day someone (including you in 6 months) adds it back.
+
+3. **Watch for anyone (including yourself) adding `'use client'` to a page-level or layout-level component.** Grep `'use client'` counts weekly. If the count doubles, you probably re-introduced the problem. Good diff signal.
+
+4. **Search Console Core Web Vitals tab.** The four URLs previously flagged "Poor" should transition to "Good" within 28 days of your 28-day RUM window hitting the new baseline. If they don't, there's a per-URL issue you haven't caught. Check Search Console weekly for the first month.
+
+**(d) Next highest-leverage performance work — stop or continue?**
+
+Your call — here's the honest read on the remaining opportunity surface.
+
+**High-leverage if you continue:**
+- **Audit the other top-traffic pages for the same two mistakes.** Probably 30-60 min of work. If even one other page has the same `'use client'` + unoptimized `<img>` pattern, you'll get a similar 2s win on that page. This is the highest-expected-value next task.
+- **TTFB reduction.** Your 550ms TTFB is the next floor you'll hit. If you're on Vercel, check region config (is your Serverless Function region near your audience?); check for middleware doing anything synchronous (auth checks, DB calls in root layout). Budget 2-4 hours for investigation, possibly 300-400ms of LCP improvement.
+
+**Lower-leverage, only if you're bored or if you're pushing to perfect:**
+- **TBT 340ms** is borderline. If you care about INP (the new CWV) you should chase this. Work surface: dynamic-import the Signup modal to get it out of the initial bundle, audit for unnecessary `useEffect` on mount.
+- **`next/script` audit** for third-party tags (analytics, chat widgets, tag manager). Any of these running synchronously above-the-fold steals interaction time.
+
+**My recommendation:** do the other-pages audit (30 min, high expected value), then stop and ship features. You're in the Good CWV zone, you're not going to get meaningful additional conversion lift from 1.6s → 1.2s, and your next hour is almost certainly worth more on a new landing-page variant or a checkout-flow polish than on shaving another 400ms. Know when to stop optimizing. You stopped at the right number.$pf$,
+ $pf$Reconciliation: Pass 2 predicted 4.1s → 1.6-1.9s, actual 1.6s at favorable end. Per-intervention: commit 1 (hero + next/image) delivered 4.2s → 2.1s = -2.1s, within predicted 1.7-2.1s coupled-intervention range; commit 2 (font) delivered 2.1s → 1.6s = -0.5s, slightly above predicted 0.3-0.4s (Google Fonts CDN was worse than median on this audience). Biggest attribution insight: the two hero mistakes (`'use client'` + unoptimized `<img>`) accounted for half the 4.2s baseline — audit every other page for same two mistakes before shipping features, 30-min audit may unlock another 2s per page × 3-4 pages. CLS stayed 0.02 — next/image width/height and font preload kept layout stable (the known regression risk on this refactor). Regression guards: (1) weekly Vercel Web Analytics p75 LCP check by segment, drift >20% = investigate; (2) Lighthouse CI with LCP <2.5s budget on pricing page as GH Actions insurance against future accidental `'use client'`; (3) grep `'use client'` count weekly, doubling = probable re-introduction; (4) Search Console CWV tab weekly for month — 4 previously-Poor URLs should transition Good within 28 days. Recommendation: do the 30-min audit of other top pages for the same pattern (highest expected value), then STOP optimizing and ship features — you're in Good CWV, 1.6→1.2s won't move conversion meaningfully, next hour is worth more on landing-page variant or checkout polish. TTFB 550ms is the next floor if you continue (region/middleware audit, ~300-400ms potential). TBT 340ms only matters if chasing INP. Know when to stop.$pf$);
+
+-- =========================================================================
 -- END OF FILE — append next project(s) below this line.
 -- Iterations working the Content queue: add 2–3 projects per iteration,
 -- appending below this comment. Do NOT rewrite existing projects.

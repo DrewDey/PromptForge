@@ -21927,6 +21927,530 @@ Your call — here's the honest read on the remaining opportunity surface.
  $pf$Reconciliation: Pass 2 predicted 4.1s → 1.6-1.9s, actual 1.6s at favorable end. Per-intervention: commit 1 (hero + next/image) delivered 4.2s → 2.1s = -2.1s, within predicted 1.7-2.1s coupled-intervention range; commit 2 (font) delivered 2.1s → 1.6s = -0.5s, slightly above predicted 0.3-0.4s (Google Fonts CDN was worse than median on this audience). Biggest attribution insight: the two hero mistakes (`'use client'` + unoptimized `<img>`) accounted for half the 4.2s baseline — audit every other page for same two mistakes before shipping features, 30-min audit may unlock another 2s per page × 3-4 pages. CLS stayed 0.02 — next/image width/height and font preload kept layout stable (the known regression risk on this refactor). Regression guards: (1) weekly Vercel Web Analytics p75 LCP check by segment, drift >20% = investigate; (2) Lighthouse CI with LCP <2.5s budget on pricing page as GH Actions insurance against future accidental `'use client'`; (3) grep `'use client'` count weekly, doubling = probable re-introduction; (4) Search Console CWV tab weekly for month — 4 previously-Poor URLs should transition Good within 28 days. Recommendation: do the 30-min audit of other top pages for the same pattern (highest expected value), then STOP optimizing and ship features — you're in Good CWV, 1.6→1.2s won't move conversion meaningfully, next hour is worth more on landing-page variant or checkout polish. TTFB 550ms is the next floor if you continue (region/middleware audit, ~300-400ms potential). TBT 340ms only matters if chasing INP. Know when to stop.$pf$);
 
 -- =========================================================================
+-- Project 55-0062 | 1099 receipt → Schedule C categorization | Jake Torres | Finance | 3 steps
+-- =========================================================================
+
+DELETE FROM prompt_steps WHERE prompt_id = '55555555-5555-5555-5555-555555550062';
+DELETE FROM prompts      WHERE id        = '55555555-5555-5555-5555-555555550062';
+
+INSERT INTO prompts (
+  id, title, description, content, result_content,
+  category_id, difficulty, model_used, model_recommendation,
+  tools_used, tags, status, author_id, vote_count, bookmark_count
+) VALUES (
+  '55555555-5555-5555-5555-555555550062',
+  $pf$A shoebox of 94 receipts → clean Schedule C in 3 Claude passes (beginner 1099 workflow)$pf$,
+  $pf$I had a shoebox (literally) of 94 business receipts from a year of 1099 consulting — coffee meetings, conference travel, software subscriptions, one weird Home Depot run. Three Claude passes turned it into a clean Schedule C with deductibility flags and a bookkeeping plan so I never do this again.$pf$,
+  $pf$This is my first full year as a 1099 consultant and I did exactly what every finance blog warns against — I let receipts pile up in a physical shoebox plus three screenshots folders on my phone. By March I had 94 line items and no idea which of them were legitimately deductible, which were partial, and which I should just leave alone because the audit risk isn't worth $23 of ink cartridge.
+
+I did NOT want to pay $400 for a bookkeeper to sort a pile this small, and I didn't want TurboTax's "smart import" guessing at categories either (the category it picks is the category the IRS audits you on — not a decision to delegate). So I transcribed everything into a Google Sheet (vendor, date, amount, raw description from the receipt), then ran three Claude Sonnet 4.6 passes: Pass 1 maps each line to the Schedule C Part II line number it belongs under. Pass 2 flags each one as 100% deductible, partial (with percentage), or not-deductible-don't-try. Pass 3 produces the quarterly summary I'll actually file plus a bookkeeping system so next year is three hours instead of a weekend.
+
+Total time: ~90 minutes of back-and-forth, one careful reread of IRS Publication 535 for the partial-deduction rules, no CPA. The output below is the real one from my 2025 tax year — numbers and vendors are real; I'm fine posting them because a consultant's expenses aren't sensitive and other solo 1099s might find the category mapping useful.$pf$,
+  $pf$Final Schedule C expense total: $18,420 across 94 line items. Breakdown: Line 8 Advertising $420; Line 11 Contract labor $1,200; Line 18 Office expense $287; Line 20a Rent vehicle/equipment $0; Line 22 Supplies $612; Line 24a Travel $2,410; Line 24b Meals (50% deductible) $1,840 raw → $920 deductible; Line 25 Utilities $0 (no dedicated office); Line 27a Other expenses $13,001 (software $4,820, professional dev $2,400, conference fees $3,100, phone/internet business portion $1,890, bank fees $391, misc $400). Seven items flagged "don't deduct" — mostly blurred grocery receipts I couldn't reconstitute a business purpose for, one questionable Home Depot run that turned out to be a houseplant.
+
+What I got out of running it: a working mental model of which IRS Schedule C line each expense type ACTUALLY goes on (turns out "software subscriptions" is Line 27a Other, NOT Line 22 Supplies, which kept tripping me up), the 50% meals rule applied correctly on the 23 coffee/meal receipts, and a "don't deduct this" instinct for sub-$25 items where the audit risk outstrips the tax savings. Next year's system: I snap every receipt to a shared Google Drive folder the day it happens, with a 6-word comment on business purpose. Estimated next-year time: 3 hours of review in January, not a March panic weekend.$pf$,
+  '11111111-1111-1111-1111-111111111101',
+  'beginner',
+  'claude-sonnet-4-6',
+  'Claude 4.6 Sonnet',
+  ARRAY['Claude','Google Sheets','Notion'],
+  ARRAY['tax','1099','schedule-c','freelance','bookkeeping','receipts'],
+  'approved',
+  '22222222-2222-2222-2222-222222222203',
+  0, 0
+);
+
+INSERT INTO prompt_steps (id, prompt_id, step_number, title, content, result_content, description) VALUES
+
+-- Step 1 --
+('66666666-6666-6666-6666-666666620101',
+ '55555555-5555-5555-5555-555555550062',
+ 1,
+ $pf$Pass 1 — map 94 raw receipt lines to Schedule C Part II line numbers$pf$,
+ $pf$I'm a 1099 consultant (freelance software/product strategy work, CA-based, sole proprietor, no S-corp election). I've got 94 receipts from 2025 I need to categorize for Schedule C Part II. I pasted the Google Sheet below — columns are: date, vendor, amount, raw description. I need you to map each line to the specific Schedule C Part II line number it belongs under (Line 8 Advertising, Line 9 Car/truck, Line 11 Contract labor, Line 18 Office expense, Line 22 Supplies, Line 24a Travel, Line 24b Meals, Line 25 Utilities, Line 27a Other expenses, etc.). Use the actual 2025 Schedule C line numbers.
+
+For each line, return: the original vendor/amount, the Schedule C line number + name, and a one-line reason for the mapping. If something genuinely doesn't belong on Schedule C (personal, too-mixed-to-deduct, capitalized as asset rather than expensed, etc.) flag it separately — don't force a fit. If several items are ambiguous, group them at the bottom with your best guess and what clarifying question would resolve them.
+
+Data (first 12 rows shown; full 94 pasted in reality):
+Jan 8 | Blue Bottle Coffee | $14.20 | coffee w/ client prospect
+Jan 11 | Notion | $10.00 | workspace sub
+Jan 14 | Delta Airlines | $412.00 | flight SFO-JFK client onsite
+Jan 14 | Lyft | $28.40 | airport to client office NYC
+Jan 15 | Marriott | $289.00 | hotel night NYC
+Jan 15 | Chipotle | $16.40 | dinner solo in NYC
+Jan 22 | Adobe Creative Cloud | $54.99 | monthly sub
+Feb 3 | UPS Store | $8.40 | shipped contract to client
+Feb 12 | Home Depot | $42.10 | plant for apartment
+Feb 19 | AWS | $127.30 | staging env for client project
+Mar 4 | Google Workspace | $12.00 | business email
+Mar 9 | Figma | $15.00 | monthly design sub$pf$,
+ $pf$Good data quality — vendor + raw description is exactly the right level of detail to categorize without guessing. Here's the mapping for the 12 rows you showed, and I'll describe how to apply the same logic to the remaining 82. Then a flagged-ambiguous list at the end.
+
+| # | Vendor | Amt | Sched C Line | Reason |
+|---|---|---|---|---|
+| 1 | Blue Bottle | $14.20 | **Line 24b Meals (50%)** | Coffee w/ prospect = business meal. 50% deductible per IRC §274(n) — deduct $7.10. |
+| 2 | Notion | $10.00 | **Line 27a Other — Software subs** | Software/SaaS goes on 27a "Other" not Line 22 Supplies. Supplies = physical consumables. |
+| 3 | Delta Airlines | $412.00 | **Line 24a Travel** | Business travel away from tax home. 100% deductible. |
+| 4 | Lyft | $28.40 | **Line 24a Travel** | Ground transport on a business trip = Travel, not Line 9 Car/truck (Line 9 = YOUR vehicle). |
+| 5 | Marriott | $289.00 | **Line 24a Travel** | Business lodging on trip. 100%. |
+| 6 | Chipotle | $16.40 | **Line 24b Meals (50%)** | Solo meal WHILE traveling for business is deductible at 50%. Solo meal at home is NOT. This one counts. |
+| 7 | Adobe CC | $54.99 | **Line 27a Other — Software subs** | Same as #2. |
+| 8 | UPS Store | $8.40 | **Line 18 Office expense** | Shipping client docs = office expense. (Could also fit Line 22 Supplies; 18 is cleaner.) |
+| 9 | Home Depot | $42.10 | **NOT DEDUCTIBLE** | "Plant for apartment" is explicitly personal. Don't deduct. |
+| 10 | AWS | $127.30 | **Line 27a Other — Cloud/hosting** | SaaS/cloud goes on 27a. |
+| 11 | Google Workspace | $12.00 | **Line 27a Other — Software subs** | Same. |
+| 12 | Figma | $15.00 | **Line 27a Other — Software subs** | Same. |
+
+**Mapping rules for the remaining 82:**
+
+- **Conference registrations, courses, books, workshops** → Line 27a Other, label "Professional development." Not Line 27a "Education" under the narrow Treas. Reg. §1.162-5 rule (education that qualifies you for a NEW trade is capitalized, not deducted — but continuing ed in your current field is).
+- **Phone/internet — business portion** → Line 25 Utilities if you have a dedicated business line/account; otherwise Line 27a "Other — phone/internet business use %" with a % of your total monthly bill (IRS Pub 463 accepts a reasonable %; most solos use 60-80% if the line is actively used for work).
+- **Business insurance (E&O, liability)** → Line 15 Insurance (other than health).
+- **Health insurance premiums** → NOT on Schedule C — those go on Schedule 1 Line 17 (SE health insurance deduction). Common mistake.
+- **Bank fees, Stripe/PayPal fees** → Line 27a Other, "Bank/merchant fees."
+- **Contractors you paid >$600** → Line 11 Contract labor. Also: you owe them a 1099-NEC if they're not incorporated. If you haven't filed those, that's a separate issue worth fixing now.
+- **Your own SEP-IRA or Solo 401(k) contributions** → NOT on Schedule C. Those are above-the-line on Schedule 1.
+- **Laptop, monitor, chair ≥ $2,500** → Likely CAPITALIZE as asset (Line 13 Depreciation or §179 expensing). Under $2,500 can be expensed via the de minimis safe harbor on Line 22 Supplies or Line 27a.
+
+**Flag pile (need your input):**
+
+- Any gas station / Uber rides where you can't reconstitute whether the trip was business — don't force-fit; either they go on Line 9 (your own vehicle, mileage-rate method — requires a mileage log) or they don't belong at all.
+- Any Amazon orders with mixed business/personal items on the same receipt — either split the receipt or take only the clearly-business portion.
+- Anything >$500 where the business purpose isn't obvious from the raw description — give me a one-line purpose and I'll categorize.
+
+Run me the next batch and I'll mark them up the same way.$pf$,
+ $pf$Categorized first 12 receipts with Schedule C line mapping — 8 clear Travel/Meals/Software, 3 Other (27a), 1 non-deductible (personal houseplant at Home Depot). Ruled: SaaS goes Line 27a Other (NOT Line 22 Supplies, which is physical consumables); solo meals count at 50% ONLY while traveling for business; ground transport on a business trip is Line 24a Travel, not Line 9 (Line 9 = your own vehicle under mileage-rate method and requires a log). Mapping rules provided for remaining 82: conference/courses → 27a Professional Development; phone/internet → Line 25 Utilities if dedicated, otherwise 27a with a % split (60-80% typical for solos); business insurance → Line 15; health insurance NOT on Schedule C (Schedule 1 Line 17 self-employed health insurance deduction); Stripe/PayPal fees → 27a "Bank/merchant fees"; contractors paid >$600 go Line 11 + you owe them a 1099-NEC; laptop/equipment >$2,500 likely capitalize (§179 or depreciation); <$2,500 eligible for de minimis safe harbor. Flagged ambiguous categories: mixed-use Amazon orders, gas/ride-share without clear business-vs-personal attribution, anything >$500 where purpose isn't obvious — request for one-line business purpose before categorizing.$pf$),
+
+-- Step 2 --
+('66666666-6666-6666-6666-666666620102',
+ '55555555-5555-5555-5555-555555550062',
+ 2,
+ $pf$Pass 2 — deductibility flags (100% / partial / don't-deduct) + audit-risk review$pf$,
+ $pf$Great, mapping's done — I ran your rules through the remaining 82 and have a fully categorized sheet. Totals came out: Line 8 Advertising $420, Line 11 Contract labor $1,200, Line 18 Office expense $287, Line 22 Supplies $612, Line 24a Travel $2,410, Line 24b Meals $1,840 raw, Line 27a Other $13,001, plus 7 flagged "don't deduct."
+
+Now pass 2: for each line, tell me the deductibility %. 100% deductible, partial (what percentage + why), or don't deduct. I know Meals are 50% under §274(n) — want confirmation on that and on anything else where the %100 / % split matters. Also: walk me through the 7 "don't deduct" flags — I want to know which ones are genuinely personal (skip them) vs ones I might be underclaiming because I was being over-cautious.
+
+Finally: anything in my totals that'd raise audit-risk if I were the one reviewing the return? I'm a solo consultant with $73K net income; I don't want a Schedule C where my expense ratio looks off for my industry.$pf$,
+ $pf$Deductibility percentages first, then the 7-flag walkthrough, then the audit-risk read.
+
+**Deductibility by line:**
+
+| Line | Category | Raw | % | Deductible |
+|---|---|---|---|---|
+| 8 | Advertising | $420 | 100% | $420 |
+| 11 | Contract labor | $1,200 | 100% | $1,200 |
+| 18 | Office expense | $287 | 100% | $287 |
+| 22 | Supplies | $612 | 100% | $612 |
+| 24a | Travel | $2,410 | 100% | $2,410 |
+| 24b | Meals | $1,840 | **50%** | **$920** |
+| 27a | Other expenses | $13,001 | see below | $13,001* |
+| **Subtotal deductible** | | **$19,970** | | **$18,850** |
+
+*Line 27a assumes each sub-category is 100% — it's not always. Flags on the 27a subtotal:
+- **Software subscriptions** — 100% if the sub is used solely for business. If you use Figma/Notion/Adobe CC for personal projects too, technically you should split. Most solos write off 100% if the personal use is trivial.
+- **Professional development** ($2,400) — 100% if in your current field. If any of it was prep for a career shift (e.g. an ML course when you do product strategy), exclude those.
+- **Phone/internet business portion** ($1,890) — this is YOUR stated split, so it's already accounting for personal use. Just make sure the % you picked is defensible (if audited, you'd show usage patterns — call logs, work hours). 60-80% is a safe range; 100% is not defensible for a single-line household phone.
+- **Bank/merchant fees** ($391) — 100%. Clean.
+- **Conference fees** ($3,100) — 100%. (Conference travel is already on Line 24a.)
+
+**§274(n) 50% meals rule — confirming and exceptions.** The $1,840 raw → $920 deductible is correct under the 2025 rule. A few exceptions where meals are 100%:
+- Meals provided for the convenience of the employer at your premises (not your scenario — you're solo).
+- Meals as compensation to employees (not your scenario).
+- Meals for client entertainment-style events sold to clients at FMV (rare — your meals are prospect coffee + travel meals, all 50%).
+
+Stick with 50% on everything in Line 24b.
+
+**The 7 "don't deduct" flags — one-by-one:**
+
+1. **Home Depot $42.10 — houseplant.** Genuine personal. Skip. ✓
+2. **Whole Foods $87 — "groceries."** Personal. Unless you can reconstitute a business-purpose meal (e.g. groceries for a dinner you hosted for a client), skip. Don't stretch this.
+3. **AMC theater $32 — date night.** Personal. Skip.
+4. **Nordstrom $210 — "work shirt for conference talk."** Here's where I'd push back on your over-caution: clothing deductibility requires the clothing to be (a) required for work AND (b) not suitable for general wear. A business-casual shirt fails test (b) even if you bought it specifically for a conference talk. The IRS position is firm. **Your over-caution is correct — skip.** But don't feel bad about it; this is one of the most commonly disallowed deductions.
+5. **Sephora $65 — "makeup for client video shoot."** Same rule as #4 — not-suitable-for-general-wear test. **Skip.** Unless it was a branded-SFX / stage makeup for a specific shoot (which is genuinely not general-use), personal use disqualifies.
+6. **Gas stations x3 — unclear.** These are the ones where I'd ACTUALLY revisit. If you drove your own car on client business and have any mileage records (calendar appointments showing you went to a client site on a specific date you filled up nearby), you can deduct via the mileage-rate method on Line 9 (67¢/mile for 2025). If you have zero documentation of business miles, skip. Don't stretch without a log.
+7. **Amazon $165 — "mixed order, book + garden stuff."** If the receipt itemizes, split and deduct only the book portion (if it's a business/professional book). If unsplittable, skip. This is a $20-40 saving at best; the audit cost of getting it wrong exceeds the tax benefit.
+
+**Net effect after review:** you were correctly cautious on 6 of 7. One — the gas receipts — you might legitimately have $40-80 of Line 9 deductions IF you can produce a mileage log from calendar data. Decide whether it's worth the reconstruction time.
+
+**Audit-risk read:**
+
+Industry benchmarks for solo consultants (IRS DIF scoring doesn't publish ratios, but practitioner rules-of-thumb): expense ratio typically 20-30% of gross income for knowledge-work consultants. Your $18,850 deductible ÷ your stated $73K net ≈ ~20% of your grossed-up ~$92K revenue. That's **in the middle of the safe band** — nothing structurally audit-flag-raising here.
+
+Specific lines that could raise a flag:
+- **Travel $2,410** — modest. Fine.
+- **Meals $920 (after 50%)** — modest. Fine.
+- **27a Other "Professional development $2,400"** — fine, but make sure each item has a clear business-field connection (defensible if audited — keep course landing pages / receipts).
+- **27a Other "Phone/internet $1,890"** — this is the single line I'd double-check. $1,890/yr = $158/mo. If you claimed 70% of a $225/mo household bill, that's fine and defensible. If you claimed 100% of a $158/mo bill that's your only phone line, that's NOT defensible — the IRS requires a personal portion on a single-line household phone. Verify the % and math.
+- **Home office deduction** — I don't see one. If you work from home, you're leaving money on the table. Either the simplified method ($5/sq ft up to 300 sq ft = $1,500 max) or actual-method (% of rent + utilities). Worth adding Line 30 / Form 8829 if applicable.
+
+**One thing to fix before filing:** if you paid any 1099 contractors >$600 and haven't filed Form 1099-NEC for them (Jan 31 deadline), do it now. Late filing = $60-310/form penalty plus potential disallowance of the deduction on YOUR Line 11 if the IRS decides the payment wasn't properly documented.$pf$,
+ $pf$Deductibility walkthrough: 100% on Lines 8/11/18/22/24a/27a (with sub-category caveats), **50% on Line 24b Meals** per §274(n) — no exceptions apply to a solo consultant's scenarios. Net deductible after 50% meal haircut: $18,850 (was $19,970 raw). Line 27a caveats: software subs 100% only if business-exclusive (personal-use split required if shared); professional development 100% only if in current field (career-shift courses must be excluded); phone/internet the % you claimed must be defensible, 60-80% range is safe for solo shared-household lines, 100% on a single-line household phone is NOT defensible. Walked 7 "don't deduct" flags: 6 of 7 correctly skipped (houseplant, groceries, AMC, Nordstrom work shirt — clothing-suitable-for-general-wear test fails even for conference talks, Sephora makeup, mixed Amazon order); 1 (gas stations) might be recoverable via Line 9 mileage-rate method at 67¢/mile IF calendar-based mileage log can be reconstructed — $40-80 potential. Audit-risk read: expense ratio ~20% of grossed-up revenue is middle-of-safe-band for knowledge-work consultants; no structural red flags. Single line to double-check: phone/internet $1,890/yr ($158/mo avg) — verify the % split is documentable. Not in data: home office deduction (Form 8829 simplified method = $5/sq ft up to 300 sq ft = $1,500 max); if work from home, add it. Pre-file action: if any contractor paid >$600 hasn't received 1099-NEC, file now (Jan 31 deadline, $60-310/form penalty for late + risk of Line 11 disallowance).$pf$),
+
+-- Step 3 --
+('66666666-6666-6666-6666-666666620103',
+ '55555555-5555-5555-5555-555555550062',
+ 3,
+ $pf$Pass 3 — quarterly summary for estimated payments + bookkeeping system for next year$pf$,
+ $pf$Perfect — fixed the phone split (it's 70% of a $225/mo shared household bill, so $1,890/yr is clean), reconstructed 3 gas receipts into 118 business miles via calendar = $79 on Line 9, and added the home office deduction using simplified method ($1,500 for 300 sq ft of my 2-BR apartment). Net deductible bumped to $20,429.
+
+Two things for pass 3:
+
+1. Using my $20,429 deductions and $92,500 gross 1099 revenue, show me a quarterly-estimates picture for 2026. I want to see quarterly payment amounts based on this year's final tax bill as the safe-harbor baseline, so I'm paying the right amount on the April/June/Sept/Jan 2027 dates instead of over- or under-paying.
+
+2. Design me a bookkeeping system so next year I can do this in 3 hours instead of a weekend. Minimum-friction — I'll actually do it if it's 2 minutes per receipt, not if it's 15. I use Google Drive, Google Sheets, Notion, my phone camera. No new tools unless they're genuinely worth it.$pf$,
+ $pf$Quarterly picture first, then the bookkeeping system.
+
+**Quarterly estimates for 2026 based on your 2025 numbers:**
+
+2025 Schedule C net profit: $92,500 gross − $20,429 expenses = **$72,071 net SE income.**
+
+2025 federal tax picture (single filer, no other income, standard deduction):
+- SE tax: $72,071 × 92.35% × 15.3% = $10,185 (no SS wage cap hit — well under $168,600)
+- Half-SE-tax deduction (above-the-line on Schedule 1): $5,093
+- Federal AGI: $72,071 − $5,093 = $66,978
+- Standard deduction (single, 2025): $15,000
+- Taxable income: $51,978
+- Federal income tax (2025 brackets, single): $11,925 × 10% = $1,193 + ($48,475 − $11,925) × 12% = $4,386 + ($51,978 − $48,475) × 22% = $771 → **$6,350**
+- QBI deduction (20% of qualified net business income, phase-in starts at $191,950 for single — you're well under): $72,071 × 20% = **$14,414**, but this reduces income BEFORE the tax calc. Let me redo: taxable income AFTER QBI = $51,978 − $14,414 = $37,564. Federal income tax on $37,564: $1,193 + ($37,564 − $11,925) × 12% = $1,193 + $3,077 = **$4,270**.
+- Total federal: $4,270 + $10,185 = **$14,455**
+
+Assume CA state taxes roughly $3,200 (CA rates, QBI doesn't apply at the state level — separate calc). I'd budget total tax liability ≈ **$17,655 for 2025**.
+
+**2026 safe-harbor quarterly payments.** IRS safe harbor: pay either 90% of 2026 actual OR 100% of 2025 actual (110% if 2025 AGI > $150K — not you) and you escape the underpayment penalty regardless of what 2026 actually owes. Since 2025 is already filed, use 100% of 2025's $14,455 federal ÷ 4 = **$3,614 per quarter federal.** Plus CA: $3,200 ÷ 4 = $800/quarter CA (BUT — important — CA's schedule is 30/40/0/30, NOT 25/25/25/25).
+
+| Due date | Federal | CA | Total |
+|---|---|---|---|
+| Apr 15, 2026 (Q1) | $3,614 | $960 (30%) | $4,574 |
+| Jun 15, 2026 (Q2) | $3,614 | $1,280 (40%) | $4,894 |
+| Sep 15, 2026 (Q3) | $3,614 | $0 (0%) | $3,614 |
+| Jan 15, 2027 (Q4) | $3,614 | $960 (30%) | $4,574 |
+| **Total** | **$14,455** | **$3,200** | **$17,655** |
+
+Pay federal via IRS Direct Pay (no fee, 1-time bank draft). CA via FTB Web Pay. If your 2026 income shifts materially (up 30%+ or down 30%+), recompute mid-year from 90%-of-2026-actual rather than overpaying to safe-harbor.
+
+**Bookkeeping system — designed for 2 min/receipt:**
+
+The friction problem is what kills every bookkeeping system. The fix is capturing categorization AT THE MOMENT of the receipt, not batching in March. Here's the minimum-viable system using tools you already have:
+
+1. **Google Drive folder: `/Business/2026 Receipts/`.** One folder, no subfolders.
+2. **Phone camera → shared album → Google Drive.** On iOS or Android, set up auto-backup of a specific "Receipts" photo album to that Drive folder. (Alternatively, Google Drive app has a "Scan" feature that OCRs to PDF — slightly cleaner but +15 sec/receipt.)
+3. **Each receipt filename gets renamed immediately with: `YYYY-MM-DD_vendor_amount_category.jpg`.** Example: `2026-04-12_delta_412_travel.jpg`. This is the load-bearing step — doing it right when you capture means March is just a summary, not a reconstruction. Budget 20 seconds per receipt.
+4. **Google Sheet — one master sheet with 6 columns:** Date, Vendor, Amount, Schedule C Line, Business Purpose (6 words), Receipt Link (Drive URL). Add a row once a week — not per receipt. Weekly habit ties to your existing calendar (e.g. Sunday evening review).
+5. **Monthly reconciliation (10 minutes):** cross-check the sheet against your business credit-card statement. Anything on the statement not in the sheet is a receipt you forgot — hunt it down while the context is still fresh.
+6. **Quarterly summary (15 minutes) on each quarterly-estimate due date:** sum by Schedule C line, compare vs prior quarter, verify you're on pace for your annual picture.
+
+**New-tool recommendation (optional, only one):** **Keeper** or **QuickBooks Solopreneur** can auto-categorize from your business bank/card. They save ~2-3 hours/year at a cost of $20-50/month. Not worth it at your income level UNLESS you're about to cross $150K gross and start thinking about an S-corp election — at that point, proper books become table-stakes.
+
+**Separate your money.** If you haven't already: one business checking account (Chase, Bluevine, or Relay — all free), one business credit card (AmEx Blue Business Plus is a good default — no annual fee, 2x points on $50K/year). Run EVERYTHING business through these. Mixing accounts is the #1 cause of March-weekend reconstruction — not 94 receipts, but 94 receipts smeared across your personal debit card.
+
+**One-time fix before you do ANY of 2026:** book a $200 CPA consult now (not a full tax prep — a 30-min review of your 2025 Schedule C). Any CPA who does solo work will spot any misclassifications you/I missed AND can tell you whether an S-corp election would save you money in 2026 (at $72K net, probably not yet; at $92K net, likely yes). Best $200 you'll spend all year.$pf$,
+ $pf$Quarterly-estimates picture using 2025 as safe-harbor baseline: 2025 total tax liability ≈ $17,655 ($14,455 federal after QBI 20% deduction, $3,200 CA). 2026 safe-harbor = 100% of 2025 federal ($3,614/qtr, standard 25/25/25/25 split) + CA's 30/40/0/30 quarterly schedule ($960/$1,280/$0/$960). Pay federal via IRS Direct Pay (no fee), CA via FTB Web Pay. Recompute mid-year if 2026 income shifts ±30%. Bookkeeping system for 2-min-per-receipt friction: (1) one Google Drive folder `/Business/2026 Receipts/`, no subfolders; (2) phone camera auto-backup to Drive via shared album; (3) rename each file IMMEDIATELY to `YYYY-MM-DD_vendor_amount_category.jpg` — load-bearing step, 20 sec/receipt, prevents March reconstruction; (4) weekly Google Sheet entry (6 columns: date, vendor, amount, Schedule C line, 6-word business purpose, Drive link); (5) monthly 10-min reconciliation vs business credit card statement; (6) quarterly 15-min summary on each estimate-due date. Optional tool: Keeper or QuickBooks Solopreneur ($20-50/mo) saves 2-3 hr/yr — not worth it at $72K net, worth it when crossing $150K gross into S-corp territory. Prerequisite: separate business checking + business credit card (Chase/Bluevine/Relay + AmEx Blue Business Plus) — mixing accounts is the #1 cause of March weekends. One-time fix: $200 CPA consult on 2025 Schedule C — spots misclassifications + S-corp election analysis at higher income levels. Best ROI spend of the year.$pf$);
+
+-- =========================================================================
+-- Project 55-0063 | Mid-year Algebra 2 rescue — quadratics reteach | Ben Okafor | Education | 4 steps
+-- =========================================================================
+
+DELETE FROM prompt_steps WHERE prompt_id = '55555555-5555-5555-5555-555555550063';
+DELETE FROM prompts      WHERE id        = '55555555-5555-5555-5555-555555550063';
+
+INSERT INTO prompts (
+  id, title, description, content, result_content,
+  category_id, difficulty, model_used, model_recommendation,
+  tools_used, tags, status, author_id, vote_count, bookmark_count
+) VALUES (
+  '55555555-5555-5555-5555-555555550063',
+  $pf$Mid-year Algebra 2 rescue — 24 students bombed the quadratics unit test, designing a 2-week reteach$pf$,
+  $pf$Half my Algebra 2 class bombed the quadratics unit test (class average 54%). 4-pass Claude workflow from item-level diagnostic → 3-track differentiated rescue plan → re-teach warm-ups + worksheets → post-rescue reassessment with cognitive-not-just-correctness rubric.$pf$,
+  $pf$I teach two sections of Algebra 2 at a public high school (30ish kids each, mixed preparation — some came in strong from Algebra 1, some didn't). We just finished the quadratics unit and the unit test landed at a class average of 54%. In Section A, 14 of 28 kids scored below 60%. Section B was marginally better but still ugly. This is the foundational unit for the rest of the year — conic sections, polynomial behavior, function transformations all depend on it — so I can't just "move on and hope they pick it up."
+
+I've been burned before by running a generic reteach that bores the kids who DID pass (and then they disengage) while still being too fast for the kids who failed (they nod politely and bomb the reassessment). This year I wanted to design the rescue rigorously: item-level diagnostic on what specifically broke, differentiated tracks so not everyone sits through the same material, real re-teach assets (not "let's review the worksheet"), and a reassessment that measures UNDERSTANDING, not just re-memorized procedure.
+
+Four Claude Opus 4.7 passes over about 90 minutes on a Saturday. The output is a 2-week, 10-class-period plan I ran in Section A the following week. Results are at the bottom — spoiler: it worked, with real caveats.$pf$,
+  $pf$After the 2-week rescue + reassessment: Section A class average jumped 54% → 79% (vs. 67% on Section B which got a generic reteach as the natural control). Of the 14 originally-below-60% students, 11 scored ≥70% on the reassessment; the other 3 are now in a targeted 1:1 pullout track for 4 more weeks on prerequisite gaps (2 are missing Algebra 1 fluency around the distributive property, 1 has been out 8 days in the unit). The differentiated-track design was the load-bearing piece — kids who already passed spent their rescue time on a "apply quadratics to real contexts" extension (projectile motion, profit-max) instead of re-sitting the reteach and disengaging. Post-rescue, student-survey math confidence jumped from 2.3/5 to 3.6/5 on the "I can factor a trinomial and explain why it works" item. Next year I'll start the quadratics unit 3 days earlier and build the diagnostic from day 1, not at the unit-test autopsy.$pf$,
+  '11111111-1111-1111-1111-111111111106',
+  'intermediate',
+  'claude-opus-4-7',
+  'Claude 4.7 Opus',
+  ARRAY['Claude','Google Docs','Desmos','Google Classroom'],
+  ARRAY['education','algebra-2','quadratics','differentiated-instruction','reteach','assessment'],
+  'approved',
+  '22222222-2222-2222-2222-222222222205',
+  0, 0
+);
+
+INSERT INTO prompt_steps (id, prompt_id, step_number, title, content, result_content, description) VALUES
+
+-- Step 1 --
+('66666666-6666-6666-6666-666666630101',
+ '55555555-5555-5555-5555-555555550063',
+ 1,
+ $pf$Pass 1 — item-level diagnostic, infer the 3 biggest misconceptions driving the failure rate$pf$,
+ $pf$I teach Algebra 2 (two sections, ~28 kids each, mixed-prep public high school). We just finished the quadratics unit (8 class periods — factoring, completing the square, quadratic formula, graphing parabolas, word problems). Unit test just came back: class average 54%, 14 of 28 in Section A scored below 60%.
+
+I have the item-level data (per-question % correct for the whole class) and I'm going to paste it below. I need you to go beyond "they didn't know it" and infer the 2-3 underlying MISCONCEPTIONS driving the failure pattern. I can't rescue on "they got #7 wrong"; I can rescue on "they don't understand what factoring IS, they think it's a memorized algorithm." That's the level I need.
+
+Item-level data (10 questions, 28 students, Section A):
+Q1 (factor x² + 7x + 12): 82% correct
+Q2 (factor 2x² − 5x − 3): 46% correct
+Q3 (factor 9x² − 25): 71% correct
+Q4 (solve x² − 8x + 12 = 0 by factoring): 75% correct
+Q5 (solve 3x² − 4x − 7 = 0 by quadratic formula): 29% correct
+Q6 (complete the square: x² + 6x − 4): 18% correct
+Q7 (convert f(x) = x² − 4x + 1 to vertex form, state vertex): 14% correct
+Q8 (graph y = (x − 2)² − 3; label vertex, axis of symmetry, 2 points): 32% correct
+Q9 (word problem — projectile: find max height & time): 21% correct
+Q10 (word problem — area optimization with constraint): 25% correct
+
+Give me: the 2-3 biggest misconceptions, which question-patterns expose each one, and one sentence per misconception about what the kids probably BELIEVE (wrongly) that leads to the error. No generic advice — work from the data.$pf$,
+ $pf$Working from the pattern: 4 of the 7 lowest-scored questions (Q6, Q7, Q9, Q10) share a root cause. Three misconceptions, ranked by leverage.
+
+**Misconception 1 — "Completing the square is a weird ritual, not an algebraic move with a reason."** (Exposed by Q6: 18% correct; Q7: 14% correct; indirectly Q9–Q10 when they try to find the max without vertex form.)
+
+What they wrongly believe: they think completing the square is a memorized sequence of steps ("halve the b, square it, add and subtract") that has something to do with the quadratic formula but they can't say what. They don't see it as **transforming an expression to reveal information you couldn't see before** — specifically, the vertex. The tell: Q6 at 18% (raw completion) is marginally beatable by memorization, but Q7 at 14% (use it to find vertex) collapses because they can't connect the completed-square form to the vertex coordinates. When they see `(x − h)² + k`, they don't read "vertex at (h, k)" — they read "some expression."
+
+This is the single highest-leverage fix because it drives Q6 + Q7 + Q8 + Q9 + Q10. Five of ten questions. If you fix this one, the class average moves 15+ points.
+
+**Misconception 2 — "Factoring is pattern-matching, not inverse-distributing."** (Exposed by Q2: 46% correct; contrasted with Q1: 82% and Q3: 71%.)
+
+What they wrongly believe: they think factoring is "find two numbers that add to b and multiply to c" — which IS the pattern for monic trinomials (Q1 at 82%), but **there is no such clean pattern for non-monic trinomials** (Q2 at 46%). They don't understand that factoring is the inverse of distribution — so they don't know how to approach `2x² − 5x − 3` when the simple pattern fails. They try guessing, get one sign wrong, give up. The gap between 82% (monic) and 46% (non-monic) is pure pattern-matching vs. concept. Q3 at 71% is the difference-of-squares special case, which they mostly remember as a separate pattern.
+
+Fix: either the ac-method done slowly with meaning attached, or (my preference) factoring-by-grouping framed as **undoing the distributive property in two stages**. Either way, you need to move from pattern-matching to "I'm unfolding a multiplication that already happened."
+
+**Misconception 3 — "Word problems are a separate species from the math."** (Exposed by Q9: 21%; Q10: 25%.)
+
+What they wrongly believe: they see a word problem and mentally file it as "a word problem" rather than "a quadratic with context." They don't extract the function, don't identify what maximum/minimum is being asked, don't connect "max height" to "vertex y-coordinate." Q9 + Q10 at 21% and 25% are not a computation problem — the kids who got the computation-only questions right (Q4 at 75%) can't transfer. This is a textbook transfer-failure signature.
+
+Fix: translation practice — given a word problem, just write the function and identify what's asked BEFORE solving. Decouples the translation step from the computation step so you can see which half is broken. (Hint: for most of your students, it's the translation.)
+
+**Ranking by rescue leverage:**
+
+1. **Misconception 1 (completing-the-square-as-transformation)** — touches 5 of 10 questions. Fix first.
+2. **Misconception 2 (factoring-as-inverse-distribution)** — touches 2 of 10 questions directly but feeds Misconception 3 indirectly (they can't factor word-problem quadratics either).
+3. **Misconception 3 (word-problem translation)** — touches 2 of 10. Fix third because it compounds gains from 1 and 2.
+
+Pass 2 should design a rescue that spends the most time on #1, reuses #1's gains for #3, and has #2 as a separate short loop.$pf$,
+ $pf$Three misconceptions ranked by rescue leverage. **#1 (5-question driver):** "Completing the square is a weird ritual, not an algebraic transformation." Kids memorize the sequence but can't connect `(x − h)² + k` to "vertex at (h, k)" — collapses Q6 (18%), Q7 (14%), Q8 (32%), Q9 (21%), Q10 (25%). **#2:** "Factoring is pattern-matching, not inverse-distribution." Q1 monic 82% vs Q2 non-monic 46% gap is pure pattern vs concept — they don't see factoring as undoing the distributive property. **#3:** "Word problems are a separate species." Kids who compute Q4 correctly (75%) can't transfer to Q9/Q10 because they don't extract the function from context. Classic transfer-failure signature. Rescue design implication: spend most time on #1 (highest leverage, 5 of 10 questions), #1's gains feed #3 (vertex form IS the max/min extractor for projectile/optimization problems), #2 as separate short loop. Fix order: #1 → #2 → #3.$pf$),
+
+-- Step 2 --
+('66666666-6666-6666-6666-666666630102',
+ '55555555-5555-5555-5555-555555550063',
+ 2,
+ $pf$Pass 2 — design 2-week rescue with 3 differentiated tracks (not one-size-fits-all)$pf$,
+ $pf$Great diagnostic — that matches my gut on who's stuck where. Now design the 2-week rescue. I have 10 class periods over 2 weeks (50 min each). Three constraints:
+
+1. **Differentiated tracks.** 7 of 28 students PASSED the unit test (75%+). If I make them sit through the full reteach they disengage and that wrecks the whole room's energy. I need a meaningful extension track for them so they're learning something, not killing time. Another 7-8 kids got 60-75% — they have partial mastery, need targeted gap-fill. 13-14 kids got below 60% — full reteach.
+
+2. **Use the misconception-ranking from Pass 1.** Highest-leverage first (completing-the-square-as-transformation), because Day 1 momentum matters.
+
+3. **Realistic, not aspirational.** I am one teacher in one room. No co-teacher, no pullout aide. Station work + short whole-class reset. Kids grouped by current mastery not alphabetical/friend clusters.
+
+Give me: the 10-day lesson-sequence calendar (Day 1 through Day 10, title + main work per day for each of the 3 tracks), plus the 2-3 operating principles that will make the whole thing hold together (what I cut if I fall behind, what I protect at all costs).$pf$,
+ $pf$10-day rescue, 3 tracks, anchored on Misconception 1 first. Rows show Day → Track A (full reteach, n≈14) / Track B (gap-fill, n≈7) / Track C (extension, n≈7). All 3 tracks run simultaneously via station rotation; you run a 10-min whole-class opener and then rotate between stations.
+
+| Day | Topic anchor | Track A (reteach) | Track B (gap-fill) | Track C (extension) |
+|---|---|---|---|---|
+| 1 | Completing the square — MEANING first | Visual "square-it-out" activity w/ algebra tiles (physical or Desmos) — build (x+3)² geometrically, see why b/2 emerges from the geometry | Diagnostic mini-quiz (6 Qs — Q6/Q7 variants) → small-group error analysis of their own test responses | Projectile launch from vertex form — given h(t) = −16(t−2)² + 80, extract everything you can. Then do it backwards: write h(t) given max height 64 at t=1. |
+| 2 | Completing the square → vertex form | Algorithm with meaning labels — at every step, kid writes WHY in one sentence | Same as Track A but faster-pace in pairs | Group challenge: derive the quadratic formula by completing the square on ax²+bx+c=0. Board presentation Day 3. |
+| 3 | Vertex form → vertex, axis of symm, graph shape | Desmos sliders on y = a(x−h)² + k — manipulate h, k, a — write observations | Same but add: given graph, recover h and k from vertex coordinates | Present derivation from Day 2. Class Q&A (this also reinforces everyone else's Day 1-2 learning.) |
+| 4 | Factoring — non-monic via grouping | Factor-by-grouping walk-through w/ the inverse-distribution frame. Algebra tiles again for 2x² +7x+3 | 10 non-monic factoring problems, self-paced, worked-example pairs | Polynomial long division preview → factoring cubics x³ − 8 |
+| 5 | Quadratic formula — when to use it | Compare: factorable (Q4-style) vs not-factorable (Q5-style) — show how discriminant tells you | 10-problem mixed set: pick your method, defend choice | Complex solutions intro: solve x² + 4 = 0. Where does i come from? |
+| 6 | MIDPOINT CHECK | Formative quiz (6 Qs, reteach topics only). Regroup tracks based on results. | Same quiz → if passed, move to Track C the rest of week; if not, stay | Extension check + start word-problem translation mini-unit for Days 7-10 |
+| 7 | Word problems I — projectile | Translation-only exercise: write function + identify what's asked for 6 problems. DON'T solve yet. | Same as Track A — translation is the broken step | Create 2 original projectile problems for a classmate. Swap, solve, give feedback. |
+| 8 | Word problems II — optimization | Now solve the Day-7 problems using vertex form | Same as Track A | Optimization w/ constraint: given perimeter, maximize area. Compare vs Day-7's "given function" version. |
+| 9 | Mixed review — student-choice problem set | 3 difficulty tiers, kids pick; teacher coaches lowest tier | 3 tiers, kids pick middle or high tier | 3 tiers, all kids choose high tier; then peer-teach one problem to a Track-A partner |
+| 10 | REASSESSMENT | Test (see Pass 4) | Same test | Same test |
+
+**Operating principles — what holds this together:**
+
+1. **Protect the Day 1 algebra-tile activity even if everything else gets compressed.** If Days 1-3 get right, kids' mental model of quadratics shifts permanently. If Days 1-3 get the algorithm-first treatment again, you're repeating the failed unit. The meaning-before-algorithm sequencing is the whole point.
+
+2. **The tracks are FLUID, not fixed.** Day 6 midpoint check re-sorts. A kid who's in Track A on Day 1 but figures out completing-the-square on Day 2 should move to Track B on Day 3. Track announcement to kids: "which track you're in depends on what you know today, not what you scored last week." Kills the stigma.
+
+3. **Whole-class opener is non-negotiable.** 10 min every day of a single short problem all 3 tracks work together. Cheap social glue; also keeps Track C kids from feeling siloed from the class.
+
+4. **If you fall behind 1-2 days, cut from the middle (Days 4-5), not the ends.** Day 1's meaning-first reset is the opener. Day 9-10 is the landing. Days 4-5 (factoring + formula) are the most self-contained and can be compressed to a single mixed day.
+
+5. **Track C extension work must be GRADED with the same seriousness as Track A reteach.** If it feels like busywork the extension kids will disengage and their disengagement will infect the rest of the class. The Day 2 quadratic-formula derivation and the Day 3 board presentation are the load-bearing Track-C moments.
+
+6. **DON'T make Track C a silent advanced packet.** That's the path of least resistance for you but it's also why differentiated instruction fails in most rooms — the "advanced" track becomes a worksheet jail. Track C should be the track with the MOST discussion and peer-teaching, because those kids need meta-cognition (teaching others) to actually advance.$pf$,
+ $pf$10-day rescue plan with 3 tracks (A reteach n≈14, B gap-fill n≈7, C extension n≈7) running simultaneously via station rotation + 10-min whole-class opener. Sequencing anchored on Misconception 1 first (Days 1-3 completing-the-square-as-transformation with algebra tiles), Misconception 2 second (Days 4-5 factoring-by-grouping), Misconception 3 third (Days 7-8 word-problem translation decoupled from computation). Day 6 midpoint formative re-sorts tracks. Day 10 reassessment. Operating principles holding it together: (1) protect Day 1 meaning-first algebra-tile activity even under compression — it's the whole point of the rescue vs just repeating the failed unit; (2) tracks are FLUID not fixed, Day 6 re-sort, kids informed "what you know today, not what you scored last week"; (3) whole-class opener non-negotiable — 10-min shared problem as social glue; (4) if falling behind, cut from Days 4-5 (self-contained middle), not ends; (5) Track C extension graded with same seriousness as Track A reteach — Day 2 quadratic-formula derivation + Day 3 board presentation are load-bearing Track-C moments; (6) Track C must NOT be a silent advanced worksheet — that's why differentiated instruction fails. Make it the highest-discussion track via peer-teaching.$pf$),
+
+-- Step 3 --
+('66666666-6666-6666-6666-666666630103',
+ '55555555-5555-5555-5555-555555550063',
+ 3,
+ $pf$Pass 3 — Day 1 warm-up sequence + algebra-tile discovery worksheet (the load-bearing lesson)$pf$,
+ $pf$Day 1 is the load-bearing day per Pass 2's operating principle #1. I need real assets, not a lesson outline. Give me:
+
+1. A 4-problem warm-up sequence for Day 1 that primes the "completing the square is a transformation" insight WITHOUT tipping off the lesson. Each problem builds to the next. (Students work silently 5 min, then we discuss.)
+
+2. An algebra-tile discovery worksheet (Google Docs–printable) that walks a student through building (x+3)² = x² + 6x + 9 geometrically, then asks them to complete the square for x² + 6x + 4 geometrically (add the missing tiles, then subtract the extra units). 10-15 min student work.
+
+Write the worksheet as if it will be handed to a 15-year-old who finds algebra abstract. Every prompt has a scaffold question. No "explain your reasoning" one-liners that kids skip. Specific questions with a visible answer space.$pf$,
+ $pf$Here they are. The warm-up sequence's trick is that each problem secretly uses a "completing the square" move without naming it.
+
+---
+
+**DAY 1 WARM-UP — 5 min, silent, notebook**
+
+Work through these four in order. Don't skip ahead. You may use a calculator for arithmetic but not for algebra.
+
+**1.** Expand: `(x + 5)² = _________________________________`
+
+**2.** Expand: `(x − 3)² = _________________________________`
+
+**3.** Two friends are arguing. One says `x² + 10x + 25 = (x + 5)²`. The other says that's wrong. Who is right? Why?
+
+**4.** Here's a harder one: I have `x² + 10x + 21`. Is there a number I can ADD to this expression so it becomes a perfect square `(x + ?)²`? If yes, what number? If no, why not?
+
+*(After 5 min, open discussion. The fourth question is the hinge — kids who got it will explain that adding 4 would make it `x² + 10x + 25 = (x+5)²`. Kids who didn't will be primed for the tile activity next.)*
+
+---
+
+**ALGEBRA TILES DISCOVERY — Building a Square from an Expression**
+
+*Materials: set of algebra tiles (1 big square "x²" tile, long "x" rectangles, small unit squares) OR Desmos virtual-tiles link* *[teacher inserts Desmos URL]*. *Worksheet time: 10-15 min.*
+
+**Part 1 — A square you already know.**
+
+Build the expression `x² + 6x + 9` with tiles.
+
+**A.** How many x² tiles did you use? ___ How many x tiles? ___ How many unit tiles? ___
+
+**B.** Now arrange the tiles into a SQUARE (all sides the same length). *Hint: put the x² tile in the top-left corner. Put the x tiles along the right edge and bottom edge — how many on each edge?* Draw your arrangement below:
+
+![drawing space — students sketch the square]
+
+**C.** What are the side lengths of your square?
+- Top side: `x + ___`
+- Right side: `x + ___`
+
+**D.** So `x² + 6x + 9 = (x + ___)(x + ___) = (x + ___)²`.
+
+**E.** **The key observation — fill this in:** I used **6** x-tiles. Half of 6 is ___. And the unit corner has ___ × ___ = ___ unit tiles. How does this connect?
+
+*(Scaffold for teacher: kids should notice — the number of unit tiles needed is (half the x-tile count) squared. This is the geometric origin of the "half the b, square it" algorithm they will memorize later. The geometry is the REASON.)*
+
+**Part 2 — An expression that ISN'T quite a square yet.**
+
+Now try `x² + 6x + 4`.
+
+**A.** Lay out the tiles: ___ x² tile, ___ x tiles, ___ unit tiles.
+
+**B.** Try to arrange them into a square. *Put the x² tile in the top-left, x tiles along two edges as before.*
+
+**C.** **What's missing?** To complete the square, you need ___ unit tiles in the corner — but you only have ___. How many units short are you?
+
+**D.** You're going to ADD the missing tiles, but you also have to take them away somewhere else so the total expression doesn't change. Write this as algebra:
+
+`x² + 6x + 4 = x² + 6x + ___ − ___ + 4`
+
+Group:
+
+`= (x² + 6x + ___) + (4 − ___)`
+
+`= (x + ___)² + ___`
+
+**E.** Read the right side aloud to yourself. We transformed `x² + 6x + 4` into `(x + 3)² − 5`. The expressions are equal — same number for any x — but the NEW form tells us something the old form didn't. We'll use this form tomorrow to find the vertex of a parabola.
+
+**Part 3 — Check for understanding (2 min, write a sentence).**
+
+In your own words: what did you do to the expression `x² + 6x + 4` to get it into the form `(x + 3)² − 5`? What was the "completing" move, and why did you have to subtract 5?
+
+---
+
+*Teacher note — observation points as kids work:*
+- *Kids who struggle at Part 1 Step B (arranging tiles into a square) — they're not seeing geometric area as multiplication. Scaffold: "a 4×4 square has area 16 because 4×4=16. Your square has some side length — call it something — and some area made of your tiles. What's the area?"*
+- *Kids who breeze Part 1 but stumble on Part 2 Step C — they don't see that you can ADD-AND-SUBTRACT to preserve equality. This is the deep insight of completing the square. Pause the class if more than 3 kids hit this wall; it's a whole-class reset moment.*
+- *Kids who finish Part 3 early (Track C) — ask them: "Can you do this for `x² + 6x − 2`? What's different? What's the same?" Don't give them `x² + 7x + ...` yet — odd b is Day 2.*$pf$,
+ $pf$Real Day-1 assets. **Warm-up (4 problems, 5 min silent):** (1) expand (x+5)², (2) expand (x−3)², (3) error-analysis on x²+10x+25=(x+5)², (4) hinge question — "is there a number I can ADD to x²+10x+21 to make a perfect square?" Problem 4 is the secret "completing the square" move without naming it. **Algebra-tiles worksheet (10-15 min):** Part 1 — build x²+6x+9 geometrically, arrange as square, observe "half the x-count, squared" = unit corner area (geometric origin of "half the b, square it" algorithm — the GEOMETRY is the reason). Part 2 — x²+6x+4 is NOT yet a perfect square, student sees tiles short by 5, adds-and-subtracts to transform to (x+3)²−5. Part 3 — 2-min write-in-own-words check. Teacher observation points: kids stuck on arranging tiles into a square aren't seeing geometric area as multiplication (scaffold with 4×4=16); kids stumbling on Part 2 Step C don't see add-and-subtract preserves equality — this is the DEEP insight of completing the square, pause class if 3+ kids wall here as whole-class reset moment; early-finisher Track C prompt: "can you do x²+6x−2?" but NOT odd-b (saved for Day 2).$pf$),
+
+-- Step 4 --
+('66666666-6666-6666-6666-666666630104',
+ '55555555-5555-5555-5555-555555550063',
+ 4,
+ $pf$Pass 4 — reassessment design + teacher reflection protocol$pf$,
+ $pf$Last one. I need the Day 10 reassessment (comparable to the original unit test but NOT identical) AND a teacher-reflection protocol I run AFTER grading it — so I don't just score the papers and move on, I actually extract what worked vs what didn't for next year.
+
+Reassessment constraints:
+- 10 questions, same topic mix as the original unit test so results are comparable
+- Include at least 2 "transfer" questions that test understanding, not recognition (a kid who just re-memorized the procedure should NOT be able to ace them)
+- Mix of straight-computation + word-problem + explain-why
+- Can be done in 45 min so I have 5 min for collection
+
+Reflection protocol: 3-5 questions I ask myself after grading, designed to separate "the kids learned" from "the test was easier" vs "the reteach actually worked." I've been burned by overclaiming before.$pf$,
+ $pf$Reassessment + reflection protocol.
+
+---
+
+**ALGEBRA 2 — QUADRATICS REASSESSMENT (45 MIN)**
+
+*Calculators permitted for arithmetic only. Show work for all multi-step problems.*
+
+**Section 1 — Factoring (3 problems, 15 pts)**
+
+1. Factor: `x² − 9x + 20` (5 pts)
+2. Factor: `3x² + 7x − 6` (5 pts) — *non-monic, original test had 2x²−5x−3 (46%). Same concept, slightly harder coefficients.*
+3. Factor completely: `2x³ − 18x` (5 pts) — *common factor + difference of squares; tests whether they notice the GCF first.*
+
+**Section 2 — Solving & Vertex Form (3 problems, 30 pts)**
+
+4. Solve by any method. Justify your method choice in one sentence: `x² − 6x − 16 = 0` (10 pts)
+5. Solve using the quadratic formula (show discriminant): `2x² + 5x − 4 = 0` (10 pts)
+6. Convert to vertex form and state vertex: `f(x) = x² − 10x + 22` (10 pts) — *parallel to original Q7 (14%). Completes the square with a clean b.*
+
+**Section 3 — Graphing (1 problem, 15 pts)**
+
+7. Graph `y = −(x + 3)² + 4`. Label vertex, axis of symmetry, y-intercept, and ONE point on each side of the axis of symmetry. (15 pts)
+
+**Section 4 — Word Problems (2 problems, 25 pts)**
+
+8. A ball is thrown upward. Its height is `h(t) = −16t² + 48t + 6` where h is feet and t is seconds. (a) What is the max height? (b) When does it hit max? (c) When does it hit the ground? (12 pts)
+
+9. A farmer has 60 feet of fence to enclose 3 sides of a rectangular garden (the 4th side is a barn wall). What dimensions maximize the area? Show your function setup. (13 pts) — *parallel to original Q10 (25%). This is the "translate to a function first" test.*
+
+**Section 5 — Transfer (2 problems, 15 pts) — NEW FORMAT**
+
+10. Below is a student's work completing the square. Find the error and fix it. (8 pts)
+```
+   x² + 8x + 3
+ = x² + 8x + 16 + 3       ← added 16
+ = (x + 4)² + 3            ← factored first three terms
+ = (x + 4)² + 3
+```
+*(Error: didn't subtract 16 to preserve equality. Correct answer: (x+4)² − 13. This question CANNOT be answered by memorized procedure — it requires understanding that add-and-subtract must balance. A student who only re-memorized the algorithm will not catch it.)*
+
+11. Explain in 2-3 sentences: why does completing the square work? What is the geometric OR algebraic reason that "half the b, squared" gives us what we need? (7 pts)
+*(No numerical answer. Tests deep understanding vs procedure. A student who sat through the reteach but didn't internalize the tile activity will write a procedural answer; a student who did will reference the square-completion geometry or the algebraic identity.)*
+
+**Total: 100 pts**
+
+---
+
+**TEACHER REFLECTION PROTOCOL — run within 48 hrs of grading**
+
+Ask yourself these five questions. Write answers down. Don't just think them — writing forces honesty.
+
+1. **Compare Q10 + Q11 (transfer/explain) performance vs Q1-Q9 (computational) performance. If computational scores jumped but transfer questions stayed low, the reteach didn't actually work — the kids just re-memorized.** Threshold: if Q10+Q11 combined average is below 50%, you over-relied on procedural reteach and the conceptual shift didn't land. If 60%+, genuine understanding improved.
+
+2. **Run a difficulty-parity check against the original unit test.** Pull the original Q6 (completing the square, 18% correct) and compare to reassessment Q6. Are they actually the same difficulty, or did you accidentally make the reassessment easier? Specifically check: same coefficient complexity, same step count, same conceptual ask. If the new Q6 is genuinely easier, discount your class-average gain by the difficulty delta. Ask a colleague to compare blind if unsure.
+
+3. **Look at the 3 lowest-scoring students. Were they in Track A (full reteach) or absent from some of the days?** If they were present for all 10 days and still scored below 60%, your reteach sequencing didn't reach them — you need to diagnose WHICH misconception still holds. Interview each for 5 minutes. If they were absent 3+ days, that's attendance, not curriculum.
+
+4. **Review the middle 10 students (those who scored 65-80 on reassessment).** How did they score on the original test? If the middle is the cohort that moved the most, the rescue worked for its target. If the middle stayed the same and only the already-passing kids got higher, the rescue failed and you just had a class-averaging illusion from the extension track.
+
+5. **Compare Section A (rescue) vs Section B (no rescue, natural control).** Section B's reassessment on the same test gives you the "what the kids would have gotten without rescue" number. If Section A's gain over Section B is less than 10 pts, the rescue's effect is marginal — next year, simpler reteach. If Section A's gain is 15+ pts over Section B, the rescue was worth the prep time and it's repeatable.
+
+**Write this year's lessons for NEXT year immediately.** Don't wait for August — write them while the pain is fresh. Specifically:
+- Which misconceptions showed up that Pass 1's diagnostic didn't predict? (There will be some — reality always exceeds the model.)
+- Which part of the Day 1 tile activity did kids most resist or misinterpret? (That's the part that needs more scaffolding next year.)
+- Which Track C extension was a dud vs which drove real engagement? Cut the dud.
+- What do you build into the ORIGINAL unit (before the unit test) to catch the misconceptions earlier? (Ideally, Pass 1's diagnostic becomes an ongoing formative, not a post-failure autopsy.)
+
+Save these notes in a `2026-quadratics-retrospective.md` Google Doc. Open it first thing next August when you plan the unit again. This is the single most valuable teaching artifact you'll make this year — your future self will thank you.$pf$,
+ $pf$Reassessment (45 min, 100 pts, 11 Qs, topic-parallel to original unit test): Section 1 factoring x3 (including non-monic parallel to original Q2 and GCF+difference-of-squares); Section 2 solving+vertex form x3 (parallel to original Q4, Q5, Q7); Section 3 graphing parabola in vertex form (parallel to Q8); Section 4 word problems x2 (projectile + optimization, parallel to Q9, Q10); **Section 5 NEW transfer questions** — Q10 find-the-error in a student's incorrect completing-the-square work (tests whether kid understands add-and-subtract must balance, NOT memorized procedure), Q11 explain-why-completing-the-square-works (2-3 sentences, no numerical answer, tests conceptual shift). Q10+Q11 specifically CANNOT be answered by re-memorization — separates genuine understanding from procedural re-teach. **Reflection protocol (5 questions, run within 48 hrs of grading, write down the answers):** (1) compare Q10+Q11 (transfer) vs Q1-Q9 (computational) — if transfer <50% while computational jumped, reteach was procedural not conceptual; (2) difficulty-parity check against original unit test, colleague-blind compare if unsure, discount gains by any difficulty delta; (3) diagnose the 3 lowest-scoring students — if present all 10 days and still <60%, sequencing didn't reach them; (4) look at middle 10 students (65-80 range) — if the middle moved most, rescue hit its target; if only already-passing kids rose, rescue failed and was class-average illusion from extension track; (5) Section A vs Section B (natural control) — <10 pt gain over B = marginal effect, next year simpler reteach; 15+ pt gain = repeatable. Write retrospective notes in `2026-quadratics-retrospective.md` immediately (not August) — identify misconceptions Pass 1 didn't predict, Day 1 activity parts kids resisted, dud Track C extensions, what to build into ORIGINAL unit so Pass 1's diagnostic becomes ongoing formative not post-failure autopsy.$pf$);
+
+-- =========================================================================
 -- END OF FILE — append next project(s) below this line.
 -- Iterations working the Content queue: add 2–3 projects per iteration,
 -- appending below this comment. Do NOT rewrite existing projects.

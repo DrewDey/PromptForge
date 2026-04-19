@@ -27761,6 +27761,930 @@ Your plan is real. You have a named primary, a vetted backup, a floor, a sick-da
 
 
 -- =========================================================================
+-- Project 55-0078 | Settings/admin panel IA refactor (47 toggles → 6 sections) | Priya Sharma | Design | 8 steps
+-- =========================================================================
+
+DELETE FROM prompt_steps WHERE prompt_id = '55555555-5555-5555-5555-555555550078';
+DELETE FROM prompts      WHERE id        = '55555555-5555-5555-5555-555555550078';
+
+INSERT INTO prompts (
+  id, title, description, content, result_content,
+  category_id, difficulty, model_used, model_recommendation,
+  tools_used, tags, status, author_id, vote_count, bookmark_count
+) VALUES (
+  '55555555-5555-5555-5555-555555550078',
+  $pf$Taking our admin panel from 47 toggles under one gear menu to a real settings page$pf$,
+  $pf$Our internal operations app has an Admin → Settings gear drawer with 47 toggles and fields piled into one long accordion. Support tickets about "where is X" are our #1 CX inbound. Over a week with Claude Opus 4.7 I worked the IA redesign end to end — principles, user research, taxonomy, nav, search, mobile, migration, and a 30-day watchlist. Eight passes, one canonical proposal.$pf$,
+  $pf$I'm the design lead at a 110-person ops-tooling startup. We sell an internal operations platform to mid-market customers (roles, permissions, workflow automation, integrations — the boring infra that runs a company's back office). The admin surface grew organically: every time a customer asked for a feature flag or a global preference, an engineer added a new row to the Admin → Settings accordion. Three years later that accordion has 47 toggles and fields, grouped by "whoever was nearest when it was added," with no search, no URLs, and no mobile treatment — on a phone it's a 4,800px tall single column.
+
+Support tickets asking "where is the SSO toggle" / "where is the audit-log retention setting" / "where do I change my signature timezone" are our #1 CX inbound, ahead of real bugs. My PM asked me to "redesign settings." My head of engineering said "don't make it a drawer, make it a real page with URLs." I got one week to produce an IA proposal before engineering starts the rewrite.
+
+I ran this with Claude Opus 4.7 across eight passes — principles first, user research next, then taxonomy, then nav, then findability, then responsive, then migration, then measurement. One thing I changed my mind on mid-stream: I started wanting to solve everything with search; by pass 5 I'd re-convinced myself that search is a power-user affordance and hierarchy has to carry the weight. Recommended for anyone doing an IA refactor on a real (not pretend) settings surface — the eight-pass shape is the transferable part, not the specific taxonomy.$pf$,
+  $pf$Shipped: a 6-section IA with named URLs, a migration plan engineering implemented over 3 sprints, and a measurement watchlist that's now the quarterly "is settings working" review. The 6 sections — Organization, Access & Identity, Billing, Notifications, Integrations, Advanced — hold all 47 settings with zero drops and two net-new entries (a dedicated audit-log page and an integrations marketplace that existed nowhere previously).
+
+Thirty days post-launch: support tickets tagged `settings-findability` dropped from an average of 23/week to 6/week (74% reduction). The "time to first edit after entering Settings" event dropped from median 42s to 11s. We did lose one metric — the total-time-in-Settings went up 20%, which at first I thought was bad but turned out to be users browsing/discovering features they didn't know existed (Integrations especially). Added that as a known-good signal to the watchlist.
+
+Biggest lesson: the eight-pass structure forced me to resist two seductive shortcuts. (1) "Just put search on it" — search is a power-user tool, not a hierarchy replacement; if your taxonomy is wrong, search makes it easier to find the wrong thing. (2) "Just copy Stripe/Linear's settings page" — their settings solve different problems; their shape is downstream of their domain model, not a template to apply. What actually worked was committing to the principles in pass 1 before looking at a single competitor, then using competitors at pass 4 only to stress-test the already-chosen taxonomy.$pf$,
+  '11111111-1111-1111-1111-111111111105',
+  'advanced',
+  'claude-opus-4-7',
+  'Claude 4.7 Opus',
+  ARRAY['Claude','Figma','Dovetail','Maze'],
+  ARRAY['information-architecture','settings','admin-ui','ux-research','design-systems','ia','taxonomy'],
+  'approved',
+  '22222222-2222-2222-2222-222222222204',
+  0, 0
+);
+
+INSERT INTO prompt_steps (id, prompt_id, step_number, title, content, result_content, description) VALUES
+
+-- Step 1 --
+('66666666-6666-6666-6666-666666780101',
+ '55555555-5555-5555-5555-555555550078',
+ 1,
+ $pf$Principles + scope: what's IN, what's explicitly OUT$pf$,
+ $pf$Before I touch a single toggle, I want to nail down principles. Our admin settings surface has 47 items piled into one accordion under a gear icon, no URLs, no search, single column on mobile stretches to ~4800px. Support tickets about "where is X" are #1 CX inbound. PM wants a "redesign." Eng lead wants a real page with URLs.
+
+I don't want to start by rearranging toggles. I want to start with a one-pager that says: what is this surface FOR, what are the design principles we're committing to, and what is explicitly NOT in scope. I'll hand this to PM + eng lead before drawing a single frame — it's the thing I'll point at when someone asks in week 3 "can we also add X."
+
+Give me a principles doc draft. Be specific to a settings / admin surface — not generic UX principles. And give me an explicit out-of-scope list. I want to be able to say "no" cleanly in week 3, not hand-wave at "the principles."$pf$,
+ $pf$This is the right starting move. Settings surfaces fail for one of two reasons: (a) they're designed as a catch-all for "anything that doesn't fit elsewhere," which is a non-design, or (b) they're designed by pattern-matching against competitor screenshots, which bakes in other people's domain models. A principles doc is how you resist both.
+
+**What this surface is FOR — one sentence:**
+
+> Settings is where an authenticated user configures how the product behaves for their organization, their team, or themselves — and nothing else.
+
+That sentence does real work. It excludes: onboarding tasks (those belong in onboarding), transactional workflows (those belong in the main app), discoverability of features (that's a marketing/in-app-education job, not a settings job), and monitoring/observability (different surface, different mental model).
+
+**Five principles — commit to these in writing:**
+
+1. **Hierarchy before search.** Users should be able to find any setting by navigating the taxonomy in under 10 seconds without touching a search box. Search is a power-user affordance, not a hierarchy replacement. If you're tempted to solve a findability problem by "adding search," your taxonomy is wrong.
+
+2. **One setting has one home.** No setting appears in two places. Cross-links are fine ("You may also want to configure X") but the setting itself lives in exactly one section. Duplication is how taxonomies rot.
+
+3. **Named URLs for every leaf.** `/settings/access/sso` not `/settings#sso-accordion`. This is non-negotiable for (a) deep-linking from support tickets, (b) shareable "here's where you set X" links, (c) browser back-button behaving correctly, (d) permission gates that return 403 cleanly.
+
+4. **Mobile is a first-class surface, not a responsive afterthought.** Our buyers are desk-bound but our users include on-call engineers, field ops, and execs who check things on phones. Every leaf page must work at 375px without horizontal scroll.
+
+5. **Destructive is slow. Additive is fast.** Toggles that only add capability (enable X integration) can be one tap. Actions that change org-wide behavior (rotate API keys, change billing, delete team) require confirmation with the thing being destroyed typed in. Gradient of friction matches gradient of consequence.
+
+**Out of scope — write these down and put them in the principles doc:**
+
+- **Not a feature-discovery surface.** If users don't know a feature exists, the fix is marketing/education/empty-state nudges in the relevant feature surface, not "put it in settings and hope they browse."
+- **Not a dashboard.** No live counts, no activity feeds, no "3 users joined this week." Settings is configuration; dashboards are elsewhere.
+- **Not a permissions debugger.** "Why can't Alice access X" belongs in an audit-log / permissions-check tool, not in the settings UI.
+- **Not a replacement for API.** Power users with 200 settings to change should use the API or config-as-code. We will not build a bulk-edit table for 47 toggles.
+- **Not organization onboarding.** Setup wizards on day 1 are different surface, different purpose, can borrow the settings routes for post-onboarding editing but do not belong INSIDE the settings page.
+
+**How to use this doc:** pin it to the top of the design Figma. When a stakeholder in week 3 asks "can we put an activity feed on the settings page?" — you don't have to argue the specific request, you point at "Not a dashboard" on the out-of-scope list. The principles earn their keep by ending debates that would otherwise relitigate in every design review.
+
+One more thing: the principle that will get most-often challenged is #1 ("hierarchy before search"). You'll want to add a specific test to the doc: *If a user can't find a setting without search, that's a taxonomy bug and we fix the taxonomy — we don't fix it by improving search.* That reframes "let's improve search" as "let's improve hierarchy," which is the harder but correct work.$pf$,
+ NULL),
+
+-- Step 2 --
+('66666666-6666-6666-6666-666666780102',
+ '55555555-5555-5555-5555-555555550078',
+ 2,
+ $pf$User research plan — 5 interviews, the specific questions$pf$,
+ $pf$Principles doc landed well with eng + PM. Now I need to do real research before I propose taxonomy — otherwise I'll just pattern-match to how I'd organize it, and I'm not the user.
+
+Constraints: I have maybe 4 days for research, our CS team can recruit 5-8 current admin-role users for 30-min sessions, we use Dovetail for transcripts + Maze for unmoderated tasks. I want to do a mix — some interviews to hear mental models in their own words, some tree-testing to validate or invalidate proposed groupings once I have them.
+
+Draft me a research plan: who to recruit, what to ask in interviews, how to structure the mental-model part vs the current-pain part, and when to use Maze vs live interviews. I want to avoid leading questions — especially the ones where I telegraph the grouping I already half-believe in.$pf$,
+ $pf$Four days is tight but workable. The plan has to do two jobs: (a) surface the users' actual mental models — how they group settings BEFORE you show them yours; (b) validate the pain points you're solving for with non-anecdotal evidence. I'd split it: 5 live interviews for mental models + pain, then 1 unmoderated tree test on Maze once you have a taxonomy draft (that's pass 3's output, not now).
+
+**Who to recruit — 5 users:**
+
+- **2 daily admins** (support / CS leaders who are in the admin page 10+ times/week). They know the current pain best.
+- **2 weekly admins** (ops managers, security leads — in there 1-2x/week). They're the tier that searches the most because they don't build muscle memory.
+- **1 first-time admin** (someone who started an admin role in the last 30 days). They'll surface onboarding confusion that the veterans have normalized away.
+
+Don't recruit 5 daily admins — you'll get a consensus that matches the veteran's mental model, not a first-time user's. Mix matters more than volume at N=5.
+
+Screener: must have touched settings in the last 14 days. Exclude customer-admins-of-accounts-you-own (internal conflict of interest). Compensate $100 — this is a 30-min session with a real professional, don't chisel.
+
+**Interview script — 30 min, structured into 4 blocks:**
+
+*Block 1 — context (5 min):* "Tell me about your role. What does a typical week look like?" Don't talk about settings yet. You're getting vocabulary and identifying what they actually care about.
+
+*Block 2 — open-ended task recall (10 min):* "Walk me through the last three times you went into the settings page. What were you trying to do, and what happened?" This is the money block. Don't interrupt. Let them ramble. Record specific verbatim phrases — those become category names later. Red flag to listen for: "I asked a teammate where X was" — that's a findability miss in the wild.
+
+*Block 3 — mental-model card sort (10 min):* Prepare 30 cards with settings names (subset of your 47 — pick a representative mix). Ask them to group into piles and name each pile. Crucially: *do not show them the current UI while they do this.* The current UI will anchor them to existing groupings, which is what you're trying to get away from. At the end, ask "which pile is the most important to you and why" — that's your hierarchy signal.
+
+*Block 4 — forced ranking (5 min):* "Of everything you just grouped, what are the 3 settings you change most often? What are the 3 you set once and never touch?" This separates frequently-used from configure-once-forget — and that split drives navigation prominence more than any abstract "importance."
+
+**What NOT to ask — the leading-question traps:**
+
+- "Would it be helpful if settings had search?" — they'll say yes. Everyone says yes to search. It doesn't tell you whether your taxonomy is broken.
+- "Do you think notifications should be separate from team settings?" — you just telegraphed your proposed grouping. They'll pattern-match.
+- "What's missing from settings today?" — produces wishlist noise, not IA insight. Save this for product discovery, not IA research.
+- "How would you redesign settings?" — users are very bad at redesigning UIs. They're excellent at describing the friction of the current one.
+
+**What to save for Maze (pass 3 follow-on):**
+
+Once you have a draft taxonomy (pass 3 output), run an unmoderated tree test on Maze with 15-25 participants (their customer panel is fine for volume here). Give them 10 specific tasks — "you need to enable SSO, click where you'd go" — and measure (a) success rate, (b) directness (did they go straight or backtrack), (c) time to first click.
+
+Success rate >70% on a cold tree test is passing. <50% on any task means that leaf is miscategorized and needs to move. Between 50-70% is a naming problem, not a placement problem — usually the label is too generic or too engineer-y.
+
+**Analysis framework — how to synthesize 5 interviews without overfitting:**
+
+After each interview, write a one-page memo: what they said (verbatim quotes on the parts that matter), what they did (in the card sort — photo the piles), what surprised you. Do the memos within 24 hours — memory fades fast. After all 5, look for (a) category names that appeared in 3+ card sorts (those are load-bearing); (b) settings that ended up in DIFFERENT piles across users (those are contested — the taxonomy needs to pick a winner and cross-link the loser); (c) settings that got their OWN pile in multiple sessions (those need to be top-level, not buried).
+
+Don't trust yourself after just reading memos. Do the physical affinity-mapping exercise — print the quotes, cluster them on a wall. The physical act of moving cards around disrupts pattern-match-to-what-I-already-believe. It sounds precious; it works.$pf$,
+ NULL),
+
+-- Step 3 --
+('66666666-6666-6666-6666-666666780103',
+ '55555555-5555-5555-5555-555555550078',
+ 3,
+ $pf$Taxonomy proposal — grouping 47 settings into 5-7 named sections$pf$,
+ $pf$Research done. 5 interviews plus my own affinity mapping. Here's what I took away: (1) four card-sort groupings repeated across 3+ users — people/access, payments, notifications, integrations/connections. (2) Two settings ("audit logs" and "API keys") ended up in different piles almost every time — contested. (3) The word "organization" was used by 4/5 users to describe the topmost layer (org name, logo, default timezone, etc.). (4) Users kept mixing up "permissions" (who can do what) with "roles" (labels we assign).
+
+Now I need to turn this into a proposed taxonomy — 5-7 top-level sections that cover all 47 settings with zero drops and no duplication, with a named rationale for each. Give me the proposal with: the sections, what goes in each, what the edge cases are (where a setting COULD fit in two sections and I'm picking one), and a few things I should deliberately NOT call sections (traps that look clean but break at scale).$pf$,
+ $pf$Your research is telling you what the taxonomy should be more clearly than you think. The four repeated piles plus the "organization"-as-topmost vocabulary plus the contested pair — those are direct signals. Here's the proposal.
+
+**Six sections (not seven — one draft I considered was splitting Access from Identity, but at 47 settings they don't earn two top-levels):**
+
+**1. Organization** — the org as a singular object.
+- Org name, logo, default timezone, default language, domain, legal entity info.
+- Default units (currency, date format).
+- Public profile (if your product has one).
+
+*Rationale:* Matches the vocabulary users gave you unprompted. This is the "who are we as an account" layer — it's singular, it's global, it's the thing a brand-new admin sees first.
+
+**2. Access & Identity** — who can sign in, and who they are when they do.
+- SSO providers + config.
+- SCIM provisioning.
+- Password policies.
+- Session length + forced-reauth rules.
+- Roles & permissions.
+- User directory (list of members + their roles).
+- Invite flows + defaults.
+- MFA enforcement.
+
+*Rationale:* This is the section daily admins spend most time in. I'm deliberately merging "Access" (authentication) with "Identity" (users/roles) because at N=47 they don't warrant two top-levels — and the research showed users conflate the two ("I go to 'users' to turn on SSO" was said by 2/5). Splitting them is the #1 trap here; don't.
+
+**3. Billing** — anything touching money.
+- Plan + seats + usage.
+- Payment method.
+- Billing contact + invoice recipient.
+- Tax ID + billing address.
+- Invoice history + receipts.
+
+*Rationale:* Narrow and singular. Users never confused billing with anything else in card sort. Don't be tempted to rename to "Plan & Billing" — it adds a word for no gain. "Billing" is universal vocabulary.
+
+**4. Notifications** — how the product reaches a user or a team.
+- Email notification rules (per-user + org defaults).
+- Slack / MS Teams connections for notifications (not for integrations — see below).
+- Webhooks for event streams.
+- Digest frequency settings.
+- Notification channels for incident alerts.
+
+*Rationale:* Users called this out by name in 4/5 card sorts. The edge case is Slack — Slack shows up in both "Notifications" (as a notification channel) and "Integrations" (as a platform connection). Your research didn't resolve which way users expected it. **My call:** Slack-for-notifications lives in Notifications (that's the use-case the word "Slack" maps to for 80% of admin users). If you add Slack-as-workflow-integration later (posting data, receiving slash commands), *that* surface lives in Integrations. Cross-link both ways.
+
+**5. Integrations** — third-party systems connected to the product for data flow, not for notifications.
+- CRM connections (Salesforce, HubSpot).
+- Data warehouse sync (Snowflake, BigQuery).
+- Identity provider connections for user sync (if SCIM isn't enough — rare).
+- Custom OAuth apps your customers have built against your API.
+- API key management (personal + service).
+
+*Rationale:* "API keys" was one of the two contested settings in research. I'm placing them in Integrations rather than Access because the primary use-case for API keys is "connect external system to us," which is an integration task. Access & Identity is about humans authenticating. If your product has a distinct "service account" concept that behaves more like a user, that moves to Access — but most B2B products don't.
+
+**6. Advanced** — the escape hatch for power-user and configure-once settings.
+- Audit log settings (retention, export destination) — the second contested setting from research.
+- Data retention policies.
+- Feature flags your customer can toggle (beta features, early-access toggles).
+- Developer settings (enabling debug mode, verbose logging).
+- Account deletion + data export (GDPR / SOC2).
+
+*Rationale:* Every settings surface needs an Advanced/escape-hatch for the 10% of settings that don't fit cleanly elsewhere. It's a legitimate category — NOT a dumping ground. Strict rule: a setting only lands in Advanced if (a) it's used by <5% of admins OR (b) it's a configure-once-forget policy. If you find yourself putting a daily-use setting in Advanced, you're misusing the category — move it to its rightful home.
+
+**What NOT to use as a section — traps:**
+
+- **"General."** Looks clean, means nothing. Every setting is general to somebody. This is the #1 settings-taxonomy trap. Use "Organization" instead — it's specific, matches user vocabulary, and forces you to put org-level things there and nothing else.
+- **"Preferences."** Ambiguous whose preferences — user? team? org? If you have user-level preferences (theme, default view), they go on the user's own profile page, NOT in org admin settings. If they're team-level, they're part of whichever feature they configure. "Preferences" as a settings section is a symptom of not having decided whose configuration this is.
+- **"Security."** Tempting, but splits weirdly across sections. SSO is access. Audit logs are Advanced. MFA is access. Retention is Advanced. A top-level "Security" forces you to either duplicate (violates principle #2) or make artificial calls. Better: tag relevant leaves with a "security" filter pill for users who navigate by concern rather than by function. (More on this in pass 5.)
+- **"Team."** Depends entirely on whether your product has a team-below-org hierarchy. If yes, "Team" belongs in the product proper (per-team settings on the team page). If the only team-ish thing is "users and roles," that's Access & Identity, not a separate "Team."
+
+**The 47-settings mapping — zero drops, no duplication:**
+
+Do this as a spreadsheet: column A = current setting name, column B = proposed section, column C = proposed leaf-page path, column D = any notes (moved-from, renamed-to, contested). Share that doc with eng lead + PM before you draw a frame. The spreadsheet is the single source of truth for the migration. Frames come after.$pf$,
+ NULL),
+
+-- Step 4 --
+('66666666-6666-6666-6666-666666780104',
+ '55555555-5555-5555-5555-555555550078',
+ 4,
+ $pf$Primary navigation spec — how the page structure feels$pf$,
+ $pf$Taxonomy signed off by PM + eng lead with one change (they wanted Billing called "Plan & Billing" — I pushed back using your rationale and they conceded). Now I need the nav spec.
+
+Tell me how the settings page should be structured at the macro level. Left rail vs top tabs vs something else? How do breadcrumbs work? What happens when you click "Settings" in the main nav — do you land on a section page, a dashboard of sections, or an overview? And how does the URL structure reflect the hierarchy?
+
+Assume desktop first for this pass; mobile is a separate pass later. I want this to feel Linear/Stripe premium, not a generic admin panel.$pf$,
+ $pf$Clean problem. The answer for 6 top-level sections with ~5-10 leaves each is a left-rail two-column layout — NOT top tabs, NOT a dashboard landing. Here's the spec.
+
+**The layout:**
+
+```
+┌─────────────────────────────────────────────────┐
+│  Top bar (app-level: logo, search, avatar)     │
+├──────────────┬──────────────────────────────────┤
+│              │                                  │
+│  Settings    │                                  │
+│  ──────────  │   Leaf page content              │
+│  Organization│   (one page, scrolls)            │
+│  Access...  ●│                                  │
+│  Billing     │                                  │
+│  Notifica..  │                                  │
+│  Integra..   │                                  │
+│  Advanced    │                                  │
+│              │                                  │
+│  Search ⌘K   │                                  │
+└──────────────┴──────────────────────────────────┘
+```
+
+Left rail: 240px fixed. Top-level sections only — not leaves. Active section gets a 2px accent-color left border and a subtle background fill. Below the six sections: a search input (⌘K to focus from anywhere on the page). Below that: a small "Need help?" link to docs — sized to not compete with the nav.
+
+Right pane: leaf-page content. One page, one purpose. Scrolls if needed.
+
+**Why left rail, not top tabs:** Six items is too many for top tabs at 1280px without wrapping. Top tabs also lose you vertical real estate, which matters on leaf pages that have forms. Left rail scales cleanly to 6-10 top-levels and communicates hierarchy visually. Linear and Stripe both use this shape for settings. Vercel uses top tabs but has 4 — it works at 4, not at 6.
+
+**What happens at `/settings` (the root)?**
+
+**DO NOT** build a dashboard-of-sections landing page. Redirect to the first section: `/settings` → `/settings/organization`. Reasons:
+1. A landing page becomes a dashboard, and we agreed dashboards aren't settings (principle out-of-scope #2).
+2. Users bookmark deep leaves, not the root. A landing page adds a click for everyone who's been here before.
+3. Skeuomorphic "settings menu" pages are a 2013 pattern that survives in nav bars but doesn't earn its keep as a dedicated page.
+
+The first time a brand-new admin lands, they land on Organization — which is the "who are we" page, which IS the natural first thing to configure. Works for first-time AND nth-time users. No landing page needed.
+
+**URL structure:**
+
+```
+/settings/organization
+/settings/organization/profile      (if we later split org into multiple leaves)
+/settings/access
+/settings/access/sso
+/settings/access/sso/okta           (a specific SSO provider config)
+/settings/access/roles
+/settings/access/roles/admin        (editing a specific role)
+/settings/access/members
+/settings/billing
+/settings/billing/plan
+/settings/billing/payment-method
+/settings/notifications
+/settings/notifications/email
+/settings/notifications/slack
+/settings/integrations
+/settings/integrations/salesforce
+/settings/integrations/api-keys
+/settings/advanced
+/settings/advanced/audit-log
+/settings/advanced/data-export
+```
+
+Rules:
+- kebab-case in URLs, not camelCase or underscores.
+- No trailing slashes.
+- Deep-linkable to every leaf. (Non-negotiable per principle #3.)
+- Editing a specific entity (a specific role, a specific integration) goes one level deeper: `/settings/access/roles/:slug`. Use human-readable slugs where possible.
+
+**Breadcrumbs:**
+
+Show breadcrumbs on leaf pages with >1 level. `Settings › Access & Identity › SSO › Okta` on `/settings/access/sso/okta`. Top bar is for app-level nav, not settings internals — breadcrumbs live at the top of the right pane. Skip breadcrumbs on first-level leaves (`Settings › Organization` is noise — the left rail already tells you where you are).
+
+**Empty / loading states:**
+
+- **Empty state on a leaf:** "You haven't set up any SSO providers yet. [Add provider] Learn more →". Action button first, doc link second. Never show a blank content area.
+- **Loading state:** Skeleton of the exact frame the content will occupy (not a spinner). Most leaves are fast (<300ms) and you'll rarely see the skeleton — but when a leaf fetches third-party state (e.g., Salesforce integration status), the skeleton prevents layout shift.
+- **Permission-denied leaf:** If a user lacks permission to view a leaf (e.g., viewer trying to open Billing), render a 403-style page with explanatory text, not a silent hide. Hidden nav items is a dark pattern; explained restrictions is respectful.
+
+**Section ordering in the left rail — in order:**
+
+1. Organization
+2. Access & Identity
+3. Billing
+4. Notifications
+5. Integrations
+6. Advanced
+
+This ordering is roughly by frequency + criticality (org setup first, then access, then billing, then the more day-to-day ones). I considered alphabetical; rejected because it puts "Advanced" second and "Organization" fifth, which is the wrong importance signal.
+
+**Visual treatment — premium dev-tool aesthetic:**
+
+- Left-rail items: regular-weight label, 14px, comfortable 12px vertical padding, 12px horizontal padding. Active item: 600-weight label, accent-color left border (2px), subtle `surface-50` background.
+- Right pane top: section title (H1, 24px, semibold). One line of descriptive text underneath (14px, muted). Horizontal rule. Then the content — forms, tables, whatever.
+- No section icons in the left rail. Icons add visual noise at 6 items and fail for users who navigate by label. If you add icons later, small monochrome only, NOT colorful category pills.
+- Consistent form treatment across leaves: same input component, same labeling, same save-button placement (bottom-right of each form, sticky on long leaves).
+
+The overall feel target: you open settings and it feels like you've entered a different mode — the app chrome recedes, the settings rail establishes its own vocabulary. Linear does this well by darkening the chrome slightly when you're in settings. Stripe does it by shrinking the top-nav typography. Pick whichever matches your app's existing chrome behavior.$pf$,
+ NULL),
+
+-- Step 5 --
+('66666666-6666-6666-6666-666666780105',
+ '55555555-5555-5555-5555-555555550078',
+ 5,
+ $pf$Findability — search, quick-actions, cross-links (without cheating on hierarchy)$pf$,
+ $pf$Big one. I've been dreading this pass because my gut keeps saying "just add a big search box and problem solved." But you called this out as a trap in pass 1. Help me design findability as a layer ON TOP of a working hierarchy, not a replacement for it.
+
+Specifically: how should settings search work? What should ⌘K do inside settings vs the app-level ⌘K? When does a setting show up as a cross-link on another leaf page? And for the users who've told us in research "I just want a shortcut to the 3 things I change often" — how do we serve that without bolting on a "favorites" feature that adds surface we'll regret?$pf$,
+ $pf$You're right to have dreaded this — findability is where most settings redesigns quietly fail by over-indexing on search and under-investing in the hierarchy. Your hierarchy did the work; search and quick-actions are now cheap, optional layers on top.
+
+**Search in settings — what it is and isn't:**
+
+Search is a power-user and long-tail-setting tool. For frequently-used settings, hierarchy navigation is faster and builds muscle memory. Search is for "I know there's a retention setting somewhere, what's it called" and "I heard we have a new feature flag, where's the toggle."
+
+**Spec:**
+
+- `⌘K` when you're inside `/settings/*` opens **settings-scoped search** (not app-level search). Visual: a small modal centered on the right pane, NOT full-screen takeover.
+- Placeholder: "Search settings…" (not "Search" alone — ambiguous with app-level).
+- Escape closes. Up/down arrows navigate results. Enter goes to the selected result.
+- Search matches: setting label, section name, a short description phrase ("Password policy" → "how long passwords must be"), and an explicit synonym list (see below).
+- Results format: three-line item — setting label (bold), section breadcrumb (muted), one-line description. Click = navigate to that setting's leaf.
+- No more than 6 results visible at once. If >6 match, show "View all X results →" at the bottom. More than 6 results for most queries means your taxonomy has duplicate-ish entries that need cleanup, not a UI problem.
+
+**Synonym list — the unsung heroes:**
+
+Users don't know your terms. They know their terms. Maintain a mapping:
+
+```
+"SSO" ← sso, single sign-on, single-signon, saml, okta-login, google-login
+"Password policy" ← password rules, password strength, password requirements, pw policy
+"API keys" ← api tokens, access tokens, personal access token, pat, integration key
+"Audit log" ← activity log, audit trail, access log, who did what, admin log
+"Data retention" ← retention policy, how long we keep data, gdpr delete, auto-delete
+"MFA" ← 2fa, two-factor, otp, authenticator app
+"Webhook" ← webhooks, event stream, push notifications, http callback
+```
+
+This list gets added to as support tickets come in with "I searched for X and nothing came up." Treat the synonym file as a growing config, not a one-time-write. Check it quarterly for new synonyms; add them.
+
+**App-level ⌘K — relationship to settings ⌘K:**
+
+- When NOT in `/settings/*`: ⌘K is your app-level command bar (navigate to any page, run any command, jump to any record).
+- When IN `/settings/*`: ⌘K scopes to settings search.
+- App-level command bar ALSO has settings items — "Go to SSO settings," "Rotate API key" — so a user in the main app can jump directly. But once they're in settings, ⌘K narrows.
+
+This is how Linear and Raycast handle it. The principle: scope cheat-sheet to context the user is already in. Full-global search is the "don't know where I am" tool; contextual search is the "I'm here and want to move within this" tool.
+
+**Cross-links — when one leaf mentions another:**
+
+On any leaf, an "Also relevant" card at the bottom (NOT the top — top is for the primary task) lists up to 3 related settings leaves with one-line descriptions. Hand-curated, not algorithmic. Examples:
+
+- On Notifications/Slack leaf → "Also relevant: Integrations → Salesforce (for Slack-based Salesforce alerts)."
+- On Access/SSO leaf → "Also relevant: Access → Roles; Access → Members."
+- On Advanced/Audit log → "Also relevant: Advanced → Data export; Access → Roles."
+
+Rules for cross-links:
+1. Max 3 per leaf. More becomes noise.
+2. Only genuine relationships, not "settings that vaguely share a word."
+3. Cross-link is a one-line description, not a repeat of the setting itself. It's a pointer, not a duplicate.
+4. If you find yourself cross-linking the same setting from 5 other places, that setting probably needs to be top-level — reconsider the taxonomy.
+
+**Quick actions / "the 3 things I change often" — without a favorites feature:**
+
+Three options, ranked:
+
+*Option A (recommended):* Do nothing specific. The combination of (1) hierarchy they learn in a week + (2) ⌘K for occasional edge cases + (3) deep-link URLs you can bookmark yourself in your browser is enough. Users who want a "favorites" feature have working bookmark UI in the browser. Ship the browser-bookmark patterns hint in docs ("Pro tip: bookmark `/settings/access/sso` in your browser for one-click access") and move on. This avoids adding a "favorites" surface that requires persistence, per-user state, and sync.
+
+*Option B:* Command-bar "recents" — ⌘K remembers the last 5 settings leaves you navigated to and shows them before you type. Cheap to build (local storage), no persistence infrastructure needed, personalized without a settings feature. This is what I'd ship as a low-cost enhancement in v1.2.
+
+*Option C (avoid):* An in-product "Favorites" section with star icons. Adds: new UI element per leaf, server-side persistence, sync across devices, "manage your favorites" leaf that's itself a settings setting (recursive ugliness). Cost is high; benefit is serving a 10-20% power-user slice a feature that Option B serves 80% as well for 5% of the cost.
+
+Ship A for v1. Add B in v1.2 if user research at 60 days post-launch shows a recents-need. Never ship C unless you have a very specific reason (enterprise admin tool with 200 settings, which isn't us).
+
+**What search should NOT do:**
+
+- No search-first landing page. The hierarchy is the default; search is a keyboard shortcut.
+- No full-text search into every field VALUE on every leaf. That's a Ctrl-F-on-a-specific-page job, not a settings-search job.
+- No "similar to what you searched" fuzzy recommendations. You'll get wrong hits, and wrong hits on settings lead to real misconfiguration. Exact-match on label + explicit-synonym is enough.
+
+The test: if your hierarchy, search, and cross-links all work as specified, a user should find any setting in under 10 seconds. If they can't, the fix is hierarchy (re-categorize the offender, improve its label, add to synonym list) — not more search UI.$pf$,
+ NULL),
+
+-- Step 6 --
+('66666666-6666-6666-6666-666666780106',
+ '55555555-5555-5555-5555-555555550078',
+ 6,
+ $pf$Mobile treatment — 375px without falling apart$pf$,
+ $pf$Desktop is shaping up. Time to prove the IA works on phone — our buyer persona is desk-bound but about 15% of settings page visits in analytics come from mobile (on-call engineers, execs checking things in meetings, field ops).
+
+How should the left-rail layout translate to 375px? Specifically: what happens to the rail, how do breadcrumbs behave, do I keep the section-title-in-right-pane convention, and what about forms that are wide on desktop? Assume I don't want a bottom-nav (we don't have one in the rest of the app) and I don't want to hide sections behind a hamburger if I can avoid it.$pf$,
+ $pf$15% mobile is enough to treat as a real constraint — high enough that you can't let it rot, low enough that you shouldn't optimize for it at the cost of the 85% desktop case. The trick on mobile is turning the spatial hierarchy (left rail + right pane) into a temporal hierarchy (section list → leaf list → leaf content), one view at a time. That pattern works and is what iOS System Preferences, Android Settings, Linear mobile, and Stripe mobile all use.
+
+**Mobile IA pattern — three view levels:**
+
+**Level 1 — Section list (the "rail" as a full-screen list):**
+- `/settings` on mobile shows a list of the 6 sections, each with section name + one-line description + chevron.
+- Full-width tap target per row (~56px height).
+- No header image, no extra chrome — this is a vertical list.
+
+```
+┌─────────────────────────────┐
+│  ‹ Back    Settings         │
+├─────────────────────────────┤
+│  Organization          ›    │
+│  ──────────────────────────│
+│  Access & Identity     ›    │
+│  ──────────────────────────│
+│  Billing               ›    │
+│  ──────────────────────────│
+│  Notifications         ›    │
+│  ──────────────────────────│
+│  Integrations          ›    │
+│  ──────────────────────────│
+│  Advanced              ›    │
+└─────────────────────────────┘
+```
+
+**Level 2 — Leaf list (inside a section):**
+- Tap "Access & Identity" → full-screen list of leaves within that section.
+- Header shows section name + back chevron to level 1.
+- Same full-width row pattern.
+
+**Level 3 — Leaf content (the actual form / table / toggle):**
+- Tap "SSO" → full-screen leaf page.
+- Header: back chevron + "SSO" title.
+- Content scrolls.
+
+Breadcrumbs are invisible on mobile — the back chevron is your breadcrumb. Don't cram "Settings › Access › SSO" into a 375px header; it truncates ugly and wastes vertical.
+
+**URLs stay the same across desktop and mobile:**
+
+`/settings/access/sso` on mobile shows Level 3 directly, with a breadcrumb-state-in-the-back-stack (Settings ← Access ← SSO). Deep-links from a support ticket still work — mobile user clicks the URL, lands on Level 3, taps back twice to navigate elsewhere. This is what users expect.
+
+**Deep-link landing behavior — the subtle thing:**
+
+When a user deep-links to Level 3 on mobile, the back stack should synthesize: back = Level 2 (leaf list), back-again = Level 1 (section list), back-again = out of settings. Do NOT send them to the referring page (the app page) on the first back — that breaks the "I'm in a section" mental model. Library: if you're using React Router or Next's App Router, explicitly set the back stack or use `history.pushState` to construct it on deep-link load.
+
+**What happens to forms on mobile:**
+
+Wide-on-desktop forms (two-column, side-by-side inputs) collapse to single-column. Every label sits above its input, not beside it. Tap targets: minimum 44×44px per platform guidelines. Save button is full-width and sticky at the bottom of the viewport — NOT floating mid-screen, NOT at the end of the form (invisible until scrolled). Sticky save is the one place mobile breaks from desktop cleanly.
+
+**Tables on mobile — the usually-ugly case:**
+
+Your members table (Access & Identity → Members) will have 4-6 columns on desktop — name, email, role, last active, actions. On mobile you have two choices:
+
+*Option A — List cards:* Each member becomes a card with name (bold top line), email (muted second line), role (right-aligned pill), and a trailing three-dot menu for actions. No horizontal scroll, no truncation. Works for up to a few hundred members — pagination kicks in then.
+
+*Option B — Horizontal scroll table:* Keep the desktop table shape, allow horizontal scroll. I dislike this. It feels lazy, it breaks finger-friendliness, it truncates the primary column (name) as you scroll. Only use Option B if the user's job requires seeing multiple columns simultaneously — which is rare in settings.
+
+Ship Option A. Document the rule: tabular data on mobile becomes cards, not scrollable tables.
+
+**Search on mobile — the biggest translation question:**
+
+⌘K doesn't exist on mobile. Your two options:
+
+*Option A:* A persistent search input at the top of Level 1 (the section list). Tap to focus, virtual keyboard opens, same search logic as desktop ⌘K. When user submits, show results as a full-screen list. Take the user to the result's Level 3 page on tap.
+
+*Option B:* A search icon in the top-right of every level. Taps opens a full-screen search sheet.
+
+I'd go with Option A. A persistent search bar at Level 1 is discoverable (new users see it immediately) and the Level 1 screen has the real estate. Option B's icon-in-corner is easily missed and the extra tap has no purpose.
+
+**Things NOT to do on mobile:**
+
+- **No hamburger menu.** You don't have one in the rest of the app. Introducing one just for settings creates inconsistency and hides the sections behind an icon.
+- **No bottom-nav tabs for the 6 sections.** We said no bottom nav; 6 items wouldn't fit anyway; it'd compete with any bottom-nav you add later.
+- **No desktop-layout-squeezed-to-375.** Don't try to preserve the two-column feel — the left rail as a thin 80px strip looks bad and the content pane is too narrow to be useful. Commit to the three-view pattern and own it.
+- **No modal-in-modal for "edit role" on a leaf.** If tapping a row on Level 3 opens a "detail" view (e.g., editing a role), make it Level 4 (another full-screen), not a modal over the current page. Modal-on-modal on mobile is disorienting.
+
+**Accessibility on mobile — the cheap wins:**
+
+- Back chevron: aria-label "Back to [section name]".
+- Section-list rows: role="link" (they navigate), focus-visible states, not role="button".
+- Tap targets: minimum 44×44px — this is a real rule, not a suggestion, especially for destructive actions.
+- Color contrast: test the dark-mode variant at 375px — muted text tends to fail WCAG AA when the right-pane-background shifts on mobile.
+
+**Test on real hardware, not the responsive viewer:**
+
+The responsive viewer in Chrome lies about touch targets, text scaling, and especially the iOS keyboard-pushing-content-up behavior (which on a leaf with a sticky save button can cover the button and strand the user). Test on at least one real iOS device and one real Android device before shipping. Twenty minutes of real-device testing catches what an hour of responsive-viewer testing misses.$pf$,
+ NULL),
+
+-- Step 7 --
+('66666666-6666-6666-6666-666666780107',
+ '55555555-5555-5555-5555-555555550078',
+ 7,
+ $pf$Migration plan — URL redirects, "moved to X" hints, team comms$pf$,
+ $pf$Eng is starting to build. They're asking about migration: the old accordion has existing deep-link hashes like `#audit-log-settings` that got bookmarked by customers and referenced in support-ticket responses. What's the cutover plan? When do we redirect, what hints do we surface for users, how do we communicate with customers, and what rollback do we have if something catastrophic ships?$pf$,
+ $pf$Migration is the most-neglected part of an IA refactor. You're right to put it ahead of the build. Here's the plan.
+
+**The redirect table — build this first, ship it at cutover:**
+
+Every old URL or hash maps to a new URL, 1:1. Examples:
+
+```
+Old                                    New
+/settings#audit-log-settings       →   /settings/advanced/audit-log
+/settings#sso                      →   /settings/access/sso
+/settings#api-keys                 →   /settings/integrations/api-keys
+/settings#billing                  →   /settings/billing/plan
+/settings#notifications            →   /settings/notifications/email
+/settings#data-retention           →   /settings/advanced/data-retention
+/settings#roles                    →   /settings/access/roles
+/settings#webhooks                 →   /settings/notifications/webhooks
+/settings#slack                    →   /settings/notifications/slack
+/settings#team                     →   /settings/access/members
+```
+
+Rules:
+1. Server-side 301s where possible (for any path-based old URL).
+2. For hash-based old URLs (`#audit-log-settings` etc.) — client-side redirect on `/settings` load, checking `window.location.hash` and pushing the new URL. Don't rely on server redirects for hashes; servers can't see hashes.
+3. Redirect preserves query-string and original referrer.
+4. Redirects are permanent — 301 status — so browsers cache them. Don't 302 ("temporary") unless you plan to reverse.
+5. **Keep redirects alive indefinitely.** Budget zero for "deprecating" redirects. They cost nothing at request-time (a single hash-map lookup) and they save ongoing support tickets forever. The day you delete them, someone clicks a link in a 3-year-old Notion doc and pages the support team.
+
+Build the redirect table as a flat config file in the repo (`settings-redirects.json`), not as scattered redirects in middleware. Having it in one place means anyone can audit the full old→new mapping, and future settings-url changes add a row rather than a new file.
+
+**"Moved to X" hints on the new leaves:**
+
+On the first 30 days after cutover, each new leaf displays a small dismissable banner: "This setting moved from the old admin panel. You can now deep-link with this URL." Purposes: (a) confirms to returning users they're in the right place, (b) normalizes the new URL pattern, (c) signals "we intentionally moved it, not a bug."
+
+After 30 days (configurable via a feature flag), the banners auto-disappear. They're scaffolding for the transition, not permanent UI.
+
+One more hint: on the old accordion URL (`/settings` without a new leaf path), if the redirect JS detects an old hash and redirects, show a one-time toast: "We redesigned Settings — you're now at the new SSO page." One time per user via local storage. Not every visit, not every session — one time.
+
+**Customer comms — 3 channels, specific timing:**
+
+1. **In-product announcement banner** — 7 days before cutover, on the old settings page: "Settings is getting a redesign next week. Your bookmarks and links will automatically redirect to the new locations. [Preview →]." Clicking Preview shows a side-by-side of old vs. new for the top 10 settings.
+
+2. **Email to admins** — 3 days before cutover, 1 day after cutover. Day-3 email is "here's what's changing and why"; day-1-after email is "we rolled it out, here's the new URLs for the things you bookmarked." Keep it short (5 sentences each). Don't explain the IA theory. Do include the 10 most-bookmarked URL mappings in the day-1-after email.
+
+3. **Docs + support-ticket templates** — update the day of cutover. Every internal doc referencing `/settings#...` URLs gets updated to `/settings/section/leaf`. Canned support responses that direct a customer to "go to settings → audit log" get updated to include the new URL. This is the least-glamorous work and the highest-leverage.
+
+**Enterprise-customer white-glove comms — the failure mode:**
+
+For customers on enterprise contracts with designated CSMs, the CSM calls / emails each contact 7 days before cutover. Not a mass email — a real message from their CSM. Enterprise customers have internal runbooks that reference your settings URLs, and they need lead time to update. Skipping this is how a quiet settings redesign turns into a loud enterprise escalation.
+
+**Rollback plan — don't ship without this:**
+
+Feature-flag the new settings page per-org. Release sequence:
+1. Day 0: ship to internal users only (dogfood).
+2. Day 7: ship to 5% of customer orgs, random sample.
+3. Day 14: ship to 25% of customer orgs.
+4. Day 21: ship to 100%.
+
+At each stage: support ticket rate for settings-tagged tickets is tracked. If rate increases >50% over the 5% rollout baseline, PAUSE rollout and investigate — don't roll forward to 25%.
+
+Hard rollback mechanism: flip the flag, all orgs return to old settings. Redirect table stays live during rollback (the new URLs 404-by-flag, old accordion works as before). This means rollback takes one flag flip (~30 seconds) and doesn't require code revert.
+
+Post-100%: leave the old-settings code path in the repo for 90 days (marked with a `TODO_REMOVE_AFTER_YYYY-MM-DD` comment). After 90 days of stable metrics, remove the old code path, keep the redirects.
+
+**The tell that migration went well vs. badly:**
+
+Good: support-ticket volume for "where is X" drops materially within 14 days of cutover. A brief 2-3 day spike in "I can't find Y" is normal — anything beyond 7 days is a real problem.
+
+Bad: support-ticket volume stays flat or goes up. Either the new taxonomy is wrong (unlikely if you did pass 2-3 research properly) OR the migration communication was poor (likely — comms is what most teams underinvest in).
+
+If tickets stay flat, do NOT immediately start re-designing the taxonomy. Do an audit: are the tickets about "can't find" (IA problem) or "don't know it moved" (comms problem)? Tag the tickets that come in for the first 14 days with which type they are. The ratio tells you what to fix.$pf$,
+ NULL),
+
+-- Step 8 --
+('66666666-6666-6666-6666-666666780108',
+ '55555555-5555-5555-5555-555555550078',
+ 8,
+ $pf$Measurement — 30-day watchlist, what's good, what's a regression$pf$,
+ $pf$Last pass. Before we ship, I want to define what "it worked" means, with specific metrics and thresholds. Not vibes — real thresholds where if we miss them I go back to pass 2 and fix the taxonomy. What should I track? What's the success baseline? What's a known-good signal vs a known-bad? And how long is the watch window before we declare the refactor done and move on?$pf$,
+ $pf$Measuring an IA refactor is a trap if you use the wrong metrics. The right framing: you're measuring findability (can users get to the setting they want) and durability (does the IA hold up as you add more settings). You're NOT measuring engagement (more time on settings is not the goal — in fact, less is often better).
+
+**The 7-metric watchlist — track these for 30 days post-100% rollout:**
+
+**1. Support-ticket rate for findability-tagged tickets (primary metric).**
+- Baseline: avg weekly count of tickets containing phrases like "can't find," "where is," "looking for" + a settings term, over the 8 weeks before cutover.
+- Target: 50% reduction by day 30. Settings findability is your stated #1 CX inbound — if this doesn't drop materially, the refactor didn't work.
+- Threshold for action: <30% reduction by day 14 = taxonomy problem, go back to pass 2-3 analysis.
+
+**2. Time to first edit after entering settings (efficiency metric).**
+- Baseline: from click-into-settings → first form-save or toggle-change. Median, P75, P90.
+- Target: 40% drop in median time. Before: users landed on the 4800px accordion and scrolled. After: they land on Organization (which for most is a no-op) or deep-link.
+- Threshold for action: any drift UP in median time from current baseline means we broke something. Investigate.
+
+**3. Direct navigation vs. search usage (hierarchy strength).**
+- Track: % of settings leaf visits that come from (a) direct URL, (b) left-rail click, (c) ⌘K search, (d) cross-link.
+- Target: 60%+ from left-rail click (hierarchy is working). 5-15% from search. If search exceeds 25% of navigation, your hierarchy has a clarity problem — users are defaulting to search because they can't find things. That's a red flag even though search "works."
+
+**4. Mobile settings session rate (mobile IA validation).**
+- Baseline: mobile sessions are 15% of settings traffic pre-refactor.
+- Target: rate stays stable or increases. A drop in mobile sessions post-refactor means the mobile treatment broke something — maybe users hit the new mobile UI, got confused, and stopped using it.
+- Threshold for action: <10% mobile settings sessions at day 14 = mobile IA needs an audit.
+
+**5. "Where is X" support themes (qualitative signal).**
+- Tag every settings-findability ticket with WHICH setting the user was looking for.
+- Target: no single setting appears in >8% of findability tickets over the 30-day window.
+- Threshold for action: any setting that DOES exceed 8% = it's probably in the wrong section. Fix: move that setting (and only that setting) based on ticket data. Don't redo the whole IA; surgical fix.
+
+**6. Bookmark-URL 404 rate (migration health).**
+- Any URL starting with `/settings/` that returns a non-200: log it. Target: <0.5% of all settings requests return non-200 in steady state. Higher = redirect table has holes.
+- Specifically watch for 404s on hashes you didn't include in the redirect table. This is how you find obscure old-URL patterns that users bookmarked.
+
+**7. Session time in settings (inverted metric — the one that surprised me).**
+- Baseline: avg session duration on old settings page.
+- **I expected this to drop; it went UP 20% in my case.**
+- Why: on old settings, users came to do one thing, did it, left. On new settings, users discover other leaves they didn't know existed — Integrations especially (most users didn't know we had a Salesforce integration until they saw it listed).
+- Treat an increase of 10-30% as a known-good discovery signal, not a regression. Treat an increase >50% as a possible "users are lost" signal.
+- This is the metric that'll trip up a junior analyst who looks at a dashboard and flags the increase. Add a note to the metric saying "expected to increase post-launch due to discovery; flag >50%."
+
+**What NOT to measure — common false metrics:**
+
+- ❌ **Settings page views.** Going up or down tells you nothing. Maybe more useful settings, maybe more problems; views alone don't distinguish.
+- ❌ **Bounce rate on settings landing page.** The landing page is `/settings/organization` which most users hit and immediately navigate from — that's the correct behavior, not a bounce.
+- ❌ **Scroll depth on leaf pages.** Settings leaves should be short. Lots of scrolling = you built a bad leaf page; scroll depth rewarding is rewarding the wrong thing.
+- ❌ **Click heatmaps alone.** Useful input but not a KPI. Heatmaps are diagnostic, not ongoing measurement.
+
+**The 30-day watchlist ritual:**
+
+- Daily (first 7 days): 10-min standup check of metric #1 (support-ticket rate) + metric #6 (404 rate). These are your "did the rollout break things" signals.
+- Weekly (weeks 2-4): full 7-metric review, 30 minutes on a Monday, with PM + eng lead + support lead.
+- Day 30: decision point. Options:
+  - *All metrics passed thresholds:* declare done. Set a quarterly review to re-check the watchlist. Move the team to the next project.
+  - *1-2 metrics missed:* surgical fix. Identify the specific setting/leaf that drove the miss, fix it, re-watch for 14 days.
+  - *3+ metrics missed:* the taxonomy itself has a problem. Go back to pass 2-3 research; don't keep patching leaves. Rare if you did research rigorously, but possible.
+
+**The durability test — what to check every quarter:**
+
+- Did any new settings get added that don't fit existing sections cleanly? (Sign of IA aging.)
+- Did any leaf accumulate >15 individual controls? (Sign of a leaf that needs to split into sub-leaves.)
+- Did the "Advanced" section grow >50% of its original size? (Sign of Advanced being used as dumping ground, violating the principle from pass 1.)
+- Did any old redirect start seeing significantly higher traffic than expected? (Sign that users never stopped using old URLs — either comms failure or those URLs exist somewhere you didn't catch.)
+
+These four questions are the early warning for IA rot. Run them quarterly; act before you need a full refactor again.
+
+**One last thing — write the post-mortem even if it went well:**
+
+30 days after launch, write a 2-page memo: what we shipped, what we measured, what surprised us (like session time going up), what we'd do differently. Share it with the broader design team and whoever runs adjacent surfaces (pricing page, user profile, etc.). The measurement discipline you built here transfers — a team working on a different IA refactor in 6 months should be able to read your memo and pattern-match to it without having to rebuild this whole framework from scratch.$pf$,
+ NULL);
+
+
+-- =========================================================================
+-- Project 55-0079 | Ghostwriting a founder's "we're shutting down" post | Emily Zhao | Writing | 3 steps
+-- =========================================================================
+
+DELETE FROM prompt_steps WHERE prompt_id = '55555555-5555-5555-5555-555555550079';
+DELETE FROM prompts      WHERE id        = '55555555-5555-5555-5555-555555550079';
+
+INSERT INTO prompts (
+  id, title, description, content, result_content,
+  category_id, difficulty, model_used, model_recommendation,
+  tools_used, tags, status, author_id, vote_count, bookmark_count
+) VALUES (
+  '55555555-5555-5555-5555-555555550079',
+  $pf$Ghostwriting a founder's shutdown post — honest, not performative$pf$,
+  $pf$My client founded a CI observability startup (Series A, $12M raised, 38 employees, 4 years). They're winding down in 60 days — couldn't hit positive unit economics, burn unsustainable, no raise option. He asked me to ghostwrite the shutdown post. His first drafts blamed the market or thanked investors before acknowledging customers. Three passes with Claude Sonnet 4.6 to get to a version that owns what happened without performing contrition.$pf$,
+  $pf$I work as a writer-for-hire for technical founders — mostly launch posts, funding announcements, thought-leadership. Earlier this month a founder I've written for twice before (Series A, CI observability, $12M raised, 38 employees) asked me to ghostwrite the shutdown post. They announce in 14 days. I had a first draft from him that wasn't usable — it blamed "the macro environment" in the second paragraph, thanked investors before acknowledging customers, and contained the phrase "while we couldn't achieve our commercial vision, the technology we built..." which is the tell of someone protecting themselves from writing the truth.
+
+I ran three passes with Claude Sonnet 4.6: first pass to set the shape (what goes in, what doesn't, what tone), second pass to stress-test my own draft for the rationalizing-vs-owning distinction, third pass for the final tuned version + the rollout cascade (customer email timing, employee heads-up, social-share sequencing). Published on a Wednesday morning. Feedback from customers (privately, to me via the founder) was the first time in this kind of project where two customers said "this actually made me trust the product more, even though it's shutting down." Which is the bar.$pf$,
+  $pf$The published post ran 620 words — tight for the genre, which typically bloats to 1200+ from defensive padding. Three specific moves I'd not have made without the pass-2 critique: (1) cut every sentence that explained *why* unit economics didn't work (those belonged in a different doc for investors, not this post); (2) led with "We're shutting DataPilot down on [date]" as the first sentence instead of a thank-you paragraph (readers don't need to be eased into news that's in the subject line); (3) gave customers a 60-day transition window with specific data-export tooling instead of vague "we'll help you migrate."
+
+The post got picked up by two industry newsletters; 40+ employees and ex-employees shared it with their network. Two customers wrote back privately saying the shutdown comms made them want to work with the founder again at his next company. One investor — one who HAD lost money — wrote to the founder to say the post was the best wind-down comms he'd seen in 18 years of VC. That's the metric.
+
+Lesson for future shutdown ghostwrites: the founder always wants to explain. Your job is to cut 80% of the explanation and leave the 20% that is ownership + gratitude to customers + a specific transition plan. Investors get a separate memo. The market doesn't need to be explained; everyone knows.$pf$,
+  '11111111-1111-1111-1111-111111111103',
+  'intermediate',
+  'claude-sonnet-4-6',
+  'Claude 4.6 Sonnet',
+  ARRAY['Claude','Google Docs','Notion'],
+  ARRAY['ghostwriting','founder-comms','shutdown','startup','crisis-comms','writing'],
+  'approved',
+  '22222222-2222-2222-2222-222222222208',
+  0, 0
+);
+
+INSERT INTO prompt_steps (id, prompt_id, step_number, title, content, result_content, description) VALUES
+
+-- Step 1 --
+('66666666-6666-6666-6666-666666790101',
+ '55555555-5555-5555-5555-555555550079',
+ 1,
+ $pf$Draft 1 — getting the shape right, what goes in and what doesn't$pf$,
+ $pf$Ghostwriting a shutdown post for a founder I've worked with before. Context: DataPilot (CI observability for engineering teams), Series A, $12M raised in 2022 at $50M post, 38 employees across US + Portugal, 4 years in. They couldn't get CAC payback under 24 months at the scale they needed to justify the fundraise; the 2024-2025 market doesn't support raising again on the numbers they have; board voted to wind down with ~14 months of runway remaining (so they CAN return ~$3M to investors, which is a rare outcome — most shutdowns return zero).
+
+He sent me a draft. It opens with two paragraphs about the macro environment and "tough decisions in difficult markets," thanks investors in paragraph 3, mentions customers in paragraph 5, and doesn't tell you the actual shutdown date until paragraph 7. It's 1,400 words and feels like a legal filing.
+
+Help me reshape. What goes in a good shutdown post, what doesn't, what order, and what tone? Assume the audience is customers first, then employees/ex-employees, then investors, then the broader tech community. I'll write the draft after you tell me the shape.$pf$,
+ $pf$His draft is doing something every founder's first shutdown draft does: protecting himself from having to write the actual news. You're right to reshape.
+
+**The shape — 5 sections, in this order:**
+
+**1. The news (paragraph 1, under 60 words).**
+- First sentence: "We're shutting DataPilot down on [date]." Exact date, not "in the coming months." Readers need the news at the top, not after context.
+- Second sentence or two: the specific transition — when service ends, what they can do in the meantime, one concrete action they can take now.
+- Do NOT lead with a thank-you. Do NOT lead with "tough decision." Do NOT lead with an anecdote. News first.
+
+**2. What went wrong (paragraph 2-3, 150-200 words).**
+- Short, specific, ownership-framed. "We couldn't get CAC payback under 24 months at the scale our fundraise required" is a real sentence. "The macro environment made growth difficult" is a non-sentence.
+- Name the specific dynamic: we needed X growth, we got Y growth, the math didn't work. Numbers if the founder's comfortable sharing them; otherwise specific-but-not-numeric ("our sales cycle stayed well over 6 months when our model assumed 90 days").
+- Do NOT blame: the market, customers, competitors, investors, employees, or COVID. Even if any of those is partially true, blaming externally in a shutdown post reads as excuse-making.
+- Do NOT over-explain. 200 words max. The details belong in a separate investor memo, not the public post.
+- Do NOT add the sentence "but the technology we built was amazing." Everyone writes that; it reads as consolation prize; it's not what customers need from you.
+
+**3. What customers need to know (paragraph 4-5, 200 words).**
+- This is the most important section. Most founders bury it. Don't.
+- Exact dates: when service ends, when data export is available until, when support ends.
+- Specific tools: link to a data-export script or UI. If you can send them a CSV of their data, say so and give a deadline.
+- Refund / credit policy: if anyone paid in advance for service beyond the shutdown date, say how they get refunded. No "we'll work with affected customers" hand-waving.
+- A named contact: email address of a real person (probably the founder) who will respond to customer questions. Not `support@` — a person.
+- If there's a recommended alternative product, name it. Don't make customers scramble.
+
+**4. Thank-yous (paragraph 6-7, 150 words).**
+- Employees first. Name the team (size + locations). Say something specific about what you built together.
+- Customers second. Name them as a group ("the 200+ engineering teams who trusted us"); if a handful of customers want to be named, ask them and name them.
+- Investors last. Briefly. "Our investors stood by us when the numbers said otherwise" or similar — acknowledging without fawning.
+- Avoid: "special thanks to..." lists that read like award-show speeches. One paragraph of concrete gratitude beats three paragraphs of name-dropping.
+
+**5. What's next for the founder (paragraph 8, 60 words).**
+- One sentence: what the founder is doing next (taking time off, joining a new company, starting a next venture).
+- Optional: a line about what they learned, framed as future-facing, not self-flagellating.
+- Close with: "I'm at [personal email]. For DataPilot-specific questions, [named-contact@]." Two emails, two purposes.
+
+**Total: 600-750 words. His draft is 1,400. 50% comes out.**
+
+**Tone principles:**
+
+- **Own it without performing contrition.** There's a mode some founders adopt where they're so apologetic it reads as fishing for reassurance. "I failed you, I'm so sorry, I should have seen it sooner, I let everyone down" is performance, not ownership. Ownership is: "Here's what happened. Here's what it means for you. Here's what we're doing about it."
+- **No hedging language.** "In retrospect," "on some level," "perhaps we," "in some ways" — cut all of it. Direct voice.
+- **No consolation prizes.** "The technology we built lives on." "The lessons we learned are invaluable." "Our team will go on to do great things." These are things you say privately to the team; they don't belong in a customer-facing post. They read as self-soothing.
+- **No business-speak.** "Sunset." "Wind down." "Pivot." "Strategic realignment." Use plain English: "shut down," "closing," "ended." The attempt to soften the verb signals discomfort with the truth.
+- **Honor the three-audience read.** The same post is read by customers (who need logistics), employees (who need respect), and the broader tech community (who need honesty). The shape above lets one post serve all three without contortion.
+
+**What to cut from his draft — by topic:**
+
+- Cut: 95% of the macro environment paragraphs. One sentence is the max.
+- Cut: explanations of the business model that don't serve the customer. If they ask why, you can say in one sentence. They're not reading this to learn your unit economics.
+- Cut: the "silver lining" section. There isn't one for customers; don't invent it.
+- Cut: any sentence that starts with "we would be remiss if we didn't..." — you can be remiss.
+- Keep: the founder's name at the bottom, their personal email, and the date. Small but load-bearing.
+
+**One last thing — the subject line (it's an email, not just a blog post):**
+
+Subject line: "DataPilot is shutting down on [date]." Not "An update from DataPilot," not "Important news from DataPilot," not "A difficult decision." The specific news in the subject line is a respect signal — you're not making customers open the email to find out what it's about.
+
+Now write the draft. Aim for 600 words on the first pass; we'll tighten in pass 2.$pf$,
+ NULL),
+
+-- Step 2 --
+('66666666-6666-6666-6666-666666790102',
+ '55555555-5555-5555-5555-555555550079',
+ 2,
+ $pf$Critique pass — what's rationalizing vs owning$pf$,
+ $pf$OK I wrote a 680-word draft using your shape. Sending it to you for a critique pass. I want you to be tough — specifically flag any sentence that's rationalizing (protecting the founder) instead of owning. Also flag any sentence that's doing two jobs (explaining AND thanking, which usually means neither lands).
+
+Draft below:
+
+---
+
+Subject: DataPilot is shutting down on June 15, 2026.
+
+We're shutting DataPilot down on June 15, 2026. Service will continue running until that date. Between now and then, every customer can export their full data with the tooling we're linking below — no request required.
+
+Here's what happened. In 2022 we raised a Series A on the bet that engineering teams would pay $40-60K/year for CI observability, and that we could acquire them with a 6-month sales cycle. We were wrong on both numbers. The teams willing to pay our price came in at a 9-month cycle; the teams with shorter cycles wanted a $10K product. At the scale required to grow into our valuation, the math didn't work. We tried three different ICPs over 2023-2024. None got us to CAC payback under 24 months.
+
+We made the call six weeks ago in a board meeting. We still have meaningful runway, which is why we can wind down deliberately instead of abruptly — and why we can return approximately $3M to investors, which is important to us.
+
+**For customers:** Service runs normally through June 15. Your data export tooling is live today at [link] — click once, get a ZIP of your full history in 60 seconds. We've also pre-negotiated a transition deal with Honeycomb's CI-specific team; if you'd like a warm introduction, reply to this email. Any annual contract that extends past June 15 will be refunded on a pro-rated basis by June 30 — you don't need to ask. My personal email is at the bottom; I'll respond to anything service-related within 24 hours through June 15.
+
+**To the team.** Thirty-eight of you across San Francisco, New York, and Lisbon. We built a product that engineering teams loved — 73 NPS at our last measurement — and a culture I've never worked in before and will miss. Each of you gets 12 weeks of severance plus your unvested equity accelerated. I'll write every one of you a reference and take any call you want about what comes next.
+
+**To our customers.** 214 engineering teams trusted us with the nervous system of their CI pipeline. You trusted us when we were a 4-person company. I owe you. If DataPilot made any part of your engineering culture easier or any on-call rotation calmer, that's on you — you built the culture, we just gave you tooling.
+
+**To our investors.** You stood by us when the numbers said otherwise. The $3M we're returning doesn't offset what you risked. I'm grateful you took the risk.
+
+What's next for me: I'm taking six months off. No next thing lined up, and I don't want one yet. After that, probably something in developer tools again, probably smaller this time.
+
+For DataPilot-specific questions: dataops@datapilot.com, answered by me and our ops lead Megan through June 15.
+
+For anything else: david@davidkleinman.com.
+
+Thank you for four years.
+
+— David Kleinman, CEO
+
+---$pf$,
+ $pf$This is a strong draft. Tighter than the first version, news-first, respectful of the customer's time. The critique is surgical, not structural — you're 80% there.
+
+**What's working — state this so you don't overcorrect:**
+
+- Opening: excellent. News in the first sentence, practical guidance in the second. No throat-clearing.
+- "Here's what happened" paragraph: the CAC/cycle specificity is load-bearing. Most shutdown posts generalize; yours commits to numbers. Keep every one of them.
+- Customer logistics: pre-negotiated Honeycomb intro is a huge move — it's the difference between "we're closing" and "we're landing you somewhere safe." This alone will earn trust.
+- Team paragraph: the specific 12-weeks + accelerated equity + reference-for-each is concrete. No vague "we'll support our team" — you named what "support" is.
+- "What's next for me" paragraph: "no next thing lined up, and I don't want one yet" is the opposite of performance. Keep that exact phrasing.
+
+**Sentences to flag — rationalizing vs owning:**
+
+**Flag 1: "which is important to us."**
+*Context:* "...we can return approximately $3M to investors, which is important to us."
+*Problem:* "Which is important to us" adds self-soothing that the fact itself doesn't need. The $3M return speaks for itself — tacking on "which is important to us" makes it about your feelings, not about having done the right thing.
+*Fix:* delete the clause. "We can return approximately $3M to investors." Period. The act is the communication.
+
+**Flag 2: "that's on you — you built the culture, we just gave you tooling."**
+*Context:* the customer thank-you paragraph.
+*Problem:* This is doing two jobs (thanking + making a humility point) and the humility point is slightly performative — it's the kind of line that reads as humble but also deflects credit that the founder should legitimately take.
+*Fix:* one of two options. Either delete the clause entirely ("If DataPilot made any part of your engineering culture easier or any on-call rotation calmer, you built that." — cleaner); OR rewrite as "If DataPilot made any part of your engineering culture easier, we're proud of it." Don't deflect; don't over-claim. The middle ground is the honest one.
+
+**Flag 3: "We tried three different ICPs over 2023-2024. None got us to CAC payback under 24 months."**
+*Context:* paragraph 2, explaining what happened.
+*Problem:* Not rationalizing — but this reads as defensive. It's trying to prove "we tried hard" before acknowledging "we didn't get there." The reader isn't accusing you of not trying; they assume you tried.
+*Fix:* keep the fact, cut the defensiveness. "We tried three ICPs over two years and couldn't get CAC payback under 24 months." The word "different" and "None got us" are the defensive tells; removing them makes the sentence report rather than argue.
+
+**Flag 4: "We made the call six weeks ago in a board meeting."**
+*Context:* start of paragraph 3.
+*Problem:* Minor, but "in a board meeting" is doing something subtle — it shifts agency to the board, slightly distancing the founder from the decision.
+*Fix:* "I made the call six weeks ago, with the board's support." The founder decided; the board supported. That's the truth and also the more ownership-framed version.
+
+**Flag 5: The "To our investors" paragraph — the whole thing.**
+*Context:* "You stood by us when the numbers said otherwise. The $3M we're returning doesn't offset what you risked. I'm grateful you took the risk."
+*Problem:* The first sentence is fine. The second is doing too much — it's drawing explicit attention to the returning-money-back fact that you already stated earlier; it reads as fishing for acknowledgment. The third is a thank-you that's working.
+*Fix:* cut the middle sentence. "You stood by us when the numbers said otherwise. I'm grateful you took the risk." Two sentences. The $3M return was stated earlier; don't re-surface it here.
+
+**Flag 6: "which is why we can wind down deliberately instead of abruptly"**
+*Context:* paragraph 3.
+*Problem:* "instead of abruptly" is an implicit comparison to founders who shut down abruptly. It reads slightly as "we're better than them," which isn't your tone.
+*Fix:* "...which is why we can wind down deliberately." Period. The positive frame works; the implicit contrast doesn't.
+
+**Flag 7: The word "approximately" in "approximately $3M."**
+*Context:* paragraph 3.
+*Problem:* "Approximately" is legal/finance hedging language. Either you can say the number or you can't. If the number is $3M, say $3M. If it's a range because of unknown wind-down costs, say "roughly $3M" (human-language hedge) or "between $2.5M and $3M" (specific range).
+*Fix:* "roughly $3M" or whatever the real number is.
+
+**One structural note — on the "To the team" paragraph:**
+
+The "12 weeks of severance + accelerated equity + reference for each" disclosure is strong, but consider whether it belongs in a PUBLIC post. Reason: some customers/press will read this and the team-specific severance becomes a compensation benchmark discussed in future hiring conversations. Two alternatives:
+
+(a) Keep it public — signals that you treated the team well, which is part of your reputation as a founder going into your next venture. Worth it in your case IF the 12 weeks is above industry norm for Series A shutdowns (it is).
+(b) Move the specifics to an internal-only all-hands email; keep the public post at "Each of you is getting severance, benefits continuation, and my personal reference."
+
+I'd lean toward (a) — the public disclosure is a positive signal and the concrete numbers prove you walked the talk. But confirm with counsel; some jurisdictions have disclosure/fairness implications.
+
+**One emotional note — for you, the ghostwriter, not the post:**
+
+The draft is working because it's restrained. You've resisted the temptation to put a "silver lining" paragraph in. Don't add one. Don't let the founder add one on his read-through. The post is honest precisely because it doesn't try to make the reader feel better at the end. The reader will feel respected — that's enough.
+
+Make the 6 cuts above; the rewrite should land at around 620-640 words. Ship the final in pass 3.$pf$,
+ NULL),
+
+-- Step 3 --
+('66666666-6666-6666-6666-666666790103',
+ '55555555-5555-5555-5555-555555550079',
+ 3,
+ $pf$Final post + the publish cascade (customer email, employee heads-up, social timing)$pf$,
+ $pf$Applied all 6 cuts. Final draft ready. Now I need the rollout sequence. This isn't just "publish the post" — it's a multi-channel cascade where the wrong order destroys trust. Specifically: when do employees hear first, when do customers get the email, when does the public post go up, and when do the social shares start? I don't want an employee to read about their own layoff on Twitter. I also don't want a customer to hear it from a press outlet before our email.
+
+Give me a specific timeline with hours, and the comms that go out on each channel. Assume the publish date is Wednesday June 3, and the founder wants the post public by Wednesday 9am PT.$pf$,
+ $pf$The cascade IS the comms. A perfectly-written post published in the wrong order is worse than a mediocre post published in the right order — because the ordering signals respect (or its absence). Here's the sequence.
+
+**The principle:** Concentric circles of "knowing." People closest to the company hear first, in the smallest setting, with the most context. Each expanding circle has slightly less privacy but more formalized comms.
+
+**Timeline — Wednesday June 3 publish, walking backwards:**
+
+**~2 weeks before (Wednesday May 20):**
+- **Board + lead investors.** Founder calls them individually. Not email — phone. They should have known about the winddown decision earlier (they voted on it), but the PUBLISH date and post content is new information. Give them the draft post; take feedback on timing, not content. (Content is founder's; timing may have counterparty implications.)
+- **Legal review of post.** One business day with the attorney — mostly for the team-compensation specifics and any IP/data-disposition language.
+
+**~1 week before (Thursday May 28):**
+- **Key customer pre-brief (top 10-15 by ARR or strategic relationship).** The founder emails each personally: "Before our public announcement next week, I wanted to tell you directly: we're shutting down on June 15. Full details attached. I want to make sure we have a transition plan that works for you — can we talk in the next few days?" This is NOT the public post. It's a one-paragraph heads-up with the draft attached. Why: these customers have contracts, pipelines, and renewals that depend on your product. They need more than 10 days' notice to plan.
+- **Press pre-brief (if applicable).** If you have relationships with 1-2 tech-press reporters who've written about the company, call them under embargo. "We're announcing a shutdown Wednesday 9am PT; here's the post; here are 3 customer references you can talk to. Embargo until 9am PT Wednesday." This prevents the narrative from being shaped by speculation. Only do this if the founder has actual press relationships; don't cold-email press.
+
+**Day before (Tuesday June 2):**
+- **5:00 PM PT — All-hands meeting, live, on Zoom.** 38 people. Founder presents: the decision, the date, the severance package, the reference offer, the "my door is open for the next 6 months for any of you" promise. Q&A. This is where the team hears the full plan with the ability to ask questions in real time.
+- **5:45 PM PT — Written follow-up to every employee.** Within an hour of all-hands. A letter from the founder that is the record of what was committed to: severance weeks, equity acceleration, benefits continuation timeline, reference offer, personal email. "Nothing said in the all-hands can be walked back via this letter; this letter holds." Legally and emotionally important.
+- **6:30 PM PT — Individual 15-min calls with direct reports** (for the founder, this is their leadership team; each leader cascades to their direct reports in the hours after). Any specific concerns get addressed. Team members know they can reach out overnight if they need to.
+- **Tuesday evening — DO NOT publish externally.** No social posts, no customer emails. The overnight gap is so employees can sleep on it, tell their partners/families, and feel like they weren't ambushed by the 9am announcement.
+
+**Publish day (Wednesday June 3):**
+- **6:00 AM PT — Remaining customers email.** All 200+ customers get the email. The content is the final public post, formatted as an email. Send 3 hours before the public post goes live so customers can't hear it from external channels first. SPF/DKIM everything; if you use Customer.io or similar, segment out your top-15 pre-briefed customers (they already know) and send to the rest.
+- **6:15 AM PT — Private email to ex-employees** (people who worked at DataPilot and left on good terms, past interns, anyone who has a real relationship with the company). "We're announcing at 9am PT. Wanted you to hear from me first."
+- **6:30 AM PT — Internal Slack post to employees** with the final public post + "This goes live at 9am. Please wait until 9am PT to share externally; we want our customers to hear from their account email first."
+- **9:00 AM PT — Public post goes live.** Company blog. Simultaneously: the founder's personal LinkedIn post (with a brief personal reflection — separate from the company post). Press embargo lifts; pre-briefed reporters can publish.
+- **9:15 AM PT — Founder on Twitter/X + LinkedIn.** One post on each. Brief. Links to the main post. Doesn't try to add commentary that's not in the post. Pinned on the founder's profile for 7 days.
+- **9:30 AM PT — Employees share.** They've been holding since 6:30 AM internal post. Many will share on LinkedIn with their own reflections. This is a positive signal — employees sharing freely means the comms went well.
+- **10:00 AM PT — Founder active on customer support.** For the next 4 hours, the founder personally responds to every customer reply. Support staff backstop for common questions; the founder takes anything beyond logistics.
+
+**Thursday (+1 day):**
+- **Follow-up email to top 15 customers** who got pre-briefed. "Anything I can do in the next 60 days to make the transition easier — direct intros to [alternative product], help with data migration, custom exports, anything. Write back."
+- **Internal Friday afternoon all-hands again.** Check in with the team. How's everyone holding up. What's needed. Answer anything that came up after Tuesday's meeting.
+
+**Ongoing (next 60 days to shutdown):**
+- **Weekly customer update** — short email, 4-5 sentences: what's operational, transition-help available, number of days until shutdown, email the founder if you need anything.
+- **Weekly team check-ins** — the team is wrapping up, finding new jobs, winding down projects. Keep them connected.
+- **Day 30 before shutdown, and day 7 before shutdown — additional customer reminders** with data-export instructions. Don't assume they remembered from the original post.
+
+**What the cascade prevents:**
+
+- Employee reads about their layoff on Twitter (prevented by Tuesday's all-hands + overnight gap).
+- Key customer hears from a reporter before their account manager (prevented by May 28 pre-brief).
+- Customer asks "why didn't you tell us sooner?" — you did; the pre-brief dates are documented.
+- Narrative is shaped by speculation because no one had the facts (prevented by embargoed press pre-brief).
+- Employees see their own severance package first in a legal doc, not a personal conversation (prevented by the all-hands + written follow-up within an hour).
+
+**One more thing — the silence on Day 2.**
+
+The day AFTER publication is almost as important as the publication day. The founder should post NOTHING on social media on Thursday. No "thanks for the kind messages," no retweets of supportive comments, no follow-up reflection post. Silence on Day 2 is the signal that the post wasn't a performance — it was the communication, and now the work is in customer transitions and team landings, not in continued social engagement.
+
+Publish Wednesday, work the customer replies Wednesday and Thursday, take Friday to breathe. The cascade above is 60 hours of execution; if you do it well, the next 60 days are easier for everyone who's affected.$pf$,
+ NULL);
+
+
+-- =========================================================================
 -- END OF FILE — append next project(s) below this line.
 -- Iterations working the Content queue: add 2–3 projects per iteration,
 -- appending below this comment. Do NOT rewrite existing projects.

@@ -25530,6 +25530,779 @@ You're ready. The draft is good. Hit send Thursday 5:15pm.$pf$,
  $pf$**Cringe audit 3 flags:** (1) "future showed up a little earlier than planned" edge-case — charitably warm+self-deprecating, uncharitably humblebrag; keep if culture reads fine, replace with "Excited and a little nervous" if any whiff of self-congratulation; (2) "It's been the real thing" flirts with movie-voiceover — test is say it out loud, if sounds like character in voiceover too much, if sounds like something you'd actually say keep; lean keep distinctive; (3) "Most of what I know about how to actually do this work I learned here" tiny flag — true+humble but read-before sentence-type; sharpen to "I learned how to do this work here" shorter+specific no hedge. "You didn't need me — I just had front-row seats" best line passes cold re-read. "If you know, you know" doing ton of work in 4 words. **Cuts to hit <280:** (1) drop "journalism degree and no agency experience" (age 22 does the work); (2) trim Priya paragraph combining two sentences cutting "Thank you"+"design critiques"; (3) cut "on the floor" + "got to do here" redundancy; (4) cut "Biweekly" + "after I'm gone" both implied; (5) cut throat-clearing "I also want to say: one of the strangest, best things about this place was" — specific detail does all work; (6) tighten B2B voice paragraph same meaning cleaner. **Final at 258 words inside target** — keeps all specific anchors Priya/Marcus/pod/Lafayette, cuts only connective tissue. **Send timing:** Thursday 5:15pm — past afternoon reply-frenzy before end-of-day, evening/morning check = higher reply-rate; NOT Friday morning (scrambling on final 8 hours), NOT late Thursday or after 6pm (afterthought), NOT Monday (gone by then). **Heads-up protocol (most skip this):** Thursday morning DM to Jenna+founders BEFORE all-company email — short "quiet minute to see it before broader list + longer note this weekend" — they shouldn't find out same time as rest of company + personal thank-yous to each separately after all-company = where real heartfelt thank-you lives; check PTO calendar flag individually. **Auto-reply** 2 sentences 30 days post-last-day: "no longer at [Agency], for current matters reach [handoff], else emilyzhao.writes@gmail.com" — forwards cleanly not elaborate. Send Thursday 5:15pm.$pf$);
 
 -- =========================================================================
+-- Project 0072 — cto_derek / Coding / 5-step Opus 4.6 advanced
+-- Zero-downtime Postgres 14 → 17 major version upgrade on HIPAA primary
+-- =========================================================================
+
+DELETE FROM prompt_steps WHERE prompt_id = '55555555-5555-5555-5555-555555550072';
+DELETE FROM prompts      WHERE id        = '55555555-5555-5555-5555-555555550072';
+
+INSERT INTO prompts (
+  id, title, description, content, result_content,
+  category_id, difficulty, model_used, model_recommendation,
+  tools_used, tags, status, author_id, vote_count, bookmark_count
+) VALUES (
+  '55555555-5555-5555-5555-555555550072',
+  $pf$Planning a Postgres 14 → 17 major version upgrade on our HIPAA primary — one shot, 4-hour Sunday window, zero data loss$pf$,
+  $pf$Our primary Postgres cluster has been on 14 since 2022. 14 goes out of security support November 2026 and we're a HIPAA shop; "unsupported Postgres serving PHI" is a bus we can't be on. Needed a defensible cutover plan — path selection, runbook, go/no-go gate, and a monitoring spec for the 72 hours after. Used Claude Opus 4.6 across five passes: scope/constraints, path comparison, full runbook, go/no-go gate, and post-cutover watch. Saved the output into our internal change-management doc tree; the dry-run two weeks later caught 12 issues the first pass didn't anticipate. Cutover executed cleanly on a Sunday 2am.$pf$,
+  $pf$I'm the CTO at a 45-person HIPAA-regulated health-tech company. Our primary Postgres cluster has been on 14 since we set it up in 2022. Postgres 14 hits end-of-life for security patches in November 2026. We are a HIPAA-covered entity. "Unsupported Postgres on a cluster holding PHI" is not a bus we can afford to be on, full stop.
+
+I want to jump to 17. Skipping 15 and 16 is a real decision — we buy a longer support runway (17 EOL is late 2029) and avoid the pain of running this exercise twice. I've been putting this off for 18 months because the downtime window math kept feeling scary, and because the last team member who did a major Postgres upgrade at scale left in 2024.
+
+Constraints worth naming up front:
+- Cluster is ~1.4TB, mostly transactional workload; ~60GB is the audit-log table, which has PHI access records and is append-only
+- RTO target for any planned cutover: 4 hours (business-hours impact is much higher on weekdays, so Sunday 2am cutover is the plan)
+- RPO target: zero data loss (non-negotiable; this is a HIPAA audit floor)
+- Single primary + one synchronous replica + one async read replica, all in the same region; no multi-region
+- Application tier is 18 services, most reading/writing through PgBouncer. About 6 of them have connection pooling quirks that matter for cutover
+- Change-management board requires a written runbook, a rehearsal, and a go/no-go checklist 72 hours before cutover
+
+I'm going to work this with Claude Opus 4.6 across five passes. The reasoning load is real — path selection has subtle tradeoffs, the runbook has 50+ steps, and I need go/no-go gates that won't collapse under "it's 2am, just ship it" pressure. Sonnet would produce the structure but not the judgment calls.$pf$,
+  $pf$Cutover executed successfully. Sunday 2am window, three weeks after this planning session. Final numbers:
+- Total downtime: 3h 41min against 4h budget (19-min buffer for decision-making on the verification step that ran long)
+- Zero data loss (RPO target met)
+- Zero rollback invocations (one was considered and declined during verification; see below)
+- 12 issues caught in the Saturday-before dry-run that would have caused rollback on real cutover day. Biggest save: the logical-replication path surfaced a non-deterministic ICU collation sort-order change between 14 and 17 that would have broken row ordering on one composite index used by our billing-reconciliation job. We'd have caught it eventually but it would have been an ugly Monday.
+
+Things that happened on the actual cutover night that the plan handled:
+1. PgBouncer on one of our 6 "quirky" services held a connection across the cutover window. The plan's 60-second force-disconnect fallback fired at minute 0:47 and took it out cleanly. Without that fallback we'd have been debugging a zombie connection in the middle of the cutover.
+2. A vacuum-analyze on the audit-log table ran 9 minutes longer than the rehearsal (60GB of append-only data; we'd underestimated index bloat). We had 40 minutes of monitoring-window buffer and burned 9. No big deal but a lesson for next time — always rehearse the vacuum on prod-sized data, not a sample.
+3. The "decision gate 4" moment (application smoke tests on the upgraded cluster) had one test fail on first run. It was a flaky test, not a cutover problem. The plan had an explicit "is this flaky? retry once" path so we didn't invoke rollback. Good call.
+
+What I'd tweak if I did this again: I'd spend more time in Pass 5 on the 7-day slow-query-regression spec. We caught one query that regressed 3x on 17 due to a planner change around JIT compilation threshold; took us 4 days to notice. A sharper watch-list in week one would have surfaced it day one.
+
+Claude's best move in the whole exercise was Pass 2's tradeoff framing around logical replication. I'd been defaulting to pg_upgrade (in-place, fastest downtime window) because "everybody uses it." Claude made the case for logical replication as the blue-green path with an honest counter-argument, and once I accepted the extra operational complexity, the downtime math dropped from ~3 hours of uncertainty to a tight 30-minute cutover with a fully-verified target cluster. That changed the risk profile enough to make the whole exercise defensible to the CM board.$pf$,
+  '11111111-1111-1111-1111-111111111104',
+  'advanced',
+  'claude-opus-4-6',
+  'Claude 4.6 Opus',
+  ARRAY['Claude','PostgreSQL','pg_upgrade','pglogical','PagerDuty','PgBouncer'],
+  ARRAY['postgres','database-migration','hipaa','major-version-upgrade','runbook','zero-downtime'],
+  'approved',
+  '22222222-2222-2222-2222-222222222209',
+  0, 0
+);
+
+INSERT INTO prompt_steps (id, prompt_id, step_number, title, content, result_content, description) VALUES
+
+-- Step 1 --
+('66666666-6666-6666-6666-666666720101',
+ '55555555-5555-5555-5555-555555550072',
+ 1,
+ $pf$Pass 1 — scope, constraints, and what NOT to touch in the same window$pf$,
+ $pf$Before I ask you to compare paths, I want to pin down scope. Most disasters I've seen in major-version upgrades came from scope creep — "while we're in there, let's also move the audit-log table to its own tablespace" — compounding risk in a window that's already tight. Help me build a constraints inventory and a deliberate NOT-this-window list.
+
+Specifically: what should I be measuring and writing down BEFORE picking a path, and what are the common "while-we're-in-there" items a team like mine will be tempted to pull into the same cutover that I should explicitly defer? I want this as a written artifact I can hand to the change-management board so the scope is boxed.$pf$,
+ $pf$Good instinct. Scope creep is the #1 killer of major-version cutovers, specifically because "we have the window anyway" feels like a free lunch and it isn't. Here's the constraints inventory + deferral list framework.
+
+**A. Constraints inventory — numbers to pin down before path selection**
+
+1. **Current size on disk, by table type.** Total cluster size is 1.4TB but the interesting number is "how much of that is the biggest 3 tables + indexes." That number drives rehearsal-time and pg_upgrade-vs-logical-replication decision. Run `SELECT schemaname, relname, pg_size_pretty(pg_total_relation_size(relid)) FROM pg_stat_user_tables ORDER BY pg_total_relation_size(relid) DESC LIMIT 10;` and commit the output.
+
+2. **Hot path latency budget.** Your 18 application services hit Postgres with some query pattern. What's the p99 latency today on the 5 most-called queries? If you don't have this in Datadog or similar, capture it for one week pre-cutover. You need a baseline to compare against on cutover night and again at 72 hours.
+
+3. **Connection counts, not just max_connections.** `SELECT state, count(*) FROM pg_stat_activity GROUP BY 1;` at peak load. If you're routinely at 70% of max_connections, PgBouncer pooling topology matters a lot more during cutover than if you're at 20%.
+
+4. **Replication lag baseline.** What's normal sync-lag and async-lag, p50 and p99? If sync-replica normally lags <1s, a 5s lag during cutover is a signal; if it normally lags 2s, 5s is noise. Same for async.
+
+5. **Extension inventory.** `SELECT extname, extversion FROM pg_extension;` — every extension needs a version-compatibility check against 17. `pg_stat_statements` is fine; `pg_cron` needs a version bump; `pglogical` matters specifically if you go that path. Any extension that's not available or has a breaking change in 17 forces the decision.
+
+6. **The 6 "quirky" services' connection behavior.** Pin down: do they reconnect cleanly on a connection-reset? Do they hold long-running transactions? Do they have retry logic? Write one sentence per service. This is the list that will bite you at 2am.
+
+7. **Audit-log retention and vacuum behavior.** 60GB append-only with PHI access records. Has the audit table ever been vacuumed? What's the index bloat factor? `pg_stat_user_tables.n_dead_tup` and the `pgstattuple` extension tell you. Vacuum-on-cutover estimates without this are guesses.
+
+8. **Backup/PITR state.** Last successful point-in-time recovery drill? If you can't restore from a week-old WAL archive on a staging cluster in under 2 hours, your rollback plan is theoretical. Test this BEFORE cutover night.
+
+9. **Change-management window exclusions.** Any other systems in a freeze window that weekend? Any ongoing customer migrations? Any board meetings the following Monday that would make a "we had a rough night" conversation extra painful? Write these down.
+
+10. **Decision-maker availability.** Who is authorized to call a rollback at 3:14am? Name the person, confirm they'll be awake and on-call, and make sure there's a backup named. The "nobody wants to call it" moment is real and preventable by naming the person in advance.
+
+**B. Explicitly NOT in this window — the deferral list**
+
+These are the items your team will propose bundling in. Say no in writing:
+
+1. **Tablespace moves** (including audit-log to dedicated volume). Defer. The PHI-storage-separation argument is real but 3 months after cutover on a stable 17 is the right time, not inside the same window.
+
+2. **Schema changes / migrations.** No `ALTER TABLE ADD COLUMN ... DEFAULT <non-constant>`, no index additions, no constraint changes. The only DDL in the cutover window is the version upgrade itself.
+
+3. **Extension upgrades that aren't required for 17 compatibility.** If `pg_stat_statements` works on 17 as-is, don't bump it. Change surface area = change risk.
+
+4. **PgBouncer version bump.** Separate change, separate window. If PgBouncer has a known issue with 17, fix that before cutover; otherwise leave it.
+
+5. **Application-tier deploys.** The 18 services do NOT deploy the Friday, Saturday, or Sunday of cutover weekend. "We want to ship the new feature while we have the window" is the sentence that causes 3am incidents.
+
+6. **SSL cert rotation, replication topology changes, tuning-parameter overhauls.** Anything that "might as well" happens is deferred.
+
+7. **Read-replica promotion tests.** Good to do. Not the weekend of the upgrade. Do them week-before or week-after.
+
+**C. The "defer-list memo" format for the CM board**
+
+Draft this as a 1-page memo with three sections:
+- What this change is (one paragraph)
+- What this change is NOT (the deferral list, one sentence per item)
+- What the rollback criteria are (we'll build in Pass 3)
+
+Getting the "what this change is NOT" list in writing is the single highest-leverage thing you can do before path selection. Scope discipline is easier to enforce when you've already said no in writing.
+
+**One thing I'd push back on in your framing:** you said "what should I be measuring BEFORE picking a path." You should be measuring the constraints inventory (A). The deferral list (B) isn't measurement — it's a pre-commitment. Both are needed, but don't conflate them. The measurement tells you what's possible; the deferral pre-commitment tells you what you're willing to resist.
+
+Ready for Pass 2 — path comparison.$pf$,
+ $pf$Scope-creep is the #1 cutover killer — "while we're in there" feels free and isn't. **(A) Constraints inventory to pin down before path selection:** (1) current size on disk by top-10 tables (drives rehearsal-time + path choice); (2) hot-path p99 latency baseline on 5 most-called queries (one week pre-cutover for comparison on night + 72h); (3) connection counts at peak via pg_stat_activity (not just max_connections — PgBouncer topology matters more at 70% utilization); (4) replication-lag baseline sync+async p50/p99 (cutover anomalies are relative to baseline); (5) extension inventory with versions — every extension needs 17 compat check, pg_cron/pglogical often force path decisions; (6) 6 quirky services' connection behavior one-sentence each — reconnect cleanly? hold long transactions? retry logic? this is the 2am bite list; (7) audit-log 60GB vacuum/bloat state via pgstattuple — vacuum-on-cutover estimates without this are guesses; (8) backup/PITR state — last drill, <2h staging restore test, else rollback is theoretical; (9) weekend exclusions other freezes/migrations/Monday-board; (10) named rollback decision-maker + backup, on-call awake. **(B) Explicit NOT-in-this-window deferral list:** tablespace moves / schema changes DDL / non-required extension bumps / PgBouncer version bump / application-tier deploys Fri-Sun / SSL cert rotation / topology changes / tuning overhauls / replica-promotion tests — all "while-we're-in-there" items deferred in writing. **(C) CM-board 1-page memo structure:** what-this-is / what-this-is-NOT (deferral list 1-sentence-each) / rollback criteria (Pass 3). Pre-commitment beats ad-hoc resistance at 3am. Pushback: constraints inventory is measurement, deferral list is pre-commitment — don't conflate. Both needed.$pf$),
+
+-- Step 2 --
+('66666666-6666-6666-6666-666666720102',
+ '55555555-5555-5555-5555-555555550072',
+ 2,
+ $pf$Pass 2 — path comparison: pg_upgrade vs logical replication vs blue-green$pf$,
+ $pf$I've got the constraints inventory from Pass 1 filled in. Top-3 tables by size are the audit_log (61GB), patient_encounters (287GB), and claims (184GB). Replication lag baseline is sync <400ms / async <1.5s p99. Extension list: pg_stat_statements, pgcrypto, pg_trgm, uuid-ossp — all standard, all 17-compatible. PITR drill completed Monday, 94-minute restore time. All 6 quirky services have reconnect logic but 2 of them have known issues with mid-transaction disconnect.
+
+Given those numbers, compare pg_upgrade (in-place) vs logical replication (blue-green) vs a pg_dump-and-restore approach. I want an honest tradeoff table and your recommendation. Counter-argue yourself at least once — what am I likely to get wrong about whichever path you recommend?$pf$,
+ $pf$Good, your numbers make this decision tractable. Three real paths, with honest tradeoffs:
+
+**Path A — pg_upgrade (in-place, binary-compatible)**
+
+*How it works:* Stop the cluster. Run `pg_upgrade --link` which hardlinks the 14 data directory into a 17 data directory, rewrites system catalogs. Restart on 17. Run ANALYZE across all tables to rebuild statistics. Done.
+
+*Downtime:* 45-90 minutes typical for a 1.4TB cluster on decent storage, assuming `--link` mode. Without link mode (copy mode), add 30-60% time.
+
+*Pros:*
+- Simplest operational story. No second cluster. Minimal moving parts.
+- No replication lag to manage during cutover.
+- The path your team is most likely to have rehearsed somewhere before.
+
+*Cons:*
+- **The analyze-stats window is a real latency risk.** Until ANALYZE completes, the 17 query planner is flying blind. Your 287GB patient_encounters table will take 15-40 minutes to analyze. During that window, queries may pick terrible plans. I've seen production clusters with 30-minute analyze windows where p99 latency 10x'd until statistics caught up.
+- **Rollback is painful.** Once pg_upgrade has rewritten catalogs, you can't just "go back to 14." You roll back by restoring from backup, which is a 94-minute PITR restore in your case + WAL replay of any transactions after backup. If you discover a problem 2 hours into 17, your rollback window has cost you 2-3 hours.
+- **No parallel validation.** You can't smoke-test 17 against real traffic before committing.
+
+**Path B — Logical replication (blue-green cluster)**
+
+*How it works:* Stand up a 17 cluster. Use logical replication (built-in since 10; pglogical if you want more control) to stream all writes from 14 to 17 continuously. Let it catch up. When lag is ≈0 and you've validated the 17 cluster, cut PgBouncer over to the 17 cluster in a single config change. Old 14 cluster becomes rollback target for a week.
+
+*Downtime:* 10-30 minutes for the actual cutover (the time to drain in-flight writes on 14, confirm lag is 0, flip PgBouncer, verify). The long logical-replication catch-up happens DAYS before cutover with zero user impact.
+
+*Pros:*
+- **Tightest downtime window.** The 4-hour budget becomes comfortable, not tight.
+- **You get to validate 17 against real traffic for days before cutover.** Any planner regression, any extension incompatibility, any subtle behavior change — you see it with production data replay before you commit.
+- **Rollback is a PgBouncer config flip back to 14.** Instant. If you discover a problem at 24h, you still have the 14 cluster warm and catching up via reverse replication. True blue-green.
+- **Lets you handle tricky collation issues deliberately.** ICU collation default changed between 14 and 17 — logical replication forces you to see sort-order diffs explicitly rather than find them in production.
+
+*Cons:*
+- **Much more operational complexity.** You run two clusters for 1-2 weeks. Storage cost doubles. Monitoring is 2x.
+- **Logical replication has limitations:** DDL is not replicated, large objects are not replicated, sequences need manual sync at cutover, some extension state doesn't replicate. You need to know your schema well enough to know what needs manual handling.
+- **Sequence cutover is the most error-prone moment.** If you don't bump sequences on 17 to current-max + safety-buffer, you'll hit primary-key collisions on first write. This is a known gotcha.
+- **The 2 "quirky" services with mid-transaction disconnect issues will trigger during cutover.** You need an explicit plan to drain those services before flipping.
+
+**Path C — pg_dump + pg_restore**
+
+*How it works:* Dump 14 cluster to file, restore to 17 cluster, cut over.
+
+*Downtime:* Your cluster size at 1.4TB with a 287GB single table makes this path unusable. You'd be looking at 6-12 hours of dump+restore time minimum. Disqualified.
+
+*Exception:* pg_dump+restore is viable for clusters <200GB or where you want to deliberately reorganize (e.g., change collation defaults, drop dead tables during dump). Not your situation.
+
+**Tradeoff table:**
+
+| Criterion | pg_upgrade | Logical replication | pg_dump/restore |
+|---|---|---|---|
+| Downtime | 45-90 min | 10-30 min | 6-12 hr |
+| Rollback speed | 94+ min (PITR) | Instant (flip) | 94+ min (PITR) |
+| Pre-cutover validation | None | Full, against real traffic | Partial |
+| Operational complexity | Low | High | Medium |
+| Collation/sort changes | Surprise you on 17 | Surfaced in advance | Visible on restore |
+| Sequence handling | Automatic | Manual + error-prone | Manual |
+| Rehearsal cost | Low | High but high-value | Low |
+
+**Recommendation: Path B — logical replication with blue-green cutover.**
+
+*Why:* Your HIPAA posture makes rollback speed the dominant criterion. If you land on 17 at 3am and discover a planner regression at 4am, you cannot afford a 94-minute PITR restore under a 4-hour RTO. You need instant rollback. Only Path B gives you that. The extra operational complexity is a 1-2 week tax for a fundamental risk-profile improvement.
+
+*The counter-argument to my own recommendation:* You'll probably under-estimate the sequence cutover and the DDL-not-replicated problem. Teams routinely discover at cutover-minute-15 that one of their services issued DDL during the pre-cutover week — a column added by a migration — that didn't replicate. The target cluster is missing that column, writes fail, incident starts. The mitigation is a 72-hour freeze on DDL to the source cluster before cutover AND a pre-cutover verification script that diffs schemas between the 14 and 17 clusters and blocks go-live if they don't match. If you skip either, logical replication's advantages evaporate.
+
+Also: I'd push back on one thing in your framing. You said "honest tradeoff table." Most of the cost of Path B is operational ops work BEFORE cutover night — standing up the cluster, running replication, building the schema-diff script, rehearsing the flip. It is NOT a cheaper night; it's a much cheaper night bought with two weeks of expensive day work. If your team has capacity for that prep work, take the path. If they don't, pg_upgrade is the honest choice and you manage the rollback risk differently (tighter backup cadence, warm standby staged).
+
+Ready for Pass 3 — full runbook.$pf$,
+ $pf$Three viable paths, honest tradeoff: **pg_upgrade** (45-90min downtime, simplest, but ANALYZE-window latency risk on 287GB patient_encounters + 94-min PITR-only rollback); **logical replication blue-green** (10-30min cutover, days of pre-validation against real traffic, rollback = PgBouncer flip, but 2x storage + DDL-not-replicated + sequence-cutover + 2 quirky services need explicit drain); **pg_dump/restore** disqualified at 1.4TB (6-12h). **Recommendation: Path B logical replication.** HIPAA posture makes rollback-speed dominant — can't afford 94-min PITR if 4am-regression under 4h RTO. Only B gives instant rollback. Extra ops complexity is 1-2 week tax for fundamental risk-profile improvement. **Tradeoff table dimensions:** downtime / rollback speed / pre-cutover validation / operational complexity / collation-sort-change handling / sequence handling / rehearsal cost. **Self-counter-argument:** you'll under-estimate sequence cutover + DDL-not-replicated problem — a column added via migration during pre-cutover week that didn't replicate = target missing column = writes fail at minute-15. Mitigation: 72h DDL freeze on source + schema-diff verification script blocking go-live if 14/17 schemas don't match. Skip either and B's advantages evaporate. **Pushback on framing:** Path B cost is operational-ops BEFORE cutover night — cluster stand-up, replication setup, schema-diff script, rehearsal — NOT cheaper night, much-cheaper night bought with 2 weeks expensive day work. If team has capacity, take it; if not, pg_upgrade is honest choice with tighter backup cadence + warm standby staged.$pf$),
+
+-- Step 3 --
+('66666666-6666-6666-6666-666666720103',
+ '55555555-5555-5555-5555-555555550072',
+ 3,
+ $pf$Pass 3 — full cutover runbook with verification checkpoints and rollback triggers$pf$,
+ $pf$We're going with Path B — logical replication blue-green. Draft the full runbook: pre-cutover preparation, the Sunday 2am cutover sequence minute-by-minute, verification checkpoints (go/no-go between phases), and explicit rollback triggers. I want this detailed enough that anyone on my team could execute it — not just me.
+
+Specifically call out: what gets verified at each checkpoint, what the explicit "abort and rollback" trigger is at each step (not "if something feels wrong"), and what the recovery procedure is from each failure mode. I've seen runbooks that are great until step 9 fails and they just say "investigate." That's not a runbook, that's a wish.$pf$,
+ $pf$Agreed — "investigate" is not a runbook instruction, it's a shrug. Here's the full runbook with explicit abort triggers and recovery paths.
+
+**PHASE 0 — T-14 days: prep (done BEFORE cutover weekend)**
+
+0.1. Provision 17 cluster with same instance class, same storage size + 20% headroom, same network topology.
+0.2. Install + verify all 4 extensions on 17 cluster.
+0.3. Configure logical replication slot + publication on 14 primary. Configure subscription on 17.
+0.4. Let initial sync complete (will take 18-36 hours for 1.4TB). Monitor `pg_stat_subscription` until all tables are in `r` (ready/streaming) state.
+0.5. Build schema-diff script — runs `pg_dump --schema-only` on both, diffs, exits non-zero on mismatch. Schedule it to run every 30 minutes from T-72h through cutover.
+0.6. Freeze all DDL on 14 from T-72h. Post in #eng-changes. PR-based migration pipeline disabled.
+0.7. Build sequence-cutover script: reads all sequences on 14 via `pg_sequences`, dumps current values, writes matching SETVAL statements for 17 with +10000 safety buffer.
+0.8. Verify PITR on staging cluster completes in <2h.
+0.9. On-call rotation confirmed: primary DRI (me), backup DRI (VPE), DBA-on-call (external vendor), product-on-call (head of product — for customer comms).
+
+**PHASE 1 — Saturday dry-run (T-24h)**
+
+1.1. In staging environment only, execute the full cutover sequence below against the staging 14-replica and a fresh staging 17 cluster. Time it.
+1.2. Any step that takes >1.5x the estimate OR produces an unexpected output: document, fix, re-rehearse. Do NOT proceed to production cutover without a clean dry-run.
+1.3. Abort trigger for the real cutover: if dry-run doesn't complete cleanly by Saturday 6pm, postpone cutover to next weekend. No heroics.
+
+**PHASE 2 — Cutover night, minute-by-minute**
+
+**T-30min (1:30am): preflight**
+- Verify: replication lag <1s. If >5s, abort.
+- Verify: schema-diff script returns clean. If dirty, abort — DDL leaked past freeze.
+- Verify: 17 cluster health (CPU <20%, disk <40%, no recent errors in log). If any yellow, stop and investigate before touching prod.
+- Verify: all 9 runbook participants are on the conference bridge. If <7, delay 15 min; if <5 at 1:45am, abort.
+
+**T-0 (2:00am): drain**
+- Broadcast "cutover starting" in #eng-changes.
+- PgBouncer: pause all pools (do NOT disconnect yet — let in-flight transactions complete).
+- Wait 60 seconds. Check `pg_stat_activity` on 14 for transactions in state `active` or `idle in transaction`.
+- For any transaction idle-in-transaction >10 seconds, terminate with `pg_terminate_backend`. This is where the 2 quirky services will show up. Abort trigger: if >20 sessions remain after force-terminate, something is wrong — roll forward or abort per DRI call.
+
+**T+5 (2:05am): final lag verification + sequence cutover**
+- Confirm replication lag = 0. `SELECT * FROM pg_stat_subscription WHERE subname='upgrade_sub';` should show `last_msg_send_time ≈ last_msg_receipt_time`.
+- Run sequence-cutover script. Verify output: every sequence on 17 is at 14's max + 10000.
+- Checkpoint 1 gate: if lag ≠ 0 OR sequence script errored on ANY sequence, abort and rollback (PgBouncer pools remain paused, no traffic to 17).
+
+**T+10 (2:10am): PgBouncer flip**
+- Update PgBouncer config file: change primary host from 14-primary to 17-primary.
+- Reload PgBouncer (NOT restart — reload preserves pool state).
+- Resume pools.
+- First 30 seconds: watch error rate in Datadog. Abort trigger: >5% error rate sustained for >15 seconds = rollback.
+
+**T+15 (2:15am): smoke tests**
+- Run application-level smoke test suite (8 tests, ~3 min total). Tests hit each of the 18 services' happy path.
+- Checkpoint 2 gate: 8/8 passing = proceed. 7/8 passing = retry once to rule out flakes. <7/8 = rollback.
+- Run HIPAA audit-log write test specifically (this is the one that's easy to forget and is the one that would cause the most regulatory pain).
+
+**T+25 (2:25am): ANALYZE + query plan verification**
+- Run ANALYZE on top 10 tables by size. Parallelize where possible.
+- On sample queries (the 5 most-called from your baseline), run `EXPLAIN (ANALYZE, BUFFERS)` and compare against 14 baseline.
+- Checkpoint 3 gate: if any top-5 query shows >3x runtime regression, open rollback consideration with DRI. A 2x regression is suspicious but not auto-rollback.
+
+**T+60 (3:00am): traffic ramp**
+- Gradually allow traffic back to full throughput (if you've been rate-limiting).
+- Monitor p99 latency on hot-path queries for 30 minutes.
+- Monitor audit-log write rate (should match typical Sunday-2am baseline).
+
+**T+90 (3:30am): close the window**
+- If all green: declare cutover complete. Post in #eng-changes, #status.
+- Keep 14 cluster running in "read-only reference" mode for 7 days in case rollback is needed later.
+- On-call schedule: primary DRI monitors for 4 more hours, then hands off.
+
+**PHASE 3 — Rollback procedure (if invoked)**
+
+Rollback trigger levels:
+- **Minor (checkpoint 2 retry):** re-run the flaky smoke test. Proceed or hard-rollback based on result.
+- **Hard rollback (at any checkpoint):** PgBouncer config reverts to 14-primary, reload, resume. 14 has been idle behind replication, its WAL is current to the moment of drain — no data loss. Total rollback time: <3 min.
+- **Deep rollback (discovered >1hr post-cutover):** if data has been written to 17 and needs to come back to 14, this is where reverse logical replication earns its keep. The reverse-subscription from 17→14 was staged Saturday; activating it + catching up + flipping is a 30-60 min operation. Document the data-delta carefully; this is where HIPAA audit trail gets tested.
+
+**Abort triggers that are NOT rollback:**
+- Cutover delayed past 4am: abort (do not proceed, do not rollback either — stay on 14). Reschedule.
+- CM board cannot reach the DRI: abort. Do not proceed without named-DRI availability.
+- Any critical monitoring system down at T-30min: abort. You cannot fly blind through a cutover.
+
+**The runbook is NOT a wish list — it has explicit go/no-go at 3 gates and explicit rollback at 2 levels. The failure mode it protects against: "we're mostly green, let's proceed." Those are the ones that burn.**
+
+Ready for Pass 4 — go/no-go gate spec.$pf$,
+ $pf$**Phase 0 T-14d prep:** 17 cluster provisioned same class+20% storage headroom / extensions verified / logical replication slot+publication+subscription / initial sync 18-36h monitored via pg_stat_subscription until `r` state / schema-diff script every 30min from T-72h / DDL freeze T-72h #eng-changes + pipeline disabled / sequence-cutover script with +10000 safety buffer / staging PITR <2h verified / 9 runbook participants confirmed 4-role rotation primary-DRI + backup + DBA + product-comms. **Phase 1 Sat dry-run T-24h:** full sequence in staging, timed; any step >1.5x estimate = fix+re-rehearse; abort real cutover if dry-run not clean by Sat 6pm — reschedule, no heroics. **Phase 2 minute-by-minute:** T-30min preflight (lag<1s abort>5s / schema-diff clean / 17 health yellow=stop / 9 on bridge else delay-then-abort); T+0 drain (pause-pools-not-disconnect / 60s wait / force-terminate idle-in-transaction >10s where quirky services surface / abort if >20 sessions remain); T+5 lag=0 verify + sequence script (checkpoint 1: lag≠0 OR script error = rollback, pools still paused); T+10 PgBouncer config flip primary-host change + reload-not-restart + resume-pools / first 30s >5% errors 15s = rollback; T+15 smoke 8 tests 3min (checkpoint 2: 8/8 proceed, 7/8 retry-once flake-rule, <7 rollback) + HIPAA audit-log write test specifically (easiest to forget + biggest reg pain); T+25 ANALYZE top-10 parallel + EXPLAIN on 5 hot queries vs baseline (checkpoint 3: >3x regression opens rollback-consideration, 2x suspicious-not-auto); T+60 traffic ramp + 30min p99 watch; T+90 declare complete, 14 read-only reference 7 days, DRI watches 4 more hours. **Phase 3 rollback levels:** minor=retry-flake / hard=PgBouncer config revert + reload + resume <3min no-data-loss WAL-current-at-drain / deep (>1hr post-cutover) = pre-staged reverse-subscription 17→14 activate+catch+flip 30-60min with data-delta HIPAA-audit-trail tested. **Abort-not-rollback:** past 4am / CM-unreachable-DRI / critical monitoring down at T-30min. Runbook protects against "mostly-green-let's-proceed" — those burn.$pf$),
+
+-- Step 4 --
+('66666666-6666-6666-6666-666666720104',
+ '55555555-5555-5555-5555-555555550072',
+ 4,
+ $pf$Pass 4 — go/no-go gate spec for the change-management board$pf$,
+ $pf$Our change-management board wants a 1-page go/no-go gate spec 72 hours before cutover. It needs to be something the board can actually verify, not "DRI is confident." Draft it. Specifically I want: the list of conditions that must ALL be true for the cutover to proceed, how each is verified (what evidence, by whom), and what the default is if any condition fails. The default should be "do not proceed" — I want the burden-of-proof on green, not on red.$pf$,
+ $pf$Agreed — the board's job is to verify, not to ratify. Here's the 1-page go/no-go spec.
+
+---
+
+**Postgres 14 → 17 Cutover — Go/No-Go Gate Spec**
+
+**Purpose:** determine whether the cutover proceeds on Sunday 2am. Default: NO-GO unless every condition below is independently verified green. A condition that is yellow, stale, unverified, or "probably fine" is NO-GO.
+
+**Verification format:** each condition has an owner and an evidence artifact. Evidence must be fresh (≤48 hours old) and machine-checkable where possible. Verbal "yes we're good" does not count.
+
+---
+
+**G1. Dry-run passed cleanly in staging environment.**
+- *Owner:* Primary DRI (me)
+- *Evidence:* Grafana dashboard screenshot + timing log showing staging cutover completed within 1.5x budget on every phase.
+- *Fail state:* any phase took >1.5x budget, OR any step produced an unexpected output, OR dry-run was not completed in full. NO-GO.
+
+**G2. Schema-diff script reports clean for 72 continuous hours.**
+- *Owner:* Primary DRI
+- *Evidence:* cron job log showing 144 consecutive clean runs (every 30min × 72h). Link to log.
+- *Fail state:* any non-clean run in the 72h window indicates DDL leaked past freeze. NO-GO until root-caused and freeze re-established.
+
+**G3. Logical replication lag <1s sustained for 24h.**
+- *Owner:* DBA-on-call
+- *Evidence:* Datadog metric `pg_stat_subscription_lag_seconds` graph for past 24h. Max value ≤1s.
+- *Fail state:* any spike >1s unexplained is NO-GO. Lag spikes are the early warning for "we'll be stuck at T+5 gate."
+
+**G4. PITR drill on staging completed successfully in <2h.**
+- *Owner:* Primary DRI
+- *Evidence:* runbook output from Monday's drill with timing.
+- *Fail state:* drill not done, drill took >2h, drill failed. NO-GO. Rollback is theoretical without this.
+
+**G5. Sequence-cutover script verified end-to-end on staging.**
+- *Owner:* Primary DRI
+- *Evidence:* output log from staging run showing all sequences advanced correctly + post-flip first-write test passed with no PK collision.
+- *Fail state:* any sequence missed, any collision. NO-GO. This is the most-common real-world PG blue-green incident.
+
+**G6. Full 9-person on-call roster confirmed available.**
+- *Owner:* Primary DRI
+- *Evidence:* named list, verbal confirm from each, backup coverage if primary unreachable. Time zones accounted for.
+- *Fail state:* any role without a named, available, confirmed human. NO-GO.
+
+**G7. Named rollback decision-maker + backup confirmed.**
+- *Owner:* VPE (not the DRI — independence matters here)
+- *Evidence:* written memo naming person + backup + escalation chain.
+- *Fail state:* decision-maker not named, or is the same person as DRI. NO-GO. The DRI should not be the one deciding whether to rollback their own work at 3am.
+
+**G8. Monitoring + paging infrastructure verified green.**
+- *Owner:* Primary DRI
+- *Evidence:* synthetic page + page-receipt test completed within 48h. Datadog + PagerDuty + Slack-alerts all firing normally.
+- *Fail state:* any tool's test page not received. NO-GO. You cannot fly blind.
+
+**G9. Deferral list (from Pass 1) confirmed no scope additions.**
+- *Owner:* Primary DRI + VPE
+- *Evidence:* written confirmation that no "while-we're-in-there" items were added since original memo.
+- *Fail state:* any scope addition. NO-GO OR strip the addition back out — scope discipline is non-negotiable.
+
+**G10. Communication plan filed with customer-support + legal.**
+- *Owner:* Head of Product
+- *Evidence:* scheduled maintenance banner, customer email draft approved, legal sign-off on HIPAA disclosure language.
+- *Fail state:* any comm not filed. NO-GO. Silent downtime on a HIPAA system is a compliance hit.
+
+---
+
+**Decision:** if all 10 are green by Thursday 5pm, the CM board reviews and ratifies Thursday 6pm. Any single red = cutover moves to next weekend, no debate. Yellow with documented mitigation plan reviewed by full CM board = case-by-case, default NO-GO.
+
+**Anti-pattern the board should reject:** "We're 9/10 and the tenth is minor — let's proceed." The 10th is never minor; it's the one that bites. Either fix it or postpone.
+
+---
+
+**Meta-comments:**
+
+1. **The board's job is burden-of-proof on GREEN, not on RED.** Structuring the spec this way — where silence defaults to no-go — prevents the "we couldn't find a reason to stop, so we went" pattern that burns teams.
+
+2. **Independence of rollback-decision-maker from DRI (G7)** is the single most-undervalued item on this list. The DRI is emotionally invested in the work succeeding. A separate person deciding "we rollback now" is the structural firebreak that lets the DRI focus on execution without the bias.
+
+3. **"Yellow with mitigation plan" should be RARE.** If half your gates end up yellow-with-mitigation, you're postponing the postponement. Retrain the team that NO-GO is a normal outcome, not a failure.
+
+Ready for Pass 5 — post-cutover monitoring.$pf$,
+ $pf$**Go/No-Go spec 10 gates, default NO-GO, burden-of-proof on green not red, verbal "probably fine" doesn't count:** G1 dry-run clean within 1.5x budget every phase (DRI / Grafana+timing log); G2 schema-diff 144 consecutive clean runs over 72h (DRI / cron log link); G3 replication lag <1s sustained 24h (DBA / Datadog pg_stat_subscription_lag_seconds); G4 PITR drill <2h on staging (DRI / Monday runbook output); G5 sequence-cutover script verified end-to-end on staging + post-flip first-write no-PK-collision test (DRI); G6 9-person on-call roster confirmed available with backups + time-zones (DRI); G7 rollback decision-maker named + backup + escalation, owned by VPE NOT DRI — independence from DRI is structural firebreak (VPE / written memo); G8 monitoring+paging synthetic-page test within 48h all-green Datadog+PagerDuty+Slack (DRI); G9 deferral list zero scope additions since original memo (DRI+VPE / written confirm); G10 customer-support banner + email draft + legal HIPAA disclosure sign-off (Head of Product). **Decision:** all-10-green by Thu 5pm → CM-board ratify Thu 6pm; single-red = next weekend no debate; yellow-with-mitigation case-by-case full-board default-NO-GO. **Anti-pattern to reject:** "9/10 tenth is minor let's proceed" — the tenth bites, fix or postpone. **Meta-3:** (1) spec structure = silence-defaults-no-go prevents "couldn't-find-reason-to-stop-so-went"; (2) G7 rollback-decision-maker-independence = single most-undervalued item, DRI emotionally invested, separate person is firebreak; (3) yellow-with-mitigation should be RARE, half-yellow = postponing postponement, retrain team that NO-GO is normal not failure.$pf$),
+
+-- Step 5 --
+('66666666-6666-6666-6666-666666720105',
+ '55555555-5555-5555-5555-555555550072',
+ 5,
+ $pf$Pass 5 — post-cutover monitoring spec: 72 hours + 7 days$pf$,
+ $pf$Last piece. The cutover is over at 3am, the team is tired, and the next 7 days are when slow regressions show up that didn't fire on night-of. I want a monitoring spec covering the 72-hour critical window and the 7-day slow-burn window. What am I watching, what are the thresholds, what does "declare 17 stable" actually mean, and what's the procedure if I discover a regression on day 4 that I didn't see on night 1?$pf$,
+ $pf$Good — night-of monitoring is table stakes. Day-4 is where reputations die. Here's the two-window spec.
+
+**Window 1 — 72 hours post-cutover (3am Sunday → 3am Wednesday)**
+
+*Watch cadence:* every 4 hours automated check, every 12 hours human review.
+
+*Metrics with thresholds:*
+
+1. **p99 latency on the 5 most-called queries.** Threshold: within 1.2x of pre-cutover baseline. 1.2-2x = yellow, investigate; >2x = red, engage DBA-on-call. Common cause: missing/stale statistics on recently-vacuumed tables → re-run ANALYZE on the affected table.
+
+2. **Error rate per service.** Threshold: within 1.1x baseline. >1.5x = red. Common cause: one of the 18 services hitting a connection pool exhaustion due to PgBouncer reload quirk → restart the service's connection pool.
+
+3. **WAL generation rate.** Threshold: within 1.3x baseline. Higher = write amplification (unexpected), investigate. Much higher = a bulk job running unexpectedly.
+
+4. **Replication lag on the remaining async replica** (the one NOT involved in cutover). Threshold: <2s sustained. Spikes indicate 17 is generating WAL faster than replica can apply, which is a throughput regression signal.
+
+5. **Autovacuum activity.** Threshold: within 2x baseline work volume. 17 has different autovacuum defaults than 14 — if it's running 3x more aggressively, you'll see IO spike. Tune if sustained.
+
+6. **Connection count on PgBouncer + cluster.** Threshold: within 1.1x baseline. Drift either way is a signal.
+
+7. **HIPAA audit-log write rate.** Threshold: ≥0.95x baseline. A DROP in audit writes is an emergency — either a service isn't logging, or the table isn't writing, both are compliance-reportable. Alert at 0.90x.
+
+*72h-close criteria — declare "stable, move to Window 2 cadence" only if:*
+- All 7 metrics within threshold for the full 72h
+- Zero unplanned rollback discussions during the window
+- Zero customer-reported issues tied to DB layer
+- 14 cluster reverse-replication has been idle but reachable (confirm weekly PITR+restore test still passes)
+
+**Window 2 — 7 days post-cutover (day 4 through day 10)**
+
+*Watch cadence:* daily automated check, one mid-week human review.
+
+*What shifts in Window 2:* you're not looking for acute incidents — you're looking for slow-burn regressions. Three specific categories:
+
+1. **Plan-regression watchlist.** Build a fixed list of 30-50 queries from your slow-query log (anything >500ms in Week -1 baseline). Every day, sample a subset and run `EXPLAIN (ANALYZE, BUFFERS)` on them with representative parameters. Compare plan structure + runtime to baseline. The typical 17 regression is a planner threshold change (JIT compilation, hash-join vs nested-loop switch) that was fine at low load and catastrophic at peak. Catch it in day 4, not week 3.
+
+2. **Autovacuum bloat trajectory.** Sample table bloat via `pgstattuple` daily on your top-10 tables. If a table is bloating faster than baseline, autovacuum tuning needs adjustment. The patient_encounters table is the one to watch — 287GB and the highest-write.
+
+3. **Dead tuple rate vs autovacuum completion rate.** If dead tuples are climbing and autovacuum isn't catching up, that's a leading indicator of performance cliff 2-3 weeks out.
+
+*7d-close criteria — declare "17 is now our primary, retire 14 cluster":*
+- All Window 1 metrics stable for 7 days
+- No plan regressions on watchlist >1.5x baseline
+- Bloat trajectory normal
+- All 18 services have re-established their connection pool equilibrium
+- 14 cluster has been idle and reachable for 7 days (one last PITR test passes)
+
+*Only then: decommission 14 cluster. Keep its last backup snapshot for 90 days per HIPAA retention policy.*
+
+**What if you discover a regression on day 4 or later?**
+
+*The deep-rollback window closes when you retire 14.* Don't rush to retire. During Window 2, you still have blue-green escape hatch. Procedure if day-4 regression discovered:
+
+1. **Scope the regression.** Is it affecting one query, one service, or broader? A single-query regression is a plan-fix problem, not a cutover problem. Don't reach for rollback; reach for `pg_hint_plan` or a `SET LOCAL` hint or a statistics-target tweak.
+
+2. **Quantify impact.** How many users / requests / what SLA budget? If impact is <5% of requests and worked-around by a hint, fix forward.
+
+3. **Escalate to rollback only if:** >20% of traffic is affected, OR fix-forward isn't working within 24 hours, OR the regression is in a HIPAA-critical path (audit log, access control). At that point, deep rollback is invoked — reverse-replication catches 14 up to current, PgBouncer flip back. The data delta gets an explicit compliance write-up.
+
+4. **Post-incident requirement:** whatever path you take (fix-forward or rollback), retro within 5 days. The retro feeds into the "what would Pass 5 do differently next time" wisdom capture.
+
+**The meta-point:** night-of monitoring is about catching obvious failures. Week-of monitoring is about catching non-obvious ones. Teams that skip the 7-day window are the teams whose databases look fine until someone complains on day 11 about the dashboard that's been 3x slower since cutover. Don't be that team.
+
+You're done. Ship the plan. Good luck Sunday.$pf$,
+ $pf$**Window 1 72h post-cutover (Sun 3am → Wed 3am) every-4h auto + every-12h human:** 7 metrics with thresholds — p99 latency on top-5 queries (1.2x baseline yellow, 2x red, fix = ANALYZE); error rate per service (1.1x baseline, 1.5x red, fix = pool restart); WAL generation rate (1.3x baseline investigate); async-replica lag <2s (throughput regression signal); autovacuum activity (2x work-volume, tune if sustained — 17 defaults differ from 14); connection count (1.1x drift either way); **HIPAA audit-log write rate ≥0.95x baseline — DROP = emergency reportable, alert at 0.90x**. 72h-close criteria: 7 metrics within threshold full 72h + zero rollback discussions + zero customer-reports + 14 cluster reverse-replication idle+reachable+weekly-PITR-test. **Window 2 day 4-10** daily auto + mid-week human — slow-burn not acute. 3 categories: (1) plan-regression watchlist — fixed 30-50 queries from slow-query log Week-1 baseline, daily EXPLAIN sample, catch JIT/hash-vs-nested-loop threshold changes in day 4 not week 3; (2) autovacuum bloat trajectory pgstattuple daily on top-10, patient_encounters 287GB highest-write is watch; (3) dead-tuple-vs-autovacuum-completion rate = leading indicator of 2-3-week performance cliff. 7d-close: retire 14 only after all metrics stable + no >1.5x plan regressions + normal bloat + 18 services pool equilibrium + 14 idle-reachable-7d + final PITR. Keep 14 snapshot 90 days HIPAA retention. **Day-4+ regression procedure:** scope (one query vs one service vs broad) → quantify (<5% traffic + hint fixes = forward, not rollback) → escalate rollback only if >20% traffic OR 24h fix-forward fails OR HIPAA-critical-path — deep rollback via reverse-replication catchup + PgBouncer flip, data-delta compliance write-up; post-retro within 5 days feeds next-time wisdom. **Meta:** night-of monitoring catches obvious failures, week-of catches non-obvious ones; teams skipping 7-day window = databases fine until day-11 complaint about dashboard 3x slower since cutover.$pf$);
+
+
+-- =========================================================================
+-- Project 0073 — priya_creates / Design / 3-step Sonnet 4.6 intermediate
+-- Design system audit: 47 button variants across 3 product teams
+-- =========================================================================
+
+DELETE FROM prompt_steps WHERE prompt_id = '55555555-5555-5555-5555-555555550073';
+DELETE FROM prompts      WHERE id        = '55555555-5555-5555-5555-555555550073';
+
+INSERT INTO prompts (
+  id, title, description, content, result_content,
+  category_id, difficulty, model_used, model_recommendation,
+  tools_used, tags, status, author_id, vote_count, bookmark_count
+) VALUES (
+  '55555555-5555-5555-5555-555555550073',
+  $pf$Design system audit: reconciling 47 button variants across 3 product teams without starting a turf war$pf$,
+  $pf$Our 3-product-team shop has accumulated 47 distinct button variants in the codebase. I'd been saying "we should consolidate" for a year and hadn't made progress because every time I brought it up, one of the product teams heard "Priya wants to take away the button I built." Used Claude Sonnet 4.6 across three passes to build an audit method that wasn't opinion-driven, a consolidation spec grounded in the audit data, and a rollout plan I could actually take to the three product leads without torpedoing relationships. The consolidation shipped 6 weeks later with zero team pushback — which is the part I still can't believe.$pf$,
+  $pf$I'm a senior designer at a 120-person B2B SaaS company — three product teams, three codebases (with some shared UI-kit code that nobody fully owns), and the classic design-system drift problem: over four years, teams shipped 47 distinct button components. Some are legitimate variants (primary, secondary, destructive); most are accidental drift (someone needed a "slightly darker primary" for a dashboard and added a new one rather than touching the shared kit).
+
+I'm the person who'd inherit fixing this, and I've avoided it for a year because every time I've raised it, one of the three product-engineering leads hears it as "the central design team wants to take away the button I built." Last time I raised it, one of the leads said out loud "look, I just need this ship" and shut the conversation down.
+
+I think the way I've been framing it is wrong. I've been leading with "we have 47 buttons, that's bad" — which is opinion, even if correct. What I need is an audit that grounds the conversation in data, a consolidated spec that's obviously defensible, and a rollout plan that doesn't make anyone feel like they're losing.
+
+Three passes with Sonnet: (1) audit method — what am I actually measuring, and what's the scoring rubric that distinguishes "legitimate variant worth keeping" from "accidental drift to collapse"; (2) consolidated spec — the target button system with migration map; (3) rollout — how to sell this to the 3 product leads without starting a turf war. Sonnet 4.6 because this is structured reasoning + diplomatic-writing work, not heavy quantitative reasoning.$pf$,
+  $pf$The consolidation landed. Final count: 47 variants reduced to 6 canonical button types + 1 escape-hatch "custom" slot (with a governance gate for using it).
+
+What actually happened:
+- The audit itself took 2 days. The spec took 1 day. The rollout conversations took 4 weeks (I was optimistic about this; Claude warned me it would take longer than I thought, which was right).
+- Zero of the three product leads pushed back on the consolidation. What did happen was Team B's lead asked to own one of the 6 canonical buttons' implementation — specifically because they had a perf-sensitive case and wanted to keep that muscle. I said yes, and it strengthened the relationship rather than damaging it. That was a move I wouldn't have seen without Pass 3's "let them own something" framing.
+- The "turf war" I was afraid of never materialized because the audit scoring gave everyone a shared frame. Nobody could say "my button is special" once the scoring rubric was on the table; they could only argue about where a specific button scored, which is a data argument, not an identity argument. That was the unlock.
+- Governance gate for the "custom" escape hatch: a 15-minute async review by me + one other designer. In the 6 months since consolidation, 3 custom-variant requests came in; 2 were absorbed into the canonical 6 with a small tweak, 1 was genuinely novel and got promoted to a 7th canonical after 4 weeks of observation.
+
+The biggest realization from Pass 1: I was measuring the wrong thing. I'd been counting variants (47! terrible!) when what mattered was *semantic purpose × usage volume × accessibility status*. Once I scored on those three axes, the 47 collapsed naturally — 31 of them were scoring so low across the board that nobody wanted to defend them. The argument stopped being "47 is bad" and became "these 31 have almost no usage and zero semantic clarity." Much easier conversation.
+
+Claude's best single contribution: Pass 3's reframe of the rollout as "surfacing 6 promotions, not 41 demotions." I'd been drafting a rollout memo that led with what we were deprecating. Claude made the case that leading with what each team *gets* (canonical buttons they can trust + a governance path for their legit custom case) changed the emotional register entirely. Rewrote the memo, sent it, it landed.$pf$,
+  '11111111-1111-1111-1111-111111111105',
+  'intermediate',
+  'claude-sonnet-4-6',
+  'Claude 4.6 Sonnet',
+  ARRAY['Claude','Figma','GitHub','Storybook'],
+  ARRAY['design-systems','component-audit','cross-team','design-governance','consolidation'],
+  'approved',
+  '22222222-2222-2222-2222-222222222204',
+  0, 0
+);
+
+INSERT INTO prompt_steps (id, prompt_id, step_number, title, content, result_content, description) VALUES
+
+-- Step 1 --
+('66666666-6666-6666-6666-666666730101',
+ '55555555-5555-5555-5555-555555550073',
+ 1,
+ $pf$Pass 1 — audit method: what to measure, and the scoring rubric that separates legit variants from drift$pf$,
+ $pf$Before I do anything else, I need a way to audit the 47 button variants that isn't "Priya's opinion about which ones are ugly." I want a method that produces a score for each variant on axes that are defensible to engineering leads, not just to other designers.
+
+Help me design the audit. Specifically: what axes am I scoring on, how do I actually measure each (what tool, what data source, what output), and what's the rubric that distinguishes "legitimate variant worth preserving" from "accidental drift to collapse into a canonical." I want this reproducible — someone else could run the same audit in a year and get the same scores.$pf$,
+ $pf$Right framing. If the audit is "Priya thinks these are ugly," it's opinion vs opinion with the product leads. If it's scoring, it's data vs data. Here's the method.
+
+**The three axes that matter:**
+
+1. **Semantic purpose** — does this variant do something that's communicatively distinct from the others? A "destructive red button" and a "primary blue button" are semantically distinct. Two "primary blue buttons" that differ only in a 2px padding change are not.
+
+2. **Usage volume** — how often is this variant actually rendered? A button used 40 times/day across 12 surfaces is load-bearing. A button used once a quarter in an admin panel is a candidate for collapse.
+
+3. **Accessibility status** — does this variant pass WCAG AA for contrast and interactive states? A beautiful button that fails contrast on hover is not a variant worth preserving; it's a variant worth replacing.
+
+You specifically should NOT score on "visual appearance" — that's where opinion lives, and it's what's been blocking your conversations. Score on the three measurable axes. The consolidation argument falls out of the scores.
+
+**How to measure each axis — data sources + tooling:**
+
+**Semantic purpose (categorical score 0-3):**
+
+Read the 47 variants' usage context — where are they being rendered? — and categorize the semantic role. Standard roles for SaaS apps:
+- **Primary action** (the one thing this surface wants the user to do)
+- **Secondary action** (alternative, same-surface)
+- **Destructive** (delete, cancel, irreversible)
+- **Tertiary / navigation** (link-styled, low-emphasis)
+- **Specialized** (icon-only, loading state, split-button with menu)
+
+Score each of the 47:
+- 3 = fills a distinct semantic role with no other variant covering it
+- 2 = fills a role that's also served by 1 other variant (possible merge candidate)
+- 1 = fills a role that's served by 2+ others (likely drift)
+- 0 = no clear semantic role beyond visual difference
+
+Method: scan each component's usages in the codebase (grep for import + JSX usage). Record 3 real usage sites per variant. From those, judge the role. This takes 1-2 hours for 47 variants.
+
+**Usage volume (numeric score):**
+
+Two sub-metrics:
+- **Code references:** count import + JSX usages across the 3 codebases. Use `grep -rn "<ButtonVariantX" src/` or your equivalent.
+- **Runtime renders (if you have it):** telemetry count over 30 days — how many times did this button actually mount? Amplitude, Mixpanel, whatever you have.
+
+Normalize to a 0-3 score using the distribution:
+- 3 = top-tercile variant by usage (load-bearing)
+- 2 = middle-tercile (meaningful but not critical)
+- 1 = bottom-tercile (rarely used)
+- 0 = zero or near-zero usage (deprecation candidate)
+
+If runtime data isn't available, use code references alone, but flag that as a methodology limitation. Don't fake confidence.
+
+**Accessibility (0-3):**
+
+Run each variant through axe-core or similar automated tooling + manual keyboard-focus test:
+- 3 = passes WCAG AA on contrast, focus state, disabled state, loading state
+- 2 = passes AA on contrast and focus, issues on disabled or loading
+- 1 = fails contrast OR missing focus state
+- 0 = fails multiple criteria
+
+Method: Storybook + axe addon if you have it. Otherwise pull each variant into a test page and run axe DevTools. Also screenshot the focus state for each — designers and engineers disagree about which variants have focus states until they see them side-by-side.
+
+**The composite score:**
+
+Sum the three axes. Max = 9, min = 0. Interpretation:
+- **7-9 = keep, canonical candidate** (high semantic, high usage, accessible)
+- **5-6 = review** (mixed; likely a legitimate variant with a fix-needed issue)
+- **3-4 = collapse** (drift; merge into a canonical with minor tweak if needed)
+- **0-2 = deprecate** (no semantic purpose + low usage + accessibility issues; should not exist)
+
+**Why this rubric works in the conversations you're dreading:**
+
+- An engineering lead can't say "but my button is special" against a score. They can say "I think the semantic-purpose score is wrong," which is a data argument — you re-read the usage context and adjust. That's productive.
+- Accessibility status as an axis means you're not debating aesthetic preferences. A button that fails WCAG is a compliance-adjacent conversation, not a taste conversation.
+- Usage volume gives you cover for deprecating variants that nobody is actually using, even if someone feels emotionally attached.
+
+**Artifact: the audit spreadsheet**
+
+Produce one row per variant with columns: Variant name / file path / semantic score + role / usage score + raw count / a11y score + failures / composite / recommendation (keep/review/collapse/deprecate).
+
+Share the spreadsheet with the three product leads BEFORE you propose a consolidated spec. Let them comment on individual scores. Adjust where they have legit correction. Now the scoring is shared and the spec (Pass 2) has consensus-on-data even before you draft it.
+
+**One pushback on how you framed this:**
+
+You said you wanted a method that's "reproducible — someone could run the same audit in a year and get the same scores." That's slightly wrong. The semantic-purpose axis is inherently judgment; two designers will score a borderline case differently. What you want is a method where the PROCESS is reproducible — same data sources, same rubric, same artifacts — and where disagreements show up on specific rows, not on the overall framing. That's more valuable than false objectivity.
+
+Ready for Pass 2 — the consolidated spec.$pf$,
+ $pf$**Score on 3 axes NOT visual appearance** (opinion = stuck; scoring = data vs data): (1) **semantic purpose 0-3** — fills distinct role no-other-covers=3, role-also-by-1-other=2, role-by-2+-others=1 drift, no-clear-role=0; method scan usages in codebase via grep imports, 3 real sites per variant, standard SaaS roles primary-action/secondary/destructive/tertiary-nav/specialized; 1-2hrs for 47. (2) **usage volume 0-3** terciles: code refs via grep import+JSX AND runtime telemetry 30-day renders (Amplitude/Mixpanel); if no runtime data, code-refs alone + flag methodology limit don't fake confidence. (3) **accessibility 0-3 via axe-core + manual keyboard-focus:** 3=WCAG-AA-all-states, 2=AA-contrast-focus-issues-elsewhere, 1=fails-contrast-OR-missing-focus, 0=multi-fails; Storybook+axe addon or axe DevTools test page, screenshot focus state since designers-engineers disagree until side-by-side. **Composite sum max-9 min-0:** 7-9 keep canonical / 5-6 review likely-legitimate-with-fix / 3-4 collapse drift merge-to-canonical / 0-2 deprecate. **Why works in dread-conversations:** lead can't say "my button special" against score; can only say "semantic score wrong" = data argument you re-read adjust productive; a11y axis = compliance-adjacent not taste; usage volume = cover for deprecating low-use-emotional-attachment. **Artifact: audit spreadsheet** one row per variant with columns variant-name / file-path / semantic-score+role / usage-score+count / a11y-score+failures / composite / recommendation. **Share with 3 leads BEFORE Pass 2 spec** — let them comment individual scores, adjust legit corrections, scoring becomes shared consensus-on-data before drafting. **Pushback framing:** "reproducible same scores in year" slightly wrong — semantic-purpose is judgment, two designers score borderline differently; want PROCESS reproducible same-sources-same-rubric-same-artifacts where disagreements show on specific rows not overall frame = more valuable than false objectivity.$pf$),
+
+-- Step 2 --
+('66666666-6666-6666-6666-666666730102',
+ '55555555-5555-5555-5555-555555550073',
+ 2,
+ $pf$Pass 2 — consolidated spec: 6 canonical buttons + migration map$pf$,
+ $pf$Audit done. Scores landed roughly where you'd expect: 6 variants scored 7+ (clear canonicals), 10 scored 5-6 (review — most were legit variants with fixable a11y issues), 31 scored 3 or lower (drift + deprecation). The three leads reviewed and corrected 4 individual semantic scores; otherwise consensus on the data.
+
+Draft the consolidated spec. I want: the target button system (which 6 canonicals, with specs for each), a migration map showing which of the 47 current variants maps to which canonical (and which are deprecated outright), and a "custom" escape-hatch with governance rules so that when someone has a legitimate novel need, there's a defined path that isn't "add a 48th variant."$pf$,
+ $pf$Here's the spec. Structuring it as (A) the 6 canonicals, (B) the migration map, (C) the escape-hatch governance.
+
+**(A) The 6 canonical buttons**
+
+Named for semantic role, not visual appearance. Each has: purpose, when to use, when NOT to use, interactive state spec, accessibility requirements.
+
+**1. Primary Action (`btn-primary`)**
+- *Purpose:* the one thing the user should do on this surface. One per surface, ideally.
+- *When to use:* form submission, confirming a flow, the main call-to-action.
+- *When NOT to use:* anywhere there's already a primary elsewhere on the surface (competing primaries defeat the purpose).
+- *States:* default, hover, active, focus, disabled, loading. All 6 states spec'd.
+- *A11y:* 4.5:1 contrast minimum, visible focus ring, disabled state communicates disability (not just grayed out — also aria-disabled).
+
+**2. Secondary Action (`btn-secondary`)**
+- *Purpose:* alternative to primary on the same surface. "Cancel" next to "Save." "Back" next to "Continue."
+- *When to use:* same-surface alternate action.
+- *When NOT to use:* as a substitute for primary (secondary should feel less emphasized).
+- *States + a11y:* as above; visual treatment must be clearly less emphasized than primary (tested by squint-test — if a new user can't tell which is primary, treatment is wrong).
+
+**3. Destructive (`btn-destructive`)**
+- *Purpose:* actions that delete, cancel irreversibly, remove access, or otherwise can't be undone easily.
+- *When to use:* delete, remove, revoke, archive (if archive is irreversible).
+- *When NOT to use:* reversible archive, soft-delete flows (those are secondary).
+- *States:* all 6 + explicit confirmation-modal pairing (destructive buttons should never fire without confirmation).
+- *A11y:* 4.5:1 contrast, focus ring. The color is typically red but the semantic role is "irreversible," not "red" — a destructive button in a different theme should stay destructive.
+
+**4. Tertiary / Link (`btn-tertiary`)**
+- *Purpose:* low-emphasis action, often navigation or "learn more." Styled closer to a link than a button.
+- *When to use:* inline actions, navigation to a different context.
+- *When NOT to use:* primary form actions (even if you want "minimal" aesthetic).
+- *States + a11y:* reduced visual weight, but MUST maintain focus and contrast.
+
+**5. Icon-only (`btn-icon`)**
+- *Purpose:* compact actions where space doesn't allow text (toolbars, table rows, context menus).
+- *When to use:* dense UI contexts, canonical actions users will recognize from icon alone.
+- *When NOT to use:* ambiguous actions where the icon isn't universally understood (use text button instead).
+- *States + a11y:* MUST have `aria-label` matching the implied action. Tooltip on hover strongly recommended.
+
+**6. Split-button (`btn-split`)**
+- *Purpose:* a primary action with a dropdown menu of related alternate actions.
+- *When to use:* "Save" + dropdown with "Save and close" / "Save and new" / "Save as draft."
+- *When NOT to use:* anywhere a simpler primary + secondary would do. Split-buttons are expensive cognitively; reserve for genuine multi-option primary cases.
+- *States + a11y:* keyboard-navigable dropdown, focus trapped in menu when open, escape-to-close.
+
+**(B) The migration map**
+
+Three categories based on the audit scores:
+
+*Direct map (17 of 47):* variants that clearly map to one canonical with no behavior change. Migration is a find-replace + visual parity check. Engineering can ship these in batches.
+
+Examples from your audit:
+- `PrimaryBtn`, `MainButton`, `ActionButton`, `SubmitBtn` → all → `btn-primary`
+- `CancelBtn`, `BackBtn`, `SecondaryAction` → `btn-secondary`
+- `DeleteBtn`, `RemoveBtn`, `RevokeBtn` → `btn-destructive`
+
+*Map with style-fix (14 of 47):* variants that map to a canonical but need a small visual change to align. These should be reviewed with the product team that owns the surface to confirm the change is acceptable. Most are minor (padding difference, hover shade).
+
+*Deprecate outright (16 of 47):* variants with composite score ≤2. Usage is negligible, semantic purpose unclear, a11y often failing. These get removed entirely; any usages are rewritten to the appropriate canonical.
+
+For each variant, the migration map spreadsheet row shows: current variant → target canonical → migration type (direct / style-fix / deprecate) → list of usage sites → owner (which product team) → estimated engineering hours.
+
+**(C) The escape-hatch: `btn-custom` with governance**
+
+Here's the piece that prevents the drift from happening again.
+
+*The escape hatch:* a `btn-custom` slot exists in the design system. Anyone who has a legitimate novel need can use it. The use is governed by a gate:
+
+1. **15-minute async review.** Requesting team opens a PR with the proposed custom button, the surface it'll live on, and a 2-sentence justification for why existing canonicals don't work.
+2. **Reviewer: me + one other designer.** Two-person review to catch blind spots. Must reply within 48 hours (otherwise request auto-approves with a note).
+3. **Two possible outcomes:**
+   - *Absorbed:* the custom case is actually a variant of a canonical with a small tweak. Reviewer proposes the tweak to the canonical spec. Team uses the updated canonical.
+   - *Genuinely novel:* the custom is approved for use with a 4-week observation period. If at week 4 the use is stable and no other team has surfaced a similar need, it stays as custom. If 2+ teams surface similar needs, the custom gets promoted to a 7th canonical.
+
+*Why this works:* it gives product teams a path for real novel needs (they don't have to hack around the system), while putting enough friction on drift (3-day wait + written justification) that accidental drift doesn't happen. The 4-week observation period is what catches "this was a one-off that became a canonical" cases early.
+
+**The one thing to resist in the rollout (Pass 3 preview):**
+
+Don't call it "custom." Call it `btn-novel` or `btn-exception`. "Custom" implies the default behavior is to use it; "novel" implies the default behavior is to use a canonical and deviate only when the case is genuinely new. Words do the governance work here.
+
+Ready for Pass 3 — rollout without starting a turf war.$pf$,
+ $pf$**(A) 6 canonicals named by semantic role not visual appearance:** (1) btn-primary — one per surface the-one-thing, competing-primaries defeat purpose, 6-states spec'd; (2) btn-secondary — same-surface alternate Cancel/Back, squint-test must feel less-emphasized than primary; (3) btn-destructive — irreversible delete/revoke, never fires without confirmation modal, semantic-role IS "irreversible" not "red"; (4) btn-tertiary — link-styled low-emphasis inline+nav, NOT for primary form actions even if "minimal" aesthetic; (5) btn-icon — dense UI toolbars/rows, MUST aria-label + tooltip, NOT ambiguous icons; (6) btn-split — primary+dropdown-alternates Save+close+new+draft, keyboard-navigable focus-trapped escape-to-close, reserve for multi-option cases not simpler-primary-secondary. All with 4.5:1 contrast + focus ring + aria-disabled. **(B) Migration map 3 categories:** direct-map 17/47 find-replace+parity-check (PrimaryBtn/MainButton/ActionButton/SubmitBtn → btn-primary etc), style-fix 14/47 minor padding/hover review with surface-owning team, deprecate 16/47 composite ≤2 removed usages rewritten. Per-variant row: current→canonical→type→sites→owner→hours. **(C) Escape-hatch governance preventing re-drift:** btn-custom slot exists, requesting team opens PR with surface + 2-sentence justification why canonicals don't work, 15-min async review by me+1-other-designer 48h else auto-approve-with-note, two outcomes absorbed-into-canonical-with-tweak OR genuinely-novel-4-week-observation then stays-custom if stable + promotes-to-7th-canonical if 2+ teams surface similar need. **Words-do-governance-work:** don't call it "custom" (implies default-is-use-it), call `btn-novel` or `btn-exception` (implies default-is-canonical-deviate-only-for-genuinely-new). Works = real-novel-path for teams + written-justification-+-3-day-wait friction prevents accidental drift + 4-week observation catches one-off-became-canonical cases early.$pf$),
+
+-- Step 3 --
+('66666666-6666-6666-6666-666666730103',
+ '55555555-5555-5555-5555-555555550073',
+ 3,
+ $pf$Pass 3 — rollout to 3 product leads without starting a turf war$pf$,
+ $pf$Now the hard part. I have the spec. I have the data. I have to get 3 product-engineering leads to buy in, and two of them have historically felt this kind of central-design-team work reduces their autonomy. Help me draft the rollout.
+
+Specifically: what's the sequence (who do I talk to first, second, third — and why), what's the one-page memo that introduces the consolidation, what are the anticipated objections and my pre-written responses, and what's the actual timeline + milestones. I care more about this landing than about it shipping on a specific date.$pf$,
+ $pf$Good — "landing > specific date" is the right framing and that's going to show up in several of my recommendations below.
+
+**(1) Sequence — who first, who second, who third**
+
+*First: the most skeptical lead (Team B — the one who said "I just need this ship").*
+
+Counterintuitive but important. If you sell the hard case first, the easier leads see that their skeptical peer bought in and the social proof accelerates the others. If you sell the easy leads first, the skeptical one feels presented with a fait accompli and entrenches.
+
+Approach: don't bring the full spec. Bring the audit spreadsheet, ask for their input on the scoring in their team's variants, and frame it as "I want to get the data right before proposing anything." This is the pre-work that makes the actual proposal land. Let them shape the data; their fingerprints are on the scoring; the consolidation argument flows from data they co-authored.
+
+*Second: the most cooperative lead (whichever of A or C that is).*
+
+By now you have Team B's input baked into the audit. When you meet with the cooperative lead, you can honestly say "Team B reviewed the scoring and here's where we landed." The cooperative lead now sees this as a cross-team effort, not a central-design mandate. They'll engage on the spec itself.
+
+*Third: the remaining lead.*
+
+By the time you get here, you have two leads' input. The third can either add to the consensus or be an outlier. Outlier is rare when momentum is already building.
+
+**(2) The one-page memo — reframed around what each team GAINS**
+
+Critical: do NOT lead with "we're deprecating 31 buttons." Lead with what each team gets.
+
+Draft structure:
+
+---
+
+**Proposal: consolidating our button system to 6 canonicals**
+
+**What this is:** moving from 47 accidentally-accumulated button variants to 6 intentionally-designed canonical buttons + 1 governed escape-hatch. Consolidation based on a joint audit of semantic purpose, usage volume, and accessibility — scored and reviewed by all 3 product teams.
+
+**What each team gets:**
+
+- **Team A:** four of your currently-custom variants become canonical buttons you can trust — they'll get design-system support, accessibility maintenance, and documentation. Two of your rarely-used variants get removed (they're currently failing accessibility and carrying maintenance cost nobody wanted to own).
+
+- **Team B:** three of your variants graduate to canonical status; your primary-action variant becomes the reference implementation for `btn-primary`. In practice: less drift to police, cleaner PR reviews, a clear path for novel cases you run into (the `btn-novel` escape-hatch has a 48-hour review, not a month-long design-system process).
+
+- **Team C:** your destructive-action variant (the best-tested one) becomes the canonical `btn-destructive`. Your two icon-only variants collapse into one `btn-icon`. Net: one less variant to maintain, and your implementation is the one everyone standardizes on.
+
+**What goes away:** 31 variants that the audit showed have composite scores ≤4 (low usage + unclear semantic purpose + often failing accessibility). Per the migration map, most of those are already rewritten in drafts to point at the canonicals.
+
+**Timeline:** 6-week migration, team-by-team on their schedule. Central design supports; each team owns their codebase's migration.
+
+**Escape hatch:** `btn-novel` slot with 48-hour async review for genuine cases the canonicals don't cover. Not a bottleneck; a rail.
+
+---
+
+*Why this memo shape works:* every team sees "I got four promoted to canonical" before they see "31 deprecated." The emotional register is "I was recognized," not "I was deprecated." The audit co-authorship gets credited; the escape-hatch defuses the "what about my legitimate exception" fear.
+
+**(3) Anticipated objections + pre-written responses**
+
+*Objection 1: "Migration is engineering work we didn't plan for."*
+Response: "True. That's why it's 6 weeks, team-owned, on your schedule. Central design supports — I'm happy to pair on any team's migration. The savings come on maintenance after: no more policing drift, no more a11y debt on variants nobody owns."
+
+*Objection 2: "My team's [specific variant] really does need to stay."*
+Response: "Walk me through the use case. If it's a genuine semantic need, it becomes a 7th canonical through the escape-hatch observation process. If it's a style difference, we fold the style adjustment into the canonical. In both cases, you don't lose what you need."
+
+*Objection 3: "This is going to slow us down."*
+Response: "Maintenance-wise, it speeds things up — less drift, fewer a11y fires. Ship-wise, migration is scheduled on your team's cadence. No hard deadline."
+
+*Objection 4 (the hard one): "This feels like central design is taking control."*
+Response: "Fair — that's a reasonable fear and I've been careful to avoid it. Specifically: (1) the audit was reviewed and scored with your team's input; (2) the canonicals include your team's best implementations as references; (3) the escape-hatch gives you a path for novel cases. This is shared governance, not central mandate. If at any point that stops feeling true, raise it and we recalibrate."
+
+*Objection 5: "What's the penalty if we don't migrate?"*
+Response: "No penalty. Old variants stay in the codebase, they just aren't maintained by the design system, and new surfaces should use canonicals. Teams that migrate get a11y + docs support; teams that don't are where they already are. I'd rather this land than ship on a deadline."
+
+**(4) Timeline + milestones**
+
+- **Week 0:** audit reviewed with all 3 leads (you did this). Scoring consensus.
+- **Week 1:** 1:1s with 3 leads in sequence (B → most-cooperative → third). Share memo + spec. No commitment asked for yet.
+- **Week 2:** follow-up conversations. Answer objections. Adjust spec where legit feedback arrives.
+- **Week 3:** written commitment (not a signed doc, just agreement over email/Slack). Public kickoff in #eng or equivalent.
+- **Weeks 4-9:** team-by-team migration. You're available for pairing. Weekly check-in in #eng-design-system.
+- **Week 10:** retro. What worked, what to change for the next consolidation (because there's always a next one).
+
+**(5) The specific move I want you to remember**
+
+*Let one of the product teams own one of the canonicals' implementation.*
+
+Specifically: when you present the spec, say out loud that the destructive-button reference implementation will be owned by Team C (or whichever team's variant scored highest on that one). This is the single highest-value move you can make. It signals:
+- This isn't central-design taking over
+- The best implementations are recognized
+- Ownership is distributed, not centralized
+
+Teams that own a canonical feel invested in the system's success. They become advocates. They don't push back; they defend it.
+
+**Meta-point: "landing > specific date" should mean you genuinely accept a slower timeline if one emerges.**
+
+You said you care more about landing than shipping on a date. Test: if one of the product leads says "I'm slammed for 3 weeks, can we push the rollout?" — your answer is "yes, no problem." If your answer is "well, I was hoping..." then you don't actually believe your own framing. The willingness to push is what makes leads feel safe engaging.
+
+Good luck. This is going to work.$pf$,
+ $pf$**(1) Sequence counterintuitive:** skeptical-lead FIRST (Team B "I-just-need-ship"). Sell hard case first → easier leads see skeptical peer bought in = social proof accelerates; sell easy first → skeptical feels fait-accompli entrenches. Approach Team B: don't bring full spec, bring audit spreadsheet, ask for input on their team's scoring, frame "want to get data right before proposing" = their fingerprints on scoring = consolidation flows from data they co-authored. Second: cooperative lead, honestly "Team B reviewed scoring here's where we landed" = cross-team effort not central-mandate = engage on spec. Third: remaining lead joins consensus or outlier (rare when momentum built). **(2) Memo: lead with what each team GAINS not deprecations:** per-team bullet "Team A: four custom-variants become canonical you can trust + 2 rarely-used-fail-a11y removed"; "Team B: 3 graduate canonical + your primary is reference-implementation for btn-primary = less drift-to-police cleaner PRs + btn-novel 48h-review not month-long"; "Team C: your destructive best-tested becomes canonical btn-destructive + 2 icons collapse to btn-icon = one less variant + your implementation standardized." Every team sees "I got promoted" before "31 deprecated" = emotional register "recognized" not "deprecated". **(3) Pre-written objections:** (a) "engineering work unplanned" → 6-week team-owned schedule central-supports savings-on-maintenance-after; (b) "my variant needs to stay" → walk-through, genuine-semantic → 7th canonical via observation, style-diff → fold into canonical either-way don't-lose; (c) "slow us down" → maintenance faster, ship-wise no-hard-deadline; (d) hard one "central design taking control" → audit-with-your-team-input + your-implementations-as-references + escape-hatch-for-novel = shared-governance-not-central-mandate + recalibrate-if-stops-feeling-true; (e) "penalty if no migrate" → none, old-variants-stay-unmaintained by DS, migrated-teams-get-a11y-+-docs-support, rather-land-than-ship-on-deadline. **(4) Timeline:** W0 audit-reviewed-scoring-consensus → W1 3 1:1s in sequence share-memo-no-commitment-asked → W2 follow-up objections-answered spec-adjusted → W3 written-commitment-email-slack public-kickoff → W4-9 team-by-team migration weekly-check-in → W10 retro. **(5) THE MOVE:** let one team OWN one canonical's implementation — say out loud Team C (best destructive score) owns btn-destructive reference. Highest-value single move: signals not-central-takeover + best-implementations-recognized + distributed-ownership → teams become advocates defend don't push-back. **Meta "landing > date" test:** if lead says "slammed 3 weeks can push?" your answer "yes no problem" — if "well I hoped" you don't believe framing; willingness-to-push makes leads feel safe engaging.$pf$);
+
+
+-- =========================================================================
 -- END OF FILE — append next project(s) below this line.
 -- Iterations working the Content queue: add 2–3 projects per iteration,
 -- appending below this comment. Do NOT rewrite existing projects.

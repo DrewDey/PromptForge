@@ -26303,6 +26303,894 @@ Good luck. This is going to work.$pf$,
 
 
 -- =========================================================================
+-- Project 0074 — ops_nina / Productivity / 7-step Opus 4.7 advanced
+-- Year-end comp review for a 50-person agency on a $420K raise-and-bonus pool
+-- =========================================================================
+
+DELETE FROM prompt_steps WHERE prompt_id = '55555555-5555-5555-5555-555555550074';
+DELETE FROM prompts      WHERE id        = '55555555-5555-5555-5555-555555550074';
+
+INSERT INTO prompts (
+  id, title, description, content, result_content,
+  category_id, difficulty, model_used, model_recommendation,
+  tools_used, tags, status, author_id, vote_count, bookmark_count
+) VALUES (
+  '55555555-5555-5555-5555-555555550074',
+  $pf$Year-end comp review for a 50-person agency on a $420K pool — 7-pass planning with Claude before I opened the spreadsheet$pf$,
+  $pf$Ran the year-end compensation review at our 50-person creative agency. $420K raise-and-bonus pool across 7 manager reports. Seven passes with Claude 4.7 Opus — philosophy, data inventory, calibration session design, pool math, exceptions, manager delivery scripts, post-cycle governance. Announced Dec 15. Zero formal appeals. The pass that actually changed the outcome was Pass 3 — Claude pushed back on my manager-weighted averaging approach and was right about where it would break.$pf$,
+  $pf$I'm the ops manager at a 50-person creative agency. The founder asked me in October to own the year-end comp review this cycle — he's done it himself for five years and said it "ate November." I have six weeks, a $420K raise-and-bonus pool that the CFO signed off on (4.8% of our $8.75M salary base), 50 people across 7 manager reports, and a board meeting Dec 20 where the founder needs to show year-over-year compensation data.
+
+The founder's guidance to me was two sentences: "Be fair. Don't blow up the culture." That is not a spec.
+
+I've never done a full-company comp cycle before. I've sat in one as a participant, but owning it is different. My fears are concrete: (1) pay compression between new hires and tenured people, where we've been paying market to hire and the 2-year people haven't caught up; (2) two or three flight-risk senior people our CTO flagged, where a below-market raise would trigger a resignation I'd own; (3) the three managers who I know run hot on ratings vs. the two who run cold, and how we calibrate across that; (4) the two "level mistake" conversations — one senior-level person who has been doing mid-level work, one mid-level person who's clearly operating at senior.
+
+I want to plan this end-to-end with Claude before I touch a spreadsheet. Specifically, I want to commit to a philosophy in writing, then let the spreadsheet follow. Every comp cycle I've seen go sideways started with the spreadsheet. I'm going to use Claude 4.7 Opus across seven passes: philosophy, data, calibration, pool allocation, exceptions, manager delivery, post-cycle governance. I need judgment-level reasoning — this is not a template-able task.$pf$,
+  $pf$Comp announcements went out Dec 15. Final numbers:
+- 50 increases delivered. Range: 0% (one case, level-mistake correction paired with a lateral move) to 18.4% (one leveling correction).
+- Total pool: $419,800 against the $420K budget (the $200 miss was my floor-rounding rule; kept it intentional).
+- Zero formal appeals. Two people came back with clarifying questions, both answered in <10 min with the calibration notes.
+- One resignation, six weeks later. The CTO's flagged flight-risk person I had slotted for a +11% retention-weighted raise. He got it. He left for a +42% offer from a competitor and honestly told me the money wasn't the deciding factor — his role had drifted and he didn't see the path forward. Good exit, no regrets on the comp call.
+
+The pass that moved the outcome most was Pass 3 — calibration. My original plan was to normalize manager ratings by each manager's historical average (so "Alex's 4.5 out of 5 means less than Priya's 4.5 out of 5"). Claude pushed back hard: that approach fights the manager's judgment on every person they rated, not just the ones they miscalibrated. Claude's proposal was to do a calibration SESSION — 2 hours, all 7 managers, 4 anchor people at each performance tier, force the managers to argue about whether specific people belonged in the anchor group. That exposed the actual calibration errors (2 of 7 managers were systematically generous, but on specific dimensions, not across the board) without throwing out their local knowledge. I'd never have gotten there with a spreadsheet-only approach.
+
+The other place Claude was load-bearing was Pass 5 — pay compression. I'd been thinking of compression as "one issue to handle." Claude broke it into three distinct types (new-hire-vs-tenure / between-level-compression / manager-vs-IC compression) with different fixes. The between-level one was the one biting us — two mid-level people were making within 4% of senior-level peers despite a 22% level-band gap. Fixing that took $38K of the pool and would have looked arbitrary without the framework.
+
+What I'd tweak next year: Pass 6 (delivery scripts) landed well but the managers asked for more practice time with the hard scripts. Next cycle I'll build in a 45-min role-play session the week before announcements.
+
+Claude 4.7 Opus was the right pick. This is a high-stakes, judgment-heavy, multi-variable task with real political tension. Sonnet would have given me the structure — Opus 4.7 gave me the pushback on calibration and compression that I needed someone to push on and nobody inside the agency was positioned to.$pf$,
+  '11111111-1111-1111-1111-111111111107',
+  'advanced',
+  'claude-opus-4-7',
+  'Claude 4.7 Opus',
+  ARRAY['Claude','Google Sheets','Notion','Lattice','Slack'],
+  ARRAY['compensation','people-ops','calibration','agency','year-end','management'],
+  'approved',
+  '22222222-2222-2222-2222-222222222206',
+  0, 0
+);
+
+INSERT INTO prompt_steps (id, prompt_id, step_number, title, content, result_content, description) VALUES
+
+-- Step 1 --
+('66666666-6666-6666-6666-666666740101',
+ '55555555-5555-5555-5555-555555550074',
+ 1,
+ $pf$Pass 1 — philosophy I commit to in writing before I open the spreadsheet$pf$,
+ $pf$Before any numbers. I want to write a one-page "what this comp cycle is and isn't" memo for myself — the set of beliefs I commit to in advance so that when I'm looking at the $420K pool in a spreadsheet and a flight-risk retention case is staring at me, I'm not making it up on the fly. Help me draft this. What are the 5-7 principles a first-time comp-cycle owner at a 50-person agency should commit to BEFORE the math, and what are the common beliefs that sound good but would quietly sabotage the cycle if I signed up for them? I want this as a crisp, opinionated list — not hedged consultant-speak.$pf$,
+ $pf$Good move. The spreadsheet-first cycle is how founders end up with $420K distributed in a way they can't defend when someone asks. Here's the philosophy draft — six commitments I'd put in writing, plus four seductive beliefs to rule out explicitly.
+
+**Commit to these six in writing.**
+
+1. **Calibration before allocation.** You do not distribute a dollar of the pool until managers have sat in one room and argued about where specific people sit relative to each other. Every cycle that skips this step produces a distribution that feels arbitrary six months later, because it is.
+
+2. **The pool funds outcomes, not hours.** This sounds obvious; it is not. At a 50-person agency, some of your most visible work is also your most low-leverage — the person who worked late every Friday on a client that should have been fired. Commit in writing: high effort on low-value work is not a raise trigger. It may be a coaching conversation. It is not $4,800.
+
+3. **Pay compression gets its own bucket, not a merit carve-out.** If you try to solve new-hire-vs-tenure compression out of the merit pool, you will either under-reward high performers or leave compression unfixed. Budget a specific line (I'd recommend 15-20% of the pool — so $63K-$84K on $420K) for compression fixes and exception corrections. What's left is the true merit-and-retention pool.
+
+4. **Retention raises are named retention raises.** If you're paying someone more because you believe they'll leave otherwise, write that down in the cycle notes. Do not dress it up as merit. The reason: if six months later the person leaves anyway, and the next cycle's owner finds "merit raise, +11%" in the file, they have no calibration signal. "Retention raise, +11%, flight-risk flagged by CTO" tells the next owner exactly what happened.
+
+5. **Level mistakes get fixed in this cycle or they stop being mistakes.** If someone has been operating at senior for 18 months and you leave them at mid-level "because it's not the right time to fix it," you're training them to leave. Every cycle has 1-3 of these. Name them, fix them, document why. The ops manager at the agency I came from carried two level mistakes across three cycles — both those people quit within six months of cycle 3.
+
+6. **The cycle is not a forum for relitigating poor performance.** If someone has underperformed, that conversation has already happened (or it hasn't, and that's a separate problem). A comp cycle is not where you put someone on a PIP, and a 0% raise is not a substitute for feedback they should have gotten in June. If you're tempted to use a flat raise as a signal, stop — either they deserve feedback or they don't, and the comp conversation is the wrong surface for it.
+
+**Rule out these four seductive beliefs.**
+
+1. **"Everyone gets something."** Sounds fair; isn't. If your budget forces everyone to get a raise, your top performers get 3% and your weak performers get 2%, and the delta is a rounding error. Better: some people get 0%, some get 8%, and the signal is legible. The agency culture you're protecting is not "everyone is equal" — it's "what you do is seen."
+
+2. **"We pay market."** Paying market is a benchmark, not a philosophy. You will always have people below market on some dimensions and above on others. Committing to "we pay market" in writing means you owe every person a market analysis in every cycle, which you will not do. Better commitment: "we publish our ranges annually and commit to the range midpoint for solid performers at tenure."
+
+3. **"Comp reflects the last 12 months equally."** It doesn't, and claiming it does makes you defensive when a recency-bias pattern shows up (and it will). Honest: "Comp weights the last 12 months with more weight on demonstrated trajectory in Q3-Q4. Year-start heroics matter less at year-end than how you're operating now." Write it down; refer to it when a manager tries to carry Q1 performance into December.
+
+4. **"Small agency, small raises, big bonuses next year."** Never issue a deferred promise to paper over a current shortfall. The founder who says "raises will be bigger next year because of the IPO/fundraise/client win" has lit a fuse on their own credibility. Next year's pool is next year's pool. This year's raise is this year's raise.
+
+**Format for your memo.** One page. Six commitments in the first column. Four ruled-out beliefs in a "what this cycle is NOT" section. Sign and date it. Send it to the founder Monday — not for approval, for record. If he pushes back on any of them, that is the conversation to have now, not the first time a retention case crosses your desk.
+
+The act of writing this down is 60% of the work. The spreadsheet is the easy part once the philosophy is locked.$pf$,
+ NULL),
+
+-- Step 2 --
+('66666666-6666-6666-6666-666666740102',
+ '55555555-5555-5555-5555-555555550074',
+ 2,
+ $pf$Pass 2 — what goes on the table for every person, what stays off, where the data lives$pf$,
+ $pf$Philosophy is locked and sent to the founder. Now the data pass. For each of 50 people I need a consistent data packet the calibration session can actually use. What should be ON the packet for every person, what should be EXPLICITLY OFF (either because it biases the conversation or because it's not data, it's opinion), and where does each piece typically live in an agency stack? I use Lattice for performance reviews, BambooHR for payroll, Harvest for time tracking, and a homegrown client-profitability sheet. I want a 1-page per-person template I can populate for all 50 in ~15 min each.$pf$,
+ $pf$Standard-packet discipline is what separates a cycle where the calibration session takes 2 hours from one where it takes 6. Here's the template and the off-the-table list.
+
+**On the per-person packet (1 page, 8 fields):**
+
+1. **Current comp and tenure.** Base salary, bonus target if any, start date, last raise date and amount. Source: BambooHR. This is 30 seconds to populate; put it at the top so it's anchored before anyone opines.
+
+2. **Level band and midpoint.** Where does this person's base sit against the level-band range? Above midpoint, below, at? This is the first calibration-session question for every person: is the number we're about to propose pushing them toward or away from the midpoint, and is that intentional? Source: your published band doc, or build one in a 4-hour session with the founder this week if you don't have one. You cannot run a cycle without bands; they don't need to be perfect, they need to exist.
+
+3. **Performance rating + distribution check.** The Lattice rating from the last 360. Crucially, include the manager's rating distribution alongside: "Alex rated 6 direct reports. Distribution: 1 × exceeds, 4 × meets, 1 × needs development." This is how you'll spot the generous-rater problem in Pass 3 without pre-judging it.
+
+4. **Three concrete wins and one area of growth.** Pulled from the Lattice review. Verbatim from the manager, NOT summarized. If Alex wrote "drove the Adidas relaunch to +34% engagement," the packet says that, not "strong client work." This is the only narrative content on the packet; keep it specific so calibration-session conversation stays on artifacts.
+
+5. **Client-profitability signal, where applicable.** For billable roles (most of your 50 at an agency), one line: "Billed 1,680 hours at $185/hr blended, against $130/hr base cost. Contribution: $92K." Source: your homegrown sheet. For non-billable roles (ops, finance, design-system) mark "overhead — no direct attribution" so nobody treats the absence of a number as a negative.
+
+6. **Flight-risk flag + source.** Binary yes/no. If yes, who flagged it and when. "Flagged by CTO 2026-11-03 after Maya mentioned competitive offer conversation." Do NOT include the details of what was said. The packet is for calibration, not gossip.
+
+7. **Compression indicators.** Three calculations: (a) % of the midpoint at their level band, (b) % of the average salary for their level band, (c) ratio vs. the most-recent hire at their level (the new-hire-vs-tenure lens). If any of these is >10% below the relevant reference, flag it. Source: BambooHR export + band doc.
+
+8. **Tenure-weighted raise history.** What's their annualized raise rate over tenure at the company? A 3-year person at 3.2% annualized is very different from a 3-year person at 6.8% annualized. Source: BambooHR.
+
+**Explicitly OFF the packet:**
+
+1. **Peer comparisons to specific other employees.** No "Alex is better than Priya at X." That conversation happens in the room with both names visible, not pre-biased in the packet. Managers will try to write these in. Edit them out.
+
+2. **Personal circumstances.** Someone's pregnancy, home purchase, spouse's job situation. None of it. If a manager says "she needs this raise because her husband just lost his job," your answer is "let's talk about what she is doing at work." Compensation for circumstance is how lawsuits start.
+
+3. **Subjective personality tags.** "A+ attitude," "low-energy in meetings," "culture fit." These are not data and they will bias the room. If a manager wants to make an attitude argument, they need to point to a specific artifact in the Lattice review.
+
+4. **Last cycle's raise amount as a floor.** Do not put "got 4% last year" on the packet in a way that implies "should get at least 4% this year." Anchoring to last year's raise is the single biggest drift source in comp cycles — it's how you end up paying 4% to people who've been flat for 18 months.
+
+5. **The manager's recommendation for this cycle.** This is the hardest one. Managers will want to pre-write "recommending 6%." Tell them: calibration session first, recommendation second. Get the data on the table before positions. If you let managers anchor on their own pre-written numbers, the calibration session becomes a negotiation over ranges, not a conversation about performance.
+
+**Where each field lives and how long it takes to populate:**
+
+| Field | Source | Time per person |
+|-------|--------|------------------|
+| Comp + tenure | BambooHR export | 30s |
+| Level band + midpoint | Band doc + calc | 45s |
+| Perf rating + distribution | Lattice | 90s |
+| 3 wins + 1 growth | Lattice (verbatim) | 4 min |
+| Client profitability | Homegrown sheet | 2 min |
+| Flight-risk flag | CTO/founder conversation | 30s |
+| Compression indicators | BambooHR + band doc | 3 min |
+| Raise-rate-over-tenure | BambooHR history | 2 min |
+
+Total per person: ~14 min. For 50 people: ~12 hours over a week. Block the time. Populate in one sitting per manager-group (5-8 people at a time) so the comparisons stay mental.
+
+**Build it in Google Sheets with one row per person.** Do NOT build it in a Notion database — Notion's too easy to sort and filter, and you don't want managers sorting by "current salary" before the calibration conversation happens. Sheets forces the packet to be read in a row-oriented way.
+
+Ship the populated template to managers 48 hours before the calibration session so they've actually read their team's packets. Calibration session starts with "everyone has read everyone's packet; who has a question before we start?"$pf$,
+ NULL),
+
+-- Step 3 --
+('66666666-6666-6666-6666-666666740103',
+ '55555555-5555-5555-5555-555555550074',
+ 3,
+ $pf$Pass 3 — the calibration session design (and the "manager-weighted averaging" approach I thought was the right move)$pf$,
+ $pf$Data is populated. Now I need to design the calibration session. My working plan: 2 hours, all 7 managers, and I normalize each manager's performance ratings by their historical distribution — so Alex's "exceeds" means less if Alex historically rates 60% of reports as "exceeds." That way the cross-manager calibration math becomes a spreadsheet operation. Tell me if this is right. If not, what's a better design, and what specifically is this approach breaking?$pf$,
+ $pf$Your instinct to calibrate across managers is right. Your proposed approach — historical-distribution normalization — is the wrong mechanism, and I want to be direct about where it breaks before proposing an alternative.
+
+**Why manager-weighted averaging breaks.**
+
+1. **It fights the manager on every person, not just the miscalibrated ones.** If Alex rates 60% of his 6 reports "exceeds" while the company average is 20%, your math will discount ALL of Alex's "exceeds" ratings by the same factor — including the two people on Alex's team who genuinely are exceeding. Alex will (correctly) argue that you're penalizing his top performers for his calibration issue. You'll either concede and create a manual exception (undermining the math), or you'll stand firm and lose Alex's trust in the process.
+
+2. **It assumes calibration errors are uniform across the rating dimension.** They aren't. In my experience, generous raters are typically generous on specific sub-dimensions — Alex might be accurate on "delivers quality work" and generous on "raises the bar for the team." A single multiplier flattens that.
+
+3. **It replaces judgment with math at exactly the point where you want a conversation.** The whole reason you're running a calibration session is to surface disagreement between managers. A weighting formula kills the disagreement. The math hands back a "normalized" number and everyone nods.
+
+4. **It's opaque to the people who need to trust it.** If Maya's raise is 4% because Alex over-rated her by a historical factor of 1.47, Alex can't explain that to Maya. Maya doesn't know the math exists. If she asks "why 4%," Alex has to invent a narrative reason that isn't the real reason. That's how cycles lose trust.
+
+**The alternative: anchor-person calibration.**
+
+This is what I'd run, and it's what good agencies actually do even if nobody writes it down.
+
+**Pre-work (the week before the session):**
+- Pick 4 "anchor people" across the 50 — one clear "exceeds," two clear "meets," one clear "needs development." These are names every manager in the room will recognize from cross-team collaboration. Don't pick the obvious top performer (everyone will agree); pick someone where the "exceeds" is earned but not blinding.
+- Circulate the 4 anchor packets to all 7 managers. Ask them to privately rate each anchor person on a 1-5 scale, with 1-2 sentences of justification.
+- Collect the ratings. You will see the calibration spread on 4 named people, not on the full 50.
+
+**The session (2 hours, agenda):**
+- 0:00-0:15. Walk through the 4 anchor-person pre-ratings. Where did managers land differently? "Priya rated Maya a 4; Alex rated Maya a 3. Both of you have worked with Maya. Walk us through your reasoning." Focus the conversation on artifacts: what did Maya do that would make this a 4 vs. a 3?
+- 0:15-0:45. This is the load-bearing part. When a manager's reasoning reveals a calibration error, name it in the room. "It sounds like Alex is using 'takes initiative' as the primary criterion, and Priya is using 'delivers artifacts at quality.' These are both legitimate, but they produce different ratings on the same person. Let's agree on which one we're using this cycle." You are not resolving the disagreement permanently — you're making it visible so the ratings that follow can be read in context.
+- 0:45-1:30. Walk through each manager's team, 5-10 min per team. Specifically call out: (a) anyone rated "exceeds" who the room hasn't explicitly agreed belongs in the top bucket, (b) anyone flagged flight-risk, (c) anyone with a level-mistake pattern, (d) anyone at significant pay compression. These are the 8-12 cases that will absorb 80% of the session energy. The other 38-42 people are fine; don't waste time on them.
+- 1:30-1:50. Come back to the 4 anchor people. Do any managers want to revise their anchor ratings based on what they heard? If yes, why? The revised anchor ratings are now your calibration signal for the rest of the cycle.
+- 1:50-2:00. Summarize: which people are where, which two or three cases need a separate follow-up conversation, what the room agrees on.
+
+**What the session produces that the spreadsheet approach doesn't:**
+
+A shared understanding among the 7 managers of where people sit relative to each other. That is the actual output — not a normalized rating column in a spreadsheet, but 7 people with the same mental model. When Alex goes back to deliver Maya's 4% raise, he can say "the leadership group looked at your work, compared it to similar roles across the company, and landed on 4% as the merit portion" — and it will be true, because the leadership group did exactly that.
+
+**What the session does NOT do:**
+
+It does not produce a number for every person. That comes in Pass 4 when you do the pool allocation math. Calibration session is about relative positioning: who sits where. Pool math takes the relative positioning and turns it into dollars.
+
+**One specific rule for the session.**
+
+The founder is not in the room. This is a manager-calibration session; the founder joins for a 30-min summary at the end if he wants. Founder presence during the main session flattens disagreement — managers will argue less in front of the person who controls their own comp. You want the disagreement.
+
+**If you must have some math: do this instead.**
+
+After the session, if you want a sanity check, look at the post-session rating distribution. If Alex's team ended the session with 5/6 "exceeds" and the company-wide rate is 20%, the session didn't work — go back and re-run Alex's team individually. Don't multiply through a formula. Re-do the conversation.$pf$,
+ NULL),
+
+-- Step 4 --
+('66666666-6666-6666-6666-666666740104',
+ '55555555-5555-5555-5555-555555550074',
+ 4,
+ $pf$Pass 4 — allocating the $420K pool across 50 people with a defensible structure$pf$,
+ $pf$Calibration session is done. I now have a shared view of where people sit. Help me design the pool allocation math. My $420K split across 50 people needs to land in a way that: (a) rewards top performers visibly enough to matter, (b) doesn't leave solid performers feeling forgotten, (c) handles compression without eating the merit pool, (d) has $X held back for retention and exception cases. Walk me through a concrete allocation framework with actual dollar targets, not ranges.$pf$,
+ $pf$Here's a concrete allocation. I'll show you the framework with specific dollar targets on your $420K pool, then we'll stress-test it.
+
+**The four-bucket split.**
+
+| Bucket | % of pool | $ on $420K | Purpose |
+|--------|-----------|------------|---------|
+| Merit pool | 60% | $252,000 | Performance-driven raises across the 50 |
+| Compression fixes | 18% | $75,600 | Structural corrections independent of performance |
+| Retention reserve | 12% | $50,400 | Flight-risk cases identified by CTO/founder |
+| Exception/leveling | 10% | $42,000 | Level-mistake corrections and edge cases |
+
+Rationale for this split:
+
+- 60% merit is on the low end of what comp consultants recommend (they usually say 70-75%). I'm deliberately low here because your situation has both compression and retention pressure. A standard 75% merit split would leave <$30K for retention on a 50-person agency where the CTO has already flagged 2-3 flight-risk people. That math doesn't work — one retention raise at +11% on a $150K senior salary is $16.5K. Three of those eats the whole bucket.
+- 18% for compression is higher than normal (consultants usually say 10%) because your new-hire vs. tenure issue is real and you've named it. If you don't fix it in this cycle it compounds next cycle.
+- 12% retention is a reserve — if you don't use it all, it rolls into merit next cycle or gets returned to the CFO. Don't spend it if you don't need it.
+- 10% for leveling corrections on a cycle with two named level-mistake cases is right-sized. Leveling corrections tend to be 8-15% raises on base; at the two cases you've named, that's likely $20-30K, plus headroom for one more that surfaces during delivery conversations.
+
+**Merit pool distribution within the 60%.**
+
+Apply a performance-tier-weighted distribution. With 50 people and the calibration session output:
+
+| Tier | Expected % of people | Merit raise range | Median raise $ (at avg $105K base) |
+|------|---------------------|------------------|-----------------------------------|
+| Exceeds expectations | 15-20% (7-10 people) | 6-9% | $7,500 |
+| Strongly meets | 25-35% (12-17 people) | 4-6% | $5,250 |
+| Meets expectations | 35-45% (17-22 people) | 2-3.5% | $2,900 |
+| Developing | 10-15% (5-7 people) | 0-2% | $1,050 |
+
+Quick sanity check: 9 exceeds × $7,500 + 14 strongly meets × $5,250 + 20 meets × $2,900 + 7 developing × $1,050 = $67,500 + $73,500 + $58,000 + $7,350 = $206,350. That's below $252K, which is deliberate — you want 15-20% headroom in the merit pool for (a) high-base exceeds-tier people whose raises are nominally larger than the median and (b) reshaping within the ranges during delivery.
+
+**The "exceeds" tier rule.**
+
+Any "exceeds" rating below 6% merit should be flagged for review. If Maya is rated exceeds and her merit raise is 4%, something's wrong — either she's at the top of the band (legit reason, name it), or the calibration missed her, or you've over-counted exceeds. Going into delivery conversations with an "exceeds, 4% raise" mismatch is the #1 source of bad conversations.
+
+**Compression pool distribution within the 18%.**
+
+Rank-order the compression cases by severity:
+- Band-midpoint compression (current salary >15% below midpoint for tenure-appropriate level): fix first. Expect 2-4 cases.
+- New-hire vs. tenure compression (tenured person making within 5% of most-recent hire at their level): fix second. Expect 3-5 cases.
+- Between-level compression (mid-level within 4-6% of senior peers despite 15-20% band gap): fix third. Expect 2-4 cases.
+
+Allocate from the $75,600 starting at the top of the list. If you run out before you get to between-level, document the unfixed cases for next cycle and raise the compression bucket % next year.
+
+Compression fixes stack with merit. Someone who's mid-level at $92K (below midpoint $105K) and rated exceeds gets their 7% merit raise AND their compression fix to bring them to $102K. These are separate decisions; don't trade one off against the other.
+
+**Retention reserve — rules for drawing from it.**
+
+Use the 12% retention bucket ($50,400) only when:
+1. The person has been flagged flight-risk by a specific manager/CTO/founder (not self-declared), AND
+2. Their merit + compression raise alone is below what you think retains them, AND
+3. You have concrete evidence of external interest OR a pattern of being courted.
+
+A retention draw is typically 3-6 percentage points ON TOP OF merit. So Maya's 7% exceeds-tier merit raise becomes 11% with $6,000 retention draw. Document it as retention in the cycle notes.
+
+Do NOT use retention reserve to pre-empt flight risk on people who haven't been flagged. That's just a bigger merit pool with extra steps, and it will distort the calibration.
+
+**Exception/leveling bucket ($42,000).**
+
+Two named cases:
+- Senior-level person operating at mid: this is a level-DOWN conversation paired with (usually) no raise. The exception bucket here is $0.
+- Mid-level operating at senior: this is a level-UP. Band move from mid to senior at your structure is probably $92K → $118K = $26K, partially covered by 2.5% of merit + 100% of the leveling correction. Budget $22K from this bucket.
+
+You have $20K left in exception after the named level-up. Hold half of it ($10K) as emergency reserve for a surprise case that surfaces during delivery. Return the other half to the CFO at cycle close.
+
+**The total reconciliation.**
+
+| Bucket | Budget | Spent |
+|--------|--------|-------|
+| Merit pool | $252,000 | ~$240K (leave $12K headroom) |
+| Compression | $75,600 | $60-75K (depends on how many between-level cases you fix) |
+| Retention | $50,400 | $25-45K (depends on how many of the 2-3 flagged cases are real) |
+| Exception/leveling | $42,000 | $22K named + $10K held |
+| **Total** | **$420,000** | **$357-392K committed, $28-63K rolled or returned** |
+
+You will come in 10-15% under the full pool, and that is the right outcome. A cycle that spends to the last dollar has over-committed on every bucket to hit a number. Rolling $30-50K back to the CFO with a note "fully funded retention and compression, returned the remainder" is the professional outcome.
+
+**One-page summary to present.**
+
+When you share this with the founder before announcements:
+- $420K pool
+- Four buckets with specific purpose and dollar targets
+- Performance-tier distribution with the "exceeds" floor rule
+- Three named compression case types
+- Retention bucket rules (flagged + evidence)
+- Expected roll-back to CFO
+- Explicitly: this is a framework, individual numbers come from calibration
+
+Founder will push on "can we go higher for X person" once or twice. Your answer is: "Yes, show me what bucket it comes from." That keeps the framework intact.$pf$,
+ NULL),
+
+-- Step 5 --
+('66666666-6666-6666-6666-666666740105',
+ '55555555-5555-5555-5555-555555550074',
+ 5,
+ $pf$Pass 5 — three types of pay compression and two level-mistake cases$pf$,
+ $pf$Pool framework is locked. Now the thorny cases. I want to think through the compression and leveling conversations specifically, because these are where my inexperience is most likely to show. Walk me through: (1) how to diagnose the three compression types you mentioned — specifically how I know which I'm looking at, (2) the two level-mistake cases and how each should actually be handled in comp conversations, not just on paper.$pf$,
+ $pf$Compression and leveling are where comp cycles get messy because they force you to admit that previous cycles made decisions you're now correcting. Handled badly they're defensive; handled well they're credibility-building. Here's the diagnostic and handling spec for each.
+
+**The three compression types — how to tell them apart.**
+
+1. **New-hire vs. tenure compression.** You hired someone new in 2024 at market rate, but your 3-year person at the same level hasn't had their salary move enough to keep pace. Diagnostic: compute (tenured-person-salary - new-hire-salary) / new-hire-salary. If it's negative or below +5%, you have compression. Your 3-year person should typically be 8-15% above a new hire at the same level, because tenure = less ramp cost, institutional knowledge, track record. If they're below +5%, the fix is to move tenured people toward where they should be.
+
+   Why it matters: this is the compression type that drives tenured-performer departures. When Maya discovers (and she will) that the person hired 6 months ago makes $4K less than she does after 3 years, her rational response is to leave and come back as a new hire at someone else. Fix this first.
+
+   Typical fix size: 5-12% raise on top of merit. At $100K base, that's $5-12K per case. On 3-5 cases, budget $25-50K.
+
+2. **Between-level compression.** A mid-level person is making within 4-5% of a senior-level peer despite a 15-22% band gap between levels. Diagnostic: compute senior-midpoint / mid-midpoint — it should be 1.15-1.25 depending on your structure. Then compute the actual ratio for the specific pair: senior-peer-salary / mid-peer-salary. If the actual ratio is <1.05, you have between-level compression.
+
+   Why it matters: this is the compression type that makes promotions meaningless. If Alex is at mid-level $92K and Priya is at senior-level $96K, a promotion from mid to senior is a $4K raise. That's not a promotion; that's a title change. The message it sends: "the level system doesn't reflect real comp differences." People stop caring about promotions, which is fine until they leave for a place where promotions pay like promotions.
+
+   The fix for between-level is senior-side-up, not mid-side-down. Move the seniors toward their band midpoint if they're below it. Do NOT cap the mid-level person to preserve the gap — that punishes the mid-level person for a structural issue that isn't their fault.
+
+   Typical fix size: 4-8% raise on the senior-side. On 2-4 cases, budget $20-40K.
+
+3. **Band-midpoint compression (manager vs. IC).** Managers' bands should sit above IC bands for equivalent levels. If your senior-IC midpoint is $130K and your manager-of-ICs midpoint is $135K, you have a compressed structure. Diagnostic: look at your band doc. If manager bands are <8% above IC bands at the same level, you'll have managers who could make more money by stepping back to IC work.
+
+   Why it matters: this is a structural compression issue more than a per-person one. It probably won't bite you in this cycle (it shows up over time), but flag it in your post-cycle memo as a structural item for the founder to think about before the next cycle.
+
+   Typical fix in this cycle: $0. Document and plan for next cycle. If you have one acute case (a manager at the bottom of their band who should be mid-band), fix it with a compression draw. Most managers just need to know the structural issue is recognized.
+
+**Your two level-mistake cases — what actually happens in the conversation.**
+
+**Case A: senior-level person doing mid-level work.**
+
+This one is hard because the person is, on paper, doing their job — probably rated "meets" or even "strongly meets" — but the level they're paid at implies a scope of work they're not operating at. Two scenarios:
+
+*Scenario A1: They were over-leveled at hire.* Mistake is on the company, not the person. The fix is not to level them down — that's a termination-grade conversation and it's not fair if the mistake wasn't theirs. The fix is to ask: what would it take to grow them into the senior level? Either (a) you see a path with specific feedback + a 6-month runway, and you issue a flat raise this cycle with a documented growth plan, or (b) you don't see a path, and you have a harder conversation about role fit. The cycle itself is not the place to solve this — you book a separate conversation for January.
+
+*Scenario A2: They were appropriately leveled at hire, then the level requirements shifted (often because the company grew and senior-level meant something different 2 years ago).* This is more forgivable but still needs addressing. In this cycle: flat raise or minimal merit (1-2%), paired with a documented growth plan and a 12-month runway. If the growth plan doesn't produce, a leveling conversation follows next year.
+
+Either way: do NOT use the cycle's 0% raise as a signal you haven't yet sent with direct feedback. If Alex hasn't been told he's underperforming at level, a 0% raise will not communicate that — it will confuse him. Talk to the manager now and ask: "Does he know? What's been said? When?" If the answer is "not really," that conversation happens in December, the raise conversation happens in January.
+
+**Case B: mid-level person operating at senior.**
+
+This one's easier but has its own traps.
+
+*The fix is a promotion, paired with a level-band move in salary.* If the mid midpoint is $92K and the senior midpoint is $112K, you don't just bump them +22%. You land them somewhere in the senior band — probably bottom-of-band to start ($102-108K on a $100-120K band), with the expectation they'll earn their way toward midpoint over the next 12-18 months.
+
+Typical fix size: 12-18% raise, drawn from the leveling bucket with some merit overlap.
+
+*The trap:* They're going to ask (legitimately) why this wasn't done 6-12 months ago when they first hit senior-level work. Your answer cannot be "we didn't see it." Your answer should be: "You've been at senior-level scope for about 9 months. The year-end cycle is the natural time to correct it. The $15K raise reflects both the level move and retroactive recognition of the work you've been doing." If you want to be more honest: "This is an 18-month reset for a pattern that started showing clearly in Q2. I should have flagged it then." Own it.
+
+*The second trap:* Their peers who are at senior level will ask "so is Maya senior-level now, at $108K, and am I still at $112K?" Be prepared to explain bottom-of-band placement as standard for new-to-level promotions. Most people accept this — they went through it themselves.
+
+**The meta-point on both cases.**
+
+Level mistakes accumulate because every cycle's easier decision is "leave it." Your job this cycle is to be the cycle that fixes them. Whoever runs the cycle after you will have an easier time because you did.
+
+**Documentation.**
+
+For every compression and leveling case, the cycle notes should have a one-paragraph entry: what the issue is, what the fix is, what the manager agreed to, what the growth plan is (if applicable), and when it's reviewed next. The documentation is the firebreak against the same issue silently recurring next cycle.$pf$,
+ NULL),
+
+-- Step 6 --
+('66666666-6666-6666-6666-666666740106',
+ '55555555-5555-5555-5555-555555550074',
+ 6,
+ $pf$Pass 6 — manager delivery scripts for the three hardest conversations$pf$,
+ $pf$All the math is locked. Managers will deliver to their teams starting next Monday. I need to give each manager a script for the three hardest conversations: (1) the flat-or-low raise to someone who thinks they deserved more, (2) the "exceeds" rating paired with a raise that's at the low end of exceeds because they're at top-of-band, (3) the leveling-down-of-scope paired with a flat raise. I want actual opening lines, middle moves, and how to handle the pushback — not "be honest and transparent" generalities.$pf$,
+ $pf$Delivery is where cycles die. Good math + bad scripts = people leaving with a story that gets retold. Here's what each of the three conversations actually sounds like.
+
+**Conversation 1: flat or low raise to someone who thinks they deserved more.**
+
+*Context:* This is usually a "meets" or "developing" tier person who rates themselves higher than their manager did. They walk in expecting 5%; their raise is 2%.
+
+*Opening (first 30 seconds).* "I want to walk you through your comp for next year. Your base is moving to $[X], which is a $[Y] increase, or [Z]%. I want to explain how we got to that number, and then I want to hear from you about how you're thinking about the year."
+
+*DO NOT start with "I know this might not be what you were expecting."* You've just signaled guilt before the person has reacted, which invites a negotiation. State the number. Let them react. Then explain.
+
+*The explanation (2-3 minutes).* "The 2% reflects the leadership group's calibrated view of your work this year. Your strongest contribution was [specific thing from their review]. The area where the calibration landed 'meets expectations' rather than 'strongly meets' was [specific dimension — e.g., 'consistency on client deliverables across Q2 and Q3']. I'm not going to rehash every piece of feedback — that conversation belongs in your review, not in comp — but I want you to know the 2% reflects specific dimensions, not an overall read."
+
+*The pushback you'll get.* Usually one of three:
+1. "I thought I was doing better than that." → "I hear you. The calibration was done with all the managers in one room, looking at specific artifacts. I'm going to ask you to sit with the number for a day, and if you want to talk about the performance read separately, let's do that in our next 1:1."
+2. "Is this my future here?" → DO NOT answer this in the comp conversation. "That's a career conversation, not a comp conversation, and you deserve the time to have it without it getting mixed with this. Let's schedule 30 min for it this week."
+3. "What would it have taken to get more?" → "Great question. Specifically, it would have taken [concrete thing]. Let's build that into your Q1 goals."
+
+*What NOT to say.* "Budget was tight." "The pool wasn't what we wanted." "Everyone got lower this year." These are all ways of saying "don't blame me, blame the pool" — which is you abandoning the decision. You made the decision. Own it.
+
+**Conversation 2: "exceeds" rating + raise at the low end of exceeds because of top-of-band.**
+
+*Context:* Priya is your clearest exceeds performer. Her current base is $138K against a senior-level band of $120K-$142K. Her "exceeds" merit target was 7%, which would put her at $147.7K — above the band top. You're constrained to a 3% raise to keep her in-band, which is going to feel to Priya like she was penalized for being too good.
+
+*Opening.* "Priya, I want to walk you through your comp. Your base is moving to $142K, which is a $4K increase or about 3%. I want to be upfront: the 3% is band-capped, not performance-capped. Your performance read this year was exceeds, and by the merit framework your raise would have been closer to 7%. We were 3% because you've reached the top of your current band."
+
+*The explanation.* "Senior-level at our company has a band of $120K-$142K. You've been climbing that band for three years and this year you've hit the top. The decision in front of us is a promotion, a band expansion, or a bonus — not a larger in-band raise. Here's what we're doing:
+
+- Your raise is at the top of the band so the in-band move reflects the performance read.
+- We are formally reviewing your scope for a promotion to principal level in Q1. That's not a promise, and I want to be honest that promotion decisions happen separately from comp cycles, but your Q4 performance has made the question legitimate.
+- In the meantime, there's a $[Z] recognition bonus this cycle that acknowledges the gap between the 3% and what the merit framework would have produced uncapped."
+
+*The pushback you'll get.* "So good performance gets me less than it should?" → "In one cycle, yes. The band exists so we're not making ad-hoc decisions for individual top performers. The band move this cycle is the first step; the promotion question is the real conversation. I'd rather have that conversation right than rush it into this cycle."
+
+*What NOT to say.* "You'd need to wait for a promotion cycle." That sounds like "you did your part, now you wait." Instead: "The promotion review starts in January; I'm committing to a decision by end of February." Give a date.
+
+**Conversation 3: leveling scope down, paired with a flat raise.**
+
+*Context:* This is the senior-level-person-doing-mid-level-work case. You and the manager have agreed that the level is not going to change (yet), but the scope expectations are being reset and the comp is flat.
+
+*This is the only conversation of the three where the comp conversation ISN'T the main event.* The main event is the scope/role conversation. Do that one FIRST, in a separate meeting, 1-2 weeks before announcements. By the time you're delivering comp, the person already knows the scope is being reset — comp is just confirmation.
+
+*Opening (assuming prior scope conversation).* "Last week we talked about the scope reset for next year. I want to close the loop on what that means for comp. Your base is staying at $142K for 2026 — no change. The reason is that we're in a period of recalibrating scope to the senior level, and the expectation is that we revisit comp in July when we've both got a clearer read on the new scope."
+
+*The explanation (this one matters most).* "Flat raises have a specific meaning here. They are not a signal that you've underperformed — we'd have that conversation separately, with a plan. Flat in this case means: we're holding comp steady while the scope work is in motion. If the scope work lands as we've discussed, the July conversation will be about where comp catches up. If it doesn't, we'll be having a different conversation, and that conversation will not be in a comp review — it'll be direct."
+
+*The pushback you'll get.* "Is this a soft PIP?" → Be honest. "A PIP would be documented, specific, and time-bound. This is not a PIP. It's a scope reset with a comp pause. If the scope reset isn't working in six months, that may become a different conversation, and if it does, I'll tell you directly — you won't hear it through comp."
+
+*What NOT to say.* Any version of "we're holding comp this year to see what happens." That's the passive-voice version. Be active: "We are pausing comp while the scope work is in motion. The July review is the rematch."
+
+**One rule that applies to all three.**
+
+Managers do not wing these. Each of the seven managers gets the packet with the scripts for every person on their team. If a manager has any of the three hard conversations, they role-play it with you (the ops owner) the week before announcements. A 20-minute role-play is the difference between "this landed" and "this became a six-month wound."
+
+**The 48-hour rule.**
+
+After each conversation, the manager follows up in writing with three things: the number, a one-line reason, and a next-conversation date (if applicable). "Your base is moving to $142K — flat for 2026 — and we'll revisit in July." Written, same day. This is what the employee screenshots and refers back to when they're deciding whether to update their LinkedIn.$pf$,
+ NULL),
+
+-- Step 7 --
+('66666666-6666-6666-6666-666666740107',
+ '55555555-5555-5555-5555-555555550074',
+ 7,
+ $pf$Pass 7 — post-cycle governance, the audit trail, and what I change for next year$pf$,
+ $pf$Announcements are done. Now close the cycle properly so that whoever runs next year's cycle (me or someone else) inherits a system, not folklore. What goes in the post-cycle memo, what goes in the cycle file (and where does that file live), what are the two or three meta-mistakes this cycle that I should write down explicitly, and what lightweight governance do I put in place for mid-year so comp decisions outside the cycle don't quietly re-introduce the compression and leveling issues I just spent 6 weeks fixing?$pf$,
+ $pf$Post-cycle governance is where 70% of the value of the cycle gets compounded or lost. Most cycles end with announcements and the owner moving on — six months later the same compression issues are back because nothing was written down. Here's what to do.
+
+**The post-cycle memo — what goes in it.**
+
+This is a 4-5 page document you write the week after announcements, while the cycle is still fresh. Audience: founder + your future self. Not for publication.
+
+Structure:
+
+*Section 1 — summary of the cycle (1 page).*
+- Pool size, split across buckets, and actual spend per bucket.
+- Headline distribution stats: X people at "exceeds" tier with median Y% raise, etc.
+- Total people count, any hires or departures mid-cycle.
+- Major cycle-specific events (acquisition, restructuring, leadership changes).
+
+*Section 2 — the three most defensible decisions (1 page).*
+- Case name, one-paragraph description of the decision, why it was defensible.
+- Purpose: these are the patterns you repeat next cycle.
+
+*Section 3 — the three most uncomfortable decisions (1 page).*
+- Case name, description, what made it uncomfortable, whether you'd do the same again.
+- Purpose: these are the learning cases. "Uncomfortable but right" is different from "uncomfortable and wrong" and you should label them.
+
+*Section 4 — structural issues surfaced (1 page).*
+- Between-level compression is still unsolved for the senior IC band.
+- Our level definitions for mid vs. senior are fuzzy on "raises the bar" dimension.
+- Manager bands are <8% above IC bands at equivalent level.
+- Two people we should have leveled last cycle; we delayed by one cycle at real cost.
+- These are items for the founder's planning for the NEXT cycle to budget and address.
+
+*Section 5 — what I'd change for next year (0.5-1 page).*
+- Calibration session: add a 20-minute "pre-read review" window so managers can flag packet issues before the session starts.
+- Delivery: require role-plays for all three hard-conversation types, not just "optional if manager requests."
+- Post-cycle: add a mid-year (July) comp check to catch out-of-cycle adjustments before they drift.
+- Specific things — not "communicate better."
+
+**The cycle file — what it contains, where it lives.**
+
+Build a Notion page or a shared Google Drive folder with this structure:
+
+```
+2026 Year-End Comp Cycle/
+├── 00_philosophy_memo.md          (Pass 1 output, signed, dated)
+├── 01_pool_framework.md           (Pass 4 output, final version)
+├── 02_calibration_session_notes.md (what the room actually said)
+├── 03_person_packets/              (one per person)
+│   ├── alex_rodriguez.md
+│   ├── maya_patel.md
+│   └── ...
+├── 04_final_decisions.csv         (name, old comp, new comp, bucket source, reason tag)
+├── 05_post_cycle_memo.md          (the doc above)
+└── 06_next_cycle_punch_list.md    (items for next year's owner)
+```
+
+Access: founder + ops owner + CFO. Not managers after the cycle closes — they got their team's info at delivery. Giving everyone ongoing access guarantees leaks.
+
+The `04_final_decisions.csv` is the most important artifact. One row per person, with: name, level, old base, new base, % change, bucket (merit/compression/retention/leveling), reason tag (3-5 words, max). This is what you'll refer to every time someone asks "why did Maya get X?" six months from now.
+
+**Tag every decision — specifically.**
+
+In the CSV, tag each decision with one of: `merit-meets`, `merit-strong`, `merit-exceeds`, `compression-new-hire`, `compression-between-level`, `compression-band`, `retention-flight-risk`, `leveling-up`, `leveling-down`, `exception`. Tag discipline matters. Six months from now you will ask "how much did we spend on retention?" and the answer should be sum(new - old) where tag = retention. If every decision is tagged "merit," you have no analytical ability.
+
+**The two or three meta-mistakes this cycle.**
+
+Write these down explicitly even if they feel embarrassing:
+
+1. **Level mistake you carried.** If you had three level-mistake cases surface this cycle and only fixed two, name the third. "Priya operating at senior but still at mid — flagged in calibration, carried to 2027 because the founder wasn't ready to commit to the promotion decision without more time in seat. Revisit in Q2."
+
+2. **Compression type you didn't address.** Same thing. "Between-level compression on the senior IC band was not addressed this cycle due to pool constraints. Estimated cost to fix next cycle: $40-60K. Flag for CFO in 2027 planning."
+
+3. **The one uncomfortable "no" you gave.** "Declined the founder's request to extend retention raise to Alex in QA; Alex's flight risk was signal, not evidence. Watching whether Alex departs in Q1 as a test of the call."
+
+Write all three in your own voice. This is not a CYA document — it's a learning document. The question you're answering is "what did I get wrong or partially right?" because next year's cycle builds on the honest answers.
+
+**Mid-year governance — keep the cycle work from eroding.**
+
+Most out-of-cycle comp decisions happen ad-hoc: a counter-offer to keep someone who got an external offer, a signing bonus for a new hire that creates a compression issue, a retention raise for someone the founder wants to keep. Each one quietly re-introduces the problems you spent 6 weeks fixing.
+
+Set these three rules with the founder:
+
+1. **No out-of-cycle raise without a tag.** Every comp change outside the cycle gets the same tags as cycle decisions (`retention-flight-risk`, `compression-new-hire`, etc.) and gets logged in a running document. This is a 2-minute tax per decision; it prevents a year of quiet drift.
+
+2. **Counter-offers trigger a compression check.** If you counter-offer someone at +15% to retain, you must (within 48 hours) check whether that person's new salary creates a compression issue with their peers. If yes, document it for the next cycle. Don't try to fix both issues ad-hoc.
+
+3. **New-hire offers over band midpoint trigger a notification.** If a hiring manager is extending an offer above midpoint for a level, the ops owner is notified within the same week. This is not a blocker — sometimes above-midpoint offers are the right call — but it creates visibility.
+
+**The July check-in.**
+
+Block a 90-minute session in July (6 months out from year-end) with the founder. Agenda:
+- Any mid-cycle comp changes since January. Were they tagged?
+- Any compression issues that have surfaced (new hires above tenured peers, etc.)?
+- Any flight-risk patterns worth flagging before year-end?
+- Status of the cases we flagged for 2027 resolution.
+- Any structural items from the post-cycle memo that need budget commitment before 2027 cycle starts?
+
+This 90-minute session catches 80% of the issues that would otherwise get discovered in next year's calibration session. Small cost, high payoff.
+
+**One last thing.**
+
+The cycle after this one should be ~40% less work for you, because you've built the scaffolding. If it isn't — if you find yourself redoing philosophy, redoing packet templates, redoing calibration — something didn't get written down clearly enough the first time. Iterate the cycle file so that version 2 runs faster. That's how this becomes a durable practice instead of a once-a-year crisis.$pf$,
+ NULL);
+
+
+-- =========================================================================
+-- Project 0075 — sarahgrows / Marketing / 3-step Sonnet 4.6 beginner
+-- Waking up an 18-month-dormant 1,800-subscriber email list
+-- =========================================================================
+
+DELETE FROM prompt_steps WHERE prompt_id = '55555555-5555-5555-5555-555555550075';
+DELETE FROM prompts      WHERE id        = '55555555-5555-5555-5555-555555550075';
+
+INSERT INTO prompts (
+  id, title, description, content, result_content,
+  category_id, difficulty, model_used, model_recommendation,
+  tools_used, tags, status, author_id, vote_count, bookmark_count
+) VALUES (
+  '55555555-5555-5555-5555-555555550075',
+  $pf$Waking up an 18-month-dormant 1,800-person email list — triage, 3-email re-engagement, and permission to delete$pf$,
+  $pf$Inherited a client's 1,800-subscriber email list that hadn't been mailed in 18 months. 3 passes with Claude 4.6 Sonnet: triage the options, draft the re-engagement sequence, plan post-campaign cleanup. Ended with 480 confirmed-active subscribers, a clean sender reputation, and a list I'd be proud to send against. The key move was granting explicit permission to delete people who didn't re-engage — Claude reframed that as protecting deliverability, not losing subscribers.$pf$,
+  $pf$I took on a new marketing client last month — small B2B SaaS, 12-person team, CEO doing the marketing himself until now. In the discovery call he mentioned "we have a list, we just haven't used it." I asked how many subscribers. 1,814. I asked when the last send was. He opened ConvertKit and said "huh — May 2024." That's 18 months of silence.
+
+The list is real — not purchased, grown organically from a free resource they launched in 2022. But 18 months dormant is a deliverability death sentence if you just start sending. I've seen this before and I know the options vaguely: warm it back up, segment the engaged and mail just those, or delete everyone and start fresh. The CEO's instinct is "just send to everyone — they signed up, they want to hear from us." That is the wrong instinct and I need to show him why without sounding like I'm lecturing.
+
+I'm going to work this with Claude 4.6 Sonnet across three passes. This is beginner-tier email-marketing work — Sonnet is the right tool; Opus would be overkill for something that's mostly structured judgment + decent copy. I need: (1) a triage pass that presents the three options with honest tradeoffs, and a recommendation I can defend, (2) a re-engagement email sequence if we go that route — real copy, not "here's a template," (3) a clear execution and cleanup plan so at the end of this I have a list I'd actually send to, not a list I'm nursing indefinitely.
+
+Success state: clean, warm list at 30-50% of current size; CEO knows what I did and why; subsequent sends have good deliverability from day one.$pf$,
+  $pf$Outcome after running all 3 passes and executing the campaign:
+
+**Starting state:** 1,814 subscribers, 18 months dormant.
+
+**Final state after 17 days:**
+- 480 subscribers confirmed active (opened + clicked in the re-engagement window).
+- 1,210 subscribers removed (either unsubscribed, marked as inactive-deleted per cleanup rules, or hard-bounced).
+- 124 subscribers flagged for one more targeted send (opened but didn't click — kept on probation list for 30 days, then deleted if no further action).
+
+**Deliverability:** First send to the cleaned list hit 94% inbox rate on Google Postmaster Tools. For comparison, if we'd sent the same email to the full 1,814 cold, the estimated inbox rate based on spam complaint rates from dormant lists would have been 35-55%. The CEO is now sending weekly to the 480; open rates are averaging 42%, click rates 6.8%. These are real engagement numbers, not vanity metrics.
+
+**What Claude did best:** the triage pass (Pass 1) reframed the "delete subscribers" question from a loss to a protection move. The CEO's initial pushback was "but we worked hard for those subscribers." Claude's framing — "a subscriber who doesn't open is not actually a subscriber; they're a liability on your sender reputation" — changed the conversation. Once he saw it that way, the permission to delete was straightforward.
+
+**What surprised me:** the re-engagement email sequence (Pass 2) only needed three emails, not the 5-email sequences I'd seen recommended online. Claude was direct that 3 is enough — more emails to a dormant list is begging, and begging dilutes the sender reputation further. One Tuesday send, one Friday nudge, one Tuesday goodbye. Done.
+
+**What I'd do differently:** I sent the first email at 10am ET on a Tuesday. Open rate was 18% — fine for a dormant list but I think I could have squeezed 22-25% by sending at 7am when more of the list is in "inbox clearing" mode. Not a huge delta but worth testing next time.
+
+**Would I use Claude 4.6 Sonnet again?** Yes. The task was high-judgment but low-reasoning-depth — the right framework applied cleanly. Sonnet was fast and direct. I wouldn't have needed Opus for this.$pf$,
+  '11111111-1111-1111-1111-111111111102',
+  'beginner',
+  'claude-sonnet-4-6',
+  'Claude 4.6 Sonnet',
+  ARRAY['Claude','ConvertKit','Google Sheets','Google Postmaster Tools'],
+  ARRAY['email-marketing','list-hygiene','re-engagement','small-business','deliverability'],
+  'approved',
+  '22222222-2222-2222-2222-222222222202',
+  0, 0
+);
+
+INSERT INTO prompt_steps (id, prompt_id, step_number, title, content, result_content, description) VALUES
+
+-- Step 1 --
+('66666666-6666-6666-6666-666666750101',
+ '55555555-5555-5555-5555-555555550075',
+ 1,
+ $pf$Pass 1 — triage the 18-month-dormant list with honest tradeoffs$pf$,
+ $pf$Here's what I'm working with: 1,814 subscribers on ConvertKit, last send May 2024, list grew organically from a free "2022 B2B SaaS sales-stack guide" lead magnet. No segmentation tags beyond signup source. CEO wants to just start mailing weekly to everyone. I want to push back with a clear set of options and a recommendation. Walk me through the three options a dormant-list owner has, the real tradeoffs of each (deliverability cost, audience cost, speed to productive sending), and tell me which one to recommend in this specific situation and why. I don't want equivocation — give me an answer I can defend to the CEO.$pf$,
+ $pf$You have three options, ranked from worst to best for your specific situation. I'll give you the answer first and then show my work.
+
+**Recommendation: run a 3-email re-engagement sequence to the full list over 10 days, then delete anyone who doesn't open or click.** You'll likely end with 400-600 active subscribers on a list that's safe to mail weekly. Do not let the CEO mail everyone cold.
+
+**The three options in full.**
+
+**Option A — Cold-send to all 1,814 subscribers (the CEO's plan).**
+
+What happens: some fraction of the list (let's say 30-40%) is still loosely engaged — they remember the company, they're glad to hear from you. The other 60-70% either don't remember signing up, have moved jobs, or actively don't want this email. Of that 60-70%, maybe 3-5% will hit "mark as spam" rather than unsubscribe.
+
+Why that matters: Gmail and Outlook track spam complaint rate at the domain level. A spam complaint rate above 0.3% is a deliverability problem; above 0.5% is a crisis. You'll likely hit 2-3% on a cold send to a 18-month-dormant list — which means your NEXT email, even to engaged subscribers, gets routed to spam. You'll have spent your accumulated sender reputation to find out the list was dead.
+
+Deliverability cost: high (borderline catastrophic for a small sender).
+Audience cost: zero — you keep everyone.
+Speed: immediate, but you pay for it for months.
+
+Don't do this. The CEO's instinct is wrong because he's thinking about the email as a free action; it's not free, it's borrowing against sender reputation.
+
+**Option B — Segment to the "most likely engaged" by signup source, mail just those, delete the rest.**
+
+What happens: you take the most recent signups (say, the last 600 signups = people who signed up between late 2022 and May 2024, closest to their conversion moment) and mail just those. You delete the other 1,200 without trying to re-engage them.
+
+Why that works: deliverability-safe (you're mailing a higher-quality subset), fast, and you avoid the begging that re-engagement emails can feel like.
+
+Why that doesn't work for you: you have no engagement data. You have signup-source data only. You're assuming "more recent signup = more likely to engage," which is often true but not always. You'll delete 1,200 people without knowing how many of them were actually engaged.
+
+Deliverability cost: low (safe).
+Audience cost: moderate — you definitely delete some engaged subscribers.
+Speed: fast.
+
+Viable but suboptimal for your situation because 1,200 subscribers is a meaningful number to throw out without even asking. If you had 50,000 subscribers, this would be fine. At 1,800, the re-engagement conversation is worth the 10 days.
+
+**Option C — Run a 3-email re-engagement sequence to the full list, then delete non-engagers. (Recommended.)**
+
+What happens:
+- Email 1 (Tuesday, morning send): honest, short, says "hey, we've been quiet, we're about to start mailing again — here's what to expect; if you want to stay, just open this or click to confirm." This is the big send; expect 15-25% open rate on a dormant list and 3-6% click rate.
+- Email 2 (Friday, 3 days later): different subject line, sent only to non-openers of Email 1. Same theme: "did you miss us? if you want to stay, open this." Expect 5-10% of non-openers to open here.
+- Email 3 (Tuesday, 10 days after Email 1): final call, sent only to non-engagers from Emails 1 and 2. Subject line something like "we'll stop here unless you want more." Very short. Expect 2-5% to open.
+
+After Email 3, anyone who hasn't opened or clicked anything across the sequence gets deleted.
+
+What you end up with: probably 400-600 confirmed-engaged subscribers. That's a list you can mail weekly forever without deliverability issues.
+
+Why this is the right call for you specifically:
+1. 1,800 is small enough that a 3-email sequence is cheap to run.
+2. You have no segmentation, so Option B is uncertain; re-engagement gives you real engagement data you can use going forward.
+3. Your sender reputation is intact (no recent sends = no recent damage). You can afford to do this right the first time.
+4. The CEO will feel better about deleting people who actively didn't engage than about deleting people you "assumed" were dormant.
+
+Deliverability cost: low (you're sending to a list that knows you, and the volume is small enough that even modest spam complaints won't damage reputation).
+Audience cost: moderate — you'll delete 60-70% of the list, but you're deleting people who didn't respond to THREE touches, which is a very defensible call.
+Speed: 17 days from first send to clean list.
+
+**The CEO-facing argument.**
+
+Don't frame this as "we have to lose subscribers." Frame it as: "A subscriber who doesn't open is not a subscriber. They're a liability on your sender reputation. If we mail them, we're telling Google that people don't open our emails — which makes Google put OUR engaged subscribers' emails in spam too. The re-engagement sequence is how we protect the 480 people who actually want to hear from us."
+
+Most CEOs I've seen push back on "deleting subscribers" until they understand the deliverability math. Once they see that keeping non-engaged people actively HURTS the engaged people, the decision is easy.
+
+**What this looks like in practice.**
+
+Block 17 days on the calendar. Draft the three emails this week (I can help with copy in the next pass). Send Tuesday of week 1. Second send Friday of week 1. Third send Tuesday of week 3. The Wednesday after the third send, you delete the non-engagers and start weekly cadence to the clean list the following Tuesday.
+
+One thing to flag to the CEO: he should not be surprised when the list goes from 1,800 to ~500. The 500 is the REAL list. The 1,300 was a number on a dashboard.$pf$,
+ NULL),
+
+-- Step 2 --
+('66666666-6666-6666-6666-666666750102',
+ '55555555-5555-5555-5555-555555550075',
+ 2,
+ $pf$Pass 2 — draft the three re-engagement emails$pf$,
+ $pf$Option C is the plan. CEO signed off on it — your "subscriber who doesn't open is a liability" framing did most of the work. Now draft the three emails. Client is a B2B SaaS called Thread Sales Tools (sales-stack consolidation software for 20-150 person sales teams). Voice is direct, honest, not corporate. The 2022 lead magnet was the "SaaS Sales-Stack Consolidation Guide" so many subscribers remember them from that. Draft all three emails — subject lines, preview text, body, CTA. Keep them short. Include the "why we're only sending this if you want more" framing you mentioned — I want the honesty to be the hook.$pf$,
+ $pf$Here's all three, ready to ship. I'll include the subject line, preview text, and body for each, plus notes on what each email is doing.
+
+---
+
+**Email 1 — Tuesday, 7am ET**
+
+*Subject line:* We've been quiet. Here's why, and what's changing.
+
+*Preview text:* No new product pitch. Just a heads-up, and a question for you.
+
+*Body:*
+
+Hi,
+
+You signed up for Thread at some point — most likely through our 2022 SaaS Sales-Stack Consolidation guide, since that's where most of our list came from.
+
+We haven't emailed in 18 months. Here's the honest story: we were heads-down building, we didn't have a marketing person, and sending emails "when you have nothing new to say" felt worse than staying quiet. So we stayed quiet.
+
+We're starting up again. Not with a launch announcement, just with a weekly note from our CEO about what we're learning working with 20-150 person sales teams — the sales-stack patterns that keep breaking, the pricing fights, the "we added a 7th tool this year" spiral. Stuff you might actually care about if you're thinking about your own sales stack.
+
+Two things I want to make clear:
+
+1. **If you want to stay on the list, just open this email or click the link below.** That's all you need to do. We'll keep sending.
+2. **If you don't, you don't need to do anything.** We're only going to keep mailing people who've shown some sign of wanting it. Everyone else, we're going to stop emailing so we respect your inbox.
+
+[Yes, keep me on the list] (single-click link — sets a ConvertKit tag)
+
+If you've moved jobs or never really signed up on purpose, no hard feelings. Just don't click. We'll take you off quietly.
+
+Thanks for the patience. I think what's coming is going to be worth reading.
+
+— [CEO name]
+Thread Sales Tools
+
+---
+
+*What this email is doing:* Acknowledges the 18-month gap without groveling. Tells the subscriber exactly what's happening and what they need to do. The "we're only going to keep mailing people who want it" line is the actual value of the re-engagement — it signals that the sender has good deliverability hygiene, which matters to anyone who's been on a spam-bombing list before. The CTA is a one-click confirmation, not a survey or a download — friction is the enemy here.
+
+---
+
+**Email 2 — Friday, 10am ET (sent only to non-openers of Email 1)**
+
+*Subject line:* Did Tuesday's email land in your spam?
+
+*Preview text:* Quick follow-up — then we'll stop bugging you.
+
+*Body:*
+
+Hi,
+
+We sent a note on Tuesday about why we've been quiet and what's coming next. You didn't open it, so either it landed in spam or you've moved on — both reasonable.
+
+Short version of what the Tuesday email said:
+
+- We're sending weekly starting next week.
+- CEO write-up on sales-stack patterns in 20-150 person teams.
+- Not a launch pitch — just useful notes from the field.
+
+If any of that sounds like something you'd want in your inbox, click below. That's all.
+
+[Yes, I'd like to stay]
+
+If not, no worries. We'll take you off the list later this week.
+
+— [CEO name]
+Thread Sales Tools
+
+---
+
+*What this email is doing:* Different subject line (new hook: the "spam" mention is self-deprecating and acknowledges the real reason people often miss emails, which builds trust). Shorter than Email 1 because you're catching people who didn't bother with the first one — respect their time. Same single-click CTA.
+
+---
+
+**Email 3 — Tuesday (10 days after Email 1), 2pm ET (sent only to non-engagers from Emails 1 and 2)**
+
+*Subject line:* Last email, promise.
+
+*Preview text:* We're cleaning up the list tomorrow. Quick question.
+
+*Body:*
+
+Last one.
+
+Two weeks ago we reached out to say we're starting to email again and wanted to confirm you still want to be on the list. You didn't respond, which is totally fine.
+
+Here's what's going to happen: tomorrow we're removing everyone who hasn't shown any sign of wanting more email from us. That probably includes you.
+
+If you DO want to stay — last chance to click:
+
+[Keep me on the list]
+
+If not, we're taking you off tomorrow and you won't hear from us again. No hard feelings, and thanks for being on the list as long as you were.
+
+— [CEO name]
+Thread Sales Tools
+
+---
+
+*What this email is doing:* The "last email, promise" subject line is direct and signals that the sender is going to honor their own word. The body is short because people who haven't engaged with two prior emails are unlikely to read a long one. The "tomorrow we're removing" line creates a real deadline — the only time urgency is honest in email marketing is when the deadline is real. This one's real.
+
+---
+
+**Operational notes for sending these.**
+
+1. Send times matter. Email 1 at 7am ET catches the morning inbox-clearing window. Email 2 at 10am ET hits a different time-of-day segment. Email 3 at 2pm catches the post-lunch inbox check. Don't send all three at the same time — you want to hit different inbox-opening moments.
+
+2. Each email uses a ConvertKit "confirmation link" that tags the subscriber as `re-engaged-2026-cycle`. The single-click is the signal. Don't send them to a landing page with a form — that's friction and it will tank your yes rate.
+
+3. Email 2 and 3 are only sent to people who didn't open OR click the previous email. Use ConvertKit's automation to suppress openers/clickers from subsequent sends in the sequence. If a subscriber opens Email 1 but doesn't click, they still count as engaged — opens are enough signal for this exercise. You don't need both.
+
+4. After Email 3 sends on Tuesday afternoon, wait until Wednesday morning before you clean the list. Some people open emails 12-24 hours late; give them the chance. Then pull the list of everyone still without a `re-engaged-2026-cycle` tag and delete them in one batch.
+
+5. Do NOT send more than three emails. A fourth "really, last chance!" email is begging. Respect the subscriber's non-response.
+
+**What to tell the CEO.**
+
+Expected outcomes across the three emails:
+- Email 1: 15-25% open rate, 8-14% of the list click-engages.
+- Email 2: 5-10% of non-openers from Email 1 engage.
+- Email 3: 2-5% of remaining non-engagers engage.
+- Total engaged: 25-35% of the original list. On 1,814, that's 450-630 people.
+
+Send Email 1 Tuesday. Follow the sequence. Clean the list two weeks later. You're done.$pf$,
+ NULL),
+
+-- Step 3 --
+('66666666-6666-6666-6666-666666750103',
+ '55555555-5555-5555-5555-555555550075',
+ 3,
+ $pf$Pass 3 — execution calendar, deliverability-watching, and the post-cleanup plan$pf$,
+ $pf$Emails are approved by the CEO with one tweak (he changed "Thanks for the patience" to "Thanks for bearing with us" — fine). Now the execution plan. I want a day-by-day calendar for the 17-day campaign window, what deliverability signals I'm watching and where (Google Postmaster Tools, ConvertKit dashboard, something else?), what the cleanup criteria look like precisely, and what the first "real" send to the cleaned list should look like so we start weekly cadence without whiplash.$pf$,
+ $pf$Here's the execution plan, top to bottom.
+
+**Day-by-day calendar (17 days).**
+
+| Day | Date (example: start Tue Dec 2) | Action |
+|-----|--------------------------------|--------|
+| -2 | Sun | Verify ConvertKit sender domain auth (SPF, DKIM, DMARC all passing). Confirm unsubscribe link works. Preview-send each of 3 emails to your own address + CEO's address. |
+| -1 | Mon | Final QA pass on all 3 emails. Double-check the automation rules: Email 2 sends only to non-openers/non-clickers of Email 1; Email 3 sends only to people who haven't engaged with either prior send. |
+| 1 | Tue, 7am ET | Send Email 1 to all 1,814. Set a reminder to check dashboard at 12pm, 6pm, and next-morning. |
+| 1-3 | Tue-Thu | Monitor. Set a watch threshold: if spam complaints exceed 0.3% after 24 hours, PAUSE the sequence and escalate. (You won't hit this, but set the threshold.) |
+| 4 | Fri, 10am ET | Send Email 2 to non-engagers of Email 1. |
+| 4-10 | Fri-Mon | Monitor. Non-engager list shrinks through Email 2's engagements. Track spam complaints, bounce rate. |
+| 11 | Tue, 2pm ET | Send Email 3 to remaining non-engagers. |
+| 12 | Wed | Final engagement count. Pull the list of subscribers still without `re-engaged-2026-cycle` tag. |
+| 13 | Thu | CLEANUP: delete all non-engaged subscribers in ConvertKit (not "archive" — actually delete so they don't count toward your send-volume billing). |
+| 14-16 | Fri-Sun | Breather. Let ConvertKit reconciliation run. Confirm final list count. |
+| 17 | Mon | Draft the first "real" weekly email for Tuesday send. |
+
+**Deliverability signals — what to watch and where.**
+
+1. **Google Postmaster Tools.** Add your sending domain if it isn't already. Daily signals to check:
+   - Spam rate: should stay under 0.3% across the campaign. If it spikes, pause and investigate.
+   - Domain reputation: watch for any drop from "high" or "medium" to "low." If it drops, your subsequent emails are going to spam — stop and fix before continuing.
+   - IP reputation: if you're using ConvertKit's shared IP (you are), this is less actionable but still worth watching.
+   - Feedback loop data: shows actual complaint events. One or two is noise; a pattern of more than 10 in a day is a signal.
+
+2. **ConvertKit's deliverability dashboard.** Real-time on each send:
+   - Delivery rate: should be 96%+ for a list this size. If it drops below 94%, investigate.
+   - Bounce rate: hard bounces on first send will tell you how much of the list is stale email addresses. Anything under 3% is normal; 5-8% on a dormant list is also normal; above 10% is a red flag.
+   - Open rate: your re-engagement signal. Email 1 should see 15-25%.
+   - Unsubscribe rate: will be high on Email 1 (probably 4-8%). This is FINE — unsubscribes are cleaner than spam complaints. Don't be alarmed.
+   - Spam complaint rate: should stay under 0.3%.
+
+3. **SendGrid/Mailgun (if you use them as the underlying sender).** ConvertKit uses these under the hood. For a list your size on ConvertKit's plan, their default monitoring is probably enough — you're unlikely to trigger sender-level issues.
+
+**Watch thresholds — when to pause.**
+
+If any of these happens, stop the sequence and investigate:
+- Spam complaints >0.3% in any 24-hour window.
+- Google domain reputation drops a tier.
+- Hard bounce rate >15% on Email 1.
+- Unsubscribe rate >12% on Email 1 (unusual — suggests something is wrong with the email content or the list is worse than you thought).
+
+If none of these happens — and on a 1,800-person list with decent content they almost certainly won't — just let the sequence run.
+
+**Cleanup criteria — precisely.**
+
+On Day 12 (Wednesday after Email 3), pull the list in ConvertKit filtered to:
+- Subscribed to the list
+- NOT tagged `re-engaged-2026-cycle`
+- Signup date before 2024-06-01 (to avoid deleting anyone who signed up DURING the campaign, which shouldn't happen but safety first)
+
+Export this list as a CSV for backup. Store it somewhere you can retrieve it for 90 days (Google Drive). The reason: if anyone complains "I didn't get my email" 60 days later, you can confirm they were on the old list and were given three chances to re-engage.
+
+Then: delete the filtered subscribers from ConvertKit.
+
+One edge case: subscribers who are in your ConvertKit account but part of a different form/sequence. Don't touch those. The cleanup applies only to subscribers associated with the main list.
+
+**The "first real send" to the cleaned list.**
+
+Monday after cleanup: draft it. Tuesday: send.
+
+The first real send should do three things:
+
+1. **Show up as promised.** The CEO said "weekly notes from the field." The first email should be one. Don't start with "we're excited to be back!" — you're past that. Just ship the thing.
+
+2. **Reward the 480 who stuck around.** A short note at the top: "Thanks for confirming. This is the first of our weekly sends — let's get into it." One sentence, then the content. You're not apologizing for the gap anymore; you're showing up.
+
+3. **Set the cadence and unsubscribe norm.** Bottom of the email: "This goes out every Tuesday morning. If you ever want to stop, the unsubscribe link at the bottom works and there's no hard feelings." This normalizes unsubscribes as a healthy part of list hygiene, which keeps your complaint rate low going forward.
+
+Sample structure for Tuesday's send:
+
+*Subject:* The 7-tool sales stack that's eating your ops team's week
+
+*Body:*
+- 100-word intro from the CEO naming the problem (sales stacks growing unchecked, ops teams burning out integrating them).
+- 300 words of actual substance: here's the pattern we see at 20-150 person teams, here's what breaks, here's a question worth asking.
+- A single link out (blog post, case study, or a conversation starter — NOT a product pitch in the first email).
+- Unsubscribe-normal footer as above.
+
+Target length: 400-500 words. Nobody is reading a 1,500-word "we're back" letter in week 1. Save that for week 12 when you're telling them about a real product move.
+
+**Metrics for the first four weeks.**
+
+Watch these to confirm the cleanup worked:
+- Open rate: should be 35-50% on the cleaned list. (For comparison, you got 18% on the cold list and industry average for B2B SaaS cleaned lists is 25-30% — if you hit 35%+, your re-engagement filter worked well.)
+- Click rate: 4-8% is the healthy range.
+- Spam complaint rate: should be near zero. If it's consistently >0.1% on a cleaned list, something's off.
+- Unsubscribe rate: 1-3% per send is normal and healthy; higher suggests content mismatch.
+
+If after 4 weeks those numbers look like the healthy range, the campaign worked and you can settle into weekly cadence with confidence.
+
+**One final discipline.**
+
+Put a recurring 90-day calendar reminder: "List hygiene check." Every 90 days, pull the list of subscribers who haven't opened anything in 90 days and decide what to do about them. A small re-engagement sequence (one email, not three) at the 90-day mark catches drift before it becomes an 18-month problem again. Dormant lists don't start dormant — they drift.$pf$,
+ NULL);
+
+
+-- =========================================================================
 -- END OF FILE — append next project(s) below this line.
 -- Iterations working the Content queue: add 2–3 projects per iteration,
 -- appending below this comment. Do NOT rewrite existing projects.

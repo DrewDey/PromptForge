@@ -22451,6 +22451,745 @@ Save these notes in a `2026-quadratics-retrospective.md` Google Doc. Open it fir
  $pf$Reassessment (45 min, 100 pts, 11 Qs, topic-parallel to original unit test): Section 1 factoring x3 (including non-monic parallel to original Q2 and GCF+difference-of-squares); Section 2 solving+vertex form x3 (parallel to original Q4, Q5, Q7); Section 3 graphing parabola in vertex form (parallel to Q8); Section 4 word problems x2 (projectile + optimization, parallel to Q9, Q10); **Section 5 NEW transfer questions** — Q10 find-the-error in a student's incorrect completing-the-square work (tests whether kid understands add-and-subtract must balance, NOT memorized procedure), Q11 explain-why-completing-the-square-works (2-3 sentences, no numerical answer, tests conceptual shift). Q10+Q11 specifically CANNOT be answered by re-memorization — separates genuine understanding from procedural re-teach. **Reflection protocol (5 questions, run within 48 hrs of grading, write down the answers):** (1) compare Q10+Q11 (transfer) vs Q1-Q9 (computational) — if transfer <50% while computational jumped, reteach was procedural not conceptual; (2) difficulty-parity check against original unit test, colleague-blind compare if unsure, discount gains by any difficulty delta; (3) diagnose the 3 lowest-scoring students — if present all 10 days and still <60%, sequencing didn't reach them; (4) look at middle 10 students (65-80 range) — if the middle moved most, rescue hit its target; if only already-passing kids rose, rescue failed and was class-average illusion from extension track; (5) Section A vs Section B (natural control) — <10 pt gain over B = marginal effect, next year simpler reteach; 15+ pt gain = repeatable. Write retrospective notes in `2026-quadratics-retrospective.md` immediately (not August) — identify misconceptions Pass 1 didn't predict, Day 1 activity parts kids resisted, dud Track C extensions, what to build into ORIGINAL unit so Pass 1's diagnostic becomes ongoing formative not post-failure autopsy.$pf$);
 
 -- =========================================================================
+-- Project 55-0064 | Blameless retrospective — 3-hour payment outage | Derek Lawson | Coding | 6 steps
+-- =========================================================================
+
+DELETE FROM prompt_steps WHERE prompt_id = '55555555-5555-5555-5555-555555550064';
+DELETE FROM prompts      WHERE id        = '55555555-5555-5555-5555-555555550064';
+
+INSERT INTO prompts (
+  id, title, description, content, result_content,
+  category_id, difficulty, model_used, model_recommendation,
+  tools_used, tags, status, author_id, vote_count, bookmark_count
+) VALUES (
+  '55555555-5555-5555-5555-555555550064',
+  $pf$Blameless retro workflow — 3hr payment outage that cost ~$180K in abandoned carts$pf$,
+  $pf$We had a P1 payment outage (3h 12min, ~$180K in abandoned carts across three brands on our platform). 6-pass Claude workflow from timeline reconstruction → contributing-factors map → 5-whys ladder that doesn't degenerate into blame → action items with explicit owner/date/tier → counterfactual stress-test → synchronous-meeting facilitation script.$pf$,
+  $pf$I'm CTO at a 45-person health-tech (we white-label a SaaS payments layer for three small-to-mid e-commerce brands — not the core product of the company, but it's a meaningful revenue line). Two Thursdays ago we had a P1: payment authorization started failing at 14:07 ET, fully failed by 14:23, we fully recovered by 17:19. 3h 12min of no checkouts across all three tenants. Abandoned-cart attribution from our analytics says we left ~$180K on the floor; the actual lost-revenue number is lower than that (some people came back) but the order of magnitude is real, and the reputational hit on one tenant's Slack is worse than the dollar number.
+
+Our retro discipline is not great. Last two incidents we ran a "what happened" meeting, wrote a Slack summary, dropped 4 action items that each a different person quietly dropped, and moved on. I've been reading Etsy/Google/Allspaw on blameless postmortems for years but every attempt I've made at running a disciplined one got watered down by someone who wanted to skip ahead to "so what are we going to do differently."
+
+This time I want to do it right. 6 Claude Opus 4.7 passes to draft the retro doc BEFORE the meeting (not after — huge point), then use the draft as the spine of a 90-minute synchronous session. The goal: actual systemic action items that survive the week, not a sympathy-theater Slack post.$pf$,
+  $pf$Ran the retro 6 days after the incident. 7 people in the room (2 on-call eng, the DB specialist who caught it, the SRE who drove recovery, the product lead for the payments line, our VP Eng, me). Pre-read the Claude-drafted doc sent 48hrs ahead. 88 minutes, stayed in scope, the 5-whys didn't devolve into "who pushed the bad change" because I used Pass 3's ladder structure to keep each "why" at the system level, not the person level. Shipped 9 action items (3 P0, 4 P1, 2 P2) with named owners and due dates, including the two load-bearing ones: (a) add connection-pool exhaustion to our existing synthetic-check suite (P0, owner: Platform, due 2 weeks — actually shipped in 8 days), (b) require a 4-line "impact on backpressure" section in every database-migration PR template going forward (P1, owner: me, due 1 week — shipped same day). Counterfactual stress-test from Pass 5 caught that "we would have detected this 11 minutes earlier if the pool-exhaustion alert had existed" which made the first action item's business case write itself. Followup at 30 days: 7 of 9 AIs closed, 2 in-flight, 0 dropped (vs. our prior-incident baseline of 4 AIs shipped / 4 AIs quietly dropped). The real win is cultural — the DB specialist who made the migration change that caused the outage said afterward "this is the first retro I've been in where I didn't spend the whole time trying to justify myself" and that sentence is worth more than the $180K.$pf$,
+  '11111111-1111-1111-1111-111111111104',
+  'advanced',
+  'claude-opus-4-7',
+  'Claude 4.7 Opus',
+  ARRAY['Claude','Datadog','PagerDuty','Google Docs','Slack'],
+  ARRAY['coding','incident-response','postmortem','sre','reliability','blameless','leadership'],
+  'approved',
+  '22222222-2222-2222-2222-222222222209',
+  0, 0
+);
+
+INSERT INTO prompt_steps (id, prompt_id, step_number, title, content, result_content, description) VALUES
+
+-- Step 1 --
+('66666666-6666-6666-6666-666666640101',
+ '55555555-5555-5555-5555-555555550064',
+ 1,
+ $pf$Pass 1 — timeline reconstruction from alerts + logs + Slack transcript$pf$,
+ $pf$I'm going to paste three raw sources below: (1) the PagerDuty alert timeline, (2) the #incident-payment-outage Slack channel transcript (our on-call used this as the incident channel), (3) the Datadog log excerpts for the payment-auth service between 14:00 and 17:30 ET.
+
+I need you to reconstruct a single, authoritative timeline with every load-bearing event at minute-granularity. Mark each event with: [TIME] [WHO/WHAT] [EVENT] [EVIDENCE SOURCE]. Don't editorialize yet — this is the "what actually happened" pass, not the "why" pass. Conflicts between sources (e.g. Slack says 14:23 but PagerDuty says 14:21) — note both and flag for me to resolve.
+
+Crucial: include the "non-events" too — the 17 minutes between the first alert firing and the first Slack message by the on-call (why was that gap? was the alert not paging? was the engineer in a meeting?). Also include the recovery-path non-events (were there periods where we thought we'd fixed it but the fix didn't take? partial recoveries? retries that succeeded then failed?).
+
+Output as a markdown table. Don't summarize it afterward — the timeline IS the artifact.
+
+[Sources pasted below — 340 lines PagerDuty, 812 lines Slack, 2,400 lines Datadog excerpts]$pf$,
+ $pf$Reconstructed timeline. Three conflicts flagged at the bottom for you to resolve.
+
+| Time (ET) | Who/What | Event | Evidence |
+|---|---|---|---|
+| 14:04 | DB migration #4217 | Online migration started on `payments.transactions` — added index on `(tenant_id, created_at)` | Migration log, DB audit trail |
+| 14:07:12 | payment-auth service | First 500s spike: 12 failures in 30s | Datadog logs, `payment-auth-prod-7xk9` pod |
+| 14:08 | PagerDuty | `payment-auth-error-rate-high` warning fired (threshold: 2%/5min) | PD alert timeline |
+| 14:09–14:16 | — | **NON-EVENT: no escalation, no ack, no Slack msg.** Warning-tier alerts don't page; they post to `#alerts-warnings` only. On-call Kiran was in a 14:00 interview panel. | PD alert log + Kiran's calendar |
+| 14:17 | PagerDuty | `payment-auth-error-rate-critical` fired (5%/2min) — paged Kiran | PD |
+| 14:19 | Kiran | Acknowledged page, joined `#incident-payment-outage`, posted "looking" | Slack 14:19:03 |
+| 14:21 | Kiran | First diagnostic attempt — checked `payment-auth` pod logs, saw `pq: too many connections` | Slack 14:21, Datadog |
+| 14:23:45 | payment-auth service | Full failure — 100% 500 rate, 0 successful checkouts across all 3 tenants | Datadog |
+| 14:24 | Kiran | Declared P1, paged SRE (Arun), paged DB specialist (Li) | Slack, PD |
+| 14:28 | Arun + Li | Joined bridge, started investigating DB connection pool | Slack |
+| 14:34 | Li | Identified root cause candidate: migration #4217 opened a long-running scan that held a connection from the pool; combined with routine traffic, pool exhausted at ~14:07 | Slack 14:34:18 |
+| 14:41 | Arun | **"FIX #1": scaled payment-auth pods 8 → 16 (hoped more pods = more connections per pod headroom)** | Slack, K8s audit |
+| 14:44 | — | **PARTIAL RECOVERY: auth success rate climbed to ~35% for 4 minutes, then dropped back to 0%** | Datadog |
+| 14:48 | Arun | Recognized fix #1 didn't hold (more pods → more connections wanted → same pool exhaustion at higher rate) | Slack 14:48 |
+| 14:51 | Li | **"FIX #2": killed the migration #4217 scan process directly via `pg_terminate_backend`** | Slack, DB audit |
+| 14:53 | — | **PARTIAL RECOVERY #2: auth success climbed to ~70%, held for 8 minutes** | Datadog |
+| 15:01 | Datadog | New alerts firing: connection wait-time > 500ms (p99) across multiple services | Datadog |
+| 15:04 | Li | Realized migration's pgstattuple snapshot was still holding a long-running transaction even after scan kill — restarted the PgBouncer layer to force-recycle | Slack 15:04:22 |
+| 15:04–15:11 | — | **CASCADE: PgBouncer restart dropped connections for all services, not just payment-auth. 3 other services (auth, notifications, orders-read) briefly errored.** | Datadog |
+| 15:11 | — | PgBouncer back online, connections re-establishing | Datadog |
+| 15:23 | payment-auth | Success rate 94% — stable | Datadog |
+| 15:27 | Kiran | Declared "recovering, monitoring" in Slack | Slack |
+| 15:27–17:19 | — | Monitoring-only phase. Kiran held the bridge. 3 customer-support threads escalated into the channel about individual stuck carts. | Slack |
+| 17:19 | Kiran | Closed incident, paged resolved in PD, posted customer-facing status-page "fully resolved" | PD, statuspage audit |
+
+**Conflicts flagged for your resolve:**
+
+1. **14:21 vs 14:22 for "first diagnostic"** — PagerDuty shows Kiran's ack at 14:19:03, Slack shows his first diagnostic message at 14:21:44. You had his Slack message at 14:21 and his earlier verbal "looking" at 14:19. I've used 14:21 as the first diagnostic since the 14:19 "looking" is an ack not a diagnostic. Confirm.
+
+2. **Migration start time** — DB audit trail says 14:04:02 for migration #4217 start. The Grafana DB dashboard screenshot in Slack shows the connection-pool climb starting at 14:04:40. 38-second gap — either the migration's initial index-build phase didn't hold a connection (expected, DDL connections are transient) and the sustained hold started at 14:04:40 when the scan phase began. Treating 14:04 as start-of-incident with 14:04:40 as start-of-symptom.
+
+3. **17:19 close time** — Statuspage audit shows "fully resolved" posted at 17:19:44; PD resolved at 17:17:12. 2.5 min gap is Kiran's manual statuspage post — not a real discrepancy, using 17:19 as incident-end.
+
+**Load-bearing non-events worth naming in Pass 2:**
+- **17-min gap 14:08–14:17** between warning-tier alert and critical alert. This is the single biggest detection delay. If warning had paged (or if pool-exhaustion had its own critical alert), MTTD would have dropped from 17 min to ~3 min.
+- **7-min gap 14:17–14:24** between first page and P1 declaration. Reasonable — Kiran was running single-threaded diagnostic. Not a process failure.
+- **2 partial recoveries** — fix #1 (scale pods) and fix #2 (kill migration scan) both produced brief recovery followed by regression. Neither fix was wrong, both were incomplete. Worth naming in Pass 2 as a "incomplete-mental-model" contributing factor, not a "wrong decision" factor.$pf$,
+ $pf$Reconstructed minute-granularity timeline of the 3h 12min outage. Load-bearing findings: (a) migration #4217 started 14:04, symptom onset 14:04:40, first warning alert 14:08 — but warning alerts don't page, only post to a channel, so the 14:17 critical-alert page was the real detection moment → **17-min detection gap**; (b) two fix attempts both produced partial recovery followed by regression — fix #1 scaled pods 8→16 but more pods wanted more connections → same exhaustion at higher rate; fix #2 killed the migration scan but the pgstattuple snapshot still held a long-running transaction → required PgBouncer restart at 15:04 which caused a **7-min cascade** affecting 3 other services; (c) full recovery 15:23, stable monitoring 15:27–17:19. Three timestamp conflicts resolved (ack vs diagnostic 14:19 vs 14:21, migration-start DDL-phase vs scan-phase 14:04 vs 14:04:40, statuspage-post-lag 17:17 vs 17:19). Two load-bearing non-events flagged for Pass 2: 17-min warning→critical gap is single biggest detection delay, 2 partial recoveries are "incomplete-mental-model" contributing factors not "wrong decision" factors (critical framing distinction for blameless retro).$pf$),
+
+-- Step 2 --
+('66666666-6666-6666-6666-666666640102',
+ '55555555-5555-5555-5555-555555550064',
+ 2,
+ $pf$Pass 2 — contributing-factors map: what went wrong, what went right, systemic vs local$pf$,
+ $pf$Now use the timeline to build a contributing-factors map. Three columns:
+
+1. **What went wrong** — every factor that contributed to the outage OR to the length of the outage. Include detection gaps, recovery delays, and mental-model gaps, not just "the migration caused it."
+
+2. **What went right** — the things that prevented this from being a 6-hour outage instead of 3h 12min. Retro discipline: if you only name what went wrong, you stop doing the things that prevented the catastrophe next time. Examples: "Arun's pod-scaling attempt was wrong-but-fast" counts; "PagerDuty escalation chain worked correctly" counts.
+
+3. **Systemic vs local** — for each factor, label **[S]** (systemic, the failure mode would have happened to any on-call in that situation) or **[L]** (local, specific to this engineer/this day/this code). The blameless-retro rule: systemic factors get action items; local factors get sympathy and a note. If your map is 90% [L], you've fallen into the blame trap. Aim for 80%+ [S].
+
+Don't generate a narrative. Give me a structured list with [S]/[L] tags. I'll review it and push back if I think anything is miscategorized.$pf$,
+ $pf$Contributing-factors map. 14 factors total: 9 wrong, 5 right. 12 [S], 2 [L] — the ratio is healthy for a blameless frame.
+
+**What went wrong (9 factors):**
+
+1. **[S] Migration #4217's scan phase held a connection from the pool for 18+ minutes.** Our migration tooling doesn't enforce a "migration operations must be bounded in connection-holding time" check. Any DBA on any day could have written this migration the same way — we have no pattern library or CI check for it.
+
+2. **[S] Connection-pool exhaustion had no dedicated alert.** We alerted on downstream symptoms (error rate, latency), not on the upstream cause (pool utilization). Pool utilization is visible in Datadog but isn't monitored. This is the single highest-leverage gap.
+
+3. **[S] Warning-tier alerts don't page.** The 14:08 warning gave us a 9-minute head start if anyone had been watching. Nobody was — warnings go to `#alerts-warnings` which nobody monitors in real-time. This is a system-design choice (we explicitly didn't want warnings to page at night), but the "only at night" nuance isn't coded — warnings just don't page ever.
+
+4. **[S] On-call was in a scheduled interview panel at time of critical page.** Our on-call handoff doesn't include "flag your unavailable blocks to the pairing secondary." Any on-call on any day could have been unavailable for reasons not visible to the team.
+
+5. **[S] Fix #1 (scale pods) was based on an incomplete mental model.** More pods → more connection requests → same pool exhaustion at higher rate. This isn't "Arun was wrong"; it's "our runbook for payment-auth errors lists 'scale pods' as step 1 without a precondition check for pool-related errors." The runbook led here.
+
+6. **[S] Fix #2 (kill migration scan) didn't account for the pgstattuple snapshot.** Neither Li's mental model nor our DBA docs name the snapshot-holds-transaction behavior of pgstattuple-adjacent scans. The fix was correct-but-incomplete; completeness would have required institutional knowledge we don't have written down.
+
+7. **[S] PgBouncer restart cascaded to 3 other services.** PgBouncer isn't isolated per-service. A restart drops connections for everything. The architecture makes this cascade inevitable whenever PgBouncer has to restart. This is a known design tradeoff from 2023, now being re-tested under fire.
+
+8. **[S] Customer-support escalations during recovery-monitoring phase pulled Kiran's attention away from monitoring.** We don't have a "customer-support goes to a different Slack channel during incidents, incident channel stays signal-only" rule.
+
+9. **[L] Migration #4217 was merged and deployed on a Thursday 13:45, 15 min before a known-peak payment window (Thursday 14:00-18:00 is our top-4 highest-checkout window per week).** Li knew the peak window timing; the migration scheduling slipped because he was unblocking a Friday deadline. A "don't deploy migrations during known-peak windows" rule would have caught this. Policy gap → [S]; but Li specifically knew and proceeded → partial [L]. Tagging as [L] but the action item should be [S] (add the check, don't rely on remembering).
+
+**What went right (5 factors):**
+
+10. **[S] PagerDuty escalation chain worked correctly.** Critical page fired, on-call acked within 2 min, escalation to SRE + DB specialist happened within 7 min. The paging system itself is not the problem.
+
+11. **[S] Kiran declared P1 at 14:24, 7 min after paging.** Fast declaration unblocks resources. Our culture of "when in doubt declare P1 early" worked.
+
+12. **[S] Datadog dashboards had enough signal to diagnose root cause by 14:34 (10 min after declaration).** 10-min MTTK (mean time to knowledge) is good for a novel failure mode. The dashboards are not the bottleneck.
+
+13. **[L] Arun's "pod scaling" fix attempt was wrong-but-fast.** He tried something, it didn't work, he recognized it didn't work in 7 min, moved on. The willingness to try-and-discard fast is a cultural strength. Tagged [L] (specific to Arun's temperament) but worth celebrating so others replicate.
+
+14. **[S] Customer statuspage was updated within 15 min of P1 declaration and updated 4 more times during the incident.** Communication discipline worked. Our statuspage runbook has the "update every 30 min even if no news" rule and it held.
+
+**Distribution check:** 12 [S] / 2 [L] (one of the [L]s — factor #9 — has an [S] action item). That's 85% systemic. Healthy ratio for Pass 3's 5-whys ladder. If the retro meeting pushes to reframe any [S] as [L] ("Li should have been more careful" for factor #6, "Kiran should have been in the channel not the interview" for factor #4), you push back — those reframes are the blame trap in action.$pf$,
+ $pf$Contributing-factors map: 14 factors, 9 wrong / 5 right, 12 [S] systemic / 2 [L] local = 85% systemic ratio (healthy for blameless frame, target 80%+). Top 3 highest-leverage systemic factors: (#2) connection-pool exhaustion had no dedicated alert — pool utilization visible in Datadog but not monitored → single highest-leverage gap; (#5) fix #1 "scale pods" from runbook was based on incomplete mental model — runbook led here, not Arun; (#6) fix #2 "kill migration scan" didn't account for pgstattuple snapshot — correct-but-incomplete due to undocumented institutional knowledge. What went right: PagerDuty escalation chain, fast P1 declaration (7min), 10-min MTTK from declaration, try-and-discard culture (Arun's 7-min discard of failed fix), statuspage discipline (5 updates in 3hrs). Anticipated blame traps for Pass 3 retro facilitation: pressure to reframe #4 ("Kiran in interview") as [L] ("should have been in channel") and #6 ("pgstattuple snapshot") as [L] ("Li should have known") — both reframes push back against, keep them [S] because system (on-call availability tracking, DBA docs completeness) is the failure mode.$pf$),
+
+-- Step 3 --
+('66666666-6666-6666-6666-666666640103',
+ '55555555-5555-5555-5555-555555550064',
+ 3,
+ $pf$Pass 3 — 5-whys ladder for each top factor, framed to stay at the system level$pf$,
+ $pf$For the top 3 systemic factors from Pass 2 (connection-pool exhaustion had no dedicated alert; fix #1 "scale pods" runbook was incomplete; fix #2 "kill scan" missed the pgstattuple snapshot), build a 5-whys ladder.
+
+Critical constraint: every "why" must resolve into a SYSTEM factor, not a PERSON factor. The classic 5-whys failure is "why didn't Alice catch it? → Alice wasn't paying attention → Alice should pay more attention." That's not a root cause; that's a suspect list. The blameless version: "why didn't ANYONE catch it? → our monitoring doesn't monitor that thing → we need a monitor for it."
+
+For each factor, give me:
+- The 5 whys
+- The terminal "why" (what the root cause actually is at the system level)
+- The anti-pattern to avoid during retro facilitation (what reframe will the room try to impose, and how do I redirect)
+
+Don't just list questions — this ladder is the spine of the synchronous retro. Make each "why" concrete enough that a participant could contest or confirm it from memory.$pf$,
+ $pf$Three 5-whys ladders. Each ends at a system factor and has an anti-pattern note for facilitation.
+
+---
+
+**Factor #2 — Connection-pool exhaustion had no dedicated alert.**
+
+**Why 1.** Why did we only detect the outage through downstream error-rate symptoms (14:08 warning, 14:17 critical) rather than on the upstream pool-exhaustion cause?
+→ Because our alerting strategy is built around user-facing symptoms (error rate, latency, checkout-success rate), not infrastructure saturation metrics.
+
+**Why 2.** Why is our alerting strategy built only around user-facing symptoms?
+→ Because when we set up alerting in 2023, we explicitly avoided "infrastructure metric" alerts because they had a high false-positive rate (pools spiking briefly during normal traffic surges). We decided to alert only on what the customer felt.
+
+**Why 3.** Why didn't we revisit that decision as we added infrastructure and saturation failure modes became more likely?
+→ Because our alerting catalog doesn't have an explicit review cadence. Alerts get added when a new incident reveals a gap; they don't get added proactively based on "what new failure modes does this architectural change introduce."
+
+**Why 4.** Why don't we have a proactive alert-review cadence tied to architecture changes?
+→ Because our architecture-review process (2024 revision) doesn't have a "what monitoring does this introduce a gap in" checklist item. Arch reviews focus on design correctness, not observability coverage.
+
+**Why 5.** Why doesn't our arch-review process have an observability-coverage checklist?
+→ Because the arch-review template was copied from a FAANG template that assumed a dedicated observability team would handle the coverage. We don't have a dedicated observability team; our arch-review template assumes we do.
+
+**Terminal why (system-level root cause):** Our architecture-review process imports an assumption — that observability coverage is handled out-of-band by a specialist team — that doesn't match our org structure. Every arch review since 2024 has silently skipped observability coverage. Pool-exhaustion alerting is one instance; there are probably other instances we haven't hit yet.
+
+**Anti-pattern during facilitation:** The room will try to collapse this to "we should have had a pool-exhaustion alert." That's the Why-1 answer, not the root cause. Push past it: "OK, we'll add the alert — but why didn't we have it?" Keep pulling until you're at the arch-review template.
+
+---
+
+**Factor #5 — Fix #1 "scale pods" runbook was based on incomplete mental model.**
+
+**Why 1.** Why did Arun's first fix scale pods even though the problem was upstream of pod count?
+→ Because the payment-auth error-rate runbook lists "scale pods 2x" as step 1 without a precondition check for "is this error upstream of pod capacity."
+
+**Why 2.** Why does the runbook list a capacity fix as step 1 without a diagnosis step?
+→ Because the runbook was written in 2024 when ~80% of payment-auth errors were downstream of pod saturation (we were under-provisioned at the time). The runbook encodes the 2024 error distribution, not the 2026 distribution.
+
+**Why 3.** Why hasn't the runbook been revised as the error distribution shifted?
+→ Because runbooks don't have a review cadence. They get updated only when they fail during an incident (as this one did).
+
+**Why 4.** Why don't runbooks have a review cadence?
+→ Because runbook maintenance isn't in anyone's formal ownership model. The original author (who left the company in 2025) is listed as owner; there's no handoff process.
+
+**Why 5.** Why don't runbooks have an ownership-handoff process when authors leave?
+→ Because our offboarding checklist covers code ownership, documentation ownership, and on-call rotation — but not operational-artifact ownership like runbooks, dashboards, and alerting rules. These fall through the cracks.
+
+**Terminal why (system-level root cause):** Our offboarding process doesn't reassign operational artifacts (runbooks, dashboards, alerts) the way it reassigns code ownership. Anything authored by someone who left is de-facto unmaintained until it fails. The payment-auth runbook is one instance; the broken 2024-era dashboards I keep seeing are probably others.
+
+**Anti-pattern during facilitation:** The room will try to reframe this as "Arun should have diagnosed before scaling." That's the blame trap — Arun followed the runbook, which is what we WANT on-call to do under time pressure. Push back: "Arun followed the runbook correctly. The runbook was wrong. Why was the runbook wrong?"
+
+---
+
+**Factor #6 — Fix #2 "kill scan" didn't account for pgstattuple snapshot.**
+
+**Why 1.** Why did killing the migration scan via `pg_terminate_backend` not release the connection?
+→ Because the migration used a pgstattuple-adjacent extension to collect index-bloat statistics. That extension opens a long-running transaction snapshot that persists independent of the scan's own connection.
+
+**Why 2.** Why didn't Li know about the pgstattuple-snapshot behavior?
+→ Because our DBA-runbook section on "killing long-running queries" doesn't document the extension's snapshot behavior. The institutional knowledge exists — the previous DBA knew — but wasn't written down.
+
+**Why 3.** Why isn't this DBA institutional knowledge written down?
+→ Because we don't have a "post-incident knowledge harvesting" practice. Things learned during incidents get fixed operationally but don't get written into the DBA-runbook unless someone explicitly makes the entry.
+
+**Why 4.** Why don't we have a post-incident knowledge-harvesting practice?
+→ Because our retro action-item template focuses on "what will we change" (process/code/alert) and not on "what did we learn that should be written down." The writing-down step falls off the retro agenda.
+
+**Why 5.** Why doesn't our retro action-item template include a knowledge-capture item?
+→ Because our retro template was derived from an SRE-incident-review template that assumes a separate knowledge base (e.g. Confluence) and a separate ownership role (docs owner). We don't have either.
+
+**Terminal why (system-level root cause):** Our retros focus on action and not on knowledge. Every incident teaches the team something that isn't written down. The pgstattuple-snapshot fact is one instance; there are probably 50 others since 2024. Over time this makes new engineers dependent on tribal knowledge to debug production.
+
+**Anti-pattern during facilitation:** The room will try "Li should have known about pgstattuple." This is the most tempting blame trap because Li is senior. Push back hard: "Who wrote this down? Where is it? If we can't point to the doc, it's not Li's fault for not knowing — it's ours for not writing it down." Use this ladder's terminal-why explicitly in the meeting.
+
+---
+
+**Summary for synchronous retro facilitation:** each ladder's Why-5 is a systemic action item (arch-review observability checklist / offboarding operational-artifact reassignment / retro knowledge-capture). Each Why-1 is a local action item (add pool alert / revise payment-auth runbook / write pgstattuple doc). A disciplined retro ships BOTH — Why-1 fixes this outage, Why-5 fixes the class of outage.$pf$,
+ $pf$Three 5-whys ladders each terminating at a system-level root cause (NOT a person): (a) pool alert missing → arch-review template imports FAANG assumption of dedicated observability team that doesn't match our org structure; (b) scale-pods runbook incomplete → offboarding process doesn't reassign operational artifacts (runbooks/dashboards/alerts) the way it reassigns code ownership; (c) pgstattuple surprise → retro action-item template focuses on action not knowledge capture, every incident teaches something that doesn't get written down. Each ladder has a named anti-pattern for facilitation — specific reframes the room will attempt (Arun should have diagnosed before scaling, Li should have known pgstattuple, Kiran should have skipped the interview) with specific redirects (Arun followed the runbook correctly — the runbook was wrong; who wrote pgstattuple down? where is it?). Key framing: Why-1 fixes THIS outage (add alert, revise runbook, document pgstattuple); Why-5 fixes the CLASS of outage (arch-review observability checklist, offboarding-operational-artifact handoff, retro knowledge-capture step). A disciplined retro ships both tiers, not just Why-1 local fixes.$pf$),
+
+-- Step 4 --
+('66666666-6666-6666-6666-666666640104',
+ '55555555-5555-5555-5555-555555550064',
+ 4,
+ $pf$Pass 4 — action items with explicit owner, due-date, and severity tier$pf$,
+ $pf$Turn the Why-1 and Why-5 insights from Pass 3 into action items. Constraints:
+
+- **Every AI has a named owner, a due date, and a severity tier (P0 / P1 / P2).** No "team X will look into it" — a specific human.
+- **P0: ship within 2 weeks, blocks other work if needed.** P1: ship within 6 weeks, normal-priority queue. P2: ship within 1 quarter, slotted by capacity.
+- **Cover both the "fix this outage" tier (Why-1) AND the "fix the class" tier (Why-5).** Don't let the retro degenerate into just tactical fixes.
+- **Balance AI count against completion history.** Our prior retros shipped 4 AIs and dropped 4 AIs (50% completion). I want 8-10 AIs max this round — if it's 15 we'll drop 8.
+- **Flag dependencies between AIs** (e.g. "AI-5 depends on AI-3" — if 3 slips, 5 slips).
+- **Flag AIs with business-case exposure** — AIs that require exec buy-in beyond my authority (e.g. new headcount, 3rd-party contract).
+
+Give me a table with: AI # | Title | Why-1 or Why-5 tier | Severity | Owner | Due date | Dependencies | Business-case exposure.$pf$,
+ $pf$9 action items. 3 P0 / 4 P1 / 2 P2. Mix of Why-1 (tactical) and Why-5 (systemic). Incident date was Thursday 2026-04-02; retro meeting is Wednesday 2026-04-08; due dates are relative to retro day.
+
+| # | Title | Tier | Severity | Owner | Due | Dependencies | Business-case exposure |
+|---|---|---|---|---|---|---|---|
+| 1 | Add `payment-auth-db-pool-utilization > 85%` critical alert (pages on-call). Add synthetic check for pool exhaustion in staging weekly. | Why-1 | **P0** | Platform (Arun) | 2026-04-22 (2 weeks) | — | None |
+| 2 | Add 4-line "backpressure / connection-holding impact" section to database-migration PR template. Require migration authors to explicitly state max connection-hold time and peak-window deployability. | Why-1 | **P0** | Me | 2026-04-15 (1 week) | — | None |
+| 3 | Revise payment-auth error-rate runbook to add precondition-check step 0 ("Is this error upstream of pod capacity? Check pool utilization first") before step 1 "scale pods." | Why-1 | **P0** | Arun (runbook co-owner with Li) | 2026-04-22 (2 weeks) | — | None |
+| 4 | Add observability-coverage checklist item to architecture-review template: "What monitoring does this change introduce a gap in?" | Why-5 | P1 | Me | 2026-05-20 (6 weeks) | AI #1 proves out the pattern | None |
+| 5 | Add operational-artifact reassignment section to offboarding checklist: every leaver's runbooks, dashboards, and alerts are explicitly reassigned with new owner listed. Audit all currently-listed-but-departed owners in 30 days; reassign. | Why-5 | P1 | People Ops + me | 2026-05-20 (6 weeks) | — | Potentially: 30-day audit may surface a half-dozen orphaned artifacts needing active maintenance time from already-busy owners. Not net-new headcount but adds hours to several people. |
+| 6 | Add "knowledge-capture" section to retro action-item template: every retro ships at least 1 "write down this thing we learned" entry alongside tactical AIs. | Why-5 | P1 | Me | 2026-04-15 (1 week) | — | None |
+| 7 | Document pgstattuple-snapshot behavior in DBA runbook. Include: which extensions open long-running transactions, how to detect them, how to fully terminate them (not just the scan). | Why-1 | P1 | Li | 2026-04-29 (3 weeks) | AI #6 institutionalizes this practice | None |
+| 8 | Add on-call "scheduled unavailability" flagging in PD: when an on-call has a scheduled-block meeting during their shift, they must flag it to the pairing secondary 24hrs ahead. | Why-5 | P2 | SRE team (Arun) | 2026-05-27 (7 weeks) | — | None |
+| 9 | Review "deploy-during-peak-windows" policy. Current state: informal, relies on author knowing the peak window. Proposed: CI check that rejects migration deploys during top-4 weekly peak windows unless explicit override. | Why-5 | P2 | Platform + Product | 2026-06-17 (10 weeks) | AI #2 PR template is prerequisite | Possibly: product lead may push back if override-friction causes 1-day slippage on marketing-coordinated deploys. Negotiate override process ahead of time. |
+
+**Not-doing list (AIs we explicitly considered and rejected):**
+
+- **A. "Retrain on-call on DBA topics."** Rejected — individual retraining doesn't address the systemic knowledge-capture gap. AI #7 + AI #6 are the correct response.
+- **B. "Separate PgBouncer per service."** Rejected — architectural rework, 6+ weeks of eng time, incident frequency doesn't justify. Revisit if we have a second PgBouncer-cascade incident within 6 months.
+- **C. "Hire a dedicated SRE."** Deferred — this is a structural question bigger than one incident. Not a retro AI. Flagging for my 1:1 with VP Eng.
+- **D. "Rewrite the payment-auth runbook end-to-end."** Rejected — AI #3 fixes the load-bearing step; full rewrite is scope-creep.
+
+**Summary: 9 AIs, 3 P0, 4 P1, 2 P2. Why-1 (tactical) : Why-5 (systemic) = 5:4. Business-case exposure on 2 AIs (#5, #9). Dependencies on 3 AIs (#4 waits on #1, #7 waits on #6, #9 waits on #2). Completion target: 100% of P0 by due date, 85% of P1 by due date, 60%+ of P2 by due date — beats prior-retro baseline (50% overall completion).**$pf$,
+ $pf$9 action items with owner/due/tier. 3 P0 (pool alert + synthetic check, migration-PR-template backpressure section, runbook precondition-check step 0), 4 P1 (arch-review observability checklist, offboarding operational-artifact reassignment, retro knowledge-capture template section, pgstattuple documentation), 2 P2 (on-call scheduled-unavailability flagging, deploy-during-peak-windows CI check). Why-1 tactical : Why-5 systemic ratio = 5:4 (disciplined blend, neither only-tactical nor only-systemic). 2 AIs have business-case exposure (offboarding audit may surface orphaned-artifact maintenance time; peak-window CI may face product-lead pushback on override friction) — flagged for ahead-of-meeting negotiation. 3 AIs have dependencies (arch-review waits on pool-alert to prove the pattern, pgstattuple doc waits on knowledge-capture template, peak-window CI waits on migration PR template). Explicit not-doing list: retrain on-call (systemic fix not individual), separate PgBouncer per service (architectural rework not justified at current incident frequency), hire dedicated SRE (structural question, out of retro scope), rewrite payment-auth runbook end-to-end (scope creep, AI #3 covers load-bearing step). Completion target 100% P0 / 85% P1 / 60%+ P2 — beats prior-retro 50% baseline.$pf$),
+
+-- Step 5 --
+('66666666-6666-6666-6666-666666640105',
+ '55555555-5555-5555-5555-555555550064',
+ 5,
+ $pf$Pass 5 — counterfactual stress-test: which actions would have actually prevented or shortened this outage?$pf$,
+ $pf$Counterfactual stress-test. For each AI from Pass 4, answer: "If this AI had existed and been correctly implemented on 2026-04-01 (day before the incident), how would the 2026-04-02 incident have played out?"
+
+The goal is to sanity-check that the action items are genuinely load-bearing, not just "things that feel productive." Some AIs will have massive counterfactual impact; some will have minor impact; some will have zero impact on THIS incident but prevent a different class. Write each honestly — if an AI wouldn't have helped, say so and justify keeping it (or cut it).
+
+For each AI, give: counterfactual outcome (time saved or prevented entirely), confidence level (high / medium / low), and "keep or cut" recommendation.$pf$,
+ $pf$Counterfactual analysis. 6 of 9 would have had measurable impact on THIS incident; 3 are forward-looking (zero impact on 04-02 but prevent a future class).
+
+**AI #1 — pool-utilization alert + synthetic check.**
+Counterfactual: pool-utilization alert would have fired at approximately 14:06 (2 minutes after migration started, as pool utilization climbed past 85%). That's 11 minutes before the 14:17 critical alert we actually got. Kiran would have been paged at 14:06 instead of 14:17. Even accounting for the fact that Kiran was in the interview panel, the pairing secondary (who wasn't in the interview) would likely have ack'd the earlier alert within 5 min. Best case: 14:11 ack vs 14:19 actual ack = **8 minutes saved on detection**. Further: knowing the cause is pool-exhaustion from the alert itself, the first diagnostic attempt would skip the "what's going on" phase and go straight to "who's holding connections" — another 5-7 minutes saved on diagnosis. **Total counterfactual savings: 13-15 minutes off the 3h 12min outage.** Confidence: HIGH. **KEEP (P0 warranted).**
+
+**AI #2 — migration PR template backpressure section.**
+Counterfactual: Li would have written in the PR that migration #4217 holds a connection for ~20 min during the scan phase and that it's peak-window-risky. The PR reviewer (Arun) would have flagged the peak-window timing. Migration likely delayed to off-peak (post-18:00) deploy. **Incident prevented entirely** — or at minimum, delayed to a low-traffic window where pool exhaustion wouldn't have driven 100% failure. Confidence: MEDIUM-HIGH (depends on reviewer catching the flag; PR template makes it likely but not certain). **KEEP (P0, highest-leverage preventative AI).**
+
+**AI #3 — runbook precondition-check step 0.**
+Counterfactual: Arun would have checked pool utilization before scaling pods. He would have seen pool exhaustion at 14:28 and skipped the scale-pods fix entirely, going straight to "who's holding connections." Saves ~7 minutes (the time lost between fix #1 at 14:41 and fix #1 failing at 14:48). **Total counterfactual savings: 7 minutes.** Confidence: HIGH. **KEEP (P0).**
+
+**AI #4 — arch-review observability checklist.**
+Counterfactual: no direct impact on 04-02 incident (the arch review for the 2024 pool-aware architecture is ancient). BUT: the last arch review (Q1 2026, migration-tooling revamp) would have flagged that the new migration framework doesn't surface connection-holding metrics. That flag would have led to AI #1 being created proactively, months ago. **Indirect impact: would likely have caused AI #1 to exist already.** Confidence: MEDIUM. **KEEP (P1 — forward-looking, prevents next incident of this class).**
+
+**AI #5 — offboarding operational-artifact reassignment.**
+Counterfactual: the payment-auth runbook author left in 2025; if the offboarding process had reassigned runbook ownership, someone would have been on the hook for the 2024-era "scale pods step 1" becoming stale. Reassignment alone doesn't fix the staleness, but "named owner reviews quarterly" would have caught it. **Indirect impact: likely AI #3 would already be done.** Confidence: MEDIUM-LOW (depends on whether the new owner actually does the quarterly review). **KEEP (P1) but couple with a calendared review rhythm in the AI, not just a name.**
+
+**AI #6 — retro knowledge-capture template section.**
+Counterfactual on 04-02: zero direct impact (no prior incident had surfaced pgstattuple). BUT: we've had 4 retros in the last 12 months, each of which surfaced ~2 tribal-knowledge facts that weren't written down. If AI #6 had existed at the 2025-08 retro, ~8 facts would be in the DBA runbook by now. Pgstattuple may or may not have been one of them, but the cumulative effect is real. **Indirect impact: reduces future incidents by a measurable-but-unquantified factor.** Confidence: MEDIUM. **KEEP (P1 — highest-leverage forward-looking AI).**
+
+**AI #7 — pgstattuple documentation.**
+Counterfactual: Li would have consulted the runbook at 14:51 and used the correct "kill snapshot + terminate scan + check pgstattuple extension state" sequence. Saves the 13-minute span 14:51-15:04 where fix #2 was partially working then required the PgBouncer restart. **Total counterfactual savings: 13 minutes.** Confidence: HIGH (assuming the runbook would have been consulted, which is reasonable given Li's habits). **KEEP (P1).**
+
+**AI #8 — on-call scheduled-unavailability flagging.**
+Counterfactual: Kiran would have flagged the interview panel to the pairing secondary 24hrs ahead. Secondary would have been monitoring alerts. 14:08 warning would have been noticed in ~2 min (vs. actual 9 min unnoticed). Even WITHOUT AI #1's pool alert, the warning-tier alert being noticed would have shortened detection by ~9 min. **Combined with AI #1: either independently saves ~8-9 minutes.** Confidence: MEDIUM (secondary might still miss a warning in `#alerts-warnings`). **KEEP (P2 — modest counterfactual impact, but low-cost to implement).**
+
+**AI #9 — deploy-during-peak-windows CI check.**
+Counterfactual: migration #4217 would have been blocked from deploying at 13:45 Thursday. Would have required Li's explicit override with justification. Li might have overridden (Friday deadline pressure was real), but the friction of writing the override might have surfaced the question of "why is this urgent for 14:00 vs 18:00?" **50-50 that incident is prevented entirely.** Confidence: MEDIUM. **KEEP (P2 — the friction itself is the value).**
+
+---
+
+**Summary — total counterfactual time savings if ALL AIs had existed:**
+
+- AI #1 alone: 13-15 min off outage
+- AI #2 alone: outage prevented or delayed to low-traffic (100% of $180K recovered in expected value)
+- AI #3 alone: 7 min off outage
+- AI #7 alone: 13 min off outage
+
+If AI #2 had existed: outage doesn't happen. If AI #2 hadn't but AI #1, #3, #7 had: outage runs ~2h 20min instead of 3h 12min (~52 minutes saved = ~$48K abandoned-cart recovery).
+
+**AI #2 is the single highest-leverage AI in the batch.** If we can only fund 1 of the 9, it's #2. Tell the retro meeting that. Funding more than 1 is trivial — all 3 P0s ship in 2 weeks. The stress-test validates the prioritization: P0s are the highest counterfactual impact; P1s are cumulative-forward-looking; P2s are low-cost insurance.
+
+**Cut list after stress-test: 0.** Every AI survives. If the retro pushes to cut to save capacity, cut none of the P0s, cut AI #8 first (modest impact, overlap with AI #1), then AI #9 (uncertain impact).$pf$,
+ $pf$Counterfactual stress-test validates the 9-AI prioritization. **Highest-leverage: AI #2 (migration PR template backpressure section) — incident prevented entirely or delayed to off-peak if this had existed.** If only 1 of 9 gets funded, it's #2. Direct counterfactual time savings if all P0s (#1, #2, #3) had existed on 2026-04-01: pool alert → 13-15 min earlier detection; runbook precondition-check → skips failed pod-scale fix, 7 min saved; PR template backpressure section → prevents incident outright. Combined P0 counterfactual if #2 hadn't prevented: 20-22 min off 3h 12min outage (~$22-25K abandoned-cart recovery). AI #7 (pgstattuple docs) adds 13 more minutes saved = 33-35 min total without #2. AI #4/#5/#6 are forward-looking (zero impact on 04-02 but prevent class) — #6 retro-knowledge-capture is highest-leverage forward-looking AI because ~8 facts-per-year would accumulate. AI #8 modest impact overlaps with #1 (either independently saves ~8-9min); AI #9 is friction-value (50-50 outage prevention via override-forced reflection). **Cut list after stress-test: 0** — every AI survives. If retro pushes to cut for capacity, cut #8 first then #9, NEVER any P0. Counterfactual analysis becomes the business case the room can't argue with — makes the "but we don't have capacity for 9 AIs" pushback land differently.$pf$),
+
+-- Step 6 --
+('66666666-6666-6666-6666-666666640106',
+ '55555555-5555-5555-5555-555555550064',
+ 6,
+ $pf$Pass 6 — 90-minute synchronous retro facilitation script$pf$,
+ $pf$Last pass. I've pre-read the Claude-drafted retro doc to the 7 attendees 48hrs ahead (timeline from Pass 1, factors from Pass 2, 5-whys from Pass 3, AIs from Pass 4, counterfactuals from Pass 5). Now I'm facilitating a 90-min synchronous session.
+
+Write me a minute-by-minute facilitator script with: segment name, time budget, what I say (verbatim opening line), the questions I ask the group, and the common failure modes for this segment + how to recover.
+
+Hard constraints:
+- The goal is NOT to re-litigate the timeline (pre-read covered it). The goal is to surface disagreement on factors/AIs and land on committed ownership.
+- Blameless frame must hold throughout — I'm the CTO, I need to model it even when tempted to critique a decision.
+- We're not leaving the room without named owners on every AI. If an owner can't commit, we renegotiate the AI's scope right there.
+
+Don't generate a bland script. Write it like you're handing it to a CTO who will actually read it 10 minutes before the meeting starts.$pf$,
+ $pf$Facilitator script. Minute-by-minute. Read this 10 minutes before the meeting. Print one page if you're Derek-the-kinetic-note-taker.
+
+---
+
+**00:00–00:05 — Open and reset the room (5 min).**
+
+Opening line (verbatim): *"Thanks everyone. Quick ground rules for the next 90 minutes. One: we're blameless. If you hear yourself or someone else about to say 'Alice should have,' rephrase to 'the system should have.' I'll catch you; catch me. Two: the pre-read is the timeline. We're not re-doing it today — if you have a specific timeline correction, drop it in the doc comments now and we'll take corrections at the end if they change a factor. Three: we leave with named owners on every AI. If you can't own an AI as written, we renegotiate scope in the room — we don't leave AIs owner-less."*
+
+Failure mode: someone wants to spend the first 20 minutes on a timeline detail. Redirect: *"Good catch — drop it in the doc, I'll take corrections at 1h 20min."*
+
+---
+
+**00:05–00:20 — Factor map review (15 min).**
+
+Opening: *"Pass 2 in the pre-read has 14 factors — 9 wrong, 5 right. I want to hear disagreement. Not 'I agree' from seven people; I want to hear 'I think factor 6 is miscategorized' or 'we missed a factor.' Start with what you'd challenge."*
+
+Questions I ask:
+- *"Anyone want to push on the [S]/[L] tags? I'm especially curious about factor 9 (the Thursday deploy) — I tagged it [L] but the action item is [S]. Does that feel right?"*
+- *"What factor did I miss? I'm not asking what we could have done differently — I'm asking what CONTRIBUTED that I didn't list."*
+- *"For the 'what went right' column — are we celebrating the right things? Arun, I tagged your fix-and-discard as [L] because it's your temperament; is that fair or should we systemize it?"*
+
+Failure mode #1: the room agrees too fast. This is a trap — it means people are conflict-avoiding, not validating. Push back: *"I'd rather we debate this for 8 minutes than nod through it. Give me one thing you'd change."*
+
+Failure mode #2: someone reframes an [S] as [L] ("Kiran should have been in the channel not the interview"). Redirect: *"Hold on. The system is 'on-call has no way to flag scheduled unavailability to a secondary.' Kiran was doing his job. What's the systemic fix?"*
+
+---
+
+**00:20–00:45 — 5-whys ladder walk-through (25 min).**
+
+Opening: *"Pass 3 has three ladders. I want to walk each one in 7-8 minutes. If the terminal why is wrong, we find out now — once we commit to AIs in the next segment, it's too late."*
+
+For each ladder (factor #2 pool alert, factor #5 runbook incomplete, factor #6 pgstattuple):
+- Read the Why-5 terminal aloud.
+- Ask: *"Does this feel like the root cause, or does it feel like we stopped early? Should we push to Why-6?"*
+- Ask: *"What's the anti-pattern reframe the room wants to go to right now? Let's name it."* (Anti-patterns are in Pass 3 — surface them, don't let them emerge organically.)
+
+Questions to plant:
+- *"Arun — I'm saying the runbook led you to scale pods. Does that feel accurate or patronizing?"* (Important: Arun needs to validate this. If he says "no, I should have diagnosed first," you've lost the blameless frame. Redirect: *"You followed the runbook. The runbook was the failure. Don't take the blame the system deserves."*)
+- *"Li — same question on pgstattuple. You didn't know because we didn't write it down. Is that the right frame?"*
+
+Failure mode: the engineer whose action was at Why-1 will absorb blame. They'll say "I should have known." The CTO's job is to refuse that frame. Script: *"If you had known, we'd still be in this same room next year for the next undocumented thing. Our job is to make it so the next person doesn't have to know."*
+
+---
+
+**00:45–01:15 — Action items + ownership commitment (30 min — LONGEST segment, intentionally).**
+
+Opening: *"Pass 4 has 9 AIs. I'm going to read each one aloud. For each: (a) is this the right AI for the factor, (b) who owns it. If the named owner can't commit to the due date, we renegotiate scope. We don't move on with an AI that doesn't have a committed owner."*
+
+For each AI (3 min per AI average):
+- Read: title, tier, severity, proposed owner, due date.
+- Ask proposed owner: *"Can you commit to this as written?"*
+- If yes: log it, move on.
+- If no: *"What's the blocker? Scope? Capacity? Dependency?"* — renegotiate scope in the room. Cut to a smaller version if needed. Re-ask commitment. Don't leave until committed.
+
+Hard rule: if any AI goes 5+ minutes without commitment, park it for the last 10 min and move on. At the end, either commit it or cut it. Don't leave owner-less.
+
+Failure mode #1: proposed owner says "I'll try." Redirect: *"'I'll try' means we'll be in this room again in 3 months. I need 'yes, with these caveats' or 'no, and here's why.'"*
+
+Failure mode #2: everyone wants to own the interesting AIs (#1 pool alert, #7 pgstattuple docs) and nobody wants the meta AIs (#5 offboarding, #6 retro template). Expected — those are my AIs by default, which is why I put myself as owner on #2, #4, #6. Model it.
+
+Failure mode #3: the room pushes to cut an AI for capacity reasons. Use Pass 5's counterfactual: *"Cutting AI #2 means the next similar migration causes a $180K outage we could have prevented for an hour of PR-template work. Convince me the math doesn't work."* If they still want to cut: cut AI #8 or #9 first (the counterfactual-low AIs).
+
+---
+
+**01:15–01:25 — Knowledge-capture + timeline corrections (10 min).**
+
+Opening: *"Per AI #6 in the new retro template: before we close, what did we learn in this incident that's not yet written down? I want at least 2 knowledge-capture items added to the DBA runbook, platform runbook, or SRE docs."*
+
+Expected items: the pgstattuple-snapshot behavior, the PgBouncer restart cascade pattern, the "scale pods is NOT the first fix for upstream saturation" rule.
+
+Then: timeline corrections from the doc comments. Only if any correction changes a factor.
+
+---
+
+**01:25–01:30 — Close (5 min).**
+
+Closing line (verbatim): *"Nine AIs, all owned. I'll send the doc with ownership tonight. The P0s are due 2 weeks; I'll personally check status on Day 8 and Day 14. P1s in 6 weeks. P2s in 10 weeks. The retro is not over until the AIs ship — this is the first retro that ships 100% of P0s. Thanks for the work today. [Li / Arun / Kiran], the way you talked about your own decisions today is why blameless retros work. I appreciate it."*
+
+(The last sentence is intentional. The engineers whose actions were at Why-1 need to hear that the blameless frame was real.)
+
+---
+
+**Post-meeting (Derek, within 24 hrs):**
+
+1. Send retro doc with ownership + due dates (template already drafted).
+2. Calendar invites for Day 8 and Day 14 P0 status checks.
+3. Add AI #6 (knowledge-capture template) to next retro's agenda template now while it's fresh.
+4. 1:1 with VP Eng to discuss the "hire dedicated SRE" question that got parked (from Pass 4 not-doing list).
+5. Post a 3-sentence summary to `#all-eng` — not the retro itself, just "we ran the retro, 9 AIs shipped, here's what's changing in migration PR template so everyone knows." Frame: blameless culture is visible or it's performative.
+
+**The one thing to protect:** if you feel yourself in the meeting about to critique a decision, bite your tongue. You can always send 1:1 feedback later. In the retro room, you're the facilitator, not the CTO-evaluator. The culture bends around how you hold your own judgment there.$pf$,
+ $pf$90-min facilitator script by segment: (0:00-0:05) open with ground rules — blameless frame modeled, pre-read is the timeline not re-litigated today, nobody leaves without named AI owners; (0:05-0:20) factor map review 15min — force disagreement, push back on too-fast agreement, name [S]/[L] reframes as anti-patterns before they emerge; (0:20-0:45) 5-whys ladder walk 25min — read each terminal-why aloud, ask if we stopped too early, explicitly refuse the engineer-absorbs-blame reframe ("you followed the runbook, the runbook failed — don't take the blame the system deserves"); (0:45-1:15) action items + ownership commitment 30min — LONGEST segment intentionally, 3min per AI, renegotiate scope in room if proposed owner can't commit, don't leave owner-less, expected pattern: CTO owns meta AIs (offboarding/retro-template) because nobody else wants them; use Pass 5 counterfactual data ("cutting AI #2 means next $180K outage we could prevent for 1hr of template work") to resist capacity-cut pressure; (1:15-1:25) knowledge-capture + timeline corrections 10min — per new AI #6 practice, harvest at least 2 knowledge items to runbooks; (1:25-1:30) close — explicit appreciation to engineers whose actions were at Why-1 so the blameless frame was real not performative. Post-meeting within 24hrs: send doc with ownership + due dates, calendar Day-8 + Day-14 P0 checks, add AI #6 to next-retro-agenda template now, 1:1 with VP Eng on parked dedicated-SRE question, 3-sentence #all-eng post making the blameless practice visible. **Protect the one thing:** as CTO-facilitator, bite tongue on critique — 1:1 feedback later; in the retro room you are facilitator not evaluator, and the culture bends around how you hold your own judgment there.$pf$);
+
+-- =========================================================================
+-- Project 55-0065 | Writing your first portfolio design case study | Priya Sharma | Design | 3 steps
+-- =========================================================================
+
+DELETE FROM prompt_steps WHERE prompt_id = '55555555-5555-5555-5555-555555550065';
+DELETE FROM prompts      WHERE id        = '55555555-5555-5555-5555-555555550065';
+
+INSERT INTO prompts (
+  id, title, description, content, result_content,
+  category_id, difficulty, model_used, model_recommendation,
+  tools_used, tags, status, author_id, vote_count, bookmark_count
+) VALUES (
+  '55555555-5555-5555-5555-555555550065',
+  $pf$Writing my first portfolio design case study — a 2024 checkout redesign I'd been avoiding$pf$,
+  $pf$I had an old project I'd been avoiding writing up for a year. 3-pass Claude workflow from "let me interview you about what you actually did" → first-draft case study in the real 3-act structure → surgical edit that kills generic language and adds the one honest reflection hiring managers actually want.$pf$,
+  $pf$I've been designing professionally for 6 years but my portfolio is thin — 3 case studies, all from early-career work, none from my current role at a mid-size B2B SaaS. I've been meaning to write up a 2024 checkout redesign project (drove a 22% conversion lift) for almost 18 months, and every time I sat down to do it I'd stare at Figma for an hour, write "The Problem: checkout was confusing" as a headline, close the tab, and tell myself I'd do it "this weekend."
+
+A recruiter friend told me last month that if I don't have this case study on my portfolio by the end of the month, I'm cost-of-living-raise locked at my current role because I can't run a senior-designer job search without a 2024-or-later real case study. So: deadline.
+
+Three Sonnet 4.6 passes over a Sunday morning. Pass 1 is the hardest — Claude interviews me about what I actually did (not what I think I should say). Pass 2 turns the interview transcript into a 3-act case study draft. Pass 3 is surgical edits — kills generic design-portfolio language ("I collaborated cross-functionally"), adds the one thing every hiring manager I've met tells me they look for (what did you GET WRONG, and what did you learn). Finished piece below — 1,180 words, 4 screenshots, 2 rough-draft artifacts showing the thinking, one "what I'd do differently" section.$pf$,
+  $pf$Published the case study to my portfolio on Sunday afternoon. Within a week: 14 LinkedIn profile views from hiring managers, 2 inbound recruiter messages referencing the case study specifically, and 1 unsolicited coffee-chat invite from a senior design director at a company I'd been trying to get in front of for 6 months. The "what I'd do differently" section — which I almost cut — is the specific thing both recruiters cited. One wrote: "I interview a lot of senior designers and 80% of case studies read like self-promotion. Yours reads like someone who actually works on teams." That sentence retroactively justified the whole Sunday. Specific engagement numbers: 847 portfolio views in 14 days (vs. ~40/month baseline), 34-sec average time-on-page (vs. 12-sec baseline — people are actually reading it), 9 of the 14 LinkedIn viewers looked at 2+ case studies after the checkout one (portfolio-depth signal). Submitting to 3 senior-designer roles this week, all of which require a portfolio + 1-2 deep case studies as application material — this one is the deep case study now. Next up: 2 more case studies from 2025 work, same workflow, should take 3 Sundays total.$pf$,
+  '11111111-1111-1111-1111-111111111105',
+  'beginner',
+  'claude-sonnet-4-6',
+  'Claude 4.6 Sonnet',
+  ARRAY['Claude','Figma','Notion','Google Docs'],
+  ARRAY['design','portfolio','case-study','career','writing','ux'],
+  'approved',
+  '22222222-2222-2222-2222-222222222204',
+  0, 0
+);
+
+INSERT INTO prompt_steps (id, prompt_id, step_number, title, content, result_content, description) VALUES
+
+-- Step 1 --
+('66666666-6666-6666-6666-666666650101',
+ '55555555-5555-5555-5555-555555550065',
+ 1,
+ $pf$Pass 1 — Claude interviews me to extract the real story (not what I think I should say)$pf$,
+ $pf$I've been stuck on writing up a 2024 checkout redesign case study for 18 months. Every time I try, I write sanitized-portfolio-speak ("I collaborated cross-functionally with the product team to identify key pain points") and then I cringe and close the tab.
+
+I want you to interview me like a journalist. Ask me questions one at a time (I'll answer one at a time), and push me off the canned phrases. I want the REAL story — what actually happened, where I got stuck, what I got wrong, who pushed back on my work, what I learned. The stuff I'd tell a friend at a bar, not what I'd put on a slide.
+
+Background context: B2B SaaS checkout. 8-week project, Spring 2024. I was the only designer (worked with 1 PM and 2 engineers). Goal was to improve checkout conversion, which had been flat for 6 months. Final outcome: 22% conversion lift after A/B test.
+
+Start with question 1. Don't batch questions. Wait for my answer before asking the next one, and let your follow-ups be driven by what I actually say.$pf$,
+ $pf$Okay, journalist mode. I'll ask one at a time. Here's question 1 — the answer will tell me whether we're writing a real case study or another sanitized one.
+
+**Q1: Before you touched the Figma file, what specifically did you BELIEVE was wrong with the checkout?** Not "it was confusing" — that's the sanitized version. What did you actually think the problem was, in your gut, before any user research? (The reason I'm asking this way: your initial hypothesis is usually the most load-bearing part of a real case study, and it's also the part designers hide because they're worried about looking naive. Your 2024-you thought something. What was it?)
+
+---
+
+*[waits for your answer, then will ask follow-ups based on what you say. Expected directions based on common checkout-redesign patterns: you probably thought the flow had too many steps, OR the copy was too sales-y, OR the form fields were wrong, OR the shipping/billing split was confusing. But your answer will be more specific than any of those because you were IN it.]*
+
+*Ground rules I'll hold myself to as the interviewer:*
+- *If you give me a sanitized answer ("users were confused"), I will push back with a specific counter-question ("Which users? Confused about what specifically? When did you first see evidence of that confusion?").*
+- *I'll ask for the moment a decision almost went the wrong way — those are the moments a case study needs.*
+- *I'll ask what the pushback was — from the PM, the engineers, the data analyst, the VP. A redesign without pushback means either nobody cared or the story is sanitized; either way, worth naming.*
+- *I'll ask what you'd do differently. I'll keep asking until you say something that surprises you to say out loud.*
+- *I'll stop when I have enough raw material for a 3-act structure: Act 1 (the problem + your hypothesis + where you were wrong about it), Act 2 (what you actually did + the decisions that mattered + the pushback), Act 3 (the result + what it means + what you learned).*
+
+*Total expected: 8-12 questions. Your answers can be short or long — don't over-edit. I'd rather have a messy real paragraph than a clean bullet list.*
+
+*Go ahead. Answer Q1.*
+
+---
+
+*[User's Q1 answer, pasted in full for the transcript]:*
+
+"Honestly? I thought the real problem was that our checkout was copying Stripe's pattern (3-step split: info → shipping → payment) but we weren't Stripe — we're B2B SaaS, we don't ship anything. The 'shipping' step was just the billing address collection, but because the pattern was labeled 'Shipping & Billing' and had the classic 2-column 'same as shipping' checkbox, users were getting confused about whether they were buying software or a physical thing. I'd seen 4-5 support tickets that said things like 'why do you need my shipping address, are you mailing me something?' and I thought if we could just re-frame the step as 'Billing' and drop the shipping visual language, we'd recover a few percent. That was my gut hypothesis."
+
+---
+
+*[Claude's Q2, based on that answer]:*
+
+**Q2: Great — that's real. The 4-5 support tickets are the specific evidence that anchors your hypothesis, which is going to be load-bearing for the case study. Now: when you took that hypothesis to your PM, what was the first pushback? I'm asking because B2B PMs in 2024 were very focused on "don't touch converting flows" even when the conversion rate was flat — did your PM push back on doing ANY work here, or did they push back on your specific hypothesis, or were they on board?**
+
+---
+
+*[The interview continues for 9 more Q/A turns. Abbreviated transcript captured below, full 10-turn dialog in the Notion doc:]*
+
+Q3: "When you ran the first usability test with 5 users, what surprised you?" — A3: "Two of the 5 didn't even see the step labels. They were scrolling through auto-pilot. My hypothesis about labeling was incomplete — the bigger issue was the visual hierarchy made the step feel transactional when it should feel consultative, like you're provisioning a tool not buying a thing."
+
+Q4: "That's a pivot. Did you have to go re-sell the PM?" — A4: "Yeah. PM was frustrated because I'd pitched a 2-week scope and was now asking for 6. We compromised at 4 and I cut the entire mobile redesign from scope."
+
+Q5: "Did cutting mobile bite you?" — A5: "Eventually — 38% of our traffic was mobile. We shipped desktop-first, saw a 22% lift on desktop, and mobile was flat for 2 more months until I got budget for the mobile version in Q3."
+
+Q6: "What's the one design decision in this project that took the longest and was the closest to going the wrong way?" — A6: "The trust signal placement. I wanted to put 'SOC 2 Type II' and '99.9% uptime' directly in the payment step. Engineer pushed back because the badges had to load async and caused a 400ms render lag. We went back and forth for two weeks. Final compromise: we statically rendered the badge text with no images, which looked visually weaker but loaded instantly. I hated it at the time. Data later showed this was the single highest-impact change in the whole flow."
+
+Q7: "Wait — say more about 'single highest-impact.' How do you know?" — A7: "We did a stepwise A/B — one variant per change across 4 waves. The trust-signal text (not even the images, just the text) drove 14pp of the 22pp total lift. I'd been fighting for the image version for weeks."
+
+Q8: "So your own best instinct was wrong about what would move the metric most?" — A8: "Yep. That's the uncomfortable one. I was pushing for the image version as a designer-aesthetic preference, not a user-conversion call. The engineer's performance concern was the correct call."
+
+Q9: "What did you learn that you'd apply to the next project?" — A9: "Run stepwise A/B earlier. I was 6 weeks into design before we ran a single isolated test. If I'd A/B'd the trust text after week 2, the rest of the project would have leaned on that insight much harder. Also: stop advocating for aesthetics when the performance cost is real — the engineer was right and I was wrong, and I should have conceded faster."
+
+Q10: "One more. If a junior designer was about to do this same project, what's the one piece of advice you'd give them that ISN'T in a portfolio case study?" — A10: "Don't label step 2 'Billing' on desktop and 'Payment' on mobile. I did this because mobile was cut from scope and shipped later with different copy. Two different labels across surfaces made future analytics + future copy changes a tangle for a year."
+
+---
+
+**Interviewer's note on material completeness:**
+
+You've given me enough for a 3-act structure.
+
+- **Act 1:** Hypothesis (the 'shipping language' reframe) + support-ticket evidence + PM scope pushback.
+- **Act 2:** Usability test pivot (auto-pilot scrolling, visual-hierarchy-not-label issue) + engineer pushback on trust-signal images + the compromise + the stepwise A/B.
+- **Act 3:** 22% desktop lift + the uncomfortable reveal (text-only trust signal was highest impact, engineer was right) + mobile lag + 2 honest pieces of learning.
+
+The 2 things that make this a REAL case study (not a sanitized one):
+1. **Your hypothesis was partly wrong.** You thought labeling; usability testing showed hierarchy. This is the pivot that makes the story.
+2. **Your aesthetic instinct lost to a performance-based decision, and the data vindicated the engineer.** This is the "what I got wrong" that hiring managers cite when they say 80% of case studies read like self-promotion.
+
+Pass 2 will turn this transcript into the actual 1,000-1,200 word draft.$pf$,
+ $pf$Claude interview-mode extracted 10 Q/A turns of real story vs sanitized-portfolio-speak. Load-bearing material surfaced: (a) initial hypothesis was "shipping-language reframe" grounded in 4-5 specific support tickets — concrete evidence not "users were confused"; (b) first usability test pivoted the hypothesis — 2 of 5 users didn't even see step labels, real issue was visual hierarchy feeling transactional when it should feel consultative; (c) PM scope pushback forced cutting mobile from original scope (38% of traffic) — shipped desktop-first, mobile flat for 2 more months; (d) trust-signal placement decision took longest and almost went wrong — engineer pushed back on image badges due to 400ms render lag, designer hated text-only compromise, data later showed text alone drove 14pp of 22pp total lift; (e) honest reflection — aesthetic instinct was wrong, engineer was right, should have conceded faster; (f) bonus junior-designer advice about cross-surface label consistency (Billing vs Payment). Three-act structure mapped: Act 1 hypothesis + evidence + PM pushback; Act 2 usability pivot + engineer-pushback-compromise + stepwise A/B; Act 3 22% desktop lift + honest reveal designer-aesthetic-lost-to-performance + mobile lag + 2 specific learnings. Two load-bearing "real not sanitized" moments: hypothesis was partially wrong (labeling vs hierarchy pivot), aesthetic instinct lost to engineer's performance call (vindicated by data).$pf$),
+
+-- Step 2 --
+('66666666-6666-6666-6666-666666650102',
+ '55555555-5555-5555-5555-555555550065',
+ 2,
+ $pf$Pass 2 — first-draft case study in 3-act structure$pf$,
+ $pf$Turn the interview into a 1,100-1,250 word case study. 3-act structure per your note:
+- Act 1: the problem + my initial hypothesis + the support ticket evidence + the PM scope pushback
+- Act 2: the usability test pivot + the trust-signal decision + the stepwise A/B design
+- Act 3: the result + the honest-reveal (engineer was right about text-only) + what I'd do differently
+
+Voice: first-person, confident but not self-promoting, specific-not-generic. No "leveraged synergies" / "collaborated cross-functionally" filler. If I catch a generic line, I'll push back in Pass 3.
+
+Structure the piece with H2 section headers, a short "At a glance" box up top (role / team / timeline / outcome), and 4 or 5 moments where I'd insert a Figma screenshot (mark as `[SCREENSHOT: ____]` so I know what to add).
+
+This is a first draft — I'll cut and rewrite in Pass 3. Don't over-polish. Get the structure and the real voice in place.$pf$,
+ $pf$First draft. 1,178 words. 5 screenshot slots marked. Voice is yours-as-interviewed, not portfolio-speak.
+
+---
+
+# Checkout redesign — a 22% conversion lift, and what I got wrong on the way
+
+**At a glance:**
+- **Role:** Sole designer (1 PM, 2 engineers)
+- **Company:** B2B SaaS, mid-size (I won't name them here — happy to share in interview)
+- **Timeline:** 8 weeks, Spring 2024
+- **Outcome:** 22% lift in desktop checkout conversion (A/B tested, 95% confidence, n=11,200 sessions across 4 waves)
+- **My job:** re-architect a flow that had been flat for 6 months
+
+---
+
+## Act 1 — The hypothesis that turned out to be half-right
+
+Our checkout conversion had been flat for six months. I pitched a redesign based on a specific gut hypothesis: **our checkout was copying Stripe's 3-step "info → shipping → payment" pattern, but we weren't Stripe.** We sell B2B SaaS. We don't ship anything. The "shipping" step was really just billing-address collection, but because the pattern came with the classic "Same as shipping?" checkbox and visual language borrowed from physical e-commerce, it was making users second-guess what they were buying.
+
+The evidence for this wasn't data; it was five support tickets I'd read the week before. Each one was some variant of *"why do you need my shipping address, are you mailing me something?"* When I pitched the redesign to my PM, I made the case with those five tickets and a 2-week scope.
+
+`[SCREENSHOT: the original checkout flow with the confusing "Shipping & Billing" step highlighted]`
+
+**The PM pushed back on scope, not on the hypothesis.** We had a shared rule on our team: don't touch a converting flow without strong evidence that the redesign will move the number, not hurt it. Fair rule. The 2-week scope was our compromise — I'd ship a focused label-and-visual-language change, we'd A/B it, if it moved we'd expand.
+
+I agreed too quickly. That 2-week scope was wrong.
+
+## Act 2 — The usability test that re-drew the project
+
+Week 2, I ran the first usability test. Five users. I expected to see the labels be the issue.
+
+**Two of the five users didn't even read the step labels.** They scrolled through the form on auto-pilot, answered what was in front of them, paused only when the payment step asked for a card number. The "Shipping & Billing" label wasn't driving confusion because users weren't reading it — they were just completing the form by its visual structure.
+
+The REAL problem was that the flow's visual hierarchy made it feel *transactional* when for B2B SaaS it should feel *consultative*. You're not buying a thing in a cart; you're provisioning a tool for your team. The step headers were small, the form fields were large, and the payment step had the visual weight of "the important part." That's e-commerce framing. For our product, the IMPORTANT part was the trust signals — who are you, what's the security posture, what happens if this breaks.
+
+`[SCREENSHOT: before/after of the payment step — left shows the original card-forward design, right shows trust-signals-forward with SOC 2 text prominent]`
+
+I had to re-sell the PM on a bigger scope. This was the hard conversation. My pitch went from "relabel the step" (2 weeks) to "restructure the visual hierarchy of the whole flow to make it feel consultative instead of transactional" (6 weeks). **We compromised at 4 weeks. I cut the mobile redesign from scope to get the desktop version shipped.** That cut hurt later — mobile was 38% of our traffic, stayed flat for another 2 months until I got budget in Q3 — but it was the right call for the desktop-first A/B.
+
+## Act 2b — The design decision that almost went the wrong way
+
+The trust-signal block is the lesson of this project for me.
+
+I wanted SOC 2 Type II and 99.9% uptime badges with the actual certification logos, prominently placed in the payment step. It was the visual anchor for the "consultative, not transactional" framing. My engineer pushed back hard: **the badge images had to load async from a 3rd party, and they added 400ms to the payment step render.** For desktop users on decent connections that's marginal; for users on slower networks it was a full render jank.
+
+I pushed back on his pushback for two weeks. I thought the visual credibility was non-negotiable. I was advocating for the image version as a designer-aesthetic call, not a user-outcome call.
+
+`[SCREENSHOT: the three variants we considered — badge images with lag, text-only trust signals, hybrid delayed-image approach]`
+
+We landed on text-only: "SOC 2 Type II certified · 99.9% uptime SLA · Your data stays in-region" rendered in the payment step header, no images, 0ms render cost. I hated it at the time. It looked visually weaker than the version I'd fought for.
+
+## Act 2c — The stepwise A/B that told the truth
+
+Because the redesign touched 4 distinct areas (step labels, visual hierarchy, trust signals, CTA copy), we ran the A/B in 4 isolated waves instead of lumping everything into one big variant. Each wave was 2,500+ sessions against control.
+
+The results were humbling:
+
+| Wave | Change | Desktop lift |
+|---|---|---|
+| 1 | Relabel steps + drop shipping visual language | +3% (marginal) |
+| 2 | Restructure visual hierarchy (consultative framing) | +5% |
+| 3 | **Add text-only trust signals** | **+14%** |
+| 4 | Refine CTA copy ("Start your subscription" vs "Complete purchase") | +0% (no effect) |
+
+**The text-only trust signal block — the compromise I'd hated — drove 14 percentage points of the total 22pp lift.** Not the version with images. Not the labeling fix. The exact design I'd argued against for two weeks was the highest-leverage change in the entire project.
+
+`[SCREENSHOT: the final payment step, trust-signal text prominent, no badge images]`
+
+## Act 3 — What I learned
+
+Two things, both honest enough to be uncomfortable.
+
+**1. Run stepwise A/B earlier, not at the end.** I spent six weeks designing before we isolated a single variable. If I'd A/B'd the trust-signal text in week 2 instead of week 7, we'd have known what was moving the metric while I still had scope to double down. The rest of the project would have leaned harder into trust-signal work and spent less time on labeling nuance that turned out to be marginal.
+
+**2. When an engineer raises a performance concern against an aesthetic choice, the engineer is probably right.** Not *always* right. But in this case I was advocating for the image badges on taste, not on user outcome. The data vindicated the engineer's call. The lesson isn't "always defer to engineering" — it's "separate aesthetic preference from user-outcome argument, and if you can't defend the aesthetic on an outcome basis, concede faster."
+
+## What I'd do differently
+
+- **Don't cut mobile from scope to hit a desktop deadline.** We paid for that decision with 2 months of flat mobile conversion and a whole second project to redo the mobile version. The "4 weeks desktop-only now" option was less responsible than "6 weeks desktop + mobile together."
+- **Don't use different labels across surfaces.** I labeled the step "Billing" on desktop and "Payment" on mobile (different cycles). Two labels across surfaces made every future copy or analytics change a tangle for a year. Pick one label per flow, hold it across surfaces.
+
+---
+
+*[End of draft — 1,178 words. Pass 3 should: kill any generic design-portfolio phrasing that slipped in, tighten the Act 2c results table, consider whether the "At a glance" box is too bland, and make sure the honest-reveal moments in Act 3 stay uncomfortable — a polish pass might sand the edges off and that's exactly what we don't want here.]*$pf$,
+ $pf$First draft 1,178 words in 3-act structure with 5 screenshot slots. Act 1: hypothesis-that-turned-out-half-right — Stripe-pattern copied despite B2B-SaaS-not-shipping-anything, grounded in 5 specific support tickets, PM pushback on scope not hypothesis, 2-week compromise I agreed to too quickly. Act 2: usability test re-drew project — 2 of 5 users didn't even read step labels, real issue was visual hierarchy feeling transactional when B2B should feel consultative, had to re-sell PM to 4-week scope and cut mobile. Act 2b: trust-signal decision almost went wrong — wanted SOC 2 badge IMAGES, engineer pushed back on 400ms async load, compromised on text-only which I hated at the time. Act 2c: stepwise 4-wave A/B told the truth — trust-signal text alone drove 14pp of 22pp total lift (relabel = 3pp marginal, hierarchy = 5pp, trust text = 14pp, CTA copy = 0pp), the version I'd argued against was the highest-leverage change. Act 3: two honest learnings — (1) run stepwise A/B earlier in week 2 not week 7, (2) when engineer raises performance concern against aesthetic choice they're probably right, separate aesthetic preference from user-outcome argument, concede faster. "What I'd do differently" coda: don't cut mobile from scope for desktop deadline (paid with 2 months flat mobile + whole second project), don't use different labels across surfaces (Billing vs Payment made analytics a tangle for a year). Voice held real-not-sanitized throughout — no "collaborated cross-functionally" or "leveraged synergies."$pf$),
+
+-- Step 3 --
+('66666666-6666-6666-6666-666666650103',
+ '55555555-5555-5555-5555-555555550065',
+ 3,
+ $pf$Pass 3 — surgical edit: kill generic language, add the one thing hiring managers want$pf$,
+ $pf$The draft is close. Three surgical edits before I publish:
+
+1. **Kill generic design-portfolio language.** If you see a phrase like "user-centered," "leveraged research insights," "drove alignment," "iterated toward," "solutioned" — flag it with a specific replacement. The test: would a hiring manager read this and learn something specific, or would they read a template?
+
+2. **Strengthen the honest-reveal moments.** Act 2b (engineer was right) and Act 3 (what I learned) are the heart of the piece. If any polish-instinct sanded the edges off, put the edges back. The "I was wrong" moment should sting a little.
+
+3. **Add 1-2 sentences about what a hiring manager should take from this.** Not explicit. Don't write "what this demonstrates about my design process." Instead, make the takeaway implicit by being concrete about a decision I made that shows judgment — the kind of sentence a reader pauses on.
+
+Return a change-list with "find / replace" pairs and brief rationale. Don't rewrite the whole piece — I want to see the surgical edits.$pf$,
+ $pf$Six edits. First three kill generic phrasing, next two strengthen honest-reveal moments, last one adds implicit takeaway.
+
+---
+
+**EDIT 1 — "At a glance" role line.**
+
+FIND: *"Role: Sole designer (1 PM, 2 engineers)"*
+
+REPLACE: *"Role: Only designer on the project — 1 PM, 2 engineers, no design manager or researcher on call"*
+
+Rationale: "Sole designer" is portfolio-speak that obscures the actual working context. The real information is that there was nobody to escalate design decisions to — no manager to unblock me, no researcher to validate hypotheses. That's the constraint that shaped the project, and it's what a senior-designer hiring manager will read and know. Add the negative-space detail, don't just list the positive-space team.
+
+---
+
+**EDIT 2 — Act 1 closing line.**
+
+FIND: *"I agreed too quickly. That 2-week scope was wrong."*
+
+REPLACE: *"I agreed too quickly. Two weeks was the scope for the symptom I was describing (a label change). Two weeks was not the scope for the problem that was actually present (a visual-hierarchy mismatch between what the flow felt like and what the product was). I couldn't see that gap yet because I hadn't tested with a user. I should have pushed for a one-week spike of usability testing BEFORE negotiating scope at all."*
+
+Rationale: the original sentence names that you were wrong but doesn't say WHY — which is the more useful part for a reader. The expanded version makes explicit the judgment lesson (test before scoping). A hiring manager who's seen designers overcommit on scope will pause on this sentence.
+
+---
+
+**EDIT 3 — Act 2 second paragraph.**
+
+FIND: *"The REAL problem was that the flow's visual hierarchy made it feel transactional when for B2B SaaS it should feel consultative."*
+
+REPLACE: *"The real problem was that the flow's visual hierarchy was borrowed from e-commerce — cart, payment, complete — and our users weren't in an e-commerce mental model. They were in a procurement mental model: 'I'm provisioning a tool for my team and I want to know I can trust the vendor before I hand over the card.' The original flow answered none of the procurement questions. The label change wouldn't fix that; only a hierarchy change would."*
+
+Rationale: "transactional vs consultative" is designer-shorthand that reads generic to a non-designer. Naming the specific mental model ("procurement") is concrete and transferable — it's a thing a reader will take away and apply. Also: most portfolio readers have read 100 "transactional vs consultative" frames; almost none have read "e-commerce vs procurement mental models." Specificity wins.
+
+---
+
+**EDIT 4 — Act 2b mid-paragraph (strengthening honest reveal).**
+
+FIND: *"I pushed back on his pushback for two weeks. I thought the visual credibility was non-negotiable. I was advocating for the image version as a designer-aesthetic call, not a user-outcome call."*
+
+REPLACE: *"I pushed back on his pushback for two weeks. I thought the visual credibility was non-negotiable, and I'll admit I thought my engineer was over-indexing on performance at the expense of design quality — that's the frame I held for most of that two weeks. I brought the argument to our design Slack, I tried to find other engineers who'd agree with me, I even framed the performance concern as something we could 'fix with better image compression.' What I wasn't doing was asking whether my aesthetic argument would actually move the checkout conversion number. It wouldn't have. The engineer's concern would have."*
+
+Rationale: the original has the "I was wrong" shape but reads clean. The replacement adds the uncomfortable specifics — you tried to recruit allies in Slack, you proposed a technical patch to preserve your preference — which is the specific behavior pattern a hiring manager recognizes from real designers they've worked with. The sting is in the specifics.
+
+---
+
+**EDIT 5 — Act 3 second learning.**
+
+FIND: *"The lesson isn't 'always defer to engineering' — it's 'separate aesthetic preference from user-outcome argument, and if you can't defend the aesthetic on an outcome basis, concede faster.'"*
+
+REPLACE: *"The lesson isn't 'always defer to engineering.' I don't believe that and neither should you. It's narrower: when you've made an aesthetic case and the engineer has made an outcome case, you have to stop and ask which claim the data could actually decide. Aesthetic claims can't be A/B tested; outcome claims can. If your disagreement is aesthetic-vs-outcome, the outcome claim should win by default until you can reframe your aesthetic claim as an outcome claim. I couldn't reframe mine. I should have conceded in week 1, not week 3."*
+
+Rationale: the replacement turns the lesson from a rule-of-thumb ("concede faster") into a decision framework (aesthetic claims can't be A/B tested; outcome claims can). That framework is transferable — a reader can use it on their next project. It's also the kind of sentence that signals "this person has thought about the meta-problem, not just this problem."
+
+---
+
+**EDIT 6 — New closing paragraph (replacing the "What I'd do differently" coda or placed right before it).**
+
+ADD (new paragraph before the coda bullets):
+
+*"The thing I keep coming back to, a year and a half after this project shipped, is that the version of the payment step I fought for — the SOC 2 badges in full color, the 99.9% uptime icon, the visual density I thought was non-negotiable — wouldn't have moved the metric. The stripped-down text version moved it. For months afterward I kept that payment step open in a Figma tab as a reminder. Not as a monument to being wrong (that's not useful), but as a reminder that 'I can see it when I look at it' is a different skill from 'I can predict which version a user will act on.' I'm getting better at the second one. The first one I've always been fine at."*
+
+Rationale: this is the implicit-takeaway sentence the prompt asked for. It signals judgment (separating design-seeing from user-prediction), it names a concrete behavior (keeping the Figma tab open), and it closes the case study on a reflective note that's self-aware without being self-deprecating. A hiring manager pauses on "I can see it when I look at it is a different skill from I can predict which version a user will act on" — it's the kind of sentence that tells them this designer thinks about their own limitations without performing humility.
+
+---
+
+**NO-CHANGE FLAGS (things I considered changing but didn't):**
+
+- *"At a glance" box format.* Considered replacing with prose intro. Kept the box because it gives the reader a 10-second skim option before committing to the full read — portfolio affordance.
+- *Act 2c results table.* Considered collapsing. Kept because the 4-wave breakdown IS the honest moment — the table shows that the thing I hated drove the result, in numbers. Words wouldn't carry it as hard.
+- *Mobile-scope-cut admission in the coda.* Almost sanded this to "shipped desktop-first." Kept the original "paid for that with 2 months of flat mobile" because it's the specific cost, which is what a hiring manager wants.
+
+---
+
+**Word-count impact:** 1,178 → approximately 1,310. Still under 1,500 which is the soft portfolio cap. Net effect: more specificity, more honest-reveal, more transferable frameworks. Ready to publish.$pf$,
+ $pf$Six surgical edits before publish. **Edits 1-3 kill generic portfolio-speak:** (1) "Sole designer" → "Only designer on the project — 1 PM, 2 engineers, no design manager or researcher on call" names the negative-space constraint that shaped decisions; (2) "2-week scope was wrong" expands to "two weeks was the scope for the symptom I was describing (label change), not the problem that was actually present (visual-hierarchy mismatch) — should have pushed for one-week usability spike BEFORE negotiating scope"; (3) "transactional vs consultative" designer-shorthand replaced with "e-commerce mental model vs procurement mental model — users provisioning a tool wanting to trust vendor before handing over card" — transferable frame most portfolios don't use. **Edits 4-5 strengthen honest-reveal moments:** (4) 2-week engineer pushback adds specific uncomfortable behavior — recruited allies in design Slack, proposed "better image compression" to preserve preference, never asked whether aesthetic argument would move conversion number; (5) "concede faster" rule-of-thumb upgraded to decision framework — "aesthetic claims can't be A/B tested; outcome claims can; if disagreement is aesthetic-vs-outcome, outcome claim wins by default until you can reframe aesthetic as outcome." **Edit 6 adds implicit-takeaway closer:** a year later still kept the payment-step Figma tab open not as monument to being wrong but as reminder that "I can see it when I look at it" is different skill from "I can predict which version a user will act on" — the judgment-about-own-limitations sentence hiring managers pause on. **No-change flags:** At-a-glance box (10-sec skim affordance kept), Act 2c 4-wave table (load-bearing honest moment in numbers that words can't carry), mobile-cut admission kept specific cost (2 months flat mobile). Word count 1,178 → ~1,310, still under 1,500 soft cap. Ready to publish.$pf$);
+
+-- =========================================================================
 -- END OF FILE — append next project(s) below this line.
 -- Iterations working the Content queue: add 2–3 projects per iteration,
 -- appending below this comment. Do NOT rewrite existing projects.

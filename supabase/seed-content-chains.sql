@@ -39391,5 +39391,833 @@ Notice that the two reasoning sentences are longer than the evidence sentence. T
 Give students a scaffold to use on their own paragraphs: Evidence → "This matters because…" → "This shows that…" The scaffold is mechanical at first. That is fine. The goal is to make the evidence-then-reasoning habit automatic, and the scaffold comes off once it is.$pf$,
  NULL);
 
+DELETE FROM prompt_steps WHERE prompt_id = '55555555-5555-5555-5555-555555550110';
+DELETE FROM prompts WHERE id = '55555555-5555-5555-5555-555555550110';
+
+INSERT INTO prompts (id, title, description, content, result_content, category_id, difficulty, model_used, model_recommendation, tools_used, tags, status, author_id, vote_count, bookmark_count)
+VALUES (
+ '55555555-5555-5555-5555-555555550110',
+ $pf$Writing a Custom ESLint Plugin to Enforce Async/Await Conventions$pf$,
+ $pf$Our React TypeScript codebase kept shipping the same three async bugs: floating promises in event handlers, async callbacks in useEffect, and .then() chains mixed with async/await. I wrote a custom ESLint plugin from scratch to catch all three automatically — here's the full build including AST traversal, rule implementation, tests, and CI deployment.$pf$,
+ $pf$I'm a full-stack developer at a 12-person startup. We had a two-year-old React TypeScript codebase and three recurring async bugs that kept slipping through code review. First: forgetting to await a promise inside an onClick handler — the async function gets called, returns a Promise, and any error inside gets swallowed silently. Second: async callbacks passed directly to useEffect, which is technically invalid (useEffect expects a cleanup function or undefined, not a Promise) and causes memory leaks when components unmount mid-request. Third: .then()/.catch() chains mixed into files that had otherwise been migrated to async/await, creating inconsistency that made tracing error flows harder. We'd caught each of these in production at least once. Code review caught them maybe 60% of the time. I decided to write an ESLint plugin that would catch all three automatically. I'd never written one before — I knew they used AST traversal but had never done it.$pf$,
+ $pf$The plugin shipped three weeks after this session and has been running in our codebase and CI for two months. On first run it caught 7 violations we didn't know about: 4 floating promises in event handlers, 2 leftover .then() chains in a partially migrated file, and 1 async useEffect missing cleanup. The pre-commit hook via lint-staged means new engineers get feedback within 2 seconds of writing a violation — they don't need to internalize the conventions, the linter explains why. The plugin also forced us to write down the rationale for each rule, which became onboarding documentation we didn't have before.$pf$,
+ '11111111-1111-1111-1111-111111111104',
+ 'intermediate',
+ 'claude-opus-4-7',
+ 'Claude 4.7 Opus',
+ ARRAY['ESLint', 'Node.js', 'TypeScript', 'Claude', 'GitHub Actions', 'lint-staged'],
+ ARRAY['ESLint plugin', 'async/await', 'TypeScript', 'React', 'AST', 'code quality'],
+ 'approved',
+ '22222222-2222-2222-2222-222222222201',
+ 0,
+ 0
+);
+
+INSERT INTO prompt_steps (id, prompt_id, step_number, content, result_content, image_url) VALUES
+
+-- Step 1 --
+('77777777-7777-7777-7777-777777110001',
+ '55555555-5555-5555-5555-555555550110',
+ 1,
+ $pf$I want to write a custom ESLint plugin for our React TypeScript codebase. We have three recurring async anti-patterns that keep slipping through code review, and I want automated enforcement.
+
+The patterns we want to catch:
+
+1. Floating promises in event handlers. Example: `<button onClick={() => handleSubmit(formData)} />` where handleSubmit is async — the returned Promise is never awaited, so errors are silently swallowed.
+
+2. Async callbacks passed directly to useEffect: `useEffect(async () => { const data = await fetchSomething(); setState(data); }, [])` — useEffect can't return a Promise, the Promise is silently discarded, and if the component unmounts before the fetch resolves, any state updates inside fire on a dead component.
+
+3. Mixed promise styles — .then()/.catch() chains in files that otherwise use async/await, making error-flow tracing harder and creating style inconsistency.
+
+I've never written an ESLint plugin before. I know they work with ASTs but I don't know the structure. Before I write anything: which of these three patterns should I implement first, and what's the overall architecture of an ESLint plugin I need to understand? Assume I'm starting from scratch — no existing plugin boilerplate.$pf$,
+ $pf$Good starting point — all three patterns are real and worth catching. Let me give you the architecture first, then a priority order for the rules.
+
+**ESLint plugin anatomy**
+
+An ESLint plugin is a Node.js module that exports a `rules` object (and optionally `configs`, `processors`). Each rule is an object with two fields:
+
+```javascript
+module.exports = {
+  meta: {
+    type: 'problem',        // 'problem' | 'suggestion' | 'layout'
+    docs: { description: 'Disallow async callbacks in useEffect' },
+    schema: [],             // JSON Schema for rule options
+    messages: {
+      asyncUseEffect: 'useEffect callback must not be async. ...'
+    }
+  },
+  create(context) {
+    return {
+      // AST visitor methods go here — called by ESLint as it walks the file
+      CallExpression(node) {
+        // triggered for every function call in the file
+      }
+    };
+  }
+};
+```
+
+The `create` function returns a visitor object. ESLint walks the AST top-to-bottom and calls each visitor when it encounters that node type. The node types you'll use most:
+
+- `CallExpression` — any function call (`fetchData()`, `.then(...)`, `useEffect(...)`)
+- `ArrowFunctionExpression` / `FunctionExpression` — function bodies; have an `async` boolean property
+- `JSXAttribute` — catches patterns in JSX props like `onClick={...}`
+- `ExpressionStatement` — a statement that is just an expression; a floating unassigned call is an `ExpressionStatement` wrapping a `CallExpression`
+
+The key insight: `async` is syntactic, so you can check `node.async === true` directly on any function node without needing the TypeScript type checker. This keeps your first two rules simple and fast.
+
+**Priority order:**
+
+1. **no-async-useeffect** — implement this first. The AST shape is completely distinctive: `CallExpression` where callee is `Identifier` with name `useEffect`, and the first argument is an `async` `ArrowFunctionExpression` or `FunctionExpression`. Zero false positives because `useEffect(async () => {...})` is always wrong.
+
+2. **no-floating-promise-handler** — implement second. Look for `ExpressionStatement → CallExpression` patterns inside JSX event handler bodies where the call is not awaited. Has some false positives for synchronous functions called without assignment, so set severity to 'warn' rather than 'error'. The `void` operator is your escape hatch for legitimate fire-and-forget calls.
+
+3. **prefer-async-await over .then()** — implement last. The most false positives (.then() is sometimes correct — Promise.all, streaming, fire-and-forget). Set to 'warn'.
+
+For testing, use ESLint's built-in `RuleTester`. Write valid and invalid test cases for each rule before you write the rule logic — it forces you to specify the exact AST shapes you're targeting.
+
+One setup note: you'll use `@typescript-eslint/parser` in your main project's ESLint config (you likely already have it), but the plugin itself doesn't need it as a dependency — the parser is a peer dependency of the consuming project. The plugin just registers rules; the parser runs on the consuming side.
+
+Start with rule 1. Want me to scaffold the plugin directory structure first so the package loads before we write any rule logic?$pf$,
+ NULL),
+
+-- Step 2 --
+('77777777-7777-7777-7777-777777110002',
+ '55555555-5555-5555-5555-555555550110',
+ 2,
+ $pf$Yes, scaffold the directory structure first. I want to understand what I'm building before I write any rule logic. Give me the complete file layout, the package.json, and the index.js entry point. I also need to know how to link it locally against our main project so I can test it in a real codebase context before publishing to our private npm registry — we use npm workspaces in our monorepo, so I'm not sure if npm link works the same way. Walk me through what files to create, what goes in each, and the exact commands to get the plugin loaded locally so that running eslint in the main project hits the stub rules without errors. I want to confirm the loading works before writing any real rule code.$pf$,
+ $pf$Here's the complete directory layout and setup.
+
+**Directory structure:**
+```
+eslint-plugin-flowco/
+├── package.json
+├── index.js              ← plugin entry point
+├── rules/
+│   ├── no-async-useeffect.js
+│   ├── no-floating-promise-handler.js
+│   └── no-then-chain.js
+└── tests/
+    ├── no-async-useeffect.test.js
+    ├── no-floating-promise-handler.test.js
+    └── no-then-chain.test.js
+```
+
+**package.json:**
+```json
+{
+  "name": "@flowco/eslint-plugin-flowco",
+  "version": "0.1.0",
+  "description": "Async/await convention enforcement for our React TypeScript codebase",
+  "main": "index.js",
+  "scripts": {
+    "test": "node --experimental-vm-modules node_modules/.bin/jest"
+  },
+  "peerDependencies": {
+    "eslint": ">=8.0.0"
+  },
+  "devDependencies": {
+    "eslint": "^8.57.0",
+    "jest": "^29.7.0"
+  }
+}
+```
+
+**index.js:**
+```javascript
+const noAsyncUseEffect = require('./rules/no-async-useeffect');
+const noFloatingPromiseHandler = require('./rules/no-floating-promise-handler');
+const noThenChain = require('./rules/no-then-chain');
+
+module.exports = {
+  rules: {
+    'no-async-useeffect': noAsyncUseEffect,
+    'no-floating-promise-handler': noFloatingPromiseHandler,
+    'no-then-chain': noThenChain,
+  },
+  configs: {
+    recommended: {
+      plugins: ['@flowco/flowco'],
+      rules: {
+        '@flowco/flowco/no-async-useeffect': 'error',
+        '@flowco/flowco/no-floating-promise-handler': 'warn',
+        '@flowco/flowco/no-then-chain': 'warn',
+      },
+    },
+  },
+};
+```
+
+**Create stub rules so the plugin loads without errors.** All three files should have the same skeleton:
+```javascript
+// rules/no-async-useeffect.js (and the other two, identically structured)
+module.exports = {
+  meta: {
+    type: 'problem',
+    docs: { description: 'placeholder' },
+    schema: [],
+    messages: {},
+  },
+  create(context) {
+    return {};  // empty visitor — no rules fire yet
+  },
+};
+```
+
+**Linking into a monorepo with npm workspaces:**
+
+`npm link` works fine in an npm workspaces setup, but the resolution order can be surprising. The cleanest approach:
+
+```bash
+# From the plugin repo root:
+npm install
+npm link
+
+# From the monorepo root (NOT a workspace package):
+npm link @flowco/eslint-plugin-flowco
+```
+
+Alternatively, add the plugin as a local path dependency in the workspace package that contains your ESLint config:
+```json
+// apps/web/package.json or your root package.json
+{
+  "devDependencies": {
+    "@flowco/eslint-plugin-flowco": "file:../../eslint-plugin-flowco"
+  }
+}
+```
+Then `npm install` from the workspace root. This is more explicit than `npm link` and survives `npm ci` in CI without manual linking.
+
+**Update your ESLint config** (`.eslintrc.json` or `.eslintrc.js`):
+```json
+{
+  "plugins": ["@flowco/flowco"],
+  "extends": ["plugin:@flowco/flowco/recommended"]
+}
+```
+
+Note the naming for scoped packages: the package is `@flowco/eslint-plugin-flowco`, the plugin reference in ESLint config strips `eslint-plugin-` and uses `@flowco/flowco`.
+
+Run `npx eslint src/` from your main project. You should see zero errors from the stubs. If ESLint can't find the plugin, the error is `Definition for rule '@flowco/flowco/no-async-useeffect' was not found` — that means the link or path resolution is off, not a rule logic issue. Fix the resolution before writing any rules. Ready for rule 1?$pf$,
+ NULL),
+
+-- Step 3 --
+('77777777-7777-7777-7777-777777110003',
+ '55555555-5555-5555-5555-555555550110',
+ 3,
+ $pf$Plugin loads cleanly — zero errors from the stubs, ESLint finds the plugin and the three rule names register. Time to implement rule 1: no-async-useeffect.
+
+Here are three concrete cases I want the rule to handle correctly:
+
+```typescript
+// ERROR — async callback directly as useEffect argument:
+useEffect(async () => {
+  const data = await fetchDashboardData(userId);
+  setData(data);
+}, [userId]);
+
+// VALID — not async at the top level, async is internal:
+useEffect(() => {
+  async function load() {
+    const data = await fetchDashboardData(userId);
+    setData(data);
+  }
+  load();
+}, [userId]);
+
+// VALID — async with explicit cancellation pattern:
+useEffect(() => {
+  let cancelled = false;
+  fetchDashboardData(userId).then((data) => {
+    if (!cancelled) setData(data);
+  });
+  return () => { cancelled = true; };
+}, [userId]);
+```
+
+One thing I want to confirm before you write the code: for the "valid" case with the internal async function, the inner load() call is also not awaited — it's a floating call from useEffect's perspective. Should my rule flag that? I think no, because useEffect itself isn't returning a Promise, but I want to make sure I understand why. Write the rule and the full test suite.$pf$,
+ $pf$Correct — the internal async function case is valid and should not be flagged. Here's why: ESLint rules operate on the AST node you target, not what happens inside nested scopes. Your rule's target is the argument passed to `useEffect(...)`. In the valid case, that argument is a regular (non-async) arrow function — `node.async === false`. What happens inside that function body is a separate concern. Your rule never looks at `load()` or whether it's awaited; it only checks whether the direct callback is async.
+
+**rules/no-async-useeffect.js:**
+```javascript
+module.exports = {
+  meta: {
+    type: 'problem',
+    docs: {
+      description: 'Disallow async callbacks passed directly to useEffect',
+      category: 'Possible Errors',
+      recommended: true,
+    },
+    schema: [],
+    messages: {
+      asyncUseEffect:
+        'useEffect callback must not be async. An async function returns a Promise, ' +
+        'but useEffect expects either undefined or a cleanup function. ' +
+        'The returned Promise is silently ignored, and state updates inside it will ' +
+        'run on an unmounted component if the component unmounts first. ' +
+        'Instead, define an async function inside the effect body and call it immediately.',
+    },
+  },
+
+  create(context) {
+    return {
+      CallExpression(node) {
+        // Only match: useEffect(asyncFn, ...)
+        if (
+          node.callee.type !== 'Identifier' ||
+          node.callee.name !== 'useEffect' ||
+          node.arguments.length < 1
+        ) {
+          return;
+        }
+
+        const callback = node.arguments[0];
+
+        // The callback itself is async — this is always wrong
+        if (
+          (callback.type === 'ArrowFunctionExpression' ||
+            callback.type === 'FunctionExpression') &&
+          callback.async === true
+        ) {
+          context.report({
+            node: callback,
+            messageId: 'asyncUseEffect',
+          });
+        }
+      },
+    };
+  },
+};
+```
+
+**tests/no-async-useeffect.test.js:**
+```javascript
+const { RuleTester } = require('eslint');
+const rule = require('../rules/no-async-useeffect');
+
+const tester = new RuleTester({
+  parserOptions: {
+    ecmaVersion: 2020,
+    ecmaFeatures: { jsx: true },
+    sourceType: 'module',
+  },
+});
+
+tester.run('no-async-useeffect', rule, {
+  valid: [
+    // Non-async callback — fine
+    { code: `useEffect(() => { fetchData(); }, []);` },
+
+    // Internal async function — fine (useEffect itself is not async)
+    {
+      code: `useEffect(() => {
+        async function load() { const d = await fetchData(); setData(d); }
+        load();
+      }, [id]);`,
+    },
+
+    // Cancellation pattern — fine
+    {
+      code: `useEffect(() => {
+        let cancelled = false;
+        fetchData().then(d => { if (!cancelled) setData(d); });
+        return () => { cancelled = true; };
+      }, [id]);`,
+    },
+
+    // async used in a non-useEffect call — not our concern
+    { code: `someOtherHook(async () => { await fetchData(); });` },
+
+    // useEffect with a variable reference (not an inline function) — can't check statically
+    { code: `useEffect(onMount, []);` },
+  ],
+
+  invalid: [
+    // Classic case: async arrow function
+    {
+      code: `useEffect(async () => { const data = await fetchData(); setData(data); }, [id]);`,
+      errors: [{ messageId: 'asyncUseEffect' }],
+    },
+    // async function expression (not arrow)
+    {
+      code: `useEffect(async function() { await fetchData(); }, []);`,
+      errors: [{ messageId: 'asyncUseEffect' }],
+    },
+    // Concise async arrow (no block body) — still async, still wrong
+    {
+      code: `useEffect(async () => fetchData(), []);`,
+      errors: [{ messageId: 'asyncUseEffect' }],
+    },
+  ],
+});
+
+console.log('no-async-useeffect: all tests passed');
+```
+
+A few notes on the implementation:
+
+The rule intentionally does not flag `useEffect(variableReference, [])` because the rule can't know if `variableReference` is async without the TypeScript type checker. This is an acceptable gap — the static analysis cost of adding type-aware checks is high; the practical impact is low because async functions passed by reference to useEffect are a much less common pattern than inline callbacks.
+
+The `someOtherHook` valid case is important to keep: if your codebase has custom hooks that wrap useEffect and share the same semantics, you'd want to add their names to the rule via a schema option. Add an `additionalHooks` array to the schema and check `node.callee.name` against it alongside `useEffect`. That's a natural v0.2 extension.
+
+Run `npm test` — all valid cases should pass with zero errors, all three invalid cases should each report exactly one `asyncUseEffect` error.$pf$,
+ NULL),
+
+-- Step 4 --
+('77777777-7777-7777-7777-777777110004',
+ '55555555-5555-5555-5555-555555550110',
+ 4,
+ $pf$Rule 1 passes all tests — including the concise async arrow edge case I hadn't thought about. Let me write rule 2 next: catching floating promises in event handlers.
+
+Here's the pattern that hurts us most in practice. When handleSubmit is async and a developer writes this:
+
+```typescript
+<button onClick={() => {
+  handleSubmit(formData);  // async call, no await — promise is discarded
+  setSubmitting(true);
+}} />
+```
+
+The handleSubmit call returns a Promise that nobody handles. Errors are silently swallowed, and if handleSubmit throws, the UI gives no feedback.
+
+My question before you write the rule: can I detect whether handleSubmit is actually async without pulling in the TypeScript type checker? I suspect the answer is no — the AST only knows it's a CallExpression, not what the callee's return type is. If that's correct, what's the practical approach here? Is a syntactic-only version useful enough to ship, or does the false-positive rate make it not worth it?$pf$,
+ $pf$You're right — syntactically, a `CallExpression` doesn't tell you whether the callee returns a Promise. The AST only knows you called a function; what that function returns requires type information. So you have two real options.
+
+**Option A: Syntactic-only rule (ship now)**
+
+Flag `ExpressionStatement → CallExpression` patterns inside JSX event handler bodies — calls that are neither awaited, nor assigned to a variable, nor chained. This catches floating calls regardless of whether they're async or not. The false-positive rate for non-async functions called in handlers is real, which is why severity should be 'warn' not 'error'. The `void` operator is the explicit escape hatch.
+
+```javascript
+// rules/no-floating-promise-handler.js
+module.exports = {
+  meta: {
+    type: 'suggestion',
+    docs: {
+      description: 'Warn on unhandled function calls in JSX event handlers',
+    },
+    schema: [],
+    messages: {
+      floatingCall:
+        'Function call in event handler is not awaited and result is not assigned. ' +
+        'If this function returns a Promise, errors will be silently swallowed. ' +
+        'Either await it (make the handler async) or use void to explicitly discard: ' +
+        '`void handleSubmit(data)` signals intentional fire-and-forget.',
+    },
+  },
+
+  create(context) {
+    function isEventHandlerAttr(node) {
+      // Matches onClick, onChange, onSubmit, onBlur, etc.
+      return (
+        node.type === 'JSXAttribute' &&
+        node.name.type === 'JSXIdentifier' &&
+        /^on[A-Z]/.test(node.name.name)
+      );
+    }
+
+    function checkBody(bodyNode) {
+      // A block body has .body (array of statements); a concise arrow returns an expression
+      const stmts =
+        bodyNode.type === 'BlockStatement'
+          ? bodyNode.body
+          : [{ type: 'ExpressionStatement', expression: bodyNode }];
+
+      for (const stmt of stmts) {
+        if (
+          stmt.type === 'ExpressionStatement' &&
+          stmt.expression.type === 'CallExpression'
+          // Note: an awaited call is AwaitExpression -> CallExpression,
+          // NOT ExpressionStatement -> CallExpression.
+          // A floating call IS ExpressionStatement -> CallExpression directly.
+        ) {
+          context.report({ node: stmt.expression, messageId: 'floatingCall' });
+        }
+      }
+    }
+
+    return {
+      JSXAttribute(node) {
+        if (!isEventHandlerAttr(node)) return;
+        if (!node.value || node.value.type !== 'JSXExpressionContainer') return;
+
+        const expr = node.value.expression;
+        if (
+          expr.type === 'ArrowFunctionExpression' ||
+          expr.type === 'FunctionExpression'
+        ) {
+          checkBody(expr.body);
+        }
+      },
+    };
+  },
+};
+```
+
+The AST note in the comment is worth understanding: an awaited call parses as `ExpressionStatement → AwaitExpression → CallExpression`. A floating call parses as `ExpressionStatement → CallExpression` directly. So `stmt.expression.type === 'CallExpression'` is already excluding awaited calls — no additional check needed.
+
+**Option B: TypeScript-aware rule (future version)**
+
+With `@typescript-eslint/utils` and `parserServices.program`, you can get the TypeScript type of `node.callee` and check if its return type is `Promise<T>`. This eliminates false positives but requires `project: './tsconfig.json'` in parserOptions, adds 20-40% to lint startup time, and means the plugin now has a hard peer dependency on `@typescript-eslint/utils`.
+
+**My recommendation:** ship Option A at 'warn'. Based on your codebase profile (React TypeScript, heavy use of async handlers), the false positive rate will be low — most event handler calls that return nothing are synchronous utilities like `setSubmitting(true)` or `navigate(...)`, and those are reassigned-style calls or known synchronous APIs. The team will suppress the handful of false positives with `void` after one sprint of real data. If the false positive rate turns out to be unacceptable, that's when you invest in Option B.
+
+One edge case in the syntactic rule: `onClick={() => handleSubmit(formData)}` as a concise arrow (no braces). The concise arrow body is the CallExpression directly — the `checkBody` function handles this via the ternary that wraps it in a fake ExpressionStatement. Verify this case in your tests.$pf$,
+ NULL),
+
+-- Step 5 --
+('77777777-7777-7777-7777-777777110005',
+ '55555555-5555-5555-5555-555555550110',
+ 5,
+ $pf$Both rules pass tests. The floating-promise rule at 'warn' is the right call — first run on our codebase flagged 11 places and about 4 were false positives on synchronous functions. That's manageable; we'll use void for those.
+
+Before I write rule 3, I want to get the plugin into CI and as a pre-commit hook. Right now it's only linked locally via the file: path in our workspace package.json. Our setup: GitHub Actions for CI, husky and lint-staged for pre-commit hooks, and we publish internal packages to GitHub Packages (we have other scoped packages under @flowco already).
+
+Walk me through the complete deployment path: publishing to GitHub Packages, updating the main project to install from the registry instead of the local path, authenticating in GitHub Actions so the CI lint job can pull from GitHub Packages, and wiring the pre-commit hook so violations block commits. Include the exact files and the authentication setup — I've published to GitHub Packages before but always forget the token scope.$pf$,
+ $pf$Here's the complete deployment path from local dev to CI.
+
+**Step 1: Publish to GitHub Packages**
+
+In the plugin's `package.json`, the name already has the `@flowco` scope — that's correct. Add publishConfig:
+```json
+{
+  "name": "@flowco/eslint-plugin-flowco",
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com"
+  }
+}
+```
+
+Create `.npmrc` in the plugin repo root (not committed — add to `.gitignore`):
+```
+@flowco:registry=https://npm.pkg.github.com
+//npm.pkg.github.com/:_authToken=${GITHUB_TOKEN}
+```
+
+The token needs `write:packages` scope. Generate at GitHub → Settings → Developer settings → Personal access tokens (classic). Then:
+```bash
+GITHUB_TOKEN=ghp_your_token npm publish
+```
+
+From now on, bump `version` in `package.json` before each publish. v0.1.0 for the current two rules; v0.2.0 when rule 3 lands.
+
+**Step 2: Update main project to install from registry**
+
+Remove the `file:` path dependency. In your workspace package.json that consumes the plugin:
+```json
+{
+  "devDependencies": {
+    "@flowco/eslint-plugin-flowco": "^0.1.0"
+  }
+}
+```
+
+Add `.npmrc` to the monorepo root (this one IS committed, since it only has registry config, no tokens):
+```
+@flowco:registry=https://npm.pkg.github.com
+```
+
+The token is injected at install time via the environment, not stored in the committed file.
+
+**Step 3: GitHub Actions lint job**
+
+In your lint workflow (`.github/workflows/lint.yml`):
+```yaml
+name: Lint
+on: [push, pull_request]
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          registry-url: 'https://npm.pkg.github.com'
+          scope: '@flowco'
+
+      - name: Install dependencies
+        run: npm ci
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Lint
+        run: npx eslint src/ --max-warnings=0
+```
+
+Key: `NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}` is automatically provided by Actions — you don't create this secret, it's built in. `setup-node` with `registry-url` wires it to the `.npmrc` authentication. The `scope: '@flowco'` tells setup-node which registry URL to apply the token to.
+
+The `--max-warnings=0` flag makes warnings (your 'warn'-severity rules) fail the lint check in CI. Remove it if you want warnings to be non-blocking in CI but still visible.
+
+**Step 4: Pre-commit hook with husky and lint-staged**
+
+```bash
+npm install --save-dev lint-staged husky
+npx husky init
+```
+
+In root `package.json`:
+```json
+{
+  "lint-staged": {
+    "*.{ts,tsx}": ["eslint --fix --cache"]
+  }
+}
+```
+
+In `.husky/pre-commit`:
+```bash
+#!/bin/sh
+npx lint-staged
+```
+
+The `--cache` flag on eslint makes the pre-commit hook fast — it only re-lints changed files and caches results for unchanged ones. First run is slower; subsequent runs (the common case) are near-instant.
+
+Note: `--max-warnings=0` is deliberately absent from lint-staged. You want the pre-commit hook to let 'warn' violations through as a soft reminder, then catch them hard in CI. This prevents the hook from blocking commits over the floating-promise false positives while you're working through them — but CI will catch anything you forget to fix before merge.
+
+**Versioning discipline:**
+
+Once rule 3 (no-then-chain) is implemented and tested, bump to `0.2.0` and publish. Add a two-line `CHANGELOG.md` to the plugin repo noting what each version added. Engineers get frustrated when a linter upgrade silently adds new rules to a CI check — the changelog gives them a heads-up and makes `npm audit` easier to reason about.$pf$,
+ NULL);
+
+DELETE FROM prompt_steps WHERE prompt_id = '55555555-5555-5555-5555-555555550111';
+DELETE FROM prompts WHERE id = '55555555-5555-5555-5555-555555550111';
+
+INSERT INTO prompts (id, title, description, content, result_content, category_id, difficulty, model_used, model_recommendation, tools_used, tags, status, author_id, vote_count, bookmark_count)
+VALUES (
+ '55555555-5555-5555-5555-555555550111',
+ $pf$Underwriting a $390K Nashville Duplex: Buy, Offer Lower, or Pass?$pf$,
+ $pf$I analyze SaaS unit economics for work but had never underwritten a rental property. Found a duplex in East Nashville — $390K asking, both units occupied. I used Claude to build the cash-flow model, run the house-hack scenario where I live in one unit, stress-test the major risks, and get a concrete offer recommendation with a target price.$pf$,
+ $pf$I'm CFO at a B2B startup, so I'm comfortable with financial models, but residential real estate is a different discipline — different inputs, different metrics, different risk framework. A duplex came up in East Nashville: $390,000 asking price, both units currently occupied at $1,550 and $1,650 per month ($3,200 total), built 2007, well-maintained per the listing. I was considering house-hacking — buying it as my primary residence, living in one unit, and renting the other. I'd never done this before and I wanted to build a proper model, not run back-of-envelope math and convince myself it worked. I also needed to understand what I actually had to go gather before I could model anything — I didn't know the right inputs.$pf$,
+ $pf$Made an offer at $375,000 with a $3,000 seller concession toward closing costs. Offer accepted. The Unit B HVAC inspection finding gave me the negotiating leverage to come in below ask without it feeling arbitrary. The unit closed 42 days later. Unit B is now rented at $1,675 (small increase at lease renewal). My effective monthly housing cost is $1,397, compared to $2,400 in rent before. The cash-flow model held up — vacancies, maintenance reserve, and insurance all came in within 10% of projections in the first two months. The HVAC in Unit B was replaced at month 4: $7,200 installed. The reserve I'd been building covered $2,400 of it; I covered the rest out of pocket. All told, the analysis was worth the rigor — I nearly passed on the deal because the initial surface-level math looked marginal before I ran the house-hack scenario.$pf$,
+ '11111111-1111-1111-1111-111111111101',
+ 'intermediate',
+ 'claude-opus-4-6',
+ 'Claude 4.6 Opus',
+ ARRAY['Claude', 'Zillow', 'Apartments.com', 'Davidson County Assessor'],
+ ARRAY['real estate', 'rental property', 'house hacking', 'cash flow analysis', 'duplex', 'Nashville'],
+ 'approved',
+ '22222222-2222-2222-2222-222222222203',
+ 0,
+ 0
+);
+
+INSERT INTO prompt_steps (id, prompt_id, step_number, content, result_content, image_url) VALUES
+
+-- Step 1 --
+('77777777-7777-7777-7777-777777111001',
+ '55555555-5555-5555-5555-555555550111',
+ 1,
+ $pf$I want to underwrite a duplex before making an offer. I'm a CFO — I know how to model a business, but I've never analyzed a rental property before and I don't know what inputs I need or what the key metrics are.
+
+Here's what I have: the duplex is in East Nashville, Tennessee (zip 37206). Asking price $390,000. Both units are currently occupied — Unit A rents at $1,550/month, Unit B at $1,650/month, total current rent $3,200/month. The building was built in 2007, the listing says well-maintained, no mention of major deferred maintenance or recent renovations. I'd put 25% down ($97,500) and finance $292,500.
+
+I'm considering house-hacking — living in Unit A and renting Unit B — but I want to understand the pure investment case first before I run the house-hack math. What does a proper underwriting look like? What inputs do I need to gather before I can build a model, and what are the metrics that actually determine whether this deal is good?$pf$,
+ $pf$Good context. A duplex at this price point has four layers of analysis: income, operating expenses, debt service, and returns. Here's what you need to gather and calculate.
+
+**Income inputs (you have most of these):**
+- **Gross scheduled rent (GSR):** $3,200/month / $38,400/year — confirmed.
+- **Vacancy and credit loss:** Apply a percentage to account for periods between tenants and occasional non-payment. For East Nashville 37206, the current vacancy rate is tight — 5% is defensible. 7% is conservative. Use 7% to build in margin: $38,400 × 0.93 = $35,712 effective gross income (EGI).
+- **Market rent check:** Are current tenants at market rate? Pull Zillow and Apartments.com for comparable 1BR and 2BR units in 37206 and 37216. If tenants are below market, there's rent upside at lease renewal. If they're at market, your model is clean as-is. This check takes 30 minutes and affects your income projection.
+
+**Operating expense inputs (gather before modeling):**
+- **Property taxes:** Pull the Davidson County Assessor record — it's public at padctn.org. Search by address. The assessed value is typically 25–35% below sale price (assessment lags market). Multiply AV by the Davidson County rate ($3.155 per $100 AV). Budget $8,500–$10,000/year until you have the actual parcel number.
+- **Insurance:** Get a landlord policy quote, not a homeowner's policy. Landlord policies run $1,400–$2,200/year for a 2007-built duplex in Davidson County. Don't use an estimate in your final model — get an actual quote; it takes one call.
+- **Maintenance and CapEx reserve:** 10% of gross rents is the standard reserve for a property this age. $38,400 × 0.10 = $3,840/year. This isn't a monthly expense — some years you spend nothing, some years you spend $8,000 on a roof repair. The reserve smooths the volatility. For a 17-year-old building, 10% is the right floor; some underwriters use 12–15%.
+- **Property management:** If self-managing, $0. If you hire a PM, budget 8–10% of collected rent ($268–$320/month). Run the model both ways.
+
+**Debt service (calculate at your specific offer price):**
+At $390K asking, 25% down ($97,500), loan $292,500:
+- Investment property rates run approximately 0.5–0.75% higher than primary residence rates. If owner-occupied (house-hacking), you qualify for primary residence financing, which is meaningfully lower.
+- At 7.25% investment property / 30yr: monthly P&I ≈ $1,996. At 7.0% primary residence: ≈ $1,947.
+
+**The four metrics that matter:**
+1. **Net Operating Income (NOI):** EGI minus all operating expenses before debt service. This is what the property earns independent of how you finance it.
+2. **Cap Rate:** NOI / purchase price. East Nashville duplexes currently trade at 4.5–5.5%. Below 4% suggests you're overpaying; above 6% on a 37206 address is unusually attractive.
+3. **Cash-on-Cash return (CoC):** Annual after-debt cash flow / total cash invested (down payment + closing costs). Measures the return on your equity. Sub-zero CoC isn't necessarily a pass — appreciation and equity build-up are part of the picture — but negative CoC means the property is subsidized from your salary, which increases risk.
+4. **Gross Rent Multiplier (GRM):** Purchase price / annual GSR. $390K / $38,400 = 10.2. Under 12 is generally workable in Nashville; under 10 is a good deal. 10.2 is reasonable but not exceptional.
+
+Gather the tax parcel data and an insurance quote first. Once you have those two numbers, the pro forma comes together in 30 minutes. What did you find on the assessor site?$pf$,
+ NULL),
+
+-- Step 2 --
+('77777777-7777-7777-7777-777777111002',
+ '55555555-5555-5555-5555-555555550111',
+ 2,
+ $pf$Here's what I pulled from public records and vendor quotes. The Davidson County Assessor shows taxable assessment at $298,000 — at the $3.155 per $100 rate that's $9,400/year in property taxes. I got a landlord insurance quote from two carriers and the lower one came back at $1,820/year. I called three local property managers and the consensus was 8% of collected rents, which on current rent is about $256/month or $3,072/year.
+
+I want to model two scenarios side by side. Scenario A: I hire a PM and treat this as a pure investment, both units rented to tenants. Scenario B: House-hack — I live in Unit A and rent Unit B at $1,650. I'd self-manage since I'd be on-site. For both scenarios use 7.25% mortgage rate on investment property financing and 7.0% for primary residence (I got verbal quotes for both), 30-year term, $292,500 loan. Use 5% vacancy — East Nashville vacancy is historically low and current listings are thin. Build me the full 12-month pro forma for both scenarios, showing the math step by step so I can follow the assumptions.$pf$,
+ $pf$Here are both pro formas. I'll show the math at each line so every assumption is visible.
+
+---
+
+**Locked inputs:**
+- Gross Scheduled Rent (GSR): $38,400/year ($3,200/month)
+- Vacancy 5%: -$1,920 → Effective Gross Income (EGI): $36,480/year ($3,040/month)
+- Property taxes: $9,400/year ($783/month)
+- Insurance: $1,820/year ($152/month)
+- Maintenance/CapEx reserve (10% of GSR): $3,840/year ($320/month)
+- Closing costs: estimate $9,000–$10,500; use $9,500 for CoC denominator
+- Total cash invested (Scenario A, investment): $97,500 down + $9,500 closing = $107,000
+- Total cash invested (Scenario B, primary): $97,500 down + $9,000 closing (slightly lower, lender credits available on primary) = $106,500
+
+---
+
+**Scenario A — Pure Investment (both units rented, PM managed)**
+
+Mortgage: $292,500 at 7.25% / 30yr → P&I = $1,996/month ($23,952/year)
+
+| Line Item | Monthly | Annual |
+|---|---|---|
+| Gross Scheduled Rent | $3,200 | $38,400 |
+| Vacancy (5%) | -$160 | -$1,920 |
+| **Effective Gross Income** | **$3,040** | **$36,480** |
+| Property Taxes | -$783 | -$9,400 |
+| Insurance | -$152 | -$1,820 |
+| Maintenance/CapEx reserve | -$320 | -$3,840 |
+| Property Management (8%) | -$243 | -$2,918 |
+| **Net Operating Income** | **$1,542** | **$18,502** |
+| Mortgage P&I | -$1,996 | -$23,952 |
+| **Monthly Cash Flow** | **-$454** | **-$5,450** |
+
+Metrics — Scenario A:
+- Cap Rate: $18,502 / $390,000 = **4.74%** (within market range for East Nashville)
+- Cash-on-Cash: -$5,450 / $107,000 = **-5.1%** (negative — property subsidized from salary)
+- GRM: $390,000 / $38,400 = **10.2**
+
+Scenario A at asking price is negative cash flow. You'd cover $454/month from salary indefinitely unless rents rise or rates drop. Not a disqualifier if you believe in Nashville appreciation, but you're carrying real risk if you hit vacancy or a CapEx event in year 1 before reserves build.
+
+---
+
+**Scenario B — House-Hack (Unit A = your residence, Unit B rented at $1,650)**
+
+Mortgage: primary residence financing at 7.0% → $292,500 / 30yr → P&I = $1,947/month ($23,364/year)
+Rental income: Unit B only, $1,650/month / $19,800/year
+Vacancy Unit B only (5%): -$83/month / -$990/year → Rental EGI: $1,567/month / $18,810/year
+Maintenance reserve: 10% of Unit B rent only = $165/month / $1,980/year
+Self-managed (no PM): $0
+
+| Line Item | Monthly | Annual |
+|---|---|---|
+| Unit B Rental Income | $1,650 | $19,800 |
+| Vacancy Unit B (5%) | -$83 | -$990 |
+| **Rental Effective Gross Income** | **$1,567** | **$18,810** |
+| Property Taxes | -$783 | -$9,400 |
+| Insurance | -$152 | -$1,820 |
+| Maintenance/CapEx reserve | -$165 | -$1,980 |
+| **Net Rental Contribution** | **$467** | **$5,610** |
+| Mortgage P&I | -$1,947 | -$23,364 |
+| **Your Net Housing Cost** | **-$1,480** | **-$17,754** |
+
+Your effective housing cost under house-hacking: **$1,480/month**, versus $2,400 in current rent. You save $920/month = $11,040/year.
+
+Another way to read this: total PITI (principal + interest + taxes + insurance) = $1,947 + $783 + $152 = $2,882/month. Unit B rent covers $1,650 of that. Net out-of-pocket before reserve: $1,232. Add $165 reserve: $1,397. Call it $1,480 conservatively. That is your new rent — except you're building equity at $3,200+ per year in principal paydown (rising each year as the amortization schedule shifts).
+
+**Bonus on the financing:** With an owner-occupied duplex and primary residence loan, you can count 75% of Unit B's market rent ($1,237/month) toward your debt-to-income calculation, which makes qualifying easier than investment property financing.
+
+Scenario B substantially changes the picture. The question is whether you want to live there.$pf$,
+ NULL),
+
+-- Step 3 --
+('77777777-7777-7777-7777-777777111003',
+ '55555555-5555-5555-5555-555555550111',
+ 3,
+ $pf$Scenario B is significantly better than I expected. A $1,480 effective housing cost on a property I own is a big improvement over $2,400/month in rent, and the equity build makes it more compelling on top of that.
+
+Before I commit to making an offer, I need to stress-test two things that concern me. First: what if the current rents are at or near market ceiling and there's no upside when leases renew? I looked at Zillow and Apartments.com for comparable units in 37206 and it looks like 1BR units are in the $1,500–$1,700 range and 2BR units are in the $1,750–$2,100 range. So maybe there's $100–$200/month of upside on Unit B if it's a 2BR, or maybe current tenants are already at market. Walk me through the rent scenario analysis.
+
+Second, the 2007 vintage means the building is 17 years old. I need the actual CapEx risk picture — what are the realistic failure points in year 1, what are the real replacement costs in Nashville, and what does a major CapEx event do to the cash-flow model before I've built a reserve? I want dollar figures, not just "budget 10% for maintenance."$pf$,
+ $pf$Both stress tests are worth running. Here's the honest picture on each.
+
+**Stress Test 1: Rent assumptions**
+
+Based on current Zillow and Apartments.com inventory in 37206/37216, your read is accurate:
+- 1BR units: $1,450–$1,700/month, median around $1,550
+- 2BR units: $1,750–$2,050/month, median around $1,875
+
+Unit A at $1,550 is at market for a 1BR. Unit B at $1,650 depends entirely on the unit mix — is it a 1BR or 2BR? If it's a 2BR, current tenant is $200–$225/month below market. If it's a 1BR, they're at market ceiling.
+
+**Scenario: Unit B is 2BR, tenant is $225 below market**
+At lease renewal you could raise to $1,875. On your house-hack model, that reduces your effective housing cost by $225/month — from $1,480 to $1,255. Good upside if it materializes, but don't model it as certain. Tenants who've been in a unit a while sometimes push back on significant increases, and in Tennessee you must give 30 days' written notice for rent increases on month-to-month leases.
+
+**Scenario: Rents are at ceiling, no upside**
+Your model already uses current rents. No change to the numbers. This case is already priced in. Don't count on rent growth to make the deal work — it's a bonus, not a basis.
+
+**Scenario: 60-day vacancy after tenant turnover**
+Say the Unit B tenant gives notice and the unit sits empty for 60 days between tenants (showing, cleaning, minor touch-up). Revenue lost: $3,300. Your 12-month maintenance reserve at 10% of Unit B rent = $1,980. A 60-day vacancy wipes it out and leaves you $1,320 short. That's a one-time out-of-pocket absorb — painful in year 1 before reserves build, but not a deal-breaker at your income level.
+
+**Stress Test 2: Year 1 CapEx risks on a 2007 building**
+
+A 17-year-old building has three systems approaching end of life. Here's the realistic cost and probability for each.
+
+**HVAC (high risk, high cost):**
+Gas furnace/AC systems have a 15–20 year useful life. A 2007 original system is in the risk window. Signs of impending failure: refrigerant loss, capacitor failure, heat exchanger cracks, or the condenser simply dying without warning. Replacement cost per unit in Nashville (2024): $6,000–$8,500 for a 3-ton split system installed, mid-efficiency. Two units: $12,000–$17,000 worst case.
+
+The inspection is your detection mechanism here. A general inspector checks if the system runs; an HVAC technician ($150–$250 separately) checks remaining life, refrigerant charge, heat exchanger integrity, and capacitor condition. Pay for the HVAC tech — it's cheap information relative to the risk.
+
+**Cash-flow impact — one HVAC replacement in year 1 ($7,500):**
+Your reserve after year 1 of house-hacking = $1,980. Gap: $5,520 out of pocket on top of your regular housing cost. Painful but survivable. More importantly: this risk is knowable in advance and can be negotiated into the purchase price.
+
+**Roof (lower risk):**
+Asphalt shingle roofs in Middle Tennessee last 20–25 years in normal conditions. A 2007 original roof is at year 17. Replacement cost for a duplex footprint: $9,000–$14,000. The general inspector should assess remaining shingle life and flag any active leaks or soft spots. A roof with 8+ years of life left is not a year-1 concern.
+
+**Water heaters (manageable):**
+10–15 year typical lifespan. If original 2007 water heaters are still in place, they're overdue and on borrowed time. Cost to replace: $1,200–$1,500 each installed. Ask the seller directly: "When were the water heaters replaced?" If they can't answer, plan to replace them proactively within 12 months and negotiate $2,500–$3,000 into the offer accordingly.
+
+**Bottom line on CapEx:** The HVAC systems are the one item that could significantly hurt you in year 1. The inspection is your answer — not stress-testing the model further, but getting eyes on the actual equipment.$pf$,
+ NULL),
+
+-- Step 4 --
+('77777777-7777-7777-7777-777777111004',
+ '55555555-5555-5555-5555-555555550111',
+ 4,
+ $pf$I did a second showing and brought a separate HVAC technician — the kind of thing I would not have thought to do without this analysis. His assessment: the HVAC unit in Unit B is the original 2007 installation, still running, but he put remaining useful life at 12–18 months. The Unit A HVAC was replaced about 5 years ago and is fine. The general inspector found no roof issues — estimated 8+ years of shingle life remaining — and the foundation and drywall both looked clean. Water heaters: Unit A was replaced 4 years ago, Unit B is original 2007 and should be replaced proactively.
+
+Based on all of this — the two-scenario pro forma, the rent stress test, the CapEx assessment, and now the actual inspection findings — give me a real recommendation. If I should make an offer, at what price, with what contingencies, and with what ask on the HVAC? If I should pass, tell me what would have to change for the deal to work. Don't hedge on risk tolerance — give me a concrete call.$pf$,
+ $pf$**Recommendation: Make an offer. Target $375,000 with a $3,000 closing cost concession. Walk if they won't come below $383,000 with nothing on the HVAC.**
+
+Here's the reasoning, step by step.
+
+**The known deficiency gives you real leverage**
+
+The HVAC tech's assessment — "12–18 months of remaining useful life" — is not an inspection scare story, it's a documented finding on the original 2007 unit. That is a material known deficiency. In a normal seller's market you'd swallow it; in today's rate environment where buyers have negotiating room, you use it.
+
+You have three ways to structure the HVAC ask:
+- (a) Seller replaces Unit B HVAC before closing: cleanest outcome, but sellers rarely want the headache of managing a contractor pre-close.
+- (b) $7,500 reduction to purchase price: cleanest for your balance sheet — reduces loan amount, reduces P&I, compounds. On a $292,500 loan, $7,500 off purchase means $7,500 less principal and roughly $52/month less P&I at 7.0%.
+- (c) $7,500 seller concession at closing: reduces your cash to close but doesn't reduce the debt. Still useful if you're cash-constrained at close.
+
+Recommend option (b) — price reduction — as your first ask. If they counter with (c), accept it; it still puts money back in your pocket for the HVAC replacement.
+
+**Offer structure:**
+
+- **Offer price: $375,000** (3.8% below $390K asking). At current rates this is a reasonable open given the known deficiency. You're not making an aggressive lowball; you're pricing a documented risk.
+- **Closing cost concession: $3,000** on top of the price reduction. This covers roughly half your closing costs and brings net cost to close down to ~$6,500 beyond your down payment.
+- **Inspection contingency: yes, 10 days.** You've already done the inspection informally, but you need it formally in the contract to have recourse if more issues surface.
+- **Financing contingency: yes.**
+- **Separate HVAC ask:** In the offer letter or during inspection-response negotiation, explicitly note the HVAC finding: "Buyer's HVAC inspection found the Unit B system to be original 2007 installation with an estimated remaining useful life of 12–18 months. Buyer requests [price reduction of $7,500 / seller concession of $7,500] to account for impending replacement." This is documented — use the technician's language.
+- **Unit B water heater:** Ask for a $1,500 credit for the original 2007 water heater. It's a small ask and a legitimate one.
+- **Closing timeline: 42 days.** Owner-occupied duplex with primary residence financing — your lender will need the full timeline.
+
+**What this does to your numbers:**
+
+At $375,000, loan = $281,250 (25% down = $93,750 — actually saves you $3,750 on the down payment too).
+P&I at 7.0% / 30yr on $281,250 = $1,872/month vs $1,947 at $390K.
+Your effective housing cost: $1,872 + $783 (taxes) + $152 (insurance) - $1,567 (Unit B rental EGI) - $165 (reserve) = **$1,075/month net**. That's $1,325/month better than your current rent.
+
+Cap rate at $375,000: $18,502 NOI / $375,000 = **4.93%** — more in line with the market; you're not overpaying for the asset.
+
+**When to walk:**
+
+If the seller holds firm at $390K with no price movement and no concessions on the HVAC: walk. Not because the deal is bad at $390K — it isn't catastrophically bad — but because you have a documented deficiency in your hand and a seller unwilling to negotiate on it is either hiding a backup offer or not operating in good faith. At your income level, the $1,480/month housing cost at $390K still works, but you'd be starting day one absorbing a known $7,500–$8,500 expense on a reserve that hasn't built yet. That's an unnecessary position to take when the leverage is yours.
+
+**The equity upside you should believe in:**
+
+East Nashville property values have compounded at 4–6% annually over the prior decade (excluding the 2020–2022 acceleration, which was an outlier). On a $375,000 purchase, a 4% appreciation year adds $15,000 in property value. Principal paydown in year 1 at 7.0% on $281,250: approximately $3,100. Combined equity gain: $18,100. Plus $11,040 in housing cost savings vs renting. Total year-1 economic gain: roughly $29,000 — on a $103,000 cash investment (down payment + closing). That's a 28% economic return in year 1 even though the "cash-on-cash" number appears negative in the pure investment frame.
+
+Offer at $375,000 with $3,000 closing concession and a separate $7,500 ask on the HVAC. You have a real number, documented inspection support, and the model has been stress-tested. Make the call.$pf$,
+ NULL);
+
 ALTER TABLE prompts ENABLE ROW LEVEL SECURITY;
 ALTER TABLE prompt_steps ENABLE ROW LEVEL SECURITY;

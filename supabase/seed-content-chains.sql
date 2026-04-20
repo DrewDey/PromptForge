@@ -37339,5 +37339,918 @@ Second: add a `scheduling.db_query_count` span attribute to slot_availability_ch
 Third: audit the patient-records service for the same pattern. The multi-provider scheduling feature likely touches patient records for eligibility checks. If the same loop-based fetch pattern was introduced there, you have a latent N+1 waiting to surface under load. Instrument the service and run a load test with realistic multi-patient requests to find out.$pf$,
  NULL);
 
+DELETE FROM prompt_steps WHERE prompt_id = '55555555-5555-5555-5555-555555550104';
+DELETE FROM prompts      WHERE id        = '55555555-5555-5555-5555-555555550104';
+
+INSERT INTO prompts (
+  id, title, description, content, result_content,
+  category_id, difficulty, model_used, model_recommendation,
+  tools_used, tags, status, author_id, vote_count, bookmark_count
+) VALUES (
+  '55555555-5555-5555-5555-555555550104',
+  $pf$Replaced two weekly standups with an async protocol that actually works$pf$,
+  $pf$Nina Kowalski, ops manager at a 50-person remote agency, builds a complete async communication framework in four passes: a diagnostic interview and decision tree, a one-page channel-and-SLA protocol document, a weekly project card template that eliminates status meetings, and a Monday rollout package with email and cheat sheet.$pf$,
+  $pf$Our agency went fully remote eight months ago and things were getting worse, not better. Senior designers were blocking their calendars to get deep work done. Team leads messaged at 10pm and expected same-night responses. We had two recurring standups — a Monday kick-off and a Wednesday check-in — that had both turned into status-report sessions where people read updates out loud and real discussions never happened.
+
+The root problem was that we had no shared definition of what was urgent. I had been the ops lead for two years and I knew the team well enough to know that dropping a policy document in the handbook would not change anything. People do not read policies. I wanted to build something that actually changes behavior — a framework that makes the right choice the path of least resistance.
+
+I used Claude to build the full async protocol system in one Saturday session. A diagnostic interview framework to run with team leads first, a decision tree any team member could use to self-sort before sending, a one-page protocol document with explicit channel SLAs and an after-hours rule, a weekly project card to replace both standups, and a Monday rollout package. We launched Monday morning. Two weeks later the noise had measurably dropped.$pf$,
+  $pf$We ran the protocol for two full weeks before the first quarterly ops review. After-hours Slack pings dropped noticeably — the decision tree made the biggest difference because it gave people a frame for checking their own urgency before sending. The weekly project card replaced both standups; team leads spent 15 to 20 minutes on Fridays instead of 75 combined minutes in Monday and Wednesday meetings. One result I did not expect: three contractors working across time zones said the explicit after-hours rule was the first time they had felt like the agency actually thought about what remote meant for people outside the core time zone.$pf$,
+  '11111111-1111-1111-1111-111111111107',
+  'beginner',
+  'claude-sonnet-4-6',
+  'Claude 4.6 Sonnet',
+  ARRAY['Claude'],
+  ARRAY['async-communication', 'remote-work', 'team-operations', 'protocols', 'templates'],
+  'approved',
+  '22222222-2222-2222-2222-222222222206',
+  0, 0
+);
+
+INSERT INTO prompt_steps (id, prompt_id, step_number, title, content, result_content, description) VALUES
+
+-- Step 1 --
+('77777777-7777-7777-7777-777777104001',
+ '55555555-5555-5555-5555-555555550104',
+ 1,
+ $pf$Diagnosing async friction and building a sync-vs-async decision tree$pf$,
+ $pf$I am an operations manager at a 50-person fully remote marketing and design agency. We have been distributed for eight months. The core problem is that nobody agrees on what "urgent" means. I get pinged on Slack at 10pm. People send "quick question" messages at 11pm expecting same-night responses. We have two recurring weekly standups — a Monday kick-off and a Wednesday check-in — that have both turned into 30-minute status-report sessions where people read what they did and nothing gets decided. Three of our senior designers have started blocking 9 to 11am daily just to get two hours of uninterrupted deep work.
+
+I want to design an async-first communication protocol but I do not want to start by writing rules. Before I write anything, I want to understand where the friction is actually coming from and build a practical tool that helps anyone on the team self-sort before they hit send. Two deliverables: First, a diagnostic interview I can run with each of our four team leads — 20 minutes, structured to surface actual friction patterns rather than general complaints. Second, a decision tree any team member can use in real time to answer: should I send this now or can it wait? Keep the decision tree simple enough to actually be used day-to-day.$pf$,
+ $pf$An audit before a policy is the right sequence. Here is the 20-minute team lead interview and the decision tree.
+
+**Part 1: 20-minute team lead interview — 8 questions**
+
+Open with context before jumping to problems. Ask in this order:
+
+*Baseline*
+1. "Walk me through the last time a communication gap caused a real problem — something you had to clean up." You are looking for the specific failure mode. "We missed a client deliverable because someone did not see my message in time" is different from "there are too many meetings." The story is the data.
+2. "On a typical Tuesday, how many unread Slack messages do you come back to after two hours of deep work?" Gives you a volume baseline.
+3. "What percentage of the Slack messages you receive are genuinely urgent — meaning someone cannot move forward without your reply today?" Establishes the gap between messages that feel urgent and messages that actually are.
+
+*Behavior patterns*
+4. "When you have a question that needs an answer today, where do you go first — Slack DM, channel, email, or booking time?" Surfaces the actual default behavior, not the stated preference.
+5. "When you send a message at 7pm, do you expect a same-night response?" Direct question. Many leads do not realize they are creating implicit pressure by messaging late.
+6. "Have you ever sent @here in a project channel for something that, in retrospect, could have waited until morning?" This one usually produces a pause.
+
+*Cost and ideal state*
+7. "What are the top three kinds of interruptions that break your flow most often?" Most will be Slack. Some will be impromptu calls. Gives you interrupt-type classification.
+8. "If you could change one thing about how this team communicates starting Monday, what would it be?" The top-of-mind priority, which often differs from what you would guess.
+
+Take notes on patterns across all four leads. If three of them say some version of "I do not know when it is okay to not respond," that is your primary design target.
+
+**Part 2: Sync-vs-async decision tree**
+
+Three questions in sequence. Print this and put it in your Slack workspace description.
+
+**Q1: Does this require a decision or response before you can make progress today?**
+- No → Send async. No rush. Use the appropriate channel.
+- Yes → go to Q2.
+
+**Q2: Can you work productively on something else for two or more hours while you wait?**
+- Yes → Send async. Flag with a specific deadline: "I need a reply on this by 3pm today to keep moving."
+- No → go to Q3.
+
+**Q3: Will a 15-minute call resolve this completely?**
+- Yes → Request a same-day sync: "I need 15 minutes on [topic] — any slot between 2 and 4pm today?"
+- No → This is a scope or alignment problem, not a communication problem. Write up the problem statement async first. Book time only after the recipient has read the context.
+
+The design principle: urgency is defined by the sender's progress being blocked, not by the sender's anxiety. A message is urgent if the receiver being unavailable for four hours would stop real work. Most messages do not meet that bar. Printing that principle alongside the tree is as valuable as the questions themselves.$pf$,
+ NULL),
+
+-- Step 2 --
+('77777777-7777-7777-7777-777777104002',
+ '55555555-5555-5555-5555-555555550104',
+ 2,
+ $pf$Writing the one-page async communication protocol for the handbook$pf$,
+ $pf$That decision tree is exactly what I needed — "urgency is defined by the sender's progress, not the sender's anxiety" is the line I have been trying to articulate for months. I ran the interviews with all four team leads this week. The patterns were consistent: every lead cited Slack DMs as the primary interrupt source, nobody knew the expected response time for different channels, and two leads mentioned feeling implicit pressure to respond to messages sent after 6pm even though we have no policy about it.
+
+Now I need to turn the findings into a protocol document I can put in the company handbook. I want it to define: which channels we use and what each is for, response time SLAs per channel, a clear and firm after-hours policy that actually removes the anxiety rather than just naming it, and a short rule for when a meeting is justified versus when an async update is the better choice. One page maximum. Something people will actually read.$pf$,
+ $pf$One-page length is the right constraint. Protocols fail when they become too granular to memorize. Here is the handbook insert.
+
+---
+
+**[Agency Name] Async Communication Protocol — v1.0**
+*Async first. Sync when it earns its place.*
+
+---
+
+**Channels and what they are for**
+
+| Channel | Use for | Not for |
+|---|---|---|
+| #[team]-updates | Status posts, weekly cards, announcements | Questions, discussion |
+| #[team]-discussion | Questions, input requests, decisions needing a record | Urgent issues, direct work requests |
+| #[project-name] | Project-specific updates and shared files | Off-topic chat |
+| Slack DM | Brief 1:1 context or sensitive topics | Work requests, decisions needing a record |
+| Email | Client communication, external parties | Internal team coordination |
+| Video call | Real-time collaboration on complex problems; relationship building | Status updates; decisions that could be made in writing |
+
+**Response time SLAs (during working hours, 9am–6pm local time)**
+
+If you are blocked until the deadline passes, post a one-line note saying so and give a revised time.
+
+- #discussion channels: **4 hours**
+- Slack DMs: **4 hours**
+- Email (internal): **same business day**
+- @here in a project channel: **2 hours** — use sparingly; only for same-day deliverables
+- @channel (team-wide): **4 hours**
+
+**After-hours rule**
+
+Messages sent after 6pm carry no response expectation until the following morning's SLA window opens. If you send at 8pm, you are opting into async — the recipient is not obligated to respond until the next day.
+
+Genuine emergencies (production failure, client safety issue) use the emergency escalation path below, not a Slack message. "The client wants an update sooner than expected" is not an emergency.
+
+Turning on Slack Do Not Disturb from 6pm to 9am is not just allowed — it is expected behavior.
+
+**Emergency escalation (actual emergencies only)**
+
+1. Call or text the on-call lead directly (number in the team directory)
+2. No response in 15 minutes → escalate to the next level
+3. Post in #incidents with a one-line description of the problem
+
+**When to call a meeting**
+
+A meeting is justified when all three are true: the decision requires real-time back-and-forth (not just approval or information transfer); the right people can attend without significant disruption; the outcome could not be reached with a well-structured async post.
+
+If one of the three is missing, write it up instead.
+
+---
+*Maintained by Operations. Questions → ops-nina. Last updated: [date].*
+
+---
+
+The SLA table is the structural change that does the work here. Before this document, everyone calibrated response urgency to their own internal anxiety. Now the expectation is explicit: a message in a discussion channel gets a response within four hours, not immediately. That single frame shift is what reduces the reflex to check Slack every 15 minutes.$pf$,
+ NULL),
+
+-- Step 3 --
+('77777777-7777-7777-7777-777777104003',
+ '55555555-5555-5555-5555-555555550104',
+ 3,
+ $pf$Building the weekly project card template to replace status meetings$pf$,
+ $pf$The protocol document is going straight into the handbook — that table format is exactly right. Next problem: the two recurring standups. Our Monday kick-off and Wednesday check-in have both turned into status-report meetings where people spend 30 minutes reading what they did last week. The real discussions we need — blockers requiring decisions, risks nobody has surfaced yet — get crowded out because we burn half the time on recaps that could have been a document.
+
+I want to replace both meetings with a single weekly async project card that team leads fill out by Friday at noon. It needs to capture what shipped, what is in progress with a progress indicator, blockers that need decisions, risks on the horizon, and whether anything genuinely needs a live sync conversation. Design it so it takes 15 minutes maximum to fill out and under 5 minutes to read. The format matters — if fields are ambiguous or it runs long, people will skip it.$pf$,
+ $pf$The reading-updates-aloud meeting is one of the most common remote-team failure modes. It imports the office standup format without adjusting for the fact that written updates are faster to consume than spoken ones. Here is the project card template.
+
+---
+
+**Weekly Project Card — [Project Name] — Week of [Date]**
+*Fill by: Friday noon. Read by: Friday afternoon or Monday morning.*
+
+---
+
+**Shipped this week** *(1–3 bullets, max 20 words each)*
+Write what shipped, not what you worked on. "Client onboarding flow — reviewed and handed off" not "worked on the onboarding project."
+- [Shipped item]
+- [Shipped item]
+
+**In progress** *(1–4 items with a progress marker)*
+- [Task] — [X%] or [milestone name, e.g., "draft ready, awaiting review"]
+
+**Decisions needed** *(fill this even when the answer is none)*
+If you need a decision before you can move forward, name it with a deadline and the owner:
+- **[Decision topic]** — need by [date] — flagging [person]
+If none: `None this week.`
+
+**Blockers** *(things outside your control slowing the work)*
+- [Blocker] — [Who owns the unblock] — [ETA if known]
+If none: `None.`
+
+**Risks** *(early warnings — things that could become blockers)*
+- [Risk] — [What would trigger it] — [What you would do]
+If none: `None.`
+
+**Needs a live sync?**
+- Yes: [1-line topic, time estimate, who needs to be in the room]
+- No: `All async this week.`
+
+---
+
+**Fill time calibration:**
+- Shipped and in-progress: 5–7 minutes (you know what shipped; writing forces precision)
+- Decisions and blockers: 3–5 minutes (if they exist, they are already in your head)
+- Risks: 2–3 minutes (think forward one week)
+- Total: 10–15 minutes
+
+**The field that does the most work:**
+"Decisions needed" replaces your Monday kick-off. That meeting exists because people are not sure which decisions are pending. If team leads fill this field every week, the Monday kick-off becomes "read the cards and respond to decision requests in writing" — which is async. The Wednesday check-in becomes optional and fires only when someone marks "Yes" on the sync question.$pf$,
+ NULL),
+
+-- Step 4 --
+('77777777-7777-7777-7777-777777104004',
+ '55555555-5555-5555-5555-555555550104',
+ 4,
+ $pf$Writing the Monday rollout email and one-page cheat sheet$pf$,
+ $pf$The template is exactly right — the "decisions needed" field is the one that is going to change Monday mornings. Now I need to roll all of this out. The protocol document and the project card template are both ready, but I need two more pieces to make the launch stick. First, a rollout email to the full 50-person team — not a cold drop of a policy document in the handbook, but something that explains why we are doing this, what is actually changing and what is not, and what they should do in their first week. Second, a one-page cheat sheet they can bookmark in Slack or print and put on a monitor — the decision tree, the channel SLAs, and the after-hours rule on one scannable page. Email under 400 words. Cheat sheet readable in under 60 seconds.$pf$,
+ $pf$Two assets that work together: the email sets the frame and the cheat sheet is the artifact people keep.
+
+---
+
+**Rollout email**
+
+Subject: How we communicate at [Agency] — new protocol starting Monday
+
+---
+
+Hey team,
+
+Starting Monday we are launching our async-first communication protocol. Here is what it is, why it exists, and what to do in week one.
+
+**Why we are doing this**
+
+We have been remote for eight months. That is long enough to know what is working and what is not. What is not working: nobody knows when a message is actually urgent. People check Slack at 11pm because they are not sure if they should. We have two weekly standups that have both turned into 30-minute status recaps with no decisions made.
+
+The fix is not more meetings or stricter rules. It is a shared language for what counts as urgent, where things belong, and when it is genuinely okay to disconnect.
+
+**What is changing**
+
+Every channel now has an explicit SLA. A message in a discussion channel gets a four-hour response during working hours — not an immediate one. Messages sent after 6pm carry no response expectation until the following morning. You are not obligated to reply until the next day. Both weekly standups are replaced with a Friday project card. Team leads post by noon Friday. Everyone reads Friday afternoon or Monday morning.
+
+**What is not changing**
+
+Your working hours, your tools, and nothing about how you do the actual work.
+
+**What to do this week**
+
+1. Read the one-page protocol in the handbook (link below).
+2. Bookmark the cheat sheet attached to this email.
+3. When you are about to send a Slack DM, ask yourself: does this need an answer before I can move forward today?
+
+That third one is the practice that makes everything else work.
+
+Questions → ops-nina in Slack or #operations.
+
+— Nina
+
+---
+
+**One-page cheat sheet**
+
+**[Agency] Async Comms — Quick Reference**
+
+**Before you send: three questions**
+1. Does this block real work today? No → async, no rush.
+2. Can you work on something else for 2+ hours while you wait? Yes → async, flag with a deadline.
+3. Will a 15-minute call resolve it completely? Yes → request same-day sync. No → write up the problem first.
+
+**Channel SLAs (9am–6pm local)**
+#discussion: 4 hrs | DM: 4 hrs | Email: same day | @here: 2 hrs
+
+**After 6pm**
+No response expected until next morning. Do Not Disturb is the right default. No guilt.
+
+**Emergency (production down or client safety only)**
+Call on-call lead directly → no answer in 15 min → escalate → post in #incidents.
+
+**Weekly project card**
+Team leads: fill by Friday noon.
+Fields: shipped / in progress / decisions needed / blockers / risks / needs a sync?
+
+---
+
+The email ends on one concrete behavior rather than restating the full policy — most people will not read a protocol doc, but they will follow one clear instruction. "Before you send a DM, ask yourself if it blocks real work today" is the habit. Everything else is the support structure around that habit.$pf$,
+ NULL);
+
+DELETE FROM prompt_steps WHERE prompt_id = '55555555-5555-5555-5555-555555550105';
+DELETE FROM prompts      WHERE id        = '55555555-5555-5555-5555-555555550105';
+
+INSERT INTO prompts (
+  id, title, description, content, result_content,
+  category_id, difficulty, model_used, model_recommendation,
+  tools_used, tags, status, author_id, vote_count, bookmark_count
+) VALUES (
+  '55555555-5555-5555-5555-555555550105',
+  $pf$Built a design system governance framework before our team fragmented$pf$,
+  $pf$Priya Sharma, senior UX designer at Fintrek (a B2B fintech SaaS), builds a complete design system governance system across eight passes: component audit methodology, classification taxonomy, two-tier token architecture, component documentation template, governance RFC, design decision log, contributor guide, and a Q2 roadmap with OKRs.$pf$,
+  $pf$Fintrek's design team grew from 2 to 12 designers in 18 months after our Series A. That growth is good news on the product side. On the design system side it looked like slow drift. By the time I noticed clearly, there were four versions of the Button component with different hover states, no documentation explaining which one to use or why any of the variations existed, and at least three cases where a designer forked a component for a one-off feature that ended up in production and stayed there.
+
+I had our Q2 planning meeting three weeks out. I could have walked in with a Notion page saying we need to do better at design system maintenance. Instead I used eight Claude sessions to build a complete governance framework from the ground up. An audit methodology to assess current drift and classify it as intentional versus accidental. A component classification taxonomy so the whole team agrees on what a foundation component is versus a pattern versus a template. A token architecture recommendation for the multi-brand rollout scheduled for Q3. A full component documentation template with Button as the worked example. A governance RFC ready to circulate. A design decision log that captures why decisions were made, not just what was decided. A contributor guide for new team members. And a Q2 roadmap with measurable OKRs.
+
+I brought everything to planning. We approved the governance structure in the first 30 minutes.$pf$,
+  $pf$Governance framework approved at Q2 planning with no major changes. Button component documentation shipped in week one as the reference implementation — two junior designers used it as a template to write their own component docs without needing a walkthrough. The design system committee met for the first time in week three: 45 minutes, three decisions made, all documented in the decision log. Token migration to the two-tier system is on the Q3 roadmap, scheduled after the multi-brand feature ships. Zero new component forks since the contributor guide launched — three requests came in through the contribution process instead.$pf$,
+  '11111111-1111-1111-1111-111111111105',
+  'advanced',
+  'claude-opus-4-7',
+  'Claude 4.7 Opus',
+  ARRAY['Claude'],
+  ARRAY['design-system', 'governance', 'component-library', 'figma', 'token-architecture', 'ux-documentation'],
+  'approved',
+  '22222222-2222-2222-2222-222222222204',
+  0, 0
+);
+
+INSERT INTO prompt_steps (id, prompt_id, step_number, title, content, result_content, description) VALUES
+
+-- Step 1 --
+('77777777-7777-7777-7777-777777105001',
+ '55555555-5555-5555-5555-555555550105',
+ 1,
+ $pf$Designing a component audit methodology to classify design system drift$pf$,
+ $pf$I am a senior UX designer at a B2B fintech SaaS company called Fintrek. We build dashboard and reporting tools for finance teams at mid-market companies. Our design team grew from 2 to 12 designers in the 18 months since our Series A. The component library in Figma has been accumulating drift — designers fork components to make one-off variants for specific features, the variants get used across multiple screens, and now we have multiple versions of core components with no documentation on which is canonical and why the variants exist.
+
+Before I can propose a governance structure, I need to know what we are actually dealing with. Help me design a component audit methodology I can run across our Figma library in one week with two junior designers assisting. I want it to produce: a clear picture of how many components have diverged and by how much, a way to classify whether drift was intentional or accidental, and a severity score I can use to prioritize which components to address first. The output should be findings I can act on, not just a list of everything that exists.$pf$,
+ $pf$A one-week audit with two juniors assisting is the right scope. Here is a methodology that produces actionable findings.
+
+**Audit structure: three phases**
+
+**Phase 1 — Inventory (day 1–2)**
+
+Create an audit spreadsheet with one row per component. Columns: component name, section in Figma, number of instances in production (pull from the design file or Storybook if available), number of distinct visual variants found in the library, date of most recent edit (Figma version history), and which designer last touched it.
+
+Do not evaluate components while inventorying — just count and locate. Two juniors can cover the inventory in parallel: one takes structural and layout components, one takes interaction and form components.
+
+**Phase 2 — Drift classification (day 3–4)**
+
+For each component with more than one variant, assign one of three categories:
+
+*Category A — Intentional and documented:* A variant exists because of a specific product decision and there is a note or branch label explaining it. No action needed; mark it and move on.
+
+*Category B — Intentional but undocumented:* A variant exists because of a real product decision but nothing explains why. Fix is documentation, not consolidation. Add a Figma annotation.
+
+*Category C — Accidental drift:* A variant exists because a designer forked the component for a feature and the fork was never reconciled. This is the problem category. These need a consolidation decision.
+
+**Phase 3 — Severity scoring (day 5)**
+
+For each Category C component, score on three dimensions (1–3 each):
+
+- *Impact:* How many screens and user flows use this component? (1 = isolated / 2 = moderate / 3 = core flow)
+- *Divergence:* How different are the variants? (1 = minor spacing / 2 = color or typography / 3 = structure or behavior)
+- *Engineering cost:* Are the variants already coded, or only in Figma? (1 = Figma only / 2 = partial code / 3 = fully coded variants)
+
+Total severity = Impact × Divergence + Engineering cost. Sort descending. Components scoring 7–11 are sprint-one consolidation targets.
+
+**Output format for the audit report**
+
+Three tables: the full inventory, the drift classification summary (count by category A/B/C), and the severity-ranked Category C list. The last table is what you bring to the governance proposal — it makes the case for a framework with data rather than assertions.
+
+One edge case to plan for: some components will have variants that span both B and C — the fork was initially intentional but was never cleaned up after the product decision changed. Flag these as "C pending review" and handle them in the governance proposal's breaking-change process, not during the audit sprint.$pf$,
+ NULL),
+
+-- Step 2 --
+('77777777-7777-7777-7777-777777105002',
+ '55555555-5555-5555-5555-555555550105',
+ 2,
+ $pf$Building a three-tier component classification taxonomy$pf$,
+ $pf$The audit methodology is exactly right — the three-phase structure and the A/B/C drift classification give me something I can actually run. I am kicking it off Monday with two junior designers.
+
+While that is running, I want to work on the classification taxonomy. Right now our library has no formal definition of what a component is versus a pattern versus a template. Designers call things components when they are really full page sections, and patterns when they mean one-off layouts. The consequence is that nobody knows which level of the system they should be working at when they need something new, or where a contribution should live.
+
+Help me design a three-tier classification system for a design library at our scale — 12 designers, one product (dashboard and reporting tool for finance teams), with a multi-brand rollout coming in Q3. Clear criteria for each tier so any designer can classify a contribution without asking me. And walk me through how a component gets promoted from one tier to another.$pf$,
+ $pf$A three-tier system works well at your scale — complex enough to be accurate, simple enough that a new hire can apply it without a reference guide.
+
+**Tier 1: Foundation**
+
+Foundation components are atoms. They carry brand decisions and are used everywhere without modification. A foundation component has a defined API and is never forked — if a designer needs a variant, they file a contribution request.
+
+*Criteria for Tier 1:*
+- Used on 10 or more distinct screens
+- Carries a brand token (color, typography, spacing) or an interaction pattern that defines the product's feel
+- Has a clear engineering owner responsible for the canonical implementation
+- Changing it affects downstream components or patterns
+
+*Examples for Fintrek:* Button, Input, Select, Checkbox, Badge, Icon, Typography scale, Color tokens
+
+**Tier 2: Pattern**
+
+Patterns are molecules — compositions of foundation components that solve a recurring problem. A pattern has a canonical structure but accepts content variation. Patterns should not be forked directly; if a use case needs customization, it becomes a Tier 3 template.
+
+*Criteria for Tier 2:*
+- Solves a recurring problem appearing in 3 or more product areas
+- Composed primarily of Tier 1 components with a defined layout relationship
+- Has a documented usage context (what problem it solves, where it belongs)
+- Changes require team review
+
+*Examples for Fintrek:* Data table with sort and filter, Chart card, Metric tile, Form section, Empty state, Alert banner, Sidebar navigation item
+
+**Tier 3: Template**
+
+Templates are pages or major screen sections. This is where product-specific customization lives. A new dashboard layout or onboarding flow starts as a template. Templates reference Tier 1 and Tier 2 but do not define them.
+
+*Criteria for Tier 3:*
+- Represents a full screen or major section (above the fold or a complete modal flow)
+- Specific to one product area or feature
+- Owned by the product designer on that area
+- Can vary without affecting the library below it
+
+*Examples for Fintrek:* Dashboard home template, Report builder template, Account settings template, Onboarding flow template
+
+**Promotion process**
+
+A component moves up the tier ladder when its usage pattern earns it. Promotion trigger: used independently in 3 or more product areas without modification and no variant has appeared. Promotion requires a brief doc (problem it solves, usage context, API surface) and a library review with at least two senior designers. Demotion is rare but happens when a component is superseded — it moves to Deprecated with a sunset timeline.
+
+**Multi-brand note for Q3**
+
+For the upcoming multi-brand rollout, Tier 1 is the layer that changes per brand (tokens, Button styling, typography). Tier 2 and Tier 3 are largely brand-agnostic if they reference semantic tokens rather than raw values. This is why the token architecture needs to land before the multi-brand work starts — if Tier 2 components reference primitive tokens directly (blue-500 instead of color-brand-primary), every component needs a brand-specific override instead of just the token layer changing.$pf$,
+ NULL),
+
+-- Step 3 --
+('77777777-7777-7777-7777-777777105003',
+ '55555555-5555-5555-5555-555555550105',
+ 3,
+ $pf$Recommending a two-tier token architecture for multi-brand readiness$pf$,
+ $pf$The taxonomy is exactly what I needed — the promotion criteria are going to make it possible for anyone to file a contribution without asking me what tier it belongs in. Your note about multi-brand and token architecture hit a real problem we have. Right now our token structure in Figma is flat: a single Color Styles library with names like "Blue 500," "Gray 200," "Orange 400." Designers reference these directly in components. There is no semantic layer. That means our Button component has Blue 500 hardcoded into its fill, and when we want a second brand with a green primary color, someone has to manually update every component that uses Blue 500 as a brand color.
+
+I know we need to move to a two-tier system but I want to understand the full architecture before I propose it. Walk me through: what the two tiers are and how they relate, what naming conventions work at our scale, how to handle the existing flat tokens without breaking everything during the migration, and what the migration sequence should look like given that multi-brand is six months out.$pf$,
+ $pf$Your instinct is right and the timing is good — six months is enough runway to do this properly.
+
+**The two-tier architecture**
+
+*Tier 1 — Primitive tokens:* Raw values. No design decision embedded in the name. The full palette.
+
+```
+color-blue-100:   #dbeafe
+color-blue-500:   #3b82f6
+color-blue-900:   #1e3a5f
+color-gray-50:    #f9fafb
+color-gray-900:   #111827
+color-orange-400: #fb923c
+```
+
+Primitives do not go in components. They exist only to feed Tier 2. A designer never picks color-blue-500 directly; they pick what it maps to in the semantic layer.
+
+*Tier 2 — Semantic tokens:* Design decisions. The name describes the role, not the value. A brand theme is a different mapping of semantic tokens to primitives.
+
+```
+color-brand-primary:        → color-blue-500  (brand A) / color-green-500 (brand B)
+color-brand-primary-hover:  → color-blue-700  (brand A) / color-green-700 (brand B)
+color-surface-page:         → color-gray-50
+color-surface-card:         → white
+color-text-primary:         → color-gray-900
+color-text-secondary:       → color-gray-500
+color-text-inverse:         → white
+color-border-subtle:        → color-gray-200
+color-border-focus:         → color-brand-primary
+color-feedback-success:     → color-green-600
+color-feedback-error:       → color-red-600
+color-feedback-warning:     → color-orange-400
+```
+
+Components reference only semantic tokens. Button.fill = color-brand-primary. When brand B goes live, you swap the semantic-to-primitive mapping for brand B. Button picks up the new color with no component changes.
+
+**Naming conventions**
+
+Use a category-role-modifier pattern: [category]-[role]-[modifier].
+
+- Categories: color, spacing, typography, border, shadow, motion
+- Roles: brand, surface, text, border, feedback, interactive
+- Modifiers: primary, secondary, subtle, inverse, hover, active, disabled (optional)
+
+Hyphens throughout — they read cleanly in Figma and in CSS custom properties. Avoid camelCase or underscores.
+
+**Migration sequence (six-month timeline)**
+
+Month 1–2: Build the primitive layer in Figma. Do not touch existing components yet. Create a Token Library file with the full primitive set. This is purely additive — nothing breaks.
+
+Month 2–3: Define the semantic layer for the current brand. Map every semantic token to a primitive. Review with the team. The hard part is agreeing on role names — expect one or two rounds of discussion.
+
+Month 3–4: Migrate Tier 1 components to reference semantic tokens. Start with Button, Input, and text styles. Build a check (Figma plugin or regex on the design tokens export) to catch any component still referencing a primitive directly.
+
+Month 5: Validate by creating a brand B token set for one screen and confirming every component responds correctly with no manual overrides.
+
+Month 6/Q3: Multi-brand feature ships using the semantic layer. Tier 2 and Tier 3 require no changes.
+
+**The migration gotcha**
+
+Some components will reference primitive tokens for non-brand purposes — for example, color-gray-200 as a table border. That is fine for brand A but creates a semantic gap when brand B has a different surface palette. During the Tier 1 migration sprint (month 3–4), flag every primitive reference that is not a brand color and verify it maps to an existing semantic token or needs a new one. This audit step is where most teams underestimate their timeline by 2–3 weeks.$pf$,
+ NULL),
+
+-- Step 4 --
+('77777777-7777-7777-7777-777777105004',
+ '55555555-5555-5555-5555-555555550105',
+ 4,
+ $pf$Writing the Button component documentation as the reference implementation$pf$,
+ $pf$The two-tier token architecture makes complete sense — and that migration gotcha about primitives used for non-brand purposes is exactly the kind of thing we would have hit in month four. I am flagging that in my planning notes.
+
+Now I want to build the component documentation template. I want to use Button as the worked example because it is our most-forked component (three accidental Category C variants in the audit). Help me write the full Button documentation as if it were the live reference doc in our design system. Include the section structure that would apply to any Tier 1 component — I will strip the Button-specific content to create the blank template. Make this genuinely usable as a reference: full variant table, token references, accessibility requirements, the works.$pf$,
+ $pf$Here is the full Button component documentation written as a live reference doc. The section structure is the template — every heading maps directly to a field you would use for any Tier 1 component.
+
+---
+
+**Button**
+*Foundation — Tier 1 | Last updated: [date] | Owner: [designer name]*
+
+---
+
+**Overview**
+
+Button is the primary interactive element in Fintrek. It initiates actions — submitting a form, confirming a dialog, triggering a report export — and appears across every flow in the product. Three variants (Primary, Secondary, Ghost) map to use cases by action weight, not personal preference.
+
+---
+
+**Anatomy**
+
+- Container: The clickable area. Minimum width 80px on desktop.
+- Label: Required. Sentence case. Action verb + object: "Export report," not "Click here" or just "Export."
+- Icon (optional): Left-aligned at 16px. Only when the icon reinforces the label — never as decoration.
+- Loading state: Replaces label with a spinner when an async action is in progress.
+
+---
+
+**Variants**
+
+| Variant | Use when | Do not use when |
+|---|---|---|
+| Primary | The single most important action on a screen. One per view. | Multiple actions compete for equal weight. |
+| Secondary | Supporting actions alongside a Primary button. | There is no Primary button in the same view. |
+| Ghost | Low-emphasis actions: cancel, dismiss, tertiary navigation. | The action has meaningful consequences (destructive, irreversible). |
+| Destructive | Permanent deletion or data loss. | Any action that is reversible. |
+
+---
+
+**Sizes**
+
+- Large (48px height): Modal confirmations, page-level CTAs
+- Medium (40px height): Default — forms, table row actions, cards
+- Small (32px height): Inline actions, dense layouts, secondary toolbar items
+
+---
+
+**States**
+
+Default, hover, active (pressed), focus (keyboard navigation), disabled, loading.
+
+Focus state is required and must be visible to keyboard users. Focus ring uses color-border-focus (maps to color-brand-primary at 2px, offset 2px). Never suppress the focus ring — it is a WCAG requirement, not a visual choice.
+
+Disabled state: 40% opacity, no pointer events. Use disabled only when the user cannot yet take the action. Do not use disabled to indicate an action is unavailable in this context — use conditional rendering instead.
+
+---
+
+**Token references**
+
+| Property | Primary | Secondary | Ghost |
+|---|---|---|---|
+| Fill | color-brand-primary | color-surface-card | transparent |
+| Text | color-text-inverse | color-brand-primary | color-brand-primary |
+| Border | none | color-brand-primary 1px | none |
+| Fill hover | color-brand-primary-hover | color-surface-subtle | color-surface-subtle |
+| Focus ring | color-border-focus 2px | color-border-focus 2px | color-border-focus 2px |
+| Border radius | 0px | 0px | 0px |
+
+---
+
+**Accessibility**
+
+- All buttons require a visible label or aria-label (icon-only usage).
+- Minimum touch target: 44×44px (WCAG 2.1 AA, success criterion 2.5.5).
+- Color contrast: label text against button fill must meet 4.5:1.
+- Loading state must announce to screen readers via aria-live="polite".
+- Disabled buttons: tabIndex -1, aria-disabled="true".
+
+---
+
+**Do / Don't**
+
+Do: One Primary per view. Do: Action-oriented labels. Do: Destructive variant for irreversible actions.
+Don't: Primary for Cancel. Don't: Ghost for the main CTA. Don't: Two Primary buttons side by side.
+
+---
+
+**Related components**
+
+- IconButton — button with no text label; used in toolbars and table row actions
+- LinkButton — looks like a hyperlink; used for low-emphasis navigation within a flow
+- ButtonGroup — wrapper for two to three related actions; handles spacing and border collapse
+
+---
+
+**Changelog**
+
+| Date | Change | Author |
+|---|---|---|
+| [date] | Added Destructive variant | [designer] |
+| [date] | Migrated fill tokens to semantic layer | [designer] |
+| [date] | Deprecated outline variant (replaced by Secondary) | [designer] |
+
+---
+
+The Changelog section is where each component starts building its own decision log. "Deprecated outline variant" is a meaningful record — a new designer reading this understands the decision was deliberate. Without it, the same question gets re-litigated every six months.$pf$,
+ NULL),
+
+-- Step 5 --
+('77777777-7777-7777-7777-777777105005',
+ '55555555-5555-5555-5555-555555550105',
+ 5,
+ $pf$Drafting the design system governance RFC$pf$,
+ $pf$The Button doc is exactly right — I can already see how stripping it to a template works. I am going to publish this as the first live Tier 1 reference this week.
+
+Now I need the governance RFC itself. This is the document I am circulating to the design team and our engineering lead before the Q2 planning meeting. It needs to propose: a design system committee (who is on it, how often it meets, what it owns), a process for contributing a new component (from proposal through library review), and a breaking change policy (how we communicate changes that require downstream updates). Keep it tight enough to read in 10 minutes. It needs to feel like relief from the current ambiguity, not like overhead being imposed — my audience is 12 designers with varying enthusiasm for process.$pf$,
+ $pf$A good governance RFC makes the process feel like less friction than the current chaos. Here it is.
+
+---
+
+**Design System Governance RFC — Fintrek v2.0**
+*Status: Proposed | Author: Priya Sharma | Circulated: [date]*
+
+---
+
+**Why this RFC exists**
+
+The design team has grown from 2 to 12 in 18 months. The component library has not kept pace. An audit this month found [N] Category C components — accidental forks that are now in production with no canonical version documented. The highest-severity cases are Button, Data Table, and Form Input.
+
+This RFC proposes the minimum governance structure needed to stop new drift, consolidate existing drift, and give every designer clarity on where to put new work. It is deliberately minimal — the goal is a process that costs less time than the current ambiguity.
+
+---
+
+**1. Design System Committee**
+
+*Members:* Two to three senior designers (rotating quarterly), one engineering representative, and a design ops facilitator. Commitment: approximately two hours per week.
+
+*Scope:* Tier 1 and Tier 2 classification decisions, breaking change approvals, component deprecations, and library-wide structural decisions (token migration, file organization). Tier 3 templates are owned by the product designers working in that area — not the committee.
+
+*Cadence:* Bi-weekly sync, 30 minutes. Async-first: most decisions are made via comment threads in Figma or the decision log. Synchronous meetings are for decisions that genuinely need real-time discussion.
+
+*What the committee does not own:* Product design decisions. Feature-level layout choices. "Should this screen use a modal or a drawer" is a product call, not a governance call.
+
+---
+
+**2. Contribution Process**
+
+Any designer can contribute to Tier 1 or Tier 2. Three stages:
+
+*Stage 1 — Propose (async, < 30 minutes):* File a contribution request in [queue location]. Include: what it is, what problem it solves, where it is already used, and which tier it belongs in. Committee responds within five business days: approved to build / needs more information / already covered by [existing component].
+
+*Stage 2 — Build (async, contributor-driven):* Build to spec — semantic tokens, all states documented, accessibility requirements met, documentation written using the component doc template.
+
+*Stage 3 — Library review (< 45 minutes):* Two senior designers review against the spec. Engineering rep confirms implementability. One round of consolidated feedback. On approval, component is published with the contributor credited in the changelog.
+
+---
+
+**3. Breaking Change Policy**
+
+A breaking change is any modification to a Tier 1 or Tier 2 component that requires downstream updates from designers or engineers — renaming a token, removing a variant, changing the default size.
+
+Process: Committee approves the change and sets a sunset timeline (minimum two weeks). Migration guide written before the change ships (what changed, what to do, before/after example). Announcement in the design system changelog and #design channel with at least two weeks notice. Old version marked Deprecated, not deleted, for one release cycle before removal.
+
+Additive changes (new variants, new components, new tokens) do not require this process.
+
+---
+
+**What this costs vs. what the current system costs**
+
+Committee: ~2 hours/week per member. Contributor: 30–60 minutes per proposal plus build time.
+
+Current system: ambiguity on every new component, 1:1 questions to senior designers every time someone needs a classification decision, and audit-and-consolidation sprints like the one we are running now.
+
+---
+
+**Proposed next steps**
+
+1. Committee self-nomination by [date]
+2. First committee meeting: review audit Category C findings and set consolidation priority
+3. Button doc published as the reference implementation
+4. Contribution process goes live
+
+*Questions → Priya or #design-system.*
+
+---
+
+The "what this costs" framing is deliberate. Design teams reject governance proposals when they feel like overhead imposed from above. Showing the overhead of the current system reframes the RFC as relief, not process.$pf$,
+ NULL),
+
+-- Step 6 --
+('77777777-7777-7777-7777-777777105006',
+ '55555555-5555-5555-5555-555555550105',
+ 6,
+ $pf$Creating an ADR-style design decision log format$pf$,
+ $pf$The RFC is exactly what I needed — that "what it costs" section is the right move. I am circulating it to the team and engineering lead this week.
+
+One piece that came up in the RFC is the decision log. I have been thinking about this separately: we make sound design decisions, but six months later nobody remembers why and new designers challenge them as arbitrary. The audit turned up three cases where a designer forked a component apparently because they did not know about a prior decision explaining why the canonical version looked the way it did.
+
+I want a design decision log format that the committee uses to capture decisions as they are made. Something like an Architecture Decision Record but adapted for design — shorter and more visual. Build me the template and write a real example entry for a decision we made this month: we chose not to add border-radius to Button even though two enterprise clients specifically requested rounded corners.$pf$,
+ $pf$A design decision log adapted from ADR format is exactly right. ADRs work in engineering because they are short, opinionated, and capture reasoning rather than just outcomes. Here is the template and the Button border-radius example.
+
+---
+
+**Design Decision Log — Template**
+
+**DDL-[number]: [Decision title]**
+*Date: | Status: Proposed / Accepted / Superseded / Deprecated*
+*Author: | Reviewer(s):*
+
+**Context**
+What situation prompted this decision? What constraints, signals, or competing options existed? 1–3 sentences.
+
+**Decision**
+What we decided. One sentence, stated as a directive.
+
+**Rationale**
+Why we chose this over the alternatives. Include: alternatives considered, what data or principles drove the choice, and what tradeoffs we are accepting.
+
+**Consequences**
+What changes as a result. Include downstream effects on other components and any follow-up work required.
+
+**Superseded by**
+Leave blank unless this decision has been replaced. If superseded, link to the newer DDL entry.
+
+---
+
+**Example — DDL-0004: Button uses 0px border-radius (sharp corners)**
+*Date: [month year] | Status: Accepted*
+*Author: Priya Sharma | Reviewer(s): [two senior designers]*
+
+**Context**
+During a quarterly review with three enterprise clients, two representatives requested rounded corners (8–12px) on action buttons, citing that their internal tools use rounded buttons and the sharp corners feel "harsh." Fintrek's design language was established at founding with sharp corners as a deliberate brand differentiator signaling precision over consumer-app softness.
+
+**Decision**
+Button maintains 0px border-radius across all variants and sizes. No rounded-corner variant will be added to the standard library.
+
+**Rationale**
+Three considerations drove this decision.
+
+First, the client request came from aesthetic preference in a two-person sample, not from a usability finding. No client reported difficulty identifying or using buttons. Changing a brand element based on aesthetic preference from two clients, without broader signal, is a poor tradeoff.
+
+Second, border-radius is a cascade decision. Button border-radius sets the visual expectation for Input, Select, Modal, Card, Badge, and every other interactive element. A rounded Button without rounded Inputs creates incoherence. Rounding everything to satisfy a preference from two clients would be a six-month design migration.
+
+Third, consistency as a brand attribute has value. Fintrek competes against generic-feeling products. Sharp corners are one of three elements that make the product feel purpose-built. Eroding any of them on small-sample client feedback risks losing the differentiation without a clear upside.
+
+Alternative considered: add an optional rounded variant configurable at the theme level. Rejected because it requires maintaining a parallel token set and creates visual inconsistency across client instances, which complicates support, screenshots, and case study materials.
+
+**Consequences**
+Add this DDL number to the Button component changelog. New designer onboarding should reference this entry so the question does not get re-litigated.
+
+Revisit trigger: if three or more clients request rounded corners in the same quarter, the customer signal justifies the maintenance overhead of the theme variant.
+
+**Superseded by**
+[blank]
+
+---
+
+The key structural move in the Rationale section is treating alternatives explicitly. That is where DDL format differs from a decision journal — you record not just what you decided but what you decided against and why. Future designers reading DDL-0004 understand rounded corners were not an oversight; they are a deliberate hold with a documented revisit condition.$pf$,
+ NULL),
+
+-- Step 7 --
+('77777777-7777-7777-7777-777777105007',
+ '55555555-5555-5555-5555-555555550105',
+ 7,
+ $pf$Writing the contributor guide for a designer new to the system$pf$,
+ $pf$The decision log template is exactly what I was picturing — and that Button border-radius example is perfect as DDL-0004. I am putting that in the log this week.
+
+Last piece before the roadmap: a contributor guide for new designers. We are onboarding three people in Q2 and right now there is no documentation for "how do I contribute to the design system." I explain the process in 1:1s every single time a new person joins. I want a guide a new hire could follow during their first two weeks without needing to ask me a single question about the library. Cover: how the library is organized (the three tiers), how to find out if what they need already exists, how to propose a new component if it does not, and what good looks like when they build and document it. Practical — not a philosophy document.$pf$,
+ $pf$Here is the contributor guide written to be followed without a walkthrough.
+
+---
+
+**Fintrek Design System — Contributor Guide**
+*For designers joining the team.*
+
+---
+
+**How the library is organized**
+
+The Fintrek design system has three tiers. Know which tier you are working at before you start.
+
+*Tier 1 — Foundation:* Atoms. Button, Input, Select, Badge, Icon, Typography, Color tokens. Used everywhere. Do not modify directly. If you need a change, use the contribution process below.
+
+*Tier 2 — Pattern:* Molecules. Data table, Chart card, Metric tile, Alert banner, Form section. Compositions of Tier 1 components solving recurring problems. Same rule: do not fork. If you need a variation, check whether it should be a contribution.
+
+*Tier 3 — Template:* Pages and major sections. Dashboard home, Report builder, Onboarding flow. These you own. Tier 3 is where product-specific design decisions live. You can create, modify, and customize Tier 3 freely.
+
+---
+
+**Before you build: the three-step check**
+
+1. Search the Figma library using Cmd + / in Figma. Search for what the component does, not just what you plan to call it.
+2. Check the component documentation pages linked from the library cover page. Variants, states, and known use cases are documented there.
+3. Ask in #design-system: "Does a [component name] exist for [use case]?" Two minutes and saves building a duplicate.
+
+If all three say no, you have a genuine gap and the contribution process applies.
+
+---
+
+**How to propose a new component**
+
+File a contribution request in [queue location]. Include four things:
+
+1. What it is (name and one sentence)
+2. What problem it solves (one specific use case, not "general utility")
+3. Where it is already used (links to Figma screens or flows)
+4. Which tier it belongs in (use the classification criteria in the taxonomy doc)
+
+The committee responds within five business days: approved to build, needs more information, or already covered by [existing component with a link].
+
+---
+
+**How to build it (checklist)**
+
+Once approved:
+
+- All states documented: default, hover, active, focus, disabled, loading (if applicable)
+- Token references: semantic tokens only — no primitives directly in fills
+- Mobile behavior defined: does it stack, scroll, collapse, or stay fixed at narrow viewport?
+- Accessibility: visible focus state, aria labels on all interactive elements, contrast ratio above 4.5:1
+- Documentation written using the component doc template (linked on the library cover page)
+- Changelog entry: one line describing what you built and why
+
+---
+
+**How to submit for review**
+
+Mark the component "Ready for Review" in the queue. Two senior designers review for token compliance, state completeness, accessibility, and documentation quality. Plan for one round of feedback. After approval the component is published with your name in the changelog.
+
+---
+
+**One thing to know before your first contribution**
+
+The library has rough edges from before governance existed. You will find components that do not follow the rules above. That is not an invitation to fix them silently — changes to existing Tier 1 or Tier 2 components go through the contribution process even when the change is clearly an improvement. A silent fix creates an undocumented change that causes confusion later. If you find something wrong, file a contribution request with "Fix:" in the title. That is the right path.$pf$,
+ NULL),
+
+-- Step 8 --
+('77777777-7777-7777-7777-777777105008',
+ '55555555-5555-5555-5555-555555550105',
+ 8,
+ $pf$Building the Q2 design system roadmap with OKR-style success metrics$pf$,
+ $pf$That contributor guide is exactly right — especially the note about not fixing rough edges silently. I am going to put that section in bold.
+
+Last step: the Q2 roadmap. I need to go into the planning meeting with a prioritized list of what the design system work is in Q2, how we will measure whether it worked, and how it connects to broader company goals. We have: the audit Category C findings that need consolidation, the governance structure being proposed, component documentation that needs to be written for Tier 1 components, and the token architecture migration that needs to start this quarter. Frame this as an OKR-style roadmap showing how design system work connects to product outcomes. Audience is me presenting to the design team plus the VP of Product and engineering lead.$pf$,
+ $pf$Here is the Q2 roadmap framed for a mixed audience of design, product, and engineering.
+
+---
+
+**Fintrek Design System — Q2 Roadmap**
+*Objective: Build the foundation for a scalable, multi-brand-ready design system before the team reaches 15 designers and before the Q3 multi-brand work begins.*
+
+---
+
+**Why Q2 is the right time**
+
+We have hit the inflection point where informal coordination no longer scales. The audit found [N] accidental component forks in production. Three designers are onboarding in Q2. The multi-brand feature is scheduled for Q3 — the token architecture must be in place before that work starts. Doing the governance work now, while the team is at 12, costs far less than doing it at 18 or during an active multi-brand sprint.
+
+---
+
+**Objective 1: Resolve existing component drift**
+
+*Key results:*
+- All Category C components with severity 8+ are consolidated to a canonical version by end of Q2
+- Zero new Category C forks created after governance launches
+- Component documentation published for the top 5 Tier 1 components (Button, Input, Data Table, Chart Card, Badge)
+
+*Work items (priority order):*
+1. Button — consolidate 3 variants to 1 canonical + publish doc (weeks 1–2)
+2. Data Table — audit and consolidate sort/filter variant differences (weeks 3–4)
+3. Form Input — consolidate focus-state variants (weeks 3–4)
+4. Badge — consolidate color and size variants (weeks 5–6)
+5. Chart Card — doc plus minor consolidation (weeks 7–8)
+
+*Why this first:* Component drift is the only problem currently visible to engineers. Consolidation unblocks cleaner handoffs and removes the "which version do I implement" question that slows every sprint.
+
+---
+
+**Objective 2: Launch design system governance**
+
+*Key results:*
+- Design system committee formed and first meeting held by end of April
+- Contribution process live with at least 2 contributions submitted through the new process by end of Q2
+- RFC, taxonomy, contributor guide, and component doc template published and linked from the library cover page
+
+*Work items:*
+1. Circulate and finalize RFC (this week)
+2. Committee self-nomination and first meeting (week 2)
+3. Contributor guide published (week 2)
+4. Component doc template published with Button as reference (week 1)
+5. Decision log initialized with DDL-0001 through DDL-0005 (week 3)
+
+*Why this second:* Governance without consolidation is rules without credibility. Both need to land in Q2.
+
+---
+
+**Objective 3: Begin token architecture migration**
+
+*Key results:*
+- Primitive token layer defined and published in Figma by end of Q2
+- Semantic token layer defined for the current brand by end of Q2
+- At least 2 Tier 1 components (Button, Input) migrated to semantic tokens before Q3 planning
+
+*Note: Full migration is a Q3 deliverable, timed to complete before multi-brand work begins.*
+
+*Work items:*
+1. Define primitive palette (weeks 1–2)
+2. Define semantic token mapping for current brand (weeks 3–5, senior designer review)
+3. Migrate Button to semantic tokens (weeks 5–6)
+4. Migrate Input to semantic tokens (weeks 6–7)
+5. Write token migration guide for remaining Tier 1 components (weeks 7–8)
+
+*Dependency:* Components being migrated should be the consolidated canonical versions from Objective 1.
+
+---
+
+**What success looks like at end of Q2**
+
+A designer joining in Q3 can find any component, understand how to use it, know which tier it belongs to, know how to contribute, and find out why any recent decision was made — without asking Priya.
+
+For engineering: the components implemented in Q3 are the canonical ones. No more "which Button variant is this?" in Slack.
+
+For multi-brand: the semantic token layer is in place. Q3 brand work is a token-mapping exercise, not a component-by-component override sprint.
+
+---
+
+*Owner: Priya Sharma. Questions → #design-system.*
+
+---
+
+The OKR structure matters here because it separates outcomes from activities. "Zero new Category C forks after governance launches" is a result you can measure — it tells product and engineering that governance is working. "Design system committee formed" is a milestone that proves nothing by itself; it is included as a dependency, not a result. Present the key results first in the planning meeting, then walk to the work items — that framing keeps the room focused on why the work matters, not just what it is.$pf$,
+ NULL);
+
 ALTER TABLE prompts ENABLE ROW LEVEL SECURITY;
 ALTER TABLE prompt_steps ENABLE ROW LEVEL SECURITY;

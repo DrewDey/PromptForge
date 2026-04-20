@@ -42492,5 +42492,884 @@ A weak contribution: agrees without adding anything new, restates what someone a
 4. Write one opinion about Douglass's argument that you are prepared to defend using evidence from the text.$pf$,
  NULL);
 
+DELETE FROM prompt_steps WHERE prompt_id = '55555555-5555-5555-5555-555555550120';
+DELETE FROM prompts      WHERE id        = '55555555-5555-5555-5555-555555550120';
+
+INSERT INTO prompts (
+  id, title, description, content, result_content,
+  category_id, difficulty, model_used, model_recommendation,
+  tools_used, tags, status, author_id, vote_count, bookmark_count
+) VALUES (
+  '55555555-5555-5555-5555-555555550120',
+  $pf$Angel term sheet analysis for a pre-revenue B2B SaaS: decoding a $500K offer and negotiating better terms$pf$,
+  $pf$Jake Torres helped a first-time founder decode his first angel term sheet — modeled the cap table dilution including the option pool shuffle, benchmarked the key terms against 2026 early-stage norms, identified the two clauses worth negotiating, and drafted the counteroffer email that closed at $3.5M pre with the full-ratchet anti-dilution clause removed.$pf$,
+  $pf$A former coworker — I'll call him Luca — pinged me on a Monday morning with a PDF attached and "can I get 30 minutes?" in the subject line. He'd been building Trackly, a B2B client portal SaaS for boutique marketing and creative agencies, for eight months. $18K MRR. Twenty-two paying customers. Growing about 15 percent month-over-month. And now a well-known LA-based angel had sent him a term sheet: $500K at a $3 million pre-money valuation.
+
+Luca had never raised before. His cap table was three founders — him at 55 percent, his two co-founders at 30 and 15. No outstanding options, no option pool yet. He did not know what "1x participating, no cap" meant in practice, could not tell whether the $3M pre was market or aggressive for his stage, had never heard the phrase "option pool shuffle," and did not know what to push back on versus what to accept and say thank you. He had a call with the investor in five days.
+
+I am a CFO by trade — growth-stage corporate finance, not venture finance. But I know enough to make sure a first-time founder does not sign something he will regret when he raises the Series A and a new investor's lawyer starts asking questions about the cap table. Four passes: understand the economics, benchmark the terms, decide what to negotiate, send the email.$pf$,
+  $pf$Luca signed the term sheet six days later. Final terms: $3.5M pre-money valuation and broad-based weighted-average anti-dilution replacing the full-ratchet. The 1x participating liquidation preference stayed in. The investor's response to the counteroffer was two sentences: "Fair on both — let's go with $3.5M pre and I'll update the anti-dilution. Can we sign next week?" Total negotiation: one email exchange. The cap table model gave Luca the confidence to actually make the ask instead of signing quietly.$pf$,
+  '11111111-1111-1111-1111-111111111101',
+  'intermediate',
+  'claude-opus-4-6',
+  'Claude 4.6 Opus',
+  ARRAY['Claude'],
+  ARRAY['term sheet', 'angel investing', 'cap table', 'startup finance', 'SaaS fundraising', 'venture capital'],
+  'approved',
+  '22222222-2222-2222-2222-222222222203',
+  0,
+  0
+);
+
+INSERT INTO prompt_steps (id, prompt_id, step_number, title, content, result_content, description) VALUES
+
+-- Step 1 --
+('77777777-7777-7777-7777-777777120001',
+ '55555555-5555-5555-5555-555555550120',
+ 1,
+ $pf$Modeling the cap table and understanding what the liquidation preference actually means$pf$,
+ $pf$I am the CFO at a growth-stage startup, and a former coworker just sent me his first angel term sheet and asked me to help him understand it before his call with the investor in five days. He is building Trackly, a B2B client portal SaaS for boutique marketing and creative agencies. Eight months in. $18K monthly recurring revenue. Twenty-two paying customers. Growing about 15 percent month-over-month.
+
+His current cap table, pre-investment, is three founders: Luca at 55 percent, co-founder two at 30 percent, co-founder three at 15 percent. No outstanding options, no option pool yet. The investor is a well-known LA-based angel who has done 30-plus early-stage deals.
+
+Here is what the term sheet says: investment amount $500K, pre-money valuation $3 million, post-money valuation $3.5 million. Required condition before close: a 15 percent option pool must be created on a pre-money basis. Liquidation preference: 1x participating, no cap. Anti-dilution: full-ratchet. Pro-rata rights: investor gets the right to invest up to $250K in Luca's next qualified financing round.
+
+Three specific things I need help with. First, what does the cap table look like after this deal closes — walk me through the full math including the option pool expansion, because I have heard there is a shuffle here that makes the dilution worse than it looks. Second, what does 1x participating, no cap mean in practice — show me the actual numbers in a $15 million acquisition and a $50 million acquisition so Luca understands what he is agreeing to. Third, what does the full-ratchet anti-dilution provision mean, and can you show me concretely what happens to Luca's ownership if Trackly has to raise a down round at a $2 million pre-money valuation six months from now.$pf$,
+ $pf$**Term Sheet Math: Option Pool Shuffle, Liquidation Preference, and Full-Ratchet Anti-Dilution**
+
+**The Option Pool Shuffle**
+
+The 15 percent option pool being created on a pre-money basis is the clause most first-time founders miss. It sounds like it is being carved out of a $3M pre-money company and shared between founders and investor. It is not. The investor's 14.29 percent ownership is calculated on the post-money company after the pool already exists. That means the entire cost of the option pool comes out of the founders' pre-investment stake.
+
+Here is the cap table progression:
+
+Pre-deal (three founders, no pool):
+- Luca: 55%
+- Co-founder 2: 30%
+- Co-founder 3: 15%
+- Total: 100%
+
+After option pool creation (new shares issued pre-investment to build the 15% pool):
+- Luca: ~46.75% (diluted from 55% to make room)
+- Co-founder 2: ~25.5% (diluted from 30%)
+- Co-founder 3: ~12.75% (diluted from 15%)
+- Option pool: ~15%
+- Total: 100%
+
+After investment closes ($500K buys 14.29% of $3.5M post-money company):
+- Luca: ~40.1%
+- Co-founder 2: ~21.9%
+- Co-founder 3: ~10.9%
+- Option pool: ~12.9% (diluted proportionally with founders)
+- Investor: ~14.29%
+- Total: ~100%
+
+Luca came in thinking he would own roughly 55% × (1 - 14.29%) ≈ 47% after the deal. He is going to own 40.1%. The seven-point gap is entirely the option pool shuffle — the pool was created at the founders' expense before the investment closed, not shared with the investor. Sanity check: investor paid $500K for 14.29% of a $3.5M post-money company. That math is clean. ($500K / $3.5M = 14.29%.) The founders absorbed all of the option pool dilution before the investor entered. That is the mechanism.
+
+**Liquidation Preference: 1x Participating, No Cap**
+
+In any acquisition or liquidity event, the liquidation preference determines who gets paid first and how much.
+
+1x participating, no cap means: the investor takes their $500K back off the top first (the "1x liquidation preference"), then participates alongside all common shareholders in whatever proceeds remain, proportional to their ownership percentage (the "participating" component — the double-dip), with no limit on how much they can collect through that participation (the "no cap").
+
+$15 million acquisition:
+- Investor takes $500K preference off the top first
+- Remaining proceeds: $14.5M
+- Investor's pro-rata share of remaining: 14.29% × $14.5M = $2.07M
+- Investor total: $500K + $2.07M = $2.57M
+- Founders and employees share: $15M - $2.57M = $12.43M (Luca ≈ $6.65M, CF2 ≈ $3.63M, CF3 ≈ $1.81M)
+
+Compare to 1x non-participating (market standard): investor would get 14.29% × $15M = $2.14M, full stop. The participation clause gave the investor an extra $430K — coming directly from the founders' proceeds.
+
+$50 million acquisition:
+- Investor takes $500K off the top
+- Remaining: $49.5M
+- Investor's pro-rata: 14.29% × $49.5M = $7.07M
+- Investor total: $7.57M
+- Compare to non-participating: 14.29% × $50M = $7.14M
+
+At $50M, the participation adds $430K to the investor at the founders' expense. The same dollar amount as at $15M — participation hurts equally at every exit size, though it hurts more as a percentage of the founders' total at smaller exits.
+
+**Full-Ratchet Anti-Dilution**
+
+Anti-dilution provisions protect investors if the company raises money at a lower price per share than the investor paid (a down round). Full-ratchet is the most aggressive form: if Trackly raises any future round at a lower per-share price than the angel's investment price, the angel's shares are retroactively repriced to the new lower price — which means issuing the angel enough additional shares to cover the difference. Those shares come free of charge, diluting the founders and option pool with no new cash coming in.
+
+Down round scenario: Trackly raises a seed round at $2M pre-money six months from now.
+
+The angel's investment was priced at $3M pre-money. The seed round prices the company at $2M pre-money — a down round by $1M. Under full-ratchet, the angel's per-share price resets to the new seed round price. To maintain their $500K invested at the lower per-share cost, the angel receives enough additional shares to close the gap. Working through the proportions: the new price is roughly 67% of the original price (2/3), so the angel needs approximately 50% more shares to keep their $500K at the new price. Those shares are issued to the angel at no cost.
+
+The practical effect: if the seed round closes at $2M pre-money, the founders' combined ownership could drop from ~72.9% to somewhere in the 55-60% range depending on the seed round size — entirely because the angel received a retroactive upgrade. This dilution is permanent and compounds in every subsequent round.$pf$,
+ NULL),
+
+-- Step 2 --
+('77777777-7777-7777-7777-777777120002',
+ '55555555-5555-5555-5555-555555550120',
+ 2,
+ $pf$Benchmarking the terms against 2026 angel and pre-seed norms$pf$,
+ $pf$That cap table math was clarifying — Luca had no idea the option pool was coming entirely out of his stack before the investor's money went in, or what the participating preference actually costs at a mid-range exit. Now that he understands what the terms mean mechanically, I need to help him figure out what is market versus what is aggressive for a company at his stage in 2026.
+
+Profile again: B2B SaaS, client portal for boutique marketing and creative agencies, $18K MRR, 22 customers, 15 percent month-over-month growth, 8 months since first paying customer. Deal: $500K at $3M pre-money, 1x participating no cap, full-ratchet anti-dilution, 15 percent pre-money option pool expansion, pro-rata rights up to $250K in future rounds.
+
+For each of the five terms — valuation, liquidation preference, anti-dilution, option pool, and pro-rata — I need: what is typical for a B2B SaaS at this stage and traction in 2026, how does this term sheet compare, and is it worth pushing back on? I want a clear verdict for each one so Luca goes into the negotiation knowing exactly what he is walking into.$pf$,
+ $pf$**Term-by-Term Benchmark: 2026 Angel and Pre-Seed SaaS Norms**
+
+**1. Valuation — $3M pre-money**
+
+Verdict: below market for this traction profile.
+
+At $18K MRR, Trackly's annualized ARR is approximately $216K. $3M pre-money divided by $216K ARR equals a 13.9x ARR multiple. For B2B SaaS with a clear ICP, paying customers, and 15 percent monthly growth in 2026, angel and pre-seed rounds typically price between 20x and 40x ARR — with the middle of the range around 25-30x for companies with clean retention and strong early growth. That range translates to roughly $4.3M to $6.5M for Trackly's profile. Even at the conservative low end (20x ARR), $4.3M would be defensible.
+
+$3M pre-money is 2022 down-market pricing. The investor is pricing conservatively — some angels do this as an opening position expecting to negotiate, others do it as a hedge on execution risk for a company with eight months of history. Either way, Luca has genuine leverage: he has MRR, paying customers, and a growth rate any seed-stage investor would want to see. He is not pre-revenue.
+
+Pushback potential: high. $3.5M is a straightforward ask and costs the investor roughly 2 percentage points of dilution.
+
+**2. Liquidation Preference — 1x participating, no cap**
+
+Verdict: the 1x is standard; the participation with no cap is aggressive.
+
+1x liquidation preference is universal — every institutional angel and seed investor expects to get their money back before common shareholders in a low-exit scenario. That part is fine and not worth contesting.
+
+The participating component is where this term gets aggressive. Market structure in 2026: 1x non-participating is the cleanest and most founder-friendly form. 1x participating with a 2x or 3x cap — the investor double-dips until they have received 2x or 3x their original investment, then converts to common — is common in competitive rounds but acknowledges the double-dip has a ceiling. 1x participating with no cap means the investor takes their $500K back and then participates in every dollar of exit proceeds at their ownership percentage, forever, regardless of exit size. As the math in step one showed, that costs Luca and his co-founders $430K in a $15M exit and the same $430K in a $50M exit.
+
+In practice this matters most in the $10M-$30M exit range — small enough that the preference is still a significant share of total proceeds. At $100M exits, founders are generally wealthy enough that it is a rounding error. At $10M-$20M exits, it is the difference between a good outcome and a great one.
+
+Pushback potential: medium. Removing the participation entirely would require swapping to 1x non-participating — possible but a harder ask than fixing the anti-dilution clause. Asking for a 3x cap is a reasonable middle position. If Luca can only push on two things with one term sheet in hand, this is the third priority after valuation and anti-dilution.
+
+**3. Anti-Dilution — full-ratchet**
+
+Verdict: aggressive and not market.
+
+Broad-based weighted-average anti-dilution is the universal standard for angel and seed-stage term sheets in 2026. Full-ratchet is a clause from the 2001 era — common during the dot-com crash when investors were trying to protect themselves against massive down rounds, largely negotiated out of early-stage term sheets over the subsequent decade. Seeing it in a 2026 angel round is unusual and worth noting.
+
+The practical concern is not just what it does to Luca now — it is what it signals to the next investor. Any competent seed-stage lead will see a full-ratchet clause and ask questions about it, because it complicates down-round math and can make the cap table difficult to clean up before the seed closes. It is a yellow flag in later due diligence.
+
+Most angels will accept broad-based weighted-average if asked directly and calmly. It is not a provision they typically stake a deal on; many included it in a standard template and did not expect pushback.
+
+Pushback potential: very high. This is the most important structural clause to change, and it is the most likely to be granted.
+
+**4. Option Pool — 15% pre-money**
+
+Verdict: high end of market range, but not egregious.
+
+10 to 12 percent is the typical pre-money option pool size at angel and pre-seed stage when the founding team is still intact and the first VP-level hires have not started yet. 15 percent is the top of the range — investors sometimes ask for it when they expect the company to need a large option pool before the next round to attract senior engineering or sales talent. Without knowing Trackly's hiring plan, it is hard to say whether the extra 3 percent is justified.
+
+What matters structurally: every point of option pool comes entirely out of the founders' pre-investment equity, as the step-one math showed. The investor does not share in that dilution — they benefit from having the pool available for future hires without bearing any of the upfront cost.
+
+Pushback potential: low. A 3-point reduction from 15% to 12% saves Luca roughly 2 percent in effective dilution — real money in a large exit but not worth burning negotiating capital when the anti-dilution and valuation moves are available. Accept this one.
+
+**5. Pro-Rata Rights — up to $250K in future rounds**
+
+Verdict: market. Accept.
+
+Pro-rata rights give the investor the right to participate in future financing rounds up to the amount needed to maintain their current ownership percentage. The $250K cap is reasonable — it approximates what a ~14% owner would be entitled to invest in a $1.75M seed round. Standard at every stage.
+
+Pro-rata rights actually benefit Luca in one indirect way: an investor who has pro-rata rights has a financial incentive to see the company raise a successful next round. They will help introduce seed investors, prep Luca for diligence, and actively want the seed to close at a good valuation. An investor without pro-rata has already made their bet; one with pro-rata has skin in what comes next.
+
+**Summary**
+
+| Term | Market (2026) | This Sheet | Verdict |
+|------|--------------|------------|---------|
+| Valuation | $4M–$5.5M pre for this profile | $3M pre | Push → $3.5M |
+| Liquidation pref | 1x non-participating | 1x participating, no cap | Negotiate or accept with cap |
+| Anti-dilution | Broad-based weighted-average | Full-ratchet | Push → weighted-average |
+| Option pool | 10–12% pre-money | 15% pre-money | Accept |
+| Pro-rata rights | Standard | $250K cap | Accept |$pf$,
+ NULL),
+
+-- Step 3 --
+('77777777-7777-7777-7777-777777120003',
+ '55555555-5555-5555-5555-555555550120',
+ 3,
+ $pf$Deciding what to negotiate and how to frame the asks$pf$,
+ $pf$This benchmark analysis is exactly what I needed. Luca has reviewed it and understands where this term sheet lands. Now the tactical question: he has one term sheet, five days, and no other offers in the pipeline. He genuinely likes this investor — they have three portfolio companies in the creative agency software space and a reputation for being genuinely helpful at the early stage, not just a check-writer. He does not want to blow this deal.
+
+Given everything we have looked at, what are the one or two specific things he should push back on, and what should he accept without comment? And how should he frame the ask — what language actually works here without coming across as inexperienced or adversarial? Luca has never negotiated a term sheet before and his instinct is to just accept everything so he does not scare the investor off.$pf$,
+ $pf$**What to Negotiate, What to Accept, and How to Frame the Asks**
+
+Given Luca's situation — one term sheet, genuine interest in the investor, five days — here is the clean answer: push on two things, accept everything else.
+
+**Push #1: Anti-Dilution → broad-based weighted-average**
+
+This is the highest-priority ask and the one most likely to be granted without friction. Full-ratchet is legitimately not market for 2026 early-stage investing. An investor who has done 30-plus deals knows this. They may have included it as a standard template clause expecting it to be negotiated out, or they may have included it deliberately and are curious whether the founder noticed. Either way, this is a reasonable ask that signals Luca has done his homework without being adversarial.
+
+Frame: one sentence. "The anti-dilution provision is the one structural item I'd like to discuss — would you be open to broad-based weighted-average? That's the standard formulation I've seen at this stage, and it still gives you full downside protection in a down-round scenario."
+
+Do not over-explain. Do not walk the investor through the mechanics of why full-ratchet is problematic. One sentence shows you know what you are looking at; a paragraph starts to sound like you are building a legal brief. If the investor says no, ask why — the answer will tell you a lot about how they think about founder relationships.
+
+**Push #2: Valuation → $3.5M pre-money**
+
+This is a small ask in dollar terms: the investor is buying a $3M-pre company and Luca is asking them to buy a $3.5M-pre company for the same $500K check. The investor's ownership goes from 14.29% to 12.5% — a difference of roughly 1.8 percentage points. Most angels can absorb that without going back to their investment committee or changing their thesis.
+
+The ask is also defensible with a single sentence of rationale: at $18K MRR and 15 percent monthly growth, $3.5M felt like the right number for where Trackly is. You are not giving a lecture on ARR multiples. You are stating a position clearly and moving on.
+
+**Accept without comment**
+
+Everything else. The 1x participating liquidation preference is not ideal — as the math shows, it costs the founders about $430K in a $15M exit. But it is common enough at this stage that raising it as a negotiating point when you have one term sheet and two higher-priority asks is the wrong call. If Luca wants to mention it as a footnote on the call, he can say "I noticed the participating structure and would prefer non-participating if there's flexibility" — that gets it on the record without making it a condition. Accept the option pool at 15%. Accept the pro-rata rights. Say thank you on both.
+
+**Tactical Notes**
+
+Send one email, not a phone call. Putting the asks in writing gives the investor time to think without the pressure of a live call, and it creates a clear record. Investors typically respond to written counteroffers within 24-48 hours because they want to close too.
+
+Put both asks in the same email. Staggering them — starting with valuation, then raising anti-dilution after that is resolved — signals that additional asks are coming, which creates negotiation fatigue. One email, both items.
+
+Lead with genuine enthusiasm, not with the ask. Luca actually wants to work with this investor. Say so, and be specific about why. Then make the asks. Then close by reaffirming interest. The ask is in the middle, not the opener and not the closer.
+
+One sentence of rationale per ask. No documentation of research, no "I spoke with three other founders who said." One sentence shows Luca did his homework. More turns a negotiation into a dispute.
+
+Do not frame either ask as a condition for signing. Luca has one term sheet. Both parties know it. Maintaining a collaborative tone is the right read of the power dynamics here. He is not bluffing about walking away, and the investor probably knows that. What he is doing is making clear, reasonable asks that signal he is a founder worth backing — someone who understands the terms he is signing and can articulate what he wants without being difficult about it.$pf$,
+ NULL),
+
+-- Step 4 --
+('77777777-7777-7777-7777-777777120004',
+ '55555555-5555-5555-5555-555555550120',
+ 4,
+ $pf$Drafting the counteroffer email$pf$,
+ $pf$Perfect. Luca has signed off on the strategy — two asks, everything else accepted, collaborative tone throughout. He wants to send the email tomorrow morning so David has time to review it before their scheduled call later in the week.
+
+A few things Luca wants to get right: short and direct, not a three-page analysis. Collaborative and enthusiastic, not adversarial or desperate. He wants it to close with genuine interest in the deal, not a veiled threat about walking away if the investor says no. He is not going to walk away if David declines the valuation ask — the anti-dilution change is the one he needs.$pf$,
+ $pf$Subject: Re: Trackly / Term Sheet — Two Items
+
+David,
+
+Thank you for the term sheet — we have reviewed it carefully and are genuinely excited about the opportunity to work with you. Your portfolio in the creative agency software space is exactly the kind of context we would want in our first investor.
+
+Before we proceed, I wanted to flag two items.
+
+First, on the anti-dilution provision: the full-ratchet structure is outside what we have seen in comparable pre-seed term sheets. Would you be open to broad-based weighted-average? That gives you full downside protection in a down-round scenario while staying closer to the current market standard.
+
+Second, on valuation: we would like to propose $3.5M pre-money. At $18K MRR and 15 percent month-over-month growth, that felt like the right number for where Trackly is — and the dilution delta on your end is modest.
+
+Both of these feel like starting points for a conversation rather than dealbreakers, and everything else in the term sheet looks good to us. We are genuinely excited to get this done. If it is easier to walk through on a call, I am flexible this week.
+
+Looking forward to it,
+Luca
+
+---
+
+**Notes on the structure:**
+
+The opening is specific, not generic. "Your portfolio in the creative agency software space is exactly the kind of context we would want" is a sentence Luca actually means and that David will register as different from the standard "excited to work with you." Investors hear that phrase a hundred times. Named context lands differently.
+
+Both asks are stated plainly with one sentence of rationale each — no hedging, no lengthy justification, no ultimatum. Anti-dilution ask: one sentence stating what the market standard is and why the current structure differs from it. Valuation ask: one sentence of business context (the MRR and growth rate) and one sentence acknowledging the investor's dilution math. Neither ask sounds like a demand.
+
+"Everything else in the term sheet looks good to us" is important — it signals that Luca reviewed the full document and is not about to surface three more issues after these two are resolved. Investors worry about the negotiation that never ends. This sentence closes that concern.
+
+The email is 174 words. Most first-time founders write term sheet responses that run 400-600 words, which turns a simple negotiation into a document review. David will read this in 45 seconds and know exactly what he is being asked. That is the goal.
+
+If David accepts both asks in his first reply — which is a real possibility — Luca should respond the same day, confirm both points, and move toward signature. He should not use acceptance as an opening to raise the liquidation preference or revisit anything else. The participating preference is suboptimal but not a reason to extend the negotiation after getting the two things that matter.$pf$,
+ NULL);
+
+DELETE FROM prompt_steps WHERE prompt_id = '55555555-5555-5555-5555-555555550121';
+DELETE FROM prompts      WHERE id        = '55555555-5555-5555-5555-555555550121';
+
+INSERT INTO prompts (
+  id, title, description, content, result_content,
+  category_id, difficulty, model_used, model_recommendation,
+  tools_used, tags, status, author_id, vote_count, bookmark_count
+) VALUES (
+  '55555555-5555-5555-5555-555555550121',
+  $pf$OpenTelemetry distributed tracing for a 7-service Node.js microservices app with tail-based sampling and Slack alerting$pf$,
+  $pf$Marcus Chen added end-to-end distributed tracing to a 7-service Node.js microservices app — designed the OTel Collector architecture with tail-based sampling, instrumented all services with auto and custom spans, fixed the RabbitMQ context propagation gap that exposed an intermittent checkout delay bug, and set up latency-threshold alerting via a lightweight Slack webhook cron script.$pf$,
+  $pf$Six months after splitting our Node.js monolith into microservices, we had a bug we could not find. Users were reporting intermittent 10-to-15 second delays during checkout — affecting maybe 1 in 200 sessions. The support team had started calling it "the hiccup." We had per-service logs. We had error rates. We had Prometheus metrics on each service individually. What we did not have was any way to follow a single request across the seven services it touched: API gateway, auth service, product catalog, inventory, pricing, cart, and order service. When the hiccup happened, we could see that each individual service reported success. We had no idea where the 12 seconds were going.
+
+Datadog was the obvious answer. We had a trial account, and the distributed tracing UI is excellent. Then we saw the quote: $800 per month for the agent tier with distributed tracing at our current traffic level. That was not going to happen at this stage of the company.
+
+OpenTelemetry was the next candidate — open-source, vendor-neutral, increasingly production-proven. The problem was that nobody on the team had set it up from scratch. The docs cover every use case, which means they cover none of them in the depth you need when you are starting from zero. I took a weekend.
+
+Five passes: architecture decision, OTel Collector and Jaeger backend setup, Express auto-instrumentation with custom business-logic spans, RabbitMQ context propagation (which turned out to be exactly where the bug was hiding), and tail-based sampling with Slack alerting so we would not drown in trace data once everything was live.$pf$,
+  $pf$The RabbitMQ context propagation step found the bug in twenty-two minutes. The checkout delay was a race between the inventory service and the pricing service — both consumed from the same RabbitMQ queue, and when inventory was slow due to disk I/O during nightly batch jobs, the pricing service would time out waiting for a lock, retry three times at four-second intervals, and succeed on the third attempt. The full sequence looked like a 10-to-13 second delay to the user. Both services logged success at the end, which is why per-service logs had never caught it. The cascade of retry spans was immediately visible in Jaeger the moment we added W3C traceparent headers to the RabbitMQ message properties. The fix was a three-line timeout configuration change and routing pricing messages to a dedicated queue separate from inventory. The hiccup disappeared the same night.$pf$,
+  '11111111-1111-1111-1111-111111111104',
+  'advanced',
+  'claude-opus-4-7',
+  'Claude 4.7 Opus',
+  ARRAY['Claude'],
+  ARRAY['OpenTelemetry', 'distributed tracing', 'Node.js', 'microservices', 'observability', 'RabbitMQ', 'Jaeger'],
+  'approved',
+  '22222222-2222-2222-2222-222222222201',
+  0,
+  0
+);
+
+INSERT INTO prompt_steps (id, prompt_id, step_number, title, content, result_content, description) VALUES
+
+-- Step 1 --
+('77777777-7777-7777-7777-777777121001',
+ '55555555-5555-5555-5555-555555550121',
+ 1,
+ $pf$Designing the OTel architecture and sampling strategy before touching any code$pf$,
+ $pf$I am a senior developer on a six-person engineering team. Six months ago we split our Node.js monolith into seven microservices: API gateway, auth service, product catalog service, inventory service, pricing service, cart service, and order service. All are Node.js with Express. The API gateway calls auth and product catalog; product catalog calls inventory and pricing; cart calls pricing; order calls inventory and cart. We also have RabbitMQ queues between inventory, pricing, and order service for async event processing.
+
+We have an intermittent bug: roughly 1 in 200 checkout sessions sees a 10-to-15 second delay. Every individual service logs success. We have no distributed tracing, so we have no way to follow a request across service boundaries and see where the time is going.
+
+Our traffic is approximately 1,200 requests per minute across all services combined at peak. Datadog is too expensive at this stage.
+
+I want to set up OpenTelemetry. Before I touch any code, I need to understand the right architecture. Specifically: should the OTel SDK in each service send traces directly to Jaeger, or should I route through an OTel Collector? What are the tradeoffs? And critically — with 1,200 req/min, if I sample every trace I will generate enormous data volume that will swamp Jaeger and cost a fortune in storage. What is the right sampling strategy for a bug like this one, where the interesting traces are rare and unpredictable?$pf$,
+ $pf$**OTel Architecture Decision and Sampling Strategy**
+
+**SDK → Collector → Jaeger, not SDK → Jaeger directly**
+
+Route through the OTel Collector. The architectural case:
+
+The OTel SDK in each service can export traces directly to a backend like Jaeger using the OTLP protocol. For a small proof-of-concept, that works fine. For production use with seven services, it has two problems. First, if Jaeger goes down or is slow, every service's trace export will block and back up — you want a buffer in between so application code is not affected by backend availability. The OTel Collector handles this with its own retry and queue. Second, and more importantly for your situation: tail-based sampling requires a component that has seen the entire trace before making the sampling decision. The SDK only knows about spans it generated; it cannot decide whether to keep a trace based on what happened in downstream services. The Collector can hold spans in memory for a configurable window, assemble the full trace, and then decide whether to keep it based on the complete picture. That is the mechanism you need to catch rare slow traces.
+
+**Tail-Based Sampling: The Right Strategy for Your Bug**
+
+Head-based sampling (the default when you configure sampling in the SDK) makes the keep-or-discard decision at the start of each request, before any downstream spans exist. It is simple, but it is the wrong tool here. A 1% head-based sampler would keep 12 of your 1,200 peak req/min — and statistically, it would also discard most of the slow traces you are trying to find, since they represent roughly 0.5% of sessions.
+
+Tail-based sampling in the OTel Collector waits for the trace to complete (or until a configurable timeout, typically 10-30 seconds), then applies sampling policies based on the trace's actual properties.
+
+The right sampling policy set for your situation:
+
+Policy 1 — Always keep error traces: any trace where at least one span has an ERROR status code. This is non-negotiable — you never want to drop a trace that contains an error, and at your traffic level error traces should be a small enough percentage that this policy alone does not create storage problems.
+
+Policy 2 — Always keep high-latency traces: any trace where the root span duration exceeds 2,000 milliseconds (2 seconds). This is the policy that will catch your intermittent checkout delay. Set the threshold at 2 seconds rather than the 10-second symptom you are seeing — you want to catch slow traces early in their development, not only the worst cases.
+
+Policy 3 — Probabilistic baseline: 5% sampling for all other traces. At 1,200 req/min peak, that gives you 60 baseline traces per minute — enough for statistical analysis without generating volume that swamps storage.
+
+At your traffic level, this three-policy setup should reduce trace volume by roughly 90-95% while preserving 100% of the traces that are actually interesting.
+
+**What to Auto-Instrument vs. What to Instrument Manually**
+
+The `@opentelemetry/auto-instrumentations-node` package covers Node.js's built-in `http`/`https` modules, Express, `pg` (PostgreSQL), `mongodb`, `redis`, and a dozen other common libraries out of the box. HTTP calls between your services will be automatically instrumented and traced, including W3C `traceparent` header injection on outgoing requests and extraction on incoming requests.
+
+What is NOT automatically instrumented: RabbitMQ / AMQP. The AMQP protocol does not have a standard location for trace context headers the way HTTP does, so the auto-instrumentation package cannot patch it reliably. You will need to manually inject trace context when publishing to RabbitMQ and extract it when consuming. This is two blocks of code — about 20 lines total — but it is required for the trace chain to survive the queue boundary. Given that your bug likely crosses a queue boundary (async pricing or inventory events), this is probably the first thing you will discover when you get tracing working.
+
+**Recommended Instrumentation Order**
+
+Start with the API gateway — it sees 100% of user-initiated traffic and is the root of every checkout trace. Then instrument product catalog (fan-out to inventory + pricing). Then inventory and pricing (both likely involved in your bug). Then cart and order. Auth service last — it is in every request but failures there are fast and visible, not the source of slow traces.$pf$,
+ NULL),
+
+-- Step 2 --
+('77777777-7777-7777-7777-777777121002',
+ '55555555-5555-5555-5555-555555550121',
+ 2,
+ $pf$Docker Compose setup for the OTel Collector and Jaeger backend$pf$,
+ $pf$The architecture decision makes sense. I want to go SDK → Collector → Jaeger, with the tail-based sampling policies you described. Now I need the actual infrastructure. We're running Kubernetes in production but I want to get this working locally in Docker Compose first so I can validate the config before deploying. Give me the docker-compose.yml and the OTel Collector YAML config with the three sampling policies. I also need to know what ports to expose and how to access the Jaeger UI.$pf$,
+ $pf$**docker-compose.yml**
+
+```yaml
+version: "3.8"
+
+services:
+  jaeger:
+    image: jaegertracing/all-in-one:1.57
+    ports:
+      - "16686:16686"   # Jaeger UI
+      - "14250:14250"   # gRPC (collector → Jaeger)
+      - "14268:14268"   # HTTP (collector → Jaeger, legacy)
+    environment:
+      - COLLECTOR_OTLP_ENABLED=true
+    restart: unless-stopped
+
+  otel-collector:
+    image: otel/opentelemetry-collector-contrib:0.99.0
+    command: ["--config=/etc/otel-collector-config.yml"]
+    volumes:
+      - ./otel-collector-config.yml:/etc/otel-collector-config.yml
+    ports:
+      - "4317:4317"   # OTLP gRPC receiver (services → collector)
+      - "4318:4318"   # OTLP HTTP receiver (services → collector)
+      - "8888:8888"   # Collector internal metrics (Prometheus scrape)
+    depends_on:
+      - jaeger
+    restart: unless-stopped
+    mem_limit: 512m     # tail sampling buffers spans in memory; cap it
+```
+
+**otel-collector-config.yml**
+
+```yaml
+receivers:
+  otlp:
+    protocols:
+      grpc:
+        endpoint: 0.0.0.0:4317
+      http:
+        endpoint: 0.0.0.0:4318
+
+processors:
+  memory_limiter:
+    # Hard ceiling to prevent OOM — check_interval fires every second,
+    # and if RSS exceeds limit_percentage the collector starts dropping.
+    check_interval: 1s
+    limit_percentage: 80
+    spike_limit_percentage: 25
+
+  batch:
+    # Batch spans before exporting to Jaeger to reduce round-trips.
+    timeout: 5s
+    send_batch_size: 512
+
+  tail_sampling:
+    # Decision wait: how long to hold spans before making the keep/drop decision.
+    # 10s covers most synchronous request chains; increase to 30s if you have
+    # async flows that take longer to complete.
+    decision_wait: 10s
+    num_traces: 50000     # max traces buffered in memory simultaneously
+    policies:
+      # Policy 1: always keep error traces
+      - name: errors-policy
+        type: status_code
+        status_code:
+          status_codes: [ERROR]
+
+      # Policy 2: always keep high-latency traces (root span > 2 seconds)
+      - name: latency-policy
+        type: latency
+        latency:
+          threshold_ms: 2000
+
+      # Policy 3: 5% probabilistic baseline for everything else
+      - name: probabilistic-policy
+        type: probabilistic
+        probabilistic:
+          sampling_percentage: 5
+
+exporters:
+  jaeger:
+    endpoint: jaeger:14250
+    tls:
+      insecure: true   # fine for local/dev; use proper certs in production
+
+  logging:
+    loglevel: warn     # log drops and errors but not every span
+
+service:
+  pipelines:
+    traces:
+      receivers: [otlp]
+      processors: [memory_limiter, batch, tail_sampling]
+      exporters: [jaeger, logging]
+
+  telemetry:
+    metrics:
+      address: 0.0.0.0:8888
+```
+
+**Key notes on this config:**
+
+Use `otel/opentelemetry-collector-contrib` rather than the base `otel/opentelemetry-collector` image — the contrib image includes the `tail_sampling` processor and the Jaeger exporter, which are not in the base image. The base image covers the minimum viable use case; you need contrib for this setup.
+
+The `memory_limiter` processor is important. Without it, the tail sampling buffer has no ceiling — at 1,200 req/min peak with a 10-second decision window, the collector needs to buffer up to 12,000 concurrent traces. Each trace with an average of 8-10 spans might consume 5-10KB; at 50,000 buffered traces (the `num_traces` ceiling), you are looking at 250-500MB of in-memory state. The `mem_limit: 512m` on the container and the `limit_percentage: 80` in the processor config work together to prevent OOM. If you see the collector dropping spans under load, increase the container memory limit before adjusting the processor percentages.
+
+**Accessing the Jaeger UI:**
+
+Navigate to `http://localhost:16686` after the containers start. The Service dropdown in the UI will populate with service names as traces arrive. Give it a few minutes of real traffic before expecting to see data.
+
+**Production caveat:**
+
+`jaegertracing/all-in-one` uses in-memory storage — it is excellent for local development and validation but stores nothing to disk. Restart the container and all traces are gone. For production, you want Jaeger with a persistent backend: Elasticsearch or OpenSearch for high-volume deployments, Cassandra for mid-volume. The switch is a Jaeger configuration change and does not affect the OTel Collector config at all.$pf$,
+ NULL),
+
+-- Step 3 --
+('77777777-7777-7777-7777-777777121003',
+ '55555555-5555-5555-5555-555555550121',
+ 3,
+ $pf$Instrumenting an Express service with auto and custom spans$pf$,
+ $pf$Collector and Jaeger are running. I can see the Jaeger UI at localhost:16686. Now I need to instrument the services. Start me with the API gateway as the reference implementation — it's Node.js 20, Express 4, connecting to PostgreSQL via the pg module, and making HTTP calls downstream to the auth service and product catalog service. I want the auto-instrumentation working for all of that, plus I want to add a custom span for the pricing calculation in the checkout flow specifically — that's a function called calculateCheckoutPricing that takes a cart object and returns a price breakdown. Walk me through the full setup from package.json through to the custom span.$pf$,
+ $pf$**Package installation**
+
+```bash
+npm install \
+  @opentelemetry/sdk-node \
+  @opentelemetry/auto-instrumentations-node \
+  @opentelemetry/exporter-trace-otlp-http \
+  @opentelemetry/resources \
+  @opentelemetry/semantic-conventions \
+  @opentelemetry/api
+```
+
+**tracing.js — the SDK bootstrap file**
+
+```javascript
+// tracing.js — must be loaded before any other module.
+// Run via: node -r ./tracing.js server.js
+// Or in package.json: "start": "node -r ./tracing.js server.js"
+
+const { NodeSDK } = require('@opentelemetry/sdk-node');
+const { getNodeAutoInstrumentations } = require('@opentelemetry/auto-instrumentations-node');
+const { OTLPTraceExporter } = require('@opentelemetry/exporter-trace-otlp-http');
+const { Resource } = require('@opentelemetry/resources');
+const { SEMRESATTRS_SERVICE_NAME, SEMRESATTRS_SERVICE_VERSION, SEMRESATTRS_DEPLOYMENT_ENVIRONMENT } =
+  require('@opentelemetry/semantic-conventions');
+
+const sdk = new NodeSDK({
+  resource: new Resource({
+    [SEMRESATTRS_SERVICE_NAME]: 'api-gateway',
+    [SEMRESATTRS_SERVICE_VERSION]: process.env.SERVICE_VERSION || '1.0.0',
+    [SEMRESATTRS_DEPLOYMENT_ENVIRONMENT]: process.env.NODE_ENV || 'development',
+  }),
+  traceExporter: new OTLPTraceExporter({
+    url: process.env.OTEL_EXPORTER_OTLP_ENDPOINT || 'http://localhost:4318/v1/traces',
+  }),
+  instrumentations: [
+    getNodeAutoInstrumentations({
+      // Auto-instruments: http, https, express, pg, dns, and ~20 others.
+      // Disable any you don't need to reduce overhead.
+      '@opentelemetry/instrumentation-fs': { enabled: false }, // noisy, not useful here
+    }),
+  ],
+});
+
+sdk.start();
+
+// Flush spans before the process exits so nothing is lost on graceful shutdown.
+process.on('SIGTERM', () => sdk.shutdown().finally(() => process.exit(0)));
+process.on('SIGINT',  () => sdk.shutdown().finally(() => process.exit(0)));
+```
+
+**Why this file must be loaded first:** `getNodeAutoInstrumentations` works by monkey-patching Node's module system at load time. When the SDK starts, it wraps the modules listed in its instrumentation set — `http`, `express`, `pg`, and others. If `server.js` imports Express before `tracing.js` runs, the patch misses Express entirely and HTTP spans will not appear. The `-r ./tracing.js` flag in the Node startup command guarantees the SDK initializes before any application code executes.
+
+**Adding a custom span to calculateCheckoutPricing**
+
+In any module that needs custom spans, get a tracer from the global provider:
+
+```javascript
+// checkout.js
+const { trace, SpanStatusCode } = require('@opentelemetry/api');
+
+const tracer = trace.getTracer('api-gateway', '1.0.0');
+
+async function processCheckout(req, res) {
+  const { cart, userId } = req.body;
+
+  // The Express auto-instrumentation already created the root HTTP span
+  // for this request. startActiveSpan creates a child span nested inside it.
+  return tracer.startActiveSpan('checkout.pricing', async (span) => {
+    try {
+      // Record input attributes for filtering in Jaeger
+      span.setAttributes({
+        'checkout.cart_item_count': cart.items.length,
+        'checkout.user_id': userId,
+        'checkout.currency': cart.currency || 'USD',
+      });
+
+      const pricing = await calculateCheckoutPricing(cart);
+
+      // Record output attributes — these show up as span metadata in Jaeger
+      span.setAttributes({
+        'checkout.subtotal_cents': pricing.subtotalCents,
+        'checkout.discount_cents': pricing.discountCents,
+        'checkout.total_cents': pricing.totalCents,
+        'checkout.discount_applied': pricing.discountCents > 0,
+      });
+
+      span.setStatus({ code: SpanStatusCode.OK });
+      return pricing;
+    } catch (err) {
+      // Record the exception on the span before rethrowing —
+      // this surfaces the stack trace in Jaeger's span detail view.
+      span.recordException(err);
+      span.setStatus({ code: SpanStatusCode.ERROR, message: err.message });
+      throw err;
+    } finally {
+      span.end(); // always end the span, even if an exception was thrown
+    }
+  });
+}
+```
+
+**What you will see in Jaeger:** A trace tree where the root span is the HTTP POST from the user to the API gateway (created automatically by the http instrumentation), with child spans for the Express route handler (automatic), the `checkout.pricing` custom span (manual), and any `pg` queries inside `calculateCheckoutPricing` (automatic). The pricing span will show the attributes you recorded — cart item count, total, discount applied — making it filterable and sortable in the Jaeger search UI.
+
+The HTTP calls downstream to auth service and product catalog will also appear as child spans of the root HTTP span, with the `traceparent` header automatically injected by the http instrumentation. When those services are instrumented with the same setup, their spans will appear as children in the same trace tree.$pf$,
+ NULL),
+
+-- Step 4 --
+('77777777-7777-7777-7777-777777121004',
+ '55555555-5555-5555-5555-555555550121',
+ 4,
+ $pf$Fixing RabbitMQ context propagation across the queue boundary$pf$,
+ $pf$The auto-instrumentation is working — I can see traces in Jaeger from the API gateway through to the downstream HTTP services. The checkout.pricing custom span shows up correctly with the attributes. But RabbitMQ is broken in exactly the way you predicted: I can see the API gateway's checkout span and I can see the inventory service doing work, but the inventory consumer span appears as a completely separate root trace in Jaeger instead of being attached to the checkout trace that triggered it. The queue boundary breaks the chain.
+
+Here is how the flow works: the order service publishes a CheckOrderCreated event to a RabbitMQ exchange after checkout completes. The inventory service consumes that event and decrements stock. The pricing service also consumes from the same exchange to update a pricing cache. Neither the publisher side nor the consumer side currently has any OTel context propagation.
+
+Give me the code for both sides — publisher and consumer — and explain whether the consumer span should be a child of the publish span or a linked span, and why.$pf$,
+ $pf$**The Core Problem**
+
+HTTP propagation works because the OTel Node SDK auto-instruments Node's `http` module and automatically injects W3C `traceparent` and `tracestate` headers on every outgoing request, then extracts them on every incoming request. AMQP does not have a standard header location that the SDK can intercept — the protocol spec allows arbitrary message properties and application headers, but there is no universal AMQP instrumentation in the auto-instrumentations-node package that knows where to look. You have to inject and extract context manually.
+
+**Publisher Side — order service publishing the event**
+
+```javascript
+// order-service/src/events/publisher.js
+const amqplib = require('amqplib');
+const { context, propagation } = require('@opentelemetry/api');
+const tracer = require('./tracer'); // your getTracer() wrapper
+
+async function publishOrderCreated(channel, orderId, cartData) {
+  return tracer.startActiveSpan('rabbitmq.publish.order_created', async (span) => {
+    try {
+      span.setAttributes({
+        'messaging.system': 'rabbitmq',
+        'messaging.operation': 'publish',
+        'messaging.destination': 'order.events',
+        'order.id': orderId,
+      });
+
+      // Build the carrier object — this is what propagation.inject writes into.
+      // RabbitMQ messages carry arbitrary headers in the properties.headers field.
+      const carrier = {};
+      propagation.inject(context.active(), carrier);
+      // carrier now looks like: { traceparent: '00-abc123...-xyz456...-01' }
+
+      const payload = JSON.stringify({ orderId, cartData, timestamp: Date.now() });
+
+      channel.publish(
+        'order.events',           // exchange
+        'order.created',          // routing key
+        Buffer.from(payload),
+        {
+          headers: carrier,       // inject the trace context here
+          contentType: 'application/json',
+          persistent: true,
+        }
+      );
+
+      span.setStatus({ code: require('@opentelemetry/api').SpanStatusCode.OK });
+    } catch (err) {
+      span.recordException(err);
+      span.setStatus({ code: require('@opentelemetry/api').SpanStatusCode.ERROR, message: err.message });
+      throw err;
+    } finally {
+      span.end();
+    }
+  });
+}
+```
+
+**Consumer Side — inventory service and pricing service**
+
+```javascript
+// inventory-service/src/events/consumer.js
+const { context, propagation, trace, ROOT_CONTEXT, SpanKind, Link } =
+  require('@opentelemetry/api');
+const tracer = require('./tracer');
+
+async function handleOrderCreated(msg, channel) {
+  // Extract the trace context from the message headers.
+  // propagation.extract reads the traceparent header and returns a Context
+  // containing the parent SpanContext from the publisher.
+  const parentContext = propagation.extract(ROOT_CONTEXT, msg.properties.headers || {});
+
+  // Start the consumer span as a new root span LINKED to the publisher span,
+  // not as a child. Explanation below.
+  const links = [];
+  const parentSpanContext = trace.getSpanContext(parentContext);
+  if (parentSpanContext) {
+    links.push({ context: parentSpanContext });
+  }
+
+  return tracer.startActiveSpan(
+    'rabbitmq.consume.order_created',
+    {
+      kind: SpanKind.CONSUMER,
+      links,    // SpanLink back to the publisher span
+    },
+    async (span) => {
+      try {
+        span.setAttributes({
+          'messaging.system': 'rabbitmq',
+          'messaging.operation': 'receive',
+          'messaging.source': 'order.events',
+        });
+
+        const data = JSON.parse(msg.content.toString());
+        span.setAttribute('order.id', data.orderId);
+
+        await decrementInventory(data.orderId, data.cartData);
+
+        channel.ack(msg);
+        span.setStatus({ code: require('@opentelemetry/api').SpanStatusCode.OK });
+      } catch (err) {
+        span.recordException(err);
+        span.setStatus({ code: require('@opentelemetry/api').SpanStatusCode.ERROR, message: err.message });
+        channel.nack(msg, false, true); // requeue
+        throw err;
+      } finally {
+        span.end();
+      }
+    }
+  );
+}
+```
+
+**Child Span vs. SpanLink — why SpanLink is the right choice here**
+
+A child span implies synchronous causality: "this span happened because of and during the parent span." In HTTP call chains, that is exactly right — the downstream service's work happens while the upstream service is waiting for a response.
+
+A RabbitMQ consumer is different. The publisher publishes the event, ends its span, and moves on. The consumer may process the message milliseconds later, or minutes later if the queue is backed up. The consumer's work is causally related to the publisher's work (you published this event; the consumer is handling it) but not temporally contained within it. Using a child span would create a misleading trace tree where the consumer work appears to be happening inside the publisher span's time window — which is not true and makes latency analysis confusing.
+
+SpanLinks are the right tool: they express "this span is related to that span" without implying parent-child temporal nesting. In Jaeger, linked spans are displayed separately with a clickable link between them. You can navigate from the checkout trace to the inventory processing trace, but they appear as distinct traces with a relationship rather than one trace containing the other.
+
+Use a child span only if the publisher actually waits for the consumer to complete (synchronous RPC over a queue) — which is not the case here.$pf$,
+ NULL),
+
+-- Step 5 --
+('77777777-7777-7777-7777-777777121005',
+ '55555555-5555-5555-5555-555555550121',
+ 5,
+ $pf$Tail-based sampling config and Slack alerting on slow traces$pf$,
+ $pf$You were right about the RabbitMQ propagation — the moment we added the message carrier headers, Jaeger showed us exactly what was happening. The inventory service and pricing service were both consuming from the same queue, and when inventory was slow (we traced it to disk I/O during a nightly batch job), pricing would time out waiting for a distributed lock, retry three times at 4-second intervals, and eventually succeed. The whole sequence appeared as a cascade of retry spans with 4-second gaps. Fix was a dedicated queue for pricing and a timeout adjustment — three lines of config. The hiccup is gone.
+
+Now I want to finalize two things. First, the tail-based sampling config in the collector — I want to confirm I have the right policies running in production, specifically the 100 percent keep on errors and high-latency traces, and 5 percent baseline. Second, alerting: I want a Slack notification when any trace exceeds 3 seconds. We don't have Prometheus set up yet, and I'd rather not add that complexity right now. Is there a simpler path to this alerting that will get us operational quickly?$pf$,
+ $pf$**Finalizing the Tail Sampling Config**
+
+Your otel-collector-config.yml from step two already has the correct structure. Here is the production-ready version with a few adjustments:
+
+```yaml
+processors:
+  tail_sampling:
+    decision_wait: 15s      # increased from 10s to handle your async queue flows
+    num_traces: 75000       # raised to handle 1,200 req/min × 15s buffer
+    expected_new_traces_per_sec: 20  # helps the collector size its internal maps
+
+    policies:
+      - name: errors-policy
+        type: status_code
+        status_code:
+          status_codes: [ERROR]
+
+      - name: latency-policy
+        type: latency
+        latency:
+          threshold_ms: 2000   # keep all traces with any span > 2 seconds
+
+      - name: probabilistic-policy
+        type: probabilistic
+        probabilistic:
+          sampling_percentage: 5
+```
+
+Two adjustments from the dev config: decision_wait raised to 15 seconds because your RabbitMQ consumer spans can arrive up to 10 seconds after the publisher span — you want the collector to wait long enough that it has seen both before making the sampling decision. And num_traces raised to 75,000 to account for the larger buffer window.
+
+Memory math at these settings: 75,000 buffered traces at an average of 10 spans per trace and 6KB per span equals approximately 4.5GB of theoretical maximum buffer — that is unrealistic in practice because most traces resolve quickly. The mem_limit: 512m on the container handles bursts by applying backpressure before OOM. If the collector starts logging "dropped spans due to memory limit," increase the container memory allocation in your Kubernetes deployment before widening the buffer.
+
+**Simple Slack Alerting Without Prometheus**
+
+For getting operational quickly without adding Prometheus to the stack, query the Jaeger HTTP search API from a lightweight cron script.
+
+```javascript
+// scripts/trace-alert.js — run on a cron every 5 minutes
+const https = require('https');
+const http  = require('http');
+
+const JAEGER_URL    = process.env.JAEGER_URL    || 'http://localhost:16686';
+const SLACK_WEBHOOK = process.env.SLACK_WEBHOOK || '';
+const THRESHOLD_MS  = parseInt(process.env.THRESHOLD_MS || '3000', 10);
+const LOOKBACK_MINS = 5;
+
+async function fetchSlowTraces() {
+  const lookbackUs = LOOKBACK_MINS * 60 * 1_000_000; // Jaeger uses microseconds
+  const url = `${JAEGER_URL}/api/traces?service=api-gateway` +
+    `&minDuration=${THRESHOLD_MS * 1000}us` +   // convert ms to microseconds
+    `&lookback=${lookbackUs}us` +
+    `&limit=20`;
+
+  return new Promise((resolve, reject) => {
+    const client = url.startsWith('https') ? https : http;
+    client.get(url, (res) => {
+      let body = '';
+      res.on('data', (chunk) => { body += chunk; });
+      res.on('end', () => {
+        try { resolve(JSON.parse(body)); }
+        catch (e) { reject(e); }
+      });
+    }).on('error', reject);
+  });
+}
+
+async function postToSlack(traces) {
+  if (!SLACK_WEBHOOK) { console.warn('No SLACK_WEBHOOK configured'); return; }
+
+  const slowest = traces.sort((a, b) => {
+    const durA = a.spans[0]?.duration || 0;
+    const durB = b.spans[0]?.duration || 0;
+    return durB - durA;
+  })[0];
+
+  const durationSec = ((slowest?.spans[0]?.duration || 0) / 1_000_000).toFixed(2);
+  const traceId = slowest?.traceID || 'unknown';
+  const jaegerLink = `${JAEGER_URL}/trace/${traceId}`;
+
+  const payload = JSON.stringify({
+    text: `*Slow trace detected* — ${traces.length} trace(s) exceeded ${THRESHOLD_MS}ms in the last ${LOOKBACK_MINS} min\n` +
+          `Slowest: *${durationSec}s* — <${jaegerLink}|View in Jaeger>`,
+  });
+
+  return new Promise((resolve, reject) => {
+    const webhookUrl = new URL(SLACK_WEBHOOK);
+    const options = {
+      hostname: webhookUrl.hostname,
+      path: webhookUrl.pathname + webhookUrl.search,
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(payload) },
+    };
+    const req = https.request(options, (res) => {
+      res.resume(); // drain and discard
+      resolve();
+    });
+    req.on('error', reject);
+    req.write(payload);
+    req.end();
+  });
+}
+
+(async () => {
+  try {
+    const result = await fetchSlowTraces();
+    const traces = result?.data || [];
+    if (traces.length > 0) {
+      console.log(`Found ${traces.length} slow trace(s) — posting to Slack`);
+      await postToSlack(traces);
+    } else {
+      console.log('No slow traces in last 5 minutes');
+    }
+  } catch (err) {
+    console.error('Trace alert error:', err.message);
+    process.exit(1);
+  }
+})();
+```
+
+Run it as a Kubernetes CronJob:
+
+```yaml
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: trace-alerter
+spec:
+  schedule: "*/5 * * * *"
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          containers:
+          - name: alerter
+            image: node:20-alpine
+            command: ["node", "/scripts/trace-alert.js"]
+            env:
+            - name: JAEGER_URL
+              value: "http://jaeger-service:16686"
+            - name: SLACK_WEBHOOK
+              valueFrom:
+                secretKeyRef:
+                  name: alerting-secrets
+                  key: slack-webhook-url
+            - name: THRESHOLD_MS
+              value: "3000"
+            volumeMounts:
+            - name: script-volume
+              mountPath: /scripts
+          volumes:
+          - name: script-volume
+            configMap:
+              name: trace-alert-script
+          restartPolicy: OnFailure
+```
+
+This gets you operational in an afternoon. The Prometheus path — add a Prometheus exporter to the OTel Collector, scrape with Prometheus, configure Alertmanager rules, add the Slack notifier to Alertmanager — is the production-grade approach for teams that already operate Prometheus. If you add Prometheus later, you can retire this cron script and move alerting into Alertmanager rules based on the `otelcol_processor_tail_sampling_count_traces_sampled` and span-duration histogram metrics the collector exposes. For now, the script works and requires zero new infrastructure.$pf$,
+ NULL);
+
 ALTER TABLE prompts ENABLE ROW LEVEL SECURITY;
 ALTER TABLE prompt_steps ENABLE ROW LEVEL SECURITY;

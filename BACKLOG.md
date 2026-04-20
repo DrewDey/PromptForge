@@ -14,13 +14,15 @@ Pick the top item in your queue. Ship it. Move to Done with one line.
 
 ---
 
-## Content queue — REAL Claude-generated prompt chains (APPROVED, ACTIVE) — **TARGET 200, 5 PER FIRING**
+## Content queue — REAL Claude-generated prompt chains (APPROVED, ACTIVE) — **ROUTINES CAP AT 170, SWARM OWNS 171-200**
 
-**Target:** 200 total projects in `supabase/seed-content-chains.sql` (bumped from 75 by Drew on 2026-04-18). **Currently at 125/200, 75 slots remaining.** The 50-project all-author/all-category 5-peat milestone is preserved in the historical line below; from 51+ forward, balance constraints loosen and iterations prioritize topic freshness (no repeat of any topic already covered in earlier projects) and chain-length diversity over strict per-author rotation.
+**Target:** 200 total projects in `supabase/seed-content-chains.sql`. **Currently at 125/200.**
 
-**Throughput:** **2 projects per iteration** (lowered from 5 by Drew on 2026-04-19 — the 5-target was overshooting time budget; iterations were defaulting to 3 with the quality escape hatch. Hard reset to 2 so iterations focus on depth without rationing). Depth floor 15–25 min should comfortably fit 2 projects at full quality. No escape hatch — ship exactly 2, both at the project-0001 quality bar.
+**⚠ Routines cap at 170 — slots 171-200 are reserved for the agent swarm** (Drew, 2026-04-20). See `supabase/swarm/README.md` and `AGENT-SWARM-PROMPTS.md` at repo root. Six parallel Opus 4.7 Max agents handle the final 30 slots (5 each) into dedicated files at `supabase/swarm/agent-a.sql` through `agent-f.sql`. Routines never touch those files and never append beyond project 170 in `seed-content-chains.sql`. Once routines hit 170, iterations pivot to the Polish queue (prod-readiness work can still run additively).
 
-**Production-readiness note:** Production-readiness tasks (corpus audits, ITERATION_LOG hygiene, doc polish, deploy hygiene) are bonus work when one fits naturally — they do NOT replace a content project slot. Throughput is always 2 content projects per iteration; production-readiness work is additive, not a substitute. At 200, Content closes; iterations work the Polish queue.
+**Throughput (routines only):** **2 projects per iteration** (lowered from 5 by Drew on 2026-04-19). Depth floor 15–25 min should comfortably fit 2 projects at full quality. No escape hatch — ship exactly 2, both at the project-0001 quality bar.
+
+**Production-readiness note:** Production-readiness tasks (corpus audits, ITERATION_LOG hygiene, doc polish, deploy hygiene) are bonus work when one fits naturally — they do NOT replace a content project slot. Throughput is always 2 content projects per iteration (up to slot 170); production-readiness work is additive, not a substitute. At 170, routines pivot to Polish queue. Swarm output (171-200) arrives asynchronously via Drew's 6-agent dispatch.
 
 Drew: repaste `supabase/seed-content-chains.sql` into Supabase SQL Editor to refresh live rows whenever you want to see the latest.
 
@@ -64,9 +66,9 @@ Read `supabase/seed-content-chains.sql` end-to-end before drafting anything. You
 - **No short, terse prompts.** "Build a blog post" is too thin. Prompts should sound like a human with context wrote them.
 - **No generic filler responses.** If you can't generate a real artifact for a prompt, rewrite the prompt until you can.
 
-### Done when
+### Done when (routines)
 
-`supabase/seed-content-chains.sql` contains 200 unique projects across 10 categories with varied chain lengths. (Production-readiness work runs in parallel from 100 onward.) Drew repastes the file into Supabase to see them live.
+`supabase/seed-content-chains.sql` contains **170** projects across 10 categories with varied chain lengths. Remaining 30 (171-200) are completed asynchronously by the 6-agent swarm into `supabase/swarm/agent-{a..f}.sql`. Drew repastes `seed-content-chains.sql` and runs each swarm file via psql (or pastes into Supabase SQL Editor) to see everything live.
 
 ---
 

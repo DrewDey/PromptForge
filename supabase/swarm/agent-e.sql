@@ -1,0 +1,29 @@
+-- =========================================================================
+-- Agent E — PathForge Content Swarm
+-- Projects 191-195 (5 projects)
+-- =========================================================================
+--
+-- Write 5 real Claude-generated prompt chain projects here. Follow the format
+-- of supabase/seed-content-chains.sql project 0001 (freelancer tax estimator,
+-- around lines 43-190) as your quality reference. Match or beat that depth.
+--
+-- UUID constraints (DO NOT USE OUTSIDE THESE RANGES):
+--   Project IDs:  55555555-5555-5555-5555-555555550191 through ...550195
+--   Step IDs:     77777777-7777-7777-7777-777777PPPSSS where PPP=191..195, SSS=001..008
+--
+-- Column order for INSERT INTO prompts:
+--   id, title, description, content, result_content,
+--   category_id, difficulty, model_used, model_recommendation,
+--   tools_used, tags, status, author_id, vote_count, bookmark_count
+--
+-- Column order for INSERT INTO prompt_steps:
+--   id, prompt_id, step_number, title, content, result_content, description
+--
+-- Rules:
+--   - vote_count = 0, bookmark_count = 0 (zero engagement policy — non-negotiable)
+--   - status = 'approved'
+--   - Use dollar-quoted strings: $pf$...$pf$ (handles apostrophes safely)
+--   - Each project begins with DELETE FROM prompt_steps + DELETE FROM prompts
+--     against that project's UUID (idempotency so the file can be re-run)
+--
+-- Delete this header comment block when you add the first project.

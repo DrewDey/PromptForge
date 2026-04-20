@@ -38991,5 +38991,405 @@ The Notion-native positioning is a genuine differentiator. Nobody else in your d
 The full payoff takes two cohorts — roughly 60 days — to show up in conversion metrics. Run the matrix again in 60 days: check whether "found a free option" has disappeared from your exit surveys and whether trial-to-paid is trending up.$pf$,
  NULL);
 
+-- ============================================================
+-- Project 0108 — sarahgrows / Marketing / intermediate / 4-step / Claude 4.6 Opus
+-- Building a B2B customer referral program for a project management SaaS
+-- ============================================================
+
+DELETE FROM prompt_steps WHERE prompt_id = '55555555-5555-5555-5555-555555550108';
+DELETE FROM prompts WHERE id = '55555555-5555-5555-5555-555555550108';
+
+INSERT INTO prompts (id, title, description, content, result_content, category_id, difficulty, model_used, model_recommendation, tools_used, tags, status, author_id, vote_count, bookmark_count)
+VALUES (
+ '55555555-5555-5555-5555-555555550108',
+ $pf$Building a B2B Customer Referral Program from Scratch$pf$,
+ $pf$Flowline is a project management SaaS for creative agencies. We had 480 paying accounts, CAC of $1,200, and almost zero organic word-of-mouth. I designed our first referral program — program mechanics, in-product copy, launch email to customers, and a 90-day measurement plan — using Claude to think through each layer.$pf$,
+ $pf$Flowline (B2B project management SaaS for creative agencies) had 480 paying accounts, average ACV around $3,600, and almost no organic growth — nearly all acquisition was paid with a $1,200 CAC. The CEO wanted referral driving 15% of new ARR within 12 months. We had no budget for a standalone referral tool, just Customer.io, Stripe, and our in-product notification system. I needed to design the full program from scratch: mechanics, copy, launch campaign, and measurement.$pf$,
+ $pf$The referral program launched two weeks after this session. The launch email got a 38% open rate and 14% click rate against a 22% average for our marketing sends. Within the first 90 days: 22 customers used the referral flow, 11 links were clicked by referred prospects, and 3 started trials — early funnel looks directionally healthy. Engineering took 9 days to instrument the project-completion trigger. Stripe payout workflow is live and tested. No gaming incidents in the first cohort.$pf$,
+ '11111111-1111-1111-1111-111111111102',
+ 'intermediate',
+ 'claude-opus-4-6',
+ 'Claude 4.6 Opus',
+ ARRAY['Customer.io', 'Stripe', 'Claude'],
+ ARRAY['referral program', 'B2B SaaS', 'word-of-mouth', 'growth marketing', 'customer acquisition', 'email copywriting'],
+ 'approved',
+ '22222222-2222-2222-2222-222222222202',
+ 0,
+ 0
+);
+
+INSERT INTO prompt_steps (id, prompt_id, step_number, content, result_content, image_url) VALUES
+
+-- Step 1 --
+('77777777-7777-7777-7777-777777108001',
+ '55555555-5555-5555-5555-555555550108',
+ 1,
+ $pf$I need to build our first customer referral program. We're a B2B project management SaaS for creative agencies — we have 480 paying accounts, average contract around $3,600 per year, and almost no organic word-of-mouth traffic. Almost everything we acquire is through paid channels, CAC is around $1,200, and the CEO wants referral driving 15% of new ARR within 12 months.
+
+I have a few constraints: no budget for a standalone referral tool like ReferralRock or Friendbee — we have Customer.io for email, Stripe for payouts, and our in-product notification system. I want this to be a real program, not a half-hearted "tell a friend" footnote.
+
+Before I write any copy or pick incentives, I need to design the program mechanics: who can refer, what the incentive is, how we structure the referral flow, and what eligibility rules prevent abuse. What should the core structure look like?$pf$,
+ $pf$A B2B referral program for a $3,600 ACV product is a different animal than consumer referral — the decision cycle is longer, the referral moment is narrower, and the incentive psychology is different. Here's the mechanics design for Flowline.
+
+**Who can refer and when:**
+Limit eligible referrers to customers who have been active for at least 60 days and have invited at least two team members to their workspace. This filters out churny accounts and new accounts that haven't formed a real opinion yet. Don't make everyone eligible on day one — your best referrers are people who have real results to share, and they need time to get those results. Target roughly the 30% of accounts who will have hit those criteria: about 144 accounts at launch.
+
+**Incentive structure:**
+For B2B at a $3,600 ACV, cash works better than account credit. Account credit has compounding churn risk — a churned customer can't use credit, so they lose the motivation to refer once they're already leaving. Cash to the referrer and a cash discount to the referred account is the cleanest structure.
+
+Proposed:
+- Referrer receives: $200 Stripe payout when the referred account upgrades to a paid plan
+- Referred account receives: 2 months free on annual plan (worth $600)
+- Eligibility trigger: payout fires after the referred account has been paid for 30 days (prevents abuse via prepaid-then-churn)
+
+The $200 payout at $3,600 ACV means referral CAC is $200 + $600 discounted revenue = effectively $800 acquisition cost vs your current $1,200. That's a 33% improvement even before compounding.
+
+**Referral flow:**
+The referral share should happen inside the product, not via a campaign email blast. The right trigger moments:
+1. After a project is marked complete (high-satisfaction signal)
+2. After a customer exports a deliverable (they're about to share work externally)
+3. After the account reaches 10 projects created (power-user signal)
+
+Each trigger shows a single in-app modal: "Your team just hit 10 projects on Flowline. Know another agency that would find this useful? Send them 2 months free — you'll get $200 when they subscribe." One CTA: "Send an invite." Pre-populates an email to their contact.
+
+**Abuse prevention:**
+- Self-referrals blocked by email domain matching at signup
+- Referral code expires after 90 days (prevents stockpiling)
+- Payout holds 30 days to prevent paid-then-churned gaming
+- Maximum 10 payouts per referrer per year (prevents affiliate-style misuse)
+
+**What this doesn't need at launch:**
+A leaderboard, a referral portal, a multi-tier structure, or a dedicated landing page. All of those add engineering time without adding referral volume for your first cohort. Build the minimum: an in-app trigger, a pre-filled email, a Stripe payout workflow, and a Customer.io automation. Measure for 90 days, then decide whether to invest in the portal.$pf$,
+ NULL),
+
+-- Step 2 --
+('77777777-7777-7777-7777-777777108002',
+ '55555555-5555-5555-5555-555555550108',
+ 2,
+ $pf$Perfect — the mechanics make sense. The "after project completed" trigger is the one we can instrument fastest since we already fire a webhook from our project completion event.
+
+Now I need to write the actual in-product experience. The modal that appears after a project is completed, the email that gets pre-filled for the customer to send to their contact, and the email the referred account gets when they follow the link.
+
+I want the copy to feel like it's coming from the customer, not from Flowline. The pre-filled email should be editable but complete — most people will send it as-is. What should these look like?$pf$,
+ $pf$The copy principle here is warm introduction over cold marketing. The modal should feel like a moment of sharing, not a pitch. The pre-filled email is the key artifact — most customers will not rewrite it, so it needs to read like something a real person would send to a colleague.
+
+**In-product modal (appears after project completion):**
+
+---
+Congrats on shipping [Project Name].
+
+Know another agency that could use this?
+Send them 2 free months on us — you'll get $200 when they subscribe.
+
+[Send an invite →]   [Skip for now]
+---
+
+Design notes: surface the actual project name for personalization. The skip link should be secondary-styled, not hidden — guilt-tripping produces resentment. Show this modal at most once per 90 days for the same account to avoid annoying frequent project-completers.
+
+**Pre-filled referral email (editable by the customer before sending):**
+
+Subject: We've been using this for our client projects — thought you'd like it
+
+---
+Hey [Name],
+
+Our team has been using Flowline to manage client projects, and it's been really solid. Thought I'd share — they're offering you 2 months free if you want to try it.
+
+[Claim your 2 free months →]
+
+— [Sender Name]
+---
+
+Keep this short. The instinct is to add features, benefits, and social proof — but a recommendation from a peer carries more weight than anything you can say about your own product. The pre-filled version should look like something a real person would send from their Gmail in 60 seconds. It will feel too sparse; ship it anyway.
+
+**Email the referred account gets after clicking the link:**
+
+Subject: [Sarah Mitchell] shared 2 free months of Flowline with you
+
+---
+Hi there,
+
+Sarah Mitchell from [Company] thought you'd like Flowline — a project management tool built for creative agencies.
+
+She's given you 2 months free. No credit card required until your trial ends.
+
+[Start your free trial →]
+
+About Flowline: purpose-built project management for client-delivery teams. Trusted by 480+ agencies.
+
+Questions? Reply to this email.
+
+— The Flowline team
+---
+
+Design notes: surface the referrer's name and company early — this is the trust mechanism, not your marketing copy. "480+ agencies" is specific enough to be credible without feeling impersonal. Keep the email under 150 words; anything longer reduces click rates on referred emails.
+
+One implementation note: the pre-filled email should be editable in a textarea in the modal before the customer clicks send — don't fire it automatically. Letting them edit it (even if they don't) makes the send feel intentional rather than something the product did to them.$pf$,
+ NULL),
+
+-- Step 3 --
+('77777777-7777-7777-7777-777777108003',
+ '55555555-5555-5555-5555-555555550108',
+ 3,
+ $pf$This is really good — the "warm intro" framing is exactly right. We're going to wire this up over the next two weeks. While engineering is building the trigger, I want to get the launch announcement ready.
+
+We've never told customers we have a referral program because we're building it now. I need an email to our 480 existing customers announcing the program — the incentive, how it works, and how to trigger the referral flow. This should be an email they'd actually want to open and read, not a marketing blast they archive on sight. We're sending from Customer.io with my name (Sarah Mitchell, Marketing) in the from field. Write it.$pf$,
+ $pf$Subject: We're paying you $200 to tell a friend
+Pre-header: Two months free for them. $200 for you. No forms, no referral portal.
+
+---
+Hi [First Name],
+
+I'm going to keep this direct: we're launching a referral program, and we want you to benefit from it.
+
+**Here's the deal:**
+
+If you introduce another agency to Flowline, they get 2 months free. When they subscribe to a paid plan, you get $200 sent to you directly via Stripe. No referral portal for you, no credit card forms for them — just a transfer.
+
+**How it works:**
+
+When you complete a project in Flowline, you'll see a prompt to invite an agency contact. It takes about 60 seconds: we pre-fill the email, you hit send (or edit it if you want), done. You'll know when your referral converts — we'll email you when the payout is on its way.
+
+**Why we're doing this now:**
+
+Honestly? Most of our customers came to us from paid ads. We know the people who love Flowline are better advocates than any ad we can run, but we've never given you a reason to tell anyone. This is us fixing that.
+
+We're starting with customers who've been active for at least 60 days with a live team workspace — if you're reading this, you're already in that group.
+
+**One thing to know:**
+
+The referral appears in-product after you complete a project, so you can send it when the moment feels natural — not because you got an email blast and forwarded a link. We think that makes a better introduction than a cold referral URL.
+
+Questions? Reply to this email. I read every one.
+
+Sarah Mitchell
+Marketing, Flowline
+---
+
+Sending notes for Customer.io:
+- From name: Sarah Mitchell (not "Flowline" or "Flowline Team")
+- From email: sarah@flowline.io — the personal from-address is the difference between "I read it" and "I archived it"
+- Send time: 10am Tuesday, recipient's local time
+- Segment: accounts where created_at < (today minus 60 days) AND team_member_count >= 2 AND status = active
+- Exclude: accounts in trial, churned, or paused billing states
+
+Subject line rationale: "$200" in the subject is clear and direct. It's not clickbait — it's the program in 7 words. Emails that name the incentive in the subject consistently outperform "Introducing our new referral program" subject lines. The pre-header handles "what's in it for them" before the open.$pf$,
+ NULL),
+
+-- Step 4 --
+('77777777-7777-7777-7777-777777108004',
+ '55555555-5555-5555-5555-555555550108',
+ 4,
+ $pf$We sent the launch email two weeks ago and the trigger is live in the product. Early results: 22 customers have used the referral flow, 11 links have been clicked by referred prospects, and 3 have started trials. We have no idea if this is good or bad, or what to watch over the next 90 days to know if the program is working.
+
+Help me build a 90-day measurement plan. What are the metrics that actually tell me if this referral program is generating real business value, what are the benchmarks I should hold them to, and what's the decision point at day 90 — how do I know if I should double down, redesign, or shut it down?$pf$,
+ $pf$Your early numbers are directionally promising. Let me give you a framework to interpret them over 90 days.
+
+**The metric stack (three layers):**
+
+Layer 1 — Program activity (tells you if the mechanics work):
+- Referral send rate: of eligible accounts who see the modal, what % click "Send an invite"? Target: ≥ 25%. Below 10% means the modal copy or timing is wrong.
+- Referral link click rate: of pre-filled emails sent, what % get clicked by the recipient? Target: ≥ 40%. Below 25% means the email copy or the incentive isn't compelling at the receiving end.
+- Trial start rate from click: of clicked links, what % start a trial? Target: ≥ 35%. Below 20% means the landing experience is breaking the handoff — check the referred-account email and the trial signup page.
+
+Layer 2 — Business conversion (tells you if the program generates revenue):
+- Referral trial-to-paid conversion: target ≥ 35%, compared against your overall trial-to-paid baseline. If referral converts below your average, the program is attracting unqualified leads — likely because referrers are sending to cold contacts rather than warm ones.
+- Referral CAC: (total payout cost + discounted ARR cost) / paid accounts acquired. Track against your $1,200 paid CAC target.
+- Referral ARR contribution: referred new ARR in the period / total new ARR. The 15% target is a 90-day trailing rate, not a day-90 snapshot.
+
+Layer 3 — Program sustainability (tells you if it compounds):
+- Payouts sent: this is a sanity check for the payout workflow, not a growth metric. If payouts are lagging more than 35 days after conversion, fix it — late payouts damage referrer trust faster than almost anything else.
+- Referrer repeat rate: of accounts who sent one referral, what % send a second within 90 days? Healthy programs see 15–25% repeats. Above 30% suggests a segment of power-referrers worth identifying and nurturing.
+- Referrer retention delta: do accounts who refer churn less? Pull 90-day retention for referrers vs non-referrers. If referrers retain at higher rates, the act of referring correlates with customer commitment — a compounding benefit beyond the direct acquisition.
+
+**Your early numbers interpreted:**
+22 sends → 11 clicks = 50% click rate (above the 40% target — the warm-intro copy is working). 11 clicks → 3 trials = 27% trial start rate (below the 35% target — investigate the post-click experience: is the referred-account email landing in spam? Is the trial signup page loading cleanly on mobile?). 3 trials is too small a sample to assess paid conversion; you need 10+ before drawing conclusions.
+
+**The day-90 decision framework:**
+Shut it down if: referral CAC exceeds $900 after accounting for discounted ARR; trial-to-paid conversion rate is below 20% (audience mismatch); referral ARR is below 3% of new ARR after 3 full months.
+
+Double down if: referral CAC is below $650; trial-to-paid is at or above 30%; referral ARR is tracking toward 8%+ of new ARR. At that point, invest in a referral portal (ReferralRock or equivalent), a dedicated referral landing page, and a second in-product trigger (the deliverable-export moment you deprioritized at launch).
+
+Redesign if: click rate is high but trial-to-paid is low (the incentive or the landing experience is the mismatch); referral send rate is low despite eligibility (the modal timing or copy is wrong). These are solvable without scrapping the program.
+
+Build a Customer.io dashboard with four metrics: send rate, click rate, trial start rate, paid conversion. Review every two weeks. Don't optimize on fewer than 10 data points per metric — week-one noise will mislead you.$pf$,
+ NULL);
+
+-- ============================================================
+-- Project 0109 — teacherben / Education / beginner / 3-step / Claude 4.7 Opus
+-- Building a standards-aligned argument writing rubric for 6th-grade ELA
+-- ============================================================
+
+DELETE FROM prompt_steps WHERE prompt_id = '55555555-5555-5555-5555-555555550109';
+DELETE FROM prompts WHERE id = '55555555-5555-5555-5555-555555550109';
+
+INSERT INTO prompts (id, title, description, content, result_content, category_id, difficulty, model_used, model_recommendation, tools_used, tags, status, author_id, vote_count, bookmark_count)
+VALUES (
+ '55555555-5555-5555-5555-555555550109',
+ $pf$Building a 6th-Grade Argument Writing Rubric from Scratch$pf$,
+ $pf$Every rubric I found online was either too complicated for students to read or too vague to grade with. I used Claude to design a CCSS-aligned rubric with real 4-level descriptors that students can actually self-assess with — plus a model paragraph for the skill they struggle with most.$pf$,
+ $pf$I teach 6th-grade ELA and was starting our argument writing unit (CCSS.W.6.1). I needed a rubric that gave me diagnostic data AND was clear enough for a 12-year-old to self-assess with before submitting. Three passes: rubric design (what to measure and why), the full rubric with 4-level descriptors, and a student-facing checklist plus a model paragraph for evidence + reasoning — the skill my class consistently struggles with most.$pf$,
+ $pf$The rubric is now the permanent assessment tool for our argument writing unit. Students use the checklist before every submission. The model paragraph exercise — where I project it and walk through the evidence-then-reasoning structure — cut the number of "evidence dump with no explanation" papers in half by the second assignment. The counterclaim row has become the single most useful teaching diagnostic: when a paper lands at "Approaching" there, the fix is usually a 5-minute mini-lesson, not a full rewrite.$pf$,
+ '11111111-1111-1111-1111-111111111106',
+ 'beginner',
+ 'claude-opus-4-7',
+ 'Claude 4.7 Opus',
+ ARRAY['Claude', 'Google Classroom'],
+ ARRAY['writing rubric', '6th grade ELA', 'argument writing', 'CCSS W.6.1', 'self-assessment', 'rubric design'],
+ 'approved',
+ '22222222-2222-2222-2222-222222222205',
+ 0,
+ 0
+);
+
+INSERT INTO prompt_steps (id, prompt_id, step_number, content, result_content, image_url) VALUES
+
+-- Step 1 --
+('77777777-7777-7777-7777-777777109001',
+ '55555555-5555-5555-5555-555555550109',
+ 1,
+ $pf$I'm a 6th-grade ELA teacher and I need to build a rubric for our argument writing unit. We're working on CCSS.W.6.1 — students need to write a clear argument with claims, evidence, counterclaim, and conclusion. I've used rubrics from the internet before but they're either way too complicated (college-level language students can't parse) or so vague they don't give me anything useful to grade with.
+
+I want to build one from scratch that actually gives me diagnostic data on where each student is struggling, and that students can understand well enough to self-assess before submitting. Before I write the rubric itself, help me figure out what it should measure, how many categories it needs, and what the four levels should be called — so the rubric gives me teaching-relevant information, not just a score.$pf$,
+ $pf$A 6th-grade argument writing rubric should do two things at once: give you the diagnostic information you need to plan instruction, and be clear enough that a 12-year-old can tell which column their paper falls into without your help. Those two goals are in tension — more diagnostic precision means more language complexity. Here's how to balance them.
+
+**What to measure (5 categories for CCSS.W.6.1):**
+
+1. **Claim** — Is there a clear, defensible thesis in the introduction that takes a position? Not just a topic statement — a view the writer will defend.
+2. **Evidence and reasoning** — Does the writer use at least two pieces of evidence? Is each piece followed by an explanation of how it supports the claim? This is the "so what" skill — the one most 6th graders skip.
+3. **Counterclaim** — Does the writer acknowledge an opposing view and respond to it? (W.6.1b specifically requires this; it needs its own category because students treat it as optional unless it's graded separately.)
+4. **Organization** — Does the paper follow a logical structure? Clear introduction, body paragraphs in a sensible order, conclusion that goes beyond restating the intro?
+5. **Language and conventions** — Is the language formal and appropriate? Are transitions present? Is it free of errors that interrupt reading?
+
+**Why five and not more:**
+Six or more categories makes grading feel grinding and assessment feel unpredictable to students. Five categories maps exactly to the five elements students need to internalize, and it matches most CCSS-aligned state rubrics — so if students move schools, the framework transfers.
+
+**The four-level structure:**
+Avoid Excellent / Good / Fair / Poor — those are comparative labels that tell students how they rank but not what they need to fix. Use a descriptive-progress model instead:
+- **Proficient** — fully meets the standard; shows the skill at grade level
+- **Approaching** — understands the skill but is missing one key element
+- **Emerging** — attempts the skill but the attempt is incomplete or unclear
+- **Beginning** — does not yet attempt the skill, or the attempt is absent
+
+This language works for instruction: "everyone at Emerging on counterclaim meets me in the back after the gallery walk" is a regrouping move you can make in real time. Proficient / Approaching / Emerging / Beginning also avoids the shame signal of "Poor" or "Needs Improvement."
+
+**Points mapping:**
+Proficient = 4, Approaching = 3, Emerging = 2, Beginning = 1. Total out of 20. Resist the urge to weight categories differently at this stage — it adds complexity without adding diagnostic value, and weighting is something to revisit after you've seen what the rubric actually measures in practice.$pf$,
+ NULL),
+
+-- Step 2 --
+('77777777-7777-7777-7777-777777109002',
+ '55555555-5555-5555-5555-555555550109',
+ 2,
+ $pf$That structure makes total sense — especially keeping the counterclaim as its own row. That's the skill my class skips most.
+
+Now can you write the full rubric? All five categories with all four levels. I want the descriptors written in language a 6th grader can actually read — short sentences, no SAT vocabulary — but specific enough that I can grade with it and it tells me something useful about where to reteach. This is the version I'll post in Google Classroom and put on the assignment sheet. Write it as the finished document.$pf$,
+ $pf$Here's the complete rubric. Every descriptor is written to describe what is on the page — not what the student knows, not what they intended. A student who reads their paper and then reads the rubric should be able to place themselves without asking you.
+
+---
+
+**Argument Writing Rubric — Grade 6 (CCSS.W.6.1)**
+
+**Claim**
+- Proficient (4): Writes a clear, specific claim in the introduction that takes a position. The claim is not a fact or a topic — it states a view the writer will defend.
+- Approaching (3): Writes a claim, but it is too broad, too vague, or only partially takes a position. A reader might guess what the writer thinks but is not sure.
+- Emerging (2): Attempts a claim, but it is stated as a fact, a question, or a general topic without a clear position.
+- Beginning (1): No claim is present in the introduction, or the introduction is missing.
+
+**Evidence and Reasoning**
+- Proficient (4): Uses at least two pieces of specific evidence (quotes, facts, or examples). Each piece is followed by at least one sentence explaining how it supports the claim.
+- Approaching (3): Uses two pieces of evidence but at least one is missing an explanation. The reader has to infer the connection.
+- Emerging (2): Uses evidence, but it is vague, repeated, or not clearly connected to the claim. Explanation is missing or only restates the evidence without adding reasoning.
+- Beginning (1): Evidence is absent, or the writing uses opinions and assumptions in place of evidence.
+
+**Counterclaim**
+- Proficient (4): Acknowledges a real opposing view and responds to it. The response explains why the writer's position is still stronger.
+- Approaching (3): Mentions the opposing view but does not respond to it. Or responds, but the response does not actually address the counterargument.
+- Emerging (2): Attempts to mention another view, but it is too brief or too vague to count as a real counterclaim.
+- Beginning (1): No counterclaim is present.
+
+**Organization**
+- Proficient (4): Has a clear introduction, body paragraphs in a logical order, and a conclusion. Each paragraph focuses on one idea. Transitions connect ideas between sentences and paragraphs.
+- Approaching (3): Structure is mostly clear, but one section is missing, out of order, or the conclusion only restates the introduction. Transitions are present but uneven.
+- Emerging (2): A structure is attempted, but paragraphs are hard to follow or seem out of order. Transitions are rare or missing.
+- Beginning (1): Writing does not have clear paragraphs or a recognizable structure.
+
+**Language and Conventions**
+- Proficient (4): Uses formal language appropriate for school writing. No slang. Sentences are complete and varied. Spelling and punctuation errors are rare and do not interrupt reading.
+- Approaching (3): Uses mostly formal language, with occasional slang or casual phrases. Most sentences are complete. Some errors that slow reading.
+- Emerging (2): Mixes formal and informal language. Some run-ons or fragments. Errors are frequent enough to interrupt reading in places.
+- Beginning (1): Language is mostly informal or unclear. Errors make it difficult to understand the writing.
+
+---
+
+Scoring: 4 points per category / 20 points total.
+- 18–20: Proficient — meets the standard
+- 14–17: Approaching — close to standard, specific gap visible in the rubric
+- 8–13: Emerging — reteach priority; identify which category or categories are dragging the score
+- 4–7: Beginning — intervention needed; consider whether the student needs a different support structure before the next draft
+
+One grading note: the Counterclaim "Approaching" descriptor ("mentions the opposing view but does not respond to it") catches probably 60% of your class. That is a teaching problem, not a rubric problem — they know they are supposed to include it, but they think acknowledging it is the same as answering it. This row makes that visible, which means you can address it directly in a 5-minute mini-lesson rather than writing "add a counterclaim response" on 20 papers.$pf$,
+ NULL),
+
+-- Step 3 --
+('77777777-7777-7777-7777-777777109003',
+ '55555555-5555-5555-5555-555555550109',
+ 3,
+ $pf$The rubric is exactly what I needed — especially that note about the counterclaim "Approaching" descriptor. That's going to be useful.
+
+Now I want to give students a self-assessment version they can use while writing, not after I return their graded paper. It should help them catch their own gaps before submitting. And I want a model paragraph I can project in class — one that shows what Proficient looks like on evidence and reasoning specifically, because that's the skill they're all weakest at right now. Write both.$pf$,
+ $pf$Here's the student checklist and the model paragraph.
+
+---
+
+**Student Self-Assessment Checklist — Argument Writing**
+Read your paper once all the way through, then use this checklist.
+
+**Claim**
+☐ My introduction has a sentence that says what I believe — not a fact, not a question, but my position.
+☐ A reader who knows nothing about this topic could read my claim and know exactly which side I am on.
+
+**Evidence and Reasoning**
+☐ I have at least two specific pieces of evidence (a quote, a statistic, or a real example — not "many people think" or "some experts say").
+☐ After each piece of evidence, I have at least one sentence that explains WHY that evidence supports my claim.
+
+**Counterclaim**
+☐ I mentioned a reason someone might disagree with me — and it is a real reason, not a weak one I invented to knock down.
+☐ I explained why my argument is still stronger. (I did not just say "but some people disagree.")
+
+**Organization**
+☐ My paper has a clear beginning, middle, and end.
+☐ Each body paragraph is about one main idea.
+☐ I used transitions between paragraphs (words like "first," "in addition," "however," "as a result," "this shows that").
+
+**Language and Conventions**
+☐ I used formal language — no slang, no "I think personally," no "in today's society."
+☐ I reread my paper and fixed any sentences that felt like they ran together or stopped too early.
+☐ I checked spelling on any word I was not certain about.
+
+**What to do before submitting:**
+If you could not check both counterclaim boxes, add a counterclaim paragraph before submitting. That is the most common reason papers land at Approaching instead of Proficient. It does not have to be long — three sentences is enough: one sentence introducing the opposing view, one sentence explaining why someone might hold it, one sentence explaining why your argument is still stronger.
+
+---
+
+**Model Paragraph: Evidence + Reasoning (project this and annotate together)**
+
+Topic: Should schools require students to wear uniforms?
+Claim being defended: School uniforms reduce distractions and help students focus on learning.
+
+---
+One study conducted by the University of Houston found that girls' reading test scores improved significantly after schools in the district adopted a uniform policy. This matters because reading scores are a direct measure of classroom focus — students who spend less mental energy on what they or others are wearing spend more of it on academic work. If something as simple as a standardized dress code can move test scores, the inconvenience of following a dress code is worth it.
+---
+
+Walk through it with the class line by line:
+- Evidence: "One study… found that girls' reading test scores improved" — specific source, specific finding.
+- Reasoning sentence 1: "This matters because…" — explains why the evidence is relevant, not just what happened.
+- Reasoning sentence 2: "If something as simple as…" — connects back to the claim and draws the "so what."
+
+Notice that the two reasoning sentences are longer than the evidence sentence. That ratio is intentional and correct. Evidence is the fact; reasoning is the argument. Most 6th-grade papers are heavy on evidence and skip the reasoning entirely — this model makes the reasoning visible as the larger and more important part.
+
+Give students a scaffold to use on their own paragraphs: Evidence → "This matters because…" → "This shows that…" The scaffold is mechanical at first. That is fine. The goal is to make the evidence-then-reasoning habit automatic, and the scaffold comes off once it is.$pf$,
+ NULL);
+
 ALTER TABLE prompts ENABLE ROW LEVEL SECURITY;
 ALTER TABLE prompt_steps ENABLE ROW LEVEL SECURITY;

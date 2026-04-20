@@ -38252,5 +38252,744 @@ For multi-brand: the semantic token layer is in place. Q3 brand work is a token-
 The OKR structure matters here because it separates outcomes from activities. "Zero new Category C forks after governance launches" is a result you can measure — it tells product and engineering that governance is working. "Design system committee formed" is a milestone that proves nothing by itself; it is included as a dependency, not a result. Present the key results first in the planning meeting, then walk to the work items — that framing keeps the room focused on why the work matters, not just what it is.$pf$,
  NULL);
 
+-- =========================================================================
+-- Project 55-0106 | B2B SaaS churn survival analysis | Raj Patel | Data | 5 steps
+-- =========================================================================
+
+DELETE FROM prompt_steps WHERE prompt_id = '55555555-5555-5555-5555-555555550106';
+DELETE FROM prompts      WHERE id        = '55555555-5555-5555-5555-555555550106';
+
+INSERT INTO prompts (
+  id, title, description, content, result_content,
+  category_id, difficulty, model_used, model_recommendation,
+  tools_used, tags, status, author_id, vote_count, bookmark_count
+) VALUES (
+  '55555555-5555-5555-5555-555555550106',
+  $pf$Predicted churn three months out using a Cox model — CS team caught 11 at-risk renewals in week one$pf$,
+  $pf$Raj Patel, data analyst consultant embedded at Canopy (B2B project management SaaS for architecture and engineering firms), builds a Cox proportional hazards model to surface at-risk accounts 90+ days before renewal. Five-step chain: survival analysis vs logistic regression trade-offs, feature engineering from raw Postgres event logs, Cox model with lifelines and hazard ratio interpretation, capacity-aware threshold calibration for the CS team, and a weekly dbt model with automated Slack alerts.$pf$,
+  $pf$I was brought in by Canopy's head of revenue after they noticed a pattern: accounts that churned had gone quiet for 60 to 90 days before the renewal call, and by the time the CSM reached out, the decision had already been made. Two CSMs managing 400 accounts. Nobody had time to check in weekly on everyone. The informal system was whoever is loudest gets attention — which meant the accounts most in need of a conversation were least likely to get one.
+
+We had event data going back two years: logins, feature usage events, support tickets, billing history. Everything you'd need to build a prediction system. But no one had.
+
+I spent three weeks building a survival model that runs every Monday morning and posts a ranked at-risk list to a Slack channel. The CSMs see which accounts to call that week, what the leading signals are, and how much time they have before the next renewal window. First run after launch: 11 accounts flagged as elevated-hazard. Nine accepted outreach. Seven renewed after targeted intervention. Two were genuine churns — one already had a Notion workspace migration underway before we flagged them. That one told us exactly what drove the decision, which was useful in a different way.$pf$,
+  $pf$Eleven at-risk accounts surfaced in the first week. Seven renewed after targeted CS intervention. The model runs every Monday morning, costs nothing beyond compute time, and the CSMs now have a prioritized contact list before their week starts — instead of a 400-row CRM sorted by deal size.$pf$,
+  '11111111-1111-1111-1111-111111111108',
+  'intermediate',
+  'claude-opus-4-6',
+  'Claude 4.6 Opus',
+  ARRAY['Claude', 'Python', 'lifelines', 'dbt', 'Slack API', 'Snowflake'],
+  ARRAY['churn-prediction', 'survival-analysis', 'customer-success', 'data-science', 'dbt', 'b2b-saas'],
+  'approved',
+  '22222222-2222-2222-2222-222222222207',
+  0, 0
+);
+
+INSERT INTO prompt_steps (id, prompt_id, step_number, title, content, result_content, description) VALUES
+
+-- Step 1 --
+('77777777-7777-7777-7777-777777106001',
+ '55555555-5555-5555-5555-555555550106',
+ 1,
+ $pf$Choosing between survival analysis and logistic regression for churn prediction$pf$,
+ $pf$I have been asked to build a churn prediction model for a B2B SaaS company called Canopy — project management software for architecture and engineering firms. About 400 customer accounts, two CSMs. The ask is to surface at-risk accounts 60 to 90 days before their renewal date so the CS team has time to intervene. We have two years of product usage events in Postgres — logins, feature events, support ticket counts, billing history — plus the renewal date and whether each account ultimately churned.
+
+I have built logistic regression churn models before and they work fine for "will this account churn in the next 90 days yes or no." But a colleague suggested Cox proportional hazards models instead, and I read a post that described Cox as strictly better for churn. I am skeptical — "strictly better" is almost never true in practice.
+
+What is the honest trade-off between Cox proportional hazards and logistic regression for this use case? When does survival analysis actually add something that logistic regression cannot? And for a B2B SaaS with 400 accounts and a renewal-cycle structure, which would you actually reach for first?$pf$,
+ $pf$The "strictly better" framing is oversimplified. They answer different questions, and the right choice depends on what you're asking.
+
+**What logistic regression answers**
+Given everything I know about an account today, what is the probability it churns within the next N days? You define N at training time — say 90 days. The model returns a score from 0 to 1. Conceptually simple, fast to interpret, robust on small samples, and often good enough if you just need a weekly ranked list of accounts to call.
+
+The limitation: you pick a window and stick with it. If your renewal cycles vary in length — some monthly, some annual, some 14 months because someone negotiated mid-cycle — a fixed 90-day window treats them identically. A monthly account with 30 days to renewal and an annual account with 30 days to renewal have very different risk profiles. Logistic regression doesn't know the difference unless you explicitly engineer that context.
+
+**What Cox proportional hazards answers**
+Given what I know about an account, what is the instantaneous risk rate of churning at any given point in its lifecycle, relative to a baseline? The output is a hazard ratio per feature, and from that you can derive a per-account survival curve showing the probability of remaining a customer at 30, 60, 90, or 180 days from now.
+
+The genuine advantages for your use case:
+
+1. **Censored observations.** Accounts that haven't churned yet are censored — you know they survived to today but not their eventual fate. Cox handles censoring natively. With only 400 accounts and 2 years of data, this matters. Logistic regression requires careful handling or exclusion of recent-joiners.
+2. **Conditional survival output.** Instead of "73% churn probability in 90 days," you can say "this account has a 42% probability of churning before its renewal on March 15." That framing is more actionable for a CSM who needs to prioritize calls.
+3. **Time-varying covariates.** Cox naturally handles features like "days since last login is now 45 days and rising" — time-dependent signals that change as the account ages.
+
+**The honest case for starting with logistic regression**
+With 400 accounts, you have a small dataset. A Cox model with 15 features needs enough churn events to be stable — if you have 40-50 churns in two years, you're near the lower bound of statistical comfort for Cox. Logistic regression is more robust to sparse data in this range.
+
+**My recommendation**
+Build logistic regression first. Get a working model and AUC baseline plus precision-at-top-20 accounts. This usually takes a day or two and gives you a comparison point. Then build Cox as a second pass. The conditional survival output is more operationally useful for CSMs, and it handles censoring cleanly. But don't skip the logistic baseline — if Cox doesn't meaningfully outperform it on your 400-account dataset, you've learned something real about your data.
+
+One gotcha specific to B2B renewal cycles: "time at risk" in survival analysis is best defined as months since contract start, not months since signup. Decide what the clock is measuring before you fit either model.$pf$,
+ NULL),
+
+-- Step 2 --
+('77777777-7777-7777-7777-777777106002',
+ '55555555-5555-5555-5555-555555550106',
+ 2,
+ $pf$Feature engineering from Canopy's Postgres event tables$pf$,
+ $pf$Good framing — I am going to build logistic regression as the baseline first, then compare to Cox. Before I write any model code I want to get the feature engineering right, because that is usually where churn models live or die.
+
+Here is what we have in Postgres. Four relevant tables:
+- accounts — account_id, contract_start_date, renewal_date, plan_tier (Starter/Growth/Enterprise), arr_usd, churned (boolean), churn_date (nullable), headcount_bucket
+- events — account_id, user_id, event_type, event_timestamp (two years, about 40 million rows)
+- support_tickets — account_id, created_at, resolved_at, priority (low/medium/high/critical)
+- billing — account_id, invoice_date, amount_usd, payment_status (paid/late/failed)
+
+The prediction target is 90-day churn: will this account churn within 90 days from the feature extraction date? I will generate training samples as one row per account per month, labeled by whether they churned in the following 90 days.
+
+What features would you extract from these tables and what signals would you prioritize? I want practical SQL, not a textbook feature list.$pf$,
+ $pf$Feature engineering is where churn models win or lose, and the specific features you choose signal whether you understand the product. Here is the approach for a B2B project management tool.
+
+**The signal hierarchy**
+Three signals consistently outperform everything else in B2B SaaS churn models:
+
+1. **Usage trajectory, not level.** An account at 60% of its peak usage is more at-risk than one that has always been at 30%. Slope tells you more than absolute value.
+2. **Breadth of user adoption.** How many users are active, and is that count shrinking? Single-user adoption in a team-licensed product is a clear early-churn signal.
+3. **Recency of high-value events.** For project management software, "days since last project created" is usually more predictive than total login count.
+
+**Feature extraction SQL (snapshot as of :snapshot_date)**
+
+```sql
+-- Usage features per account
+SELECT
+    a.account_id,
+    a.plan_tier,
+    a.arr_usd,
+    a.headcount_bucket,
+    -- Recency
+    EXTRACT(EPOCH FROM (:snapshot_date - MAX(e.event_timestamp))) / 86400
+        AS days_since_last_activity,
+    EXTRACT(EPOCH FROM (:snapshot_date - MAX(
+        CASE WHEN e.event_type = 'project_created' THEN e.event_timestamp END
+    ))) / 86400 AS days_since_last_project_created,
+    -- Active user count: last 28 days vs prior 28 days
+    COUNT(DISTINCT CASE WHEN e.event_timestamp >= :snapshot_date - INTERVAL '28 days'
+        THEN e.user_id END) AS active_users_l28,
+    COUNT(DISTINCT CASE WHEN e.event_timestamp >= :snapshot_date - INTERVAL '56 days'
+        AND e.event_timestamp < :snapshot_date - INTERVAL '28 days'
+        THEN e.user_id END) AS active_users_p28,
+    -- Engagement depth
+    COUNT(DISTINCT CASE WHEN e.event_timestamp >= :snapshot_date - INTERVAL '28 days'
+        THEN e.event_type END) AS distinct_feature_types_l28,
+    COUNT(CASE WHEN e.event_timestamp >= :snapshot_date - INTERVAL '28 days'
+        THEN 1 END) AS total_events_l28,
+    COUNT(CASE WHEN e.event_timestamp >= :snapshot_date - INTERVAL '90 days'
+        THEN 1 END) AS total_events_l90,
+    -- Usage ratio: are they doing more or less than last period?
+    CASE
+        WHEN COUNT(CASE WHEN e.event_timestamp >= :snapshot_date - INTERVAL '56 days'
+            AND e.event_timestamp < :snapshot_date - INTERVAL '28 days' THEN 1 END) = 0 THEN NULL
+        ELSE COUNT(CASE WHEN e.event_timestamp >= :snapshot_date - INTERVAL '28 days'
+            THEN 1 END)::float /
+            NULLIF(COUNT(CASE WHEN e.event_timestamp >= :snapshot_date - INTERVAL '56 days'
+                AND e.event_timestamp < :snapshot_date - INTERVAL '28 days' THEN 1 END), 0)
+    END AS usage_ratio_l28_vs_p28
+FROM accounts a
+LEFT JOIN events e ON e.account_id = a.account_id
+    AND e.event_timestamp <= :snapshot_date
+GROUP BY a.account_id, a.plan_tier, a.arr_usd, a.headcount_bucket;
+```
+
+Join in support and billing signals via CTEs:
+
+```sql
+support_features AS (
+    SELECT account_id,
+        COUNT(*) FILTER (WHERE created_at >= :snapshot_date - INTERVAL '90 days')
+            AS support_tickets_l90,
+        COUNT(*) FILTER (WHERE created_at >= :snapshot_date - INTERVAL '90 days'
+            AND priority IN ('high', 'critical'))
+            AS high_priority_tickets_l90
+    FROM support_tickets GROUP BY account_id
+),
+billing_features AS (
+    SELECT account_id,
+        MAX(CASE WHEN payment_status = 'late'
+            AND invoice_date >= :snapshot_date - INTERVAL '180 days' THEN 1 ELSE 0 END)
+            AS had_late_payment_l180,
+        COUNT(*) FILTER (WHERE payment_status IN ('late', 'failed')
+            AND invoice_date >= :snapshot_date - INTERVAL '180 days')
+            AS payment_issues_l180
+    FROM billing GROUP BY account_id
+)
+```
+
+**Derived columns to add in Python after the SQL pull:**
+- `active_user_decline`: active_users_l28 minus active_users_p28 (negative = shrinking adoption)
+- `days_to_renewal`: renewal_date minus snapshot_date as float
+- `tenure_days`: snapshot_date minus contract_start_date as float
+
+**What to deprioritize initially:** NLP on support ticket text (high effort, small gain at 400 accounts), invoice amount changes (correlated with plan tier you already have), and event-type frequency distributions (too many sparse features for this sample size — use breadth and depth instead).
+
+One calibration note: check label imbalance before picking a metric. At 8-10% annual churn and a 90-day prediction window, labels will be heavily skewed toward zero. Use precision-at-top-K (the CSMs can only call 20 accounts per week anyway) rather than accuracy or overall AUC.$pf$,
+ NULL),
+
+-- Step 3 --
+('77777777-7777-7777-7777-777777106003',
+ '55555555-5555-5555-5555-555555550106',
+ 3,
+ $pf$Building the Cox proportional hazards model with lifelines and interpreting hazard ratios$pf$,
+ $pf$The logistic regression baseline came out at AUC 0.76 and precision-at-20 of 0.60 — 60% of the top 20 flagged accounts in the validation set actually churned within 90 days. Workable. Now I want to build the Cox model to compare.
+
+I have the feature dataframe from the SQL. For Cox I need a duration column (days from contract start to churn or to snapshot) and an event-observed column (1 if churned, 0 if censored). I have both.
+
+The challenge: the CSMs are not data people. When the model runs Monday, I need output they can act on, not hazard ratios. But I also need to understand what the model is telling me so I can sanity-check it before showing it to anyone.
+
+Write the Cox model fitting code using lifelines. Include: fit, proportional hazards assumption check, hazard ratio output with confidence intervals, and the per-account output format I should produce for the CSMs — survival probability at 30, 60, and 90 days ranked by churn risk.$pf$,
+ $pf$Here is the full Cox implementation with the CSM-facing output.
+
+```python
+import pandas as pd
+import numpy as np
+from lifelines import CoxPHFitter
+from lifelines.statistics import proportional_hazard_test
+from sklearn.preprocessing import StandardScaler
+
+# --- 1. Prepare the dataframe ---
+df_cox = df.dropna(subset=['duration_days', 'churned']).copy()
+
+# Impute missing features — Cox does not handle NaN
+continuous_features = [
+    'days_since_last_activity', 'days_since_last_project_created',
+    'active_users_l28', 'active_users_p28', 'distinct_feature_types_l28',
+    'total_events_l28', 'total_events_l90', 'usage_ratio_l28_vs_p28',
+    'support_tickets_l90', 'high_priority_tickets_l90',
+    'arr_usd', 'tenure_days',
+]
+for col in continuous_features:
+    df_cox[col] = df_cox[col].fillna(df_cox[col].median())
+df_cox['had_late_payment_l180'] = df_cox['had_late_payment_l180'].fillna(0)
+df_cox['payment_issues_l180']   = df_cox['payment_issues_l180'].fillna(0)
+df_cox['active_user_decline']   = df_cox['active_users_l28'] - df_cox['active_users_p28']
+
+# Scale features — Cox is not scale-invariant; large-range features dominate
+scaler = StandardScaler()
+df_cox[continuous_features] = scaler.fit_transform(df_cox[continuous_features])
+
+# --- 2. Fit ---
+feature_cols = continuous_features + [
+    'had_late_payment_l180', 'payment_issues_l180', 'active_user_decline'
+]
+cox = CoxPHFitter(penalizer=0.1)   # L2 penalty — important with 400 accounts
+cox.fit(
+    df_cox[feature_cols + ['duration_days', 'churned']],
+    duration_col='duration_days',
+    event_col='churned',
+    show_progress=False,
+)
+
+# --- 3. Proportional hazards assumption check ---
+# Violation means hazard ratio changes over time — a model integrity issue
+results = proportional_hazard_test(
+    cox,
+    df_cox[feature_cols + ['duration_days', 'churned']],
+    time_transform='rank',
+)
+violations = results.summary[results.summary['p'] < 0.05]
+if not violations.empty:
+    print("PH assumption violated for:")
+    print(violations[['p', 'test_statistic']])
+    # Fix: stratify by the violating variable, or add a time interaction term
+
+# --- 4. Hazard ratios ---
+hr = cox.summary[['exp(coef)', 'exp(coef) lower 95%', 'exp(coef) upper 95%', 'p']]
+hr.columns = ['hazard_ratio', 'hr_lower', 'hr_upper', 'p_value']
+print(hr.sort_values('hazard_ratio', ascending=False).to_string())
+
+# --- 5. CSM-facing output: conditional survival at 30/60/90 days ---
+active = df_cox[df_cox['churned'] == 0].copy()
+survival_fns = cox.predict_survival_function(active[feature_cols])
+
+output = []
+for i, (idx, row) in enumerate(active.iterrows()):
+    t_now = row['duration_days']
+    sf = survival_fns.iloc[:, i]
+
+    def cond_surv(t_future, _sf=sf, _t=t_now):
+        s_f = np.interp(t_future, _sf.index, _sf.values)
+        s_n = np.interp(_t, _sf.index, _sf.values)
+        return s_f / s_n if s_n > 0 else 0.0
+
+    output.append({
+        'account_id': row['account_id'],
+        'renewal_date': row['renewal_date'],
+        'days_to_renewal': int(row['days_to_renewal']),
+        'arr_usd': row['arr_usd_raw'],
+        'p_survive_30d': round(cond_surv(t_now + 30), 3),
+        'p_survive_60d': round(cond_surv(t_now + 60), 3),
+        'p_survive_90d': round(cond_surv(t_now + 90), 3),
+        'churn_risk_score': round(1 - cond_surv(t_now + 90), 3),
+    })
+
+csm_output = pd.DataFrame(output).sort_values('churn_risk_score', ascending=False)
+```
+
+**Reading the hazard ratios**
+An HR of 1.8 on `days_since_last_activity` (standardized) means a one-SD increase in days-since-last-login is associated with 80% higher instantaneous churn hazard, holding all else equal. Expect HRs above 1.3 on recency and usage-decline features, and HRs below 0.7 on active-user-count and feature-breadth — those confirm the model is picking up the signals you expected. Wide 95% confidence intervals spanning 1.0 mean the feature isn't contributing reliably at this sample size; consider dropping it.
+
+Note on conditional survival: the `cond_surv` calculation — P(survive to T+horizon | survived to T) — is the correct framing for "will this account churn before renewal." Unconditional survival from time 0 underestimates churn risk for long-tenured accounts.$pf$,
+ NULL),
+
+-- Step 4 --
+('77777777-7777-7777-7777-777777106004',
+ '55555555-5555-5555-5555-555555550106',
+ 4,
+ $pf$Calibrating the at-risk threshold for CS team capacity$pf$,
+ $pf$The Cox model is outperforming logistic regression on the validation set — AUC 0.81 vs 0.76, precision-at-20 improved from 0.60 to 0.70. Going with Cox.
+
+Now I need to calibrate the threshold. You used 0.35 as a placeholder in the last step. The CS team can make 15 proactive calls per week — that is their realistic capacity, they also have inbound. False positives are annoying but not catastrophic; false negatives are expensive. A missed at-risk account that churns costs the ARR.
+
+How should I think about threshold calibration given this asymmetry? For context: 400 accounts, 2 CSMs at 15 calls per week capacity, roughly 8 to 10 percent annual churn rate (32 to 40 churns expected per year), CSM time costs roughly $40 per hour, average ARR per churned account is $12,000.$pf$,
+ $pf$The cost asymmetry you described makes this a false-negative-averse problem. Let me work through the calibration logic numerically.
+
+**Putting dollar values on errors**
+- Cost of a false positive: one proactive call is roughly 30 minutes of CSM time = $20. Plus the mild awkwardness of calling a healthy account. Call it $25 total.
+- Cost of a false negative: one missed churn at $12,000 ARR. Even at a 20% save rate — meaning you convert 1 in 5 accounts you reach out to — each caught account is worth $2,400 in expectation. The cost of missing one is therefore roughly $2,400.
+
+Ratio: false-negative cost / false-positive cost = $2,400 / $25 = 96. You can absorb 96 false-positive calls to avoid missing one churn. That is an extremely asymmetric loss function — it pushes you toward a low threshold and toward catching everything.
+
+**The binding constraint is capacity, not the loss function**
+15 calls per week × 52 weeks = 780 call-slots per year. With 8-10% churn across 400 accounts, you have 32-40 genuine churn events per year. If the model flags 15 accounts every single week, you are spending 780 slots to catch ~36 events — a positive rate of about 4.6%, meaning 95.4% of your proactive calls are false positives. That is theoretically optimal given the loss function above, but it will destroy CSM buy-in. When 20 of every 21 "at-risk" calls go nowhere, the CSMs stop trusting the model and stop making the calls.
+
+**My recommendation: capacity-aware dynamic threshold instead of a fixed scalar**
+
+```python
+def get_weekly_at_risk(df_scored, capacity=15, min_score=0.20):
+    """
+    Returns top `capacity` accounts by churn_risk_score with a floor
+    of min_score to prevent flagging genuinely healthy accounts
+    during low-churn months.
+    """
+    eligible = df_scored[df_scored['churn_risk_score'] >= min_score].copy()
+    return eligible.nlargest(capacity, 'churn_risk_score')
+```
+
+The `min_score=0.20` floor is the key design choice: during quiet months, it prevents the model from filling all 15 slots with accounts at 3-5% churn probability — those calls are wasted. In practice, monitor the first four weeks: if you consistently get fewer than 10 accounts above 0.20, lower the floor to 0.15. If you're regularly returning 40+ accounts above 0.20, raise it to 0.30 until the model has more history to calibrate on.
+
+One operational nuance: a `days_to_renewal` filter is worth adding. Flagging an account with 200 days to renewal and 25% churn risk gives the CSM nowhere to land the conversation — there's nothing to discuss about renewal yet. A practical range is accounts with renewals 30-180 days out. Accounts inside 30 days are almost certainly already in a renewal conversation and don't need cold outreach.$pf$,
+ NULL),
+
+-- Step 5 --
+('77777777-7777-7777-7777-777777106005',
+ '55555555-5555-5555-5555-555555550106',
+ 5,
+ $pf$Weekly dbt model and Slack alert for automated Monday morning delivery$pf$,
+ $pf$This is working well. The model ran for the first time in production on Monday and surfaced 11 accounts with churn_risk_score above 0.20 in the top-15 bucket. Nine accepted outreach calls. This is already more than happened last month with no system.
+
+Now I need to make it self-sustaining. Right now I am running the Python scoring script manually each Monday morning before standup. The head of revenue wants it to run automatically and post to a Slack channel at 8am so the CSMs see it before their week starts.
+
+The data lives in Snowflake — that is where the dbt project is. The scoring logic is in Python. What is the right architecture? I want the feature extraction to be a dbt model that materializes weekly, then a lightweight Python script that loads the dbt output, runs the Cox model (pre-fitted and saved), and posts the ranked at-risk list to Slack.$pf$,
+ $pf$Architecture: dbt for feature materialization, Python for scoring, Slack for delivery. Both components are straightforward.
+
+**dbt model: `models/marts/churn/churn_features_weekly.sql`**
+
+```sql
+-- Materialized as table; runs on the weekly dbt job schedule.
+-- Downstream: loaded by churn_score.py for Cox model scoring.
+
+{{ config(materialized='table', tags=['churn', 'weekly']) }}
+
+WITH base_accounts AS (
+    SELECT
+        account_id, contract_start_date, renewal_date, plan_tier, arr_usd, headcount_bucket,
+        CURRENT_DATE AS snapshot_date,
+        DATEDIFF('day', contract_start_date, CURRENT_DATE) AS tenure_days,
+        DATEDIFF('day', CURRENT_DATE, renewal_date)        AS days_to_renewal
+    FROM {{ ref('dim_accounts') }}
+    WHERE churned = FALSE
+      AND renewal_date BETWEEN CURRENT_DATE + 30 AND CURRENT_DATE + 180
+),
+usage_features AS (
+    SELECT
+        e.account_id,
+        DATEDIFF('day', MAX(e.event_timestamp), CURRENT_DATE)           AS days_since_last_activity,
+        DATEDIFF('day', MAX(CASE WHEN e.event_type = 'project_created'
+            THEN e.event_timestamp END), CURRENT_DATE)                  AS days_since_last_project_created,
+        COUNT(DISTINCT CASE WHEN e.event_timestamp >= CURRENT_DATE - 28
+            THEN e.user_id END)                                         AS active_users_l28,
+        COUNT(DISTINCT CASE WHEN e.event_timestamp >= CURRENT_DATE - 56
+            AND e.event_timestamp < CURRENT_DATE - 28
+            THEN e.user_id END)                                         AS active_users_p28,
+        COUNT(DISTINCT CASE WHEN e.event_timestamp >= CURRENT_DATE - 28
+            THEN e.event_type END)                                      AS distinct_feature_types_l28,
+        COUNT(CASE WHEN e.event_timestamp >= CURRENT_DATE - 28  THEN 1 END) AS total_events_l28,
+        COUNT(CASE WHEN e.event_timestamp >= CURRENT_DATE - 90  THEN 1 END) AS total_events_l90,
+        ZEROIFNULL(
+            COUNT(CASE WHEN e.event_timestamp >= CURRENT_DATE - 28 THEN 1 END)::float
+            / NULLIF(COUNT(CASE WHEN e.event_timestamp >= CURRENT_DATE - 56
+                AND e.event_timestamp < CURRENT_DATE - 28 THEN 1 END), 0)
+        ) AS usage_ratio_l28_vs_p28
+    FROM {{ ref('fct_events') }} e
+    WHERE e.event_timestamp >= CURRENT_DATE - 180
+    GROUP BY e.account_id
+),
+support_features AS (
+    SELECT account_id,
+        COUNT(*) FILTER (WHERE created_at >= CURRENT_DATE - 90)                          AS support_tickets_l90,
+        COUNT(*) FILTER (WHERE created_at >= CURRENT_DATE - 90
+            AND priority IN ('high','critical'))                                          AS high_priority_tickets_l90
+    FROM {{ ref('fct_support_tickets') }} GROUP BY account_id
+),
+billing_features AS (
+    SELECT account_id,
+        MAX(CASE WHEN payment_status = 'late'
+            AND invoice_date >= CURRENT_DATE - 180 THEN 1 ELSE 0 END) AS had_late_payment_l180,
+        COUNT(*) FILTER (WHERE payment_status IN ('late','failed')
+            AND invoice_date >= CURRENT_DATE - 180)                    AS payment_issues_l180
+    FROM {{ ref('fct_billing') }} GROUP BY account_id
+)
+SELECT
+    a.*,
+    COALESCE(u.days_since_last_activity,        90) AS days_since_last_activity,
+    COALESCE(u.days_since_last_project_created, 90) AS days_since_last_project_created,
+    COALESCE(u.active_users_l28,                 0) AS active_users_l28,
+    COALESCE(u.active_users_p28,                 0) AS active_users_p28,
+    COALESCE(u.distinct_feature_types_l28,       0) AS distinct_feature_types_l28,
+    COALESCE(u.total_events_l28,                 0) AS total_events_l28,
+    COALESCE(u.total_events_l90,                 0) AS total_events_l90,
+    COALESCE(u.usage_ratio_l28_vs_p28,           0) AS usage_ratio_l28_vs_p28,
+    COALESCE(u.active_users_l28, 0) - COALESCE(u.active_users_p28, 0) AS active_user_decline,
+    COALESCE(s.support_tickets_l90,              0) AS support_tickets_l90,
+    COALESCE(s.high_priority_tickets_l90,        0) AS high_priority_tickets_l90,
+    COALESCE(b.had_late_payment_l180,            0) AS had_late_payment_l180,
+    COALESCE(b.payment_issues_l180,              0) AS payment_issues_l180
+FROM base_accounts a
+LEFT JOIN usage_features   u ON u.account_id = a.account_id
+LEFT JOIN support_features s ON s.account_id = a.account_id
+LEFT JOIN billing_features b ON b.account_id = a.account_id
+```
+
+**Python scoring script: `churn_score.py`**
+
+```python
+"""churn_score.py — weekly scoring and Slack delivery.
+Schedule: cron 0 8 * * 1  (Monday 8am UTC, after dbt weekly job completes)
+"""
+import os, pickle
+import numpy as np
+import pandas as pd
+import snowflake.connector
+from slack_sdk import WebClient
+
+FEATURE_COLS = [
+    'days_since_last_activity','days_since_last_project_created',
+    'active_users_l28','active_users_p28','distinct_feature_types_l28',
+    'total_events_l28','total_events_l90','usage_ratio_l28_vs_p28',
+    'support_tickets_l90','high_priority_tickets_l90',
+    'arr_usd','tenure_days','had_late_payment_l180',
+    'payment_issues_l180','active_user_decline',
+]
+CONTINUOUS = [c for c in FEATURE_COLS
+              if c not in ('had_late_payment_l180','payment_issues_l180')]
+CAPACITY, MIN_SCORE = 15, 0.20
+
+def load_features():
+    conn = snowflake.connector.connect(
+        account=os.environ['SNOWFLAKE_ACCOUNT'],
+        user=os.environ['SNOWFLAKE_USER'],
+        password=os.environ['SNOWFLAKE_PASSWORD'],
+        warehouse=os.environ['SNOWFLAKE_WAREHOUSE'],
+        database='analytics', schema='marts_churn',
+    )
+    df = pd.read_sql("SELECT * FROM churn_features_weekly", conn)
+    conn.close()
+    return df
+
+def score(df, cox, scaler):
+    X = df[FEATURE_COLS].fillna(0).copy()
+    X[CONTINUOUS] = scaler.transform(X[CONTINUOUS])
+    surv_fns = cox.predict_survival_function(X)
+    rows = []
+    for i, (_, row) in enumerate(df.iterrows()):
+        t = row['tenure_days']
+        sf = surv_fns.iloc[:, i]
+        def cs(h, _sf=sf, _t=t):
+            return np.interp(h, _sf.index, _sf.values) / max(np.interp(_t, _sf.index, _sf.values), 1e-9)
+        rows.append({
+            'account_id': row['account_id'], 'arr_usd': row['arr_usd'],
+            'renewal_date': row['renewal_date'],
+            'days_to_renewal': int(row['days_to_renewal']),
+            'churn_risk_score': round(1 - cs(t + 90), 3),
+        })
+    return pd.DataFrame(rows).sort_values('churn_risk_score', ascending=False)
+
+def post_slack(at_risk):
+    lines = [
+        f"*At-Risk Account Report — {pd.Timestamp.today().strftime('%b %d %Y')}*",
+        f"_{len(at_risk)} accounts flagged (top {CAPACITY}, min {int(MIN_SCORE*100)}% churn risk)_\n",
+    ]
+    for _, r in at_risk.iterrows():
+        lines.append(
+            f"- `{r['account_id']}` | *{int(r['churn_risk_score']*100)}% risk* | "
+            f"${int(r['arr_usd']/1000)}K ARR | renews in {r['days_to_renewal']}d"
+        )
+    WebClient(token=os.environ['SLACK_BOT_TOKEN']).chat_postMessage(
+        channel='#cs-at-risk-accounts', text="\n".join(lines), mrkdwn=True,
+    )
+
+if __name__ == '__main__':
+    with open('/opt/models/cox_v1.pkl','rb') as f: cox = pickle.load(f)
+    with open('/opt/models/scaler_v1.pkl','rb') as f: scaler = pickle.load(f)
+    df = load_features()
+    scored = score(df, cox, scaler)
+    at_risk = scored[scored['churn_risk_score'] >= MIN_SCORE].head(CAPACITY)
+    post_slack(at_risk)
+```
+
+Operational notes: pickle the Cox model and StandardScaler together after your first fitting run. Refit monthly rather than weekly — weekly refits on 400 accounts produce model drift from small-sample noise. The dbt `tags=['churn','weekly']` lets your orchestrator run this job separately from daily transforms and trigger `churn_score.py` on the job's success event.$pf$,
+ NULL);
+
+-- =========================================================================
+-- Project 55-0107 | Competitive intelligence workflow | Lena Morales | Strategy | 4 steps
+-- =========================================================================
+
+DELETE FROM prompt_steps WHERE prompt_id = '55555555-5555-5555-5555-555555550107';
+DELETE FROM prompts      WHERE id        = '55555555-5555-5555-5555-555555550107';
+
+INSERT INTO prompts (
+  id, title, description, content, result_content,
+  category_id, difficulty, model_used, model_recommendation,
+  tools_used, tags, status, author_id, vote_count, bookmark_count
+) VALUES (
+  '55555555-5555-5555-5555-555555550107',
+  $pf$Built a 30-minute-per-week competitive intel workflow — caught a competitor's pricing move before my Q2 cohort launched$pf$,
+  $pf$Lena Morales, solopreneur running Zestful (a freelancer personal finance tool at $14/month), builds a systematic competitive intelligence workflow after discovering — two months late — that a competitor had launched a free tier that was quietly eating her trial conversions. Four-step chain: mapping the competitive landscape and choosing what to track, setting up a free monitoring stack, building a competitive matrix, and translating the matrix into a concrete Q2 positioning and pricing decision.$pf$,
+  $pf$I ran Zestful for 18 months without any real competitive intelligence. My mental model was built from pre-launch research and never updated. I knew who the players were when I launched — FreshBooks Lite, Wave, Bonsai, a handful of Notion templates on Gumroad. That was it.
+
+Then I started losing trials faster than I expected in February. Not a flood — a steady leak. I set up a quick exit survey and started getting "found a free option that does what I need." I had no idea what free option they were talking about. Spent two hours searching and found that Bonsai had launched a free tier six weeks earlier — limited to three active clients. A lot of my trial conversions were freelancers with two or three clients who now had a free alternative.
+
+I had been running a 14-day trial at $14/month. If I had known about Bonsai's move, I would have extended my trial to 21 days or launched my own free tier for one client. Instead I found out from exit surveys two months after the damage.
+
+I used Claude to build a proper competitive intel system in one afternoon. Four passes: mapping the landscape and deciding what signals actually matter, setting up a monitoring stack I can maintain as a solo founder, building a matrix that generates decisions rather than just inventories, and turning that matrix into a concrete positioning and pricing decision for Q2.$pf$,
+  $pf$Launched a free-forever tier (one active client, all core features) and extended the paid trial from 14 to 21 days the week after completing this exercise. Trial-to-paid conversion improved from 31% to 38% over the following 60 days. The competitive monitoring system now runs passively — Friday review takes under 25 minutes, and I have not been caught flat-footed by a competitor move since.$pf$,
+  '11111111-1111-1111-1111-111111111109',
+  'intermediate',
+  'claude-sonnet-4-6',
+  'Claude 4.6 Sonnet',
+  ARRAY['Claude', 'Google Alerts', 'Visualping', 'Product Hunt'],
+  ARRAY['competitive-intelligence', 'solopreneur', 'saas-pricing', 'positioning', 'market-research'],
+  'approved',
+  '22222222-2222-2222-2222-222222222210',
+  0, 0
+);
+
+INSERT INTO prompt_steps (id, prompt_id, step_number, title, content, result_content, description) VALUES
+
+-- Step 1 --
+('77777777-7777-7777-7777-777777107001',
+ '55555555-5555-5555-5555-555555550107',
+ 1,
+ $pf$Mapping the competitive landscape and choosing what signals to track$pf$,
+ $pf$I run Zestful, a personal finance tool for freelancers — Notion-based tracker with Python automations, $14 per month. I have been running it for 18 months and my competitive intelligence is basically zero. I did research before launch, built a list of competitors, and then never updated it.
+
+I am sitting here on a Sunday afternoon having just figured out that Bonsai launched a free tier six weeks ago, and I only found out because my exit surveys started saying "found a free option." Two months of trial conversion damage from something I had no system to catch.
+
+I want to fix this. But I am a solopreneur. I cannot spend more than 30 minutes a week on competitive monitoring — I have a product to build. Whatever system I build needs to stay sustainable.
+
+Two deliverables: First, a structured process for mapping my actual competitive landscape — I suspect my competitor list is stale. Second, a framework for deciding what to track per competitor, because trying to monitor everything is how solopreneurs end up monitoring nothing. What signals actually matter for a solo SaaS in a niche market, and how do I know when something is worth acting on?$pf$,
+ $pf$The two-month lag you experienced is the classic small-founder blind spot: you have a mental model from launch research and don't update it until something breaks. The fix is not more intelligence — it is the right intelligence, collected in a way you will actually sustain.
+
+**Step 1: Reconstruct your current competitive landscape (do this once, takes 90 minutes)**
+
+Your pre-launch list is stale. Run this process to reset it, then use the monitoring system to keep it current.
+
+*Search protocol:*
+1. Google: "freelancer finance app," "invoice tracker for freelancers," "freelancer accounting Notion," "freelance income tracker." Note every result on the first two pages.
+2. Product Hunt: search "freelancer finance" and "freelance invoice," filter to products launched in the last 24 months.
+3. Reddit: r/freelance, r/digitalnomad, r/personalfinance. Search "freelancer finance tool" and "track freelance income." What do people actually recommend?
+4. G2 and Capterra: search "freelance invoicing," sort by most recently reviewed. New products surface here when they get their first reviews.
+5. Gumroad and Etsy: search "freelancer finance tracker." This is your direct competitor set — people paying for a template doing what Zestful does.
+6. Your own exit surveys and support tickets: what alternatives are people naming? This is your most accurate signal for what competes at the decision moment.
+
+Classify what you find into three tiers:
+
+| Tier | Description | Example |
+|---|---|---|
+| Direct | Same user, same job, similar price point | Bonsai free tier, Notion templates at $9–15 |
+| Adjacent | Same user, different scope | Wave, FreshBooks Lite (full accounting, overkill for most freelancers) |
+| Emerging | New entrant or pivot that could enter your tier | Any Product Hunt launch targeting freelancer finance in the last 6 months |
+
+You probably have 3-6 direct competitors, 8-12 adjacent, and 2-4 emerging worth watching. The 30-minutes-per-week budget forces you to track direct and emerging closely, adjacent loosely.
+
+**What signals actually matter**
+
+Five signal categories that regularly drive action for a solo SaaS:
+
+| Signal | What it tells you | Check frequency |
+|---|---|---|
+| Pricing changes | Competitive repositioning; free tier launches (your blind spot) | Weekly |
+| Feature announcements | Where they're investing; new capability gaps | Weekly |
+| Messaging changes | Homepage tagline, "who this is for" copy | Monthly |
+| Review volume and rating changes | Growing fast means growing threat | Monthly |
+| Job postings | Hiring engineers means features incoming; hiring sales means moving up-market | Monthly |
+
+**When something is worth acting on**
+
+Not everything you find requires a response. Use this filter:
+
+1. Does it change the decision a potential customer makes at the free-trial-to-paid moment? Act within two weeks.
+2. Does it change who your product is explicitly "not for"? Update positioning within a month.
+3. Does it suggest a feature gap that customers will start naming? Add to product backlog with a priority score.
+4. Is it interesting but doesn't change what a customer would choose? Monitor, don't act.
+
+The Bonsai free tier was a Category 1 signal. It directly changed the conversion decision for your 2-3 client segment. That warranted an immediate response — extend your trial or launch a free tier to compete at that moment.$pf$,
+ NULL),
+
+-- Step 2 --
+('77777777-7777-7777-7777-777777107002',
+ '55555555-5555-5555-5555-555555550107',
+ 2,
+ $pf$Setting up the free monitoring stack that runs passively$pf$,
+ $pf$Good framework. I ran the landscape mapping this afternoon and found I was missing three competitors I had not tracked before: Copilot (formerly Pilota — now doing broader freelancer business tooling), Solo.app (just launched on Product Hunt last month), and two Gumroad templates that have gotten meaningful traction. My direct competitor list is now six.
+
+Now I need to set up the actual monitoring system. Zero budget for paid tools right now. I need something passive — I should be able to sit down on Friday mornings for 20 to 25 minutes, scan what changed, and know whether anything requires action.
+
+What is the actual stack? I want concrete tool recommendations with what I configure in each. No "consider using X" — tell me exactly what to set up.$pf$,
+ $pf$Here is the exact stack. All free. Setup time is about two hours total; then it runs passively.
+
+**1. Google Alerts — pricing and feature announcement monitoring (20 minutes to set up)**
+
+Go to google.com/alerts. Create one alert per direct competitor. Use these string patterns:
+
+- `"Bonsai" "pricing"` — catches pricing page updates indexed by Google
+- `"Bonsai" ("free plan" OR "free tier" OR "free forever")` — catches free tier announcements
+- `"Solo.app" freelancer` — broad catch for any new content about Solo
+- Repeat for each of your six direct competitors
+
+Set delivery to weekly digest, delivered Friday morning. This catches press coverage and blog posts announcing changes. It does not catch silent homepage edits — that is what step 2 handles.
+
+**2. Visualping — pricing page change detection (30 minutes to set up)**
+
+Visualping (visualping.io) monitors a URL for visual changes and emails you a before/after screenshot when the page changes. Free tier: 5 monitors at weekly frequency.
+
+Configure monitors on:
+- Each direct competitor's /pricing page (4-5 of your 6 slots)
+- Your own pricing page as a sanity check
+
+For each monitor: paste the URL, select visual change detection, choose weekly check. You will get an email with a side-by-side screenshot the week anything changes.
+
+This is what would have caught Bonsai's free tier the week it launched — pricing pages change rarely but the changes are high-signal.
+
+**3. Product Hunt notifications — emerging competitor detection**
+
+Create a Product Hunt account and follow the Productivity, Finance, and Freelance topics. PH sends daily digest emails. Most launches are irrelevant — skim the subject line and delete. When you see "freelance finance" or "freelancer" in the title, open it.
+
+Also bookmark producthunt.com/topics/freelance and check it during your Friday review.
+
+**4. G2 review monitoring — competitor review velocity (manual, 5 minutes per month)**
+
+G2 does not have a free API but you can do this manually. Bookmark each competitor's G2 page. Once a month during your Friday review: check total review count vs last month, current average rating, and the newest 3-5 reviews. Review velocity tells you if a competitor is growing. Sort by newest reviews — these reflect current product reality, not historical sentiment.
+
+**Your Friday 25-minute review routine:**
+
+- Read Google Alerts digest emails (5 min)
+- Open any Visualping "change detected" alerts and look at the before/after (3 min if changes, 0 if none)
+- Skim Product Hunt weekly digest (2 min)
+- Update your tracking notes with any changes found (5 min)
+- Decision gate: did anything trigger Category 1 (decision-at-conversion-moment)? If yes, schedule a 2-hour response block next week. If no, close the tab (10 min buffer)
+
+If you find yourself going over 30 minutes, you are researching rather than monitoring. Monitoring is passive — it answers "did anything change?" Researching is active and requires a specific question.$pf$,
+ NULL),
+
+-- Step 3 --
+('77777777-7777-7777-7777-777777107003',
+ '55555555-5555-5555-5555-555555550107',
+ 3,
+ $pf$Building a competitive matrix that generates decisions$pf$,
+ $pf$I have the monitoring stack running. I also did a deep-dive session this weekend — manually reviewed all six direct competitors, gathered pricing tables, feature lists, G2 reviews, and screenshots of their homepages.
+
+Now I need to synthesize this into something I can use to make decisions. I have a pricing review in two weeks where I decide whether to keep $14 per month, add a free tier, change my trial length, or restructure the plans entirely.
+
+Help me build the competitive matrix. I want it to show me where I am positioned relative to competitors, where there are gaps or advantages I am not communicating, and what the landscape says about where to price Zestful for Q2. More importantly, tell me what structure the matrix should have so it actually generates decisions rather than just being a comprehensive-looking table.$pf$,
+ $pf$A competitive matrix that generates decisions needs to be built backward from the decisions you are making — not structured as a comprehensive feature inventory. Feature matrices feel thorough and lead nowhere. Decision-oriented matrices are smaller, uglier, and more useful.
+
+For your pricing review, the decisions are: free tier yes/no, trial length, price point, and plan structure. Structure the matrix to answer each directly.
+
+**Sheet 1: Pricing and conversion structure**
+
+| Competitor | Free tier? | Free tier limits | Paid entry | Trial? | Trial length |
+|---|---|---|---|---|---|
+| Bonsai | Yes | 3 active clients | $24/mo | No | — |
+| Wave | Yes | Unlimited invoicing | $16/mo | No | — |
+| Solo.app | Yes | 1 project, 3 invoices | $12/mo | Yes | 14 days |
+| [Others] | — | — | — | — | — |
+| **Zestful** | **No** | — | **$14/mo** | **Yes** | **14 days** |
+
+Fill this first. The pattern you will see immediately: you are the only direct competitor without a free tier. This table directly answers the free-tier question before you even look at features.
+
+**Sheet 2: Positioning and messaging**
+
+| Competitor | Who they say it's for | Core value prop | G2 top complaints |
+|---|---|---|---|
+| Bonsai | Freelancers and independent contractors | All-in-one: proposals, contracts, invoicing, time tracking | "Overwhelming for someone just starting out"; "too many features I don't use" |
+| Wave | Small businesses | Free accounting, invoicing, payroll | "Steep learning curve"; "feels like accounting software, not a freelancer tool" |
+| Zestful | Freelancers who want clarity | Simple, Notion-native | (your own data) |
+
+Source the G2 complaints from your 5-minutes-per-month G2 review. The pattern that shows up here for Bonsai and Wave — "too complex for simple use cases" — is the gap you can own.
+
+**Sheet 3: Feature parity (the 8-10 features your customers actually care about)**
+
+Source the feature list from your own support tickets, exit survey requests, and G2 reviews asking "what do you wish it did." For Zestful, that probably means: invoice creation, expense tracking, tax estimation, client management, payment tracking, income reporting. Score each competitor 1 (has it) or 0 (does not). Add a Zestful column.
+
+The gaps you find are your competitive advantages (features they don't have or do poorly) and your risks (features they have that you don't). Three competitors having tax estimation and you not is a risk. You being the only Notion-native tool in the list is an advantage.
+
+**How to use the matrix for your pricing decision**
+
+Sheet 1 tells you whether a free tier is table stakes in your category. If every direct competitor has one, the question has shifted from "should I?" to "what are the right limits?"
+
+Sheet 2 tells you whether there is a positioning gap you can occupy — a customer profile that nobody is explicitly targeting. "Too complex for beginners" complaints across multiple competitors is your signal.
+
+Sheet 3 tells you which feature gaps justify a lower price point and which are near-term roadmap priorities.
+
+Build the matrix before the meeting. Show up with the comparison, not the raw notes. The decisions come out of the comparison, not from thinking harder.$pf$,
+ NULL),
+
+-- Step 4 --
+('77777777-7777-7777-7777-777777107004',
+ '55555555-5555-5555-5555-555555550107',
+ 4,
+ $pf$Turning the competitive matrix into a Q2 positioning and pricing decision$pf$,
+ $pf$I built the matrix. Here is what I found:
+
+Every direct competitor except one Gumroad template has some kind of free tier. My 14-day trial is at or below the median — two competitors offer 21 days, one offers 30 days. Solo.app is at $12 per month with both a free tier and a 14-day trial. My price at $14 is not the problem — it is competitive. The conversion barrier is the absence of a free tier: someone with two freelance clients has no reason to try Zestful before paying when Bonsai is free at that client count.
+
+On features: my biggest gap is no in-app tax estimation. Three competitors have it and it appears in my own support requests. On the other side, I am the only Notion-native tool in my direct set — nobody else is targeting Notion users specifically.
+
+Sheet 2 confirmed what I suspected: Bonsai and Wave both get "too complex for someone just starting out" complaints. Nobody is explicitly owning "simple enough for your first freelance client" at a price under $15.
+
+Given all this, what is the right positioning decision for Q2? One clear recommendation, the reasoning, and what I would need to change about Zestful to execute on it.$pf$,
+ $pf$The matrix is pointing at a clear positioning: simple-first freelancer finance for people in their first one to three years of self-employment. Here is the full recommendation.
+
+**Q2 positioning decision: own the beginner freelancer, free at one client**
+
+*Pricing structure:*
+
+Drop from $14 to $12 per month. Solo.app is your closest structural competitor and they are at $12 with both a free tier and a trial. At $14 you are priced above them without a clear differentiator at the moment someone is comparing options. At $12 you are price-parity with the nearest competitor and can compete on simplicity and Notion-native positioning instead of price.
+
+Add a free-forever tier: one active client, all core features — invoicing, expense tracking, income reporting. No trial clock. The constraint is client count rather than time, which means someone with a single client gets real permanent value and someone with multiple clients has a clear, natural reason to upgrade. This directly addresses the Bonsai overlap: your free tier is simpler and more specifically designed for the beginning freelancer; Bonsai's free tier is a lead-gen entry point to a complex platform.
+
+Extend the paid trial from 14 to 21 days. A 14-day window is often not long enough for a freelancer to send two full invoice cycles and feel the value of the tool. Three weeks catches the second invoice send. Across SaaS categories where value requires repeated use, 21-day trials consistently outperform 14-day ones on conversion.
+
+*Messaging change:*
+
+Add "for beginning freelancers" to your positioning explicitly. Current messaging — "freelancers who want clarity on their money" — is too broad to own a segment. Proposed direction: "The simplest way to track your freelance money. Free for your first client." This lets you own a segment none of the major competitors are deliberately targeting — the sub-$20K-revenue freelancer who does not need a contract-to-cash platform and is actively put off by accounting software complexity.
+
+*Feature gap:*
+
+Tax estimation is your most commonly-requested missing feature and it is present in three competitors. Add a basic quarterly estimated-tax calculator before Q2 ends. Even a simple one — income times effective rate, with a "set aside 30% quarterly" prompt — is enough to check the box for a beginning freelancer who is worried about owing money in April. It does not need to be sophisticated; it needs to exist.
+
+*What not to change:*
+
+The Notion-native positioning is a genuine differentiator. Nobody else in your direct set is targeting Notion users. Do not dilute it by trying to appeal to freelancers who do not already use Notion — that is a different product.
+
+*Execution sequence:*
+
+1. This week: drop price to $12 and extend trial to 21 days. Both are config changes; ship in one day.
+2. Next two weeks: build and launch the free tier with one-client limit.
+3. Q2 milestone: basic quarterly tax estimation feature.
+4. After free tier ships: update landing page messaging. Do not change the message until the product matches it.
+
+The full payoff takes two cohorts — roughly 60 days — to show up in conversion metrics. Run the matrix again in 60 days: check whether "found a free option" has disappeared from your exit surveys and whether trial-to-paid is trending up.$pf$,
+ NULL);
+
 ALTER TABLE prompts ENABLE ROW LEVEL SECURITY;
 ALTER TABLE prompt_steps ENABLE ROW LEVEL SECURITY;

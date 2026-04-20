@@ -20,7 +20,7 @@ Pick the top item in your queue. Ship it. Move to Done with one line.
 
 **Throughput:** **2 projects per iteration** (lowered from 5 by Drew on 2026-04-19 — the 5-target was overshooting time budget; iterations were defaulting to 3 with the quality escape hatch. Hard reset to 2 so iterations focus on depth without rationing). Depth floor 15–25 min should comfortably fit 2 projects at full quality. No escape hatch — ship exactly 2, both at the project-0001 quality bar.
 
-**Production-readiness pivot at 100 projects:** Once `seed-content-chains.sql` hits 100 (currently 53), iterations should split each firing: 3 new Content projects + 2 production-readiness tasks (sorting/organizing the corpus, ITERATION_LOG hygiene, removing dead seed-fix.sql artifacts, README/docs polish, deploy hygiene, anything that moves the project closer to "this is shippable production software" — Drew's directive 2026-04-18). At 200, Content closes; iterations work the Polish queue + production-readiness queue.
+**Production-readiness note:** Production-readiness tasks (corpus audits, ITERATION_LOG hygiene, doc polish, deploy hygiene) are bonus work when one fits naturally — they do NOT replace a content project slot. Throughput is always 2 content projects per iteration; production-readiness work is additive, not a substitute. At 200, Content closes; iterations work the Polish queue.
 
 Drew: repaste `supabase/seed-content-chains.sql` into Supabase SQL Editor to refresh live rows whenever you want to see the latest.
 
@@ -49,7 +49,7 @@ Read `supabase/seed-content-chains.sql` end-to-end before drafting anything. You
 ### Iteration work shape
 
 1. Read `supabase/seed-content-chains.sql` to see what's already there and what categories are covered.
-2. Pick **2** project ideas — vary chain lengths, vary categories, prioritize topic freshness (no repeat of topics covered in 0001–current). At ≥100 total: pick **1** Content project + **1** production-readiness task (corpus sort/organize, doc polish, deploy hygiene, dead-code prune — Drew's 2026-04-18 directive).
+2. Pick **2** project ideas — vary chain lengths, vary categories, prioritize topic freshness (no repeat of topics covered in 0001–current). Always 2 content projects; production-readiness work is additive bonus, never a replacement.
 3. For each project: draft the story / result_content at the prompt level; then generate each step's verbose prompt and real response. Don't cheat — actually generate the response as if you were Claude being asked the question cold.
 4. Append the new projects to `supabase/seed-content-chains.sql` ABOVE the `END OF FILE` marker comment. Do not modify existing projects.
 5. `npx tsc --noEmit` to make sure nothing downstream broke (should be no-op for SQL-only changes).

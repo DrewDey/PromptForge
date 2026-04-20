@@ -34635,6 +34635,604 @@ This was not a data breach. Customer payment information was not affected. This 
  NULL);
 
 -- =========================================================================
+-- Project 0096 — jakefinance / Finance / 5-step / Opus 4.7 / intermediate
+-- =========================================================================
+
+DELETE FROM prompt_steps WHERE prompt_id = '55555555-5555-5555-5555-555555550096';
+DELETE FROM prompts      WHERE id        = '55555555-5555-5555-5555-555555550096';
+
+INSERT INTO prompts (
+  id, title, description, content, result_content,
+  category_id, difficulty, model_used, model_recommendation,
+  tools_used, tags, status, author_id, vote_count, bookmark_count
+) VALUES (
+  '55555555-5555-5555-5555-555555550096',
+  $pf$Modeling our first home purchase from pre-approval to decision memo$pf$,
+  $pf$Bank pre-approved us for $950K but that number felt reckless. Five passes to build a real affordability model, compare 15 vs 30-year mortgages at current rates, analyze the down payment decision, estimate closing costs, and write a decision memo we'll carry through a six-month search.$pf$,
+  $pf$We have been renting in San Francisco for seven years. We finally admitted we are serious about buying. The bank pre-approval came in at $950,000 — which felt less like a ceiling and more like a dare. I have modeled company financials professionally for eight years. I know what "you're approved for this" means: it means the bank calculated the maximum they're willing to lend, not the maximum that makes sense for our lives. My partner and I sat down on a Sunday with a spreadsheet and Claude, working through five sessions: a real affordability model from our salary-only numbers, a 15-versus-30-year comparison at current rates, the down payment optimization question, a detailed closing cost estimate, and finally a decision memo we both signed off on before starting our search. This is the sequence that got us to a number we both trust.$pf$,
+  $pf$A home purchase framework we actually believe in: a verified price ceiling of $875K (well below the $950K pre-approval), a clear recommendation for the 30-year mortgage with invested savings over the 15-year, a decision on 20% down based on post-close liquidity rather than the investment math alone, a closing cost estimate of $195K–$205K total cash to close, and a one-page decision memo with explicit go/no-go conditions neither of us will negotiate away under offer pressure.$pf$,
+  '11111111-1111-1111-1111-111111111101',
+  'intermediate',
+  'claude-opus-4-7',
+  'Claude 4.7 Opus',
+  ARRAY['Claude', 'Google Sheets'],
+  ARRAY['personal-finance', 'home-buying', 'mortgage', 'financial-modeling', 'real-estate', 'san-francisco'],
+  'approved',
+  '22222222-2222-2222-2222-222222222203',
+  0, 0
+);
+
+INSERT INTO prompt_steps (id, prompt_id, step_number, title, content, result_content, description) VALUES
+
+-- Step 1 --
+('66666666-6666-6666-6666-666666960101',
+ '55555555-5555-5555-5555-555555550096',
+ 1,
+ $pf$What can we actually afford — building a real affordability framework$pf$,
+ $pf$I need to build an honest affordability model for a first home purchase in San Francisco. Bank pre-approved us for $950K. I want to figure out what we should actually offer on a home, not what the bank will technically let us borrow.
+
+Our situation: combined gross income is $465,000 — I'm at $285K, my partner at $180K. Both are a base/RSU mix; our cash salaries only are $185K and $145K ($330K combined). After-tax take-home on the $330K salary-only base is approximately $17,900/month, which I've verified against our last two tax returns. We have $220,000 in liquid savings available for a down payment, plus a separate $60,000 emergency fund that is off the table. Current rent is $4,200/month. No debt — no car payment, no student loans, credit cards paid in full. Monthly non-housing fixed expenses are roughly $6,500 (food, transportation, subscriptions, insurance). We expect childcare costs in approximately 18 months.
+
+The bank used the 28/36 rule on our full $465K gross: $10,850/month as the housing ceiling. That number is completely disconnected from how I think about our finances. RSUs vest on a four-year schedule and could stop. I want to base this on our salary-only cash income.
+
+What is the right affordability framework, and what purchase price range does it imply?$pf$,
+ $pf$The 28/36 rule was designed for W-2 workers with stable, predictable salary. Running it against total compensation that includes vesting equity is how people end up house-poor when a grant cycle ends or a layoff hits. Your instinct to use salary-only is correct.
+
+**The framework I'd use**
+
+*Conservative salary-only baseline*: $330K gross → $17,900/month net take-home.
+
+Monthly cash remaining after non-housing fixed costs: $17,900 − $6,500 = $11,400.
+
+Two useful ceilings:
+- **25% of salary take-home** (tighter than 28/36, housing-only): $17,900 × 0.25 = **$4,475/month PITI**
+- **33% of net-after-fixed** (what fits the rest of your life): $11,400 × 0.33 = **$3,762/month PITI**
+
+Use these as a range, not a hard rule. Your actual comfort zone is somewhere between them.
+
+**What price range does that imply?**
+
+Assumptions: 20% down, 30-year fixed at 7.10% (current April 2026 conforming rate), property tax 1.25% annually (SF Prop 13 new-purchase rate), homeowners insurance $150/month.
+
+Monthly P&I factor at 7.10% 30yr: approximately $6.62 per $1,000 of loan.
+
+| Purchase | Down (20%) | Loan | P&I | Tax | Ins | PITI |
+|---|---|---|---|---|---|---|
+| $625,000 | $125,000 | $500,000 | $3,310 | $651 | $150 | **$4,111** |
+| $650,000 | $130,000 | $520,000 | $3,442 | $677 | $150 | **$4,269** |
+| $675,000 | $135,000 | $540,000 | $3,575 | $703 | $150 | **$4,428** |
+| $700,000 | $140,000 | $560,000 | $3,707 | $729 | $150 | **$4,586** |
+
+At the 25%-of-take-home ceiling ($4,475/month), you're looking at roughly $675K with 20% down. At the 33%-of-net-after-fixed ceiling ($3,762), you're around $575K.
+
+**Where to set the search ceiling**
+
+Your RSU income — treated as a discretionary cushion rather than a planning input — gives you room to stretch. A $875K purchase produces PITI of approximately $6,900/month on your full take-home ($24,800/month combined), which is 28% of combined take-home — still inside a reasonable upper bound when equity income is included. My recommendation: **set your search ceiling at $875K**. That's your RSU-inclusive upper bound. Your walk-away threshold is $900K; do not go above it.
+
+The salary-only range ($575K–$675K) is what you could afford on base salaries alone if RSUs stopped tomorrow. Treat it as your downside floor, not your target.
+
+**The childcare note you need to account for now**
+
+Childcare in San Francisco runs $2,800–$3,500/month for an infant in a licensed center. In 18 months, your net-after-fixed drops from $11,400 to roughly $8,100. The 33%-of-net-after-fixed ceiling falls to $2,673/month PITI — a dramatically lower number. Either factor this in now and buy at the conservative floor, or treat it as a risk you're knowingly accepting against your RSU income. Name it explicitly before you commit. Do not discover it six months after closing.
+
+**Next step**: model 15-year versus 30-year at the $875K ceiling with current rates.$pf$,
+ NULL),
+
+-- Step 2 --
+('66666666-6666-6666-6666-666666960102',
+ '55555555-5555-5555-5555-555555550096',
+ 2,
+ $pf$15-year vs 30-year mortgage comparison at current rates$pf$,
+ $pf$Good. Let's settle the mortgage term question. Using $875K purchase price and 20% down ($175K), so loan amount is $700,000. Rates I'm seeing quoted today: 30-year fixed at 7.10%, 15-year fixed at 6.50%.
+
+Run the full comparison. I want:
+1. Monthly P&I for each
+2. Total interest paid over the full term
+3. The actual decision logic — not just "15-year saves money." I know it does. Tell me what question I should actually be asking to choose between them.
+
+Show your math.$pf$,
+ $pf$Loan: $700,000. Both calculations below are standard amortization.
+
+**Monthly P&I**
+
+| Term | Rate | Monthly P&I |
+|---|---|---|
+| 30-year | 7.10% | $4,695 |
+| 15-year | 6.50% | $6,101 |
+
+Monthly payment difference: **$1,406/month more for the 15-year**.
+
+**Total interest over life of loan**
+
+| Term | Total paid | Principal | Total interest |
+|---|---|---|---|
+| 30-year | $1,690,200 | $700,000 | **$990,200** |
+| 15-year | $1,098,180 | $700,000 | **$398,180** |
+
+The 15-year saves **$592,020 in total interest**. That number is real, but it obscures the actual decision.
+
+**The question you should actually be asking**
+
+The 15-year is not "savings" — it's a forced investment in home equity at a guaranteed 6.50% return (your avoided interest rate). The 30-year with $1,406/month invested is an equity investment in the market at whatever returns you actually achieve.
+
+The question is: *do you expect your investment return to exceed 6.50% over the next 15–30 years?*
+
+- If yes → 30-year plus disciplined monthly investing wins
+- If no (or uncertain) → 15-year is the better guaranteed return
+
+At 7.5% assumed annual investment return: the 30-year path, investing the $1,406/month difference, builds a substantial portfolio — but the 15-year path ends the mortgage in 15 years and then lets you invest the full $6,101/month for the following 15. The 15-year path wins at year 30, but by less than the $592K interest savings suggest, because the invested difference under the 30-year path also compounds.
+
+The crossover point: if your long-term portfolio return is below ~6.50%, the 15-year is the superior financial outcome. Above that, they're close, with the 30-year winning at higher return assumptions because the monthly investment starts earlier and compounds longer.
+
+**The non-math factor that usually decides this**
+
+Two high-income households with automated 401k contributions and index fund investing: you'll likely invest the difference. The 30-year gives you $1,406/month in breathing room for the first several years of homeownership (which are expensive — HVAC, water heater, deferred maintenance you didn't know about) AND the option to prepay principal when income allows. The 15-year requires $6,101/month no matter what.
+
+**My recommendation: 30-year**
+
+Take the 30-year. The rate spread (0.60% lower for 15yr) is real but not dramatic. If you're disciplined investors — which your question suggests you are — invest the difference monthly. Prepay the principal when you have a good RSU quarter. If you ever want to effectively replicate the 15-year, you can add $1,406/month in principal prepayments; you don't have to. The 15-year forces a payment level that is 40% of your salary-only take-home, which is tight. The 30-year is 26%. That flexibility matters more than it sounds like in year two of homeownership.$pf$,
+ NULL),
+
+-- Step 3 --
+('66666666-6666-6666-6666-666666960103',
+ '55555555-5555-5555-5555-555555550096',
+ 3,
+ $pf$Down payment optimization — 20% vs 10% plus PMI$pf$,
+ $pf$We said 20% down ($175K) to avoid PMI. But we have $220K available, meaning we could put 10% down ($87,500) and invest the remaining $90K. The PMI cost is the cost of that choice.
+
+Specific questions:
+1. What does PMI actually cost per month on a $787,500 loan at our credit profile? (We're at approximately 765 FICO, both of us.)
+2. When do we hit 80% LTV and PMI drops?
+3. What does $90,000 grow to if invested as a lump sum over the PMI period at 7.5% annualized?
+4. Net comparison: PMI total cost vs investment return. What does the math say?
+5. What do you actually recommend?$pf$,
+ $pf$Let's work through this carefully.
+
+**PMI cost**
+
+At 10% down ($87,500 down, $787,500 loan), 765 FICO, 90% LTV on a conventional conforming loan: PMI rates for a well-qualified borrower in this band run 0.35%–0.50% annually. At 0.40%:
+
+Annual PMI: $787,500 × 0.004 = **$3,150/year**
+Monthly PMI: **$263/month**
+
+**When does PMI cancel?**
+
+PMI cancels when your loan balance falls to 80% of the original purchase price: 80% × $875,000 = $700,000.
+
+Starting balance: $787,500. You need to pay down $87,500 to reach $700,000.
+
+On a 30-year at 7.10%, monthly principal reduction starts slow. In month 1: P&I = $5,213, interest = $787,500 × (7.10%/12) = $4,657, principal = $556. The principal portion grows slowly as the loan amortizes. Reaching $87,500 in cumulative principal paydown takes approximately **98 months (8.2 years)** at this rate.
+
+Note: if the home appreciates, you can request cancellation earlier by ordering an appraisal demonstrating 80% LTV on appraised value. Bay Area appreciation might shorten the PMI period — but plan around the amortization schedule; appreciation is upside, not a baseline.
+
+**Total PMI cost**
+
+$263/month × 98 months = **$25,774 in PMI premiums**
+
+**Investment return on $90,000 over 8.2 years**
+
+Lump sum at 7.5% annual return:
+
+$90,000 × (1.075)^8.2 ≈ $90,000 × 1.809 = **$162,810**
+
+Net investment gain: $162,810 − $90,000 = **$72,810**
+
+**Net comparison over the PMI period (8.2 years)**
+
+| | Cost / Benefit |
+|---|---|
+| PMI paid | −$25,774 |
+| Investment gain on $90K | +$72,810 |
+| **Net math advantage of 10% down** | **+$47,036** |
+
+The math favors 10% down by approximately $47,000 over the PMI period, at 7.5% assumed returns. The break-even investment return (where the PMI cost exactly equals the investment gain) is around 3.5% annualized — meaning you'd need to earn less than 3.5% on the $90K for 20% down to win on math alone.
+
+**What I actually recommend: 20% down — but for a different reason than the math**
+
+The math says 10% down wins. I'm recommending 20% down anyway, for this specific situation:
+
+You have $220K available. After 20% down ($175K), you have $45K in liquid savings — not counting your $60K emergency fund. That $45K is your first-year homeownership buffer, and you need most of it.
+
+After 10% down ($87,500), you'd have $132,500 remaining — but $90K of that is earmarked for investment. True liquid buffer: $42,500. The incremental liquidity difference between the two paths is only $2,500. But here's the problem: if the $90K is in the market and the furnace dies in month four, your choices are "sell investments at a potentially bad time" or "raid the emergency fund." Neither is good.
+
+If you had $350K in savings, 10% down plus invest is the clearly correct financial move. At $220K, the liquidity math is too tight.
+
+**The one scenario where I'd reverse this**: if you can negotiate a seller credit of $20K+ toward closing costs, your post-close buffer improves materially. At that point, the 10% down + invest approach becomes viable. Flag it as a strategy when you're in contract negotiations.$pf$,
+ NULL),
+
+-- Step 4 --
+('66666666-6666-6666-6666-666666960104',
+ '55555555-5555-5555-5555-555555550096',
+ 4,
+ $pf$Closing costs — itemized estimate for cash to close$pf$,
+ $pf$Last numbers question before the decision memo. Planning for $875K purchase, 20% down ($175K), 30-year at 7.10%. What should we actually budget for closing costs and total cash to close? I want itemized, not a vague "2-5 percent" range. We're in San Francisco.$pf$,
+ $pf$Itemized estimate for an $875,000 purchase, $700,000 loan, 30-year fixed, San Francisco County.
+
+**Lender fees**
+
+| Item | Low | High |
+|---|---|---|
+| Loan origination (0.5% of loan, negotiable) | $3,500 | $3,500 |
+| Underwriting / processing | $900 | $1,200 |
+| Appraisal | $800 | $1,100 |
+| Credit report | $35 | $50 |
+| Flood certification + tax service | $75 | $125 |
+| **Lender subtotal** | **$5,310** | **$5,975** |
+
+**Third-party fees**
+
+| Item | Low | High |
+|---|---|---|
+| Title search | $300 | $500 |
+| Lender's title insurance (required) | $1,800 | $2,400 |
+| Owner's title insurance (strongly recommended in CA) | $2,200 | $3,100 |
+| Escrow / settlement fee | $2,500 | $3,500 |
+| SF County recording fees | $100 | $200 |
+| SF transfer tax: 0.75% × $875K = $6,562 (split 50/50 by convention — buyer pays ~$3,281) | $3,281 | $3,281 |
+| Notary + wire + courier | $125 | $225 |
+| **Third-party subtotal** | **$10,306** | **$13,206** |
+
+*Transfer tax note: this is negotiable. In a soft market, ask for the seller to cover the full $6,562. In a competitive market, expect 50/50 or full-buyer. Your agent will know the current convention.*
+
+**Prepaid items** (funding your escrow account — not fees, but required cash at closing)
+
+| Item | Low | High |
+|---|---|---|
+| Homeowners insurance: 14 months prepaid (12 + 2 months escrow) at $150/mo | $2,100 | $2,100 |
+| Property tax: SF bills semi-annually; expect 3–5 months of $911/mo into escrow | $2,733 | $4,555 |
+| Prepaid mortgage interest: remainder of close month at $136/day | $136 | $3,944 |
+| **Prepaids subtotal** | **$4,969** | **$10,599** |
+
+*Prepaids are highly close-date dependent. Closing on the 1st means 29 days of prepaid interest ($3,944). Closing on the 28th means 1–2 days ($136–$272). Ask your agent to model this for any property where timing matters.*
+
+**Total cash to close**
+
+| | Low | High |
+|---|---|---|
+| Down payment | $175,000 | $175,000 |
+| Lender fees | $5,310 | $5,975 |
+| Third-party fees | $10,306 | $13,206 |
+| Prepaids | $4,969 | $10,599 |
+| **Total** | **$195,585** | **$204,780** |
+
+**Budget $200,000–$205,000.** The midpoint is your planning number.
+
+**The liquidity warning**
+
+You have $220K available (not counting the emergency fund). After closing at $200K midpoint, your liquid buffer is **$20,000**. That is uncomfortably thin for a first year of San Francisco homeownership. Common first-year costs: HVAC service or replacement ($1,500–$8,000), plumbing ($500–$3,000), pest inspection follow-up ($300–$1,200), deferred maintenance the inspector flagged. The standard 1% annual maintenance rule on $875K is $8,750/year.
+
+Three ways to improve your post-close position:
+1. **Seller credit**: request $15,000–$20,000 in seller credits toward closing costs in the purchase offer. In any market where you're not competing against multiple offers, this is reasonable to ask for. A $15K credit reduces your cash-to-close to $185K, leaving $35K in liquidity — much more manageable.
+2. **Lower purchase price**: $850K saves ~$5K in fees and reduces the down payment by $5K = approximately $10K total cash reduction.
+3. **Short delay**: six more months of saving at your current savings rate adds $15K–$20K to the buffer before you close.
+
+Factor one of these into your offer strategy.$pf$,
+ NULL),
+
+-- Step 5 --
+('66666666-6666-6666-6666-666666960105',
+ '55555555-5555-5555-5555-555555550096',
+ 5,
+ $pf$Writing the decision memo — parameters and go/no-go conditions$pf$,
+ $pf$We have everything we need. I want to write a one-page decision memo that my partner and I can both agree to, reference while we're searching, and hold ourselves to when we're standing in a kitchen deciding whether to make an offer. We're both analytical. No fluff. Include: our agreed search parameters, financial constraints, explicit go/no-go conditions, and any questions we've consciously deferred. It needs to be short enough to read in two minutes.$pf$,
+ $pf$**Home Purchase Decision Memo**
+*Jake Torres & [Partner] — April 2026*
+
+---
+
+**Why this memo exists**
+
+We are actively searching for a first home in San Francisco. This document records what we have agreed to so we do not renegotiate under pressure. Both of us have read it. Neither of us is allowed to override it unilaterally.
+
+---
+
+**Agreed search parameters**
+
+| Parameter | Value | Basis |
+|---|---|---|
+| Purchase price ceiling | $875,000 | 25% of salary-only take-home; RSU income treated as cushion |
+| Walk-away line | $900,000 | Hard stop — no escalation above this |
+| Mortgage term | 30-year fixed | Flexibility over forced paydown; invest the difference |
+| Target rate | ≤7.10% (30yr) | Rate-lock at or below this |
+| Down payment | 20% | Avoids PMI; protects post-close liquidity |
+| Minimum post-close buffer | $30,000 | After all fees, credits, and down payment — non-negotiable |
+| Target seller credit | $15,000 | Request in every offer; treat as negotiating room, not a requirement |
+
+---
+
+**Go conditions (all must be true)**
+
+- Purchase price ≤ $875,000 after concessions
+- Post-close liquid savings (excluding emergency fund) ≥ $30,000
+- Physical inspection: no deferred maintenance exceeding $15,000 unless offset by credit
+- HOA dues (if applicable): ≤ $500/month; recalculate PITI ceiling if higher
+- We both feel good about it after sleeping on it; no offer under time pressure from an agent
+
+---
+
+**No-go conditions (any one kills the deal)**
+
+- Offer requires escalating above $900,000 to win
+- Post-close savings would fall below $30,000 after all closing costs and credits applied
+- Inspection requires waiving the inspection contingency
+- Significant unpermitted work that creates financing or resale risk
+- Either of us is uncomfortable and cannot articulate why — that counts
+
+---
+
+**Open questions we have consciously deferred**
+
+1. *Childcare cost impact*: we acknowledged the $2,800–$3,500/month impact in 18 months. We are accepting this as manageable on RSU income. Revisit this memo if income changes materially before we close.
+2. *Refinance trigger*: we will refinance to a 15-year if and when 30-year rates fall to 5.5% or below. No action required now.
+
+---
+
+**How to use this**
+
+Before making any offer: run through every go condition against the actual numbers. If any no-go fires, walk. Read this together before every offer — not after. If we want to change a parameter, we change the memo together first, not in the middle of negotiating.$pf$,
+ NULL);
+
+-- =========================================================================
+-- Project 0097 — ops_nina / Productivity / 3-step / Sonnet 4.6 / beginner
+-- =========================================================================
+
+DELETE FROM prompt_steps WHERE prompt_id = '55555555-5555-5555-5555-555555550097';
+DELETE FROM prompts      WHERE id        = '55555555-5555-5555-5555-555555550097';
+
+INSERT INTO prompts (
+  id, title, description, content, result_content,
+  category_id, difficulty, model_used, model_recommendation,
+  tools_used, tags, status, author_id, vote_count, bookmark_count
+) VALUES (
+  '55555555-5555-5555-5555-555555550097',
+  $pf$Building a weekly review that doesn't collapse by week three$pf$,
+  $pf$Nina had started a weekly review practice six times and abandoned it six times. Three sessions with Claude: a sustainable 35-minute structure designed around her specific failure modes, a Notion-ready template, and the anti-collapse mechanics that made it stick.$pf$,
+  $pf$I have started a weekly review approximately six times in my life and abandoned it approximately six times. The longest run was five weeks. Every system I have tried has become a two-hour archaeology project that I dread by Wednesday and skip when I'm tired. I manage operations for a fifty-person creative agency, which means my weeks are almost entirely reactive — things arrive from account managers, project managers, the CEO, and vendors, and I handle them. Without a deliberate moment to zoom out, I am running the same reactive loop forever and calling it work. I finally sat down with Claude and built something from scratch, specifically around the reasons my past attempts had failed. Three sessions: a structure with real time boxes, a Notion template I can start without thinking, and the mechanisms that make it stick when I don't feel like doing it.$pf$,
+  $pf$A weekly review practice I have run for four consecutive weeks without skipping. The Friday session takes 35–40 minutes. On bad weeks, a 15-minute minimum version produces a week I can actually navigate. The system stuck because it was designed around my failure modes — not around what productivity frameworks recommend in the abstract.$pf$,
+  '11111111-1111-1111-1111-111111111107',
+  'beginner',
+  'claude-sonnet-4-6',
+  'Claude 4.6 Sonnet',
+  ARRAY['Claude', 'Notion'],
+  ARRAY['weekly-review', 'productivity', 'gtd', 'notion', 'habits', 'time-management'],
+  'approved',
+  '22222222-2222-2222-2222-222222222206',
+  0, 0
+);
+
+INSERT INTO prompt_steps (id, prompt_id, step_number, title, content, result_content, description) VALUES
+
+-- Step 1 --
+('66666666-6666-6666-6666-666666970101',
+ '55555555-5555-5555-5555-555555550097',
+ 1,
+ $pf$Designing the review structure — 35 minutes, not 2 hours$pf$,
+ $pf$I want to build a sustainable weekly review practice. I'm an operations manager at a 50-person creative agency. My weeks are reactive: things land in my inbox all week from account managers, the CEO, vendors, whoever. By Friday afternoon my brain is done.
+
+I've tried weekly reviews before. Here's exactly why they've failed:
+
+1. They take too long. Every system I've tried runs 90 minutes to 2 hours once I'm actually in it.
+2. They feel open-ended. I sit down and don't know where to start, so I stare at a blank page for ten minutes and then give up.
+3. They require visiting too many different places — email, Asana, Slack, my paper notebook, my calendar — and I lose momentum switching between them.
+
+My constraints: I need something that takes 30–45 minutes maximum. It needs to be structured enough to start without deciding how to start. And I need a shorter version for weeks when I'm exhausted — something that's still worth doing even if it's not the full version.
+
+What structure would you build?$pf$,
+ $pf$The two-hour review fails because it tries to do everything simultaneously: capture, process, evaluate, and plan all at once with no order. Separating those into three distinct phases with hard time boxes solves both the length problem and the blank-page problem — you always know exactly what you're doing and when you're done.
+
+Here is the structure:
+
+---
+
+**Phase 1 — Clear (10 minutes)**
+
+The only goal is to get everything out of your head and into one list. Not organizing it, not evaluating it. Just capturing.
+
+What to sweep:
+- Email: scan by subject line and flag anything that needs a response or action. Archive everything else. You are not reading deeply — you are doing reconnaissance.
+- Asana: scroll your personal task list. Mark completed items done. Note anything that's still open but shouldn't be.
+- Slack: identify threads where you are the blocker or owe someone a response.
+- Paper notebook: anything you wrote down this week that hasn't been captured somewhere else.
+
+Time box: 10 minutes. Stop when the timer goes off even if you're not done. This phase is not about achieving inbox zero. It's about having a single consolidated list to work from in Phase 2.
+
+---
+
+**Phase 2 — Review (15 minutes)**
+
+Now look at what happened. Three questions only:
+
+1. *What did I actually accomplish this week?* Write it down. Most people skip this step and then wonder why they feel unproductive. Doing this creates the before-and-after picture that makes the rest of the review feel worth it.
+2. *What didn't happen that I expected to?* Not to assign blame — to notice patterns. If the same item keeps landing on next week's list, it either needs to be delegated or killed.
+3. *What is unresolved and will haunt me over the weekend?* If you can clear it in five minutes right now, clear it. If not, write it at the top of Monday's list explicitly so your brain stops holding onto it.
+
+---
+
+**Phase 3 — Plan (10 minutes)**
+
+Set up next week only — not the next quarter.
+
+- Write down the three things that must happen next week. Not "would be nice to." Must. If you can't identify three clear musts, that is itself useful information.
+- Scan next week's calendar: is there a meeting you haven't prepared for yet?
+- Pick one item from your task list that has been deferred more than twice. Either schedule it with a specific date, or delete it. No more deferring.
+
+---
+
+**Minimum viable review (for exhausted Fridays)**
+
+Phase 3 only. Ten minutes. Write the three must-dos for next week and check whether you owe anyone anything that can't wait until Monday. That's it. A ten-minute review is infinitely better than no review.
+
+---
+
+**On the "too many places" problem**
+
+Phase 1 is specifically designed to solve this. Its purpose is to consolidate everything into one list so that Phases 2 and 3 can run entirely from that list with no app-switching. If Phase 1 is working, Phases 2 and 3 should be done from paper or a single Notion page — no toggling between tools.$pf$,
+ NULL),
+
+-- Step 2 --
+('66666666-6666-6666-6666-666666970102',
+ '55555555-5555-5555-5555-555555550097',
+ 2,
+ $pf$Building the Notion template — copy and use every Friday$pf$,
+ $pf$The three-phase structure with hard time boxes is exactly what I needed. The blank-page problem was the real issue — having a defined scope for each phase means I'm not deciding how to review, I'm just following the structure.
+
+Now I need a Notion template. A few specifics:
+- Page, not a database. I duplicate it each Friday and rename it to the date.
+- Covers all three phases with enough structure that I can start without reading instructions.
+- Includes the minimum viable version at the bottom so I can skip to it on bad weeks.
+- Not too wordy in the template itself. Prompts and checkboxes, not paragraphs.
+
+Show me exactly what the template should look like.$pf$,
+ $pf$Here is the complete template. In Notion: create a new page, paste everything below, then turn it into a template using the "Templates" button (top right of any page). Each Friday: duplicate → rename to `2026-MM-DD Weekly Review`.
+
+---
+
+```
+# Weekly Review — [Date]
+
+---
+
+## ⏱ Phase 1 — Clear  •  10 min
+
+**Sweep:**
+☐ Email — flag anything needing a response, archive the rest
+☐ Asana — mark completed items done; note anything open that shouldn't be
+☐ Slack — threads where I'm the blocker or owe a reply
+☐ Notebook — anything written this week not yet captured elsewhere
+
+**Anything urgent in the sweep?**
+→ [write here, or "none"]
+
+---
+
+## 🔍 Phase 2 — Review  •  15 min
+
+**What I actually got done this week:**
+-
+-
+-
+
+**What I expected to do but didn't:**
+-
+-
+
+**What's unresolved that will haunt me this weekend?**
+(If clearable in <5 minutes: do it now. Otherwise: top of Monday's list.)
+→ [write here, or "none"]
+
+---
+
+## 📋 Phase 3 — Plan  •  10 min
+
+**Three things that MUST happen next week:**
+1.
+2.
+3.
+
+**Calendar check — any prep still needed before a meeting?**
+→ [write here, or "none"]
+
+**One item deferred 2+ times: real or dead?**
+Item: ___________________
+☐ Schedule it → date: ___   ☐ Kill it
+
+---
+
+## ✅ Wrapped up
+
+Started: ___   Finished: ___
+
+One thing I want to remember for next week:
+
+---
+---
+
+## 🔥 Minimum Viable Review  •  10 min only
+
+**Three must-dos for next week:**
+1.
+2.
+3.
+
+**Do I owe anyone anything that can't wait until Monday?**
+→ [yes / no — if yes: handle it or add to top of Monday's list]
+
+Done.
+```
+
+---
+
+**A few Notion-specific setup notes:**
+
+*Callout blocks for phase headers*: convert the `## Phase` headings to Callout blocks (type `/callout`). The emoji and shaded background create a visual break that tells your eyes "new phase" without reading. Much easier to navigate when you're tired on a Friday.
+
+*Toggle for the Phase 1 sweep list*: put the four checkbox items inside a toggle block (type `/toggle`, then move the checkboxes inside it). The toggle collapses after you sweep through it, so Phase 2 appears cleanly without the completed list cluttering your view.
+
+*Naming convention*: use ISO format — `2026-04-25 Weekly Review` — so pages sort chronologically in the sidebar without any effort. Written-out dates (`April 25 Weekly Review`) sort alphabetically and end up scattered.
+
+*Templates button*: set this page as a Notion template so "New from template" is a single click. Put the template in a `Weekly Reviews` page so all your reviews live in one folder and are searchable by date or keyword from Notion's global search.$pf$,
+ NULL),
+
+-- Step 3 --
+('66666666-6666-6666-6666-666666970103',
+ '55555555-5555-5555-5555-555555550097',
+ 3,
+ $pf$Anti-collapse mechanics — what actually keeps the system running$pf$,
+ $pf$The template is in Notion. The structure makes sense. Here's my pattern: I run the review for two or three weeks. Then I have a busy Friday, skip it, tell myself I'll do it Monday, don't do it Monday, feel vaguely guilty, skip the next Friday because I already broke the streak, and eventually just stop.
+
+I don't want general motivation advice about "building habits." I want the specific mechanics that prevent each failure mode. What actually stops the collapse?$pf$,
+ $pf$Your collapse sequence is specific — skip one Friday, guilt spiral, abandon — so the fixes need to be specific too. Here are the three mechanics that target each part of that pattern.
+
+---
+
+**Failure mode 1: "I'm busy this Friday, I'll do it Monday."**
+
+Monday doesn't happen. The weekly review only works if it is attached to Friday, because Friday is the natural clearing point before the weekend. Monday-you is already reacting to new inputs and has no interest in reviewing last week.
+
+**Fix: trigger stacking.** Attach the review start to a physical action you already do every Friday without deciding to. Not a time ("I'll start at 4pm") — a behavior. Examples:
+
+- "When I close my laptop at the end of Friday, I open Notion and start the review."
+- "When I make my Friday afternoon coffee, I open the template before I do anything else."
+- "When I put on my headphones for the end-of-day wind-down, the first thing I open is the weekly review."
+
+The prior action becomes the trigger. You are not deciding to start the review — the action before it decides for you. This eliminates the "I don't feel like it" window entirely.
+
+The trigger must be physical and specific. "When I'm done with work" is too vague and requires a judgment call. "When I close my laptop lid" requires no judgment. Pick one and write it down in the template itself.
+
+---
+
+**Failure mode 2: You skip once and then guilt kills the system.**
+
+The shame of one missed week is more destructive than the missed week itself. Right now your mental model treats a skipped review as a system failure. That's what causes abandonment — not the skip itself.
+
+**Fix: a written rescue protocol.** Add this text to the bottom of your Notion template, below the Minimum Viable Review section:
+
+*"If I skipped last week: run the Minimum Viable Review right now. One missed week is one missed workout, not a broken system. The only failure is not restarting. Start at the top of the MVR."*
+
+The psychological move here: the Minimum Viable Review is explicitly sufficient. When you are two weeks behind, you do not need to reconstruct last week's review. You run the 10-minute version for this week and move forward. The system is designed to absorb misses. You are not violating a contract — you're using the rescue route that was always there.
+
+Having this written in the template itself means you read it on a guilty Friday when you're considering skipping again. You don't have to remember the rule; it's in front of you.
+
+---
+
+**Failure mode 3: One long session poisons the expectation.**
+
+If the review runs 75 minutes once — because you're deep in it and don't want to stop — it starts to feel like a 75-minute commitment even when it usually takes 38. One long session rewrites the expected duration more than twenty normal ones do.
+
+**Fix: the timer is non-negotiable.** Set a 40-minute countdown when you open the template. When it goes off, stop. Write "time's up" in the wrap-up section and close the page. A partial review is worth more than a perfect review that never happens next week.
+
+If you consistently need more than 40 minutes, the problem is not time management — something is creeping into your review that doesn't belong there. Common culprits: deep email processing (that's separate work, not a sweep), project planning (that's a different meeting), or trying to actually complete tasks during the review instead of just capturing them. Identify the leaking phase and tighten it.
+
+---
+
+**The one framing shift that predicts whether it sticks**
+
+Your job is almost entirely reactive. A weekly review is the one 40-minute window per week that is entirely yours — where you decide the agenda, the pace, and what gets attention. People who frame it as "a productivity chore I have to do" abandon it. People who frame it as "the one thing per week I'm fully in charge of" protect it.
+
+Whether that framing works for you I can't predict. But the three mechanics above are structural — they work even on weeks when you don't feel like it, because they don't rely on motivation.$pf$,
+ NULL);
+
+-- =========================================================================
 -- END OF FILE — append next project(s) below this line.
 -- Iterations working the Content queue: add 2–3 projects per iteration,
 -- appending below this comment. Do NOT rewrite existing projects.

@@ -40219,5 +40219,549 @@ East Nashville property values have compounded at 4–6% annually over the prior
 Offer at $375,000 with $3,000 closing concession and a separate $7,500 ask on the HVAC. You have a real number, documented inspection support, and the model has been stress-tested. Make the call.$pf$,
  NULL);
 
+-- ---------------------------------------------------------------------------
+-- Project 0112 — ops_nina / Productivity / beginner / 3-step / Sonnet 4.6
+-- Topic: Building a 90-day remote onboarding program from scratch for a first CS hire
+-- ---------------------------------------------------------------------------
+
+DELETE FROM prompt_steps WHERE prompt_id = '55555555-5555-5555-5555-555555550112';
+DELETE FROM prompts      WHERE id        = '55555555-5555-5555-5555-555555550112';
+
+INSERT INTO prompts (
+  id, title, description, content, result_content,
+  category_id, difficulty, model_used, model_recommendation,
+  tools_used, tags, status, author_id, vote_count, bookmark_count
+) VALUES (
+  '55555555-5555-5555-5555-555555550112',
+  $pf$Built a 90-day remote onboarding program from scratch — one afternoon before our first CS hire started$pf$,
+  $pf$Nina Kowalski, ops lead at a 22-person all-remote SaaS company, building a structured first-90-days onboarding program before her company's first dedicated customer success hire. No prior process — just ad-hoc Slack invites and shipped laptops. Three passes: the framework and principles, a week-by-week plan for the CS role, and the day-one welcome packet.$pf$,
+  $pf$We hired Maya Okonkwo as our first head of customer success. Start date: three weeks out. At Sprocket, we build project management software for creative agencies. We have 22 full-time employees, all remote, spread across six time zones. We have been a company for two and a half years. In that time, the sum total of our onboarding program has been: ship the laptop, add to Slack, schedule a few intro calls, and tell people to ask questions.
+
+It worked when we were seven people. By the time we got to fifteen it was creating real problems. Our product engineer took nearly three months to feel confident about the codebase. Our account manager had been at the company for six months before someone thought to walk her through how we calculate churn. We lose a lot of institutional knowledge to the "ask whoever's online" approach.
+
+Maya's role is brand new for us. She is inheriting 62 accounts, a Zendesk queue with roughly fifteen open tickets, and a lot of undocumented tribal knowledge about which customers need weekly check-ins and which ones are self-serve and get annoyed when you reach out too often. If she does not ramp well, real accounts churn before she is even comfortable.
+
+I have three weeks. I have never built a formal onboarding program before. I have been through one good one and several bad ones, which gives me opinions. I am using Claude to do this faster and better than I would do it on my own.$pf$,
+  $pf$A three-piece onboarding suite that I had ready five days before Maya's start date.
+
+The framework — a one-page philosophy document that everyone on the team read before Maya joined, explaining the three-phase approach and what we were asking of the people she would be meeting in those first ninety days. It changed how the intro calls went.
+
+A week-by-week plan, specific enough that Maya said in her first week she never felt like she was floating. She knew what each week was for and what success looked like before the week started.
+
+The day-one welcome packet — the first document in her inbox on her start date. By the time she finished reading it she knew where everything was, what the first week would look like, and did not need to ask anyone where the employee handbook lived.
+
+Maya fully owned her accounts by week nine. One customer called to say the new CS hire had "already saved the relationship." That would not have happened if she had spent month one figuring out basic logistics.$pf$,
+  '11111111-1111-1111-1111-111111111107',
+  'beginner',
+  'claude-sonnet-4-6',
+  'Claude 4.6 Sonnet',
+  ARRAY['Claude'],
+  ARRAY['onboarding', 'remote work', 'operations', 'customer success', 'new hire', 'SaaS'],
+  'approved',
+  '22222222-2222-2222-2222-222222222206',
+  0,
+  0
+);
+
+INSERT INTO prompt_steps (id, prompt_id, step_number, title, content, result_content, description) VALUES
+
+-- Step 1 --
+('77777777-7777-7777-7777-777777112001',
+ '55555555-5555-5555-5555-555555550112',
+ 1,
+ $pf$Designing the framework before building anything$pf$,
+ $pf$I need to build a first-hire onboarding program from scratch before our new head of customer success starts in three weeks. Some context so you have the full picture.
+
+We are Sprocket, a 22-person all-remote B2B SaaS company building project management software for creative agencies. Our new hire, Maya, is our first dedicated customer success manager. She is inheriting 62 accounts — a mix of about 18 high-touch enterprise accounts paying $800 to $2,400 per month and the rest mid-market or self-serve. We use Zendesk for support, Notion for documentation, and HubSpot for account health tracking, though the CRM is not well-maintained.
+
+Our current onboarding process is: ship the laptop, add to Slack, and schedule a few intro calls. That stopped scaling around 15 people. Our most recent hire took four months to feel genuinely productive and never felt she knew what was expected at each stage.
+
+I want to build this right before Maya starts, not bolt it together after she is already confused. I have never built a formal onboarding program before. Before I write any documents or schedules, help me design the framework. What should the structure of a 90-day remote onboarding program look like? What are the phases, what does each phase need to accomplish, and what are the milestones that tell me someone is on track versus lost? And specifically for a head of CS role where she needs both product depth and customer relationship context — what do most remote onboarding programs get wrong?$pf$,
+ $pf$Before you build any documents, there are three structural decisions that will shape everything else.
+
+**The three phases**
+
+**Phase 1 — Learn (weeks 1–3).** The job of this phase is context, not contribution. Maya is not expected to own accounts, close anything, or fix anything. Her job is to absorb: product, customers, team, tools, and unwritten norms. The most common mistake companies make in this phase is scheduling too many intro calls and not enough time to read. Intro calls are high-effort, low-retention information transfer. Build a reading track — specific documents in a specific order — and protect time for it. Every intro call should have a document the person writes in advance that Maya reads before the call. The call deepens context; it does not provide it.
+
+**Phase 2 — Build (weeks 4–8).** The job of this phase is co-ownership. Maya starts taking on accounts, but not alone. She shadows customer interactions first, then co-leads, then owns with someone available to backstop. The milestone at the end of phase 2 is that she has run at least three customer check-ins independently and received feedback on each one. The goal is not independence yet — it is calibrated independence, where she knows which decisions she can make solo and which ones to flag.
+
+**Phase 3 — Own (weeks 9–12).** Full ownership. She is running her book, handling the Zendesk queue without routing to others, and has made at least one proactive decision about account health without prompting. The end-of-phase milestone is not a checklist — it is a genuine conversation about what she still needs and what the next ninety days should look like.
+
+**What most remote onboarding programs get wrong**
+
+Three patterns come up repeatedly.
+
+Too much meeting, not enough documentation. Remote companies substitute intro calls for the organic hallway exposure of an office environment. The intent is right; the execution produces a new hire who has had forty introductory conversations and retained fragments of each. Solution: pre-read documents before every intro call, so the call deepens context rather than delivering it cold.
+
+No separation between product knowledge and customer knowledge. For a CS role, these are different learning tracks. Product knowledge comes from the product itself, internal docs, and engineering. Customer knowledge comes from Zendesk history, recorded calls, and notes from whoever held the CS function before. Conflating them produces a hire who can walk through the demo but cannot remember which customer segment generates the most support volume.
+
+Treating completion as success. The milestone at the end of each phase is not "attended all intro calls" or "read all documents." It is a behavioral outcome. For phase 1: can she navigate the product and explain what each plan tier is for? For phase 2: did she run three customer check-ins and receive a green on her account-handling judgment? These outcomes require explicit measurement conversations, not the assumption that time elapsed equals readiness.
+
+**One thing specific to Maya's role:** before she touches any customer directly, she should read the last 90 days of Zendesk history for her top fifteen accounts. This sounds tedious; it is not. It surfaces context she would otherwise spend six months discovering through mistakes. Pair that with a "who is who" document — not an account list, but a document that translates each account into: high-touch or low-touch, current health, relationship quirks, and last notable interaction. Whoever handled CS before Maya should write this before her start date.$pf$,
+ NULL),
+
+-- Step 2 --
+('77777777-7777-7777-7777-777777112002',
+ '55555555-5555-5555-5555-555555550112',
+ 2,
+ $pf$Building the week-by-week plan for Maya's first 90 days$pf$,
+ $pf$The three-phase framework is exactly what I needed. Separate reading tracks for product versus customer context, behavioral milestones instead of completion metrics, documentation before every intro call — those principles are going to change how I structure the whole program.
+
+Now I need the week-by-week plan built out for Maya's specific situation. Here are the details: Sprocket is a 22-person all-remote B2B SaaS, project management tool for creative agencies. Maya is our first dedicated CS hire, inheriting 62 accounts — about 18 high-touch enterprise accounts and the rest mid-market or self-serve. We use Zendesk, Notion, and HubSpot. HubSpot is incomplete and not fully trusted. I have been informally handling CS for the past eight months while doing other work, so I am the context-transfer person.
+
+Using the three-phase framework, give me the week-by-week plan through month three. For each week: primary focus, specific activities, what she should read, and the success signal that tells me she is on track. Specific enough that I can actually build the schedule from this.$pf$,
+ $pf$A few structural notes before the schedule: aim for no more than three hours per day of structured onboarding in weeks one and two, so Maya has time to process. Reduce to one or two hours per day in weeks three and four as she develops her own questions. Reading track items should be compiled in a single Notion page labeled by week and sent before her start date. Success signals are behavioral, not completion-based.
+
+---
+
+**Week 1 — Product orientation and team foundation**
+
+Primary focus: understand what Sprocket does, for whom, and how the product works at a user level.
+
+Activities: Day 1 is account setup plus reading this welcome packet — no meetings until afternoon. Day 2 is a two-hour product walkthrough with your product lead, driven by Maya, not a sales demo. Day 3 is a broad pass through the last 30 days of Zendesk history: pattern recognition, not case resolution. Days 4 and 5 are the first three team intro calls (Engineering, Product, Sales) using pre-read documents sent 24 hours in advance.
+
+Reading track: company one-pager, current pricing page (internal version with margins), your top five most-read knowledge base articles, and the last two all-hands notes.
+
+Success signal: Maya can explain what Sprocket does, who the buyer is, and what the core workflow looks like without referencing documentation. She can navigate Zendesk and find a ticket from a specific account.
+
+---
+
+**Week 2 — Customer knowledge and context transfer**
+
+Primary focus: understand the account base before touching any customer.
+
+Activities: a 90-minute context transfer session with you covering the top 18 high-touch accounts using the "who is who" document, with honest acknowledgment of what the HubSpot data can and cannot be trusted for. Shadow two inbound customer interactions — observe only, no response. Read the last six months of churn post-mortems.
+
+Reading track: top five feature request threads from Zendesk, the three churn post-mortems, the internal ideal customer profile document.
+
+Success signal: Maya can name the top five accounts by ARR and describe each one's current situation without looking anything up.
+
+---
+
+**Weeks 3–4 — First co-owned account interactions**
+
+Primary focus: transition from observation to co-ownership on a small set of low-risk accounts.
+
+Activities: select six low-risk accounts for Maya to co-manage — healthy accounts with no recent support volume and a renewal date at least four months out. For each account, Maya writes the check-in message and you review before send. Maya runs her first independent Zendesk ticket response; you review within 30 minutes.
+
+Success signal: Maya wrote and sent four customer messages with no revisions required on the second pass.
+
+---
+
+**Weeks 5–8 — Build phase: expanding ownership**
+
+Primary focus: gradual transfer of account ownership. Maya leads, you backstop.
+
+Week 5: Maya owns the Zendesk queue for her six assigned accounts independently and routes escalations to you with context. Week 6: first solo enterprise check-in, with a 30-minute prep sync beforehand and a 15-minute debrief after. Weeks 7 and 8: expand to twelve owned accounts; second solo enterprise check-in.
+
+Success signal: by end of week 8, Maya ran three customer check-ins independently and your feedback was directional rather than correctional. She can name the renewal month for her twelve accounts without looking it up.
+
+---
+
+**Weeks 9–12 — Own phase: full book**
+
+Primary focus: Maya owns all 62 accounts. Focus shifts from learning to optimization.
+
+Week 9: full account transfer — Maya takes the HubSpot queue, Zendesk assignments, and renewal calendar. Week 10: first proactive health intervention — Maya identifies a red-flag account before being asked and proposes an action plan. Weeks 11–12: Maya runs her first quarterly business review for a high-touch account, prep deck drafted in Notion and reviewed once.
+
+End-of-phase conversation: what has she mastered, what does she still need, what should the next 90 days focus on?
+
+Success signal: Maya identified and acted on an account health risk before being prompted. The QBR ran without escalation.$pf$,
+ NULL),
+
+-- Step 3 --
+('77777777-7777-7777-7777-777777112003',
+ '55555555-5555-5555-5555-555555550112',
+ 3,
+ $pf$Writing the day-one welcome packet$pf$,
+ $pf$The week-by-week plan is exactly what I needed — I am going to convert this directly into a Notion page for Maya and the team. One more thing: I want to build the day-one welcome packet. This is the first document Maya gets, the evening before her start date or first thing on day one morning.
+
+It should not be a wall of text. It should be organized, warm but not effusive, and give her everything she needs to not feel like she is floating on day one. She should finish reading it and know: where everything lives, what the first week looks like, who to contact when something is not working, and that someone thought about her start before she arrived.
+
+What should go in a day-one welcome packet for a remote hire joining a small SaaS company? Then write the actual document for Maya, tailored to Sprocket, her CS role, and the three-phase framework we just built. Use the specific details — company name, tool stack, her accounts, the first week schedule — so it reads as a real document, not a template.$pf$,
+ $pf$A day-one welcome packet has one job: make it so she never has to ask "where do I find X?" for anything in week one. Everything else — relationship building, deep product knowledge, account context — happens over ninety days. The first day is logistics, clarity, and a signal that the company prepared for her arrival.
+
+What goes in it: an orienting message from the person who owns onboarding, the week-one schedule, access instructions for every tool she will use, the five documents to read before her first intro call, a quick reference for week-one contacts, and a FAQ for first-day questions. No HR boilerplate, no mission statement, no company history. Those belong elsewhere.
+
+Here is the actual packet:
+
+---
+
+**Welcome to Sprocket, Maya**
+
+I am Nina, operations lead here and your main point of contact through onboarding. Your first week is structured intentionally. The goal is not to overwhelm you with information — it is to get you to a place where you can navigate the product, understand who our customers are, and feel grounded before you take on any account responsibility. That does not happen until week three at the earliest, and that is by design.
+
+A few things to know before you start:
+
+**How we communicate.** Slack is for quick questions and social presence. Notion is where documentation lives — check it before asking anyone, there is a good chance the answer is already there. Zendesk is where all customer communication lives; you will get oriented on Friday of your first week.
+
+**The team.** 22 people, six time zones, no physical office. Company all-hands is the second Tuesday of each month at 10am Eastern. Before each intro call I have scheduled for you, you will receive a short document from the person you are meeting — read it first. It makes the call significantly more useful.
+
+**Your first week:**
+
+| Day | Focus | Primary activity |
+|-----|-------|-----------------|
+| Monday | Orientation | Account setup, this document, no meetings until afternoon |
+| Tuesday | Product | 2-hour product walkthrough with Jordan (product lead) — you drive |
+| Wednesday | Customer context | 30-day Zendesk history review with me |
+| Thursday | Team | Intro call: Engineering (Reid + Amara) — pre-read sent Tuesday |
+| Friday | Team | Intro calls: Product (Jordan) and Sales (Diego) — pre-reads sent Thursday |
+
+**Your accounts.** You are inheriting 62 accounts. About 18 are high-touch enterprise accounts; the rest are mid-market or self-serve. You will not contact any of them for the first two weeks — that time is for building context, not relationship management. By the end of week two you will know the top 18 accounts by name, health, and recent history before you send a single message.
+
+**Read these before Thursday:**
+
+1. Sprocket — What we do and who we do it for (5 minutes)
+2. Current pricing tiers — internal version with margins (5 minutes)
+3. Top five most-read knowledge base articles (15 minutes)
+4. Last two all-hands notes (10 minutes)
+5. CS role context — what the prior eight months looked like (10 minutes)
+
+All five are linked in the Notion page titled **Maya Onboarding — Week 1 Reading Track**, pinned in the #onboarding Slack channel.
+
+**Access checklist — complete by 11am Monday:**
+- Slack (invite sent to your email)
+- Notion (invite sent, access to all public workspaces)
+- Zendesk (agent seat provisioned, queue access)
+- HubSpot (read access; write access follows week-two training)
+- Zoom (SSO via Google Workspace)
+- Google Drive (shared with company domain)
+
+If any of these are not working by 11am, Slack me directly. Do not spend time troubleshooting access on your first day.
+
+**Getting help.** If you are stuck on anything — cannot find a document, not sure who to ask — message me. Week-one questions are expected. Week-six questions about basic logistics mean something in this packet failed.
+
+One thing worth naming: we are building this CS role and this onboarding program at the same time. Some things will be incomplete. If you find a gap — a document that should exist and does not, a process that has not been written down — flag it. You will likely become the person who writes it. That is genuinely part of the job.
+
+Talk to you on Slack today.
+
+— Nina$pf$,
+ NULL);
+
+-- ---------------------------------------------------------------------------
+-- Project 0113 — emwriter / Writing / intermediate / 6-step / Opus 4.7
+-- Topic: Ghostwriting a Series A quarterly investor update after a mixed quarter
+-- ---------------------------------------------------------------------------
+
+DELETE FROM prompt_steps WHERE prompt_id = '55555555-5555-5555-5555-555555550113';
+DELETE FROM prompts      WHERE id        = '55555555-5555-5555-5555-555555550113';
+
+INSERT INTO prompts (
+  id, title, description, content, result_content,
+  category_id, difficulty, model_used, model_recommendation,
+  tools_used, tags, status, author_id, vote_count, bookmark_count
+) VALUES (
+  '55555555-5555-5555-5555-555555550113',
+  $pf$Ghostwrote a first Series A investor update for a founder who had been staring at a blank doc for two days$pf$,
+  $pf$Emily Zhao ghostwriting a Q1 investor update for Kira Nakamura, CEO of Patchwork (Series A B2B SaaS), after a quarter that missed MRR targets but closed three enterprise logos in the final two weeks. Six passes: investor update philosophy, the Q narrative, the metrics table framing, the highlights and lowlights, the ask and Q2 roadmap, and final polish into a send-ready document.$pf$,
+  $pf$Kira Nakamura is the CEO of Patchwork, a B2B SaaS company that sells workflow automation tools for HR teams. She raised a $3.2 million Series A seven months ago from a lead at Crosspoint Ventures and two angels. Q1 just closed. Monthly recurring revenue came in at $87,000 against a $94,000 plan — a 7.5% miss. But in the last two weeks of the quarter, the sales team closed three enterprise accounts. Those three logos, annualized, bring the company to a $93,500 monthly run rate entering Q2. Burn was $148,000 against a plan of $142,000, explained by a VP of Engineering hire that came in two weeks early. Runway at current burn: 18 months.
+
+Kira had been staring at a blank Google Doc for two days. She knew what an investor update should contain in theory but did not know how to handle the tension between "we missed plan" and "we have real momentum." She was afraid that leading with the miss would spook investors and equally afraid that burying it behind the enterprise logos would look like spin.
+
+She reached out after someone in her investor's portfolio recommended me. I have ghostwritten investor updates before, mostly at seed and Series A, where the investor relationships are still forming and the communication stakes are highest. The difference between a well-written investor update and a bad one at this stage is not whether the investors feel good about the quarter. It is whether they trust the founder to be honest when things are hard.
+
+I spent one afternoon with Claude working through this from first principles. Kira sent the finished update two days after we started and had replies from both lead investors within four hours.$pf$,
+  $pf$A 550-word investor update that Kira described as "the first time I have read something I am sending to investors without wanting to change every sentence."
+
+Both lead investors replied within four hours of send. Her Crosspoint contact wrote: "Q1 note was clear-eyed and useful — exactly what I want from a Series A company. Call scheduled for end of April." The two angels each sent one-line replies. No follow-up questions about the revenue miss.
+
+The finished document lives in Patchwork's investor relations Notion and serves as the template for every future quarterly update. It has since been shared with three other founders in the Crosspoint portfolio who were asked to model their updates on it.$pf$,
+  '11111111-1111-1111-1111-111111111103',
+  'intermediate',
+  'claude-opus-4-7',
+  'Claude 4.7 Opus',
+  ARRAY['Claude'],
+  ARRAY['investor relations', 'ghostwriting', 'Series A', 'SaaS', 'startup communication', 'quarterly update'],
+  'approved',
+  '22222222-2222-2222-2222-222222222208',
+  0,
+  0
+);
+
+INSERT INTO prompt_steps (id, prompt_id, step_number, title, content, result_content, description) VALUES
+
+-- Step 1 --
+('77777777-7777-7777-7777-777777113001',
+ '55555555-5555-5555-5555-555555550113',
+ 1,
+ $pf$Understanding what Series A investors actually want from a quarterly update$pf$,
+ $pf$I need to ghostwrite a quarterly investor update for a Series A founder who has never written one. Before I write a single sentence, I want the framework right.
+
+Some context so you understand the situation fully. My client is Kira Nakamura, CEO of Patchwork, a B2B SaaS company that sells workflow automation tools for HR teams. She raised a $3.2 million Series A seven months ago from a lead at Crosspoint Ventures and two angels. Q1 just closed. Revenue came in at $87K MRR against a $94K plan — a 7.5% miss. But in the last two weeks, the sales team closed three enterprise accounts that bring the company's monthly run rate to $93,500 entering Q2. Burn was $148K against a $142K plan. Runway: 18 months.
+
+She has been staring at a blank document for two days because she does not know how to handle the fact that she missed plan on the headline metric while also having real forward momentum. She is afraid that leading with the miss will spook investors; she is also afraid that burying the miss behind the enterprise logos will look like spin.
+
+I have done investor communication work before but I want to think through first principles before drafting anything. Three questions: What do Series A investors actually want from a quarterly update, and what is the biggest mistake founders make at this stage? What is the right structure and target length for an update like this? And how do you present a revenue miss that genuinely was not the whole story without it looking like you are deflecting?$pf$,
+ $pf$Series A investors are not looking for good news. They are testing something more important: whether the founder can give them an accurate picture of reality — including the uncomfortable parts — and whether that picture is connected to a clear view of what happens next. The quarterly update is the primary mechanism by which that trust gets built or eroded over time.
+
+**What Series A investors actually want**
+
+Three things, in priority order.
+
+First: accurate ground truth. Not an optimistic interpretation of the numbers — the actual numbers, presented without hedging language that makes investors do translation work themselves. Investors who see quarterly updates from fifteen portfolio companies learn quickly which founders soft-pedal and which ones level. Being in the second category is a significant long-term asset, especially when you eventually have a genuinely hard quarter and need their support.
+
+Second: a coherent narrative explaining the gap between plan and reality. Not excuses — analysis. "We missed MRR by 7.5% because enterprise sales cycles lengthened; we closed three accounts in the final ten days that represent over $120K ARR hitting Q2 revenue" is coherent analysis. "We were slightly below plan but have strong momentum" is not analysis — it is an adjective where a mechanism should be.
+
+Third: a clear ask. What do you need from your investors this quarter? Introductions? Strategic input? A specific connection? Investors at Series A are actively useful if you give them a specific way to help. An update with no ask leaves half the value on the table.
+
+**The biggest mistake founders make**
+
+The worst one: burying the miss and hoping investors will not notice. They will notice. They see the numbers in your monthly data room before they read the update. If the update glosses over something they already observed, the implicit message is that the founder does not think they are paying attention. This is the trust-destroying version and it is very hard to recover from.
+
+Second worst: writing the update like a press release. Investor updates are operational briefings, not announcement documents. Polished corporate voice and marketing framing signal that the founder is performing rather than communicating.
+
+**Structure and length**
+
+A Series A quarterly update should be 400 to 600 words — readable in under five minutes. Standard structure: (1) quarter in a sentence, honest and factual; (2) Q narrative, two to three paragraphs, what happened and why; (3) a metrics table — actuals versus plan, no interpretive commentary in the table; (4) highlights, three to five bullets with real specifics; (5) lowlights, one to two bullets, analysis not apology; (6) ask, one paragraph, specific and directed; (7) Q2 preview, two to three sentences on what to watch.
+
+**On presenting the revenue miss**
+
+There is a third path between "leading with the miss" and "burying it." Name it accurately and immediately, then provide the mechanism: "Q1 MRR came in at $87K, 7.5% behind plan. The gap came from two enterprise deals that pushed to Q2 — both are now closed, bringing our Q2 entering run rate to $93.5K." That is two sentences. It answers the question investors will immediately have, provides the mechanism, and transitions directly into the forward-looking reality.
+
+The key is that the mechanism must be factually accurate and genuinely explain the gap rather than deflect from it. If enterprise timing caused the miss, say so specifically, name the accounts, and show the result. The miss is not hidden; the cause and consequence are stated plainly. That is not spin — it is accurate context.$pf$,
+ NULL),
+
+-- Step 2 --
+('77777777-7777-7777-7777-777777113002',
+ '55555555-5555-5555-5555-555555550113',
+ 2,
+ $pf$Writing the Q1 narrative section in Kira's voice$pf$,
+ $pf$The structure and the approach to the revenue miss are exactly right. Name it immediately, give the mechanism in two sentences, then move to the forward-looking reality. That framing resolves the tension Kira was stuck on.
+
+Now let's build the Q1 narrative. Just this section for now: the two to three paragraphs that explain what happened in Q1, what drove the gap between plan and actuals, and why the enterprise logos closed in the last two weeks matter for Q2. Here are the details:
+
+Target MRR: $94,000. Actual MRR: $87,000. Gap: $7,000, or 7.5%. The gap came from two enterprise deals expected to close in Q1 that both signed in the last ten days of the quarter — after the MRR count snapshot. Patchwork recognizes MRR when contracts are fully executed, not when they are verbally committed.
+
+The three accounts that closed: Meridian Health (a regional health system, about 800 employees, $2,800/month), Cosgrave + Partners (a professional services firm, 420 employees, $2,100/month), and a third hospital network that has not yet authorized use of their name. Q2 run rate entering: $87,000 existing plus $2,800 plus $2,100 plus $1,650 for the unnamed account, totaling $93,550 per month.
+
+Burn: $148K actual versus $142K plan. The $6K variance was a VP of Engineering hire that came in two weeks earlier than planned.
+
+Kira's voice is direct, not effusive. Short declarative sentences. She is suspicious of adjectives that do not carry weight. Write the Q1 narrative in her voice.$pf$,
+ $pf$Here is the Q1 narrative in Kira's voice:
+
+---
+
+Q1 MRR came in at $87K against a $94K plan. The gap came from two enterprise deals — Meridian Health and a regional hospital network — that signed in the final ten days of the quarter, after the MRR snapshot. Both are fully executed. Including Cosgrave + Partners, which also closed in late Q1, we enter Q2 at $93.5K MRR.
+
+We hired Chris Nakagawa as VP of Engineering two weeks ahead of schedule. That accelerated the close date to late March and added $6K to Q1 burn, bringing total Q1 burn to $148K versus $142K plan. The hire was right and the timing was right. Runway at current burn is 18 months.
+
+The product shipped two features in Q1 — native Workday integration, our most-requested enterprise feature, and a redesigned onboarding flow that reduced time-to-first-workflow by 62%. The Workday integration was cited as a factor in all three enterprise closes.
+
+---
+
+Three things worth flagging about this draft.
+
+First, "the gap came from two enterprise deals" is factually accurate, but Kira should be ready for a follow-up from investors: "Was this a systematic pipeline issue or genuinely a timing issue with specific deals?" If there are four other enterprise deals in the pipeline at similar stages, she can answer that confidently. If the pipeline is thin beyond these three, she should mention pipeline depth somewhere in the update — not as a defensive move, but because investors will ask.
+
+Second, the Workday integration connection to the three enterprise closes is a strong detail and should stay. It creates a direct line from product investment to enterprise sales outcome to revenue. Investors like that causal chain.
+
+Third, "the hire was right and the timing was right" is intentionally direct and unapologetic. A $6K variance on a $148K burn quarter is not alarming; the response to it should be proportionate. Apologetic framing would be a larger signal problem than the number itself.$pf$,
+ NULL),
+
+-- Step 3 --
+('77777777-7777-7777-7777-777777113003',
+ '55555555-5555-5555-5555-555555550113',
+ 3,
+ $pf$Building the metrics table with the right framing$pf$,
+ $pf$The narrative is clean. "The hire was right and the timing was right" — that is exactly Kira's voice and I am keeping that line.
+
+Now let me build the metrics table. I want to present MRR actual versus plan, ARR run rate, burn actual versus plan, and runway. Two questions before I build it.
+
+First, there is a nuance in the ARR run rate. Should I show the Q1 exit ARR run rate of $87K times 12 equals $1.04M, or should I show the Q2 entering run rate of $93.5K times 12 equals approximately $1.12M? Crosspoint will have seen the $87K monthly number. Showing $1.04M feels like presenting the bad version of the number; showing $1.12M feels like making the metric ambiguous by implying it is a Q1 figure when it reflects post-quarter closes. What is the right approach?
+
+Second, how do I handle the unnamed hospital account in the table? They are included in the Q2 run rate but I cannot name them publicly yet. Do I note them as "name TBD" in the table or just roll their MRR into the run rate without attribution?$pf$,
+ $pf$On the ARR run rate: show both numbers, labeled distinctly. Something like:
+
+- Q1 exit ARR run rate: $1.04M
+- Current ARR run rate: $1.12M (reflects three enterprise closes)
+
+Each number answers a different question. Q1 exit run rate is "here is where the business was at the close of the quarter" — the honest baseline. Current ARR run rate is "here is what the business looks like right now" — it reflects the three enterprise closes that happened after the MRR snapshot. Both are accurate; neither is spin. The labeling does the work.
+
+Showing only the Q1 exit run rate forces investors to do the mental math on what the enterprise closes mean. Showing only the current rate without labeling it clearly would be misleading about what quarter it represents. Show both, label both, and the table tells a coherent story.
+
+On the unnamed account: roll their MRR into the current run rate figure in the table without attribution. The metrics table should not have provisional attributions and footnotes; that belongs in the highlights section where you can give it context with a "(name TBD — contract executing)" note. The table is for clean numbers.
+
+---
+
+**Metrics — Q1 2026**
+
+| Metric | Plan | Actual |
+|--------|------|--------|
+| MRR (Q1 exit) | $94,000 | $87,000 |
+| MRR variance | — | –$7,000 (–7.5%) |
+| Q1 exit ARR run rate | $1.13M | $1.04M |
+| Current ARR run rate | — | $1.12M |
+| Q1 burn | $142,000 | $148,000 |
+| Burn variance | — | +$6,000 (+4.2%) |
+| Runway at current burn | — | 18 months |
+
+---
+
+Two notes. The current ARR run rate row has no plan figure because it is not in the original plan — it reflects post-quarter enterprise closes. Leaving the plan cell blank is correct; the absence of a plan figure signals this row is forward-looking, not a Q1 metric.
+
+The burn variance is shown as both a dollar figure and a percentage. A $6K variance sounds significant in isolation; 4.2% on a $148K burn quarter contextualizes it accurately. Include both.$pf$,
+ NULL),
+
+-- Step 4 --
+('77777777-7777-7777-7777-777777113004',
+ '55555555-5555-5555-5555-555555550113',
+ 4,
+ $pf$Writing the highlights and lowlights — including a churn signal Kira wants to omit$pf$,
+ $pf$The metrics table is clean. I like showing both run rate numbers with distinct labels — Kira agreed when I walked her through the reasoning.
+
+Now build the highlights and lowlights sections. Here are all the details I have.
+
+Highlights: the three enterprise closes (Meridian Health at $2,800/month, Cosgrave + Partners at $2,100/month, unnamed hospital network at $1,650/month); native Workday integration shipped in February, most-requested enterprise feature, cited as a factor in all three closes; onboarding redesign shipped in March, time-to-first-workflow down 62% versus Q4 baseline, Q1 new account activation at 71% within seven days versus 44% in Q4; Chris Nakagawa joined as VP Engineering, previously VP Eng at Recurly for three years then two years at a FinTech startup.
+
+Lowlights: Q1 MRR missed plan (already covered in narrative). Also: self-serve monthly churn ticked up from 1.8% to 2.4% in Q1. Kira has not diagnosed the cause yet — she suspects the November pricing change but does not know for certain. She wants to leave it out of the update because she does not have an answer.
+
+There is a real question here: should the churn increase be in the lowlights even though Kira does not know the cause yet? Walk me through the decision, then write both sections.$pf$,
+ $pf$Yes, it should be in the lowlights. Here is the decision logic.
+
+The case for including it: your investors almost certainly have access to churn data through your metrics dashboard or monthly data room. A 33% relative increase in monthly self-serve churn — from 1.8% to 2.4% — is a visible number. If it appears in the data they have and does not appear in the update, the signal is: my founder noticed this and did not mention it. That is a more concerning signal than the churn number itself.
+
+The case against including it: Kira does not have the answer yet, so any explanation would be speculative.
+
+The resolution: the case against is weaker than it sounds. Series A investors do not expect founders to have answers to every negative trend by the time the quarterly update goes out. What they expect is that the founder noticed the trend and is investigating it. "Self-serve monthly churn increased from 1.8% to 2.4% in Q1; we are investigating — leading hypothesis is the November pricing change, and we will have clarity by end of April" is not a confession of failure. It is exactly the kind of operational honesty that builds the long-term trust Kira wants. The alternative — omitting a visible metric — undermines that trust in a way that is much harder to recover from.
+
+---
+
+**Highlights**
+
+- Three enterprise closes: Meridian Health ($2,800/month), Cosgrave + Partners ($2,100/month), and a regional hospital network (name TBD — contract executing, $1,650/month). All three cited native Workday integration as a factor in their decision.
+- Workday integration shipped in February — our most-requested enterprise feature. Cited by two of three enterprise sales cycles as the reason for switching from a competitor; cited by the third as removing the final blocker to executive sign-off.
+- Onboarding redesign shipped in March. Time-to-first-workflow reduced 62% versus Q4 baseline. Q1 new account activation at 71% within seven days; Q4 baseline was 44%.
+- Chris Nakagawa joined as VP Engineering. Previously VP Engineering at Recurly for three years, then led engineering through acquisition at a FinTech startup. Building the enterprise infrastructure roadmap starting Q2.
+
+**Lowlights**
+
+- Q1 MRR at $87K versus $94K plan (detail in narrative above).
+- Self-serve monthly churn increased from 1.8% to 2.4% in Q1. We are investigating; leading hypothesis is the November pricing change affecting the lowest-tier plan. Diagnosis and action plan by end of April.
+
+---
+
+One structural note: the first lowlights bullet repeats something already covered in the narrative. It is conventional to include it here as a formal acknowledgment so the lowlights section does not appear to be conspicuously avoiding the headline number. Kira can cut it if she finds it redundant, but I would leave it in.$pf$,
+ NULL),
+
+-- Step 5 --
+('77777777-7777-7777-7777-777777113005',
+ '55555555-5555-5555-5555-555555550113',
+ 5,
+ $pf$Writing the ask and Q2 roadmap — and whether to make two asks$pf$,
+ $pf$Good. Including the churn is the right call and Kira agreed. The "we are investigating" framing is exactly right — honest without being alarmist.
+
+Now the ask and Q2 roadmap. Here is what Kira actually needs from investors this quarter.
+
+She wants one introduction: her Crosspoint lead, Adam Wheeler, has a strong relationship with the head of People Operations at a large professional services firm that has been publicly discussing HR automation investment. The account would be 600-plus seats. Kira has not asked Adam directly because she is not sure how to make the ask in a way that does not feel like burning a favor.
+
+She also wants strategic input from one of her angels, Jan, who is a former Fortune 500 CHRO. Not an introduction — just 30 minutes of thinking on how enterprise HR teams evaluate vendor credibility. She keeps losing late-stage evaluations to "insufficient track record" objections.
+
+She is worried that asking for two different things in the same update looks like she is overwhelming people with asks.
+
+Q2 priorities: land at least one more enterprise in the regional health system vertical (Meridian Health made two warm introductions in March, both in active evaluation); complete the Slack integration by end of May (next most-requested enterprise feature, 60% scoped); investigate and address the self-serve churn trend; push self-serve activation from 71% to 80%.
+
+Write the ask section and Q2 roadmap, and address Kira's concern about making two asks.$pf$,
+ $pf$On asking for two things: this is not a problem. Investors at Series A understand they play different roles — some open doors, some provide strategic counsel, some do both. Adam's role here is a warm introduction. Jan's role is thirty minutes of strategic thinking on enterprise buying behavior. These are different asks directed to different people. Framing each one specifically, with the right person named, is not "asking for too much" — it is operational clarity. An update that ends with "please reach out if you can help" is actually more burdensome, because it forces every investor to interpret what help you need. Write each ask specifically and direct each to the right person.
+
+---
+
+**Ask**
+
+Two things this quarter, directed to different people.
+
+Adam — I would welcome an introduction to your contact at the People Operations head if the timing is right for you. We now have two enterprise references in the regional health and professional services verticals, and their profile fits our current ICP closely. Happy to send a two-paragraph context note to make the intro easy if that helps.
+
+Jan — given your CHRO background, I would genuinely value thirty minutes of your thinking on how enterprise HR teams evaluate vendor credibility. We are occasionally losing late-stage evaluations to "insufficient track record" objections and I want to get better at addressing that. Would you be up for a call before end of April?
+
+---
+
+**Q2 — what to watch**
+
+- Enterprise: close at least one additional regional health system account. Meridian Health made two warm introductions in March; both are in active evaluation.
+- Product: ship Slack integration by end of May. Next most-requested enterprise feature; 60% scoped.
+- Self-serve: diagnose and address the churn trend by end of April; push new account activation from 71% to 80%.
+
+The leading indicator I would watch for Q2: new enterprise opportunities converting in the health system vertical. If Meridian's referrals and Chris's first two months on enterprise infrastructure convert, the Workday thesis was a real product wedge. If they stall, Q1 enterprise closes were relationship-driven rather than product-driven — and that changes what we focus on.
+
+---
+
+One framing note: the ask section is written in second person, directly addressing Adam and Jan, because investor updates at Series A are best sent as individual emails rather than a single BCC'd blast. Individual sends let Kira add a one-line opening specific to each investor before the shared update text. If she sends as a group email, the second-person framing would need adjustment — but individual sends are the right practice here.$pf$,
+ NULL),
+
+-- Step 6 --
+('77777777-7777-7777-7777-777777113006',
+ '55555555-5555-5555-5555-555555550113',
+ 6,
+ $pf$Final polish and assembling the send-ready document$pf$,
+ $pf$Everything is there. Now I need the final polish pass and the assembled send-ready document.
+
+Read everything we built: the Q1 narrative, the metrics table, the highlights and lowlights, the ask, and the Q2 roadmap. Assemble it into a single final document. As you do it, fix anything that does not sound like Kira's voice — short declarative sentences, no adjectives that are not pulling weight, no corporate language. Check that the narrative flows from section to section without repetition. Flag anything that should be cut.
+
+Then give me the complete document, ready to paste into a Google Doc and send.$pf$,
+ $pf$Three changes made in the polish pass, noted before the final document.
+
+The Q narrative's third paragraph covered the Workday integration and onboarding redesign in detail — the same material appears in Highlights. Cut the third paragraph to just the VP of Engineering hire, which belongs in the narrative because it explains the burn variance. Product milestones stay in Highlights only.
+
+"Current ARR run rate" label in the metrics table is cleaner and more self-explanatory than "Q2 entering ARR run rate." Investors will understand from the narrative that it reflects post-quarter closes; the table does not need to repeat the mechanism.
+
+The ask section opening "Two things this quarter, directed to different people" was cut — it reads as a header, not Kira's voice. The specificity of each ask makes the transition self-evident.
+
+---
+
+**Patchwork — Q1 2026 Investor Update**
+
+*From Kira Nakamura, CEO | April 2026*
+
+---
+
+Q1 MRR came in at $87K against a $94K plan. The gap came from two enterprise deals — Meridian Health and a regional hospital network — that signed in the final ten days of the quarter, after the MRR snapshot. Both are fully executed. Including Cosgrave + Partners, which also closed in late Q1, we enter Q2 at $93.5K MRR.
+
+We hired Chris Nakagawa as VP of Engineering two weeks ahead of schedule. That brought Q1 burn to $148K versus $142K plan. The hire was right and the timing was right. Runway at current burn is 18 months.
+
+---
+
+**Metrics — Q1 2026**
+
+| | Plan | Actual |
+|--|------|--------|
+| MRR | $94,000 | $87,000 (–7.5%) |
+| Q1 exit ARR run rate | $1.13M | $1.04M |
+| Current ARR run rate | — | $1.12M |
+| Q1 burn | $142,000 | $148,000 (+4.2%) |
+| Runway | — | 18 months |
+
+---
+
+**Highlights**
+
+- Three enterprise closes: Meridian Health ($2,800/month), Cosgrave + Partners ($2,100/month), regional hospital network TBD ($1,650/month). All three cited Workday integration as a factor.
+- Workday integration shipped in February. Cited in two of three enterprise sales cycles as the reason for switching from a competitor; cited in the third as removing the final blocker to executive sign-off.
+- Onboarding redesign shipped in March. Time-to-first-workflow down 62% versus Q4 baseline. Q1 new account activation at 71% within seven days; Q4 baseline was 44%.
+- Chris Nakagawa joined as VP Engineering. Previously VP Eng at Recurly for three years, then led engineering through acquisition at a FinTech startup. Enterprise infrastructure roadmap starts Q2.
+
+**Lowlights**
+
+- Q1 MRR at $87K versus $94K plan (detail above).
+- Self-serve monthly churn increased from 1.8% to 2.4% in Q1. We are investigating; leading hypothesis is the November pricing change. Diagnosis and action plan by end of April.
+
+---
+
+Adam — I would welcome an introduction to your contact at the People Operations head if the timing is right. We have two enterprise references in adjacent verticals now. Happy to send a two-paragraph context note to make the intro easy.
+
+Jan — given your CHRO background, I would find it useful to spend thirty minutes on how enterprise HR teams evaluate vendor credibility. We are occasionally losing late-stage evaluations to insufficient track record objections and want to get better at addressing that. Would you be up for a call before end of April?
+
+---
+
+**Q2 — what to watch**
+
+- Enterprise: close at least one additional regional health system (Meridian made two warm introductions in March; both in active evaluation).
+- Product: Slack integration by end of May. Next most-requested enterprise feature, 60% scoped.
+- Self-serve: diagnose and address churn by end of April; push activation from 71% to 80%.
+
+The leading indicator I would watch: new enterprise opportunities converting in the health system vertical. If Meridian's referrals and Chris's first two months convert, the Workday thesis was a real product wedge. If they stall, Q1 enterprise closes were relationship-driven — and that changes what we focus on.
+
+— Kira$pf$,
+ NULL);
+
 ALTER TABLE prompts ENABLE ROW LEVEL SECURITY;
 ALTER TABLE prompt_steps ENABLE ROW LEVEL SECURITY;

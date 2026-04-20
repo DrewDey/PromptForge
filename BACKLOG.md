@@ -70,21 +70,47 @@ Read `supabase/seed-content-chains.sql` end-to-end before drafting anything. You
 
 ---
 
-## Polish queue — VISION-ALIGNED STRUCTURAL TASKS
+## Polish queue — VISION-ALIGNED STRUCTURAL TASKS — **SITE-WIDE REDESIGN PASS**
 
-**Queue empty as of iter 83.** Restocked 2026-04-17, fully consumed across iter 82 (chip removal) + iter 83 (ask/response vocabulary). Drew: seed 3–5 fresh vision-aligned structural tasks before the next overnight run, or flip focus to a Content queue restock (bump target from 50 → 75 at the same quality bar). Until the queue is restocked, iterations have no eligible work to pull — prior iter 76–82 seed instructions to pull only from Polish when Content is closed.
+Restocked 2026-04-20 (post-homepage-redesign) with the three ASAP items Drew flagged. The new homepage (commit `77b94a1`) introduced a distinct editorial aesthetic — Instrument Serif display accents, grid-pattern hero background, eyebrow pills with mono labels, dark surface-900 bookend sections, hairline cards. The rest of the site has not caught up. Priority now: bring the 3 highest-visitor-impact pages into that system. All three are routine-safe with the specs below (styles already live in `src/app/home.css`, scoped under `.pf-home`).
+
+**This queue supersedes any Content-queue work once the Content queue closes at 200.** If the Content queue hits its 200 target mid-overnight-run, the next iteration switches to this list, in order.
+
+1. **Browse page (`/browse`) — match the new homepage aesthetic.** This is the #2 page in the funnel (every hero CTA lands here). Current page predates the redesign and feels disconnected from the homepage when a visitor clicks through.
+   - Apply the homepage hero pattern: eyebrow pill (mono + pulse dot optional), h1 with Instrument Serif accent on one key word (e.g., *"Find your next build path."*), lead paragraph in `--color-surface-600`, supporting filter chrome below.
+   - Rewrite filter/search chrome to use the mono-label + dark border pattern from the homepage (`.eyebrow` + `1px solid var(--color-surface-200)`); avoid competing with the cards visually.
+   - Card grid uses the existing `PromptCard` (iter 53 result-first treatment is close enough). Gap/padding to match the homepage `.cats-grid` rhythm.
+   - Bottom of page: echo the homepage's dark `finalcta` section with a "Can't find what you're looking for? Share yours." or similar.
+   - Scope: extend `src/app/home.css` with a `.pf-home .browse-*` subtree, OR create `src/app/browse/browse.css` using the same token set. Wrap the page in `<div className="pf-home">` (or rename to `.pf-page` + refactor). Aim for 1–2 firings.
+
+2. **Auth pages (`/auth/login`, `/auth/signup`) — polish to match.** Almost certainly still template-default Tailwind forms. On a site this distinctive, default-styled auth breaks trust at the exact conversion moment.
+   - Split-panel layout: left side editorial (eyebrow + h1 with serif accent + lead copy + value prop bullets), right side clean form. Or centered + single column with the same type system; either is fine.
+   - Form inputs: `1px solid var(--color-surface-300)` baseline, `border-color: var(--color-brand-orange)` on focus, `--font-sans` body, mono placeholders if they'd add texture.
+   - Submit button: `.btn-primary` from home.css (surface-900 → brand-orange on hover).
+   - Footer-of-page cross-link pair ("Already have an account? Log in." / vice versa) in the homepage's mono-eyebrow style.
+   - Copy: keep current field names, lift the voice into the same editorial register ("Forge an account" vs generic "Sign up").
+   - Scope: ~1 firing per page, or 1 firing for both if the layouts mirror.
+
+3. **Detail page (`/prompt/[id]`) — editorial build-log pass.** Iters 51–54 shipped foundations (case-study hero, Prose variant, editorial Story treatment) but the page still carries the prompt-library feel overall — step cards are visually neutral, chain doesn't read like a journey, metadata pills are doing too much.
+   - Mirror the homepage's anatomy diagram: three-rail composition (Metadata sidebar | Chain body | Outcome sidebar) on `lg+`, stacking on mobile. The existing step cards become the Chain middle rail.
+   - Step cards: adopt the `.astep` pattern from home.css — numbered tile left, bordered card right, `h4` step title, mono prompt line, result line with dashed top border + mono `OUTPUT` label. Deprecate the current CodeBlock-heavy step chrome in favor of this lighter editorial frame.
+   - Rename the page's H1 family to use the homepage's Instrument Serif accent on ~1 word (project-specific — could be the verb in the project title, e.g., *"**Forge** a freelance tax estimator"*).
+   - Move the fork CTA above the fold again but style it as the homepage does — sharp, primary button, not a sticky sidebar unless it earns it.
+   - Scope: 2–3 firings (structural rewrite). Depth floor #1 (reference-grounded) applies — WebFetch a Linear changelog article or Stripe docs case-study page to calibrate the editorial pattern.
+
+Each of the three items above is a real structural change (no padding-only diffs) and matches the Depth floor. Spec is detailed enough that an iteration shouldn't need product judgment at each step — if it does, halt and add to QUESTIONS.md.
 
 ---
 
 ## Structural queue — Drew + live-session only
 
-Items that need Drew's product calls, new deps, schema work, or non-trivial UX spec.
+Items that need Drew's product calls, new deps, schema work, or non-trivial UX spec. **Items 1 and 2 are the two highest-impact gaps between the site's promise and delivery** — Drew flagged both explicitly on 2026-04-20. These should get live-session priority as soon as Content queue closes or a scheduled session opens.
 
-1. **Wire image uploads to Supabase Storage.** `ImageUpload` component exists but doesn't persist. Needs Storage bucket, signed-URL policy, RLS. Until this ships, no card can show a thumbnail and no step can show a screenshot of the build — which cripples the "watching someone build" vision harder than any spacing issue.
-2. **Build page — finish the builder.** Drag-to-reorder steps (real grip handle) + image drop zones on step Result blocks. Pairs with #1.
+1. **Wire image uploads to Supabase Storage.** `ImageUpload` component exists but doesn't persist. Needs Storage bucket (Drew-click in Supabase dashboard OR service-role key), signed-URL policy, RLS, upload handler, persistence wiring. **This is the single biggest gap between the homepage promise ("see what was built") and the detail-page reality (text + code boxes only).** Until this ships, every design polish elsewhere is makeup on an incomplete product — the Exhibit card on the homepage looks great because it's a static mockup; real detail pages can't match.
+2. **Build page (`/prompt/new`) — Notion-style builder, not a form.** Drew's stated vision from day one. Currently a vertical-field form; should be a live-preview editor with drag-to-reorder steps, rich-text prompt/result editing, inline screenshot drop zones (blocked on #1), and the preview pane mirroring the detail-page render in real time. **This is the submission flow that populates the library** — its aesthetic directly affects the quality bar of what authors contribute. Big lift, biggest payoff after detail-page rework.
 3. **Browse card thumbnail slot.** Blocked on #1. Card top becomes a 16:9 image when present — the card-level "look what they made" moment.
 4. **CodeBlock `showLineNumbers` wiring + code-vs-prose toggle in the builder.** Natural-language content shouldn't number; literal code should. Iter 52 shipped the auto-detection heuristic (`src/lib/content-kind.ts`); the remaining structural work is the explicit builder-side toggle so authors can override when the heuristic guesses wrong.
-5. **Fork / remix flow — actual data wiring.** Polish #6 makes the CTA persistent; the real prefill-a-new-draft-from-this-project flow needs schema thought, copy-on-fork semantics, attribution. Spec before shipping.
+5. **Fork / remix flow — actual data wiring.** The homepage and About page both center fork-and-remix as the core value loop. The actual prefill-a-new-draft-from-this-project flow needs schema thought (fork_of FK on prompts?), copy-on-fork semantics (steps cloned? attribution line auto-prefilled?), and UX for "your version" vs "original." Spec before shipping.
 
 ---
 

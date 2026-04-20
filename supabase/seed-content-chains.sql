@@ -36510,5 +36510,834 @@ Let me check your account right now. [Look up the email address on file.] If the
 That is completely fine — you do not need to return the sauce to receive your refund. Visit harvestandtable.com/recall and select "already discarded" in the return form. Refunds process in three to five business days.$pf$,
  NULL);
 
+-- ---------------------------------------------------------------------------
+-- Project 0102 — jakefinance / Finance / intermediate / 4-step / Opus 4.6
+-- Topic: Evaluating a first angel investment in a friend's pre-seed SaaS startup
+-- ---------------------------------------------------------------------------
+
+DELETE FROM prompt_steps WHERE prompt_id = '55555555-5555-5555-5555-555555550102';
+DELETE FROM prompts      WHERE id        = '55555555-5555-5555-5555-555555550102';
+
+INSERT INTO prompts (
+  id, title, description, content, result_content,
+  category_id, difficulty, model_used, model_recommendation,
+  tools_used, tags, status, author_id, vote_count, bookmark_count
+) VALUES (
+  '55555555-5555-5555-5555-555555550102',
+  $pf$Evaluated my first angel investment with a real framework instead of gut instinct$pf$,
+  $pf$Jake Torres, CPA, working through his first angel investment decision — a $25K SAFE in a friend's pre-seed B2B SaaS startup — from evaluation framework to SAFE terms analysis to portfolio sizing to a final go/no-go decision memo.$pf$,
+  $pf$My friend Liu Yang is the CEO of a startup called Stackify. It is a B2B workflow automation tool for small marketing agencies — think client reporting, task handoffs, and approval tracking in one place instead of three. He is raising a $1.2M pre-seed round and asked me to come in at $25K on a SAFE.
+
+I have known Liu for eight years. He is sharp, he knows his market, and I believe in him as a founder. I also know that being a good friend and being a rigorous investor are two different skills, and conflating them is how people make bad bets they cannot explain later.
+
+I am a CPA with a financial modeling background. I have read about SAFEs, I understand cap tables, I know how to build a DCF. What I have never done is evaluate an early-stage startup investment from the outside. I have $80K in a brokerage account I consider available for investments outside of retirement — not touching my emergency fund or my retirement accounts. Before I said yes or no, I wanted to think through this like an investor, not like a friend.$pf$,
+  $pf$Four passes built a framework I can defend.
+
+An evaluation rubric covering the five things that actually matter at pre-seed stage — team judgment being far more predictive than traction at this point — with specific questions to bring to Liu and what his answers would tell me. Not a vibe check.
+
+A full SAFE terms analysis on the $8M post-money valuation cap, 20% discount, and MFN clause: the cap is defensible for a pre-revenue SaaS targeting a clearly defined niche, the discount is market standard, but the absence of a pro-rata right means I have no mechanism to maintain my ownership percentage in a future round and should negotiate for one before signing.
+
+A portfolio construction framework for first-time angels: the $25K check represents 31% of my available brokerage capital and 4x what any single angel position should be if I am serious about diversification. Model says $8-12K per check across 7-10 companies over three years — which either means I need to negotiate down the check size or acknowledge I am making a concentrated one-time bet on a personal relationship, not building a portfolio.
+
+A decision memo: go, with two conditions — a pro-rata right negotiated before signing, and check size reduced to $15K to leave capital available for a second angel investment within the year. Rationale for why these two conditions together make this a defensible investment instead of a friendship favor.$pf$,
+  '11111111-1111-1111-1111-111111111101',
+  'intermediate',
+  'claude-opus-4-6',
+  'Claude 4.6 Opus',
+  ARRAY['Claude'],
+  ARRAY['angel investing', 'SAFE', 'pre-seed', 'financial analysis', 'due diligence'],
+  'approved',
+  '22222222-2222-2222-2222-222222222203',
+  0,
+  0
+);
+
+INSERT INTO prompt_steps (id, prompt_id, step_number, title, content, result_content, description) VALUES
+
+-- Step 1 --
+('77777777-7777-7777-7777-777777102001',
+ '55555555-5555-5555-5555-555555550102',
+ 1,
+ $pf$Building an evaluation framework for a pre-seed SaaS investment$pf$,
+ $pf$My friend Liu Yang is raising a $1.2M pre-seed round for his startup Stackify — a B2B workflow automation tool for small marketing agencies. He has asked me to join at $25K on a SAFE. This would be my first angel investment.
+
+Some context on what I know so far: Liu is a second-time founder — his first company did not make it but he ran it for three years and learned the hard way why his first product-market fit hypothesis was wrong. Stackify is about 14 months old, he has one paying customer at $600/month, and he has been working on it full-time since he left his last job. I know the marketing agency space reasonably well because I have done bookkeeping and advisory work for a handful of them, so I understand the operational pain he is trying to solve.
+
+I am a CPA with a financial modeling background, not an investor. I have read about SAFEs and I understand cap tables, but I have never evaluated an early-stage startup as a potential investor. I want a rigorous evaluation framework — something I could explain to someone else, not just a gut feeling. Before I look at the SAFE terms at all, I want to understand what I should be evaluating and what I am actually looking for at this stage. Walk me through a pre-seed evaluation framework for a B2B SaaS investment. What matters most at this stage and why?$pf$,
+ $pf$At pre-seed, you are almost entirely betting on the team and the insight, not the business. There is not enough traction to validate the market and not enough product to validate the technology. The framework should reflect that honestly.
+
+**Five things that matter at pre-seed, in order of importance**
+
+**1. Founder-market fit** — does Liu have a genuine advantage in understanding this problem, or is he an outsider guessing at it? The right question is not "does he understand marketing agencies" but "does he understand what they are bad at paying for and why." Strong founder-market fit looks like: he has worked in the space, has built relationships with the exact customer type, can articulate the problem from the customer's perspective more clearly than anyone you would find in a job description, and has strong opinions about what existing solutions get wrong. Second-time founder is a positive signal here — the failure taught him something. Ask him: what did he learn from the first company that applies directly to how he is building this one?
+
+**2. Market size and dynamics** — is the niche large enough to build a venture-scale business, and is it growing? Small marketing agencies in the US: there are approximately 25,000 agencies with under 25 employees, with average annual revenue in the $500K–$3M range. If Stackify charges $500/month per agency at even 2% market penetration that is 500 customers at $6K ARR = $3M ARR. Not a unicorn market, but not a dead end either — if the product expands upmarket over time, it is a reasonable wedge. What you are looking for: Liu should know these numbers cold and be able to tell you the path from current customers to $10M ARR without hand-waving. Red flag: founders who say "the market is huge" with no specifics.
+
+**3. Early evidence of a real problem** — does the one paying customer actually tell you something? One customer at $600/month pre-product-market-fit is weak traction, but the questions around it matter more than the number. How did that customer come to pay? Did Liu sell them or did they ask to pay? What specifically are they using, and what would they lose if it disappeared tomorrow? If the answer is "we built a Zapier integration they use for client reporting and they would be annoyed but fine," that is different from "their Monday morning client calls would break without it." Ask Liu to describe the customer's workflow before and after Stackify in specific detail.
+
+**4. Why now** — what has changed in the environment or technology that makes this the right moment to build this? Marketing agencies have existed for decades; workflow pain is not new. What has changed? The most credible versions of this usually involve: a platform shift (AI tools creating new workflow complexity), a regulatory or market shift (rising client acquisition costs forcing smaller agencies to cut internal overhead), or a new enabling technology (something that makes the core workflow automation cheaper to build than it was three years ago). If Liu cannot articulate a compelling "why now" beyond "it was always a problem," that is a risk flag.
+
+**5. Product clarity and wedge logic** — does he have a specific initial product that solves one thing well, with a clear path to expansion? The best pre-seed B2B products do one thing that is deeply embedded in the customer's workflow before trying to do ten things. What is Stackify's core wedge? What is the first feature the customer cannot live without? And what does the expansion path look like — does adding more features deepen usage, or does it dilute it?
+
+**Questions to bring to Liu before you look at any terms:**
+- Walk me through your ideal customer's Monday morning in detail — before Stackify, and after.
+- What does the customer who is not buying tell you when they say no?
+- What did your first company teach you that directly applies to how you are building this one?
+- Why is now the right time to build this versus three years ago or three years from now?
+- What does $1M ARR look like in customer count, and who specifically are those customers?$pf$,
+ NULL),
+
+-- Step 2 --
+('77777777-7777-7777-7777-777777102002',
+ '55555555-5555-5555-5555-555555550102',
+ 2,
+ $pf$Analyzing the SAFE terms — valuation cap, discount, and missing pro-rata$pf$,
+ $pf$I went through the framework questions with Liu over a two-hour call last week and came away more confident on team and market than I expected. His answers on founder-market fit were genuinely good — the first company failure was a distribution mistake he named specifically, his "why now" answer centered on AI writing tools creating new approval and revision workflows that agencies have no system for, and the one paying customer turns out to be his former employer who uses Stackify to manage client deliverable reviews. Not perfect traction, but the customer context is real.
+
+Now I need to look at the actual SAFE terms. Here is what Liu sent me:
+
+- Post-money valuation cap: $8M
+- Discount rate: 20%
+- MFN (most favored nation) clause: yes
+- Pro-rata rights: not included
+
+I have a basic understanding of how SAFEs work — I know the cap and discount are both conversion triggers and that I convert at the lower of the two at the Series A. I do not have a strong sense of whether $8M is a reasonable cap for this stage or how much it matters relative to the discount. I also do not know how much the missing pro-rata right should concern me. Walk me through an analysis of these four terms and tell me what I should push back on if anything.$pf$,
+ $pf$Let me go through each term, what it actually means in practice, and where the negotiating leverage is.
+
+**Post-money valuation cap: $8M**
+
+The cap sets the maximum valuation at which your SAFE converts into equity. If the Series A is priced at a $20M pre-money valuation, you convert as if you invested at $8M — meaning you get a better price than Series A investors. If the Series A is at $5M pre-money, the cap is irrelevant and the discount triggers instead.
+
+Is $8M reasonable at pre-seed for a B2B SaaS with one customer? Borderline. In 2024–2025, pre-seed B2B SaaS with credible founders and early signals has been pricing in the $5–12M post-money cap range depending on the team pedigree and early proof. Liu is a second-time founder with one paying customer and a focused niche — $8M is not aggressive, but it is not a bargain either. The key question is what your return looks like at realistic outcomes.
+
+Quick math: $25K at an $8M cap. If the company raises a Series A at $20M pre-money, your $25K converts to $25K / $8M = 0.3125% ownership post-conversion (before dilution from the new round). If the Series A is $3M on $17M post-money, your ownership is $25K / $8M = 0.3125%, diluted by whatever the new investors take. At a $100M exit, 0.3125% (pre-dilution) is worth $312,500 — roughly 12.5x your investment. At a $50M exit it is 6x. At a $20M exit it is 2.5x. Angel investing with diversification targets a portfolio of 10% returning 10x or more; this math only works if you believe Liu has a path to $100M+ in enterprise value.
+
+**Discount rate: 20%**
+
+The 20% discount means you convert at 80% of whatever price the Series A is priced at, if that conversion price is lower than the cap. Market standard for pre-seed SAFEs is 15–25% — 20% is exactly in range and unremarkable. No pushback warranted here.
+
+**MFN clause**
+
+The MFN clause means that if Liu offers future investors in this same SAFE round better terms (lower cap, higher discount, pro-rata rights), you automatically get those better terms applied retroactively to your investment. This is investor-protective and standard. It matters most if he issues additional SAFEs to later investors in the same round at a lower cap — which can happen if fundraising is slow and he needs to sweeten the deal. Having MFN means you are protected from that.
+
+**Missing pro-rata right: this is the item to push back on**
+
+Pro-rata rights give you the right (not obligation) to invest your proportionate share in the next priced round to maintain your ownership percentage. Without pro-rata, you are subject to full dilution at Series A with no ability to protect your stake. This is standard in most angel SAFEs and its absence is unusual.
+
+Why it matters at your check size: at $25K into a $1.2M round you are approximately 2% of the round, which translates to a small but non-zero ownership stake. Without pro-rata, a Series A at any size dilutes you with no recourse. With pro-rata, you have the right to invest again at Series A terms to hold your percentage. You may not exercise it — you may not have the capital — but you want the option.
+
+Push back on this specifically. Ask for a pro-rata right capped at your proportionate share of the round. It costs Liu nothing to grant it and is standard for investors who are not institutional. If he says no or hedges, ask him why he excluded it — the answer tells you something about how he is thinking about his cap table management going forward.$pf$,
+ NULL),
+
+-- Step 3 --
+('77777777-7777-7777-7777-777777102003',
+ '55555555-5555-5555-5555-555555550102',
+ 3,
+ $pf$Portfolio construction — how does a $25K check fit into a first-time angel's capital allocation?$pf$,
+ $pf$The terms analysis was really useful — I am going to push for the pro-rata right before I make any decision. One more thing I want to work through before I write up my decision memo: the portfolio sizing question. I have $80K in my brokerage account that I consider available for risk investments outside of retirement. I have no other angel investments. A $25K check in Stackify would be 31% of that available capital.
+
+I know enough about investing to know that concentration is usually a risk, but I also know that angel investing is different from buying index funds — the math on expected returns is different, the minimum check sizes are real, and not everyone who wants to do angel investing actually has the capital to build a diversified portfolio. Walk me through the portfolio construction math for a first-time angel with $80K available. Should I do $25K in Stackify, or does that number need to change?$pf$,
+ $pf$The honest answer is that $25K into Stackify at your current capital level is not a portfolio — it is a single concentrated bet. That might be fine, but you should be clear-eyed about what you are actually doing.
+
+**The math on angel portfolio construction**
+
+Angel investing returns follow a power law distribution: a small number of investments return most of the value, and most investments return zero. Studies of angel portfolios (Kauffman Foundation, Robert Wiltbank's research on angel returns) consistently show that portfolio returns improve significantly as you move from 1–5 investments to 10+ investments, with diminishing improvement above 20. The rough rule of thumb is that a diversified angel portfolio should have at minimum 10 investments to have a reasonable probability of containing one strong outlier.
+
+At $80K total available capital with a 10-investment minimum, your maximum check size for true diversification is $8,000 per investment. $25K is 3x that.
+
+**What this means for your Stackify decision**
+
+There are three honest framings for a $25K check at your capital level:
+
+**Option 1: You are making a one-time concentrated bet, not starting an angel portfolio.** You invest $25K in Stackify because you believe in Liu specifically, you accept the concentration risk, and you are not expecting to build a portfolio of angel investments over the next three to five years. This is a legitimate choice — plenty of people make a single angel investment in a friend's company as a career-support move, not as a portfolio strategy. Be honest that this is what you are doing.
+
+**Option 2: You reduce the check size to fit a portfolio model.** If you want to actually diversify, your check per company should be $8–12K. A $10K check in Stackify leaves $70K available for 7–9 more investments at similar sizes, which is a real portfolio. The tradeoff: Liu may have a minimum check size in mind, and $10K feels less meaningful than $25K when it is a friend asking.
+
+**Option 3: You size the check at something between portfolio and concentration — say $15K.** $15K is 18.75% of available capital, leaving $65K for future investments. It lets you build a partial portfolio of 5–7 investments at $10K each while still making a meaningful commitment to Liu. It is not rigorous portfolio construction but it is not reckless concentration either, and for a first-time angel with limited capital it is probably the most practical framing.
+
+**One more number to anchor this**
+
+Consider what it would mean to lose the entire investment. At $25K, losing everything is meaningful — it is 31% of your available brokerage capital and would take 12–18 months of savings to replace at a typical savings rate. At $15K, it is still significant but not disruptive. At $10K, losing it is the cost of the education as much as it is a financial loss. There is no right answer here, but the question "can I lose this without it changing how I feel about Liu or how I approach future investments" is worth sitting with.$pf$,
+ NULL),
+
+-- Step 4 --
+('77777777-7777-7777-7777-777777102004',
+ '55555555-5555-5555-5555-555555550102',
+ 4,
+ $pf$Decision memo — go or no-go, and on what terms$pf$,
+ $pf$OK, I have everything I need. Liu and I had a follow-up call and he agreed to add a pro-rata right — he said he would have included it anyway and it slipped through when his lawyer drafted the SAFE. I also thought hard about the portfolio sizing question and landed at $15K as the right check size: meaningful enough to matter to Liu, small enough that losing it entirely would not reshape how I think about this investment.
+
+I want to write a proper decision memo — something I can actually look back at in three years and understand why I made this call. Walk me through what a good angel investment decision memo looks like and then help me write one for Stackify. I do not need it to be long. I need it to be honest and specific enough that future-me would recognize whether this bet was well-reasoned.$pf$,
+ $pf$A good angel investment memo is not a thesis document — it is a record of what you believed at the time and why, specific enough to be useful for pattern recognition later. Aim for one page. Here is a clean structure and then the memo for Stackify.
+
+**Structure for any angel memo**
+1. What the company does and for whom (two sentences)
+2. Why this team (specific to these founders)
+3. The investment thesis (what has to be true for this to work)
+4. Key risks (honest, not hedged)
+5. Decision and terms
+6. What would change my mind (your early warning signals)
+
+---
+
+**STACKIFY — INVESTMENT MEMO**
+*Jake Torres | April 2026 | $15,000 on SAFE*
+
+**What it is:** Stackify is a B2B workflow tool for small marketing agencies, focusing on client deliverable review and approval tracking. Initial wedge is replacing ad-hoc email and Slack chains with a structured approval workflow. One paying customer at $600/month; raising $1.2M pre-seed.
+
+**Why this team:** Liu Yang is a second-time founder with relevant failure. His first company collapsed because of distribution mistakes he can name specifically — not a product failure, which means the product-building judgment survived the company. He worked at Stackify's first customer before founding, which means he built the initial product for a workflow he lived in. That is the strongest version of founder-market fit at pre-seed: the founder is the customer.
+
+**Investment thesis:** Small marketing agencies are generating more AI-assisted deliverables with faster revision cycles, creating a new class of approval workflow that neither project management tools nor communication tools handle well. If Liu can own the "client approval and feedback" workflow as a deeply embedded product, he has a credible path to expand into adjacent workflows (intake, onboarding, reporting) as agencies standardize on Stackify as their client-facing operating layer. Conversion point: Stackify becomes the system of record for client communication, not a nice-to-have.
+
+**Key risks:**
+- *Single customer concentration.* One paying customer is a starting point, not validation. The thesis collapses if this is a one-time relationship sale rather than a repeatable motion.
+- *Competition from category leaders.* Notion, Monday, and Asana all technically cover this use case and have distribution advantages. The question is whether the agency-specific workflows create enough stickiness that generalist tools cannot follow.
+- *Liu executes distribution differently this time.* The first-company lesson was about distribution, not product. The pre-seed round is supposed to prove the distribution hypothesis. If MRR is still $600/month at Series A, the thesis has not developed.
+
+**Decision:** GO at $15,000. Terms: $8M post-money SAFE, 20% discount, MFN, pro-rata right (added in negotiation). Reduced check size from $25K to $15K to reserve capital for a second angel investment within 12–18 months, building toward a small diversified portfolio rather than a single concentrated position.
+
+**What would change my mind (in year 1):**
+- Customer count stays at 1 despite the raise
+- Liu changes the product direction away from the approval workflow wedge before hitting $5K MRR
+- The paying customer churns without a clear and correctable reason
+
+*Next check-in: 6 months post-investment, looking for MRR growth and customer count as the primary signal.*$pf$,
+ NULL);
+
+-- ---------------------------------------------------------------------------
+-- Project 0103 — cto_derek / Coding / advanced / 7-step / Opus 4.7
+-- Topic: Adding OpenTelemetry distributed tracing to trace a P95 latency regression
+-- ---------------------------------------------------------------------------
+
+DELETE FROM prompt_steps WHERE prompt_id = '55555555-5555-5555-5555-555555550103';
+DELETE FROM prompts      WHERE id        = '55555555-5555-5555-5555-555555550103';
+
+INSERT INTO prompts (
+  id, title, description, content, result_content,
+  category_id, difficulty, model_used, model_recommendation,
+  tools_used, tags, status, author_id, vote_count, bookmark_count
+) VALUES (
+  '55555555-5555-5555-5555-555555550103',
+  $pf$Added OpenTelemetry tracing to a 5-service Node.js platform and traced a P95 regression to 28 serial database queries$pf$,
+  $pf$Derek Lawson, CTO at Delphi Health, retrofitting distributed tracing into a 5-service Node.js platform after a P95 latency regression appeared two months after a new scheduling feature shipped — from zero observability to a root-cause diagnosis and three-line fix.$pf$,
+  $pf$We run a Node.js microservices platform at Delphi Health — five services (appointment scheduling, provider lookup, patient records, notifications, and an API gateway), PostgreSQL, Redis, deployed on ECS Fargate. Two months ago we shipped a multi-provider scheduling feature. Since then, our P95 latency on the POST /appointments endpoint went from 180ms to 620ms.
+
+I could see the degradation in CloudWatch but could not tell where in the request path the time was going. The endpoint crosses at least three service boundaries before returning. We had structured logs per service (Winston, JSON format) but zero distributed tracing. No way to follow a single request across service boundaries.
+
+I spent three weeks treating this as a Redis problem, a connection pool problem, a CPU throttling problem. Nothing landed. The actual root cause was hiding in a loop inside provider lookup, and I never would have found it without traces.
+
+This is the chain of conversations I had with Claude to go from zero instrumentation to a production tracing setup to a root-cause diagnosis and a three-line fix.$pf$,
+  $pf$Seven passes from zero observability to a root-cause fix.
+
+Tool selection landed on OpenTelemetry SDK plus Grafana Tempo: OTel for vendor-neutral instrumentation at the application layer, Tempo for trace storage on top of S3 connected to the existing Grafana instance.
+
+SDK bootstrap wired into the scheduling service: NodeSDK with OTLP/gRPC exporter, BatchSpanProcessor, auto-instrumentations covering Express, pg, and fetch, with the OTel Collector as an ECS sidecar.
+
+Context propagation fixed: provider-svc instrumented with the same SDK so W3C traceparent headers flow across the service boundary, turning disconnected per-service traces into a single multi-service waterfall.
+
+Custom span attributes added at the middleware layer for appointment_type and a hashed patient_id, and inline for scheduling_attempt_count and slot_query_window_days — business context you can write TraceQL queries against without digging through logs.
+
+Tail-based sampling strategy at the Collector: always-keep for error traces and traces over 400ms, 15% probabilistic for everything else. Reduces Tempo storage from 56,000 spans/day to around 11,700 while keeping full coverage of the problem traffic.
+
+Grafana dashboard built with four panels (service error rates, P50/P95/P99 latency timeseries, top slow operations, recent high-latency traces), with spanmetrics-generated Prometheus histograms driving a P95 greater than 400ms alert routed to PagerDuty.
+
+Root cause found and fixed: the slot availability check in provider-svc was running one query per candidate provider in a loop — 28 separate database round trips instead of one batched SELECT. The trace waterfall made it obvious: 28 child spans at 9 to 14ms each under the slot_availability_check span. Replaced the loop with a single query using the PostgreSQL ANY operator. P95 dropped from 680ms to 185ms.$pf$,
+  '11111111-1111-1111-1111-111111111104',
+  'advanced',
+  'claude-opus-4-7',
+  'Claude 4.7 Opus',
+  ARRAY['Claude', 'OpenTelemetry', 'Grafana Tempo', 'Node.js'],
+  ARRAY['opentelemetry', 'distributed tracing', 'microservices', 'observability', 'N+1 query', 'Node.js'],
+  'approved',
+  '22222222-2222-2222-2222-222222222209',
+  0,
+  0
+);
+
+INSERT INTO prompt_steps (id, prompt_id, step_number, title, content, result_content, description) VALUES
+
+-- Step 1 --
+('77777777-7777-7777-7777-777777103001',
+ '55555555-5555-5555-5555-555555550103',
+ 1,
+ $pf$Choosing a distributed tracing tool for a 5-service Node.js platform$pf$,
+ $pf$I am the CTO at Delphi Health, a health-tech startup. Our backend is five Node.js services — appointment scheduling, provider lookup, patient records, notifications, and an API gateway — running on ECS Fargate with PostgreSQL, Redis, and Node 20 throughout. Services call each other over HTTP.
+
+Two months ago we shipped a multi-provider scheduling feature. Since then, P95 on POST /appointments has gone from 180ms to 620ms. I can see the regression in CloudWatch but I cannot tell which service or operation is slow — the endpoint crosses three service boundaries. We have structured JSON logs per service but zero distributed tracing.
+
+I have been looking at three options: OpenTelemetry SDK plus Grafana Tempo, Datadog APM, and AWS X-Ray. We already run Grafana for Prometheus metrics, and we are a Series A startup so cost matters. Help me compare the three for our specific situation and make the call. I want to understand the real tradeoffs, not just the marketing pitch.$pf$,
+ $pf$For your stack and constraints, OpenTelemetry plus Grafana Tempo is the right call. Here is the full comparison so you can argue with the reasoning.
+
+**OpenTelemetry SDK plus Grafana Tempo**
+
+Cost: Tempo is object-storage backed (S3) and bills for storage, not ingestion. At your scale — five services, a few thousand requests per day — you are looking at $20 to $50 per month depending on retention period and sampling rate. If you are already running Grafana, adding Tempo is adding one service, not a platform switch.
+
+Vendor lock-in: none at the instrumentation layer. The OTel SDK is the open standard; you can point it at Tempo today and Datadog next year without touching application code. For observability tooling specifically, this matters more than elsewhere because you will change your backend as the platform matures.
+
+Integration with your existing stack: Tempo integrates natively with Grafana. Your existing dashboards can correlate a latency alert with the specific trace that caused it in two clicks — trace ID links from alert context to Tempo Explore out of the box.
+
+Auto-instrumentation quality for Node.js: excellent. The @opentelemetry/auto-instrumentations-node package covers Express, pg, ioredis, HTTP, and fetch without code changes. W3C trace context propagation across service boundaries works once all services are instrumented.
+
+Cons: more setup work than Datadog. You configure a Collector, understand the OTLP pipeline, and run one more piece of infrastructure. This is two to four hours of work, not thirty minutes.
+
+**Datadog APM**
+
+Cost: roughly $31 per host per month for APM plus infrastructure bundle, around $155 per month for five services. More if ECS tasks scale out. Defensible at Series A but materially more than Tempo. If you already pay for Datadog for something else, the bundle makes APM marginal cost. If not, you are buying a new platform for one problem.
+
+Setup: fastest to a working state. The Datadog agent handles almost everything; Node.js auto-instrumentation is mature.
+
+Lock-in: significant. Instrumentation uses Datadog format under the hood even though they added OTel ingestion recently. Switching later means re-instrumenting all five services.
+
+UI: genuinely excellent, especially the service map and correlated logs. The flame graph and trace search experience is the best in the category.
+
+**AWS X-Ray**
+
+Cost: $5 per million traces recorded plus $0.50 per million segments scanned. Cheap and unpredictable — usually fine until you add detailed instrumentation and watch segment counts multiply.
+
+Integration: first-class if your entire stack is AWS-native throughout (Lambda, ECS with the X-Ray daemon, ALB). For your setup — ECS with HTTP-to-HTTP service calls — context propagation requires the X-Ray SDK in each service, meaning Node.js instrumentation changes you will eventually want to migrate off.
+
+Tooling: the Service Map in the X-Ray console is genuinely good. The query and filter experience is weak compared to Grafana. You lose the Grafana integration you already have.
+
+Note: in 2025, most teams starting fresh on AWS choose OTel with ADOT (AWS Distro for OpenTelemetry) exporting to X-Ray rather than the native X-Ray SDK — meaning even AWS is steering you toward OTel.
+
+**Recommendation: OTel plus Tempo**
+
+You are already running Grafana. Tempo runs alongside it. The OTel auto-instrumentation covers your stack without code changes. You get vendor neutrality at the layer most likely to benefit from it later.
+
+The one strong argument for Datadog is if you are already paying for their infrastructure monitoring — the APM bundle cost is then marginal. If you are not already paying for Datadog, adding $150 per month for this specific problem is hard to justify when Tempo solves it for under $50 per month.
+
+Implementation sequence: instrument the scheduling service first (isolated, has the problem), verify spans appear in Tempo with correct service attribution, then roll to provider lookup and patient records. You should see the full cross-service trace within a day of starting.$pf$,
+ NULL),
+
+-- Step 2 --
+('77777777-7777-7777-7777-777777103002',
+ '55555555-5555-5555-5555-555555550103',
+ 2,
+ $pf$Bootstrapping the OTel SDK in the scheduling service$pf$,
+ $pf$Going with OTel plus Tempo. Starting with the scheduling service. It is a Node 20 Express app running in a Docker container on ECS Fargate. It calls provider-svc over HTTP using the built-in fetch API and queries PostgreSQL directly via pg 8 with a connection pool. I want spans appearing in Tempo with correct service attribution and operation names before I touch any business logic. Give me the actual code, not pseudocode.$pf$,
+ $pf$The critical constraint: the OTel SDK must be required and initialized before any application code loads, including Express, pg, and HTTP clients. If you require Express before initializing OTel, the HTTP instrumentation patch misses the already-loaded module. The require-first pattern is non-negotiable.
+
+**Install packages:**
+```bash
+npm install \
+  @opentelemetry/sdk-node \
+  @opentelemetry/auto-instrumentations-node \
+  @opentelemetry/exporter-trace-otlp-grpc \
+  @opentelemetry/semantic-conventions \
+  @opentelemetry/resources \
+  @grpc/grpc-js
+```
+
+**`src/tracing.ts` — initialize before everything else:**
+```typescript
+import { NodeSDK } from '@opentelemetry/sdk-node';
+import { getNodeAutoInstrumentations } from '@opentelemetry/auto-instrumentations-node';
+import { OTLPTraceExporter } from '@opentelemetry/exporter-trace-otlp-grpc';
+import { BatchSpanProcessor } from '@opentelemetry/sdk-trace-base';
+import { Resource } from '@opentelemetry/resources';
+import { SemanticResourceAttributes } from '@opentelemetry/semantic-conventions';
+
+const exporter = new OTLPTraceExporter({
+  // Collector sidecar on ECS uses localhost — awsvpc mode shares the
+  // task network namespace, so localhost resolves to the sidecar correctly
+  url: process.env.OTEL_EXPORTER_OTLP_ENDPOINT ?? 'grpc://localhost:4317',
+});
+
+const sdk = new NodeSDK({
+  resource: new Resource({
+    [SemanticResourceAttributes.SERVICE_NAME]: 'scheduling-svc',
+    [SemanticResourceAttributes.SERVICE_VERSION]: process.env.APP_VERSION ?? '1.0.0',
+    [SemanticResourceAttributes.DEPLOYMENT_ENVIRONMENT]: process.env.NODE_ENV ?? 'production',
+  }),
+  spanProcessor: new BatchSpanProcessor(exporter, {
+    maxQueueSize: 2048,
+    scheduledDelayMillis: 5000,  // flush every 5s
+    maxExportBatchSize: 512,
+  }),
+  instrumentations: [
+    getNodeAutoInstrumentations({
+      // Disable noisy low-value instrumentation
+      '@opentelemetry/instrumentation-fs': { enabled: false },
+      '@opentelemetry/instrumentation-net': { enabled: false },
+      '@opentelemetry/instrumentation-dns': { enabled: false },
+    }),
+  ],
+});
+
+sdk.start();
+
+// Flush pending spans before the container exits — critical on SIGTERM
+process.on('SIGTERM', () => {
+  sdk.shutdown()
+    .then(() => process.exit(0))
+    .catch(() => process.exit(1));
+});
+```
+
+**`src/index.ts` — first import:**
+```typescript
+import './tracing'; // must be first — patches modules before they load
+import express from 'express';
+// ... rest of application imports
+```
+
+**ECS task definition — OTel Collector sidecar:**
+
+Add a second container to your task definition alongside the scheduling service container:
+```json
+{
+  "name": "otel-collector",
+  "image": "otel/opentelemetry-collector-contrib:0.96.0",
+  "command": ["--config=/etc/otelcol/config.yaml"],
+  "mountPoints": [
+    { "sourceVolume": "otel-config", "containerPath": "/etc/otelcol" }
+  ],
+  "portMappings": [{ "containerPort": 4317, "protocol": "tcp" }],
+  "essential": false
+}
+```
+
+**Minimal `collector.yaml` to get traces flowing to Tempo:**
+```yaml
+receivers:
+  otlp:
+    protocols:
+      grpc:
+        endpoint: 0.0.0.0:4317
+
+processors:
+  batch:
+    timeout: 1s
+    send_batch_size: 1024
+
+exporters:
+  otlp/tempo:
+    endpoint: https://your-tempo-instance:4317
+    headers:
+      Authorization: "Bearer {TEMPO_API_KEY}"
+
+service:
+  pipelines:
+    traces:
+      receivers: [otlp]
+      processors: [batch]
+      exporters: [otlp/tempo]
+```
+
+**Verify it is working:**
+
+Deploy and hit POST /appointments once. In Tempo Explore, search:
+```
+{ .service.name = "scheduling-svc" }
+```
+
+You should see spans for the Express HTTP handler, each pg query, and any outbound fetch calls. If nothing appears: (1) check Collector logs first — OTLP connection failures are logged there; (2) verify OTEL_EXPORTER_OTLP_ENDPOINT is set in the ECS task environment; (3) confirm tracing.ts is the first TypeScript import (barrel files can reorder imports in compiled output — import tracing directly in the entry file, not through a barrel).
+
+One ECS Fargate note worth saving: Fargate requires awsvpc network mode, and in awsvpc mode, containers in the same task share the task network namespace — so localhost in the scheduling container resolves to the Collector sidecar correctly without any additional configuration.$pf$,
+ NULL),
+
+-- Step 3 --
+('77777777-7777-7777-7777-777777103003',
+ '55555555-5555-5555-5555-555555550103',
+ 3,
+ $pf$Fixing broken context propagation across the service boundary$pf$,
+ $pf$The scheduling service is instrumented and I am seeing spans in Tempo. I can see the Express handler span, the pg query spans, and the outbound fetch to provider-svc. But in Tempo, the fetch from scheduling-svc shows as a child span under the scheduling trace, and then there is a completely separate unconnected trace in provider-svc. The two are not linked — they appear as two independent root traces. What am I missing?$pf$,
+ $pf$What you are seeing is the expected behavior when only one service is instrumented. The OTel SDK is correctly injecting W3C traceparent headers into the outbound fetch from scheduling-svc — you can verify this by logging outgoing request headers and looking for traceparent: 00-{traceId}-{spanId}-01. But provider-svc has no OTel instrumentation to extract those headers. So it starts a new root span rather than continuing the trace, which is why you see two disconnected traces.
+
+The fix is to instrument provider-svc with the same tracing.ts setup. Once both services have the OTel SDK running, the auto-instrumentation handles both sides: on the outbound side it injects the traceparent header; on the inbound side it extracts it and creates a new span as a child of the caller's span.
+
+**Verify propagation after instrumenting provider-svc:**
+
+Run a quick manual check before looking at real traffic:
+```bash
+curl -v -X GET https://provider-svc-internal/providers/1234 \
+  -H 'traceparent: 00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01'
+```
+
+Then search in Tempo:
+```
+{ .service.name = "provider-svc" }
+```
+
+Filter to the last 5 minutes and look for a span with the same 4bf9... trace ID. If you find it, propagation is working.
+
+**What the connected trace looks like:**
+
+Once both services are instrumented, a single POST /appointments trace shows the full waterfall:
+```
+scheduling-svc | POST /appointments            [620ms total]
+  +-- pg | SELECT patients...                  [12ms]
+  +-- http | GET provider-svc/providers        [390ms]  <- where the time goes
+  |    +-- provider-svc | GET /providers       [380ms]
+  |         +-- pg | SELECT providers...       [8ms]
+  |         +-- slot_availability_check        [350ms]  <- child spans tell the story
+  +-- pg | INSERT appointments                 [15ms]
+```
+
+The 390ms on the provider-svc call is the smoking gun. Once you see the full waterfall you know exactly which operation to investigate.
+
+**One configuration note:**
+
+The W3C Trace Context propagator is enabled by default in @opentelemetry/auto-instrumentations-node 0.40 and later. If you are on an older version, add it explicitly:
+```typescript
+import { W3CTraceContextPropagator } from '@opentelemetry/core';
+// In NodeSDK options:
+textMapPropagator: new W3CTraceContextPropagator(),
+```
+
+Check with `npx @opentelemetry/auto-instrumentations-node --version` if you are unsure.
+
+**Roll-out order:**
+
+Instrument in dependency order: scheduling-svc done, provider-svc needed now, then patient-records. The gateway can be last — traces will start at the scheduling layer rather than the gateway until it is instrumented, which is fine for debugging this regression.$pf$,
+ NULL),
+
+-- Step 4 --
+('77777777-7777-7777-7777-777777103004',
+ '55555555-5555-5555-5555-555555550103',
+ 4,
+ $pf$Adding business span attributes without scattering OTel calls across controllers$pf$,
+ $pf$Context propagation is working. I can now see the full multi-service trace. I want to add business context to the spans so I can write TraceQL queries against appointment_type, scheduling_attempt_count, and patient identifier — specifically for debugging specific patient complaints. I do not want to put trace.getActiveSpan() calls in every controller. What is the right pattern, and how do I handle patient_id given that it is PHI?$pf$,
+ $pf$Add business attributes in two places, not everywhere: request-level attributes go in a single Express middleware, and mid-request attributes calculated during processing go inline in the specific operation that computes them.
+
+**Middleware for request-level attributes:**
+```typescript
+// src/middleware/tracing-context.ts
+import { trace } from '@opentelemetry/api';
+import { createHash } from 'crypto';
+
+const TRACE_ID_SALT = process.env.TRACE_ID_SALT!; // secret env var, not hardcoded
+
+function hashPatientId(rawId: string): string {
+  // SHA-256 + salt: consistent across requests, not reversible without the salt
+  return createHash('sha256').update(TRACE_ID_SALT + rawId).digest('hex').slice(0, 16);
+}
+
+export function addBusinessContext() {
+  return (req: Request, res: Response, next: NextFunction) => {
+    const span = trace.getActiveSpan();
+    if (!span) return next();
+
+    if (req.body?.appointment_type) {
+      span.setAttribute('appointment.type', req.body.appointment_type);
+    }
+    if (req.body?.patient_id) {
+      // Store hashed ID only — raw patient_id is PHI and does not belong in traces
+      // The hash is consistent per patient, so you can correlate traces for debugging
+      span.setAttribute('patient.id_hash', hashPatientId(req.body.patient_id));
+    }
+
+    next();
+  };
+}
+```
+
+Register after auth middleware but before route handlers:
+```typescript
+app.use(authenticate());
+app.use(addBusinessContext());
+app.use(router);
+```
+
+**Mid-request attributes in the scheduling operation:**
+```typescript
+// src/services/scheduling.service.ts
+import { trace, SpanStatusCode } from '@opentelemetry/api';
+
+const tracer = trace.getTracer('scheduling-svc');
+
+async function findAvailableSlot(request: SchedulingRequest, attempt: number): Promise<Slot[]> {
+  return tracer.startActiveSpan('slot_availability_check', async (span) => {
+    span.setAttribute('scheduling.attempt_count', attempt);
+    span.setAttribute('scheduling.slot_query_window_days', request.windowDays);
+    span.setAttribute('scheduling.provider_count', request.providerIds.length);
+
+    try {
+      const result = await queryAvailableSlots(request);
+      span.setAttribute('scheduling.slots_found', result.length);
+      return result;
+    } catch (err) {
+      span.recordException(err as Error);
+      span.setStatus({ code: SpanStatusCode.ERROR });
+      throw err;
+    } finally {
+      span.end(); // always end the span, even on error path
+    }
+  });
+}
+```
+
+The named child span slot_availability_check becomes a distinct entry in the Tempo waterfall — you will see exactly how long that operation takes and how many child spans it generates. This is the span that will expose the root cause.
+
+**On the PHI question:**
+
+Raw patient IDs in trace data are a real exposure risk. Traces are often stored in systems that are not HIPAA-hardened and may be exported outside your AWS boundary. Two patterns are in production use at health-tech companies:
+
+The hashing approach (above): SHA-256 of rawId plus a server-side salt stored in Secrets Manager. The hash is consistent for the same patient across requests, so you can find all traces for a patient complaint with `{ .patient.id_hash = "abc123def456" }` in TraceQL without storing raw PHI.
+
+The correlation ID approach: issue an internal UUID as a trace-safe patient correlation ID, store the mapping in a lookup table, and put only the UUID in traces. More infrastructure; cleaner separation. Usually overkill until you have a dedicated data governance team.
+
+For your current scale, the hashing approach is sufficient. Note it in your security documentation and rotate the salt annually.
+
+**Querying the attributes in Tempo:**
+```
+{ .appointment.type = "urgent" && duration > 400ms }
+{ .scheduling.attempt_count > 1 && .service.name = "scheduling-svc" }
+```$pf$,
+ NULL),
+
+-- Step 5 --
+('77777777-7777-7777-7777-777777103005',
+ '55555555-5555-5555-5555-555555550103',
+ 5,
+ $pf$Production sampling strategy that does not miss rare errors$pf$,
+ $pf$The instrumentation looks good and I have verified the business context attributes. Before going to production I need a sampling strategy. Rough math: POST /appointments handles about 8,000 requests per day. With seven services in the trace path after full rollout that is 56,000 spans per day at 100 percent sampling. Error rate is around 2 percent — about 160 errors per day — and I absolutely cannot miss those. Walk me through a strategy that keeps volume manageable without dropping the events I most need.$pf$,
+ $pf$At 56,000 spans per day you are not in a storage crisis today — that is a few hundred MB per month at typical span sizes around 1 to 3KB. But designing the sampling strategy now, before you scale, is the right call.
+
+The fundamental tradeoff is between head-based and tail-based sampling.
+
+**Head-based sampling** makes the keep/drop decision at the start of the request before any span data is collected. Simple to configure — add ProbabilitySampler(0.1) to the SDK and 10% of traces are sampled. The fatal flaw for your situation: at 2% error rate and 10% sampling, you drop 90% of error traces. You keep about 16 error traces per day instead of 160. The traces you most need are the most likely to be dropped.
+
+**Tail-based sampling** makes the decision after all spans in a trace are collected. The Collector buffers spans for a configurable window (typically 30 seconds), then applies policies to the complete trace — always keep errors, always keep high-latency traces, sample everything else probabilistically. More infrastructure; the correct answer when rare events matter.
+
+**Recommended setup — AlwaysOn at the SDK, tail-based at the Collector:**
+
+Keep the SDK head sampler at AlwaysOn (every span sent to the Collector). The Collector handles the keep/drop decision with full trace context available.
+
+Updated `collector.yaml`:
+```yaml
+processors:
+  batch:
+    timeout: 1s
+    send_batch_size: 1024
+
+  tail_sampling:
+    decision_wait: 30s
+    num_traces: 50000
+    expected_new_traces_per_sec: 10
+    policies:
+      - name: always-keep-errors
+        type: status_code
+        status_code: { status_codes: [ERROR] }
+
+      - name: always-keep-high-latency
+        type: latency
+        latency: { threshold_ms: 400 }
+
+      - name: always-keep-retries
+        type: string_attribute
+        string_attribute:
+          key: scheduling.attempt_count
+          values: ["2", "3", "4", "5"]
+
+      - name: probabilistic-baseline
+        type: probabilistic
+        probabilistic: { sampling_percentage: 15 }
+```
+
+Policies are OR-combined: a trace matching any policy is kept. The probabilistic-baseline catches everything else at 15%.
+
+**Storage estimate with this configuration:**
+- Error traces: ~160 per day at 100% keep = 160
+- High-latency traces: ~5% of 8,000 = 400 at 100% keep
+- Remaining 7,440 at 15% = ~1,116
+- Total: ~1,680 traces per day across 7 services = ~11,760 spans
+- At 2KB average span size: ~23MB per day, ~700MB per month — under one dollar at S3 rates
+
+**One operational constraint to plan for:**
+
+The tail sampler buffers spans in memory. For 50,000 max traces at 7 spans per trace average, that is roughly 350,000 spans in the buffer at peak — around 700MB to 1.5GB depending on span payload size. Allocate at least 2GB RAM to the Collector container.
+
+Monitor the `otelcol_processor_tail_sampling_sampling_trace_dropped_count` metric and alert if it ever exceeds zero. When the buffer fills, the Collector drops spans silently rather than at the application — a drop counter spike means you are seeing more traffic than the buffer handles and need to either increase the buffer size or tighten the probabilistic percentage.$pf$,
+ NULL),
+
+-- Step 6 --
+('77777777-7777-7777-7777-777777103006',
+ '55555555-5555-5555-5555-555555550103',
+ 6,
+ $pf$Building the Grafana dashboard and P95 latency alert$pf$,
+ $pf$Collector is running with tail sampling, traces are flowing at the expected reduced rate. I need a Grafana dashboard that shows whether something is wrong at a glance, and an alert that fires when P95 scheduling latency exceeds 400ms sustained. I am on Grafana Cloud. Walk me through the architecture — specifically how traces turn into alertable metrics, since I know you cannot drive alert rules directly from trace queries.$pf$,
+ $pf$You have it right: trace-based Tempo queries cannot drive Grafana alert rules. Alert rules need time-series metrics. The architecture is two parallel paths — traces go to Tempo for investigation, and the Collector also generates Prometheus-format span metrics for alerting and trend dashboards.
+
+**Step 1: Enable spanmetrics at the Collector**
+
+Add a spanmetrics processor to collector.yaml that converts span data into latency histograms as spans flow through:
+```yaml
+processors:
+  spanmetrics:
+    metrics_exporter: prometheus
+    latency_histogram_buckets: [10ms, 25ms, 50ms, 100ms, 200ms, 400ms, 600ms, 1000ms, 2000ms]
+    dimensions:
+      - name: service.name
+      - name: http.route
+      - name: http.status_code
+      - name: appointment.type
+
+exporters:
+  prometheus:
+    endpoint: "0.0.0.0:8889"
+
+service:
+  pipelines:
+    traces:
+      receivers: [otlp]
+      processors: [batch, tail_sampling, spanmetrics]
+      exporters: [otlp/tempo]
+    metrics:
+      receivers: [spanmetrics]
+      exporters: [prometheus]
+```
+
+This generates `traces_spanmetrics_duration_milliseconds_bucket` as a Prometheus histogram labeled by service.name, http.route, and the custom dimensions you added.
+
+**Step 2: Four-panel Grafana dashboard**
+
+Panel 1 — Service error rate (stat panel, top row, one per service)
+Green under 1%, red above:
+```
+rate(traces_spanmetrics_calls_total{
+  service_name="scheduling-svc",
+  status_code="STATUS_CODE_ERROR"
+}[5m])
+/
+rate(traces_spanmetrics_calls_total{service_name="scheduling-svc"}[5m])
+```
+
+Panel 2 — P50/P95/P99 latency timeseries (main panel)
+Three overlapping lines for the POST /appointments operation over the selected time range. Add a red reference line at 400ms. P95 query:
+```
+histogram_quantile(0.95,
+  sum(rate(traces_spanmetrics_duration_milliseconds_bucket{
+    service_name="scheduling-svc",
+    http_route="/appointments"
+  }[5m])) by (le)
+)
+```
+
+Panel 3 — Top 5 slowest operations (table panel)
+P95 latency by span_name across all services, sorted descending. Surfaces new slow sub-operations without manual searching.
+
+Panel 4 — Recent high-latency traces (trace list)
+A Tempo data source panel with this TraceQL query:
+```
+{ .service.name = "scheduling-svc" && duration > 400ms }
+```
+Each row links directly to the full trace in Tempo Explore. When the alert fires, an engineer clicks a row and lands on the waterfall within 10 seconds.
+
+**Step 3: Alert rule**
+```yaml
+name: scheduling-p95-high
+expr: |
+  histogram_quantile(0.95,
+    sum(rate(traces_spanmetrics_duration_milliseconds_bucket{
+      service_name="scheduling-svc"
+    }[5m])) by (le)
+  ) > 0.4
+for: 5m
+labels:
+  severity: warning
+  team: platform
+annotations:
+  summary: "Scheduling P95 latency above 400ms for 5 minutes"
+  runbook_url: "https://internal-runbooks/scheduling-latency"
+```
+
+Note the threshold is 0.4 (seconds), not 400 — Prometheus uses seconds, not milliseconds.
+
+The `for: 5m` condition means P95 must stay above 400ms for a full five minutes before the alert fires. This filters transient spikes — a single slow minute should not wake anyone up. Sustained degradation should.
+
+One dashboard UX improvement worth adding after the basics are working: a time-range variable that links the dashboard time window to a Tempo Explore URL. When an engineer lands on the dashboard from a PagerDuty notification, the high-latency traces panel auto-scopes to the incident window, cutting investigation time significantly.$pf$,
+ NULL),
+
+-- Step 7 --
+('77777777-7777-7777-7777-777777103007',
+ '55555555-5555-5555-5555-555555550103',
+ 7,
+ $pf$Using the trace to root-cause and fix the latency regression$pf$,
+ $pf$The alert fired this morning. P95 is at 680ms. I opened the recent high-latency traces panel and clicked into one. Here is what I see in the Tempo waterfall: the top-level span is POST /appointments at 680ms. Under it there is an HTTP call to provider-svc at 440ms. Under that call, inside provider-svc, I can see the slot_availability_check span at 410ms. Inside that span I count 28 child spans, all named pg.query, each with nearly identical SQL — something like SELECT star FROM provider_schedules WHERE provider_id equals parameter one. Each one takes between 9 and 14ms. What is the pattern and how do I fix it?$pf$,
+ $pf$That trace is a textbook N+1 query. The slot_availability_check operation is running 28 separate database round trips in sequence where it should run one. The waterfall made it visible in a way that logs never would: 28 spans at 9 to 14ms each add up to 250 to 390ms, and that accounts for most of the 410ms on the parent span.
+
+**What the code looks like:**
+
+Your slot finder is iterating over candidate providers and querying each one individually inside a loop:
+```typescript
+// Current code — the N+1 pattern
+async function checkSlotAvailability(request: SchedulingRequest): Promise<Slot[]> {
+  const slots: Slot[] = [];
+
+  for (const providerId of request.providerIds) {     // 28 providers
+    const schedules = await db.query(
+      `SELECT * FROM provider_schedules
+       WHERE provider_id = $1
+         AND date BETWEEN $2 AND $3
+         AND is_available = TRUE`,
+      [providerId, startDate, endDate]
+    );
+    slots.push(...mapSchedulesToSlots(schedules.rows, providerId));
+  }
+
+  return slots;
+}
+```
+
+28 providers, one query each, all sequential. The query builder makes this easy to write inside a loop — it looks innocuous and runs fine in development where the dataset is small and each query is fast.
+
+**Fix — one batched query:**
+```typescript
+// Fixed — single query replacing 28
+async function checkSlotAvailability(request: SchedulingRequest): Promise<Slot[]> {
+  const { rows } = await db.query(
+    `SELECT ps.*, p.display_name, p.specialty
+     FROM provider_schedules ps
+     JOIN providers p ON p.id = ps.provider_id
+     WHERE ps.provider_id = ANY($1::uuid[])
+       AND ps.date BETWEEN $2 AND $3
+       AND ps.is_available = TRUE
+     ORDER BY ps.date, ps.start_time`,
+    [request.providerIds, startDate, endDate]
+  );
+
+  return rows.map(row => ({
+    providerId: row.provider_id,
+    providerName: row.display_name,
+    startTime: row.start_time,
+    endTime: row.end_time,
+    date: row.date,
+  }));
+}
+```
+
+The PostgreSQL `ANY($1::uuid[])` operator accepts an array parameter directly — no dynamic IN clause construction, no string interpolation, no SQL injection risk. The database handles the join in a single pass with an index scan on provider_id.
+
+**Expected trace after the fix:**
+```
+scheduling-svc | POST /appointments            [~185ms]
+  +-- pg | SELECT patients...                  [12ms]
+  +-- http | GET provider-svc/providers        [65ms]   <- from 440ms
+  |    +-- provider-svc | GET /providers       [58ms]
+  |         +-- slot_availability_check        [42ms]   <- from 410ms
+  |              +-- pg | SELECT provider...   [35ms]   <- one span, not 28
+  +-- pg | INSERT appointments                 [15ms]
+```
+
+P95 should drop from 680ms to around 180 to 200ms, matching the pre-regression baseline.
+
+**Verify with Tempo after deploying:**
+
+Query for the slot_availability_check span and compare child span count before and after:
+```
+{ .service.name = "provider-svc" && name = "slot_availability_check" }
+```
+
+Filter to the last 30 minutes post-deploy. In the before traces you see 28 pg.query children. In the after traces you see one. The fix is visible in the trace structure, not just the latency number.
+
+**Three follow-up items worth doing while this is fresh:**
+
+First: add a query count assertion to your integration tests. Wrap your test database connection in a query counter and assert after the endpoint call — something like `expect(queryCounter.count).toBeLessThanOrEqual(5)` for the slot check operation. This regression shipped two months ago and lived in production because nothing caught it in CI. A query count test would have caught it when the multi-provider feature was first committed.
+
+Second: add a `scheduling.db_query_count` span attribute to slot_availability_check in your instrumentation. Track the number of SQL statements executed per scheduling attempt as a span attribute. A query count regression surfaces in traces before it crosses the latency threshold — you see the count go from 1 to 28 without waiting for the P95 alert to fire.
+
+Third: audit the patient-records service for the same pattern. The multi-provider scheduling feature likely touches patient records for eligibility checks. If the same loop-based fetch pattern was introduced there, you have a latent N+1 waiting to surface under load. Instrument the service and run a load test with realistic multi-patient requests to find out.$pf$,
+ NULL);
+
 ALTER TABLE prompts ENABLE ROW LEVEL SECURITY;
 ALTER TABLE prompt_steps ENABLE ROW LEVEL SECURITY;

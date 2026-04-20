@@ -36159,5 +36159,356 @@ For each: give me a 2 to 3 sentence opener, the one thing I should not say under
 Carry these on the back of one card if you want them nearby. You probably will not need all three in a single night, but having two of them ready means you will not freeze.$pf$,
  NULL);
 
+-- ---------------------------------------------------------------------------
+-- Project 0101 — emwriter / Writing / intermediate / 5-step / Sonnet 4.6
+-- Topic: Crisis communications package for a food startup product recall
+-- ---------------------------------------------------------------------------
+
+DELETE FROM prompt_steps WHERE prompt_id = '55555555-5555-5555-5555-555555550101';
+DELETE FROM prompts      WHERE id        = '55555555-5555-5555-5555-555555550101';
+
+INSERT INTO prompts (
+  id, title, description, content, result_content,
+  category_id, difficulty, model_used, model_recommendation,
+  tools_used, tags, status, author_id, vote_count, bookmark_count
+) VALUES (
+  '55555555-5555-5555-5555-555555550101',
+  $pf$Built a crisis communications package for a food recall — framework to press release in one Sunday morning$pf$,
+  $pf$Emily Zhao ghostwriting and building crisis comms for a meal kit startup after an undisclosed cashew allergen was discovered in 4,100 shipped units. Five passes: crisis framework, customer recall email, social media statement, AP-style press release, and a customer support Q&A for front-line reps before the Monday phones started ringing.$pf$,
+  $pf$Marcus Reyes called me on a Sunday morning while I was halfway through a run. He is the founder of Harvest + Table, a direct-to-consumer meal kit company I have been doing PR and content work for since they had 400 subscribers. They are now at 8,200, mostly Pacific Coast food people who cook seriously and pay attention to what is in their food.
+
+He had that very specific kind of calm that people get when they are holding everything together because they have no other option.
+
+The short version: their February Harvest Bowl kit had shipped to 4,100 customers across 23 states. A new sauce supplier had quietly substituted a cashew-based tahini alternative without notifying anyone at the company. The allergen label listed sesame but not tree nuts. Two customers had called customer service the previous afternoon with reactions. One needed an EpiPen.
+
+He had already called his lawyer and his insurance broker. Now he needed all of the communications — the email to the 4,100 customers, something for social media, a press release for when media came looking, and a document his customer support team could actually use when the phones started ringing Monday morning. We had roughly 18 hours before word started spreading without us.
+
+The company had built a real reputation for ingredient transparency — it was a core part of their brand and the reason most of their audience paid attention to them. That made this worse in one way and more manageable in another. Their customers were sophisticated enough to understand a supply chain failure if it was explained honestly. But they were also going to hold Harvest + Table to exactly the standard the company had publicly set for itself.
+
+I use Claude for crisis work when I need to move fast without moving sloppy. The judgment calls are mine. The drafts I build together with it.$pf$,
+  $pf$Five pieces, built in under four hours.
+
+A crisis framework with the correct stakeholder notification sequence — affected customers first, ahead of any public posting — three message pillars (transparency about what happened, clear actions for the customer, accountability taken at the company level and not transferred to the supplier), and a list of specific phrases that would actively harm the company's position regardless of how reasonable they sounded in draft.
+
+The customer recall email went out at 11:42am Sunday. 310 words, subject line that led with the alert and not a brand message, personal note from Marcus at the end that sounded like a person and not legal review.
+
+The social media statements — Instagram caption and a three-tweet thread — went up after confirms that the customer emails were queued. Both used the word recall without hedging.
+
+An AP-style press release ready before any media contacted us. Three journalists reached out between Sunday afternoon and Tuesday morning. All three received a holding statement and the release. No story ran.
+
+A customer support Q&A with 10 scenarios covering: the customer who already ate the sauce with no reaction, the parent of a child who ate it, the customer asking for compensation beyond the refund, the media inquiry that hit the wrong line, the customer who wants to know why they were not notified sooner, and two edge cases the support team had not thought to prepare for.
+
+By Monday afternoon: 340 return requests processed, over 200 phone calls handled from a script, no support interaction went sideways, no litigation filed in the six weeks following the recall.$pf$,
+  '11111111-1111-1111-1111-111111111103',
+  'intermediate',
+  'claude-sonnet-4-6',
+  'Claude 4.6 Sonnet',
+  ARRAY['Claude'],
+  ARRAY['crisis communications', 'product recall', 'ghostwriting', 'food safety', 'PR writing'],
+  'approved',
+  '22222222-2222-2222-2222-222222222208',
+  0,
+  0
+);
+
+INSERT INTO prompt_steps (id, prompt_id, step_number, title, content, result_content, description) VALUES
+
+-- Step 1 --
+('77777777-7777-7777-7777-777777101001',
+ '55555555-5555-5555-5555-555555550101',
+ 1,
+ $pf$Building the crisis communications framework before drafting anything$pf$,
+ $pf$I need to build a complete crisis communications package today for a client. Here is the situation in full so you understand what we are dealing with.
+
+Marcus Reyes is the founder of Harvest + Table, a direct-to-consumer meal kit company with 8,200 subscribers. Their February Harvest Bowl kit — lot number HT-FEB-2024-A — shipped to 4,100 customers in 23 states. The kit includes a Golden Sesame Sauce. A new supplier substituted a cashew-based tahini alternative for the original sauce without telling anyone at Harvest + Table. The allergen label lists sesame. It does not list cashews or tree nuts anywhere. Two customers called customer service yesterday afternoon with allergic reactions. One used an EpiPen.
+
+Marcus has already spoken with his lawyer and insurance broker. The lawyer cleared communications as long as we do not speculate about outcomes or admit fault in ways that go beyond factual accuracy. Now he needs everything: a customer notification email for the 4,100 affected recipients, a social media statement, a press release for media, and a Q&A document his three part-time customer support reps can actually use when the phones start Monday morning. The customer email goes out today.
+
+Before I write a single word of any draft, I want the strategic framework right. Three things I need from you: what is the correct order to notify stakeholders in a food safety recall, and what is the reasoning behind that sequence? What are the three or four message pillars that every piece of communication needs to hit consistently regardless of format or audience? And what are the specific phrases or framings that would actively hurt this company's position — things that might sound reasonable in draft but that I need to cut from everything before it goes out?$pf$,
+ $pf$This is a food safety recall, not a reputation crisis that happens to involve safety. That distinction changes the sequence, the tone, and what you owe your audience.
+
+**Stakeholder notification order**
+
+**1. Affected customers first, before any public statement.** The 4,100 people who received the February kit get the email before anything appears on social or goes to press. Every hour you post publicly without having notified affected customers directly is an hour someone learns about the recall from Instagram before they get the company email. That sequence is trust-destroying and nearly impossible to recover from. Trigger the email, confirm sends are queued, then publish the social statement.
+
+**2. Voluntary FDA notification.** Your lawyer has flagged this, but it belongs on the same-morning list: self-reporting to FDA MedWatch or your district office is not the same as waiting for them to contact you. Companies that self-report control more of the framing and receive different treatment than companies that are contacted first. This is your lawyer's lane — make sure it is actually in motion.
+
+**3. Broader subscriber base.** Your 8,200 subscribers includes 4,100 people who did not receive this specific kit. They still need to hear from you. They may have purchased kits as gifts for someone who did receive it, and your audience subscribed partly because of ingredient transparency. Silence toward the people who did not receive the kit reads as concealment.
+
+**4. Press and media.** Have a press release and a holding statement ready before any journalist contacts you. Do not initiate media outreach before affected customers have been notified. The story you want is "company moved immediately to protect customers." That story requires the notification sequence to actually be correct.
+
+**5. Customer support team, before the phones start.** Most companies forget this communication and then pay for it when a support call becomes a screenshot. The Q&A document goes to every front-line person before Monday morning.
+
+---
+
+**Message pillars**
+
+Every piece of communication should consistently hit three things, regardless of length or format:
+
+**Pillar 1 — Factual transparency about what happened and what the risk is.** Not a summary, not softened language. The specific product, the specific allergen not disclosed, the lot number, who is at risk. This is not optional and cannot be shortened to vague language about "an ingredient issue."
+
+**Pillar 2 — Clear, specific action for the customer.** Stop using the sauce. Check the lot number against the one in the email. Here is the refund link. Here is the symptom that should prompt immediate care. People in a safety situation need to know what to do. Anything that does not tell them what to do is filler.
+
+**Pillar 3 — Accountability taken at the company level, not transferred to the supplier.** The supplier substituted without notifying anyone — that is relevant context, not an explanation of why Harvest + Table is not responsible. The allergen mislabeling happened on a Harvest + Table product. The company takes responsibility for what shipped under its name. This is both the ethical position and the legally defensible one: it is accurate, does not speculate, and your lawyer should have no objection.
+
+---
+
+**Phrases to cut from every draft**
+
+— **"No serious injuries have been reported."** One person used an EpiPen. FDA definition of serious adverse reaction includes anaphylaxis. You also do not yet know the full scope of reactions. This phrase is both inaccurate and reads as minimization.
+
+— **"This situation"** as a euphemism for the word recall. Use the word recall. Avoiding it signals to your audience that you are trying to obscure what is happening.
+
+— **"We take food safety very seriously."** Every company involved in a food safety failure has said exactly this. It carries no information and tells the reader they are looking at a template.
+
+— **"Due to an isolated supplier error..."** Leading with the supplier shifts blame in a way that conflicts with Pillar 3 and reads as defensive. Supplier context can appear in paragraph three of the press release. It does not belong in the opening of the customer email.
+
+— **"We apologize for any inconvenience."** Someone used an EpiPen. Use "we are sorry" — direct and human — or say nothing. "Inconvenience" signals that the writer has not thought carefully about what actually happened.
+
+— **"We have no reason to believe..."** This is speculation about a scope you do not yet know. Stick only to what you can verify.$pf$,
+ NULL),
+
+-- Step 2 --
+('77777777-7777-7777-7777-777777101002',
+ '55555555-5555-5555-5555-555555550101',
+ 2,
+ $pf$Drafting the customer recall email to 4,100 affected recipients$pf$,
+ $pf$Good — the framework is clean and I have the pillar structure and the phrase list locked in. Now I need the most critical piece first: the direct email to the 4,100 customers who received the February Harvest Bowl kit.
+
+A few specific details to build in. The product name they would recognize is "Golden Sesame Sauce" — that is what it says on the label inside the box, which is also where the allergen disclosure appears. The lot number for the affected kits is HT-FEB-2024-A, printed on a white sticker on the inside of the box lid. The refund and return process is a form at harvestandtable.com/recall — I want that linked directly in the email. Customer service is reachable at hello@harvestandtable.com and 415-882-4400.
+
+Marcus wants a personal note at the end — not a legalistic signoff, not a founder-brand-voice flourish, but something that sounds like a person who is genuinely distressed about what happened to his customers. He specifically does not want the email to sound like it was drafted by the legal department. The lawyer reviewed the framework and the pillar structure; the actual email is mine and Marcus's to write.
+
+The email should not be long. Someone worried about an allergen reaction needs to understand their situation and take action, not read a company narrative. But it cannot be so spare that it feels cold or like we are trying to get through it quickly. Under 350 words for the full body. Write the complete email: subject line, preheader text, and full body copy.$pf$,
+ $pf$**Subject:** Important: allergen alert for your February Harvest Bowl kit — please read
+
+**Preheader:** If you have a tree nut allergy, stop using the Golden Sesame Sauce immediately.
+
+---
+
+Hi [First Name],
+
+I'm writing to you directly because your February Harvest Bowl kit may contain an undisclosed allergen.
+
+**What happened:** The Golden Sesame Sauce included in your kit contains cashews. The sauce label does not list cashews or tree nuts as an ingredient. We discovered this after two customers reported allergic reactions.
+
+**What this means for you:** If you or anyone in your household has a tree nut allergy, please stop using this sauce immediately. Do not consume any portion you have already prepared with it. If you experience symptoms of an allergic reaction — swelling, hives, difficulty breathing, or nausea — seek medical attention right away.
+
+**How to check:** Your kit contains lot number **HT-FEB-2024-A**, printed on a white sticker on the inside of the box lid.
+
+**What to do next:**
+
+1. Set the sauce aside. Do not discard it if you are willing to return it — we will send a prepaid label.
+2. Submit a return request at harvestandtable.com/recall. All February Harvest Bowl customers receive a full refund regardless of whether you have used the sauce.
+3. If you or someone in your household has had a reaction, please contact us at hello@harvestandtable.com or 415-882-4400. We want to follow up with you directly.
+
+---
+
+*A note from Marcus:*
+
+I started Harvest + Table because I believe people have a right to know exactly what is in their food. This label failure is a direct failure of that commitment. I am sorry.
+
+A supplier substituted an ingredient without telling us, and our verification process did not catch it before this kit shipped. Neither of those facts changes what ended up in your kitchen, or what our label said.
+
+We are auditing every current supplier ingredient and label. I will send a follow-up when that review is complete.
+
+Marcus Reyes
+Founder, Harvest + Table
+415-882-4400$pf$,
+ NULL),
+
+-- Step 3 --
+('77777777-7777-7777-7777-777777101003',
+ '55555555-5555-5555-5555-555555550101',
+ 3,
+ $pf$Social media statements — Instagram and Twitter$pf$,
+ $pf$The customer email is exactly right — Marcus approved it with two small wording changes and it is in the send queue. Once I get confirmation that the first batch is deployed, the social posts go up. Not before.
+
+Now I need the social media pieces. The Instagram audience is food-oriented, engaged, and expects transparency from the accounts they follow — they pay attention to ingredient sourcing copy in captions, and they will notice whether this statement is genuine or templated. The Twitter audience moves faster and amplifies further in both directions, and is less patient with long posts.
+
+A few constraints. The Instagram caption can be up to about 300 words for a topic like this — the audience will read it. The Twitter version should be short enough to read in one glance; use a thread if there is more to say, but do not try to compress everything into a single cramped tweet. For both: lead with the alert, not with brand voice. The allergen information needs to be the first thing someone sees, not buried after two paragraphs of context. Avoid anything that sounds like a PR crisis template — Harvest + Table has a distinctive voice that is direct and warm, and the statement should feel consistent with that even in a difficult moment.
+
+Write the Instagram caption and a short Twitter thread.$pf$,
+ $pf$**Instagram caption:**
+
+Allergen alert — please read if you received our February Harvest Bowl kit.
+
+The Golden Sesame Sauce in the February Harvest Bowl kit contains cashews. The label does not list cashews or tree nuts. If you or anyone in your household has a tree nut allergy, please stop using the sauce immediately.
+
+Every customer who received the February Harvest Bowl kit is eligible for a full refund — no questions, whether or not you have used the sauce. The return form is in our bio link and at harvestandtable.com/recall.
+
+If you or a family member has had a reaction, please contact us at hello@harvestandtable.com or 415-882-4400. We want to hear from you directly.
+
+What happened: a supplier substituted a cashew-based ingredient for our sesame sauce formulation without notifying us. Our allergen label verification did not catch the change before the kit shipped. That is our failure to fix, and we are auditing every supplier ingredient and label as a result.
+
+We emailed all customers who received this kit directly this morning. If you have not seen it, please check your spam folder or reach out and we will resend it.
+
+We are sorry.
+
+— Marcus and the Harvest + Table team
+
+---
+
+**Twitter thread:**
+
+**Tweet 1:**
+Allergen alert — February Harvest Bowl customers, please read.
+
+The Golden Sesame Sauce in your kit contains cashews. The label does not list tree nuts. If you have a tree nut allergy, stop using the sauce.
+
+Full details + refund: harvestandtable.com/recall
+
+**Tweet 2:**
+All February Harvest Bowl customers can request a full refund — no conditions, whether or not you have used the sauce.
+
+Had a reaction? Email hello@harvestandtable.com or call 415-882-4400 directly.
+
+**Tweet 3:**
+What happened: a supplier substituted a cashew-based ingredient without notifying us. Our label verification did not catch it. We emailed all affected customers this morning.
+
+We are auditing every supplier ingredient and label. Marcus will follow up with customers when that review is done.$pf$,
+ NULL),
+
+-- Step 4 --
+('77777777-7777-7777-7777-777777101004',
+ '55555555-5555-5555-5555-555555550101',
+ 4,
+ $pf$Writing the press release for media inquiries$pf$,
+ $pf$Social posts went up 45 minutes after the email send confirmation. Three journalists have already sent inquiry requests — one from a Bay Area food publication, one from a regional newspaper consumer affairs desk, and one general assignment reporter who found us through the Twitter thread. I need to send all three the same thing: a professional press release they can quote directly and accurately.
+
+AP style throughout. All facts attributed correctly to Marcus Reyes as founder and to the company by name. Include the key factual details: lot number HT-FEB-2024-A, product name Golden Sesame Sauce, February Harvest Bowl kit, approximately 4,100 kits shipped to customers in 23 states, the nature of the allergen mislabeling (cashews present but not disclosed, supplier substituted an ingredient without notification), and what the company is doing in response. Include that affected customers have been notified directly and that a full refund process is available.
+
+The release should acknowledge the two known adverse reactions without disclosing any personal information about the customers involved. Do not speculate about cause beyond what we factually know — supplier substituted an ingredient without notifying the company, allergen label was not updated. Do not include anything that commits to specific outcomes or timelines beyond what Marcus has actually agreed to, which is a 30-day customer follow-up on the supplier audit results.
+
+Media contact for the release is my PR line: Emily Zhao Communications, emily@emilyzhaocomms.com, 415-917-3320. Write the full press release ready to send.$pf$,
+ $pf$FOR IMMEDIATE RELEASE
+
+**Media contact:**
+Emily Zhao Communications
+emily@emilyzhaocomms.com
+415-917-3320
+
+---
+
+**HARVEST + TABLE ISSUES VOLUNTARY RECALL OF FEBRUARY HARVEST BOWL KIT FOR UNDISCLOSED TREE NUT ALLERGEN**
+
+*Meal kit company notifies 4,100 customers after cashews discovered in sauce not listed on allergen label; full refunds available at harvestandtable.com/recall*
+
+**SAN FRANCISCO** — Harvest + Table, a San Francisco-based direct-to-consumer meal kit company, today announced a voluntary product recall of its February Harvest Bowl kit after determining that the kit's Golden Sesame Sauce contains cashews not disclosed on the allergen label.
+
+The affected product is identified by lot number HT-FEB-2024-A. Approximately 4,100 kits were distributed to customers across 23 states. The Golden Sesame Sauce allergen label identifies sesame as an allergen. It does not list cashews or tree nuts.
+
+Harvest + Table became aware of the undisclosed allergen after two customers reported adverse allergic reactions on February 15. The company began direct customer notification by email Sunday morning and has established a recall and refund portal at harvestandtable.com/recall.
+
+"The label on this sauce failed to disclose an allergen. Two people had reactions as a result of that failure," said Marcus Reyes, founder of Harvest + Table. "We have notified every customer who received this kit and we are refunding all of them — no conditions. We are conducting a full audit of every supplier ingredient disclosure and every kit label we currently use."
+
+**Cause of the mislabeling**
+
+Harvest + Table states that a sauce supplier substituted a cashew-based ingredient in the Golden Sesame Sauce formulation without notifying the company. The company's allergen label verification process did not detect the substitution prior to distribution.
+
+**Customer instructions**
+
+Customers who received the February Harvest Bowl kit and have a tree nut allergy should stop using the Golden Sesame Sauce immediately. All customers who received the affected kit — regardless of allergy status — may request a full refund at harvestandtable.com/recall or by calling 415-882-4400. Prepaid return labels are available.
+
+Customers who have experienced symptoms of an allergic reaction should seek immediate medical attention and may contact the company directly at hello@harvestandtable.com.
+
+Harvest + Table states it expects to provide customers with findings from the supplier and label audit within 30 days.
+
+*###*
+
+*Harvest + Table is a direct-to-consumer meal kit company based in San Francisco, California, serving subscribers in 23 states.*$pf$,
+ NULL),
+
+-- Step 5 --
+('77777777-7777-7777-7777-777777101005',
+ '55555555-5555-5555-5555-555555550101',
+ 5,
+ $pf$Customer support Q&A for front-line reps before the phones start$pf$,
+ $pf$Last piece. Before the phones start Monday morning I need a Q&A document the support team can actually use in real time. There are three people — all part-time, none of whom have worked a food recall before. They will get callers who are scared, callers who are angry, callers who had reactions, callers who just want their refund, and callers who will ask questions that require judgment they are not equipped to make on the fly.
+
+The document needs to be scannable during an active call — not a briefing they read once and try to remember. Short answers. Clear escalation paths for anything that should not be handled at the front-line level: medical questions, legal or compensation discussions, anything that sounds like it could become litigation, and media contacts that reach the wrong line.
+
+Cover at minimum: customers who already ate the sauce but have no symptoms, customers whose child ate it, customers asking whether they need to see a doctor, customers asking what happened with the supplier, customers asking why they were not notified sooner, customers asking for compensation beyond the refund, media contacts that hit the wrong line, customers reporting an allergic reaction, and customers who say they never received the email. Include any other scenarios you think this team will definitely face that I have not listed.$pf$,
+ $pf$**Harvest + Table — Recall Response: Support Q&A**
+February 2024 | For internal use only — support team
+Escalations: Marcus at ext. 201 or marcus@harvestandtable.com
+
+---
+
+**"I ate the sauce and I feel fine. Do I need to do anything?"**
+
+If you do not have a tree nut allergy, there is no health concern for you. You are still eligible for a full refund — no conditions. If you develop any symptoms over the next 24 to 48 hours, seek medical attention.
+
+*Do not say "you're probably fine" or speculate about whether they have an allergy.*
+
+---
+
+**"My child ate the sauce. What should I do?"**
+
+The same allergen concern applies to children as adults. If your child has a known tree nut allergy or has had previous reactions to tree nuts, contact their pediatrician now. If your child is showing symptoms of an allergic reaction right now — swelling, hives, difficulty breathing — call 911 or go to the emergency room immediately. You are eligible for a full refund.
+
+*If the parent is distressed: slow down, listen, do not rush toward the refund.*
+
+---
+
+**"Do I need to go to the doctor?"**
+
+We are not able to give medical advice. If you have a known tree nut allergy, please contact your doctor or healthcare provider to let them know about the exposure. If you are experiencing symptoms of an allergic reaction right now, please seek immediate medical attention.
+
+---
+
+**"I had a reaction. I used my EpiPen / I went to the hospital."**
+
+I am very sorry. Please hold for one moment — I am connecting you directly with Marcus.
+
+*Transfer immediately to Marcus (ext. 201). Before transferring: get the caller's name and a callback number. Do not ask for medical details. Do not apologize on behalf of the company beyond "I am sorry." Document the call: name, callback number, time of call.*
+
+---
+
+**"Why was I not notified sooner?"**
+
+We sent a direct email to every customer who received the February Harvest Bowl kit Sunday morning, as soon as we confirmed the full scope of the issue. If you did not receive it, it may be in your spam folder — I can resend it right now. Would you like me to do that?
+
+*Do not apologize for the notification timing. If they remain frustrated, acknowledge the frustration without agreeing the timeline was wrong.*
+
+---
+
+**"What happened with the supplier? Why did they do this?"**
+
+A sauce supplier substituted an ingredient in our Golden Sesame Sauce formulation without notifying us, and our label verification process did not catch it before the kit shipped. We are conducting a full audit of all supplier ingredient disclosures and kit labels right now. Marcus Reyes will send customers an update within 30 days.
+
+*Do not speculate about what will happen to the supplier or what process changes are planned. Only share what is in the customer email and the press release.*
+
+---
+
+**"A refund is not enough. I want you to cover my medical bills / damages."**
+
+I understand. I want to make sure you are connected with the right person at the company. May I get your name and a callback number? Marcus Reyes, our founder, will follow up with you directly within one business day.
+
+*Document fully: name, callback number, what they described experiencing. Do not dispute the claim, do not negotiate, do not promise anything about what the company will or will not cover.*
+
+---
+
+**"I am a reporter / journalist calling for a comment."**
+
+Thank you for reaching out. All media inquiries are handled by Emily Zhao at emily@emilyzhaocomms.com or 415-917-3320. I can also email you the press release we issued this morning — would that be helpful?
+
+*Do not answer any question beyond providing the media contact. Do not confirm or deny details not already in the press release.*
+
+---
+
+**"I never got the email. Are you sure you have my address?"**
+
+Let me check your account right now. [Look up the email address on file.] If the address looks correct, the email may be in your spam or promotions folder — the subject line is "Important: allergen alert for your February Harvest Bowl kit." I can resend it right now.
+
+*If the address on file is wrong: correct it and resend. Note the update in the account log.*
+
+---
+
+**"I already threw the sauce away."**
+
+That is completely fine — you do not need to return the sauce to receive your refund. Visit harvestandtable.com/recall and select "already discarded" in the return form. Refunds process in three to five business days.$pf$,
+ NULL);
+
 ALTER TABLE prompts ENABLE ROW LEVEL SECURITY;
 ALTER TABLE prompt_steps ENABLE ROW LEVEL SECURITY;

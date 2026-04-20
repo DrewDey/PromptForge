@@ -35238,5 +35238,687 @@ Whether that framing works for you I can't predict. But the three mechanics abov
 -- appending below this comment. Do NOT rewrite existing projects.
 -- =========================================================================
 
+DELETE FROM prompt_steps WHERE prompt_id = '55555555-5555-5555-5555-555555550098';
+DELETE FROM prompts      WHERE id        = '55555555-5555-5555-5555-555555550098';
+
+INSERT INTO prompts (
+  id, title, description, content, result_content,
+  category_id, difficulty, model_used, model_recommendation,
+  tools_used, tags, status, author_id, vote_count, bookmark_count
+) VALUES (
+  '55555555-5555-5555-5555-555555550098',
+  $pf$Built a production webhook delivery system with BullMQ and Redis$pf$,
+  $pf$Derek's health-tech SaaS was firing webhooks inline — slow partner endpoints blocked the API, one outage meant 200+ missed events. Six passes with Claude: architecture decision, TypeScript worker, retry policy with dead letter queue, subscription management with secret rotation, customer delivery log, and production monitoring runbook.$pf$,
+  $pf$HealthBridge is a health-tech SaaS that connects EHR systems to third-party partners — scheduling platforms, billing software, patient communication tools. Every time a patient appointment is created or a record changes, we fire webhooks to whichever partner integrations that customer has enabled. For the first 18 months, our webhook implementation was dead simple: an axios.post call inside the API request handler, fire-and-forget, no retry. It worked fine when partner endpoints were fast and reliable.
+
+Then we started landing enterprise customers with real integration requirements. In a three-week stretch in February, we had three webhook incidents: a slow partner endpoint caused our API P95 response time to blow past 2 seconds, a partner had a 6-hour outage and missed 200+ events with no recovery path, and a security-conscious enterprise asked for HMAC signature verification and a delivery audit log. We had none of those things.
+
+I blocked out a Sunday to rebuild this from scratch. I used Claude as a design partner across six sessions, going from architecture decision through TypeScript implementation through the operational runbook. By end of day we had a production webhook delivery system running in staging. It took two more days to cut over in production, but the design and implementation work happened in those six hours.$pf$,
+  $pf$HealthBridge's webhook system went from fire-and-forget inline HTTP calls to a BullMQ-backed delivery pipeline with 8-attempt exponential backoff (30-second base, 63-minute total window), HMAC-SHA256 signing using the Stripe-format timestamp+body scheme, per-partner subscription management with zero-downtime secret rotation, a customer-facing delivery log with per-attempt HTTP status and response body, a replay endpoint for dead deliveries, and a monitoring runbook with specific alerts for queue backup and per-partner failure rate. First week in production: zero cascading API timeouts from partner endpoint latency, three partner outages absorbed cleanly with events held and delivered on recovery, and one enterprise onboarding unblocked that had stalled on "how do we audit deliveries?"$pf$,
+  '11111111-1111-1111-1111-111111111104',
+  'advanced',
+  'claude-opus-4-7',
+  'Claude 4.7 Opus',
+  ARRAY['Claude', 'BullMQ', 'Redis', 'PostgreSQL', 'TypeScript', 'Node.js', 'Express'],
+  ARRAY['webhooks', 'bullmq', 'redis', 'typescript', 'nodejs', 'reliability', 'event-driven'],
+  'approved',
+  '22222222-2222-2222-2222-222222222209',
+  0, 0
+);
+
+INSERT INTO prompt_steps (id, prompt_id, step_number, title, content, result_content, description) VALUES
+
+-- Step 1 --
+('66666666-6666-6666-6666-666666980101',
+ '55555555-5555-5555-5555-555555550098',
+ 1,
+ $pf$Architecture decision and Postgres schema for a queue-backed webhook system$pf$,
+ $pf$We're a Node.js TypeScript Express API. Our current webhook implementation is an axios.post inline in the API handler — fire and forget, no retry. This has caused three incidents in six weeks: slow partner endpoints bleeding into our API latency, a 6-hour partner outage that silently dropped 200+ events, and an enterprise prospect asking for HMAC signatures and a delivery audit log we don't have. I need to rebuild this as a proper queue-backed delivery system. Before I touch code: help me choose the right architecture. Options I'm considering: a job queue backed by Redis using BullMQ, rolling our own polling loop on a Postgres deliveries table, or pushing this into a managed message broker like SQS. We're around 50,000 webhook events per day and 200 partner endpoints. We already have Postgres and Redis in production. Walk me through the trade-offs and tell me which approach you'd take here and why, then give me the Postgres schema I'll need — the tables, columns, and indexes.$pf$,
+ $pf$BullMQ is the right choice here. Let me run through the comparison at your scale and stack.
+
+**Rolling your own Postgres polling loop**
+Viable under 5,000 events/day. At 50k/day you'll hammer the deliveries table with polling queries, create contention on status update rows as workers race to claim jobs, and end up reinventing BullMQ's job lifecycle anyway. The one advantage is zero new dependencies — but you already have Redis, so that advantage is gone.
+
+**SQS or RabbitMQ**
+Correct architectural choice for very high scale (millions/day), cross-language teams, or if you're already in AWS and want fully managed infra. For 50k/day with an existing Redis cluster, this is operational complexity without a clear payoff. SQS also has a 15-minute max visibility timeout — your exponential backoff at 8 attempts will extend past that, requiring SQS DLQ plus re-enqueue logic. More moving parts, not fewer.
+
+**BullMQ + Redis**
+Correct for your scale. BullMQ gives you: atomic job processing (no double-delivery), built-in exponential backoff with configurable delay, dead letter via the failed job state, and Bull Board for real-time visibility. At 50k/day you're at about 0.58 events per second average — Redis handles this easily. One important note: BullMQ stores job state in Redis, but you still want a Postgres webhook_deliveries table for the customer-facing audit log. Redis is the job queue; Postgres is the durable record.
+
+---
+
+**Postgres schema:**
+
+```sql
+CREATE TABLE webhook_subscriptions (
+  id                  UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  customer_id         UUID NOT NULL REFERENCES customers(id) ON DELETE CASCADE,
+  endpoint_url        TEXT NOT NULL,
+  event_types         TEXT[] NOT NULL,
+  signing_secret      TEXT NOT NULL,
+  signing_secret_prev TEXT,
+  secret_rotated_at   TIMESTAMPTZ,
+  is_active           BOOLEAN NOT NULL DEFAULT true,
+  created_at          TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at          TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX ON webhook_subscriptions (customer_id);
+CREATE INDEX ON webhook_subscriptions USING GIN (event_types);
+
+CREATE TABLE webhook_deliveries (
+  id               UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  subscription_id  UUID NOT NULL REFERENCES webhook_subscriptions(id),
+  event_type       TEXT NOT NULL,
+  event_id         UUID NOT NULL,
+  payload          JSONB NOT NULL,
+  attempt_number   INT NOT NULL DEFAULT 1,
+  status           TEXT NOT NULL DEFAULT 'pending'
+    CHECK (status IN ('pending','success','failed','dead')),
+  http_status_code INT,
+  response_body    TEXT,
+  duration_ms      INT,
+  attempted_at     TIMESTAMPTZ,
+  next_retry_at    TIMESTAMPTZ,
+  bullmq_job_id    TEXT,
+  created_at       TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX ON webhook_deliveries (subscription_id, created_at DESC);
+CREATE INDEX ON webhook_deliveries (event_id);
+CREATE INDEX ON webhook_deliveries (status) WHERE status IN ('pending','failed');
+```
+
+Two design notes worth flagging: `signing_secret_prev` stores the previous signing secret during rotation, giving partners a 5-minute overlap window to update their verification code without a hard cutover. `payload` is JSONB not TEXT so you can filter individual fields in debug queries later — the write overhead is negligible at your volume.$pf$,
+ NULL),
+
+-- Step 2 --
+('66666666-6666-6666-6666-666666980102',
+ '55555555-5555-5555-5555-555555550098',
+ 2,
+ $pf$TypeScript delivery worker with HMAC signing and HTTP status-code routing$pf$,
+ $pf$Good. Going with BullMQ. Schema is in. Now give me the TypeScript Worker implementation — the code that actually dequeues jobs and attempts delivery. It needs to: (1) make the HTTP POST to the endpoint URL, (2) attach an HMAC-SHA256 signature using the Stripe-format scheme (timestamp + raw body), (3) respect a 10-second timeout, (4) handle HTTP status codes correctly — 2xx is success, 3xx follow up to 3 redirects, 4xx is permanent failure and should not retry, 5xx and network errors should retry via BullMQ's backoff, (5) update the webhook_deliveries row in Postgres after each attempt with the status, HTTP code, response body, and duration. Show the complete TypeScript file. We're using the pg library directly.$pf$,
+ $pf$Here's `src/workers/webhookWorker.ts`:
+
+```typescript
+import { Worker, Job } from 'bullmq';
+import { createHmac } from 'crypto';
+import axios, { AxiosError } from 'axios';
+import { Pool } from 'pg';
+import Redis from 'ioredis';
+
+interface WebhookJobData {
+  deliveryId: string;
+  endpointUrl: string;
+  signingSecret: string;
+  payload: Record<string, unknown>;
+  attemptNumber: number;
+}
+
+export function createWebhookWorker(db: Pool, redis: Redis) {
+  const worker = new Worker<WebhookJobData>(
+    'webhook-delivery',
+    async (job: Job<WebhookJobData>) => {
+      const { deliveryId, endpointUrl, signingSecret, payload, attemptNumber } = job.data;
+      const startMs = Date.now();
+      const bodyString = JSON.stringify(payload);
+      const timestamp = Math.floor(Date.now() / 1000).toString();
+      const signature = createHmac('sha256', signingSecret)
+        .update(`${timestamp}.${bodyString}`)
+        .digest('hex');
+
+      let httpStatus: number | null = null;
+      let responseBody: string | null = null;
+      let newStatus: 'success' | 'failed' | 'dead' = 'failed';
+
+      try {
+        const response = await axios.post(endpointUrl, bodyString, {
+          headers: {
+            'Content-Type': 'application/json',
+            'X-Webhook-Timestamp': timestamp,
+            'X-Webhook-Signature': `v1=${signature}`,
+          },
+          timeout: 10_000,
+          maxRedirects: 3,
+          validateStatus: null, // handle all status codes ourselves
+        });
+
+        httpStatus = response.status;
+        responseBody = JSON.stringify(response.data).slice(0, 4096);
+
+        if (response.status >= 200 && response.status < 300) {
+          newStatus = 'success';
+        } else if (response.status >= 400 && response.status < 500) {
+          // 4xx = permanent failure, skip BullMQ retry
+          await updateDelivery(db, deliveryId, { status: 'dead', httpStatus, responseBody,
+            durationMs: Date.now() - startMs, attemptNumber });
+          throw Object.assign(new Error(`Permanent failure: HTTP ${response.status}`),
+            { name: 'PermanentFailureError' });
+        }
+        // 5xx falls through to the throw below, which BullMQ retries
+      } catch (err) {
+        if (err instanceof AxiosError) {
+          httpStatus = err.response?.status ?? null;
+          responseBody = err.message.slice(0, 4096);
+        } else {
+          throw err;
+        }
+      }
+
+      await updateDelivery(db, deliveryId, { status: newStatus, httpStatus, responseBody,
+        durationMs: Date.now() - startMs, attemptNumber });
+
+      if (newStatus === 'failed') throw new Error(`HTTP ${httpStatus ?? 'network error'}`);
+    },
+    { connection: redis, concurrency: 20 }
+  );
+
+  worker.on('failed', async (job) => {
+    if (job && job.attemptsMade >= (job.opts.attempts ?? 1)) {
+      await db.query(`UPDATE webhook_deliveries SET status = 'dead' WHERE id = $1`,
+        [job.data.deliveryId]);
+    }
+  });
+
+  return worker;
+}
+
+async function updateDelivery(db: Pool, id: string,
+  u: { status: string; httpStatus: number | null; responseBody: string | null;
+       durationMs: number; attemptNumber: number }) {
+  await db.query(
+    `UPDATE webhook_deliveries SET status=$1, http_status_code=$2, response_body=$3,
+     duration_ms=$4, attempt_number=$5, attempted_at=NOW() WHERE id=$6`,
+    [u.status, u.httpStatus, u.responseBody, u.durationMs, u.attemptNumber, id]
+  );
+}
+```
+
+Three things worth explaining: `validateStatus: null` stops Axios from throwing on 4xx/5xx, letting you route status codes in clean if/else logic instead of parsing an AxiosError just to read `err.response.status`. The `PermanentFailureError` trick exits the retry loop early for 4xx responses — BullMQ retries any job that throws, so you throw after marking the row dead, and the `worker.on('failed')` handler catches exhausted retries separately. The `v1=` prefix on the signature header follows the Stripe pattern and lets you migrate to a v2 algorithm later without breaking existing parsers.$pf$,
+ NULL),
+
+-- Step 3 --
+('66666666-6666-6666-6666-666666980103',
+ '55555555-5555-5555-5555-555555550098',
+ 3,
+ $pf$Exponential backoff schedule, BullMQ retry configuration, and dead letter queue$pf$,
+ $pf$The worker is running in staging. Now I need to nail the retry policy. My instinct is exponential backoff starting at 30 seconds, max 8 attempts, then mark as permanently failed. Before I configure BullMQ: (1) what are the actual delay numbers at each of 8 attempts and what's the total time window from first attempt to giving up? (2) should I use BullMQ's built-in exponential backoff type or write a custom delay function, and what's the trade-off? (3) after 8 failures, what does the dead letter queue look like in a BullMQ + Postgres stack — where do failed jobs actually live and how does an operator re-enqueue a specific delivery or a batch?$pf$,
+ $pf$**Backoff schedule at 8 attempts, 30-second base, multiplier 2:**
+
+| Attempt | Delay before this attempt | Cumulative elapsed |
+|---------|--------------------------|-------------------|
+| 1 | 0 (immediate) | 0 min |
+| 2 | 30 sec | 0:30 |
+| 3 | 1 min | 1:30 |
+| 4 | 2 min | 3:30 |
+| 5 | 4 min | 7:30 |
+| 6 | 8 min | 15:30 |
+| 7 | 16 min | 31:30 |
+| 8 | 32 min | 63:30 |
+
+Total window: about 63 minutes from first attempt to final failure. That covers most partner outages — a typical deployment restart is 5–15 minutes, a serious incident is 30–60 minutes. Beyond 63 minutes, events go dead and require human replay, which is the right default for health-tech where a 2-hour partner outage warrants investigation.
+
+**Built-in vs. custom backoff:**
+
+BullMQ's `{ type: 'exponential', delay: 30000 }` implements `delay * 2^attemptsMade`. The math is right but it adds no jitter. The jitter problem: if a partner goes down and recovers, all queued retries fire simultaneously and can overwhelm their endpoint on recovery. Add jitter with a custom backoff strategy:
+
+```typescript
+// In Worker options:
+settings: {
+  backoffStrategy: (attemptsMade: number) => {
+    const delay = 30_000 * Math.pow(2, attemptsMade - 1);
+    const jitter = Math.floor(Math.random() * 5_000);
+    return delay + jitter;
+  },
+},
+// In job options:
+{ attempts: 8, backoff: { type: 'custom' } }
+```
+
+**Dead letter queue:**
+
+BullMQ keeps exhausted-retries jobs in Redis in the `failed` set, but Redis retention is not durable and you already have Postgres for the audit log. The practical pattern: your `worker.on('failed')` handler (already in the worker) writes `status = 'dead'` to Postgres. Your dead letter queue is just:
+
+```sql
+SELECT * FROM webhook_deliveries WHERE status = 'dead' ORDER BY created_at DESC;
+```
+
+For operator replay, a simple admin endpoint re-enqueues by updating the Postgres row back to `pending` and adding a new BullMQ job:
+
+```typescript
+app.post('/admin/webhooks/deliveries/:id/replay', async (req, res) => {
+  const { rows } = await db.query(
+    `SELECT wd.*, ws.endpoint_url, ws.signing_secret
+     FROM webhook_deliveries wd JOIN webhook_subscriptions ws ON ws.id = wd.subscription_id
+     WHERE wd.id = $1 AND wd.status = 'dead'`, [req.params.id]);
+
+  if (!rows[0]) return res.status(404).json({ error: 'Not found or not dead' });
+  await db.query(
+    `UPDATE webhook_deliveries SET status='pending', attempt_number=1 WHERE id=$1`,
+    [rows[0].id]);
+  await webhookQueue.add('deliver', { deliveryId: rows[0].id, endpointUrl: rows[0].endpoint_url,
+    signingSecret: rows[0].signing_secret, payload: rows[0].payload, attemptNumber: 1 },
+    { attempts: 8, backoff: { type: 'custom' } });
+  res.json({ ok: true });
+});
+```
+
+Cap batch replay at 100 per request — blasting a week of backlog at a partner endpoint the moment it recovers is how you cause their second incident.$pf$,
+ NULL),
+
+-- Step 4 --
+('66666666-6666-6666-6666-666666980104',
+ '55555555-5555-5555-5555-555555550098',
+ 4,
+ $pf$Subscription management API and zero-downtime HMAC secret rotation$pf$,
+ $pf$Two things I need to finalize before calling this production-ready. First, the subscription management API — partners need endpoints to create a subscription, update the endpoint URL or event types, delete it, and rotate their signing secret without service disruption. For rotation specifically: walk me through the dual-secret window pattern and how to implement it so a partner can update their verification code without a hard cutover moment. Second, the HMAC signature scheme — spec out exactly what the signature header looks like, how a partner verifies it in Node.js, and what the most common implementation mistakes are so I can call them out in our integration docs.$pf$,
+ $pf$**Subscription management endpoints:**
+
+```
+POST   /api/v1/webhook-subscriptions          — create
+GET    /api/v1/webhook-subscriptions/:id      — read
+PATCH  /api/v1/webhook-subscriptions/:id      — update url or event_types
+DELETE /api/v1/webhook-subscriptions/:id      — soft-delete (is_active = false)
+POST   /api/v1/webhook-subscriptions/:id/rotate-secret — initiate rotation
+```
+
+On `POST`, generate the secret server-side and return it exactly once:
+```typescript
+const secret = `whsec_${crypto.randomBytes(32).toString('base64url')}`;
+```
+The `whsec_` prefix makes it recognizable in logs and clearly not a password. `base64url` avoids `+`, `/`, `=` characters that trip up some partner log parsers. Store it encrypted at rest — a plaintext signing secret in Postgres is a real risk if the DB gets exfiltrated.
+
+**Zero-downtime rotation — the dual-secret pattern:**
+
+When a partner calls `POST .../rotate-secret`: generate a new secret, move `signing_secret` → `signing_secret_prev`, store the new secret as `signing_secret`, set `secret_rotated_at = NOW()`. Return the new secret to the partner once.
+
+For the next 5 minutes, your worker signs outgoing webhooks with the new secret. On the partner side, tell them to accept verification against either secret during the overlap window. Your verification docs:
+
+```typescript
+function verifyWebhook(req: Request, secret: string, secretPrev?: string): boolean {
+  const timestamp = req.headers['x-webhook-timestamp'] as string;
+  const sig = (req.headers['x-webhook-signature'] as string).replace('v1=', '');
+  if (Math.abs(Date.now() / 1000 - parseInt(timestamp)) > 300) return false; // 5-min window
+  const expected = (s: string) => createHmac('sha256', s)
+    .update(`${timestamp}.${req.rawBody}`).digest('hex');
+  const toBuffer = (s: string) => Buffer.from(s, 'hex');
+  if (timingSafeEqual(toBuffer(sig), toBuffer(expected(secret)))) return true;
+  if (secretPrev && timingSafeEqual(toBuffer(sig), toBuffer(expected(secretPrev)))) return true;
+  return false;
+}
+```
+
+**Signature header spec:**
+
+```
+X-Webhook-Timestamp: 1745792400
+X-Webhook-Signature: v1=3b4e8f2a9c...64-char-hex...
+```
+
+What you sign: `{timestamp}.{raw request body as string}`. The `v1=` prefix allows algorithm migration to v2 later without breaking existing parsers.
+
+**Four common implementation mistakes to call out in your docs:**
+
+1. Using `===` instead of `timingSafeEqual` — string comparison in JavaScript is not constant-time and is vulnerable to timing attacks on the signature bytes.
+2. Using the parsed JSON body instead of `rawBody` — Express re-serializes JSON, which may change key order. The HMAC was computed over the exact bytes you sent. Always preserve `rawBody` via the `verify` callback in `bodyParser.json()`.
+3. Not checking the timestamp — without the age check, a captured webhook can be replayed indefinitely.
+4. Stripping `v1=` after comparison — strip it before, not after, otherwise you're comparing `v1=abc` against `abc` and it always fails.$pf$,
+ NULL),
+
+-- Step 5 --
+('66666666-6666-6666-6666-666666980105',
+ '55555555-5555-5555-5555-555555550098',
+ 5,
+ $pf$Customer-facing delivery log API, replay endpoint, and retention strategy$pf$,
+ $pf$Enterprise partners are asking for a delivery log — every attempt with timestamp, HTTP status, and response body, filterable by event type and status. Some want to replay specific failed deliveries themselves. Give me: (1) the API endpoint shape for the customer-facing delivery log — paginated, filterable, with full response metadata; (2) the replay endpoint design for a partner to re-enqueue a dead delivery; (3) your recommendation on data retention — how long do we keep delivery records at 50k events per day, and do we need a partitioning strategy?$pf$,
+ $pf$**Delivery log endpoint:**
+
+```
+GET /api/v1/webhook-subscriptions/:subscriptionId/deliveries
+```
+
+Query params: `status` (pending/success/failed/dead), `event_type`, `since` (ISO 8601, default 7 days), `limit` (1–100, default 25), `cursor` (for keyset pagination).
+
+Response shape:
+```json
+{
+  "data": [{
+    "id": "uuid",
+    "event_type": "appointment.created",
+    "event_id": "uuid",
+    "status": "dead",
+    "attempt_number": 8,
+    "http_status_code": 503,
+    "response_body": "Service Unavailable",
+    "duration_ms": 9847,
+    "attempted_at": "2026-04-20T14:32:11Z",
+    "next_retry_at": null
+  }],
+  "next_cursor": "eyJpZCI6IiJ9...",
+  "has_more": true
+}
+```
+
+Use keyset pagination (cursor-based), not LIMIT/OFFSET. At 50k events/day your webhook_deliveries table hits tens of millions of rows within a year. OFFSET-based pagination degrades linearly because Postgres scans all skipped rows. Keyset uses `(attempted_at DESC, id DESC)` indexed columns and is O(1) regardless of page depth. Cursor is base64(JSON of last row's `{attempted_at, id}`).
+
+**Partner-initiated replay:**
+
+```
+POST /api/v1/webhook-subscriptions/:subscriptionId/deliveries/:deliveryId/replay
+```
+
+Authorization: verify the partner owns the subscription before re-enqueuing. Rate-limit to 10 replays per subscription per minute — don't let partners accidentally flood a just-recovered endpoint. Create a new delivery row rather than recycling the dead one; add `replayed_from` UUID on the new row for audit correlation. Return: `{ ok: true, new_delivery_id: "uuid" }`.
+
+**Data retention:**
+
+At 50k events/day × 1.2 average attempts = 60k rows/day ≈ 22M rows/year. At ~500 bytes average, roughly 11 GB/year. You don't need partitioning for several years at this volume.
+
+Recommended retention policy:
+- Successful deliveries: 90 days — enough for partner correlation, rarely actionable after that.
+- Failed/dead deliveries: 1 year — health-tech audit requirements make 90 days too short.
+- Pending/in-flight: indefinitely until resolved (they resolve within 63 minutes regardless).
+
+Implement as a nightly pg_cron job:
+```sql
+DELETE FROM webhook_deliveries
+  WHERE status = 'success' AND attempted_at < NOW() - INTERVAL '90 days';
+DELETE FROM webhook_deliveries
+  WHERE status IN ('failed','dead') AND attempted_at < NOW() - INTERVAL '1 year';
+```
+
+Add monthly table partitioning by `attempted_at` when you cross 50M rows or see query slowdowns — probably 18–24 months out at current trajectory.$pf$,
+ NULL),
+
+-- Step 6 --
+('66666666-6666-6666-6666-666666980106',
+ '55555555-5555-5555-5555-555555550098',
+ 6,
+ $pf$Production monitoring metrics, alert thresholds, and on-call runbook$pf$,
+ $pf$Last piece: production monitoring. Our stack is Datadog for metrics and PagerDuty for alerting. What metrics should I track specifically for the webhook delivery system — not just generic API uptime, but the ones that actually catch webhook-specific problems early? What are appropriate alert thresholds for a health-tech B2B product? And write me the runbook for the two most common incidents I expect: (a) the queue is backing up and delivery lag is spiking, and (b) a specific partner endpoint has been consistently failing for 6+ hours. These runbooks need to be specific enough for an on-call engineer who didn't build this system.$pf$,
+ $pf$**Key metrics to track:**
+
+| Metric | Why it matters |
+|--------|---------------|
+| `webhook.delivery.success_rate` (5-min rolling) | System-wide health. Should stay above 95%. A dip below 90% is usually a mass partner issue or a code bug. |
+| `webhook.queue.depth` (waiting jobs, not delayed) | Growing queue means workers are falling behind — could be concurrency exhaustion, Redis slowdown, or a traffic spike. |
+| `webhook.delivery.p99_latency_ms` | Should be under 5 seconds. Spikes usually mean slow partner endpoints, not your system. |
+| `webhook.delivery.dead_count_rate` (per hour) | Rate of deliveries hitting dead-letter. Normally near zero. A spike means a partner has been unreachable for 63+ minutes. |
+| `webhook.partner.failure_rate` (per partner, 5-min) | Per-partner failure rate. Catches a single bad integration without noise from healthy partners. |
+| `webhook.redis.memory_mb` | Keeps you ahead of OOM issues if the queue backs up severely. |
+
+**Alert thresholds:**
+
+| Alert | Threshold | Severity |
+|-------|-----------|----------|
+| Overall delivery success rate | < 92% for 5 min | P1 — page immediately |
+| Queue depth (waiting) | > 5,000 for 3 min | P2 — Slack, may escalate |
+| p99 delivery latency | > 8 sec for 5 min | P2 — Slack; often partner-side |
+| Dead-letter rate | > 50/hour | P2 — investigate partner |
+| Single-partner failure rate | > 80% for 30 min | P3 — Slack, notify partner |
+| Redis memory | > 80% capacity | P1 — scale before OOM |
+
+---
+
+**Runbook A: Queue backup / delivery lag spike**
+
+*Symptoms*: Queue depth alert fires, Bull Board shows jobs backing up, delivery timestamps lagging.
+
+1. Check whether the queue is growing or just large. `redis-cli LLEN bull:webhook-delivery:wait` — is it actively growing? Retries in the delayed set are normal. New jobs accumulating in waiting is the problem.
+
+2. Check worker pod count vs. job rate. Each pod processes 20 concurrent jobs. If you're seeing a traffic spike from a bulk operation, scale horizontally: `kubectl scale deployment webhook-worker --replicas=5`. BullMQ workers are stateless; the queue drains proportionally.
+
+3. Check for a single slow partner clogging the concurrency pool. `SELECT subscription_id, AVG(duration_ms), COUNT(*) FROM webhook_deliveries WHERE attempted_at > NOW() - INTERVAL '10 minutes' GROUP BY subscription_id ORDER BY AVG(duration_ms) DESC LIMIT 5`. If one subscription is taking 9+ seconds per attempt, it's consuming most of your 20 concurrency slots. Circuit-break it: `UPDATE webhook_subscriptions SET is_active = false WHERE id = '<id>'`. Alert the partner; re-enable once they confirm stability.
+
+4. Check Redis health: `redis-cli info stats`. Look for `rejected_connections`, `used_memory_human`, `latency_ms`. A Redis slowdown affects all BullMQ operations. Escalate to infra if Redis is degraded.
+
+*Resolution*: scale workers or circuit-break the slow partner. Stand down when queue depth returns below 100.
+
+---
+
+**Runbook B: Partner endpoint failing for 6+ hours**
+
+*Symptoms*: Dead-letter rate alert fires for one subscription. Dead rows accumulating in webhook_deliveries for one partner.
+
+1. Confirm scope and failure type. `SELECT COUNT(*), http_status_code FROM webhook_deliveries WHERE subscription_id = '<id>' AND status = 'dead' GROUP BY http_status_code`. A consistent 404 or 403 means their endpoint URL changed or auth broke — different problem than 503s indicating their server is down.
+
+2. Check if the partner is aware. Look up the customer in your CRM. If this is an enterprise customer with an SLA, open a P1 incident with their team now. The notification should come from customer success, not automated: include the first failed timestamp, error code, and count of affected events.
+
+3. Do not replay automatically. Blasting hours of queued events at a partner endpoint the moment it recovers can overwhelm their ingest. Notify the partner first, wait for their confirmation, then replay in batches using the admin endpoint with a `max_per_minute` cap. For a 6-hour backlog at 50k/day = ~1,250 events, replaying at 60/minute takes about 20 minutes. Monitor for 429 responses during replay; slow down further if needed.
+
+4. Post-incident: if this is the third outage in 30 days for this partner, document it in their partnership record and recommend they expose a more resilient ingest endpoint or implement their own queue.$pf$,
+ NULL);
+
+DELETE FROM prompt_steps WHERE prompt_id = '55555555-5555-5555-5555-555555550099';
+DELETE FROM prompts      WHERE id        = '55555555-5555-5555-5555-555555550099';
+
+INSERT INTO prompts (
+  id, title, description, content, result_content,
+  category_id, difficulty, model_used, model_recommendation,
+  tools_used, tags, status, author_id, vote_count, bookmark_count
+) VALUES (
+  '55555555-5555-5555-5555-555555550099',
+  $pf$Rebuilt Finecast's trial email sequence and lifted conversion from 5.2% to 7.8%$pf$,
+  $pf$Sarah's client had a 14-day free trial converting at 5.2% — well below the 9–15% PLG benchmark. Their entire email program was a day-0 welcome and a day-11 expiry reminder. Four passes: Mixpanel-grounded diagnosis, activation-event-triggered email architecture, writing the three highest-impact emails in full, and a measurement plan with statistically-powered A/B tests.$pf$,
+  $pf$Finecast is a B2B video production workflow tool — asset management, project management, and client review and approval all in one platform. They had been on $99 per seat per month for 18 months with a 14-day free trial. Their trial-to-paid conversion was 5.2%. The product team suspected an onboarding problem; their head of marketing wasn't sure. Their entire trial email program was two messages: a welcome email on day 0 and a "your trial expires in 3 days" message on day 11.
+
+I was brought in to audit the email side and build a proper trial nurture sequence. Before I wrote a single email, I spent a session with Claude diagnosing the problem using their Mixpanel data. The diagnosis surfaced a clear activation gate: 71% of churned trial users had never uploaded their first asset. Users who completed "upload asset and invite a team member" within 72 hours of signup converted at 34%. Everything after that was rebuilding the email program around that gate.$pf$,
+  $pf$Finecast went from two calendar-triggered emails to a six-message activation-event-triggered sequence targeting the upload-plus-invite activation gate. First 60 days in production across 500 trials: conversion moved from 5.2% to 7.8%. Email 2 — a 90-word "stuck on first upload?" message sent four hours after signup if no asset had been uploaded — had a 42% open rate and 19% click-through, the highest-performing email in the sequence. Email 3, triggered when a user uploaded but hadn't invited anyone, pulled the activation gate forward from day 5 to day 2 on average for the users it reached. The 90-day A/B test plan is running; the team expects to reach 9% or above once Email 5's upgrade framing is optimized.$pf$,
+  '11111111-1111-1111-1111-111111111102',
+  'intermediate',
+  'claude-sonnet-4-6',
+  'Claude 4.6 Sonnet',
+  ARRAY['Claude', 'Customer.io', 'Mixpanel'],
+  ARRAY['plg', 'trial-to-paid', 'email-marketing', 'saas', 'conversion', 'activation'],
+  'approved',
+  '22222222-2222-2222-2222-222222222202',
+  0, 0
+);
+
+INSERT INTO prompt_steps (id, prompt_id, step_number, title, content, result_content, description) VALUES
+
+-- Step 1 --
+('66666666-6666-6666-6666-666666990101',
+ '55555555-5555-5555-5555-555555550099',
+ 1,
+ $pf$Diagnosing a 5.2% trial-to-paid conversion rate before redesigning the email sequence$pf$,
+ $pf$My client Finecast makes B2B video production workflow software — asset management, project management, and client review and approval in one platform. $99 per month per seat. They have a 14-day free trial. Their trial-to-paid conversion is 5.2%. Industry benchmark for PLG SaaS tools in the creative workflow space is 9–15%. Their entire trial email program right now is: a welcome email on day 0, and a "your trial expires in 3 days" message on day 11. That's it. I have access to their Mixpanel data. Their product team has mentioned informally that "most free trial users never get past the asset upload step," but that hasn't been validated. Before I start designing any emails, help me think through the most likely causes of a 5.2% conversion rate for a product like this, ranked by which causes are email-fixable vs. which require product changes, and tell me which Mixpanel queries I should run to validate each hypothesis. I don't want to build an elaborate email sequence that papers over a product problem.$pf$,
+ $pf$The gap between 5.2% and 9–15% is real but the causes are not equal in how email-addressable they are. Here's the diagnostic framework, ranked by fix-ability:
+
+**Tier 1: Fixable with email (if the product works)**
+
+*Activation failure* — most likely cause. Users sign up, don't reach the value moment before the trial ends, and churn without understanding what they'd lose. If 71% of churned users never upload an asset, your email sequence has two jobs: get users to the activation gate faster, and rescue users who are stuck before they lose momentum. This is your primary lever.
+
+Mixpanel query: Funnels → `signup` → `asset_uploaded` → `team_member_invited` → `trial_converted`, segmented by converted vs. churned. What percentage of converts crossed both gates vs. churned users? If converts cluster above 80% and churned users cluster below 30%, you have a hard activation gate and email is the right intervention.
+
+*Timing failure* — the day-11 expiry reminder is too late. Users who are disengaged by day 11 have already mentally moved on. This is a pure email/timing problem with no product dependency.
+
+Mixpanel query: `trial_converted` event with `days_since_signup` property. When in the 14-day window do conversions actually happen? If 60% or more happen in the first 4 days, the day-11 email is largely irrelevant — converts have already decided. If conversions spike at day 11–12, the reminder is doing real work and you keep it.
+
+**Tier 2: Partially email-addressable**
+
+*Value communication failure* — users who uploaded an asset but didn't convert may not understand what they'd lose on the free tier. Email can compensate by explaining the stakes, but this often indicates a positioning problem or weak free-to-paid differentiation that email can only partially solve.
+
+Mixpanel query: `trial_expired` filtered to `asset_uploaded = true AND team_member_invited = false`. What percentage of expired trials were activated but solo? If this group exceeds 20% of total churns, a "bring your team" email targeting activated-but-solo users is likely high-ROI.
+
+**Tier 3: Needs product changes**
+
+*Trial too short for the workflow* — 14 days may be too short for a platform where the full value loop (upload, invite, run a client review cycle, see the feedback consolidated) takes three weeks in practice. Email can accelerate but can't compress a genuinely long value realization timeline.
+
+Mixpanel query: `client_review_completed` event during trial. What percentage of trial users complete a full review cycle before expiration? Under 15% suggests a trial-length or workflow-complexity problem.
+
+**Before building the sequence**: run the funnel query first. If "never uploaded" is confirmed at 70%+ of churns, you have your diagnosis — build around the activation gate. If 40% of churned users were activated but still didn't convert, layer in value-communication emails for the activated cohort. Don't build for both hypotheses in the first version; it makes testing unclear and A/B results uninterpretable.$pf$,
+ NULL),
+
+-- Step 2 --
+('66666666-6666-6666-6666-666666990102',
+ '55555555-5555-5555-5555-555555550099',
+ 2,
+ $pf$Activation-event-triggered email architecture for a 14-day PLG trial$pf$,
+ $pf$The Mixpanel data confirmed it. Funnel: signup → asset_uploaded → team_member_invited → trial_converted. Of churned trial users, 71% never uploaded an asset. Of users who completed both upload and team invite, 34% converted to paid. That's the gate. Current emails are purely calendar-triggered — day 0 and day 11. I want to rebuild this as an activation-event-triggered sequence. Design the full email architecture: the complete list of emails, what trigger fires each one (behavioral event vs. fallback calendar), who each email should appear to come from, and what the single job of each email is. Target: get 80% of trial users to "asset uploaded and team member invited" within 72 hours of signup.$pf$,
+ $pf$Here's the six-email architecture. The principle: behavioral triggers always win over calendar triggers. Calendar triggers are fallbacks for users who haven't taken the relevant action — they should feel like help, not countdown pressure.
+
+| # | Trigger | From | Job |
+|---|---------|------|-----|
+| Email 1 | Immediately after signup | CEO (human name) | Welcome + orient + one instruction |
+| Email 2 | 4 hours post-signup, IF no asset uploaded | CEO | Rescue stuck users before momentum dies |
+| Email 3 | When asset uploaded, IF no team invite within 1 hour | CEO | Pull the second half of the activation gate |
+| Email 4 | Day 7, IF not yet activated | Product/support | Last-call help before trial is half over |
+| Email 5 | Activated AND day 10 | CEO | Introduce upgrade framing while value is fresh |
+| Email 6a | Day 12, IF activated | CEO | Urgency + loss framing for converts-in-waiting |
+| Email 6b | Day 12, IF NOT activated | Support | Different message: "Is there something blocking you?" |
+
+**Email-by-email notes:**
+
+Email 1 is the only email everyone receives. It should be 150 words, from a named human, and end with one instruction: "Upload your first project asset. Takes 90 seconds." Not ten features — one instruction. Finecast's value only makes sense when you're looking at your own work, not a marketing description.
+
+Email 2 is the highest-leverage email in the sequence. 71% of churned users never uploaded — this email catches them at 4 hours, before the trial has gone cold. It must be under 90 words with exactly one link. The subject line does most of the work: "Did you get a chance to upload yet?" reads like a message from a person who remembers you, not a system checking a metric.
+
+Email 3 targets the activated-but-solo user. Someone who uploaded an asset is clearly engaged — they just haven't invited their team. The job is to make collaboration feel immediately valuable through a concrete outcome, not a feature bullet. "Your client can leave timestamped feedback directly in the video timeline" beats "Finecast is better with a team."
+
+Email 4 is the hardest to get right. A user who hasn't uploaded anything by day 7 has either forgotten about Finecast or hit a real blocker. The email should offer help, not guilt. Include a direct reply-to address or Calendly link — for B2B SaaS at $99/seat, one setup call that converts a trial is worth the CS time.
+
+Email 5 is for your best leads — activated users who are already experiencing value. This is the right moment to introduce pricing and what they'd lose. Don't do it before activation; it creates pricing anxiety before they've seen the product work.
+
+Email 6a vs. 6b is the most important personalization in the sequence. An activated user (knows the product, needs a nudge) and a non-activated user (hasn't seen any value) should not receive the same "trial expires in 2 days" message. The activated user gets urgency and loss framing. The non-activated user gets a different subject line, a softer ask, and probably a discount offer as a last resort.
+
+**Sender strategy:** Emails 1, 2, 3, 5, 6a from the CEO — not a fake name on a support alias, actually from or appearing from the CEO's address. For a $99/seat SaaS selling to teams, the "CEO noticed my trial" signal has real retention power. Emails 4 and 6b can be from product@ or support@ — these are operational, not relationship-building.$pf$,
+ NULL),
+
+-- Step 3 --
+('66666666-6666-6666-6666-666666990103',
+ '55555555-5555-5555-5555-555555550099',
+ 3,
+ $pf$Production-ready copy for the three highest-impact trial emails$pf$,
+ $pf$Good. Write emails 1, 2, and 3 in full — production-ready copy, ready to import into Customer.io. Email 1 is the day-0 welcome from the CEO, sets context, ends with one instruction. Email 2 is the 4-hour "stuck?" email if no asset was uploaded — from the CEO, 90 words max, one link. Email 3 fires when they've uploaded but haven't invited anyone — from the CEO, framed around the collaboration value not feature bullet points. Tone for all three: direct, no fluffy adjectives, no "excited to share" language. Finecast's brand voice is practical and slightly irreverent — built by video professionals, not PMs.$pf$,
+ $pf$---
+
+**Email 1 — Day 0 welcome**
+
+From: Alex Chen, Finecast
+Subject: Your trial is running — here's where to start
+Preview text: One thing to do before anything else.
+
+Hi {{first_name}},
+
+You signed up for Finecast. Good call.
+
+The fastest way to see why it works: upload a real project you're currently working on. Not a test file — an actual asset from something you're in the middle of. The features that matter (review rounds, version tracking, client feedback) only make sense once you're looking at your own work.
+
+Takes about 90 seconds. Go here: [Upload your first project →]
+
+If you hit friction or something doesn't work the way you expect, reply to this email. I read it.
+
+Alex Chen
+Co-founder, Finecast
+
+P.S. Finecast was built by video editors and producers who got tired of chasing client feedback in email threads. If that sounds familiar, you're in the right place.
+
+---
+
+*Subject line note: "Your trial is running" creates low-grade urgency without being pushy. The single instruction is in the email body, not buried after three paragraphs of feature copy.*
+
+---
+
+**Email 2 — 4-hour stuck-at-upload**
+
+From: Alex Chen, Finecast
+Subject: Did you get a chance to upload yet?
+Preview text: Takes 90 seconds, genuinely.
+
+Hi {{first_name}},
+
+Quick check — you haven't uploaded a project yet. That's where Finecast clicks. It doesn't make sense in the abstract.
+
+[Upload your first project →] — 90 seconds, any file type.
+
+If something's blocking you, just reply and tell me. I'll sort it.
+
+Alex
+
+---
+
+*Why it works: the subject line reads like a message from a person who remembers you, not an automated trigger. Under 90 words. One link. No features mentioned — the CTA does all the work. Reply-to is monitored.*
+
+---
+
+**Email 3 — Uploaded, no team invite yet**
+
+From: Alex Chen, Finecast
+Subject: One more thing while you're in here
+Preview text: Your client can leave feedback directly in the timeline.
+
+Hi {{first_name}},
+
+You uploaded your first project — nice. Here's the part that changes how you work with clients:
+
+Invite one person to review it. When they do, they can leave timestamped comments directly on the video timeline. No more "at 1:32 the logo looks off" in a Slack message you then have to find while scrubbing. The feedback lives with the asset.
+
+[Invite someone to review →]
+
+Takes 30 seconds. Works best with a real project and a real collaborator — which you've already got.
+
+Alex
+
+---
+
+*Why it works: leads with a concrete outcome rather than "Finecast is better with a team." The specificity ("at 1:32 the logo looks off") earns credibility — it's the exact frustration the product solves. No feature list, no pricing mention, one CTA.*$pf$,
+ NULL),
+
+-- Step 4 --
+('66666666-6666-6666-6666-666666990104',
+ '55555555-5555-5555-5555-555555550099',
+ 4,
+ $pf$KPIs, 90-day conversion target, and first three A/B tests$pf$,
+ $pf$The sequence is built and ready to go live in Customer.io. Before we launch: what KPIs should I be tracking per email, what's a realistic 90-day trial conversion target given what we now know about the activation gate, and what are the three highest-priority A/B tests to run in the first 90 days? Finecast runs about 250 new trials per month. I want tests that are statistically meaningful at that volume — flag the minimum sample sizes needed and tell me what each test is actually measuring beyond just "open rate vs. open rate."$pf$,
+ $pf$**Per-email KPIs:**
+
+Don't use open rates as a primary metric — Apple MPP inflates them unreliably. Use behavioral conversions:
+
+| Email | Primary KPI | Secondary KPI |
+|-------|-------------|--------------|
+| Email 1 | Asset upload within 24h of send | Click rate on CTA |
+| Email 2 | Asset upload within 4h of send | Reply rate |
+| Email 3 | Team invite within 4h of send | Days-to-invite gap |
+| Email 4 | Any product action within 48h | Reply rate / call booked |
+| Email 5 | Conversion to paid within 72h | Plan selected |
+| Email 6a | Conversion to paid within 48h | Upgrade CTA click |
+| Email 6b | Any product action within 48h | Reply / call booked |
+
+**Headline metric**: trial-to-paid conversion at 30 days and 60 days. Track both — a sequence change can shift timing without changing total conversion. The 60-day view shows whether you're accelerating conversions that would have happened anyway or actually improving the overall rate.
+
+**Realistic 90-day target:**
+
+Starting from 5.2% with a confirmed activation gate at 34% conversion for activated users: a realistic first-pass improvement is 7–9%. Here's why that range: if Emails 1–3 move 40% of the 71% stuck-before-upload cohort across the gate (a conservative assumption), you've newly activated roughly 28% of your churned users. Of those, 34% convert — that's about 9.5 additional conversions per 100 trials. In practice, email engagement rates and behavioral triggers introduce noise, so 7.5–8.5% is the realistic band. Set the internal target at 7.5% with a stretch of 9%. Reaching above 9% will likely require product changes alongside the email work.
+
+**Three A/B tests, prioritized:**
+
+*Test 1 (Run first): Email 2 subject line — check-in vs. feature*
+
+A: "Did you get a chance to upload yet?"
+B: "Upload your first project and see Finecast click"
+
+What you're actually testing: does treating the stuck user as a person who got interrupted (Version A, relationship signal) outperform treating them as a user who needs one more explanation of what happens next (Version B, clarity signal)? This is a positioning hypothesis — the subject line is just the proxy. If A wins, double down on human-voiced check-ins throughout the sequence. If B wins, stuck users respond to clarity, not warmth.
+
+Sample size: at 250 trials/month, roughly 71% will trigger Email 2 (didn't upload in 4 hours) = ~178 recipients/month. To detect a 5 percentage-point difference in "uploaded within 4h" rate at 80% power, you need approximately 380 per variant. At ~89 per variant per month, that's 4–5 months to significance. This test answers a structural question about the sequence strategy, not a word-choice question — worth the time.
+
+*Test 2 (Run second): Email 1 length — 150 words vs. 400 words with feature walkthrough*
+
+A: Current short version (one instruction, 150 words)
+B: Extended version with three feature descriptions before the CTA
+
+What you're testing: the one-instruction hypothesis. Version A bets users who just signed up need direction, not information. Version B bets some users need more context to feel confident starting. This is one of the most structurally important tests in the sequence — if B wins, you need to reconsider the brevity principle throughout all six emails.
+
+Sample size: all 250 trials/month receive Email 1, split 50/50 = 125 per variant. To detect a 3% absolute difference in "asset uploaded within 24h" at 80% power, you need ~500 per variant — about 4 months. Run second to avoid confounding Test 1 results.
+
+*Test 3 (Run third): Email 6a framing — loss vs. gain*
+
+A: "Your trial ends in 2 days — here's what you'd lose" (specific feature list)
+B: "Ready to make it permanent?" (forward-looking, no loss framing)
+
+What you're testing: whether loss aversion outperforms forward momentum in a B2B upgrade context. Loss framing has strong empirical support in consumer contexts; B2B is less established. This test has the most direct revenue impact but the smallest eligible audience.
+
+Sample size: only activated users receive 6a, estimated at 29% of 250 trials = ~72 per month, split 50/50 = 36 per variant. To detect a 10% absolute difference in conversion at 80% power, you need ~180 per variant — about 5 months. Run this one last. The result is worth waiting for.$pf$,
+ NULL);
+
 ALTER TABLE prompts ENABLE ROW LEVEL SECURITY;
 ALTER TABLE prompt_steps ENABLE ROW LEVEL SECURITY;

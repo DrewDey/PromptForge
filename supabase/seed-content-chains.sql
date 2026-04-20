@@ -32052,6 +32052,545 @@ If you are grandfathering because the pushback was uncomfortable: that is not a 
 -- =========================================================================
 
 -- =========================================================================
+-- Project 0088 — jakefinance / Finance / 5-step / advanced / Opus 4.6
+-- Topic: Venture debt term sheet analysis ($5M facility)
+-- =========================================================================
+
+DELETE FROM prompt_steps WHERE prompt_id = '55555555-5555-5555-5555-555555550088';
+DELETE FROM prompts      WHERE id        = '55555555-5555-5555-5555-555555550088';
+
+INSERT INTO prompts (
+  id, title, description, content, result_content,
+  category_id, difficulty, model_used, model_recommendation,
+  tools_used, tags, status, author_id, vote_count, bookmark_count
+) VALUES (
+  '55555555-5555-5555-5555-555555550088',
+  $pf$Analyzing a $5M venture debt term sheet: take it, negotiate, or pass?$pf$,
+  $pf$CFO at a Series A SaaS company evaluating a $5M venture debt facility from Hercules Capital. Five passes: decode the term sheet economics, model true cost of capital vs. equity alternatives, analyze covenant risk, identify negotiation priorities, and draft the board memo with recommendation.$pf$,
+  $pf$I built this project four months after our Series A closed. We had raised $12M at a $15M pre-money valuation, and burn had crept up to $680K/month as we scaled the sales team. Our board received a $5M venture debt term sheet from Hercules Capital and the CEO's instinct was to take it — more runway is more runway.
+
+I had never evaluated a venture debt deal before. I knew roughly what warrants were. I did not know how to model the real cost of capital, how to read covenants, or what was actually negotiable. I used Claude to work through it systematically before I touched a spreadsheet or took a call with Hercules. Five passes over two days. By the end I had a cost-of-capital model, a covenant risk ranking, a specific negotiation playbook, and a board memo.$pf$,
+  $pf$We drew $3M of the $5M facility at close, negotiated warrant coverage from 5% to 3%, and swapped the minimum cash covenant from a floating 4x-monthly-burn formula to a fixed $3M floor. The revenue growth covenant held at 15% YoY but Hercules agreed to a 2-quarter cure window.
+
+The $3M extended our effective runway from 17 months to 21 months at prevailing burn — enough to take Series B pressure off the timeline. Nine months later we closed a $24M Series B at a $52M pre-money valuation. The venture debt cost roughly $900K in cash over three years to protect approximately 15 points of equity dilution that a bridge round would have imposed. The math was not close.$pf$,
+  '11111111-1111-1111-1111-111111111101',
+  'advanced',
+  'claude-opus-4-6',
+  'Claude 4.6 Opus',
+  ARRAY['Google Sheets','Claude AI'],
+  ARRAY['venture-debt','term-sheet','fundraising','cost-of-capital','saas-finance','covenants','board-memo'],
+  'approved',
+  '22222222-2222-2222-2222-222222222203',
+  0, 0
+);
+
+INSERT INTO prompt_steps (id, prompt_id, step_number, title, content, result_content, description) VALUES
+
+-- Step 1 --
+('66666666-6666-6666-6666-666666880101',
+ '55555555-5555-5555-5555-555555550088',
+ 1,
+ $pf$Decode the term sheet: what each term means and what's normal$pf$,
+ $pf$I'm CFO at Meridian Analytics, a B2B SaaS company. We closed a $12M Series A four months ago at a $15M pre-money valuation. Monthly burn is around $680K, so we have roughly 17 months of runway. Hercules Capital just sent us a term sheet for a $5M venture debt facility. My CEO wants to take it but I've never evaluated a venture debt deal before — only equity rounds. The key terms are: 3-year term, interest rate of Prime plus 4.5% (Prime is 8.5%, so roughly 13% effective), 5% warrant coverage, 12-month draw window, and a 1% loan origination fee. There are also financial covenants I need to dig into separately. Before I model anything or take a call with Hercules, I need a plain-English breakdown of what each term actually means, what's standard at our stage, and what should flag my attention. I don't want the optimistic version — tell me what to watch out for.$pf$,
+ $pf$Let me walk through each term, flag what's standard, and flag what to push on.
+
+## Interest Rate: Prime + 4.5% (~13% effective)
+
+This is on the high end of market but not unusual for Hercules, which prices aggressively relative to other venture lenders (WesternTech, Runway, Lighter Capital). For a Series A company with a freshly-scaled sales team and rising burn, Hercules sees more credit risk than they would for a company two years post-A with a clean renewal rate. Prime + 2.5% to Prime + 4% is more typical from competitive lenders; Prime + 4.5% is Hercules's standard opening. This rate will not move in negotiation — spend no capital here.
+
+The 13% headline sounds alarming. It's interest-only for most of the term, and you're comparing it to equity dilution — not to a mortgage. The right comparison is the cost of capital in your actual alternative scenarios, which we'll model in step 2.
+
+## Warrant Coverage: 5%
+
+This is the real lever. Warrant coverage is calculated as a percentage of the principal drawn: 5% of $5M = $250,000 in warrants, priced at your Series A valuation, exercisable at exit or maturity.
+
+5% is Hercules's opening position. Market rate for Series A-stage venture debt with your growth profile is 1.5% to 3%. You should push for 2.5% or lower; expect to land at 3%. At your Series A price, 5% warrant coverage represents approximately 0.93% dilution to your cap table — but the equity value transferred to Hercules at exit scales with your outcome, not with the face value of the warrants. At a $100M exit, 5% warrant coverage on $5M costs Hercules roughly $640K in warrant gains; at 2.5%, that's half. This is worth negotiating hard.
+
+## 12-Month Draw Window
+
+You have 12 months from signing to draw any portion of the $5M. You don't take it all at close — you draw tranches as needed. This matters: you only pay interest on what you've drawn, and standby fees on undrawn amounts are typically lower than the interest rate. Structure your draw as two tranches: an initial draw at close, and a second draw tied to a specific trigger (a revenue milestone or Series B LOI). This preserves optionality.
+
+## 1% Origination Fee
+
+$50,000 at close, regardless of how much you draw. Standard. Not negotiable. Not worth raising.
+
+## 3-Year Term
+
+The full facility matures at 36 months. Venture debt is structured as interest-only for the first 12–18 months, then principal amortization over the remaining term. On $5M drawn, you're not paying principal in the early months — just interest (~$54K/month at 13%). The maturity date is real: lenders don't extend. If you haven't exited or refinanced by month 36, you owe the remaining principal. This is a real constraint if your company is still private at year three.
+
+## What to read next
+
+The financial covenants in the term sheet are where the real risk lives. A debt deal with friendly rates and aggressive covenants is worse than an expensive deal with flexible covenants. Walk me through those before we model anything.$pf$,
+ NULL),
+
+-- Step 2 --
+('66666666-6666-6666-6666-666666880102',
+ '55555555-5555-5555-5555-555555550088',
+ 2,
+ $pf$True cost of capital: model the cash cost, warrant dilution, and bridge alternative$pf$,
+ $pf$That's a clear framework. Now I need to actually model the cost so I can compare this to the alternative scenarios — either no additional capital, or a $5M bridge at Series A valuation from our existing investors. The relevant covenant terms I'll cover in the next step, but I know we have three: minimum cash of 4x monthly burn, revenue growth of at least 15% YoY tested quarterly, and an MAE clause. For now, I want the numbers: (1) total cash cost of the $5M facility over three years, including interest and origination, (2) equity cost of the warrant coverage at different exit outcomes — model $50M, $100M, and $200M exits, and (3) dilution comparison to a $5M bridge round at our Series A valuation. We raised $12M at $15M pre-money, so post-money was $27M.$pf$,
+ $pf$Here's the full cost-of-capital model in three passes.
+
+## Pass 1: Cash cost of the $5M venture debt facility
+
+Assume $5M drawn at close. Term: 3 years. Structure: 18-month interest-only period, then 18-month amortization.
+
+**Interest-only period (months 1–18):**
+$5M x 13% / 12 x 18 months = **$975,000**
+
+**Amortization period (months 19–36):**
+Principal repaid evenly: $5M / 18 = $277,778/month
+Average balance during amortization: ~$2.5M
+Interest on declining balance: $2.5M x 13% / 12 x 18 ≈ **$487,500**
+
+**Origination fee:** $50,000
+
+**Total cash cost over 3 years: ~$1,512,500**
+Effective annualized cost on $5M: ~10.5% (lower than headline 13% because amortizing balance reduces the denominator)
+
+If you draw $3M at close and $2M at month 9 (contingent on milestone):
+- Interest on $3M for 9 months: ~$292,500
+- Then interest on $5M for remaining 9 months of IO: ~$487,500
+- Amortization period approximately similar
+- **Estimated total cash cost on staggered draw: ~$1,100,000** — material savings vs. $5M at close
+
+## Pass 2: Warrant dilution at exit
+
+5% warrant coverage on $5M = $250,000 face value of warrants, struck at Series A price.
+
+Your Series A: $12M raised at $15M pre-money. Post-money: $27M. Warrant face value as percentage of post-money: $250K / $27M ≈ **0.93% dilution** to the cap table.
+
+The warrants don't increase in count — the dilution percentage is fixed. But the value Hercules captures at exit scales:
+
+| Exit Valuation | Cap Table Dilution | Hercules Warrant Gain |
+|---------------|--------------------|-----------------------|
+| $50M exit | 0.93% | ~$215,000 |
+| $100M exit | 0.93% | ~$640,000 |
+| $200M exit | 0.93% | ~$1,580,000 |
+
+If you negotiate from 5% to 2.5% warrant coverage: dilution drops to ~0.46%, Hercules gains are cut in half at every exit.
+
+## Pass 3: Dilution comparison to a $5M bridge at Series A valuation
+
+If existing investors provide a $5M bridge at Series A price (post-money $27M):
+
+New shares issued for $5M: equivalent to $5M / $27M = **18.5% of the existing post-money**. In practice, dilution to founders and prior investors: approximately 15.6% of the new total capitalization.
+
+**Side-by-side comparison:**
+
+| Scenario | Cash Cost (3yr) | Dilution |
+|----------|----------------|----------|
+| VD — $5M at close | ~$1,513,000 | ~0.93% |
+| VD — $3M draw + $2M contingent | ~$1,100,000 | ~0.56% (on $3M drawn) |
+| Bridge equity at Series A price | $0 | ~15.6% |
+
+**The equity math:** at a $100M exit, 15.6% dilution costs existing shareholders approximately $15.6M in exit proceeds. The venture debt costs $1.5M in cash. For a company with credible upside, you're paying roughly $1.5M to protect roughly $15M in equity value. The case for venture debt is strong — assuming the covenants don't become a trap. Cover those next.$pf$,
+ NULL),
+
+-- Step 3 --
+('66666666-6666-6666-6666-666666880103',
+ '55555555-5555-5555-5555-555555550088',
+ 3,
+ $pf$Covenant analysis: risk-rank all three and identify the tripwires$pf$,
+ $pf$The cost model makes the equity case for venture debt clear. Now walk me through the three covenants in detail. Here's the exact language from the term sheet: (1) Minimum Cash Covenant — Borrower shall maintain unrestricted cash of at least 4x the prior calendar month's Operating Cash Burn at all times; (2) Revenue Growth Covenant — Borrower's trailing 12-month ARR growth shall not fall below 15% year-over-year, tested on the last day of each fiscal quarter; (3) MAE Clause — An event of default shall occur upon the occurrence of a Material Adverse Effect on the business, operations, financial condition, or prospects of Borrower. Current metrics for context: $680K monthly burn, $9.2M ARR growing at 27% YoY, $18.3M unrestricted cash post-Series A. Tell me how close we are to each tripwire and which covenant is the most dangerous.$pf$,
+ $pf$Let me score each covenant against your current metrics and rank by actual risk.
+
+## Covenant 1: Minimum Cash (4x monthly burn)
+
+Your floor today: $680K x 4 = **$2.72M minimum cash required**
+Your current cash: $18.3M
+Headroom today: **$15.58M — no near-term risk**
+
+The danger is structural, not current. The covenant floor moves with your burn. If burn grows:
+
+| Monthly Burn | Cash Floor Required |
+|-------------|---------------------|
+| $680K (today) | $2.72M |
+| $900K (+32%) | $3.60M |
+| $1.2M (+76%) | $4.80M |
+
+Worse: "4x prior month's burn" includes one-time cash events. An annual vendor prepayment (common in SaaS), a large hire cohort landing in one payroll, or a slow collections week can spike your burn metric for a single month — which temporarily raises your covenant floor. A bad month creates a technical covenant breach even when the business is healthy.
+
+**The fix:** push to replace "4x monthly burn" with a fixed dollar floor — e.g., $2.5M or $3M. A fixed floor gives Hercules the same protection without penalizing you for normal cash flow volatility.
+
+**Risk level: Moderate today, high if burn grows and you don't negotiate the structure.**
+
+---
+
+## Covenant 2: Revenue Growth >= 15% YoY (quarterly test)
+
+Your current trailing ARR growth: 27% YoY
+Covenant floor: 15%
+Headroom today: **12 percentage points**
+
+This looks comfortable. It isn't.
+
+ARR growth is tested on a trailing 12-month basis, quarterly. A single bad quarter — especially a large churn event — compresses the trailing rate more than the event itself suggests. Example:
+
+You lose a $600K ARR customer in Q3. Your current ARR drops from $9.2M to $8.6M. Prior-year ARR (at 27% growth) was approximately $7.24M. New trailing growth rate: ($8.6M - $7.24M) / $7.24M = **18.8%** — still above the floor, but headroom has compressed from 12pp to 3.8pp. One more bad quarter could trip it.
+
+Growth rate deceleration also compounds: as your denominator (prior-year ARR) grows with time, sustaining the trailing percentage becomes harder. A company growing at 27% today faces natural deceleration in the $15-20M ARR range; 15% YoY looks achievable until a churn cluster hits it from two directions simultaneously.
+
+**This is your highest-risk covenant.** ARR growth is the metric you control least in a given quarter. Negotiate: either lower the floor from 15% to 10%, or add a 2-quarter cure window before breach constitutes a default.
+
+**Risk level: High. This is the one that could blow up a deal where the business is fundamentally fine.**
+
+---
+
+## Covenant 3: Material Adverse Effect (MAE)
+
+This is intentionally vague — "material adverse effect on business, operations, financial condition, or prospects" can mean almost anything. MAE clauses are rarely triggered as a standalone enforcement action; lenders invoke them when the story has fundamentally changed and they want leverage in a workout.
+
+Real triggers in venture debt history: failed fundraise after extending runway, key founder departure, regulatory action, loss of a customer representing more than 20% of ARR, or a restatement.
+
+MAE language is largely non-negotiable. What you can negotiate: carve-out language that explicitly excludes ordinary business volatility, macroeconomic conditions, or anything disclosed before close.
+
+**Risk level: Low probability of enforcement, but zero cure path once invoked. Negotiate carve-outs.**
+
+---
+
+## Priority ranking for negotiation
+
+1. Revenue growth covenant — highest structural risk, least controllable, must negotiate
+2. Minimum cash covenant — negotiate the burn-multiple structure to a fixed floor
+3. MAE clause — push for carve-outs; the core clause won't move$pf$,
+ NULL),
+
+-- Step 4 --
+('66666666-6666-6666-6666-666666880104',
+ '55555555-5555-5555-5555-555555550088',
+ 4,
+ $pf$Negotiation priorities: three specific asks and what to expect from each$pf$,
+ $pf$Good — I have the risk ranking. Now I need to know what to actually ask for. We have a call with Hercules next week and I want to go in with exactly three asks, ranked by expected ROI on negotiating capital. What are the specific terms I should request, what counteroffers should I expect, and what is the minimum acceptable outcome for each? And which terms are genuinely fixed so I don't waste goodwill on them?$pf$,
+ $pf$Here are three asks, ranked by expected ROI, with Hercules's likely counter and your walk-away threshold.
+
+---
+
+## Ask #1: Warrant coverage — 5% down to 2.5%
+
+**What to ask for:** 2.5% warrant coverage.
+
+**Why this moves:** 5% is Hercules's opening; 2.5–3% is market for a Series A SaaS company at your growth profile. This is the most negotiable term in the deck — Hercules knows it's their ask-high line.
+
+**Expected counter:** 3–3.5%. Accept 3%.
+
+**Your minimum:** 3%. At 3%, you're paying $150K face value in warrants instead of $250K — roughly half the equity cost at every exit outcome.
+
+**What to say:** "We've benchmarked warrant coverage across the market at our stage. 2.5% is consistent with what comparable companies are getting from other lenders. We want to close with Hercules — help us get there on warrants."
+
+Do not offer to trade warrant coverage for a higher interest rate. Cash cost is predictable and finite; equity cost isn't and scales with your success.
+
+---
+
+## Ask #2: Minimum cash covenant — floating 4x burn to fixed $3M floor
+
+**What to ask for:** Replace "4x prior month's Operating Cash Burn" with "$3M unrestricted cash at all times."
+
+**Why this moves:** Hercules's goal is to ensure you have operating cash. A fixed floor achieves the same protection without the volatility of a burn-multiple that spikes on one-time outflows. Frame this as a structural argument about risk measurement, not as "we can't meet your threshold." Those are very different conversations.
+
+**Expected counter:** Hercules may keep the burn multiple but offer a 30-day cure period, or may switch to a fixed floor at a higher number ($4M or $5M). Fixed $3M is better than 4x-burn-with-cure; $4M fixed is acceptable.
+
+**Your minimum:** Either a fixed floor at or below $4M, OR 4x burn with a 30-day cure window and a defined cap (not to exceed $4M at any measurement).
+
+Do not accept 4x burn with no cure period. A one-time cash outflow — an annual SaaS prepayment, a larger-than-normal hire cohort — can spike your burn metric for a single month and create a technical breach even when you're healthy. That's covenant structure risk, not business risk.
+
+---
+
+## Ask #3: Revenue growth covenant — 15% to 10% or add cure window
+
+**What to ask for:** Either reduce the floor from 15% to 10%, or add a 2-quarter cure window before breach constitutes an event of default.
+
+**Why this matters:** As the covenant analysis showed, a single $600K ARR churn event can compress your trailing growth rate from 27% to ~18% in one quarter — cutting headroom from 12pp to under 4pp. Quarterly testing with no cure period means one bad quarter followed by a good recovery still creates a technical default.
+
+**Expected pushback:** Hercules will resist the rate reduction — ARR growth is a core credit quality metric for them. They will more likely accept a cure period.
+
+**Your minimum:** 2-quarter cure window, or a smoothing mechanism (test on a 2-quarter trailing average rather than point-in-time quarterly test). Either reduces the point-in-time volatility risk.
+
+If they won't move at all: factor this into your draw decision. Consider drawing only $2M at close (not $3M) and holding the second tranche until you have a Series B term sheet in hand that makes full repayment feasible. Reducing your exposure to this covenant is a risk management choice you can make without their agreement.
+
+---
+
+## Terms that won't move
+
+- **Interest rate:** Prime + 4.5% is Hercules's standard pricing for your profile. Spend no capital here.
+- **Origination fee:** $50K is standard. Not worth raising.
+- **Term length:** 3 years is fixed.
+- **MAE clause core language:** The clause won't go away. Negotiate carve-out definitions but don't fight the clause itself.
+
+---
+
+## How to run the call
+
+Open by confirming intent: "We want to close with Hercules — you've been good to work with and the structure is right for us. We have three items to work through." Then address each ask sequentially. Resolve warrant coverage first — most likely to move, builds goodwill. Move to the cash covenant second. Save the revenue growth covenant for last; it's the hardest conversation and should happen when the relationship is warm.$pf$,
+ NULL),
+
+-- Step 5 --
+('66666666-6666-6666-6666-666666880105',
+ '55555555-5555-5555-5555-555555550088',
+ 5,
+ $pf$Board memo: recommendation, financial impact table, and risk disclosure$pf$,
+ $pf$We got movement on most of our asks. Hercules accepted 3% warrant coverage (down from 5%), switched the minimum cash covenant to a fixed $3M floor, and held firm on the revenue growth covenant at 15% YoY — but agreed to a 2-quarter cure window. Origination fee stays at 1%. We plan to draw $3M at close and hold the remaining $2M as a contingent draw available after we hit $14M ARR or receive a Series B term sheet, whichever comes first. Board meeting is in five days. Draft the board memo recommending we proceed. One page, clear recommendation, financial impact table, and be direct about the two risks I need to put in front of the board transparently.$pf$,
+ $pf$**MERIDIAN ANALYTICS — BOARD MEMO**
+Subject: Venture Debt Facility — Recommendation to Proceed
+To: Board of Directors
+From: Jake Torres, CFO
+Classification: Confidential
+
+---
+
+**Recommendation**
+
+Management recommends proceeding with a $5M venture debt facility from Hercules Capital on the negotiated terms below. We propose drawing $3M at close and holding the remaining $2M draw in reserve, available upon reaching $14M ARR or receiving a Series B term sheet — whichever occurs first. Board approval is requested to execute the facility and authorize management to proceed with the $3M initial draw.
+
+---
+
+**What we negotiated**
+
+| Term | Original | Final |
+|------|----------|-------|
+| Warrant coverage | 5% of facility | 3% of facility ($150K face value at Series A price) |
+| Minimum cash covenant | 4x monthly burn (variable) | Fixed $3M floor |
+| Revenue growth covenant | 15% YoY, quarterly test | 15% YoY, 2-quarter cure window |
+| Origination fee | 1% ($50K) | 1% ($50K, unchanged) |
+| Interest rate | Prime + 4.5% (~13%) | Prime + 4.5% (unchanged) |
+| Draw structure | $5M at close | $3M at close + $2M contingent |
+
+---
+
+**Financial impact**
+
+| Metric | Status quo | With VD ($3M drawn) |
+|--------|-----------|----------------------|
+| Runway at $680K/month burn | 17 months | 21 months |
+| Monthly cash cost (IO period) | — | ~$32,500 |
+| Total cash cost, 3-year term | — | ~$900,000 |
+| Cap table dilution | — | ~0.56% (warrants on $3M) |
+| Minimum cash covenant | No constraint | $3M floor |
+
+The 4-month runway extension moves our Series B timeline from a Q3 deadline to Q4 or Q1 — reducing pressure to close in a compressed market window. At a $100M Series B outcome, the 0.56% warrant dilution costs approximately $340K in exit proceeds; a $5M bridge at Series A valuation would have diluted existing shareholders by approximately 15.6%, costing roughly $15.6M at the same outcome.
+
+---
+
+**Strategic rationale**
+
+Venture debt is an equity-preservation instrument. For $900K in cash cost over three years, we protect approximately 15 points of dilution relative to the most realistic non-debt alternative — a bridge round from existing investors at Series A valuation. The equity math strongly favors this deal at any credible exit outcome above $20M.
+
+The contingent second draw preserves optionality: we incur no interest on the $2M reserve until we actively choose to draw it. Drawing only $3M at close minimizes both interest accrual and covenant exposure during the period before Series B.
+
+---
+
+**Risks — transparent disclosure**
+
+**Risk 1: Revenue growth covenant.**
+The 15% YoY ARR growth covenant carries real exposure despite our current 27% growth rate. A sustained churn event or go-to-market slowdown can compress the trailing 12-month rate significantly in a single quarter — our internal modeling shows a $600K ARR churn event could reduce headroom from 12 percentage points to under 4 percentage points in one quarter. The 2-quarter cure window provides meaningful protection but is not unlimited. If our trailing growth rate approaches 20%, management will notify the board immediately, reassess the second tranche draw, and explore options including early partial repayment.
+
+**Risk 2: Maturity risk at 36 months.**
+Venture debt does not extend. The $3M initial draw plus any second tranche is due at month 36 unless the company has exited or refinanced. Our planning assumption is a Series B within 12 months, which would enable early repayment from proceeds. The board should treat the 36-month maturity as a hard backstop that requires either a successful fundraise or a secondary refinancing event — not a soft deadline.
+
+---
+
+**Requested action:** Approval to execute the Hercules Capital venture debt facility on the terms above, and authority for management to proceed with the $3M initial draw at close.$pf$,
+ NULL);
+
+
+-- =========================================================================
+-- Project 0089 — teacherben / Education / 3-step / beginner / Sonnet 4.6
+-- Topic: Running a first Socratic seminar on The Great Gatsby (10th grade)
+-- =========================================================================
+
+DELETE FROM prompt_steps WHERE prompt_id = '55555555-5555-5555-5555-555555550089';
+DELETE FROM prompts      WHERE id        = '55555555-5555-5555-5555-555555550089';
+
+INSERT INTO prompts (
+  id, title, description, content, result_content,
+  category_id, difficulty, model_used, model_recommendation,
+  tools_used, tags, status, author_id, vote_count, bookmark_count
+) VALUES (
+  '55555555-5555-5555-5555-555555550089',
+  $pf$Running my first Socratic seminar on The Great Gatsby: structure, questions, and damage control$pf$,
+  $pf$First-year 10th-grade English teacher planning a first Socratic seminar for 32 mixed-ability students. Three passes: physical setup, timing, and participation rubric that actually works; five anchor questions ranked by accessibility with follow-up prompts; and specific moves for dead silence, one student dominating, and factual errors — plus a debrief that isn't awkward.$pf$,
+  $pf$I was four months into my first year teaching 10th-grade English when my department chair suggested I try a Socratic seminar after watching me lecture through a Great Gatsby unit. I had heard of Socratic seminars but had never run one. Every guide I found was either impossibly vague — "let the students lead!" — or required a level of preparation I did not have bandwidth for mid-semester.
+
+I had three things to figure out: how to set up the room so students knew what to do, what questions would actually generate real discussion from a mixed-ability class, and what to do when it inevitably broke down. I used Claude 4.6 Sonnet and three focused passes.$pf$,
+  $pf$The seminar ran for 43 minutes. Three students who had not spoken once in four months of class said something substantive. The question "Is Gatsby's dream admirable or delusional?" generated 22 minutes of back-and-forth before I moved to the next one. Dead silence hit at minute 12 — I used the write-first redirect from pass three and it worked immediately.
+
+The verbal debrief was awkward and I stopped it halfway through. I switched to the written reflection prompt and collected 31 half-sheets. The student who wrote "I didn't say it because I thought it was wrong" in the Option B reflection is now one of the most consistent voices in the room.$pf$,
+  '11111111-1111-1111-1111-111111111106',
+  'beginner',
+  'claude-sonnet-4-6',
+  'Claude 4.6 Sonnet',
+  ARRAY['Claude AI','Google Docs'],
+  ARRAY['socratic-seminar','discussion','the-great-gatsby','classroom-management','first-year-teacher','beginner-friendly','english-ela'],
+  'approved',
+  '22222222-2222-2222-2222-222222222205',
+  0, 0
+);
+
+INSERT INTO prompt_steps (id, prompt_id, step_number, title, content, result_content, description) VALUES
+
+-- Step 1 --
+('66666666-6666-6666-6666-666666890101',
+ '55555555-5555-5555-5555-555555550089',
+ 1,
+ $pf$Physical setup, timing, and a participation rubric for a first attempt$pf$,
+ $pf$I'm a first-year English teacher and my department chair suggested I try a Socratic seminar next Wednesday with my 10th-grade class on The Great Gatsby. I have 32 students and a 50-minute period. I've never run one before. Every resource I find is either extremely vague — "create a safe space for dialogue" — or incredibly complicated, with inner and outer circle setups and 10-point participation rubrics I don't have time to teach students this week. I need something that actually works for a first attempt with a mixed-ability class. Walk me through: where should students sit, how do I structure the 50 minutes, how many questions should I plan for, what should the participation rubric actually look like, and how do I open the seminar so students understand what's expected? I want a structure I can execute, not a philosophy.$pf$,
+ $pf$Here's a first-seminar structure you can run on Wednesday without overbuilding.
+
+## Physical setup
+
+Move desks into a single large circle before students arrive, if possible. All 32 students in the circle — not inner/outer circle, not fish bowl. Those formats work better in theory and are harder to manage on a first attempt; one circle is simpler and gives every student direct eye contact with everyone else.
+
+Sit down in the circle yourself, not at the front of the room. Standing at the board signals lecture mode. Sitting in the circle signals that today is different.
+
+If the room doesn't allow a full circle, two semicircles facing each other work. The essential thing: students should be looking at each other, not at you.
+
+## Timing for 50 minutes
+
+- Minutes 0–5: Introduce the format and norms
+- Minutes 5–43: Discussion — three anchor questions, roughly 12 minutes each
+- Minutes 43–50: Debrief (written, not verbal — more on this in step 3)
+
+Plan three questions, not five. In preparation, five feels right. In the room, one good question runs 18 minutes and you spend the rest of the period fighting the clock. Three gives you a next question if discussion dies and permission to let a good thread run without abandoning it.
+
+## Participation rubric — keep it simple
+
+For a first seminar, three behaviors, four points total:
+
+1. Made at least one substantive contribution (2 points) — a real comment, not "I agree with what she said"
+2. Built on another student's point by name: "As Jaylen said..." or "That connects to what Marcus brought up..." (1 point)
+3. Asked the group a question (1 point)
+
+Do not grade on number of contributions. That incentivizes interrupting and quantity over quality. A student who says one insightful thing earns full marks. A student who talks six times and says nothing worth building on should not.
+
+Hand the rubric out before you start. Students need to see it in writing before the discussion begins.
+
+## How to open the seminar
+
+Script the first 90 seconds — do not wing it:
+
+"Today is a Socratic seminar. Here's how it works: I'm going to put a question on the board, and then I'm going to step back. Your job is to run the conversation — you call on each other, you respond to each other, you build on each other's ideas. My job is to listen and ask a follow-up if things stall. This is graded on the rubric in front of you. You don't have to agree with each other. You do have to actually engage with what each other is saying."
+
+Then write the first question on the board. Read it aloud. Sit down. Wait 10 seconds.
+
+The silence will feel uncomfortable. Let it sit. Someone will talk — usually the student with the most to say who also cannot stand silence. That's fine. The first speaker breaks the seal. Your only job in that moment is to stay quiet and let them.$pf$,
+ NULL),
+
+-- Step 2 --
+('66666666-6666-6666-6666-666666890102',
+ '55555555-5555-5555-5555-555555550089',
+ 2,
+ $pf$Five anchor questions for Gatsby, ranked by accessibility$pf$,
+ $pf$That structure is exactly what I needed — thank you. Now I need the actual questions. Every time I've tried to write Socratic questions myself I end up with one of two problems: comprehension questions that students answer in one sentence and then we're stuck, or opinion questions so open that we get "I think Gatsby is sad" with nowhere to go. I need five questions — you said plan three, but give me five so I can pick the best ones — that will generate real discussion in a 10th-grade class that just finished the novel. My class is mixed ability: roughly a third are strong readers, a third are average, and a third struggle. The questions need to be accessible enough that a struggling reader can contribute something real, but rich enough that strong readers have somewhere to go.$pf$,
+ $pf$Here are five questions ordered from most accessible to most analytically demanding. Use questions 1, 2, and 4 as your three anchors — they form a natural arc from character judgment to narrator reliability to what the novel is actually arguing. Keep 3 and 5 in reserve.
+
+---
+
+**Question 1: Is Gatsby's dream admirable or delusional?**
+
+Use this to open. Every student has a position, and the text supports both readings. Admirable: he built himself from nothing, stayed completely committed, never quit. Delusional: the dream is specifically about Daisy — not success in the abstract — and he never updates his model of who she is even when she shows him who she actually is. The green light, the shirts scene, the parties no one attends in the spirit Gatsby intended — all point to delusion.
+
+Struggling readers can land on a side and defend it with a scene. Strong readers can complicate the binary: is it admirable and delusional at the same time, and what does that say about how Americans actually pursue dreams? Expected runtime: 15–20 minutes.
+
+Follow-up if discussion slows: "If Gatsby is delusional, why does Nick admire him at the end? What does that say about Nick?"
+
+---
+
+**Question 2: Is Nick an honest narrator or does he lie to himself?**
+
+This is the analytical upgrade from question 1 — it requires students to notice the gap between what Nick says and what Nick does. He calls himself "one of the few honest people I have ever known." He also covers up a hit-and-run, enables Gatsby's obsession for months, admires Tom while condemning him, and falls into the New York scene he claims to find shallow.
+
+Accessible entry point: "Does Nick do honest things in the novel? Give me an example." Strong-reader depth: "What does Nick get out of his relationship with Gatsby? Why does he need it?"
+
+---
+
+**Question 3 (reserve): Who is most responsible for Myrtle Wilson's death?**
+
+Good backup question — very concrete, directly textable, and naturally generates disagreement. Tom, Daisy, Gatsby, Nick, and Wilson are all viable answers with textual support. Struggling readers can name a person and find a scene. Strong readers move to systemic arguments: Wilson is killed not by any individual decision but by the carelessness of people with money, and the novel makes that structural.
+
+Follow-up: "Does Fitzgerald want us to blame a person or a system?"
+
+---
+
+**Question 4: What is the novel actually arguing about the American Dream?**
+
+Save this for your third anchor — it requires synthesis. The answer is not simply "the American Dream is bad." The novel's argument is more specific: the American Dream as Americans actually pursue it — wealth as the destination rather than the means, nostalgia as the engine, belief that you can literally repeat the past — is corrupted at the source. The East and West Egg geography makes it structural: new money can never actually become old money, and the Dream says it can.
+
+Use only if energy is still strong at the 35-minute mark.
+
+Follow-up: "If Fitzgerald were writing this novel today, what would he choose as the modern version of Gatsby?"
+
+---
+
+**Question 5 (reserve): What does the green light mean, and why does it disappear the moment Gatsby and Daisy reunite?**
+
+Symbol question — accessible at the surface (it represents hope, the future, the Dream) and rich underneath. The light disappears after the reunion because, as Nick says, the count of Gatsby's enchanted object had vanished. The thing can only exist as an object of desire, not as attainment. Strong readers get to the argument that the American Dream functions the same way: it has meaning only in the pursuing, not in the arriving.
+
+---
+
+**Recommended run order:** Start with Question 1 (accessible, controversial), move to Question 2 (analytical, personal), end with Question 4 (synthetic, if time). Keep Question 3 in your back pocket for minute 30 if energy collapses — it reliably restarts stalled discussions because it's concrete and slightly adversarial.$pf$,
+ NULL),
+
+-- Step 3 --
+('66666666-6666-6666-6666-666666890103',
+ '55555555-5555-5555-5555-555555550089',
+ 3,
+ $pf$What to do when it breaks: silence, one student dominating, and the debrief$pf$,
+ $pf$Last piece I need: what to do when it goes wrong. Every discussion I've run this year has hit at least one of these three problems. First, the room goes completely silent — 40 seconds, everyone staring at me, waiting. Second, two or three students are doing all the talking while the other 29 have checked out. Third, a student says something factually incorrect or completely off-topic and I don't know whether to correct them in front of the class or let it go. Give me my specific move in each case. And then help me with the debrief — I have 7 minutes at the end of class and I have no idea what to do with them.$pf$,
+ $pf$Each situation has a specific move. Here they are.
+
+---
+
+## Situation 1: Dead silence (40 seconds, everyone looking at you)
+
+**Your move:** wait five more seconds — it will feel much longer than it is — then give them 60 seconds to write.
+
+Say: "Take 60 seconds. Write one sentence — anything — about the question. Then we'll share."
+
+The write-first move works because it gives quieter students something concrete to say (they're reading from their own paper, not performing) and breaks the collective freeze without you answering the question yourself. After 60 seconds, call on a specific student by name. Do not ask "does anyone want to share?" — that recreates the conditions for another silence.
+
+What not to do: explain the question again, soften the question, or share your own opinion. If you rescue them from the silence, you teach them to wait for the rescue. The next silence will come faster.
+
+---
+
+## Situation 2: Two or three students doing all the talking, the rest checked out
+
+**Your move in the moment:** interrupt gently and redirect by name.
+
+While a dominant student is still speaking, say: "Hold on — let's hear from someone we haven't heard from yet. [Specific name], what's your take on what [previous student] just said?"
+
+If the named student says "I don't know": "What part of this are you most uncertain about?" Almost everyone can answer that question. "I'm not sure whether Gatsby is actually in love with Daisy or just in love with the idea of her" is a contribution. It gets the student speaking and gives the room something to respond to.
+
+Structural move for next time: add one explicit norm at the very start — "Each person speaks once before anyone speaks twice." Write it on the board. This creates social permission for quieter students to hold the floor because the group norm says it's their turn — not because you assigned them a speaking slot.
+
+---
+
+## Situation 3: A student says something factually wrong or off-topic
+
+These are different problems.
+
+**Factually wrong:** Do not correct in front of the room. Redirect to the text instead: "Where in the novel do you see that? Can you point us to the passage?" If they cannot locate it, the class will self-correct — another student will know the actual text. If they find a nearby passage that doesn't quite support the claim, someone else will usually push back. Let the text do the work; the discussion is more valuable than the correction.
+
+**Off-topic:** Acknowledge and redirect. "That's interesting — hold that thought. Let's bring it back to the question: [restate the question]. Does what you just said connect to it anywhere?" Most off-topic contributions are genuine attempts to engage — the student found an entry point that doesn't quite fit. Don't dismiss them; redirect toward where they were trying to go.
+
+---
+
+## The 7-minute debrief
+
+Do not try to verbally summarize the discussion — it turns into a mini-lecture that undercuts the seminar you just ran. Use a written reflection instead.
+
+Give students one of these two prompts on a half-sheet they hand in as they leave:
+
+**Option A:** "What's one idea you heard today that changed or complicated how you were thinking about the novel? Whose idea was it? What did it make you reconsider?"
+
+**Option B:** "What's one thing you wanted to say during the seminar but didn't? What stopped you?"
+
+Option A tells you which ideas actually landed in the room. Option B is more revealing: "I didn't say it because I wasn't sure I was right" and "I didn't know how to say it without sounding dumb" are real responses that tell you things about your classroom culture no rubric will.
+
+Collect both. Read them before next class. The student who said something sharp in a side conversation but was silent during the seminar — she's in the Option B pile. She's worth a private follow-up before the next discussion.$pf$,
+ NULL);
+
+
+-- =========================================================================
 -- END OF FILE — append next project(s) below this line.
 -- Iterations working the Content queue: add 2–3 projects per iteration,
 -- appending below this comment. Do NOT rewrite existing projects.

@@ -31207,6 +31207,851 @@ Execute with confidence. The math is defensible. The downside cases are survivab
 
 
 -- =========================================================================
+-- Project 0086 — cto_derek / Coding / 7-step / advanced / Opus 4.7
+-- Topic: Zero-downtime Postgres multi-tenancy migration (200M-row table)
+-- =========================================================================
+
+DELETE FROM prompt_steps WHERE prompt_id = '55555555-5555-5555-5555-555555550086';
+DELETE FROM prompts      WHERE id        = '55555555-5555-5555-5555-555555550086';
+
+INSERT INTO prompts (
+  id, title, description, content, result_content,
+  category_id, difficulty, model_used, model_recommendation,
+  tools_used, tags, status, author_id, vote_count, bookmark_count
+) VALUES (
+  '55555555-5555-5555-5555-555555550086',
+  $pf$Zero-downtime multi-tenancy migration: adding organization_id to a 200M-row health-records table$pf$,
+  $pf$CTO of a health-tech SaaS adding multi-tenant support to a 200M-row Postgres table without a maintenance window. Seven passes with Opus 4.7: risk taxonomy, schema analysis, dual-write wrapper, throttled backfill job, live cutover runbook, post-migration monitoring SLIs, and a 5-week deprecation plan that actually closes.$pf$,
+  $pf$We built HealTrack as a single-tenant SaaS — one Postgres cluster per clinic. It worked at 40 clinics, but every new customer was a new DB deployment, and that was becoming an operational burden. The business decision to move to multi-tenancy was easy. The implementation was less easy.
+
+Our core problem: a health_records table with 200M rows designed for single-tenant. Every query assumed a single organization — no organization_id column, indexes built for per-clinic partitioning, FK relationships assuming one auth namespace. We needed to add multi-tenancy support without taking the product down. We serve active clinics during work hours; zero tolerance for scheduled downtime.
+
+I asked Claude Opus 4.7 to help me design the migration from risk assessment through post-migration deprecation. Seven rounds of back-and-forth over two days. What came out was a complete runbook, working dual-write wrapper in TypeScript, a throttled backfill job with replication-lag awareness, and a Datadog monitoring dashboard. The monitoring caught a replication lag event on a dry-run Friday that would have caused a 3-hour incident in production.$pf$,
+  $pf$Deployed the full multi-tenancy migration: 12 days of dual-write, 29-hour backfill at 500 rows/sec, and a production cutover that completed in 140ms of table lock with zero incidents and zero data loss.
+
+p99 on the hot query path improved from 12ms to 9ms because the new compound index on (organization_id, recorded_at) is tighter than the old GIN-heavy schema. The monitoring SLIs flagged one replication lag event (58 seconds) on a dry-run Friday — traced to a misconfigured WAL sender — caught before production. The backfill script's replication-lag back-off logic is what caught it. By week five, the v1-deprecated table was dropped, the dual-write code was removed, and clinic_id was gone from the schema.$pf$,
+  '11111111-1111-1111-1111-111111111104',
+  'advanced',
+  'claude-opus-4-7',
+  'Claude 4.7 Opus',
+  ARRAY['PostgreSQL','TypeScript','Prisma','Datadog','LaunchDarkly','GitHub Actions'],
+  ARRAY['postgres','zero-downtime','database-migration','multi-tenancy','health-tech','backfill','dual-write'],
+  'approved',
+  '22222222-2222-2222-2222-222222222209',
+  0, 0
+);
+
+INSERT INTO prompt_steps (id, prompt_id, step_number, title, content, result_content, description) VALUES
+
+-- Step 1 --
+('66666666-6666-6666-6666-666666860101',
+ '55555555-5555-5555-5555-555555550086',
+ 1,
+ $pf$Risk taxonomy + migration strategy selection$pf$,
+ $pf$I need to add organization_id UUID NOT NULL to a 200M-row health_records table in Postgres 15. The table is the hot path of our application — 800 reads/sec and 150 writes/sec at peak. We have 40 clinic customers, zero tolerance for downtime (clinics use this actively during work hours), and no Patroni failover configured — we're on RDS Multi-AZ. I know there are multiple migration strategies: rebuild in parallel, Postgres online DDL, shadow table. Help me build a real risk taxonomy for each approach and recommend one. I need the actual failure modes, not the optimistic path. I've read the Postgres docs. I want the stuff the docs don't say.$pf$,
+ $pf$Let me map the real risk surface for each approach and give you a verdict.
+
+## Option A: Native ALTER TABLE ADD COLUMN
+
+Postgres 15 can add a NOT NULL column with a stable DEFAULT (including gen_random_uuid()) without a full table rewrite — that part is instant. The schema DDL is safe.
+
+**The trap:** you need real organization_id values, not a random UUID placeholder. The backfill — UPDATE health_records SET organization_id = (lookup from clinic mapping) WHERE organization_id = placeholder — rewrites rows, triggers autovacuum debt, and contends with live writes on RDS.
+
+**Real failure modes:**
+- Autovacuum falling behind bloat from 200M row updates, degrading heap-to-index ratio and causing query plan regressions
+- Lock escalation if you later add a NOT NULL constraint check (Postgres 15 can skip this with NOT VALID + concurrent validation, but validation still scans the full table)
+- Replication lag spike on RDS standby if backfill WAL volume saturates the standby pipeline
+- **Risk rating: MEDIUM-HIGH** at your write volume
+
+## Option B: Shadow table + dual-write + rename
+
+Create health_records_v2 with the correct schema, dual-write to both tables, backfill via batched INSERT from v1, then rename. Most reliable for high-write tables.
+
+**Real failure modes:**
+- Application code complexity: every write path must write to both tables for the full migration window
+- If you miss one write path (background jobs, webhooks, scheduled tasks), shadow table diverges silently with no alarm
+- The final RENAME requires a brief ACCESS EXCLUSIVE lock — typically 50–300ms on a table of your size, but can stretch to 2+ seconds if long-running analytics queries are active
+- Storage cost: 200M rows × 2 during migration window
+- **Risk rating: MEDIUM** — complexity is real but fully manageable if you enumerate all write paths first
+
+## Option C: pg_repack or logical replication
+
+pg_repack rebuilds the table online without a lock; logical replication keeps a live parallel copy via Debezium.
+
+**Real failure modes:**
+- RDS Multi-AZ does not support pg_repack cleanly — the extension requires superuser grants that rds_superuser does not cover
+- Logical replication on RDS requires a publication/subscription setup your team hasn't operated
+- **Risk rating: HIGH** — you'd be learning new operational surface area during a migration with zero downtime tolerance
+
+## Recommendation: Option B
+
+For your constraints — 800 reads/sec, zero downtime, single team, RDS — shadow-table wins. The dual-write complexity is the most controllable risk on your list.
+
+Three-phase plan:
+- **Phase 1 (Days 1–3):** Create health_records_v2. Add dual-write to all identified write paths behind a feature flag. Verify on staging.
+- **Phase 2 (Days 4–14):** Background backfill at throttled 500 rows/sec with replication-lag monitoring.
+- **Phase 3 (Day 15):** Cutover — drain, verify, rename. Target a 200ms exclusive lock window.
+
+Before we go further: enumerate every write path in your application that touches health_records. Background jobs, webhook handlers, audit log writers, bulk import scripts — all of them. Missing one is how dual-write migrations fail.$pf$,
+ NULL),
+
+-- Step 2 --
+('66666666-6666-6666-6666-666666860102',
+ '55555555-5555-5555-5555-555555550086',
+ 2,
+ $pf$Schema analysis and migration plan for health_records_v2$pf$,
+ $pf$Good — Option B. Let me give you the actual schema. health_records: primary key id UUID, columns patient_id UUID NOT NULL (FK to patients), clinic_id UUID NOT NULL (this IS effectively organization — we just didn't name it that), record_type VARCHAR(50), recorded_at TIMESTAMPTZ NOT NULL, data JSONB, created_at TIMESTAMPTZ DEFAULT now(), updated_at TIMESTAMPTZ DEFAULT now(). Indexes: GIN on data for structured search, btree on (clinic_id, recorded_at), btree on (patient_id, recorded_at), unique on (patient_id, record_type, recorded_at). Three FK constraints: health_records → patients, health_records → clinics, and audit_logs.record_id → health_records.id. I need organization_id to map 1:1 from clinic_id for now. Give me the full plan — v2 schema, index design, FK strategy, and anything I'm probably not thinking about.$pf$,
+ $pf$With clinic_id as a 1:1 proxy for organization_id, this is cleaner than most multi-tenancy migrations. Here's the complete plan.
+
+## health_records_v2 schema
+
+```sql
+CREATE TABLE health_records_v2 (
+  id              UUID          NOT NULL DEFAULT gen_random_uuid(),
+  organization_id UUID          NOT NULL,
+  patient_id      UUID          NOT NULL,
+  clinic_id       UUID          NOT NULL,  -- KEEP during migration; deprecate post-cutover
+  record_type     VARCHAR(50),
+  recorded_at     TIMESTAMPTZ   NOT NULL,
+  data            JSONB,
+  created_at      TIMESTAMPTZ   NOT NULL DEFAULT now(),
+  updated_at      TIMESTAMPTZ   NOT NULL DEFAULT now(),
+  CONSTRAINT health_records_v2_pkey PRIMARY KEY (id)
+);
+```
+
+I'm keeping clinic_id in v2 during the migration window. Dropping it pre-cutover doubles your risk surface — leave removal for the deprecation phase.
+
+## Index design
+
+Build all four indexes CONCURRENTLY before cutover, not after. You do not want to build indexes on a hot table during a cutover window.
+
+```sql
+-- Replaces: btree on (clinic_id, recorded_at)
+CREATE INDEX CONCURRENTLY idx_hrv2_org_time
+  ON health_records_v2 (organization_id, recorded_at DESC);
+
+-- Replaces: btree on (patient_id, recorded_at) — same structure
+CREATE INDEX CONCURRENTLY idx_hrv2_patient_time
+  ON health_records_v2 (patient_id, recorded_at DESC);
+
+-- Replaces: unique on (patient_id, record_type, recorded_at)
+-- Scope uniqueness to organization — make the implicit constraint explicit
+CREATE UNIQUE INDEX CONCURRENTLY idx_hrv2_patient_type_time_unique
+  ON health_records_v2 (organization_id, patient_id, record_type, recorded_at);
+
+-- GIN on data — unchanged
+CREATE INDEX CONCURRENTLY idx_hrv2_data_gin
+  ON health_records_v2 USING GIN (data);
+```
+
+## FK strategy
+
+```sql
+ALTER TABLE health_records_v2
+  ADD CONSTRAINT fk_hrv2_patient
+  FOREIGN KEY (patient_id) REFERENCES patients(id);
+
+ALTER TABLE health_records_v2
+  ADD CONSTRAINT fk_hrv2_organization
+  FOREIGN KEY (organization_id) REFERENCES organizations(id);
+```
+
+Skip the clinics FK on v2 — clinic_id stays as a column but without a constraint. You're treating it as legacy-read-only during the migration window. Adding a FK to a column you'll drop in 4 weeks creates unnecessary constraint-check overhead during backfill.
+
+## The audit_logs problem
+
+audit_logs.record_id → health_records.id is your most important FK to manage. During migration, this points to v1. After the rename, health_records IS v2 and the FK is automatically valid — the rename doesn't break references.
+
+But: your backfill must include every row that audit_logs references. If backfill misses a row, audit_logs queries after rename will find missing PKs.
+
+Add this as a required pre-cutover verification:
+
+```sql
+SELECT COUNT(*) FROM audit_logs
+WHERE record_id NOT IN (SELECT id FROM health_records_v2);
+-- Must return 0 before cutover proceeds.
+```
+
+## organization_id mapping
+
+For the backfill: organization_id = clinic_id. Straight 1:1 assignment. If you later introduce true multi-tenancy (one organization, multiple clinics), you create an organizations table and update the mapping — but that's a future migration, not this one.$pf$,
+ NULL),
+
+-- Step 3 --
+('66666666-6666-6666-6666-666666860103',
+ '55555555-5555-5555-5555-555555550086',
+ 3,
+ $pf$Dual-write implementation in TypeScript + Prisma$pf$,
+ $pf$Schema plan is solid. Now help me implement dual-write. We're TypeScript + Prisma. I have 8 write paths that touch health_records: main API CRUD endpoints (create, update, delete), a nightly aggregation job that inserts summary records, a webhook receiver that logs inbound HL7 messages as records, an audit log writer that inserts alongside every record change, and a scheduled task that bulk-imports from a lab results API. I want to use a LaunchDarkly feature flag to gate the dual-write. How do I structure this so I can't miss a write path and can verify coverage before enabling in production?$pf$,
+ $pf$The dual-write must live at the database abstraction layer, not at each call site. You have 8 write paths today and probably an undocumented 9th — touching each one individually is how you miss the monthly one that nobody remembers.
+
+## Repository wrapper pattern
+
+Create a HealthRecordsRepository class. ALL write paths route through this class. The dual-write logic lives in exactly one place.
+
+```typescript
+// src/repositories/HealthRecordsRepository.ts
+import { PrismaClient, Prisma } from '@prisma/client';
+import { ldClient } from '../lib/launchdarkly';
+
+type HRCreate = Prisma.health_recordsCreateInput;
+type HRUpdate = Prisma.health_recordsUpdateInput;
+
+export class HealthRecordsRepository {
+  constructor(private db: PrismaClient) {}
+
+  private async isDualWriteEnabled(userId?: string): Promise<boolean> {
+    return ldClient.variation(
+      'health-records-dual-write',
+      { key: userId ?? 'system' },
+      false
+    );
+  }
+
+  async create(data: HRCreate, userId?: string): Promise<void> {
+    const dualWrite = await this.isDualWriteEnabled(userId);
+    await this.db.$transaction(async (tx) => {
+      await tx.health_records.create({ data });
+      if (dualWrite) {
+        await tx.health_records_v2.create({
+          data: { ...data, organization_id: data.clinic_id },
+        });
+      }
+    });
+  }
+
+  async update(id: string, data: HRUpdate, userId?: string): Promise<void> {
+    const dualWrite = await this.isDualWriteEnabled(userId);
+    await this.db.$transaction(async (tx) => {
+      await tx.health_records.update({ where: { id }, data });
+      if (dualWrite) {
+        const v2Exists = await tx.health_records_v2.findUnique({ where: { id } });
+        if (v2Exists) {
+          await tx.health_records_v2.update({ where: { id }, data });
+        }
+        // If not in v2 yet (pre-backfill window): skip silently, backfill will catch it
+      }
+    });
+  }
+
+  async delete(id: string, userId?: string): Promise<void> {
+    const dualWrite = await this.isDualWriteEnabled(userId);
+    await this.db.$transaction(async (tx) => {
+      await tx.health_records.delete({ where: { id } });
+      if (dualWrite) {
+        // Soft-delete in v2 during migration to avoid FK issues in audit_logs
+        await tx.health_records_v2
+          .update({ where: { id }, data: { updated_at: new Date() } })
+          .catch(() => { /* Row not in v2 yet — skip */ });
+      }
+    });
+  }
+}
+```
+
+## Write path audit checklist
+
+Go through all 8 paths and confirm each routes through HealthRecordsRepository:
+
+| Write path | Current form | Routed? |
+|---|---|---|
+| POST /health-records | db.health_records.create() | ☐ |
+| PUT /health-records/:id | db.health_records.update() | ☐ |
+| DELETE /health-records/:id | db.health_records.delete() | ☐ |
+| Nightly aggregation job | direct query | ☐ |
+| HL7 webhook receiver | direct query | ☐ |
+| Audit log writer | direct query | ☐ |
+| Lab results bulk import | direct query | ☐ |
+| [8th path] | ??? | ☐ |
+
+For each unchecked row: refactor to use the repository before enabling the flag. This is your correctness audit — completing it is the gate to Phase 2.
+
+## Staging verification query
+
+After 24h with flag enabled in staging, run:
+
+```sql
+SELECT
+  (SELECT COUNT(*) FROM health_records)    AS v1_count,
+  (SELECT COUNT(*) FROM health_records_v2) AS v2_count,
+  (SELECT COUNT(*) FROM health_records)
+    - (SELECT COUNT(*) FROM health_records_v2) AS delta;
+```
+
+The delta will be large initially — all pre-flag rows are only in v1, and that's the backfill gap. What you're watching for: delta is NOT growing after flag enable. If delta grows, a write path is still bypassing the repository.$pf$,
+ NULL),
+
+-- Step 4 --
+('66666666-6666-6666-6666-666666860104',
+ '55555555-5555-5555-5555-555555550086',
+ 4,
+ $pf$Throttled backfill job with replication-lag awareness$pf$,
+ $pf$The dual-write wrapper is in place. We verified coverage in staging over 72 hours — delta is stable at zero. Now I need to design the backfill job to populate health_records_v2 with the 200M rows that predate the dual-write flag. This runs on the same RDS instance as production. My constraints: stay under 10ms p99 on the main API, and don't let replication lag exceed 60 seconds on the standby (that's our ops alert threshold). How do I design the backfill so it's safe AND resumable?$pf$,
+ $pf$A backfill on a live RDS instance is a throttle-and-monitor problem. Here is the complete design.
+
+## Cursor-based iteration (not OFFSET)
+
+Never use OFFSET for large table pagination — it gets slower with every batch as Postgres scans further into the heap. Use a cursor on the primary key instead.
+
+```typescript
+// scripts/backfill-health-records-v2.ts
+import { PrismaClient } from '@prisma/client';
+
+const db = new PrismaClient();
+const BATCH_SIZE = 500;
+const SLEEP_MS = 10;           // 10ms sleep → ~500 rows/sec sustained
+const LAG_CHECK_INTERVAL = 100; // check replication lag every 100 batches
+
+async function checkReplicationLag(): Promise<number> {
+  const rows = await db.$queryRaw<[{ lag_seconds: number }]>`
+    SELECT EXTRACT(EPOCH FROM (
+      now() - pg_last_xact_replay_timestamp()
+    )) AS lag_seconds
+  `;
+  return rows[0]?.lag_seconds ?? 0;
+}
+
+async function backfill() {
+  let cursor: string | null = null;
+  let batchCount = 0;
+  let totalCopied = 0;
+
+  const total = await db.health_records.count();
+  console.log(`Total rows to backfill: ${total.toLocaleString()}`);
+
+  while (true) {
+    const rows = await db.health_records.findMany({
+      where: cursor ? { id: { gt: cursor } } : undefined,
+      orderBy: { id: 'asc' },
+      take: BATCH_SIZE,
+      select: {
+        id: true, patient_id: true, clinic_id: true,
+        record_type: true, recorded_at: true, data: true,
+        created_at: true, updated_at: true,
+      },
+    });
+
+    if (rows.length === 0) break;
+
+    await db.health_records_v2.createMany({
+      data: rows.map(row => ({
+        ...row,
+        organization_id: row.clinic_id,
+      })),
+      skipDuplicates: true,  // idempotent — safe to restart mid-run
+    });
+
+    cursor = rows[rows.length - 1].id;
+    totalCopied += rows.length;
+    batchCount++;
+
+    if (batchCount % 1000 === 0) {
+      const pct = ((totalCopied / total) * 100).toFixed(1);
+      console.log(`${totalCopied.toLocaleString()} / ${total.toLocaleString()} (${pct}%)`);
+    }
+
+    if (batchCount % LAG_CHECK_INTERVAL === 0) {
+      const lag = await checkReplicationLag();
+      if (lag > 30) {
+        console.warn(`Replication lag ${lag.toFixed(1)}s — sleeping 5s`);
+        await new Promise(r => setTimeout(r, 5000));
+      }
+      if (lag > 55) {
+        console.error(`Replication lag critical at ${lag.toFixed(1)}s — pausing 30s`);
+        await new Promise(r => setTimeout(r, 30000));
+      }
+    }
+
+    await new Promise(r => setTimeout(r, SLEEP_MS));
+  }
+
+  console.log(`Backfill complete. Total: ${totalCopied.toLocaleString()}`);
+}
+
+backfill()
+  .catch(console.error)
+  .finally(() => db.$disconnect());
+```
+
+## Expected timeline
+
+At 500 rows/batch + 10ms sleep: ~500 rows/sec sustained. For 200M rows: 400,000 batches at 10ms each = 4,000 seconds of pure sleep, plus query time ≈ **28–32 hours total.**
+
+This is intentionally slow. Speed is not the goal. Replication health is.
+
+## Four metrics to watch during backfill
+
+Open a Datadog dashboard with:
+1. **RDS WriteIOPS** — stay under 80% of provisioned IOPS
+2. **RDS ReplicaLag** — alert at 30s, critical at 60s (the script handles 30s and 55s with back-off)
+3. **API p99 latency** — regression here means the backfill is competing for I/O; cut BATCH_SIZE
+4. **health_records_v2 row count** — linear growth = healthy; any flatline = investigate
+
+## Resumability
+
+skipDuplicates: true makes the job idempotent. If you kill it and restart, it begins from the beginning of v1 but skips all rows already in v2 at the DB level. At 500 rows/sec, a restart costs you batch-time on already-inserted rows but no data integrity risk. For cheap restarts: persist the cursor to a backfill_state table every 10,000 rows.$pf$,
+ NULL),
+
+-- Step 5 --
+('66666666-6666-6666-6666-666666860105',
+ '55555555-5555-5555-5555-555555550086',
+ 5,
+ $pf$Live cutover runbook: exact sequence, timing, and rollback triggers$pf$,
+ $pf$Backfill completed after 29 hours. Row counts match — health_records_v2 has 200,000,847 rows, health_records has 200,000,847 rows, delta has been zero for 6 hours. Now I need the actual cutover runbook. This is the step I'm most nervous about. It involves taking an exclusive lock on a 200M-row table serving 800 reads/sec. Walk me through the exact sequence, the timing targets for each step, clear rollback triggers, and how to assign roles so nobody has to make a judgment call under pressure.$pf$,
+ $pf$The rename is the lowest-risk step in the entire migration — as long as your preparation is correct. Here is the complete runbook.
+
+## Pre-cutover checklist (T-24h)
+
+- [ ] Final row-count parity: COUNT(*) on both tables matches exactly
+- [ ] Audit log FK verification: zero audit_logs rows reference a record_id not in health_records_v2
+- [ ] All four v2 indexes showing VALID in pg_stat_user_indexes
+- [ ] Staging cutover drill completed and documented (at least one dry run)
+- [ ] Datadog dashboard open: API p99, RDS WriteIOPS, ReplicaLag
+- [ ] LaunchDarkly dashboard open: dual-write flag ready to disable
+- [ ] Git tag pre-cutover-rollback pushed for application rollback if needed
+- [ ] On-call rotated to senior backend engineer for the 2-hour window
+
+## Cutover sequence (Tuesday 2pm — low-traffic window)
+
+```sql
+-- T=0: Final parity check
+SELECT
+  (SELECT COUNT(*) FROM health_records)    AS v1,
+  (SELECT COUNT(*) FROM health_records_v2) AS v2;
+-- Delta must be 0. If delta > 0: STOP. Investigate dual-write gap.
+
+-- T+1min: Rename (takes ACCESS EXCLUSIVE lock on both tables briefly)
+BEGIN;
+ALTER TABLE health_records    RENAME TO health_records_v1_deprecated;
+ALTER TABLE health_records_v2 RENAME TO health_records;
+COMMIT;
+
+-- T+2min: Disable dual-write flag in LaunchDarkly
+-- All writes now go to health_records (v2). Dual-write no longer needed.
+
+-- T+3min: Smoke test
+SELECT COUNT(*) FROM health_records
+WHERE recorded_at > now() - interval '5 minutes';
+-- Should return new rows — confirms writes are landing in v2 correctly
+```
+
+## Timing expectations
+
+| Step | Expected | Alarm threshold |
+|---|---|---|
+| Pre-cutover row count | 5–30s | > 60s: investigate |
+| RENAME v1 → deprecated | 50–300ms | > 2s: ROLLBACK |
+| RENAME v2 → health_records | 50–300ms | > 2s: ROLLBACK |
+| Smoke test | 2–5 min | > 15min degradation: rollback |
+| p99 return to baseline | < 5 min | > 30min degraded: rollback |
+
+The ACCESS EXCLUSIVE lock during RENAME waits for active queries to drain. On an 800-read/s table, typical wait is 50–300ms. If you're seeing 2+ seconds, there's a long-running analytics query holding a lock — ROLLBACK and schedule cutover around it.
+
+## Rollback procedure (valid within 30 minutes of cutover)
+
+```sql
+BEGIN;
+ALTER TABLE health_records             RENAME TO health_records_v2;
+ALTER TABLE health_records_v1_deprecated RENAME TO health_records;
+COMMIT;
+-- Re-enable dual-write flag in LaunchDarkly
+```
+
+After 30 minutes, new writes have landed only in v2. Rolling back at that point causes data loss. Forward-fix instead of rollback.
+
+## Role assignments
+
+| Role | Person | Task |
+|---|---|---|
+| DRI | You (CTO) | Execute SQL, call go/no-go |
+| Monitoring | Senior backend engineer | Watching Datadog throughout |
+| Rollback owner | Backend engineer | Pre-authorized: revert LD flag, deploy rollback tag |
+| Customer success | CS lead | Ready to notify clinics if incident declared |$pf$,
+ NULL),
+
+-- Step 6 --
+('66666666-6666-6666-6666-666666860106',
+ '55555555-5555-5555-5555-555555550086',
+ 6,
+ $pf$Post-migration monitoring: SLI definitions and pg_stat_* queries$pf$,
+ $pf$Cutover went cleanly — RENAME completed in 140ms, no lock contention, p99 looks stable. Now I want to build the monitoring layer that should have existed before the migration. Give me concrete SLI definitions for health_records availability and latency, plus the Datadog queries I'd actually set up to track them. And tell me what I should be watching in pg_stat_* during the first 7 days post-migration. I want this to catch slow problems, not just crashes.$pf$,
+ $pf$Post-migration monitoring is where most teams get lazy after a successful cutover. Then replication drift or index bloat surprises them two weeks later. Here are the concrete SLIs and the pg_stat_* queries.
+
+## SLI 1: health_records read latency (p99)
+
+**Definition:** 99th percentile of SELECT latency against health_records, measured at the application tier, 5-minute rolling window.
+**Target:** p99 < 15ms. Your pre-migration baseline was 12ms; 15ms gives 25% regression budget.
+**Datadog query:**
+```
+avg:trace.postgresql.query.duration{resource_name:health_records*,env:production}.p99()
+```
+
+## SLI 2: health_records write availability
+
+**Definition:** Percentage of INSERT/UPDATE operations that succeed (non-error, non-timeout), 1-hour rolling window.
+**Target:** 99.9% — allows 3.6 seconds of write failures per hour.
+**Datadog query:**
+```
+sum:app.health_records.write.success{env:production}.as_count() /
+sum:app.health_records.write.total{env:production}.as_count() * 100
+```
+
+## SLI 3: RDS replication lag
+
+**Definition:** Seconds of lag between primary and Multi-AZ standby.
+**Target:** < 30s sustained; alert at 45s; page at 60s.
+**Datadog query:**
+```
+avg:aws.rds.replica_lag{dbidentifier:healtrack-prod}
+```
+
+## pg_stat_* queries to run daily for 7 days
+
+```sql
+-- 1. Index usage — are all four v2 indexes being used?
+SELECT
+  indexrelname,
+  idx_scan,
+  idx_tup_read,
+  idx_tup_fetch
+FROM pg_stat_user_indexes
+WHERE relname = 'health_records'
+ORDER BY idx_scan DESC;
+-- idx_hrv2_org_time and idx_hrv2_patient_time should dominate.
+-- idx_hrv2_data_gin at zero after day 3 means a query path is bypassing it.
+
+-- 2. Autovacuum health
+SELECT
+  n_live_tup,
+  n_dead_tup,
+  ROUND(n_dead_tup::numeric / NULLIF(n_live_tup, 0) * 100, 2) AS dead_ratio_pct,
+  last_autovacuum,
+  last_autoanalyze
+FROM pg_stat_user_tables
+WHERE relname = 'health_records';
+-- Target: dead_ratio_pct < 5%.
+-- If > 10%: run VACUUM ANALYZE health_records manually.
+-- last_autovacuum should be within 12h at your write rate.
+
+-- 3. Sequential scan alert
+SELECT seq_scan, idx_scan, seq_tup_read
+FROM pg_stat_user_tables
+WHERE relname = 'health_records';
+-- Any growth in seq_scan post-migration = a query path without an index.
+-- Trace it with EXPLAIN (ANALYZE, BUFFERS) on the slow query.
+
+-- 4. Lock waits (watch first 48h especially)
+SELECT wait_event_type, wait_event, COUNT(*) AS count
+FROM pg_stat_activity
+WHERE state = 'active' AND wait_event_type = 'Lock'
+GROUP BY 1, 2
+ORDER BY 3 DESC;
+```
+
+## The check most teams miss: pg_stat_bgwriter
+
+```sql
+SELECT
+  checkpoints_req,    -- forced checkpoints from WAL volume (bad if climbing)
+  checkpoints_timed,  -- scheduled checkpoints (expected)
+  maxwritten_clean,   -- bgwriter throttled (bad if high)
+  buffers_backend     -- backend forced to flush its own buffers (very bad)
+FROM pg_stat_bgwriter;
+```
+
+buffers_backend > 0 and climbing means shared_buffers or bgwriter settings are undersized for your post-migration write pattern. On RDS this is a parameter group tuning issue — open a support ticket. It won't crash you, but it will slowly degrade p99.$pf$,
+ NULL),
+
+-- Step 7 --
+('66666666-6666-6666-6666-666666860107',
+ '55555555-5555-5555-5555-555555550086',
+ 7,
+ $pf$Post-migration deprecation plan: 5-week timeline with actual SQL$pf$,
+ $pf$Seven days post-migration, everything looks clean. p99 is 9ms (improved), replication lag flat at 2-4 seconds, dead_ratio_pct at 1.2%. But I still have health_records_v1_deprecated taking up 200M rows of storage, and clinic_id still sitting in the new health_records that I said I would deprecate. What does a clean deprecation phase actually look like? I want a concrete timeline with the specific SQL — not "remove it eventually."$pf$,
+ $pf$The deprecation phase is where migrations become permanent fixtures if you don't put hard dates on it. Here is the plan with actual dates and actual SQL.
+
+## Final integrity verification (Day 7, before beginning deprecation)
+
+```sql
+-- 1. Confirm nothing is still querying v1_deprecated
+SELECT seq_scan, idx_scan, n_live_tup, last_autovacuum
+FROM pg_stat_user_tables
+WHERE relname = 'health_records_v1_deprecated';
+-- seq_scan and idx_scan should be 0 (only your monitoring queries).
+
+-- 2. Confirm audit_logs has no dangling references
+SELECT COUNT(*) FROM audit_logs al
+LEFT JOIN health_records hr ON al.record_id = hr.id
+WHERE hr.id IS NULL;
+-- Must return 0. Any non-zero result: investigate before dropping v1.
+
+-- 3. Confirm organization_id is clean
+SELECT COUNT(*) FROM health_records WHERE organization_id IS NULL;
+-- Must return 0.
+
+SELECT COUNT(*) FROM health_records hr
+LEFT JOIN organizations o ON hr.organization_id = o.id
+WHERE o.id IS NULL;
+-- Must return 0.
+```
+
+## Week 2 (Days 8–14): Remove clinic_id from application reads
+
+Find and remove all SELECT paths that read clinic_id from the app — replace with organization_id. Code change only, no schema change yet.
+
+```bash
+grep -r "clinic_id" src/ --include="*.ts" | grep -v "// deprecated"
+```
+
+Each match is either a read path (convert to organization_id now) or a write path (wait until week 3).
+
+## Week 3 (Days 15–21): Remove clinic_id from writes
+
+Update HealthRecordsRepository to stop writing clinic_id. Deploy and watch for 48 hours with no errors.
+
+## Week 4 (Day 22): Drop clinic_id column
+
+```sql
+-- clinic_id is not indexed in v2 — this is a metadata-only operation in Postgres 15, fast.
+ALTER TABLE health_records DROP COLUMN clinic_id;
+
+-- Verify:
+SELECT column_name FROM information_schema.columns
+WHERE table_name = 'health_records' ORDER BY ordinal_position;
+-- clinic_id must not appear.
+```
+
+## Week 5 (Day 29): Drop health_records_v1_deprecated
+
+```sql
+-- Final active-session check
+SELECT COUNT(*) FROM pg_stat_activity
+WHERE query ILIKE '%health_records_v1_deprecated%' AND state = 'active';
+-- Must return 0.
+
+-- Drop it
+DROP TABLE health_records_v1_deprecated;
+-- Estimated recovery: 200M rows × ~500 bytes avg ≈ 100 GB
+-- RDS storage reclaim is asynchronous — visible in CloudWatch over 2–3 days.
+```
+
+## Week 6 (Day 36): Remove dual-write code and archive the LD flag
+
+Remove all isDualWriteEnabled() calls from HealthRecordsRepository. The class simplifies to a single-write path with no feature flag dependency. Archive the LaunchDarkly flag.
+
+## What week 6 looks like in total
+
+By day 36 you have removed:
+- ~100 GB storage (v1_deprecated table)
+- ~150 lines of dual-write wrapper code
+- 1 LaunchDarkly flag
+- clinic_id column from schema
+- All clinic_id references in application code
+
+Document in a post-mortem: dual-write ran 19 days total (12 flag-on + 7 stable post-backfill), the replication lag event the backfill script caught on dry-run Friday (the specific line of code that saved you), and the p99 improvement from 12ms to 9ms from the tighter compound index — the unexpected win to write up for the team.$pf$,
+ NULL);
+
+
+-- =========================================================================
+-- Project 0087 — lena_solopreneur / Strategy / 3-step / beginner / Sonnet 4.6
+-- Topic: Raising your freelance rate for the first time
+-- =========================================================================
+
+DELETE FROM prompt_steps WHERE prompt_id = '55555555-5555-5555-5555-555555550087';
+DELETE FROM prompts      WHERE id        = '55555555-5555-5555-5555-555555550087';
+
+INSERT INTO prompts (
+  id, title, description, content, result_content,
+  category_id, difficulty, model_used, model_recommendation,
+  tools_used, tags, status, author_id, vote_count, bookmark_count
+) VALUES (
+  '55555555-5555-5555-5555-555555550087',
+  $pf$Raising your freelance rate for the first time: the math, the email, and the pushback$pf$,
+  $pf$Solopreneur who has been charging $40/hour for content consulting for 8 months finally runs the math and raises to $65/hour. Three passes: know you're ready and what to charge, write the actual client email, and handle the four types of pushback without discounting.$pf$,
+  $pf$I had been charging $40/hour for content strategy consulting for 8 months. I knew it was below market — I had seen the same work priced at $75-100/hour from people I considered peers. But every time I had thought about raising my rates, I had talked myself out of it. What if clients left? What if I seemed greedy? What if the timing was wrong?
+
+The timing was obviously never going to feel right. I finally asked Claude to help me think through it — not to validate that I should do it, but to actually do the math, write the email, and prepare for pushback. Three short passes with Claude 4.6 Sonnet. What I got back was clearer than I expected.$pf$,
+  $pf$Raised to $65/hour with a 60-day grandfather period for all 11 existing clients. Lost zero clients. Two new clients I onboarded after the rate increase came via referral and did not negotiate — they just said yes.
+
+The email script took me 20 minutes to personalize across 11 individual sends. One client asked if I could do $55/hour. I said no, offered to book hours at the old rate before the deadline, and they said okay. The third-pass framework had predicted that exact scenario and gave me the exact language — I did not have to think on my feet.$pf$,
+  '11111111-1111-1111-1111-111111111109',
+  'beginner',
+  'claude-sonnet-4-6',
+  'Claude 4.6 Sonnet',
+  ARRAY['Google Sheets','Gmail'],
+  ARRAY['freelance','pricing','rate-increase','solopreneur','client-communication','beginner-friendly'],
+  'approved',
+  '22222222-2222-2222-2222-222222222210',
+  0, 0
+);
+
+INSERT INTO prompt_steps (id, prompt_id, step_number, title, content, result_content, description) VALUES
+
+-- Step 1 --
+('66666666-6666-6666-6666-666666870101',
+ '55555555-5555-5555-5555-555555550087',
+ 1,
+ $pf$Know if you're ready and what to actually charge$pf$,
+ $pf$I have been charging $40/hour for content strategy consulting for 8 months. I have 11 regular clients, all ongoing. I make about $2,400/month from this work, targeting 60 hours/month. I think I am undercharging — I have seen the same type of work priced at $75-100/hour from people I consider peers or slightly ahead of me. But every time I think about raising rates I talk myself out of it. Is there a way to actually know if you are ready, or does it always feel uncomfortable? And help me figure out what I should charge. The jump from $40 to $75 or more feels huge — is there a middle ground that makes sense?$pf$,
+ $pf$You're ready when: your schedule stays full without active marketing, you're turning away work, or clients are getting you as a deal and you both sense it. You have all three of those. Eight months, 11 recurring clients, and a rate you already know is below market — the market has already validated you. The feeling of "not ready yet" is not information about your pricing. It's information about your relationship with discomfort.
+
+## What should you charge?
+
+Let's work this from two directions and meet in the middle.
+
+**From cost and time:** You're billing 60 hours/month at $40 = $2,400/month. If you want to work 50 hours instead — a healthy reduction — you need $48/hour just to hold flat. More useful floor: what do you need annually? If $30,000 is your floor: $30,000 / 50 weeks / 20 billable hours per week = $30/hour. You are already 33% above your floor. This means you have real pricing power — you're not pricing this to survive, you're pricing it below market by choice.
+
+**From market rate:** Content strategy consulting in 2025 runs $60-120/hour depending on specialization and client size:
+- Entry-level generalist: $50-65/hour
+- Mid-tier with a track record and recurring clients: $70-90/hour
+- Niche-specific or retainer-anchored: $85-120/hour
+
+Eight months in, 11 recurring clients, referral-driven, not actively marketing: that's mid-tier track record. $65/hour is conservative. $75/hour is fully defensible. $80/hour is a stretch but not wrong if your niche is tight.
+
+**My recommendation: $65/hour now, with a planned move to $75 in 6-9 months.**
+
+The reason to not jump to $75 immediately is yours, not your clients'. Going from $40 to $65 is a 62% increase — it sounds alarming but it lands in the center of the reasonable-mid-range-market-rate band. You'll negotiate the conversation from security rather than anxiety. After 6 months at $65 with no client loss (which is what will happen), the move to $75 will feel completely normal to ask for.
+
+## The math most freelancers don't run
+
+Say 2 of your 11 clients leave after the increase. You're now at 9 clients.
+
+- Old: 11 clients × $40/hr → 60 hours/month → $2,400/month
+- New: 9 clients × $65/hr → 37 hours to match $2,400 — or 50 hours to earn $3,250
+
+Losing 2 clients and raising your rate results in working fewer hours for more money. Run that spreadsheet before you send the email. It quiets the fear better than any reassurance.$pf$,
+ NULL),
+
+-- Step 2 --
+('66666666-6666-6666-6666-666666870102',
+ '55555555-5555-5555-5555-555555550087',
+ 2,
+ $pf$The exact email to send to all 11 clients$pf$,
+ $pf$Okay I ran the math. You're right — even if I lose two clients I come out ahead financially and with fewer hours. Now I need to actually write the email. I have 11 clients. Most have been with me 2-6 months. Three of them are friends-of-friends and I feel a little nervous about how they will receive it. I want to give everyone a 60-day grandfather window at the old rate so they have time to plan. My new rate is $65/hour starting on a date 60 days from now. Can you write me an email I can adapt for each person? I want it to be direct and warm but not apologetic. Not a big announcement. Just matter-of-fact.$pf$,
+ $pf$Here are two versions — one for your regular clients, one for the friends-of-friends who might want a line of relationship acknowledgment. Use whichever fits the person.
+
+---
+
+**Version A — regular clients:**
+
+Subject: Quick note on my rates
+
+Hi [Name],
+
+I wanted to give you a heads-up: my consulting rate is moving to $65/hour starting [DATE — 60 days from today].
+
+Any hours we book before [DATE] will still be at $40/hour, so there is no rush if you have projects you want to lock in before then.
+
+I am really glad to be working with you on [project or work area]. If you have questions about how this affects anything ongoing, just reply and we will sort it out.
+
+Thanks,
+Lena
+
+---
+
+**Version B — friends-of-friends (one additional line):**
+
+Subject: Quick note on my rates
+
+Hi [Name],
+
+I wanted to let you know personally: my consulting rate is moving to $65/hour starting [DATE].
+
+Hours booked before [DATE] stay at $40/hour — plenty of runway if you have anything you'd like to schedule.
+
+I have really appreciated working with you this year. This is me bringing my rates in line with where my work has landed, and I wanted you to hear it from me directly.
+
+As always, reach out if you want to talk through anything.
+
+Thanks,
+Lena
+
+---
+
+## Notes on using these:
+
+**Do not add reasons.** The emails above have none. "I've been doing this for 8 months and the market rate is higher" sounds defensive. "I'm raising my rates due to increased costs" sounds like a landlord. Your clients do not need a reason. They need a heads-up and a date.
+
+**Do not apologize.** Every time "sorry" or "unfortunately" appears in a pricing email it signals that you think you are doing something wrong. You are not.
+
+**Do not ask if it's okay.** "I hope this works for you" is an invitation to negotiate. State the date, offer the window, move on.
+
+**Personalize the project line in Version A.** "Working with you on the Meridian content calendar" lands warmer than "working with you on your content." Takes 10 seconds per email.
+
+**Send individually, not as a BCC blast.** Eleven emails. Twenty minutes. Worth it.$pf$,
+ NULL),
+
+-- Step 3 --
+('66666666-6666-6666-6666-666666870103',
+ '55555555-5555-5555-5555-555555550087',
+ 3,
+ $pf$Handling the four types of pushback without discounting$pf$,
+ $pf$I've drafted the emails and I'm about to send them. Before I do, walk me through the pushback I should actually expect and how to handle each scenario. I'm most worried about: someone asking for a compromise rate like $55, a friend-of-friend who takes it personally, a client who says they genuinely cannot afford it, and a client who just goes silent. What is the right response in each case — give me actual scripts, not just principles. And help me think through when it makes sense to grandfather someone versus let them go.$pf$,
+ $pf$Here is the script for each scenario plus the underlying principle so you can adapt on the fly.
+
+## Pushback type 1: "Can we do $55 instead?"
+
+**The wrong move:** saying yes to stop the discomfort.
+
+**Script:**
+"I appreciate you asking directly. I'm not able to do $55 — the new rate is $65/hour across the board. Happy to continue at $40 through [DATE] while you figure out what makes sense for your budget."
+
+That is the full response. Do not explain further. If they push again: "The rate is $65 — I'm not able to go lower." Most people ask once. Very few ask twice. Almost no one asks three times.
+
+The underlying principle: negotiating your first rate increase is the same as negotiating the rate itself. Once you establish that your stated rate is negotiable, your rate is always negotiable. The short-term discomfort of saying no is the price of a clean professional boundary.
+
+## Pushback type 2: The friend-of-friend who takes it personally
+
+**What it might sound like:** "Oh wow, I didn't realize I was just a client to you."
+
+**Script:**
+"You're definitely not just a client — I value our work together. And that's exactly why I wanted to give you a heads-up directly instead of just updating my invoices. This is just where my rates need to be now. I hope we can keep working together."
+
+If they push further on the personal angle: "I understand. If $65 doesn't work, I completely get it — no hard feelings."
+
+This is the scenario where you will feel the urge to make an exception and grandfather them indefinitely. Do not. Indefinite grandfathering creates a two-tier client list that you will resent in six months. The friendship survives a rate increase. It does not need a permanent discount to survive.
+
+## Pushback type 3: "I genuinely can't afford $65"
+
+**Script:**
+"I understand — budgets are real. The $40/hour rate is available through [DATE] if timing is the issue. After that, if $65 isn't workable, I'd recommend booking a smaller number of hours each month to fit the budget, or we can pause and pick back up when it makes sense. I'd rather be upfront about that than have you stretch."
+
+**The exception case:** If this is a client you genuinely want to keep at a lower rate — a true hardship situation, a nonprofit you believe in, a relationship with real long-term value — you can offer a monthly retainer at a slightly lower effective rate. Say so directly: "I do have a retainer option if you want to commit to a set number of hours per month — happy to talk through what that looks like." Only offer this if you would want to offer it regardless of the pushback. Do not create a discount as a response to negotiation pressure.
+
+## Pushback type 4: Goes silent
+
+**What to do:** nothing for two weeks. Then send:
+
+"Hey [Name] — just wanted to make sure my last email landed okay. Happy to answer questions about timing. Otherwise I will assume the date works and we will continue from there."
+
+Most silence is processing time. Some silence is avoidance. This follow-up distinguishes between them without being pushy. If they go silent after the follow-up too: they have made their decision and do not want to say it out loud. Let them go gracefully. Do not chase.
+
+## When to grandfather indefinitely versus let someone go
+
+Only grandfather indefinitely if all three of these are true:
+1. The relationship has genuine value beyond the income — not just nice, but actually meaningful to you
+2. You chose to offer it — they did not negotiate you into it
+3. You are setting a clear internal limit ("one grandfathered client at a time")
+
+If you are grandfathering because the pushback was uncomfortable: that is not a reason. That is the discomfort of holding a boundary, which gets easier each time you do it.$pf$,
+ NULL);
+
+
+-- =========================================================================
+-- Step-UUID convention note for project 100+:
+-- Projects 01-99 use: 66666666-6666-6666-6666-666666PP01SS
+--   where PP = 2-digit decimal project, SS = 2-digit decimal step
+--   e.g. project 86 step 3 → 66666666-6666-6666-6666-666666860103
+-- Projects 100-199 use: 77777777-7777-7777-7777-777777PPP0SS
+--   where PPP = 3-digit decimal project, SS = 2-digit decimal step
+--   e.g. project 100 step 1 → 77777777-7777-7777-7777-777777100001
+--        project 150 step 8 → 77777777-7777-7777-7777-777777150008
+-- This avoids the 12-char last-segment overflow at 3-digit project numbers.
+-- Decided: iter 102 (2026-04-19). No collision with 66666666-prefix steps.
+-- =========================================================================
+
+-- =========================================================================
 -- END OF FILE — append next project(s) below this line.
 -- Iterations working the Content queue: add 2–3 projects per iteration,
 -- appending below this comment. Do NOT rewrite existing projects.

@@ -33309,6 +33309,867 @@ Client-specific tools — tools you adopt because a client requires them for col
 
 
 -- =========================================================================
+-- Project 0092 — priya_creates / Design / 8-step / Opus 4.7 / advanced
+-- =========================================================================
+
+DELETE FROM prompt_steps WHERE prompt_id = '55555555-5555-5555-5555-555555550092';
+DELETE FROM prompts      WHERE id        = '55555555-5555-5555-5555-555555550092';
+
+INSERT INTO prompts (
+  id, title, description, content, result_content,
+  category_id, difficulty, model_used, model_recommendation,
+  tools_used, tags, status, author_id, vote_count, bookmark_count
+) VALUES (
+  '55555555-5555-5555-5555-555555550092',
+  $pf$WCAG 2.1 AA Accessibility Audit and Dev Handoff for Mend Health's Clinician Dashboard$pf$,
+  $pf$After Mend Health lost a $280K enterprise deal because the hospital prospect's IT team failed their dashboard on WCAG criteria, product designer Priya Sharma ran a complete WCAG 2.1 AA remediation project using Claude 4.7 Opus — from audit scope and color contrast analysis through ARIA annotation library, screen reader testing protocol, remediation backlog with sprint phasing, and a Confluence-ready dev handoff package. Eight passes, one designer, 60-day deadline.$pf$,
+  $pf$We lost a $280,000 annual contract three weeks ago because a hospital system's IT procurement team ran a vendor accessibility audit and failed our clinician dashboard on 14 specific criteria. They sent a 22-page report. Our CEO put a freeze on new enterprise demos until we show documented remediation progress — which means this is now blocking our entire Q3 pipeline.
+
+I'm the only product designer at Mend, a 70-person B2B healthcare SaaS that helps specialty practices manage patient workflows. I know WCAG exists. I've fixed individual contrast issues before. But I've never run a formal audit and I've never produced the kind of compliance documentation an enterprise IT team would accept as evidence of progress. I had 60 days, no budget for an external accessibility consultant, and one front-end engineer available for one sprint of remediation work.
+
+I used Claude 4.7 Opus to work through the entire audit systematically — starting from what a proper scope even looks like, then color contrast failures in our design system tokens, keyboard navigation specs for our four hardest components, ARIA annotation guides for the five highest-traffic components, form accessibility patterns, a formal screen reader testing protocol, a severity-ordered remediation backlog with sprint phasing, and finally a full Confluence-ready dev handoff document that engineering could actually use.
+
+The whole chain took three working days. Engineering started Phase 1 the following Monday.$pf$,
+  $pf$Eight passes, complete WCAG 2.1 AA remediation package: two design system color token failures identified and fixed (text-secondary updated to #5D6874 at 6.4:1 on white, primary button blue updated to #1A5DD1 at 5.1:1 on white), keyboard navigation and focus state specs delivered for main nav, data table, modal dialog, and date range picker, ARIA annotations written for data table, date range picker, modal, multi-select dropdown, and status badges, form accessibility spec covering required field patterns, error association via aria-describedby, and autocomplete attributes for 18 intake fields, a six-flow screen reader test protocol with pass/fail criteria for NVDA, VoiceOver, and JAWS, a 23-item remediation backlog with severity/effort matrix and two-sprint phasing, and a Confluence-ready dev handoff combining all specs with acceptance criteria for every Phase 1 item.
+
+Engineering shipped Phase 1 on day 13. The prospect's IT compliance team reviewed our remediation documentation and agreed to resume the RFP. I now own the accessibility review process for every enterprise demo going forward — the audit work turned into a repeatable process.$pf$,
+  '11111111-1111-1111-1111-111111111105',
+  'advanced',
+  'claude-opus-4-7',
+  'Claude 4.7 Opus',
+  ARRAY['Claude','Figma','Color Contrast Analyzer','axe DevTools','NVDA','VoiceOver','Confluence'],
+  ARRAY['accessibility','WCAG','design-system','healthcare','enterprise','UX','compliance'],
+  'approved',
+  '22222222-2222-2222-2222-222222222204',
+  0, 0
+);
+
+INSERT INTO prompt_steps (id, prompt_id, step_number, title, content, result_content, description) VALUES
+
+-- Step 1 --
+('66666666-6666-6666-6666-666666920101',
+ '55555555-5555-5555-5555-555555550092',
+ 1,
+ $pf$Audit scope, component prioritization, and findings format$pf$,
+ $pf$I just got a 22-page WCAG compliance report from a hospital system's IT procurement team. They failed our main clinician dashboard on 14 criteria across contrast ratios, keyboard navigation, and ARIA attributes. I'm the only designer at my company and I've never run a formal WCAG audit — I've fixed individual accessibility issues before but never structured a full audit project with proper compliance documentation.
+
+Before I touch anything, I need to understand: what does a proper WCAG 2.1 AA audit scope look like for a complex B2B SaaS dashboard? Our app has data tables with sortable columns and pagination, date range pickers, modal dialogs, multi-select dropdowns with search, and status badge components everywhere. Which component categories should I prioritize and in what order? What tooling should a designer use (not an engineer)? And how should I structure findings so they're useful for both engineering implementation and for a compliance team reviewing our progress documentation?$pf$,
+ $pf$A WCAG 2.1 AA audit for a SaaS dashboard has four functional layers. Work through them in this order — each builds on the previous and the ordering reflects where failures are densest.
+
+**Layer 1: Perceivable — color contrast**
+SC 1.4.3 (text) and SC 1.4.11 (non-text UI). Every text element needs 4.5:1 contrast for normal text, 3:1 for large text (18px+ regular or 14px+ bold). Every UI component — input borders, focus indicators, icons that convey meaning — needs 3:1. This is your highest-volume failure category. Run it first because fixes live in design system tokens, and one token update propagates everywhere.
+
+**Layer 2: Operable — keyboard accessibility**
+SC 2.1.1 (keyboard) and SC 2.4.7/2.4.11 (focus visible). Every interactive element must be reachable and operable by keyboard alone. For WCAG 2.2 (which enterprise procurement is increasingly referencing), SC 2.4.11 requires focus indicators to cover a minimum area and maintain 3:1 contrast against adjacent colors. Older codebases typically have `outline: none` on interactive elements — that fails both criteria.
+
+**Layer 3: Understandable — forms**
+SC 1.3.5 (autocomplete), SC 3.3.1 (error identification), SC 3.3.2 (labels). Required-field indicators that rely only on color fail SC 1.4.1. Error messages not programmatically associated with their fields fail SC 3.3.1. For a healthcare app with patient intake forms, this is your highest user-impact area — a screen reader user who can't identify which field failed can't complete the form.
+
+**Layer 4: Robust — ARIA**
+SC 4.1.2 (name/role/value), SC 4.1.3 (status messages). Correct ARIA roles, states, and properties ensure screen readers interpret dynamic components correctly. The ARIA Authoring Practices Guide specifies exact patterns for your component set.
+
+**Component prioritization for your app**
+Order by frequency of use × complexity of failure:
+1. Data table (sortable columns, pagination) — clinicians spend most of their session here
+2. Date range picker — primary filter mechanism; if not keyboard-accessible, filtered views are inaccessible
+3. Modal dialogs — focus trap failures cause disorientation; likely flagged in your 22-page report
+4. Multi-select dropdown — high ARIA complexity, high failure risk
+5. Status badges — usually contrast-only failures, lower severity
+
+**Tooling for designers**
+- **Color Contrast Analyzer** (TPGi, free): eyedropper any two pixels on screen for exact ratio. More reliable than browser plugins for rendered states.
+- **axe DevTools** (browser extension, free tier): automated scan catches ~40% of detectable issues, references WCAG criteria by number.
+- **Browser accessibility inspector** (Chrome: Elements → Accessibility tab): shows the computed ARIA tree without reading source code.
+- **VoiceOver** (Mac, built-in): test your 5 highest-priority flows manually after implementing changes. Automated tools don't catch focus order or live region timing.
+
+**Findings format — six columns**
+Use this structure for every issue:
+
+| Component | WCAG Criterion | Current State | Required State | Severity | Estimated Effort |
+
+Severity tiers: **Critical** (blocks task completion for assistive tech users), **Major** (significantly impedes a workflow), **Minor** (reduces quality, doesn't block). Effort: **S** (<4 hours), **M** (0.5–2 days), **L** (2–5 days). This gives engineering clear acceptance criteria and gives the compliance team evidence of documented scope.
+
+Don't target AAA unless the prospect specifically requires it. AA is the legal standard in the US (ADA Section 508 for federal contractors, increasingly enforced in private litigation), EU (EN 301 549), and NHS-adjacent procurement frameworks. AAA adds meaningful effort for marginal compliance benefit.$pf$,
+ NULL),
+
+-- Step 2 --
+('66666666-6666-6666-6666-666666920102',
+ '55555555-5555-5555-5555-555555550092',
+ 2,
+ $pf$Color contrast audit — design system token failures and replacements$pf$,
+ $pf$Following your framework — starting with color contrast because it's Layer 1. Here are our current design system tokens and where they're used:
+
+Text: --color-text-primary: #1A1D23 on #FFFFFF (body text). --color-text-secondary: #6B7280 on #FFFFFF (secondary labels, table metadata). --color-text-muted: #9CA3AF on #FFFFFF (placeholder text, disabled states). Button text: #FFFFFF on --color-brand-blue: #2D6FE8 (primary button). Navigation: #FFFFFF on --color-surface-900: #111827 (dark header). Table header: --color-surface-600: #4B5563 on --color-surface-50: #F9FAFB. Table row hover: #1A1D23 on --color-surface-100: #F3F4F6. Status badges (text on background): success #065F46 on #D1FAE5, warning #92400E on #FEF3C7, error #991B1B on #FEE2E2, info #1E40AF on #DBEAFE.
+
+For each pair: calculate the actual contrast ratio using the WCAG relative luminance formula, tell me pass or fail (normal text 4.5:1, large text 3:1), and for any failure propose a replacement that stays in the same color family. I need the exact ratios for compliance documentation.$pf$,
+ $pf$Running the relative luminance formula (sRGB gamma linearization, then L = 0.2126R + 0.7152G + 0.0722B) on each pair:
+
+**Passing pairs — no changes needed**
+- `#1A1D23 on #FFFFFF`: L(1A1D23) = 0.014 → **15.1:1** ✓
+- `#FFFFFF on #111827`: L(111827) = 0.033 → **11.7:1** ✓
+- `#4B5563 on #F9FAFB`: L(4B5563) = 0.109, L(F9FAFB) = 0.955 → **7.5:1** ✓
+- `#1A1D23 on #F3F4F6`: L(F3F4F6) = 0.900 → **12.8:1** ✓
+- `#065F46 on #D1FAE5`: 9.9:1 ✓
+- `#92400E on #FEF3C7`: 5.6:1 ✓
+- `#991B1B on #FEE2E2`: 8.3:1 ✓
+- `#1E40AF on #DBEAFE`: 6.8:1 ✓
+
+**Failing pairs**
+
+`--color-text-secondary #6B7280 on #FFFFFF`
+L(6B7280) = 0.191 → ratio **4.35:1** → **FAILS** for normal text (4.5:1 required). Passes for large text (3:1), so this only fails at body size or below.
+Replacement: `#5D6874` → L ≈ 0.143 → **6.4:1** ✓. Same cool-gray family, barely perceptibly darker to the eye, clearly secondary to your primary text color.
+
+`#FFFFFF on --color-brand-blue #2D6FE8`
+L(2D6FE8) = 0.195 → ratio **4.24:1** → **FAILS** for normal text. This is your primary button — every user encounters it.
+Replacement: `#1A5DD1` (darkens the blue ~12% in lightness) → L ≈ 0.121 → **6.4:1** ✓. Visually indistinguishable from the original at normal brightness; brand perception holds.
+
+**The muted text situation — more nuanced than it looks**
+`--color-text-muted #9CA3AF on #FFFFFF` = **2.39:1**, a clear numeric fail. But WCAG SC 1.4.3 explicitly exempts "text that is part of an inactive user interface component." Placeholder text and disabled states qualify. The token is fine for those uses. Where it fails: any hint text rendered while a field is active, or any muted-style text applied to active content. Audit how you're using this token — if it's strictly placeholders and disabled states, no change needed. If it appears on active content, move those instances to `--color-text-secondary` (now #5D6874).
+
+**Summary table for compliance documentation**
+
+| Token | Current Value | Ratio | Status | Action |
+|-------|--------------|-------|--------|--------|
+| --color-text-primary | #1A1D23 | 15.1:1 | PASS | None |
+| --color-text-secondary | #6B7280 | 4.35:1 | FAIL (normal text) | Update to #5D6874 |
+| --color-text-muted | #9CA3AF | 2.39:1 | Exempt (inactive) | Audit usage |
+| --color-brand-blue (button) | #2D6FE8 | 4.24:1 | FAIL | Update to #1A5DD1 |
+| --color-surface-600 (tbl hdr) | #4B5563 | 7.5:1 | PASS | None |
+| Success badge | #065F46/#D1FAE5 | 9.9:1 | PASS | None |
+| Warning badge | #92400E/#FEF3C7 | 5.6:1 | PASS | None |
+| Error badge | #991B1B/#FEE2E2 | 8.3:1 | PASS | None |
+| Info badge | #1E40AF/#DBEAFE | 6.8:1 | PASS | None |
+
+Two token updates. Push both to the design system variables file and every component using them inherits the fix automatically. That's why running contrast analysis at the token level beats auditing individual components — one change, site-wide effect.$pf$,
+ NULL),
+
+-- Step 3 --
+('66666666-6666-6666-6666-666666920103',
+ '55555555-5555-5555-5555-555555550092',
+ 3,
+ $pf$Keyboard navigation and focus state spec for nav, data table, modal, and date range picker$pf$,
+ $pf$Color tokens are updated in Figma and I've sent the new hex values to the engineering lead. Moving to keyboard navigation. The compliance report called out three specific things: our main nav has no visible focus indicator, the data table's sortable column headers aren't keyboard-accessible, and our modal dialogs don't trap focus correctly — a tester found they could Tab out of an open modal and interact with the page behind it. I also know our date range picker is 100% click-driven with zero keyboard support.
+
+I need formal specs for all four: main navigation, data table, modal dialog, date range picker. For each: Tab order, keyboard shortcuts that should be supported, and what the focus indicator needs to look like to pass WCAG 2.4.7 and 2.4.11 from WCAG 2.2. Format it so I can hand this directly to the engineering team.$pf$,
+ $pf$**WCAG 2.4.11 Focus Appearance baseline — applies to all four components**
+The focus indicator must satisfy: (a) a minimum area equivalent to a 2px solid outline around the element's perimeter; (b) at least 3:1 contrast between the focused and unfocused states. Using `outline: 2px solid #1A5DD1; outline-offset: 2px` (your updated brand blue) on white backgrounds gives 6.4:1 — comfortable margin. On the dark header: `outline: 2px solid #FFFFFF; outline-offset: 2px` gives 11.7:1 against #111827. Never use `outline: none` on interactive elements; replace the browser default with these rules.
+
+**1. Main Navigation**
+Tab order: skip-to-content link (first focusable element on every page, visually hidden until focused, activates with Enter to move focus to `<main id="main-content">`) → logo → primary nav items left to right → utility icons → user menu button. Enter or Space activates links.
+
+Focus indicator: `outline: 2px solid #1A5DD1; outline-offset: 2px` on light backgrounds; `outline: 2px solid #FFFFFF; outline-offset: 2px` on the dark header. If nav items have dropdowns: Enter/Space opens, arrow keys navigate options, Escape closes and returns focus to the trigger.
+
+**2. Data Table with Sortable Columns**
+Tab order: Tab moves to the table region. Within the table, Tab moves to the first interactive element — the first sort header. Left/Right arrow keys move between column headers. Space or Enter activates sort on the focused header.
+
+Sort header markup: `<th role="columnheader" aria-sort="none|ascending|descending">`. The `aria-sort` attribute must update on each activation — this is what announces direction changes to screen readers. Focus indicator same as above, on the #F9FAFB header background.
+
+For the table body: the full `role="grid"` with arrow-key cell navigation is the complete solution, but if Sprint 1 capacity is tight, keyboard-accessible sort headers alone closes the specific compliance failure cited in your report.
+
+**3. Modal Dialog**
+On open: focus moves to the modal container or its first focusable element. Do not leave focus on the trigger button behind the overlay.
+
+Focus trap: Tab must cycle only through focusable elements within the modal. When the last focusable element is reached, Tab wraps to the first. Shift+Tab navigates backward. Focus must never reach elements behind the overlay while the modal is open.
+
+On close (Escape key, X button, or Cancel): focus returns to the element that triggered the modal. Users lose their place if focus drops to `<body>`.
+
+Required markup: `role="dialog"` on the container, `aria-modal="true"` to signal to screen readers that background content is inert, `aria-labelledby` pointing to the modal's heading.
+
+**4. Date Range Picker**
+The ARIA Authoring Practices Guide specifies this pattern exactly. Minimum implementation:
+
+Trigger button opens a dialog containing a calendar grid. `role="grid"` on the calendar, `role="gridcell"` on each day. Arrow keys navigate: Left/Right = adjacent days, Up/Down = adjacent weeks, Page Up/Down = adjacent months, Home/End = start/end of week. Enter or Space selects the focused date. Escape closes the picker and returns focus to the trigger.
+
+Required states: `aria-current="date"` on today's date; `aria-selected="true"` on selected dates; `aria-disabled="true"` on unavailable dates (still focusable, not selectable). A live region with `aria-live="polite"` should announce the month/year label when the user navigates between months.$pf$,
+ NULL),
+
+-- Step 4 --
+('66666666-6666-6666-6666-666666920104',
+ '55555555-5555-5555-5555-555555550092',
+ 4,
+ $pf$ARIA annotation guide for the five highest-traffic components$pf$,
+ $pf$Keyboard nav spec is written and I've added it to the Figma annotations layer. Now I need ARIA annotation guides for all five core components so engineering knows exactly what roles, states, and properties each component needs. The five are: (1) data table with sortable columns, row selection, and pagination, (2) date range picker, (3) modal dialog, (4) multi-select dropdown with search, (5) status badges.
+
+Format it so I can paste directly into Confluence specs. Each component should cover the container element, interactive child elements, dynamic state changes — what attributes update when the user interacts — and any live region announcements that are especially important for a clinician workflow. Clinicians are often mid-task when status changes arrive; I want to get the live region guidance right.$pf$,
+ $pf$**ARIA Annotation Guide — Core Components**
+
+**1. Data Table**
+```
+Container:      role="grid" aria-label="Patient encounters"
+                aria-rowcount="{total rows}" aria-colcount="{column count}"
+Sort headers:   role="columnheader" scope="col"
+                aria-sort="none"           — default (unsorted)
+                aria-sort="ascending"      — after first sort click
+                aria-sort="descending"     — after second sort click
+                Button inside th: aria-label="Sort by {Column Name}, ascending"
+Data rows:      role="row" aria-rowindex="{1-based index}"
+Data cells:     role="gridcell"
+Row selection:  aria-selected="true|false" on role="row"
+Select-all:     aria-label="Select all rows" aria-checked="true|false|mixed"
+Pagination nav: <nav aria-label="Table pagination">
+                Current page button: aria-current="page"
+                Disabled prev/next: aria-disabled="true"
+Live region:    <div role="status" aria-live="polite" aria-atomic="true">
+                Update text to: "Showing 47 results, sorted by Date, ascending"
+                after any sort or filter change. Keep this element in DOM always.
+```
+
+**2. Date Range Picker**
+```
+Trigger:        <button aria-label="Select date range, currently {displayed range}"
+                        aria-expanded="false|true" aria-haspopup="dialog">
+Dialog:         role="dialog" aria-label="Date range picker" aria-modal="true"
+Calendar grid:  role="grid" aria-labelledby="{month-heading-id}"
+Month heading:  <h2 id="cal-month-label">March 2026</h2>
+Month nav btns: aria-label="Previous month" / aria-label="Next month"
+Day cells:      role="gridcell" aria-label="{full date, e.g. March 15, 2026}"
+                aria-selected="true|false"
+                aria-current="date" on today only
+                aria-disabled="true" on unavailable dates
+Live region:    <div aria-live="polite"> — update with month name on navigation
+```
+
+**3. Modal Dialog**
+```
+Container:      role="dialog" aria-modal="true" aria-labelledby="{heading-id}"
+                If no visible heading: aria-label="{descriptive name}"
+Close button:   aria-label="Close {modal name}" — not just "Close"
+Form fields:    Each input needs associated <label>, not just placeholder text
+                aria-describedby pointing to helper text and/or error messages
+Focus mgmt:     On open → first focusable element or close button
+                On close → trigger element (required, not optional)
+```
+
+**4. Multi-Select Dropdown with Search (ARIA combobox pattern)**
+```
+Input:          role="combobox" aria-expanded="false|true"
+                aria-haspopup="listbox" aria-controls="{listbox-id}"
+                aria-autocomplete="list"
+                aria-activedescendant="{id of highlighted option, or empty}"
+Listbox:        role="listbox" aria-label="{field label}" aria-multiselectable="true"
+Each option:    role="option" aria-selected="true|false" id="{unique-id}"
+Remove tags:    <button aria-label="Remove {option name}">x</button>
+Live region:    <div role="status" aria-live="polite">
+                On selection: "3 options selected"
+                On search: "12 options available" — critical for keyboard users
+```
+
+**5. Status Badges — clinician-specific guidance**
+```
+Informational badges (color + text, e.g. "Active", "Archived"):
+  If text label alone communicates status: plain <span> is sufficient, no ARIA needed.
+  If color is the only differentiator: add role="img" aria-label="Status: Active"
+
+Live status changes (encounter status updated mid-session):
+  <div aria-live="polite" aria-atomic="true" class="sr-only" id="status-announcer">
+  Update text content on change: "Encounter status updated to Completed"
+  The visible badge updates separately in the DOM.
+  DO NOT use aria-live="assertive" for status updates — it interrupts whatever the
+  clinician is currently reading. polite waits for a natural pause.
+```
+
+The clinician-specific rationale for `polite` vs `assertive`: clinicians are often mid-sentence with a patient, navigating a data table, or scanning lab results when a status update arrives. `assertive` interrupts immediately — creates auditory noise in a clinical workflow. `polite` announces at the next available moment. Reserve `assertive` only for errors that require immediate action (e.g., a form submission failure they need to correct now).$pf$,
+ NULL),
+
+-- Step 5 --
+('66666666-6666-6666-6666-666666920105',
+ '55555555-5555-5555-5555-555555550092',
+ 5,
+ $pf$Form accessibility spec — required fields, error association, and autocomplete attributes$pf$,
+ $pf$ARIA guide is done and the Figma file is fully annotated. Moving to forms — the compliance report specifically flagged three issues with our patient intake form and appointment scheduling modal.
+
+First: required field indicators are only visual — a red asterisk next to the label, no text equivalent. The asterisk color alone fails SC 1.4.1.
+
+Second: our inline validation errors show under each field in red, but they're not programmatically associated with their fields. A screen reader user gets the errors announced after all the form fields, not adjacent to the field they apply to.
+
+Third: the intake form has fields for full name, email, phone, date of birth, and home address — none have autocomplete attributes, which fails SC 1.3.5.
+
+Write the spec for fixing all three: exact HTML patterns for required field indicators, the exact aria-describedby wiring for error messages, and the autocomplete attribute values for standard healthcare intake fields.$pf$,
+ $pf$**1. Required field indicators**
+The red-asterisk-only approach fails SC 1.4.1 (color as the sole visual differentiator) and SC 1.3.3 (sensory characteristics). Two compliant patterns:
+
+```html
+<!-- Pattern A: visually-hidden "Required" text (preferred for compliance docs) -->
+<label for="patient-name">
+  Full name <span aria-hidden="true">*</span>
+  <span class="sr-only">Required</span>
+</label>
+<input id="patient-name" type="text" aria-required="true">
+
+<!-- Pattern B: inline "(Required)" in the label text -->
+<label for="patient-name">Full name (Required)</label>
+<input id="patient-name" type="text" aria-required="true">
+```
+
+`aria-hidden="true"` on the asterisk prevents screen readers from announcing "asterisk" redundantly. The `.sr-only` span or the text "(Required)" ensures the requirement is communicated via text.
+
+One counterintuitive note: if most fields on your form are required, WCAG actually recommends marking the exceptions ("Optional") rather than labeling every required field. Announcing "required" on 35 of 40 fields creates cognitive noise. If your intake form is predominantly required fields, switch to marking only the optional ones and remove the asterisks.
+
+**2. Error message association**
+```html
+<!-- Error state -->
+<div class="form-group">
+  <label for="dob">Date of birth</label>
+  <input
+    id="dob"
+    type="text"
+    aria-required="true"
+    aria-invalid="true"
+    aria-describedby="dob-hint dob-error"
+  >
+  <p id="dob-hint" class="field-hint">Format: MM/DD/YYYY</p>
+  <p id="dob-error" class="field-error" role="alert">
+    Enter a valid date in MM/DD/YYYY format.
+  </p>
+</div>
+```
+
+Three things are happening: `aria-invalid="true"` signals the error state (screen readers announce "invalid" when the field is focused). `aria-describedby` with multiple space-separated IDs associates both the hint text and the error message with the field. `role="alert"` on the error element causes it to be announced immediately when it appears in the DOM — the user does not need to navigate to it.
+
+When the error is cleared: set `aria-invalid="false"` on the input and either remove the error element from the DOM or empty its text content. Don't leave stale error text inside a `role="alert"` element.
+
+**3. Autocomplete attributes for healthcare intake fields**
+```html
+<input type="text"  id="first-name"  autocomplete="given-name">
+<input type="text"  id="last-name"   autocomplete="family-name">
+<input type="text"  id="full-name"   autocomplete="name">
+<input type="email" id="email"       autocomplete="email">
+<input type="tel"   id="phone"       autocomplete="tel">
+<input type="text"  id="address-1"   autocomplete="address-line1">
+<input type="text"  id="address-2"   autocomplete="address-line2">
+<input type="text"  id="city"        autocomplete="address-level2">
+<input type="text"  id="state"       autocomplete="address-level1">
+<input type="text"  id="zip"         autocomplete="postal-code">
+<input type="text"  id="dob"         autocomplete="bday">
+```
+
+One gotcha specific to your use case: if clinicians are filling in this form on behalf of patients (entering someone else's data), set `autocomplete="off"` on personally-identifiable fields like name, DOB, and address. SC 1.3.5's intent is to support users entering their own information — a clinician should not have their own name autofilled into a patient record. Determine which flows are self-service (patients filling their own form) vs. staff-entry (clinicians entering patient data) and apply the attribute accordingly. Document the decision in the spec so the compliance team doesn't flag the `autocomplete="off"` instances as violations.$pf$,
+ NULL),
+
+-- Step 6 --
+('66666666-6666-6666-6666-666666920106',
+ '55555555-5555-5555-5555-555555550092',
+ 6,
+ $pf$Screen reader testing protocol — five critical flows with NVDA, VoiceOver, and JAWS$pf$,
+ $pf$Form spec is written and sent to the front-end team. Now I need to build a formal screen reader testing protocol. Two reasons: one, I need to validate that engineering's implementations actually work correctly once they ship the fixes; two, the enterprise prospect's IT compliance team asked us for testing evidence — not just a list of what we changed, but documentation that human testing happened.
+
+I need to know which screen readers to test and in what priority order, and I need test scripts for our five most critical user flows: (1) logging in, (2) viewing the patient data table and applying a date range filter, (3) adding an appointment via the scheduling modal, (4) filling out the patient intake form, (5) reviewing and acknowledging a status alert. Scripts need to be specific enough that a QA tester who is not an accessibility expert can follow them — step by step, with expected audio output and pass/fail criteria.$pf$,
+ $pf$**Screen reader priority order**
+1. **NVDA + Chrome** (Windows) — primary. Most widely used free screen reader; Chrome is the most commonly tested browser combination for web apps. Run all five flows here first.
+2. **VoiceOver + Safari** (macOS) — secondary. Required for macOS users and important for healthcare orgs running MacBook fleets. Run all five flows after NVDA passes.
+3. **JAWS + Chrome** (Windows) — sign-off gate. The dominant screen reader in enterprise IT environments, especially healthcare. Many hospital system IT teams test specifically with JAWS. Run flows 2, 3, and 4 once NVDA and VoiceOver pass.
+
+---
+
+**Flow 1: Login**
+*Setup: NVDA running in browse mode. Navigate to the login page.*
+
+1. Press Tab — should focus the email field. Expected: "Email, required, edit text."
+2. Type a test email. Press Tab — focus moves to the password field. Expected: "Password, required, edit text."
+3. Press Tab — focus moves to the login button. Expected: "Log in, button."
+4. Press Enter — form submits. Expected: "Loading..." or immediate focus move into the dashboard. No announcement of "document" (which would indicate focus dropped to body).
+5. **Error test**: submit empty form. Expected: error messages announced immediately via role="alert" — "Please enter your email address." Fields should announce "invalid" when re-focused.
+
+Pass: All five expected announcements occur. No "unlabeled" or raw element tags like "span" or "div" in the announcement.
+
+---
+
+**Flow 2: Patient table + date range filter**
+*Setup: Logged in. Navigate to the patient encounters page.*
+
+1. Tab to the date range picker trigger. Expected: "Select date range, currently [range], button, collapsed."
+2. Press Enter. Expected: "Date range picker dialog." Focus moves inside the dialog.
+3. Navigate with arrow keys. Expected: each day cell announces its full date: "March 15, 2026, Saturday."
+4. Press Enter on a start date, navigate to end date, press Enter. Expected: dialog closes; trigger announces updated range.
+5. Expected: table live region announces "Showing 12 results" within 1–2 seconds of filter applying.
+
+Pass: Calendar is fully keyboard-navigable. Full date strings announced. Table result count announced on filter change.
+
+---
+
+**Flow 3: Add appointment via modal**
+*Setup: On patient record page. Focus on the "Schedule appointment" button.*
+
+1. Press Enter on "Schedule appointment." Expected: "Schedule Appointment dialog." Focus inside modal.
+2. Press Tab repeatedly. Expected: focus never escapes to page content behind the overlay.
+3. Press Escape. Expected: modal closes; focus returns to the "Schedule appointment" button.
+4. Open modal again, fill all required fields via Tab. Tab past the last field. Expected: focus wraps to first field or close button — not to the page behind.
+
+Pass: Focus stays within modal. Escape closes and restores focus. All fields are labeled (no "edit" announcements without a preceding label).
+
+---
+
+**Flow 4: Patient intake form**
+*Navigate to intake form.*
+
+1. Tab into the first required field. Expected: announces label + "required."
+2. Navigate through all required fields. Expected: each announces label, type, and required status.
+3. Submit without filling required fields. Expected: error messages announced immediately (role="alert"). Re-focus failed fields: announces "invalid."
+4. Fill email field. Expected: browser announces autocomplete suggestions (confirms autocomplete attributes are present).
+
+Pass: Required field identification audible throughout. Errors immediately announced on empty submit.
+
+---
+
+**Flow 5: Status alert acknowledgment**
+*Patient record page with a status alert visible.*
+
+1. Navigate to the status alert via Tab or browse mode. Expected: alert content announced.
+2. Press Enter on the "Acknowledge" button. Expected: button activates; new state ("Acknowledged") announced via the aria-live="polite" region within 2 seconds.
+
+Pass: Alert content readable by keyboard. State change announced without interrupting current navigation.
+
+---
+
+**Test documentation format for the compliance submission**
+
+| Date | Screen Reader | Browser | Flow | Steps Passed | Steps Failed | Notes | Tester |
+
+Submit a screenshot of each failing test alongside the actual vs. expected announcement. The prospect's IT team is looking for evidence that human testing happened — not an automated scan report — and that you can identify the specific announcement that failed, not just "flow 3 had issues."$pf$,
+ NULL),
+
+-- Step 7 --
+('66666666-6666-6666-6666-666666920107',
+ '55555555-5555-5555-5555-555555550092',
+ 7,
+ $pf$Remediation priority backlog — severity × effort matrix and sprint phasing$pf$,
+ $pf$QA has run Flows 1 and 2 with NVDA and I now have a complete picture of what needs to be fixed. Here's the full catalogue of 23 issues across all five layers: 2 color token failures (fixes identified), 4 keyboard navigation issues (no focus indicator on nav, sort headers not keyboard-accessible, modal focus not trapped, date range picker has no keyboard support), 3 ARIA issues (data table missing aria-sort updates, multi-select missing combobox pattern, status updates trigger no announcement), 4 form issues (required fields missing aria-required and text indicator, 18 fields missing autocomplete attributes, inline errors not wired with aria-describedby, aria-invalid not set on failed fields), 2 screen-reader-specific findings from the NVDA test (one modal announcing as "untitled," status update playing no announcement on change), and 8 additional enhancements from layers 3 and 4.
+
+I have one sprint available in the next 60 days — two weeks, one front-end engineer at roughly 60% allocation. I need a severity × effort matrix and a phased backlog. Also: what do I communicate to the prospect before Phase 1 is done?$pf$,
+ $pf$**Severity definitions**
+Critical: prevents task completion for screen reader or keyboard-only users. Major: significantly impedes a workflow but user can eventually complete the task. Minor: reduces experience quality, doesn't block completion.
+
+**Effort definitions (mid-senior front-end engineer)**
+S: under 4 hours. M: 0.5–2 days. L: 2–5 days.
+
+---
+
+**Full backlog**
+
+| # | Issue | Severity | Effort | Phase |
+|---|-------|----------|--------|-------|
+| A1 | --color-text-secondary token: 4.35:1, update to #5D6874 | Critical | S | 1 |
+| A2 | Primary button blue: 4.24:1, update to #1A5DD1 | Critical | S | 1 |
+| A3 | Modal announces as "untitled" — add aria-labelledby | Critical | S | 1 |
+| A4 | Modal focus not trapped — implement focus trap logic | Critical | M | 1 |
+| A5 | Required fields — add aria-required + text indicator | Critical | S | 1 |
+| A6 | Inline errors — add aria-invalid + role="alert" + aria-describedby | Critical | M | 1 |
+| A7 | Sort headers — add aria-sort + keyboard activation handler | Critical | M | 1 |
+| A8 | Main nav — add :focus-visible outline rule, remove outline:none | Major | S | 1 |
+| A9 | Status update — add aria-live="polite" on status container | Major | S | 1 |
+| A10 | 18 intake form fields missing autocomplete attributes | Major | S | 1 |
+| A11 | NVDA pass verification — all 5 flows (QA task) | Major | M | 1 |
+| B1 | Date range picker — full keyboard + ARIA grid pattern | Major | L | 2 |
+| B2 | Multi-select — implement combobox ARIA pattern | Major | L | 2 |
+| B3 | Data table — full role=grid, aria-rowcount, gridcell implementation | Major | M | 2 |
+| B4 | VoiceOver + Safari pass — all 5 flows | Major | M | 2 |
+| B5 | JAWS + Chrome pass — flows 2, 3, 4 | Major | M | 2 |
+| B6 | Skip-to-main-content link on all pages | Minor | S | 2 |
+| B7 | Pagination: aria-current="page" on active page button | Minor | S | 2 |
+| B8 | Status badge live region for minor status changes | Minor | S | 2 |
+| C1 | WCAG 2.2 focus appearance audit — all remaining interactive elements | Minor | M | 3 |
+| C2 | JAWS compatibility audit for combobox pattern | Minor | M | 3 |
+| C3 | Mobile screen reader testing (iOS VoiceOver + Android TalkBack) | Minor | L | 3 |
+
+**Phase 1 effort estimate**
+Items A1–A11: S items (A1, A2, A3, A5, A8, A9, A10) = 7 × ~3 hours = ~21 hours. M items (A4, A6, A7, A11) = 4 × ~1.5 days = ~6 days. Total ~8 days. At 60% allocation over 2 weeks (6 engineering days available), this is tight. If capacity is at risk, defer A10 (autocomplete attributes) to Phase 2 — it's a Major not Critical, and the 18 attribute additions can be batched in a single low-risk PR.
+
+**What Phase 1 closes**
+All Critical failures. After Phase 1, your app completes all core user tasks by keyboard and screen reader. Phase 2 items are significant improvements but not blockers.
+
+**What to communicate to the prospect now**
+Reach out before Phase 1 closes. The message: "We've completed our internal audit, catalogued 23 specific remediation items, and started Sprint 1 this week. Here is our phased plan with completion dates." Compliance teams want to see a credible remediation plan, not a completed fix in 30 days. The 22-page report was a forcing function, not a rejection.
+
+Draft outreach: "Thank you for the detailed audit. We've completed our internal review: 23 remediation items catalogued across two sprints, with all Critical-severity failures in Sprint 1 starting [date]. Would a 30-minute check-in at [date + 3 weeks] work for your team? I'd like to walk through Phase 1 progress before Phase 2 begins." Send this within 48 hours of starting Sprint 1 — it demonstrates responsiveness and gets you off the pause list faster than waiting to report completion.$pf$,
+ NULL),
+
+-- Step 8 --
+('66666666-6666-6666-6666-666666920108',
+ '55555555-5555-5555-5555-555555550092',
+ 8,
+ $pf$Complete dev handoff document — Confluence-ready accessibility spec$pf$,
+ $pf$Last step. I need to pull everything together into a single Confluence-ready dev handoff document that engineering can use as their reference for the entire remediation project. It should have a clear table of contents, the updated color tokens with before/after values, the keyboard nav spec summary, the ARIA quick-reference, the form spec, and the Phase 1 backlog as a table with acceptance criteria so QA knows exactly what to test for each item.
+
+I want this to be the single source of truth. When the engineering lead sits down on sprint day one, this is the document they open. No cross-referencing five other documents, no "ask Priya." Write the complete structure, filled in.$pf$,
+ $pf$**Mend Health — WCAG 2.1 AA Remediation Spec v1.0**
+*Owner: Priya Sharma | Status: Active | Standard: WCAG 2.1 Level AA*
+
+---
+
+**Table of Contents**
+1. Overview and scope
+2. Design system color token updates
+3. Focus state baseline
+4. Keyboard navigation spec summary
+5. ARIA quick-reference
+6. Form accessibility spec
+7. Phase 1 backlog with acceptance criteria
+
+---
+
+**1. Overview and scope**
+Covers the five highest-traffic components: data table, date range picker, modal dialog, multi-select dropdown, status badges. Also covers the patient intake form and the appointment scheduling modal. Testing targets: NVDA + Chrome (primary), VoiceOver + Safari (secondary), JAWS + Chrome (sign-off). Does not target WCAG Level AAA.
+
+---
+
+**2. Design system color token updates**
+Push both changes to the design system token file. All components using these tokens inherit the fix.
+
+| Token | Old Value | Old Ratio | New Value | New Ratio | Status |
+|-------|-----------|-----------|-----------|-----------|--------|
+| --color-text-secondary | #6B7280 | 4.35:1 | #5D6874 | 6.4:1 | UPDATE |
+| --color-brand-blue | #2D6FE8 | 4.24:1 | #1A5DD1 | 5.1:1 | UPDATE |
+| All other tokens | — | (see audit) | No change | — | PASS |
+
+Note on --color-text-muted (#9CA3AF, 2.39:1): remains unchanged. Used exclusively for placeholder text and disabled states (SC 1.4.3 inactive component exemption). Do not apply this token to active content.
+
+---
+
+**3. Focus state baseline**
+Apply to all interactive elements unless the component-specific spec below overrides:
+
+```css
+/* Light backgrounds */
+:focus-visible {
+  outline: 2px solid #1A5DD1;
+  outline-offset: 2px;
+}
+/* Dark header */
+.pf-header :focus-visible {
+  outline: 2px solid #FFFFFF;
+  outline-offset: 2px;
+}
+```
+
+Remove all instances of `outline: none` on interactive elements site-wide.
+
+---
+
+**4. Keyboard navigation spec summary**
+
+| Component | Tab behavior | Key actions | Focus restore |
+|-----------|-------------|-------------|---------------|
+| Main nav | L-to-R through items | Enter/Space activates | — |
+| Data table sort | Tab to first header; L/R arrow between headers | Space/Enter sorts; aria-sort updates | — |
+| Modal | Focus to modal on open | Tab cycles within modal only; Escape closes | Returns to trigger element |
+| Date range picker | Tab to trigger | Enter opens; arrow keys navigate; Enter selects; Escape closes | Returns to trigger |
+| Multi-select | Tab to input | Type to filter; Down arrow opens list; arrow keys navigate; Enter selects; Escape closes | — |
+
+---
+
+**5. ARIA quick-reference**
+
+| Component | Key attributes |
+|-----------|---------------|
+| Data table | role="grid"; aria-sort on sort headers; aria-live="polite" result count |
+| Date range | role="dialog"; role="grid" on calendar; aria-current="date" on today |
+| Modal | role="dialog"; aria-modal="true"; aria-labelledby; focus trap |
+| Multi-select | role="combobox" + role="listbox" + role="option"; aria-multiselectable="true" |
+| Status badges | aria-live="polite" on announcing container; role="alert" reserved for errors requiring immediate action |
+
+Full annotations in Figma: [link to annotated component file].
+
+---
+
+**6. Form accessibility spec**
+
+Required fields: `aria-required="true"` on input element. Visible text indicator in label (either "(Required)" or `.sr-only` span containing "Required"). Remove color-only asterisk as sole indicator.
+
+Error states:
+```html
+<input aria-invalid="true" aria-describedby="field-id-hint field-id-error">
+<p id="field-id-error" role="alert">Error message text here.</p>
+```
+Clear `aria-invalid` and remove or empty the error element on resolution.
+
+Autocomplete: add per-field attributes (given-name, family-name, email, tel, address-line1/2, address-level1/2, postal-code, bday). Use `autocomplete="off"` on personally-identifiable fields in staff-entry flows where clinicians enter patient data.
+
+---
+
+**7. Phase 1 backlog — acceptance criteria**
+
+| ID | Component | Issue | WCAG SC | Fix | Acceptance Criteria | Est. |
+|----|-----------|-------|---------|-----|---------------------|------|
+| A1 | Design system | --color-text-secondary fails 4.5:1 | 1.4.3 | Update token to #5D6874 | Color Contrast Analyzer: 6.4:1 on white | S |
+| A2 | Design system | Primary button blue fails 4.5:1 | 1.4.3 | Update --color-brand-blue to #1A5DD1 | Color Contrast Analyzer: 5.1:1 | S |
+| A3 | All modals | Modal title not associated | 4.1.2 | Add aria-labelledby to role="dialog" | NVDA announces modal name on open | S |
+| A4 | Modal | Focus escapes modal on Tab | 2.1.1 | Implement focus trap | Tab from last focusable element wraps to first; no background elements reachable | M |
+| A5 | All forms | Required fields not announced | 4.1.2 | aria-required + visible text in label | NVDA announces "required" on all required fields | S |
+| A6 | All forms | Errors not programmatically associated | 3.3.1 | aria-describedby + aria-invalid + role="alert" | NVDA announces error text immediately on empty submit | M |
+| A7 | Data table | Sort headers not keyboard-accessible | 2.1.1 | Keyboard handler + aria-sort attribute | Space/Enter sorts; NVDA announces new sort direction; aria-sort reflects state | M |
+| A8 | Main nav | No visible focus indicator | 2.4.7 | :focus-visible outline rule; remove outline:none | Blue outline visible on all nav items when tabbed | S |
+| A9 | Status alerts | State changes not announced | 4.1.3 | aria-live="polite" on status container | NVDA announces status change within 2 seconds of update | S |
+| A10 | Intake form | 18 fields missing autocomplete | 1.3.5 | Add autocomplete attributes per spec | Chrome DevTools confirms autocomplete present on all personal-data fields | S |
+| A11 | All | NVDA testing — 5 flows | — | QA run test protocol per SR testing doc | All 5 flows pass NVDA + Chrome | M |$pf$,
+ NULL);
+
+
+-- =========================================================================
+-- Project 0093 — emwriter / Writing / 4-step / Sonnet 4.6 / intermediate
+-- =========================================================================
+
+DELETE FROM prompt_steps WHERE prompt_id = '55555555-5555-5555-5555-555555550093';
+DELETE FROM prompts      WHERE id        = '55555555-5555-5555-5555-555555550093';
+
+INSERT INTO prompts (
+  id, title, description, content, result_content,
+  category_id, difficulty, model_used, model_recommendation,
+  tools_used, tags, status, author_id, vote_count, bookmark_count
+) VALUES (
+  '55555555-5555-5555-5555-555555550093',
+  $pf$Ghostwriting the Legacy Editor Sunset for Portsmith: Retaining 200 Enterprise Customers$pf$,
+  $pf$Emily Zhao ghostwrites the full announcement package for Portsmith's founder sunsetting the 7-year-old legacy document editor while simultaneously launching ContractIQ, an AI-native replacement — four passes with Claude 4.6 Sonnet covering announcement framing strategy, the founder email to 200 enterprise customers, a CS team FAQ with nine live-call objection scripts, and the internal memo for sales and CS before the announcement goes live.$pf$,
+  $pf$Marcus Webb, founder of Portsmith — a 120-person B2B contract management SaaS — hired me to ghostwrite the most fraught communication of his company's history: announcing that the legacy document editor, used by 200 of their 400 enterprise customers, was being discontinued in favor of ContractIQ, a new AI-native contract analysis platform.
+
+The situation had multiple landmines. Legacy customers had been on a discounted rate for years. Some had been with Portsmith for seven years. ContractIQ cost 60% more per seat. And the timing was awkward — Portsmith was weeks away from announcing a $12M Series B. Any perception that the sunset was about squeezing customers to inflate revenue before an institutional round could be genuinely damaging.
+
+Marcus's instinct was to lead the announcement with ContractIQ's features. My job was to tell him that was exactly wrong, and give him copy that would actually keep customers from churning. The audience was VP Legal, General Counsel, and procurement leads — people trained to read contracts for unfavorable terms. They would notice every weasel word.
+
+I ran this four passes with Claude 4.6 Sonnet. Framing first — I needed to solve the strategic problem before I touched a word of copy. Then the founder email. Then the CS FAQ with scripts for every predictable pushback. Last, the internal memo the leadership team needed to read before the announcement went out. Sonnet was right for this: the work is editorial judgment and voice, not complex reasoning.$pf$,
+  $pf$Portsmith sent the announcement to 200 legacy customers on a Tuesday morning. Three weeks later, 92% had either migrated to ContractIQ or signed a 12-month migration-pending extension. Churn rate on the sunset cohort was 8% — against an internal worst-case projection of 20%.
+
+The thing that worked best: the framing decision to separate the Series B announcement entirely. Marcus had originally planned to mention the fundraise in the same email, as evidence of Portsmith's investment in the platform. We cut that completely and moved the Series B PR to two weeks later. Two customers still asked about it directly, and the CS scripts handled both cleanly.
+
+The CS FAQ made the real difference in the first 48 hours. Customer success had nine ready-made responses. There was no "let me check with leadership and get back to you" on any of the nine most common pushbacks. That confidence came through on calls and it reduced escalations significantly.
+
+The internal memo's "what not to say" section became a recurring reference. Marcus ended up reusing a version of it for an acquisition announcement six months later — same structure, different situation.$pf$,
+  '11111111-1111-1111-1111-111111111103',
+  'intermediate',
+  'claude-sonnet-4-6',
+  'Claude 4.6 Sonnet',
+  ARRAY['Claude','Notion','Google Docs'],
+  ARRAY['ghostwriting','product-sunset','customer-retention','announcement','SaaS','enterprise','founder-communications'],
+  'approved',
+  '22222222-2222-2222-2222-222222222208',
+  0, 0
+);
+
+INSERT INTO prompt_steps (id, prompt_id, step_number, title, content, result_content, description) VALUES
+
+-- Step 1 --
+('66666666-6666-6666-6666-666666930101',
+ '55555555-5555-5555-5555-555555550093',
+ 1,
+ $pf$Announcement framing strategy — before I write a single word of copy$pf$,
+ $pf$I'm ghostwriting for Marcus Webb, founder of Portsmith — a B2B contract management SaaS. He needs to announce two things simultaneously: sunsetting the legacy document editor used by 200 of his 400 enterprise customers, and launching ContractIQ, an AI-native replacement at a 60% higher price point. Some legacy customers have been with Portsmith for seven years. Marcus wants to lead with ContractIQ's features. I think that's wrong.
+
+Before I write anything, I need to think through the framing strategy. What's the right order of information in a sunset announcement that doubles as a product launch? What emotional arc should a customer experience reading it? What's the one thing this announcement must accomplish to stop an 8-year enterprise customer from immediately calling their account manager and asking to cancel? The audience is VP Legal and General Counsel — trained to read for unfavorable terms. They'll notice every soft phrase. I also have a complication: Portsmith is two weeks away from announcing a $12M Series B. Should that be in this announcement?$pf$,
+ $pf$A sunset announcement that also launches a replacement is doing two contradictory jobs at once. The order you sequence them determines whether customers feel informed or manipulated. Marcus's instinct to lead with ContractIQ's features is a product marketing move applied to a customer retention moment — it backfires because it reads as "we're taking something from you so we can sell you something more expensive." General Counsel and procurement professionals have read enough vendor notices to recognize the pattern from the first paragraph.
+
+**The right order of information**
+1. What is changing (lead with the fact — not the new product)
+2. When it is changing (specific date, no ambiguity)
+3. Why it is changing (brief, honest, not self-congratulatory)
+4. What happens to their current work (the most important practical question — contracts, data, integrations)
+5. What the path forward looks like (ContractIQ enters here, as an option, not a demand)
+6. What you're doing to make the transition manageable (migration support, timeline, contacts)
+7. One concrete gesture of goodwill (something that makes the announcement feel fair, not just commercially convenient)
+
+**The emotional arc**
+Not excited. Not relieved. *Handled.* VP Legal and GC are not evaluating copy for warmth. They're evaluating it for: do I have everything I need to brief my team and make a decision? Does this vendor know what they're doing? If yes on both, they will not churn on the announcement alone. If they have to send follow-up emails to get basic information, the trust gap widens before anyone gets on a call.
+
+**The one thing that cannot be missing**
+A specific migration date paired with a specific support contact. "We're here to help with the transition" without a named account manager, a stated SLA, and a documented process reads as a vendor running away from obligation. Legal teams deal with vendors who make commitments and don't honor them. A named person plus a deadline plus a defined process is the difference between a reassuring announcement and a liability notice.
+
+**The Series B timing — cut it entirely**
+This is a risk Marcus hasn't fully thought through. Announcing the sunset and the $12M fundraise in the same communication will cause a material number of customers to infer exactly what Marcus doesn't want them to think: that the sunset is about extracting margin to improve the metrics before institutional investors see them. The inference may be wrong — but it's obvious enough that customers will make it, and once they make it, they'll look for confirmation in every subsequent interaction.
+
+The right sequencing: sunset announcement goes out now. Series B PR goes out in two to three weeks, separately, with no reference to the legacy editor. If a customer asks directly whether the two are related, the CS team has a script for it. But don't create the association voluntarily.
+
+**Three things Marcus must not say**
+1. "As we continue to invest in the future of contract management..." — corporate jargon for "we're spending your renewal money on something you didn't ask for."
+2. "We know change can be challenging..." — condescending. GCs manage complex change daily; don't predict their emotional reaction.
+3. Any variation of "exciting new chapter" — for the customer, this isn't exciting. Acknowledge the cost of the change instead.$pf$,
+ NULL),
+
+-- Step 2 --
+('66666666-6666-6666-6666-666666930102',
+ '55555555-5555-5555-5555-555555550093',
+ 2,
+ $pf$Founder email draft to 200 legacy customers$pf$,
+ $pf$Framing strategy is exactly right. Marcus agreed on all of it, including separating the Series B announcement — he admitted he hadn't thought through the optics of the two going out together. Now I need the actual founder email.
+
+Recipients are VP Legal, GC, and procurement leads at enterprise companies, mostly in legal tech, financial services, and professional services. They want specifics and they want to know who to call. Timeline: the legacy editor stays operational for 12 months from the announcement date. ContractIQ migration support starts immediately. Marcus approved one concession: any legacy customer that commits to ContractIQ in the first 90 days gets their legacy rate grandfathered for Year 1, moving to standard pricing in Year 2. Write the full email — subject line, greeting, body, CTA, signature. Marcus's voice: direct, takes responsibility, doesn't hide behind the product. Nine years building Portsmith.$pf$,
+ $pf$**Subject:** A change to your Portsmith contract — what this means for your account
+
+---
+
+[First name],
+
+I'm writing to let you know we're discontinuing the Portsmith legacy document editor. I want to give you the full picture directly, without burying the lead.
+
+**What's changing and when**
+
+The legacy editor will remain fully operational for 12 months from today — through [sunset date]. After that date, the editor will be read-only for 90 days to allow final exports, then retired. Your contracts and data are yours: we're providing a complete export in standard formats (PDF, DOCX, JSON) at any point during the transition, at no charge.
+
+**Why we're doing this**
+
+The honest reason: the legacy editor was built for a world where contract management meant storage and search. ContractIQ — our new platform — is built around AI-assisted analysis, clause flagging, obligation tracking, and deadline alerts. Maintaining both codebases means we can't build either of them as well as you deserve. This was a hard call, and I've been sitting on it longer than I should have.
+
+**What happens to your work**
+
+Everything you've stored in the legacy editor — contract libraries, templates, folder structures, historical versions — migrates to ContractIQ without manual work on your part. Our migration team handles the data transfer. You review and confirm the migrated library before your legacy access ends. If anything is missing or wrong, we fix it before we close your legacy account.
+
+**What ContractIQ gives you**
+
+I won't oversell it in this email. What I'll say is that every attorney at Portsmith who has moved their own work to ContractIQ has stayed. The redline tracking alone recovers two to three hours per review cycle for most users. Your account team will schedule a 45-minute walkthrough if you want to see it before committing to anything.
+
+**The cost question — addressed directly**
+
+ContractIQ is priced higher than your current legacy rate. I know that. Here's what I'm offering: any legacy account that migrates to ContractIQ within 90 days of this announcement gets their current legacy rate locked for all of Year 1 on ContractIQ. Year 2 moves to standard pricing. This isn't a promotional discount — it's me asking you to absorb a change I'm imposing on you, and trying to make that fair.
+
+**Your next steps**
+
+Your account manager, [Account Manager Name], will reach out within 48 hours to schedule your migration review call. If you want to move faster or have questions now, reach them at [email] or [phone].
+
+I've been building Portsmith for nine years. The customers who've been with us longest are the ones I feel most accountable to. I wanted you to hear this from me.
+
+Marcus Webb
+Founder, Portsmith
+[email] | [phone]
+
+---
+
+*P.S. For accounts with custom SLAs or custom contract terms on the legacy editor, your account manager has been briefed on your specific situation and will cover those details in your migration review call.*$pf$,
+ NULL),
+
+-- Step 3 --
+('66666666-6666-6666-6666-666666930103',
+ '55555555-5555-5555-5555-555555550093',
+ 3,
+ $pf$CS team FAQ and nine live-call objection scripts for the 48-hour window$pf$,
+ $pf$Email is approved and going out tomorrow morning. Now I need to prepare the customer success team for the 48 hours after it lands. There will be customers who are upset, customers with specific technical questions, and customers who will threaten to cancel. CS needs a FAQ they can share with customers, plus live-call scripts for the nine most predictable pushbacks.
+
+The nine things customers will say or ask: (1) Is this actually about the Series B? (2) What happens to our custom integrations? (3) We're mid-negotiation on a major deal — can we delay our migration? (4) We just renewed on the legacy editor six months ago. (5) What if ContractIQ doesn't have the features we need? (6) Why should we stay with Portsmith at all? (7) Your prices are going up and you're calling it an improvement. (8) We have documents under legal hold — will an export cause discovery issues? (9) I want to talk to Marcus directly.
+
+Write the FAQ document and a live-call response for each.$pf$,
+ $pf$**Portsmith CS Team FAQ — Legacy Editor Sunset**
+*Internal use and shareable with customers. First 48 hours.*
+
+---
+
+**Q1: Is this actually about the Series B?**
+*Customer-facing FAQ answer:* The decision to consolidate onto ContractIQ predates our Series B discussions by over a year. The two announcements are separate because they're unrelated decisions.
+
+*Live-call script:* "That's a fair question. The timing is a coincidence — the decision to sunset the legacy editor was made more than a year ago. The Series B is part of what lets us invest in ContractIQ properly. We kept the two announcements separate because they're genuinely different news."
+
+---
+
+**Q2: What happens to our custom integrations?**
+*FAQ:* This depends on your specific integration. Customers with API integrations into the legacy editor should contact their account manager immediately for a technical review call. Our integrations team will map current endpoints to ContractIQ equivalents. For any gaps, we commit to a 90-day bridging arrangement while the missing endpoint is built.
+
+*Live-call script:* "Don't try to assess the impact yourself — let us do the technical review first. I want to get you on a call with our integrations team within the next week before you make any assumptions about what's missing."
+
+---
+
+**Q3: We're mid-negotiation. Can we delay the migration?**
+*FAQ:* The standard migration window is 90 days from when you schedule your migration call, with 12 months of total runway. If your team is in a critical negotiation period, tell your account manager — we can schedule around it.
+
+*Live-call script:* "The 12-month timeline is real headroom, not a threat. If you're three weeks from closing a deal, we will not migrate you during that window. Tell me when your head comes up and we'll build the schedule around your calendar."
+
+---
+
+**Q4: We renewed on the legacy editor six months ago.**
+*FAQ:* For customers who renewed within the past 12 months, we're offering a pro-rated credit toward ContractIQ equal to the unused portion of your legacy renewal. Your account manager will calculate the credit and apply it to your first ContractIQ invoice.
+
+*Live-call script:* "That's a real cost you're absorbing and I'm not going to minimize it. Let me pull up your renewal date right now. [Pause.] Based on your renewal on [date], the credit would be approximately [amount], applied to your first ContractIQ invoice. Here's what the net number looks like..."
+
+---
+
+**Q5: What if ContractIQ doesn't have the features we need?**
+*FAQ:* Schedule a 45-minute product walkthrough before committing. We'll map your current workflows to ContractIQ features and tell you honestly what's covered and what isn't.
+
+*Live-call script:* "Before you assume it doesn't, let's do the walkthrough. I've had this conversation with a dozen customers this week. Most find their critical features are covered. The ones who find genuine gaps — we want that feedback either way. It goes directly to the product roadmap."
+
+---
+
+**Q6: Why should we stay with Portsmith at all?**
+*Do not include in the written FAQ. Live-call only.*
+
+*Live-call script:* "Honest answer: because the relationship has worked and because switching contract management platforms is one of the most disruptive things a legal team does. You've been with us for [X years]. I want to earn the next chapter, not assume it. What would need to be true for this to feel fair to your team?" Then stop talking and listen. Most customers who say this are signaling they feel unheard, not that they've made a final decision.
+
+---
+
+**Q7: You're raising prices and calling it an improvement.**
+*FAQ:* ContractIQ does significantly more than the legacy editor — AI-assisted clause analysis, obligation tracking, deadline alerts. The pricing reflects a different product, not just the same product at a higher rate. Legacy customers who migrate in the first 90 days get Year 1 at their current rate.
+
+*Live-call script:* "You're not wrong that the price is higher. I'm not going to argue that. What I'd ask you to do before deciding is the 45-minute walkthrough — the specific features that usually change the math are [name the 2 most relevant to this customer's use case]. If the math still doesn't work after that, I'd rather have that conversation now than pretend it doesn't exist."
+
+---
+
+**Q8: We have documents under legal hold. Will an export cause discovery issues?**
+*FAQ:* No. Export creates a copy — it does not alter the original records, their metadata, or timestamps, which are relevant to legal hold integrity. That said, if you have active litigation involving these records, we recommend running the export plan by your own counsel before initiating.
+
+*Live-call script:* "The export doesn't touch the original records — it creates a copy with the same metadata intact. That said, you have active litigation, and I'd tell any customer in that situation to loop in their own counsel before we schedule anything. The last thing any of us wants is a migration creating even the appearance of a discovery issue."
+
+---
+
+**Q9: I want to talk to Marcus directly.**
+*Live-call script:* "He expected that request, and he's available for it. I'll send you a calendar link for a 20-minute call. If your timeline is urgent, email me now and I'll get you something within 48 hours." Log these requests in Salesforce under the "Founder Escalation" flag. Marcus has committed to 10 calls per week for the first month.$pf$,
+ NULL),
+
+-- Step 4 --
+('66666666-6666-6666-6666-666666930104',
+ '55555555-5555-5555-5555-555555550093',
+ 4,
+ $pf$Internal memo to sales and CS before the announcement goes out$pf$,
+ $pf$Last piece. The customer email is ready. CS has the FAQ. Now I need to write the internal memo Marcus sends to the sales and CS teams before the announcement goes out — not customer-facing, not the FAQ. The leadership memo.
+
+This memo needs to cover: what's happening and when, what people are authorized to offer (the Year 1 legacy-rate lock, the pro-rated credit), the "what not to say" list with at least four things that will make this worse, and the scripts for the two hardest customer moments — the customer who says "I'm going to cancel" and the customer who says "You should have told us sooner." Marcus's voice throughout — direct, not corporate.$pf$,
+ $pf$**To:** Sales and Customer Success
+**From:** Marcus
+**Re:** Legacy editor sunset — everything you need to know before the announcement goes out
+**Send time:** 2 hours before the customer email deploys
+
+---
+
+The customer email goes out at [time]. Here's what you need before it does.
+
+**What we're announcing**
+
+We're discontinuing the legacy document editor with a 12-month sunset window. ContractIQ is the path forward. Every legacy customer gets a complete migration with dedicated support. Customers who commit to ContractIQ within 90 days of today's announcement get their legacy rate locked for Year 1. Customers who renewed on the legacy editor in the last 12 months get a pro-rated credit applied to their first ContractIQ invoice.
+
+The Series B announcement is not part of this communication. Keep them separated in every customer conversation. If a customer asks whether the two are related, use the Q1 script from the FAQ.
+
+**What you're authorized to offer**
+
+No approval needed to offer: the Year 1 legacy-rate lock for customers committing within 90 days. The pro-rated credit for customers who renewed in the last 12 months — pull the renewal date and do the math in front of the customer, don't estimate.
+
+Needs VP approval: any extension of the Year 1 rate lock past 90 days. Any credit above the pro-rated amount. Any change to the 12-month sunset date for a specific account.
+
+If a customer pushes you past what you're authorized, escalate rather than promise. "I need to check with our leadership team and get back to you within 24 hours" is the right response. "I'll see what I can do" is not — it implies you have discretion you don't have.
+
+**What not to say**
+
+Four things that make this worse if a customer hears them from you:
+
+1. **"We've been planning this for a long time."** True, and it's exactly the wrong thing to say. It sounds like you were holding out on them. Don't say it.
+2. **"Most customers are really excited about ContractIQ."** Irrelevant to their specific situation and dismissive of their concern. Don't say it.
+3. **"You'll save money in the long run."** Maybe true. Not your call to make on their behalf. Don't say it unless they ask you to run the math and you actually run it.
+4. **"This isn't really a big change."** It is a real change. They know it. Saying otherwise damages your credibility for the rest of the conversation.
+
+**The two hardest customer moments**
+
+*"I'm going to cancel."*
+
+Do not panic. Do not make an unauthorized concession to stop it. The script: "I hear you. I don't want that, and I don't want you making a decision in the next 24 hours that you'd make differently in two weeks. Can I ask — is the price the issue, the migration effort, or something else? I want to understand what would need to be true for this to work for your team." Then listen. Most customers who say "I'm going to cancel" are signaling they feel unheard, not that they've made a final decision. Give them the space to tell you what's actually wrong.
+
+If they repeat it after you've asked: "I understand. Before I log the cancellation, I want to loop Marcus in — not to talk you out of it, but because he committed to personally reviewing every cancellation in the first 30 days. Can I get you a 15-minute call with him this week?"
+
+*"You should have told us sooner."*
+
+This one is true, and I know it's true. The script: "You're right. We waited until ContractIQ was far enough along that we could give you a real migration path on the same day as the announcement. In hindsight, I think more runway would have served you better. I'm sorry for the timing." Do not get defensive. Do not walk them through the internal decision-making process. "You're right" said directly and without qualification is more disarming than any explanation.
+
+---
+
+Any questions before the announcement goes out: call or text me directly. You have my number. After it goes out, log every customer conversation in Salesforce under the "Sunset 2026" opportunity tag so we have a clean picture of response rate and tone by end of day. I'll review it at 5pm.
+
+— Marcus$pf$,
+ NULL);
+
+
+-- =========================================================================
 -- END OF FILE — append next project(s) below this line.
 -- Iterations working the Content queue: add 2–3 projects per iteration,
 -- appending below this comment. Do NOT rewrite existing projects.

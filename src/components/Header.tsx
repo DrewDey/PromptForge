@@ -55,6 +55,7 @@ export default function Header() {
   const isActive = (href: string) => {
     if (href === '/browse') return pathname === '/browse' || (pathname.startsWith('/prompt/') && pathname !== '/prompt/new')
     if (href === '/prompt/new') return pathname === '/prompt/new'
+    if (href === '/about') return pathname === '/about'
     return false
   }
 
@@ -89,6 +90,16 @@ export default function Header() {
               >
                 <Plus className="w-3.5 h-3.5" />
                 Build
+              </Link>
+              <Link
+                href="/about"
+                className={`text-[13px] font-medium px-3 py-1.5 transition-colors duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange ${
+                  isActive('/about')
+                    ? 'text-brand-orange bg-surface-800'
+                    : 'text-surface-300 hover:text-white'
+                }`}
+              >
+                About
               </Link>
             </div>
           </div>
@@ -163,6 +174,15 @@ export default function Header() {
             >
               <Plus className="w-3.5 h-3.5" />
               Build
+            </Link>
+            <Link
+              href="/about"
+              className={`text-sm font-medium px-3 py-3 transition-colors duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange ${
+                isActive('/about') ? 'text-brand-orange bg-surface-800' : 'text-surface-300 hover:text-white active:bg-surface-800'
+              }`}
+              onClick={() => setMobileMenuOpen(false)}
+            >
+              About
             </Link>
             <div className="border-t border-surface-700 my-2" />
             {user ? (

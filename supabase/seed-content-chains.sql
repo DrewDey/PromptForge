@@ -43773,5 +43773,481 @@ Full incident post with the complete timeline and what we're changing: [link].
 **5. The "those conversations are for later" close.** This does two things: it tells readers that Jordan knows there's more work to do, and it signals today is not the day for it. Customers don't want to hear about your post-mortem process the day of the incident. They want to know you understand what happened. "For later" acknowledges the process without centering it.$pf$,
  NULL);
 
+DELETE FROM prompt_steps WHERE prompt_id = '55555555-5555-5555-5555-555555550124';
+DELETE FROM prompts WHERE id = '55555555-5555-5555-5555-555555550124';
+
+INSERT INTO prompts (
+  id, title, description, content, result_content,
+  category_id, difficulty, model_used, model_recommendation,
+  tools_used, tags, status, author_id, vote_count, bookmark_count
+) VALUES (
+  '55555555-5555-5555-5555-555555550124',
+  $pf$Building an engineering career ladder for a team that grew too fast to write one$pf$,
+  $pf$Derek Lawson, CTO at a health-tech startup, built an IC engineering career ladder from L2 to L5 in six weeks after losing two senior engineers who said they couldn't see a path forward. Four Claude sessions: framework design, behavioral-anchor level definitions, a calibration and promotion process, and the communication plan that kept the announcement from landing as a surprise ranking exercise.$pf$,
+  $pf$We closed our Series A eighteen months ago at eight engineers. Fast-forward to now and we're at twenty-five, but we hired fast and into specific needs — frontend for the patient portal project, backend for the auth service, a staff engineer to anchor the data pipeline. Nobody got a formal level, because when there are eight of you it feels like bureaucracy. I knew exactly where each person was.
+
+Then two senior engineers resigned in the same quarter. Both exit interviews said the same thing without comparing notes: "I don't know what the next version of my career looks like here." One of them had been with me since the seed stage. That conversation was rough.
+
+My HR VP came with a clean ask: have a career ladder ready before the Q2 performance cycle opens in six weeks. I'd never built one. I spent a few days looking at published ladders — Dropbox's, Intercom's, a few others — and got turned around by how different they all were. The frameworks people write about online feel either too abstract to use or too specific to their organization. I ran four Claude sessions to build the actual thing: framework design first, then the level definitions, then the calibration process, then the rollout plan.$pf$,
+  $pf$The ladder shipped with the Q2 cycle. Every engineer walked into their performance conversation knowing what level definition they'd be assessed against. The two promotions that came out of that cycle — one L3→L4 and one L4→L5 — were documented, calibrated across engineering leads, and announced without complaint. One engineer who had been on the fence about leaving told me after his review it was the most substantive career conversation we'd had since his first week. He stayed. The ladder doc ended up on LinkedIn — an engineer posted it with three sentences: "Most engineering career ladders are garbage. This one isn't." I didn't post it. He just found it.$pf$,
+  '11111111-1111-1111-1111-111111111109',
+  'intermediate',
+  'claude-opus-4-6',
+  $pf$Claude 4.6 Opus$pf$,
+  ARRAY['Claude'],
+  ARRAY['engineering leadership', 'career ladder', 'engineering levels', 'team building', 'CTO', 'performance management'],
+  'approved',
+  '22222222-2222-2222-2222-222222222209',
+  0,
+  0
+);
+
+INSERT INTO prompt_steps (id, prompt_id, step_number, title, content, result_content, description) VALUES
+
+-- Step 1 --
+('77777777-7777-7777-7777-777777124001',
+ '55555555-5555-5555-5555-555555550124',
+ 1,
+ $pf$Framework design: how many levels, which dimensions, where to start$pf$,
+ $pf$I'm CTO at a health-tech startup. We've grown from 8 to 25 engineers in the last 18 months since our Series A. We've never had formal engineering levels — people are hired as "Software Engineer" or "Senior Software Engineer" with no L2/L3/L4/L5 structure. My HR VP has asked me to have a career ladder ready in six weeks for our Q2 performance cycle. Two senior engineers resigned this quarter, and both exit interviews said the same thing without comparing notes: they couldn't see a career path here.
+
+Before I write a single level definition, I need to understand the design decisions. Specifically: how many levels should a 25-person engineering team have — is L2 through L5 right, or should I go deeper? What dimensions should structure the levels — I've seen technical skills, scope, leadership, and impact in various combinations and I don't know what's canonical versus cargo-culted. What are the most common mistakes CTOs make when building their first ladder? And should I start from scratch or adapt something like Dropbox's or Intercom's published ladders — both are publicly available and I've read them, but they feel like they were built for different organizations than mine.$pf$,
+ $pf$**How many levels**
+
+For a 25-person team, L2 through L5 is the right range. L1 is entry-level new-grad; you probably have none. L5 is staff/principal — you likely have one or two. Going to L6 and L7 creates a false ceiling you'll need to break the moment you hire a truly exceptional engineer two years from now, and it signals an org formality that doesn't match your current scale.
+
+The real temptation to resist is adding half-levels — "Senior II" or "L3.5." Don't. Fractional levels are where calibration arguments live forever. Clean steps are harder to define but far easier to apply consistently across four engineering leads.
+
+**Which dimensions to use**
+
+The four dimensions that survive contact with real calibration sessions:
+
+**Technical Depth** — not "knows X technology" but "can design systems that span X concerns without guidance." This measures capability, not credentials. The key: behavioral anchors should be observable at calibration time, not inferred from the list of technologies on someone's resume.
+
+**Scope & Autonomy** — the unit of work this person owns and can drive to completion without check-ins. This is the cleanest level differentiator and the one most ladders underspecify. The gap between L3 and L4 lives almost entirely in this dimension.
+
+**Influence & Collaboration** — how they affect the engineers around them, not just their own output. At L2 this is "receives code review well." At L5 this is "shifts how the engineering organization thinks."
+
+**Execution & Reliability** — do they deliver what they commit to, do they communicate problems early, do they raise the quality bar or just match it. This dimension catches the engineers who are technically strong but organizationally brittle.
+
+**The three most common mistakes**
+
+First: writing job descriptions instead of behavioral anchors. "Writes clean, maintainable code" is a job description. "Designs for operational clarity — their systems are readable by someone who didn't write them, under incident conditions at 2 AM" is a behavioral anchor. The difference sounds subtle but matters enormously at calibration time. Job descriptions describe what someone does; behavioral anchors describe what they are capable of doing.
+
+Second: making the L3→L4 gap too small. This is the single most common calibration argument. L3 means "executes well within a defined problem space." L4 means "scopes the problem itself and ensures the right problem is being solved." If your definitions blur this line, every engineer who's been at L3 for more than a year will be certain they're L4. Write the gap explicitly.
+
+Third: confusing scope of ownership with level. An L3 can own a service. An L4 owns a capability — the set of outcomes a cluster of services is supposed to deliver, not the services themselves. An L5 owns a problem space the organization hasn't fully named yet. Engineers get confused when they own a large, business-critical service and are still calibrating at L3. The clarification: how much of the system you own doesn't determine your level. How much influence you have over what the organization builds next does.
+
+**Starting from an existing ladder**
+
+Start with Dropbox's or Intercom's for structure — they both use a four-dimension approach and the format is solid. Rewrite every behavioral anchor for your context: health-tech, compliance-aware, 25-person scale. The structure is transferable. The anchors are not. Stealing the format saves you roughly 40% of the design work. The remaining 60% is in writing anchors that your engineers will recognize as describing real work they've seen done, not platitudes from a framework designed for a different company. That work can't be skipped.$pf$,
+ NULL),
+
+-- Step 2 --
+('77777777-7777-7777-7777-777777124002',
+ '55555555-5555-5555-5555-555555550124',
+ 2,
+ $pf$Writing the L2–L5 definitions with behavioral anchors$pf$,
+ $pf$That framework helps a lot — especially the scope-of-ownership-vs-level point. I have engineers who own large, business-critical services but haven't demonstrated that they're shaping what the org builds next. That's the L3/L4 line you're describing and I couldn't articulate it cleanly before now.
+
+I'm going with L2 through L5. Most of our engineers are probably L2 or L3. I'd say four or five who feel L4, and one or two who are genuinely L5.
+
+Can you write the actual level definitions? Four dimensions per level: Technical Depth, Scope & Autonomy, Influence & Collaboration, and Execution & Reliability. I need behavioral anchors — what this person actually does — not aspirational job description language. We're a health-tech company, so compliance awareness and care around clinical data should be present at the senior levels. Three to four anchors per dimension per level.$pf$,
+ $pf$**L2 — Software Engineer**
+
+*Technical Depth:* Implements features and fixes bugs in an existing codebase with the happy path in mind and asks for help identifying edge cases. Understands the system they're working in; doesn't yet have a working mental model of systems they haven't touched. Recognizes when a security or compliance concern needs escalation and asks rather than guesses. Code is correct before it's reviewed; rarely introduces regressions in the area they know.
+
+*Scope & Autonomy:* Works on scoped tasks (1–5 days) with clear requirements. Completes assigned work with light supervision. Gets stuck on ambiguous requirements and needs help decomposing. Not yet defining their own work scope.
+
+*Influence & Collaboration:* Participates in code review as a receiver; applies feedback consistently. Communicates blockers when they surface. Works well with their immediate team; not yet interacting meaningfully across team boundaries.
+
+*Execution & Reliability:* Delivers most assigned tasks on schedule. Communicates delays when noticed but may catch them late. Estimates effort for tasks they've seen before; struggles with novel work. Output quality matches team standard when code-reviewed.
+
+---
+
+**L3 — Senior Software Engineer**
+
+*Technical Depth:* Designs and ships features that span multiple services or system layers without supervision. Identifies non-obvious edge cases and error conditions before they're found in review. Writes code that's readable for operations and debugging, not just for the happy path. In health-tech contexts: understands PHI handling requirements in their area and applies them correctly without prompting; knows when to escalate to security review.
+
+*Scope & Autonomy:* Owns a service or well-scoped feature area end-to-end. Drives from requirements to shipped product with occasional check-ins on approach. Decomposes multi-week work into trackable milestones without being asked. When a requirement is ambiguous, resolves it rather than blocking.
+
+*Influence & Collaboration:* Gives substantive code reviews — catches logic errors and design concerns, not just style. Mentors L2s in 1:1 or review contexts when given the opportunity. Communicates status before problems become surprises.
+
+*Execution & Reliability:* Delivers consistently on commitments at the task and week level. Catches scope creep early and flags it rather than absorbing it silently. Estimates effort for familiar and moderately novel problems. Raises quality: their work reduces the defect rate in their area over time.
+
+---
+
+**L4 — Staff Engineer**
+
+*Technical Depth:* Designs systems that serve multiple teams or product surfaces. Anticipates failure modes and designs for observability from the start, not as a follow-up. Evaluates technology choices against the organization's 12–18 month trajectory, not just the immediate problem. In health-tech contexts: proactively raises compliance and security implications at architecture review; shapes how the team handles clinical data at the system design level, not just implementation.
+
+*Scope & Autonomy:* Owns a capability — the outcome a cluster of services is supposed to deliver, not just the services themselves. Drives from a business problem to an engineering approach without a spec. Works across teams to align on approach before writing code. Identifies when adjacent teams are about to solve the same problem differently and intervenes before the divergence becomes expensive.
+
+*Influence & Collaboration:* Meaningfully influences technical direction outside their immediate team. Their design reviews change what gets built, not just how. Is known for raising the quality of engineering discussions in the room. Actively mentors L3s on growth trajectory, not just on code.
+
+*Execution & Reliability:* Delivers multi-quarter initiatives end-to-end, including the parts that don't formally belong to them. Manages risk on complex projects — flags problems with enough lead time to change course. Estimates unknown-unknown work with appropriate hedging and is usually right about the confidence interval, not just the median estimate.
+
+---
+
+**L5 — Principal Engineer**
+
+*Technical Depth:* Shapes technical direction for the organization. Identifies systemic problems the engineering org hasn't named yet and builds the case for addressing them. Designs for a 3-year organizational trajectory. In health-tech contexts: drives the company's security and compliance engineering posture — not just implements against a standard, but defines what the standard should be for this company's risk profile.
+
+*Scope & Autonomy:* Owns a problem space — an area of capability the organization needs to develop that may not yet have clear boundaries. Works across engineering, product, and leadership to define what the organization should be building. Effective without needing a manager to scope their work.
+
+*Influence & Collaboration:* Shifts how the engineering organization thinks, not just what it builds. Technical opinions carry weight with leadership and peers. Sponsors engineers across levels — actively invests in the growth of people outside their immediate team, without being asked.
+
+*Execution & Reliability:* Delivers on initiatives that span the organization over multiple quarters. Manages dependencies across teams and functions without making it a coordination tax for others. Their calibration on complex, novel work becomes the organization's calibration.$pf$,
+ NULL),
+
+-- Step 3 --
+('77777777-7777-7777-7777-777777124003',
+ '55555555-5555-5555-5555-555555550124',
+ 3,
+ $pf$Calibration process: who decides, what evidence, and two tricky cases$pf$,
+ $pf$These definitions are exactly what I needed — the L3/L4 distinction between "owns a service" and "owns the outcome a cluster of services is supposed to deliver" is the line I couldn't articulate before. Several engineers just came into sharp focus for me.
+
+Now I need to build the calibration and promotion process. Specifically: who decides on promotions, what evidence do you actually need, and how do you run a calibration session so it doesn't become "the popular engineers get promoted"? I have four engineering leads and an HR VP.
+
+Two concrete concerns: First, I have engineers who have been informally called "senior" for two years who will now formally land at L3. I need to handle the framing carefully there. Second, I have one engineer who clearly meets the L4 technical bar but who is genuinely difficult — creates churn on teams they touch. I need a framework that separates "capable of doing L4 work" from "earns an L4 title."$pf$,
+ $pf$**Who decides**
+
+Engineering manager nominates; calibration panel reviews and decides. Panel: CTO plus all engineering leads. HR VP attends for process consistency and to flag anything that looks like it might create a legal or comp-band problem — they don't make the technical call.
+
+Do not accept self-nominations. Engineers assess themselves against the ladder (their self-assessment is a conversation input, not a decision input). Letting self-nomination drive the agenda creates exactly the popularity dynamic you're trying to avoid.
+
+**What evidence you actually need**
+
+Three categories, all required — not "two out of three":
+
+*Demonstrated impact at the next level.* Not "delivered project X" but "drove the architecture decision for X across three teams, including the call to descope Y which reduced compliance risk." The first statement describes execution. The second statement describes L4 behavior. The evidence must be specific and must be at the next level, not the current level they've already earned.
+
+*Consistent behavior over time.* A pattern, not a peak. One exceptional quarter during a high-visibility project can produce a false signal. Three to four consecutive quarters of next-level behavior is the standard. Peak performance is not promotion evidence — it's "interesting, let's see if it continues" evidence.
+
+*Available scope at the next level.* Promotion without scope is a title grant, not a level change. Before promoting someone to L4, confirm there is L4-scale work for them to own. If not, be honest about it — "you are calibrating at L4 but we don't have L4 scope to give you yet" is a real answer and engineers usually respect it more than a delayed promotion with no explanation.
+
+**Calibration session structure**
+
+Quarterly. Each engineering lead prepares two or three cases: one promotion case, one "tracking toward promotion in one to two quarters," and one development conversation case if applicable.
+
+For each case: state the proposed level, read two specific behavioral examples per dimension (not summaries — specific things this person did), then invite other leads to confirm or challenge with their own observations. Other leads may have cross-team visibility the nominating manager doesn't.
+
+Use "ready / stretch / not yet" to triage — not a numerical ranking, not a forced distribution. Ready means promote this cycle. Stretch means check back in one to two quarters with a specific development goal. Not yet means a development conversation is needed now.
+
+Ninety minutes maximum. More than six cases and quality degrades. Schedule another session rather than rushing the back half.
+
+**Handling the informally-senior cases**
+
+The framing that works: the level is a starting point, not a verdict.
+
+Script for managers: "We built a shared definition of what levels mean here. In this framework you're at L3, and here's what L4 looks like — let's talk about what your path to it looks like from where you are." The level is the beginning of the growth conversation, not the grade report.
+
+This only works if the level is actually a starting point. If L3 means "you're stuck here and we're not investing in your development," the framing won't hold. Engineers can sense when a conversation is real versus managed.
+
+**The difficult L4 case**
+
+Your ladder definitions describe capability — what this person can do. They don't describe how they work with others. You need to add an explicit promotion criterion that makes this a formal policy before your first calibration.
+
+Add a section to the ladder called "Promotion Criteria" with two required components for L4 and above: the capability profile (which the level definitions cover) and the collaboration standard. Write the L4 collaboration standard explicitly: "Your presence on a project increases the output of the team, not just your own output. You are a multiplier, not a cost center." An engineer who is technically capable of L4 work but creates churn on teams they touch is L3 until they meet the collaboration standard.
+
+Document this in the ladder itself, not in a verbal footnote. If it's in the doc, it's policy. If it's verbal, it's a one-time judgment about one person — which is exactly what you're trying to avoid. Build the policy before you apply it.$pf$,
+ NULL),
+
+-- Step 4 --
+('77777777-7777-7777-7777-777777124004',
+ '55555555-5555-5555-5555-555555550124',
+ 4,
+ $pf$Communication and rollout: announcing without triggering a ranking exercise$pf$,
+ $pf$The calibration structure is exactly what I needed, and documenting the collaboration standard in the ladder itself is the right call — that makes it policy before it applies to anyone specifically. I'm adding a "Promotion Criteria" section to the doc.
+
+Last piece: the rollout. I'm worried about a few specific failure modes — engineers doing rapid mental math about where they land and feeling blindsided; the informally-senior engineers feeling like they've been ranked down; and the appearance that this materialized out of nowhere as a management judgment tool. What does the announcement look like and how do I sequence it so the first thing people hear isn't the level definitions?$pf$,
+ $pf$**Sequence — this order matters**
+
+*Step 1: Brief the engineering leads before anyone else sees the doc.* Give them 48 hours with the draft. Let them ask questions, surface their concerns, and calibrate on the edge cases they're already thinking about. They will be in 1:1s explaining level decisions before you know it. They need to know the doc as well as you do — ideally better, for their own direct reports.
+
+*Step 2: CTO sends an async announcement memo to all engineers.* Written over spoken. Engineers re-read written announcements; they can't re-hear a meeting. Async over live — a live all-hands invites reactive questions before people have had time to process; async gives them space to sit with it first.
+
+*Step 3: Every manager runs a 1:1 with each direct report before the Q2 review window opens.* "I want to walk you through the ladder and where I see you landing" should happen before any formal review kicks off. This is the most important step in the sequence. An engineer who first hears their level from a doc drop in the review system, with no prior conversation, is an engineer who feels processed.
+
+**The announcement memo structure**
+
+Subject: Engineering Career Framework — ready before Q2 reviews
+
+*Why we built this* (specific — the exit conversations, the growth phase). Don't open with a generic line about supporting your development. Engineers can smell the HR template. Say the actual reason: "We lost two engineers this quarter who told us they couldn't see a path forward. That's on us. Here's what we did about it."
+
+*What it is* — IC ladder L2 through L5, four dimensions, behavioral anchors. Link to the doc.
+
+*What it is NOT* — not a ranking exercise, not a retroactive performance grade, not a signal that the company's relationship with any engineer is changing today. People need to hear what the thing isn't as clearly as they hear what it is.
+
+*How it will be used* — your manager will walk through your starting level with you in a 1:1 before Q2 reviews open. The level is the starting point for your growth conversation, not the end point. Levels are reviewed quarterly in calibration sessions with the engineering leads.
+
+*What to do with your questions* — bring them to your manager 1:1. Do not put a form, a survey, or an "open questions" thread at the bottom. That surfaces individual anxieties publicly, which creates the group dynamic you're trying to prevent.
+
+**The one sentence that does the most work in the memo**
+
+"Your level is the starting line for the conversation about where you're going, not a verdict on where you've been."
+
+Write that sentence. Don't paraphrase it. It addresses the core fear — that this ladder is a judgment — before engineers have a chance to form it as a grievance.
+
+**Script for the informally-senior conversations**
+
+For the managers having these 1:1s: "Senior means different things in different companies and different contexts. In the framework we built together, your starting level is L3. That's the honest read against the definition we wrote — and it's the starting point for a real conversation about what L4 looks like for you here. I want us to talk about what the specific path is. I wouldn't be having this conversation with you if I didn't think you could get there."
+
+The structure of that script: acknowledge the word they've been using (senior), name the framework and the level plainly, redirect immediately to the path forward, end with a statement of investment. Don't hedge on the level itself — hedging signals that the calibration wasn't confident, which opens the door to negotiation rather than development conversation.$pf$,
+ NULL);
+
+DELETE FROM prompt_steps WHERE prompt_id = '55555555-5555-5555-5555-555555550125';
+DELETE FROM prompts WHERE id = '55555555-5555-5555-5555-555555550125';
+
+INSERT INTO prompts (
+  id, title, description, content, result_content,
+  category_id, difficulty, model_used, model_recommendation,
+  tools_used, tags, status, author_id, vote_count, bookmark_count
+) VALUES (
+  '55555555-5555-5555-5555-555555550125',
+  $pf$Building a subscriber churn prediction model the CS team runs themselves every Monday$pf$,
+  $pf$Raj Patel built a weekly churn risk scoring model for a B2B SaaS company — not an academic exercise but a live prioritization queue the customer success team uses every Monday morning to decide which 80 accounts to call. Three sessions covered feature engineering from raw product event tables, model selection and training with SHAP-based explainability, and the pipeline integration that made the output a Google Sheet anyone on the CS team could read without touching Python.$pf$,
+  $pf$I got this engagement through a referral. The CMO at a B2B project management SaaS reached out after annual churn jumped from 8% to 14% in twelve months. The company has 2,800 customers on annual subscriptions and a customer success team of six that can make about 80 high-effort outreach calls per week. The team was prioritizing by gut feel plus renewal date proximity. That sounds improvised, but it's actually how most CS teams without a model operate — you can't call 2,800 accounts, so you prioritize whatever feels urgent.
+
+The CMO had seen demos from three enterprise churn prediction vendors. Each required a six-month data pipeline setup, a dedicated analytics engineer to maintain it, and pricing between $50K and $120K per year. She asked if there was a scrappier version that could be running in six weeks. There was.
+
+I had access to their Postgres product database, their billing platform (Stripe), and their support system (Intercom). I used three Claude sessions: feature engineering from raw event tables, model selection and training, and the CS workflow integration — the part most data consultants skip. A model that lives in a Jupyter notebook I have to run manually is not a product. The CS team needed something they could run themselves without calling me.$pf$,
+  $pf$The model went live in week seven of the engagement. The CS team runs it themselves every Monday morning — it takes about four minutes, generates a prioritization queue of the top 80 accounts, and includes a plain-English one-line explanation for each account ("engagement down 65% vs. 60-day average; only 2 of 8 seats active; 4 support tickets in the last 30 days" is enough context to pick up the phone). At the three-month mark, the CS team had reached 94% of accounts scoring above 0.7 churn probability before their renewal date. Churn rate at six months: 9.8%, down from 14%. The CMO told me it was the most useful data project she'd funded since the company started. Total engagement: six weeks. Not $50K.$pf$,
+  '11111111-1111-1111-1111-111111111108',
+  'intermediate',
+  'claude-sonnet-4-6',
+  $pf$Claude 4.6 Sonnet$pf$,
+  ARRAY['Claude'],
+  ARRAY['churn prediction', 'customer success', 'machine learning', 'XGBoost', 'SHAP', 'Python', 'B2B SaaS'],
+  'approved',
+  '22222222-2222-2222-2222-222222222207',
+  0,
+  0
+);
+
+INSERT INTO prompt_steps (id, prompt_id, step_number, title, content, result_content, description) VALUES
+
+-- Step 1 --
+('77777777-7777-7777-7777-777777125001',
+ '55555555-5555-5555-5555-555555550125',
+ 1,
+ $pf$Feature engineering: which signals predict churn, and which are leaky$pf$,
+ $pf$I'm a freelance data consultant on a churn prediction engagement. The client is a B2B project management SaaS — 2,800 annual subscribers, customer success team of six, budget for about 80 high-effort outreach calls per week. Annual churn jumped from 8% to 14% in the last twelve months and the CMO wants a weekly risk score to help the CS team prioritize.
+
+I have access to three data sources: (1) a Postgres product database with an events table (user actions: page views, task creates, task completes, comments, file uploads, login timestamps, team member invites, integrations enabled/modified) and a subscriptions table (MRR, plan tier, seat count, start date, renewal date, status); (2) Stripe billing data (payment history, days from invoice due to payment received, failed charges, plan upgrade/downgrade events); (3) Intercom support data (ticket count per month, first response time, CSAT scores per ticket, ticket categories, unresolved ticket count).
+
+Before I build anything, I need to understand the feature engineering choices. What signals from these three sources are most predictive of B2B SaaS churn? How do I build features from raw event tables without spending three weeks on pipeline infrastructure? And critically — which features look predictive but are actually leaky, meaning I can only observe them after churn has already started?$pf$,
+ $pf$**Top signals by source**
+
+**Product events database**
+
+*Engagement decay rate* — the most predictive feature in most B2B churn models. Calculate it as the ratio of user actions in the last 30 days to the 60–90 day window. Absolute login counts are less predictive than trend. A customer who logged in 40 times in month one and 8 times in month four is a fundamentally different risk profile from a customer steady at 15. Build this as a rolling ratio per subscription month, not a point-in-time count.
+
+*Team adoption ratio* — seats with at least one login in the last 30 days divided by purchased seats. For B2B software, the buyer is rarely the primary user. A customer who bought 10 seats with 2 active is at risk regardless of how engaged those 2 are. This signal captures the gap between the value the buyer expected (whole team using it) and the reality (two people using it, eight who aren't).
+
+*Feature breadth* — count of distinct feature categories used in the last 30 days. Customers using one feature are far more exposed to churn than customers using five. Each additional feature category represents a job-to-be-done the customer now depends on the product for.
+
+*Admin login recency and frequency* — the admin or account owner is the decision-maker for renewal. Admin disengagement is a leading indicator even when team activity looks stable. Track the admin separately from the team average.
+
+*Integration events* — any integration enabled or modified in the last 90 days. Integrations represent embedded workflow — they create switching cost. Integration activity is a positive signal; no integration activity when the cohort average is nonzero is a relative risk signal.
+
+**Stripe billing**
+
+*Payment lag trend* — how many days after invoice due date payment was received, per billing cycle. A pattern of increasing payment lag (paid on day 2, then day 7, then day 15) often precedes a cancel or dispute.
+
+*Failed charge history* — any failed charge in the last six months. Even if recovered, failed charges correlate with churn.
+
+*Upgrade/downgrade trajectory* — any plan downgrade in the last 12 months is a signal; any upgrade is a protective signal.
+
+**Intercom support**
+
+*Ticket velocity trend* — tickets per month, rolling 3-month trend. Rising ticket volume signals friction with the product.
+
+*CSAT score trend* — a single low CSAT score is noise; consistently declining CSAT over 60–90 days is signal.
+
+*Unresolved ticket count* — customers with open tickets at any point in the last 30 days are at elevated risk. An open, unresolved problem creates a concrete reason to cancel.
+
+**Leaky features — the three traps**
+
+*"Last login absolute date."* If you're predicting churn within 30 days of renewal and the customer cancelled 20 days ago, their last login will look like 20 days ago — this makes the feature look predictive because it is, but only because you're observing the symptom after the cause. Use login frequency trend, not absolute recency.
+
+*"Support ticket submitted on cancellation date."* You can't observe this until they've already left. Use tickets in the 60-day window before any given snapshot date, not tickets that coincide with the cancellation event.
+
+*"Days remaining on contract."* This teaches the model "customers churn when their renewal is due" — which is trivially true and has no predictive value for early intervention. It's a confound, not a signal. Leave it out of the feature set.
+
+**Building features without a three-week pipeline**
+
+Use a subscription-month snapshot approach. Each row = one customer-month. Calculate all features at snapshot time using SQL window functions. Build one query per snapshot date and union across your history window. For the engagement decay ratio:
+
+```sql
+SELECT
+  subscription_id,
+  snapshot_date,
+  COUNT(CASE WHEN event_time > snapshot_date - INTERVAL '30 days' THEN 1 END)::float
+    / NULLIF(COUNT(CASE WHEN event_time BETWEEN snapshot_date - INTERVAL '90 days'
+                                              AND snapshot_date - INTERVAL '30 days' THEN 1 END), 0)
+    AS engagement_decay_ratio,
+  COUNT(DISTINCT CASE WHEN event_time > snapshot_date - INTERVAL '30 days'
+                      THEN feature_category END)
+    AS feature_breadth_30d
+FROM events
+JOIN subscriptions USING (subscription_id)
+GROUP BY subscription_id, snapshot_date
+```
+
+Build all features in one pass per snapshot date. At 24 months of history with monthly snapshots, you get approximately 24 × 2,800 = 67,000 rows before filtering — more than enough for model training without any streaming infrastructure.$pf$,
+ NULL),
+
+-- Step 2 --
+('77777777-7777-7777-7777-777777125002',
+ '55555555-5555-5555-5555-555555550125',
+ 2,
+ $pf$Model selection, training, and evaluation at 11% class imbalance$pf$,
+ $pf$Good — the engagement decay ratio and the team adoption ratio are exactly the signals I needed to name clearly. The leaky feature traps are useful too; the "days remaining on contract" one would have slipped through. I've spent the last week building the feature table in SQL and I ended up with 38 features at the subscription-quarter level. 24 months of history, about 6,200 rows total, 680 of which are churned subscriptions — 11% base rate.
+
+Now I need to pick and train the model. My priorities in order: (1) explainable to a CS team lead and a CMO — "black box" is a hard no for this client; (2) runs reliably on new data every Monday without breaking; (3) accurate. I'm a comfortable Python and sklearn practitioner, so implementation isn't the obstacle. What model should I use, what hyperparameter choices matter for this data profile, and how do I evaluate performance? I'm guessing accuracy is the wrong metric at an 11% base rate, but I want to know what the right metric actually is and why.$pf$,
+ $pf$**Model recommendation: XGBoost with SHAP values**
+
+Don't choose a simpler model in the name of explainability. Choose XGBoost and add SHAP — this gives you better predictive accuracy than logistic regression, and SHAP makes individual predictions as interpretable as any model for the use case that actually matters: "why is this specific account at risk right now?" SHAP gives you a per-prediction feature attribution that reads as "team adoption rate is the primary driver of this account's score, contributing 0.34 to the log-odds" — which is exactly the signal the CS rep needs to open a call with context.
+
+Logistic regression is not your friend here. It assumes linear relationships between features and log-odds of churn — which is false. Engagement decay interacts with team adoption in a nonlinear way (low decay + high adoption is protective; low decay + low adoption is severely high risk). XGBoost handles that interaction automatically.
+
+**Class imbalance: use scale_pos_weight, not SMOTE**
+
+At 11% churn rate, SMOTE (synthetic minority oversampling) adds noise at the decision boundary for structured tabular data. Use `scale_pos_weight` in XGBoost instead. Set it to (total rows − churned rows) / churned rows. For your data: (6,200 − 680) / 680 ≈ 8.1. This tells the model to treat each churned observation as if it were 8 non-churned observations, adjusting the loss function rather than resampling the training data.
+
+**Training code**
+
+```python
+import xgboost as xgb
+import shap
+from sklearn.metrics import roc_auc_score, brier_score_loss
+from sklearn.calibration import calibration_curve
+
+# Time-based split — never random for temporal data
+# Random split leaks future churn patterns into training
+train = df[df['snapshot_quarter'] < '2025-Q4']
+test  = df[df['snapshot_quarter'] >= '2025-Q4']
+
+X_train, y_train = train[FEATURE_COLS], train['churned']
+X_test,  y_test  = test[FEATURE_COLS],  test['churned']
+
+model = xgb.XGBClassifier(
+    n_estimators=400,
+    max_depth=5,
+    learning_rate=0.05,
+    scale_pos_weight=8.1,
+    subsample=0.8,
+    colsample_bytree=0.8,
+    random_state=42,
+    eval_metric='auc'
+)
+model.fit(
+    X_train, y_train,
+    eval_set=[(X_test, y_test)],
+    verbose=50
+)
+
+proba = model.predict_proba(X_test)[:, 1]
+print(f"AUC-ROC:     {roc_auc_score(y_test, proba):.3f}")
+print(f"Brier score: {brier_score_loss(y_test, proba):.3f}")
+
+# SHAP for explainability
+explainer = shap.TreeExplainer(model)
+shap_values = explainer.shap_values(X_test)
+shap.summary_plot(shap_values, X_test, plot_type='bar')
+```
+
+**Evaluation: AUC-ROC, not accuracy**
+
+At 11% base rate, a model that predicts "not churned" for every account achieves 89% accuracy. That is a useless model. Accuracy is the wrong metric whenever class imbalance is meaningful.
+
+AUC-ROC measures whether the model correctly ranks churned accounts above non-churned accounts across all possible thresholds. This is exactly right for a prioritization use case — you're building a sorted queue, not making a binary decision.
+
+Also run a Brier score. AUC-ROC tells you about ranking; Brier score tells you about calibration — whether a 0.7 probability score actually means "70% likely to churn." If you're going to hand the CS team a sheet with scores like "0.87" and "0.43," those numbers need to mean something. A poorly calibrated model can have good AUC-ROC and still be misleading.
+
+**On thresholds: don't use one**
+
+You don't need a churn/not-churn threshold. You need a ranked list. The CS team can reach 80 accounts per week — take the top 80 by predicted probability, in descending order. A threshold gives you a binary classification that's too rigid; a ranked list gives you "most at risk this week," which is precisely what the use case requires. The probability score is the priority score.$pf$,
+ NULL),
+
+-- Step 3 --
+('77777777-7777-7777-7777-777777125003',
+ '55555555-5555-5555-5555-555555550125',
+ 3,
+ $pf$CS workflow integration: pipeline, plain-English output, and the handoff$pf$,
+ $pf$The model trained. AUC-ROC 0.83 on the holdout set — I'm satisfied with that. Top SHAP features in order: (1) engagement decay ratio, (2) team adoption rate, (3) admin login frequency last 60 days, (4) support ticket velocity last 90 days, (5) days since any integration event. All five make intuitive sense and I can explain them to the CMO without a statistics background required.
+
+Here's the problem I need to solve before this is a real product: CS team lead Maya told me upfront that any tool requiring them to run a Python script or look at a Jupyter notebook is a nonstarter. They want a spreadsheet. The output needs to tell them not just which accounts to prioritize, but why — enough context to pick up the phone without digging for background first. Describe the pipeline from model output to CS queue, what the weekly output actually looks like for Maya's team, and how I hand this off so it runs without me on Monday mornings.$pf$,
+ $pf$**Pipeline overview**
+
+A single Python script that runs on a weekly schedule. Not a notebook, not a dashboard platform you have to maintain, not a server with state. The script does four things:
+
+1. Runs the feature SQL queries against Postgres and pulls the current-week snapshot data for all active subscriptions
+2. Loads the serialized model (`pickle.load`) and generates churn probability scores for all accounts
+3. Converts per-account SHAP values into plain-English risk signals using a feature-to-language mapping
+4. Writes the top 80 accounts (sorted descending by score) to a Google Sheet
+
+**What the CS output looks like**
+
+The sheet has one header row and up to 80 data rows. Columns:
+
+| Account | Score | Risk Tier | Top Signals | Renewal Date | Days Until Renewal | CS Owner |
+|---|---|---|---|---|---|---|
+| Harmon & Co | 0.87 | High | Engagement down 68% vs. 60-day avg; 2 of 8 seats active; 5 support tickets in 30 days | 2026-05-12 | 22 | Maya |
+
+Risk Tier is derived from score: High (≥0.70), Medium (0.40–0.69), Low (<0.40). The sheet shows all 80 accounts; Maya's team typically works the High tier first, then fills available capacity from Medium.
+
+**Plain-English signal conversion**
+
+A feature-to-language mapping converts SHAP values into readable strings. For each prediction, pull the top 3 SHAP contributors (by absolute value) and map them:
+
+```python
+SIGNAL_MAP = {
+    'engagement_decay_ratio': lambda v:
+        f"Engagement down {int((1 - v) * 100)}% vs. 60-day avg" if v < 0.75 else None,
+    'team_adoption_rate': lambda v:
+        f"{int(v * 100)}% of purchased seats active" if v < 0.65 else None,
+    'admin_login_freq_60d': lambda v:
+        f"Admin login frequency down {int((1 - v) * 100)}% this month" if v < 0.40 else None,
+    'support_ticket_velocity_90d': lambda v:
+        f"{int(v)} support tickets in last 90 days" if v > 3 else None,
+    'days_since_integration_event': lambda v:
+        f"No integration activity in {int(v)} days" if v > 90 else None,
+    'payment_lag_trend': lambda v:
+        f"Payment lag increasing — last invoice {int(v)} days late" if v > 5 else None,
+}
+
+def top_signals(shap_row, feature_values, top_n=3):
+    ranked = sorted(
+        [(feat, abs(shap_val)) for feat, shap_val in shap_row.items()],
+        key=lambda x: x[1], reverse=True
+    )
+    signals = []
+    for feat, _ in ranked:
+        if feat in SIGNAL_MAP:
+            text = SIGNAL_MAP[feat](feature_values[feat])
+            if text:
+                signals.append(text)
+        if len(signals) == top_n:
+            break
+    return '; '.join(signals) if signals else 'No clear single driver'
+```
+
+**Automation options**
+
+*Simplest — GitHub Actions:* A scheduled workflow (`cron: '0 8 * * 1'`) running the script every Monday at 8 AM. Credentials live in GitHub repository secrets. The script writes to Google Sheets via the Sheets API (service account JSON). If the script errors, GitHub Actions sends an email to whoever owns the repo. Free, zero infrastructure.
+
+*Better — Render.com free tier:* Same script, wrapped in a cron job config. Add a Slack webhook notification: one POST on success ("Churn queue ready — 80 accounts, 14 High risk") and a different message on failure ("Churn script failed — check logs"). Maya gets a Slack confirmation every Monday by 8:15 AM and knows to check if she doesn't see it.
+
+**The handoff**
+
+One 30-minute session with Maya and the tech lead who will own the operational side. With Maya: walk through how to read the sheet and what the top signal phrases mean in terms of what to say on the call. "Engagement down 68% vs. 60-day average" means "their team has nearly stopped using the product over the last month — open with that, not with renewal." She doesn't need to understand XGBoost. She needs to know what the signals are telling her.
+
+With the tech lead: where the credentials live, how to re-run the script manually if the scheduled job fails, and the "if this breaks" escalation path. Leave a one-page README in the repo with the weekly runbook. The runbook has three sections: normal operation (expected Slack message time, expected row count), common failure modes (Postgres connection timeout — retry once; Sheets API 403 — re-authorize service account), and who to contact if neither fix works (you, for the first 90 days).
+
+Serialize the model to a file the day you hand off, not a notebook cell. `pickle.dump(model, open('churn_model_v1.pkl', 'wb'))` in the repo, versioned. When you retrain in six months, it becomes `churn_model_v2.pkl` with a dated retrain log in the README.$pf$,
+ NULL);
+
 ALTER TABLE prompts ENABLE ROW LEVEL SECURITY;
 ALTER TABLE prompt_steps ENABLE ROW LEVEL SECURITY;

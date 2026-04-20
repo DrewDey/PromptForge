@@ -32591,6 +32591,724 @@ Collect both. Read them before next class. The student who said something sharp 
 
 
 -- =========================================================================
+-- Project 0090 — sarahgrows / Marketing / 4-step / intermediate / Opus 4.7
+-- Topic: Competitive battle cards after losing 7 of 12 deals to one competitor
+-- =========================================================================
+
+DELETE FROM prompt_steps WHERE prompt_id = '55555555-5555-5555-5555-555555550090';
+DELETE FROM prompts      WHERE id        = '55555555-5555-5555-5555-555555550090';
+
+INSERT INTO prompts (
+  id, title, description, content, result_content,
+  category_id, difficulty, model_used, model_recommendation,
+  tools_used, tags, status, author_id, vote_count, bookmark_count
+) VALUES (
+  '55555555-5555-5555-5555-555555550090',
+  $pf$Building competitive battle cards after losing 7 of 12 deals to Prism Analytics — win/loss interviews, positioning map, and sales enablement$pf$,
+  $pf$Head of Marketing at a 45-person B2B sales analytics SaaS. Win rate against one competitor dropped from 82% to 42% in one quarter. Four passes with Claude 4.7 Opus: structured win/loss interview protocol, competitive positioning map built from public sources, full battle card with objection scripts, and a sales enablement rollout plan that actually changed rep behavior.$pf$,
+  $pf$I'm Head of Marketing at Locus, a 45-person B2B company selling sales analytics to mid-market SaaS companies. Our product helps sales teams understand pipeline health, forecast more accurately, and identify at-risk deals. We've been growing well — 34% ARR growth last year, 87% net retention — but something changed four months ago when a competitor called Prism Analytics launched.
+
+Prism is well-funded (they raised a $22M Series A six months before we did), has a slicker UI, and is eating into our pipeline. Our CEO ran the loss analysis last Friday: of the last 12 deals that went to a competitor, 7 went to Prism. That's a 42% competitive win rate where four months ago we were winning 82% of head-to-heads. The CEO put me on it with one clear ask: 'Fix the Prism problem by end of Q2.'
+
+I've done ad-hoc competitive work before — I've updated our battlecard slide once a year, I've read Prism's website. But this is the first time I'm building a real competitive intelligence and enablement program from scratch, and the CEO's ask is high-stakes enough that I can't wing it.
+
+I'm running this four passes with Claude 4.7 Opus. Pass 1: build the win/loss interview protocol and extract the real patterns from the 3 loss conversations I've already scheduled. Pass 2: build the competitive positioning map — where Prism is weak, where they're strong, where we should attack. Pass 3: draft the actual battle cards — not a PowerPoint slide, a real document the reps can use. Pass 4: sales enablement rollout plan — how to train 12 reps and 2 SEs in a way that actually sticks. I'm using Opus 4.7 for judgment-intensive work. This isn't copy; it's strategy.$pf$,
+  $pf$Six weeks after finishing this chain, our win rate against Prism went from 42% back to 61% in the following quarter. The CEO closed a $78K ARR deal using the 'analytics depth vs. workflow breadth' reframe from the battle card.
+
+The biggest surprise from the whole exercise was what the win/loss interviews actually revealed. I went in expecting to hear 'Prism has a better sequences module.' That came up, but it wasn't the load-bearing reason. The real pattern was a behavioral gap: Prism's reps were trained to say '6 weeks to implementation' with confidence, while Locus reps were saying '1 to 2 months' as a hedge. Same actual timeline. Prism's reps had been coached; ours hadn't. That behavioral fix cost me nothing to implement — I just added 'say six weeks, never say one to two months' to the battle card and spent 15 minutes on it in the next team call.
+
+The second surprise: the G2 analysis in Pass 2 revealed that Prism's most consistent complaint in negative reviews was weak export and limited custom reporting. That's exactly where Locus is strongest, and we weren't leading with it. Our messaging was defensive — we were trying to explain why our sequences module wasn't a dealbreaker instead of leading with the thing we win on.
+
+The battle card is now in Locus's Notion sales wiki. The thing that made it stick was the roleplay session in the rollout — I made reps practice the sequences objection handle before they needed it in the field. Zero reps have said '1 to 2 months' in a recorded demo since the training.
+
+Claude 4.7 Opus was the right pick. Pass 2 especially — the G2 complaint analysis and the way it mapped to our product strengths wasn't something I'd have structured that cleanly without the external thinking pressure. This is judgment-intensive strategic work, not copywriting. Opus earns the premium here.$pf$,
+  '11111111-1111-1111-1111-111111111102',
+  'intermediate',
+  'claude-opus-4-7',
+  'Claude 4.7 Opus',
+  ARRAY['Claude','Notion','G2','Salesforce','Loom'],
+  ARRAY['competitive-intelligence','battle-cards','win-loss','sales-enablement','positioning','B2B-SaaS'],
+  'approved',
+  '22222222-2222-2222-2222-222222222202',
+  0, 0
+);
+
+INSERT INTO prompt_steps (id, prompt_id, step_number, title, content, result_content, description) VALUES
+
+-- Step 1 --
+('66666666-6666-6666-6666-666666900101',
+ '55555555-5555-5555-5555-555555550090',
+ 1,
+ $pf$Pass 1 — build the win/loss interview protocol and extract the real patterns$pf$,
+ $pf$I have three loss conversations scheduled for this week — all three champions at companies that went with Prism over Locus in the last 60 days. I've lost competitive deals before but I've never run a structured win/loss interview program. I want to do this right, not just ask people why they picked the other product.
+
+Here's what I know about the three deals:
+— Deal 1: $47K ARR, 22-person sales team, SaaS company. Champion was the VP of Sales. Went with Prism 6 weeks ago. I had one conversation with her post-loss and she said 'Prism was a better fit for how our team works right now.' That's not actionable.
+— Deal 2: $31K ARR, 35-person sales team, HR tech company. Champion was the Head of Revenue Ops. Chose Prism after a 3-week evaluation. I have no post-loss conversation yet.
+— Deal 3: $22K ARR, 18-person team, marketing agency trying to build more predictable pipeline. Champion was the founder. Chose Prism at the last minute after seeing a Prism demo. My rep said 'he seemed locked in at the end of the demo, I don't know what happened.'
+
+What I need: a win/loss interview protocol I can use for all three calls — the questions that actually get to the real reason, not the polite reason. And tell me how to synthesize the three conversations afterward to extract the pattern that's actionable, not just a list of feedback.$pf$,
+ $pf$Win/loss interviews have one job: get the real reason, not the polished reason. The polished reason is 'it was a better fit' or 'we went a different direction.' The real reason is usually one of four things: (1) a specific feature they couldn't get past, (2) a process failure in your sales cycle, (3) a pricing or terms issue, or (4) a relationship factor. Your interview protocol needs to create the conditions for the real reason to surface.
+
+**The protocol — 12 questions in 4 buckets**
+
+Run the interview in 30 minutes. Start by framing it explicitly: 'My goal isn't to re-open the deal — I'm trying to improve how we sell and build. I'll learn more from your honest answers than from diplomatic ones.' That permission-to-be-direct statement changes what people will tell you.
+
+**Bucket 1 — Outcome (2 questions)**
+
+1. 'Walk me through the final week of the decision. What did the conversation with your team look like when you made the call?' Listen for who the real decision-makers were. If she mentions her CEO or finance, there may be a pricing or authority factor you missed.
+
+2. 'How confident does your team feel right now that you made the right call?' A hesitant 'yes' often comes with the real reason attached.
+
+**Bucket 2 — Capability (4 questions)**
+
+3. 'When you imagine using Prism in six months, what's the specific workflow you're most excited about?' What they're excited about is what Locus failed to address or demo compellingly.
+
+4. 'Were there features in Locus that you thought were genuinely strong? Anything you'll miss?' This reveals where Locus is differentiated in their mind.
+
+5. 'Was there a specific moment in the evaluation where you felt Locus couldn't meet your needs?' You're looking for a specific moment, not a general impression.
+
+6. 'Did Prism demo or promise something in your final decision conversations that changed your thinking?' Salespeople make specific claims at the end of deals. This surfaces last-minute positioning moves.
+
+**Bucket 3 — Process (3 questions)**
+
+7. 'When did you feel most and least confident in the Locus team throughout the evaluation?' The 'least confident' is the actionable one.
+
+8. 'Was there a question or concern you raised during the evaluation that you felt we didn't fully answer?'
+
+9. 'How did the two sales experiences compare — working with Locus vs. working with Prism?' Listen for specific behaviors. 'The Prism rep sent us a custom implementation timeline within 24 hours' is actionable. 'They were more responsive' is not.
+
+**Bucket 4 — Future (3 questions)**
+
+10. 'Is there anything you wish we'd done differently in the process?'
+
+11. 'If Prism doesn't work out six months from now, would you evaluate Locus again?' A 'yes, but I'd need to see X' often contains the real reason.
+
+12. 'Is there anything I haven't asked that you think I should know?'
+
+---
+
+**How to synthesize three calls into actionable patterns**
+
+After all three calls, build a 3×4 matrix: rows are the three deals, columns are the four buckets. For each cell, write the 1-3 most diagnostic things you heard. Then look across the columns, not the rows.
+
+If all three calls have something in Bucket 2 (Capability) about the same feature, that's a product gap. If all three have something in Bucket 3 (Process) about responsiveness or demo quality, that's a sales execution problem. If the pattern is in Bucket 4 (Future) — all three said they'd consider Locus again — that's a situational loss, not a fundamental competitive problem.
+
+One prediction given your deal details: watch for a timeline or implementation confidence gap in Bucket 3. Deal 3 — 'he seemed locked in at the end of the demo' — suggests something happened in the Prism demo that shifted his confidence. That's usually a specific commitment the rep made (timeline, pricing, support) that your rep didn't match. Ask specifically: 'Was there a specific thing the Prism rep said or showed in that final demo that changed your thinking?'$pf$,
+ NULL),
+
+-- Step 2 --
+('66666666-6666-6666-6666-666666900102',
+ '55555555-5555-5555-5555-555555550090',
+ 2,
+ $pf$Pass 2 — build the competitive positioning map from public sources$pf$,
+ $pf$I ran all three calls. Here's what came out of the synthesis matrix:
+
+Capability (most consistent): All three brought up Prism's outbound sequences module. Locus has limited sequencing functionality — we can track when emails were sent, but we can't create or trigger sequences from inside the product. All three mentioned this as something they're 'excited to use.' One person specifically said 'we've been using Outreach for sequencing and having it all in one place is appealing.'
+
+Process (most diagnostic): The pattern I didn't expect: all three called out the implementation timeline. Two people specifically said Prism told them '6 weeks.' One said their Locus rep 'wasn't sure — said it depends.' I looked at our rep's notes: she said '1 to 2 months, but it depends on your integrations.' Prism is saying the same thing our reps are saying, just with a specific confident number instead of a range and a hedge.
+
+Future: All three said they'd evaluate Locus again if the sequences gap were closed or if Prism doesn't perform. These aren't category rejections.
+
+So I have two things to fix: a real product gap (sequences), and a behavioral gap (implementation language coaching). The product gap I can't fix by Q2. The language gap I can fix this week.
+
+Now I need the competitive positioning map. Prism's website, G2 profile, LinkedIn job postings, and case studies are all public. Where is Prism most vulnerable to a Locus attack? Where are they strongest and I should stop fighting? And where is the framing that lets us win deals even while the sequences gap exists?$pf$,
+ $pf$Based on a systematic read of Prism's public positioning, here's the competitive map.
+
+**What Prism is selling**
+
+Prism's homepage headline is 'Close more deals with smarter outbound.' Their feature prioritization on the website: Sequences → Email Engagement Tracking → Pipeline View → Analytics → Reporting. They consistently emphasize 'everything your team needs in one place' and 'replace your outreach and analytics stack with one product.'
+
+What this tells you: Prism is selling breadth of workflow. The promise is consolidation — stop paying for Outreach plus a separate analytics tool. That's a compelling value prop for teams that don't have an established outreach stack. It's less compelling for teams that already have Salesloft or Outreach and need better analytics depth on top of it.
+
+**Prism's G2 vulnerabilities**
+
+The consistent complaints in Prism's sub-4-star reviews over the last 6 months:
+
+1. **Export limitations.** 'Reporting is good for what's built in but you can't get your data out cleanly.' Multiple reviewers mention CSV exports that lose custom fields, or Salesforce sync that drops deal-stage history. Shows up in 7 of 11 sub-4-star reviews.
+
+2. **Custom reporting rigidity.** 'Can't build the exact view my VP wants — I'm stuck using their templates.' Several reviewers mention needing to 'export to Excel anyway' for the analysis that actually matters to leadership.
+
+3. **Implementation complexity for custom integrations.** 'Took us 12 weeks, not 6, because we had a custom Salesforce object structure.' This appears in 4 reviews and directly counters their implementation-timeline message.
+
+4. **'Wide not deep.'** Multiple reviewers say variants of 'good for a team that wants all-in-one, less good if you need to go deep on any one thing.' Prism's own customers are describing their positioning gap.
+
+**The 2×2 positioning matrix**
+
+Two dimensions matter: Workflow Breadth (sequences, automation, all-in-one) vs. Analytics Depth (custom reporting, export, Salesforce sync fidelity, forecasting sophistication).
+
+Prism owns top-left: high workflow breadth, moderate analytics depth.
+Locus owns top-right: moderate workflow functionality, high analytics depth.
+
+**Where to attack, where to stop fighting**
+
+Stop fighting here: the sequences comparison. You don't have a sequences module and you won't by Q2. Fighting on that terrain is a losing argument. 'We're working on sequencing' is worse than not mentioning it — it's a credibility issue when Prism has a demo-ready product.
+
+Attack here: export fidelity and custom reporting. This is Prism's most consistent G2 vulnerability and it maps directly to your product strength. Lead with: 'If your VP of Sales builds their forecasting model in a spreadsheet, Locus exports cleanly into it. Prism's customers report export limitations.'
+
+The reframe for sequences: don't defend the gap, acknowledge it and redirect. 'If outbound sequencing is your team's primary use case, Prism is probably the right choice. If forecast accuracy and pipeline analytics are what you're building around, Locus is built for that use case. Teams that need both usually run Locus for analytics and keep their outreach tool.' This is honest and it filters for the deals you can win.
+
+The implementation language coaching — highest ROI change you can make before the battle card even exists: send your reps a 2-sentence note now. 'When prospects ask about implementation, say: our standard implementation takes six weeks. Stop saying one to two months.' That alone is worth this whole exercise if it lands.$pf$,
+ NULL),
+
+-- Step 3 --
+('66666666-6666-6666-6666-666666900103',
+ '55555555-5555-5555-5555-555555550090',
+ 3,
+ $pf$Pass 3 — draft the full battle card$pf$,
+ $pf$Perfect. Now I need the actual battle card — not a one-page slide, a real working document that reps can reference before a call, during a demo, and when they're handling objections live. I have 12 reps and 2 SEs. The battle card needs to be readable in 3 minutes, memorable enough that reps internalize the key moves, and specific enough that there's no improvising needed on the 4 most common objections I know are coming.
+
+Those 4 objections: (1) 'Prism has a sequences module built in,' (2) 'Prism said they can implement in 6 weeks,' (3) 'Prism has more integrations,' and (4) 'Prism is less expensive.' Give me a Notion-ready document.$pf$,
+ $pf$# Locus vs. Prism — Competitive Battle Card
+
+*Owner: Head of Marketing | Review cycle: 60 days*
+
+---
+
+## Our positioning in one sentence
+
+Locus is built for revenue teams that run their forecasting and pipeline strategy on real data. Prism is built for teams that want outbound sequencing plus basic analytics in one place. These are different products solving different problems.
+
+---
+
+## When we win
+
+- VP of Sales or CFO has a forecasting model they trust; they need pipeline data to feed it cleanly.
+- Sales team uses Salesforce with custom objects, stages, or non-standard field mappings.
+- Company had a bad forecasting quarter and needs to rebuild confidence in pipeline data.
+- Sales team has Outreach or Salesloft already and needs analytics on top of their existing stack.
+
+## When we lose (acknowledge it early)
+
+- Team's primary pain is outbound sequencing and they don't have an outreach tool yet. Say: 'If sequences is your primary use case, Prism is the right tool. We're great at analytics on top of Outreach or Salesloft, but we're not the sequences platform.'
+- Very small team (under 10 reps) with simple Salesforce and basic dashboard needs. These teams don't need Locus's depth. Don't oversell.
+
+---
+
+## Our three differentiated strengths
+
+**1. Export fidelity and custom reporting**
+Our exports preserve all Salesforce custom fields, deal-stage history, and opportunity splits. Reps build their own pipeline views; finance can pull forecast data directly without a data team.
+*Prism's gap (from their G2 reviews):* 7 of the last 11 sub-4-star reviews cite export limitations or lost custom fields in Salesforce sync.
+
+**2. Forecast accuracy at the deal level**
+Locus's deal health scoring uses 14 engagement signals and Salesforce activity data to surface at-risk deals before they slip. Not just a dashboard — actionable flags by rep, by stage, by segment.
+*Prism's gap:* Prism's analytics are aggregated, not deal-level. Reviewers note: 'Good for top-of-funnel visibility, less useful when you need to understand individual deal health.'
+
+**3. Salesforce sync fidelity**
+Standard and custom Salesforce objects, non-standard stage mappings, opportunity splits, multi-currency. Locus handles the messy Salesforce installs that other tools break on.
+
+---
+
+## The 4 objection handles
+
+**Objection 1: 'Prism has a sequences module built in'**
+
+Acknowledge: 'That's true — Prism's sequences module is real and it's good. If your team is looking to replace Outreach or Salesloft with something integrated, Prism is worth evaluating for that use case.'
+
+Redirect: 'The question is what you're optimizing for. Teams building around outbound sequences love the consolidation story. Teams building around forecast accuracy tend to find that consolidation trade-off costs them depth on the analytics side. Which of those describes your primary pain?'
+
+If they push back: 'Identify the two or three reporting scenarios that matter most to your VP of Sales or CFO right now. Let's demo exactly those. If Locus can do them and Prism can't, the sequencing comparison is a secondary decision.'
+
+**Objection 2: 'Prism said they can implement in 6 weeks'**
+
+Response (do not hedge): 'Our standard implementation is also six weeks. We start with a scoping call in week one that gives you an exact timeline based on your Salesforce configuration. Companies with standard setups typically go live in week four or five.'
+
+Do not say: '1 to 2 months' or 'it depends.'
+
+If they reference a Prism customer who took 12 weeks: 'That pattern shows up in Prism's reviews — teams with non-standard Salesforce configurations hit their implementation complexity harder than estimated. Our scoping call is designed to catch that in week one so you're not surprised at week 10.'
+
+**Objection 3: 'Prism has more integrations'**
+
+Clarify first: 'Which integrations are decision-relevant for you?' Most companies care about 3–5 integrations. Then respond specifically. [Update quarterly: Salesforce, HubSpot, Outreach, Salesloft, Slack, Google Workspace, Zoom are all covered by Locus.]
+
+If they cite something Locus doesn't have: 'Is that a must-have or a nice-to-have? If it's a must-have, that's worth knowing now. If it's a nice-to-have, the question is whether it outweighs the analytics depth comparison.'
+
+**Objection 4: 'Prism is less expensive'**
+
+Clarify first: 'How much less? And on what seat count?' Pricing comparisons almost always compare different tiers or seat counts.
+
+If Prism is genuinely less expensive: 'The way I'd frame it: if the primary use case is outbound sequences with basic analytics, Prism is priced for that product and it's fair. If the primary use case is forecast accuracy and pipeline analytics, the cost delta usually gets absorbed in the first QBR where you don't spend 3 days building a spreadsheet. What's the cost of a bad forecast quarter for your team?'
+
+---
+
+## Implementation language — memorize this
+
+**Say:** 'Six weeks' or 'six to eight weeks for complex configurations'
+**Never say:** '1 to 2 months' / 'it depends' / 'we'll scope it and let you know'
+
+---
+
+## Red flags (escalate to SE)
+
+- Prospect has >4 custom Salesforce objects → complex setup, needs SE validation before promising timeline
+- Prospect is currently on Outreach or Salesloft AND considers sequences a primary workflow → high sequences dependency, hard win
+- Prospect's primary buyer is CRO or CFO (not VP Sales) → these buyers usually care more about data fidelity, plays to our strength$pf$,
+ NULL),
+
+-- Step 4 --
+('66666666-6666-6666-6666-666666900104',
+ '55555555-5555-5555-5555-555555550090',
+ 4,
+ $pf$Pass 4 — sales enablement rollout plan that actually changes rep behavior$pf$,
+ $pf$Last piece. I have 12 reps and 2 SEs. Weekly team meeting is 30 minutes, usually full. My VP of Sales is supportive but doesn't want to eat more than 20 minutes of any weekly meeting with competitive training. I need: how to introduce the battle card, how to make the language coaching stick — especially the 'six weeks' fix, that's the highest-ROI thing on this list — and what good looks like in 60 days. I'm also worried this gets treated as shelf-ware once I ship it. Tell me how to prevent that.$pf$,
+ $pf$The shelf-ware problem has one cause: you shipped the document but didn't ship the behavior change. Here's how to wire the rollout so the behavior actually changes.
+
+**Week 1 — single-point email before any meeting**
+
+Send this to all 12 reps and 2 SEs before you do anything else:
+
+'One change effective immediately: when any prospect asks about implementation timeline, say six weeks. Not one to two months. Not it depends. Six weeks. If you think their Salesforce configuration is complex, say: six to eight weeks for configurations with custom objects — we scope that in week one. That's it. Practice saying it out loud before your next call. More context coming in the team meeting.'
+
+The reason to send this before the meeting: reps are going to have calls this week, and the language fix is the highest-ROI change you can make. Don't make them wait for the meeting.
+
+**Week 2 — 25 minutes in the team meeting**
+
+Structure:
+- 10 minutes: battle card overview — not a walk-through of every section, just the 3-question framing: When do we win? When should we acknowledge we'll lose? What are the 4 objections and how do we handle them?
+- 15 minutes: live roleplay on the two most common objections — sequences and implementation timeline. Pick two reps to roleplay, not the most senior ones — the most junior. The team learns more from watching someone who needs practice than from watching someone who already has it.
+
+Ask the VP of Sales to be in the room and kick off the roleplay portion. The signal from the manager that 'we take this seriously' matters more than the content.
+
+**Week 3 — shadow and reinforce**
+
+Ask two reps for a 20-minute debrief after their first competitive call. Not a critique — a debrief. 'What came up, what did you say, what worked, what would you do differently?' Two goals: catch the language coaching gap before it calcifies, and hear what actually happened so you can update the battle card if the competitive landscape has shifted.
+
+If you hear a rep said 'one to two months,' address it 1-on-1, not in front of the team. The behavior change needs to feel like a skill upgrade, not a mistake correction.
+
+**Month 2 — embed in onboarding**
+
+The battle card goes into the sales onboarding deck for new reps. Add a 20-minute Prism module: 10 minutes of background, 5 minutes of battle card review, 5 minutes of roleplay on the sequences objection. Every rep who joins after this ships gets the competitive context from day one.
+
+**Shelf-ware prevention: the 30-day win/loss check**
+
+Pull the last 30 days of competitive deal outcomes from Salesforce. You need a 'competitor' field on opportunities if you don't have one — add it this week. Check two things:
+
+1. Win rate against Prism: is it higher than 42%? Even 50% is a meaningful move.
+2. Call recording review: listen to 3 recordings where Prism came up. Are reps saying 'six weeks'? Are they using the sequences reframe or still fighting on that terrain?
+
+If the win rate moved: share the data with the team. Nothing reinforces a behavior change like visible proof it's working. If it didn't move: the battle card content isn't the issue — something in the execution is. Run another win/loss interview.
+
+**What good looks like in 60 days**
+
+1. Win rate against Prism ≥ 55% (from 42%).
+2. Zero reps using 'one to two months' in recorded demos.
+3. Every new rep hired in Q2 has been through the Prism module in onboarding.
+4. Battle card has been updated at least once based on something a rep heard in a competitive call.$pf$,
+ NULL);
+
+
+-- =========================================================================
+-- Project 0091 — ops_nina / Productivity / 5-step / intermediate / Sonnet 4.6
+-- Topic: SaaS tool audit and consolidation — 23 tools to 16, $37K saved
+-- =========================================================================
+
+DELETE FROM prompt_steps WHERE prompt_id = '55555555-5555-5555-5555-555555550091';
+DELETE FROM prompts      WHERE id        = '55555555-5555-5555-5555-555555550091';
+
+INSERT INTO prompts (
+  id, title, description, content, result_content,
+  category_id, difficulty, model_used, model_recommendation,
+  tools_used, tags, status, author_id, vote_count, bookmark_count
+) VALUES (
+  '55555555-5555-5555-5555-555555550091',
+  $pf$Auditing and consolidating 23 SaaS tools at a 50-person creative agency — from $7,200/month to $4,100/month$pf$,
+  $pf$Ops manager at a 50-person creative agency after the CFO flagged $86,400/year in SaaS subscriptions with obvious overlap. Five passes with Claude 4.6 Sonnet: inventory and categorize all 23 tools, build a defensible evaluation rubric, make the 4 consolidation decisions and map migrations, plan the change management for 3 resistant stakeholders, and build a governance model to prevent future sprawl.$pf$,
+  $pf$I'm ops manager at Lightform Creative, a 50-person marketing and brand design agency. We've been growing fast — added 14 people in the last 14 months — and tools have accumulated like sediment. A Monday.com account for some teams, Asana for others, Basecamp because a client preferred it three years ago and someone decided to use it internally too, Figma for designers, Canva Pro because the social team preferred it, Microsoft Teams because we connected with a client that way and then never disconnected, Google Chat because someone's account had it, three different apps for time tracking depending on who started using what.
+
+At the December budget review the CFO showed me a spreadsheet: $7,200 a month, 23 SaaS tools. She said 'we need to cut at least $40,000 from this line by Q2.' She didn't say how. That's my problem to solve.
+
+I've audited individual tools before — 'do we actually use this?' is a question I can answer. But I've never run a full-agency consolidation. The challenge isn't the analysis; it's the politics and the migrations. Every team has the tool they're used to and the tool a client made them use. If I cancel Basecamp on a Tuesday, I have 8 people whose client portal URLs break.
+
+I'm running this five passes with Claude 4.6 Sonnet. This is structured judgment work, not deep reasoning — Sonnet is the right tool. Pass 1: make sense of the full landscape and find the obvious overlaps. Pass 2: build a rubric I can actually defend to the people who will push back on the decisions. Pass 3: make the 4 consolidation decisions and map the migrations. Pass 4: plan the change management — the political problem is harder than the technical problem. Pass 5: governance, so I'm not back here in 18 months.$pf$,
+  $pf$Final outcome, three months after finishing this chain: $37,200 in annual savings against the CFO's $40,000 target. The last $2,800 is a second round of smaller consolidations I'm running in Q3 once the Q1 migrations settle.
+
+The consolidations that shipped: Monday.com retired (kept Asana as the single PM platform), Basecamp retired, Microsoft Teams retired (moved to Slack Connect for client channels), Canva Pro retired (moved to shared Figma team libraries), one of the two smaller time tracking tools retired. Combined: $37,200/year saved.
+
+The hardest part wasn't the tools — it was the Basecamp retirement. Exactly as I'd predicted in Pass 3, two account teams had basecamp.io URLs embedded in client onboarding documentation. The Pass 4 change management plan had a client-facing URL redirect item specifically because I'd anticipated this. I had a redirect plan and a communication template ready before either team came to complain. That prep made a real difference.
+
+The thing that surprised me: Canva Pro was easier than expected. The social team resisted initially, but when I showed them how to create shared Figma component libraries for non-designer use, they came around within a week. The Figma team had already built good templates and just hadn't shared them agency-wide.
+
+The governance model (Pass 5) has held for four months. No new tools have been added without the three-question approval form. One request came in for a specialized video editing tool — it passed the three questions (clear use case, specific users, exit plan) and got approved. That's the model working correctly.
+
+Claude 4.6 Sonnet was exactly right for this. I didn't need deep reasoning — I needed good structure, realistic tradeoff framing, and scripts I could use in 1-on-1 conversations without editing. Sonnet delivered all three faster than I would have produced them myself.$pf$,
+  '11111111-1111-1111-1111-111111111107',
+  'intermediate',
+  'claude-sonnet-4-6',
+  'Claude 4.6 Sonnet',
+  ARRAY['Claude','Google Sheets','Asana','Slack','Notion','Harvest'],
+  ARRAY['SaaS-audit','tool-consolidation','operations','agency','cost-reduction','governance'],
+  'approved',
+  '22222222-2222-2222-2222-222222222206',
+  0, 0
+);
+
+INSERT INTO prompt_steps (id, prompt_id, step_number, title, content, result_content, description) VALUES
+
+-- Step 1 --
+('66666666-6666-6666-6666-666666910101',
+ '55555555-5555-5555-5555-555555550091',
+ 1,
+ $pf$Pass 1 — inventory and categorize all 23 tools, surface the overlap priorities$pf$,
+ $pf$Here's my full tool list with monthly costs and department attribution. I need help making sense of this before I make any decisions.
+
+Project management: Asana ($1,200/month, 38 users), Monday.com ($540/month, 12 users), Basecamp ($680/month, 8 users)
+Design and assets: Figma ($420/month, 14 users), Canva Pro ($280/month, 8 users)
+Communication: Slack ($610/month, 50 users), Microsoft Teams ($290/month, 9 users), Google Chat ($0, included in Workspace)
+Document collaboration: Google Workspace ($750/month, 50 users), Notion ($320/month, 14 users)
+Time tracking: Harvest ($240/month, 20 users), Toggl ($180/month, 12 users), Clockify ($80/month, 6 users)
+Video and async: Loom ($200/month, 12 users)
+Marketing and analytics: HubSpot Starter ($450/month), Semrush ($200/month, 3 users)
+File storage: Google Drive (included in Workspace), Dropbox ($240/month, 30 users)
+Development: GitHub ($84/month, 2 users), Cloudflare ($12/month)
+Misc: Calendly ($60/month, 8 users), Zoom ($300/month, 50 users), Descript ($180/month, 4 users)
+HR/payroll: Gusto ($210/month) — do not touch
+
+Help me categorize this, find the obvious overlaps, and tell me which categories to investigate first.$pf$,
+ $pf$Let me organize this and pull out the patterns before you do any analysis.
+
+**Categorized inventory (excluding Gusto)**
+
+| Category | Tools | Monthly | Notes |
+|---|---|---|---|
+| Project management | Asana, Monday.com, Basecamp | $2,420 | 3 tools, significant overlap |
+| Design/assets | Figma, Canva Pro | $700 | Partial overlap, different user bases |
+| Communication | Slack, Teams, Google Chat | $900 | 3 tools for one function |
+| Document collaboration | Google Workspace, Notion | $1,070 | Overlap — Notion likely duplicating Drive/Docs |
+| Time tracking | Harvest, Toggl, Clockify | $500 | 3 tools for one function |
+| Video/async | Loom, Zoom, Descript | $680 | Different use cases, minimal overlap |
+| Marketing | HubSpot, Semrush | $650 | Different functions, no overlap |
+| File storage | Dropbox, Google Drive | $240 | Overlap |
+| Developer tools | GitHub, Cloudflare | $96 | Low headcount, likely locked-in |
+| Misc | Calendly, Zoom | $360 | Zoom is essential |
+
+**Overlap priority list — investigate these first**
+
+**Tier 1: High cost, clear overlap, most political**
+
+1. **Project management ($2,420/month, 3 tools).** Your biggest opportunity and your hardest political problem. The winner is almost certainly Asana — 38 of 50 users is dominant adoption breadth. The question is how messy the Basecamp retirement is. Before you touch anything: are there live client projects in Basecamp? Are any client-facing URLs using basecamp.io? This is the highest migration risk.
+
+2. **Communication ($900/month, 3 tools for one function).** Slack is the clear winner at full agency coverage (50 users). Teams at $290/month for 9 users is a retirement candidate unless those 9 are using it for a specific client collaboration that can't move to Slack Connect. Google Chat is $0, so no savings, but worth retiring from an attention standpoint.
+
+3. **Time tracking ($500/month, 3 tools).** Harvest has the most users (20) and is the most full-featured — it includes invoicing and client billing that Toggl and Clockify don't have. Probably the easiest consolidation, but confirm that Harvest's invoicing integration is actively used by finance before you retire the others.
+
+**Tier 2: Medium cost, partial overlap**
+
+4. **Document collaboration ($1,070/month).** Google Workspace is essential and untouchable. Notion at $320/month for 14 users is probably duplicating Google Docs functionality. Ask: what is Notion being used for that Google Docs doesn't solve? If the answer is 'wikis and structured internal docs,' there's a case for keeping it. If it's 'notes and meeting docs,' retirement candidate.
+
+5. **File storage ($240/month).** Dropbox alongside Google Drive is overlap. The question is whether any client file-sharing workflows run through Dropbox. If yes, retirement requires a client migration plan. If no, this is straightforward.
+
+**Tier 3: Low cost or locked-in, investigate last**
+
+6. **Design/assets ($700/month).** Figma is essential. Canva Pro at $280/month for 8 users is a possible retirement if the social team can work within Figma's design system. Worth investigating but not the first priority.
+
+7. **Developer tools ($96/month).** 2 users, likely essential for contractor access. Don't touch.
+
+8. **Marketing ($650/month).** HubSpot and Semrush are different functions with no overlap. Confirm each is actively used, but consolidation isn't the play here.
+
+**Red flags to investigate before any cuts**
+- Basecamp: are there live client projects? Are any client-facing URLs using basecamp.io?
+- Microsoft Teams: are any teams using it for client-facing channels? Client in your Teams instance means a migration plan before retirement.
+- Dropbox: is it used for client file delivery? Some agencies use Dropbox shared folders as client deliverable portals.
+- Notion: is it public-facing or internal-only?
+
+Start with PM (biggest dollar impact, most political), then communication, then time tracking. Don't touch developer tools or payroll.$pf$,
+ NULL),
+
+-- Step 2 --
+('66666666-6666-6666-6666-666666910102',
+ '55555555-5555-5555-5555-555555550091',
+ 2,
+ $pf$Pass 2 — build a defensible evaluation rubric for the PM consolidation$pf$,
+ $pf$The PM consolidation is definitely first — $2,420/month and the most political. I've confirmed: Asana is used by 38 of 50 people including all account teams and project managers. Monday.com is used by 12 people on the strategy and planning side. Basecamp is used by 8 people, and I just confirmed that 2 clients have active basecamp.io URLs in their onboarding documents.
+
+I know the answer is probably Asana. But I need a rubric that I can show to the Monday.com team and the Basecamp users that makes the decision feel like analysis and not like I picked the winner before I started. Give me a defensible evaluation rubric for choosing between the 3 PM tools, and then show me how it scores each tool.$pf$,
+ $pf$Here's the rubric. Five factors, scored 1–5, weighted by strategic importance. The rubric first, then the scoring.
+
+**The 5-factor rubric**
+
+**Factor 1: Team adoption breadth (weight: 30%)**
+How many of the agency's 50 people use this tool actively, weekly?
+- 5: >35 users (>70% of agency)
+- 4: 25-35 users
+- 3: 15-25 users
+- 2: 8-15 users
+- 1: <8 users
+
+**Factor 2: Client-facing dependencies (weight: 25%)**
+Are there client-facing URLs, shared workspaces, or onboarding documentation embedded in this tool?
+- 5: None — tool is entirely internal
+- 4: Minimal — 1-2 clients, easily migrated
+- 3: Moderate — 3-5 clients or embedded in standard onboarding docs
+- 2: Significant — 6+ clients or core to client delivery
+- 1: Deep — clients log in as their primary delivery interface
+
+**Factor 3: Migration complexity (weight: 20%)**
+How hard is it to move active work from this tool to another?
+- 5: Trivial — export/import tools exist, no active projects
+- 4: Low — a few active projects, standard export
+- 3: Moderate — significant active work, some manual migration
+- 2: High — active work plus client-facing plus custom structure
+- 1: Prohibitive — deeply embedded in client delivery or financial workflow
+
+**Factor 4: Unique functionality (weight: 15%)**
+Does this tool have a feature the other two can't replicate?
+- 5: None — fully replaceable by the top competitor
+- 4: Minor — 1-2 features that would require a workaround
+- 3: Moderate — one important workflow that would need rebuilding
+- 2: Significant — a core workflow this team relies on daily
+- 1: Critical — would break a client delivery workflow
+
+**Factor 5: Cost-per-active-user (weight: 10%)**
+Monthly cost divided by actual weekly-active users.
+- 5: <$10/user/month
+- 4: $10–20/user/month
+- 3: $20–35/user/month
+- 2: $35–60/user/month
+- 1: >$60/user/month
+
+**Scoring**
+
+| Factor (weight) | Asana | Monday.com | Basecamp |
+|---|---|---|---|
+| Adoption breadth (30%) | **5** (38/50 users) | **2** (12/50) | **1** (<8/50) |
+| Client dependencies (25%) | **5** (internal only) | **5** (internal only) | **2** (2 client URLs) |
+| Migration complexity (20%) | **4** (active projects, standard export) | **4** (active projects, standard export) | **3** (client URLs add complexity) |
+| Unique functionality (15%) | **4** (timeline + workload views well-liked) | **3** (board views not native in Asana) | **5** (fully replaceable) |
+| Cost/active user (10%) | **4** ($31.58/user) | **2** ($45/user) | **1** ($85/user) |
+| **Weighted total** | **4.20** | **2.70** | **1.75** |
+
+**The verdict**
+
+Asana wins on three of five factors including the two highest-weighted. Retire Basecamp and Monday.com; consolidate to Asana.
+
+**Anticipating the Monday.com pushback:** The strategy team will say 'Asana doesn't have the board views we use.' Partially true — Asana has board views, but they're less visual than Monday's color-coded columns. The honest answer: 'Asana's board view covers 80% of what you're doing in Monday. We'll rebuild your Monday templates in Asana during the migration window. If there are two workflows that don't translate, we document them and decide whether to use Google Sheets for those specific cases.'
+
+**Anticipating the Basecamp pushback:** The two account teams will say 'our clients have URLs in their onboarding docs.' That's legitimate. The answer: 'We have a redirect and migration plan specifically for those two clients. You'll get updated templates before we communicate anything to the clients.' The key is having that plan ready before they raise the concern, not after.$pf$,
+ NULL),
+
+-- Step 3 --
+('66666666-6666-6666-6666-666666910103',
+ '55555555-5555-5555-5555-555555550091',
+ 3,
+ $pf$Pass 3 — 4 consolidation decisions with sequenced migration plans$pf$,
+ $pf$I've worked through the other categories using the rubric framework and here's where I've landed: PM tools → keep Asana, retire Monday and Basecamp; communication → keep Slack, retire Teams (Slack Connect for client channels) and retire Google Chat; file storage → keep Google Drive, retire Dropbox after auditing the client-sharing use cases; time tracking → keep Harvest, retire Toggl and Clockify.
+
+For each of these 4 consolidations, give me the migration plan: what to do, in what order, what the risks are, and the point of no return for each.$pf$,
+ $pf$Four consolidations with sequenced migration plans.
+
+**Consolidation 1: Project management → Asana wins, retire Monday.com + Basecamp**
+
+Migration order (run these in sequence):
+
+1. Week 1 (before any announcements): Export all active Monday.com projects. Create Asana templates for the 3 main Monday.com workflow types the strategy team uses. Send the strategy team lead a preview before any all-agency communication.
+
+2. Week 1–2: Identify the 2 clients with Basecamp URLs in their onboarding documentation. Get the specific pages. Set up Asana equivalents for those 2 client-facing projects.
+
+3. Week 2 (after internal communication): Create Asana projects for all active Basecamp projects. Migrate content using Basecamp's export plus Asana's import, or manually for the 2 client-facing ones.
+
+4. Week 3: Send client-facing migration email to the 2 clients with Basecamp URLs. Include the new Asana URL and a note that Basecamp stays readable for 30 days after cancellation. Give them your contact for anything that breaks.
+
+5. Day 45 (point of no return): Cancel Monday.com. Cancel Basecamp.
+
+Risks: Monday.com strategy team workflow disruption — mitigate by pre-migrating templates before announcement. Basecamp client URL breaks — mitigate by preparing migration comms in week 1, before cancellation.
+
+Monthly savings: $1,220/month.
+
+**Consolidation 2: Communication → Slack wins, retire Teams + Google Chat**
+
+Migration order:
+
+1. Day 1 (before announcements): Audit the 9 Microsoft Teams users. Are any channels client-facing? If yes, those clients need Slack Connect invitations before Teams is retired.
+
+2. Day 3: For each client in Teams, send a Slack Connect invitation. Most clients who are in Teams will have Slack — Slack Connect works the same way.
+
+3. Week 2: All-team communication: Slack is the single platform starting [date]. Include the date Teams access ends.
+
+4. Day 30 (point of no return for Teams): Cancel Microsoft Teams subscription. Archive the Teams workspace — don't delete. The message history may be needed for a client reference.
+
+5. Google Chat: Retire with a single Slack message: 'Google Chat is not the official channel — Slack is. Please use Slack going forward.' No formal cancellation needed (it's $0), but communicate clearly.
+
+Risks: Client Teams channels — audit day 1 and send Slack Connect invitations before announcing anything. One or two clients who refuse Slack — have a plan (shared email thread, their preferred tool) so one edge case doesn't block the consolidation.
+
+Monthly savings: $290/month.
+
+**Consolidation 3: File storage → Google Drive wins, retire Dropbox**
+
+Migration order:
+
+1. Week 1 (before announcements): Audit Dropbox usage. You're looking for: shared client folders where clients retrieve deliverables; large asset folders (video, large design files) that would be painful to move.
+
+2. If client-shared folders exist: Migrate to corresponding Google Drive shared folders. Send clients the new URL before closing the Dropbox link. Give 30 days' notice.
+
+3. If large asset concerns exist: Check if those assets are already partially in Google Drive. Google Workspace includes 30GB per user and Shared Drives can be provisioned larger. This may not be a real barrier.
+
+4. Day 45–60 (after confirmed migration): Cancel Dropbox subscription.
+
+Special consideration: If the audit reveals clients are actively using Dropbox as a deliverable portal — not just 'they could' but 'they do weekly' — keep Dropbox for those specific client folders and retire the broader agency subscription. Move those clients to individual shared plans or absorb them into the client budget.
+
+Monthly savings: $240/month.
+
+**Consolidation 4: Time tracking → Harvest wins, retire Toggl + Clockify**
+
+Migration order (this is the simplest one):
+
+1. Day 1: Confirm that Harvest's invoicing integration is set up and working for the finance team before you tell anyone. The reason Harvest wins isn't just adoption — it has invoicing and client billing features the others don't. Make sure that's confirmed.
+
+2. Day 3–7: Message to Toggl users (12 people) and Clockify users (6 people): 'We're consolidating to Harvest. Here's how to export your time history, here's how to set up your Harvest account. Questions before [date]?'
+
+3. Day 14: Cancel Toggl subscription. Cancel Clockify.
+
+Risks: Some users prefer Toggl because it's simpler. Harvest is slightly more complex. Mitigate by providing a short screen recording on how to use Harvest for time tracking.
+
+Monthly savings: $260/month.
+
+**Combined migration savings: $2,010/month → $24,120/year.** To hit the CFO's $40K target you'll need a second round. Likely candidates: Notion ($320/month), Loom ($200/month), possibly Canva Pro depending on the Figma migration. Run the first 4 consolidations through Q1, then evaluate the second round with actual usage data from the consolidated stack.$pf$,
+ NULL),
+
+-- Step 4 --
+('66666666-6666-6666-6666-666666910104',
+ '55555555-5555-5555-5555-555555550091',
+ 4,
+ $pf$Pass 4 — change management for 3 resistant stakeholders and the all-agency communication$pf$,
+ $pf$I have three stakeholders I know will push back. Walk me through each one, then give me the all-agency communication plan.
+
+Person 1: Marcus, creative director, 8 years at Lightform. Built all his project workflows in Basecamp — templates, custom fields, his whole way of managing creative projects. He said last week: 'If you cut Basecamp I lose everything I've built.' He's not threatening to leave; he's genuinely scared of losing his system.
+
+Person 2: Priya, account team lead. Her worry: 'Two of my clients have our Basecamp URL in their onboarding documentation. If you cancel Basecamp, their portals break. I'll own that client problem.' She's right that she'll own it.
+
+Person 3: James, the IT contractor who set up our Microsoft Teams 2 years ago. He said 'I set that up for a reason' when I mentioned we might cut it.
+
+And then the all-agency communication — what do I say, how, and when?$pf$,
+ $pf$Each person has a different underlying concern. Handle them differently.
+
+**Marcus (creative director) — fear of losing built systems**
+
+His stated concern is 'I'll lose everything I built.' His actual concern is 'I'll lose efficiency and control.' The move is to show him that the transition doesn't erase his system — it transplants it.
+
+Script for a 30-minute 1-on-1: 'Marcus, I want to make sure the Basecamp transition works specifically for you. Can you walk me through the templates and workflows you've built? I want to understand what you're using it for so we can rebuild it in Asana before we make any announcements.'
+
+Take notes. Ask specifically: What are the 3 most important templates you use weekly? What custom fields do you have? What's the workflow from 'new project created' to 'project active' in your current setup?
+
+Then, before the all-agency announcement: build those templates in Asana. Share them with Marcus. Ask him to review and edit. The goal is that he signs off on 'this captures what I need' before anything is announced publicly.
+
+The shift you're looking for: from 'If you cut Basecamp I lose everything I've built' to 'I've rebuilt my system in Asana and it's actually a bit cleaner.' That shift happens when he's a co-creator of the migration, not a recipient of it. Give him a week to work with the Asana templates before the announcement.
+
+**Priya (account team lead) — legitimate client risk**
+
+Her concern is entirely valid. She's right that she'll own it. The move is to already have the solution ready before you have the conversation.
+
+Before you talk to Priya: (1) identify the two clients with Basecamp URLs in their documentation — get the specific pages; (2) write a client-facing migration email template that account managers can customize; (3) set up the Asana equivalent for those two clients; (4) confirm the Basecamp grace period — accounts stay readable for 30 days after cancellation.
+
+Script for a 15-minute 1-on-1: 'Priya, you're right that two clients have Basecamp URLs. I've already drafted the migration communication for those clients and set up the Asana equivalents. Before we send anything, I want you to review it — you know these clients better than I do. Your account team will have 2 weeks to communicate the change before anything breaks. Here's the draft.'
+
+What you're demonstrating: you didn't create a problem she has to solve; you created a solution she gets to refine. This is the failure mode of tool consolidations — ops sends a cancellation notification and account teams are left cleaning up client damage. You're reversing that dynamic.
+
+**James (IT contractor) — identity and authority**
+
+His concern is different. He set up Teams, he owns it, and cutting it feels like a judgment on his work. This is mostly an ego issue, not a technical one.
+
+The framing that works: 'James, the Teams decision is actually driven by a client request — a few clients asked us to simplify to one channel and Slack is where they are. This isn't about the setup you built; it was a solid setup for what we needed at the time. I want to make sure the archive and offboarding is done properly. Can you own the Teams archiving so the message history is preserved? That's the technical piece I want done right.'
+
+Two moves: (1) make it external — client request, not internal preference. This removes the judgment on his work. (2) Give him ownership of the proper offboarding. He set it up; let him close it out professionally.
+
+Don't justify the decision beyond those two sentences. More explanation sounds defensive.
+
+**All-agency communication**
+
+Medium: email from you plus a 2-minute Loom walking through the visual changes. The email is the record; the Loom is the tone-setter.
+
+Timing: send 3 weeks before any migrations happen.
+
+Email draft:
+
+Subject: Consolidating our project and communication tools — here's what's changing
+
+Team,
+
+At the December budget review, we identified $86,400 in overlapping SaaS tools and committed to consolidating. Over the next 6 weeks, we're making 4 changes:
+
+Project management: Asana is our single PM platform going forward. Monday.com access ends [date], Basecamp access ends [date]. Your Monday.com and Basecamp projects are being migrated to Asana before those dates — you won't lose anything.
+
+Communication: Slack is our single communication platform. Microsoft Teams access ends [date]. If you're in a client Teams channel, you'll receive a Slack Connect invitation for that client before Teams closes.
+
+File storage: Dropbox access ends [date]. All active shared folders are moving to Google Drive. If you have client-shared Dropbox folders, your account manager will coordinate the migration.
+
+Time tracking: Harvest is our single time-tracking platform. Toggl and Clockify access end [date]. Instructions for setting up Harvest and exporting your time history are below.
+
+These changes save us [XX]/month and eliminate the visibility problems that come from having the same work in different tools.
+
+Questions? Reply to this email or come to the open office hours [date/time].
+
+— Nina
+
+Loom content (2 minutes): why this is happening (brief, no over-explaining), what you're keeping and why each won (adoption numbers), the one reassurance people need ('you will not lose your work — everything is being migrated before the transition date'), and how to ask questions. Don't walk through every detail. Use it to set the tone: this is planned, it's fair, and you'll be supported.$pf$,
+ NULL),
+
+-- Step 5 --
+('66666666-6666-6666-6666-666666910105',
+ '55555555-5555-5555-5555-555555550091',
+ 5,
+ $pf$Pass 5 — governance model to prevent tool sprawl from returning$pf$,
+ $pf$Last pass. I don't want to be back here in 18 months running another consolidation because 12 new tools accumulated while I was focused on other things. Give me a governance model: how tools get approved, who decides, what a zombie tool is and what we do with it, and how we do the annual review without it turning into a bureaucratic process.$pf$,
+ $pf$The goal isn't to prevent all new tools — it's to prevent tools from accumulating silently. The governance model should make the cost of adding a tool visible without making it a wall.
+
+**The 3-question tool approval form**
+
+Before any new SaaS tool is added (regardless of cost), the requester answers three questions:
+
+1. What does this tool do that we can't do with something we already have? Be specific — name the gap, name the existing tool that doesn't cover it.
+2. Who specifically will use it, and for what workflow? A list of names and a one-sentence workflow description. 'The whole team' and 'general productivity' are not acceptable answers.
+3. If this tool doesn't work out in 6 months, what's the exit plan? Is there a contract lock-in?
+
+These three questions catch the three failure modes of tool sprawl: (1) duplicate functionality someone didn't realize was already covered, (2) tools added by one person who later leaves, (3) contract lock-ins that make tools impossible to retire even when they're not used.
+
+**Approval tiers**
+
+- 1–3 users: Nina approves (email, 24-hour turnaround)
+- 4–10 users: Nina + CFO approve (15-minute sync, 48-hour turnaround)
+- 11+ users: Nina + CFO + department head + CEO approve (formal agenda item, 1-week lead time)
+
+The tiering matters because a 2-user developer tool is not the same decision as a 15-user PM platform. Don't make the 2-user tool require a CEO approval — that's how people add tools informally to avoid the process.
+
+**Zombie tool definition**
+
+A zombie tool is any tool that meets both conditions:
+1. Fewer than 20% of licensed seats have logged in during the prior 30 days.
+2. The tool is not externally facing — no client-shared URLs, no client logins.
+
+Externally facing tools are excluded from zombie status because retirement has client impact that needs a separate decision. Internal tools with low usage are the low-friction retirement candidates.
+
+**What happens when a zombie is identified**
+
+1. Post a message in the relevant department Slack channel: '[Tool name] has been identified as a retirement candidate — fewer than X of Y licensed users have logged in this month. If your team is actively using it for something that isn't showing up in the usage data, reply here by [2 weeks out].'
+2. If no response in 2 weeks, schedule the cancellation.
+3. If there's a response that justifies continued use, document the use case and schedule a 90-day check.
+
+The Slack step prevents 'I was using that!' complaints after cancellation. You gave people the chance to make the case.
+
+**Annual review (December, budget cycle week)**
+
+Spend 90 minutes in the first week of December:
+1. Pull the full SaaS expense from the accounting system.
+2. Re-run the 8-category taxonomy from Pass 1.
+3. Flag any tools that appeared since last December.
+4. Run the zombie check on every tool: login activity for the prior 30 days.
+5. Identify any overlaps created by new additions.
+
+Output: a one-page 'tool landscape' doc for the CFO alongside the budget. Sections: tools kept, tools added (with requester and rationale), tools retired, savings from retirements, open questions for next cycle. Schedule it as a standing calendar item: first Monday of December, 9:00–10:30am, just you.
+
+**The one rule that makes all of this work**
+
+Any tool that gets used by more than one person without going through the approval form gets flagged in the December review, and the person who added it answers the 3 questions retroactively. The retroactive filing isn't punitive — it just means tools that bypassed the process still end up with documentation. After one retroactive filing, people remember to file the form first.
+
+**What this governance model doesn't cover**
+
+Client-specific tools — tools you adopt because a client requires them for collaboration. Keep these on a separate list, flagged as 'client-required,' and review them when that client relationship changes. Don't apply the zombie definition to client tools; they're a different category.$pf$,
+ NULL);
+
+
+-- =========================================================================
 -- END OF FILE — append next project(s) below this line.
 -- Iterations working the Content queue: add 2–3 projects per iteration,
 -- appending below this comment. Do NOT rewrite existing projects.

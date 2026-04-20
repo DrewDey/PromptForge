@@ -40763,5 +40763,720 @@ The leading indicator I would watch: new enterprise opportunities converting in 
 — Kira$pf$,
  NULL);
 
+DELETE FROM prompt_steps WHERE prompt_id = '55555555-5555-5555-5555-555555550114';
+DELETE FROM prompts      WHERE id        = '55555555-5555-5555-5555-555555550114';
+
+INSERT INTO prompts (
+  id, title, description, content, result_content,
+  category_id, difficulty, model_used, model_recommendation,
+  tools_used, tags, status, author_id, vote_count, bookmark_count
+) VALUES (
+  '55555555-5555-5555-5555-555555550114',
+  $pf$Built a zero-downtime Kubernetes deployment pipeline to eliminate the 30-second error spikes that were violating health-system SLA contracts$pf$,
+  $pf$Derek Lawson, CTO of MedAxis (health-tech SaaS for specialty care practices, 38 employees), diagnosing and fixing a Kubernetes deployment process that caused 15–45 seconds of HTTP 502s and 503s on every production push. Three root causes: missing readiness probes, no graceful shutdown handling, and migration-before-code sequencing. Four passes: failure mode diagnosis at the LB and pod lifecycle level, Kubernetes manifest hardening with probes and PodDisruptionBudgets, expand/contract database migration pattern with real Alembic SQL examples, and a lightweight canary deployment strategy with automated Datadog-triggered rollback.$pf$,
+  $pf$MedAxis builds clinical workflow software for specialty care practices — scheduling, referral management, and care coordination for rheumatology and gastroenterology groups. We have 38 people. We raised a Series B eight months ago and closed three mid-market health system contracts in the following quarter. Two of those contracts include 99.9% monthly uptime SLAs.
+
+We have been on Kubernetes for about 14 months — four microservices on GKE Autopilot, PostgreSQL on Cloud SQL, all behind a Google Cloud Load Balancer. Our deployment process has always been: run the Alembic migration first, then kubectl apply the new Deployment manifest. New pods start, old pods terminate immediately. It has always produced 15–45 seconds of HTTP 502s and 503s while the pods cycle.
+
+Pre-Series B, this was annoying but not consequential. Post-Series B, our ops contacts at two health system customers email me every time their monitoring dashboard logs a red event during business hours. We are technically in SLA violation in any month with more than four deploys. That is every month.
+
+I spent one session with Claude understanding the actual failure mechanisms — then built a complete fix: proper Kubernetes manifest configuration, an Alembic migration discipline that does not break running code, and a lightweight canary setup for risky releases. No new infrastructure. No service mesh.$pf$,
+  $pf$Deployment-caused SLA violations dropped to zero in the first month after the changes landed. Eleven production deploys since the pattern went in with zero 502 or 503 spikes recorded in Datadog.
+
+The fixes were not exotic. The immediate 502 cause was two separate timing mismatches: new pods were being added to the load balancer backend pool before they were ready to serve traffic, and old pods were being terminated before the LB finished draining connections away from them. Two YAML additions and a preStop lifecycle hook resolved both ends.
+
+The expand/contract migration pattern took longer to internalize as a team discipline but is now the documented standard for any MedAxis schema change. The canary setup has already paid off: the second use caught a subtle edge case in a patient referral routing change affecting roughly 8% of encounters. The watchdog scaled the canary to zero before it reached the full rollout.$pf$,
+  '11111111-1111-1111-1111-111111111104',
+  'intermediate',
+  'claude-opus-4-6',
+  'Claude 4.6 Opus',
+  ARRAY['Claude', 'Kubernetes', 'PostgreSQL', 'Alembic'],
+  ARRAY['kubernetes', 'zero-downtime deployment', 'database migrations', 'DevOps', 'GKE', 'canary deployment'],
+  'approved',
+  '22222222-2222-2222-2222-222222222209',
+  0,
+  0
+);
+
+INSERT INTO prompt_steps (id, prompt_id, step_number, title, content, result_content, description) VALUES
+
+-- Step 1 --
+('77777777-7777-7777-7777-777777114001',
+ '55555555-5555-5555-5555-555555550114',
+ 1,
+ $pf$Diagnosing the three root causes of HTTP 502s during every Kubernetes rolling update$pf$,
+ $pf$We are getting 15 to 45 seconds of HTTP 502s and 503s from our Google Cloud Load Balancer on every production deployment. Setup: four microservices on GKE Autopilot, PostgreSQL on Cloud SQL, Google Cloud Load Balancer in front. All services are Flask plus Gunicorn on port 8080. Current deploy process: run the Alembic migration first, then kubectl apply the new Deployment manifest. New pods start, old pods terminate immediately. No readiness probes configured anywhere. No feature flags, no canary.
+
+We raised a Series B eight months ago and have three health system contracts with 99.9% monthly SLA clauses. The 502 spikes are showing up in their monitoring dashboards and our ops contacts are emailing me. I need this fixed before the next deploy cycle in four days.
+
+Before I change anything: walk me through the failure modes that produce 502s during a Kubernetes rolling update. I want the actual mechanism at the LB and pod lifecycle level — not just "add a readiness probe." What is Kubernetes doing during a rolling update that produces these errors, and why do errors appear at both the start and the tail end of the deploy window?$pf$,
+ $pf$Three distinct failure modes are stacking, which is why you see errors at both the start and the tail end of each deployment window.
+
+**Failure mode 1: Missing readiness probe causes 502s at rollout start**
+
+When Kubernetes starts a new pod, it watches for the pod to reach Running state — which happens when the container process launches, not when it is ready to serve traffic. Without a readiness probe, the pod is immediately added to the Service's endpoint set and the load balancer begins routing requests to it. For a Flask plus Gunicorn process, there is typically a 5–15 second initialization window: worker processes start, connection pools warm up, application code finishes loading. Every request the LB sends to the new pod during that window gets dropped. The LB surfaces this as a 502.
+
+**Failure mode 2: No graceful shutdown causes 502s at rollout tail**
+
+When Kubernetes decides to terminate an old pod, it sends SIGTERM to the container. Gunicorn begins a graceful shutdown — but Google Cloud Load Balancer takes 30–60 seconds to drain a backend from its pool after the Kubernetes health check changes. During that drain window, the LB is still routing new requests to a pod that has already closed its listener. Those connections fail with 502s.
+
+Fixing this requires two coordinated settings. First, terminationGracePeriodSeconds on the pod spec must be longer than the LB drain window — 75 seconds is a safe default for GCE. Second, a preStop lifecycle hook that sleeps 15 seconds before Gunicorn's shutdown begins gives the LB time to stop routing new connections before the listener closes.
+
+**Failure mode 3: Migration-before-code creates a broken transition window**
+
+Running Alembic before the code deploy means your currently running pods are working against the new schema for the entire rollout duration. Adding a NOT NULL column without a default causes old code to fail on every INSERT. Renaming a column causes every query using the old name to fail. Even adding a nullable column can produce unexpected behavior if old code does not expect it.
+
+The correct pattern is to never deploy a migration that breaks the currently running code. This is the expand/contract discipline: migrations must be forward-compatible so old code still works, new code must handle both old and new schema during rollout, and only after all old pods are retired do you run migrations that finalize the schema change.
+
+**What to tackle first**
+
+The readiness probe and graceful shutdown are a single Deployment manifest change and should eliminate most of what you are seeing. The migration pattern is a team process change. Fix the manifest first — it is discrete and verifiable within one deploy cycle — then document expand/contract as the migration standard.$pf$,
+ NULL),
+
+-- Step 2 --
+('77777777-7777-7777-7777-777777114002',
+ '55555555-5555-5555-5555-555555550114',
+ 2,
+ $pf$The Kubernetes Deployment manifest changes and PodDisruptionBudget for zero-downtime rolling updates$pf$,
+ $pf$That diagnosis matches what I am seeing exactly. I just confirmed we have no readiness probe in any of our four Deployment manifests — we have a /health endpoint returning 200 when Gunicorn is up, it is just not wired to anything. The SIGTERM timing issue explains why the tail-end 502s appear 30–45 seconds into each rollout.
+
+Give me the actual YAML. All four services are structurally identical: three replicas, a ClusterIP Service on port 8080, Flask plus Gunicorn listening on 0.0.0.0:8080. I need the updated Deployment spec with the readiness probe, a liveness probe, the preStop lifecycle hook, and terminationGracePeriodSeconds tuned correctly. Also include a PodDisruptionBudget — I know we need one but have never configured it. Include the reasoning for each value so I understand what to adjust if our initialization timing differs.$pf$,
+ $pf$Here is the updated Deployment spec for the container and strategy sections — everything else in your existing manifest stays the same.
+
+```yaml
+spec:
+  replicas: 3
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1        # Bring up 1 new pod before removing any old ones
+      maxUnavailable: 0  # Never drop below 3 running, ready pods during rollout
+  template:
+    spec:
+      terminationGracePeriodSeconds: 75  # LB drain window (60s) + preStop sleep (15s) + 5s buffer
+      containers:
+      - name: api
+        image: your-registry/your-service:tag
+        ports:
+        - containerPort: 8080
+
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 8080
+          initialDelaySeconds: 5    # First check 5s after container start
+          periodSeconds: 5          # Re-check every 5s
+          failureThreshold: 3       # Remove from LB pool after 3 consecutive failures
+          successThreshold: 1       # Re-add after 1 passing check
+
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8080
+          initialDelaySeconds: 30   # Conservative — only check liveness after 30s
+          periodSeconds: 10
+          failureThreshold: 3       # Restart pod after 30s of consecutive failure
+
+        lifecycle:
+          preStop:
+            exec:
+              # Sleep 15s before Gunicorn shutdown begins.
+              # GCE LB needs this window to drain connections away from this pod.
+              command: ["/bin/sh", "-c", "sleep 15"]
+
+        command:
+        - gunicorn
+        - --bind
+        - 0.0.0.0:8080
+        - --timeout
+        - "45"    # Worker timeout must stay below terminationGracePeriodSeconds
+        - --workers
+        - "4"
+        - app:application
+```
+
+**PodDisruptionBudget** as a separate manifest:
+
+```yaml
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: api-service-pdb
+  namespace: your-namespace
+spec:
+  minAvailable: 2
+  selector:
+    matchLabels:
+      app: api-service  # Must match your Deployment pod template labels
+```
+
+Why minAvailable: 2 with 3 replicas: the PDB tells Kubernetes it cannot voluntarily evict a pod during node drains or GKE Autopilot upgrades if doing so would drop you below 2 running pods. Without a PDB, GKE node upgrades can terminate two pods simultaneously. Combined with the readiness probe warmup window, that can briefly bring your available pod count to zero.
+
+Why maxUnavailable: 0 in the rolling update strategy: Kubernetes must bring the new pod to ready state — readiness probe passing — before terminating any old pod. With maxSurge: 1, the rollout is: start 1 new pod, wait for readiness pass, remove 1 old pod, start next new pod, wait, remove. The LB always sees 3 ready pods during the transition.
+
+If your Gunicorn startup takes longer than 5 seconds, check startup logs to measure the actual initialization time and increase initialDelaySeconds accordingly. If your GCE backend service connection draining is configured below 60 seconds in Cloud Console, you can reduce terminationGracePeriodSeconds and the preStop sleep proportionally.$pf$,
+ NULL),
+
+-- Step 3 --
+('77777777-7777-7777-7777-777777114003',
+ '55555555-5555-5555-5555-555555550114',
+ 3,
+ $pf$The expand/contract database migration pattern with concrete Alembic examples$pf$,
+ $pf$The preStop sleep is the detail I had been missing — it bridges the timing gap between when GKE marks a pod for termination and when the LB actually stops routing to it. That goes into the runbook tonight.
+
+Now the migration pattern. Give me concrete Alembic examples for the two schema changes we do most often: adding a column that we eventually want to be NOT NULL, and renaming a column. I want to see the actual migration files for each phase and understand what code changes accompany each deployment. Our highest-traffic table is patient_encounters with about 2.4 million rows.$pf$,
+ $pf$Both examples follow the same underlying rule: a migration that deploys alongside a code release must not break currently running pods. Old pods must work correctly against the new schema while the rolling update is in progress.
+
+**Adding a NOT NULL column: encounter_type VARCHAR on patient_encounters**
+
+Phase 1 — add as nullable, deploy with new code that writes it:
+```python
+# migrations/001_add_encounter_type_nullable.py
+def upgrade():
+    op.add_column('patient_encounters',
+        sa.Column('encounter_type', sa.String(50), nullable=True))
+    # No default, no NOT NULL — old code is unaware of the column and works fine
+    # New code: writes encounter_type on new rows, handles None on reads from old rows
+
+def downgrade():
+    op.drop_column('patient_encounters', 'encounter_type')
+```
+
+Phase 2 — backfill and add constraint (run after all old pods have been replaced):
+```python
+# migrations/002_backfill_encounter_type.py
+def upgrade():
+    # Single UPDATE on 2.4M rows — chunk in 50K batches if you see lock waits in Cloud SQL logs
+    op.execute(
+        "UPDATE patient_encounters SET encounter_type = 'standard' WHERE encounter_type IS NULL"
+    )
+    op.alter_column('patient_encounters', 'encounter_type',
+                    existing_type=sa.String(50), nullable=False)
+```
+
+No Phase 3 needed for this case.
+
+---
+
+**Renaming a column: provider_id to clinician_id on patient_encounters**
+
+A rename requires four phases. A single-migration rename breaks old code that reads or writes the old column name.
+
+Phase 1 — add new column and populate from old:
+```python
+# migrations/003_add_clinician_id.py
+def upgrade():
+    op.add_column('patient_encounters',
+        sa.Column('clinician_id', sa.BigInteger(), nullable=True))
+    op.execute("UPDATE patient_encounters SET clinician_id = provider_id WHERE clinician_id IS NULL")
+    # CONCURRENTLY builds the index without holding an exclusive table lock.
+    # Standard CREATE INDEX holds AccessExclusiveLock — blocks all reads and writes.
+    # On 2.4M rows that can be 30–90 seconds of complete table unavailability.
+    op.execute(
+        "CREATE INDEX CONCURRENTLY IF NOT EXISTS "
+        "idx_patient_encounters_clinician_id ON patient_encounters (clinician_id)"
+    )
+```
+
+Deploy Phase 1 plus code that dual-writes to both clinician_id and provider_id. Old code reads and writes provider_id only. New code reads clinician_id, falls back to provider_id while backfill is still open.
+
+Phase 2 — add NOT NULL constraint (after all old pods gone, all rows populated):
+```python
+# migrations/004_clinician_id_not_null.py
+def upgrade():
+    op.alter_column('patient_encounters', 'clinician_id',
+                    existing_type=sa.BigInteger(), nullable=False)
+```
+
+Deploy Phase 2 plus code update: stop dual-writing, write clinician_id only.
+
+Phase 3 — drop old column:
+```python
+# migrations/005_drop_provider_id.py
+def upgrade():
+    op.drop_index('idx_patient_encounters_provider_id', table_name='patient_encounters')
+    op.drop_column('patient_encounters', 'provider_id')
+```
+
+One note on CREATE INDEX CONCURRENTLY and Alembic: CONCURRENTLY cannot run inside an open transaction, and Alembic wraps migrations in a transaction by default. Use op.execute() with the SQL as a string outside any transaction context, or configure the migration revision to not use a transaction. Check your Alembic version's docs — the exact approach changed between 1.4 and 1.8.$pf$,
+ NULL),
+
+-- Step 4 --
+('77777777-7777-7777-7777-777777114004',
+ '55555555-5555-5555-5555-555555550114',
+ 4,
+ $pf$Lightweight Kubernetes canary deployment with automated rollback for high-risk releases$pf$,
+ $pf$The CREATE INDEX CONCURRENTLY note is exactly the kind of detail I would have gotten wrong. We have done standard CREATE INDEX on production tables before and watched the monitoring go red for 45 seconds without connecting it to the index build. That goes into the deployment runbook alongside the expand/contract examples.
+
+One more piece: for high-risk releases — significant schema changes, new features where we are uncertain about edge cases in production patient data — I want a canary deployment pattern. We are on GKE Autopilot and a full service mesh is not worth the operational overhead at our scale. What is the simplest canary setup that works with standard Kubernetes, and how do I wire up automated rollback so it does not depend on someone watching Datadog in real time?$pf$,
+ $pf$The Kubernetes-native canary pattern requires no additional infrastructure. The mechanism: two Deployments sharing a single Service label selector, with traffic split proportionally by replica count.
+
+**Traffic-split canary**
+
+Your Service selects pods by label — for example app: patient-api. Create a stable Deployment (current version, 3 replicas) and a canary Deployment (new version, 1 replica), both with pods labeled app: patient-api. The Service load-balances across all matching pods regardless of which Deployment owns them. With 3 stable and 1 canary, approximately 25% of requests hit the canary pods.
+
+```yaml
+# patient-api-canary.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: patient-api-canary
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: patient-api
+      version: canary
+  template:
+    metadata:
+      labels:
+        app: patient-api   # Service selects this label
+        version: canary    # Distinct label for Datadog metrics filtering
+    spec:
+      containers:
+      - name: api
+        image: your-registry/patient-api:v-new
+        # Same readiness probe, preStop hook, and terminationGracePeriodSeconds as stable
+```
+
+To abort: kubectl scale deployment patient-api-canary --replicas=0. Pod termination honors the preStop hook — graceful drain, no new 502s.
+
+To promote: kubectl set image deployment/patient-api-stable api=your-registry/patient-api:v-new && kubectl delete deployment patient-api-canary.
+
+**Automated rollback watchdog**
+
+A CronJob running every two minutes during the canary window handles automated rollback without real-time monitoring:
+
+```python
+#!/usr/bin/env python3
+# canary-watchdog.py — runs as Kubernetes CronJob during canary window
+import subprocess, sys, time, requests, os
+
+DD_API_KEY = os.environ['DATADOG_API_KEY']
+CANARY_DEPLOYMENT = 'patient-api-canary'
+ERROR_THRESHOLD = 0.02  # 2% error rate triggers rollback
+SLACK_WEBHOOK = os.environ.get('SLACK_WEBHOOK_URL', '')
+
+def get_canary_error_rate():
+    now = int(time.time())
+    query = ('avg:trace.flask.request.errors{version:canary}.as_rate() / '
+             'avg:trace.flask.request.hits{version:canary}.as_rate()')
+    resp = requests.get(
+        'https://api.datadoghq.com/api/v1/query',
+        params={'query': query, 'from': now - 300, 'to': now},
+        headers={'DD-API-KEY': DD_API_KEY},
+        timeout=10
+    )
+    series = resp.json().get('series', [])
+    if not series or not series[0].get('pointlist'):
+        return 0.0  # No data: do not abort on missing metrics
+    return series[0]['pointlist'][-1][1] or 0.0
+
+rate = get_canary_error_rate()
+if rate > ERROR_THRESHOLD:
+    subprocess.run(
+        ['kubectl', 'scale', 'deployment', CANARY_DEPLOYMENT, '--replicas=0'],
+        check=True
+    )
+    if SLACK_WEBHOOK:
+        requests.post(SLACK_WEBHOOK,
+            json={'text': f'Canary rollback: {rate:.1%} error rate exceeded {ERROR_THRESHOLD:.0%} threshold'})
+    sys.exit(1)
+print(f'Canary healthy: {rate:.2%} error rate')
+```
+
+**The constraint you cannot skip**
+
+Both stable and canary pods must run against the same database schema simultaneously. This is the expand/contract pattern from step 3 paying off: if you have completed Phase 1 of a migration, new nullable column present, you can safely run canary pods writing the new column alongside stable pods that do not. If you have skipped expand/contract, canary rollout becomes dangerous — the new code may require a schema state the stable code cannot tolerate.
+
+The readiness probe and the rollback watchdog are two separate protection layers. The probe handles pods that fail health checks before entering the backend pool. The watchdog handles pods that pass health checks but produce errors at runtime. For a HIPAA-regulated product, 90 minutes at 25% traffic represents meaningful production signal before committing the full rollout.$pf$,
+ NULL);
+
+DELETE FROM prompt_steps WHERE prompt_id = '55555555-5555-5555-5555-555555550115';
+DELETE FROM prompts      WHERE id        = '55555555-5555-5555-5555-555555550115';
+
+INSERT INTO prompts (
+  id, title, description, content, result_content,
+  category_id, difficulty, model_used, model_recommendation,
+  tools_used, tags, status, author_id, vote_count, bookmark_count
+) VALUES (
+  '55555555-5555-5555-5555-555555550115',
+  $pf$Built a Markov chain attribution model to surface $1M of content pipeline that last-touch was assigning to outbound SDR$pf$,
+  $pf$Raj Patel consulting for Clearfield Software (B2B SaaS analytics, $4.8M ARR, 22 people), replacing last-touch attribution with a Markov chain model on 18 months of BigQuery touch event data and 520 closed-won deals. Five passes: model selection rationale (why Markov chain over Shapley for this dataset size), BigQuery SQL for ordered touch sequences with data quality checks, Python Markov chain implementation with removal effect calculations, holdout validation framework with CFO confidence statement, and 20-minute meeting structure for an $80K budget renewal decision.$pf$,
+  $pf$Clearfield Software builds no-code analytics dashboards for operations teams. They are at $4.8M ARR with 22 people and six marketing channels: Google Ads, LinkedIn Ads, content marketing via blog and SEO, webinars, outbound SDR sequences, and partner referrals. Last-touch attribution said outbound SDR was responsible for 65% of closed-won revenue. Content was getting 3%.
+
+The CMO had been watching accounts come in through blog posts, engage with several more pieces of content over weeks, and then respond to an SDR sequence they had previously ignored — and last-touch was giving SDR 100% of those deals. She needed to justify an $80K per year content investment to a CFO whose position was: if content is not showing up in the numbers, why are we spending $80K on it.
+
+I had 18 months of event-level touch data in BigQuery and 520 closed-won deals. I spent one afternoon with Claude building a Markov chain attribution model from scratch — model selection, data pipeline, implementation, validation, and the meeting structure. The result: content attribution went from 3% to 22.1%, representing $1.06M of the $4.8M ARR. The CFO approved the renewal.$pf$,
+  $pf$Content attribution moved from 3% ($144K) under last-touch to 22.1% ($1.06M) under the Markov chain model. Outbound SDR attribution moved from 65% to 28.4%. The holdout validation showed a Spearman correlation of 0.34 between Markov partial-path scores and actual conversion outcomes — last-touch produces no score for partial paths by construction.
+
+The CFO approved the $80K content renewal in the same meeting where we presented the results. The CMO has since reallocated 15% of the Google Ads budget toward content production with a 90-day measurement plan. I now run this model quarterly for Clearfield as a retained engagement. The BigQuery SQL and Python notebook live in their data warehouse.$pf$,
+  '11111111-1111-1111-1111-111111111108',
+  'intermediate',
+  'claude-sonnet-4-6',
+  'Claude 4.6 Sonnet',
+  ARRAY['Claude', 'BigQuery', 'Python', 'Jupyter'],
+  ARRAY['marketing attribution', 'Markov chain', 'BigQuery', 'Python', 'data science', 'B2B SaaS analytics'],
+  'approved',
+  '22222222-2222-2222-2222-222222222207',
+  0,
+  0
+);
+
+INSERT INTO prompt_steps (id, prompt_id, step_number, title, content, result_content, description) VALUES
+
+-- Step 1 --
+('77777777-7777-7777-7777-777777115001',
+ '55555555-5555-5555-5555-555555550115',
+ 1,
+ $pf$Choosing the right attribution model for a B2B SaaS with 520 deals and 6 marketing channels$pf$,
+ $pf$I am doing a consulting engagement for Clearfield Software — B2B SaaS, no-code analytics dashboards for operations teams, $4.8M ARR, 22 people. They run six marketing channels: Google Ads, LinkedIn Ads, content marketing via blog and SEO, webinars, outbound SDR sequences, and partner referrals. Last-touch attribution says outbound SDR is responsible for 65% of closed-won revenue. Content is getting 3%.
+
+The CMO wants to justify keeping an $80K per year content investment. Her intuition: content is nurturing accounts over weeks before they respond to SDR outreach, but last-touch makes that contribution invisible. The CFO's position: if content does not show up in the numbers, why spend $80K on it.
+
+I have 18 months of event-level marketing data in BigQuery — touch events with timestamp, channel, account ID, and deal ID populated at close. About 520 closed-won deals. Average sales cycle 35 days.
+
+Before I write any code: help me think through the attribution model options. I know first-touch, last-touch, linear, time-decay, Markov chain, and Shapley value. What are the real tradeoffs for this dataset, and which is right? I want your actual reasoning, not a feature comparison table.$pf$,
+ $pf$The fundamental problem with every rules-based model — first-touch, last-touch, linear, time-decay — is that they assert a weighting scheme independent of your actual data. Last-touch says recency is everything. Linear says all touches are equal. Time-decay says recency matters exponentially. None of these is empirically derived; they are just different assumptions baked in as constants. For a company making an actual $80K budget decision, "our model assumes recency matters" is a weak foundation.
+
+**Why Markov chain and not Shapley value**
+
+For 520 deals across 6 channels you have two credible data-driven options: Markov chain and Shapley value from cooperative game theory. Shapley is theoretically elegant — it computes each channel's marginal contribution by evaluating all possible coalitions. With 6 channels that is 2 to the power of 6, or 64 subsets. The problem is data sparsity: how many of your 520 deals have exactly the channels {LinkedIn, Webinar, Partner Referral} and nothing else? Probably 2–5. Shapley values built on 3 observations are noise, and that noise propagates to every channel estimate.
+
+Markov chain requires only sequential transition probabilities — the probability of moving from channel A to channel B given that A was the last observed touch. With 520 deals you will have plenty of observations for each transition pair even when rare complete paths are sparse. It is a substantially lower-variance estimator for this dataset size.
+
+**How Markov chain attribution answers the CMO's question directly**
+
+The model treats the customer journey as a sequence of state transitions from START through channel touches to CONVERSION. You compute the removal effect for each channel: what fraction of conversions would be lost if this channel were removed from all paths entirely? A channel that appears at the junction of many high-converting paths gets high removal effect even when it is never the final touch. This directly quantifies the relay pattern the CMO is describing — content enabling eventual SDR response — where last-touch assigns content zero credit.
+
+**One honest caveat**
+
+Markov assumes the observed touchpoint sequence reflects the causal structure of the buyer journey. There is a potential confounder: accounts that actively seek out content may already be higher-intent. Markov will attribute credit to content, but some portion of that credit may reflect pre-existing intent rather than content's direct influence. Present the Markov estimate as useful for decision-making while acknowledging it measures influence, not causation. For an $80K renewal decision, the distinction matters less than for a $2M budget reallocation.$pf$,
+ NULL),
+
+-- Step 2 --
+('77777777-7777-7777-7777-777777115002',
+ '55555555-5555-5555-5555-555555550115',
+ 2,
+ $pf$Building the BigQuery touch sequence pipeline with data quality checks$pf$,
+ $pf$Markov chain makes sense. The removal effect framing is the right story for the CFO — it is a counterfactual about what would happen if a channel did not exist, which is cleaner than a model output number.
+
+Let me describe the data. BigQuery table called marketing_touches: touch_id (STRING), account_id (STRING), deal_id (STRING, NULL for accounts that have not closed), channel (STRING — one of google_ads, linkedin_ads, content, webinar, outbound_sdr, partner_referral), touched_at (TIMESTAMP). A deals table: deal_id (STRING), account_id (STRING), closed_at (TIMESTAMP), stage (STRING). I will filter to stage = closed_won.
+
+Give me the SQL to build ordered touch sequences per deal for the Markov model. Also give me the data quality checks I should run first — I do not know how clean this data is and I would rather find problems before I present results.$pf$,
+ $pf$Here is the complete sequence-building query followed by the quality checks.
+
+**Touch sequence pipeline**
+
+```sql
+-- Ordered, deduplicated channel touch sequences per closed-won deal
+-- 120-day lookback: 35-day avg sales cycle with 3x headroom for outliers
+WITH closed_won AS (
+  SELECT deal_id, account_id, closed_at
+  FROM deals
+  WHERE stage = 'closed_won'
+),
+touches_in_window AS (
+  SELECT
+    d.deal_id,
+    t.channel,
+    t.touched_at,
+    ROW_NUMBER() OVER (
+      PARTITION BY d.deal_id ORDER BY t.touched_at ASC
+    ) AS raw_seq
+  FROM closed_won d
+  JOIN marketing_touches t
+    ON  t.account_id = d.account_id
+    AND t.touched_at < d.closed_at
+    AND t.touched_at >= TIMESTAMP_SUB(d.closed_at, INTERVAL 120 DAY)
+),
+with_prev AS (
+  SELECT *,
+    LAG(channel) OVER (PARTITION BY deal_id ORDER BY raw_seq) AS prev_channel
+  FROM touches_in_window
+),
+-- Collapse consecutive same-channel touches into one
+-- Prevents a 6-email SDR sequence from counting as 6 separate outbound_sdr touches
+deduped AS (
+  SELECT deal_id, channel, touched_at, raw_seq
+  FROM with_prev
+  WHERE channel != prev_channel OR prev_channel IS NULL
+),
+touch_sequences AS (
+  SELECT
+    d.deal_id,
+    ARRAY_AGG(c.channel ORDER BY c.raw_seq) AS channel_path,
+    COUNT(*) AS path_length,
+    MIN(c.touched_at) AS first_touch_at
+  FROM deduped c
+  JOIN closed_won d USING (deal_id)
+  GROUP BY d.deal_id
+)
+SELECT * FROM touch_sequences ORDER BY deal_id;
+```
+
+**Data quality checks — run before building the model**
+
+```sql
+-- 1. How many closed-won deals have zero touch events?
+-- Over 10% suggests dark funnel: direct traffic, offline intros, unlogged partner referrals
+SELECT
+  COUNT(DISTINCT d.deal_id) AS total_deals,
+  COUNT(DISTINCT ts.deal_id) AS deals_with_touches,
+  ROUND(100.0 * COUNT(DISTINCT ts.deal_id) / COUNT(DISTINCT d.deal_id), 1) AS pct_with_touches
+FROM closed_won d
+LEFT JOIN touch_sequences ts ON ts.deal_id = d.deal_id;
+
+-- 2. Path length distribution
+-- Many 1-touch paths may indicate tracking gaps, not genuinely single-touch deals
+-- Paths above 15 may be account-level noise from campaigns spanning multiple years
+SELECT path_length, COUNT(*) AS deals
+FROM touch_sequences
+GROUP BY path_length ORDER BY path_length;
+
+-- 3. Channel exposure rate (before attribution)
+-- Low-presence channels will have high-variance Markov estimates — flag these in the methodology
+SELECT
+  channel,
+  COUNT(DISTINCT deal_id) AS deals_with_channel,
+  ROUND(100.0 * COUNT(DISTINCT deal_id) /
+    (SELECT COUNT(*) FROM touch_sequences), 1) AS pct_of_deals
+FROM touch_sequences, UNNEST(channel_path) AS channel
+GROUP BY channel ORDER BY deals_with_channel DESC;
+
+-- 4. Top channel co-occurrences — reveals relay patterns before any model
+SELECT
+  a.channel AS ch_a, b.channel AS ch_b,
+  COUNT(DISTINCT a.deal_id) AS deals_with_both
+FROM
+  (SELECT deal_id, channel FROM touch_sequences, UNNEST(channel_path) AS channel) a
+JOIN
+  (SELECT deal_id, channel FROM touch_sequences, UNNEST(channel_path) AS channel) b
+  ON a.deal_id = b.deal_id AND a.channel < b.channel
+GROUP BY 1, 2 ORDER BY deals_with_both DESC LIMIT 15;
+```
+
+The consecutive-dedup step matters most for outbound_sdr. If your SDR runs a six-touch email sequence and the account responds to touch six, collapsing to one touch reflects the actual signal: the account was in an SDR sequence and eventually responded.
+
+For channels appearing in fewer than 30 deals — partner_referral is likely below that — treat Markov estimates as directional rather than precise. The model still produces numbers; they just carry higher variance. Flag this in the methodology section.$pf$,
+ NULL),
+
+-- Step 3 --
+('77777777-7777-7777-7777-777777115003',
+ '55555555-5555-5555-5555-555555550115',
+ 3,
+ $pf$Implementing Markov chain attribution in Python with removal effects and revenue credit$pf$,
+ $pf$The co-occurrence query is going to be useful before I even show the model output — I can show the CMO the raw path data confirming the relay pattern she has been describing. I ran the quality checks. 31 of 520 deals have no touch events in the 120-day window — excluding them as dark funnel, flagging in the methodology. Path lengths are mostly 2–6, a few at 14–17. The co-occurrence query shows content and outbound_sdr together in 214 deals — 43% of my 489 remaining deals. That is the relay pattern.
+
+Now give me the Python implementation. I am working in a Jupyter notebook and will load the BigQuery output as a pandas DataFrame where channel_path is a list per row. I want to compute the transition matrix and calculate removal effects for each channel. Walk me through the implementation — I have read about Markov chain attribution but have not built one.$pf$,
+ $pf$Here is the complete implementation with notes on each piece.
+
+```python
+import pandas as pd
+import numpy as np
+from collections import defaultdict
+
+def build_transition_matrix(paths):
+    transitions = defaultdict(lambda: defaultdict(int))
+    for path in paths:
+        for i in range(len(path) - 1):
+            transitions[path[i]][path[i + 1]] += 1
+
+    all_states = set()
+    for path in paths:
+        all_states.update(path)
+    all_states.update(['START', 'CONVERSION', 'NULL'])
+    all_states = sorted(list(all_states))
+    state_idx = {s: i for i, s in enumerate(all_states)}
+
+    n = len(all_states)
+    matrix = np.zeros((n, n))
+    for from_state, to_dict in transitions.items():
+        row_total = sum(to_dict.values())
+        if row_total == 0:
+            continue
+        for to_state, count in to_dict.items():
+            matrix[state_idx[from_state]][state_idx[to_state]] = count / row_total
+
+    for absorbing in ['CONVERSION', 'NULL']:
+        idx = state_idx[absorbing]
+        matrix[idx][idx] = 1.0
+
+    return matrix, all_states, state_idx
+
+
+def simulate_conversion_rate(matrix, states, state_idx, n_sims=50_000):
+    conv_idx = state_idx['CONVERSION']
+    start_idx = state_idx['START']
+    rng = np.random.default_rng(seed=42)
+    conversions = 0
+    for _ in range(n_sims):
+        current = start_idx
+        for _ in range(50):
+            if current == conv_idx:
+                conversions += 1
+                break
+            row = matrix[current]
+            if row.sum() == 0:
+                break
+            current = rng.choice(len(states), p=row)
+    return conversions / n_sims
+
+
+def prepare_paths(path_lists):
+    return [['START'] + list(p) + ['CONVERSION'] for p in path_lists]
+
+
+def compute_removal_effects(df, channels):
+    baseline_paths = prepare_paths(df['channel_path'].tolist())
+    matrix, states, state_idx = build_transition_matrix(baseline_paths)
+    baseline_rate = simulate_conversion_rate(matrix, states, state_idx)
+    print(f'Baseline conversion rate (model): {baseline_rate:.4f}')
+
+    removal_effects = {}
+    for channel in channels:
+        filtered = df['channel_path'].apply(lambda p: [c for c in p if c != channel])
+        temp_df = pd.DataFrame({'channel_path': filtered})
+        temp_df = temp_df[temp_df['channel_path'].apply(len) > 0].copy()
+        if len(temp_df) == 0:
+            removal_effects[channel] = 1.0
+            continue
+        temp_paths = prepare_paths(temp_df['channel_path'].tolist())
+        m, s, si = build_transition_matrix(temp_paths)
+        rate_without = simulate_conversion_rate(m, s, si)
+        removal_effects[channel] = (baseline_rate - rate_without) / baseline_rate
+        print(f'  {channel}: {removal_effects[channel]:.4f}')
+
+    return removal_effects, baseline_rate
+
+
+channels = ['google_ads', 'linkedin_ads', 'content', 'webinar', 'outbound_sdr', 'partner_referral']
+removal_effects, baseline_rate = compute_removal_effects(df, channels)
+
+total_re = sum(removal_effects.values())
+attribution = {ch: re / total_re for ch, re in removal_effects.items()}
+
+avg_deal_arpa = 4_800_000 / 489
+print('\n--- Revenue Attribution ---')
+for ch, pct in sorted(attribution.items(), key=lambda x: -x[1]):
+    rev = pct * avg_deal_arpa * 489
+    print(f'  {ch:22s}  {pct*100:5.1f}%   ${rev:>10,.0f}')
+```
+
+Why Monte Carlo rather than matrix inversion: the analytical solution uses the fundamental matrix, which requires inverting a submatrix of the transition matrix. At 8 states this is fast either way. Monte Carlo is easier to debug when your matrix has zero rows — a channel appearing in so few deals it has no observed outgoing transitions in some removal scenarios. Matrix inversion silently produces nonsense for degenerate matrices; Monte Carlo stalls at the dead-end state and you can see it.
+
+Run at 50,000 simulations and check stability: re-run with a different seed. If any channel attribution moves more than 1–2 percentage points between runs, raise to 100,000. For partner_referral, which appears in roughly 7–10% of deals, treat the estimate as directional regardless of simulation count.$pf$,
+ NULL),
+
+-- Step 4 --
+('77777777-7777-7777-7777-777777115004',
+ '55555555-5555-5555-5555-555555550115',
+ 4,
+ $pf$Validating the Markov model on holdout data and building the CFO confidence statement$pf$,
+ $pf$The Monte Carlo results are stable at 50,000 simulations. Results: content at 22.1%, outbound_sdr at 28.4%, google_ads at 19.8%, linkedin_ads at 11.2%, webinar at 10.9%, partner_referral at 7.6%.
+
+The shift from last-touch is significant — content goes from 3% to 22%, SDR from 65% to 28%. That is large enough that the CFO will immediately ask how I know this model is right rather than just different. How do I validate that Markov is actually better at reflecting reality? I need something concrete, not just "the model is internally consistent."$pf$,
+ $pf$The cleanest validation is a holdout test. It also produces the specific evidence you need for the CFO.
+
+**Holdout validation: does Markov predict conversion better than last-touch on unseen data?**
+
+Split your 489 deals chronologically: first 13 months for training, last 5 months as holdout. Build the transition matrix on training deals only. For each holdout deal, take the first half of that deal's touches — simulating not knowing whether it will close — and compute the Markov-estimated probability of conversion from that partial path.
+
+```python
+def score_partial_path(partial_path, matrix, states, state_idx, n_sims=10_000):
+    if not partial_path:
+        return simulate_conversion_rate(matrix, states, state_idx, n_sims)
+    last_channel = partial_path[-1]
+    if last_channel not in state_idx:
+        return simulate_conversion_rate(matrix, states, state_idx, n_sims)
+
+    start_state = state_idx[last_channel]
+    conv_idx = state_idx['CONVERSION']
+    rng = np.random.default_rng(seed=0)
+    conversions = 0
+    for _ in range(n_sims):
+        current = start_state
+        for _ in range(50):
+            if current == conv_idx:
+                conversions += 1
+                break
+            row = matrix[current]
+            if row.sum() == 0:
+                break
+            current = rng.choice(len(states), p=row)
+    return conversions / n_sims
+
+cutoff = '2024-04-01'  # adjust to your actual 13-month mark
+train_df = df[df['first_touch_at'] < cutoff].copy()
+holdout_df = df[df['first_touch_at'] >= cutoff].copy()
+
+train_paths = prepare_paths(train_df['channel_path'].tolist())
+m, s, si = build_transition_matrix(train_paths)
+
+holdout_df['partial_path'] = holdout_df['channel_path'].apply(lambda p: p[:max(1, len(p)//2)])
+holdout_df['markov_score'] = holdout_df['partial_path'].apply(
+    lambda p: score_partial_path(p, m, s, si)
+)
+
+from scipy.stats import spearmanr
+holdout_df['path_progress'] = (
+    holdout_df['partial_path'].apply(len) / holdout_df['channel_path'].apply(len)
+)
+corr, pval = spearmanr(holdout_df['markov_score'], holdout_df['path_progress'])
+print(f'Spearman r = {corr:.3f}, p = {pval:.4f}')
+```
+
+A correlation around 0.30–0.40 is meaningful for an attribution model trained on 340 deals. The key comparison: last-touch cannot score a partial path at all. It can only tell you who was last, and there is no last touch until the deal closes. That asymmetry is your CFO answer.
+
+**The confidence framing that holds up under pushback**
+
+Do not claim the model is correct. Claim it is less wrong than last-touch, and explain exactly why.
+
+Last-touch has a predictable systematic error: it assigns 100% of conversion credit to the final touch regardless of what brought the account to that point. You can verify this error directly without any model — pull 20 deals from your content plus outbound_sdr co-occurrence set and ask the sales team whether the content touches seem incidental or meaningful. Your data shows 43% of deals had a content touch before the SDR sequence that closed them. Last-touch assigned content zero credit in all 214 of those deals. That is a guaranteed wrong answer, not a modeling tradeoff.
+
+Markov asks a better question: which channels, if removed, would have broken the conversion path? It is not proven causal — but it is based on a more defensible question, and the holdout validation shows it captures real signal. That is the correct confidence level to bring to the meeting: useful for decision-making, not a precise measurement of ground truth.$pf$,
+ NULL),
+
+-- Step 5 --
+('77777777-7777-7777-7777-777777115005',
+ '55555555-5555-5555-5555-555555550115',
+ 5,
+ $pf$Structuring the 20-minute budget renewal meeting to reach a decision without a methodology debate$pf$,
+ $pf$The holdout correlation came out at 0.34 Spearman, p less than 0.001. The comparison to last-touch having zero predictive power on partial paths is a clean story. I am building a five-deal side-by-side slide showing what each model assigns to real deals where content appeared early and SDR closed.
+
+Now the presentation. The meeting is 20 minutes with the CMO and CFO. The ask: should Clearfield renew the $80K per year content contract. Markov says content is responsible for $1.06M of the $4.8M ARR. The risk I am managing: the CFO turns this into a methodology debate and we run out of time without a recommendation. Give me the meeting structure and specific talking points, including how to handle the pushback.$pf$,
+ $pf$The risk you are naming is real and common. The defense: structure the meeting so the methodology question comes up after the intuitive case has already landed.
+
+**20-minute structure**
+
+**(0–4 min): Open with what was wrong about last-touch**
+
+Do not open with Markov chain. Open with last-touch and show why it was specifically broken for Clearfield. One slide: a real deal, anonymized, showing the actual channel path (content, content, outbound_sdr, close). Under last-touch: SDR gets 100%, content gets 0%. Ask the room: does this seem right? The CMO will say no. You have established that the current measurement is wrong before introducing the alternative.
+
+Set this anchor early: "We had a broken ruler. The question is not whether the Markov model is perfectly right — it is whether it is less wrong than what we have been using."
+
+**(4–12 min): Three facts, not a methodology lecture**
+
+Slide 1 — the raw path data. "Content appears in 43% of all closed-won deals over the last 18 months. Under last-touch, content received zero credit in every one of those 214 deals." This is a count from the raw data, not a model output. Nobody can dispute it.
+
+Slide 2 — model comparison side by side. Last-touch on the left, Markov on the right, for each of the six channels. The shift is the story. Do not explain the methodology here — just show the numbers.
+
+Slide 3 — the five-deal side-by-side. Three deals where content appeared early and SDR closed. Ask: which answer is more consistent with what we know about these accounts? Get the room to engage with the intuition before the CFO asks about the math.
+
+**(12–16 min): Pre-answer the CFO's question**
+
+This will come. Answer it before they finish asking: "We tested it. We trained the model on 13 months of data and scored deals it had never seen using only partial paths — simulating not knowing whether the deal would close. The Markov scores correlated 0.34 with actual outcomes. Last-touch generates no score for a partial path at all."
+
+If they push further: "The three credible data-driven attribution models — Markov, Shapley, and time-decay — all directionally agree that content is undervalued by last-touch. They disagree on the exact number. The range is $850K to $1.1M attributed revenue. The decision threshold is whether $80K is justified by more than $800K of influence. On any model in the credible range, the answer is yes."
+
+**(16–20 min): Recommendation and the test**
+
+Be direct. "I recommend renewing. The model says content generates roughly $1M of pipeline influence that last-touch was making invisible. The $80K spend implies a 12x return on attributed revenue."
+
+Give the CFO something to own going forward: "Run this model again at the end of Q3. If content attribution holds as you scale SDR, the thesis is confirmed. If it drops faster than SDR scales, we revisit." This gives the CFO a test to validate rather than a number to accept on faith.
+
+One thing not to do: if anyone asks which attribution model is most accurate in general, do not get drawn into an abstract comparison. Redirect: "The more useful question is whether the data supports this specific decision. On any reasonable model, $80K generating $850K or more of attributed influence is a clear renewal."$pf$,
+ NULL);
+
 ALTER TABLE prompts ENABLE ROW LEVEL SECURITY;
 ALTER TABLE prompt_steps ENABLE ROW LEVEL SECURITY;

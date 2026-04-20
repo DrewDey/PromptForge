@@ -34170,6 +34170,471 @@ Any questions before the announcement goes out: call or text me directly. You ha
 
 
 -- =========================================================================
+-- Project 55-0094 | GitHub Actions CI pipeline | Marcus Chen | Coding | 3 steps
+-- =========================================================================
+
+DELETE FROM prompt_steps WHERE prompt_id = '55555555-5555-5555-5555-555555550094';
+DELETE FROM prompts      WHERE id        = '55555555-5555-5555-5555-555555550094';
+
+INSERT INTO prompts (
+  id, title, description, content, result_content,
+  category_id, difficulty, model_used, model_recommendation,
+  tools_used, tags, status, author_id, vote_count, bookmark_count
+) VALUES (
+  '55555555-5555-5555-5555-555555550094',
+  $pf$First CI pipeline for a React + TypeScript side project$pf$,
+  $pf$Marcus kept shipping broken builds by committing directly to main. Three passes with Claude to set up a GitHub Actions CI pipeline: lint + type-check + Vitest, debug a JSDOM environment error, then add an auto-deploy step to GitHub Pages.$pf$,
+  $pf$SpecView is a browser tool I built to render OpenAPI 3.x specs — paste in a spec URL or JSON and it shows every endpoint organized by tag with expandable request and response schemas. Nothing revolutionary, but it's the thing I actually wanted to exist when I was onboarding to a new API at work. I've been building it solo for two months and my CI strategy was "I'll remember to run lint before I push." I did not remember to run lint before I push. Three times in three weeks I pushed a commit with a TypeScript error. Third time the homepage went blank and someone filed a GitHub issue. That was the moment. I finally sat down to learn GitHub Actions properly, using Claude as a guide since I'd never written a workflow file before. Three sessions: initial pipeline setup, debugging a JSDOM configuration failure, then wiring in auto-deploy to GitHub Pages.$pf$,
+  $pf$Working CI pipeline running on every PR and push to main: lint, type-check, and Vitest all required to pass before merge. Auto-deploy job added that publishes to GitHub Pages on merge. The JSDOM configuration was the most educational piece — I had assumed Vitest set up browser globals automatically for React tests, which it doesn't.$pf$,
+  '11111111-1111-1111-1111-111111111104',
+  'beginner',
+  'claude-opus-4-6',
+  'Claude 4.6 Opus',
+  ARRAY['Claude', 'GitHub Actions', 'React', 'TypeScript', 'Vitest', 'ESLint'],
+  ARRAY['ci-cd', 'github-actions', 'react', 'typescript', 'testing', 'deployment'],
+  'approved',
+  '22222222-2222-2222-2222-222222222201',
+  0, 0
+);
+
+INSERT INTO prompt_steps (id, prompt_id, step_number, title, content, result_content, description) VALUES
+
+-- Step 1 --
+('66666666-6666-6666-6666-666666940101',
+ '55555555-5555-5555-5555-555555550094',
+ 1,
+ $pf$Initial workflow: lint + type-check + Vitest on every PR$pf$,
+ $pf$I have a React + TypeScript app called SpecView on GitHub. My package.json already defines three scripts: lint (ESLint), typecheck (tsc --noEmit), and test (Vitest). I've never written a GitHub Actions workflow file before and I don't know where to start. I want CI that runs on every pull request and every push to main, requiring all three scripts to pass before a merge is allowed. Show me the complete .github/workflows/ci.yml file and explain what each section actually means — I keep reading terms like runner, job, step, and event in the docs and I'm having trouble connecting them to what I'm setting up. Real explanations, not just a template I copy without understanding.$pf$,
+ $pf$Create `.github/workflows/ci.yml` — GitHub discovers workflow files automatically based on that path.
+
+```yaml
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      - run: npm ci
+      - run: npm run lint
+
+  typecheck:
+    name: Type Check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      - run: npm ci
+      - run: npm run typecheck
+
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      - run: npm ci
+      - run: npm run test
+```
+
+**The four concepts, actually explained:**
+
+*Event* (`on:`) — what causes the workflow to run. `push` fires when commits land on a branch; `pull_request` fires when a PR is opened or updated. `branches: [main]` means "only when the target is main." A commit pushed to a feature branch with no open PR targeting main won't trigger this workflow.
+
+*Job* — an isolated execution unit. Each job (`lint`, `typecheck`, `test`) runs on its own fresh VM. They start in parallel by default — lint failing doesn't prevent test from starting. If you want fail-fast behavior, add `needs: [lint]` to the other jobs. Parallel is fine for now.
+
+*Runner* (`runs-on: ubuntu-latest`) — a temporary VM that GitHub provisions for the job. It starts completely empty, runs your steps, and gets destroyed. Nothing persists between runs, which is why every job re-runs `checkout` and `setup-node`.
+
+*Step* — a single command or action inside a job. `uses: actions/checkout@v4` is a prebuilt action that clones your repo. `run: npm ci` is a shell command. Steps execute sequentially; if one fails, subsequent steps are skipped.
+
+**Why `npm ci` instead of `npm install`:** `ci` installs exactly what is in `package-lock.json` and won't modify it. Faster than `install`, stricter, reproducible across runs. Always use it in CI.
+
+**Why `cache: 'npm'`:** caches `node_modules` between runs, keyed to `package-lock.json`. If your lockfile didn't change, the next run skips the download. Without caching you pay full download time on every run.
+
+After committing this file, open a PR and you'll see three status checks appear. To enforce them: Settings → Branches → Add rule for `main` → check "Require status checks to pass before merging" → search for and add `Lint`, `Type Check`, and `Test`. That's the full loop: push → checks run → merge blocked until all three are green.$pf$,
+ NULL),
+
+-- Step 2 --
+('66666666-6666-6666-6666-666666940102',
+ '55555555-5555-5555-5555-555555550094',
+ 2,
+ $pf$Debugging the test job: window is not defined$pf$,
+ $pf$Lint and typecheck are both passing. The test job is failing with this:
+
+  Error: The following error originated from your test code, not from Vitest itself.
+  > window is not defined
+
+My tests render React components and check the DOM — nothing unusual, mostly renderToStaticMarkup and some querySelector calls in the assertions. I assumed Vitest set up JSDOM automatically for React projects. Clearly it doesn't. What's happening and how do I fix it?$pf$,
+ $pf$Vitest defaults to Node's JavaScript environment, which has no DOM globals — no `window`, no `document`, no `HTMLElement`. It does not enable JSDOM automatically for React projects. You have to opt in explicitly.
+
+**Quick per-file fix:**
+Add this comment at the very top of any test file that needs DOM access:
+```ts
+// @vitest-environment jsdom
+```
+Vitest reads this pragma and runs that file under JSDOM. No config changes required. Fine for a one-off file, but if all your tests need the DOM, the global config approach is cleaner.
+
+**Global config fix (recommended):**
+Create `vitest.config.ts` in your project root:
+```ts
+import { defineConfig } from 'vitest/config'
+import react from '@vitejs/plugin-react'
+
+export default defineConfig({
+  plugins: [react()],
+  test: {
+    environment: 'jsdom',
+    globals: true,
+  },
+})
+```
+
+`environment: 'jsdom'` sets the DOM environment for all test files. `globals: true` injects `describe`, `it`, `expect`, and `vi` as global variables so you don't need to import them — matching Jest's behavior, which most React testing tutorials assume.
+
+**Also verify jsdom is installed.** It's a peer dependency that Vitest doesn't bundle. Check:
+```
+npm list jsdom
+```
+If it's not listed, install it:
+```
+npm install -D jsdom
+```
+Commit the updated `package-lock.json`. If jsdom isn't in the lockfile, the CI job will fail on `npm ci` before your tests even start.
+
+**One thing to know about the tradeoff:** with `environment: 'jsdom'` set globally, every test file runs under JSDOM — even pure utility tests that don't touch the DOM. That adds roughly 30–80ms per file. At the scale of a side project this is irrelevant. If it becomes a problem later, you can override specific files back to `node` with the per-file pragma.
+
+After adding the config and confirming jsdom is in your lockfile, push and the test job should go green. `window is not defined` always means either a missing JSDOM setup or a module-level import that executes browser-side code at import time — in your case it's the former.$pf$,
+ NULL),
+
+-- Step 3 --
+('66666666-6666-6666-6666-666666940103',
+ '55555555-5555-5555-5555-555555550094',
+ 3,
+ $pf$Adding auto-deploy to GitHub Pages on merge to main$pf$,
+ $pf$All three jobs are green. CI is working — no more accidentally pushing broken builds. Now I want to add automatic deployment to GitHub Pages whenever a PR merges to main. My build output goes to dist/. I've already enabled Pages in the repo settings and pointed it at a gh-pages branch, which doesn't exist yet. How do I add a deploy job that builds and pushes to that branch, and what do I need to configure in the repo settings to make it work?$pf$,
+ $pf$Add a fourth job at the bottom of your `ci.yml`, inside the `jobs:` block:
+
+```yaml
+  deploy:
+    name: Deploy to GitHub Pages
+    needs: [lint, typecheck, test]
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      - run: npm ci
+      - run: npm run build
+      - name: Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./dist
+          publish_branch: gh-pages
+```
+
+**What each part does:**
+
+`needs: [lint, typecheck, test]` — the deploy job won't start until all three CI jobs succeed. Tests fail → no deploy.
+
+`if: github.ref == 'refs/heads/main' && github.event_name == 'push'` — without this condition, the deploy job would attempt to run on `pull_request` events too. PRs from forks don't have write access to your repo, so the deploy would fail. Same-repo PRs also shouldn't auto-deploy. This condition limits deploy to direct pushes to main — i.e., what happens when a PR merges.
+
+`permissions: contents: write` — the auto-generated `GITHUB_TOKEN` needs write permission to push commits to the `gh-pages` branch. Without this block you get a 403 on the deploy step.
+
+`peaceiris/actions-gh-pages@v4` — handles pushing your built files to the specified branch. It uses `github_token`, which is an auto-generated secret GitHub provides to every workflow run. You don't create this yourself.
+
+**One repo setting to check:** Settings → Actions → General → Workflow permissions. Set it to "Read and write permissions." If it's on read-only, the deploy step fails with a permissions error even with the job-level `permissions` block.
+
+**What happens on the first run:** the `gh-pages` branch doesn't exist yet. The action creates it on the first successful deploy. You don't need to create it manually. After it's created, GitHub Pages picks up the new content automatically — first deploy takes about 60–90 seconds to appear live; subsequent deploys are faster.
+
+If you see "The process '/usr/bin/git' failed with exit code 128" in the deploy step log, it's almost always the workflow permissions setting — confirm read-write is selected in repo settings.$pf$,
+ NULL);
+
+-- =========================================================================
+-- Project 55-0095 | Silent schema-change data incident | Raj Patel | Data | 4 steps
+-- =========================================================================
+
+DELETE FROM prompt_steps WHERE prompt_id = '55555555-5555-5555-5555-555555550095';
+DELETE FROM prompts      WHERE id        = '55555555-5555-5555-5555-555555550095';
+
+INSERT INTO prompts (
+  id, title, description, content, result_content,
+  category_id, difficulty, model_used, model_recommendation,
+  tools_used, tags, status, author_id, vote_count, bookmark_count
+) VALUES (
+  '55555555-5555-5555-5555-555555550095',
+  $pf$Hunting down 3 days of bad revenue data from a silent schema change$pf$,
+  $pf$Raj Patel traces mysteriously low revenue in his client's Snowflake warehouse to a silent upstream column rename, backfills the corrupted rows, adds dbt monitoring to prevent recurrence, and writes the postmortem.$pf$,
+  $pf$I do freelance data consulting on retainer for a mid-size DTC homegoods brand — around $4M monthly revenue flowing through Shopify, warehoused in Snowflake via Fivetran, modeled with dbt Cloud. I check their revenue dashboard every Monday morning before the ops standup. One Monday the last three days looked wrong: order counts were correct, but revenue totals were running about 18% low. Not a cliff — a quiet, consistent underreporting across all three days. Fivetran showed no sync errors. Shopify admin showed nothing unusual. Something was broken inside the pipeline and I had three hours before the standup. I asked Claude to help me structure the investigation before I started running random queries, because a hypothesis-first approach is faster than brute force.$pf$,
+  $pf$Root cause confirmed in 40 minutes: the upstream PostgreSQL database had a column renamed from order_total to total_amount in a Thursday-night migration. Fivetran silently synced the renamed column as nulls with no error. Three-day backfill completed inside a transaction. dbt not_null schema test added. Client postmortem delivered before the standup.$pf$,
+  '11111111-1111-1111-1111-111111111108',
+  'intermediate',
+  'claude-sonnet-4-6',
+  'Claude 4.6 Sonnet',
+  ARRAY['Claude', 'Snowflake', 'dbt', 'Fivetran', 'SQL'],
+  ARRAY['data-quality', 'snowflake', 'dbt', 'fivetran', 'incident-response', 'schema-migration'],
+  'approved',
+  '22222222-2222-2222-2222-222222222207',
+  0, 0
+);
+
+INSERT INTO prompt_steps (id, prompt_id, step_number, title, content, result_content, description) VALUES
+
+-- Step 1 --
+('66666666-6666-6666-6666-666666950101',
+ '55555555-5555-5555-5555-555555550095',
+ 1,
+ $pf$Structuring the investigation: isolate the affected date range$pf$,
+ $pf$I'm a freelance data consultant and I just found that my client's last three days of Shopify revenue are about 18% lower than they should be. Order counts look correct — the right number of rows are in the table. Revenue totals are wrong. Fivetran shows no sync errors. The pipeline is Shopify PostgreSQL to Fivetran to Snowflake to dbt to the dashboard. I have access to both the raw Fivetran landing tables (raw_shopify.orders) and the dbt-transformed model (analytics.daily_revenue_summary). I want to structure this investigation before I start running queries. What are the most likely root causes when order counts are correct but revenue totals are wrong, and which queries should I run first to isolate the issue?$pf$,
+ $pf$When row counts are correct but revenue totals are wrong, the failure is almost always one of four things:
+
+1. **A source column changed** — the column you're aggregating was renamed, altered, or started containing nulls after a migration
+2. **A join is fan-outing rows** — a join introduced duplicate rows and you're summing over inflated counts (this would also inflate row counts, so less likely here)
+3. **A filter shifted** — a WHERE clause started including or excluding rows it didn't before (same problem: count would shift too)
+4. **A unit or currency shift** — values in cents are suddenly being returned in dollars, or vice versa
+
+Given that order counts are correct and Fivetran shows no errors, the fan-out and filter scenarios are unlikely. Start with the source column hypothesis.
+
+**Query 1: Find the exact date where revenue breaks**
+```sql
+SELECT
+    DATE(created_at)        AS order_date,
+    COUNT(*)                AS order_count,
+    SUM(order_total)        AS total_revenue,
+    AVG(order_total)        AS avg_order_value
+FROM raw_shopify.orders
+WHERE created_at >= DATEADD(day, -14, CURRENT_DATE)
+GROUP BY 1
+ORDER BY 1 DESC;
+```
+If it's a column change, average order value will cliff off on one specific date and hold consistently lower after. The date of the cliff is the date of the upstream change.
+
+**Query 2: Check for nulls in the revenue column**
+```sql
+SELECT
+    DATE(created_at)                        AS order_date,
+    COUNT(*)                                AS total_orders,
+    COUNT(order_total)                      AS orders_with_revenue,
+    COUNT(*) - COUNT(order_total)           AS null_revenue_orders
+FROM raw_shopify.orders
+WHERE created_at >= DATEADD(day, -14, CURRENT_DATE)
+GROUP BY 1
+ORDER BY 1 DESC;
+```
+Note that `COUNT(column)` ignores NULLs while `COUNT(*)` counts everything. If `null_revenue_orders` goes from zero to nonzero on a specific date, your column started returning nulls — the signature of a schema rename where the old column name kept syncing as empty.
+
+**Query 3: Check for new columns added to the table**
+```sql
+SELECT column_name, data_type, is_nullable
+FROM raw_shopify.INFORMATION_SCHEMA.COLUMNS
+WHERE table_name = 'ORDERS'
+ORDER BY ordinal_position;
+```
+If you see both `ORDER_TOTAL` and `TOTAL_AMOUNT` in the results, a column was renamed in the source and Fivetran added the new column while the old one went null. That's your root cause. Run these three queries in order and report what you see.$pf$,
+ NULL),
+
+-- Step 2 --
+('66666666-6666-6666-6666-666666950102',
+ '55555555-5555-5555-5555-555555550095',
+ 2,
+ $pf$Writing the backfill: restore 3 days of corrupted revenue$pf$,
+ $pf$The null check was exactly right. Starting Thursday at 11pm, order_total is null for every row. And there's a new column called total_amount that has the actual values for those rows. The Shopify engineering team ran a migration Thursday night that renamed the column, and Fivetran picked up the new column but kept syncing the old name as nulls with no error logged anywhere. I count 3,847 affected orders spanning Friday, Saturday, and Sunday. I need to write the backfill. I don't want to run a raw UPDATE with no rollback path — what's the safest pattern for doing this in Snowflake, and how do I verify it before I commit?$pf$,
+ $pf$Good instinct. The pattern: validate scope first, UPDATE inside a transaction, verify before you commit.
+
+**Step 1: Validate before touching anything**
+```sql
+SELECT
+    COUNT(*)                             AS affected_rows,
+    MIN(created_at)                      AS earliest_affected,
+    MAX(created_at)                      AS latest_affected,
+    COUNT(total_amount)                  AS rows_with_replacement,
+    COUNT(*) - COUNT(total_amount)       AS rows_missing_replacement
+FROM raw_shopify.orders
+WHERE order_total IS NULL;
+```
+Run this first. If `rows_missing_replacement` is not zero, some orders have null in both columns — you have a deeper problem and should stop here to investigate those rows before doing a mass update. Assuming it comes back as zero, all 3,847 rows have a valid `total_amount` to pull from. Proceed.
+
+**Step 2: Update inside a transaction**
+Snowflake supports standard ACID transactions:
+```sql
+BEGIN TRANSACTION;
+
+UPDATE raw_shopify.orders
+SET    order_total = total_amount
+WHERE  order_total IS NULL
+  AND  total_amount IS NOT NULL;
+
+-- Spot-check before committing
+SELECT COUNT(*) AS still_null
+FROM   raw_shopify.orders
+WHERE  order_total IS NULL;
+-- Expected: 0
+
+COMMIT;
+-- or ROLLBACK if the spot-check looks wrong
+```
+The `BEGIN TRANSACTION` holds the changes in an uncommitted state. If `still_null` comes back as zero, commit. If something looks wrong — unexpected count, timeout, anything — run `ROLLBACK` and the UPDATE never happened.
+
+**Step 3: Post-commit revenue verification**
+```sql
+SELECT
+    DATE(created_at)    AS order_date,
+    COUNT(*)            AS order_count,
+    SUM(order_total)    AS total_revenue,
+    AVG(order_total)    AS avg_order_value
+FROM raw_shopify.orders
+WHERE created_at >= '2026-04-17'
+GROUP BY 1
+ORDER BY 1;
+```
+Compare Friday, Saturday, Sunday to the same days the prior week. They should be back in range. If average order value still looks wrong — consistently half or double — check whether the source is returning values in cents: some Shopify API versions return `order_total` as an integer in cents. That would show as revenue 100x too low even after the backfill.
+
+Once confirmed, your dbt models recompute correctly on the next scheduled run — no changes needed in the dbt layer since dbt reads from the source table fresh each time.$pf$,
+ NULL),
+
+-- Step 3 --
+('66666666-6666-6666-6666-666666950103',
+ '55555555-5555-5555-5555-555555550095',
+ 3,
+ $pf$dbt schema test to catch future column renames$pf$,
+ $pf$Backfill is done. Revenue is correct — Friday and Saturday both match week-prior comparables within about 2%, which is normal variation. Now I want to make sure this never silently propagates again. My client uses dbt Cloud on a daily schedule. I want a test that would catch this class of issue — a critical column going null — ideally within 24 hours of the schema change rather than after three days. What are my options in dbt?$pf$,
+ $pf$Two complementary layers: a dbt schema test catches null revenue on the next dbt run; a Snowflake monitoring query catches it faster if 24-hour detection is too slow.
+
+**Layer 1: dbt not_null test with thresholds**
+
+In your `models/staging/sources.yml` (or wherever your Shopify orders source is declared):
+
+```yaml
+version: 2
+
+sources:
+  - name: raw_shopify
+    database: your_snowflake_db
+    schema: raw_shopify
+    tables:
+      - name: orders
+        columns:
+          - name: order_total
+            tests:
+              - not_null:
+                  config:
+                    severity: error
+                    error_if: ">100"
+                    warn_if: ">0"
+```
+
+The `warn_if/error_if` thresholds matter. A single null `order_total` could be a legitimate edge case — a voided order, a test transaction. But 100+ nulls on a revenue column is an incident. `error_if: ">100"` blocks the dbt run from completing and sends a failure notification through whatever alerting you have in dbt Cloud. `warn_if: ">0"` surfaces smaller anomalies without blocking. With a daily schedule, this catches Thursday's migration by Friday morning instead of Monday.
+
+**Layer 2: dbt source freshness**
+Add a freshness check so dbt alerts if Fivetran stops syncing entirely:
+
+```yaml
+sources:
+  - name: raw_shopify
+    freshness:
+      warn_after: {count: 2, period: hour}
+      error_after: {count: 6, period: hour}
+    loaded_at_field: _fivetran_synced
+    tables:
+      - name: orders
+```
+
+This catches a different failure mode — Fivetran going silent rather than syncing nulls.
+
+**Layer 3: Snowflake monitoring query for sub-24-hour detection**
+If daily dbt is too slow, create a Snowflake Task:
+```sql
+CREATE OR REPLACE TASK revenue_null_monitor
+  WAREHOUSE = your_warehouse
+  SCHEDULE = 'USING CRON 0 */4 * * * America/New_York'
+AS
+SELECT
+    CURRENT_TIMESTAMP                        AS checked_at,
+    COUNT(*) - COUNT(order_total)            AS null_revenue_count,
+    CASE
+        WHEN COUNT(*) - COUNT(order_total) > 50 THEN 'CRITICAL'
+        WHEN COUNT(*) - COUNT(order_total) > 0  THEN 'WARNING'
+        ELSE 'OK'
+    END                                      AS status
+FROM raw_shopify.orders
+WHERE created_at >= CURRENT_DATE - 2;
+
+ALTER TASK revenue_null_monitor RESUME;
+```
+Pair with a Snowflake Alert that fires when `status != 'OK'`. Detection lag drops to 4 hours.
+
+**Which to use:** the dbt test alone is sufficient for most clients and requires no extra infrastructure. Add the Snowflake Task if your client has SLAs where 24-hour detection is unacceptable. For a DTC homegoods brand, the dbt test is the right level of investment.$pf$,
+ NULL),
+
+-- Step 4 --
+('66666666-6666-6666-6666-666666950104',
+ '55555555-5555-5555-5555-555555550095',
+ 4,
+ $pf$One-page incident postmortem for the client$pf$,
+ $pf$Everything is fixed and the monitoring is in place. Last piece: I need to write a postmortem for my client's head of ops. She's not technical — she understands business impact but not Fivetran or schema migrations. The CFO also needs to see it since he noticed the dashboard numbers and asked questions. And the engineering team that ran the Thursday migration needs to understand what happened downstream. I want one document that works for all three, explains what happened without being a blame document, and communicates what we've put in place. Can you draft it?$pf$,
+ $pf$**Revenue Data Incident Report — April 18–21, 2026**
+*Prepared by: Raj Patel, Data Consulting | Distributed to: Head of Ops, CFO, Engineering*
+
+---
+
+**What happened**
+
+From Thursday evening, April 17 through Monday morning, April 21, the daily revenue figures in the dashboard were approximately 18% lower than actual revenue. The correct number of orders appeared throughout — the issue was in revenue totals only.
+
+Estimated impact on reporting accuracy: approximately $147,000 in weekend revenue was undercounted across three days (Friday approximately $48K, Saturday $62K, Sunday $37K). No transactions were lost. No customer data was affected. Payments processed normally in Shopify throughout the incident. The error existed only in the reporting dashboard.
+
+**Root cause**
+
+On Thursday evening, the engineering team ran a database maintenance update that renamed an internal field used to store order revenue. This was a standard and appropriate code improvement on their end.
+
+The data pipeline that copies Shopify data into the reporting warehouse was not aware of this change. When the field name changed, the pipeline continued running without error — but the old field name began returning empty values instead of revenue amounts. The pipeline had no way to distinguish between "this field is intentionally empty" and "this field was renamed and we're now looking at the wrong place."
+
+**Why the gap wasn't caught sooner**
+
+The pipeline showed no errors because, technically, it had not failed — it was successfully copying data, just from the wrong field. Detection required looking at the dashboard and noticing the numbers seemed consistently low, which happened Monday morning.
+
+**What was corrected**
+
+All 3,847 affected orders were updated in the reporting database to restore the correct revenue values, drawn from the renamed field. The correction was verified against prior-week comparisons; all three affected days now show figures within normal weekly variation. Dashboard models were re-run and confirmed accurate.
+
+**What's in place going forward**
+
+Two changes were made:
+
+First, the reporting pipeline now runs an automated daily check that flags any significant number of orders with missing revenue. If the check trips, an alert fires before the morning dashboard refresh. This would have surfaced Thursday's change by Friday morning.
+
+Second, going forward, any changes to the Shopify database that affect order or financial fields should be communicated to the data team at least 24 hours before the change runs. A single Slack message is sufficient — no approval required, just advance notice so we can verify the pipeline before and after. A brief coordination checklist has been shared with the engineering team.
+
+**What this is not**
+
+This was not a data breach. Customer payment information was not affected. This was not a failure by the engineering team — the field rename was a correct maintenance step. The gap was the absence of a communication link between application changes and their downstream effects on reporting. That link is now established.
+
+*Questions: contact Raj Patel.*$pf$,
+ NULL);
+
+-- =========================================================================
 -- END OF FILE — append next project(s) below this line.
 -- Iterations working the Content queue: add 2–3 projects per iteration,
 -- appending below this comment. Do NOT rewrite existing projects.

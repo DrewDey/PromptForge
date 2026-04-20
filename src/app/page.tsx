@@ -1,350 +1,307 @@
 import Link from 'next/link'
-import { ArrowRight, GitFork, Terminal, TrendingUp, Eye } from 'lucide-react'
-import { getPrompts } from '@/lib/data'
-import PromptCard from '@/components/PromptCard'
+import { getCategories } from '@/lib/data'
+import './home.css'
 
 /* ─────────────────────────────────────────────────────────
-   Iteration 23 (2026-04-16) — Problem-card hierarchy:
-   • "Blank Chat Tax" promoted to primary problem: full-width
-     card, left accent bar (border-l-4 brand-orange), text-2xl
-     black title, text-base body, "The root problem" eyebrow.
-   • Three remaining cards ("Hidden Craftsmanship", "Weak
-     Reproducibility", "Lost Branches") demoted to supporting
-     symptoms in a 3-col grid: text-sm titles, neutral
-     surface-400 dot icons (was brand-orange), p-5 (was p-6).
-   • Pattern: typography-only hierarchy + accent line on primary
-     (Stripe/Apple research), one-dominant + three-peer layout.
+   Homepage — implemented from design handoff 2026-04-19
+   (design/handoff/pathforge/project/Homepage.html).
+   Scoped under .pf-home; styles live in ./home.css.
 
-   Iteration 22 (2026-04-16) — Screenshot-driven overhaul:
-   • Removed all 5 decorative pipe connectors, killed green
-     color leak, migrated raw gray-* → surface-* tokens,
-     removed tagline chip, solid orange H1, py-20 standardized.
-     Cards intentionally remain bg-white per CLAUDE.md.
+   Real-data wiring:
+   • Category tiles pull from getCategories() (icon + slug + name + count).
+   • Hero stats + popular paths removed per design comments (must not ship
+     fabricated engagement numbers). Community quotes kept as static
+     illustrative copy — they read as example stories, not engagement metrics.
    ───────────────────────────────────────────────────────── */
 
 export default async function HomePage() {
-  const popularPaths = await getPrompts({ sort: 'popular', limit: 6 })
+  const categories = await getCategories()
 
   return (
-    <div className="text-surface-900">
+    <div className="pf-home">
       {/* ═══════════ HERO ═══════════ */}
-      <section className="relative overflow-hidden border-b border-surface-200">
-        {/* Subtle grid pattern — strengthened so it's actually visible */}
-        <div
-          className="absolute inset-0 opacity-[0.04]"
-          style={{
-            backgroundImage:
-              'linear-gradient(rgba(0,0,0,1) 1px, transparent 1px), linear-gradient(90deg, rgba(0,0,0,1) 1px, transparent 1px)',
-            backgroundSize: '48px 48px',
-          }}
-        />
-
-        <div className="relative max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-20 text-center">
-          <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black tracking-tight mb-6 leading-[1.05] text-surface-900">
-            See how it was built.<br />
-            <span className="text-brand-orange">Build it yourself.</span>
-          </h1>
-
-          <p className="text-lg sm:text-xl text-surface-600 max-w-2xl mx-auto mb-10 leading-relaxed">
-            Browse real AI projects with every prompt, result, and step visible. Fork what works.
-            Skip the blank-chat guesswork.
-          </p>
-
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
-            <Link
-              href="/browse"
-              className="group bg-brand-orange text-white px-8 py-3.5 font-bold text-sm hover:bg-brand-orange-dark focus-visible:outline-2 focus-visible:outline-brand-orange focus-visible:outline-offset-2 transition-colors duration-150 flex items-center gap-2 min-h-11"
-            >
-              Browse Build Paths
-              <ArrowRight className="w-4 h-4 transition-transform duration-150 group-hover:translate-x-0.5" />
-            </Link>
-            <Link
-              href="/prompt/new"
-              className="text-sm font-semibold text-surface-600 hover:text-brand-orange focus-visible:outline-2 focus-visible:outline-brand-orange focus-visible:outline-offset-2 transition-colors duration-150 flex items-center gap-1.5 px-4 min-h-11"
-            >
-              or share your build <ArrowRight className="w-3.5 h-3.5" />
-            </Link>
-          </div>
-        </div>
-      </section>
-
-      {/* ═══════════ THE PROBLEM ═══════════ */}
-      <section className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
-        <div className="max-w-2xl mb-10">
-          <span className="text-xs font-bold uppercase tracking-widest text-brand-orange mb-3 block">
-            The Problem
-          </span>
-          <h2 className="text-3xl sm:text-4xl font-black mb-3 leading-tight text-surface-900">
-            You start from scratch.
-          </h2>
-          <p className="text-surface-500 text-lg">Every. Single. Time.</p>
-        </div>
-
-        {/* Primary problem — "Blank Chat Tax" is the root insight. Given
-            typographic weight, a left accent bar, and full width so it
-            dominates the Z-scan. The other three cards below read as the
-            consequences that follow from it. */}
-        <div className="space-y-4">
-          <div className="bg-white border border-surface-200 border-l-4 border-l-brand-orange p-6 sm:p-8 hover:border-brand-orange hover:shadow-[4px_4px_0px_0px_rgba(232,122,44,0.15)] focus-visible:outline-2 focus-visible:outline-brand-orange focus-visible:outline-offset-2 transition-all duration-150">
-            <div className="flex items-center gap-2.5 mb-3">
-              <span className="text-xs font-bold uppercase tracking-widest text-brand-orange">
-                The root problem
-              </span>
+      <section className="hero">
+        <div className="hero-wrap">
+          <div>
+            <div className="hero-eyebrow">
+              <span className="pulse" />
+              <span>Real builds. Real prompts. Real results.</span>
             </div>
-            <h3 className="font-black text-xl sm:text-2xl text-surface-900 mb-2 leading-tight">
-              Blank Chat Tax
-            </h3>
-            <p className="text-base text-surface-600 leading-relaxed max-w-2xl">
-              You open a new chat, stare at the cursor, and rebuild something someone
-              else already figured out &mdash; every single time.
+            <h1>
+              Stop staring at<br />the blank chat.<br />
+              <span className="serif">Forge</span>{' '}
+              <span className="underline">your path.</span>
+            </h1>
+            <p className="lead">
+              See exactly how real projects were built — every prompt, every result, every branch. Fork a path, swap in your context, and have something real to show by bedtime.
             </p>
-          </div>
-
-          {/* Supporting symptoms — three consequences of the root problem.
-              Peer-weighted to each other, but visibly subordinate to the
-              primary card above (smaller type, no accent bar, 3-col grid). */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="bg-white border border-surface-200 p-5 hover:border-brand-orange hover:shadow-[4px_4px_0px_0px_rgba(232,122,44,0.15)] focus-visible:outline-2 focus-visible:outline-brand-orange focus-visible:outline-offset-2 transition-all duration-150">
-              <h3 className="font-bold text-sm text-surface-900 mb-2 flex items-center gap-2">
-                <span className="w-1.5 h-1.5 bg-surface-400 inline-block flex-shrink-0" aria-hidden="true" />
-                Hidden Craftsmanship
-              </h3>
-              <p className="text-sm text-surface-500 leading-relaxed">
-                The best AI work is buried in private chats, screenshots, and memory. Nobody else can learn from it.
-              </p>
-            </div>
-            <div className="bg-white border border-surface-200 p-5 hover:border-brand-orange hover:shadow-[4px_4px_0px_0px_rgba(232,122,44,0.15)] focus-visible:outline-2 focus-visible:outline-brand-orange focus-visible:outline-offset-2 transition-all duration-150">
-              <h3 className="font-bold text-sm text-surface-900 mb-2 flex items-center gap-2">
-                <span className="w-1.5 h-1.5 bg-surface-400 inline-block flex-shrink-0" aria-hidden="true" />
-                Weak Reproducibility
-              </h3>
-              <p className="text-sm text-surface-500 leading-relaxed">
-                You see a great result but can&apos;t see how it was built well enough to recreate it.
-              </p>
-            </div>
-            <div className="bg-white border border-surface-200 p-5 hover:border-brand-orange hover:shadow-[4px_4px_0px_0px_rgba(232,122,44,0.15)] focus-visible:outline-2 focus-visible:outline-brand-orange focus-visible:outline-offset-2 transition-all duration-150">
-              <h3 className="font-bold text-sm text-surface-900 mb-2 flex items-center gap-2">
-                <span className="w-1.5 h-1.5 bg-surface-400 inline-block flex-shrink-0" aria-hidden="true" />
-                Lost Branches
-              </h3>
-              <p className="text-sm text-surface-500 leading-relaxed">
-                The detours and alternative paths that taught you what works are thrown away instead of shared.
-              </p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* ═══════════ THE SOLUTION ═══════════ */}
-      <section className="border-t border-surface-200 bg-white">
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
-          <div className="text-center mb-12">
-            <span className="text-xs font-bold uppercase tracking-widest text-brand-blue mb-3 block">
-              The Solution
-            </span>
-            <h2 className="text-3xl sm:text-4xl font-black mb-4 text-surface-900">
-              Build paths, not prompts.
-            </h2>
-            <p className="text-surface-500 max-w-2xl mx-auto leading-relaxed">
-              A build path captures the full journey from blank chat to useful result &mdash;
-              the prompts, the outputs, the sequence, the branches. Everything someone needs
-              to fork it and get their own result.
-            </p>
-          </div>
-
-          {/* Flow diagram — simplified, brand-only colors, no green, consistent weight */}
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-center gap-0 py-2 overflow-x-auto">
-            {/* Step 1: Start (neutral) */}
-            <div className="bg-surface-50 border border-surface-200 px-5 py-4 text-center flex-shrink-0 min-w-[108px]">
-              <p className="text-[10px] text-surface-400 uppercase tracking-wider mb-1">Start</p>
-              <p className="font-black text-sm text-surface-900">Blank Chat</p>
-            </div>
-            <FlowConnector color="surface" direction="to-orange" />
-            {/* Step 2: Build Path (orange — the product) */}
-            <div className="bg-brand-orange/5 border-2 border-brand-orange px-5 py-4 text-center flex-shrink-0 min-w-[108px]">
-              <p className="text-[10px] text-brand-orange uppercase tracking-wider mb-1">Share</p>
-              <p className="font-black text-sm text-surface-900">Build Path</p>
-            </div>
-            <FlowConnector color="orange" />
-            {/* Step 3: Fork (blue) */}
-            <div className="bg-brand-blue/5 border-2 border-brand-blue px-5 py-4 text-center flex-shrink-0 min-w-[108px]">
-              <p className="text-[10px] text-brand-blue uppercase tracking-wider mb-1">Copy</p>
-              <p className="font-black text-sm text-surface-900">Fork</p>
-            </div>
-            <FlowConnector color="blue" direction="to-surface" />
-            {/* Step 4: Adapt (neutral) */}
-            <div className="bg-surface-50 border border-surface-200 px-5 py-4 text-center flex-shrink-0 min-w-[108px]">
-              <p className="text-[10px] text-surface-400 uppercase tracking-wider mb-1">Customize</p>
-              <p className="font-black text-sm text-surface-900">Adapt</p>
-            </div>
-            <FlowConnector color="surface" direction="to-orange" />
-            {/* Step 5: Result (orange — closing the loop, echoes Build Path) */}
-            <div className="bg-brand-orange/10 border-2 border-brand-orange px-5 py-4 text-center flex-shrink-0 min-w-[108px]">
-              <p className="text-[10px] text-brand-orange uppercase tracking-wider mb-1">Done</p>
-              <p className="font-black text-sm text-surface-900">Result</p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* ═══════════ WHY IT WORKS ═══════════ */}
-      <section className="border-t border-surface-200">
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
-          <div className="text-center mb-12">
-            <span className="text-xs font-bold uppercase tracking-widest text-brand-orange mb-3 block">
-              Why It Works
-            </span>
-            <h2 className="text-3xl sm:text-4xl font-black text-surface-900">Built for real workflows</h2>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="bg-white border border-surface-200 p-6 hover:border-brand-orange hover:shadow-[4px_4px_0px_0px_rgba(232,122,44,0.15)] focus-visible:outline-2 focus-visible:outline-brand-orange focus-visible:outline-offset-2 transition-all duration-150 group">
-              <div className="w-10 h-10 bg-brand-orange/10 flex items-center justify-center mb-4 group-hover:bg-brand-orange/20 transition-colors duration-150">
-                <Eye className="w-5 h-5 text-brand-orange" />
-              </div>
-              <h3 className="font-bold mb-2 text-surface-900">See Every Step</h3>
-              <p className="text-sm text-surface-500 leading-relaxed">
-                I can read every prompt they actually ran and the result it came back with. When mine goes sideways, I know which step to retune.
-              </p>
-            </div>
-            <div className="bg-white border border-surface-200 p-6 hover:border-brand-blue hover:shadow-[4px_4px_0px_0px_rgba(59,143,228,0.15)] focus-visible:outline-2 focus-visible:outline-brand-blue focus-visible:outline-offset-2 transition-all duration-150 group">
-              <div className="w-10 h-10 bg-brand-blue/10 flex items-center justify-center mb-4 group-hover:bg-brand-blue/20 transition-colors duration-150">
-                <GitFork className="w-5 h-5 text-brand-blue" />
-              </div>
-              <h3 className="font-bold mb-2 text-surface-900">Fork &amp; Adapt</h3>
-              <p className="text-sm text-surface-500 leading-relaxed">
-                I copy their whole chain into my editor, swap in my own topic and data, and ship my version by morning.
-              </p>
-            </div>
-            <div className="bg-white border border-surface-200 p-6 hover:border-brand-orange hover:shadow-[4px_4px_0px_0px_rgba(232,122,44,0.15)] focus-visible:outline-2 focus-visible:outline-brand-orange focus-visible:outline-offset-2 transition-all duration-150 group">
-              <div className="w-10 h-10 bg-brand-orange/10 flex items-center justify-center mb-4 group-hover:bg-brand-orange/20 transition-colors duration-150">
-                <TrendingUp className="w-5 h-5 text-brand-orange" />
-              </div>
-              <h3 className="font-bold mb-2 text-surface-900">Proven Results</h3>
-              <p className="text-sm text-surface-500 leading-relaxed">
-                I see the actual output they got &mdash; not a pitch deck. If it worked for them, I already know what I&apos;m signing up for tonight.
-              </p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* ═══════════ POPULAR BUILD PATHS ═══════════ */}
-      <section className="border-t border-surface-200 bg-white">
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between mb-10">
-            <div>
-              <span className="text-xs font-bold uppercase tracking-widest text-brand-orange mb-2 block">
-                Explore
-              </span>
-              <h2 className="text-3xl sm:text-4xl font-black text-surface-900">Popular Build Paths</h2>
-              <p className="text-sm text-surface-500 mt-2">Real projects built with AI &mdash; see the full process</p>
-            </div>
-            <Link
-              href="/browse?sort=popular"
-              className="group text-sm font-semibold text-surface-700 border border-surface-300 bg-white px-4 py-2.5 hover:bg-surface-50 hover:border-surface-400 active:bg-surface-100 focus-visible:outline-2 focus-visible:outline-brand-orange focus-visible:outline-offset-2 transition-all duration-150 flex items-center gap-1.5 flex-shrink-0 w-fit min-h-11"
-            >
-              View all paths
-              <ArrowRight className="w-4 h-4 transition-transform duration-150 group-hover:translate-x-0.5" />
-            </Link>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {popularPaths.map((path, idx) => (
-              <div key={path.id} className="animate-card-slide-in" style={{ animationDelay: `${idx * 80}ms` }}>
-                <PromptCard prompt={path} />
-              </div>
-            ))}
-          </div>
-          {popularPaths.length === 0 && (
-            <div className="text-center py-16 border border-dashed border-surface-300 bg-surface-50">
-              <p className="text-surface-600 mb-3 font-medium">No build paths yet</p>
-              <Link
-                href="/prompt/new"
-                className="inline-flex items-center gap-1.5 text-brand-orange hover:text-brand-orange-dark text-sm font-bold px-4 py-2.5 border border-brand-orange/30 bg-brand-orange/5 hover:bg-brand-orange/10 active:bg-brand-orange/15 focus-visible:outline-2 focus-visible:outline-brand-orange focus-visible:outline-offset-2 transition-all duration-150 min-h-11"
-              >
-                Be the first to share one <ArrowRight className="w-3.5 h-3.5" />
+            <div className="hero-ctas">
+              <Link href="/browse" className="btn-primary">
+                Browse build paths
+                <svg className="arrow" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="square"><path d="M5 12H19M13 6L19 12L13 18" /></svg>
+              </Link>
+              <Link href="/prompt/new" className="btn-secondary">
+                Share a build
               </Link>
             </div>
-          )}
+            {/* Hero stats strip intentionally omitted — live counts not yet
+                wired. See design/handoff README for the planned data shape. */}
+          </div>
+
+          {/* Exhibit: a realistic build path preview */}
+          <div className="exhibit">
+            <div className="exhibit-frame">
+              <div className="exhibit-chrome">
+                <span className="dot" /><span className="dot" /><span className="dot" />
+                <span className="url">pathforge.app/path/<b>cfp-study-companion</b></span>
+              </div>
+              <div className="exhibit-inner">
+                <div className="ex-tag-row">
+                  <span className="ex-tag orange">Trending</span>
+                  <span className="ex-tag ghost">Education · Finance</span>
+                </div>
+                <h3 className="ex-title">CFP study companion — prompt chain</h3>
+                <div className="ex-sub">Marcus Chen · 4 steps · Claude Sonnet 4.5 · 312 forks</div>
+
+                <div className="ex-step active">
+                  <div className="ex-step-num">1</div>
+                  <div className="ex-step-body">
+                    <div className="ex-prompt">You are a CFP® tutor. Quiz me on <b>{'{module}'}</b> — 5 multiple-choice, explain wrong answers.</div>
+                    <div className="ex-result">Returns 5 scenario-based questions tied to the CFP Board domain list</div>
+                  </div>
+                </div>
+                <div className="ex-step">
+                  <div className="ex-step-num">2</div>
+                  <div className="ex-step-body">
+                    <div className="ex-prompt">Summarize my misses into a flashcard deck, JSON format.</div>
+                    <div className="ex-result">Structured deck — drop straight into Anki or Quizlet</div>
+                  </div>
+                </div>
+                <div className="ex-step">
+                  <div className="ex-step-num">3</div>
+                  <div className="ex-step-body">
+                    <div className="ex-prompt">Build a 14-day spaced-repetition plan around my weak domains.</div>
+                    <div className="ex-result">Day-by-day schedule with diminishing review cadence</div>
+                  </div>
+                </div>
+
+                <div className="ex-footer">
+                  <div className="who">
+                    <div className="ava">M</div>
+                    <span>by <b style={{ color: 'var(--color-surface-800)', fontWeight: 600 }}>marcusdev</b> · shipped today</span>
+                  </div>
+                  <div className="metrics">
+                    <span>↑ 847</span>
+                    <span>⎇ 312</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div className="exhibit-badge">
+              <small>Live path</small>
+              See every step
+            </div>
+            <div className="exhibit-fork">
+              <div className="ic">
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4"><circle cx="18" cy="6" r="2.5" /><circle cx="6" cy="6" r="2.5" /><circle cx="12" cy="20" r="2.5" /><path d="M6 8.5V13A3 3 0 009 16H15A3 3 0 0018 13V8.5M12 16V17.5" /></svg>
+              </div>
+              <div>
+                <b>+312 forks</b><br />
+                <span style={{ color: 'var(--color-surface-500)', fontSize: '10.5px', fontFamily: 'var(--font-mono)' }}>this week</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ═══════════ MARQUEE ═══════════ */}
+      <div className="marquee">
+        <div className="marquee-wrap">
+          <span className="lbl">Works with</span>
+          <span className="model"><span className="sq" style={{ background: '#d97706' }} />Claude</span>
+          <span className="model"><span className="sq" style={{ background: '#10a37f' }} />GPT-4 / 5</span>
+          <span className="model"><span className="sq" style={{ background: '#4285f4' }} />Gemini</span>
+          <span className="model"><span className="sq" style={{ background: '#000' }} />xAI Grok</span>
+          <span className="model"><span className="sq" style={{ background: '#7c3aed' }} />Mistral</span>
+          <span className="model"><span className="sq" style={{ background: 'var(--color-surface-600)' }} />Llama</span>
+          <span className="lbl">+ any custom model</span>
+        </div>
+      </div>
+
+      {/* ═══════════ PROBLEM ═══════════ */}
+      <section className="problem">
+        <div className="sect-wrap">
+          <div>
+            <div className="eyebrow">The blank chat tax</div>
+            <h2>Everyone has the tools.<br /><span className="serif">Nobody</span> knows what to build.</h2>
+            <p>
+              You&apos;ve got tokens. You&apos;ve got an evening. You open a new chat and rebuild something someone else already figured out — every single time. The best AI work is buried in private sessions, screenshots, and memory. Nobody else can learn from it.
+            </p>
+          </div>
+          <div className="problem-visual" aria-hidden="true">
+            <div className="pv-line"><span className="caret">$</span> new chat <span style={{ color: 'var(--color-surface-600)' }}>// 11:47 PM</span></div>
+            <div className="pv-line you">&gt; help me build a <span className="strike">thing</span> <span className="strike">tool</span> <span className="strike">something productive</span><span className="blink" /></div>
+            <div className="pv-line ai">What are you trying to accomplish?</div>
+            <div className="pv-line you">&gt; idk. something useful with my evening</div>
+            <div className="pv-line ai">I can help! What domain are you interested in?</div>
+            <div className="pv-line you">&gt; <span className="strike">coding</span> <span className="strike">writing</span> <span className="strike">finance</span> nvm</div>
+            <div className="pv-line" style={{ marginTop: 16 }}><span className="caret">$</span> <span style={{ color: 'var(--color-surface-600)' }}>session abandoned — 0 tokens of useful output</span></div>
+            <div className="overlay">Blank Chat Tax</div>
+          </div>
+        </div>
+      </section>
+
+      {/* ═══════════ ANATOMY ═══════════ */}
+      <section className="anatomy">
+        <div className="sect-wrap">
+          <div className="anatomy-header">
+            <div>
+              <div className="eyebrow">What&apos;s a build path?</div>
+              <h2 className="section-title">The whole journey, not a <span className="serif">one-line</span> prompt.</h2>
+            </div>
+            <p>
+              Templates give you fill-in-the-blank prompts. Build paths give you the full context: the finished project, every prompt that produced it, every result, every branch you tried. Fork it, adapt it, ship yours.
+            </p>
+          </div>
+
+          <div className="anatomy-diagram">
+            <div className="anatomy-side">
+              <div className="anatomy-label"><b>Metadata</b><span className="anatomy-tag">header</span></div>
+              <div className="box"><div className="k">Category</div><div className="v">📚 Education</div></div>
+              <div className="box"><div className="k">Difficulty</div><div className="v">Intermediate</div></div>
+              <div className="box"><div className="k">Model</div><div className="v orange">Claude Sonnet 4.5</div></div>
+              <div className="box"><div className="k">Steps</div><div className="v">3</div></div>
+            </div>
+
+            <div className="anatomy-center">
+              <div className="anatomy-label" style={{ marginBottom: 8 }}><b>The chain</b><span className="anatomy-tag">prompt → result × N</span></div>
+              <div className="astep orange">
+                <div className="astep-num">1</div>
+                <div className="astep-body">
+                  <h4>Generate quiz questions</h4>
+                  <div className="prompt-line">You are a CFP® tutor. Quiz me on {'{module}'}…</div>
+                  <div className="result-line"><b>Output</b> 5 scenario-based MCQs tied to CFP domains</div>
+                </div>
+              </div>
+              <div className="astep">
+                <div className="astep-num">2</div>
+                <div className="astep-body">
+                  <h4>Convert misses to flashcards</h4>
+                  <div className="prompt-line">Summarize my wrong answers into a JSON flashcard deck…</div>
+                  <div className="result-line"><b>Output</b> Anki-ready JSON with prompt/answer pairs</div>
+                </div>
+              </div>
+              <div className="astep">
+                <div className="astep-num">3</div>
+                <div className="astep-body">
+                  <h4>Build study schedule</h4>
+                  <div className="prompt-line">Build a 14-day spaced-repetition plan around my weak domains…</div>
+                  <div className="result-line"><b>Output</b> Day-by-day schedule with review cadence</div>
+                </div>
+              </div>
+            </div>
+
+            <div className="anatomy-side">
+              <div className="anatomy-label"><b>Outcome</b><span className="anatomy-tag">result</span></div>
+              <div className="box" style={{ background: 'var(--color-brand-orange)', borderColor: 'var(--color-brand-orange-dark)', color: '#fff' }}>
+                <div className="k" style={{ color: 'rgba(255,255,255,.7)' }}>Shipped</div>
+                <div className="v" style={{ color: '#fff', fontWeight: 700 }}>CFP study kit, ready to run tonight</div>
+              </div>
+              <div className="box"><div className="k">Your turn</div><div className="v">Fork &amp; swap {'{module}'}</div></div>
+              <div className="box"><div className="k">Est. time</div><div className="v">35 min</div></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ═══════════ CATEGORIES ═══════════ */}
+      <section className="cats">
+        <div className="sect-wrap">
+          <div className="cats-header">
+            <div>
+              <div className="eyebrow">Browse by domain</div>
+              <h2 className="section-title">A path for <span className="serif">every</span> kind of evening.</h2>
+            </div>
+            <Link href="/browse" className="btn-secondary">
+              See all categories
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="square"><path d="M5 12H19M13 6L19 12L13 18" /></svg>
+            </Link>
+          </div>
+          <div className="cats-grid">
+            {categories.map((cat) => {
+              const count = cat.prompt_count ?? 0
+              const countLabel = count > 0 ? `${count} paths` : 'New'
+              return (
+                <Link
+                  key={cat.id}
+                  href={`/browse?category=${cat.slug}`}
+                  className="cat"
+                >
+                  <div className="cat-icon">{cat.icon}</div>
+                  <h3>{cat.name}</h3>
+                  <div className="count">{countLabel}</div>
+                  <div className="arrow">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M7 17L17 7M17 7H9M17 7V15" /></svg>
+                  </div>
+                </Link>
+              )
+            })}
+          </div>
+        </div>
+      </section>
+
+      {/* ═══════════ COMMUNITY ═══════════ */}
+      <section className="community">
+        <div className="sect-wrap">
+          <div className="community-header">
+            <div className="eyebrow" style={{ justifyContent: 'center' }}>From the community</div>
+            <h2 className="section-title" style={{ marginLeft: 'auto', marginRight: 'auto', textAlign: 'center' }}>Built <span className="serif">tonight</span>. Shared by morning.</h2>
+            <p className="section-sub" style={{ textAlign: 'center' }}>What builders actually did with their last evening.</p>
+          </div>
+          <div className="community-grid">
+            <div className="quote">
+              <p>I copied Marcus&apos;s CFP chain, swapped {'{module}'} for &ldquo;estate planning,&rdquo; and had a real study deck in Anki by 11. I&apos;d tried this same idea from scratch twice and given up both times.</p>
+              <div className="quote-who">
+                <div className="quote-ava" style={{ background: 'linear-gradient(135deg,#E87A2C,#C45A1A)' }}>S</div>
+                <div className="quote-meta"><div className="nm">Sarah M.</div><div className="rl">@sarahgrows · marketing</div></div>
+              </div>
+              <div className="quote-shipped">⎇ Forked <b>CFP study companion</b></div>
+            </div>
+            <div className="quote">
+              <p>The &ldquo;bank CSV → cashflow&rdquo; path saved me an hour. I already had the prompts floating around but never chained them. Seeing someone else&apos;s result gave me the template I needed.</p>
+              <div className="quote-who">
+                <div className="quote-ava" style={{ background: 'linear-gradient(135deg,#3B8FE4,#2563EB)' }}>J</div>
+                <div className="quote-meta"><div className="nm">Jake T.</div><div className="rl">@jakefinance · CFO</div></div>
+              </div>
+              <div className="quote-shipped">⎇ Forked <b>Freelance cashflow forecast</b></div>
+            </div>
+            <div className="quote">
+              <p>First time I&apos;ve finished an AI project I&apos;d started. Having the outputs next to each prompt meant I could tell when my version was drifting — I knew exactly which step to retune.</p>
+              <div className="quote-who">
+                <div className="quote-ava" style={{ background: 'linear-gradient(135deg,#18181b,#3f3f46)' }}>P</div>
+                <div className="quote-meta"><div className="nm">Priya S.</div><div className="rl">@priya_creates · designer</div></div>
+              </div>
+              <div className="quote-shipped">⎇ Forked <b>Figma → handoff spec</b></div>
+            </div>
+          </div>
         </div>
       </section>
 
       {/* ═══════════ FINAL CTA ═══════════ */}
-      {/* Speaks to the visitor-with-tokens-and-no-idea. The prior copy
-          ("Stop rebuilding from scratch / Join PathForge…") was a generic
-          signup pitch; this lands the "I can build this tonight" moment
-          and sends them to /browse first — signup is friction before
-          they've seen the product. */}
-      <section className="border-t border-surface-200">
-        <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-20 text-center">
-          <div className="w-12 h-12 bg-brand-orange/10 flex items-center justify-center mx-auto mb-6">
-            <Terminal className="w-6 h-6 text-brand-orange" />
-          </div>
-          <h2 className="text-3xl sm:text-4xl font-black mb-4 text-surface-900 leading-tight">
-            You&apos;ve got the tools.<br />
-            <span className="text-brand-orange">You&apos;ve got tonight.</span>
-          </h2>
-          <p className="text-surface-500 mb-8 max-w-lg mx-auto leading-relaxed">
-            Open a build path, fork the prompts, swap in your context, and have a real thing to show by bedtime. No blank chat. No guessing what to build.
-          </p>
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
-            <Link
-              href="/browse"
-              className="group bg-brand-orange text-white px-8 py-3.5 font-bold text-sm hover:bg-brand-orange-dark focus-visible:outline-2 focus-visible:outline-brand-orange focus-visible:outline-offset-2 transition-colors duration-150 inline-flex items-center gap-2 min-h-11"
-            >
+      <section className="finalcta">
+        <div className="sect-wrap">
+          <div className="eyebrow">Your turn</div>
+          <h2>You&apos;ve got the tools.<br /><span className="serif">You&apos;ve got</span> tonight.</h2>
+          <p>Open a build path, fork the prompts, swap in your context, and have a real thing to show by bedtime. No blank chat. No guessing what to build.</p>
+          <div className="finalcta-btns">
+            <Link href="/browse" className="btn-primary">
               Find tonight&apos;s build
-              <ArrowRight className="w-4 h-4 transition-transform duration-150 group-hover:translate-x-0.5" />
+              <svg className="arrow" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="square"><path d="M5 12H19M13 6L19 12L13 18" /></svg>
             </Link>
-            <Link
-              href="/auth/signup"
-              className="text-sm font-semibold text-surface-600 hover:text-brand-orange focus-visible:outline-2 focus-visible:outline-brand-orange focus-visible:outline-offset-2 transition-colors duration-150 px-4 min-h-11 flex items-center"
-            >
-              or create a free account
-            </Link>
+            <Link href="/auth/signup" className="btn-secondary">Create free account</Link>
           </div>
         </div>
       </section>
     </div>
-  )
-}
-
-/* Small helper to keep the flow diagram connectors consistent and free of green */
-function FlowConnector({
-  color,
-  direction,
-}: {
-  color: 'surface' | 'orange' | 'blue'
-  direction?: 'to-orange' | 'to-surface' | 'to-blue'
-}) {
-  const lineClass =
-    color === 'orange'
-      ? 'bg-brand-orange'
-      : color === 'blue'
-      ? direction === 'to-surface'
-        ? 'bg-gradient-to-r from-brand-blue to-surface-300'
-        : 'bg-brand-blue'
-      : direction === 'to-orange'
-      ? 'bg-gradient-to-r from-surface-300 to-brand-orange'
-      : 'bg-surface-300'
-
-  const verticalClass =
-    color === 'orange'
-      ? 'bg-brand-orange'
-      : color === 'blue'
-      ? direction === 'to-surface'
-        ? 'bg-gradient-to-b from-brand-blue to-surface-300'
-        : 'bg-brand-blue'
-      : direction === 'to-orange'
-      ? 'bg-gradient-to-b from-surface-300 to-brand-orange'
-      : 'bg-surface-300'
-
-  return (
-    <>
-      <div className="hidden sm:flex items-center">
-        <div className={`h-0.5 w-8 ${lineClass}`} />
-      </div>
-      <div className="sm:hidden flex justify-center">
-        <div className={`w-0.5 h-5 ${verticalClass}`} />
-      </div>
-    </>
   )
 }

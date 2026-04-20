@@ -44,6 +44,11 @@
   --color-surface-700: #3f3f46;
   --color-surface-800: #27272a;
   --color-surface-900: #18181b;
+
+  /* Typography — three-font system per Homepage design handoff (2026-04-19) */
+  --font-sans: var(--font-sans), system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --font-display: var(--font-display), Georgia, serif;
+  --font-mono: var(--font-mono), ui-monospace, SFMono-Regular, Menlo, monospace;
 }
 
 /* Sharp edges globally */

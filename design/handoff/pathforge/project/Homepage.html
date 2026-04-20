@@ -1,0 +1,947 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>PathForge — Homepage Redesign</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" />
+<style>
+  :root {
+    /* PathForge brand — pulled from globals.css */
+    --brand-orange: #E87A2C;
+    --brand-orange-light: #F5A623;
+    --brand-orange-dark: #C45A1A;
+    --brand-blue: #3B8FE4;
+    --brand-blue-dark: #2563EB;
+
+    --surface-50:  #fafafa;
+    --surface-100: #f4f4f5;
+    --surface-200: #e4e4e7;
+    --surface-300: #d4d4d8;
+    --surface-400: #a1a1aa;
+    --surface-500: #71717a;
+    --surface-600: #52525b;
+    --surface-700: #3f3f46;
+    --surface-800: #27272a;
+    --surface-900: #18181b;
+
+    --font-sans: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+    --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+    --font-display: 'Instrument Serif', Georgia, serif;
+  }
+
+  * { box-sizing: border-box; border-radius: 0 !important; margin: 0; padding: 0; }
+  html, body { background: var(--surface-50); color: var(--surface-900); font-family: var(--font-sans); -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility; }
+  a { color: inherit; text-decoration: none; }
+  button { font: inherit; background: none; border: none; cursor: pointer; color: inherit; }
+  svg { display: block; }
+  img { display: block; max-width: 100%; }
+
+  /* ─── Header — matches src/components/Header.tsx ─── */
+  .pf-header { position: sticky; top: 0; z-index: 50; background: var(--surface-900); box-shadow: 0 1px 3px rgba(0,0,0,.3), 0 4px 12px rgba(0,0,0,.15); }
+  .pf-header .wrap { max-width: 1280px; margin: 0 auto; padding: 0 24px; display: flex; align-items: center; justify-content: space-between; height: 56px; }
+  .pf-header .left { display: flex; align-items: center; gap: 24px; }
+  .pf-logo { display: flex; align-items: center; flex-shrink: 0; }
+  .pf-logo img { height: 36px; width: auto; display: block; }
+  .pf-nav { display: flex; align-items: center; gap: 4px; }
+  .pf-nav a { font-size: 13px; font-weight: 500; color: var(--surface-300); padding: 6px 12px; display: inline-flex; align-items: center; gap: 6px; transition: color .2s; }
+  .pf-nav a:hover { color: #fff; }
+  .pf-nav a.active { color: var(--brand-orange); background: var(--surface-800); }
+  .pf-nav a.build { color: var(--brand-orange); font-weight: 600; border: 1px solid rgba(232,122,44,.4); padding: 5px 12px; transition: all .2s; }
+  .pf-nav a.build:hover { background: var(--brand-orange); color: var(--surface-900); border-color: var(--brand-orange); }
+  .pf-nav a.build.active { background: var(--brand-orange); color: var(--surface-900); border-color: var(--brand-orange); }
+  .pf-header .right { display: flex; align-items: center; gap: 12px; }
+  .pf-login { font-size: 13px; font-weight: 500; color: var(--surface-300); transition: color .2s; white-space: nowrap; }
+  .pf-login:hover { color: #fff; }
+  .pf-cta { background: var(--brand-orange); color: #fff; font-size: 13px; font-weight: 600; padding: 6px 14px; transition: background .2s; white-space: nowrap; }
+  .pf-cta:hover { background: var(--brand-orange-dark); }
+
+  /* ─── Hero ─── */
+  .hero { position: relative; border-bottom: 1px solid var(--surface-200); background: #fff; overflow: hidden; }
+  .hero::before { content: ""; position: absolute; inset: 0; background-image: linear-gradient(rgba(0,0,0,.035) 1px, transparent 1px), linear-gradient(90deg, rgba(0,0,0,.035) 1px, transparent 1px); background-size: 56px 56px; pointer-events: none; mask-image: radial-gradient(ellipse 80% 60% at 50% 40%, black 40%, transparent 100%); }
+  .hero::after { content: ""; position: absolute; top: -160px; right: -160px; width: 520px; height: 520px; background: radial-gradient(circle, rgba(232,122,44,.18), transparent 60%); pointer-events: none; }
+  .hero .wrap { position: relative; max-width: 1280px; margin: 0 auto; padding: 80px 24px 72px; display: grid; grid-template-columns: 1.1fr 1fr; gap: 64px; align-items: center; }
+  .hero-eyebrow { display: inline-flex; align-items: center; gap: 8px; font-family: var(--font-mono); font-size: 11px; font-weight: 500; color: var(--surface-600); background: var(--surface-100); border: 1px solid var(--surface-200); padding: 5px 10px; margin-bottom: 20px; letter-spacing: .02em; }
+  .hero-eyebrow .pulse { width: 6px; height: 6px; background: var(--brand-orange); position: relative; }
+  .hero-eyebrow .pulse::after { content: ""; position: absolute; inset: 0; background: var(--brand-orange); animation: pulse 2s infinite; }
+  @keyframes pulse { 0% { transform: scale(1); opacity: 1 } 100% { transform: scale(2.4); opacity: 0 } }
+
+  .hero h1 { font-size: 72px; line-height: 1.02; letter-spacing: -0.035em; font-weight: 900; color: var(--surface-900); margin-bottom: 24px; }
+  .hero h1 .serif { font-family: var(--font-display); font-weight: 400; font-style: italic; letter-spacing: -0.02em; color: var(--brand-orange); }
+  .hero h1 .underline { position: relative; white-space: nowrap; }
+  .hero h1 .underline::after { content: ""; position: absolute; left: 0; right: 0; bottom: 4px; height: 10px; background: var(--brand-orange); opacity: .18; z-index: -1; }
+  .hero p.lead { font-size: 19px; line-height: 1.55; color: var(--surface-600); margin-bottom: 32px; max-width: 520px; }
+  .hero-ctas { display: flex; align-items: center; gap: 12px; margin-bottom: 36px; }
+  .btn-primary { background: var(--surface-900); color: #fff; padding: 13px 22px; font-size: 14px; font-weight: 600; display: inline-flex; align-items: center; gap: 8px; transition: transform .15s, background .15s; white-space: nowrap; }
+  .btn-primary:hover { background: var(--brand-orange); transform: translateY(-1px); }
+  .btn-primary .arrow { transition: transform .15s; }
+  .btn-primary:hover .arrow { transform: translateX(3px); }
+  .btn-secondary { background: #fff; color: var(--surface-900); border: 1px solid var(--surface-300); padding: 12px 20px; font-size: 14px; font-weight: 600; display: inline-flex; align-items: center; gap: 8px; transition: all .15s; white-space: nowrap; }
+  .btn-secondary:hover { border-color: var(--surface-900); }
+
+  .hero-stats { display: flex; gap: 32px; padding-top: 24px; border-top: 1px solid var(--surface-200); }
+  .hero-stat { display: flex; flex-direction: column; gap: 2px; }
+  .hero-stat .num { font-size: 22px; font-weight: 800; color: var(--surface-900); font-variant-numeric: tabular-nums; letter-spacing: -0.02em; }
+  .hero-stat .num span { color: var(--brand-orange); }
+  .hero-stat .lbl { font-size: 11.5px; color: var(--surface-500); font-weight: 500; text-transform: uppercase; letter-spacing: .06em; }
+
+  /* Hero exhibit — live build path preview */
+  .exhibit { position: relative; }
+  .exhibit-frame { position: relative; background: linear-gradient(180deg, var(--surface-900), var(--surface-800)); padding: 16px; box-shadow: 0 30px 60px -20px rgba(24,24,27,.35), 0 8px 16px -8px rgba(24,24,27,.2); }
+  .exhibit-chrome { display: flex; align-items: center; gap: 6px; padding: 0 4px 12px; border-bottom: 1px solid var(--surface-700); margin-bottom: 12px; }
+  .exhibit-chrome .dot { width: 10px; height: 10px; background: var(--surface-600); }
+  .exhibit-chrome .url { margin-left: 12px; font-family: var(--font-mono); font-size: 11px; color: var(--surface-400); }
+  .exhibit-chrome .url b { color: var(--brand-orange); font-weight: 600; }
+  .exhibit-inner { background: #fff; padding: 20px; }
+  .ex-tag-row { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+  .ex-tag { font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .09em; padding: 3px 7px; }
+  .ex-tag.orange { background: var(--brand-orange); color: #fff; }
+  .ex-tag.ghost { background: var(--surface-100); color: var(--surface-600); border: 1px solid var(--surface-200); }
+  .ex-title { font-size: 20px; font-weight: 700; letter-spacing: -0.015em; margin-bottom: 4px; line-height: 1.2; }
+  .ex-sub { font-size: 12.5px; color: var(--surface-500); margin-bottom: 16px; }
+
+  .ex-step { display: grid; grid-template-columns: 28px 1fr; gap: 12px; margin-bottom: 10px; }
+  .ex-step-num { width: 28px; height: 28px; display: grid; place-items: center; background: var(--surface-100); color: var(--surface-600); font-family: var(--font-mono); font-size: 12px; font-weight: 600; border: 1px solid var(--surface-200); }
+  .ex-step.active .ex-step-num { background: var(--brand-orange); color: #fff; border-color: var(--brand-orange); }
+  .ex-step-body { display: flex; flex-direction: column; gap: 6px; }
+  .ex-prompt { font-family: var(--font-mono); font-size: 11.5px; line-height: 1.5; color: var(--surface-800); background: var(--surface-50); padding: 8px 10px; border-left: 2px solid var(--surface-300); }
+  .ex-prompt b { color: var(--brand-blue-dark); font-weight: 600; }
+  .ex-result { font-size: 12px; line-height: 1.5; color: var(--surface-600); padding-left: 10px; border-left: 2px solid var(--brand-orange); }
+  .ex-result::before { content: "↳ "; color: var(--brand-orange); font-weight: 700; }
+
+  .ex-footer { display: flex; align-items: center; justify-content: space-between; margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--surface-100); font-size: 11.5px; color: var(--surface-500); }
+  .ex-footer .who { display: flex; align-items: center; gap: 6px; }
+  .ex-footer .ava { width: 16px; height: 16px; background: linear-gradient(135deg, var(--brand-orange), var(--brand-orange-dark)); color: #fff; font-size: 9px; font-weight: 700; display: grid; place-items: center; }
+  .ex-footer .metrics { display: flex; align-items: center; gap: 10px; font-variant-numeric: tabular-nums; }
+
+  /* Floating badge on exhibit */
+  .exhibit-badge { position: absolute; top: -14px; right: -14px; background: var(--brand-orange); color: #fff; padding: 8px 12px; font-family: var(--font-mono); font-size: 11px; font-weight: 600; letter-spacing: .02em; box-shadow: 0 8px 20px -4px rgba(232,122,44,.4); transform: rotate(2deg); }
+  .exhibit-badge small { font-weight: 400; opacity: .85; display: block; font-size: 9px; letter-spacing: .08em; text-transform: uppercase; }
+  .exhibit-fork { position: absolute; bottom: 24px; left: -20px; background: #fff; border: 1px solid var(--surface-200); padding: 10px 12px; font-size: 11.5px; display: flex; align-items: center; gap: 8px; box-shadow: 0 12px 24px -8px rgba(0,0,0,.15); transform: rotate(-1.5deg); }
+  .exhibit-fork b { color: var(--surface-900); font-weight: 700; }
+  .exhibit-fork .ic { width: 20px; height: 20px; background: var(--brand-blue); color: #fff; display: grid; place-items: center; }
+
+  /* ─── Marquee / logos row ─── */
+  .marquee { background: #fff; border-top: 1px solid var(--surface-200); border-bottom: 1px solid var(--surface-200); padding: 20px 0; overflow: hidden; }
+  .marquee .wrap { max-width: 1280px; margin: 0 auto; padding: 0 24px; display: flex; align-items: center; gap: 48px; font-size: 12px; color: var(--surface-500); flex-wrap: wrap; justify-content: center; }
+  .marquee .lbl { font-family: var(--font-mono); font-size: 10.5px; text-transform: uppercase; letter-spacing: .1em; color: var(--surface-400); }
+  .marquee .model { font-weight: 600; color: var(--surface-700); display: inline-flex; align-items: center; gap: 6px; }
+  .marquee .model .sq { width: 8px; height: 8px; }
+
+  /* ─── Generic section ─── */
+  section { border-bottom: 1px solid var(--surface-200); }
+  section .wrap { max-width: 1280px; margin: 0 auto; padding: 88px 24px; }
+  .eyebrow { font-family: var(--font-mono); font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .14em; color: var(--brand-orange); display: inline-flex; align-items: center; gap: 8px; margin-bottom: 14px; }
+  .eyebrow::before { content: ""; width: 20px; height: 1px; background: var(--brand-orange); }
+  h2.section-title { font-size: 44px; line-height: 1.05; letter-spacing: -0.025em; font-weight: 900; color: var(--surface-900); max-width: 720px; margin-bottom: 16px; }
+  h2.section-title .serif { font-family: var(--font-display); font-style: italic; font-weight: 400; letter-spacing: -0.01em; color: var(--brand-orange); }
+  .section-sub { font-size: 17px; line-height: 1.55; color: var(--surface-500); max-width: 620px; }
+
+  /* Problem section — single strip, no card soup */
+  .problem { background: var(--surface-900); color: #fff; }
+  .problem .wrap { display: grid; grid-template-columns: 1fr 1.1fr; gap: 64px; align-items: center; padding: 100px 24px; }
+  .problem .eyebrow { color: var(--brand-orange); }
+  .problem h2 { font-size: 52px; line-height: 1.05; letter-spacing: -0.03em; font-weight: 900; color: #fff; margin-bottom: 20px; }
+  .problem h2 .serif { font-family: var(--font-display); font-style: italic; font-weight: 400; color: var(--brand-orange); }
+  .problem p { font-size: 17px; color: var(--surface-400); line-height: 1.6; max-width: 480px; }
+  .problem-visual { position: relative; font-family: var(--font-mono); font-size: 12px; background: var(--surface-800); border: 1px solid var(--surface-700); padding: 24px; }
+  .problem-visual .caret { color: var(--surface-500); }
+  .problem-visual .line { color: var(--surface-500); margin-bottom: 8px; }
+  .problem-visual .line.you { color: #fff; }
+  .problem-visual .line.ai { color: var(--surface-400); padding-left: 12px; border-left: 2px solid var(--surface-700); }
+  .problem-visual .strike { text-decoration: line-through; text-decoration-color: var(--brand-orange); text-decoration-thickness: 2px; opacity: .6; }
+  .problem-visual .blink { display: inline-block; width: 8px; height: 14px; background: var(--brand-orange); vertical-align: middle; animation: blink 1s steps(1) infinite; margin-left: 2px; }
+  @keyframes blink { 50% { opacity: 0; } }
+  .problem-visual .overlay { position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%) rotate(-4deg); background: var(--brand-orange); color: #fff; padding: 14px 24px; font-family: var(--font-sans); font-size: 16px; font-weight: 800; letter-spacing: -0.01em; text-transform: uppercase; box-shadow: 0 12px 28px -8px rgba(0,0,0,.4); }
+
+  /* Anatomy — "what's a build path" */
+  .anatomy .wrap { padding: 100px 24px; }
+  .anatomy-header { display: grid; grid-template-columns: 1.2fr 1fr; gap: 48px; align-items: end; margin-bottom: 56px; }
+  .anatomy-header p { font-size: 16px; color: var(--surface-500); line-height: 1.6; }
+  .anatomy-diagram { position: relative; background: #fff; border: 1px solid var(--surface-200); padding: 40px; display: grid; grid-template-columns: 200px 1fr 200px; gap: 48px; align-items: stretch; }
+  .anatomy-label { font-family: var(--font-mono); font-size: 11px; text-transform: uppercase; letter-spacing: .1em; color: var(--surface-500); padding-bottom: 8px; border-bottom: 1px solid var(--surface-200); margin-bottom: 14px; display: flex; align-items: center; justify-content: space-between; }
+  .anatomy-label b { color: var(--surface-900); font-weight: 700; }
+  .anatomy-tag { font-family: var(--font-mono); font-size: 9.5px; padding: 2px 6px; background: var(--surface-100); color: var(--surface-600); }
+
+  .anatomy-side { display: flex; flex-direction: column; }
+  .anatomy-side .box { background: var(--surface-50); border: 1px solid var(--surface-200); padding: 14px; margin-bottom: 10px; }
+  .anatomy-side .box .k { font-family: var(--font-mono); font-size: 10px; color: var(--surface-500); text-transform: uppercase; letter-spacing: .1em; margin-bottom: 4px; }
+  .anatomy-side .box .v { font-size: 13px; color: var(--surface-900); font-weight: 600; }
+  .anatomy-side .box .v.orange { color: var(--brand-orange); }
+
+  .anatomy-center { display: flex; flex-direction: column; gap: 12px; }
+  .astep { display: grid; grid-template-columns: 36px 1fr; gap: 14px; align-items: start; }
+  .astep-num { width: 36px; height: 36px; display: grid; place-items: center; background: var(--surface-900); color: #fff; font-family: var(--font-mono); font-size: 13px; font-weight: 700; }
+  .astep.orange .astep-num { background: var(--brand-orange); }
+  .astep-body { background: #fff; border: 1px solid var(--surface-200); padding: 14px 16px; position: relative; }
+  .astep-body::before { content: ""; position: absolute; left: -7px; top: 16px; width: 12px; height: 1px; background: var(--surface-300); }
+  .astep h4 { font-size: 14px; font-weight: 700; margin-bottom: 4px; }
+  .astep .prompt { font-family: var(--font-mono); font-size: 11.5px; color: var(--surface-600); line-height: 1.55; margin-bottom: 6px; }
+  .astep .result { font-size: 12px; color: var(--surface-500); line-height: 1.55; padding-top: 6px; border-top: 1px dashed var(--surface-200); }
+  .astep .result b { color: var(--brand-orange); text-transform: uppercase; letter-spacing: .06em; font-size: 10px; font-family: var(--font-mono); margin-right: 6px; }
+
+  /* Categories */
+  .cats .wrap { padding: 100px 24px; }
+  .cats-header { display: flex; justify-content: space-between; align-items: end; margin-bottom: 36px; gap: 32px; flex-wrap: wrap; }
+  .cats-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; }
+  .cat { background: #fff; border: 1px solid var(--surface-200); padding: 22px; position: relative; transition: all .15s; cursor: pointer; overflow: hidden; }
+  .cat::before { content: ""; position: absolute; inset: 0; background: linear-gradient(135deg, var(--brand-orange), transparent 60%); opacity: 0; transition: opacity .2s; pointer-events: none; }
+  .cat:hover { transform: translateY(-2px); border-color: var(--surface-900); box-shadow: 0 8px 20px -8px rgba(0,0,0,.12); }
+  .cat:hover::before { opacity: .06; }
+  .cat-icon { width: 32px; height: 32px; display: grid; place-items: center; background: var(--surface-100); color: var(--surface-700); margin-bottom: 16px; font-size: 16px; transition: all .15s; }
+  .cat:hover .cat-icon { background: var(--brand-orange); color: #fff; }
+  .cat h3 { font-size: 14.5px; font-weight: 700; color: var(--surface-900); margin-bottom: 2px; letter-spacing: -0.005em; }
+  .cat .count { font-family: var(--font-mono); font-size: 11px; color: var(--surface-500); }
+  .cat .arrow { position: absolute; top: 22px; right: 22px; color: var(--surface-300); transition: all .15s; }
+  .cat:hover .arrow { color: var(--brand-orange); transform: translate(2px,-2px); }
+
+  /* Popular paths */
+  .paths { background: #fff; }
+  .paths .wrap { padding: 100px 24px; }
+  .paths-header { display: flex; justify-content: space-between; align-items: end; margin-bottom: 40px; gap: 32px; flex-wrap: wrap; }
+  .paths-tabs { display: flex; gap: 2px; margin-bottom: 32px; border-bottom: 1px solid var(--surface-200); }
+  .paths-tab { padding: 12px 18px; font-size: 13.5px; font-weight: 500; color: var(--surface-500); border-bottom: 2px solid transparent; margin-bottom: -1px; display: inline-flex; align-items: center; gap: 8px; }
+  .paths-tab.active { color: var(--surface-900); border-bottom-color: var(--brand-orange); font-weight: 600; }
+  .paths-tab:hover:not(.active) { color: var(--surface-700); }
+  .paths-tab .tab-count { font-family: var(--font-mono); font-size: 10.5px; color: var(--surface-400); background: var(--surface-100); padding: 1px 6px; }
+  .paths-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+
+  .pcard { background: #fff; border: 1px solid var(--surface-200); padding: 22px; position: relative; overflow: hidden; transition: all .15s; cursor: pointer; }
+  .pcard:hover { border-color: var(--surface-900); transform: translateY(-2px); box-shadow: 0 10px 30px -12px rgba(0,0,0,.14); }
+  .pcard::before { content: ""; position: absolute; top: 0; left: 0; right: 0; height: 2px; background: var(--brand-orange); transform: scaleX(0); transform-origin: left; transition: transform .2s; }
+  .pcard:hover::before { transform: scaleX(1); }
+  .pcard-outcome { background: linear-gradient(135deg, rgba(232,122,44,.4), var(--surface-200) 40%, rgba(59,143,228,.4)); padding: 1.5px; margin-bottom: 16px; }
+  .pcard-outcome-inner { background: #fff; padding: 14px; min-height: 110px; }
+  .pcard-outcome-lbl { display: flex; align-items: center; gap: 7px; font-size: 9.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .12em; color: var(--surface-900); margin-bottom: 8px; }
+  .pcard-outcome-lbl .d { width: 5px; height: 5px; background: var(--brand-blue); border-radius: 50% !important; }
+  .pcard-outcome-lbl .sep { color: var(--surface-300); font-weight: 400; }
+  .pcard-outcome-lbl .m { color: var(--surface-500); text-transform: none; letter-spacing: .02em; font-weight: 500; font-size: 10px; }
+  .pcard-outcome p { font-size: 13.5px; line-height: 1.5; color: var(--surface-800); display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+  .pcard-cat { font-size: 11.5px; color: var(--surface-500); font-weight: 500; margin-bottom: 4px; }
+  .pcard h3 { font-size: 15.5px; font-weight: 600; letter-spacing: -0.005em; margin-bottom: 6px; line-height: 1.3; }
+  .pcard-desc { font-size: 12.5px; line-height: 1.55; color: var(--surface-500); margin-bottom: 14px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  .pcard-foot { display: flex; align-items: center; justify-content: space-between; padding-top: 12px; border-top: 1px solid var(--surface-100); font-size: 11px; }
+  .pcard-chip { font-size: 10.5px; font-weight: 600; padding: 2px 7px; border: 1px solid; }
+  .pcard-chip.b { color: #059669; border-color: #a7f3d0; background: #ecfdf5; }
+  .pcard-chip.i { color: #d97706; border-color: #fed7aa; background: #fffbeb; }
+  .pcard-chip.a { color: #dc2626; border-color: #fecaca; background: #fef2f2; }
+  .pcard-foot .model { color: var(--surface-400); display: inline-flex; align-items: center; gap: 4px; font-family: var(--font-mono); font-size: 10.5px; }
+  .pcard-foot .metrics { display: flex; align-items: center; gap: 8px; color: var(--surface-500); font-variant-numeric: tabular-nums; }
+
+  /* Community */
+  .community { background: var(--surface-50); }
+  .community .wrap { padding: 100px 24px; }
+  .community-header { text-align: center; margin-bottom: 56px; }
+  .community-header h2 { margin: 16px auto; }
+  .community-header p { margin: 0 auto; }
+  .community-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+  .quote { background: #fff; border: 1px solid var(--surface-200); padding: 28px; position: relative; }
+  .quote::before { content: "\201C"; position: absolute; top: 4px; left: 20px; font-family: var(--font-display); font-size: 72px; line-height: 1; color: var(--brand-orange); opacity: .2; }
+  .quote p { font-size: 15px; line-height: 1.55; color: var(--surface-800); margin-bottom: 20px; position: relative; font-family: var(--font-display); font-style: italic; font-weight: 400; }
+  .quote-who { display: flex; align-items: center; gap: 10px; padding-top: 16px; border-top: 1px solid var(--surface-100); }
+  .quote-ava { width: 36px; height: 36px; color: #fff; font-weight: 700; font-size: 13px; display: grid; place-items: center; font-family: var(--font-sans); }
+  .quote-meta .nm { font-size: 13px; font-weight: 600; color: var(--surface-900); }
+  .quote-meta .rl { font-size: 11.5px; color: var(--surface-500); font-family: var(--font-mono); }
+  .quote-shipped { margin-top: 16px; display: inline-flex; align-items: center; gap: 6px; font-size: 11px; color: var(--surface-600); background: var(--surface-50); padding: 5px 8px; font-family: var(--font-mono); }
+  .quote-shipped b { color: var(--brand-orange); }
+
+  /* Final CTA */
+  .finalcta { background: var(--surface-900); color: #fff; position: relative; overflow: hidden; }
+  .finalcta::before { content: ""; position: absolute; inset: 0; background-image: linear-gradient(rgba(255,255,255,.04) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.04) 1px, transparent 1px); background-size: 56px 56px; mask-image: radial-gradient(ellipse 60% 80% at 50% 50%, black 30%, transparent 100%); }
+  .finalcta::after { content: ""; position: absolute; bottom: -200px; left: 50%; transform: translateX(-50%); width: 800px; height: 400px; background: radial-gradient(ellipse, rgba(232,122,44,.25), transparent 70%); }
+  .finalcta .wrap { position: relative; padding: 120px 24px; text-align: center; max-width: 720px; }
+  .finalcta .eyebrow { color: var(--brand-orange); margin: 0 auto 20px; justify-content: center; }
+  .finalcta h2 { font-size: 68px; line-height: 1.02; letter-spacing: -0.035em; font-weight: 900; margin-bottom: 24px; }
+  .finalcta h2 .serif { font-family: var(--font-display); font-style: italic; font-weight: 400; color: var(--brand-orange); }
+  .finalcta p { font-size: 18px; color: var(--surface-400); line-height: 1.55; margin: 0 auto 36px; max-width: 520px; }
+  .finalcta-btns { display: flex; gap: 12px; justify-content: center; align-items: center; }
+  .finalcta .btn-primary { background: var(--brand-orange); }
+  .finalcta .btn-primary:hover { background: var(--brand-orange-dark); transform: translateY(-1px); }
+  .finalcta .btn-secondary { background: transparent; color: #fff; border-color: var(--surface-700); }
+  .finalcta .btn-secondary:hover { border-color: #fff; background: var(--surface-800); }
+
+  /* Footer */
+  footer.pf-footer { background: var(--surface-900); color: var(--surface-300); border-top: 1px solid var(--surface-800); }
+  .pf-footer .wrap { max-width: 1280px; margin: 0 auto; padding: 72px 24px 32px; }
+  .foot-top { display: grid; grid-template-columns: 1.6fr 1fr 1fr 1fr 1.4fr; gap: 48px; margin-bottom: 56px; }
+  .foot-brand .logoline { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
+  .foot-brand h4 { font-size: 18px; font-weight: 800; color: #fff; letter-spacing: -0.01em; }
+  .foot-brand h4 span { color: var(--brand-orange); }
+  .foot-brand p { font-size: 13.5px; color: var(--surface-400); line-height: 1.6; max-width: 340px; margin-bottom: 20px; }
+  .foot-social { display: flex; gap: 8px; }
+  .foot-social a { width: 32px; height: 32px; display: grid; place-items: center; background: var(--surface-800); border: 1px solid var(--surface-700); color: var(--surface-400); transition: all .15s; }
+  .foot-social a:hover { background: var(--brand-orange); border-color: var(--brand-orange); color: #fff; }
+
+  .foot-col h5 { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .14em; color: var(--surface-500); margin-bottom: 18px; font-family: var(--font-mono); }
+  .foot-col ul { list-style: none; display: flex; flex-direction: column; gap: 10px; }
+  .foot-col a { font-size: 13px; color: var(--surface-300); transition: color .15s; display: inline-flex; align-items: center; gap: 6px; }
+  .foot-col a:hover { color: var(--brand-orange); }
+  .foot-col a .pip { font-size: 9px; font-family: var(--font-mono); color: var(--surface-600); font-weight: 600; padding: 1px 5px; background: var(--surface-800); border: 1px solid var(--surface-700); }
+  .foot-col a:hover .pip { color: var(--brand-orange); border-color: var(--brand-orange); }
+
+  .foot-news h5 { margin-bottom: 12px; }
+  .foot-news p { font-size: 12.5px; color: var(--surface-400); margin-bottom: 14px; line-height: 1.55; }
+  .foot-news form { display: flex; }
+  .foot-news input { flex: 1; background: var(--surface-800); border: 1px solid var(--surface-700); color: #fff; padding: 10px 12px; font: inherit; font-size: 12.5px; outline: none; }
+  .foot-news input::placeholder { color: var(--surface-500); }
+  .foot-news input:focus { border-color: var(--brand-orange); }
+  .foot-news button { background: var(--brand-orange); color: #fff; padding: 10px 14px; font-size: 12.5px; font-weight: 600; display: inline-flex; align-items: center; gap: 6px; transition: background .15s; }
+  .foot-news button:hover { background: var(--brand-orange-dark); }
+  .foot-news small { display: block; margin-top: 10px; font-size: 11px; color: var(--surface-500); font-family: var(--font-mono); }
+
+  .foot-bottom { display: flex; justify-content: space-between; align-items: center; padding-top: 24px; border-top: 1px solid var(--surface-800); }
+  .foot-bottom p { font-size: 12px; color: var(--surface-500); }
+  .foot-bottom .links { display: flex; gap: 20px; }
+  .foot-bottom a { font-size: 12px; color: var(--surface-500); transition: color .15s; }
+  .foot-bottom a:hover { color: var(--surface-300); }
+  .foot-bottom .pips { display: flex; gap: 3px; }
+  .foot-bottom .pips .s { width: 8px; height: 8px; }
+
+  /* Tweaks panel */
+  .tweaks-panel { position: fixed; bottom: 20px; right: 20px; width: 280px; background: #fff; border: 1px solid var(--surface-300); box-shadow: 0 20px 40px -12px rgba(0,0,0,.25); z-index: 100; font-size: 12.5px; display: none; }
+  .tweaks-panel.open { display: block; }
+  .tweaks-hdr { display: flex; align-items: center; justify-content: space-between; padding: 12px 14px; border-bottom: 1px solid var(--surface-200); background: var(--surface-900); color: #fff; }
+  .tweaks-hdr h4 { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .1em; font-family: var(--font-mono); }
+  .tweaks-body { padding: 14px; display: flex; flex-direction: column; gap: 14px; }
+  .tweak { display: flex; flex-direction: column; gap: 6px; }
+  .tweak label { font-size: 11px; font-weight: 600; color: var(--surface-600); text-transform: uppercase; letter-spacing: .08em; font-family: var(--font-mono); }
+  .tweak-opts { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; }
+  .tweak-opts button { padding: 7px 10px; border: 1px solid var(--surface-300); font-size: 11.5px; color: var(--surface-700); transition: all .1s; }
+  .tweak-opts button:hover { border-color: var(--surface-600); }
+  .tweak-opts button.on { background: var(--surface-900); color: #fff; border-color: var(--surface-900); }
+
+  /* Hero variant B */
+  body[data-hero="centered"] .hero .wrap { grid-template-columns: 1fr; text-align: center; padding: 100px 24px 64px; }
+  body[data-hero="centered"] .hero .exhibit { max-width: 720px; margin: 0 auto; }
+  body[data-hero="centered"] .hero h1 { max-width: 900px; margin-left: auto; margin-right: auto; font-size: 88px; }
+  body[data-hero="centered"] .hero p.lead { margin-left: auto; margin-right: auto; }
+  body[data-hero="centered"] .hero-ctas { justify-content: center; }
+  body[data-hero="centered"] .hero-stats { justify-content: center; }
+  body[data-hero="centered"] .hero-eyebrow { margin-left: auto; margin-right: auto; display: inline-flex; }
+
+  /* Accent variant */
+  body[data-accent="blue"] { --brand-orange: #3B8FE4; --brand-orange-dark: #2563EB; --brand-orange-light: #64B5F6; }
+  body[data-accent="warm"] { --brand-orange: #D85D1A; --brand-orange-dark: #A64010; }
+
+  /* Density */
+  body[data-density="loose"] section .wrap { padding-top: 120px; padding-bottom: 120px; }
+  body[data-density="tight"] section .wrap { padding-top: 64px; padding-bottom: 64px; }
+
+  @media (max-width: 1024px) {
+    .hero .wrap { grid-template-columns: 1fr; gap: 48px; padding: 64px 24px; }
+    .problem .wrap { grid-template-columns: 1fr; }
+    .cats-grid { grid-template-columns: repeat(3, 1fr); }
+    .paths-grid { grid-template-columns: repeat(2, 1fr); }
+    .community-grid { grid-template-columns: 1fr; }
+    .anatomy-diagram { grid-template-columns: 1fr; gap: 24px; }
+    .foot-top { grid-template-columns: 1fr 1fr; }
+    .hero h1 { font-size: 56px; }
+    .finalcta h2 { font-size: 48px; }
+    h2.section-title { font-size: 34px; }
+  }
+  @media (max-width: 640px) {
+    .pf-search { display: none; }
+    .hero h1 { font-size: 42px; }
+    .cats-grid { grid-template-columns: repeat(2, 1fr); }
+    .paths-grid { grid-template-columns: 1fr; }
+    .foot-top { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ═══════════ HEADER ═══════════ -->
+<header class="pf-header">
+  <nav class="wrap">
+    <div class="left">
+      <a href="#" class="pf-logo" aria-label="PathForge — AI Build Paths">
+        <img src="assets/logo.png?v=3" alt="PathForge" />
+      </a>
+
+      <div class="pf-nav">
+        <a href="#" class="active">Browse</a>
+        <a href="#" class="build">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="square"><path d="M12 5V19M5 12H19"/></svg>
+          Build
+        </a>
+      </div>
+    </div>
+
+    <div class="right">
+      <a href="#" class="pf-login">Log in</a>
+      <a href="#" class="pf-cta">Sign up</a>
+    </div>
+  </nav>
+</header>
+
+<!-- ═══════════ HERO ═══════════ -->
+<section class="hero">
+  <div class="wrap">
+    <div>
+      <!--
+        LIVE-DATA PLACEHOLDER — hero eyebrow
+        Intended to show real-time platform activity (count of approved build
+        paths + count shipped today). Removed from the mockup because we had
+        no real numbers yet. When wiring up in Next.js:
+          - Replace the static span with a server component that calls
+            `getPrompts({ status: 'approved' })` from src/lib/data.ts and
+            a new `getPromptsShippedSince(startOfDay)` helper.
+          - Keep the pulse dot; swap copy to real totals. Fall back to
+            hiding the eyebrow entirely if either count is 0.
+      -->
+      <div class="hero-eyebrow">
+        <span class="pulse"></span>
+        <span data-live="platform-activity">Real builds. Real prompts. Real results.</span>
+      </div>
+      <h1>
+        Stop staring at<br/>the blank chat.<br/>
+        <span class="serif">Forge</span> <span class="underline">your path.</span>
+      </h1>
+      <p class="lead">
+        See exactly how real projects were built — every prompt, every result, every branch. Fork a path, swap in your context, and have something real to show by bedtime.
+      </p>
+      <div class="hero-ctas">
+        <a href="#" class="btn-primary">
+          Browse build paths
+          <svg class="arrow" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="square"><path d="M5 12H19M13 6L19 12L13 18"/></svg>
+        </a>
+        <a href="#" class="btn-secondary">
+          Share a build
+        </a>
+      </div>
+      <!--
+        LIVE-DATA PLACEHOLDER — hero stats strip
+        ──────────────────────────────────────────
+        Removed the hard-coded "1,284 build paths / 6,712 forks / 23.4k
+        builders" trio per Drew: these numbers were fabricated and must not
+        ship. Do NOT reintroduce as static markup.
+
+        When this is ported to Next.js, wire from live Supabase counts:
+          - build_paths  → count(prompts) where status='approved'
+          - forks_month  → count(forks)   where created_at >= first-of-month
+          - builders     → count(distinct profiles.id) with ≥1 approved prompt
+                           (or replace with a more meaningful metric — e.g.
+                           "paths shipped this week" — once the schema is
+                           final).
+
+        Render only when ALL three are non-zero; if the platform is early
+        and numbers are small/embarrassing, hide the whole strip rather
+        than show placeholders. Structure to re-introduce:
+
+          <div class="hero-stats" data-live="hero-counts">
+            <div class="hero-stat">
+              <div class="num">{buildPathCount}</div>
+              <div class="lbl">Build paths</div>
+            </div>
+            … etc …
+          </div>
+      -->
+    </div>
+
+    <!-- Exhibit: a realistic build path preview -->
+    <div class="exhibit">
+      <div class="exhibit-frame">
+        <div class="exhibit-chrome">
+          <span class="dot"></span><span class="dot"></span><span class="dot"></span>
+          <span class="url">pathforge.app/path/<b>cfp-study-companion</b></span>
+        </div>
+        <div class="exhibit-inner">
+          <div class="ex-tag-row">
+            <span class="ex-tag orange">Trending</span>
+            <span class="ex-tag ghost">Education · Finance</span>
+          </div>
+          <h3 class="ex-title">CFP study companion — prompt chain</h3>
+          <div class="ex-sub">Marcus Chen · 4 steps · Claude Sonnet 4.5 · 312 forks</div>
+
+          <div class="ex-step active">
+            <div class="ex-step-num">1</div>
+            <div class="ex-step-body">
+              <div class="ex-prompt">You are a CFP® tutor. Quiz me on <b>{module}</b> — 5 multiple-choice, explain wrong answers.</div>
+              <div class="ex-result">Returns 5 scenario-based questions tied to the CFP Board domain list</div>
+            </div>
+          </div>
+          <div class="ex-step">
+            <div class="ex-step-num">2</div>
+            <div class="ex-step-body">
+              <div class="ex-prompt">Summarize my misses into a flashcard deck, JSON format.</div>
+              <div class="ex-result">Structured deck — drop straight into Anki or Quizlet</div>
+            </div>
+          </div>
+          <div class="ex-step">
+            <div class="ex-step-num">3</div>
+            <div class="ex-step-body">
+              <div class="ex-prompt">Build a 14-day spaced-repetition plan around my weak domains.</div>
+              <div class="ex-result">Day-by-day schedule with diminishing review cadence</div>
+            </div>
+          </div>
+
+          <div class="ex-footer">
+            <div class="who">
+              <div class="ava">M</div>
+              <span>by <b style="color: var(--surface-800); font-weight: 600;">marcusdev</b> · shipped today</span>
+            </div>
+            <div class="metrics">
+              <span>↑ 847</span>
+              <span>⎇ 312</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="exhibit-badge">
+        <small>Live path</small>
+        See every step
+      </div>
+      <div class="exhibit-fork">
+        <div class="ic">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><circle cx="18" cy="6" r="2.5"/><circle cx="6" cy="6" r="2.5"/><circle cx="12" cy="20" r="2.5"/><path d="M6 8.5V13A3 3 0 009 16H15A3 3 0 0018 13V8.5M12 16V17.5"/></svg>
+        </div>
+        <div>
+          <b>+312 forks</b><br/>
+          <span style="color: var(--surface-500); font-size: 10.5px; font-family: var(--font-mono);">this week</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════ MARQUEE ═══════════ -->
+<div class="marquee">
+  <div class="wrap">
+    <span class="lbl">Works with</span>
+    <span class="model"><span class="sq" style="background:#d97706"></span>Claude</span>
+    <span class="model"><span class="sq" style="background:#10a37f"></span>GPT-4 / 5</span>
+    <span class="model"><span class="sq" style="background:#4285f4"></span>Gemini</span>
+    <span class="model"><span class="sq" style="background:#000"></span>xAI Grok</span>
+    <span class="model"><span class="sq" style="background:#7c3aed"></span>Mistral</span>
+    <span class="model"><span class="sq" style="background:var(--surface-600)"></span>Llama</span>
+    <span class="lbl">+ any custom model</span>
+  </div>
+</div>
+
+<!-- ═══════════ THE PROBLEM ═══════════ -->
+<section class="problem">
+  <div class="wrap">
+    <div>
+      <div class="eyebrow">The blank chat tax</div>
+      <h2>Everyone has the tools.<br/><span class="serif">Nobody</span> knows what to build.</h2>
+      <p>
+        You've got tokens. You've got an evening. You open a new chat and rebuild something someone else already figured out — every single time. The best AI work is buried in private sessions, screenshots, and memory. Nobody else can learn from it.
+      </p>
+    </div>
+    <div class="problem-visual" aria-hidden="true">
+      <div class="line"><span class="caret">$</span> new chat <span class="line" style="color: var(--surface-600);">// 11:47 PM</span></div>
+      <div class="line you">&gt; help me build a <span class="strike">thing</span> <span class="strike">tool</span> <span class="strike">something productive</span><span class="blink"></span></div>
+      <div class="line ai">What are you trying to accomplish?</div>
+      <div class="line you">&gt; idk. something useful with my evening</div>
+      <div class="line ai">I can help! What domain are you interested in?</div>
+      <div class="line you">&gt; <span class="strike">coding</span> <span class="strike">writing</span> <span class="strike">finance</span> nvm</div>
+      <div class="line" style="margin-top: 16px;"><span class="caret">$</span> <span style="color: var(--surface-600);">session abandoned — 0 tokens of useful output</span></div>
+      <div class="overlay">Blank Chat Tax</div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════ ANATOMY ═══════════ -->
+<section class="anatomy">
+  <div class="wrap">
+    <div class="anatomy-header">
+      <div>
+        <div class="eyebrow">What's a build path?</div>
+        <h2 class="section-title">The whole journey, not a <span class="serif">one-line</span> prompt.</h2>
+      </div>
+      <p>
+        Templates give you fill-in-the-blank prompts. Build paths give you the full context: the finished project, every prompt that produced it, every result, every branch you tried. Fork it, adapt it, ship yours.
+      </p>
+    </div>
+
+    <div class="anatomy-diagram">
+      <!-- Left rail: metadata -->
+      <div class="anatomy-side">
+        <div class="anatomy-label"><b>Metadata</b><span class="anatomy-tag">header</span></div>
+        <div class="box"><div class="k">Category</div><div class="v">📊 Productivity</div></div>
+        <div class="box"><div class="k">Difficulty</div><div class="v">Intermediate</div></div>
+        <div class="box"><div class="k">Model</div><div class="v orange">Claude Sonnet 4.5</div></div>
+        <div class="box"><div class="k">Forks</div><div class="v">312</div></div>
+      </div>
+
+      <!-- Center: the chain -->
+      <div class="anatomy-center">
+        <div class="anatomy-label" style="margin-bottom:8px;"><b>The chain</b><span class="anatomy-tag">prompt → result × N</span></div>
+        <div class="astep orange">
+          <div class="astep-num">1</div>
+          <div class="astep-body">
+            <h4>Generate quiz questions</h4>
+            <div class="prompt">You are a CFP® tutor. Quiz me on {module}…</div>
+            <div class="result"><b>Output</b> 5 scenario-based MCQs tied to CFP domains</div>
+          </div>
+        </div>
+        <div class="astep">
+          <div class="astep-num">2</div>
+          <div class="astep-body">
+            <h4>Convert misses to flashcards</h4>
+            <div class="prompt">Summarize my wrong answers into a JSON flashcard deck…</div>
+            <div class="result"><b>Output</b> Anki-ready JSON with prompt/answer pairs</div>
+          </div>
+        </div>
+        <div class="astep">
+          <div class="astep-num">3</div>
+          <div class="astep-body">
+            <h4>Build study schedule</h4>
+            <div class="prompt">Build a 14-day spaced-repetition plan around my weak domains…</div>
+            <div class="result"><b>Output</b> Day-by-day schedule with review cadence</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right rail: outcome -->
+      <div class="anatomy-side">
+        <div class="anatomy-label"><b>Outcome</b><span class="anatomy-tag">result</span></div>
+        <div class="box" style="background: var(--brand-orange); border-color: var(--brand-orange-dark); color: #fff;">
+          <div class="k" style="color: rgba(255,255,255,.7)">Shipped</div>
+          <div class="v" style="color:#fff; font-weight: 700;">CFP study kit, ready to run tonight</div>
+        </div>
+        <div class="box"><div class="k">Your turn</div><div class="v">Fork & swap {module}</div></div>
+        <div class="box"><div class="k">Est. time</div><div class="v">35 min</div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════ CATEGORIES ═══════════ -->
+<section class="cats">
+  <div class="wrap">
+    <div class="cats-header">
+      <div>
+        <div class="eyebrow">Browse by domain</div>
+        <h2 class="section-title">A path for <span class="serif">every</span> kind of evening.</h2>
+      </div>
+      <a href="#" class="btn-secondary">See all categories
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="square"><path d="M5 12H19M13 6L19 12L13 18"/></svg>
+      </a>
+    </div>
+    <!--
+      LIVE-DATA PLACEHOLDER — category tiles + counts
+      ──────────────────────────────────────────────
+      The 10 category tiles below each show a `.count` of "N paths" that is
+      fabricated. These must not ship as static numbers.
+
+      When porting to Next.js:
+        - Fetch categories from Supabase: `getCategories()` from src/lib/data.ts.
+        - For each category, get the count of `approved` prompts in that
+          category. Either:
+            (a) extend getCategories() to include a `path_count` via a
+                left-join + count on prompts where status='approved', OR
+            (b) run a single `select category_id, count(*) from prompts
+                where status='approved' group by category_id` query and
+                merge in page.tsx.
+        - Render tiles by mapping over the real categories array — keep the
+          slug, icon, name from the DB (categories.icon already exists).
+        - For counts: show "{n} paths" when n > 0; show "New" (or omit the
+          count entirely) when n === 0 so empty categories don't look dead.
+        - Link each tile to /browse?category={slug}, not "#".
+        - If fewer than ~6 categories have any approved paths, consider
+          hiding empty ones or rendering them as disabled.
+
+      The static tiles below are a visual spec only. Replace the whole
+      .cats-grid with a server-component .map() over real category data.
+    -->
+    <div class="cats-grid" data-live="category-tiles">
+      <a href="/browse?category=finance" class="cat" data-slug="finance">
+        <div class="cat-icon">💰</div>
+        <h3>Finance</h3>
+        <div class="count" data-live="path-count">— paths</div>
+        <div class="arrow"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 17L17 7M17 7H9M17 7V15"/></svg></div>
+      </a>
+      <a href="/browse?category=marketing" class="cat" data-slug="marketing">
+        <div class="cat-icon">📈</div>
+        <h3>Marketing</h3>
+        <div class="count" data-live="path-count">— paths</div>
+        <div class="arrow"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 17L17 7M17 7H9M17 7V15"/></svg></div>
+      </a>
+      <a href="/browse?category=writing" class="cat" data-slug="writing">
+        <div class="cat-icon">✍️</div>
+        <h3>Writing</h3>
+        <div class="count" data-live="path-count">— paths</div>
+        <div class="arrow"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 17L17 7M17 7H9M17 7V15"/></svg></div>
+      </a>
+      <a href="/browse?category=coding" class="cat" data-slug="coding">
+        <div class="cat-icon">💻</div>
+        <h3>Coding</h3>
+        <div class="count" data-live="path-count">— paths</div>
+        <div class="arrow"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 17L17 7M17 7H9M17 7V15"/></svg></div>
+      </a>
+      <a href="/browse?category=design" class="cat" data-slug="design">
+        <div class="cat-icon">🎨</div>
+        <h3>Design</h3>
+        <div class="count" data-live="path-count">— paths</div>
+        <div class="arrow"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 17L17 7M17 7H9M17 7V15"/></svg></div>
+      </a>
+      <a href="/browse?category=education" class="cat" data-slug="education">
+        <div class="cat-icon">📚</div>
+        <h3>Education</h3>
+        <div class="count" data-live="path-count">— paths</div>
+        <div class="arrow"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 17L17 7M17 7H9M17 7V15"/></svg></div>
+      </a>
+      <a href="/browse?category=productivity" class="cat" data-slug="productivity">
+        <div class="cat-icon">⚡</div>
+        <h3>Productivity</h3>
+        <div class="count" data-live="path-count">— paths</div>
+        <div class="arrow"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 17L17 7M17 7H9M17 7V15"/></svg></div>
+      </a>
+      <a href="/browse?category=data" class="cat" data-slug="data">
+        <div class="cat-icon">📊</div>
+        <h3>Data</h3>
+        <div class="count" data-live="path-count">— paths</div>
+        <div class="arrow"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 17L17 7M17 7H9M17 7V15"/></svg></div>
+      </a>
+      <a href="/browse?category=business" class="cat" data-slug="business">
+        <div class="cat-icon">🏢</div>
+        <h3>Business</h3>
+        <div class="count" data-live="path-count">— paths</div>
+        <div class="arrow"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 17L17 7M17 7H9M17 7V15"/></svg></div>
+      </a>
+      <a href="/browse?category=personal" class="cat" data-slug="personal">
+        <div class="cat-icon">🎲</div>
+        <h3>Personal</h3>
+        <div class="count" data-live="path-count">— paths</div>
+        <div class="arrow"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 17L17 7M17 7H9M17 7V15"/></svg></div>
+      </a>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════ POPULAR PATHS — REMOVED ═══════════
+     Per Drew (2026-04-19): the entire "Paths that actually shipped" section
+     has been removed from the homepage. It was rendering with fabricated
+     cards, fake tab counts, and a fake total ("View all 1,284 paths"). These
+     must not ship. When re-introducing in the live Next.js app:
+       - Pull real popular paths via `getPrompts({ sort: 'popular', limit: 6 })`
+         from src/lib/data.ts (already used in page.tsx today).
+       - Use the live <PromptCard /> component, not the mockup card.
+       - Tab counts (Trending / New / Most forked / Quick wins) must be
+         derived from real queries, or drop the tab UI entirely until the
+         library has enough volume to justify it.
+       - Hide the section entirely when there are <6 approved paths so the
+         homepage isn't padded with empty grids.
+     ═════════════════════════════════════════════ -->
+
+<!-- ═══════════ COMMUNITY ═══════════ -->
+<section class="community">
+  <div class="wrap">
+    <div class="community-header">
+      <div class="eyebrow" style="justify-content:center;">From the community</div>
+      <h2 class="section-title" style="margin-left: auto; margin-right: auto; text-align: center;">Built <span class="serif">tonight</span>. Shared by morning.</h2>
+      <p class="section-sub" style="text-align: center;">What builders actually did with their last evening.</p>
+    </div>
+    <div class="community-grid">
+      <div class="quote">
+        <p>I copied Marcus's CFP chain, swapped {module} for "estate planning," and had a real study deck in Anki by 11. I'd tried this same idea from scratch twice and given up both times.</p>
+        <div class="quote-who">
+          <div class="quote-ava" style="background: linear-gradient(135deg,#E87A2C,#C45A1A);">S</div>
+          <div class="quote-meta"><div class="nm">Sarah M.</div><div class="rl">@sarahgrows · marketing</div></div>
+        </div>
+        <div class="quote-shipped">⎇ Forked <b>CFP study companion</b></div>
+      </div>
+      <div class="quote">
+        <p>The "bank CSV → cashflow" path saved me an hour. I already had the prompts floating around but never chained them. Seeing someone else's result gave me the template I needed.</p>
+        <div class="quote-who">
+          <div class="quote-ava" style="background: linear-gradient(135deg,#3B8FE4,#2563EB);">J</div>
+          <div class="quote-meta"><div class="nm">Jake T.</div><div class="rl">@jakefinance · CFO</div></div>
+        </div>
+        <div class="quote-shipped">⎇ Forked <b>Freelance cashflow forecast</b></div>
+      </div>
+      <div class="quote">
+        <p>First time I've finished an AI project I'd started. Having the outputs next to each prompt meant I could tell when my version was drifting — I knew exactly which step to retune.</p>
+        <div class="quote-who">
+          <div class="quote-ava" style="background: linear-gradient(135deg,#18181b,#3f3f46);">P</div>
+          <div class="quote-meta"><div class="nm">Priya S.</div><div class="rl">@priya_creates · designer</div></div>
+        </div>
+        <div class="quote-shipped">⎇ Forked <b>Figma → handoff spec</b></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════ FINAL CTA ═══════════ -->
+<section class="finalcta">
+  <div class="wrap">
+    <div class="eyebrow">Your turn</div>
+    <h2>You've got the tools.<br/><span class="serif">You've got</span> tonight.</h2>
+    <p>Open a build path, fork the prompts, swap in your context, and have a real thing to show by bedtime. No blank chat. No guessing what to build.</p>
+    <div class="finalcta-btns">
+      <a href="#" class="btn-primary">
+        Find tonight's build
+        <svg class="arrow" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="square"><path d="M5 12H19M13 6L19 12L13 18"/></svg>
+      </a>
+      <a href="#" class="btn-secondary">Create free account</a>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════ FOOTER ═══════════ -->
+<footer class="pf-footer">
+  <div class="wrap">
+    <div class="foot-top">
+      <div class="foot-brand">
+        <div class="logoline">
+          <span class="pf-logo-mark" style="width:32px; height:32px;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="square" stroke-linejoin="miter" width="20" height="20"><path d="M4 20 L12 4 L20 20 M7 14 L17 14"/></svg>
+          </span>
+          <h4>Path<span>Forge</span></h4>
+        </div>
+        <p>The default place to reuse proven AI build paths. Stop staring at the blank chat — forge your path.</p>
+        <div class="foot-social">
+          <a href="#" aria-label="X / Twitter">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2H21l-6.52 7.45L22 22h-6.56l-5.13-6.7L4.4 22H1.643l6.97-7.97L2 2h6.56l4.63 6.14L18.244 2zm-1.136 18h1.54L7.044 4H5.4l11.708 16z"/></svg>
+          </a>
+          <a href="#" aria-label="GitHub">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12c0 4.42 2.87 8.17 6.84 9.5.5.08.66-.22.66-.48v-1.7c-2.78.6-3.37-1.34-3.37-1.34-.45-1.16-1.1-1.47-1.1-1.47-.9-.62.07-.6.07-.6 1 .07 1.53 1.03 1.53 1.03.9 1.52 2.34 1.08 2.9.82.1-.65.35-1.08.63-1.33-2.22-.25-4.56-1.11-4.56-4.95 0-1.1.39-2 1.03-2.7-.1-.26-.45-1.28.1-2.66 0 0 .84-.27 2.75 1.02.8-.22 1.65-.33 2.5-.33s1.7.11 2.5.33c1.9-1.3 2.75-1.02 2.75-1.02.55 1.38.2 2.4.1 2.66.64.7 1.03 1.6 1.03 2.7 0 3.85-2.34 4.7-4.57 4.95.36.3.67.9.67 1.8v2.68c0 .26.16.57.67.48A10 10 0 0022 12c0-5.52-4.48-10-10-10z"/></svg>
+          </a>
+          <a href="#" aria-label="Discord">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M20.317 4.37a19.79 19.79 0 00-4.885-1.515.074.074 0 00-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 00-5.487 0 12.65 12.65 0 00-.617-1.25.077.077 0 00-.079-.037A19.74 19.74 0 003.68 4.37a.07.07 0 00-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 00.031.057 19.9 19.9 0 005.993 3.03.078.078 0 00.084-.028c.462-.63.873-1.295 1.226-1.994a.076.076 0 00-.04-.105 13.1 13.1 0 01-1.872-.892.077.077 0 01-.008-.127c.126-.094.252-.192.372-.292a.074.074 0 01.078-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 01.079.009c.12.1.246.198.372.292a.077.077 0 01-.006.127 12.3 12.3 0 01-1.873.891.077.077 0 00-.041.106c.36.698.772 1.362 1.225 1.993a.076.076 0 00.084.028 19.84 19.84 0 006.002-3.03.077.077 0 00.032-.054c.5-5.177-.838-9.674-3.548-13.66a.06.06 0 00-.031-.03z"/></svg>
+          </a>
+        </div>
+      </div>
+      <div class="foot-col">
+        <h5>Platform</h5>
+        <ul>
+          <li><a href="#">Browse paths</a></li>
+          <li><a href="#">Submit a path</a></li>
+          <li><a href="#">Trending</a></li>
+          <li><a href="#">Most forked</a></li>
+          <li><a href="#">New this week <span class="pip">128</span></a></li>
+        </ul>
+      </div>
+      <div class="foot-col">
+        <h5>Categories</h5>
+        <ul>
+          <li><a href="#">Finance</a></li>
+          <li><a href="#">Marketing</a></li>
+          <li><a href="#">Coding</a></li>
+          <li><a href="#">Writing</a></li>
+          <li><a href="#">All domains →</a></li>
+        </ul>
+      </div>
+      <div class="foot-col">
+        <h5>Company</h5>
+        <ul>
+          <li><a href="#">How it works</a></li>
+          <li><a href="#">About</a></li>
+          <li><a href="#">Changelog</a></li>
+          <li><a href="#">Docs</a></li>
+          <li><a href="#">Contact</a></li>
+        </ul>
+      </div>
+      <div class="foot-news foot-col">
+        <h5>Get tonight's build</h5>
+        <p>One curated build path in your inbox, every Friday. Fork it for the weekend.</p>
+        <form onsubmit="event.preventDefault(); this.querySelector('button').innerHTML='✓&nbsp;&nbsp;Subscribed';">
+          <input type="email" placeholder="you@where.ever" />
+          <button type="submit">Join
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="square"><path d="M5 12H19M13 6L19 12L13 18"/></svg>
+          </button>
+        </form>
+        <small>No spam. Unsubscribe anytime.</small>
+      </div>
+    </div>
+
+    <div class="foot-bottom">
+      <p>© 2026 PathForge. Built with AI. Shared by builders.</p>
+      <div class="links">
+        <a href="#">Privacy</a>
+        <a href="#">Terms</a>
+        <a href="#">Status</a>
+      </div>
+      <div class="pips" aria-hidden="true">
+        <span class="s" style="background: var(--brand-orange);"></span>
+        <span class="s" style="background: var(--brand-blue);"></span>
+      </div>
+    </div>
+  </div>
+</footer>
+
+<!-- ═══════════ TWEAKS ═══════════ -->
+<div class="tweaks-panel" id="tweaks">
+  <div class="tweaks-hdr">
+    <h4>Tweaks</h4>
+    <button id="tweaks-close" aria-label="Close"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6L18 18M18 6L6 18"/></svg></button>
+  </div>
+  <div class="tweaks-body">
+    <div class="tweak">
+      <label>Hero layout</label>
+      <div class="tweak-opts" data-tweak="hero">
+        <button data-value="split" class="on">Split</button>
+        <button data-value="centered">Centered</button>
+      </div>
+    </div>
+    <div class="tweak">
+      <label>Accent color</label>
+      <div class="tweak-opts" data-tweak="accent">
+        <button data-value="orange" class="on">Orange</button>
+        <button data-value="warm">Warm</button>
+        <button data-value="blue">Blue</button>
+      </div>
+    </div>
+    <div class="tweak">
+      <label>Density</label>
+      <div class="tweak-opts" data-tweak="density">
+        <button data-value="tight">Tight</button>
+        <button data-value="default" class="on">Default</button>
+        <button data-value="loose">Loose</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  /*EDITMODE-BEGIN*/
+  const TWEAKS = {
+    "hero": "split",
+    "accent": "orange",
+    "density": "default"
+  };
+  /*EDITMODE-END*/
+
+  const body = document.body;
+  function apply(k, v) {
+    body.setAttribute('data-' + k, v);
+    document.querySelectorAll(`[data-tweak="${k}"] button`).forEach(b => {
+      b.classList.toggle('on', b.dataset.value === v);
+    });
+  }
+  Object.entries(TWEAKS).forEach(([k,v]) => apply(k,v));
+
+  document.querySelectorAll('[data-tweak]').forEach(group => {
+    const key = group.dataset.tweak;
+    group.addEventListener('click', e => {
+      const btn = e.target.closest('button');
+      if (!btn) return;
+      const v = btn.dataset.value;
+      apply(key, v);
+      window.parent.postMessage({type: '__edit_mode_set_keys', edits: {[key]: v}}, '*');
+    });
+  });
+
+  // Edit-mode bridge
+  const panel = document.getElementById('tweaks');
+  window.addEventListener('message', (e) => {
+    if (!e.data) return;
+    if (e.data.type === '__activate_edit_mode') panel.classList.add('open');
+    if (e.data.type === '__deactivate_edit_mode') panel.classList.remove('open');
+  });
+  window.parent.postMessage({type: '__edit_mode_available'}, '*');
+  document.getElementById('tweaks-close').addEventListener('click', () => panel.classList.remove('open'));
+
+  // Tab buttons on paths section (visual only)
+  document.querySelectorAll('.paths-tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      document.querySelectorAll('.paths-tab').forEach(t => t.classList.remove('active'));
+      tab.classList.add('active');
+    });
+  });
+</script>
+
+</body>
+</html>

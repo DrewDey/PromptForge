@@ -28685,6 +28685,615 @@ Publish Wednesday, work the customer replies Wednesday and Thursday, take Friday
 
 
 -- =========================================================================
+-- Project 0080 — teacherben / Education / 4-step Sonnet 4.6 beginner
+-- First-year 9th-grade teacher running a mandatory school science fair
+-- =========================================================================
+
+DELETE FROM prompt_steps WHERE prompt_id = '55555555-5555-5555-5555-555555550080';
+DELETE FROM prompts      WHERE id        = '55555555-5555-5555-5555-555555550080';
+
+INSERT INTO prompts (
+  id, title, description, content, result_content,
+  category_id, difficulty, model_used, model_recommendation,
+  tools_used, tags, status, author_id, vote_count, bookmark_count
+) VALUES (
+  '55555555-5555-5555-5555-555555550080',
+  $pf$First-year teacher running a science fair — 112 students, 8 weeks, no lab budget$pf$,
+  $pf$First-year 9th-grade general-science teacher handed a mandatory school science fair mid-October. 112 students across 5 sections, 8-week runway, zero lab budget, no documentation from past years. Four passes with Claude Sonnet 4.6 to build a project framework, 8-week calendar with 3 named check-in gates, 5-criteria judging rubric with a calibration exercise, and a "simpler-track" failure safety net. Fair ran the week before winter break — 97 full projects, 11 simpler-track finishes, 4 incompletes.$pf$,
+  $pf$I teach 9th-grade general science. Five sections, 112 students. On October 15 my department chair told me I was running the school science fair — mandatory participation, 8-week runway, the teacher who'd run it last year left over the summer, and there was no document from past years I could inherit. The fair would be December 12, a week before winter break.
+
+I had never run a science fair. I had never judged one. I had done one in 7th grade and vaguely remember it was stressful. I have zero lab budget, a classroom with four sinks and one working outlet per wall, and a curriculum I was still learning to teach.
+
+Sat down on a Saturday morning with a large coffee and Claude Sonnet 4.6 — this is logistics and structure, not heavy reasoning, so Sonnet is the right model at the price. Worked through four things: (1) a project framework that defines what actually works for 112 9th-graders in 8 weeks with no budget; (2) an 8-week calendar with three named check-in gates; (3) a judging rubric plus a short calibration exercise to keep 12–15 volunteer judges scoring consistently; (4) a failure safety net — what happens to kids who are behind at week 5 and week 7, so no one ends up with a zero on the gradebook.
+
+Four passes, about two hours. Ended with a 9-page doc I turned into student handouts, a slide deck, and a judging spreadsheet.$pf$,
+  $pf$Fair ran Friday before winter break. 97 full projects finished on time. 11 simpler-track projects finished (a 3-slide version for kids who got behind at week 5 — half credit, but something real to present, which was the goal). 4 incompletes, all for students with extended absences, handled separately through the grade team.
+
+**What worked:**
+
+- **The zero-budget constraint was the best thing that happened to the design.** It forced me to define "project" as "a question you answered with something you could observe at home or in a kitchen," which is actually what 9th-grade science fair should be. Nobody proposed a 3D-printed wind turbine. Nobody's cousin's science-fair kit showed up. Kids did real observation and measurement.
+- **Three named gates, not continuous nagging.** Week 2 topic approval, week 5 data-collection complete, week 7 poster draft. Each gate was a concrete yes/no. Kids who missed a gate got a specific, pre-scripted conversation — not a vague "check in."
+- **The volunteer-judge calibration exercise.** 15 adults, 20 minutes before judging started. Showed them 3 example projects, had them score independently, compared scores, talked through where they diverged. Scores on the day landed within 1 point across judges — tight enough that awards didn't come down to who got which judge.
+- **The failure safety net was the biggest psychological relief of the whole thing.** Knowing that a behind kid had a defined simpler-track path meant I could have honest conversations at week 5 without it feeling like I was writing them off. Three kids ended up on the simpler track who would otherwise have dropped out completely.
+
+**What I'd change next time:**
+
+- Week 2 topic approval needs to be STRICTER. I let through 4 projects that were too ambitious and all 4 ended up on the simpler track by week 5. Next year: if I'm not confident a kid can finish, it doesn't get approved.
+- Don't put data-collection during Thanksgiving week. Two kids had "I'll observe over the holiday" projects and family plans changed. Keep the Thanksgiving week as buffer, not active work.
+- Parent email on day 1 should include the volunteer-judge signup link. I sent it week 6 and scrambled for the last 4 judges.
+
+**Claude's best line from the whole session:**
+
+> "A science fair's success metric isn't the best project. It's the fraction of 112 kids who finish something they can explain out loud. Design for the 40th-percentile kid, not the top 5."
+
+That line shaped every subsequent decision. It's why I built the simpler-track, why I set the rubric on "ownership" rather than "creativity," and why the topic-approval rubric's killer question became "if this project goes badly, can you still write it up as what I learned about why it didn't work?"$pf$,
+  '11111111-1111-1111-1111-111111111106',
+  'beginner',
+  'claude-sonnet-4-6',
+  'Claude 4.6 Sonnet',
+  ARRAY['Claude','Google Docs','Google Sheets'],
+  ARRAY['teaching','science-fair','project-based-learning','first-year-teacher','curriculum-design'],
+  'approved',
+  '22222222-2222-2222-2222-222222222205',
+  0, 0
+);
+
+INSERT INTO prompt_steps (id, prompt_id, step_number, title, content, result_content, description) VALUES
+
+-- Step 1 --
+('66666666-6666-6666-6666-666666800101',
+ '55555555-5555-5555-5555-555555550080',
+ 1,
+ $pf$Project framework + topic-approval rubric$pf$,
+ $pf$I need to define what counts as an acceptable science-fair project for 112 9th-graders with an 8-week runway, a classroom with minimal lab equipment, and zero materials budget. The previous teacher left no documentation. I need (a) a few project archetypes that actually work in these constraints, (b) a topic-approval rubric I can use at week 2 so I don't let through ambitious projects that will implode by week 5, and (c) a list of project types to rule out up front so I don't get 30 "build a volcano" proposals. Keep it practical — I'm not running Intel ISEF; I'm running a mandatory school fair where the goal is every kid finishes something they can explain out loud.$pf$,
+ $pf$Start from your real constraint: **8 weeks, no money, no lab, 112 kids.** Design the fair around what a 9th-grader can actually do at home or in a kitchen with things they already own. If a project requires a purchase, it's out. If it requires a controlled lab environment, it's out. That leaves you more ground than it sounds.
+
+**Four archetypes that work:**
+
+1. **Observational / natural-science.** Pick a phenomenon in the natural world, observe it systematically, document what you see, explain the mechanism. Examples: how fast does ice melt on 3 surfaces (metal / plastic / wood); does a pendulum's period actually depend on mass (it doesn't, and measuring this well IS the project); at what temperature does yeast stop fermenting in bread dough; which of 3 cleaning products actually removes stains from a white t-shirt. The project lives in the *measurement* and the *comparison*, not in building anything.
+
+2. **Kitchen / home chemistry.** Questions answerable with ingredients in the kitchen plus a kitchen scale. Does baking-soda-to-vinegar ratio change the height of a bread rise (this is a good one, lots of variables). Do different salts melt ice at different rates (table salt, sea salt, Epsom). How does dissolved sugar affect the boiling point of water (colligative properties in disguise).
+
+3. **Survey / human-behavior.** Survey 30 people (a homeroom, a sports team, a church group). Ask a well-defined question with 3 controllable variables. Analyze the responses. The project lives in the *question design* and the *analysis*, not in collecting volume. Examples: does the order of list items affect which one people pick; do people remember longer or shorter words more accurately; does time of day affect how someone rates the difficulty of a simple math problem.
+
+4. **Device / engineering — capped.** Build a simple thing with household materials and test it under 3 conditions. Paper-airplane wing-shape tests, parachute size-vs-drop-time tests, insulation-material tests with a cup of hot water and a thermometer. Cap: materials must come from a kitchen, a recycling bin, or one hardware-store trip under \$10 — via a separate approved-request form you sign.
+
+**Topic-approval rubric (use at week 2). 5 questions, all must be yes:**
+
+1. **Can you do this with things you already own or can get for under \$10?** If no, redesign or reject.
+2. **Can you finish data collection in 10 calendar days or less, not counting Thanksgiving week?** If no, shrink the scope.
+3. **Can you tell me in one sentence what you're trying to find out?** If the student can't articulate the question, the project isn't ready; send them back.
+4. **Do you have 3 variables you can change and 1 thing you're measuring?** If the answer is vague, the project will collapse under its own ambiguity. Common fail mode: "I want to see which is best" — best at what, measured how?
+5. **If this project goes badly, can you still write it up as "here's what I learned about why it didn't work"?** This is the killer question. Projects where "failure" means no writeup are brittle. Projects where "failure" becomes a data point are antifragile.
+
+**Project types to rule out up front — publish this list with the topic form:**
+
+- Anything requiring live animals (ethical review, time, and you will regret this).
+- Anything requiring fire, open flames, or heating beyond a kitchen stove (liability).
+- Anything requiring the purchase of a kit ("science fair kit" searches on Amazon ban the lazy-parent project).
+- Anything requiring a parent's PhD-level help (if the topic needs a biomed-chem parent to explain it, 80% of the project is the parent's).
+- Volcanoes. I'm sorry. Too many, too done, too often not actually a science project. Make them do something else.
+- Anything where "data collection" becomes "made a YouTube video" — no phone filming required beyond a simple photo of the setup.
+
+**One move that saves you later:** at topic-approval, make every student write a one-sentence "if I finish this, my results will look like ____." If they can't describe what success looks like, they're not ready to start.
+
+Don't worry about the fair being "impressive." You are running a mandatory school fair in November of your first year of teaching. The success metric is 100 kids walking a visitor through a question they answered. That's a huge win. Design for the 40th-percentile kid and the top 5 will stretch on their own.$pf$,
+ NULL),
+
+-- Step 2 --
+('66666666-6666-6666-6666-666666800102',
+ '55555555-5555-5555-5555-555555550080',
+ 2,
+ $pf$8-week calendar + three named gates$pf$,
+ $pf$Perfect — I'll use those four archetypes and the rubric. Now I need the week-by-week calendar with the three check-in gates baked in. Eight weeks from today (October 20) to fair day (December 12). Thanksgiving is November 27-28, so practically we lose a week. Walk me through week 1 through week 8, what the gate looks like at week 2 / week 5 / week 7, what happens concretely to kids who miss a gate, and what are the two or three teacher-side tasks I need to do each week that I'll otherwise forget if I don't have them in writing? Also flag which week is most likely to blow up so I can plan for it.$pf$,
+ $pf$Here's your 8-week calendar. I've built it around the 3 gates you named and the Thanksgiving gap. Read it as a schedule you give students on day 1, plus a parallel teacher-task column.
+
+**Week 1 (Oct 20-24) — Launch + exploration.**
+- *Students:* Fair overview in class. Handout: archetypes + rubric + banned-topics list. Homework — bring 3 candidate project ideas to class by Friday. No commitment yet; exploration only.
+- *Teacher tasks:* Parent email on day 1 — fair date, expectations, volunteer-judge signup link. Set up a Google Form for topic submission. Draft a 5-min classroom share of what a "good fair project" looks like vs. a bad one — show 2 real examples each.
+
+**Week 2 (Oct 27-31) — TOPIC GATE.**
+- *Students:* Submit topic form by Wednesday (with rubric answers). Brief conferences with you during class Thursday-Friday — 3 minutes each (112 × 3 min ≈ 6 hours of class time; allocate one section-day to conferences). Approved: proceed to week 3. Rejected: 7 days to resubmit.
+- *Gate rule:* No topic approved after end of Week 3. Anyone who hasn't cleared by then goes on simpler-track — they'll write a 3-slide "question I wanted to answer but didn't have time for" plus why they thought it was interesting, capped at half credit.
+- *Teacher tasks:* Approve or bounce each topic using the rubric (target 5 min/student). Maintain a master spreadsheet: student / topic / status / archetype / concern level. Flag the 10-15 students whose projects you're most worried about.
+
+**Week 3 (Nov 3-7) — Design.**
+- *Students:* Write a 1-page project design: question, 3 variables, 1 measurement, 10 planned steps, materials list, timeline. Due Friday.
+- *Teacher tasks:* Spot-check flagged students' designs. Volunteer-judge recruiting — need 12-15 adults. Hit up department colleagues, school admin, and your own network. Judges must be willing to sit through 10 9th-grade projects in a row.
+
+**Week 4 (Nov 10-14) — Start data collection.**
+- *Students:* Begin collecting data at home. Keep a lab notebook — a cheap composition book, NOT a Notes app. Kids will lose data that's only digital.
+- *Teacher tasks:* Mini-lesson on how to keep a lab notebook. Mid-week check: ask students to show you their notebook with 2 entries. Flag any "haven't started" kids. Reach out to parents of the 10-15 you flagged in week 2.
+
+**Week 5 (Nov 17-21) — DATA GATE. THIS IS THE WEEK THAT WILL BLOW UP.**
+- *Students:* By Friday, must show you a lab notebook with actual data (or observations) collected. Specifically: not "I planned it out," but "I ran the experiment and here are the numbers."
+- *Gate rule:* Students who haven't started data collection by end of Week 5 move to simpler-track. Private conversation, framed as a track change, not a failure. Expect 3-5 kids here.
+- *Teacher tasks:* **Hold this gate.** You will be tempted to give "one more week" to 8 kids. Don't. Students who can't start by week 5 won't finish by week 7; simpler-track preserves a credit and their dignity. This is the hardest moment of the whole fair for you — pre-commit now to the rule.
+
+**Week 6 (Nov 24-28) — Thanksgiving week.**
+- *Students:* Thanksgiving Monday + Tuesday, no school Wed-Fri. Officially a buffer week — no new deliverables. In practice: kids who are behind have 2 school days to catch up before the week ends; kids on track get a breather.
+- *Teacher tasks:* Monday — check in with kids who JUST made the data gate (10-min conversations). Tuesday — finalize your judge list, send logistics email. Do not assign new work; don't send "reminders" over Thanksgiving — the families will resent it.
+
+**Week 7 (Dec 1-5) — POSTER GATE.**
+- *Students:* Poster draft due Friday. Include: question, method, 3-4 data points, conclusion, "what I'd do differently." Minimum format: a tri-fold poster board with sections in the order you specify.
+- *Gate rule:* Students without a draft Friday get a weekend-over extension — due Monday EOD. Miss Monday: simpler-track. By this point almost everyone clears.
+- *Teacher tasks:* Review 90+ posters — 3 min each, targeted feedback on one specific thing (not a rewrite). This is a 5-hour block; plan Saturday morning.
+
+**Week 8 (Dec 8-12) — Polish + fair day.**
+- *Mon-Thu:* Students revise based on feedback. Final posters Thursday.
+- *Friday Dec 12 / Fair day:* 8am setup, 8:50am judge calibration, 9am judging starts, 11:30am judging ends, 12:15pm awards, 12:30pm parents walk through, 2pm cleanup.
+- *Teacher tasks:* Mon — final 1:1 check-ins with kids still rough. Tue — judge briefing email. Wed — room setup plan. Thu — walk the room mentally. Fri — run the fair.
+
+**Three teacher tasks that will tank the whole thing if you miss them, regardless of week:**
+
+1. **Parent email at end of week 1 with the volunteer-judge link.** Miss this and week 7 becomes a recruiting sprint.
+2. **Update your student spreadsheet once a week.** The spreadsheet is your early-warning system.
+3. **Keep a running "kids I'm worried about" list.** Revisit it weekly. Conference with 2-3 each week. The list peaks at 10-15 in week 5 and shrinks to 3-4 by fair day.
+
+**Which week is most likely to blow up:** Week 5, by a wide margin. That's where reality hits and you find out who actually started. Plan your non-fair commitments around being tired that Friday evening.$pf$,
+ NULL),
+
+-- Step 3 --
+('66666666-6666-6666-6666-666666800103',
+ '55555555-5555-5555-5555-555555550080',
+ 3,
+ $pf$Judging rubric + 20-minute calibration exercise$pf$,
+ $pf$Great, calendar is locked. Now I need the judging rubric and a briefing for 12-15 volunteer judges — most of whom have never judged a science fair. I want scores to be calibrated across judges so awards don't come down to who happened to get which judge. Give me (a) the rubric itself — 4-6 criteria on a clear scale, (b) a short judge briefing they read when they arrive, (c) a 20-minute calibration exercise I can run right before judging starts, and (d) a rule for how to compile scores and handle disagreements.$pf$,
+ $pf$You're right to obsess about judge variance. It's the #1 reason parents complain about fair outcomes — parents don't object to their kid not winning; they object to the feeling that the outcome was random.
+
+**Rubric — 5 criteria, 0-4 scale each, 20 points total:**
+
+| # | Criterion | 0 | 2 | 4 |
+|---|-----------|---|---|---|
+| 1 | **Question clarity** | Can't explain what they were trying to find out | Question is stated but vague | One sentence, specific, testable |
+| 2 | **Method** | Didn't actually test anything | Tested but with confounds they can't explain | Clean method, variables named, student can walk through it |
+| 3 | **Data** | No data or fabricated-looking | Some data, incomplete or poorly presented | Real data, documented, in an understandable chart or table |
+| 4 | **Conclusion** | "It worked" / "It didn't" / none | Concluded but doesn't match the data | Conclusion follows from the data, acknowledges uncertainty |
+| 5 | **Ownership** | Project feels parent-driven; can't answer questions | Student knows parts but not whole | Student can answer any question about any part |
+
+**Award buckets by total score:**
+- 17-20: gold ribbon
+- 13-16: silver
+- 9-12: bronze
+- 0-8: participation
+
+**What's deliberately missing:** no "creativity," no "visual appeal," no "difficulty." These are where judges diverge hardest (personal taste) and where parents push back loudest ("his poster was beautiful!"). You want judgeable criteria, not taste criteria. A great-looking poster with an owner who can't answer questions scores poorly on #5 — which is exactly right.
+
+**Judge briefing (one page, hand to each judge when they arrive):**
+
+> Welcome, and thank you for judging. Today you'll score ~10 projects, 5 minutes per project.
+>
+> **At each project:** Ask the student to tell you their question. Ask them to walk you through their method and data. Ask one follow-up — "If you did this again, what would you change?" — then score on the rubric.
+>
+> **Tone:** Warm, curious, not intimidating. These are 9th-graders. Some are nervous. Your job is to listen, ask one real question, and fill the rubric honestly. Not to teach, not to correct, not to debate the science.
+>
+> **Where to be generous:** if the question is clear and the student owns the project, score generously on 1 and 5 even if the data is messy. A curious, honest 9th-grader who did real work should score well.
+>
+> **Where to hold the line:** if the student can't explain the method or the data, score low on 2 and 3. A beautiful poster with a student who can't answer questions signals a parent-did-it project — don't reward that.
+>
+> **Ties are fine.** Don't manufacture distinctions. If two projects feel equal, score them equal.
+>
+> **Logistics:** your packet lists 10 students. Rotate through in order; if a student isn't at their station, come back. Hand score sheets to the coordinator table by 11:30. Results compile at noon.
+
+**20-min calibration exercise (8:30-8:50am, before judging starts):**
+
+1. **Setup (3 min).** Judges sit together at a front table. Each gets the rubric + three short written "projects" you prepared in advance. One is a clearly strong project. One is muddled middle-of-the-pack. One is "parent clearly wrote this; kid can't answer." You know what each should score.
+
+2. **Silent scoring (7 min).** Each judge scores all three, independently, using the rubric. No discussion.
+
+3. **Reveal + discuss (8 min).** Read scores aloud. The middle one will have the widest spread (expect 9-17 / 20 — that's normal). Walk through why the rubric should pull it tighter. Re-score as needed. The goal isn't identical scores — it's nobody wildly off the others.
+
+4. **Set the norm (2 min).** Say out loud: **"If you're unsure between two adjacent numbers on any criterion, round DOWN by default. This keeps the top of the scale reserved for genuinely strong work."** Repeat it. Judges default upward without this rule; you'll end up with 60% of projects scored 18-20 and the gold ribbon loses meaning.
+
+**Compiling scores + handling disagreements:**
+
+- Each project gets **2 independent judges.** Assign rotations so no pair of judges overlaps twice.
+- **Average the two scores.**
+- **If the two scores disagree by more than 4 points:** you (the teacher) go to the project, talk to the student for 3 minutes, and break the tie yourself. Expect 2-4 tiebreakers; budget the last 30 minutes for them.
+
+**One rule I'd hold firm on:** do NOT reveal running average scores to judges mid-fair. Judges who see their own running average drift toward the middle — it's unconscious recalibration. Each project scored cold on the rubric.
+
+**One last move for parent communication later:** after the fair, if a parent questions a score, don't debate it. Walk them through the rubric, criterion by criterion, with the specific sheet their child's judges filled out. 90% of complaints deflate at that walkthrough. The remaining 10% weren't actually about the score — they were about the parent feeling unheard. Hear them, and don't re-score on fair day.$pf$,
+ NULL),
+
+-- Step 4 --
+('66666666-6666-6666-6666-666666800104',
+ '55555555-5555-5555-5555-555555550080',
+ 4,
+ $pf$Failure safety net + run-day logistics$pf$,
+ $pf$Last piece. I need the failure safety net spelled out in detail — specifically, what happens to kids who are behind at the week-5 data gate and the week-7 poster gate, how I phrase those conversations so they don't feel like punishments, and how the simpler-track projects get presented on fair day so those kids are not visibly the "lesser" projects in front of their peers and parents. And one last thing — give me run-day logistics: how do I physically set up a gym with ~100 posters, where do judges go, when do students arrive, and what's the "something went wrong" plan for fair day?$pf$,
+ $pf$You've built the scaffolding. Last mile is protecting the kids who end up behind and making fair day not collapse on logistics.
+
+**The simpler-track path — what it is, concretely:**
+
+Any student who misses the Week 5 data gate or the Week 7 poster gate moves to simpler-track. That means:
+
+- **Deliverable:** 3-slide presentation on a computer, or a 1-panel poster (NOT a tri-fold). Three slides/sections: (1) the question I was trying to answer, (2) why I thought it was interesting, (3) what I learned from not finishing — specifically, what I would do differently.
+- **Grade:** half credit (50% on the fair assignment). Better than a zero (which a dropout would get) and worse than a full project (which rewards the kids who did the work). Calibrated so that finishing simpler-track is a meaningful win.
+- **Fair-day placement:** simpler-track kids get a station just like everyone else. **Do not cluster them. Do not label their station differently.** A simpler-track kid at a small poster explaining their question is, to a visitor, indistinguishable from a regular project — especially if their stations are distributed across the gym.
+
+**The conversation when you move a kid to simpler-track (Week 5 and Week 7):**
+
+Private, 3 minutes, in the hallway or after class. Script:
+
+> "Hey — I want to check in with you about the fair. Looking at where you are with [data / poster], I don't think you can finish the full project by the deadline, and I don't want you to try and end up with nothing. There's another option — we call it simpler-track. You do 3 slides about the question you wanted to answer, why you thought it was interesting, and what you learned trying. It's half credit but it's a real thing you present on fair day. I'd like to move you there. Are you OK with that, or do you want to push for the full project?"
+
+Most kids will accept. The few who push back because they want to keep trying — let them, revisit in 3 days. No visible progress by then, repeat the conversation more firmly.
+
+**What NOT to do in this conversation:**
+- Don't use "failed," "behind," or "giving up." You're offering a path, not delivering a verdict.
+- Don't have this conversation in front of classmates.
+- Don't email the parent before talking to the kid. Talk to the kid first; email the parent within 24 hours, framed as "we talked today and decided on a path that makes sense for her workload."
+
+**Run-day logistics (Friday Dec 12):**
+
+**Physical setup (8:00-8:45am):**
+- Need ~100 stations. A standard school gym with 6 rows of 17 tables (borrow from classrooms the day before) works. Number every station 1-100 with painter's tape on the table edge.
+- Students bring their own posters and set up at their assigned station between 8:30 and 8:55.
+- Judges check in at a front table — name tag, packet, one-page briefing, coffee.
+- **8:50am — 20-min calibration exercise** (the one from step 3).
+- **9:00-11:30 — Judging.** Each judge has 10 assigned projects; ~15 min each with travel allows generous margin.
+- **11:30-12:15 — Score compile + tiebreakers.** Judges hand in sheets; you run the 2-4 disagreements as on-floor conversations with the students.
+- **12:15-12:30 — Awards.** 10 minutes max. Hand out ribbons, read names, clap, done.
+- **12:30-1:45 — Parents walk the fair.** Kids stand at their stations and explain their projects to their own families and others.
+- **1:45-2:15 — Cleanup.** All students help break down stations. Door shuts at 2:30.
+
+**The "something went wrong" plan:**
+
+- **A judge doesn't show.** You recruited 12-15 to cover 97 projects with doubled coverage. If someone no-shows, redistribute — the remaining judges each pick up 1-2 extra projects. Don't panic. Calibration is already done.
+- **A poster fell apart / got left at home.** Have 3 blank tri-folds and markers at the teacher table. 90 minutes before judging, a student can rebuild something presentable. If they literally can't, they present verbally from a 1-panel reconstruction. Score them on ownership and question clarity; don't penalize the visual.
+- **A parent escalates about their kid's score.** Smile, say "let me walk through the rubric with you," and walk them through the specific criterion they're pushing on. DO NOT re-score on fair day. If there's a real issue, it gets handled Monday. Most complaints deflate during the rubric walkthrough.
+- **A kid cries or melts down.** Pre-plan a 5-minute back-room reset: your classroom, a water bottle, a seat. Walk them through a 2-minute reset, send them back. Most 9th-grade meltdowns are 3 minutes long if someone notices.
+- **You (the teacher) are fried by 11am.** This will happen. Eat something at 10:45 even if you're not hungry. Have another teacher or an admin on-call to spell you for 10 minutes if you need it. You cannot run 6 hours on adrenaline alone.
+
+**Three moves that make the next fair easier:**
+
+1. **Monday after the fair — 20-minute debrief in each section.** Students write one sentence on what went well + one sentence on what they'd change. You'll learn more from these 112 sentences than from any grade distribution. Save them; they become year-2's framework input.
+2. **Email all volunteer judges within 48 hours.** Thank them by name, tell them what worked, ask for one piece of honest feedback. You need these judges again next year; the thank-you is both grace and recruiting.
+3. **Write a one-page "how to run this fair" doc the Monday after.** Three sections: the four archetypes, the three gates, the rubric. Put it in your teacher shared drive under "department resources." Next year's version of you (or your successor) will thank you — and you will have solved the problem the previous teacher left you.
+
+**Last thing.** You're a first-year teacher running a mandatory 112-student fair with no documentation and no budget. If you finish December 12 with 95+ kids having presented something they can explain, you have absolutely crushed this. Don't let "I wish the top projects had been more impressive" be the story you tell yourself afterward. The story is: 100 ninth-graders explained a real question to an adult they'd never met. That's the whole thing.$pf$,
+ NULL);
+
+
+-- =========================================================================
+-- Project 0081 — ops_nina / Productivity / 5-step Opus 4.6 intermediate
+-- New-client onboarding rebuild at a 50-person agency (11 communication leaks)
+-- =========================================================================
+
+DELETE FROM prompt_steps WHERE prompt_id = '55555555-5555-5555-5555-555555550081';
+DELETE FROM prompts      WHERE id        = '55555555-5555-5555-5555-555555550081';
+
+INSERT INTO prompts (
+  id, title, description, content, result_content,
+  category_id, difficulty, model_used, model_recommendation,
+  tools_used, tags, status, author_id, vote_count, bookmark_count
+) VALUES (
+  '55555555-5555-5555-5555-555555550081',
+  $pf$New-client onboarding rebuild — 11 "no one told me that" moments$pf$,
+  $pf$Operations manager at a 50-person creative agency. Three clients in 2 months said "no one told me that" in escalation calls with our exec sponsor — different content, same failure mode. Got 8 weeks to rebuild onboarding. Five passes with Claude Opus 4.6: design the 6-interview audit, categorize the 11 leaks into 4 root causes, redesign with 11 named "communication commitments" (owner / trigger / medium / deadline), sequence a 6-week rollout that doesn't trigger PM resistance, set a 60-day watchlist with anti-metrics and kill conditions.$pf$,
+  $pf$I've been operations manager at this 50-person creative agency for 3 years. We do brand work — 12-20 active clients at any time, 6-week to 6-month engagements. In February and March, three different clients said some version of "no one told me that" in escalation calls with our exec sponsor. The specific things they hadn't been told were wildly different — one was about our invoice cadence, one was about revision-round math, one was about which of our team members they could email directly. Different content; same failure mode.
+
+I told our CEO I thought the onboarding was leaking and wanted 6 weeks to rebuild it. He gave me 8. I sat down with Claude Opus 4.6 in mid-March and worked five passes: (1) design the audit — interview structure, confidentiality, how to manage my own bias; (2) categorize the 11 leaks we found so the rebuild targets root causes not symptoms; (3) rebuild the 6-step onboarding with 11 named "communication commitments," each with owner / trigger / medium / deadline; (4) roll out the new process without triggering the skeptical PMs' defenses; (5) a 60-day watchlist with primary metrics, anti-metrics, and explicit kill conditions.
+
+Shipped in week 7. Three PMs initially pushed back ("this will slow us down"); six weeks later, two had flipped. Client NPS improved but it's noisy — the real signal was the CEO stopped forwarding "no one told me that" emails. That's the bar.$pf$,
+  $pf$Six weeks in, three things have clearly landed and one is still shaky.
+
+**What's working:**
+
+- **"Artifact, not meeting" default.** 7 of the 11 commitments got converted from a status meeting into a written artifact (short, scannable). PMs resisted at first ("we already meet"), but client NPS improved and PMs report a net 2.5-hour/week savings. Writing the thing forced each PM to state it explicitly rather than hoping the client picked it up.
+- **The 30-day "you should know by now" check-in.** One of the 11 commitments is a day-30 PM-to-client call with a specific list of 8 things we expect the client to know by now ("our typical response time is X," "you have 2 revision rounds per deliverable," "we don't work Fridays"). The first PMs who used it report the client literally said "oh, I didn't know that" on 2-3 items. Which was the whole point.
+- **Named owner on every commitment.** "PM owns" or "Exec sponsor owns" on each of the 11. Ambiguous ownership was at the root of at least 4 of the original leaks; the fix isn't to improve the process but to say out loud who is responsible.
+
+**What's shaky:**
+
+- **The 60-day rebrief.** One commitment is a PM-and-exec-sponsor joint call with the client at day 60 to recommit. Two PMs skipped it entirely. In both cases the clients are fine and the PMs say "the client didn't want it." I can't tell if PMs are reading the client or protecting their own calendar. Monitoring.
+
+**What I learned about the 11 leaks:**
+
+They fell into 4 categories: *surprise information* (client found out late), *deferred information* (PM knew but hadn't said), *missing commitment* (said verbally, never written down), and *conflicting info* (two people at the agency told the client different versions). Deferred and missing-commitment were the biggest categories — 7 of 11. The fix for both is the same: written artifact, named owner, specific trigger.
+
+**Claude's best line from the session:**
+
+> "Nobody believes a process until they see it work for their specific fear. Pick one PM whose fear you know — schedule anxiety, revision anxiety, scope anxiety — and design the pilot around THAT fear. If the pilot addresses their worst case, they sell the process to the others for you."
+
+I piloted with Kendra (revision-scope anxiety — her worst client fights have all been about revision math). The new revision-rounds artifact gave her the exact ground she'd wanted for two years. She became the strongest internal advocate. That single recommendation was the most load-bearing move in the whole rollout.$pf$,
+  '11111111-1111-1111-1111-111111111107',
+  'intermediate',
+  'claude-opus-4-6',
+  'Claude 4.6 Opus',
+  ARRAY['Claude','Notion','Slack','Google Docs'],
+  ARRAY['operations','client-onboarding','process-design','agency-ops','communication','change-management'],
+  'approved',
+  '22222222-2222-2222-2222-222222222206',
+  0, 0
+);
+
+INSERT INTO prompt_steps (id, prompt_id, step_number, title, content, result_content, description) VALUES
+
+-- Step 1 --
+('66666666-6666-6666-6666-666666810101',
+ '55555555-5555-5555-5555-555555550081',
+ 1,
+ $pf$Audit design — interview structure for 6 stakeholders$pf$,
+ $pf$Before I rebuild anything, I need to understand why three different clients in two months have told our exec sponsor some version of "no one told me that." I want to interview 6 people over two weeks: 2 of our PMs, 2 recently-onboarded clients (one happy, one who escalated), and 2 execs including the sponsor who got the complaints. I need (a) what questions I actually ask each of the three groups, (b) how I handle confidentiality so PMs don't clam up and clients feel safe, and (c) what to do about my own bias — I have strong opinions about which PMs are sloppy and I don't want to come in fishing for evidence. Assume 45-minute interviews, async scheduling, one person on the call with me at a time.$pf$,
+ $pf$Good instinct to set the interview protocol before you start. Most operations audits fail because the interviewer picks up signal-shaped noise — people complain about the thing they most recently remembered, not the thing most broken. You want a protocol that surfaces systemic patterns, not individual gripes.
+
+**Three groups, three different scripts:**
+
+**(1) PMs — 2 interviews, 45 min each.**
+
+Open with: "I'm looking at why clients in their first 60 days sometimes feel surprised by things we could have told them earlier. This isn't a review of you or anyone specific — I'm trying to find where the process itself has gaps." Then:
+
+- Walk me through the last new-client kickoff you ran, step by step, with timing. What actually happened in the first week?
+- What do you tell new clients verbally that isn't in any doc?
+- What do you wait to tell them — either deliberately (picking a moment) or because you're not sure when it's right?
+- When does a client typically find out about invoicing / revision rounds / team access / scheduling rules? Which of those does your current process make explicit vs. leave to "they'll learn as we go"?
+- In the last year, what's the thing a client has been most *surprised* by? Not upset — surprised.
+- What do YOU wish you knew about a client in week 1 that we don't currently collect?
+
+**Why these questions:** they get PMs talking about *artifacts and timing*, not *who did what wrong*. "Walk me through" and "when does the client find out" are concrete; "what's broken" invites blame.
+
+**(2) Clients — 2 interviews, 45 min each. One escalation client, one happy client.**
+
+Open with: "We're improving how we bring new clients on. I'd love 45 minutes to hear what your first 60 days with us actually felt like. This is for our internal process — nothing you say goes into client-facing communications, and I'm not going to feed individual quotes back to your PM."
+
+- Walk me through your first two weeks with us. What did you expect to happen? What actually happened?
+- What's something you wished we'd told you earlier? Even small things.
+- Was there ever a moment you weren't sure what to do next, or who to ask? What was it?
+- When did you first feel like you "got" how we worked? How did that happen?
+- Compare us to the last 2-3 agencies you've onboarded with. What did they do on day 1 that we don't, or vice versa?
+
+**Why these questions:** "When did you first feel like you got it" is the single best question on this list. Clients describe a specific moment that *wasn't* designed by anyone on our side — which is exactly where the process has a gap.
+
+**(3) Execs including the exec sponsor — 2 interviews, 30 min each.**
+
+Open with: "I'm auditing onboarding leaks. 30 minutes to hear the escalations you've been taking and anything you've noticed across accounts."
+
+- Walk me through the recent "no one told me that" escalations. What was said, what was the client actually asking for, how did you resolve it?
+- Are there specific clients you find yourself explaining our process to over and over? What do they keep not understanding?
+- Which PMs do you trust to handle a client's first 60 days without you checking? What's different about them?
+
+**Confidentiality — so PMs don't clam up:**
+
+- Written promise, in the interview-invite email: "No individual quotes will be shared outside my notes. My writeup will name patterns, not people. If I want to use a direct quote, I'll come back to you for permission."
+- No recording. Take handwritten notes. Write up the full notes within 24 hours — memory fades fast.
+- Name the anti-pattern out loud in the open: "This isn't a PM review. If I had a PM problem, I'd be doing PM reviews, not a process audit."
+
+**Managing your own bias — the "PM-is-sloppy" trap:**
+
+You said you think certain PMs are sloppy. You're probably partially right. But if you go in looking for evidence, three things happen: you over-weight their interviews, you under-weight everyone else's insights, and you end up with a rebuild that targets *people* instead of *process*. Two mitigations:
+
+1. **Interview the PM you think is MOST CAREFUL first, before the one you think is sloppy.** This recalibrates your baseline — you'll hear what a careful PM still gets wrong (surprisingly a lot). Starting with a sloppy PM anchors you on their failures and makes the careful one look artificially flawless.
+2. **Write down 5 patterns you expect to find BEFORE any interview.** Put the list in a doc with today's date. After the 6 interviews, compare. If 5-of-5 confirmed, you were fishing. If 2-of-5 confirmed, the audit was worth the weeks.
+
+**One extra move:** after the 6 interviews, write a 1-page "what I heard" and share it with ALL 6 interviewees before you build anything. Invite corrections. You'll catch your own misreadings and — more importantly — the interviewees will trust the eventual rebuild because they saw it coming.$pf$,
+ NULL),
+
+-- Step 2 --
+('66666666-6666-6666-6666-666666810102',
+ '55555555-5555-5555-5555-555555550081',
+ 2,
+ $pf$Categorize the 11 leaks into 4 root-cause types$pf$,
+ $pf$I ran the 6 interviews over two weeks. I've got pages of notes. I can see 11 specific moments across the 6-step onboarding where information should have moved and didn't — invoice cadence, revision rounds, team email access, scheduling norms, out-of-office coverage, and six others. I need a categorization framework so the rebuild targets the *kinds* of leaks, not the surface content. Give me 3-5 leak categories with clear definitions and "which of these vs. which of these" tests, then help me think about which category most of the 11 are likely to fall into based on your prior.$pf$,
+ $pf$Four categories will cover almost everything. I'll define each, give you the test that distinguishes it, and tell you what kind of fix it takes. Then I'll predict the distribution on your 11 based on what onboarding leaks usually look like.
+
+**(1) Surprise information.** Client finds out something after a triggering event — not when they were supposed to, not before a deadline that relied on them knowing. Example: "I didn't know the first invoice would come in 2 weeks; our AP takes 30 days." The information WAS going to move; it just moved late relative to when the client needed it.
+
+- **Test:** did the client have to take an action they couldn't plan for, because they didn't have the context in time?
+- **Fix shape:** pull the information EARLIER in the timeline. Add an explicit trigger that fires before the client needs to act.
+
+**(2) Deferred information.** A PM or exec knew the information and intended to share it, but was waiting for "the right moment" or "when it became relevant." Different from surprise: this is *conscious*, not accidental. Example: "I didn't tell them about revision rounds because I didn't want to lead with limits — but when the first revision came in, they'd assumed unlimited."
+
+- **Test:** was there a specific moment where the person said to themselves, "I'll tell them when X happens"?
+- **Fix shape:** convert from *judgment call about timing* into *rule with a specific trigger*. Take the decision out of the PM's discretion.
+
+**(3) Missing commitment.** The information was shared verbally or implicitly but never written down. Client heard it at kickoff but doesn't remember, or their colleague who joined later never heard it at all. Example: "I thought we'd agreed [PM] was point of contact but when she was on PTO, we emailed the whole team and got different answers."
+
+- **Test:** if you asked the client to point to a document that confirms this, could they?
+- **Fix shape:** written artifact, shared in a predictable location. This is the most common fix and the one PMs resist hardest ("we talked about it already").
+
+**(4) Conflicting information.** Two people at the agency told the client two different versions. Sometimes across time (PM said X at kickoff; exec said Y at the 30-day call); sometimes across people (PM said X to the client's primary contact; creative lead said Y to the client's marketing associate). Example: "Your PM said revision rounds reset per milestone; your creative director said they're cumulative across the engagement."
+
+- **Test:** can you point to two specific quotes, from two people on our team, that disagree?
+- **Fix shape:** a single source of truth (the artifact from category 3) + a rule that conflicting info gets reconciled to the artifact, not the most recent conversation.
+
+**Quick test flowchart:**
+
+- "Client didn't know" → surprise or missing-commitment.
+- "Client heard it but doesn't remember" → missing-commitment.
+- "We decided to wait to tell them" → deferred.
+- "Two of us told them different things" → conflicting (which almost always reveals an underlying missing-commitment).
+
+**The common fix shape across all 4:** the rebuild should center on *named artifacts + explicit triggers*, not on "train PMs to communicate better." Training lasts about a week. Artifacts last forever — a written artifact remains in effect on the day the PM who wrote it is sick, on PTO, or distracted.
+
+**My prediction about your 11, before you tell me:**
+
+Without seeing your notes, I'd bet roughly 2-3 surprise, 3-4 deferred, 3-4 missing-commitment, 1-2 conflicting. Most onboarding leaks are deferred or missing — both fixable with artifacts. Surprise is harder (requires earlier trigger). Conflicting is usually a symptom of missing — fix the missing commitment and most conflicts evaporate because now both people can point to the same doc.
+
+**When you bring me the mapping:**
+
+- Tell me if any leak doesn't fit the 4 categories. That's interesting — either the framework is incomplete or the leak is a red herring.
+- Tell me if 2+ leaks are the same commitment failing in multiple places (e.g., revision rounds being unclear in kickoff AND at week 4 AND at the 30-day check). Those collapse into ONE fix in the rebuild.
+- For each leak: category + proposed fix shape (artifact / earlier trigger / both). We'll pressure-test before you commit to implementation.
+
+**A warning about how audits go wrong from here:** the temptation after an audit is to add a commitment for every single leak, which produces a 20-commitment bureaucracy that nobody follows. The discipline is to collapse related leaks into single commitments and accept that ONE commitment can fix three leaks. The best onboarding rebuild has fewer, stronger commitments — not more, weaker ones.$pf$,
+ NULL),
+
+-- Step 3 --
+('66666666-6666-6666-6666-666666810103',
+ '55555555-5555-5555-5555-555555550081',
+ 3,
+ $pf$Redesign — 11 communication commitments (owner / trigger / medium / deadline)$pf$,
+ $pf$Mapping done. 3 surprise, 4 deferred, 3 missing, 1 conflicting. I also realized 3 of the 11 collapse into 2 root-cause fixes (two revision-round leaks are the same commitment failing in two places; the invoice-cadence-surprise and the missing-AP-contact are basically one failure). So I have 9 distinct rebuild targets. Now the actual rebuild — I need 11 "communication commitments" that cover the 9 targets (two targets get double coverage intentionally — belt-and-suspenders for the highest-stakes ones). For each: specific trigger, specific owner (PM / exec sponsor / ops), specific medium (written artifact / email / meeting), specific deadline. And give me the "artifact, not meeting" default rule plus the short list of when a meeting IS the right answer.$pf$,
+ $pf$Good call on the belt-and-suspenders for revision-rounds and invoicing — those are where clients escalate hardest, so one commitment each is not enough.
+
+**The 11 commitments:**
+
+| # | Commitment | Trigger | Owner | Medium | Deadline |
+|---|-----------|---------|-------|--------|----------|
+| 1 | **Engagement letter** (scope, timeline, fees, revision math, out-of-office policy, holidays) | Contract signed | PM + Ops co-sign | Written PDF, attached to welcome email | Day 0 (before kickoff) |
+| 2 | **Contact matrix** — who the client emails for what; who covers when someone's out | Contract signed | PM | 1-page written, sent with engagement letter | Day 0 |
+| 3 | **Kickoff meeting** — relationship-building + confirmation of written agreements | Engagement letter delivered | PM | 60-min live (video or in-person) | Day 5-7 |
+| 4 | **Kickoff recap email** — what was decided, what's open, next 2 weeks' expected activity | Kickoff ends | PM | Written email + doc link | Within 24 hrs of kickoff |
+| 5 | **First-invoice preview** — exact amount, timing, how to pay, who the client's AP should email | Kickoff recap sent | Ops | Written email to client AP contact | Day 8-9 |
+| 6 | **Revision-rounds artifact** — count, reset rules, what counts as a round, what counts as a "question" | Scope finalized | PM | Written 1-pager, embedded in engagement letter + restated week 3 | Week 3 re-share |
+| 7 | **Weekly status email** — every Friday, 3 sections: what we did, what we'll do next week, anything we need from you | Week 1 starts | PM | Written email, same format every week | Every Friday by 4pm |
+| 8 | **30-day "you should know by now" check-in** — list of 8 things we expect the client to know; PM asks in a 30-min call | 30 days after kickoff | PM | 30-min call + written follow-up | Day 28-32 |
+| 9 | **First deliverable transmittal** — how to review, how to flag revisions, what revision-round math means on THIS deliverable | First deliverable ready | PM | Written in deliverable email | With first deliverable |
+| 10 | **60-day exec recommit** — exec sponsor joins a client call; PM presents "how it's going," exec asks client what's not working | 60 days after kickoff | Exec sponsor + PM | 45-min call | Day 58-62 |
+| 11 | **Post-escalation written reconciliation** — if a client escalates, within 24 hrs we send a written "here's what we committed to, here's what we're changing" | Client escalation | Exec sponsor | Written email, cc'd to PM | 24 hours |
+
+**Which targets are double-covered:**
+
+- Revision rounds: commitment #1 (engagement letter) + commitment #6 (standalone revision-rounds artifact restated at week 3). This addresses the two-place failure you identified.
+- Invoicing: commitment #1 (engagement letter sets cadence) + commitment #5 (explicit AP-to-AP email before first invoice). This addresses the missing-AP-contact root cause.
+- Everything else is single-coverage.
+
+**The "artifact, not meeting" default:**
+
+**Default rule:** if information can be conveyed in 300 words or fewer and doesn't require the client's real-time response, it's an artifact (email + doc link). Don't schedule a meeting for information delivery.
+
+**When a meeting IS the right answer (3 cases only):**
+
+1. **Relationship-building with a new client** (kickoff #3, 60-day recommit #10). Clients need to see the humans building their work. These are not information-delivery meetings; they're trust-building.
+2. **Ambiguous territory where the client needs to respond in real time** — scope negotiation, escalation resolution, a creative direction change. If the PM genuinely doesn't know how the client will react, the meeting captures the response live.
+3. **Concern has been raised and the client needs to feel heard** — escalations, tough feedback. The medium IS part of the message; a written "we hear you" can feel cold.
+
+**Everything else is an artifact.** Status meetings → status emails (#7). Check-ins → written pre-reads (#8). Invoice preview → email, not a call (#5).
+
+**The cultural rule to ship alongside the commitments:**
+
+> "When in doubt, write it. A written commitment the client can reread beats a meeting the client half-remembers."
+
+Say this at the rollout. Put it on the rebuild one-pager. Pin it in the agency Slack.
+
+**Three things to pressure-test before committing to this spec:**
+
+- **Commitment #8 (30-day check-in) is the single most load-bearing new thing.** Prototype it with one PM on one client before asking all 8 PMs to do it cold. You will learn what the 8-item "you should know by now" list actually looks like only after the first real call.
+- **Commitment #10 (60-day exec recommit) will run into "the client didn't want it."** Hold the line. Clients don't initially realize they want it; by month 3, most clients say it was the most useful call of the engagement. But expect the PMs to try to skip it.
+- **Commitment #11 (escalation reconciliation) is hardest to operationalize because it fires rarely.** Treat it as policy + a template living in the ops runbook, not a muscle-memory commitment. When it fires, you'll be glad it exists.
+
+**What I would NOT add, even though the temptation will be real:**
+
+- Don't add a "mid-week check-in" email. Weekly status (#7) is plenty.
+- Don't add a "project-completion retrospective" — that's a separate process that belongs to account management, not onboarding.
+- Don't add a "client NPS survey at 30 days" — NPS surveys are noisy at N=1 per client and they train PMs to optimize for the survey score rather than the underlying experience. Measure NPS at day 60 via the exec recommit instead (#10 can include 2 quick questions).
+
+Ship 11, not 14. Overhead scales faster than usefulness when process piles up.$pf$,
+ NULL),
+
+-- Step 4 --
+('66666666-6666-6666-6666-666666810104',
+ '55555555-5555-5555-5555-555555550081',
+ 4,
+ $pf$Rollout sequence — not an all-hands$pf$,
+ $pf$Now rollout. We have 8 client-facing PMs — three I know will push back ("this slows us down," "we already do this"), four who are on the fence, one (Kendra) who will love it because she's been asking for more structure for months. I want to sequence the rollout so it lands. Who hears about it in what order? What's the pilot rule? What's the messaging to skeptical PMs? And what do I say to the CEO, who will want to announce it at the next all-hands?$pf$,
+ $pf$Do not do all-hands. All-hands rollouts of process changes almost always backfire — skeptical PMs arrive to a pre-announced fait accompli, feel like they had no input, and underground-resist for weeks afterward. Sequence this quieter.
+
+**Rollout sequence:**
+
+**Week 1 — The willing partner.** Start with Kendra. Share the full rebuild doc with her. Get her feedback. Make 2-3 real changes to the spec based on her input (you'll need to see those changes so they aren't cosmetic — the point is her fingerprints are genuinely on it). Announce privately to leadership: "Kendra and I have been working on a rebuild — we want to pilot it on her next new client." Her saying yes in her own voice matters more than any top-down announcement.
+
+**Week 2 — The pilot.** New client X signs → Kendra uses the new 11-commitment process. You shadow the first week's artifacts — especially commitments #1, #2, #4, #5. You and Kendra debrief weekly. The pilot is 4-6 weeks; don't rush it.
+
+**Week 3 — Talk to the skeptical PMs, one at a time.** Before any broad announcement, hold 30-min 1:1s with the 3 skeptics. Open with: "Kendra is piloting a new onboarding process. I want your honest take on the parts I think you'll find useful and the parts I think you'll push back on." Share the artifact. **Do not defend it; ask questions.** You're listening for 3 things:
+
+1. Which commitments feel useful ("oh, I'd actually use that")
+2. Which feel like overhead ("I already do this — why more paperwork?")
+3. What their deepest process fear is — schedule anxiety, revision creep, scope drift
+
+**For each skeptic, find ONE commitment that directly addresses their deepest fear.** For revision-anxious PM: #6 gives them written ground they can point to. For schedule-anxious PM: #7 weekly status is their protective artifact ("I already told you, here's the email"). For scope-anxious PM: #1 engagement letter locks scope in writing. Lead with *their* commitment. "I know #7 might seem like overhead. Here's why it's your shield against [specific client scenario you know burns them]."
+
+**This is the single most load-bearing move in the whole rollout.** Skeptics don't resist "process" in the abstract — they resist what they think the process will cost them. If the process actively protects them from their worst scenario, resistance flips to advocacy.
+
+**Week 4 — Fence-sitter PMs.** Same 1:1 structure, shorter (20 min). Most will say "sounds good, when do we start." A few will want to see how Kendra's pilot is going — share unvarnished updates (including the stuff that's awkward or hasn't worked).
+
+**Week 5 — Team meeting, not all-hands.** PM team meeting, 45 min. Kendra walks through her pilot (first 4 weeks of it). You walk through the 11 commitments and what's needed from each PM. Do NOT call this a "rollout" or "announcement" — call it "a retro of the pilot and next steps." Most of the group has been brought along privately by now; this is the moment the group agrees out loud.
+
+**Week 6 — First non-pilot PM starts.** Choose a fence-sitter who seemed enthusiastic, not a skeptic — you want early non-pilot success to build momentum before the hardest PM tries it.
+
+**Weeks 7-12 — Gradual rollout, one PM at a time, fence-sitters first, most-skeptical PM last.** Any new client onboarding from this point uses the new process. Existing clients (mid-engagement) stay on the old process; don't retrofit — retrofitting midstream is all the cost with none of the benefit.
+
+**Messaging to the CEO:**
+
+> "We're piloting a process rebuild with Kendra on one client starting this week. I'll have results in 6 weeks. I'd rather roll it out quietly than announce at all-hands — skeptical PMs dig in when they feel blindsided. If it works, I'd like to update the team at the 6-week PM meeting. If you want it at an all-hands, let's wait until a PM is telling the story, not me."
+
+CEOs who push back on this are usually optimizing for "looking decisive," not outcomes. A gentle firm line holds — "announcing this before it works is the fastest way to make it not work" — and most CEOs will relent.
+
+**What NOT to say:**
+
+- Don't call it a "process overhaul." That triggers change-fatigue. Call it "a rebuild of onboarding."
+- Don't say "we had a lot of leaks." PMs hear this as "I am being accused of leaking." Say "we found 11 moments where written artifacts would have prevented client surprise." Same content, different frame.
+- Don't name individual PMs or individual escalations in any written memo. The rebuild memo is about the system, not the people. (You can name individual PMs privately — to them, for feedback — never in writing that others will see.)
+
+**One specific risk to watch at week 5-6:**
+
+The most-skeptical PM will hear through the grapevine that a rollout is happening before you've had the 1:1. They'll arrive at the team meeting already primed to push back. Pre-empt this — your week-3 1:1 must happen BEFORE any of the fence-sitters hear about it, because fence-sitters leak informally. The sequence only works if you're ahead of the whisper network.
+
+**Last move for staying-power:**
+
+At week 8, after the team meeting, write a one-page "commitments as they stand now" doc. Date it. Treat it as v1.0. Commit publicly to a v2.0 at the 60-day retro where you'll change things based on what you've learned. This signals two things to skeptical PMs: (1) the process is not fixed forever, you're listening, and (2) the doc is the authority, not your memory or anyone's verbal recollection. Both matter.$pf$,
+ NULL),
+
+-- Step 5 --
+('66666666-6666-6666-6666-666666810105',
+ '55555555-5555-5555-5555-555555550081',
+ 5,
+ $pf$60-day watchlist + kill conditions$pf$,
+ $pf$Finally — 60-day watchlist. What metrics do I monitor to know whether this is actually working vs. just cosmetic? Give me 5 primary signals (mix of leading and lagging), 2 anti-metrics (ways I could optimize that would be bad), a retro ritual for the PM team at day 60, and — critically — explicit kill conditions so I know when to revert part or all of this rather than keep limping.$pf$,
+ $pf$**5 primary signals:**
+
+1. **"No one told me that" mentions in exec-sponsor escalation calls (lagging).** Track the count over rolling 60-day windows. Baseline was 3 in 2 months. Target: 0 in the first 60 days post-rollout, 1 or fewer in any subsequent 60-day window. This is the ultimate validation metric — lagging, since you only find out when it happens, but the one the CEO actually cares about.
+
+2. **Commitment-delivery rate (leading).** For each new client, track whether each of the 11 commitments was delivered on time. Simple per-client checklist, maintained by the PM, spot-checked by you weekly. Target: 100% delivery on #1-5 (foundational), ≥90% on #6-11 (execution). If a PM is consistently below 90%, that's a conversation — not "you're failing" but "which commitment is consistently skipped, and is the commitment wrong?"
+
+3. **Client response time on first feedback (leading).** When the first deliverable or the first artifact goes out, how fast does the client respond? Pre-rebuild baseline ~3 days. Faster response is a signal that clients know who to respond to and that they're paying attention. Target: median under 36 hours.
+
+4. **PM-side hours logged in "client-question handling" (leading).** PMs track hours. "Client-question" is a billing category for when a client asks something we've already told them. High hours = communication is failing. Low hours = clients are finding answers in the artifacts. Target: 30% reduction over baseline.
+
+5. **Client NPS at day 60 (lagging).** Current baseline is noisy — we measure sporadically. Part of the rebuild is to actually measure NPS at day 60 for every new client via a 2-question survey (NPS score + "what's going well / what's not"). Target: median NPS ≥8 (we currently sit around 7).
+
+**2 anti-metrics — signals that look good but indicate something's wrong:**
+
+1. **Zero commitment-delivery misses across all PMs.** If every PM hits 100% on every commitment every week, you're probably looking at a reporting artifact, not real behavior. Some misses will happen — clients reschedule, out-of-offices, contract delays push triggers. 100% always = PMs are gaming the tracker or you're reading the data wrong. Investigate.
+
+2. **Increased total hours per engagement.** If the onboarding rebuild adds meaningful hours to PM time on a client, you've rebuilt a heavier process, not a better one. Total PM hours per engagement should stay within ±10% of baseline. If it goes up 20%, you've added overhead and need to cut — probably one of the commitments is doing less work than expected.
+
+**Day-60 retro ritual (PM team, 90 min):**
+
+- **15 min — Data review.** You share the 5 metrics. No analysis yet; just numbers.
+- **30 min — Per-commitment walk.** 11 commitments × ~2 min each. For each: "Which PMs found this load-bearing? Which found it overhead? What's one change we'd make?" Record in a shared doc.
+- **15 min — Pattern discussion.** What's the theme across the changes? Is there one commitment universally unloved? One universally loved? Why?
+- **20 min — v2 decisions.** Commit to 2-3 changes for the next 60-day window. MORE than 3 is too much at once. Document them.
+- **10 min — Re-commit.** Everyone says, out loud, "I'm in for the next 60."
+
+**Retro hygiene:**
+
+- Don't retro individual PMs. The conversation is about the commitments, not the humans. Individual PM conversations happen in 1:1s, not retros.
+- Hold the retro EVEN IF metrics are great. If you only retro on failure, PMs associate retro with failure and start avoiding them.
+- Write changes into the commitments doc on the same day. "Cleanup pass later" never happens.
+
+**Kill conditions — when to revert part or all of this:**
+
+- **Full-revert trigger:** at day 60, anti-metric #2 shows +20% PM hours per engagement AND any one of the primary metrics is worse than baseline. The rebuild added cost without adding value. Revert the whole thing, wait 6 months, rebuild with what you learned.
+- **Partial-revert trigger:** a specific commitment is delivering at 40% or lower across 3+ PMs AND is scored "overhead" by 4+ PMs in the retro. Drop that commitment specifically. Don't drop the whole framework — one bad commitment doesn't invalidate the others.
+- **Stay-the-course trigger (NOT a kill):** metrics are mixed at day 60 — 2 or 3 primary metrics hit target, 2 or 3 don't. This is normal at 60 days; most rebuild benefits show at day 90-120 as new clients accumulate in the new process. Don't panic-revert at day 60 if the direction is roughly right.
+- **Democratic revert:** 4+ of 8 PMs, in the retro, say they want to go back to the old way. Don't argue. The rebuild depends on PM willingness; if a majority is opposed after 60 days of real use, it's not landing. Revert gracefully — "we tried, it didn't land for this team at this time, we'll revisit" — and actually mean it. Don't force.
+
+**One rule about success, which is the most important thing I'll tell you in the whole sequence:**
+
+**If it works, don't add more.** Don't turn 11 commitments into 18 at day 120. The goal is a load-bearing, minimum-viable process. Every commitment added is a tax on PM flexibility. Hold the line at 11. When a new leak surfaces (and one will), your first question is: "Which existing commitment should have caught this?" 80% of the time the fix is tightening an existing commitment, not adding a new one.
+
+**The long arc:**
+
+If the rebuild is still running at day 180 and client NPS is up and "no one told me that" is effectively extinct, you'll have built something rare in agency operations — a process that PMs trust, clients notice, and leadership can point to when a new account comes in. That's the endgame. Not more process; the right process, visibly working.
+
+**Last thing.** At day 60, write a one-page "here's what we learned, here's what we changed" memo. Send it to all 8 PMs, the CEO, and the exec sponsor. Three paragraphs, no more. This is the artifact that closes the loop and signals that the rebuild is real ongoing work, not a one-time intervention. Most operations initiatives die because nobody closes the loop. The closing-memo is cheap insurance against that.$pf$,
+ NULL);
+
+
+-- =========================================================================
 -- END OF FILE — append next project(s) below this line.
 -- Iterations working the Content queue: add 2–3 projects per iteration,
 -- appending below this comment. Do NOT rewrite existing projects.

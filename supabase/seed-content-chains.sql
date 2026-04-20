@@ -35238,6 +35238,7 @@ Whether that framing works for you I can't predict. But the three mechanics abov
 -- appending below this comment. Do NOT rewrite existing projects.
 -- =========================================================================
 
+
 DELETE FROM prompt_steps WHERE prompt_id = '55555555-5555-5555-5555-555555550098';
 DELETE FROM prompts      WHERE id        = '55555555-5555-5555-5555-555555550098';
 
@@ -35918,6 +35919,244 @@ B: "Ready to make it permanent?" (forward-looking, no loss framing)
 What you're testing: whether loss aversion outperforms forward momentum in a B2B upgrade context. Loss framing has strong empirical support in consumer contexts; B2B is less established. This test has the most direct revenue impact but the smallest eligible audience.
 
 Sample size: only activated users receive 6a, estimated at 29% of 250 trials = ~72 per month, split 50/50 = 36 per variant. To detect a 10% absolute difference in conversion at 80% power, you need ~180 per variant — about 5 months. Run this one last. The result is worth waiting for.$pf$,
+ NULL);
+-- ---------------------------------------------------------------------------
+-- Project 0100 — teacherben / Education / beginner / 3-step / Opus 4.7
+-- Topic: Parent-teacher conference night for a first-year high school teacher
+-- ---------------------------------------------------------------------------
+
+DELETE FROM prompt_steps WHERE prompt_id = '55555555-5555-5555-5555-555555550100';
+DELETE FROM prompts      WHERE id        = '55555555-5555-5555-5555-555555550100';
+
+INSERT INTO prompts (
+  id, title, description, content, result_content,
+  category_id, difficulty, model_used, model_recommendation,
+  tools_used, tags, status, author_id, vote_count, bookmark_count
+) VALUES (
+  '55555555-5555-5555-5555-555555550100',
+  $pf$Ran my first parent-teacher conference night fully prepared — framework, prep sheets, and scripts$pf$,
+  $pf$Ben's first parent-teacher conference night with 40 families and no school training. Three passes: a 5-minute slot structure that feels personal not scripted, a one-page printable prep sheet to fill in for every student in under 3 minutes, and ready language for the three hardest conversations — grade dispute, struggling student, and the polite non-conversation with a parent whose kid you barely know.$pf$,
+  $pf$I teach 9th grade biology — three sections, about 35 students each. My first fall semester, parent-teacher conference night showed up on the school calendar in week eight. The school handed me a sign-up sheet, a classroom, and nothing else. Forty families signed up for 5-minute slots, plus probable walk-ins. I had never run a parent-teacher conference before and had no idea what to do with five minutes.
+
+I was specifically dreading two things: making the conversations feel like I was actually talking about their kid instead of reading off a gradebook, and getting a parent who disputed a grade without knowing what to say. I used Claude to build the whole system in one sitting the weekend before. A 5-minute slot framework that gave the conversation a real shape, a one-page prep sheet I could fill in for each student in two to three minutes, and language for the three hard conversations I knew were coming.
+
+I printed a prep sheet for every family. Conference night ended up being the week I felt most prepared for all semester — including the two grade-challenge conversations that came up exactly as expected.$pf$,
+  $pf$A complete conference-night system I actually used: a 5-step slot structure covering opening observation, grade snapshot, one actionable recommendation, a real listening pause, and a clean close — all in five minutes. A double-sided prep sheet with fill-in fields for 40 students that I completed in three nights at roughly 2 minutes per student. Scripts for a grade dispute, a struggling-at-54 student conversation with a parent who had no idea, and the average quiet kid whose parent drove to school on a Wednesday night and deserved more than "everything's fine." I ended the night with 8 follow-up commitments documented on the back of the prep sheets and none forgotten.$pf$,
+  '11111111-1111-1111-1111-111111111106',
+  'beginner',
+  'claude-opus-4-7',
+  'Claude 4.7 Opus',
+  ARRAY['Claude'],
+  ARRAY['parent-teacher conference', 'new teacher', 'communication', 'classroom management', 'scripts'],
+  'approved',
+  '22222222-2222-2222-2222-222222222205',
+  0, 0
+);
+
+INSERT INTO prompt_steps (id, prompt_id, step_number, title, content, result_content, description) VALUES
+
+-- Step 1 --
+('77777777-7777-7777-7777-777777100001',
+ '55555555-5555-5555-5555-555555550100',
+ 1,
+ $pf$Designing a 5-minute parent-teacher slot that feels real, not scripted$pf$,
+ $pf$I'm in my first year teaching 9th grade biology at a large public high school — three sections, about 35 students each. Parent-teacher conference night is two weeks away. I have 5-minute slots for each family on a sign-up sheet, and I'm expecting 35 to 40 families plus some walk-ins.
+
+I've never done a parent-teacher conference before and the school gave me zero guidance — just a room and a schedule. I don't know what to cover in 5 minutes, what order to say things, or how to strike the right tone. I'm worried about two specific things: first, that the conversations will feel like I'm reading off a spreadsheet instead of actually talking about their kid; second, that I'll get a parent who disputes a grade and I'll say something wrong.
+
+Help me design the structure for a 5-minute conference slot. I want something that feels personal and not like I'm reciting a checklist, covers what parents actually want to hear, lets me flag serious concerns without derailing the whole conversation, gives the parent time to talk rather than just me, and ends clearly so I can wrap up on time without being rude. What should I say first, second, third? What should I absolutely not lead with?$pf$,
+ $pf$Five minutes sounds tight, but it is actually the right constraint. It forces you to say only the things that matter, which produces a better conference than a 15-minute one where you fill the time and lose the thread.
+
+**The structure:**
+
+**1. Open with one true observation (30 seconds)**
+
+Not "she is doing great" — parents cannot do anything with that. One specific, observable thing: "Marcus has gotten comfortable asking questions in class — he asked something in our photosynthesis unit that the AP students hadn't thought of." Or for a struggling student: "I have noticed that Maria does best when she has a concrete visual in front of her. I have been watching for that all semester." This signals that you actually know their kid. It is the highest-value 30 seconds of the conversation.
+
+**2. Name where they stand, briefly (45 seconds)**
+
+Current grade, one data point of context. "She is at a 78 — two missed assignments are pulling it down, but the unit test was strong, which is the more meaningful number." One sentence for the grade, one sentence of context. Do not pad it.
+
+**3. One thing that would move the needle (45 seconds)**
+
+Not a list. One thing. "If he turns in the lab report sitting in incomplete status, he jumps from a 71 to an 83 overnight." Or: "She is close to mastering the cellular respiration unit — if she comes to office hours once before the test, I think it clicks." Give them something to go home and act on.
+
+**4. Ask one question and actually listen (90 seconds)**
+
+"Is there anything happening at home I should know about, or anything she has said about class that stuck with you?" Then stop talking. This is where parents tell you the thing that explains the whole semester — the anxiety diagnosis, the after-school job, the grandparent who just moved in. You cannot plan for what you hear. Just listen and take one note.
+
+**5. Close with what happens next (30 seconds)**
+
+Either nothing ("She is doing well — I will just keep an eye on that lab report") or a specific next step ("I am going to follow up with him about office hours — you will hear from me by Friday if he does not show"). Do not leave the conversation open-ended when there is a real concern.
+
+**What not to lead with:** the grade. Parents who hear a number first spend the rest of the time defending their kid or asking why the grade is that number, and you lose the 90 seconds of real listening. The grade is context for the conversation, not the headline.
+
+**Timing:** bring a clock or set a silent phone timer. If a parent runs over, it is okay to say "I want to make sure I can give the next family my full attention — can we schedule a follow-up call this week?" That is not rude; it is professional. Most parents expect it.$pf$,
+ NULL),
+
+-- Step 2 --
+('77777777-7777-7777-7777-777777100002',
+ '55555555-5555-5555-5555-555555550100',
+ 2,
+ $pf$Building a printable one-page prep sheet for 40 families$pf$,
+ $pf$That framework is exactly what I needed — it gives the conversation a real shape instead of a blank five minutes. Now I need to actually prep. I have 40 families signed up and can spread prep across three nights, maybe 15 to 20 minutes per night total. That works out to roughly 2 to 3 minutes per student.
+
+Can you design a one-page prep sheet I can print for each student and fill in quickly? It should give me everything I need to run the 5-minute structure you just outlined without reading off it like a script. Specific needs: a place to pre-write my opening observation so I am not searching for it mid-conversation, a way to flag anything sensitive before I walk in (grade dispute risk, IEP or 504 accommodations, anything that might make this conversation harder than average), and a follow-up tracker on the back so I do not lose commitments I make at the end of a long night. Something I can keep face-down on the table and flip to without looking like I am consulting a dossier.$pf$,
+ $pf$Here is the prep sheet. Print one per student, double-sided. The front is conference prep; the back is notes during and after. Fill in order: Sensitive Flags first (scan email for any parent who has been in touch), then Grade Snapshot (two minutes with the gradebook open), then The One Thing (usually flows directly from the grade snapshot), then the Opening Observation (this one takes the most thought — write it last).
+
+---
+
+**PARENT-TEACHER CONFERENCE PREP**
+
+Student: _________________________ Period: _____ Date: _____________
+
+Parent / guardian attending: _________________________
+
+---
+
+**OPENING OBSERVATION** *(one specific true thing — not a grade)*
+
+Something I have noticed about how they engage, learn, or struggle:
+
+_______________________________________________________________
+
+_______________________________________________________________
+
+---
+
+**GRADE SNAPSHOT**
+
+Current grade: ________ Course average at this point: ________
+
+Context (check one):
+
+☐ Strong test scores, weak homework — grade undersells their ability
+
+☐ Missed assignments dragging it down — quick fix available
+
+☐ Consistent with effort level
+
+☐ Other: _______________________
+
+---
+
+**THE ONE THING** *(specific action, not a general recommendation)*
+
+_______________________________________________________________
+
+This would move them from _____ to approximately _____
+
+---
+
+**QUESTION TO ASK** (circle one before you walk in)
+
+"Is there anything happening at home I should know about?"
+
+"Has [name] said anything about class that stuck with you?"
+
+---
+
+**SENSITIVE FLAGS** *(review before the conversation — do not bring to the table)*
+
+☐ IEP / 504 — accommodation to reference: _______________________
+
+☐ Grade dispute risk (prior email, pushback in class)
+
+☐ Attendance concern
+
+☐ Family situation I am already aware of: _______________________
+
+☐ None
+
+---
+
+*(back of page)*
+
+**WHAT I HEARD FROM THE PARENT**
+
+_______________________________________________________________
+
+_______________________________________________________________
+
+**COMMITMENTS I MADE**
+
+☐ _____________________________________________________________ By: _____________
+
+☐ _____________________________________________________________ By: _____________
+
+**FOLLOW-UP STATUS**
+
+☐ Done / no follow-up needed
+
+☐ Scheduled: _______________________________
+
+☐ Waiting on student
+
+---
+
+**How to fill this in efficiently:** Sensitive Flags first — takes 30 seconds per student once your email is sorted. Grade Snapshot next — two minutes in the gradebook. The One Thing usually falls out of the grade snapshot automatically. Opening Observation is the one that takes real thought; write it for the students you know well and leave a blank for the ones you need to think on more. For students where nothing specific comes to mind: "She has been consistent — shows up, does the work" is honest and most parents are glad to hear it.
+
+**After the conference:** flip to the back immediately. You will have two minutes before the next family. Use them. You will not remember the detail by the time the night is over.$pf$,
+ NULL),
+
+-- Step 3 --
+('77777777-7777-7777-7777-777777100003',
+ '55555555-5555-5555-5555-555555550100',
+ 3,
+ $pf$Scripts for the three hardest conference conversations$pf$,
+ $pf$This is really useful — I can see exactly how I would run through the front of that sheet in under three minutes per student. Last thing before I walk in: I want to have actual language ready for the three conversations I am almost certain will come up. Not word-for-word scripts to read off, but specific language I can reach for when I am flustered and do not want to say the wrong thing.
+
+Scenario 1: A parent who disputes the grade. Their kid told them the test was easy and they studied for three hours. The actual score was a 61, not the 74 the parent seems to be expecting. The parent is polite but clearly skeptical.
+
+Scenario 2: I need to tell a parent that their kid is at a 54 and genuinely at risk of not passing. These parents have no idea — nothing in my records shows prior contact about this student struggling. I need to be honest without the conversation collapsing into them crying and me backing down from what I just said.
+
+Scenario 3: A parent whose kid is average and quiet. Grade is fine, no issues, but I genuinely do not know this student well and I cannot fake a connection I do not have. I also cannot say "your kid is fine, see you later" to a parent who drove to school on a Wednesday night.
+
+For each: give me a 2 to 3 sentence opener, the one thing I should not say under any circumstances, and one sentence to close the conversation cleanly without leaving it hanging.$pf$,
+ $pf$These are the three conversations that derail first-year teachers. Here is specific language for each.
+
+---
+
+**Scenario 1 — Grade dispute ("She studied for hours and said it was easy")**
+
+*Opener:*
+"I want to walk through the test with you, because I understand that disconnect is frustrating. She scored a 61 — the class average was a 68, and the questions that gave her the most trouble were the application questions in Section 3 where you have to take the concept and reason through a new scenario. The good news is the information is clearly in her notes; what tripped her up was the question format, not the material."
+
+*Why this works:* You are leading with data and naming the specific gap — "application questions" and "question format" tells the parent something actionable. You are not defending the grade; you are explaining it. There is a path forward embedded in the explanation.
+
+*Never say:* "She must not have studied the way she thought she did." Even if it is true. Especially if it is true. You will not recover from this sentence. Say what the data shows, not what you think happened the night before.
+
+*Close:* "What I would suggest is that she come in before the next unit test so I can show her what the application questions are actually asking for — twenty minutes, and it usually makes the whole thing click."
+
+---
+
+**Scenario 2 — Struggling student at 54, parents do not know**
+
+*Opener:*
+"I want to be direct with you because you can help me help him in a way I cannot from here. He is at a 54 right now, which puts him at risk of not passing the semester. He is not struggling because he cannot do the work — I have seen him understand the concepts in class. What is happening is that the work is not getting turned in, and I do not know what is getting in the way of that."
+
+*When the parent is upset or starts crying:* stop talking. Slide a box of tissues if you have one. "Take your time." That is all. Do not rush to fill the silence with reassurance you cannot back up.
+
+*Never say:* "Don't worry, he still has time to turn it around." If he is at 54 with six weeks left, that is genuinely uncertain — the parent knows it, and if you promise something you cannot deliver, you have lost their trust in everything else you said. Say what is true and what the path forward looks like, not that everything will be fine.
+
+*Close:* "I would like to start a weekly Friday email to you — just one line on how he is doing that week. You tell me what you are seeing at home, I will tell you what I am seeing here. Can I start that this week?"
+
+---
+
+**Scenario 3 — Quiet average kid you do not know well**
+
+*Opener:*
+"James is a steady student — his grade is solid at a 78, he turns his work in, and he is one of the students I want to get to know better this semester because I know there is more going on than what I have seen so far."
+
+*Why this works:* You are being honest that you do not know him well, but you are framing it as intention rather than negligence. Parents of quiet kids almost never hear anything about their children all year. "I want to know him better" is something they rarely hear, and it lands differently than any grade can.
+
+*Never say:* "He is doing fine, everything is good." A parent drove to school at 7pm for "fine." Accurate but not worth the trip.
+
+*Close:* "Is there something about him I should know — something that would help me find the right opening with him? He seems like someone who would respond well once I find the right subject."
+
+---
+
+Carry these on the back of one card if you want them nearby. You probably will not need all three in a single night, but having two of them ready means you will not freeze.$pf$,
  NULL);
 
 ALTER TABLE prompts ENABLE ROW LEVEL SECURITY;

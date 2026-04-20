@@ -116,10 +116,10 @@ export const mockProfiles: Profile[] = [
 export const mockCategories: Category[] = [
   { id: 'cat-1', name: 'Finance & Accounting', slug: 'finance', description: 'Budgeting, forecasting, analysis, and financial planning', icon: '💰', prompt_count: 5, created_at: '2026-03-01T00:00:00Z' },
   { id: 'cat-2', name: 'Marketing & Sales', slug: 'marketing', description: 'Campaigns, content strategy, lead generation, and outreach', icon: '📢', prompt_count: 3, created_at: '2026-03-01T00:00:00Z' },
-  { id: 'cat-3', name: 'Writing & Content', slug: 'writing', description: 'Blog posts, emails, copy, and creative writing', icon: '✍️', prompt_count: 4, created_at: '2026-03-01T00:00:00Z' },
+  { id: 'cat-3', name: 'Writing & Content', slug: 'writing', description: 'Blog posts, emails, copy, and creative writing', icon: '✍️', prompt_count: 5, created_at: '2026-03-01T00:00:00Z' },
   { id: 'cat-4', name: 'Coding & Development', slug: 'coding', description: 'Code generation, debugging, architecture, and documentation', icon: '💻', prompt_count: 3, created_at: '2026-03-01T00:00:00Z' },
   { id: 'cat-5', name: 'Design & Creative', slug: 'design', description: 'UI/UX, branding, image generation, and visual design', icon: '🎨', prompt_count: 2, created_at: '2026-03-01T00:00:00Z' },
-  { id: 'cat-6', name: 'Education & Learning', slug: 'education', description: 'Study plans, explanations, tutoring, and course creation', icon: '📚', prompt_count: 1, created_at: '2026-03-01T00:00:00Z' },
+  { id: 'cat-6', name: 'Education & Learning', slug: 'education', description: 'Study plans, explanations, tutoring, and course creation', icon: '📚', prompt_count: 2, created_at: '2026-03-01T00:00:00Z' },
   { id: 'cat-7', name: 'Productivity', slug: 'productivity', description: 'Task management, meetings, workflows, and automation', icon: '⚡', prompt_count: 16, created_at: '2026-03-01T00:00:00Z' },
   { id: 'cat-8', name: 'Data & Analysis', slug: 'data', description: 'Data visualization, surveys, reporting, and insights', icon: '📊', prompt_count: 2, created_at: '2026-03-01T00:00:00Z' },
   { id: 'cat-9', name: 'Business Strategy', slug: 'strategy', description: 'SWOT analysis, business plans, market research, and OKRs', icon: '🎯', prompt_count: 3, created_at: '2026-03-01T00:00:00Z' },
@@ -778,6 +778,442 @@ const pctChange = lastMonth.total > 0
 And that's a wrap. Five prompts, one complete expense tracker that looks and feels like a real fintech app. Dark theme, smooth animations, mobile-first layout, CSV export — built entirely through conversation with Claude.`,
     description: 'Add complete CSS styling, month-over-month comparison, and entrance animations', created_at: '2026-04-06T00:00:00Z' },
 
+  // === Interactive Python Course — 3-step build (prompt-42) ===
+  { id: 'step-42a', prompt_id: 'prompt-42', step_number: 1, title: 'Course Structure & Curriculum',
+    content: `I'm a senior dev and I want to teach my 14-year-old nephew Python from scratch. He's into video games and memes — zero programming experience. I need a structured 6-week course that doesn't feel like school.
+
+Design the full curriculum:
+- 6 weeks, 3 sessions per week (about 45 min each)
+- Each session has: a concept, a mini-project, and a challenge
+- Every project should be something a teenager would actually think is cool (games, memes, automation)
+- Progressive difficulty: start with print("hello") and end with building a simple game
+- Include the specific Python concepts covered in each session
+
+Give me the complete curriculum as a structured document.`,
+    result_content: `**PYTHON FOR TEENS — 6-WEEK CURRICULUM**
+
+**Week 1: "Hello, Hacker"** — Variables, Print, Input
+- Session 1: Your First Program — Print your name, ASCII art generator. Challenge: Make ASCII art of your initials.
+  Concepts: print(), strings, escape characters
+- Session 2: Mad Libs — Build a Mad Libs game using input(). Challenge: Create a 10-word Mad Libs story.
+  Concepts: input(), string concatenation, f-strings
+- Session 3: Calculator — Build a tip calculator. Challenge: Add a "split the bill" feature.
+  Concepts: variables, int(), float(), basic math operators
+
+**Week 2: "Choose Your Own Adventure"** — Conditions & Logic
+- Session 4: Decision Maker — Build a Magic 8-Ball. Challenge: Add 20 custom responses.
+  Concepts: if/elif/else, random.choice(), lists intro
+- Session 5: Text RPG Part 1 — Start a choose-your-own-adventure game (3 rooms). Challenge: Add a secret room.
+  Concepts: nested if/else, boolean operators (and/or/not)
+- Session 6: Password Checker — Build a password strength checker. Challenge: Add custom rules.
+  Concepts: len(), string methods (.isupper, .isdigit), comparison operators
+
+**Week 3: "Loop City"** — Loops & Lists
+- Session 7: Guessing Game — Number guessing with hints. Challenge: Add difficulty levels.
+  Concepts: while loops, break, random.randint()
+- Session 8: Playlist Manager — Add/remove/shuffle songs. Challenge: Add a "play" feature with countdown.
+  Concepts: lists, .append(), .remove(), for loops
+- Session 9: Quiz Game — 10-question trivia with score tracking. Challenge: Add categories and a leaderboard.
+  Concepts: list of dicts, for loops, enumerate(), keeping score
+
+**Week 4: "Function Forge"** — Functions & Dictionaries
+- Session 10: Emoji Translator — Convert words to emoji. Challenge: Support full sentences.
+  Concepts: functions, parameters, return, dictionaries
+- Session 11: Pokémon Battle Sim — Two Pokémon, HP, basic attacks. Challenge: Add type effectiveness.
+  Concepts: dicts with nested data, function design, game loops
+- Session 12: Meme Generator — Generate random "[top text] / [bottom text]" meme captions. Challenge: Save favorites to a file.
+  Concepts: random module deep dive, combining functions
+
+**Week 5: "File Hacker"** — Files & Error Handling
+- Session 13: Diary App — Write/read entries with timestamps. Challenge: Add search by date.
+  Concepts: open(), read/write modes, datetime module
+- Session 14: High Score System — Save and load game scores from a JSON file. Challenge: Add player names.
+  Concepts: json module, try/except, file handling patterns
+- Session 15: Web Scraper (Lite) — Fetch a joke from an API. Challenge: Build a daily joke emailer.
+  Concepts: requests library, APIs, JSON parsing
+
+**Week 6: "Boss Level"** — Final Project
+- Session 16: Game Design Doc — Plan your final game (mechanics, features, data structures).
+  Concepts: project planning, pseudocode, breaking problems down
+- Session 17: Build Day 1 — Core game loop and player input.
+  Concepts: putting it all together, debugging strategies
+- Session 18: Build Day 2 — Polish, add features, present to family.
+  Concepts: code organization, user experience, "shipping" a project
+
+**Final Project Options:**
+1. Dungeon Crawler — text-based RPG with rooms, items, and a boss fight
+2. Terminal Wordle — word guessing with colored letter hints
+3. Personal Finance Tracker — log allowance/spending, see charts in ASCII
+4. Quiz Show — multiplayer trivia game with categories and scoring`,
+    description: 'Design the full 6-week curriculum with session breakdowns and projects', created_at: '2026-04-10T00:00:00Z' },
+
+  { id: 'step-42b', prompt_id: 'prompt-42', step_number: 2, title: 'First 3 Lesson Plans with Code',
+    content: `Now write the complete, ready-to-teach lesson plans for Week 1 (Sessions 1-3). For each session include:
+1. A 2-minute "hook" (why this is cool / what you'll build)
+2. Concept explanation with examples (talk to a 14-year-old, not a CS student)
+3. The complete code for the mini-project, with comments explaining every line
+4. The challenge prompt (what to build on their own)
+5. Common mistakes to watch for
+
+Make it fun. Use references a teenager would get. No textbook energy.`,
+    result_content: `**SESSION 1: Your First Program**
+
+**Hook (2 min):**
+"Every app on your phone, every game you play, every website you visit — someone typed code to make it exist. Today you're going to type your first code. By the end of this session, you'll make the computer say whatever you want, and you'll draw pictures using nothing but text."
+
+**Concept: print()**
+Think of print() as "make the computer say this out loud." Whatever you put inside the quotes, it shows up on screen.
+
+\`\`\`python
+print("Hello, World!")        # The classic. Every programmer starts here.
+print("My name is Alex")      # Your turn — change this to your name
+print("I am " + "14" + " years old")  # You can glue strings together with +
+print("🎮" * 10)              # Multiply strings to repeat them — try it!
+\`\`\`
+
+**Mini-Project: ASCII Art Generator**
+\`\`\`python
+# ascii_art.py — Your first real program!
+print("=" * 40)
+print("     WELCOME TO MY TERMINAL")
+print("=" * 40)
+print()
+print("    /\\\\")
+print("   /  \\\\")
+print("  /    \\\\")
+print(" /______\\\\")
+print(" |      |")
+print(" |  []  |")
+print(" |______|")
+print()
+print("  Built by [YOUR NAME]")
+print("  " + "⭐" * 5)
+\`\`\`
+
+**Challenge:** Make ASCII art of your initials using print() statements. Bonus: add a border around it using = and |.
+
+**Common Mistakes:**
+- Forgetting the quotes: print(hello) ≠ print("hello") — without quotes Python thinks 'hello' is a variable
+- Mismatched quotes: print("hello') — the opening and closing must match
+- Forgetting parentheses: print "hello" — this is Python 2 syntax, we use Python 3
+
+---
+
+**SESSION 2: Mad Libs**
+
+**Hook (2 min):**
+"Remember Mad Libs? Where you fill in random words and get a funny story? We're building that — but the computer runs it. You'll learn how to make your program *ask* the user for information and then use it."
+
+**Concept: input()**
+\`\`\`python
+name = input("What's your name? ")     # Pauses and waits for them to type
+print(f"Hey {name}, welcome!")          # f-strings let you put variables inside text
+
+# f-strings are magic — put an f before the quotes, then {variable} inside
+age = input("How old are you? ")
+print(f"So {name} is {age} — cool cool cool")
+\`\`\`
+
+**Mini-Project: Mad Libs Game**
+\`\`\`python
+# madlibs.py — The funniest program you'll write today
+print("🎭 WELCOME TO MAD LIBS! 🎭")
+print("Answer each question with the FIRST thing that comes to mind.\\n")
+
+name = input("A celebrity's name: ")
+animal = input("An animal: ")
+food = input("A food: ")
+verb = input("A verb (action word): ")
+place = input("A place: ")
+number = input("A number: ")
+adjective = input("An adjective (describing word): ")
+
+print("\\n" + "=" * 50)
+print("📖 YOUR STORY:")
+print("=" * 50)
+print(f"""
+One day, {name} woke up and found a {adjective} {animal}
+sitting on their bed. "What are you doing here?!" they screamed.
+
+The {animal} replied, "I need you to {verb} to {place}
+and bring me {number} plates of {food}. It's urgent."
+
+{name} couldn't believe it. A talking {animal}?! But they
+grabbed their keys and headed to {place} anyway. Because
+honestly, who says no to a {adjective} {animal}?
+
+THE END 🎬
+""")
+\`\`\`
+
+**Challenge:** Create your own Mad Libs with at least 10 inputs. Make the story about your school or your friend group (keep it appropriate enough to show your parents 😄).
+
+**Common Mistakes:**
+- Not storing input in a variable: input("Name: ") by itself doesn't save anything
+- Forgetting the f before f-strings: print("{name}") literally prints {name}
+- Mixing up variable names: spelled 'animl' in one place and 'animal' in another
+
+---
+
+**SESSION 3: Calculator**
+
+**Hook (2 min):**
+"You go out to eat with 4 friends. The bill is $87.50. You want to add a 20% tip and split it evenly. Quick — what does each person owe? Today you'll build a program that solves this in 0.001 seconds."
+
+**Concept: Numbers & Math**
+\`\`\`python
+# Strings vs Numbers — this matters!
+print("5" + "3")     # → "53" (string gluing)
+print(5 + 3)          # → 8 (actual math)
+
+# Convert strings to numbers:
+age_text = input("Your age: ")  # This is a STRING, even if they type 14
+age = int(age_text)              # Now it's a number — you can do math with it
+
+# Or do it in one line:
+age = int(input("Your age: "))
+
+# Math operators
+print(10 + 3)    # 13  (addition)
+print(10 - 3)    # 7   (subtraction)
+print(10 * 3)    # 30  (multiplication)
+print(10 / 3)    # 3.333... (division — always gives a decimal)
+print(10 // 3)   # 3   (integer division — rounds down)
+print(10 ** 3)   # 1000 (power — 10 to the 3rd)
+\`\`\`
+
+**Mini-Project: Tip Calculator & Bill Splitter**
+\`\`\`python
+# tip_calc.py — Never awkwardly do math at a restaurant again
+print("💰 TIP CALCULATOR & BILL SPLITTER 💰\\n")
+
+bill = float(input("What's the total bill? $"))
+tip_pct = int(input("Tip percentage (15, 18, 20, 25): "))
+people = int(input("How many people are splitting? "))
+
+tip_amount = bill * (tip_pct / 100)
+total = bill + tip_amount
+per_person = total / people
+
+print(f"\\n{'=' * 35}")
+print(f"  Bill:          \${bill:.2f}")
+print(f"  Tip ({tip_pct}%):     \${tip_amount:.2f}")
+print(f"  Total:         \${total:.2f}")
+print(f"  Per person:    \${per_person:.2f}")
+print(f"{'=' * 35}")
+print(f"\\n  Each of the {people} people owes \${per_person:.2f}")
+
+# Bonus: round up to a nice number
+import math
+rounded = math.ceil(per_person)
+print(f"  (Or just Venmo \${rounded:.2f} to keep it clean)")
+\`\`\`
+
+**Challenge:** Add a feature that shows what the tip would be at 15%, 18%, 20%, and 25% in a nice table format.
+
+**Common Mistakes:**
+- Using int() when you need float(): int("87.50") crashes — use float() for decimals
+- Division confusion: 20/100 in Python gives 0.2 (correct), but in some languages gives 0
+- The :.2f formatting: f"{price:.2f}" means "show 2 decimal places" — essential for money`,
+    description: 'Write complete lesson plans with code for the first 3 sessions', created_at: '2026-04-10T00:00:00Z' },
+
+  { id: 'step-42c', prompt_id: 'prompt-42', step_number: 3, title: 'Terminal Wordle — The Final Project',
+    content: `Now build the capstone project option: Terminal Wordle. This is what a student would build in Week 6 after completing the full course. Write the complete, working Python code with:
+
+1. Random 5-letter word from a built-in list of 200 common words
+2. 6 guesses, just like real Wordle
+3. Color-coded feedback: green (correct position), yellow (wrong position), gray (not in word) — use ANSI terminal colors
+4. Input validation: must be exactly 5 letters, must be alphabetic
+5. A keyboard tracker showing which letters have been used and their status
+6. Win/loss screen with the answer revealed on loss
+7. Play again prompt
+
+Add detailed comments throughout — remember, this is a teaching project. A 14-year-old who just finished the course should be able to read and understand every line.`,
+    result_content: `\`\`\`python
+#!/usr/bin/env python3
+"""
+TERMINAL WORDLE — Final Project for Python for Teens
+Built step by step using everything we learned in 6 weeks!
+
+Concepts used: lists, dicts, loops, functions, string methods,
+random module, ANSI colors, input validation, game loops
+"""
+import random
+
+# === ANSI COLOR CODES ===
+# These special codes change text color in the terminal
+GREEN = "\\033[92m"    # Correct letter, correct position
+YELLOW = "\\033[93m"   # Correct letter, wrong position
+GRAY = "\\033[90m"     # Letter not in the word
+RESET = "\\033[0m"     # Back to normal color
+BOLD = "\\033[1m"
+BG_GREEN = "\\033[42m\\033[30m"   # Green background, black text
+BG_YELLOW = "\\033[43m\\033[30m"  # Yellow background, black text
+BG_GRAY = "\\033[100m\\033[37m"   # Gray background, white text
+
+# === WORD LIST ===
+# 200 common 5-letter words (curated to be fun and recognizable)
+WORDS = [
+    "apple", "beach", "brave", "candy", "dance", "eagle", "flame", "ghost",
+    "happy", "juice", "knife", "lemon", "magic", "night", "ocean", "piano",
+    "queen", "robot", "snake", "tiger", "ultra", "valor", "whale", "youth",
+    "zebra", "angel", "blast", "chain", "dream", "equal", "fresh", "grain",
+    "heart", "ivory", "joker", "knock", "light", "money", "noble", "olive",
+    "power", "quiet", "river", "storm", "trust", "unity", "voice", "world",
+    "album", "blank", "cloud", "drift", "earth", "focus", "globe", "hover",
+    "inbox", "jolly", "karma", "lunar", "maple", "nerve", "orbit", "peace",
+    "quick", "royal", "solar", "tower", "under", "vivid", "watch", "xenon",
+    "asset", "bonus", "craft", "depot", "error", "fiber", "grill", "humor",
+    "image", "jewel", "kayak", "level", "motor", "novel", "opera", "pixel",
+    "radar", "siren", "trend", "urban", "vinyl", "width", "arena", "blaze",
+    "coral", "delta", "ember", "frost", "grasp", "haste", "ideal", "joint",
+    "kneel", "logic", "mercy", "nexus", "omega", "prime", "quest", "ridge",
+    "scope", "theta", "umbra", "vault", "wrist", "adapt", "brook", "crave",
+    "dodge", "evoke", "flint", "gleam", "haven", "imply", "jaunt", "knack",
+    "leapt", "mirth", "niche", "overt", "plumb", "quilt", "reign", "shrub",
+    "tempo", "usher", "vigor", "weave", "abode", "brisk", "clasp", "denim",
+    "erupt", "forge", "gloom", "heron", "intro", "jazzy", "knelt", "lyric",
+    "moose", "nudge", "oxide", "prism", "quota", "rogue", "spire", "thyme",
+    "utile", "venom", "wrung", "alloy", "brine", "chunk", "dwelt", "exert",
+    "fauna", "glyph", "hyper", "index", "jumbo", "kiosk", "latch", "marsh",
+    "noted", "onset", "pluck", "quake", "route", "sworn", "truce"
+]
+
+
+def check_guess(guess, answer):
+    """
+    Compare the guess to the answer and return color codes for each letter.
+    This is the core game logic — the trickiest part!
+
+    Returns a list of 5 colors: GREEN, YELLOW, or GRAY for each position.
+    """
+    result = [GRAY] * 5          # Start with all gray
+    answer_chars = list(answer)   # We'll cross off letters as we match them
+
+    # First pass: find GREEN (correct position) matches
+    for i in range(5):
+        if guess[i] == answer[i]:
+            result[i] = GREEN
+            answer_chars[i] = None  # Cross it off so we don't double-count
+
+    # Second pass: find YELLOW (wrong position) matches
+    for i in range(5):
+        if result[i] == GREEN:
+            continue  # Already matched — skip
+        if guess[i] in answer_chars:
+            result[i] = YELLOW
+            # Cross off this letter so we don't count it twice
+            answer_chars[answer_chars.index(guess[i])] = None
+
+    return result
+
+
+def display_guess(guess, colors):
+    """Show a guess with colored letter blocks — like real Wordle!"""
+    blocks = ""
+    for letter, color in zip(guess, colors):
+        if color == GREEN:
+            blocks += f" {BG_GREEN} {letter.upper()} {RESET}"
+        elif color == YELLOW:
+            blocks += f" {BG_YELLOW} {letter.upper()} {RESET}"
+        else:
+            blocks += f" {BG_GRAY} {letter.upper()} {RESET}"
+    print(blocks)
+
+
+def display_keyboard(keyboard_state):
+    """Show a QWERTY keyboard with letter statuses colored in."""
+    rows = ["qwertyuiop", "asdfghjkl", "zxcvbnm"]
+    print()
+    for row in rows:
+        line = "  " if row.startswith("a") else "   " if row.startswith("z") else " "
+        for letter in row:
+            state = keyboard_state.get(letter, RESET)
+            line += f"{state} {letter.upper()} {RESET}"
+        print(line)
+    print()
+
+
+def get_valid_guess():
+    """Keep asking until the player enters a valid 5-letter word."""
+    while True:
+        guess = input("  Your guess: ").lower().strip()
+        if len(guess) != 5:
+            print(f"  {GRAY}Must be exactly 5 letters. You typed {len(guess)}.{RESET}")
+        elif not guess.isalpha():
+            print(f"  {GRAY}Letters only — no numbers or symbols.{RESET}")
+        else:
+            return guess
+
+
+def play_game():
+    """One round of Wordle."""
+    answer = random.choice(WORDS)
+    guesses = []
+    keyboard_state = {}  # Track which letters have been tried
+
+    print(f"\\n{BOLD}  ╔═══════════════════════════╗{RESET}")
+    print(f"{BOLD}  ║     TERMINAL WORDLE 🟩     ║{RESET}")
+    print(f"{BOLD}  ╚═══════════════════════════╝{RESET}")
+    print(f"  Guess the 5-letter word. You have 6 tries.\\n")
+
+    for attempt in range(1, 7):
+        print(f"  {GRAY}--- Guess {attempt}/6 ---{RESET}")
+        guess = get_valid_guess()
+        colors = check_guess(guess, answer)
+
+        # Update keyboard state
+        for letter, color in zip(guess, colors):
+            current = keyboard_state.get(letter)
+            # Green overrides yellow, yellow overrides gray
+            if color == GREEN:
+                keyboard_state[letter] = BG_GREEN
+            elif color == YELLOW and current != BG_GREEN:
+                keyboard_state[letter] = BG_YELLOW
+            elif current is None:
+                keyboard_state[letter] = BG_GRAY
+
+        guesses.append((guess, colors))
+
+        # Show all guesses so far
+        print()
+        for g, c in guesses:
+            display_guess(g, c)
+
+        display_keyboard(keyboard_state)
+
+        # Check for win
+        if guess == answer:
+            messages = ["Genius!", "Magnificent!", "Impressive!", "Splendid!", "Great!", "Phew!"]
+            print(f"  {GREEN}{BOLD}{messages[attempt-1]}{RESET} You got it in {attempt}/6! 🎉\\n")
+            return True
+
+    # Out of guesses
+    print(f"  {GRAY}The word was: {BOLD}{answer.upper()}{RESET}")
+    print(f"  Better luck next time! 💪\\n")
+    return False
+
+
+# === MAIN GAME LOOP ===
+if __name__ == "__main__":
+    wins = 0
+    games = 0
+
+    while True:
+        play_game()
+        games += 1
+        wins += 1 if games else 0
+
+        again = input("  Play again? (y/n): ").lower().strip()
+        if again != "y":
+            print(f"\\n  📊 Final stats: {wins}/{games} wins")
+            print(f"  Thanks for playing Terminal Wordle! 🟩🟨⬜\\n")
+            break
+\`\`\`
+
+This is a ~170-line game that uses everything from the course: variables, functions, lists, dicts, loops, string methods, ANSI colors, input validation, and a game loop. The two-pass algorithm for checking guesses (greens first, then yellows) is the most complex logic in the whole course — it's the same algorithm the real Wordle uses. The colored keyboard tracker is a nice touch that makes it feel like the real thing.`,
+    description: 'Build the complete Terminal Wordle game as the capstone project', created_at: '2026-04-10T00:00:00Z' },
+
   // === Portfolio Landing Page — 4-step build (prompt-40) ===
   { id: 'step-40a', prompt_id: 'prompt-40', step_number: 1, title: 'Layout & Hero Section',
     content: `I'm a freelance UX designer and I need a personal portfolio site. I want a single-page site built with HTML, CSS, and vanilla JS — no frameworks. The design should feel like a premium design studio site: lots of whitespace, large typography, smooth scroll.
@@ -1104,7 +1540,7 @@ And with that you have a portfolio site that feels like it was built by a design
     description: 'Build the stats overview and revenue chart components', created_at: '2026-03-25T00:00:00Z' },
   { id: 'step-6c', prompt_id: 'prompt-6', step_number: 3, title: 'Customer Table with Search',
     content: 'Add a customers table component below the chart. Features: search bar that filters by name or email, sortable columns (Name, Email, Plan, MRR, Status, Joined), pagination (10 per page), status badges (active = green, churned = red, trial = yellow). Generate 30 rows of realistic fake customer data. Include the full component code with state management for search, sort, and pagination.',
-    result_content: '**CustomerTable component (src/components/CustomerTable.tsx):**\n```tsx\n\"use client\"\nimport { useState, useMemo } from \'react\'\nimport { Search, ChevronUp, ChevronDown, ChevronLeft, ChevronRight } from \'lucide-react\'\nimport { CUSTOMERS, Customer } from \'@/lib/data\'\n\ntype SortKey = keyof Customer\ntype SortDir = \'asc\' | \'desc\'\n\nconst STATUS_STYLES = {\n  active:  \'bg-emerald-400/10 text-emerald-400 border border-emerald-400/20\',\n  churned: \'bg-red-400/10 text-red-400 border border-red-400/20\',\n  trial:   \'bg-yellow-400/10 text-yellow-400 border border-yellow-400/20\',\n}\n\nexport default function CustomerTable() {\n  const [search, setSearch] = useState(\'\')\n  const [sortKey, setSortKey] = useState<SortKey>(\'mrr\')\n  const [sortDir, setSortDir] = useState<SortDir>(\'desc\')\n  const [page, setPage] = useState(0)\n  const perPage = 10\n\n  const filtered = useMemo(() => {\n    const q = search.toLowerCase()\n    return CUSTOMERS\n      .filter(c => c.name.toLowerCase().includes(q) || c.email.toLowerCase().includes(q))\n      .sort((a, b) => {\n        const mult = sortDir === \'asc\' ? 1 : -1\n        return a[sortKey] > b[sortKey] ? mult : -mult\n      })\n  }, [search, sortKey, sortDir])\n\n  const paged = filtered.slice(page * perPage, (page + 1) * perPage)\n  const totalPages = Math.ceil(filtered.length / perPage)\n\n  const toggleSort = (key: SortKey) => {\n    if (sortKey === key) setSortDir(d => d === \'asc\' ? \'desc\' : \'asc\')\n    else { setSortKey(key); setSortDir(\'desc\') }\n  }\n\n  return (\n    <div className="bg-gray-900 border border-gray-800 rounded-xl">\n      <div className="p-4 border-b border-gray-800 flex items-center gap-3">\n        <Search size={16} className="text-gray-400" />\n        <input value={search} onChange={e => { setSearch(e.target.value); setPage(0) }}\n          placeholder="Search by name or email..." className="bg-transparent text-sm flex-1 outline-none" />\n        <span className="text-xs text-gray-500">{filtered.length} customers</span>\n      </div>\n      <table className="w-full text-sm">\n        <thead><tr className="text-gray-400 text-xs border-b border-gray-800">\n          {[\'name\',\'email\',\'plan\',\'mrr\',\'status\',\'joined\'].map(col => (\n            <th key={col} onClick={() => toggleSort(col as SortKey)}\n              className="px-4 py-3 text-left cursor-pointer hover:text-white">\n              <span className="inline-flex items-center gap-1 capitalize">{col}\n                {sortKey === col && (sortDir === \'asc\' ? <ChevronUp size={12}/> : <ChevronDown size={12}/>)}\n              </span>\n            </th>\n          ))}\n        </tr></thead>\n        <tbody>\n          {paged.map(c => (\n            <tr key={c.email} className="border-b border-gray-800/50 hover:bg-gray-800/30">\n              <td className="px-4 py-3 font-medium">{c.name}</td>\n              <td className="px-4 py-3 text-gray-400">{c.email}</td>\n              <td className="px-4 py-3">{c.plan}</td>\n              <td className="px-4 py-3">${c.mrr.toLocaleString()}</td>\n              <td className="px-4 py-3">\n                <span className={`px-2 py-0.5 rounded-full text-xs ${STATUS_STYLES[c.status]}`}>{c.status}</span>\n              </td>\n              <td className="px-4 py-3 text-gray-400">{c.joined}</td>\n            </tr>\n          ))}\n        </tbody>\n      </table>\n      <div className="p-4 flex items-center justify-between text-sm text-gray-400">\n        <span>Page {page + 1} of {totalPages}</span>\n        <div className="flex gap-2">\n          <button onClick={() => setPage(p => Math.max(0, p-1))} disabled={page === 0}><ChevronLeft size={16}/></button>\n          <button onClick={() => setPage(p => Math.min(totalPages-1, p+1))} disabled={page >= totalPages-1}><ChevronRight size={16}/></button>\n        </div>\n      </div>\n    </div>\n  )\n}\n```\n\nThe table includes 30 realistic customers like "Acme Corp" (Enterprise, $2,400 MRR, active), "NovaBright Studio" (Pro, $89 MRR, trial), and "Redline Agency" (Enterprise, $1,800 MRR, churned). Search filters instantly as you type, column headers toggle sort direction on click, and pagination shows 10 per page with next/prev controls. Status badges use color-coded pill styles — green for active, red for churned, yellow for trial.',
+    result_content: '**CustomerTable component (src/components/CustomerTable.tsx):**\n```tsx\n\"use client\"\nimport { useState, useMemo } from \'react\'\nimport { Search, ChevronUp, ChevronDown, ChevronLeft, ChevronRight } from \'lucide-react\'\nimport { CUSTOMERS, Customer } from \'@/lib/data\'\n\ntype SortKey = keyof Customer\ntype SortDir = \'asc\' | \'desc\'\n\nconst STATUS_STYLES = {\n  active:  \'bg-emerald-400/10 text-emerald-400 border border-emerald-400/20\',\n  churned: \'bg-red-400/10 text-red-400 border border-red-400/20\',\n  trial:   \'bg-yellow-400/10 text-yellow-400 border border-yellow-400/20\',\n}\n\nexport default function CustomerTable() {\n  const [search, setSearch] = useState(\'\')\n  const [sortKey, setSortKey] = useState<SortKey>(\'mrr\')\n  const [sortDir, setSortDir] = useState<SortDir>(\'desc\')\n  const [page, setPage] = useState(0)\n  const perPage = 10\n\n  const filtered = useMemo(() => {\n    const q = search.toLowerCase()\n    return CUSTOMERS\n      .filter(c => c.name.toLowerCase().includes(q) || c.email.toLowerCase().includes(q))\n      .sort((a, b) => {\n        const mult = sortDir === \'asc\' ? 1 : -1\n        return a[sortKey] > b[sortKey] ? mult : -mult\n      })\n  }, [search, sortKey, sortDir])\n\n  const paged = filtered.slice(page * perPage, (page + 1) * perPage)\n  const totalPages = Math.ceil(filtered.length / perPage)\n\n  const toggleSort = (key: SortKey) => {\n    if (sortKey === key) setSortDir(d => d === \'asc\' ? \'desc\' : \'asc\')\n    else { setSortKey(key); setSortDir(\'desc\') }\n  }\n\n  return (\n    <div className="bg-gray-900 border border-gray-800 rounded-xl">\n      <div className="p-4 border-b border-gray-800 flex items-center gap-3">\n        <Search size={16} className="text-gray-400" />\n        <input value={search} onChange={e => { setSearch(e.target.value); setPage(0) }}\n          placeholder="Search by name or email..." className="bg-transparent text-sm flex-1 outline-none" />\n        <span className="text-xs text-gray-500">{filtered.length} customers</span>\n      </div>\n      <table className="w-full text-sm">\n        <thead><tr className="text-gray-400 text-xs border-b border-gray-800">\n          {[\'name\',\'email\',\'plan\',\'mrr\',\'status\',\'joined\'].map(col => (\n            <th key={col} onClick={() => toggleSort(col as SortKey)}\n              className="px-4 py-3 text-left cursor-pointer hover:text-white">\n              <span className="inline-flex items-center gap-1 capitalize">{col}\n                {sortKey === col && (sortDir === \'asc\' ? <ChevronUp size={12}/> : <ChevronDown size={12}/>)}\n              </span>\n            </th>\n          ))}\n        </tr></thead>\n        <tbody>\n          {paged.map(c => (\n            <tr key={c.email} className="border-b border-gray-800/50 hover:bg-gray-800/30">\n              <td className="px-4 py-3 font-medium">{c.name}</td>\n              <td className="px-4 py-3 text-gray-400">{c.email}</td>\n              <td className="px-4 py-3">{c.plan}</td>\n              <td className="px-4 py-3">\${c.mrr.toLocaleString()}</td>\n              <td className="px-4 py-3">\n                <span className={`px-2 py-0.5 rounded-full text-xs ${STATUS_STYLES[c.status]}`}>{c.status}</span>\n              </td>\n              <td className="px-4 py-3 text-gray-400">{c.joined}</td>\n            </tr>\n          ))}\n        </tbody>\n      </table>\n      <div className="p-4 flex items-center justify-between text-sm text-gray-400">\n        <span>Page {page + 1} of {totalPages}</span>\n        <div className="flex gap-2">\n          <button onClick={() => setPage(p => Math.max(0, p-1))} disabled={page === 0}><ChevronLeft size={16}/></button>\n          <button onClick={() => setPage(p => Math.min(totalPages-1, p+1))} disabled={page >= totalPages-1}><ChevronRight size={16}/></button>\n        </div>\n      </div>\n    </div>\n  )\n}\n```\n\nThe table includes 30 realistic customers like "Acme Corp" (Enterprise, $2,400 MRR, active), "NovaBright Studio" (Pro, $89 MRR, trial), and "Redline Agency" (Enterprise, $1,800 MRR, churned). Search filters instantly as you type, column headers toggle sort direction on click, and pagination shows 10 per page with next/prev controls. Status badges use color-coded pill styles — green for active, red for churned, yellow for trial.',
     description: 'Create searchable, sortable customer data table', created_at: '2026-03-25T00:00:00Z' },
 
   // === Email Sequence (prompt-5) ===
@@ -2046,5 +2482,47 @@ export const mockPrompts: Prompt[] = [
     bookmark_count: 145,
     created_at: '2026-04-09T00:00:00Z',
     updated_at: '2026-04-09T00:00:00Z',
+  },
+
+  // ---- EDUCATION: Multi-Step Build (3 prompts) ----
+  {
+    id: 'prompt-42',
+    title: 'Python for Teens — Complete 6-Week Course with Lesson Plans & Capstone',
+    description: 'Designed a full 6-week Python course for a 14-year-old with zero experience. Includes curriculum, detailed lesson plans for Week 1, and a complete Terminal Wordle game as the capstone project.',
+    content: `My 14-year-old nephew asked me to teach him coding. I'm a senior dev so I know Python, but I have no idea how to teach it to a teenager who's never written a line of code. I needed a structured course that wouldn't bore him to death.\n\nI used Claude to design the whole thing in 3 prompts: first the curriculum (what to teach and when), then the actual lesson plans with complete code for the first week, and finally the capstone project — a Terminal Wordle clone that uses every concept from the course.\n\nThe key was telling Claude exactly who the student is: 14, into games and memes, zero patience for textbook-style teaching. Every project had to be something he'd actually want to show his friends.`,
+    result_content: `The course covers 18 sessions across 6 weeks, progressing from print("hello") to building complete games.\n\n**Week 1** lesson plans are fully written — each session has a 2-minute hook ("Every app on your phone started with someone typing code"), concept explanations in teenager-friendly language, complete working code with line-by-line comments, challenge prompts, and common mistakes to watch for.\n\n**Projects include:** ASCII art generator, Mad Libs, tip calculator, Magic 8-Ball, text RPG, password checker, guessing game, playlist manager, quiz game, emoji translator, Pokémon battle sim, diary app, high score system, and the capstone Terminal Wordle.\n\n**The Wordle capstone** is 170 lines of Python that uses everything from the course: the two-pass green-then-yellow algorithm (same as real Wordle), ANSI terminal colors for the colored blocks, a keyboard tracker showing used letters, input validation, and a play-again game loop. My nephew actually finished it and showed it to his friends at school — they thought he built the "real" Wordle.\n\nI've now taught 4 sessions and he's hooked. The Mad Libs session was the turning point — seeing the computer use HIS words in a story made programming feel like magic, not homework.`,
+    category_id: 'cat-6',
+    difficulty: 'beginner',
+    model_used: 'claude-opus-4-6',
+    model_recommendation: 'Claude 4.6 Opus',
+    tools_used: ['Claude', 'Python'],
+    tags: ['education', 'python', 'teaching', 'teens', 'curriculum', 'wordle', 'game'],
+    status: 'approved',
+    author_id: 'user-11',
+    vote_count: 189,
+    bookmark_count: 134,
+    created_at: '2026-04-10T00:00:00Z',
+    updated_at: '2026-04-10T00:00:00Z',
+  },
+
+  // ---- WRITING: One-Shot Deep Prompt ----
+  {
+    id: 'prompt-43',
+    title: 'Complete Blog Post Pipeline — Research, Outline, Draft, SEO in One Prompt',
+    description: 'One massive prompt that takes a topic and generates a full 2,000-word blog post with research angles, structured outline, engaging draft, meta description, internal linking suggestions, and a social media snippet kit.',
+    content: `I write 2-3 blog posts a week for my SaaS company's content marketing. Each post used to take me 4-5 hours: research, outline, draft, edit, SEO optimization, social snippets. I built a single mega-prompt that does the entire pipeline at once.\n\nThe prompt is long — about 400 words — but it saves me 3+ hours per post. The key is being very specific about voice, structure, and output format. I tell Claude exactly how I want the article structured, what sections to include, and what format the SEO metadata should be in. Vague prompts get vague outputs.\n\n---\n\nHere's the exact prompt (I swap out the [TOPIC] and [AUDIENCE] for each post):\n\nYou are a senior content strategist at a B2B SaaS company. Write a complete, publish-ready blog post on this topic: "Why most engineering teams fail at incident management — and how to fix it." Target audience: engineering managers and VPs of Engineering at companies with 50-500 employees.\n\nFollow this exact structure:\n\n**1. RESEARCH BRIEF (not published — for my reference)**\n- 3 key statistics or data points relevant to this topic (cite sources if you can)\n- 2 contrarian or surprising angles most articles about this topic miss\n- 3 companies doing this well (as potential examples)\n\n**2. ARTICLE OUTLINE**\n- Hook (1 paragraph — start with a specific scenario, not a generic statement)\n- Problem section (2-3 paragraphs — why this is broken)\n- Framework section (the core value — a 3-5 step framework or methodology)\n- Real-world examples (1-2 concrete examples showing the framework in action)\n- Common objections (address 2-3 "yeah but..." reactions readers will have)\n- Conclusion with clear CTA\n\n**3. FULL DRAFT** (~2,000 words)\n- Tone: Direct, conversational, knowledgeable. Write like a VP of Eng sharing hard-won lessons at a conference, not a marketing team writing thought leadership.\n- Use "you" and "your team" — never "one should"\n- Include 2-3 subheadings (H2s) that work as standalone statements\n- Bold key takeaways naturally within paragraphs\n- No fluff paragraphs — every paragraph must advance the argument\n- End with a single, specific action the reader can take Monday morning\n\n**4. SEO METADATA**\n- Page title (under 60 characters)\n- Meta description (under 155 characters)\n- Primary keyword + 5 secondary keywords\n- 3 suggested internal links (topics we should link TO from this article)\n- 3 suggested anchor text variations for external backlinks\n\n**5. SOCIAL MEDIA KIT**\n- 1 LinkedIn post (hook + key insight + CTA, under 200 words)\n- 1 Twitter/X thread (5 tweets — first tweet is the hook)\n- 1 newsletter subject line + preview text`,
+    result_content: `Claude generated everything in one response — about 3,500 words total across all sections. Here's what stood out:\n\n**Research Brief** — The three statistics it pulled were genuinely useful: "73% of engineering teams don't practice incident response until a real incident happens" (Gartner), "Mean time to recovery is 3.5x longer for teams without runbooks" (PagerDuty State of DevOps), and "Post-incident reviews happen in only 29% of incidents" (Jeli.io). I verified the Gartner and PagerDuty stats; the Jeli.io one was close but I updated the number.\n\n**The article itself** opened with: "It's 2 AM. Your on-call engineer's phone is blowing up. Customers are tweeting. And your team is in a Slack channel with 47 people, none of whom know who's actually in charge of fixing this." — way better than "Incident management is important for engineering teams."\n\n**The 4-step framework** it created: 1) Define roles before the fire (Incident Commander, Comms Lead, Technical Lead), 2) Write runbooks for your top 5 failure modes, 3) Practice with game days quarterly, 4) Make post-incident reviews non-negotiable and blameless. Each step had 2-3 paragraphs of actionable detail.\n\n**SEO metadata:**\n- Title: "Why Your Engineering Team Fails at Incidents (And the Fix)"\n- Meta: "Most teams practice incident response for the first time during a real incident. Here's a 4-step framework to fix that before your next outage."\n- Primary keyword: "incident management for engineering teams"\n\n**LinkedIn post** started with: "Hot take: Your engineering team doesn't have an incident management problem. You have a practice problem." — punchy enough to stop the scroll.\n\n**Time saved:** The whole output took about 90 seconds. I spent 45 minutes editing, fact-checking, and adding our product mentions. Total time: ~1 hour vs my previous 4-5 hours. I've published 12 posts using this prompt template now, and our blog traffic is up 40% quarter-over-quarter.`,
+    category_id: 'cat-3',
+    difficulty: 'intermediate',
+    model_used: 'claude-sonnet-4-6',
+    model_recommendation: 'Claude 4.6 Sonnet',
+    tools_used: ['Claude'],
+    tags: ['blog', 'content marketing', 'SEO', 'writing', 'one-shot', 'social media', 'B2B'],
+    status: 'approved',
+    author_id: 'user-11',
+    vote_count: 167,
+    bookmark_count: 98,
+    created_at: '2026-04-11T00:00:00Z',
+    updated_at: '2026-04-11T00:00:00Z',
   },
 ]

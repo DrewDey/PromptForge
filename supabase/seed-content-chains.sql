@@ -42084,5 +42084,413 @@ Step 5, Ideas capture (10 minutes): write down product ideas, angles, or improve
 Total time: under one hour per month. The discipline is one change at a time and waiting for data before making the next. Changing everything at once when sales are slow is the most common mistake Etsy sellers make — you cannot tell which change worked.$pf$,
  NULL);
 
+DELETE FROM prompt_steps WHERE prompt_id = '55555555-5555-5555-5555-555555550118';
+DELETE FROM prompts      WHERE id        = '55555555-5555-5555-5555-555555550118';
+
+INSERT INTO prompts (
+  id, title, description, content, result_content,
+  category_id, difficulty, model_used, model_recommendation,
+  tools_used, tags, status, author_id, vote_count, bookmark_count
+) VALUES (
+  '55555555-5555-5555-5555-555555550118',
+  $pf$Customer win/loss analysis program for a B2B compliance SaaS with a nine-point close rate drop$pf$,
+  $pf$Sarah Mitchell built a structured win/loss interview program for a B2B compliance SaaS client whose close rate had fallen nine points in six months — designed the interview framework, analyzed 12 transcripts to isolate the real loss driver (implementation fear, not pricing), and wrote the board-ready brief that got buy-in for a guided onboarding pilot.$pf$,
+  $pf$Vaultline sells compliance document management to mid-market finance teams — hedge funds, private equity firms, and regional banks in the 50 to 500 employee range. The VP of Sales brought me in because their close rate had dropped from 28 percent to 19 percent over six months and nobody could explain why. The CRM had won and lost dispositions but the notes were thin — whatever the rep felt like typing that day: "not ready," "went with competitor," "budget freeze." No patterns, no signal.
+
+I had done informal post-mortems before — calling a lost prospect and asking what happened — but never a systematic program. I needed to design the interview framework, figure out how to get people to actually respond, run the interviews, and translate raw themes into something the executive team would act on. Three weeks, 12 interviews, one brief that the VP forwarded to the CEO.$pf$,
+  $pf$The win/loss program surfaced a finding nobody expected: the primary loss driver was not pricing. It was implementation timeline fear — prospects believed Vaultline would take three to six months to deploy and saw that as a deal-blocker. The pricing concern the VP of Sales had assumed was the problem ranked third. The brief recommended a guided onboarding pilot with a public 30-day go-live guarantee; Vaultline added it to the sales deck the following quarter and close rate recovered to 24 percent in the first 90 days.$pf$,
+  '11111111-1111-1111-1111-111111111102',
+  'intermediate',
+  'claude-sonnet-4-6',
+  'Claude 4.6 Sonnet',
+  ARRAY['Claude'],
+  ARRAY['win/loss analysis', 'B2B SaaS', 'sales intelligence', 'customer research', 'marketing analytics', 'close rate'],
+  'approved',
+  '22222222-2222-2222-2222-222222222202',
+  0,
+  0
+);
+
+INSERT INTO prompt_steps (id, prompt_id, step_number, title, content, result_content, description) VALUES
+
+-- Step 1 --
+('77777777-7777-7777-7777-777777118001',
+ '55555555-5555-5555-5555-555555550118',
+ 1,
+ $pf$Designing the win/loss interview framework from scratch$pf$,
+ $pf$I am a marketing consultant working with Vaultline, a B2B SaaS that sells compliance document management to mid-market finance teams — private equity firms, hedge funds, and regional banks typically in the 50 to 500 employee range. The VP of Sales told me last week that their close rate dropped from 28 percent to 19 percent over the last six months and nobody has a good explanation. The CRM has won and lost dispositions but the notes are thin — whatever the sales rep felt like typing that day, usually "not ready" or "went with competitor" or "budget freeze." No real signal there.
+
+I have been brought in to build a win/loss analysis program from scratch. I have done informal post-mortems — calling a prospect and asking what happened — but never a structured program. I need to design the interview framework before I start reaching out to anyone.
+
+A few specific things I need help with: Who should I interview — only losses or wins too? How many interviews do I actually need before the findings mean something? What questions get people to tell me the real reason rather than the polite version? And how do I get lost prospects to agree to talk at all — most outreach for this kind of thing gets ignored. Give me a framework I can actually execute.$pf$,
+ $pf$**Win/Loss Interview Framework**
+
+**Who to interview, and why both sides matter**
+
+Interview both wins and losses — wins are half the signal and most programs skip them. A win/loss program that only studies losses tells you what went wrong but not what made the difference when you succeed. Your sharpest insights come at the comparison boundary: deals you won that looked like they should have gone the other way, and losses where you thought you were in a strong position.
+
+Proportion: 60 percent losses, 40 percent wins. Lost deals are harder to schedule and harder to get honest answers from, so you need more of them to reach the same signal clarity.
+
+Volume before pattern confidence: 8 interviews is the minimum before findings are directional, 15 before they are reliable enough for a board presentation. Plan for 12 in this first round — 7 losses and 5 wins. That is the point where patterns either confirm themselves or you realize your sample is telling you something unexpected.
+
+**Respondent selection**
+
+Prioritize interviews from the last 90 days. Deals older than 4 months get harder to schedule and the prospect's memory softens. For wins, reach the economic buyer — the person who approved the budget and made the final call, not the champion who ran the evaluation. For losses, try to reach the decision-maker or whoever owned the vendor comparison, not just your internal contact.
+
+**Getting lost prospects to respond**
+
+The biggest predictor of response rate is the sender. Outreach from the VP of Sales or CEO converts 3 to 4 times better than outreach from marketing or a research coordinator. The message should be brief and non-sales: "We lost your business and we would like to understand why so we can improve — this is not a pitch, there is nothing to sell. Would you give us 20 minutes?" Position it as feedback you are asking for as a favor, not a study you are inviting them into.
+
+Offer a $25 gift card or a small charitable donation in their name — this converts skeptical respondents who feel the company owes them nothing. Send the outreach 10 to 14 days after the deal closes: too early feels defensive, too late and the details fade.
+
+**The question architecture**
+
+Open with context-setting, not a question: "Take me back to when you first started evaluating vendors in this category. What triggered the search?" Let them talk before you ask anything pointed.
+
+Organize the interview in four sections:
+
+1. Trigger and initial criteria — What problem they were solving, what mattered before they met any vendors, how they defined success before seeing any demos.
+
+2. Evaluation process — Who was involved, how they narrowed the field, what demos or trials they ran, what the evaluation criteria were explicitly and implicitly.
+
+3. The decision point — For losses: "Walk me through the final conversation where you chose the other path." For wins: "When did you feel certain you had made the right choice?" Then: "What would have changed your mind?"
+
+4. Retrospective — For losses: "Six months from now, what would have to be true for you to consider us again?" For wins: "What should we never change about what we are doing?"
+
+The key to honest answers is avoiding hypothetical framing. "Would better pricing have made a difference?" gets a polite yes. "What was the specific moment you decided not to move forward with us?" gets you the real reason.
+
+One question that consistently surfaces hidden loss drivers: "What did you tell your team or your CFO about why you chose the other vendor?" The explanation a buyer gives to their own colleagues is usually more honest than the one they give to you.
+
+**Synthesis preparation**
+
+Record every interview with permission. Transcribe. Tag quotes by theme as you go — do not wait until all 12 are done. Themes to watch for: pricing and value perception, implementation complexity and timeline, product-fit gaps, trust and brand, internal champion strength, and competitive alternatives. You will see two or three of these dominate. Pattern saturation is when the 12th interview is not telling you anything the 8th did not already say.$pf$,
+ NULL),
+
+-- Step 2 --
+('77777777-7777-7777-7777-777777118002',
+ '55555555-5555-5555-5555-555555550118',
+ 2,
+ $pf$Finding the real loss driver in 12 interview transcripts$pf$,
+ $pf$I have finished 12 interviews — 7 losses and 5 wins — over the past three weeks. Before I run the synthesis, I want to share the clearest quotes from each transcript and have you help me identify the real patterns. Marcus, the VP of Sales, is convinced the problem is pricing. He said it during the kickoff call and I have heard him say it in three conversations since. But when I read through these transcripts I keep seeing something else.
+
+Here are the most direct quotes I pulled:
+
+Loss 1 (regional bank, 190 employees, chose a competitor): "The pricing was a factor but honestly the thing that stopped us was not knowing how long it would take to get live. Our IT team is small and we could not absorb a six-month implementation project right now. We asked your sales rep and got a vague answer."
+
+Loss 2 (private equity firm, 75 employees, passed on all vendors): "We wanted to move this year but when we started asking about implementation we kept getting it depends as an answer. That made us feel like the safe answer was to wait."
+
+Loss 3 (hedge fund, 120 employees, went with legacy provider): "Your product looked better but we already have a relationship with the incumbent. Switching cost was real. But if you had given us a clear picture of what the first 60 days looked like, we might have felt differently."
+
+Win 1 (regional bank, 220 employees): "The demo was good but what really closed it for me was when your rep said here is exactly what happens in the first 30 days and we will have you live in 30. I showed that to my CFO and she said yes."
+
+Win 2 (hedge fund, 95 employees): "We almost went with the competitor on price. But then we saw their implementation timeline was three to six months. Yours was faster and you were willing to show us a project plan."
+
+Loss 4 (family office, 60 employees): "Price was the reason we told your rep no. But between us, if we had felt more confident about what deployment would look like, price would have been negotiable."
+
+Loss 5 (PE firm, 340 employees): "We liked the product. Pricing was fine honestly. But our IT director said no because she could not get a firm answer on integration lift. Your team kept saying light lift without backing it up."
+
+Win 3 (regional bank, 180 employees): "I have done these implementations before and they always take longer than promised. I asked your team for a specific go-live date and they gave me one in writing. That was the differentiator."
+
+What is actually driving the losses here? And is Marcus right about pricing?$pf$,
+ $pf$What these interviews are telling you is that Marcus is wrong about pricing — or at least, he is wrong about pricing being the primary cause. Three of your seven losses name pricing as a reason, and two of those three reveal in the same breath that implementation clarity would have been negotiable on price. That is not a pricing problem. That is a sales execution problem: prospects cannot get a clear, specific, confident answer about what deployment actually looks like.
+
+**The real pattern: implementation ambiguity as the primary loss driver**
+
+Five of your seven losses contain an explicit mention of implementation timeline, IT burden, or integration confidence as a decision factor. That is 71 percent. Pricing appears in three losses. Implementation confidence is almost certainly the primary loss driver.
+
+The pattern is clearest in Loss 4: "Price was the reason we told your rep no. But between us, if we had felt more confident about what deployment would look like, price would have been negotiable." That is a prospect who used pricing as the social exit and told you the real reason in the next sentence. Loss 5 follows the same logic — the IT director blocked a deal the business buyer wanted to close because she could not get a concrete integration scope from the sales team.
+
+Your win evidence confirms this by inversion. Win 1, Win 2, and Win 3 all describe the same closing moment: a specific, documented go-live commitment. Win 3's respondent named it directly: "I asked your team for a specific go-live date and they gave me one in writing. That was the differentiator." The reps who gave specific written commitments won. The reps who gave vague answers did not.
+
+**Three themes ranked by frequency and impact**
+
+1. Implementation timeline ambiguity — primary loss driver, 5 of 7 losses. Prospects ask about go-live, get "it depends" or "light lift" without specifics, and perceive risk that exceeds their organization's capacity. Small IT teams in particular interpret vague implementation answers as a signal that deployment will become their problem. This is not primarily a product problem — it is a sales execution problem.
+
+2. Competitive switching inertia — contributing factor in two losses. Prospects with an established vendor relationship need more than "your product looks better" to switch. A documented first-30-days plan and a specific go-live commitment appear to be the threshold that makes switching feel safe.
+
+3. Pricing — loss driver in 3 of 7, primary in 1 of 7. Only one loss shows pricing as a standalone driver with no other major factor. In the other two, pricing was a secondary concern that became a blocking reason when implementation confidence was already shaky.
+
+**What to tell Marcus**
+
+The finding is not that pricing is fine. The finding is that implementation confidence is the primary loss driver and pricing is the secondary rationalization. Prospects who feel confident about deployment are willing to negotiate on price. Prospects who do not feel confident use pricing as the exit because it is easier to say than "your sales team gave me a vague answer and I do not trust what you are telling me."
+
+The recommendation is not a price cut. It is a go-live guarantee or documented 30-day implementation plan that sales can show during the final stage conversation. The reps who are already doing this are winning. The fix is codifying what works and making it standard, not adjusting the price sheet.$pf$,
+ NULL),
+
+-- Step 3 --
+('77777777-7777-7777-7777-777777118003',
+ '55555555-5555-5555-5555-555555550118',
+ 3,
+ $pf$Writing the board-ready win/loss brief$pf$,
+ $pf$The pattern analysis is exactly what I needed — I can see the story now. Marcus was wrong about pricing. Implementation timeline fear is the real loss driver, and the wins confirm it: the reps who gave specific go-live commitments closed, and the ones who gave vague answers did not. I need to write a one-page win/loss brief that goes to Marcus and the board. This is not an academic report — they want findings, so what, and now what. No methodology section, no hedging. Sharp enough that Marcus would forward it to the CEO. Use the specific findings from the analysis.$pf$,
+ $pf$---
+
+**WIN/LOSS BRIEF — VAULTLINE Q1–Q2 2026**
+*Based on 12 buyer interviews (7 losses, 5 wins) — deals closed Q1 and Q2 2026*
+
+---
+
+**Finding: Implementation ambiguity is the primary loss driver — not pricing.**
+
+Close rate dropped from 28 percent to 19 percent over six months. Twelve buyer interviews across Q1 and Q2 losses and wins show that 5 of 7 losses involve implementation timeline uncertainty as a decision factor. Pricing appears in 3 of 7 losses; in 2 of those 3, buyers indicate that better implementation confidence would have made price negotiable.
+
+Wins confirm the same finding by inversion: 3 of 5 wins describe a specific, documented go-live commitment as the closing moment. One respondent said: "I asked your team for a specific go-live date and they gave me one in writing. That was the differentiator."
+
+---
+
+**What is happening in lost deals**
+
+Prospects ask about deployment timeline and integration scope during evaluation. The sales team answers with "it depends" and "light lift" without specifics. Finance teams with small IT departments interpret vague implementation answers as a risk signal — if the vendor cannot tell us how long this takes, deployment will become our problem. Deals stall or close to a competitor who provides more specificity, or to the incumbent whose risk is switching cost rather than deployment risk.
+
+The pricing objection in lost-deal CRM notes is frequently a social exit. Buyers use pricing to decline politely rather than say "your sales team could not give us a concrete implementation answer." Follow-up interviews surface the real reason.
+
+---
+
+**What is working in won deals**
+
+Reps who provide a documented 30-day implementation plan — or who commit to a specific go-live date during the final stage conversation — are closing at a materially higher rate. This is not a product difference. It is a sales execution difference that already exists within the team.
+
+---
+
+**Recommendation: 30-day go-live program**
+
+Codify what winning reps are already doing. Create a formalized 30-day implementation guide that sales can show during demos and attach to final proposals. Consider a 30-day go-live commitment as a positioning statement — it directly addresses the primary loss driver and differentiates from competitors who give vague deployment timelines.
+
+Priority segment: mid-market finance teams with IT departments under 10 people. This is where implementation fear is highest and where a documented deployment plan moves the decision most.
+
+---
+
+**What this brief is not recommending**
+
+A price reduction. One loss in seven shows pricing as a standalone driver with no other major factor. Cutting price without addressing implementation clarity will not recover the close rate.
+
+---
+
+*Recommended next step: 30-day pilot program design session with Sales and Customer Success. Two-week turnaround.*$pf$,
+ NULL);
+
+DELETE FROM prompt_steps WHERE prompt_id = '55555555-5555-5555-5555-555555550119';
+DELETE FROM prompts      WHERE id        = '55555555-5555-5555-5555-555555550119';
+
+INSERT INTO prompts (
+  id, title, description, content, result_content,
+  category_id, difficulty, model_used, model_recommendation,
+  tools_used, tags, status, author_id, vote_count, bookmark_count
+) VALUES (
+  '55555555-5555-5555-5555-555555550119',
+  $pf$Designing a Socratic seminar on Frederick Douglass's 1852 Fourth of July speech for a mixed-ability 10th-grade class$pf$,
+  $pf$Ben Okafor built a complete Socratic seminar unit on Frederick Douglass's "What to the Slave is the Fourth of July?" for a mixed-ability 10th-grade US History class — the discussion protocol, a tiered CCSS-aligned question set, and a student preparation packet with reading guide and annotation scaffold that brought 23 of 28 students into substantive discussion.$pf$,
+  $pf$I have been teaching 10th-grade US History at a public high school in Cleveland for seven years. Every year we cover antebellum America and the abolitionist movement, and every year students read the primary sources in summary form and never actually engage with the argument. This year I wanted to run a Socratic seminar on Frederick Douglass's "What to the Slave is the Fourth of July?" — his 1852 Rochester speech. I think it is one of the most rhetorically powerful documents in American history, but I had never run a seminar on primary source material before. My class has 28 students with a wide skill spread: 6 or 7 reading well above grade level, about 14 in the middle, and 7 or 8 who struggle with 19th-century syntax and vocabulary. I needed to design the seminar in a way that gave every student a genuine entry point without creating a two-track experience where my struggling readers were just spectators.$pf$,
+  $pf$The Socratic seminar ran for 55 minutes. Twenty-three of 28 students made at least one substantive contribution — the highest participation rate I have had in a discussion-based class in three years. The tiered question set worked as designed: opening questions got quieter students talking early, and the core analytical questions deepened the conversation without losing the room. Three students who rarely speak in class contributed in the first 20 minutes. The annotation scaffold in the prep packet was the difference — students came in with actual textual evidence rather than general impressions of what the speech was about.$pf$,
+  '11111111-1111-1111-1111-111111111106',
+  'beginner',
+  'claude-sonnet-4-6',
+  'Claude 4.6 Sonnet',
+  ARRAY['Claude'],
+  ARRAY['Socratic seminar', 'US History', 'Frederick Douglass', 'primary sources', 'discussion protocol', 'CCSS'],
+  'approved',
+  '22222222-2222-2222-2222-222222222205',
+  0,
+  0
+);
+
+INSERT INTO prompt_steps (id, prompt_id, step_number, title, content, result_content, description) VALUES
+
+-- Step 1 --
+('77777777-7777-7777-7777-777777119001',
+ '55555555-5555-5555-5555-555555550119',
+ 1,
+ $pf$Structuring the seminar format for a 28-student mixed-ability class$pf$,
+ $pf$I am a high school teacher in Cleveland, Ohio. I teach 10th-grade US History and next month I am covering antebellum America and the abolitionist movement. I want to run a Socratic seminar on Frederick Douglass's 1852 speech "What to the Slave is the Fourth of July?" — one of the most rhetorically powerful primary sources in American history — but I have never run a Socratic seminar on primary source material before. I have done seminars on informational texts at a previous school but a speech from 1852 with 19th-century syntax and vocabulary is a different challenge.
+
+My class has 28 students. Skill range is wide — maybe 6 or 7 reading well above grade level, about 14 in the middle, and 7 or 8 who struggle with complex primary source text. I need to design a seminar structure that gives every student a genuine entry point without creating a two-track experience where my struggling readers end up as spectators.
+
+How should I structure this? Should I do an inner/outer circle format or a full-class discussion? How long should the seminar actually run for a 55-minute class period? What do students need to prepare before they walk in? And how do I make sure struggling readers come in with real evidence to draw on, not just a general impression of the text?$pf$,
+ $pf$**Socratic Seminar Structure for "What to the Slave is the Fourth of July?" — 10th Grade US History**
+
+**Format: Modified fishbowl with rotating inner circle**
+
+For a 28-student class with a wide skill range, a full-class discussion is the wrong format. With 28 students, dominant voices take over within the first five minutes, quieter students disengage, and you spend your facilitation energy managing the room rather than deepening the conversation. A modified fishbowl — two groups of 14, each taking the inner circle for one round — gives you better discussion quality and higher ultimate participation.
+
+Timeline for a 55-minute period:
+- 5 minutes: seminar launch; re-read one anchor passage as a whole class before discussion starts
+- 25 minutes: Round 1 — Group A in the inner circle, Group B observes and takes notes
+- 3 minutes: transition — Group B shares one thing Group A said that they want to build on
+- 22 minutes: Round 2 — Group B in the inner circle, Group A observes and notes
+
+**Why fishbowl beats full-class for primary source material**
+
+With 19th-century text and a wide skill range, full-class discussion breaks in two predictable ways. Advanced readers carry the conversation and struggling readers become spectators — which is exactly what you are trying to avoid. Or you slow down to support struggling readers and the advanced students check out. Fishbowl solves both: every student participates in a round, inner circles of 14 are small enough to structure participation deliberately, and the observation role in the outer circle is genuinely productive — watching peers discuss the same text often produces understanding that reading alone does not.
+
+**Group composition**
+
+Mix skill levels within each group. Do not sort by reading level — that recreates the two-track experience in seminar form. If you have students who are very likely to dominate, split them across groups so neither round is outpaced by one strong voice.
+
+**What students need to bring**
+
+Students need the speech read at least twice with specific passages annotated and a preparation sheet completed before seminar day. The critical piece for struggling readers is a structured annotation scaffold — a document that tells them exactly which sections to focus on and what to look for, so they arrive with specific textual evidence rather than a general impression. Without a prep protocol, struggling readers come in underprepared and withdraw when the conversation demands specific quotes they do not have.
+
+A brief whole-class re-read of one anchor passage at the start of the seminar is worth the five minutes — it grounds every reader, gives struggling readers a moment to reconnect with what they read, and signals that the text is the source of authority in the room, not the teacher.
+
+**Anchor passage recommendation**
+
+Open with the paragraph that begins "What, to the American slave, is your 4th of July?" — approximately paragraph 17 in most editions. It is the rhetorical center of the speech, it is accessible at a close reading, and it sets the central question the entire seminar can orbit. Have students read it silently again, then read it aloud yourself before you ask the first question. Struggling readers who arrived underprepared will often key off this moment.$pf$,
+ NULL),
+
+-- Step 2 --
+('77777777-7777-7777-7777-777777119002',
+ '55555555-5555-5555-5555-555555550119',
+ 2,
+ $pf$Building the tiered question set aligned to CCSS standards$pf$,
+ $pf$The fishbowl format makes sense for my class and I like the reasoning behind the mixed-group composition. Now I need the actual question set — the questions I will use during the seminar itself. I want three tiers: opening questions that lower the entry barrier and get all students talking early, core analytical questions that push into Douglass's rhetoric and argument structure, and closing questions that zoom out to historical significance and contemporary connection.
+
+I also need these aligned to CCSS.ELA-Literacy standards because my department does standards-based grading and I will need to map the seminar to specific standards when I turn in the unit plan. Can you write the full question set with the standards alignment noted for each tier?$pf$,
+ $pf$**Socratic Seminar Question Set: "What to the Slave is the Fourth of July?" (Frederick Douglass, 1852)**
+
+*Primary CCSS alignment: RH.9-10.1, RH.9-10.6, RH.9-10.8, SL.9-10.1, SL.9-10.4*
+
+---
+
+**Opening Questions — entry-level, observation and first response**
+*CCSS.RH.9-10.1 (cite textual evidence); CCSS.SL.9-10.1 (collaborative discussion)*
+
+These are answerable from the text at a surface level. Use them in the first 5 to 8 minutes to get every voice in the room before you move to core questions. No student should be silent by the time you introduce a core analytical question.
+
+1. What is the tone of Douglass's opening paragraphs? Find one line from the first three paragraphs that shows you that tone.
+
+2. What is Douglass saying when he asks "What, to the American slave, is your 4th of July?" Put his question in your own words.
+
+3. Who does Douglass say is excluded from the celebration he is speaking at? How do you know from the text?
+
+---
+
+**Core Analytical Questions — rhetorical and argumentative analysis**
+*CCSS.RH.9-10.6 (identify point of view and purpose); CCSS.RH.9-10.8 (assess the argument and evidence); CCSS.SL.9-10.4 (present claims with evidence)*
+
+These require students to analyze Douglass's rhetorical choices and evaluate his argument. They should carry 25 to 30 minutes of discussion. You do not need to ask all of them — follow the conversation and introduce a question when the discussion stalls or drifts off the text.
+
+4. Douglass says "The feeling of the nation must be quickened; the conscience of the nation must be roused." What does he mean by this? How does his argument attempt to do that?
+
+5. Why does Douglass use questions rather than direct statements for much of the speech? What effect does that rhetorical choice have on his audience?
+
+6. Partway through the speech, Douglass shifts from emotional appeal to a legal argument — he starts citing American law and court decisions. Why does he make that shift? What does he want the audience to feel after the emotional section, and what does he want them to think after the legal section?
+
+7. Douglass says to his audience: "You know that I am right." What assumptions about the audience is he making? Do you think those assumptions were accurate in Rochester in 1852? Why or why not?
+
+8. What is Douglass's purpose in comparing the American Revolution to the condition of enslaved people in 1852? Is that comparison effective as a rhetorical strategy? Find evidence from the text to support your answer.
+
+---
+
+**Closing Questions — historical significance and contemporary connection**
+*CCSS.RH.9-10.9 (integrate and compare multiple sources); CCSS.SL.9-10.1d (respond thoughtfully to diverse perspectives)*
+
+Use these in the final 8 to 10 minutes of each round. They are designed to close the conversation rather than open new threads.
+
+9. Douglass gave this speech nine years before the Civil War began. Does knowing what comes after change how you read his argument? How?
+
+10. If you had to state Douglass's central claim — the argument the entire speech is building toward — in one sentence, what would it be?
+
+11. Is there a version of Douglass's question that someone could ask today — "what is this day to you, really?" — and if so, who might ask it and to whom?
+
+---
+
+**Facilitation note:** Do not ask opening questions in lecture mode. After you ask, wait through silence — count to 8 in your head before intervening. Students processing the text need that time. If nobody responds after 8 seconds, redirect: "Find one line from the first three paragraphs and just read it to us." That gets the first voice in the room and usually breaks the silence for everyone else. The first voice is the hardest. After that, conversation typically builds on its own.$pf$,
+ NULL),
+
+-- Step 3 --
+('77777777-7777-7777-7777-777777119003',
+ '55555555-5555-5555-5555-555555550119',
+ 3,
+ $pf$Writing the student preparation packet with reading guide and annotation scaffold$pf$,
+ $pf$The structure and question set are exactly what I needed. Now I need the actual student preparation packet — the document students receive before the seminar that tells them how to read and annotate the speech, what to bring to class, and how participation works. My struggling readers especially need the annotation scaffold — something that directs them to specific sections and tells them exactly what to look for, so they arrive with real textual evidence rather than a general impression of the speech. Can you write the actual packet as a student-facing document I can hand out?$pf$,
+ $pf$**STUDENT PREPARATION PACKET**
+**Socratic Seminar: "What to the Slave is the Fourth of July?"**
+*Frederick Douglass — Rochester, New York, 1852*
+*US History 10*
+
+---
+
+**What is a Socratic seminar?**
+
+A Socratic seminar is a structured discussion where you and your classmates analyze a text together by asking questions, citing evidence, and building on each other's ideas. Your teacher starts the conversation with a question, but the discussion is yours — you are not trying to find the right answer, you are thinking together in real time.
+
+You will be in a small inner circle for about 25 minutes, then you will switch roles. When you are in the outer circle, your job is to listen carefully and take notes on what you hear. You will use those notes when it is your turn in the inner circle.
+
+**Before seminar day, you need:**
+1. The speech read at least twice — once for overall sense, once while using the annotation scaffold below
+2. Three to five passages highlighted or underlined, with your notes in the margin
+3. Your preparation sheet completed (last page of this packet)
+
+If you arrive without preparation, you will not have evidence to draw on during the discussion. The seminar is graded on the quality and specificity of your contributions, not on how many times you speak.
+
+---
+
+**READING GUIDE**
+
+The speech is long. You do not need to annotate every paragraph — focus on these four sections, which contain the arguments you will be discussing.
+
+**Section 1: The opening (paragraphs 1 through 5)**
+Douglass opens by saying he is not sure why he was invited to speak at a celebration of American independence. Read these paragraphs and think: What is his relationship to this audience? What is the tone — uncertain, controlled, something else?
+Look for: how Douglass uses the words "you" and "your." Notice who he is and is not including when he says "you."
+
+**Section 2: The central question (paragraphs 14 through 19)**
+This is the core of the speech. Douglass asks directly: What does July 4th mean to an enslaved person? He then answers his own question. Read this section twice.
+Look for: how his tone shifts from the opening. What changes? What stays the same?
+
+**Section 3: The legal argument (paragraphs 23 through 28)**
+Here Douglass changes strategy. He stops making an emotional argument and starts making a legal one — he argues that slavery is wrong according to American law and American court decisions, not just American morality.
+Look for: what specific laws or documents he cites. Think about why citing American law might accomplish something a moral argument alone cannot.
+
+**Section 4: The closing (final four paragraphs)**
+Douglass ends with something unexpected — not despair, but a kind of guarded hope about the future. Read the closing and think about what evidence he gives for that hope and whether you find it convincing.
+
+---
+
+**ANNOTATION SCAFFOLD**
+
+For each of your three to five highlighted passages, write these four things in the margin or on a separate sheet:
+
+Quote — the specific words from the text, written out exactly
+What Douglass is doing — arguing, comparing, questioning, appealing to emotion, building a legal case, something else
+What I notice — what is interesting, surprising, confusing, or powerful about this choice
+How I might use this — which discussion question this evidence could help answer
+
+Example:
+
+Quote: "This Fourth of July is yours, not mine. You may rejoice, I must mourn."
+What Douglass is doing: Drawing a sharp contrast between the audience's experience and the experience of enslaved people
+What I notice: The two sentences are parallel but opposite — "yours/mine" and "rejoice/mourn" in pairs. That structure feels very controlled for something that is also emotionally charged.
+How I might use this: To answer a question about who Douglass is addressing and what he thinks the audience should feel
+
+---
+
+**PARTICIPATION NORMS**
+
+We do not raise hands during the seminar — we use conversational cues.
+
+To build on what someone said: "I want to add to what _____ said..."
+To respectfully disagree: "I hear you, but when I look at paragraph 17, I read it differently..."
+To bring in evidence: "Douglass actually says in paragraph ___ that..."
+To ask the group a question: "What do you mean when you say...?"
+
+You do not need to speak every few minutes. One or two substantive contributions backed by specific textual evidence are worth more than five quick reactions with no text support.
+
+A strong contribution: cites a specific line from the speech and explains what it shows, or builds on a classmate's point with new evidence, or asks a question that pushes the group deeper into the text.
+
+A weak contribution: agrees without adding anything new, restates what someone already said, or speaks without any reference to the text.
+
+---
+
+**PREPARATION SHEET** — complete this before seminar day
+
+1. Copy one quote from Section 2 (paragraphs 14 through 19) that you think is the most important line in that section. In two sentences, explain why you chose it.
+
+2. In your own words, what legal point is Douglass making in Section 3? Write one to two sentences.
+
+3. Write one question you want to bring to the seminar — a question you genuinely do not know the answer to after reading the speech.
+
+4. Write one opinion about Douglass's argument that you are prepared to defend using evidence from the text.$pf$,
+ NULL);
+
 ALTER TABLE prompts ENABLE ROW LEVEL SECURITY;
 ALTER TABLE prompt_steps ENABLE ROW LEVEL SECURITY;

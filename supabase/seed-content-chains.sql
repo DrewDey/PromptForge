@@ -41478,5 +41478,611 @@ Give the CFO something to own going forward: "Run this model again at the end of
 One thing not to do: if anyone asks which attribution model is most accurate in general, do not get drawn into an abstract comparison. Redirect: "The more useful question is whether the data supports this specific decision. On any reasonable model, $80K generating $850K or more of attributed influence is a clear renewal."$pf$,
  NULL);
 
+DELETE FROM prompt_steps WHERE prompt_id = '55555555-5555-5555-5555-555555550116';
+DELETE FROM prompts      WHERE id        = '55555555-5555-5555-5555-555555550116';
+
+INSERT INTO prompts (
+  id, title, description, content, result_content,
+  category_id, difficulty, model_used, model_recommendation,
+  tools_used, tags, status, author_id, vote_count, bookmark_count
+) VALUES (
+  '55555555-5555-5555-5555-555555550116',
+  $pf$Accessibility audit and remediation for a production React component library$pf$,
+  $pf$Priya Sharma ran a full WCAG 2.1 AA audit on a B2B SaaS component library, surfaced 34 violations, triaged them by severity and fix effort, and delivered remediation guidance and a team accessibility guide that helped close a $180K enterprise deal.$pf$,
+  $pf$Arro is a B2B expense management SaaS I have been the lead designer on for two and a half years. In January, three enterprise prospects in a row started asking about ADA compliance during procurement — two of them required WCAG 2.1 AA as a condition of purchase. Our product manager flagged the largest opportunity ($180K ARR, a 600-person logistics company) as a deal-risk because we had no audit or compliance documentation.
+
+I had done spot accessibility checks — alt text on images, color contrast in the design system — but never a systematic audit of the full component library. I had two weeks to go from zero to a report engineering could act on. I used Claude to build the audit methodology, translate raw violation data into a prioritized engineering report, write the remediation implementation spec, and create a team accessibility guide our frontend lead called the most useful internal doc we had shipped in a year. The deal closed.$pf$,
+  $pf$The audit surfaced 34 WCAG 2.1 AA violations across 40 components: 7 critical (keyboard trap in the custom dropdown, focus not returned to trigger after modal close, missing accessible names on icon-only buttons, no aria-live on inline validation errors, insufficient contrast on disabled state text and chart legend dots, duplicate IDs on multi-instance date pickers), 11 high, 16 medium-to-low. Sprint 1 remediated all 7 critical violations. Sprint 2 addressed all 11 high-severity issues. The enterprise deal closed three weeks after we delivered the compliance report.$pf$,
+  '11111111-1111-1111-1111-111111111105',
+  'intermediate',
+  'claude-opus-4-7',
+  'Claude 4.7 Opus',
+  ARRAY['Claude', 'axe DevTools', 'VoiceOver', 'React', 'ARIA'],
+  ARRAY['accessibility', 'WCAG', 'React', 'design systems', 'UX', 'component library'],
+  'approved',
+  '22222222-2222-2222-2222-222222222204',
+  0,
+  0
+);
+
+INSERT INTO prompt_steps (id, prompt_id, step_number, title, content, result_content, description) VALUES
+
+-- Step 1 --
+('77777777-7777-7777-7777-777777116001',
+ '55555555-5555-5555-5555-555555550116',
+ 1,
+ $pf$Setting up the audit scope and methodology for a 40-component React library$pf$,
+ $pf$I am the lead UX designer at a B2B expense management SaaS. We have about 40 components in our React and TypeScript component library — buttons, inputs, custom dropdowns, date pickers, data tables, modals, toast notifications, and inline form validation patterns. I have been handling design here for two and a half years but I have mostly focused on visual design; accessibility has not been a systematic practice.
+
+Three enterprise prospects in a row this quarter asked about WCAG 2.1 AA compliance during procurement, and one $180K deal is now listed as a risk because we cannot produce an audit report. I am a designer with basic browser console skills — not an engineer. I need to run a credible first accessibility audit on our component library in about two weeks. I have heard of axe DevTools and Lighthouse but I do not know how to structure the process, what to test manually versus automatically, or how to organize the results in a way that is useful for engineering.
+
+Give me a methodology I can actually run as a non-engineer, the right tools in the right order, and a component-level checklist prioritized by where failures are most common in React component libraries like ours.$pf$,
+ $pf$A WCAG 2.1 AA audit on a 40-component library is a real job — but a designer with browser skills can do a high-quality first-pass if you sequence the work right. Automated tools first, keyboard second, screen reader third. That order maximizes coverage per hour and surfaces issues roughly in order of how visually obvious they are.
+
+**Phase 1: Automated scanning (axe DevTools + Lighthouse) — budget 4–6 hours**
+
+Install the axe DevTools Chrome extension (the free tier catches the majority of WCAG 2.1 AA violations). Navigate to each component in your Storybook. Run axe on each component's rendered state and export results to a spreadsheet. Track: component name, violation ID, WCAG success criterion (axe maps this automatically), impact (critical/serious/moderate/minor), and the element that failed.
+
+Separately, run Google Lighthouse on your three most-used application pages — not just component isolation. Page-level audits catch things component isolation misses: missing lang attributes on the html element, poor heading hierarchy across a real layout, and viewport meta problems.
+
+Automated tools reliably catch: insufficient color contrast, missing image alt text, missing form labels, missing aria attributes, duplicate IDs, empty buttons. They miss: keyboard traps, focus order problems, meaningful reading sequence, timeout warnings, and any component that is technically labeled but reads nonsensically with a screen reader.
+
+**Phase 2: Keyboard-only testing — budget 3–4 hours**
+
+Disable your mouse. Navigate using only Tab, Shift-Tab, Enter, Space, Escape, and arrow keys (arrow keys for within-component navigation: dropdowns, date pickers, radio groups). Document every place where:
+- An interactive element is unreachable by Tab
+- You cannot leave an element once focused (keyboard trap)
+- The focus indicator is invisible or barely visible against its background
+- A component opens but does not respond to keyboard navigation internally
+- Focus jumps to an unexpected location after a dialog closes
+
+Custom React components built as styled divs are where this phase matters most. Dropdowns, date pickers, and autocomplete fields built without explicit keyboard handling fail here almost universally.
+
+**Phase 3: Screen reader testing — budget 2–3 hours, highest signal per hour**
+
+Use VoiceOver (Mac, built-in, press Cmd-F5) with Safari. Focus on these component types: all form inputs (does VoiceOver announce the label when the input receives focus?), error states (does the validation error announce when it appears?), data tables (do column headers associate correctly with cells?), modals (does focus move to the modal on open?), and loading states (does a spinner or skeleton announce when content loads?).
+
+You do not need to screen-reader-test all 40 components. Automated covers the easy ones. Screen reader time goes to interactive components and async patterns exclusively.
+
+**Your audit priority order (ranked by React ecosystem failure rate)**
+
+1. Custom dropdowns and autocompletes — almost always built as divs; keyboard and ARIA both fail
+2. Date pickers — keyboard navigation within the calendar, focus management on open and close
+3. Data tables with sorting or pagination — header associations, sort direction announcements
+4. Modal dialogs — focus trap, aria-modal, Escape handling, focus return to trigger
+5. Inline form validation — error announcement timing with aria-live
+6. Icon-only buttons — accessible name, since the icon carries no inherent text
+7. Color in status indicators — contrast ratio, and meaning not conveyed by color alone
+
+**Your tracking spreadsheet columns**
+
+Component | Violation | WCAG Criterion | Impact | Fix Effort | Owner | Status
+
+Start with axe results, then add keyboard and screen reader findings manually. You will need this organized for engineering — they want to understand effort before committing sprint time.
+
+One calibration note: axe impact labels (critical/serious/moderate/minor) and WCAG A vs AA classifications are different grading systems that do not directly map to each other. In your report to engineering, organize by WCAG success criterion — that is what your enterprise customers will reference. Your own internal severity rating (does this block a user from completing a task?) is more useful for prioritization than axe labels.$pf$,
+ NULL),
+
+-- Step 2 --
+('77777777-7777-7777-7777-777777116002',
+ '55555555-5555-5555-5555-555555550116',
+ 2,
+ $pf$Translating raw audit findings into a structured WCAG-organized engineering report$pf$,
+ $pf$I ran the audit using your methodology — axe automated scan on all 40 components in Storybook, keyboard-only testing across the seven high-risk categories, and screen reader testing on forms, tables, and modals. Here is what I found.
+
+Axe automated, 8 violations: disabled input text #767676 on white background at 4.46:1 which fails the 4.5:1 AA requirement; chart legend dots too small for contrast measurement and below AA for their size; secondary button hover state #3B82F6 text on #EFF6FF background at 3.8:1 which fails 4.5:1; search bar uses placeholder but no label element or aria-label; inline edit field same problem; two instances of the custom date picker on the same page share the same id value; icon-only archive button has aria-hidden on the SVG and nothing else on the button; stale aria-hidden on body from an old modal implementation that was not cleaned up.
+
+Keyboard testing: the custom dropdown is built as a div and clicking opens it but Tab goes straight through with no focus stop and no keyboard navigation at all; the date picker opens on Enter from the trigger button but arrow keys do not navigate the calendar days; data table sort buttons are keyboard-reachable but no announcement is made when sort direction changes; modal closes on Escape correctly but focus returns to the top of the page rather than back to the trigger button that opened it.
+
+Screen reader testing: inline validation errors appear in the DOM when the form submits but VoiceOver does not announce them because there is no aria-live region; loading spinner announced as image with empty description; in the responsive stacked layout under 768px the data table renders as a definition list and column headers do not associate with cell values in a way screen readers understand.
+
+Help me turn these into a structured report organized by WCAG success criterion, with severity and enough context that our frontend lead can understand what to fix without me being in the room.$pf$,
+ $pf$Here is your structured report organized by WCAG success criterion. Sorted by severity within each criterion and written in engineering terms, not design terms.
+
+---
+
+**Accessibility Audit Report — Arro Component Library**
+Standard: WCAG 2.1 Level AA | Scope: 40 components (automated + keyboard + screen reader) | Violations: 19 total — 7 Critical, 8 High, 4 Medium
+
+---
+
+**CRITICAL — Fix in Sprint 1**
+
+**WCAG 1.4.3 Contrast (Minimum) — three violations**
+
+Disabled input text: #767676 on #FFFFFF = 4.46:1. Fails 4.5:1. Note: WCAG 2.1 does not exempt disabled controls from contrast requirements at AA — this is a common misconception. Fix: darken to #737373 (4.6:1) or define a dedicated disabled-state design token.
+
+Secondary button hover state: #3B82F6 text on #EFF6FF background = 3.8:1. Fails 4.5:1. Fix: use #1D4ED8 (6.1:1) for hover text, or change the hover background to maintain threshold.
+
+Chart legend dots: 6px diameter. At this size they require 3:1 contrast under WCAG 1.4.11 Non-text Contrast, and meaning is also conveyed by color alone in violation of 1.4.1. Fix: add a pattern or shape to each legend marker in addition to the color.
+
+**WCAG 1.3.1 Info and Relationships — two violations**
+
+Search bar: has visible placeholder "Search expenses..." but no label element and no aria-label or aria-labelledby. Placeholder is not a substitute for a label — it disappears on input and is not announced consistently by all screen readers. Fix: add a visually-hidden label element or aria-label="Search expenses".
+
+Inline edit field: same pattern, placeholder only. Fix: same approach.
+
+**WCAG 4.1.1 Parsing — one violation**
+
+Date picker duplicate ID: when two DatePicker instances appear on the same page, both render id="datepicker-input". Duplicate IDs break ARIA relationships such as labelledby and describedby. Fix: generate unique IDs per instance using useId() (React 18+) or an incrementing counter.
+
+**WCAG 4.1.2 Name, Role, Value — two violations**
+
+Icon-only archive button: SVG has aria-hidden="true" and the button has no accessible name. Announced by screen readers as "button" with no label. Fix: add aria-label="Archive" to the button element.
+
+Stale aria-hidden on body: body aria-hidden="true" persists after modal close. This hides the entire page from assistive technology. Fix: ensure the modal close handler removes aria-hidden from body. This is the highest-urgency item in the report — it currently makes the entire application inaccessible to screen reader users after any modal interaction.
+
+---
+
+**HIGH — Fix in Sprint 2**
+
+**WCAG 2.1.1 Keyboard — two violations**
+
+Custom dropdown: built as a div with no Tab stop and no keyboard navigation. Fix: convert trigger to a button element, add role="listbox" to the container, role="option" to items, implement Up/Down arrow navigation, Enter to select, Escape to close.
+
+Date picker keyboard navigation: opens on Enter from the trigger but calendar days do not respond to arrow keys. Fix: implement the ARIA Authoring Practices Guide date picker grid pattern with arrow key navigation between days.
+
+**WCAG 2.4.3 Focus Order — one violation**
+
+Modal focus return: after Escape closes the modal, focus jumps to the top of the page. Fix: save a ref to the trigger element before opening, restore focus with triggerRef.current.focus() in the close handler.
+
+**WCAG 4.1.3 Status Messages — two violations**
+
+Inline validation errors: error message elements appear in the DOM on form submit but have no role="alert" or aria-live="assertive". VoiceOver does not announce them. Fix: wrap the error message container in a div with role="alert". Put the alert role on the message container, not on the input itself.
+
+Loading spinner: announced as image with no alt text. Fix: add alt="Loading" to the img, or if SVG use role="img" aria-label="Loading". Also add an aria-live="polite" region that announces when loading completes.
+
+**WCAG 1.3.2 Meaningful Sequence — one violation**
+
+Responsive data table: under 768px, the table renders as a definition list. Column headers render as dt elements but do not associate with dd cells in a way screen readers understand as a table relationship. Fix: use role="table", role="row", role="columnheader", and role="cell" in the responsive layout, or use a recognized responsive table technique.
+
+**WCAG 2.4.7 Focus Visible — one violation**
+
+Sort button focus: sort buttons on column headers show no visible focus ring. Fix: add :focus-visible outline — at minimum, outline: 2px solid var(--color-brand-orange); outline-offset: 2px.$pf$,
+ NULL),
+
+-- Step 3 --
+('77777777-7777-7777-7777-777777116003',
+ '55555555-5555-5555-5555-555555550116',
+ 3,
+ $pf$Building the sprint plan and framing the work for engineering buy-in$pf$,
+ $pf$This is really useful. I need to take this into sprint planning with our engineering lead tomorrow. We have two frontend engineers who can dedicate about 50% of their time for two sprints — each sprint is two weeks. The critical items are clear, but I need help thinking through fix sequencing and effort estimation.
+
+The custom dropdown conversion is probably a big lift since it is used in about 15 places across the product. The stale aria-hidden body bug should be fast. The color contrast fixes feel like they touch the design token layer which I own.
+
+Can you help me think through effort estimates, sequencing, and how to frame this for engineering in a way that gets buy-in rather than resistance — our frontend lead tends to push back on work that feels abstract or indefinite.$pf$,
+ $pf$Here is how to frame this for sprint planning. The goal is not to walk in with a wish list — it is to walk in with a prioritized queue that has specific effort estimates and a clear delivery milestone that maps to the business outcome (the compliance report the deal needs). Engineers respond to bounded, concrete work, not open-ended audits.
+
+**Effort estimates**
+
+Stale aria-hidden on body: 1–2 hours. One-line fix in the modal close handler. Highest urgency, lowest effort.
+Icon-only archive button aria-label: 30 minutes. aria-label attribute on an existing button. No behavior change.
+Duplicate date picker IDs: 1–2 hours. Replace hardcoded ID with useId() or a counter. Touches one component definition.
+Search bar and inline edit labels: 2–3 hours. Add visually-hidden label or aria-label. May need a .sr-only CSS class if the project does not have one.
+Modal focus return: 2–4 hours. Save trigger ref before open, restore on close. Self-contained in the Modal component.
+Inline validation aria-live: 3–5 hours. Add role="alert" wrapper to error container. Test with VoiceOver after to confirm announcement fires on submit.
+Loading spinner: 2–3 hours. Add alt text and a polite live region for load completion.
+Color contrast (3 violations): 4–6 hours. Design-token change you own; engineering applies the CSS variable update. Requires design QA pass.
+Custom dropdown keyboard refactor: 1–2 days. If the Dropdown component is centralized in your component library, the fix is applied once and all 15 instances update automatically. The concern about 15 places is a QA scope question, not an effort question.
+Date picker keyboard navigation: 1–2 days implementing the ARIA grid pattern, or about 4 hours if you adopt react-datepicker (already accessible) and integrate it in place of the custom implementation.
+Responsive data table: 1 day. Requires restructuring the mobile layout with ARIA table roles.
+Sort direction announcement: 3 hours. Add aria-sort attributes (ascending/descending/none) to th elements.
+
+**Sequencing recommendation**
+
+Sprint 1: all 7 critical violations. The stale aria-hidden body, icon button label, duplicate ID, search and inline-edit labels, modal focus return, aria-live on errors, and spinner are all doable in Sprint 1. Estimate 15–20 combined engineering hours. Color contrast is yours to deliver as token updates so engineering applies them in parallel without blocking. Realistic to sweep all 7 critical items in one sprint.
+
+Sprint 2: all 8 high-severity items. Custom dropdown keyboard refactor (2 days), date picker keyboard navigation (1.5 days or 4 hours with react-datepicker), responsive data table ARIA (1 day), sort announcements (3 hours), focus visible on sort buttons (1 hour). That sweeps everything above medium severity.
+
+**How to frame it in the meeting**
+
+Do not open with "we have 19 accessibility violations." Open with the business context: there is a $180K deal contingent on a WCAG 2.1 AA report, and the violations are finite, bounded, and half of them are small. Show the effort estimates above as a table. Engineers read tables.
+
+For the custom dropdown at 15 places: if Dropdown is a shared library component, the keyboard fix is applied once and all 15 instances update automatically. The risk is regressions in instances that override component behavior — that is a QA scope problem, not an effort problem. If there are truly 15 independent implementations, name that as an architecture problem worth solving.
+
+For color contrast: own it. "I am updating the design tokens, you apply the CSS variable, we QA together." Accessibility work framed as collaborative rather than "engineering fixes it" gets better outcomes.
+
+Have a clear definition of done ready: you will re-run axe and do a 1-hour keyboard walkthrough of each fixed component. Engineers want to know what done looks like before they commit sprint time.$pf$,
+ NULL),
+
+-- Step 4 --
+('77777777-7777-7777-7777-777777116004',
+ '55555555-5555-5555-5555-555555550116',
+ 4,
+ $pf$Implementation spec for the accessible custom dropdown with grouped options and multi-select$pf$,
+ $pf$The sprint is underway. The quick wins from Sprint 1 are done — stale aria-hidden, button labels, duplicate IDs, search bar labels, modal focus return, aria-live on errors, spinner. All clean. Now we are into the harder items. The custom dropdown is the biggest piece. Our frontend lead looked at the ARIA Authoring Practices Guide and said it is going to take him three days. He has asked me to review the implementation spec before he writes code.
+
+We are not replacing it with an off-the-shelf component — the dropdown has enough custom behavior (grouped options, multi-select with checkboxes, searchable with async loading) that a drop-in replacement is not realistic. Can you write the implementation spec for the accessible custom dropdown: the ARIA roles and attributes, keyboard interaction model, focus management, and any gotchas that are easy to get wrong on a React-based custom dropdown that has grouped options, multi-select with checkboxes, and async search.$pf$,
+ $pf$Here is the implementation spec your frontend lead can work from directly.
+
+**Accessible Custom Dropdown — Implementation Spec**
+Pattern: Listbox (single-select) and Listbox with checkboxes (multi-select)
+Reference: ARIA Authoring Practices Guide Listbox pattern at https://www.w3.org/WAI/ARIA/apg/patterns/listbox/
+
+**Component structure**
+
+```jsx
+// Trigger button
+<button
+  id="dropdown-trigger"
+  aria-haspopup="listbox"
+  aria-expanded={isOpen}
+  aria-labelledby="dropdown-label dropdown-trigger"
+  aria-controls="dropdown-listbox"
+  onClick={toggle}
+  onKeyDown={handleTriggerKeyDown}
+>
+  {selectedLabel || placeholder}
+</button>
+
+// Listbox container
+<ul
+  id="dropdown-listbox"
+  role="listbox"
+  aria-labelledby="dropdown-label"
+  aria-activedescendant={activeOptionId}
+  tabIndex={-1}
+  hidden={!isOpen}
+  ref={listboxRef}
+  onKeyDown={handleListboxKeyDown}
+>
+  {groups.map(group => (
+    <li role="presentation" key={group.id}>
+      <div role="group" aria-labelledby={`group-label-${group.id}`}>
+        <span id={`group-label-${group.id}`} role="presentation">
+          {group.label}
+        </span>
+        {group.options.map(option => (
+          <li
+            id={`option-${option.id}`}
+            role="option"
+            aria-selected={selectedIds.includes(option.id)}
+            aria-disabled={option.disabled}
+            key={option.id}
+          >
+            {option.label}
+          </li>
+        ))}
+      </div>
+    </li>
+  ))}
+</ul>
+```
+
+For multi-select: add aria-multiselectable="true" to the ul with role="listbox". Each option's aria-selected reflects its checked state. Do NOT use role="checkbox" inside role="option" — that is invalid ARIA. The listbox pattern handles multi-select through aria-multiselectable alone.
+
+**Keyboard interaction model**
+
+Enter or Space: open dropdown from trigger; select the focused option when open.
+Escape: close dropdown and return focus to trigger.
+Down Arrow: move focus to next option; wrap to first when at last.
+Up Arrow: move focus to previous option; wrap to last when at first.
+Home: move focus to first option.
+End: move focus to last option.
+Tab: close dropdown and move focus to next focusable element outside.
+Printable characters: type-ahead to next option beginning with that character, reset after 500ms of no input.
+
+For multi-select: Enter or Space toggles selection without closing. Shift-Down and Shift-Up extend selection to next or previous. Shift-Space selects contiguous range from anchor to current.
+
+**Focus management — three gotchas**
+
+Gotcha 1: aria-activedescendant versus roving tabIndex. Use aria-activedescendant for this listbox pattern: the ul element holds DOM focus, the option li elements have no tabIndex, and you track the highlighted option via a CSS class. Set aria-activedescendant on the ul to the ID of the currently highlighted option. Screen readers announce the highlighted option without DOM focus actually moving through the list. This is simpler state management than roving tabIndex, where you would move DOM focus to each individual li.
+
+Gotcha 2: focus moves INTO the listbox on open, not onto the trigger. When the dropdown opens, call listboxRef.current.focus() to move DOM focus to the ul with role="listbox". This is required for arrow-key navigation and aria-activedescendant to work. The common mistake is leaving focus on the trigger and hoping arrow key handlers there will fire — they will not work correctly for in-listbox navigation.
+
+Gotcha 3: async search and screen reader announcement. When the search input filters options and new results load asynchronously, add an aria-live="polite" region outside the listbox that announces the count: "12 options available." The listbox does not automatically announce option count changes on its own. Do not put aria-live on the listbox itself — that causes every option to be announced on every keystroke.
+
+For the searchable variant specifically: the search input should use role="combobox", aria-expanded={isOpen}, aria-controls="dropdown-listbox", and aria-autocomplete="list". This switches to the combobox ARIA pattern; reference the APG combobox spec for the complete attribute set.
+
+**Grouped options**
+
+Group labels using role="group" with aria-labelledby are announced by screen readers before the options in that group. Keep group label text concise — VoiceOver announces the group name on first entry. The group label span element should not be interactive.
+
+**QA testing checklist**
+
+Tab to trigger: announced as "Dropdown [selected value or placeholder], collapsed, button."
+Enter on trigger: dropdown opens, focus moves to listbox, active option announced.
+Arrow keys navigate: each option announced, group name announced on first entry into each group.
+Escape closes: focus returns to trigger.
+Tab while open: dropdown closes, focus moves to next element outside.
+Multi-select Enter: toggles checked state, announced as "checked" or "unchecked."
+Async search: result count announced in live region after results load.
+Disabled option: announced as "dimmed" in VoiceOver, not selectable by Enter.
+axe DevTools re-run: zero new violations.$pf$,
+ NULL),
+
+-- Step 5 --
+('77777777-7777-7777-7777-777777116005',
+ '55555555-5555-5555-5555-555555550116',
+ 5,
+ $pf$Writing the team accessibility guide to prevent future regressions$pf$,
+ $pf$Sprint 2 is wrapping up. The audit is complete, all critical and high violations are remediated, and the axe re-scan is clean on those items. Three violations remain — two medium and one low — which are going on the next sprint. The compliance report is in good shape for the enterprise deal.
+
+Now I need something durable: an internal accessibility guide for the team so these gains do not regress and future component work starts accessible rather than retrofitting at the end. The audience is our two frontend engineers with mid-level React experience and no prior systematic accessibility experience, plus any future engineers we hire. I want it practical and opinionated, not a textbook. Write it.$pf$,
+ $pf$Here is your team accessibility guide. Written to be bookmarkable and opinionated — an engineer adding a new component should be able to read this in 10 minutes and know what decisions to make.
+
+---
+
+**Arro Accessibility Guide — Component Development**
+
+**The rule**
+
+Every component you ship is accessible by default. Accessibility is not a pass at the end — it is part of the component contract. If it cannot be used by keyboard alone and is not announced correctly by VoiceOver, it is not done.
+
+---
+
+**The three things that matter most**
+
+Every interactive element needs a name. If a user can click it, focus it, or activate it, a screen reader needs to announce what it is. Use aria-label on buttons with no visible text, label elements paired to inputs, alt on images that carry meaning. If unsure: open VoiceOver (Cmd-F5, Safari), tab to the element, listen. If VoiceOver says "button" with nothing else, the name is missing.
+
+Keyboard-first, mouse second. Build keyboard behavior before wiring mouse events. Tab to reach, Enter or Space to activate, Escape to dismiss, arrow keys to navigate within a component. Do not add onClick to a div — use a button and get keyboard behavior for free.
+
+Dynamic changes need announcements. If content appears, updates, or loads in response to user action, a screen reader user needs to hear about it. Use role="alert" for error messages and critical status (assertive — interrupts current reading). Use aria-live="polite" for non-urgent updates such as result counts or load completion. Put the live region on a dedicated status element outside the dynamic content.
+
+---
+
+**Component patterns — what to use**
+
+Button that does something: use the button element — gets keyboard and ARIA role for free.
+Link that navigates: use an anchor tag with href — gets keyboard and role for free.
+Form input: use input with a label element paired by the for attribute. Never use placeholder as a substitute for a label.
+Toggle or checkbox: use input type="checkbox" or role="checkbox" with aria-checked.
+Simple dropdown with no custom behavior: use select — accessible by default, style with CSS.
+Complex dropdown with groups, multi-select, or async search: Listbox or Combobox pattern. See the Dropdown Implementation Spec in Notion.
+Error message or alert: use div with role="alert" — announces immediately without the user navigating to it.
+Non-urgent status update (result count, load complete): use div with aria-live="polite" inside a visually-hidden element.
+Modal dialog: use the dialog element or role="dialog" with a focus trap, aria-modal="true", and aria-labelledby pointing to the modal title.
+Data table: use table with th scope="col" — not div grids unless you implement full ARIA table roles.
+Loading state: use role="status" with aria-label="Loading" on the spinner; add a polite live region that announces when loading completes.
+
+---
+
+**The three things that break most often in this codebase**
+
+Custom dropdowns without keyboard support. If you build a dropdown as a div with onClick, it will not work with keyboard and will not announce correctly. Use the Listbox pattern from the Dropdown Implementation Spec, or a select element for simple cases. We remediated this in Sprint 2 — do not reintroduce the pattern.
+
+Stale aria-hidden on body. If you implement a modal, make sure aria-hidden="true" is removed from body when the modal closes. Leaving it hides the entire application from screen reader users. One line of cleanup in the close handler; full-application consequence if missed.
+
+Error messages that appear silently. If you add an error message to the DOM without a live region, a screen reader user does not hear it unless they navigate to it manually. Every validation error container should have role="alert" or be inside an aria-live="assertive" region. Test with VoiceOver: submit a form with an empty required field and listen for the announcement.
+
+---
+
+**Pre-merge checklist — 15 minutes**
+
+Tab through the component without a mouse. Can you reach every interactive element? Can you activate it with Enter or Space? Can you exit any open state with Escape?
+Run axe DevTools on the component in Storybook. Zero violations before merging.
+Open VoiceOver (Cmd-F5 in Safari). Tab to the component. Does it announce something meaningful — not just "button" with nothing else?
+If the component has a dynamic state — loading, error, selection change — does the state change announce without requiring the user to navigate to it?
+
+If any of these fail, fix before merging. Accessibility debt is exponentially harder to remediate once a component ships to 15 places in the application.
+
+---
+
+**Color and contrast**
+
+Minimum contrast for body text: 4.5:1 at AA. For large text (18px bold or 24px regular and larger): 3:1. For UI component boundaries and focus indicators: 3:1.
+
+Do not convey meaning by color alone. If a status indicator is red for error and green for success, add an icon or text label alongside the color. Color-blind users cannot distinguish red from green.
+
+Our design tokens meet contrast requirements for main text and primary button states post-audit. Disabled states are the exception — WCAG 2.1 does NOT exempt disabled controls from contrast requirements at AA. Check disabled text contrast on every new component.
+
+Focus indicators: every interactive element must have a visible :focus-visible style. Our default is outline: 2px solid var(--color-brand-orange); outline-offset: 2px. Do not remove it. Do not replace it with box-shadow unless you have verified the shadow is visible on all background colors the element appears on.
+
+---
+
+**When to use ARIA**
+
+The first rule of ARIA: do not use ARIA. Native HTML elements — button, input, select, table — already have the correct roles and keyboard behavior built in. Use ARIA when building a custom interactive component that has no HTML equivalent, or when you need to describe a relationship (aria-labelledby, aria-describedby) that HTML alone cannot express.
+
+ARIA describes semantics; it does not create behavior. A div with role="button" still needs explicit keyboard event handlers. ARIA does not fix bad HTML — it adds description to elements that earn it.$pf$,
+ NULL);
+
+DELETE FROM prompt_steps WHERE prompt_id = '55555555-5555-5555-5555-555555550117';
+DELETE FROM prompts      WHERE id        = '55555555-5555-5555-5555-555555550117';
+
+INSERT INTO prompts (
+  id, title, description, content, result_content,
+  category_id, difficulty, model_used, model_recommendation,
+  tools_used, tags, status, author_id, vote_count, bookmark_count
+) VALUES (
+  '55555555-5555-5555-5555-555555550117',
+  $pf$Planning and launching a new Etsy digital product line from scratch$pf$,
+  $pf$Lena Morales used Claude to plan the full launch of an AI-workflow printable planner line on Etsy — from market research and launch sequencing to listing copy optimization and a monthly review framework.$pf$,
+  $pf$I run an Etsy shop selling digital planners alongside two niche content sites, and I treat both like small businesses. In February I had an idea for a new product line: printable AI-workflow planners specifically designed for solopreneurs who are just starting to use Claude or ChatGPT in their daily work. My existing shop does fine but I have always launched by intuition — put it up, see what happens, tweak the title if nothing sells.
+
+This time I wanted to do it properly: validate the idea before spending two or three weeks on design, build a real launch sequence, write listing copy that would actually rank in Etsy search, and set up a framework for reviewing results after 30 days. I used Claude for all four of those things. Here is the whole chain.$pf$,
+  $pf$The AI Workflow Planner Bundle launched with 5 SKUs. First 30 days: 412 views, 38 favorites, 19 sales at an average of $8.50, $161.50 gross. The top performer was the Daily Claude Workflow Planner at 11 units. Organic Etsy search accounted for 9 of 19 sales in week 4, up from 2 of 6 in week 1 — the keyword optimization was taking hold. The 30-day review identified three changes for month 2: reorder product photos to show actual planner pages first, add a beginner starter kit at $5.99, and test a title rewrite on the listing with zero sales.$pf$,
+  '11111111-1111-1111-1111-111111111110',
+  'intermediate',
+  'claude-opus-4-6',
+  'Claude 4.6 Opus',
+  ARRAY['Claude', 'Etsy', 'Canva'],
+  ARRAY['Etsy', 'digital products', 'solopreneur', 'product launch', 'AI tools', 'printables'],
+  'approved',
+  '22222222-2222-2222-2222-222222222210',
+  0,
+  0
+);
+
+INSERT INTO prompt_steps (id, prompt_id, step_number, title, content, result_content, description) VALUES
+
+-- Step 1 --
+('77777777-7777-7777-7777-777777117001',
+ '55555555-5555-5555-5555-555555550117',
+ 1,
+ $pf$Researching Etsy demand and validating the AI-workflow planner product concept$pf$,
+ $pf$I run a small Etsy shop selling digital planners. I have an idea for a new product line: AI-workflow planners for solopreneurs — printable PDFs that help someone actually integrate Claude or ChatGPT into their daily work rather than using it randomly. Think daily planning pages designed around an AI-assisted morning review, project pages that prompt you to define your AI tasks for each project, and a weekly reflection designed around reviewing what you actually built with AI that week. I am targeting other solopreneurs like me — people running Etsy shops, niche sites, and freelance services — who know they should be using AI more systematically but do not have a system.
+
+Before I spend two or three weeks designing these, I want to validate whether there is real demand on Etsy and what the competitive landscape looks like. I cannot do paid keyword research tools right now. What should I be searching to assess demand and competition? What signals tell me a product is actually selling versus just sitting there? And are there adjacent markets or angles I might be missing for this specific product concept.$pf$,
+ $pf$The good news: you do not need a paid tool to get a meaningful read on Etsy demand. Manual search is slower but the signals are the same — you are looking for indicators of real purchase activity, not just listing volume.
+
+**What to search and what to look for**
+
+Start with these searches in order: "AI planner printable", "ChatGPT planner", "AI workflow planner", "solopreneur planner printable", "digital planner AI". For each, look at the first two pages of results — those are the listings Etsy's algorithm considers most relevant.
+
+For each listing that looks relevant, check three things. Review count and recency: a listing with 40 or more reviews where the most recent is from the last 30 days is actively selling. A listing with 12 reviews and the most recent from 8 months ago is probably coasting. Etsy does not show units sold, so review recency is your best proxy for current sales velocity. Total shop sales: click through to the seller's shop — Etsy displays total sales count. A shop with 2,000 or more sales is established and their product mix tells you what buyers in this category are willing to pay for. Favorites relative to reviews: a listing with 200 favorites and only 15 reviews has strong interest but a conversion problem. That signals real demand but something in the photos, description, or price is not closing the sale — which is actually useful information about what to avoid.
+
+**Adjacent searches to run**
+
+"Notion template solopreneur" and "Airtable template freelancer" — different format but the same buyer problem. If these are selling well, solopreneurs are purchasing systems-building tools, which validates the need your planner addresses.
+
+"Daily planner printable entrepreneur" — the broader category. Look for any listings that mention AI or productivity optimization in the description even if not in the title.
+
+"Freelancer planner printable" — your target customer by occupation.
+
+**What tells you there is room to enter**
+
+A category is worth entering when you see: listings with real review counts (20 or more) in the relevant searches, proving buyers exist; most listings are generic and not AI-workflow-specific, meaning your niche framing differentiates you; no single dominant seller with 100 or more reviews on the exact product concept you are planning. You do not need an empty market — you need a market where your specific angle is not already well-covered.
+
+**Angles you might be missing**
+
+Three adjacent product ideas worth testing alongside your main concept.
+
+The onboarding angle: a "30-day AI habit builder" structured as a challenge, not just a planner. People new to AI often respond better to a finite challenge than an open-ended system — the boundary reduces overwhelm.
+
+The context sheet: a single-page printable "context prompt sheet" that helps someone write a useful system prompt for their business. A fill-in template that results in a real Claude system prompt. Different format, same underlying problem of not knowing how to start.
+
+The decision template: an "AI or not?" decision card — a printable for deciding when to use AI on a specific task. Sounds simple but this is a genuine blocker for solopreneurs who feel paralyzed about which tasks to hand off.
+
+These could be the starter SKUs in a bundle, which is the format that converts best for digital products on Etsy: sell the bundle at $14.99 and let the individual items exist at $5–7 as lower-risk entry points for new buyers.
+
+Before designing anything: post a rough Canva mockup in a solopreneur community or your existing email list and ask whether they would pay $9 for something like it. The response rate and specific feedback will tell you more than Etsy research alone. Etsy research tells you what is currently selling; direct feedback tells you what your specific target customer would actually buy from you.$pf$,
+ NULL),
+
+-- Step 2 --
+('77777777-7777-7777-7777-777777117002',
+ '55555555-5555-5555-5555-555555550117',
+ 2,
+ $pf$Building a launch sequence with a small warm audience and no paid ads budget$pf$,
+ $pf$I did the research. There are listings for AI planners but they are mostly generic — not specifically designed for solopreneurs with an AI workflow angle. I found two sellers with 30-plus reviews on AI planner products at $7 to $9 per listing and no clear dominant player. I am going to build the product line: a core daily AI workflow planner, a weekly review planner, a project planning page designed around AI-assisted work, and a context prompt sheet. I will price the bundle at $14.99 and list each item individually at $5.99.
+
+Now I need a launch sequence. I do not have a newsletter list for this shop — I have one for a niche site but it is a different audience. I have an Instagram with 340 followers in the solopreneur and small business niche, and I have an existing Etsy shop with about 80 past buyers. How do I structure a launch for a digital product with a small but warm existing audience and no paid ads budget? What should I do in the week before launch, on launch day, and in the first two weeks after.$pf$,
+ $pf$You have two real assets here — 80 past Etsy buyers who trusted you enough to purchase once, and 340 Instagram followers who opted into solopreneur content. Small and warm beats large and cold for a launch like this.
+
+**The week before launch**
+
+Days 7 to 5: draft a personal message to your 80 past Etsy buyers using the Etsy seller message tool. This is your warmest audience — they have already paid you once. Tell them what is coming, why you made it, and offer an early-access coupon code for 10 to 15% off the bundle. Keep the tone personal, not broadcast: "I have been working on something I think you will actually use" reads better than "New product launching soon." They bought from you before; remind them they are getting early access, not just a promotional email.
+
+Days 5 to 3: start teasing on Instagram, but not with a polished launch announcement. Show the work. A photo of your desk with the half-designed planner pages. A reel or story showing one page of the product with a specific use case: "I use this morning page to decide what I am actually handing off to Claude today." Pre-launch content like this serves two functions — it warms your audience to the concept and it signals that the product is made by a real person, which converts better at this price point than polished brand photography.
+
+Days 2 to 1: post the product directly. Here is what it is, here is what it does, here is the price, here is the link. Stories with a link sticker. Pin the announcement to your profile. Remind early-access buyers that their discount code expires on launch day.
+
+**Launch day**
+
+List all 5 SKUs — the bundle plus four individual items — at the same time. Etsy's algorithm gives a small boost to new listings in the first 24 to 48 hours, so do not stagger them across days.
+
+Post on Instagram at least twice: a morning announcement and an evening detailed look at one of the individual items. Stories throughout the day. Send a short follow-up message to past buyers: "It is live. Here is the link. Discount expires tonight." One sentence, one action.
+
+**Week 1 post-launch**
+
+Do not check the numbers obsessively. Etsy search ranking takes 1 to 2 weeks to build — most of your week 1 sales will come from your direct audience, not organic search. Your primary job in week 1 is generating early reviews, because reviews unlock search ranking on Etsy.
+
+Two things that help with reviews: customize your automatic Etsy post-purchase message to be warm and include "if you have any questions about the planner, reply here" — this opens a dialogue that often leads to a review. And message any buyer who has not left a review after 7 days: "I hope the planner is useful — if you have a minute to leave a review, it makes a real difference for a small shop." About 20 to 30% of buyers will review when asked directly.
+
+**Week 2 post-launch**
+
+By days 10 to 14, check Etsy Analytics for views, favorites, and conversion rate per listing. High views and low sales means a conversion problem — photos, description, or price. Low views means a search ranking problem — keywords and tags. These diagnose different fixes.
+
+Do not run a sale in week 2. It trains buyers to wait for discounts and it suppresses your natural conversion rate baseline. Hold pricing stable for the full first 30 days so you know what your actual numbers are before testing changes.$pf$,
+ NULL),
+
+-- Step 3 --
+('77777777-7777-7777-7777-777777117003',
+ '55555555-5555-5555-5555-555555550117',
+ 3,
+ $pf$Rewriting the Etsy listing title, description, and tags for search ranking and conversion$pf$,
+ $pf$Good framework — I followed it. Products are live. Now I need to optimize the listings themselves. Here is my current listing for the bundle: title is "AI Workflow Planner Bundle Printable PDF Digital Download Solopreneur Productivity". Description is just a paragraph saying what is included and a note about how it downloads. I have 13 tags but they are all generic: digital planner, printable planner, productivity planner, solopreneur, planner bundle, PDF download, instant download, digital download, small business planner, entrepreneur planner, daily planner, weekly planner, work from home planner.
+
+Can you rewrite the title, description, and tags for the bundle listing? Focus on what actually improves Etsy search ranking and conversion — I know Etsy uses its own algorithm and I want to understand what matters in title, description, and tags for a digital product in this niche.$pf$,
+ $pf$Here is what actually matters in Etsy's search algorithm for this type of listing, then the rewritten copy.
+
+**How Etsy search works**
+
+Etsy's algorithm (called Cassini) weights these factors in order for a new listing: title relevance with the first few words carrying the most weight, tag relevance where each tag is a phrase you are competing on, and listing quality score which is click-through rate plus conversion rate from search results. For a new listing with no reviews, you compete on title and tags alone in the first 2 to 4 weeks. That is the only lever available right now.
+
+Three mistakes in your current listing: your title front-loads the right primary phrase but wastes space on "Printable PDF Digital Download" — Etsy already knows it is a digital item because you listed it that way; your tags are high-competition, low-specificity terms that a new listing cannot rank for on page 1; and your description leads with features rather than the buyer's problem, which matters because the first 160 characters appear in Etsy search previews on mobile.
+
+**Rewritten title**
+
+"AI Workflow Planner Bundle | Printable Solopreneur Planner | Daily Claude ChatGPT Productivity Planner | PDF"
+
+Why this works: "AI Workflow Planner" is the primary phrase and leads the title. "Printable Solopreneur Planner" targets your exact customer by occupation. "Daily Claude ChatGPT Productivity Planner" captures buyers searching for either tool by name. Total under 140 characters, which is Etsy's title limit.
+
+**Rewritten description**
+
+If you are using Claude or ChatGPT in your work but feel like you are doing it randomly — grabbing it when you remember, not really building a system — this planner is for you.
+
+The AI Workflow Planner Bundle is a set of 4 printable PDFs designed specifically for solopreneurs who want to actually integrate AI into their daily work. Not just prompt templates — a real planning system built around how AI fits into solo business work.
+
+WHAT IS INCLUDED:
+Daily AI Workflow Planner — morning planning page structured around deciding what you are handing off to AI today
+Weekly AI Review Planner — end-of-week reflection on what you built with AI, what did not work, what to change
+AI-Assisted Project Planner — project planning page with built-in prompts for defining your AI tasks at the project level
+Context Prompt Sheet — fill-in template for writing your own Claude or ChatGPT system prompt
+
+Each page is 8.5 x 11 inches US Letter, designed for print or digital annotation in GoodNotes, Notability, or any PDF app. Black and white printing works — the design uses minimal ink. You will receive a download link immediately after purchase. PDF format, instant access. Questions? Message me and I will respond within 24 hours.
+
+**Rewritten tags — 13 phrase-based tags**
+
+solopreneur AI planner
+AI workflow planner
+ChatGPT planner printable
+Claude AI productivity
+printable solopreneur planner
+AI tools planner bundle
+digital planner entrepreneur
+daily AI planning page
+work from home AI planner
+freelancer productivity planner
+AI habit planner printable
+solopreneur bundle digital
+entrepreneur AI system
+
+Why these work: mix of your exact product phrase, your target customer by occupation, and use-case phrases buyers actually search. All are 2 to 4 words — single-word tags like "printable" or "digital" are too broad for a new listing to rank on. No tag repeats the same root phrase twice so you are covering more search variants.$pf$,
+ NULL),
+
+-- Step 4 --
+('77777777-7777-7777-7777-777777117004',
+ '55555555-5555-5555-5555-555555550117',
+ 4,
+ $pf$30-day review: reading the data and building a monthly iteration framework$pf$,
+ $pf$The first 30 days are done. Total views: 412. Favorites: 38. Sales: 19 total, $161.50 gross. Breakdown by listing: Daily Claude Workflow Planner individual at 11 sales; Bundle at 5 sales; Context Prompt Sheet at 2 sales; Weekly Review Planner at 1 sale; AI-Assisted Project Planner at 0 sales. I got 4 reviews, all 5 stars. Etsy analytics shows traffic sources as 67% Etsy search, 22% Etsy app and other Etsy pages meaning shop traffic, 11% direct and other. No external traffic yet. Conversion rate on the bundle is 3.2% and on the daily planner it is 6.1%.
+
+What does this tell me about what is working and what to change for month 2? And can you give me a structured monthly review framework I can use every month going forward.$pf$,
+ $pf$Your first-month numbers are better than they might look at a glance. A 6.1% conversion rate on the individual daily planner is strong — Etsy average for digital products is roughly 2 to 4%. The bundle at 3.2% is below average, which is worth diagnosing. And the AI-Assisted Project Planner at 0 sales is telling you something specific about either the listing or the product framing.
+
+**What the data is telling you**
+
+The daily planner is your hero product. 11 of 19 sales, highest conversion rate, and the fact that it outsells the bundle is instructive — buyers prefer to try one product before committing to the full set. This is common for digital products from new shops with no established brand trust. The day planner listing copy and photos are working. Do not change what is working.
+
+The bundle underperforming the individual item by conversion rate suggests a perception problem, not a pricing problem. Buyers are landing on the bundle page and not feeling confident enough to commit. The most common cause: the first photo does not show enough of the actual product. If your first photo is a mockup of the cover or a lifestyle shot, swap it for a flat-lay showing actual interior pages from all four planners side by side. Show buyers exactly what they are getting. The first photo is the click-through driver — it needs to communicate value at a glance.
+
+The AI-Assisted Project Planner at 0 sales in 30 days is almost certainly a search and title problem rather than a product quality problem. Check how many views that listing received. If it is under 30 views, buyers are not finding it in search. Ask whether "AI-Assisted Project Planner" is a phrase a buyer actually types. They might search "project planner AI printable" or "solopreneur project template" instead. Run a manual Etsy search for the phrases in your current title and see whether your listing appears on page 1.
+
+The 67% Etsy search traffic is a strong leading indicator. As your four reviews accumulate into 10, 20, and beyond, and as the algorithm learns your conversion rates, organic search traffic typically grows further in months 3 and 4. You are building ranking momentum — the weekly numbers are not the whole story.
+
+**Three changes for month 2**
+
+First: swap the bundle's first photo. Show actual interior pages from all four planners in a flat-lay or side-by-side. This is the single highest-leverage change available to you right now.
+
+Second: create a Starter Kit listing at $5.99 — just the Daily Claude Workflow Planner plus the Context Prompt Sheet, the two products that are already selling. This gives buyers who want to try before committing to $14.99 a lower-risk entry point, and it captures a buyer segment the current pricing structure is losing.
+
+Third: test a title rewrite on the AI-Assisted Project Planner. Try "AI Project Planner Printable | Solopreneur AI Workflow Template | ChatGPT Claude Project Planning Page." Give it two full weeks and then check whether views increased. If views go up, the new keywords are working. If views stay flat, the problem is in search visibility at a deeper level and the tags need revisiting.
+
+**Monthly Review Framework**
+
+Step 1, Traffic review (10 minutes): open Etsy Analytics, Stats, Views per listing. Which listings have the most views? Which have the fewest? Is total search traffic growing or flat compared to last month? Flag any listing with fewer than 30 monthly views — it is not being found and needs a title or tag change.
+
+Step 2, Conversion rate review (10 minutes): views divided by sales equals conversion rate for each listing. Benchmark: 2 to 4% is average for digital products, above 5% is strong, below 1.5% is a conversion problem. High views plus low conversion is a content problem — photos, description, or price. Low views is a discovery problem — keywords and tags.
+
+Step 3, Review harvest (5 minutes): count new reviews this month. If you have sales but no new reviews, message buyers who purchased more than 7 days ago and have not reviewed. One sentence, no pressure. Target at least one new review per 3 to 5 sales as a minimum baseline.
+
+Step 4, One change per flagged listing (30 minutes): make exactly one change to any listing that flagged in steps 1 or 2. One change at a time so you can isolate what moved the numbers. Give each change two full weeks before evaluating.
+
+Step 5, Ideas capture (10 minutes): write down product ideas, angles, or improvements that surfaced this month. Do not act on them immediately — evaluate against data at the next monthly review.
+
+Total time: under one hour per month. The discipline is one change at a time and waiting for data before making the next. Changing everything at once when sales are slow is the most common mistake Etsy sellers make — you cannot tell which change worked.$pf$,
+ NULL);
+
 ALTER TABLE prompts ENABLE ROW LEVEL SECURITY;
 ALTER TABLE prompt_steps ENABLE ROW LEVEL SECURITY;

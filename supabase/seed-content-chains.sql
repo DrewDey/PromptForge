@@ -29293,6 +29293,815 @@ If the rebuild is still running at day 180 and client NPS is up and "no one told
  NULL);
 
 
+
+-- =========================================================================
+-- Project 0082 — dataraj / Data / 6-step Opus 4.7 advanced
+-- Phantom pipeline audit four days before a board meeting
+-- =========================================================================
+
+DELETE FROM prompt_steps WHERE prompt_id = '55555555-5555-5555-5555-555555550082';
+DELETE FROM prompts      WHERE id        = '55555555-5555-5555-5555-555555550082';
+
+INSERT INTO prompts (
+  id, title, description, content, result_content,
+  category_id, difficulty, model_used, model_recommendation,
+  tools_used, tags, status, author_id, vote_count, bookmark_count
+) VALUES (
+  '55555555-5555-5555-5555-555555550082',
+  $pf$$1.8M phantom-pipeline audit — 96 hours before the board meeting$pf$,
+  $pf$Senior data analyst at a 110-person SaaS company. CFO planned to quote $8.4M Q1 pipeline on Thursday's board deck; my Snowflake mirror showed $6.6M on the same stage filters. Six passes with Claude Opus 4.7 — triage plan, duplicate detection across parent/child accounts, Stage-5 artifact integrity check, error-bar reconstruction, CFO pre-brief memo, post-audit governance. Landed at a defensible $6.74M ±$180K before the board saw a phantom number.$pf$,
+  $pf$I run data analytics at a 110-person SaaS company. Monday morning the CFO forwarded me the Q1 pipeline number she was going to quote to the board on Thursday: $8.4M. I'd run the same cut out of our Snowflake mirror of Salesforce Friday afternoon and gotten $6.6M. Same stage filter, same close-date window, and a $1.8M gap that wasn't FX or rounding.
+
+Four days of runway. The CFO is smart and trusts the Salesforce report she's used for six years; the board chair is a career CFO who will absolutely ask for the decomposition. If I walked her in with the $8.4M and $1.8M of it was phantom, that's a trust hit on her and on me.
+
+Six passes with Claude Opus 4.7 over 72 hours — this wasn't a Sonnet problem, it was judgment calls on data-quality methodology, political framing, and board-room prep, and the extra depth paid off every pass. Pass 1 was the triage plan: what to check, in what order, with time budgets. Pass 2 was duplicate-opportunity detection across parent/child account hierarchies. Pass 3 was Stage-5 integrity — are Commit opps actually Commit-worthy. Pass 4 was error-bar reconstruction. Pass 5 was CFO pre-brief memo + expected board Q&A. Pass 6 was the post-audit governance plan she asked for after the meeting.$pf$,
+  $pf$Final number for the board: **$6.74M ± $180K (1σ)**. Decomposition: $120K filter-definition gap, $1.12M duplicate opportunities across parent/child accounts (13 pairs confirmed with RevOps sign-off), $420K of Stage-5 opps moved to Stage 4 after artifact-checklist review.
+
+CFO used "approximately $6.7M, in the $6.5-7M range" in the board deck with a footnote about the end-of-quarter audit. Board chair asked for the decomposition (predicted). Audit-committee member asked what was being done to prevent recurrence (predicted). Q4 "what's your confidence interval" question from the finance-literate director came almost word-for-word from my prep sheet. No blowups.
+
+What I learned that I didn't know going in: the CFO's first fear reading the memo wasn't "the data is wrong" — it was "I was about to look bad." The single most important line I wrote in the pre-brief memo was "none of these adjustments represent lost revenue, only miscounted records." Reframing the finding from loss to counting let her walk into the board meeting confident instead of defensive.
+
+Also: the governance plan that came out of this is now standing infrastructure — nightly duplicate-alerting Slack bot, Salesforce validation rule blocking artifact-less Stage-5 advancement, monthly reconciliation between Snowflake and SFDC. One data engineer + one RevOps analyst at ~30% time each. Three weeks of build, and we've had zero pipeline-number surprises for two quarters.$pf$,
+  '11111111-1111-1111-1111-111111111108',
+  'advanced',
+  'claude-opus-4-7',
+  'Claude 4.7 Opus',
+  ARRAY['Claude','Snowflake','Salesforce','dbt','Looker'],
+  ARRAY['data-quality','pipeline','salesforce','board-prep','revops','snowflake'],
+  'approved',
+  '22222222-2222-2222-2222-222222222207',
+  0, 0
+);
+
+INSERT INTO prompt_steps (id, prompt_id, step_number, title, content, result_content, description) VALUES
+
+-- Step 1 --
+('66666666-6666-6666-6666-666666820101',
+ '55555555-5555-5555-5555-555555550082',
+ 1,
+ $pf$Triage plan — 5 checks, ordered by frequency + time budget$pf$,
+ $pf$I have 96 hours (Monday 9am → Thursday 9am) to verify or correct an $8.4M Q1 pipeline number that the CFO plans to quote to the board. My Snowflake mirror shows $6.6M on what I think are the same filters. Either my aggregation is wrong, her Salesforce report is including things I'm filtering out, or the underlying data has quality issues that change the answer. I don't have time for a full data-quality audit. Give me a 5-check ordered plan with a time budget per check AND a decision tree for when to escalate to the CFO pre-emptively vs. keep digging. Order the checks by how likely each is to be the root cause, because I want to frontload the time budget on likely hits.$pf$,
+ $pf$Five checks in this order. The ordering is frequency-weighted: pipeline-discrepancy root causes cluster heavily in the first two checks in my experience, so frontload time there and only escalate when you've exhausted the obvious.
+
+**Check 1 (2 hours): Filter-definition parity.** First prove you and the CFO team are aggregating the *same set* of opportunities. Export both reports' underlying Opportunity IDs — hers from Salesforce, yours from Snowflake — and set-diff them. Four common culprits:
+
+- Stage inclusion (is Stage 2 / Qualified in-pipeline for her and out for you?)
+- Close-date filter (Q1 = Jan 1-Mar 31 for you; Fiscal Q1 = Feb 1-Apr 30 for Finance — this has bit me before)
+- Record-type filter (New Business vs. Renewal vs. Expansion — one may be missing)
+- Ownership filter (AE-owned vs. SDR-owned vs. unassigned)
+
+If the set-diff is clean, the problem is *valuation*, not scope — skip to Check 3. If there's a set-diff, the scope IS the problem; resolve it, re-run both aggregations, and you may be done in 3 hours without needing checks 2-5.
+
+**Check 2 (3 hours): Duplicate opportunities.** If scope is aligned but values diverge, the most common cause in a SaaS org is the same logical deal showing up twice — typically parent-account and child-account records for the same enterprise customer. Look for:
+
+- Opps on child accounts whose parent account has an Opp for the same product family in the same quarter.
+- Opps created within 14 days on related accounts with values within ±10%.
+- Multiple Stage-4+ opps on the same account with overlapping product lines.
+
+This check is the one most likely to move the number *downward*, which is politically useful — you'd rather find $1.8M of double-counting than $1.8M of missing revenue.
+
+**Check 3 (2 hours): Stage-5 (Commit) integrity.** For every opp in your highest pre-close stage, verify the late-stage artifacts — typically: proposal sent, redline email from legal in the last 30 days, discovery-call log, decision-maker meeting. Opps with none of these are stage-inflated and belong in Stage 3 or lower. Expect 8-15% of late-stage opps to fail this check at quarter-end in a 110-person SaaS company.
+
+**Check 4 (2 hours): Stale-activity scrub.** For any opp regardless of stage, flag those with no Activity (email, call, meeting) for 45+ days. In a 90-day quarter these are zombies. Pipeline reports typically include them because "Stage ≥ 2" is the filter, not "Stage ≥ 2 AND recent activity."
+
+**Check 5 (1-2 hours): Rep-level outlier analysis.** Group opps by owner; look at mean stage-advancement velocity and count of Stage-4+ opps per rep. Reps 2+ standard deviations above team mean are either (i) actually that good, (ii) stage-inflating to hit quota, or (iii) having a genuinely hot quarter. For outliers, spot-check 5 Stage-4 opps against Check 3's artifact list.
+
+**Decision tree for escalation — this matters more than the checks themselves:**
+
+- **Monday end-of-day, pre-emptive heads-up to CFO**: if Check 1 reveals a filter mismatch of >$500K. Call her; don't email. Say: "There's a filter-definition gap I want to walk you through before Thursday — we're on the same data, using slightly different rules." This is a conversation, not an alarm.
+- **Tuesday end-of-day, structured note**: if Checks 1+2+3 have surfaced $500K-$1.5M of adjustment. Memo, not Slack. Memos frame findings; Slacks frame fires.
+- **Wednesday morning, urgent**: total adjustment >$1.5M OR stage-inflation by a named rep. At that point it's a board-deck risk and she needs room to decide — quote old and be wrong, quote new and explain, or defer.
+
+**One rule**: never surprise the CFO on Thursday. Every hour on these checks is cheap; every minute walking her through a finding on stage in the board meeting is extremely expensive. The whole point of this 96-hour window is that she walks in with the right number and confident framing.
+
+**Your time budget, restated**: Monday full day Checks 1-2. Tuesday AM Check 3, PM Check 4. Wednesday AM Check 5 + writeup. Wednesday PM CFO pre-brief memo. Thursday AM stand by for questions.$pf$,
+ NULL),
+
+-- Step 2 --
+('66666666-6666-6666-6666-666666820102',
+ '55555555-5555-5555-5555-555555550082',
+ 2,
+ $pf$Duplicate-opportunity detection SQL + manual review rubric$pf$,
+ $pf$Check 1 took 90 minutes and revealed a small filter mismatch ($120K — she was including New-Business-Expansion opps I was excluding). Reconciled. That leaves $1.68M unexplained. Moving to Check 2: duplicate-opportunity detection across parent/child accounts. Give me the actual SQL against Snowflake — I have SFDC_ACCOUNT (with PARENT_ACCOUNT_ID self-reference) and SFDC_OPPORTUNITY mirrored nightly. I want a query that flags likely-duplicate opp pairs: same product family, overlapping close-date windows, parent-child or sibling account relationship, values within some tolerance. I'd rather have false positives I can review than miss real duplicates. Also give me the manual review rubric I should use on each flagged pair.$pf$,
+ $pf$Snowflake SQL below. Query resolves each account to its "group root" (parent or self), then pairs opps within the same group that share a product family and have close dates within 60 days. Three suspicion tiers based on amount-variance and close-date gap.
+
+```sql
+WITH opp_pool AS (
+  -- Q1 pipeline set: stage >= 2, close date in Q1 FY26
+  SELECT
+    o.ID AS opp_id,
+    o.ACCOUNT_ID,
+    o.PRODUCT_FAMILY,
+    o.AMOUNT,
+    o.STAGE,
+    o.CLOSE_DATE,
+    o.OWNER_ID
+  FROM SFDC_OPPORTUNITY o
+  WHERE o.STAGE >= 2
+    AND o.CLOSE_DATE BETWEEN '2026-02-01' AND '2026-04-30'
+    AND o.IS_DELETED = FALSE
+),
+account_group AS (
+  -- Resolve each account to its group root (parent or self)
+  SELECT ID AS account_id, COALESCE(PARENT_ACCOUNT_ID, ID) AS group_root_id
+  FROM SFDC_ACCOUNT
+),
+opp_with_group AS (
+  SELECT op.*, ag.group_root_id
+  FROM opp_pool op
+  JOIN account_group ag ON ag.account_id = op.ACCOUNT_ID
+),
+candidate_pairs AS (
+  SELECT
+    a.opp_id AS opp_a, a.AMOUNT AS amount_a, a.STAGE AS stage_a,
+    a.OWNER_ID AS owner_a, a.CLOSE_DATE AS close_a,
+    b.opp_id AS opp_b, b.AMOUNT AS amount_b, b.STAGE AS stage_b,
+    b.OWNER_ID AS owner_b, b.CLOSE_DATE AS close_b,
+    a.PRODUCT_FAMILY, a.group_root_id,
+    ABS(a.AMOUNT - b.AMOUNT) / NULLIF(GREATEST(a.AMOUNT, b.AMOUNT), 0) AS amount_variance,
+    ABS(DATEDIFF('day', a.CLOSE_DATE, b.CLOSE_DATE)) AS close_date_gap
+  FROM opp_with_group a
+  JOIN opp_with_group b
+    ON a.group_root_id = b.group_root_id
+   AND a.PRODUCT_FAMILY = b.PRODUCT_FAMILY
+   AND a.opp_id < b.opp_id                        -- avoid mirror pairs
+   AND ABS(DATEDIFF('day', a.CLOSE_DATE, b.CLOSE_DATE)) <= 60
+)
+SELECT *,
+  CASE
+    WHEN amount_variance < 0.10 AND close_date_gap <= 14 THEN 'A_high'
+    WHEN amount_variance < 0.25 AND close_date_gap <= 30 THEN 'B_medium'
+    ELSE 'C_low'
+  END AS suspicion_tier
+FROM candidate_pairs
+ORDER BY suspicion_tier, amount_variance, close_date_gap;
+```
+
+**Notes on the query:**
+
+- `COALESCE(PARENT_ACCOUNT_ID, ID)` resolves each account to its top-of-tree. One-level parent handles 95% of real cases; if you have multi-level hierarchies, extend with a recursive CTE.
+- `a.opp_id < b.opp_id` eliminates mirror pairs — without it, you get (A,B) and (B,A) as separate rows.
+- Product family is a hard requirement. Two opps on the same parent account for different products are legitimately separate deals.
+- The 14-day / 60-day / 10% / 25% thresholds are empirical. Tune if your sales cycles are longer.
+
+**Manual review rubric — run on every Tier A and Tier B pair:**
+
+1. **Rep identity.** Same owner both records? Probably a mistake — rep created a second record and forgot the first. Different owners? Possibly a territory dispute; flag the regional VP.
+2. **Stage trajectory.** Pull activity history on both. If one opp's activity log suddenly stops and the other's picks up the same day, they're the same deal migrated.
+3. **Primary contact.** Same primary contact? High-confidence duplicate. Different contacts at the same parent account? Could be legitimately separate motions (engineering vs. finance buyer).
+4. **Proposal / quote attachment.** If both have an attached proposal or CPQ quote, compare line items. Overlapping SKUs = duplicate. Non-overlapping = separate.
+5. **Closed-won history.** Any related closed-won opps in the last 12 months? Sometimes a "duplicate" is actually an expansion miscategorized — existing $X of ARR plus $Y of new, not two separate deals.
+
+**What to do with the output:**
+
+- **Tier A (high-confidence):** default to merging. Keep the record with more activity; archive the other. Pre-write the merge decisions; have the RevOps director sign off tomorrow. Expected count: 3-8 pairs for your company size at quarter-end.
+- **Tier B (medium-confidence):** manual review by you + regional VP; ~5 min/pair. Expected 10-20 pairs. Half merge, half are legitimate.
+- **Tier C (low-confidence):** skim for obvious cases, otherwise set aside for post-audit hygiene. Don't try to clean these in the 96-hour window; they're noise, not the main signal.
+
+**One gotcha:** watch for what look like duplicates but are actually consecutive-year renewals. If opp A has close_date Jan 15 2026 and opp B has close_date Feb 12 2026, same product family same account, but A is an annual renewal and B is an expansion uplift — those are two legit deals with a tight timing coincidence. Your query flags them; your rubric catches them.$pf$,
+ NULL),
+
+-- Step 3 --
+('66666666-6666-6666-6666-666666820103',
+ '55555555-5555-5555-5555-555555550082',
+ 3,
+ $pf$Stage-5 integrity check + managing the politics$pf$,
+ $pf$Check 2 ran overnight. 6 Tier-A pairs totaling $740K of likely double-counting; 14 Tier-B pairs reviewed with the regional VP by 9am — 7 confirmed as duplicates, another $380K. So $1.12M of the $1.68M gap traced to duplicates. $560K unexplained. Moving to Check 3: Stage-5 integrity. Give me the "late-stage artifacts" checklist I should run every Stage-5 opp against, the SQL to flag ones that fail, and — honestly, this is the part I'm most worried about — how to handle the politics. Some of these will be reps' pet opps they're already sweating, and I'm Data, not Sales. Boundary questions.$pf$,
+ $pf$**Late-stage artifacts — minimum bar for a legit Stage-5 (Commit) opp:**
+
+A Commit-stage opp means "this will close this quarter, the customer is ready, legal is engaged, the contract is in motion." That status has observable artifacts:
+
+1. **Proposal / quote attached, dated within 30 days.** Older than 30 days = deal has stalled and somebody's slow to update stage. Older than 60 = probably dead.
+2. **Email thread with the customer in the last 14 days.** From Outlook/Gmail activity logs. Silent for 2+ weeks at Commit = stuck.
+3. **Meeting logged with a decision-maker (Director+) in the last 30 days.** Manager-level meetings are fine for Stages 3-4; Commit requires decision-maker engagement.
+4. **Discovery/demo earlier in the opp lifecycle.** No demo logged = either the motion skipped steps or logging failed. Either way, due-diligence gap.
+5. **Legal / procurement touchpoint in last 30 days.** Redline email, MSA request, vendor-onboarding form. Essential for opps >$50K ARR; smaller deals may legitimately skip.
+
+**SQL to flag failures:**
+
+```sql
+WITH stage5 AS (
+  SELECT ID AS opp_id, OWNER_ID, AMOUNT
+  FROM SFDC_OPPORTUNITY
+  WHERE STAGE = 5
+    AND IS_DELETED = FALSE
+    AND CLOSE_DATE BETWEEN '2026-02-01' AND '2026-04-30'
+),
+recent_proposal AS (
+  SELECT DISTINCT OPPORTUNITY_ID FROM SFDC_ATTACHMENT
+  WHERE (NAME ILIKE '%proposal%' OR NAME ILIKE '%quote%' OR NAME ILIKE '%msa%')
+    AND CREATED_DATE >= DATEADD('day', -30, CURRENT_DATE)
+),
+recent_customer_email AS (
+  SELECT DISTINCT OPPORTUNITY_ID FROM SFDC_TASK
+  WHERE TYPE = 'Email' AND CONTACT_ROLE != 'Internal'
+    AND CREATED_DATE >= DATEADD('day', -14, CURRENT_DATE)
+),
+dm_meeting AS (
+  SELECT DISTINCT e.OPPORTUNITY_ID
+  FROM SFDC_EVENT e
+  JOIN SFDC_CONTACT c ON c.ID = e.WHO_ID
+  WHERE e.CREATED_DATE >= DATEADD('day', -30, CURRENT_DATE)
+    AND c.TITLE_TIER IN ('Director', 'VP', 'C-Level')
+),
+legal_touch AS (
+  SELECT DISTINCT OPPORTUNITY_ID FROM SFDC_TASK
+  WHERE (SUBJECT ILIKE '%legal%' OR SUBJECT ILIKE '%redline%'
+         OR SUBJECT ILIKE '%msa%' OR SUBJECT ILIKE '%procurement%')
+    AND CREATED_DATE >= DATEADD('day', -30, CURRENT_DATE)
+)
+SELECT
+  s.opp_id, s.OWNER_ID, s.AMOUNT,
+  (CASE WHEN rp.OPPORTUNITY_ID IS NULL THEN 0 ELSE 1 END
+   + CASE WHEN re.OPPORTUNITY_ID IS NULL THEN 0 ELSE 1 END
+   + CASE WHEN dm.OPPORTUNITY_ID IS NULL THEN 0 ELSE 1 END
+   + CASE WHEN lt.OPPORTUNITY_ID IS NULL THEN 0 ELSE 1 END) AS artifact_score
+FROM stage5 s
+LEFT JOIN recent_proposal rp ON rp.OPPORTUNITY_ID = s.opp_id
+LEFT JOIN recent_customer_email re ON re.OPPORTUNITY_ID = s.opp_id
+LEFT JOIN dm_meeting dm ON dm.OPPORTUNITY_ID = s.opp_id
+LEFT JOIN legal_touch lt ON lt.OPPORTUNITY_ID = s.opp_id
+ORDER BY artifact_score ASC, s.AMOUNT DESC;
+```
+
+**Interpretation bands:**
+
+- **4/4:** legitimate. Safe.
+- **3/4:** likely legit. Usually missing legal touch because the deal is sub-$50K. Safe.
+- **2/4:** borderline. Should probably be Stage 4. Flag for RevOps review.
+- **1/4 or 0/4:** stage-inflated. High probability these are opps reps marked Commit to hit forecast, not opps the customer has committed to. Expect 8-15% of Stage-5 opps to land here.
+
+**The politics — rules for you, Data-side analyst:**
+
+1. **Don't name reps to the CFO.** She needs the aggregate adjustment ("we identified $X of Stage-5 opps that don't meet our artifact standards and should be reported as Stage-4"). Naming reps is the VP of Sales' job, not yours.
+
+2. **Don't message reps directly.** You are Data. They are Sales. Direct messages are a boundary violation. Route findings to the regional VP; let them have the conversation.
+
+3. **Frame findings as artifact, not behavior.** "This opp lacks a legal touchpoint in the last 30 days" is a fact. "This rep is stage-inflating" is an accusation. Report facts; others interpret.
+
+4. **Document the regional VP sign-off.** "Showed these flagged opps to [VP]; [VP] agreed $X should move to Stage 4 / wants to keep $Y in Stage 5 for the following reasons." That audit trail protects you when the number changes by Thursday.
+
+5. **Expect pushback; prepare for it.** At least one rep will argue their Commit opp is real even without artifacts. "The customer told me on Friday." The fix isn't arguing — the fix is "great, log that conversation now and let's re-score."
+
+**Expected adjustment from this check:** $300-500K lands in Stage 4. Combined with duplicates ($1.12M), you're at $1.4-1.6M of adjustment, close to the $1.68M gap. Whatever's left after Check 4 is usually noise — bad data entry, FX rounding, or one large opp in a weird state that needs a manual call.$pf$,
+ NULL),
+
+-- Step 4 --
+('66666666-6666-6666-6666-666666820104',
+ '55555555-5555-5555-5555-555555550082',
+ 4,
+ $pf$Reconstructing the number with defensible confidence bands$pf$,
+ $pf$It's Wednesday morning. Stage-5 check flagged 17 opps as 0/4 or 1/4; regional VP review moved 11 to Stage 4, adjusting $420K out of Commit. Total: $120K filter + $1.12M duplicates + $420K stage-integrity = $1.66M, matching the $1.68M gap within rounding. Revised number is $6.74M. The CFO is going to ask "how confident are you in $6.74M?" — I need a defensible confidence band and the framing for how to present it. Help me build the error-bar analysis and the one-pager memo structure.$pf$,
+ $pf$**Where residual uncertainty lives — four factors:**
+
+$6.74M is your best point estimate given the data Wednesday morning. But residual uncertainty exists, and surfacing it *quantitatively* is what separates a sharp analyst from a sales-ops hack.
+
+1. **Filter-definition edge cases (~$40-80K).** Even after Check 1, ~8 opps have ambiguous New-Business-Expansion classification (customer is technically existing but product is new). Half include, half exclude depending on strictness.
+
+2. **Stage-integrity uncertainty (~$80-150K).** Of the 11 opps moved to Stage 4, 2-3 may actually be legitimate Commit the rep didn't log well. Can't verify without a day of rep conversations you don't have.
+
+3. **Duplicate-merge residuals (~$30-60K).** Merging duplicate records, the "true" combined value isn't always sum or average — sometimes one record had an inflated number because it was a parent-level rollup. Post-merge reconciliation has fuzziness.
+
+4. **Currency / tax / incremental-ARR (~$20-50K).** At quarter-end, FX conversions and tax-inclusive-vs-exclusive line items contribute $20-50K of noise in any report.
+
+**Computing the band:**
+
+Treat the four factors as independent and sum in quadrature (root-sum-of-squares, since they aren't perfectly correlated):
+
+σ_total = √(60² + 115² + 45² + 35²) = √(3,600 + 13,225 + 2,025 + 1,225) = √20,075 ≈ **$142K**
+
+Round up to $180K to account for covariance you can't fully rule out (factor 2 and factor 3 may be mildly correlated through the same reps).
+
+**Q1 pipeline = $6.74M ± $180K (1σ)** or **$6.38M to $7.10M (95% CI)**. Tighter than the original $1.68M gap and gives defensible ground under scrutiny.
+
+**The one-pager memo — structure:**
+
+**Title:** Q1 Pipeline Audit — Revised Number + Supporting Analysis
+
+**Paragraph 1 (2 sentences, headline):** Lead with the new number and the delta.
+
+> "Q1 pipeline stands at $6.74M ± $180K as of Wednesday 9am, down $1.66M from the $8.40M Monday-report figure. The variance traces to three data-quality findings detailed below; **none represent lost revenue, only miscounted records**."
+
+That bolded sentence is the most important line in the whole memo. The CFO's first fear reading this is "I was about to quote a number that was $1.66M too high — am I going to look bad?" The framing "this is counting, not loss" is the reframe she needs. The money wasn't real in the first place; it just wasn't counted correctly.
+
+**Paragraph 2 (3 sentences, methodology):** Brief description of the 96-hour audit — filter-parity check, duplicate detection, stage-integrity scoring, residual variance. Name the cross-checks (Snowflake against Salesforce; regional VP sign-off on stage adjustments). Do NOT name individual reps.
+
+**Section: Finding 1 — Duplicate opportunities across account hierarchy ($1.12M).** Two sentences + small table: "Pair count: 13 confirmed / Amount impact: -$1.12M / Method: parent-account + product-family + close-date overlap, manually reviewed with RevOps."
+
+**Section: Finding 2 — Stage-5 integrity adjustments ($420K).** "11 opps moved from Stage 5 to Stage 4 after artifact-checklist review with regional VPs. Adjustments reflect opportunities that did not meet internal artifact standards for Commit stage. These opps remain in pipeline; they are not lost deals."
+
+**Section: Finding 3 — Filter-definition parity ($120K).** One sentence: "Report included 3 New-Business-Expansion opps classified as Renewal in the Snowflake mirror. Reconciled."
+
+**Section: Confidence interval.** "Revised $6.74M carries ±$180K residual uncertainty at 1σ, driven primarily by stage-integrity judgment calls on a small set of opps. For board-presentation purposes, recommended phrasing: 'approximately $6.7M' or 'in the $6.5M to $7M range.'"
+
+**Closing (2 sentences):** "Recommendation: use $6.7M in the board deck with a footnote 'Q1 pipeline, adjusted after quarter-end data-quality audit.' Ongoing hygiene pass in Q2 to prevent recurrence — details in separate memo."
+
+**What NOT to put in the memo:**
+
+- Rep names, even in an appendix.
+- Multi-page technical deep-dive. She doesn't need the SQL.
+- Defensive hedges ("I believe", "initial analysis suggests"). Write declaratively.
+- A list of what Sales did wrong. Not your memo.
+- An apology for the original number being wrong. Not her fault; system issue.
+
+**How to send it:**
+
+Slack her: "I've finished the Q1 pipeline audit. Short version: revised number is $6.74M, down $1.66M from Monday. Memo attached. Can I walk you through it before 2pm?" Schedule the 20-minute conversation. The memo is the artifact for the file; the conversation is what actually lands. Don't skip the conversation and hope she reads on her own.$pf$,
+ NULL),
+
+-- Step 5 --
+('66666666-6666-6666-6666-666666820105',
+ '55555555-5555-5555-5555-555555550082',
+ 5,
+ $pf$Board-deck slide language + anticipated Q&A prep$pf$,
+ $pf$CFO read the memo, called me. She wants me in the room Thursday morning — not presenting, just available for data questions. I have ~24 hours to prep. Give me (a) the exact slide language I should recommend for the pipeline number, (b) 5 questions I should expect from board members with 2-sentence-max answers I should be ready to deliver, and (c) what I do if a board member asks something I genuinely don't know.$pf$,
+ $pf$**Slide language — recommended:**
+
+Headline: **Q1 pipeline ≈ $6.7M**
+
+Secondary: "Adjusted from initial report after end-of-quarter data-quality audit; reduction reflects deduplication and stage-integrity corrections, not lost revenue"
+
+Footnote (8pt): "Pipeline figure represents Stage 2-5 opportunities with Q1 close dates, revised 4/17/26 following internal audit. Residual uncertainty: ±$180K at 1σ."
+
+The headline uses ≈ signaling because precise-number false precision is a trust hit when someone asks for decomposition. "Approximately $6.7M" invites the question "what's the range?" — which is a question you *want*, because it lets the CFO cite the confidence interval and demonstrate methodological rigor. Self-fulfilling defensiveness.
+
+**The 5 questions to expect (answers ≤2 sentences):**
+
+**Q1 (most likely, from board chair — career CFO): "Why is this different from the last update? What changed?"**
+
+A: "End-of-quarter data-quality audit surfaced three issues: duplicate opportunity records across parent-child accounts, some Stage-5 deals that lacked artifact support, and a filter definition mismatch. The dollars themselves didn't change; the counting did."
+
+**Q2 (from the finance-literate director): "What's your confidence interval?"**
+
+A: "Plus-or-minus $180K at one sigma, so $6.5M to $7M at 95% confidence. Residual uncertainty is driven by stage-judgment calls on a small set of opps where rep-customer conversations may not be fully documented."
+
+**Q3 (from the founder / CEO): "How much of this ends up closing?"**
+
+A: "Historical close rate on Stage 2-5 pipeline has been 34-38% over the last four quarters. Applying that band to $6.74M gives expected Q1 close of $2.3M to $2.6M."
+
+**Q4 (from an audit-committee director): "What's being done to prevent this happening again?"**
+
+A: "Weekly Salesforce hygiene review starting in Q2 — automated duplicate detection, Stage-5 artifact checklist enforced in the opportunity workflow, monthly reconciliation between Snowflake mirror and source Salesforce. Full governance plan being finalized this week."
+
+**Q5 (from a growth-oriented director): "Is the sales team hitting its targets?"**
+
+A: "This pipeline audit doesn't speak to quota attainment — that's a separate report. The CFO has the Q1 attainment deck." (Pass it back. Don't answer questions that aren't yours.)
+
+**What to do if you genuinely don't know:**
+
+Three words: **"I don't know."**
+
+Then: "I can get you an answer in [time window — aim under 24 hours]." Write it down visibly in front of them. Send the answer within that window whether they follow up or not.
+
+Do NOT:
+- **Speculate** ("My guess would be..."). Guesses become board-minute quotes you'll have to defend.
+- Say "that's outside the scope of this audit" unless it genuinely is. Board members read that as a dodge.
+- Pass the question to the CFO unless the question is genuinely in her lane. You're in the room because you did the work.
+
+**Two rules for the room:**
+
+1. **Sit close enough to be seen but not at the table unless invited.** Analyst-who-did-the-work is there to be *available*, not to participate. Don't self-promote into the conversation.
+
+2. **Take notes on every question asked, even ones not directed at you.** Board meetings generate follow-up threads; you want to remember which member asked about what, because that member will remember and will appreciate being addressed specifically in a follow-up.
+
+**One gotcha:** if the CFO looks at you and asks a question mid-presentation, don't answer immediately. Pause half a beat — let her choose whether to defer to you or redirect. She may want you to answer, or she may want to answer herself using information you primed her with. The half-beat gives her control.
+
+**One small confidence move:**
+
+If you're visibly uncertain about the prep, the CFO will pick up on it. Practice the five answers out loud Wednesday night — literally out loud, not in your head. The difference between "answered confidently in 2 sentences" and "rambled for 45 seconds" is whether you practiced the 2 sentences. You did the work; own the findings; the prep is just polish.$pf$,
+ NULL),
+
+-- Step 6 --
+('66666666-6666-6666-6666-666666820106',
+ '55555555-5555-5555-5555-555555550082',
+ 6,
+ $pf$Post-audit Salesforce hygiene governance — 4-part plan$pf$,
+ $pf$Board meeting went fine — pipeline held up, Q4 question came up and she used my answer almost verbatim, no blowups. Now CFO wants the "governance plan" I mentioned. Give me a 4-part ongoing hygiene plan I can realistically run with one data engineer + one RevOps analyst at ~30% time each, preventing this exact failure mode from recurring. Want real specifics: what automations, what review cadence, what dashboards, and what's in-scope vs. out-of-scope — don't let this creep into "solve all data quality."$pf$,
+ $pf$**Scope — write this down FIRST.**
+
+**In scope:**
+- Opportunity record quality (duplicates, stage-integrity, stale activity).
+- Pipeline-number defensibility across Snowflake mirror and Salesforce source of truth.
+- Quarterly end-of-period audit cadence.
+
+**Out of scope:**
+- Lead quality / SDR attribution.
+- Account hierarchy cleanup.
+- Forecast accuracy (owned by RevOps + Finance).
+- Marketing-source attribution.
+
+Post this boundary on the team's Notion page. When someone files a ticket asking "can you also check X?", point them back. Scope creep is how this initiative becomes a 4-FTE job in 8 months.
+
+**Part 1: Automated duplicate-opp alerting (data engineer, 2 weeks to build, nightly)**
+
+- Port the Check 2 SQL into a scheduled dbt model that runs nightly.
+- Tier-A pairs (near-identical amount, close date within 14 days, same account group) flag to Slack channel `#sfdc-hygiene-alerts`, pinging the relevant owner's regional VP.
+- VP has 48 hours to resolve (merge, mark as separate, escalate). Unresolved auto-escalates to RevOps director after 48h.
+- Expected volume: 2-5 alerts/week steady-state after initial cleanup; spikes at quarter-end.
+
+**Part 2: Stage-5 artifact enforcement at the workflow level (RevOps analyst, 3 weeks to build)**
+
+Salesforce validation rule: to advance to Stage 5, the opp must have:
+- A linked proposal/quote attachment with Created Date ≥ Stage-5-entry-date minus 30 days.
+- At least one logged meeting with a Director+ contact in the last 30 days.
+- A legal/procurement activity task for opps with Amount > $50K.
+
+Reps who try to advance without these get a helpful error message explaining what's missing. Override path: regional VP can submit an override with a free-text reason, logged for quarterly review. Expected effect: 60-80% reduction in stage-inflated opps within one quarter.
+
+**Part 3: Monthly Snowflake ↔ Salesforce reconciliation (data engineer + RevOps, 1 day/month)**
+
+First business day of every month: reconciliation script diffs the Snowflake opp snapshot against a Salesforce report with identical filters. Any delta > $100K → written note in the monthly data-quality log with root cause (filter drift, record delete, field change, ETL bug). Quarterly: CFO gets a 2-paragraph "pipeline data health" summary as a standing agenda item in monthly finance review.
+
+**Part 4: End-of-quarter audit as standing deliverable (data engineer, 2 days/quarter)**
+
+Three business days before quarter-end, run the full 5-check audit — as a codified script, not a bespoke investigation. Output: standard "Q-end pipeline audit" memo with same structure as Wednesday's memo. Delivered to CFO 48 hours before board meeting. Even if the number holds: the audit runs. Running it only when you suspect a problem means you only find problems you already suspected.
+
+**Dashboard (Looker, maintained by RevOps analyst):**
+
+Four tiles, refreshed nightly:
+- Duplicate alert count (7-day rolling) — expect 2-10
+- Stage-5 artifact compliance rate — target >90%
+- Snowflake-Salesforce reconciliation variance — target <$100K
+- Stage-5 average age (days since entered Commit) — target <45
+
+CFO gets a Slack screenshot every Monday 9am. No meeting required. All four green → one emoji back and she moves on.
+
+**What this plan is explicitly NOT:**
+
+- A rep-performance monitoring tool. Artifact checks protect pipeline integrity, not grade individual reps. If Sales leadership wants rep scorecards, that's their build.
+- A replacement for forecast meetings. Forecast accuracy and pipeline integrity overlap but aren't the same. Keep boundaries clean.
+- A perfection project. You will never have zero duplicates or 100% artifact compliance. Target "good enough for the board to trust the number" — the 90%+ compliance / <$100K variance / <10 duplicate pairs per month band.
+
+**Staffing reality check:**
+
+1 DE + 1 RevOps analyst at ~30% time each = ~24 hrs/week combined, sustainable indefinitely after the initial 5-week build. If creeping above that, scope has crept — pull something out.
+
+**For the file, privately:**
+
+This audit worked because you were skeptical of the number BEFORE the CFO quoted it. The governance plan institutionalizes that skepticism. But its most important feature is that it lets you be less personally vigilant — if you go on vacation, quit, or get promoted, the pipeline-integrity infrastructure keeps running. Document it as a system, not a heroic act. Systems outlast people.
+
+**One last thing to write into the governance doc:**
+
+A section titled "What this system will NOT catch." Be explicit: it won't catch a wholesale Salesforce API outage, it won't catch collusion between reps and a manager to inflate the same opp, it won't catch a new quote-to-cash workflow change that breaks the artifact-checking assumptions. List the gaps. The CFO will respect the honesty more than she'd respect a claim of total coverage, and when one of those gaps eventually bites, you'll be the person who flagged it a quarter earlier.$pf$,
+ NULL);
+
+
+-- =========================================================================
+-- Project 0083 — lena_solopreneur / Personal / 4-step Opus 4.6 intermediate
+-- Cross-country move with 120 freelance-editing clients
+-- =========================================================================
+
+DELETE FROM prompt_steps WHERE prompt_id = '55555555-5555-5555-5555-555555550083';
+DELETE FROM prompts      WHERE id        = '55555555-5555-5555-5555-555555550083';
+
+INSERT INTO prompts (
+  id, title, description, content, result_content,
+  category_id, difficulty, model_used, model_recommendation,
+  tools_used, tags, status, author_id, vote_count, bookmark_count
+) VALUES (
+  '55555555-5555-5555-5555-555555550083',
+  $pf$Moving cross-country with 120 freelance clients — keeping the business intact$pf$,
+  $pf$Freelance copy editor in Brooklyn with 120 active clients. Partner got a tenure-track job at UW; 9 weeks to move to Seattle without losing the business. Four passes with Claude Opus 4.6 — 9-week transition framework, client tier-segmentation with scripts, move-week operational plan, 90-day post-move Seattle rebuild.$pf$,
+  $pf$I'm a freelance copy editor in Brooklyn with roughly 120 active clients — a mix of literary-agency authors, indie nonfiction writers, and three small publishing houses I'm on retainer with. My partner just accepted a tenure-track assistant-professor job at UW and starts September 1. That gives me 9 weeks to move us cross-country and figure out how not to lose my business in the process.
+
+I've been solo for 7 years. My business runs on relationships and momentum — clients book me 2-4 weeks out, publishers have me on monthly retainers, word-of-mouth referrals bring in ~30% of new work. A cross-country move is a real risk: even a month of reduced availability can cost me 5-10 regular clients permanently.
+
+Four passes with Claude Opus 4.6 — this wasn't a Sonnet problem because it needed real judgment calls about service-business dynamics, not generic productivity advice. I didn't want a moving guide. I wanted a plan tuned to my situation: service business where availability signals reliability, 9-week clock, coast-to-coast time zone shift, 120 relationships to manage, and the honest fact that some clients would probably leave regardless.
+
+The unlock was Claude's framing in Pass 1: don't tell most clients. 80 of 120 interact with me entirely via email + shared Google Docs. A cross-country move is operationally invisible to them except for ~10 days in the middle. Telling them invites "will you still be available?" anxiety I don't need.$pf$,
+  $pf$Move happened 8 weeks after starting this plan. At the 90-day post-move mark: lost 7 clients (5.8% churn — within the <10% band my plan set as "acceptable"). Kept all 3 publisher retainers intact. New business from Seattle came slower than NYC initially, but my Pacific-hours availability opened up west-coast indie-author work I couldn't reach before. Gross revenue in month 4 post-move was 94% of pre-move baseline; month 6 is tracking to full recovery.
+
+The single most valuable decision was not telling ~80 of 120 clients I was moving. Over-communicating would have invited questions and cost me work for nothing. I told the 35 clients where it genuinely mattered; the rest never knew.
+
+What I didn't expect: my business ended up structurally healthier after the move than before. 80% NYC/national clients + 20% Pacific-NW = real diversification. A year in, revenue is up 8% vs. pre-move, with less East-Coast geographic concentration risk. Claude's line in pass 4 — "write that down now and reread it in December when you're feeling homesick" — I did, and it helped on a bad week in week 6 post-move when my inbox was quieter than Brooklyn and I was catastrophizing.$pf$,
+  '11111111-1111-1111-1111-111111111110',
+  'intermediate',
+  'claude-opus-4-6',
+  'Claude 4.6 Opus',
+  ARRAY['Claude','Gmail','Notion','QuickBooks','Calendly'],
+  ARRAY['freelance','relocation','client-management','business-continuity','solopreneur'],
+  'approved',
+  '22222222-2222-2222-2222-222222222210',
+  0, 0
+);
+
+INSERT INTO prompt_steps (id, prompt_id, step_number, title, content, result_content, description) VALUES
+
+-- Step 1 --
+('66666666-6666-6666-6666-666666830101',
+ '55555555-5555-5555-5555-555555550083',
+ 1,
+ $pf$9-week transition framework — what "maintain" actually means$pf$,
+ $pf$Help me build a 9-week framework for the move. I need to think about it in terms of: (a) what stays the same operationally, (b) what changes and when clients need to know, (c) what "maintain the business" actually means in numbers I can measure. I don't want a moving checklist — I can Google that. I want a framework for how I make dozens of judgment calls over the next 9 weeks about what to defer, what to communicate proactively, and what to just quietly handle without announcing.$pf$,
+ $pf$Start by naming what you're actually protecting. Your business runs on three assets:
+
+1. **Active client relationships (120)** — relationships generating revenue now and next month.
+2. **Publisher retainers (3)** — predictable monthly income that can't lapse without a ~60-day rehiring cycle.
+3. **Referral pipeline** — the 30% of new clients you don't individually manage; they come from word-of-mouth from existing clients.
+
+Everything else — local networking events, Brooklyn freelancer Slack, your preferred coffee shop — is optional. If you treat asset preservation as the goal, most decisions become fast.
+
+**The measurable definition of "maintain":**
+
+Don't say "keep the business going." Say: at the 90-day post-move mark, I want (a) ≥90% of current clients still active, (b) all 3 publisher retainers unchanged, (c) at least 8 new-client inquiries in months 1-3 post-move vs. baseline 12/month. Those three numbers are your success metric. Hit them → the move didn't damage your business. Miss any by >30% → you need a month-4 recovery plan.
+
+**What stays the same:**
+
+- Email. Gmail works in Seattle.
+- Domain / website. Neutral geography — good.
+- Tools: Google Docs, Zoom, invoicing software, Stripe. Location-independent.
+- Rates, turnaround times, booking windows, typical deliverables. No change.
+
+If a client books a 3-week copyedit on July 1 with delivery July 22, they don't care whether you're in Brooklyn or Seattle. Don't make it their problem.
+
+**What actually changes:**
+
+The one thing that actually changes is typical response window on days 1-10 of the move itself. Your "reply by end of day" promise can't hold when you're loading a truck. So the real question isn't "how do I announce the move?" — it's "how do I manage the 10-day reduced-availability window?" (Step 3's problem.)
+
+Everything else — change of address, driver's license, state taxes, Seattle relationships — is background operations. Invisible to clients. Doesn't need announcing.
+
+**The "when does a client need to know" rule:**
+
+A client needs to know if:
+- The move delays their delivery by >2 business days.
+- You need to reschedule a live (Zoom) call that's already booked.
+- They're on a publisher retainer with contract language about local presence (check yours; probably none).
+
+Otherwise: don't announce. The business-school instinct is transparency. The actual-business instinct is quiet competence. If a client never notices you moved, that's the best outcome.
+
+**The 9-week phasing:**
+
+- **Weeks 9-7 pre-move (~July 1-21):** Finish client work at normal pace. Book normally. Accept new work only with delivery windows after the reduced-availability period (earliest delivery Aug 25). No announcement.
+- **Weeks 7-4 pre-move (July 22 - Aug 11):** Tier-segment client list (step 2). Draft the few emails you'll actually send. NY-to-WA logistics in background (lease, movers, DL plan). Still no broad announcement.
+- **Weeks 4-1 pre-move (Aug 12 - Aug 30):** Send narrowly-targeted communications (step 2). Confirm ongoing terms with publisher retainers. Soft-decline work that would deliver between Sep 1-10.
+- **Moving week (Aug 31 - Sep 10):** Reduced availability window (step 3).
+- **Weeks 1-4 post-move (Sep 11 - Oct 8):** Ramp back to full availability. Don't book heavy.
+- **Weeks 4-12 post-move (Oct - Nov):** Full schedule + start Seattle-local network (step 4).
+
+**One judgment-call heuristic to carry through all 9 weeks:**
+
+When in doubt, default to "don't tell the client." Over-communication is the newbie instinct; pros absorb invisible work so the client's experience stays unchanged. You are a pro. Act like it.
+
+**One anti-pattern to name explicitly:**
+
+The "I'm making a big move and I want my clients to know I appreciate them" impulse. That impulse is real and understandable — it's about you processing a transition, not about your clients' needs. Process the transition in other ways (therapist, friends, journal). Don't use your client list as a group-therapy audience. Saving an email draft in your Drafts folder titled "For me, not for sending" and dumping the feelings into it, then leaving it there, is a surprisingly effective substitute.$pf$,
+ NULL),
+
+-- Step 2 --
+('66666666-6666-6666-6666-666666830102',
+ '55555555-5555-5555-5555-555555550083',
+ 2,
+ $pf$Client tier-segmentation + actual email scripts$pf$,
+ $pf$Help me build the tier-segmentation for my 120 clients. I want to know who gets a personal heads-up, who gets a generic "slightly slower turnaround in early September" note, and who doesn't need to know at all. Also give me the actual email scripts for each tier — I don't want to draft 35 bespoke emails and I don't want to send 120 identical generic emails. Somewhere between, tiered properly. And rules: what do I NOT say in each tier.$pf$,
+ $pf$Three tiers. The sorting rule is NOT "how much do they pay" but "how much would the 10-day reduced-availability window actually affect them."
+
+**Tier A — Personal heads-up (expect: 5-10 clients)**
+
+Who:
+- Publisher retainers (all 3).
+- Anyone with a live project whose delivery window crosses Sep 1-10.
+- Anyone with a recurring booking pattern where September's slot is already implicitly assumed.
+- Any client you've had a substantive phone or video call with in the last 6 months (relationship-density clients).
+
+How: personal email or short call, 3-5 minutes of your attention each. You draft each one individually.
+
+Template (customize heavily):
+
+> Subject: Quick heads up on early September availability
+>
+> [Name] — quick note: I'm moving to Seattle at the end of August, so for about 10 days (Aug 31 - Sep 10) I'll be slower on email than usual. Flagging because [specific reason — "you mentioned wanting the next pass by Sep 5" or "I know we're planning an October kickoff"].
+>
+> Plan: [concrete plan for their specific project — "I'll deliver your September pass by Aug 28, before the move starts" or "let's schedule our kickoff call for Sep 15 so I'm settled"].
+>
+> Nothing else changes — rates, process, responsiveness all return to normal by mid-September. Wanted you to hear it from me.
+>
+> [Your name]
+
+**Tier-A rules:**
+- Lead with the concrete plan, not the move itself. The move is context; the plan is the point.
+- No apology. This is a normal life event you're handling professionally. Apology invites anxiety.
+- No options ("would you prefer..."). Offer your plan; let them push back if needed.
+
+**Tier B — Generic note (expect: 25-35 clients)**
+
+Who:
+- Clients with active or likely-active work September-October.
+- Clients worked with in the last 4 months who'll probably book again.
+- Anyone with a standing "maybe I'll reach out" understanding.
+
+How: one template, sent individually (not BCC — BCC feels impersonal). One email drafted, pasted to 25-35 recipients one at a time. ~2-hour batch.
+
+Template:
+
+> Subject: Early September timing
+>
+> Hi [Name] — heads up that I'll have slightly slower email turnaround in early September (roughly Aug 31 - Sep 10) while I handle some personal logistics. Back to normal by mid-September.
+>
+> If you're planning to send work my way in that window, either send it before Aug 28 or after Sep 12 and we'll be in good shape.
+>
+> [Your name]
+
+**Tier-B rules:**
+- Don't mention the move specifically. "Personal logistics" is true and sufficient. Once you say "moving to Seattle" you invite follow-up questions and small talk you don't have time for across 30 clients.
+- Under 75 words. Longer emails invite longer responses.
+- No apology, no hedge, no "but feel free to email anyway!"
+
+**Tier C — No communication (expect: 75-90 clients)**
+
+Who:
+- Anyone not worked with in 6+ months.
+- Anyone whose interactions with you are entirely async with 1-2-week turnarounds.
+- Past-clients effectively dormant.
+
+These people don't need to know. If they email during the 10-day window and don't hear back for 36 hours, they won't notice or care. If they do notice, your usual 24-48h response time is what they expect anyway.
+
+Attempting to proactively communicate with Tier C does three bad things:
+
+1. Invites "oh I was going to reach out soon" responses you have to manage.
+2. Signals reduced availability — some Tier C will book competitors on hearing it.
+3. Burns pre-move time on a 75-client email campaign for near-zero upside.
+
+**The segmentation mechanic:**
+
+Don't do this in your head. Export the client list from your tool (QuickBooks, Stripe, Notion). Add three columns: last_project_date, likely_active_Sep_Oct (y/n/maybe), tier (A/B/C). Sort and tag in 90 minutes. Then batch Tier-B in one 2-hour session (not drafting — pasting + first-name personalization). Tier A takes 30 min/client over several days.
+
+**Publisher retainers — special case:**
+
+All 3 publisher retainers get a **phone call**, not an email. Phone signals you're not afraid of the conversation and you're treating the relationship with the gravity it deserves. Schedule 15 min with each lead editor. Agenda: "I'm moving to Seattle, here's the timing, here's the plan for maintaining our current workflow, any concerns?" Write down what they say. Email a recap within 24 hours to document the plan.
+
+**One thing NOT to do:**
+
+Don't send a mass-BCC "I'm excited to announce I'm moving to Seattle!" email to all 120. This is the most common mistake freelancers make. It broadcasts disruption you've been at pains to minimize. It's for your benefit, not theirs — and your best clients already know to hear from you 1:1, not on a distribution list.$pf$,
+ NULL),
+
+-- Step 3 --
+('66666666-6666-6666-6666-666666830103',
+ '55555555-5555-5555-5555-555555550083',
+ 3,
+ $pf$Move-week operational plan — 10 days of reduced availability$pf$,
+ $pf$Now the 10-day reduced-availability window itself. How do I keep the business running while I'm literally in a moving truck / unpacking / handling driver's license and utilities chaos? I need a plan for: in-flight work at move time, calendar management, a "real emergency" protocol, and the question of whether to hire temporary help. I'd rather have a too-strict plan I can relax than a too-loose one where I find myself editing at 11pm in a hotel room.$pf$,
+ $pf$**The 10-day window, day by day:**
+
+- **Aug 28-30 (last 3 pre-move days):** Deliver every piece of in-flight work you possibly can. No new projects. Out-of-office goes up on email:
+
+  > I'll have slightly slower turnaround times through Sep 10 — expect 48h response instead of my usual 24h. Urgent matters: [emergency email or phone, see below]. Back to full speed Sep 11.
+
+  Intentionally vague. Doesn't mention the move. Doesn't say "on vacation." Just sets the expectation.
+
+- **Aug 31 - Sep 2 (pack + last NY day):** Email twice daily — 9am and 6pm. 15-min windows. Respond to Tier-A and anything labeled "urgent" in subject. Everything else sits.
+
+- **Sep 3-6 (cross-country travel):** One 30-min window at 9am Eastern from hotel Wi-Fi. Tier-A + urgent + publisher retainers only. Phone on voice-to-text so you can draft short replies when a partner's driving.
+
+- **Sep 7-9 (Seattle arrival + move-in + utilities):** One 45-min block each morning 7-7:45am Pacific (10-10:45 Eastern — when East Coast clients expect to see a response by). Broader triage.
+
+- **Sep 10 (reset day):** 3-hour focused work block. Clear email backlog. Confirm Tier-A projects on track. Send "back to full availability tomorrow" to anyone whose project needs it.
+
+- **Sep 11:** Normal workflow resumes.
+
+**Work in-flight at move time:**
+
+Anything booked with delivery between Aug 31 - Sep 10 should have been shifted earlier or later during the last 4 pre-move weeks. If something slipped through — you have a single 2-hour emergency work block mid-cross-country, usually Day 3 evening at a hotel, to push one thing forward. Label that block on your calendar NOW so you don't end up promising 10 things into it.
+
+**Calendar management:**
+
+- Block Aug 31 - Sep 10 as "limited availability" in your booking calendar. Calendly or similar: set "unavailable."
+- Any client who tries to book a Zoom in that window gets auto-redirected. Resist the urge to say yes "just this once."
+- Re-open Sep 11 for bookings starting Sep 15 at earliest. Give yourself 4 days settled-into-Seattle before a live client meeting.
+
+**The "real emergency" protocol:**
+
+Define "real emergency" in advance. Clarifies road-decisions:
+
+- A publisher missing a hard deadline because of something you owe them (prevent by front-loading).
+- A Tier-A client whose live book launch depends on your work (same).
+- A typo on a just-published major-press title needing an immediate correction pass (rare, real).
+
+For emergencies: ONE fallback channel — your cell phone. Number in the OOO auto-reply with "urgent matters only." Tier-A clients have it already. Tier-B will see "urgent matters only" as a filter; almost none will call.
+
+Do NOT set up a second email auto-forward or hire a VA to triage. Both introduce coordination overhead exceeding the value of the triage.
+
+**Temporary help — the honest answer:**
+
+Don't hire a helper for 10 days to handle client work:
+
+1. Training cost exceeds benefit over a short window.
+2. A substitute editor working on your client's manuscript introduces a quality inconsistency the client will notice and not forgive.
+3. Your brand IS you. A 10-day gap is far less damaging than "surprise, someone you don't know is touching your book."
+
+What you CAN outsource during move week:
+- Home-logistics tasks (movers, packing helpers, utilities scheduling).
+- Driver's license / state tax registration — schedule for week 2 Seattle, not week 1. Week 1 is just getting boxes into the house.
+- Dog-walker / grocery-delivery support during unpacking.
+
+**One contingency plan:**
+
+If something genuinely catastrophic happens mid-move (hospitalization, family emergency, stolen laptop) — the plan isn't "try to keep editing." The plan is:
+
+- 4-line email to every Tier-A client with the specific situation and a concrete revised timeline.
+- Pause Tier-B and Tier-C communications entirely. They can wait a week.
+- Publisher retainers: phone call to the lead editor within 24 hours.
+
+Prepare a one-page "emergency contact card" — partner's name, Seattle address, emergency business contact — and stash it in your phone. The worst case doesn't become a full business collapse.
+
+**One philosophical point:**
+
+Freelancers who fail at a cross-country move fail because they tried to work through it — 6 hours of editing in a hotel room on move day, responding to every client email to "prove they're still working." This generates bad work product, exhausts you, and telegraphs panic. The 10-day reduced-availability window is structural, not heroic. Treat it as a feature of the move, not a test of your dedication.
+
+**One thing to prepare in week 7 that pays off in week 10:**
+
+Write the "Sep 11, I'm back" email now. One draft, 75 words, warm but not apologetic. Schedule it to send Sep 11 at 7am Pacific. When Sep 11 arrives and you're still tired and boxes are still everywhere, that pre-written email lets you resume business-as-usual on time without having to compose anything fresh. Small, weirdly load-bearing move.$pf$,
+ NULL),
+
+-- Step 4 --
+('66666666-6666-6666-6666-666666830104',
+ '55555555-5555-5555-5555-555555550083',
+ 4,
+ $pf$Post-move 90-day Seattle plan — stability, layering, foundation$pf$,
+ $pf$Last piece — 90-day post-move plan. I've never lived on the West Coast. I don't have a Seattle network, don't know which local literary agents and small presses might be good clients, and need to handle state tax / business registration properly. Structure the first 90 days: what to do weeks 1-4, what to add weeks 4-8, what I start building long-term by weeks 8-12.$pf$,
+ $pf$**Guiding principle for the 90 days:**
+
+Don't try to "rebuild your network" in Seattle in 90 days. That framing is exhausting and unrealistic. Instead: keep the business you already have healthy, then layer in 2-3 Seattle-local moves per month on top of existing work. Most of your pipeline is already portable. The Seattle local layer is additive, not replacement.
+
+**Weeks 1-4 (Sep 11 - Oct 8): Stability**
+
+Goals:
+- Full availability resumed. Clients experience no change in service.
+- Washington state business registration completed.
+- State tax situation understood.
+- No new initiatives. No networking events. No Seattle outreach.
+
+**Washington state business setup — specifics:**
+
+- Register as sole proprietor with a Unified Business Identifier (UBI) through WA Department of Revenue. Free, online, ~45 min.
+- WA has no state income tax (simplifies things vs. NY). BUT: WA has a Business & Occupation (B&O) tax on gross revenue, not net income. For "service and other activities" the rate is 1.5% of gross. At $100K gross this is $1,500/year — plan for it in pricing.
+- File B&O tax monthly or quarterly (based on revenue tier). You'll likely be quarterly.
+- Get Seattle business license (~$90/year, separate from state).
+- Update LLC/sole-prop address with IRS (Form 8822-B), Stripe, QuickBooks, bank, invoicing software.
+- NY tax: you'll file a 2026 NY part-year return. Keep records of which income was earned while residing where. Most clients don't care — it's your problem, not theirs.
+
+Day 3 post-move: call a Seattle accountant who handles freelancers. 30-min consult to confirm the above. Worth ~$200.
+
+**Weeks 1-4 client-side:**
+
+- "Back to full availability" email to every Tier-A and Tier-B who's likely to book in next 60 days. One-line: "Resettled and back at full speed — looking forward to next projects." One 2-hour batch.
+- Reopen booking calendar for Sep 15 onward at full availability.
+- Ping any Tier-A client you expected to hear from but haven't in 60+ days. Gentle: "How's the fall project shaping up?"
+
+**Weeks 4-8 (Oct 9 - Nov 5): Seattle-layer additions**
+
+Now — and only now — start thinking about local. Narrowly.
+
+Three targeted moves:
+
+1. **Identify 8-12 Seattle-based literary agents, small presses, indie-authors** whose work overlaps your editing specialty. Poets & Writers database, PubWeek, LinkedIn. Draft 3-4 personalized intro emails. Don't bulk-send — 2-3/week.
+
+2. **Join ONE local community of practice.** Northwest Independent Editors Guild (NWIEG) or Pacific Northwest Writers Association (PNWA). Memberships $50-100/year. Attend the monthly meeting. Don't announce yourself as "new in town"; just show up twice before introducing yourself. In-person is worth more than LinkedIn.
+
+3. **Re-engage ONE dormant NYC network asset.** Email 2-3 mid-tier editors at NYC presses you used to overlap with — not asking for work, just sharing you're working West Coast hours now and asking about recent books. These are the people most likely to send referrals when a West-Coast author crosses their desk.
+
+Do NOT:
+- Attend a generic "Seattle freelancer mixer." Lowest-return activity in a service business; time is better spent reading 3 Pacific-NW authors' work and sending one thoughtful email.
+- Start a Seattle-specific newsletter. Startup cost 20 hours; ROI 18 months out.
+- Change your brand / website to emphasize Seattle. You serve clients nationally; geography is noise.
+
+**Weeks 8-12 (Nov 6 - Dec 3): Long-term foundation**
+
+Three structural moves:
+
+1. **First substantive Seattle-local client delivery.** If October networking produced 1-2 leads, you should be delivering on the first project by mid-November. This is the proof point.
+
+2. **Establish ONE recurring in-person touchpoint.** Standing coffee with a local editor or agent you hit it off with — weekly or biweekly. One relationship, not ten. Depth over breadth.
+
+3. **Re-evaluate Tier-B/C client list.** At 90 days, some Tier-B have gone dormant; some Tier-C have come back. Re-segment and adjust 6-month targeting. Becomes a standing quarterly activity.
+
+**The 90-day success metric — be honest:**
+
+Hit the numbers from Step 1: ≥90% client retention, 3 publishers intact, 8+ inquiries/month months 1-3 (or tracking to baseline 12 by month 4).
+
+Vanity metrics that feel like success but aren't:
+- Number of coffee meetings attended.
+- Number of Seattle LinkedIn connections.
+- A big-name NYC client sending a sentimental "we'll miss you" email.
+
+Real metrics:
+- Money in the door at baseline rate.
+- Publisher retainers untouched.
+- New-inquiry count recovering toward baseline.
+
+**One thing you'll feel that isn't true:**
+
+At week 3 post-move you'll feel like your business is collapsing because your inbox is quieter than NYC. It's not. Your inbox is quiet because (a) you set expectations about reduced availability, so people delayed reaching out, and (b) September is genuinely slower in publishing. Don't overreact. Don't send panicked outreach. Don't slash rates. Let the calendar fill naturally through October.
+
+**The long arc — write this down NOW:**
+
+A year from now, your business should be 80% NYC/national clients + 20% Pacific-NW new clients — a structurally healthier diversification than pure East Coast. The move isn't a risk to manage down; it's a diversification opportunity you're setting up in 90 days of careful work. Write that down now, and reread it in December when you're feeling homesick.
+
+**One move that separates a professional transition from an amateur one:**
+
+At 90 days, write a 500-word reflection for yourself titled "What I'd tell someone else moving cross-country mid-business." Don't publish it. It's for your own file. Two years from now when a freelancer friend is considering a similar move, you'll have a real asset to hand them, and your advice won't be rose-tinted. Most good professional lessons die because nobody writes them down at the moment they're still sharp.$pf$,
+ NULL);
+
+
 -- =========================================================================
 -- END OF FILE — append next project(s) below this line.
 -- Iterations working the Content queue: add 2–3 projects per iteration,

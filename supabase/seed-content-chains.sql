@@ -43371,5 +43371,407 @@ spec:
 This gets you operational in an afternoon. The Prometheus path — add a Prometheus exporter to the OTel Collector, scrape with Prometheus, configure Alertmanager rules, add the Slack notifier to Alertmanager — is the production-grade approach for teams that already operate Prometheus. If you add Prometheus later, you can retire this cron script and move alerting into Alertmanager rules based on the `otelcol_processor_tail_sampling_count_traces_sampled` and span-duration histogram metrics the collector exposes. For now, the script works and requires zero new infrastructure.$pf$,
  NULL);
 
+DELETE FROM prompt_steps WHERE prompt_id = '55555555-5555-5555-5555-555555550122';
+DELETE FROM prompts      WHERE id        = '55555555-5555-5555-5555-555555550122';
+
+INSERT INTO prompts (
+  id, title, description, content, result_content,
+  category_id, difficulty, model_used, model_recommendation,
+  tools_used, tags, status, author_id, vote_count, bookmark_count
+) VALUES (
+  '55555555-5555-5555-5555-555555550122',
+  $pf$Client Kickoff Ritual: The Checklist and Email We Run Every Time Now$pf$,
+  $pf$Nina Kowalski diagnosed why her agency kept losing clients in their first 90 days, built a 21-item three-phase kickoff checklist that addresses the seven most costly agency failure modes, and drafted the pre-kickoff email template that resolves approval chain and success-criteria gaps before the call ever starts.$pf$,
+  $pf$My agency has about 50 people. For two years, we kept losing clients in the first 90 days — not because our work was bad, but because the project start was always slightly on fire. Scope was ambiguous, the approval chain was never documented, the PM walked into the kickoff not knowing what success was supposed to look like, and we spent the first 20 minutes of every kickoff call troubleshooting login emails instead of setting strategy.
+
+I could see the pattern but I didn't have a clean diagnostic. I decided to use Claude to name the actual failure modes, build a real checklist, and write the pre-kickoff email template every PM should be sending but never does. Two weeks later we had a Notion template that every account manager and PM uses at the start of every new client engagement.$pf$,
+  $pf$The checklist and email template are live in our Notion workspace. New PMs are onboarded with both during their first week. In the eight months since we rolled this out, we haven't lost a client in the first 90 days for a process reason. One engagement came close — a scope ambiguity situation — and it was caught at the "alignment check" step in the pre-kickoff phase and resolved before the call.$pf$,
+  '11111111-1111-1111-1111-111111111107',
+  'beginner',
+  'claude-sonnet-4-6',
+  'Claude 4.6 Sonnet',
+  ARRAY['Claude', 'Notion'],
+  ARRAY['client kickoff', 'agency operations', 'project management', 'checklist', 'client onboarding', 'process design'],
+  'approved',
+  '22222222-2222-2222-2222-222222222206',
+  0,
+  0
+);
+
+INSERT INTO prompt_steps (id, prompt_id, step_number, title, content, result_content, description) VALUES
+
+-- Step 1 --
+('77777777-7777-7777-7777-777777122001',
+ '55555555-5555-5555-5555-555555550122',
+ 1,
+ $pf$Naming the seven failure modes that kill the first 90 days$pf$,
+ $pf$I'm operations manager at a 50-person digital agency in Chicago — mostly account managers, project managers, and creatives across web, content, and brand work. We do project-based client work, usually 60-to-180-day engagements.
+
+Our problem: we keep losing clients in the first 90 days. Not because our work is bad — our retention past 90 days is actually strong. The losses happen early, and when I talk to the clients who churned, the theme is always "the start felt disorganized" or "we didn't feel like you understood what we needed." Which usually means the kickoff went wrong.
+
+I want to fix this systematically, not just tell PMs to "be more organized." What are the seven most common client kickoff failure modes at agencies — meaning the specific things that go wrong in the first two weeks of a new client engagement? For each one, tell me what it costs if left unfixed — in terms of client trust, project margin, or team time. Be specific; I'm not looking for generic project management advice.$pf$,
+ $pf$**The Seven Client Kickoff Failure Modes — and What Each One Costs**
+
+**1. Scope ambiguity carried into execution** (surfaces in Week 1–2)
+
+The SOW is signed but not internalized. One side says "website redesign" and means 5 pages; the other means 15. The brief talks about "brand alignment" but neither side has defined what that means in practice. Cost: scope creep that destroys margin and causes resentment before you've delivered anything good. The first revision conversation turns into a contract dispute, and the client starts to feel like they're being nickeled.
+
+**2. Approval chain not documented before work starts** (surfaces at first delivery)
+
+The PM delivers the first asset. It comes back: "Looks great, but I need to get this to our VP before we can approve it." No one mentioned the VP. The VP travels. You wait two weeks on something that should have taken three days. Cost: idle time billed to the project, missed milestones that you own in the client's mind, and a PM who now looks unprepared.
+
+**3. Timeline interpreted as delivery, not review cycle** (surfaces immediately or at first milestone)
+
+You say "first draft in two weeks." They tell their team: "we'll have the final in two weeks." You deliver the draft. They say you're late. Cost: an expectation mismatch that no amount of good work recovers from — once a client thinks you missed a deadline, you're playing defense for the rest of the engagement.
+
+**4. Tool and access setup deferred to kickoff call** (surfaces during the call itself)
+
+Slack channel, project management tool, brand asset library, Google Drive folder — none of it exists before the kickoff meeting. The first 20 minutes of a 60-minute call go to login emails and screen-share troubleshooting. Cost: wasted meeting time, a rushed agenda, and a first impression that reads as disorganized. Clients don't say this out loud; they just make a mental note.
+
+**5. Single point of contact never named** (surfaces at first issue)
+
+Four people on the client side all have opinions. None of them know who has final say. When something needs a decision, you're sending to all four and getting four different answers. Cost: round-robin emails, contradictory feedback, PM time eaten by stakeholder management instead of project work.
+
+**6. Success criteria undefined at project start** (surfaces at final delivery)
+
+You deliver what's in scope. Client says: "this isn't quite what we were going for." Neither side is wrong — you just never agreed on what "right" looks like. Cost: full revision cycle on approved scope, margin destruction, and a contract dispute risk that puts the client relationship on ice right before renewal conversations.
+
+**7. Sales-to-PM handoff is broken** (surfaces before kickoff, but PMs feel it during the call)
+
+The PM learns about the project the day before the kickoff call. The commitments made in the sales deck don't match what the SOW says. The client had conversations with your sales team that the PM was never included in. Cost: PM walks into the first call uninformed, the client notices, and confidence in the team drops in the meeting where you're trying to build it.
+
+---
+
+Fix rate note: Failure modes 1, 3, and 6 account for the majority of first-90-day churn at most agencies — they're the "we didn't understand each other" category. Modes 4 and 7 are embarrassing but recoverable. Modes 2 and 5 are the most operationally damaging because they silently extend timelines in ways the client tracks but doesn't always voice until they decide not to renew.
+
+Start with 1, 2, 4, and 7 in your checklist. Those four are the most addressable through process, and fixing them has the highest return on a PM's prep time.$pf$,
+ NULL),
+
+-- Step 2 --
+('77777777-7777-7777-7777-777777122002',
+ '55555555-5555-5555-5555-555555550122',
+ 2,
+ $pf$Building the 21-item three-phase kickoff checklist$pf$,
+ $pf$This is exactly what I see. Failure modes 1, 2, 4, and 7 are the ones we keep repeating — and 6 is the one that blows up at the worst possible moment, right at final delivery. Now I need the actual artifact: a project kickoff checklist my PMs can follow every time, for every new client engagement, without having to think about what they might be forgetting.
+
+I want it organized into three phases: pre-kickoff (what the PM does in the 48–72 hours before the kickoff call), during-kickoff (what needs to happen on the call itself), and post-kickoff (what gets done within 24 hours after the call ends). Should be specific enough that a brand-new PM could follow it without asking anyone a question. Somewhere around 20–25 items total. Make sure each of the seven failure modes we identified is addressed by at least one checklist item — I want this to be a complete defense against all seven, not just the obvious ones.$pf$,
+ $pf$**Agency Client Kickoff Checklist** (21 items across 3 phases)
+
+---
+
+**Phase 1 — Pre-Kickoff (72–48 hours before the call)**
+
+□ Review the signed SOW and sales deck side-by-side; write a 3-bullet "as we understand it" scope summary; flag any discrepancy before the call (addresses FM 1 and FM 7)
+
+□ Get the answer to: "Were there any verbal commitments made to this client that aren't in the SOW?" — ask the account lead or salesperson who closed the deal, get it in writing (addresses FM 7)
+
+□ Confirm client-side attendee list: names, titles, and each person's role in the project (decision-maker, contributor, observer)
+
+□ Set up the project management tool (Asana / Monday / Notion / etc.); send access invites 48 hours before the call so no one is troubleshooting login emails live (addresses FM 4)
+
+□ Create the shared folder or Drive; upload the SOW, creative brief, and any reference assets; pin the folder link in the project tool (addresses FM 4)
+
+□ Create the Slack channel or email thread; invite all client contacts; post a "welcome and looking forward to Thursday" note so clients confirm access before the call (addresses FM 4)
+
+□ Send the kickoff agenda to the client 24 hours in advance
+
+□ Send the pre-kickoff email with two pre-call questions — who has final approval authority, and what does success look like (detailed in Step 3; this primes the most important conversations before the call starts) (addresses FM 2 and FM 6)
+
+---
+
+**Phase 2 — During Kickoff (the call itself)**
+
+□ Read the "as we understand it" scope summary aloud in the first five minutes; ask: "Does this match your understanding?" — resolve any discrepancy before moving on (addresses FM 1)
+
+□ Get the single point of contact named explicitly; if they offer multiple people, ask: "When there's a decision to make and people disagree, who has final say?" (addresses FM 5)
+
+□ Walk the timeline with this framing: "These dates are when we deliver; these dates are when we need your feedback by" — not "deliverable on [date]" which clients consistently interpret as final (addresses FM 3)
+
+□ Review the approval chain: "Who needs to sign off on [key deliverable type]? What's their typical turnaround time?" — document the answer in your notes live (addresses FM 2)
+
+□ Define success for the final deliverable: "When you see the last deliverable and it's exactly right, what's the reaction?" — capture the answer verbatim; this becomes your target (addresses FM 6)
+
+□ Confirm all tool access is live before ending the call; if anyone is missing access, resolve it on the call or assign an owner with a same-day deadline (addresses FM 4)
+
+□ Agree on communication protocol: where questions go (Slack vs. email), what's urgent vs. async, expected response time
+
+□ Set the first milestone in the project tool before the call ends — milestone name, due date, responsible party
+
+---
+
+**Phase 3 — Post-Kickoff (within 24 hours of the call)**
+
+□ Send the kickoff summary email within four hours: confirmed scope, confirmed timeline, confirmed single POC, confirmed success criteria, link to the project tool
+
+□ Log POC name, approval chain, and success criteria verbatim into the project management tool — not just in your email thread (makes it findable later when someone disputes it)
+
+□ Create the first deliverable or task in the PM tool and assign it with a due date; this moves the project from "kickoff complete" to "work in progress" within 24 hours
+
+□ If the sales-to-PM handoff revealed any discrepancies: schedule a 15-minute call with the account lead to close them before a single hour of work is billed (addresses FM 7)
+
+□ Set a 48-hour reminder on the first milestone so you're preparing for delivery, not reacting to it
+
+---
+
+**Total: 21 items** across 3 phases. All 7 failure modes addressed.
+
+Failure mode coverage: FM 1 (items 1, 9), FM 2 (items 8, 12, 17), FM 3 (item 11), FM 4 (items 4, 5, 6, 14), FM 5 (item 10), FM 6 (items 8, 13, 17), FM 7 (items 2, 20).
+
+Suggest turning this into a Notion template with a checkbox database — PMs duplicate it per client at project start, and it automatically lives in the project workspace.$pf$,
+ NULL),
+
+-- Step 3 --
+('77777777-7777-7777-7777-777777122003',
+ '55555555-5555-5555-5555-555555550122',
+ 3,
+ $pf$Writing the pre-kickoff email template$pf$,
+ $pf$The checklist covers everything on our end. Now I need the last artifact: the pre-kickoff email that the PM sends to the client 48 hours before the call. This isn't a logistical notice — it's the piece that plants the two questions PMs almost never ask before a kickoff: who has final approval authority, and what does success look like for this project.
+
+It should: set the agenda so the client knows what Thursday's call covers; confirm who's attending; share the link to the folder and project tool; and include those two questions in a way that feels natural, not like a form. The tone should be warm and organized — someone who has done this a hundred times, not someone sending a template. Also include brief notes after the template explaining why each structural choice was made — this helps my PMs understand the logic so they can adapt it without breaking what makes it work.$pf$,
+ $pf$**Pre-Kickoff Email Template**
+
+---
+
+Subject: Getting ready for [Project Name] kickoff — [Day] @ [Time]
+
+Hi [Name],
+
+Looking forward to [Day] — I've been going through the brief and I'm excited about where this can go.
+
+A few things before the call to make sure we hit the ground running:
+
+**The agenda is attached.** We'll cover scope alignment, timeline, your delivery and review process, and how we'll communicate day-to-day. Should run 45–50 minutes, with a few minutes at the end for questions.
+
+**Project folder is live:** [link]. You'll find the SOW and project brief in there. If anything looks wrong or is missing, let me know today and I'll sort it.
+
+**Project tool is set up:** [link]. I've added [client contact names] — if anyone else on your team needs access before [Day], just say the word.
+
+**Two quick questions before we meet:**
+
+1. Who has final approval authority on deliverables? (Sometimes it's the person on the call, sometimes there's someone else who needs to sign off — I just want to make sure I know who the decision-maker is so I'm not creating delays later.)
+
+2. When you imagine this project going perfectly — what does the final deliverable look like, or what reaction does it get? Even a sentence helps us aim at the right target from day one.
+
+No need to write an essay — a sentence on each is plenty. You can reply here, or I'll ask again on [Day] if easier.
+
+See you at [Time].
+
+[PM Name]
+
+---
+
+**Why each structural choice works:**
+
+**The opening line.** "I've been going through the brief and I'm excited about where this can go" is personal and signals investment. Compare to "Please find attached the agenda for our upcoming kickoff" — same information, zero relationship. The opening 10 words set the emotional register for the whole engagement.
+
+**Tool setup before the call.** Sending folder and tool links in this email — not on the call — means any access issues surface 48 hours early, not live. If a client's IT firewall blocks Asana, you have two days to fix it quietly. Wait for the call, and you spend 20 minutes on troubleshooting and end 10 minutes short of the agenda.
+
+**The two questions.** These are the ones most PMs never ask in writing before a kickoff — and they're the two that prevent failure modes 2 (approval chain) and 6 (success criteria). Asking by email instead of only on the call does two things: clients often answer more thoughtfully in writing, and you have a written record before work starts, which matters if there's a dispute later.
+
+**"No need to write an essay."** This removes the friction that makes people not respond. Most professionals see a question with no length constraint as an essay assignment. The one-sentence permission makes it much more likely you get a reply before Thursday.
+
+**Subject line format.** "[Project Name] kickoff — [Day] @ [Time]" is searchable by project name and by time. Generic subjects like "Kickoff prep" get lost. Including the time means clients can find this email on the morning of the call.$pf$,
+ NULL);
+
+DELETE FROM prompt_steps WHERE prompt_id = '55555555-5555-5555-5555-555555550123';
+DELETE FROM prompts      WHERE id        = '55555555-5555-5555-5555-555555550123';
+
+INSERT INTO prompts (
+  id, title, description, content, result_content,
+  category_id, difficulty, model_used, model_recommendation,
+  tools_used, tags, status, author_id, vote_count, bookmark_count
+) VALUES (
+  '55555555-5555-5555-5555-555555550123',
+  $pf$Crisis comms after a 6-hour outage: incident post, customer email, and LinkedIn — drafted and sent in four hours$pf$,
+  $pf$Emily Zhao ghostwrote a complete crisis communications package for Meridian, a B2B project management SaaS, after a 6-hour database outage — building the principles framework, drafting the public incident post, writing the personalized email to 340 affected customers, and scripting the founder's LinkedIn post, all within a four-hour window. The customer email achieved a 71% open rate; the LinkedIn post generated 340 comments and directly saved three churning accounts.$pf$,
+  $pf$My client Jordan runs Meridian, a B2B project management tool for professional services firms — consultancies, agencies, law firms. About 2,400 customers, mostly teams of 5 to 50. On a Tuesday morning, Meridian had a 6-hour database outage. The exact window was 8 AM to 2 PM — prime working hours for every customer on the platform. By the time service was restored, Jordan's inbox had 87 unread emails, one customer had already posted on LinkedIn asking if anyone else was down, and three accounts had submitted cancellation requests.
+
+Jordan needed three communications in four hours: a public incident post explaining what happened, a personal email to the 340 customers who had been actively using the product during the outage window, and a LinkedIn post she would put under her own name that acknowledged the incident without sounding defensive. She had never written crisis comms before; neither had I — my background is B2B journalism and brand ghostwriting. I used four Claude sessions to build the principles framework, draft each piece, and get Jordan's voice right.$pf$,
+  $pf$All three pieces went out within the four-hour window. The customer email had a 71% open rate against a baseline of 34%. The LinkedIn post received 340 comments over three days — most from customers expressing appreciation for the transparency — and Jordan told me directly that three accounts that had submitted cancellation requests wrote back after seeing it to say they were staying. The public incident post was cited in two SaaS operator newsletters as a model for how to handle downtime communications. Jordan's words: "I sent a crisis message I actually felt good about."$pf$,
+  '11111111-1111-1111-1111-111111111103',
+  'intermediate',
+  'claude-opus-4-7',
+  'Claude 4.7 Opus',
+  ARRAY['Claude'],
+  ARRAY['crisis communications', 'incident post', 'SaaS', 'ghostwriting', 'customer email', 'LinkedIn'],
+  'approved',
+  '22222222-2222-2222-2222-222222222208',
+  0,
+  0
+);
+
+INSERT INTO prompt_steps (id, prompt_id, step_number, title, content, result_content, description) VALUES
+
+-- Step 1 --
+('77777777-7777-7777-7777-777777123001',
+ '55555555-5555-5555-5555-555555550123',
+ 1,
+ $pf$Learning what makes crisis communications work — and fail$pf$,
+ $pf$I'm a freelance content strategist and ghostwriter, mostly B2B journalism background. A client of mine — Jordan, founder of Meridian, a B2B project management SaaS — just had a 6-hour database outage this morning. Service is restored. Now she needs three pieces of communication drafted today: a public incident post for the company blog and status page, a personal email to the 340 customers who were active during the outage, and a LinkedIn post she'll publish under her own name.
+
+I've written hundreds of articles and brand narratives. I have not written crisis communications before. Before I start drafting, I need to understand the principles. What makes a crisis communication work versus fail for a B2B SaaS company? I want specifics: what does a good incident post contain that a bad one doesn't, why do most customer apology emails feel hollow, and what is the trap founders fall into when writing about an incident on LinkedIn? I'm going to use your answer to guide everything I draft in the next three sessions.$pf$,
+ $pf$**Crisis Communications Principles for B2B SaaS — What Works and What Doesn't**
+
+**The one test everything needs to pass**
+
+Does this communication make the affected person feel seen, or does it make the company feel better? Most crisis communications fail because they're written to reduce the company's discomfort, not to address the customer's. The difference shows up immediately in the first paragraph.
+
+A communication that works starts with the customer experience, not the company's explanation. "If you were using Meridian between 8 AM and 2 PM today, you couldn't do your work" is a stronger opener than "We experienced a database infrastructure issue that affected service availability" — both are true, but only one acknowledges that a real person had a bad day because of you.
+
+**What a good incident post contains that a bad one doesn't**
+
+A bad incident post: corporate passive voice ("a disruption was experienced"), no admission of specific impact (customers have to do the math on whether they were affected), a vague cause ("technical issues"), a timeline buried in paragraph three, and a reassurance that "steps are being taken" with no specifics.
+
+A good incident post has five required elements: **(1) plain-language timeline** — when the incident started, when it was detected, when it was resolved, in human time ("8:04 AM to 2:11 PM Pacific"), not epoch timestamps; **(2) what was affected specifically** — "all customers" or "users on the import and bulk-update features" — vague is worse than specific even when the scope is large; **(3) what caused it** — one sentence, technically accurate but not jargon-heavy; if you don't know yet, say "we're still determining root cause" rather than making something up; **(4) what you did to fix it** — not "steps were taken" but who did what, in what order; and **(5) what you're doing to prevent it** — one or two concrete actions, not a list of aspirations.
+
+The element most incident posts skip: a sentence acknowledging the human impact. "We know Tuesday morning is when most of your week starts, and we know this hit at the worst possible time" does more trust work than three paragraphs of root-cause explanation.
+
+**Why most customer apology emails feel hollow**
+
+Three reasons: they arrive too late (12+ hours after service restores), they're written by a team that wasn't personally affected, and they're calibrated to reduce legal and PR risk rather than to actually communicate.
+
+The hallmarks: passive voice throughout, "we apologize for any inconvenience" (the word "any" signals distancing from the impact), a link to the status page as though the customer hasn't already seen it, and a subject line that doesn't mention the incident ("Important service update" rather than "About this morning's outage").
+
+What makes a customer email feel real: it's from a person by name (not "The Meridian Team"), it acknowledges the specific impact to the customer's likely workflow, it arrives within hours, and it tells the customer something they didn't already know — the cause, the fix, or what happens next.
+
+**The LinkedIn trap for founders**
+
+Three failure modes, in order of frequency:
+
+**(1) The damage-control essay.** Founder writes 600 words explaining everything that happened in technical detail. Reads as: "I need you to understand this wasn't really our fault." Length signals defensiveness. Customers don't want an explanation — they want to feel the person in charge understands what happened to them.
+
+**(2) The humility performance.** "This was completely unacceptable. We failed you. I am personally devastated." Authentic humility is specific accountability with a path forward. Performance humility — big emotional language with no specific action — makes readers trust the company less. The tell: if you remove the founder's name and company name, could this be from any founder at any company? Then it's generic.
+
+**(3) The redemption arc.** "We messed up. But here's what we learned and how this will make us stronger." This centers the company's growth story, not the customer's experience. Save the growth narrative for six months from now. Today is not the day to turn your outage into a character-development arc for the brand.
+
+What works on LinkedIn: short, specific, and written as a person talking to another person. Jordan's name is on it — it should sound like Jordan.$pf$,
+ NULL),
+
+-- Step 2 --
+('77777777-7777-7777-7777-777777123002',
+ '55555555-5555-5555-5555-555555550123',
+ 2,
+ $pf$Drafting the public incident post$pf$,
+ $pf$Good — these principles are exactly what I needed. The distinction between damage-control essay, humility performance, and redemption arc is going to govern everything I draft today. I've never seen those failure modes named that precisely and I now know what to avoid.
+
+Here are Jordan's notes on what actually happened:
+
+- Outage window: 8:04 AM to 2:11 PM Pacific, Tuesday April 15
+- All customers affected — no read access, no write access, login was failing for most users
+- Root cause: a database migration ran overnight and completed successfully, but a foreign key index on the projects table was created with a DEFAULT INVALID flag that wasn't caught in staging. Under Tuesday morning traffic load, this caused query timeouts across the platform.
+- Detection: a customer emailed support at 8:09 AM. Engineering was paged at 8:17 AM. The INVALID index was identified at 10:45 AM. The index rebuild ran from 11:00 AM to 1:58 PM (the projects table has 600 million rows — you can't rush it). Full service restored at 2:11 PM.
+- Prevention: staging environment is being updated to mirror production traffic loads; index creation in any migration script now requires a second engineer review before deployment.
+
+Draft the public incident post. Should live on their company blog and status page. Complete — timeline, cause, fix, prevention steps, and the acknowledgment that this hit at a bad time — but not an essay. Aim for 400–500 words. Jordan's voice is direct and fairly informal (founder voice, not PR voice).$pf$,
+ $pf$**Meridian — Incident Report: April 15, 2026**
+
+**Summary**
+
+On Tuesday, April 15, Meridian was unavailable from 8:04 AM to 2:11 PM Pacific. Every customer was affected. This post covers what happened, what we did to fix it, and what we're doing to make sure it doesn't happen again.
+
+**What happened**
+
+We ran a database migration overnight on April 14. The migration completed successfully, but it created a foreign key index on our projects table with a flag that marked the index as invalid. That flag was not caught in our staging environment.
+
+When Tuesday morning traffic hit — which is our highest-load window of the week — queries that touched the projects table began timing out across the platform. Login failed for most users. The entire product was effectively unavailable from 8:04 AM onward.
+
+**Timeline**
+
+- **8:04 AM** — Service degradation begins
+- **8:09 AM** — First customer support email received
+- **8:17 AM** — Engineering team paged
+- **10:45 AM** — Invalid index identified as root cause
+- **11:00 AM** — Index rebuild initiated (our projects table contains 600 million rows; this takes time)
+- **1:58 PM** — Index rebuild complete
+- **2:11 PM** — Full service restored
+
+**What we did**
+
+Once we had the root cause, the fix was clear: rebuild the index correctly. The delay between identification (10:45 AM) and resolution (2:11 PM) was almost entirely the time a 600-million-row index rebuild requires — it's not something you can speed up while keeping the database stable. We chose not to ship a partial fix that would have restored some functionality while risking data corruption.
+
+**What we're doing to prevent this**
+
+Two changes are in place starting this week:
+
+1. Our staging environment will be updated to mirror production traffic load patterns. The bug that caused this outage would have been caught if staging had been running at production scale. It wasn't. That's a gap we should have closed earlier.
+
+2. Any migration script that creates or modifies an index now requires a second engineer sign-off before deployment. We've added this as a required step in our deployment checklist.
+
+**What we owe you**
+
+Tuesday morning is when most of your week starts. We know that. A 6-hour outage beginning at 8 AM on a Tuesday is not a background event — it's the middle of your workday, your client meetings, your deadlines. We understand that, and we're sorry it happened.
+
+If you have questions about the incident or how it affected your account specifically, reply here or reach us at support@meridianapp.com. We'll respond same-day.
+
+— Jordan and the Meridian team$pf$,
+ NULL),
+
+-- Step 3 --
+('77777777-7777-7777-7777-777777123003',
+ '55555555-5555-5555-5555-555555550123',
+ 3,
+ $pf$Writing the personal email to affected customers$pf$,
+ $pf$The incident post is solid — especially the timeline and the "Tuesday morning is when most of your week starts" line. That acknowledgment is doing exactly what you described: making the reader feel seen before we explain anything. I want to carry that into the customer email.
+
+Now the personal email. This goes to the 340 customers who were actively using the product during the outage window — logged in or attempting to log in between 8:04 AM and 2:11 PM. This is different from the incident post: the incident post is a public record for anyone who finds it; this email is from Jordan to a specific person whose day was disrupted.
+
+It should be shorter, more personal, and feel like one person writing to another person — not a company sending a notification. Jordan's name on the from line. No marketing language, no upsell, no "we value your partnership." The customers receiving this already know what happened — they lived it. The email's job is not to explain the incident again. It's to make the customer feel that someone at Meridian actually understands what a 6-hour outage on a Tuesday morning means for their business.$pf$,
+ $pf$Subject: About this morning
+
+Hi [First Name],
+
+I'm Jordan, founder of Meridian. If you were using Meridian this morning, your day started with an outage that lasted six hours. I wanted to reach out directly.
+
+You don't need me to walk you through the timeline — you lived it. The short version: a migration we ran last night created a database problem that didn't show up in testing but surfaced immediately when Tuesday morning traffic hit. That's on us.
+
+Service was restored at 2:11 PM, but I know that's small comfort if you had a 9 AM client presentation or a team standup that depended on getting into your account this morning. Tuesday is when most people's weeks start. An 8 AM outage on a Tuesday is not a minor inconvenience — it's the middle of your workday.
+
+Two things we're changing so this doesn't happen again: our staging environment is being updated to run at production load (the bug would have been caught), and any migration that touches a core table now requires a second engineer sign-off before it deploys. We should have had both in place already.
+
+If this morning cost you something specific — a client deliverable, a meeting that had to be rescheduled, a deadline you missed — I'd like to know. Reply to this email and I'll read it.
+
+Jordan
+Founder, Meridian$pf$,
+ NULL),
+
+-- Step 4 --
+('77777777-7777-7777-7777-777777123004',
+ '55555555-5555-5555-5555-555555550123',
+ 4,
+ $pf$Drafting Jordan's LinkedIn post and coaching her on the voice$pf$,
+ $pf$Last piece. Jordan needs to post something on LinkedIn under her own name. Her network is mostly other founders, operators, and SaaS professionals — people who have been through a production incident or know someone who has. About 8,000 followers.
+
+She's nervous about this one. The three failure modes you named in session one — the damage-control essay, the humility performance, the redemption arc — all feel like live wires to her. She doesn't want it to look like damage control. She doesn't want to perform humility. She doesn't want to make it about Meridian's growth story. She just wants to say something real.
+
+Draft the LinkedIn post. Short, under 200 words, written in first person as Jordan. Then, below the draft, write 4–5 coaching notes explaining why each structural choice was made — Jordan will read these before she posts, so she can edit with confidence instead of second-guessing every line.$pf$,
+ $pf$**LinkedIn Post Draft**
+
+---
+
+We had a 6-hour outage this morning.
+
+If you're a Meridian customer and you were trying to work between 8 AM and 2 PM Pacific — that's on us. A database migration we ran last night created a problem that didn't show up in testing but surfaced immediately when real traffic hit. We identified it, fixed it, service is restored.
+
+I've been going through the support inbox and the emails we received. I wanted to write this before I did anything else.
+
+A Tuesday morning outage is not a minor thing. I know that. I'm not going to turn this into a lesson about resilience or a list of what we're going to do better — those conversations are for later. Right now I just want to say: I'm sorry this happened, and we're going to fix the gaps that let it happen.
+
+Full incident post with the complete timeline and what we're changing: [link].
+
+---
+
+**Coaching notes for Jordan:**
+
+**1. Opening with the fact, not the feeling.** "We had a 6-hour outage this morning" is the right first sentence — not an apology, not context, not a qualifier. It leads with what happened. This signals confidence and accountability simultaneously. The instinct to open with "I want to start by saying how sorry we are" puts the company's emotional state before the customer's experience; this opening reverses that.
+
+**2. "That's on us" is doing a lot of work.** This is the sentence that separates this post from every corporate incident communication. "We accept full responsibility for this service disruption" is ten words to say what "that's on us" says in three. Plain language, no hedging. It also makes the post sound like a person wrote it, not a PR committee.
+
+**3. The "going through the support inbox" line.** This is the image that makes the reader believe Jordan actually engaged with what happened. It's specific (the support inbox) and behavioral (she was doing it before she posted). This is the difference between claiming accountability and demonstrating it. If Jordan actually went through the inbox before writing this — leave the line exactly as is. If she didn't, change it to something she actually did.
+
+**4. "I'm not going to turn this into a lesson."** This directly pre-empts the redemption arc failure mode. Jordan's audience has seen 50 founders turn their worst day into a brand story. Naming the genre and refusing to play it is more authentic than just not doing it. The line also relieves pressure — Jordan doesn't have to wrap this into a growth narrative, because she just told everyone she's not going to.
+
+**5. The "those conversations are for later" close.** This does two things: it tells readers that Jordan knows there's more work to do, and it signals today is not the day for it. Customers don't want to hear about your post-mortem process the day of the incident. They want to know you understand what happened. "For later" acknowledges the process without centering it.$pf$,
+ NULL);
+
 ALTER TABLE prompts ENABLE ROW LEVEL SECURITY;
 ALTER TABLE prompt_steps ENABLE ROW LEVEL SECURITY;

@@ -44719,5 +44719,487 @@ Open a dedicated savings account, label it taxes, and transfer your 30% there on
 "Clean books" means: your Tab 3 totals match what your bank and platforms received, you have the 1099 documents in hand, and you can explain anything that looks unusual in a sentence. Everything else is your accountant's job.$pf$,
  NULL);
 
+-- ============================================================
+-- Project 0128: ABM Pilot for 12 Tier-1 Accounts / sarahgrows / Marketing / 5-step / Opus 4.7 / intermediate
+-- ============================================================
+
+DELETE FROM prompt_steps WHERE prompt_id = '55555555-5555-5555-5555-555555550128';
+DELETE FROM prompts WHERE id = '55555555-5555-5555-5555-555555550128';
+
+INSERT INTO prompts (
+  id, title, description, content, result_content,
+  category_id, difficulty, model_used, model_recommendation,
+  tools_used, tags, status, author_id, vote_count, bookmark_count) VALUES (
+  '55555555-5555-5555-5555-555555550128',
+  $pf$ABM Pilot: Turning 12 Named Architecture Firm Accounts into Pipeline$pf$,
+  $pf$Sarah Mitchell built Trackify's first account-based marketing program from scratch — a $40K, 12-week pilot targeting 12 named enterprise architecture firms. No prior ABM experience. Real pipeline by week 12.$pf$,
+  $pf$When Trackify's CEO and VP Sales aligned on an enterprise push in January, I had exactly $40,000 and twelve weeks to prove ABM was worth investing in at scale. Our $2.3M ARR came almost entirely from sub-50-seat deals won through demand gen — G2 reviews, LinkedIn campaigns, a webinar funnel that converted okay at the $12K ACV range. But the growth thesis now required landing AE firms with 500-plus seats and $80–150K potential deals. Those firms weren't converting from our generic funnel; they needed a different motion entirely.
+
+I'd never run ABM before. I spent a week reading Sangram Vajre's work, the Terminus blog, and piecing together how companies like Bombora and Drift had done it. Then I sat down with Claude and built the Trackify ABM pilot piece by piece: the account list, the intelligence dossiers, the content and outreach framework, the channel orchestration, and the measurement system. What follows is exactly how I did it.$pf$,
+  $pf$By week 12, 9 of 12 Tier-1 accounts had moved from "target" to "engaged" (at least two meaningful touchpoints from different channels), 4 had active discovery calls on the calendar, and we had one verbal commitment for a $94K contract pending legal. The pilot justified a $180K ABM budget for Q3.$pf$,
+  '11111111-1111-1111-1111-111111111102',
+  'intermediate',
+  'claude-opus-4-7',
+  'Claude 4.7 Opus',
+  ARRAY['Claude', 'LinkedIn Sales Navigator', 'LinkedIn Campaign Manager', 'HubSpot', 'Google Ads'],
+  ARRAY['ABM', 'account-based marketing', 'B2B marketing', 'enterprise sales', 'demand generation', 'pipeline building'],
+  'approved',
+  '22222222-2222-2222-2222-222222222202',
+  0,
+  0
+);
+
+INSERT INTO prompt_steps (id, prompt_id, step_number, title, content, result_content, description) VALUES
+
+-- Step 1 --
+('77777777-7777-7777-7777-777777128001',
+ '55555555-5555-5555-5555-555555550128',
+ 1,
+ $pf$Account list and ICP for the enterprise segment$pf$,
+ $pf$I'm VP of Marketing at Trackify, a project management SaaS built for architecture and engineering firms. We have $2.3M ARR, 215 customers, and average deal size around $12K ACV — all demand gen wins from G2, LinkedIn campaigns, and a webinar funnel. The CEO and VP Sales just aligned on a major accounts strategy: land 5 to 10 deals with large AE firms at 500-plus employees for $80–150K ACV. I've been given $40K and 12 weeks to prove ABM is worth scaling. Problem is I've never built an ABM program — only demand gen.
+
+Two specific questions to start: First, how do I define the ICP for this enterprise segment? Our existing customers are mostly 10–80 person AE firms; the enterprise buyers are meaningfully different. Second, what's the actual method for building the list of 12 accounts for the pilot? Sales will give me a wish list of 40 names and I need a principled way to get to 12 — not a generic answer about aligning with sales, but actual criteria and a scoring process.$pf$,
+ $pf$Let me separate the two questions because they're related but distinct.
+
+**Defining the enterprise ICP**
+
+Your existing customers show you what converts through demand gen — small-to-mid AE firms, probably 10–80 employees, making a purchase decision quickly with a principal or operations director who found you on G2 or a webinar. Enterprise is a meaningfully different buyer profile.
+
+For AE firms at 500-plus employees, the ICP signals that matter most:
+
+*Firmographic:*
+- 500–2,000 employees (above 2,000 and you're in pure enterprise with procurement cycles you can't shorten in 12 weeks)
+- Multi-office: at least 3 US offices with active project coordination across them — this is where generic PM tools create visible pain
+- $50M-plus annual revenue: enough to absorb an $80–100K software spend without a six-month budget cycle
+- Current tooling: Microsoft Project, Asana, or Monday.com — not Deltek Vision or Newforma (those firms are committed to a vertical platform and harder to displace)
+
+*Behavioral signals worth sourcing:*
+- Recent growth: new office opened in the last 18 months, active RFP participation, headcount growing on LinkedIn
+- Informal PM function: no dedicated PM director, project coordination lives with principals or studio managers who are visibly frustrated with the current tool
+- A high-visibility project delivery challenge in the last year — shows the pain is real and felt at principal level, not just operational
+
+**Building the 12-account list**
+
+Start from four sources, then trim with a scoring matrix.
+
+*Source 1: Won enterprise deals.* You have a few existing customers at 200-plus seats. Who are they? Build a one-page profile of each: firm size, office count, what tool they replaced, who championed the deal. These become ground truth for the ICP.
+
+*Source 2: Look-alike expansion.* Take your 3–5 best existing large customers and run them through LinkedIn Sales Navigator's Account Recommendations — filter by employee count 500-plus, industry "Architecture and Planning" plus "Civil and Structural Engineering," US/Canada. Filter results to firms showing Asana or Monday.com usage via BuiltWith or LinkedIn job postings. A job post mentioning those tools signals both the current tooling and the pain simultaneously.
+
+*Source 3: CEO and VP Sales nominations.* Ask for names but apply the ICP filter. If they nominate a firm already on Deltek or Newforma, deprioritize unless there's a specific reason to believe they're evaluating alternatives. Get the reasoning behind each nomination — "we met their PM director at AIA" is worth more than a cold wish-list entry.
+
+*Source 4: Conference attendee signals.* AIA and SMPS (Society for Marketing Professional Services — the AE-firm association) sometimes publish session attendee data. Firms sending multiple people to PM-track sessions are actively thinking about this problem.
+
+**Why 12**
+
+The number isn't arbitrary. ABM at this scale requires real personalization — account-specific content, coordinated outreach, tailored ads. 12 accounts means you can spend 2–3 hours per account dossier and still have time for execution. More than 20 and you're templating so heavily it stops being ABM and starts being segmented demand gen with extra steps. 12 also gives you a statistically meaningful result: if 4–5 move to pipeline, that's a real signal.
+
+Trim to 12 using a scoring matrix: ICP fit (firmographic match, 40 points), warmth (any prior touchpoint, 30 points), strategic value (CEO/VP nomination or conference contact, 20 points), tool displacement opportunity (on Asana or Monday, not on Deltek, 10 points). Pick the 12 highest scorers.$pf$,
+ NULL),
+
+-- Step 2 --
+('77777777-7777-7777-7777-777777128002',
+ '55555555-5555-5555-5555-555555550128',
+ 2,
+ $pf$Account intelligence dossiers and buying committee mapping$pf$,
+ $pf$The 12 accounts are locked. Before anyone reaches out, I want to make sure we actually know something about each firm — their structure, their pain, who we need to talk to. I've read ABM content that says "research your accounts" without explaining what that means in practice. What should an account intelligence dossier actually contain? And how do I map the buying committee at each firm — who's the champion, who's the economic buyer, and who will try to block the deal? I'm working primarily with LinkedIn Sales Navigator and public information, not Bombora or a large intent data spend.$pf$,
+ $pf$An account intelligence dossier is six sections. Build one Google Doc per account.
+
+**Section 1: Account snapshot (15 minutes per account)**
+- Firm size and office locations: count active offices from their website. Record the city and any headcount listed, and note whether each office runs its own project intake or reports to a central studio.
+- Revenue estimate: US AE firms at 500-plus employees are almost always above $50M. Engineering News-Record's annual rankings give specific figures if you need them.
+- Specialty: generalist or focused (healthcare, higher ed, civic, hospitality)? Specialization affects the PM pain — a firm with complex healthcare project compliance has different coordination headaches than a residential developer.
+- Current tooling: search "Asana" OR "Monday.com" OR "project management" OR "Deltek" in LinkedIn People Search filtered to that company. Job postings are more reliable — a six-month-old post for "Project Coordinator, proficient in Asana" tells you both the current tool and that the role exists.
+
+**Section 2: Buying committee map**
+
+You need at minimum three roles identified by name.
+
+*Champion:* The person who feels the pain of the current tool most directly. At AE firms, this is usually a Studio Manager, Director of Operations, or a senior PM who's been informally handed project coordination. Find them via LinkedIn (title search: "project manager" OR "operations" filtered to the firm). Read their recent posts — complaints about coordination, mentions of specific tools, or anything about workflows.
+
+*Economic buyer:* The person who controls the budget and signs the contract. At 500-plus employee firms, typically a COO, CFO, or Managing Principal. They care about financial control, compliance, and risk on large projects. They appear in news coverage — press releases about project awards often list the MP.
+
+*Blocker:* IT director or procurement lead at larger firms. Will they require SOC 2 certification? Data residency requirements? A formal security review? Check LinkedIn for an IT director title; if one exists, your champion needs to know how to navigate that stakeholder before the deal progresses.
+
+**Section 3: Recent news and signals (20 minutes per account)**
+Search the firm name in Google News filtered to the last 12 months. Look for: new office openings, major project announcements, leadership changes (a new COO or Managing Director is often evaluating tools), and any mention of delivery challenges.
+
+**Section 4: Relationship inventory**
+Do you know anyone here? Check your LinkedIn first-degree connections filtered to the company. Check CRM history — did anyone from this firm ever download content, attend a webinar, or start a trial that didn't convert? Warm accounts should be prioritized in your outreach sequence.
+
+**Section 5: Outreach hypothesis**
+One sentence: why this account, why now, what is the specific pain hook. "Corgan just opened their fourth office in 18 months — multi-office coordination is their active pain." "HOK has 12 active healthcare projects requiring HIPAA documentation — Asana doesn't handle that natively." This sentence becomes the first line of every piece of personalized content for this account.
+
+**Section 6: Engagement log**
+Leave this blank. Fill it in as touchpoints happen: date, channel, content sent, response received, next step. This transforms the dossier from a research document into a live account view over the 12 weeks.
+
+One dossier takes 1.5–2 hours the first time. After the first three you'll have a rhythm. Build all 12 before starting any outreach — accounts you haven't researched get the wrong message.$pf$,
+ NULL),
+
+-- Step 3 --
+('77777777-7777-7777-7777-777777128003',
+ '55555555-5555-5555-5555-555555550128',
+ 3,
+ $pf$Personalization framework and outreach quality bar$pf$,
+ $pf$All 12 dossiers are complete. Looking at them, the accounts naturally cluster into three groups: four large general-practice firms with multi-office coordination pain, four healthcare-specialist firms with compliance documentation pain, and four boutique design-forward firms drowning in their tools mismatch. The outreach hypothesis is clear for each cluster.
+
+Now I need to turn this into actual content and outreach copy. I have a marketing team of one and an SDR team of two — I cannot write 12 different case study PDFs and 12 different email sequences. What's the right personalization framework for ABM at this scale? What do I actually customize versus what do I templatize? And can you write a good versus bad example of an outreach email opener so I know where the quality bar actually is?$pf$,
+ $pf$The personalization mistake most first-time ABM practitioners make is personalizing at the account level when they should be personalizing at the cluster level and then adding one account-specific sentence on top.
+
+**The personalization ladder**
+
+Four levels, high-to-low effort:
+
+*Level 1 (1-to-1): True account specificity.* Something only true about this account — a recent project win, a specific pain visible in their job postings, a mutual connection. This is the one sentence your SDR adds to the outreach. Your dossier Section 5 outreach hypothesis is exactly this. 15 minutes of research per account, already done.
+
+*Level 2 (1-to-few): Cluster content.* Build one content asset per firmographic cluster. Your three clusters each get one one-page case study framed around their specific pain — three assets, not twelve. For healthcare specialists, the case study leads with HIPAA documentation and project compliance. For multi-office GPs, it leads with cross-office visibility and project handoffs between studios. For boutique design firms, it leads with how Trackify replaces the spreadsheet-and-email coordination layer they've outgrown.
+
+*Level 3 (1-to-segment): Industry framing.* Your website case studies, webinar invitations, and LinkedIn ads reference architecture and engineering firms specifically. If they don't already, update them. This is table stakes, not ABM.
+
+*Level 4 (1-to-many): Generic demand gen.* Everything else you're already running. ABM doesn't replace it; it runs in parallel for the 12 accounts.
+
+For 12 Tier-1 accounts with a team of one: Level 1 one-liners (15 min each = 3 hours total), Level 2 cluster content (3 short one-pagers = 6–8 hours), Level 3 framing already done. Total incremental content work is one focused week.
+
+**Good vs. bad email opener**
+
+*Bad:*
+
+> Hi Jennifer,
+>
+> I hope you're doing well. I'm reaching out because I think Trackify could be a great fit for Gensler's project management needs. We help architecture firms like yours streamline their workflows. Would love to set up a 20-minute call to learn more about your team.
+
+What's wrong: "hope you're doing well" is filler. "a great fit" is claim before proof. "streamline their workflows" is every software vendor's pitch. "learn more about your team" puts the burden on Jennifer.
+
+*Good:*
+
+> Hi Jennifer,
+>
+> Gensler's Chicago office just won the Lincoln Yards mixed-use commission — that project alone involves coordinating architecture, interiors, and civil teams across three Gensler offices. We built Trackify specifically for that kind of cross-studio project load. Worth 15 minutes?
+
+What's right: opens on something true and specific to their firm (from their press release). Connects it to a real coordination pain the recipient would recognize. Positions Trackify's value in their language. The close is a low-commitment ask.
+
+The account-specific opening sentence comes from your dossier Section 5 outreach hypothesis. The second sentence is your Level 2 value prop for their cluster. The third sentence is the ask. That's the template — the specific opening changes per account.
+
+**SDR sequence structure**
+
+Day 1: Personalized email using the opener structure above.
+Day 4: LinkedIn connection request with a one-line note referencing the same context.
+Day 8: Follow-up email with the cluster one-pager attached ("put together a quick case study on how firms running multi-studio healthcare projects use Trackify — thought it might be relevant").
+Day 15: Final email, explicit close ("trying this one more time — if timing is off, I'll follow up in 90 days").
+Day 16: SDR updates dossier engagement log and marks the account's current stage.$pf$,
+ NULL),
+
+-- Step 4 --
+('77777777-7777-7777-7777-777777128004',
+ '55555555-5555-5555-5555-555555550128',
+ 4,
+ $pf$Multi-channel orchestration: LinkedIn ads, retargeting, and SDR coordination$pf$,
+ $pf$Content and sequences are ready. Now I need to coordinate the channels — I want SDR outreach to land in an environment where the account already knows who Trackify is. I've read about the "surround sound" ABM approach. I have access to LinkedIn Campaign Manager, Google Ads for retargeting, and G2 category ads. Total remaining budget is $34K after content and dossier work. How do I coordinate the channels so ads and SDR outreach work together? What's the LinkedIn matched audiences setup for just these 12 companies? And what's a reasonable budget breakdown?$pf$,
+ $pf$Surround sound ABM works because account-level touchpoints accumulate before the SDR asks for a meeting. By the time an outbound email arrives, the recipient has already seen your brand in two or three other places. The key is sequencing: ads go live before SDR outreach starts, not simultaneously.
+
+**Timeline logic**
+
+Week 1–2: Ads go live. The 12 accounts start seeing Trackify content in their LinkedIn feeds. No outbound sequences yet.
+Week 3: SDRs send first emails to champions. By now, someone at each account has likely seen two or three LinkedIn impressions of Trackify. The email lands warmer.
+Week 4–8: Sustained ad pressure plus ongoing SDR sequences. For accounts that don't respond by day 15, ads keep Trackify top-of-mind.
+Week 9–10: Second-touch on non-responders — different angle (the compliance framing for a healthcare-cluster account that didn't respond to the multi-office opener).
+Week 11–12: Pilot wind-down. Stage each account for the week-12 readout.
+
+**LinkedIn matched audiences setup**
+
+In LinkedIn Campaign Manager:
+1. Go to Plan → Audiences → Create Audience → Company.
+2. Upload a CSV with the 12 company names and their LinkedIn Company Page URLs.
+3. LinkedIn matches by company page — include both name and URL to maximize match rate.
+4. The general targeting minimum is 300 accounts, but Sponsored Content ads can run against a smaller list; LinkedIn will note lower reach estimates. For 12 named firms this is expected.
+5. Build two campaigns: one Sponsored Content campaign (cluster-specific case study as a lead gen form ad) and one Message Ad campaign targeting economic buyer personas at firms that haven't responded to SDR by week 6.
+
+Match rate for 12 named AE firms will be high — 9 to 11 of 12 — because these are established firms with real LinkedIn company pages.
+
+**Budget breakdown ($34K remaining)**
+
+LinkedIn Ads: $18,000 ($1,500/week for 12 weeks). Roughly 12,000–18,000 impressions per week across the 12 firms. For approximately 150 buying committee members per account, that's 50–80 buying committee impressions per account per week.
+
+G2 Category ads and retargeting: $8,000. G2 ads place you in front of buyers actively researching PM software for AE. At your deal size, one influenced deal covers the entire G2 spend. Retargeting adds $500–1K and helps SDR timing.
+
+SDR time (blended hourly plus tools): $6,000. Two SDRs spending roughly 20% of their time on these 12 accounts for 12 weeks.
+
+Contingency, sequence tooling, and minor content updates: $2,000. Total: $34,000.
+
+**One operational note**
+
+Wire your CRM to create an account-level engagement view, not just contact-level. For ABM, you care about aggregate touchpoints the account has received, not whether one contact opened an email. Most CRM defaults track at the contact level. A simple account-level roll-up field takes about 30 minutes to configure and makes the week-6 status update possible without manually combing through dossier logs.$pf$,
+ NULL),
+
+-- Step 5 --
+('77777777-7777-7777-7777-777777128005',
+ '55555555-5555-5555-5555-555555550128',
+ 5,
+ $pf$Pilot measurement framework and the week-12 readout$pf$,
+ $pf$I'm three weeks into the pilot. LinkedIn matched audiences are running, SDRs are on sequence, and I'm tracking opens and clicks in HubSpot. The CEO wants a status update at end of week 6 and a full readout at week 12. I'm worried about measuring the wrong things — open rates and LinkedIn impressions feel like vanity metrics at this stage. What are the right ABM metrics for a pilot at this scale? How do I build the account-level tracking view I actually need? And what does a realistic successful outcome look like at week 12 given I'm starting from zero with 12 accounts?$pf$,
+ $pf$You're right to distrust open rates and impressions. Those measure activity, not account progression.
+
+**The three metrics that actually matter**
+
+*1. Account engagement score*
+For each of the 12 accounts, count distinct touchpoints from distinct channels. SDR email opened: 1 point. SDR email replied: 3 points. LinkedIn ad impression (estimated): 0.5 points. Meeting booked: 10 points. Website visit from someone at the company: 2 points (trackable via HubSpot's company-level IP identification at the base tier). Build a Google Sheet with rows as accounts and columns as weeks. Each cell shows the running score. Accounts above 10 points are "engaged." Accounts above 25 are "active."
+
+*2. Pipeline influenced*
+Any opportunity in your CRM with at least one buying committee member from a Tier-1 account who received ABM touches before the opportunity was created counts as ABM-influenced pipeline. At week 12, your claim isn't "ABM closed X dollars" — it's "ABM influenced Y dollars in identified pipeline from target accounts, with four opportunities at discovery stage." First-pilot ABM rarely closes in 12 weeks. That expectation needs to be set with the CEO before the readout, not during it.
+
+*3. Account stage progression*
+Define four stages: Target (on the list, no engagement), Contacted (SDR outreach initiated), Engaged (at least one bidirectional interaction — a reply, a meeting attended, a LinkedIn connection accepted), Pipeline (qualified opportunity open in CRM). At week 12, a healthy pilot: zero accounts still at Target, three to four at Pipeline, five to six at Engaged, two to three at Contacted-but-not-yet-engaged.
+
+**The week-6 status update (three slides)**
+
+Slide 1: Heat map — the 12-account engagement score table, color-coded green/yellow/red.
+Slide 2: Highlights — the two or three strongest signals so far (a reply, a meeting booked, the economic buyer accepting the SDR's LinkedIn connection).
+Slide 3: Adjustments — what you're changing based on what you've learned. The CEO wants to see learning, not just execution.
+
+**The week-12 readout template**
+
+*Title:* ABM Pilot Results — 12 Accounts, 12 Weeks
+
+*Hypothesis:* Coordinated ABM across 12 named Tier-1 accounts will move more of them to pipeline than demand gen alone would have in the same period.
+
+*Methodology:* One paragraph: account selection criteria, channels used, content approach, sequence structure.
+
+*Results:*
+- Account stage distribution: how many at each of the four stages
+- ABM-influenced pipeline: total dollar value across identified opportunities
+- Engagement by cluster: which cluster performed best and your hypothesis on why
+- Key learnings: which personalization angle worked, which channel did the most work, one thing you'd do differently
+
+*Recommendation:*
+If 3-plus accounts reached Pipeline: request $180–250K for Q3 to run 30 accounts with two additional SDRs. If 1–2 reached Pipeline: request a focused $80K extension on the best-performing cluster before scaling. If 0 reached Pipeline: identify whether the issue was ICP fit, messaging fit, or channel fit, and recommend a targeted 4-week re-test with specific changes.
+
+A first ABM pilot that moves 4–5 accounts from Target to Engaged or Pipeline in 12 weeks with one or two discovery calls is a successful pilot by any practitioner benchmark. Set that bar with the CEO before week 12.$pf$,
+ NULL);
+
+-- ============================================================
+-- Project 0129: Designing a 3-Week PBL Unit / teacherben / Education / 3-step / Sonnet 4.6 / beginner
+-- ============================================================
+
+DELETE FROM prompt_steps WHERE prompt_id = '55555555-5555-5555-5555-555555550129';
+DELETE FROM prompts WHERE id = '55555555-5555-5555-5555-555555550129';
+
+INSERT INTO prompts (
+  id, title, description, content, result_content,
+  category_id, difficulty, model_used, model_recommendation,
+  tools_used, tags, status, author_id, vote_count, bookmark_count) VALUES (
+  '55555555-5555-5555-5555-555555550129',
+  $pf$Designing a 3-Week PBL Unit: 8th-Grade Water Quality Investigation$pf$,
+  $pf$Ben Okafor, 8th-grade science teacher in Columbus, OH, designed his first project-based learning unit — a water quality investigation of the Olentangy River — using test kits he already owned and a real local waterway.$pf$,
+  $pf$I'd been to four project-based learning professional development sessions over two years and remained skeptical. The examples always felt aspirational and disconnected from the reality of 26 eighth-graders, a shared lab cart, and a curriculum calendar that can't slip more than a week.
+
+At the end of March, three things aligned: I had a planning window, I had a class set of simple water chemistry test kits I'd bought three years ago and barely used — pH strips, dissolved oxygen tests, nitrate strips, turbidity cards — and I had a genuinely relevant local context. The Olentangy River runs three blocks from school. The Ohio EPA publishes monitoring data for it publicly. A real question that real people are actively studying, with materials I already owned.
+
+I sat down with Claude and built the unit properly for the first time: a real driving question, NGSS-aligned objectives, student investigation materials that force comparability across groups, an assessment rubric that rewards thinking over formatting, and a presentation protocol with a genuine audience. This is exactly how I designed it.$pf$,
+  $pf$The unit ran in October across all three sections. All groups completed the full investigation and presented findings. Seven of nine groups across the three sections developed a specific recommendation for the Ohio EPA's monitoring program based on their own data. The Columbus Metropolitan Library agreed to display student findings posters in their STEM section for two months. Ben submitted the unit for the district's innovation in science teaching award and won honorable mention.$pf$,
+  '11111111-1111-1111-1111-111111111106',
+  'beginner',
+  'claude-sonnet-4-6',
+  'Claude 4.6 Sonnet',
+  ARRAY['Claude', 'Google Sheets'],
+  ARRAY['project-based learning', 'PBL', 'water quality', 'NGSS', 'middle school science', 'environmental science'],
+  'approved',
+  '22222222-2222-2222-2222-222222222205',
+  0,
+  0
+);
+
+INSERT INTO prompt_steps (id, prompt_id, step_number, title, content, result_content, description) VALUES
+
+-- Step 1 --
+('77777777-7777-7777-7777-777777129001',
+ '55555555-5555-5555-5555-555555550129',
+ 1,
+ $pf$Unit structure, driving question, and NGSS alignment$pf$,
+ $pf$I'm a middle school science teacher and I want to design my first real project-based learning unit. I've done group labs and long-term projects before, but never a true PBL sequence with a driving question and a public product. My context: 8th-grade science, three sections of 26 students, I have simple water chemistry test kits covering pH, dissolved oxygen, nitrate, and turbidity, and the Olentangy River runs three blocks from school. I want the unit to be three weeks.
+
+I've been to PD sessions on PBL but they all felt abstract. In practice, how do I actually design this? What makes a good driving question for this specific context? How do I align it to NGSS without making the alignment feel like paperwork? And what does the three-week day-by-day structure look like for a 26-student class with 50-minute periods? This is my first time building a PBL unit and I need a concrete structure I can actually execute, not more theory.$pf$,
+ $pf$Three weeks works well for this unit, and your setup is genuinely good: a real question with a real answer students can debate (is the Olentangy healthy?), testable materials you already own, and an institutional audience monitoring the same river (the Ohio EPA's Olentangy data is publicly available and students can measure against it directly).
+
+**The driving question**
+
+A good PBL driving question is genuinely open (no single correct answer), connects to a real situation beyond the classroom, and requires students to do something — not just report, but judge and recommend.
+
+For this unit: *"Is the Olentangy River safe for the ecosystem, and what would you recommend to the Ohio EPA based on your data?"*
+
+This works because: it's real (the EPA actively monitors the river and publishes thresholds students can test against), it requires genuine judgment (not just collecting data, but interpreting it and making a recommendation), and it produces a natural public product. The question is also genuinely answerable by 8th graders with your kits — which is easy to lose sight of when reading PBL frameworks designed for well-resourced programs.
+
+**NGSS alignment**
+
+Your unit hits several 8th-grade performance expectations directly:
+- MS-LS2-5: Evaluate competing design solutions for maintaining biodiversity and ecosystem services (the recommendation is the design solution)
+- MS-ESS3-3: Apply scientific principles to design a method for monitoring and minimizing human impact on the environment
+- MS-ETS1-1: Define the criteria and constraints of a design problem (framing investigation parameters against EPA standards)
+
+For practices: Planning and Carrying Out Investigations (the testing), Analyzing and Interpreting Data (comparing readings to EPA thresholds), and Constructing Explanations (the recommendation). Crosscutting Concept: Cause and Effect — connecting readings to upstream sources.
+
+Keep the alignment summary to half a page in your unit plan. Administrators need to see it; students don't.
+
+**Three-week day-by-day structure (50-minute periods)**
+
+*Week 1 — Launch and Investigate*
+
+Day 1: Launch event. Show the Ohio EPA's most recent Olentangy monitoring report (publicly available at ohio.gov; search "Olentangy biennial report"). Ask the driving question. Do not answer it. Introduce water quality indicators and form groups of 3–4.
+
+Day 2: Mini-lesson on what each parameter measures and why it matters for ecosystems — not just how to use the kit, but why dissolved oxygen below 5 mg/L stresses fish, why elevated nitrates signal agricultural runoff, what turbidity does to aquatic organisms that navigate by light.
+
+Day 3: Calibration lab. Every group tests the same pre-collected sample. This catches common procedural errors (pH strip read time, DO kit timing) before the field component and creates a baseline for class discussion.
+
+Day 4–5: Field or comparison lab. Walk to the river if accessible, or bring in pre-collected samples from two locations — upstream and downstream of the Granville Road treatment facility creates a meaningful comparison point. Each group records all four parameters.
+
+*Week 2 — Analysis and Meaning-Making*
+
+Day 6–7: Groups visualize their data. A comparison bar chart or table is sufficient. Teach the EPA threshold values (pH 6.5–8.5, dissolved oxygen above 5 mg/L, nitrates below 10 mg/L) so students classify readings as pass or fail against a real benchmark, not just a raw number.
+
+Day 8: Whole-class share-out. What did different groups find? Are readings consistent across groups? If not, what might explain the variation? This session usually produces the best discussion of the unit — disagreement between groups is more interesting than agreement.
+
+Day 9–10: Cluster research. Each group investigates one probable cause for the parameter they found most concerning — agricultural runoff for nitrates, urban stormwater for turbidity, temperature effects on dissolved oxygen. This step connects their data to causes and builds the explanation component of the recommendation.
+
+*Week 3 — Product and Presentation*
+
+Day 11–13: Build the product. Each group produces a one-page brief plus display poster: what they measured, what they found, what it means against EPA standards, and what they recommend. The recommendation is the heart of the project.
+
+Day 14: Peer review. Groups swap briefs and give structured feedback using the rubric categories. Peer feedback raises final presentation quality more reliably than another round of teacher feedback at this stage.
+
+Day 15: Presentations to an authentic audience. Options in ascending order of stakes: the class only, a neighboring teacher's class, a parent evening, or a written submission to the Ohio EPA's citizen science program. Tell students on Day 1 who the audience will be — the audience shapes the work more than any rubric.$pf$,
+ NULL),
+
+-- Step 2 --
+('77777777-7777-7777-7777-777777129002',
+ '55555555-5555-5555-5555-555555550129',
+ 2,
+ $pf$Student investigation protocol and group collaboration structures$pf$,
+ $pf$The unit structure is clear. Now I need the actual student-facing materials. Two specific things: First, what should the investigation protocol handout look like — the sheet students use during the water testing lab days? I need something that guides them through the procedure but also ensures data is collected in a comparable format across groups. I've had group projects before where different groups collect data in incompatible ways and the class discussion becomes impossible. Second, what are the specific structures that prevent the coasting problem in 8th-grade group projects? I've tried "everyone has a role" before and it doesn't really prevent one person from doing all the work. I want structures that actually distribute ownership.$pf$,
+ $pf$Two things: a concrete protocol format and the specific structures that actually prevent coasting — not just assigned roles.
+
+**Investigation protocol handout — template**
+
+One double-sided page. Three sections.
+
+*Section 1: Before You Test*
+- Sample location (address or landmark description; note surface, mid-column, or bank edge)
+- Sample collection date and time
+- Weather conditions today and in the past 48 hours (rainfall directly affects turbidity and runoff readings)
+- Group hypothesis: what do you predict your readings will show, and why?
+
+*Section 2: Data Collection Table*
+
+| Parameter | Test Method | Your Reading | Units | EPA Standard | Pass / Fail |
+|-----------|-------------|-------------|-------|--------------|-------------|
+| pH | pH strip, 30-second read | ___ | pH units | 6.5 – 8.5 | ___ |
+| Dissolved Oxygen | DO kit, full procedure | ___ | mg/L | above 5 mg/L | ___ |
+| Nitrates | Nitrate strip, 60-second read | ___ | mg/L | below 10 mg/L | ___ |
+| Turbidity | Visual comparison scale | ___ | NTU estimate | below 1 NTU | ___ |
+
+Add below the table: "Tester's name: _______________  Each group member must conduct at least one test independently and sign the row."
+
+The "tester's name" field is your accountability mechanism built into data collection itself. During the class share-out, you can call on the specific student who ran a specific test — they know their number because they ran it.
+
+*Section 3: After Testing (complete together)*
+- Which reading surprised you most? What might explain it?
+- Which parameter shows the most concern based on EPA standards?
+- One question this data raises that you'd want to investigate further.
+- What will your group focus on for Week 2 research?
+
+**Four structures that actually prevent coasting**
+
+Generic "everyone has a role" fails because the roles are often unequal in consequence — the person who sets up equipment and the person who presents findings are not doing equivalent work, and students know it.
+
+*Structure 1: Rotating daily roles with a built-in verification loop*
+Four roles, rotate each class session: Lab Director (reads procedure aloud, directs sequence), Data Recorder (the only person who writes in the protocol — creates accountability for accuracy), Equipment Manager (sets up and returns all materials), Quality Checker (re-runs one test independently to verify the Data Recorder's reading and notes any discrepancy). The Quality Checker role is the key one — it creates peer verification students take seriously because a discrepancy means the group has to decide which reading to use.
+
+Rotate daily. A student who coasted as Equipment Manager on day 1 becomes Lab Director on day 3. You cannot coast as Lab Director.
+
+*Structure 2: Individual exit slips, not group exit slips*
+End each class with a 3-sentence individual exit slip: describe what your group found today; describe your specific contribution; write one question you still have. Collect these every day for Week 1. You don't need to grade them formally — read through them that evening. You'll immediately see which students write "we collected water samples" versus "I ran the dissolved oxygen test and got 4.2 mg/L, which is below the EPA minimum — I'm wondering if the reading changes downstream from the treatment plant discharge."
+
+These are a diagnostic tool, not a grading mechanism. If a student's slips are consistently thin, you have a private conversation before Week 2 rather than a surprise grade penalty at the end.
+
+*Structure 3: Jigsaw expert roles for Week 2 research*
+When groups research causes of their parameter readings in Week 2, assign individual students to become the expert on a sub-topic: nitrate sources, phosphate and nutrient cycling, point-source versus non-point-source pollution, or dissolved oxygen and temperature relationships. Each expert teaches their piece to the group. The recommendation draft cannot be written until all experts have contributed. No coasting when the group's product requires your specific piece.
+
+*Structure 4: Named contribution in the final presentation*
+Each person presents the section of the investigation they primarily led. The student who ran the dissolved oxygen tests presents the DO findings. The student who researched agricultural runoff presents the cause analysis. This isn't about equal speaking time — it's about each student presenting content they actually own and can answer questions about. Q&A makes this visible to everyone in the room, which raises preparation stakes more than any rubric description.$pf$,
+ NULL),
+
+-- Step 3 --
+('77777777-7777-7777-7777-777777129003',
+ '55555555-5555-5555-5555-555555550129',
+ 3,
+ $pf$Assessment rubric, presentation protocol, and post-unit teacher reflection$pf$,
+ $pf$Almost done. Two final pieces: the assessment rubric and the presentation protocol. On the rubric — I want it to reward scientific reasoning and recommendation quality, not formatting and poster polish. I've seen rubrics that give highest marks to students who completed all the steps correctly and made a nice display, with actual analytical thinking as a minor category. What are the right categories, and what does strong versus weak look like in each? On the presentation: I'm planning 8 minutes per group plus Q&A. What's the structure and how do I handle questions so it doesn't fall apart with 13-year-olds? And after this unit runs, I want a simple reflection template — this is my first PBL unit and I want to capture what worked before I forget.$pf$,
+ $pf$**Assessment rubric — four categories**
+
+The design principle: the category capturing analytical thinking gets the most weight. Formatting and completeness categories exist but don't dominate.
+
+*Category 1: Data Quality and Measurement Accuracy (25 points)*
+- 4 (Exemplary): All four parameters measured using correct procedure and timing; readings consistent with a verification trial; units correct throughout; anomalies identified and noted, not silently ignored
+- 3 (Proficient): Most parameters measured correctly; one procedural error or inconsistency; units correct
+- 2 (Developing): Data collected with procedural errors; missing at least one parameter; units inconsistent
+- 1 (Beginning): Data collection incomplete or not following protocol; no attempt to identify errors
+
+*Category 2: Scientific Reasoning — Interpretation (35 points)*
+This is the highest-weighted category. This is where thinking happens, not effort.
+- 4 (Exemplary): Uses EPA thresholds to interpret each measurement, not just report the number; connects at least one reading to a probable cause using evidence from Week 2 research; distinguishes a concerning reading from a normal one; acknowledges a limitation of the data (one sample on one day is not the whole river)
+- 3 (Proficient): Uses EPA standards to classify readings as pass or fail for all parameters; makes at least one evidence-based connection between a reading and a cause; mentions at least one limitation
+- 2 (Developing): Describes values as high, low, or normal without EPA comparison; interpretation stops at labeling; no causal reasoning; no acknowledgment of limitations
+- 1 (Beginning): Repeats data numbers without any interpretation; cannot distinguish a reading that signals a problem from one that doesn't
+
+*Category 3: Recommendation Quality (25 points)*
+- 4 (Exemplary): Recommendation is specific, actionable, and supported by the group's own data — not general environmental messaging; names a specific audience and a specific action; includes at least one suggestion for follow-up testing to address uncertainty
+- 3 (Proficient): Recommendation is connected to the group's data; specific enough that someone could act on it
+- 2 (Developing): Recommendation is generic ("the river needs to be cleaner," "people should stop polluting") or supported by general knowledge rather than the group's measurements
+- 1 (Beginning): No recommendation, or a recommendation that contradicts the data
+
+*Category 4: Presentation Clarity (15 points)*
+Weight this lowest. A student who reasons brilliantly in a disorganized presentation is doing stronger work than a student with a beautiful poster and a generic recommendation.
+- 4: Findings organized logically from data through interpretation to recommendation; a non-expert audience could follow the argument; each group member speaks
+- 3: Organized; most members speak; argument is followable
+- 2: Disorganized; some members don't speak
+- 1: Incomplete; presenter cannot explain their own numbers
+
+**Presentation protocol: 8 minutes plus questions**
+
+Divide the 8 minutes by group size. For groups of four, 2 minutes each with a distinct section. Assign sections before presentation day — not on the morning of.
+
+Member 1: What did you investigate and why? State the driving question and your group's going-in hypothesis.
+Member 2: What did you find? Walk through the data table — each reading and whether it passed or failed the EPA standard.
+Member 3: What does it mean? Connect at least one reading to a probable cause and compare your findings to the EPA's published Olentangy data.
+Member 4: What do you recommend? Who specifically should act on this, and what should they do?
+
+For groups of three, members 3 and 4 can be one person covering interpretation and recommendation together. Do not allow one student to present alone — the split presentation is the final accountability structure from Week 1 carried through to the end.
+
+**Q&A with 8th graders**
+
+Before Q&A begins, post three prepared questions on the board as a question bank the audience draws from. This eliminates the awkward silence and raises question quality from generic comments to substantive probes.
+
+Your three questions:
+1. Your [parameter] reading was [X]. What might explain that result given what you know about the watershed?
+2. If you could test the river again with one additional parameter or at a different location, what would you choose and why?
+3. Your recommendation was [restate it]. Who specifically would need to act on it, and what would they need to know first?
+
+Call on audience members to ask from the bank. Thirteen-year-olds ask sharper questions than you expect when they've been through the same investigation.
+
+**Post-unit teacher reflection template**
+
+Complete within 48 hours of the last presentation. Five questions:
+
+1. *Driving question effectiveness:* Did students actually refer back to the driving question during their work, or did it fade into background decoration? If it faded, how would you rewrite it so it stays generative through Week 3?
+
+2. *Investigation quality:* Which lab day produced the cleanest, most comparable data across groups? What was different about the setup or protocol on that day?
+
+3. *Group dynamics:* Which groups had uneven participation? What specifically happened — which structure broke down first? What would you add to Week 1, Day 1 to prevent it?
+
+4. *Highest engagement moment:* What was the single class period where student engagement was most visible? What made it happen — the content, the structure, the audience, or something else?
+
+5. *One structural change for next year:* If you run this unit again in the fall, what is the one thing you would change before Lesson 1? Not a list — one thing.
+
+File this in a folder labeled by semester, not by unit. You are more likely to open a folder labeled "Fall 2026 reflections" than one labeled "Olentangy PBL unit." The reflection does not help you improve if you never read it in February when you are planning for fall.$pf$,
+ NULL);
+
 ALTER TABLE prompts ENABLE ROW LEVEL SECURITY;
 ALTER TABLE prompt_steps ENABLE ROW LEVEL SECURITY;

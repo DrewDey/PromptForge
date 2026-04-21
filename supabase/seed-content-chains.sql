@@ -45201,5 +45201,522 @@ Complete within 48 hours of the last presentation. Five questions:
 File this in a folder labeled by semester, not by unit. You are more likely to open a folder labeled "Fall 2026 reflections" than one labeled "Olentangy PBL unit." The reflection does not help you improve if you never read it in February when you are planning for fall.$pf$,
  NULL);
 
+-- ============================================================
+-- Project 0130: Unit Economics Deep Dive: Diagnosing Deteriorating CAC Payback Before Series B / jakefinance / Finance / 4-step / Opus 4.6 / intermediate
+-- ============================================================
+
+DELETE FROM prompt_steps WHERE prompt_id = '55555555-5555-5555-5555-555555550130';
+DELETE FROM prompts WHERE id = '55555555-5555-5555-5555-555555550130';
+
+INSERT INTO prompts (
+  id, title, description, content, result_content,
+  category_id, difficulty, model_used, model_recommendation,
+  tools_used, tags, status, author_id, vote_count, bookmark_count) VALUES (
+  '55555555-5555-5555-5555-555555550130',
+  $pf$Unit Economics Deep Dive: Diagnosing a Deteriorating CAC Payback Before Series B$pf$,
+  $pf$Jake Torres, CFO of an $8.2M ARR compliance SaaS, discovers CAC payback has crept from 10 to 16 months as the company moved upmarket — and builds a cohort model, diagnoses the root cause, and frames a credible fix for Series B investors.$pf$,
+  $pf$We closed our Series A eighteen months ago at $4.1M ARR with a thesis that was straightforward: win the mid-market for compliance documentation in manufacturing. The strategy worked — we're at $8.2M ARR now, 180 customers, average ACV of $45K. The board is happy with the top-line number.
+
+What they haven't seen — and what I've been quietly worried about — is what's happened to the efficiency of the growth engine as we've moved upmarket. Average deal size has grown 60% in two years. The sales team has tripled in headcount. Marketing spend is up 4x. But we're closing roughly the same number of new logos per quarter as we were in 2023.
+
+I started this project because our lead Series A investor asked for a "full unit economics breakdown by cohort" for the Series B prep materials, and I realized I didn't actually have one. We track ARR, churn, and new bookings — but not LTV or CAC payback by cohort year. I built the model with Claude's help, and what I found changed how I'm thinking about the next 12 months entirely.$pf$,
+  $pf$The model showed CAC payback expanded from 10 months in 2023 to 16 months in 2025 — not because marketing became less efficient, but because sales team quota attainment dropped from 85% to 61% during the upmarket transition. The fix wasn't more budget; it was restructuring territory assignments and replacing the bottom two reps. The Series B deck now leads with the diagnosis and the recovery plan, not just the ARR number.$pf$,
+  '11111111-1111-1111-1111-111111111101',
+  'intermediate',
+  'claude-opus-4-6',
+  'Claude 4.6 Opus',
+  ARRAY['Claude', 'Google Sheets', 'Salesforce', 'Stripe'],
+  ARRAY['SaaS metrics', 'unit economics', 'LTV/CAC', 'CAC payback', 'Series B', 'cohort analysis', 'FP&A'],
+  'approved',
+  '22222222-2222-2222-2222-222222222203',
+  0,
+  0
+);
+
+INSERT INTO prompt_steps (id, prompt_id, step_number, title, content, result_content, description) VALUES
+
+-- Step 1 --
+('77777777-7777-7777-7777-777777130001',
+ '55555555-5555-5555-5555-555555550130',
+ 1,
+ $pf$The unit economics framework: what metrics matter and how to calculate them$pf$,
+ $pf$I'm the CFO of Formlink, a B2B SaaS company that automates compliance documentation for mid-market manufacturing companies. We're at $8.2M ARR with 180 customers, average ACV around $45K — we've moved upmarket over the past two years, up from $28K ACV two years ago. Sales team is 7 quota-carrying reps plus 4 SDRs. Series B materials go to investors in about four months.
+
+My Series A lead is asking for a full unit economics breakdown by cohort year for the deck, and I realize I've never built one properly. We track ARR, annual churn rate (blended across all cohorts, about 6%), monthly new bookings, and net revenue retention by cohort. But I don't have LTV or CAC payback calculated at the cohort level — we've just been using a blended number.
+
+Before I start pulling data, I want to understand the full framework. What metrics should I be calculating, how do I calculate each one from the raw data I have, and what's the difference between using blended numbers versus cohort-level numbers? I specifically want to know what data I need to pull from Salesforce and Stripe to build this properly.$pf$,
+ $pf$SaaS unit economics comes down to five numbers, and the difference between blended and cohort-level versions of those numbers is where the interesting information lives.
+
+**The five core metrics**
+
+**1. Customer Acquisition Cost (CAC)**
+CAC = total sales + marketing spend for a period / number of new customers acquired in that period.
+
+"Total sales + marketing spend" should include everything: rep salaries and OTE commissions, SDR compensation, marketing team salaries, paid channels, events, tools (CRM licenses, sales engagement platforms), and any agency fees. Most CFOs undercount CAC because they exclude salaries and only count direct ad spend. Include everything.
+
+Blended CAC mixes all cohorts together. Cohort CAC allocates the spend in a given calendar year to the customers acquired that year. When you're growing headcount and marketing spend rapidly, blended CAC lags reality — it smooths the most recent (and usually highest) cohort's costs with historical numbers from when the team was smaller.
+
+**2. Lifetime Value (LTV)**
+LTV = ACV × gross margin percentage / annual gross churn rate.
+
+Two precision points here. First, use gross margin, not net margin — LTV measures the gross profit a customer generates over their lifetime before sales and marketing costs, because you've already accounted for those in CAC. Second, use gross churn rate (customers who cancel), not net revenue retention — those are different numbers. A 108% NRR cohort can still have 8% gross churn if 16% of customers expand enough to offset the leavers. For LTV, you care about how long a customer stays, which is gross churn, not the expansion story.
+
+**3. LTV:CAC ratio**
+Simply LTV / CAC. The SaaS industry benchmark is 3x or better. Anything under 2x means you're spending more to acquire customers than they return. Anything above 10x usually means you're under-investing in growth. At your stage — moving upmarket, building out enterprise sales — 4–8x is a reasonable target.
+
+**4. CAC Payback Period**
+CAC payback (months) = CAC / (ACV × gross margin / 12).
+
+This answers: how many months of gross margin does it take to recover what you spent to acquire this customer? Unlike LTV:CAC, payback doesn't require estimating customer lifetime — it measures how quickly you're recovering acquisition cost. Investors care about this because it drives cash flow: a 24-month payback means you're negative on a customer for two years before they become profitable, which is a significant working capital burden.
+
+**5. Net Revenue Retention (NRR)**
+NRR = (beginning ARR + expansion − churn − contraction) / beginning ARR, measured at 12 months. This tells you whether an existing cohort grows or shrinks without new customers. NRR above 100% means expansion revenue covers all churn — the cohort grows itself.
+
+**What to pull from Salesforce and Stripe**
+
+From Salesforce: for each calendar year (2023, 2024, 2025), pull — (a) total new customers acquired (closed-won opportunities), (b) the ACV of each deal, (c) close date, (d) total sales + marketing spend for the year broken out by category: rep OTE × attainment, SDR costs, marketing program spend, tools, agency. That last item often lives in your GL or budget spreadsheet, not the CRM — pull it from actuals.
+
+From Stripe: for each cohort, pull — (a) first invoice date, (b) MRR/ARR at month 12 for each original cohort customer to calculate NRR, (c) cancel date for any customers who churned to calculate gross churn by cohort.
+
+One practical note: the S&M spend data often lives in your P&L, not Salesforce. Pull actuals from your GL for total sales and marketing line items by year — that's more reliable than summing individual deal costs from the CRM.$pf$,
+ NULL),
+
+-- Step 2 --
+('77777777-7777-7777-7777-777777130002',
+ '55555555-5555-5555-5555-555555550130',
+ 2,
+ $pf$Building the cohort model: calculating LTV, CAC, and payback by year$pf$,
+ $pf$Great, that framework is exactly what I needed. I pulled the data from Salesforce and our P&L. Here's what I have by cohort year:
+
+2023 cohort: 40 new customers, average ACV $28,000, total S&M spend that year $700,000, gross margin 72%, 12-month NRR 108%, gross annual churn about 7.5% (3 customers churned by end of 2024 out of the original 40).
+
+2024 cohort: 50 new customers, average ACV $36,000, S&M spend $1,300,000, gross margin 74%, 12-month NRR 106%, gross churn about 7%.
+
+2025 cohort: 45 new customers through Q3, annualizing to roughly 55 for the full year but I'll use 45 as-of-today. ACV $45,000, S&M spend $2,100,000 annualized for the full year, gross margin 76%. 12-month NRR not available yet since this cohort is still young. Use blended 7% gross churn for the LTV estimate.
+
+Can you build the full model for all three cohorts — CAC, LTV, LTV:CAC, and CAC payback — and flag anything that concerns you? I want to understand the trend, not just the individual numbers.$pf$,
+ $pf$Here's the full cohort model. I'll show the calculation for each metric step by step so the numbers are auditable.
+
+**2023 Cohort**
+- CAC: $700,000 / 40 = **$17,500**
+- Monthly gross margin per customer: $28,000 × 0.72 / 12 = **$1,680/month**
+- CAC payback: $17,500 / $1,680 = **10.4 months**
+- LTV: $28,000 × 0.72 / 0.075 = **$268,800**
+- LTV:CAC: $268,800 / $17,500 = **15.4x**
+- NRR: 108%
+
+**2024 Cohort**
+- CAC: $1,300,000 / 50 = **$26,000**
+- Monthly gross margin: $36,000 × 0.74 / 12 = **$2,220/month**
+- CAC payback: $26,000 / $2,220 = **11.7 months**
+- LTV: $36,000 × 0.74 / 0.07 = **$381,257**
+- LTV:CAC: $381,257 / $26,000 = **14.7x**
+- NRR: 106%
+
+**2025 Cohort (annualized)**
+- CAC: $2,100,000 / 45 = **$46,667**
+- Monthly gross margin: $45,000 × 0.76 / 12 = **$2,850/month**
+- CAC payback: $46,667 / $2,850 = **16.4 months**
+- LTV: $45,000 × 0.76 / 0.07 = **$488,571** (blended 7% churn)
+- LTV:CAC: $488,571 / $46,667 = **10.5x**
+- NRR: unknown — cohort too young
+
+**Summary**
+
+| Cohort | CAC | Payback | LTV | LTV:CAC | NRR |
+|--------|-----|---------|-----|---------|-----|
+| 2023 | $17,500 | 10.4 mo | $269K | 15.4x | 108% |
+| 2024 | $26,000 | 11.7 mo | $381K | 14.7x | 106% |
+| 2025 | $46,667 | 16.4 mo | $489K | 10.5x | — |
+
+**What concerns me**
+
+The LTV:CAC numbers — 15x, 15x, 10x — are all healthy by standard benchmarks. You're not losing money on customer acquisition. But the trend is what you should worry about, not the absolute values.
+
+Three signals that merit a real diagnosis before the Series B:
+
+**1. CAC nearly tripled while new customer count grew 12.5%.** In 2023 you spent $700K to acquire 40 customers. In 2025 you'll spend $2.1M to acquire roughly 45–55. Sales and marketing efficiency has deteriorated sharply. LTV went up with ACV, which masks it in the LTV:CAC ratio — but CAC payback shows it clearly because payback is indifferent to how long a customer stays. You're recovering acquisition cost 58% slower than you were two years ago.
+
+**2. NRR declined as ACV increased — the wrong direction.** Moving upmarket should improve NRR if larger customers have more expansion potential. Your NRR dropped from 108% to 106% at the same time your ACV grew 60%. That's a flashing yellow light: the upmarket customers may not actually be better than your traditional mid-market segment on a lifetime basis, despite costing 2.7x more to acquire.
+
+**3. The 2025 CAC is unusually high relative to ACV growth.** Between 2023 and 2024, ACV grew 29% and S&M spend grew 86% — significant but explainable by team build-out. Between 2024 and 2025, ACV grew another 25% and S&M spend grew 62%. The spend-to-ACV ratio keeps widening. Something structural changed in the sales motion.
+
+Next question to answer: is the CAC increase driven by more spend per rep, or by reps not hitting quota? Those have very different fixes.$pf$,
+ NULL),
+
+-- Step 3 --
+('77777777-7777-7777-7777-777777130003',
+ '55555555-5555-5555-5555-555555550130',
+ 3,
+ $pf$Diagnosing the deterioration: what's driving the CAC payback expansion$pf$,
+ $pf$You're right that I need to diagnose this before the deck. I pulled the rep-level data from Salesforce. Here's what I found:
+
+2023: 3 quota-carrying reps, team-wide quota attainment 85%, average quota per rep $1.4M new ARR, average sales cycle 47 days.
+2024: 5 reps, team attainment 74%, average quota $1.5M, average sales cycle 67 days.
+2025 (annualized): 7 reps, team attainment 61%, average quota $1.6M, average sales cycle 91 days.
+
+Total S&M spend breakdown for 2025: rep OTE times attainment $870,000, SDR team $340,000, marketing programs $620,000, tools and agency $270,000.
+
+What's actually driving the CAC problem — is this a sales productivity issue, a marketing efficiency issue, or both? And how would you frame the root cause?$pf$,
+ $pf$This is primarily a sales productivity problem, not a marketing problem. The data is fairly clear once you break it down.
+
+**Decomposing the CAC increase**
+
+In 2023, your 3 reps closed approximately $1.12M in new ARR (40 customers × $28K). In 2025, 7 reps are projected to close roughly $2.03M (45 customers × $45K). New ARR grew 81% while sales headcount grew 133%. That's the problem in one number.
+
+In 2023, rep productivity (new ARR per rep) was approximately $373K. In 2025, it's approximately $289K — a 22% decline per rep while quotas are theoretically going up.
+
+**The attainment breakdown tells the real story**
+
+Team attainment of 61% against $1.6M quotas means average actual bookings per rep ≈ $976K. At 7 reps that's roughly $6.8M total quota-carrying capacity, but you're realizing $2M in new ARR. You're running a team at 30% of theoretical capacity.
+
+For context: in 2023, 85% attainment against $1.4M quota = $1.19M per rep. Your most efficient year. The team you have today, at 2023 productivity levels, would be producing roughly $2.78M in new ARR — 37% more than current performance.
+
+**Three plausible explanations**
+
+**1. The upmarket ICP requires a different sales motion the team doesn't have yet.** Moving from $28K to $45K ACV usually means shifting from a champion-led mid-market close to a multi-stakeholder enterprise close involving procurement, security review, and legal. If your reps were hired and trained on the mid-market motion, the 91-day average sales cycle and 61% attainment is consistent with reps struggling with deal complexity and decision-unit management — not with pipeline quality.
+
+**2. Ramp time for the 2024–2025 hires hasn't paid off yet.** You added 4 reps between 2023 and 2025. Enterprise reps typically need 6–12 months to fully ramp. If your newest hires are 8 months in and still ramping, they're counting against attainment without contributing proportionally. This is a lagging problem that resolves itself — but you need to know whether it's ramp or whether fully-ramped reps are also underperforming.
+
+**3. Pipeline quality is declining as you prospect upmarket.** Enterprise manufacturing companies have longer, more complex procurement cycles. If your SDR team is generating pipeline volume without improving qualification, reps may be working unqualified opportunities that inflate the sales cycle while consuming quota capacity.
+
+**The diagnosis**
+
+Look at your two most tenured reps from 2023 — the ones who were hitting 85% attainment. What is their 2025 attainment? If they're at 80–90%, the problem is ramp for the new hires and will self-correct. If they've dropped to 55–65%, the problem is the ICP shift — the motion that worked for $28K mid-market deals doesn't work for $45K enterprise deals, and the whole team needs retraining or replacement with reps who've sold at this ACV before.
+
+My read: the 91-day sales cycle is the tell. Your best 2023 reps were closing in 47 days. Enterprise deals at $45K ACV shouldn't take 91 days — that's longer than typical for your price point and suggests qualification problems: reps are working deals they shouldn't, or not disqualifying unserious buyers early enough.
+
+**What marketing isn't**
+
+Your marketing spend went from roughly $280K (2023, estimated from the $700K total minus rep/SDR costs) to $620K (2025, directly stated) — a meaningful increase but proportional to ARR growth. Marketing is holding its efficiency. The $620K in programs in 2025 is generating proportional pipeline. The problem is what happens to that pipeline once it hits the sales team.$pf$,
+ NULL),
+
+-- Step 4 --
+('77777777-7777-7777-7777-777777130004',
+ '55555555-5555-5555-5555-555555550130',
+ 4,
+ $pf$Board-ready framing: presenting the unit economics story for Series B$pf$,
+ $pf$This diagnosis is really helpful. I can see now that the core issue is sales productivity during the upmarket transition — the two tenured reps from 2023 are at 78% attainment, down from their prior 87%, and the four reps hired in 2024–2025 are at an average of 51%. Two of the four new hires are clearly not going to make it; the other two are ramping but slowly. I'm going to restructure territory assignments, replace the two underperformers, and implement MEDDIC as a qualification standard for the first time.
+
+Now I need help framing this for the Series B deck. Investors are going to see CAC payback going from 10 to 16 months and ask hard questions. I want to present this as evidence that we understand our business deeply and have a clear plan — not as a hidden problem they're discovering. What's the framing, and what specific talking points should I prepare for the CAC payback question?$pf$,
+ $pf$The framing that works here is: "we caught this ourselves, we know exactly why it happened, and here's the specific action that returns payback to target." That's a stronger narrative than pretending the deterioration doesn't exist, and stronger than presenting it without a diagnosis.
+
+**The slide structure**
+
+*Slide title: Unit Economics by Cohort — Trend and Recovery Plan*
+
+Tell the story in four panels, either on one slide or across two:
+
+**Panel 1 — The trend (show the table)**
+2023: CAC $17.5K / Payback 10.4 mo / LTV:CAC 15.4x
+2024: CAC $26K / Payback 11.7 mo / LTV:CAC 14.7x
+2025: CAC $46.7K / Payback 16.4 mo / LTV:CAC 10.5x
+
+Don't hide the trend. Investors will calculate this themselves from your ARR data and your headcount data. Show it first, before they ask.
+
+**Panel 2 — The diagnosis (one clear sentence)**
+"Payback expansion was driven by sales team quota attainment declining from 85% to 61% during our ACV shift from $28K to $45K — a friction point common in upmarket transitions that we've now diagnosed to the individual rep level."
+
+This sentence does three things: it names the cause specifically, it contextualizes it as an expected consequence of a deliberate strategy shift, and it signals that you have rep-level data, which most early-stage CFOs don't have organized. Investors fund teams that understand their own numbers.
+
+**Panel 3 — The specific fix (not "we're working on it")**
+"We are replacing two underperforming reps hired in 2024, restructuring territories to match rep experience to deal complexity, and implementing MEDDIC for the first time as a qualification standard. These actions are already underway — first rep transition planned for Q1."
+
+Vague commitments like "improving sales effectiveness" give investors nothing to hold you to. Specific commitments — two specific terminations, a named process — signal seriousness. If you've already made the decisions, say so.
+
+**Panel 4 — The recovery target (with math)**
+"We expect CAC payback to return to 12–13 months by Q4 as the new reps fully ramp and MEDDIC qualification shortens average sales cycle from 91 days toward 65–70. At 12-month payback on a $45K ACV product, LTV:CAC remains above 12x — consistent with Series B-stage benchmarks."
+
+This gives investors a specific, checkable prediction with an underlying mechanism. You're not promising 2023 efficiency at 2025 scale; you're promising a credible middle ground you can defend with the math you've already shown.
+
+**The investor question you need to be ready for**
+
+"Is the NRR decline (108% → 106%) related to the same root cause?"
+
+Honest answer: probably not the same cause, but worth watching. NRR decline as you move upmarket could reflect (a) larger companies having more formal cancellation processes, (b) your product not yet having the enterprise-tier features that drive expansion, or (c) early signals that the enterprise ICP values something you're not delivering. Have a hypothesis ready. If you believe it's product-driven — features enterprise customers need that are on the roadmap — say that. If you don't know, say you're tracking it closely but the cohorts are too young to draw conclusions.
+
+**One more thing to bring to due diligence**
+
+Prepare a one-pager with the rep-level breakdown: total quota capacity, actual attainment, rep count by tenure band, average sales cycle by deal size band. You don't need to volunteer it in the initial pitch, but when a VC says "can we dig into the sales productivity data," having it ready shows operational maturity. Most Series A companies can't produce this on 24 hours' notice — you can.$pf$,
+ NULL);
+
+-- ============================================================
+-- Project 0131: PostgreSQL Full-Text Search: Migrating 2.8M Rows from ILIKE to tsvector/tsquery / marcusdev / Coding / 3-step / Sonnet 4.6 / intermediate
+-- ============================================================
+
+DELETE FROM prompt_steps WHERE prompt_id = '55555555-5555-5555-5555-555555550131';
+DELETE FROM prompts WHERE id = '55555555-5555-5555-5555-555555550131';
+
+INSERT INTO prompts (
+  id, title, description, content, result_content,
+  category_id, difficulty, model_used, model_recommendation,
+  tools_used, tags, status, author_id, vote_count, bookmark_count) VALUES (
+  '55555555-5555-5555-5555-555555550131',
+  $pf$PostgreSQL Full-Text Search: From 4-Second ILIKE Queries to 40ms Results on 2.8M Rows$pf$,
+  $pf$Marcus Chen replaces a slow ILIKE-based job search with native PostgreSQL full-text search — tsvector/tsquery with GIN index for ranked results, then pg_trgm for prefix matching — dropping query time from 4–6 seconds to under 50ms without adding separate infrastructure.$pf$,
+  $pf$A client hired me to fix their job board's search, which had become unusable. The jobs table had grown to 2.8 million rows over three years and every search was running two sequential scans — one ILIKE on the title column, one on the description. Common searches like "software engineer" were timing out at 4–6 seconds. Users were abandoning search and going straight to category browsing.
+
+The first instinct was Elasticsearch. I talked them out of it — adding separate search infrastructure to a 2-person engineering team that already struggled to keep Postgres patched meant a maintenance burden they'd never recover from. Postgres has had solid full-text search built in since version 8, and at 2.8M rows it handles it fine. We spent two days migrating the search to tsvector/tsquery with a GIN index and then added pg_trgm for partial matching. Search now returns in under 50ms, and we kept the entire stack on one database.$pf$,
+  $pf$After the migration: search queries return in 35–50ms (down from 4–6 seconds), GIN indexes in place for both tsvector and pg_trgm, combined query handles full-word and partial-word searches in a single application layer. The Elasticsearch conversation never came up again.$pf$,
+  '11111111-1111-1111-1111-111111111104',
+  'intermediate',
+  'claude-sonnet-4-6',
+  'Claude 4.6 Sonnet',
+  ARRAY['Claude', 'PostgreSQL', 'Node.js', 'pg (node-postgres)'],
+  ARRAY['PostgreSQL', 'full-text search', 'tsvector', 'GIN index', 'pg_trgm', 'query optimization', 'Node.js'],
+  'approved',
+  '22222222-2222-2222-2222-222222222201',
+  0,
+  0
+);
+
+INSERT INTO prompt_steps (id, prompt_id, step_number, title, content, result_content, description) VALUES
+
+-- Step 1 --
+('77777777-7777-7777-7777-777777131001',
+ '55555555-5555-5555-5555-555555550131',
+ 1,
+ $pf$Diagnosing the ILIKE problem and choosing the right approach$pf$,
+ $pf$I'm working on a job board with a PostgreSQL database. The jobs table has 2.8 million rows with these relevant columns: id (bigint), title (varchar 255), description (text), location (varchar 100), category (varchar 50), posted_at (timestamp), is_active (boolean).
+
+The current search query is:
+
+SELECT * FROM jobs
+WHERE is_active = true
+  AND (title ILIKE '%' || $1 || '%'
+    OR description ILIKE '%' || $1 || '%')
+ORDER BY posted_at DESC
+LIMIT 20;
+
+On common queries like "software engineer" this runs in 4–6 seconds. EXPLAIN ANALYZE shows sequential scans on both columns. I know I need to move away from ILIKE but I'm not sure what the right approach is — I've heard of PostgreSQL full-text search, pg_trgm, and Elasticsearch. What are my options, what are the tradeoffs, and what should I actually use here? The team is 2 engineers and I don't want to add separate infrastructure if I can avoid it.$pf$,
+ $pf$Your ILIKE query is doing exactly what you'd expect: because the wildcard is on both sides of the search term ('%term%'), PostgreSQL can't use a B-tree index and has to scan every row. For 2.8 million rows on two columns, that's unavoidable with this pattern. The fix lives entirely within Postgres — you don't need Elasticsearch.
+
+**Your three options**
+
+**Option 1: PostgreSQL native full-text search (tsvector/tsquery)**
+Postgres converts text into a vector of lexemes — normalized, stemmed word tokens — stored in a tsvector column. At search time it converts the query string into a tsquery and matches against the tsvector using a GIN (Generalized Inverted Index). This is index-based: search time is O(log n) against the GIN, not O(n) across all rows.
+
+Pros: fast (sub-100ms on 2.8M rows with a proper GIN index), built into Postgres, supports ranking via ts_rank, handles stemming automatically so "engineering" matches "engineer", supports phrase queries and boolean operators. Cons: only matches whole words and their stems — searching for "engi" won't match "engineer". Language-aware, so you pick a text search configuration (use 'english' for English content).
+
+**Option 2: pg_trgm (trigram matching)**
+pg_trgm breaks text into 3-character overlapping substrings (trigrams) and builds a GIN or GiST index on them. This is how the LIKE '%term%' pattern can be made index-searchable.
+
+Pros: handles partial-word matches ("engi" returns "engineer"), works with LIKE and ILIKE using familiar SQL syntax. Cons: a 3-character minimum means very short queries ("js") produce many false positives, and relevance ranking is less natural than ts_rank.
+
+**Option 3: Elasticsearch**
+A separate search engine built around Lucene. Handles full-text, partial, fuzzy, and autocomplete search very well at any scale. Pros: more query flexibility, better synonym and typo handling. Cons: a second system to run, keep synced with Postgres, monitor, and upgrade. For a 2-person team this is a significant operational commitment — the maintenance cost compounds over time.
+
+**What I'd use here**
+
+Start with native PostgreSQL full-text search (tsvector + tsquery + GIN index). For a job board at 2.8M rows it will be fast enough and covers the core case: users searching by keyword across title and description.
+
+After that, layer in pg_trgm for partial-word matching. Many job seekers type partial terms — "react" for "React Developer", "devops" for "DevOps Engineer". The tsvector approach handles full-word searches, pg_trgm catches the partial ones. You run both indexes and combine the queries in the application layer.
+
+This keeps everything in Postgres, takes about a day to implement, and eliminates the problem completely.$pf$,
+ NULL),
+
+-- Step 2 --
+('77777777-7777-7777-7777-777777131002',
+ '55555555-5555-5555-5555-555555550131',
+ 2,
+ $pf$Implementing tsvector/tsquery with GIN index and ranked results$pf$,
+ $pf$That's clear — I'll start with native full-text search and add pg_trgm after. A few questions before I write the migration: should I store the tsvector in a generated column or compute it at query time? The jobs table gets about 500 new inserts per day and maybe 50 updates — mostly setting is_active to false when jobs expire. Also, how do I weight the title field higher than the description in the ranking? A search for "software engineer" should prefer a job with that title over one that only mentions it in the description. And can you show me the complete migration — the ALTER TABLE, the index, and the updated query?$pf$,
+ $pf$Store the tsvector in a generated stored column and keep it updated automatically — computing at query time works fine for read-light tables but on a search-heavy workload with 500 inserts per day, you want the tsvector pre-computed so queries only hit the index.
+
+**Step 1 — Add the stored tsvector column**
+
+```sql
+ALTER TABLE jobs
+  ADD COLUMN search_vector tsvector
+    GENERATED ALWAYS AS (
+      setweight(to_tsvector('english', coalesce(title, '')), 'A') ||
+      setweight(to_tsvector('english', coalesce(description, '')), 'B')
+    ) STORED;
+```
+
+This uses a generated column (Postgres 12+), which the database maintains automatically on insert and update — no trigger needed. The setweight function assigns weight 'A' (highest) to title tokens and 'B' (second) to description tokens. ts_rank uses these weights when sorting results, so a job titled "Software Engineer" outranks one that only mentions software engineering in the description body.
+
+The coalesce handles NULL values — without it, a NULL description would cause the entire expression to return NULL.
+
+**Step 2 — Build the GIN index**
+
+```sql
+CREATE INDEX CONCURRENTLY idx_jobs_search_vector
+  ON jobs USING GIN (search_vector);
+```
+
+Use CONCURRENTLY to avoid locking the table during index creation. On 2.8M rows this will take 5–15 minutes. Without CONCURRENTLY, the table is locked for reads and writes for the entire duration — fine on a dev environment, not on production.
+
+**Step 3 — Populate existing rows (if needed)**
+
+If you're on Postgres 12+ and used GENERATED ALWAYS AS STORED, the column populates automatically during the ALTER TABLE. If for some reason you're on an older version or added a plain tsvector column instead, backfill in batches:
+
+```sql
+-- Run in a loop until 0 rows updated
+UPDATE jobs
+SET search_vector =
+  setweight(to_tsvector('english', coalesce(title, '')), 'A') ||
+  setweight(to_tsvector('english', coalesce(description, '')), 'B')
+WHERE id IN (
+  SELECT id FROM jobs
+  WHERE search_vector IS NULL
+  LIMIT 10000
+);
+```
+
+**Step 4 — The updated search query**
+
+```sql
+SELECT
+  id, title, location, category, posted_at,
+  ts_rank(search_vector, query) AS rank
+FROM jobs,
+  plainto_tsquery('english', $1) AS query
+WHERE is_active = true
+  AND search_vector @@ query
+ORDER BY rank DESC, posted_at DESC
+LIMIT 20;
+```
+
+Key points: plainto_tsquery converts the user's raw search string into a tsquery — it handles spaces, punctuation, and stop words without requiring users to know FTS syntax. The @@ operator is the match operator and uses the GIN index. ts_rank produces a relevance score using the A/B weights you set. Ordering by rank DESC first, then posted_at DESC as a tiebreaker, gives the most relevant and most recent results.
+
+**Verify the index is being used**
+
+```sql
+EXPLAIN ANALYZE
+SELECT id, title,
+  ts_rank(search_vector, plainto_tsquery('english', 'software engineer')) AS rank
+FROM jobs
+WHERE is_active = true
+  AND search_vector @@ plainto_tsquery('english', 'software engineer')
+ORDER BY rank DESC
+LIMIT 20;
+```
+
+You want to see "Bitmap Index Scan on idx_jobs_search_vector" or "Index Scan using idx_jobs_search_vector" — not a sequential scan. If you're still seeing Seq Scan, run ANALYZE jobs; first to update the planner statistics, then re-check. The planner occasionally misses a freshly-created index until statistics catch up.$pf$,
+ NULL),
+
+-- Step 3 --
+('77777777-7777-7777-7777-777777131003',
+ '55555555-5555-5555-5555-555555550131',
+ 3,
+ $pf$Adding pg_trgm for partial matching and wiring the Node.js application layer$pf$,
+ $pf$The tsvector implementation is working — EXPLAIN ANALYZE confirms the GIN index is being used and queries are returning in 35–50ms on full-word searches. But one problem: users are searching partial words and getting no results. "React" returns results (it's a full token in tsvector), but "reac" returns nothing. Same with "devop" for "DevOps" and "engin" for "engineer." Our autocomplete fires at 3 characters, so users frequently have incomplete words in their search when they submit. How do I add pg_trgm to handle the partial-match case, and how do I combine the two approaches in the Node.js query layer? I'm using node-postgres (the pg package).$pf$,
+ $pf$pg_trgm handles the partial-match case cleanly. Here's the full implementation.
+
+**Enable the extension and create the trigram index**
+
+```sql
+-- Enable pg_trgm (requires superuser on first install per database)
+CREATE EXTENSION IF NOT EXISTS pg_trgm;
+
+-- Trigram index on the title column
+-- Title is higher-signal than description for partial-word completion
+CREATE INDEX CONCURRENTLY idx_jobs_title_trgm
+  ON jobs USING GIN (title gin_trgm_ops);
+```
+
+The gin_trgm_ops operator class instructs Postgres to build a GIN trigram index on this column. For an autocomplete use case, indexing only title is usually sufficient and faster to build than indexing the full description text.
+
+**The trigram search query**
+
+```sql
+SELECT id, title, location, category, posted_at,
+  similarity(title, $1) AS score
+FROM jobs
+WHERE is_active = true
+  AND title % $1
+ORDER BY score DESC, posted_at DESC
+LIMIT 20;
+```
+
+The % operator returns rows where trigram similarity exceeds pg_trgm.similarity_threshold (default 0.3). You can tune this per session: lower values return more results (fuzzier), higher values return fewer (more precise). For a job title autocomplete, 0.3 is a good starting point.
+
+**Node.js application layer — combining both approaches**
+
+The strategy: use full-text search for multi-word or complete-word queries, and trigram search for short or partial queries.
+
+```javascript
+const { Pool } = require('pg');
+const pool = new Pool();
+
+async function searchJobs(rawQuery) {
+  const trimmed = rawQuery.trim();
+  if (!trimmed) return [];
+
+  const words = trimmed.split(/\s+/);
+  const lastWord = words[words.length - 1];
+
+  // Use trigram for single short words (likely partial input from autocomplete)
+  const isPartial = words.length === 1 && lastWord.length < 5;
+
+  if (isPartial) {
+    const { rows } = await pool.query(
+      `SELECT id, title, location, category, posted_at,
+              similarity(title, $1) AS score
+       FROM jobs
+       WHERE is_active = true
+         AND title % $1
+       ORDER BY score DESC, posted_at DESC
+       LIMIT 20`,
+      [trimmed]
+    );
+    return rows;
+  }
+
+  // Full-text search for complete-word or multi-word queries
+  const { rows } = await pool.query(
+    `SELECT id, title, location, category, posted_at,
+            ts_rank(search_vector, plainto_tsquery('english', $1)) AS score
+     FROM jobs,
+          plainto_tsquery('english', $1) query
+     WHERE is_active = true
+       AND search_vector @@ query
+     ORDER BY score DESC, posted_at DESC
+     LIMIT 20`,
+    [trimmed]
+  );
+  return rows;
+}
+```
+
+For autocomplete specifically — returning title suggestions as the user types — use a prefix ILIKE, which works with the trigram index once pg_trgm is installed:
+
+```javascript
+async function autocompleteJobs(prefix) {
+  if (prefix.length < 3) return [];
+
+  const { rows } = await pool.query(
+    `SELECT DISTINCT title
+     FROM jobs
+     WHERE is_active = true
+       AND title ILIKE $1
+     ORDER BY title
+     LIMIT 10`,
+    [`${prefix}%`]   // prefix match — trigram index covers this pattern
+  );
+  return rows.map(r => r.title);
+}
+```
+
+One important note: a prefix ILIKE (term%, not %term%) can use the trigram GIN index in Postgres once pg_trgm is installed. The original problem was the middle-wildcard (%term%) pattern, which still can't use a B-tree index. The trigram index covers both patterns, but the prefix form is faster because it has higher selectivity.
+
+**Confirm the trigram index is being used**
+
+```sql
+SET pg_trgm.similarity_threshold = 0.3;
+
+EXPLAIN ANALYZE
+SELECT id, title, similarity(title, 'reac') AS score
+FROM jobs
+WHERE is_active = true
+  AND title % 'reac'
+ORDER BY score DESC
+LIMIT 20;
+```
+
+You want to see "Bitmap Index Scan on idx_jobs_title_trgm" — not a sequential scan. Very short queries (2 characters) may still fall back to Seq Scan because 2-character inputs don't produce enough unique trigrams to make the index useful. The 3-character minimum from your autocomplete component handles this naturally.$pf$,
+ NULL);
+
 ALTER TABLE prompts ENABLE ROW LEVEL SECURITY;
 ALTER TABLE prompt_steps ENABLE ROW LEVEL SECURITY;

@@ -44249,5 +44249,475 @@ With the tech lead: where the credentials live, how to re-run the script manuall
 Serialize the model to a file the day you hand off, not a notebook cell. `pickle.dump(model, open('churn_model_v1.pkl', 'wb'))` in the repo, versioned. When you retrain in six months, it becomes `churn_model_v2.pkl` with a dated retrain log in the README.$pf$,
  NULL);
 
+-- Project 0126 — priya_creates / Design / intermediate / 4-step / Opus 4.7
+DELETE FROM prompt_steps WHERE prompt_id = '55555555-5555-5555-5555-555555550126';
+DELETE FROM prompts WHERE id = '55555555-5555-5555-5555-555555550126';
+
+INSERT INTO prompts (
+  id, title, description, content, result_content,
+  category_id, difficulty, model_used, model_recommendation,
+  tools_used, tags, status, author_id, vote_count, bookmark_count
+) VALUES (
+  '55555555-5555-5555-5555-555555550126',
+  $pf$Building a v1 design system for a B2B SaaS that shipped without one$pf$,
+  $pf$Priya Sharma built a complete design system in 10 weeks for a 4-year-old logistics SaaS — audit documentation structure, two-layer token architecture, engineer-ready component specs, Figma library conventions, and a realistic adoption rollout plan. The product had six different button styles and three inconsistent modal treatments when she arrived.$pf$,
+  $pf$I got this contract through a Notion job board post. A 45-person B2B logistics SaaS called Karrio — they build route optimization and delivery management software for regional carriers, Series A, around $2M ARR — posted for a "contract product designer, design systems experience preferred." The product launched in 2022, built engineering-first. Three designers joined in 2023 and 2024, each bringing their own Figma conventions and none with a mandate to standardize anything. By the time I arrived, the codebase had six different button styles, three modal header treatments, four near-identical card surface colors that looked like accidents not choices, and a heading hierarchy that changed from screen to screen. The head of product had started hearing "this feels inconsistent and unpolished" in user interviews. Nobody had fixed it because it had never been officially anyone's job.
+
+The scope: audit the current state, define a token architecture, spec the top five components, build a Figma library the engineering team could actually use, and hand off with a contribution guide. Ten weeks.$pf$,
+  $pf$The delivered system: a Figma design system library with 8 component groups, 124 named component variants, a two-layer token library (38 primitive color tokens mapped to 24 semantic color tokens; 12 spacing primitives mapped to 9 semantic spacing tokens; a 7-step type scale), and an internal contribution guide. The first engineer PR using the new button component merged in week 11, two days after handoff. At the six-month check-in, the engineering lead said every new feature shipped in the last quarter had been built exclusively from system components. The product finally looked like one product.$pf$,
+  '11111111-1111-1111-1111-111111111105',
+  'intermediate',
+  'claude-opus-4-7',
+  $pf$Claude 4.7 Opus$pf$,
+  ARRAY['Claude'],
+  ARRAY['design system', 'Figma', 'component library', 'design tokens', 'UX', 'SaaS design', 'product design'],
+  'approved',
+  '22222222-2222-2222-2222-222222222204',
+  0,
+  0
+);
+
+INSERT INTO prompt_steps (id, prompt_id, step_number, title, content, result_content, description) VALUES
+
+-- Step 1 --
+('77777777-7777-7777-7777-777777126001',
+ '55555555-5555-5555-5555-555555550126',
+ 1,
+ $pf$Audit documentation structure and two-layer token architecture$pf$,
+ $pf$I'm a freelance UX/product designer on a 10-week design system engagement for a 4-year-old B2B logistics SaaS. The company has 45 employees — 3 designers, 11 engineers, Series A. The product launched in 2022, built engineering-first with designers joining later, and has never had a formal design system. I've done an initial audit by clicking through every screen in the product. What I found: 6 different button styles — three different primary blue hex values (#2563EB, #1D4ED8, #1E40AF), two different padding patterns, and ghost versus outline used interchangeably with no logic; 3 different modal header treatments; inconsistent heading hierarchy where the same semantic level uses 16px bold in some screens, 14px uppercase tracked in others, and 18px medium in others; 4 near-identical card surface colors (#FAFAFA, #F9FAFB, #F8FAFC, #F7F8FA) that look like accidents.
+
+Before I start building, I need help with two things. First: I've worked on design systems before but always joined an existing one mid-flight. This is my first time structuring an audit from zero. How do I document the audit so it actually drives decisions rather than producing a gallery of screenshots labeled "inconsistent"? Second: what two-layer token architecture makes sense for a company at this scale — not a 5-person startup, not Figma or Shopify? I've read about primitive versus semantic tokens but never designed both layers from scratch. I want to be thorough enough that we could add dark mode someday, without over-engineering it into something the engineers won't maintain.$pf$,
+ $pf$Let me structure the audit first, then the token architecture — they're connected: a well-structured audit reveals the semantic vocabulary the token layer should express.
+
+**Structuring the audit as a decision log**
+
+The failure mode with design audits is producing a gallery of screenshots labeled "inconsistent." That tells the team what's broken but not what to do next. Structure it as a decision log instead. For each inconsistency class — buttons, type, color, spacing — document four things:
+
+1. *What exists now.* A complete visual inventory with hex values, pixel measurements, component names, and Figma frame references. Not "there are multiple button styles" but "there are 6 button styles: here are their exact specs and which screens use each one."
+
+2. *The canonical version.* Your recommendation for which variant to keep, with a reason. "Canonicalize to #2563EB — used in 68% of primary interactive elements, passes WCAG AA at 4.61:1 on white, closest to the original brand blue in the style guide. The #1D4ED8 and #1E40AF variants appeared in a 2023 dark mode prototype that shipped partially and was never cleaned up."
+
+3. *Instance count.* How many screens and components need updating. This converts the audit from a complaint document into a prioritized project plan with visible effort.
+
+4. *Fix type.* Figma token update only, code token update only, or both. This separates design debt from engineering debt so the right person owns each item.
+
+Your six button styles should end the audit as one line: "Primary button: canonicalize to #2563EB / 12px 20px padding / 14px medium weight. Update 12 screens in Figma. Engineering: 3 component overrides in ButtonBase."
+
+**Two-layer token architecture for 45 people**
+
+Two layers exactly — not one, not three. Three layers is Salesforce. One layer is chaos.
+
+*Primitive tokens* — raw design values with no semantic meaning. Every color in your palette, every spacing step, every type size. Never referenced directly by components.
+
+```
+color-blue-500: #3B82F6        color-blue-600: #2563EB
+color-blue-700: #1D4ED8        color-blue-800: #1E40AF
+color-neutral-0:   #FFFFFF     color-neutral-50:  #F9FAFB
+color-neutral-100: #F3F4F6     color-neutral-200: #E5E7EB
+color-neutral-600: #4B5563     color-neutral-900: #111827
+
+space-1: 4px    space-2: 8px    space-3: 12px
+space-4: 16px   space-5: 20px   space-6: 24px
+
+text-size-xs: 12px   text-size-sm: 14px    text-size-base: 16px
+text-size-lg: 18px   text-size-xl: 20px    text-size-2xl: 24px
+```
+
+*Semantic tokens* — what a value means in the UI. These are what components consume. The rule: components never reference primitive tokens directly.
+
+```
+color-action-primary:         color-blue-600
+color-action-primary-hover:   color-blue-700
+color-action-primary-pressed: color-blue-800
+color-text-primary:           color-neutral-900
+color-text-secondary:         color-neutral-600
+color-text-disabled:          color-neutral-400
+color-surface-default:        color-neutral-0
+color-surface-subtle:         color-neutral-50
+color-border-default:         color-neutral-200
+color-border-focus:           color-action-primary
+space-component-sm:           space-2
+space-component-md:           space-4
+space-component-lg:           space-6
+```
+
+Naming convention: {category}-{role}-{modifier}. Category is color, space, text, radius, or shadow. Role is the semantic meaning. Modifier is the state or variant. Consistency in naming matters more than the specific names — the system should be predictable enough that an engineer can guess the token name before looking it up.
+
+The discipline that makes dark mode possible: a button's background is `color-action-primary`, never `color-blue-600`. When you add dark mode, you change what `color-action-primary` points to, and every component follows without touching component code.
+
+Target for Karrio: 38 primitive color tokens → 24 semantic color tokens; 12 spacing primitives → 9 semantic spacing tokens; 7-step type scale. That's the right size for a team where an engineer can hold the system in their head. More than roughly 60 semantic tokens becomes a maintenance project of its own.
+
+Start with color tokens — that's where the inconsistency is most visible. Get the primitive → semantic mapping into Figma variables and into the Tailwind config as a PR before you build any components. Use that first PR to validate the handoff convention: do engineers understand what they're importing? A token layer that lives only in Figma is a design fiction, not a design system.$pf$,
+ NULL),
+
+-- Step 2 --
+('77777777-7777-7777-7777-777777126002',
+ '55555555-5555-5555-5555-555555550126',
+ 2,
+ $pf$Writing engineer-ready component specs using button as the template$pf$,
+ $pf$The audit-as-decision-log framing was exactly what I needed — I finished the full audit last week and it produced a 14-page doc the engineering lead called the most useful design artifact he'd seen in two years. The token layer is also approved: 38 primitive color tokens → 24 semantic color tokens, 12 spacing primitives → 9 semantic spacing tokens, and a 7-step type scale. The design engineer implemented them as CSS variables in the Tailwind config, which worked cleanly.
+
+Now I need to spec the 5 components the engineering team prioritized for first implementation: button, input, badge, modal, and toast/notification. I've been designing long enough to know what each component needs conceptually, but I've never written component specs meant for engineers to implement without a walkthrough. My old process was Figma annotations plus a 30-minute verbal explanation. That doesn't scale to 11 engineers with different levels of design context.
+
+Can you show me what a complete, engineer-ready button spec looks like? I want to use it as the template for the other four. Specifically: what sections should a complete spec have, at what level of detail, and what's the thing designers most commonly leave out that engineers actually need?$pf$,
+ $pf$A complete, engineer-ready component spec has six sections. Here's the button spec for Karrio — use this as your template.
+
+---
+
+**COMPONENT: Button**
+*Owner: Priya Sharma | Status: Approved | Version: 1.0*
+
+**1. Variants**
+
+| Variant | When to use |
+|---|---|
+| Primary | The single most important action on a screen. One per view. |
+| Secondary | Important but not primary. Can appear alongside Primary. |
+| Ghost | Tertiary or low-emphasis actions. |
+| Danger | Irreversible destructive actions — delete, remove, revoke. |
+
+**2. Sizes**
+
+| Size | Height | Horizontal padding | Font size | Spacing token |
+|---|---|---|---|---|
+| sm | 32px | 12px | text-size-sm (14px) | space-component-sm |
+| md (default) | 40px | 16px | text-size-base (16px) | space-component-md |
+| lg | 48px | 20px | text-size-lg (18px) | space-component-lg |
+
+**3. States — specify for every variant**
+
+| State | Primary background | Border | Text | Cursor |
+|---|---|---|---|---|
+| Default | color-action-primary | none | color-neutral-0 | pointer |
+| Hover | color-action-primary-hover | none | color-neutral-0 | pointer |
+| Pressed | color-action-primary-pressed | none | color-neutral-0 | pointer |
+| Focus visible | color-action-primary | 2px solid color-border-focus, 2px offset | color-neutral-0 | pointer |
+| Disabled | color-neutral-200 | none | color-neutral-400 | not-allowed |
+| Loading | color-action-primary | none | transparent (spinner replaces label) | wait |
+
+Ghost states: transparent background → color-surface-subtle on hover → color-surface-default on press. Danger variant uses color-status-destructive tokens.
+
+**4. Anatomy and spacing**
+
+```
+[ icon-left? 4px gap ] [ label ] [ 4px gap icon-right? ]
+```
+
+- Icon size: 16px for sm, 20px for md, 24px for lg. SVG only, no raster.
+- Label: font-weight-medium, no truncation — if the label overflows its container, the container layout is wrong.
+- Icon-only buttons: `aria-label` required, no exceptions. Width matches height (square). Tooltip on hover showing the aria-label text.
+- Full-width: `width: 100%`. Use only in mobile layouts and modal/form footers.
+
+**5. Behavior**
+
+- *Loading:* Replace label with a spinner sized to match the button (16px sm / 20px md / 24px lg). Disable pointer events. Do not change button dimensions — spinner replaces text in-place with no layout shift.
+- *Disabled:* Use the HTML `disabled` attribute on the element, not just `pointer-events: none`. Use `aria-disabled` only if the button cannot be removed from the DOM but should remain non-actionable — these are different cases.
+- *Form submission:* `type="submit"` for form primary actions. `type="button"` for everything else — never rely on browser defaults.
+- *Click area:* full button bounding box is the click target. No padding-only clickable zones.
+
+**6. Accessibility**
+
+- Contrast: Primary on white = 4.61:1 (WCAG AA requires 4.5:1) ✓
+- Keyboard: Tab to focus, Enter or Space to activate
+- Focus visible: 2px outline, 2px offset — never `outline: none` without a visible alternative
+- Loading: `aria-busy="true"` on the button during loading state
+- Screen reader: button label or aria-label is the accessible name — icon-only buttons require aria-label, not optional
+
+---
+
+**What designers most commonly leave out:**
+
+The loading state — engineers have to guess whether to disable the button, show a spinner, or both, and they guess differently on different screens. Specify it explicitly and you get consistent behavior everywhere. The focus-visible treatment — designers test with a mouse, engineers test with a mouse, nobody tests with a keyboard until QA, and then focus rings are missing or `outline: none` is in the codebase. The `disabled` versus `aria-disabled` distinction — a real implementation difference that engineers get wrong without guidance. And icon-only button accessibility — it always ends up in a "nice to have" column unless the spec marks it required.$pf$,
+ NULL),
+
+-- Step 3 --
+('77777777-7777-7777-7777-777777126003',
+ '55555555-5555-5555-5555-555555550126',
+ 3,
+ $pf$Organizing the Figma library file so engineers can find and use components$pf$,
+ $pf$That button spec worked as the template — I've now written all five component specs using that exact structure. The input spec was the most involved; I discovered during writing that I hadn't thought through the state where focus and error coexist simultaneously (both should be visible: orange focus ring, red border, red helper text). The modal spec surfaced a product decision I'd been avoiding: does clicking the overlay always close the modal? We decided yes by default, with an explicit preventClose prop for destructive confirmation dialogs.
+
+Now I need to build the actual Figma library file. I have a rough draft, but I've never built a Figma component library intended for engineering consumption — my past experience was designing within project files, not maintaining a shared library other teams import. What conventions should I follow? Specifically: how to name components so engineers can find them, how to structure variants so they're navigable, what to put in the Figma file versus what belongs in the spec doc, and how to organize the file pages so it makes sense to someone opening it for the first time.$pf$,
+ $pf$A Figma library engineers actually use has three properties: component names that match the API surface they import from in code, variants that map to the props they set, and just enough annotation that common cases are self-documenting without the spec doc open.
+
+**Naming convention**
+
+Use a Component/Variant/State hierarchy in Figma's naming — this maps to how engineers navigate props.
+
+```
+Button/Primary/Default
+Button/Primary/Hover
+Button/Primary/Focus
+Button/Primary/Disabled
+Button/Primary/Loading
+Button/Secondary/Default
+...
+Input/Default/Empty
+Input/Default/Filled
+Input/Default/Error
+Input/Default/Focused
+Input/Default/FocusError
+...
+Badge/Neutral        Badge/Success
+Badge/Warning        Badge/Danger
+Toast/Success        Toast/Error
+Toast/Warning        Modal/Default
+Modal/Fullscreen
+```
+
+Use the same names you used in the component specs — they should be identical to the React component names the engineering team uses. "Button" not "CTA" or "Clickable." "Badge" not "Tag" or "Pill." Consistency between Figma names and code names means engineers never have to translate.
+
+**Variant structure in Figma**
+
+In the Variants panel, expose the props an engineer would actually set — not every internal visual detail. For Button:
+
+- Variant: Primary | Secondary | Ghost | Danger
+- Size: sm | md | lg
+- State: Default | Hover | Pressed | Focused | Disabled | Loading
+- HasIconLeft: true | false
+- HasIconRight: true | false
+
+Don't expose internal properties like padding values or font sizes as variant props. Those are tokens, not props — a designer who needs different padding needs to change the component definition, not override an instance. Keeping variant props clean keeps the variant matrix navigable. Expose 8 props and the full combination space becomes unusable for anyone who isn't the person who built it.
+
+**File page structure**
+
+```
+[ Cover        ] — title, version number, last updated date, link to spec docs
+[ Tokens       ] — color swatches, type scale, spacing scale (visual reference)
+[ Components   ] — all published components organized by component group
+[ Icons        ] — SVG icon library if you're maintaining one
+[ _Playground  ] — private, not published; explorations and WIP work
+[ _Archive     ] — pre-system screenshots, audit documentation frames
+```
+
+The underscore prefix sorts internal pages to the top and signals "not for external consumption." The Cover page is not optional — anyone opening the file for the first time should immediately see what version they're using and where to find implementation detail. Published library pages (Tokens, Components, Icons) are what engineers connect via Libraries. Keep the published set tight: only components that have a corresponding approved spec doc.
+
+**Annotations inside Figma**
+
+Use annotations for three things only: token references ("Background: color-action-primary"), non-obvious interaction behavior ("Click outside closes modal unless preventClose=true"), and edge cases that could be missed in implementation ("Icon-only buttons require aria-label — no exceptions"). Don't duplicate the spec doc in annotations — engineers who need implementation depth read the spec; Figma annotations are for quick reference while implementing.
+
+**One thing worth adding before handoff**
+
+Pin a changelog frame at the top of the Components page — a simple table with columns: Date | Component | Change | Breaking? Start it on the day you publish with "Initial library release." Engineers who subscribe to your library get no automatic notification when components update. A visible changelog tells them what changed without requiring a Slack message every time. Establishing the convention on day one means it actually gets maintained.$pf$,
+ NULL),
+
+-- Step 4 --
+('77777777-7777-7777-7777-777777126004',
+ '55555555-5555-5555-5555-555555550126',
+ 4,
+ $pf$Getting 11 engineers to actually use the system — adoption rollout plan$pf$,
+ $pf$The Figma file is done — 8 component groups, 124 variants, full token library linked, annotations on every non-obvious behavior. The engineering lead opened it yesterday and said it was "shockingly organized." Now I need the rollout plan. I have 10 weeks total and I'm at week 9. I need the engineering team to adopt this for new features going forward, and I need a realistic strategy for handling the existing codebase — 6 different button styles still live in production. I'm not expecting to convert everything in one sprint. But I also don't want to hand this off and watch it gather dust while engineers keep doing what they've always done. What are the levers that actually work for design system adoption when you're a freelancer leaving in a week, not a full-time employee staying to enforce it?$pf$,
+ $pf$Design system adoption fails for one of three reasons: engineers don't know the system exists, the system is harder to use than what they already do, or there's no institutional pressure to adopt. Address all three before you leave.
+
+**Before you leave: run one real migration sprint together**
+
+The most effective thing you can do in week 9 is pair with the engineering lead to migrate one real in-progress feature — not a demo page, not a sandbox, a feature currently in the sprint. Pick the one closest to shipping, port its buttons and inputs to system components, and merge it. This does three things: it proves the system works in production, it surfaces the two or three integration problems you didn't anticipate (there's always a Tailwind specificity conflict or a missing token variant), and it creates a team member who has used the system and can answer implementation questions without you.
+
+The first PR is what converts "a Figma file someone made" into "the thing we use."
+
+**The new-code rule — written, not verbal**
+
+Add one line to the engineering team's PR template or contribution guide: "New UI must use design system components. Legacy components migrate opportunistically — when you touch a screen for any other reason." Frame it as a norm that lives in the place engineers already read, not a policy that requires a meeting. New code applies immediately; legacy code pays down its debt naturally over 12–18 months, triggered by whoever touches that screen next.
+
+Most teams that successfully adopt design systems don't do big-bang migrations. They set a migration trigger — any change to this screen means migrate it — and let the debt pay itself off. The "opportunistically" qualifier reduces resistance because nobody is asked to stop shipping to clean up old code. But it's not optional: the rule says "when you touch it, migrate it," and that should be reviewable in PRs.
+
+**The convenience check**
+
+Every week after you leave, the engineering lead should be able to answer one question: did anyone say it was easier to write a custom button than import from the system? If yes, that's a signal — not a discipline failure, a system gap. Missing variant. Incorrect token name. Figma-to-code discrepancy. Fix it within 48 hours. A design system's adoption rate tracks almost perfectly with its friction-to-quality ratio. If importing ButtonPrimary is harder than writing `bg-blue-600 text-white px-4 py-2`, the system loses every time, even with institutional support.
+
+**Contribution process — lightweight, not bureaucratic**
+
+Leave a Requests frame pinned in the Figma file: a simple table where engineers or designers can drop a screenshot labeled "I needed this and it didn't exist." Review it in the existing design-engineering weekly sync — which you should set up before you leave. Requests that appear more than twice get prioritized for the next component sprint. This keeps the system from feeling like a closed artifact that only designers can modify.
+
+**At 3 months: the closing check-in**
+
+Before you formally close the contract, schedule a 30-minute call at the 3-month mark. Pull the PR history with the engineering lead: how many new-feature PRs used system components? How many introduced custom components that should have been in the system? If custom components outnumber system uses, something is wrong — either there are gaps, or the adoption norm isn't being enforced. If system components dominate, document that explicitly. Design systems live or die on the second PR, not the first. Anyone can be convinced once.$pf$,
+ NULL);
+
+-- Project 0127 — lena_solopreneur / Personal / beginner / 3-step / Opus 4.6
+DELETE FROM prompt_steps WHERE prompt_id = '55555555-5555-5555-5555-555555550127';
+DELETE FROM prompts WHERE id = '55555555-5555-5555-5555-555555550127';
+
+INSERT INTO prompts (
+  id, title, description, content, result_content,
+  category_id, difficulty, model_used, model_recommendation,
+  tools_used, tags, status, author_id, vote_count, bookmark_count
+) VALUES (
+  '55555555-5555-5555-5555-555555550127',
+  $pf$Setting up a dead-simple bookkeeping system for a one-person freelance business$pf$,
+  $pf$Lena Morales had been freelancing for 20 months with no real bookkeeping system — tax time meant three days of scrambling through receipts and statements. Three sessions with Claude built her a simple Google Sheets system with a 7-category chart of accounts, a 30-minute monthly close workflow, and a quarterly estimated tax framework that means she now goes into tax season knowing her numbers cold.$pf$,
+  $pf$I've been running my freelance business for 20 months — a mix of digital products on Etsy, two niche content sites monetized with display ads and affiliate links, and occasional brand consulting projects I take on when the scope is interesting. Revenue has been growing: I averaged $4,200 a month last year and $6,800 a month so far this year.
+
+My bookkeeping was a disaster. I had a Google Sheet I'd started in January 2024 and abandoned by March. A folder of PDF receipts that was loosely organized. Some bank statements I'd downloaded in a panic. A PayPal history I had never actually reconciled. When my accountant finished my 2025 taxes she was patient, but it had taken me three full days of detective work before I could give her anything resembling organized records. I kept thinking I'd set up a real system "soon." Soon kept not happening.
+
+I don't have a complicated business. No employees, no inventory to track, no receivables that stretch more than 30 days. Every time I looked at QuickBooks or Wave I felt overwhelmed — they're built for businesses with complexity I don't have. I wanted something I could build in a Google Sheet and maintain in 30 minutes a month.$pf$,
+  $pf$I now have a bookkeeping system that takes about 25 minutes at month-end. It lives in a single Google Sheets workbook with three tabs. My accountant looked at my January 2026 close and said it was the cleanest month I'd ever handed her. I know within a few hundred dollars what my quarterly estimated tax payment should be before I open any tax software. Tax prep this year took an afternoon, not three days.$pf$,
+  '11111111-1111-1111-1111-111111111110',
+  'beginner',
+  'claude-opus-4-6',
+  $pf$Claude 4.6 Opus$pf$,
+  ARRAY['Claude'],
+  ARRAY['bookkeeping', 'freelance finance', 'self-employed taxes', 'Google Sheets', 'solopreneur', 'estimated taxes'],
+  'approved',
+  '22222222-2222-2222-2222-222222222210',
+  0,
+  0
+);
+
+INSERT INTO prompt_steps (id, prompt_id, step_number, title, content, result_content, description) VALUES
+
+-- Step 1 --
+('77777777-7777-7777-7777-777777127001',
+ '55555555-5555-5555-5555-555555550127',
+ 1,
+ $pf$Building a chart of accounts and Google Sheets tracker for a one-person freelance business$pf$,
+ $pf$I've been freelancing for 20 months and I need to finally set up real bookkeeping. My business is genuinely simple: I sell digital products on Etsy (I receive a monthly deposit from Etsy Payments), I have two niche content sites that earn display ad revenue from Mediavine paid monthly and some Amazon affiliate commissions, and I take occasional brand consulting projects where I invoice clients directly and get paid via Stripe or check. My expenses include Canva Pro, domain hosting and renewals, an AI tools subscription, supplies for product photography, a portion of my home internet, and occasional contractor payments when I hire someone to help with content. Monthly revenue this year has averaged around $6,800.
+
+I've never had a real bookkeeping system. I just download bank statements in January and try to reconstruct everything before my accountant appointment. It took me three full days this year and my accountant was visibly frustrated by the end. I want to build a Google Sheets system I'll actually maintain — specifically I need to know what categories to track (I think that's called a chart of accounts?) and what the spreadsheet structure should look like. I'm not an accountant. I don't need double-entry bookkeeping or journal entries. I just need to know what I earned, what I spent, which category each thing goes in for taxes, and whether my numbers match my bank statement.$pf$,
+ $pf$Let me give you the structure that will actually work for a business like yours — which is genuinely simple, not a scaled-down version of a complicated thing.
+
+**Your income categories (3)**
+
+For taxes and for your own clarity, separate income by source — not by payment method.
+
+1. **Product sales** — all Etsy Payments deposits. One row per monthly deposit.
+2. **Content and affiliate revenue** — Mediavine ad payments plus Amazon affiliate commissions. One row per payment per platform.
+3. **Consulting revenue** — client invoices paid via Stripe or check. One row per invoice paid.
+
+That's it. Your accountant's question about income is "what type of activity generated it" — these three categories answer that cleanly. You don't need to separate Stripe fees from Etsy fees at the income level; those go in expenses.
+
+**Your expense categories (7)**
+
+These names map directly to how the IRS groups Schedule C deductions, which means your spreadsheet speaks the same language as your accountant's software.
+
+1. **Software subscriptions** — Canva Pro, AI tools, any monthly SaaS you pay for the business.
+2. **Hosting and domains** — domain renewals, web hosting, CDN costs. Separate from software because your accountant may handle long-term domain registrations differently.
+3. **Platform fees** — the percentage Etsy takes, Stripe processing fees (2.9% plus 30 cents per transaction), Mediavine's revenue share if they deduct it before paying you. Deductible and easy to miss.
+4. **Home office and internet** — you can deduct a percentage of your home internet equal to the percentage of your home used for business. If you have a dedicated workspace, measure its square footage divided by total home square footage. If not, 50% of the internet bill is a defensible estimate. Track the full monthly bill here; your accountant applies the percentage.
+5. **Supplies** — physical materials for product photography, paper, printer cartridges, any tangible items directly used in the business.
+6. **Contractor payments** — anyone you pay for content, design, or other work. Keep this separate because anyone you pay more than $600 in a calendar year requires a 1099-NEC filed by January 31. You need names and totals tracked cleanly.
+7. **Professional services** — your accountant's fee, any legal fees, bookkeeping software if you ever switch to a paid tool.
+
+**Google Sheets structure — 3 tabs**
+
+*Tab 1: Transactions.* The working tab. Every income payment and every expense goes here as it happens or when you do your monthly close.
+
+Columns: Date | Type (Income/Expense) | Source or Payee | Category | Description | Amount | Reconciled (checkbox)
+
+One row per transaction. Don't summarize — if Mediavine paid you twice in one month, two rows. Keep descriptions brief but specific: "Canva Pro monthly" or "Stripe fees — March consulting invoice." The Reconciled checkbox is the key column: you check it when you confirm the transaction appears on your bank or platform statement.
+
+*Tab 2: Monthly Summary.* Auto-populated from Tab 1 using SUMIF formulas. One column per month, rows for each income and expense category, a Net row at the bottom (total income minus total expenses). This is what you glance at during your monthly close — 30 seconds to read. If a month looks off, click into Tab 1 to investigate.
+
+*Tab 3: Annual Tracker.* Year-to-date totals auto-populated from Tab 2. At year-end, this is the single tab you share with your accountant as a starting point.
+
+**The one habit that makes this work**
+
+Pick one day per month — last day of the month or first of the next, and keep it consistent. Export or screenshot your bank statement for the period. Go through every transaction. Enter anything that isn't already in Tab 1. Check the Reconciled box for each transaction after you confirm it. When every bank statement line is reconciled, Tab 2's net should match your bank balance change for the month. If it's off by more than a few dollars, find the gap before you close. The discipline is the close — everything else is just data entry.$pf$,
+ NULL),
+
+-- Step 2 --
+('77777777-7777-7777-7777-777777127002',
+ '55555555-5555-5555-5555-555555550127',
+ 2,
+ $pf$The monthly 30-minute close workflow and handling mixed personal/business expenses$pf$,
+ $pf$The setup is done — I built the three-tab workbook and filled in January from memory. It took about an hour because I had to dig through bank statements and PayPal history, but now it's in there. For February I want to do this properly in real time. Can you walk me through what my actual month-end close should look like step by step? I'm aiming for 30 minutes or less. I also have two specific situations I'm not sure how to handle: (1) Some expenses are a mix of personal and business — my phone bill is the main one, and in February I also bought a day pass at a co-working space for a client call. How do I decide what percentage to claim and how do I record it? (2) PayPal is separate from my main bank account and sometimes money sits there for a week before I transfer it to my checking. Do I record the income when I receive it in PayPal or when the transfer hits my bank?$pf$,
+ $pf$30 minutes is realistic for your business size. Here's the exact process.
+
+**The monthly close — step by step**
+
+*Prep (5 minutes).* Open your Transactions tab. Open your bank account statement filtered to the month. Open PayPal activity for the month. Open Etsy Payments history for the month. Have your credit card statement ready if you use a card for business expenses.
+
+*Enter and reconcile transactions (15 minutes).* Go through your bank statement line by line. For each transaction: if it's already in your Transactions tab, check the Reconciled box and move on. If it's not in the tab yet, add a new row — date, type, source or payee, category, description, amount — then check the Reconciled box.
+
+Most transactions at your volume are recurring and predictable: Canva posts on the same date every month, Mediavine deposits on the 15th, consulting Stripe transfers within two days of payment. The actual new entries per month are usually five to ten for a business your size. That's your 15 minutes.
+
+*Review Tab 2 (5 minutes).* Look at this month's column in the Monthly Summary tab. Does total income match what you remember earning? Do expenses look reasonable by category? You're not auditing — you're scanning for anything obviously wrong: a subscription you don't recognize, income that looks unusually high or low. If something's off, filter Tab 1 by that category to find it.
+
+*Done.* If Tab 2's net matches your expected bank balance change for the month, you're closed.
+
+**Handling mixed personal/business expenses**
+
+*Phone bill:* Use 50% as your business portion. This is standard practice for sole proprietors who use the same phone for personal and business, and it's defensible without tracking individual calls. Enter 50% of your monthly phone bill in Software subscriptions or create a separate Phone/communications category. Your accountant applies the deduction.
+
+*Co-working day pass:* 100% business expense. Category: Professional services, or "Rent/lease" if your accountant uses that Schedule C line for day passes — either is defensible. Description: "Co-working day pass — client call, Feb 14." You don't need a receipt beyond the charge on your bank statement, but the description should make the business purpose clear in case you're ever asked.
+
+The general rule for split expenses: if you can explain the business percentage in one sentence, take it. "50% phone because I use it equally for personal and business" is enough. "100% internet because I work from home full-time" is aggressive — the square footage calculation is the right method. "100% co-working pass because I went specifically for a client call" is straightforward. Your accountant is not going to scrutinize a $35 day pass; they will scrutinize a claimed 100% home internet deduction.
+
+**Income timing: cash basis**
+
+Record income when you receive it — not when you invoice, not when the transfer hits your checking account.
+
+- Etsy: record when Etsy marks the payment complete in your Etsy Payments dashboard, typically three business days after order.
+- Stripe consulting payment: record when the client pays the invoice in Stripe, not when you send it.
+- PayPal: record when the money arrives in PayPal, not when you transfer it to your bank. The bank transfer is just a cash movement between your own accounts — not new income.
+
+This is cash-basis accounting, which is the standard method for sole proprietors. You pay taxes on money you actually received. The PayPal-to-bank transfer is invisible from a bookkeeping standpoint — you already recorded the income when it arrived in PayPal.$pf$,
+ NULL),
+
+-- Step 3 --
+('77777777-7777-7777-7777-777777127003',
+ '55555555-5555-5555-5555-555555550127',
+ 3,
+ $pf$Quarterly estimated taxes and the year-end accountant handoff checklist$pf$,
+ $pf$The monthly close is working — I did February in 22 minutes and it felt manageable for the first time. Now I need to understand the tax side. I've been paying whatever I owe in April and having a small panic attack about it each year. I know self-employed people are supposed to pay quarterly estimated taxes but I've never actually done it. My net profit this year is running about $5,900 a month (revenue $6,800 minus expenses roughly $900). Can you explain how quarterly estimated taxes work for someone in my situation and what I should actually set aside each quarter? And separately — what does "handing my accountant clean books" actually mean? What does she need from me at year-end, and what's genuinely my job versus hers?$pf$,
+ $pf$Let me give you the quarterly framework first, then the year-end checklist.
+
+**Quarterly estimated taxes — how they work**
+
+The IRS wants tax payments throughout the year, not all in April. Because nobody withholds taxes from your freelance income, you owe estimated payments four times a year. If you underpay — specifically, if you pay less than 90% of what you'll owe for the year, or less than 100% of what you owed last year — you pay a small underpayment penalty. Not catastrophic, but annoying and avoidable.
+
+The 2026 quarterly due dates:
+- Q1 (January through March): April 15, 2026
+- Q2 (April through May): June 16, 2026
+- Q3 (June through August): September 15, 2026
+- Q4 (September through December): January 15, 2027
+
+**Estimating your quarterly payment at $5,900/month net**
+
+At $5,900 per month net profit, your projected annual net is roughly $70,800. Here's what that looks like:
+
+*Self-employment (SE) tax:* SE tax is 15.3% on 92.35% of your net profit. The 92.35% exists because you deduct half of SE tax before calculating income tax — the IRS acknowledging that you're both employer and employee.
+
+$70,800 x 0.9235 = $65,384 subject to SE tax
+$65,384 x 0.153 = $10,004 SE tax owed
+Half of SE tax ($5,002) becomes an above-the-line income deduction
+
+*Federal income tax:*
+AGI: $70,800 minus $5,002 (half SE tax deduction) = $65,798
+Standard deduction for a single filer in 2026: $15,000
+Taxable income: $65,798 minus $15,000 = $50,798
+
+2026 federal brackets (single filer):
+- 10% on first $11,925 = $1,193
+- 12% on $11,926 to $48,475 = $4,386
+- 22% on $48,476 to $50,798 = $511
+Federal income tax: approximately $6,090
+
+*Total annual federal tax:* $10,004 plus $6,090 = $16,094
+*Quarterly payment:* $16,094 divided by 4 = approximately $4,024 per quarter
+
+**The 30% rule as a workable shortcut**
+
+For most solopreneurs earning between $50K and $120K net, setting aside 30% of net profit each month stays close enough to avoid underpayment penalties. At $5,900 net per month, that's $1,770 per month set aside, or $5,310 per quarter — slightly over the calculated amount, which means a small refund or credit toward the following Q1.
+
+Open a dedicated savings account, label it taxes, and transfer your 30% there on the same day you do your monthly close. Treating it as already gone is the habit that prevents the April panic.
+
+**The year-end handoff: your job is six things**
+
+1. **Your Tab 3 annual tracker.** Income by category, expenses by category, net profit. If these numbers match your bank and platform statements, the filing conversation is 30 minutes. If they don't, the conversation is hours.
+
+2. **Any 1099-NEC forms you received.** If clients paid you more than $600 via bank transfer or check — not through PayPal or Venmo, which issue their own forms — they're required to send you a 1099-NEC by January 31. Collect them and verify they match your records. Discrepancies need an explanation before filing.
+
+3. **1099-K data from your platforms.** Etsy, Stripe, and PayPal issue 1099-Ks if your payments exceed the IRS reporting threshold for the year (currently $5,000 for 2025 and 2026, though this number continues to change). These should match your recorded income. If your records show more than the 1099-K, that's fine — you report the higher number. If the 1099-K shows more, investigate the gap.
+
+4. **Home office calculation inputs.** If you're claiming a home office deduction: the square footage of your dedicated workspace and the total square footage of your home. Your accountant calculates the percentage and applies it to relevant expenses. You provide the measurements.
+
+5. **A list of anyone you paid more than $600 during the year.** Name, address, total amount paid, and their W-9 (which you should collect before making the first payment, not after). Your accountant can prepare and file the 1099-NECs if you give her the list; she cannot produce the list from nothing.
+
+6. **One paragraph about anything unusual.** A major equipment purchase, income from a new source, a significant change from the prior year. If you tell your accountant about the $2,100 camera you bought in October for product photography, she can evaluate whether to expense it fully under Section 179 or depreciate it. If you don't mention it, she won't know to ask.
+
+"Clean books" means: your Tab 3 totals match what your bank and platforms received, you have the 1099 documents in hand, and you can explain anything that looks unusual in a sentence. Everything else is your accountant's job.$pf$,
+ NULL);
+
 ALTER TABLE prompts ENABLE ROW LEVEL SECURITY;
 ALTER TABLE prompt_steps ENABLE ROW LEVEL SECURITY;

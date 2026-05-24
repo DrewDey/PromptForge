@@ -2,12 +2,14 @@ import fs from 'node:fs'
 import path from 'node:path'
 import type { ReactNode } from 'react'
 import Link from 'next/link'
-import { ExternalLink, FileCode2, Gamepad2, GitBranch, ShieldCheck } from 'lucide-react'
+import { ExternalLink, FileCode2, Gamepad2, GitBranch } from 'lucide-react'
 
 const prompt = 'Make me a playable Snake game as a single self-contained HTML file.'
 const artifactPath = '/artifacts/snake-gpt55-pro-oneshot.html'
 const chatUrl = 'https://chatgpt.com/c/6a122064-6094-832a-9228-e239ce31e79b'
 const capturedAt = 'May 23, 2026, 6:00 PM ET'
+const chatResponseIntro =
+  'I’ll build a standalone HTML Snake game with embedded CSS/JavaScript, playable directly in a browser, including scoring, keyboard controls, pause/restart, and mobile-friendly touch support.'
 
 function getModelResponse() {
   try {
@@ -47,7 +49,8 @@ function ArtifactFrame() {
         title="Playable Snake game generated from one ChatGPT prompt"
         src={artifactPath}
         sandbox="allow-scripts allow-same-origin"
-        className="h-[620px] w-full bg-black lg:h-[760px]"
+        scrolling="no"
+        className="h-[1120px] w-full bg-black sm:h-[980px] lg:h-[900px]"
       />
     </div>
   )
@@ -78,46 +81,19 @@ function RunSummary() {
   )
 }
 
-function AttachmentLink({
-  href,
-  label,
-  meta,
-}: {
-  href: string
-  label: string
-  meta: string
-}) {
-  return (
-    <a
-      href={href}
-      target="_blank"
-      rel="noreferrer"
-      className="flex min-w-0 items-center justify-between gap-3 border border-surface-200 bg-surface-50 px-3 py-2 text-surface-900 transition hover:border-brand-orange hover:bg-primary-50"
-    >
-      <span className="min-w-0">
-        <span className="block truncate text-sm font-bold">{label}</span>
-        <span className="block truncate font-mono text-[10px] uppercase tracking-[0.14em] text-surface-500">
-          {meta}
-        </span>
-      </span>
-      <ExternalLink className="h-3.5 w-3.5 shrink-0 text-brand-blue" />
-    </a>
-  )
-}
-
 function ResponsePackage({ modelResponse }: { modelResponse: string }) {
   return (
-    <details className="group border border-surface-200 bg-surface-50">
+    <details className="group border border-surface-200 bg-white">
       <summary className="flex cursor-pointer list-none items-center justify-between gap-4 p-4">
         <span className="min-w-0">
           <span className="block font-mono text-[10px] uppercase tracking-[0.16em] text-surface-500">
             Exact response collapsed
           </span>
           <span className="mt-1 block text-base font-black text-surface-900">
-            Verbatim ChatGPT HTML file, attachments, and verification
+            Verbatim ChatGPT message
           </span>
           <span className="mt-1 block text-sm leading-6 text-surface-600">
-            Contains the exact downloaded response, generated HTML file, screenshots, and top embed link.
+            Full response text from the source run. The generated code is collapsed inside.
           </span>
         </span>
         <span className="shrink-0 border border-surface-300 bg-white px-3 py-2 font-mono text-[10px] uppercase tracking-[0.12em] text-surface-700">
@@ -126,74 +102,40 @@ function ResponsePackage({ modelResponse }: { modelResponse: string }) {
       </summary>
 
       <div className="space-y-4 border-t border-surface-200 bg-white p-4">
-        <p>
-          Exact response captured from ChatGPT: a self-contained HTML file and live preview. The
-          verbatim file content is attached below and mounted as the playable result at the top.
-        </p>
-
-        <div className="grid gap-3 border border-surface-900 bg-surface-900 p-4 text-white md:grid-cols-[minmax(0,1fr)_auto] md:items-center">
-          <div>
-            <div className="font-mono text-[10px] uppercase tracking-[0.16em] text-brand-orange">
-              Mounted at top
-            </div>
-            <p className="mt-1 text-sm font-semibold leading-6 text-surface-100">
-              The playable game is this response&apos;s attached HTML file rendered in the top embed.
-            </p>
-          </div>
+        <div className="space-y-4 text-sm leading-7 text-surface-900">
+          <p>{chatResponseIntro}</p>
+          <p className="font-mono text-xs text-surface-500">Thought for 10m 57s</p>
+          <p>Done — here&apos;s the single self-contained HTML file:</p>
           <a
-            href="#final-result"
-            className="inline-flex items-center justify-center border border-brand-orange px-3 py-2 text-xs font-bold text-brand-orange transition hover:bg-brand-orange hover:text-white"
+            href={artifactPath}
+            target="_blank"
+            rel="noreferrer"
+            className="inline-flex items-center gap-2 border-b border-surface-400 font-semibold text-surface-900 transition hover:border-brand-orange hover:text-brand-orange"
           >
-            View embed
+            Download the playable Snake game
+            <ExternalLink className="h-3.5 w-3.5" />
           </a>
         </div>
 
-        <div className="border border-surface-200 bg-surface-50 p-4">
-          <div className="mb-2 flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.16em] text-surface-500">
-            <ShieldCheck className="h-3.5 w-3.5 text-brand-blue" />
-            Verification summary
-          </div>
-          <p className="text-sm font-semibold leading-6 text-surface-900">
-            Playable Snake game, embedded above, verified from the generated HTML file. No external
-            URLs were found in the captured artifact.
-          </p>
-        </div>
-
-        <div>
-          <div className="mb-2 font-mono text-[10px] uppercase tracking-[0.16em] text-surface-500">
-            Exact response attachments
-          </div>
-          <div className="grid gap-2 md:grid-cols-3">
-            <AttachmentLink
-              href={artifactPath}
-              label="snake-gpt55-pro-oneshot.html"
-              meta="Generated file"
-            />
-            <AttachmentLink
-              href="/screenshots/snake-demo-game-running.png"
-              label="Game running"
-              meta="Verification screenshot"
-            />
-            <AttachmentLink
-              href="/screenshots/snake-demo-desktop-full.png"
-              label="Full page"
-              meta="Page screenshot"
-            />
+        <div className="border border-surface-200 bg-surface-50 px-4 py-3">
+          <div className="flex items-center gap-2 font-mono text-[11px] font-bold text-surface-700">
+            <FileCode2 className="h-4 w-4 text-brand-blue" />
+            snake_game_single_file.html
           </div>
         </div>
 
-        <details className="group border border-surface-200 bg-white">
+        <details className="group/code border border-surface-200 bg-white">
           <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-4 py-3">
             <span className="min-w-0">
               <span className="flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.16em] text-surface-500">
                 <FileCode2 className="h-3.5 w-3.5 text-brand-blue" />
-                Exact response
+                Code block
               </span>
               <span className="mt-1 block text-sm font-bold text-surface-900">
-                Verbatim ChatGPT HTML file
+                Full HTML response
               </span>
               <span className="mt-1 block text-xs leading-5 text-surface-500">
-                This is the exact downloaded response content, collapsed because it is long.
+                Collapsed because the generated file is long.
               </span>
             </span>
             <span className="shrink-0 border border-surface-300 px-2 py-1 font-mono text-[10px] uppercase tracking-[0.12em] text-surface-600">

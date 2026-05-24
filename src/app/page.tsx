@@ -36,12 +36,12 @@ export default async function HomePage() {
               See exactly how real projects were built — every prompt, every result, every branch. Fork a path, swap in your context, and have something real to show by bedtime.
             </p>
             <div className="hero-ctas">
-              <Link href="/browse" className="btn-primary">
-                Browse build paths
+              <Link href="/paths" className="btn-primary">
+                Build Paths
                 <svg className="arrow" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="square"><path d="M5 12H19M13 6L19 12L13 18" /></svg>
               </Link>
-              <Link href="/prompt/new" className="btn-secondary">
-                Share a build
+              <Link href="/build" className="btn-secondary">
+                Build a path
               </Link>
             </div>
             {/* Hero stats strip intentionally omitted — live counts not yet
@@ -53,61 +53,61 @@ export default async function HomePage() {
             <div className="exhibit-frame">
               <div className="exhibit-chrome">
                 <span className="dot" /><span className="dot" /><span className="dot" />
-                <span className="url">pathforge.app/path/<b>cfp-study-companion</b></span>
+                <span className="url">pathforge.app/path/<b>snake-gpt55-pro-oneshot</b></span>
               </div>
               <div className="exhibit-inner">
                 <div className="ex-tag-row">
-                  <span className="ex-tag orange">Trending</span>
-                  <span className="ex-tag ghost">Education · Finance</span>
+                  <span className="ex-tag orange">Approved seed</span>
+                  <span className="ex-tag ghost">Personal &amp; Fun · Game</span>
                 </div>
-                <h3 className="ex-title">CFP study companion — prompt chain</h3>
-                <div className="ex-sub">Marcus Chen · 4 steps · Claude Sonnet 4.5 · 312 forks</div>
+                <h3 className="ex-title">Playable Snake game — one-shot path</h3>
+                <div className="ex-sub">PathForge Projects · 1 prompt · GPT 5.5 Pro · live artifact</div>
 
                 <div className="ex-step active">
                   <div className="ex-step-num">1</div>
                   <div className="ex-step-body">
-                    <div className="ex-prompt">You are a CFP® tutor. Quiz me on <b>{'{module}'}</b> — 5 multiple-choice, explain wrong answers.</div>
-                    <div className="ex-result">Returns 5 scenario-based questions tied to the CFP Board domain list</div>
+                    <div className="ex-prompt">Make me a playable Snake game as a single self-contained HTML file.</div>
+                    <div className="ex-result">Returns a full HTML artifact with game logic, controls, and styling</div>
                   </div>
                 </div>
                 <div className="ex-step">
                   <div className="ex-step-num">2</div>
                   <div className="ex-step-body">
-                    <div className="ex-prompt">Summarize my misses into a flashcard deck, JSON format.</div>
-                    <div className="ex-result">Structured deck — drop straight into Anki or Quizlet</div>
+                    <div className="ex-prompt">Mount the generated file as the final result.</div>
+                    <div className="ex-result">The playable game renders directly at the top of the project page</div>
                   </div>
                 </div>
                 <div className="ex-step">
                   <div className="ex-step-num">3</div>
                   <div className="ex-step-body">
-                    <div className="ex-prompt">Build a 14-day spaced-repetition plan around my weak domains.</div>
-                    <div className="ex-result">Day-by-day schedule with diminishing review cadence</div>
+                    <div className="ex-prompt">Keep the exact response package collapsed below the preview.</div>
+                    <div className="ex-result">Prompt, response, attachments, and verification stay tied together</div>
                   </div>
                 </div>
 
                 <div className="ex-footer">
                   <div className="who">
-                    <div className="ava">M</div>
-                    <span>by <b style={{ color: 'var(--color-surface-800)', fontWeight: 600 }}>marcusdev</b> · shipped today</span>
+                    <div className="ava">P</div>
+                    <span>by <b style={{ color: 'var(--color-surface-800)', fontWeight: 600 }}>PathForge Projects</b> · approved seed</span>
                   </div>
                   <div className="metrics">
-                    <span>↑ 847</span>
-                    <span>⎇ 312</span>
+                    <span>1 prompt</span>
+                    <span>1 artifact</span>
                   </div>
                 </div>
               </div>
             </div>
             <div className="exhibit-badge">
               <small>Live path</small>
-              See every step
+              Play the artifact
             </div>
             <div className="exhibit-fork">
               <div className="ic">
                 <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4"><circle cx="18" cy="6" r="2.5" /><circle cx="6" cy="6" r="2.5" /><circle cx="12" cy="20" r="2.5" /><path d="M6 8.5V13A3 3 0 009 16H15A3 3 0 0018 13V8.5M12 16V17.5" /></svg>
               </div>
               <div>
-                <b>+312 forks</b><br />
-                <span style={{ color: 'var(--color-surface-500)', fontSize: '10.5px', fontFamily: 'var(--font-mono)' }}>this week</span>
+                <b>Seed #1</b><br />
+                <span style={{ color: 'var(--color-surface-500)', fontSize: '10.5px', fontFamily: 'var(--font-mono)' }}>approved</span>
               </div>
             </div>
           </div>
@@ -160,17 +160,17 @@ export default async function HomePage() {
               <h2 className="section-title">The whole journey, not a <span className="serif">one-line</span> prompt.</h2>
             </div>
             <p>
-              Templates give you fill-in-the-blank prompts. Build paths give you the full context: the finished project, every prompt that produced it, every result, every branch you tried. Fork it, adapt it, ship yours.
+              Templates give you fill-in-the-blank prompts. Build Paths give you the full context: the finished project, every prompt that produced it, every result, every branch you tried. Fork it, adapt it, ship yours.
             </p>
           </div>
 
           <div className="anatomy-diagram">
             <div className="anatomy-side">
               <div className="anatomy-label"><b>Metadata</b><span className="anatomy-tag">header</span></div>
-              <div className="box"><div className="k">Category</div><div className="v">📚 Education</div></div>
-              <div className="box"><div className="k">Difficulty</div><div className="v">Intermediate</div></div>
-              <div className="box"><div className="k">Model</div><div className="v orange">Claude Sonnet 4.5</div></div>
-              <div className="box"><div className="k">Steps</div><div className="v">3</div></div>
+              <div className="box"><div className="k">Category</div><div className="v">🎮 Personal &amp; Fun</div></div>
+              <div className="box"><div className="k">Difficulty</div><div className="v">Beginner</div></div>
+              <div className="box"><div className="k">Model</div><div className="v orange">GPT 5.5 Pro</div></div>
+              <div className="box"><div className="k">Steps</div><div className="v">1</div></div>
             </div>
 
             <div className="anatomy-center">
@@ -178,25 +178,25 @@ export default async function HomePage() {
               <div className="astep orange">
                 <div className="astep-num">1</div>
                 <div className="astep-body">
-                  <h4>Generate quiz questions</h4>
-                  <div className="prompt-line">You are a CFP® tutor. Quiz me on {'{module}'}…</div>
-                  <div className="result-line"><b>Output</b> 5 scenario-based MCQs tied to CFP domains</div>
+                  <h4>Send one plain prompt</h4>
+                  <div className="prompt-line">Make me a playable Snake game as a single self-contained HTML file.</div>
+                  <div className="result-line"><b>Output</b> complete HTML game file</div>
                 </div>
               </div>
               <div className="astep">
                 <div className="astep-num">2</div>
                 <div className="astep-body">
-                  <h4>Convert misses to flashcards</h4>
-                  <div className="prompt-line">Summarize my wrong answers into a JSON flashcard deck…</div>
-                  <div className="result-line"><b>Output</b> Anki-ready JSON with prompt/answer pairs</div>
+                  <h4>Capture the response</h4>
+                  <div className="prompt-line">Store the exact response package and attached file.</div>
+                  <div className="result-line"><b>Output</b> collapsed response with verification context</div>
                 </div>
               </div>
               <div className="astep">
                 <div className="astep-num">3</div>
                 <div className="astep-body">
-                  <h4>Build study schedule</h4>
-                  <div className="prompt-line">Build a 14-day spaced-repetition plan around my weak domains…</div>
-                  <div className="result-line"><b>Output</b> Day-by-day schedule with review cadence</div>
+                  <h4>Mount the artifact</h4>
+                  <div className="prompt-line">Render the final file at the top of the page.</div>
+                  <div className="result-line"><b>Output</b> playable Snake game inside the project page</div>
                 </div>
               </div>
             </div>
@@ -205,10 +205,10 @@ export default async function HomePage() {
               <div className="anatomy-label"><b>Outcome</b><span className="anatomy-tag">result</span></div>
               <div className="box" style={{ background: 'var(--color-brand-orange)', borderColor: 'var(--color-brand-orange-dark)', color: '#fff' }}>
                 <div className="k" style={{ color: 'rgba(255,255,255,.7)' }}>Shipped</div>
-                <div className="v" style={{ color: '#fff', fontWeight: 700 }}>CFP study kit, ready to run tonight</div>
+                <div className="v" style={{ color: '#fff', fontWeight: 700 }}>Playable Snake game, ready to run tonight</div>
               </div>
-              <div className="box"><div className="k">Your turn</div><div className="v">Fork &amp; swap {'{module}'}</div></div>
-              <div className="box"><div className="k">Est. time</div><div className="v">35 min</div></div>
+              <div className="box"><div className="k">Your turn</div><div className="v">Fork &amp; change the rules</div></div>
+              <div className="box"><div className="k">Est. time</div><div className="v">10 min</div></div>
             </div>
           </div>
         </div>
@@ -219,22 +219,22 @@ export default async function HomePage() {
         <div className="sect-wrap">
           <div className="cats-header">
             <div>
-              <div className="eyebrow">Browse by domain</div>
+              <div className="eyebrow">Explore by domain</div>
               <h2 className="section-title">A path for <span className="serif">every</span> kind of evening.</h2>
             </div>
-            <Link href="/browse" className="btn-secondary">
+            <Link href="/paths" className="btn-secondary">
               See all categories
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="square"><path d="M5 12H19M13 6L19 12L13 18" /></svg>
             </Link>
           </div>
           <div className="cats-grid">
-            {categories.map((cat) => {
+            {categories.filter(cat => (cat.prompt_count ?? 0) > 0).map((cat) => {
               const count = cat.prompt_count ?? 0
               const countLabel = count > 0 ? `${count} paths` : 'New'
               return (
                 <Link
                   key={cat.id}
-                  href={`/browse?category=${cat.slug}`}
+                  href={`/paths?category=${cat.slug}`}
                   className="cat"
                 >
                   <div className="cat-icon">{cat.icon}</div>
@@ -250,43 +250,6 @@ export default async function HomePage() {
         </div>
       </section>
 
-      {/* ═══════════ COMMUNITY ═══════════ */}
-      <section className="community">
-        <div className="sect-wrap">
-          <div className="community-header">
-            <div className="eyebrow" style={{ justifyContent: 'center' }}>From the community</div>
-            <h2 className="section-title" style={{ marginLeft: 'auto', marginRight: 'auto', textAlign: 'center' }}>Built <span className="serif">tonight</span>. Shared by morning.</h2>
-            <p className="section-sub" style={{ textAlign: 'center' }}>What builders actually did with their last evening.</p>
-          </div>
-          <div className="community-grid">
-            <div className="quote">
-              <p>I copied Marcus&apos;s CFP chain, swapped {'{module}'} for &ldquo;estate planning,&rdquo; and had a real study deck in Anki by 11. I&apos;d tried this same idea from scratch twice and given up both times.</p>
-              <div className="quote-who">
-                <div className="quote-ava" style={{ background: 'linear-gradient(135deg,#E87A2C,#C45A1A)' }}>S</div>
-                <div className="quote-meta"><div className="nm">Sarah M.</div><div className="rl">@sarahgrows · marketing</div></div>
-              </div>
-              <div className="quote-shipped">⎇ Forked <b>CFP study companion</b></div>
-            </div>
-            <div className="quote">
-              <p>The &ldquo;bank CSV → cashflow&rdquo; path saved me an hour. I already had the prompts floating around but never chained them. Seeing someone else&apos;s result gave me the template I needed.</p>
-              <div className="quote-who">
-                <div className="quote-ava" style={{ background: 'linear-gradient(135deg,#3B8FE4,#2563EB)' }}>J</div>
-                <div className="quote-meta"><div className="nm">Jake T.</div><div className="rl">@jakefinance · CFO</div></div>
-              </div>
-              <div className="quote-shipped">⎇ Forked <b>Freelance cashflow forecast</b></div>
-            </div>
-            <div className="quote">
-              <p>First time I&apos;ve finished an AI project I&apos;d started. Having the outputs next to each prompt meant I could tell when my version was drifting — I knew exactly which step to retune.</p>
-              <div className="quote-who">
-                <div className="quote-ava" style={{ background: 'linear-gradient(135deg,#18181b,#3f3f46)' }}>P</div>
-                <div className="quote-meta"><div className="nm">Priya S.</div><div className="rl">@priya_creates · designer</div></div>
-              </div>
-              <div className="quote-shipped">⎇ Forked <b>Figma → handoff spec</b></div>
-            </div>
-          </div>
-        </div>
-      </section>
-
       {/* ═══════════ FINAL CTA ═══════════ */}
       <section className="finalcta">
         <div className="sect-wrap">
@@ -294,7 +257,7 @@ export default async function HomePage() {
           <h2>You&apos;ve got the tools.<br /><span className="serif">You&apos;ve got</span> tonight.</h2>
           <p>Open a build path, fork the prompts, swap in your context, and have a real thing to show by bedtime. No blank chat. No guessing what to build.</p>
           <div className="finalcta-btns">
-            <Link href="/browse" className="btn-primary">
+            <Link href="/paths" className="btn-primary">
               Find tonight&apos;s build
               <svg className="arrow" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="square"><path d="M5 12H19M13 6L19 12L13 18" /></svg>
             </Link>

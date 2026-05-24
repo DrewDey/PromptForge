@@ -123,7 +123,7 @@ export default async function UserProfilePage({
               This user hasn&apos;t shared any AI projects.
             </p>
             <Link
-              href="/prompt/new"
+              href="/build"
               className="inline-flex items-center gap-2 bg-brand-orange text-white px-6 py-2.5 text-sm font-bold hover:bg-brand-orange-dark focus-visible:outline-2 focus-visible:outline-brand-orange focus-visible:outline-offset-2 transition-colors duration-150 min-h-11"
             >
               Share your first project

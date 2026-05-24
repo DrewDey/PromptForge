@@ -24,7 +24,7 @@ const categories = [
 type Step = { title: string; content: string; result_content: string; description: string }
 
 // Mirrors PromptCard's difficulty chip palette so the preview card reads the same
-// as the Browse grid's real cards.
+// as the Build Paths grid's real cards.
 const difficultyPreviewConfig: Record<string, { label: string; color: string }> = {
   beginner: { label: 'Beginner', color: 'text-emerald-600 bg-emerald-50 border-emerald-200' },
   intermediate: { label: 'Intermediate', color: 'text-amber-600 bg-amber-50 border-amber-200' },
@@ -89,7 +89,7 @@ function BuilderPreview({
           <Eye className="w-3 h-3" aria-hidden="true" /> Live preview
         </span>
         <span className="hidden lg:inline text-[10px] text-surface-400">
-          How it appears on Browse
+          How it appears on Build Paths
         </span>
       </div>
 
@@ -188,7 +188,7 @@ function BuilderPreview({
 
       {!hasAnyInput && (
         <p className="text-xs text-surface-400 leading-relaxed">
-          Fill in the form and your card preview will come to life here — exactly how it will look on the Browse grid.
+          Fill in the form and your card preview will come to life here — exactly how it will look on the Build Paths grid.
         </p>
       )}
     </div>
@@ -310,7 +310,11 @@ export default function SubmitProjectPage() {
       const supabase = createClient()
       supabase.auth.getUser().then(({ data: { user } }) => {
         setIsLoggedIn(!!user)
+      }).catch(() => {
+        setIsLoggedIn(false)
       })
+    }).catch(() => {
+      setIsLoggedIn(false)
     })
   }, [])
 
@@ -465,10 +469,10 @@ export default function SubmitProjectPage() {
         </p>
         <div className="flex items-center justify-center gap-4">
           <Link
-            href="/browse"
+            href="/paths"
             className="bg-brand-orange text-white px-5 py-2.5 text-sm font-medium hover:opacity-90 transition-opacity"
           >
-            Browse Projects
+            Build Paths
           </Link>
           <button
             onClick={() => {
@@ -543,9 +547,9 @@ export default function SubmitProjectPage() {
 
   return (
     <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
-      <Link href="/browse" className="text-sm text-surface-500 hover:text-surface-900 flex items-center gap-1 mb-6 transition-colors duration-150">
+      <Link href="/paths" className="text-sm text-surface-500 hover:text-surface-900 flex items-center gap-1 mb-6 transition-colors duration-150">
         <ArrowLeft className="w-4 h-4" />
-        Back to browse
+        Back to Build Paths
       </Link>
 
       {/* Page hero — the Build page had no H1, just stranded subtext. Gives the
@@ -555,7 +559,7 @@ export default function SubmitProjectPage() {
           Build your project
         </h1>
         <p className="text-sm text-surface-500 leading-relaxed">
-          Share what you built with AI — the prompts, the process, and the results. Fill in the form; the card on the right shows what it will look like on Browse.
+          Share what you built with AI — the prompts, the process, and the results. Fill in the form; the card on the right shows what it will look like on Build Paths.
         </p>
       </header>
 

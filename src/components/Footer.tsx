@@ -19,7 +19,7 @@ export default function Footer() {
               src="/logo.png"
               alt="PathForge"
               width={130}
-              height={37}
+              height={42}
               className="mb-4 brightness-0 invert opacity-95"
             />
             <p className="text-sm text-surface-400 leading-relaxed max-w-md">
@@ -32,20 +32,19 @@ export default function Footer() {
           <div className="md:col-span-3 md:col-start-7">
             <h3 className="text-[11px] font-bold uppercase tracking-widest text-surface-500 mb-4">Platform</h3>
             <ul className="space-y-2.5 text-sm">
-              <li><Link href="/browse" className="text-surface-300 hover:text-brand-orange transition-colors duration-150 focus-visible:outline-2 focus-visible:outline-brand-orange focus-visible:outline-offset-2">Browse paths</Link></li>
-              <li><Link href="/prompt/new" className="text-surface-300 hover:text-brand-orange transition-colors duration-150 focus-visible:outline-2 focus-visible:outline-brand-orange focus-visible:outline-offset-2">Submit a path</Link></li>
-              <li><Link href="/browse?sort=popular" className="text-surface-300 hover:text-brand-orange transition-colors duration-150 focus-visible:outline-2 focus-visible:outline-brand-orange focus-visible:outline-offset-2">Popular</Link></li>
+              <li><Link href="/what-to-build" className="text-surface-300 hover:text-brand-orange transition-colors duration-150 focus-visible:outline-2 focus-visible:outline-brand-orange focus-visible:outline-offset-2">What to Build</Link></li>
+              <li><Link href="/paths" className="text-surface-300 hover:text-brand-orange transition-colors duration-150 focus-visible:outline-2 focus-visible:outline-brand-orange focus-visible:outline-offset-2">Build Paths</Link></li>
+              <li><Link href="/suggestion-box" className="text-surface-300 hover:text-brand-orange transition-colors duration-150 focus-visible:outline-2 focus-visible:outline-brand-orange focus-visible:outline-offset-2">Suggestion Box</Link></li>
+              <li><Link href="/build" className="text-surface-300 hover:text-brand-orange transition-colors duration-150 focus-visible:outline-2 focus-visible:outline-brand-orange focus-visible:outline-offset-2">Build a path</Link></li>
             </ul>
           </div>
 
-          {/* Categories */}
+          {/* Company links */}
           <div className="md:col-span-3">
-            <h3 className="text-[11px] font-bold uppercase tracking-widest text-surface-500 mb-4">Categories</h3>
+            <h3 className="text-[11px] font-bold uppercase tracking-widest text-surface-500 mb-4">Company</h3>
             <ul className="space-y-2.5 text-sm">
-              <li><Link href="/browse?category=productivity" className="text-surface-300 hover:text-brand-orange transition-colors duration-150 focus-visible:outline-2 focus-visible:outline-brand-orange focus-visible:outline-offset-2">Productivity</Link></li>
-              <li><Link href="/browse?category=coding" className="text-surface-300 hover:text-brand-orange transition-colors duration-150 focus-visible:outline-2 focus-visible:outline-brand-orange focus-visible:outline-offset-2">Coding</Link></li>
-              <li><Link href="/browse?category=marketing" className="text-surface-300 hover:text-brand-orange transition-colors duration-150 focus-visible:outline-2 focus-visible:outline-brand-orange focus-visible:outline-offset-2">Marketing</Link></li>
-              <li><Link href="/browse?category=finance" className="text-surface-300 hover:text-brand-orange transition-colors duration-150 focus-visible:outline-2 focus-visible:outline-brand-orange focus-visible:outline-offset-2">Finance</Link></li>
+              <li><Link href="/about" className="text-surface-300 hover:text-brand-orange transition-colors duration-150 focus-visible:outline-2 focus-visible:outline-brand-orange focus-visible:outline-offset-2">Vision</Link></li>
+              <li><Link href="/paths?category=personal" className="text-surface-300 hover:text-brand-orange transition-colors duration-150 focus-visible:outline-2 focus-visible:outline-brand-orange focus-visible:outline-offset-2">Personal &amp; Fun</Link></li>
             </ul>
           </div>
         </div>

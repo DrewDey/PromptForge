@@ -66,3 +66,38 @@ export type PromptWithRelations = Prompt & {
   steps?: PromptStep[]
   images?: ProjectImage[]
 }
+
+export type SuggestionModerationStatus = 'pending' | 'approved' | 'declined'
+export type SuggestionPublicStatus = 'under_review' | 'planned' | 'shipped' | 'declined'
+export type SuggestionVisibility = 'private' | 'scheduled_public' | 'public'
+export type SuggestionResponseVisibility = 'public' | 'submitter'
+
+export type Suggestion = {
+  id: string
+  title: string
+  body: string
+  author_id: string
+  moderation_status: SuggestionModerationStatus
+  public_status: SuggestionPublicStatus
+  visibility: SuggestionVisibility
+  vote_count: number
+  approved_at: string | null
+  scheduled_publish_at: string | null
+  kept_private_at: string | null
+  created_at: string
+  updated_at: string
+}
+
+export type SuggestionResponse = {
+  id: string
+  suggestion_id: string
+  responder_id: string | null
+  body: string
+  visibility: SuggestionResponseVisibility
+  created_at: string
+}
+
+export type SuggestionWithRelations = Suggestion & {
+  author?: Profile | null
+  responses?: SuggestionResponse[]
+}

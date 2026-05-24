@@ -1,6 +1,6 @@
 // Iter 2026-04-21 — Browse v2 (Direction A) from handoff bundle PathForge 2.
 // Persistent AI search band at top, Path of the Week split card, 4-card shelf,
-// collapsible "Browse build paths" panel (B-pattern facets + ranked list),
+// collapsible "Build Paths" panel (B-pattern facets + ranked list),
 // domain grid, and "The Loop" lettered walkthrough.
 //
 // Panel state is URL-driven: ?q=... auto-opens (search mode); ?panel=open opens
@@ -14,6 +14,7 @@ import { redirect } from 'next/navigation'
 import { getCategories, getPrompts } from '@/lib/data'
 import type { PromptWithRelations } from '@/lib/types'
 import { AI_MODELS } from '@/lib/models'
+import { getProjectHref } from '@/lib/project-links'
 import '../browse.css'
 
 const DIFFICULTIES = [
@@ -33,10 +34,10 @@ const FACET_MODELS = [
 ]
 
 const SUGGESTION_QUERIES = [
-  'Weekly cashflow forecast from my Stripe CSVs',
-  'Study plan for AWS cert in 2 weeks',
-  'Turn a long article into a week of LinkedIn posts',
-  'Daily PR review summary for my team',
+  'Snake game',
+  'one-shot HTML game',
+  'playable artifact',
+  'token maxing demo',
 ]
 
 type SearchParams = {
@@ -61,9 +62,9 @@ export default async function BrowsePage({
   const activeSort = params.sort ?? 'newest'
   const panelOpen = Boolean(q) || params.panel === 'open' || Boolean(activeCategory || activeDifficulty || activeModel)
 
-  // Redirect empty-string query to canonical /browse to avoid ?q= litter
+  // Redirect empty-string query to canonical /paths to avoid ?q= litter
   if (params.q !== undefined && q === '' && params.panel !== 'open' && !activeCategory && !activeDifficulty && !activeModel) {
-    redirect('/browse')
+    redirect('/paths')
   }
 
   const [categories, allPrompts] = await Promise.all([
@@ -141,7 +142,7 @@ export default async function BrowsePage({
       if (p[key] === '' || p[key] === undefined) delete p[key]
     }
     const qs = new URLSearchParams(p as Record<string, string>).toString()
-    return `/browse${qs ? `?${qs}` : ''}`
+    return `/paths${qs ? `?${qs}` : ''}`
   }
 
   // Editorial slices (only relevant when panel is closed)
@@ -167,7 +168,7 @@ export default async function BrowsePage({
             </>
           )}
 
-          <form action="/browse" method="get" className="ai-box">
+          <form action="/paths" method="get" className="ai-box">
             <div className="ai-box-row">
               <div className="ai-icon" aria-hidden="true">✦</div>
               <div className="ai-input-wrap">
@@ -216,7 +217,7 @@ export default async function BrowsePage({
               {SUGGESTION_QUERIES.map(suggestion => (
                 <Link
                   key={suggestion}
-                  href={`/browse?q=${encodeURIComponent(suggestion)}`}
+                  href={`/paths?q=${encodeURIComponent(suggestion)}`}
                   className="ai-suggest-pill"
                 >
                   &ldquo;{suggestion}&rdquo;
@@ -259,7 +260,7 @@ export default async function BrowsePage({
               <div className="panel-toggle-left">
                 <div className="panel-toggle-icon" aria-hidden="true">≡</div>
                 <div>
-                  <div className="panel-toggle-title">Browse build paths</div>
+                  <div className="panel-toggle-title">Build Paths</div>
                   <div className="panel-toggle-sub">
                     <span className="mono" style={{ color: 'var(--color-brand-orange)' }}>
                       {filtered.length} {filtered.length === 1 ? 'match' : 'matches'}
@@ -269,7 +270,7 @@ export default async function BrowsePage({
                   </div>
                 </div>
               </div>
-              <Link href="/browse" className="btn-ghost" style={{ fontSize: 12 }}>
+              <Link href="/paths" className="btn-ghost" style={{ fontSize: 12 }}>
                 Close panel ▴
               </Link>
             </header>
@@ -362,7 +363,7 @@ export default async function BrowsePage({
                 </div>
 
                 <div className="facet-footer">
-                  <Link href={q ? `/browse?q=${encodeURIComponent(q)}` : '/browse?panel=open'} className="facet-reset" style={{ display: 'inline-block', textAlign: 'center' }}>
+                  <Link href={q ? `/paths?q=${encodeURIComponent(q)}` : '/paths?panel=open'} className="facet-reset" style={{ display: 'inline-block', textAlign: 'center' }}>
                     Reset all filters
                   </Link>
                 </div>
@@ -380,7 +381,7 @@ export default async function BrowsePage({
                       return (
                         <Link
                           key={p.id}
-                          href={`/prompt/${p.id}`}
+                          href={getProjectHref(p)}
                           className={`result-row${isTop ? ' top' : ''}`}
                         >
                           <div className={`result-rank${isTop ? ' top' : ''}`}>
@@ -421,13 +422,13 @@ export default async function BrowsePage({
                         <span className="sparkle">✦</span>
                         Didn&apos;t find the right path?{' '}
                         <b>
-                          <Link href="/prompt/new" style={{ textDecoration: 'underline' }}>
+                          <Link href="/build" style={{ textDecoration: 'underline' }}>
                             Share your own build
                           </Link>
                         </b>{' '}
                         — what you ship today becomes the example someone forks tomorrow.
                       </div>
-                      <Link href="/prompt/new" className="btn-dark">Share a path →</Link>
+                      <Link href="/build" className="btn-dark">Build a path →</Link>
                     </div>
                   </>
                 ) : (
@@ -436,13 +437,13 @@ export default async function BrowsePage({
                     <p className="result-empty-sub">
                       {q ? (
                         <>Nothing matched &ldquo;{q}&rdquo; under the current filters. Clear a filter, rephrase the query, or{' '}
-                          <Link href="/prompt/new" style={{ color: 'var(--color-brand-orange)', textDecoration: 'underline' }}>
+                          <Link href="/build" style={{ color: 'var(--color-brand-orange)', textDecoration: 'underline' }}>
                             share your own build
                           </Link>{' '}
                           if the path doesn&apos;t exist yet.
                         </>
                       ) : (
-                        <>Try broader filters or browse a domain below.</>
+                        <>Try broader filters or explore a domain below.</>
                       )}
                     </p>
                   </div>
@@ -460,7 +461,7 @@ export default async function BrowsePage({
           <section className="potw-section">
             <div className="section-wrap">
               <div className="section-eyebrow">Path of the week</div>
-              <Link href={`/prompt/${potw.id}`} className="potw-card">
+              <Link href={getProjectHref(potw)} className="potw-card">
                 <div className="potw-left">
                   <div className="potw-tagline">
                     <span className="potw-chip">Editor&apos;s pick</span>
@@ -535,7 +536,7 @@ export default async function BrowsePage({
                     const cat = categories.find(c => c.id === p.category_id)
                     const modelMeta = AI_MODELS.find(m => m.id === p.model_used)
                     return (
-                      <Link key={p.id} href={`/prompt/${p.id}`} className="shelf-card">
+                      <Link key={p.id} href={getProjectHref(p)} className="shelf-card">
                         <div className="shelf-cat">{cat?.name ?? '—'}</div>
                         <div className="shelf-title">{p.title}</div>
                         <div className="shelf-desc">{p.description}</div>
@@ -561,11 +562,11 @@ export default async function BrowsePage({
           {/* Browse panel TOGGLE (closed) */}
           <div className="panel-toggle-wrap">
             <div className="section-wrap">
-              <Link href="/browse?panel=open" className="panel-toggle" data-open="false">
+              <Link href="/paths?panel=open" className="panel-toggle" data-open="false">
                 <div className="panel-toggle-left">
                   <div className="panel-toggle-icon" aria-hidden="true">≡</div>
                   <div>
-                    <div className="panel-toggle-title">Browse build paths</div>
+                    <div className="panel-toggle-title">Build Paths</div>
                     <div className="panel-toggle-sub">
                       Filter all {totalLibrary} paths by category, difficulty, model, and more.
                     </div>
@@ -590,8 +591,8 @@ export default async function BrowsePage({
                 <p>Each category opens a curated shortlist — not a dump of every path.</p>
               </div>
               <div className="domains-grid">
-                {categories.map(c => (
-                  <Link key={c.id} href={`/browse?category=${c.slug}`} className="domain-card">
+                {categories.filter(c => (c.prompt_count ?? 0) > 0).map(c => (
+                  <Link key={c.id} href={`/paths?category=${c.slug}`} className="domain-card">
                     <div className="domain-icon">{c.icon ?? '◇'}</div>
                     <div className="domain-name">{c.name}</div>
                     <div className="domain-count">
@@ -609,8 +610,8 @@ export default async function BrowsePage({
                     Build it yourself. <span className="serif">Share it back.</span>
                   </div>
                 </div>
-                <Link href="/prompt/new" className="cta-band-btn">
-                  Share a build path →
+                <Link href="/build" className="cta-band-btn">
+                  Build a path →
                 </Link>
               </div>
             </div>
@@ -677,9 +678,9 @@ export default async function BrowsePage({
                     Build it yourself. <span className="serif">Share it back.</span>
                   </div>
                 </div>
-                <Link href="/prompt/new" className="cta-band-btn">
-                  Share a build path →
-                </Link>
+              <Link href="/build" className="cta-band-btn">
+                Build a path →
+              </Link>
               </div>
             </div>
           </section>

@@ -16,24 +16,56 @@ export default function Header() {
   const [isAdmin, setIsAdmin] = useState(false)
 
   useEffect(() => {
+    const authAwareRoute =
+      pathname.startsWith('/admin') ||
+      pathname.startsWith('/user/') ||
+      pathname.startsWith('/suggestion-box')
+
+    if (!authAwareRoute) {
+      setUser(null)
+      setUserMeta({})
+      setIsAdmin(false)
+      return
+    }
+
     if (!process.env.NEXT_PUBLIC_SUPABASE_URL) return
 
+    let cancelled = false
+    let unsubscribe: (() => void) | undefined
+
     import('@/lib/supabase/client').then(({ createClient }) => {
+      if (cancelled) return
       const supabase = createClient()
 
-      supabase.auth.getUser().then(({ data: { user } }) => {
+      supabase.auth.getSession().then(({ data: { session } }) => {
+        if (cancelled) return
+
+        const user = session?.user ?? null
         setUser(user)
         if (user) {
           setUserMeta({
             username: user.user_metadata?.username,
             display_name: user.user_metadata?.display_name,
           })
-          supabase.from('profiles').select('role').eq('id', user.id).single()
-            .then(({ data }) => setIsAdmin(data?.role === 'admin'))
+          void (async () => {
+            try {
+              const { data } = await supabase.from('profiles').select('role').eq('id', user.id).single()
+              if (!cancelled) setIsAdmin(data?.role === 'admin')
+            } catch {
+              if (!cancelled) setIsAdmin(false)
+            }
+          })()
+        }
+      }).catch(() => {
+        if (!cancelled) {
+          setUser(null)
+          setUserMeta({})
+          setIsAdmin(false)
         }
       })
 
       const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+        if (cancelled) return
         setUser(session?.user ?? null)
         if (session?.user) {
           setUserMeta({
@@ -46,16 +78,28 @@ export default function Header() {
         }
       })
 
-      return () => subscription.unsubscribe()
+      unsubscribe = () => subscription.unsubscribe()
+    }).catch(() => {
+      if (!cancelled) {
+        setUser(null)
+        setUserMeta({})
+        setIsAdmin(false)
+      }
     })
-  }, [])
+
+    return () => {
+      cancelled = true
+      unsubscribe?.()
+    }
+  }, [pathname])
 
   const displayName = userMeta.display_name || userMeta.username || 'Account'
 
   const isActive = (href: string) => {
-    if (href === '/browse') return pathname === '/browse' || (pathname.startsWith('/prompt/') && pathname !== '/prompt/new')
-    if (href === '/prompt/new') return pathname === '/prompt/new'
-    if (href === '/about') return pathname === '/about'
+    if (href === '/what-to-build') return pathname === '/what-to-build'
+    if (href === '/paths') return pathname === '/paths' || pathname === '/browse' || (pathname.startsWith('/prompt/') && pathname !== '/prompt/new') || pathname === '/snake-demo'
+    if (href === '/suggestion-box') return pathname.startsWith('/suggestion-box')
+    if (href === '/build') return pathname === '/build' || pathname === '/prompt/new'
     return false
   }
 
@@ -66,40 +110,50 @@ export default function Header() {
           {/* Left: Logo + Nav */}
           <div className="flex items-center gap-6">
             <Link href="/" className="flex items-center gap-2 shrink-0 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange">
-              <Image src="/logo.png" alt="PathForge — AI Build Paths" width={110} height={30} priority />
+              <Image src="/logo.png" alt="PathForge — AI Build Paths" width={110} height={35} priority />
             </Link>
 
             <div className="hidden md:flex items-center gap-1">
               <Link
-                href="/browse"
+                href="/what-to-build"
                 className={`text-[13px] font-medium px-3 py-1.5 transition-colors duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange ${
-                  isActive('/browse')
+                  isActive('/what-to-build')
                     ? 'text-brand-orange bg-surface-800'
                     : 'text-surface-300 hover:text-white'
                 }`}
               >
-                Browse
+                What to Build
               </Link>
               <Link
-                href="/prompt/new"
+                href="/paths"
+                className={`text-[13px] font-medium px-3 py-1.5 transition-colors duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange ${
+                  isActive('/paths')
+                    ? 'text-brand-orange bg-surface-800'
+                    : 'text-surface-300 hover:text-white'
+                  }`}
+              >
+                Build Paths
+              </Link>
+              <Link
+                href="/suggestion-box"
+                className={`text-[13px] font-medium px-3 py-1.5 transition-colors duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange ${
+                  isActive('/suggestion-box')
+                    ? 'text-brand-orange bg-surface-800'
+                    : 'text-surface-300 hover:text-white'
+                }`}
+              >
+                Suggestion Box
+              </Link>
+              <Link
+                href="/build"
                 className={`text-[13px] font-semibold px-3 py-1.5 transition-all duration-200 flex items-center gap-1.5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange ${
-                  isActive('/prompt/new')
+                  isActive('/build')
                     ? 'text-surface-900 bg-brand-orange'
                     : 'text-brand-orange border border-brand-orange/40 hover:bg-brand-orange hover:text-surface-900'
                 }`}
               >
                 <Plus className="w-3.5 h-3.5" />
                 Build
-              </Link>
-              <Link
-                href="/about"
-                className={`text-[13px] font-medium px-3 py-1.5 transition-colors duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange ${
-                  isActive('/about')
-                    ? 'text-brand-orange bg-surface-800'
-                    : 'text-surface-300 hover:text-white'
-                }`}
-              >
-                About
               </Link>
             </div>
           </div>
@@ -157,32 +211,41 @@ export default function Header() {
         {mobileMenuOpen && (
           <div className="md:hidden pb-4 border-t border-surface-800 mt-1 pt-3 flex flex-col gap-0.5">
             <Link
-              href="/browse"
+              href="/what-to-build"
               className={`text-sm font-medium px-3 py-3 transition-colors duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange ${
-                isActive('/browse') ? 'text-brand-orange bg-surface-800' : 'text-surface-300 hover:text-white active:bg-surface-800'
+                isActive('/what-to-build') ? 'text-brand-orange bg-surface-800' : 'text-surface-300 hover:text-white active:bg-surface-800'
               }`}
               onClick={() => setMobileMenuOpen(false)}
             >
-              Browse
+              What to Build
             </Link>
             <Link
-              href="/prompt/new"
+              href="/paths"
+              className={`text-sm font-medium px-3 py-3 transition-colors duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange ${
+                isActive('/paths') ? 'text-brand-orange bg-surface-800' : 'text-surface-300 hover:text-white active:bg-surface-800'
+              }`}
+              onClick={() => setMobileMenuOpen(false)}
+            >
+              Build Paths
+            </Link>
+            <Link
+              href="/suggestion-box"
+              className={`text-sm font-medium px-3 py-3 transition-colors duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange ${
+                isActive('/suggestion-box') ? 'text-brand-orange bg-surface-800' : 'text-surface-300 hover:text-white active:bg-surface-800'
+              }`}
+              onClick={() => setMobileMenuOpen(false)}
+            >
+              Suggestion Box
+            </Link>
+            <Link
+              href="/build"
               className={`text-sm font-semibold px-3 py-3 transition-colors duration-200 flex items-center gap-1.5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange ${
-                isActive('/prompt/new') ? 'text-brand-orange bg-surface-800' : 'text-surface-300 hover:text-white active:bg-surface-800'
+                isActive('/build') ? 'text-brand-orange bg-surface-800' : 'text-surface-300 hover:text-white active:bg-surface-800'
               }`}
               onClick={() => setMobileMenuOpen(false)}
             >
               <Plus className="w-3.5 h-3.5" />
               Build
-            </Link>
-            <Link
-              href="/about"
-              className={`text-sm font-medium px-3 py-3 transition-colors duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange ${
-                isActive('/about') ? 'text-brand-orange bg-surface-800' : 'text-surface-300 hover:text-white active:bg-surface-800'
-              }`}
-              onClick={() => setMobileMenuOpen(false)}
-            >
-              About
             </Link>
             <div className="border-t border-surface-700 my-2" />
             {user ? (

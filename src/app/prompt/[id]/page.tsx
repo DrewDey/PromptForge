@@ -157,8 +157,8 @@ export default async function PromptDetailPage({
       <nav aria-label="Breadcrumb" className="mb-8">
         <ol className="flex items-center gap-1.5 text-sm">
           <li>
-            <Link href="/browse" className="text-surface-400 hover:text-brand-orange transition-colors duration-200 font-medium">
-              Browse
+            <Link href="/paths" className="text-surface-400 hover:text-brand-orange transition-colors duration-200 font-medium">
+              Build Paths
             </Link>
           </li>
           {prompt.category && (
@@ -166,7 +166,7 @@ export default async function PromptDetailPage({
               <li aria-hidden="true"><ChevronRight className="w-3.5 h-3.5 text-surface-300" /></li>
               <li>
                 <Link
-                  href={`/browse?category=${prompt.category.slug}`}
+                  href={`/paths?category=${prompt.category.slug}`}
                   className="text-surface-400 hover:text-brand-orange transition-colors duration-200 font-medium"
                 >
                   {prompt.category.icon} {prompt.category.name}
@@ -226,7 +226,7 @@ export default async function PromptDetailPage({
         <div className="flex items-center gap-x-2 gap-y-2.5 flex-wrap pt-6 border-t border-surface-200 text-xs">
           {prompt.category && (
             <Link
-              href={`/browse?category=${prompt.category.slug}`}
+              href={`/paths?category=${prompt.category.slug}`}
               className="inline-flex items-center gap-1.5 font-semibold bg-brand-orange/10 text-brand-orange-dark px-2.5 py-1.5 border border-brand-orange/30 hover:bg-brand-orange/15 transition-colors duration-200"
             >
               <span>{prompt.category.icon}</span>
@@ -569,7 +569,7 @@ export default async function PromptDetailPage({
           {prompt.tags.map(tag => (
             <Link
               key={tag}
-              href={`/browse?q=${encodeURIComponent(tag)}`}
+              href={`/paths?q=${encodeURIComponent(tag)}`}
               className="text-xs bg-surface-100 text-surface-500 px-2.5 py-1.5 border border-surface-200 hover:border-brand-orange/50 hover:text-brand-orange transition-colors duration-200"
             >
               #{tag}
@@ -586,7 +586,7 @@ export default async function PromptDetailPage({
               More in {prompt.category.icon} {prompt.category.name}
             </h2>
             <Link
-              href={`/browse?category=${prompt.category.slug}`}
+              href={`/paths?category=${prompt.category.slug}`}
               className="inline-flex items-center gap-1 text-sm font-medium text-brand-orange hover:text-brand-orange-dark transition-colors duration-200 group"
             >
               View all
@@ -628,7 +628,7 @@ export default async function PromptDetailPage({
             </div>
             <div className="px-5 py-4 space-y-4">
               <Link
-                href="/prompt/new"
+                href="/build"
                 className="flex w-full items-center justify-center gap-2 bg-brand-orange hover:bg-brand-orange-dark text-white text-sm font-semibold px-4 py-2.5 transition-colors duration-200 focus-visible:outline-2 focus-visible:outline-brand-orange focus-visible:outline-offset-2"
               >
                 <GitFork className="w-4 h-4" aria-hidden="true" />
@@ -684,7 +684,7 @@ export default async function PromptDetailPage({
           </p>
         </div>
         <Link
-          href="/prompt/new"
+          href="/build"
           className="inline-flex items-center justify-center gap-1.5 bg-brand-orange hover:bg-brand-orange-dark text-white text-[13px] font-semibold px-3.5 py-2.5 transition-colors duration-200 shrink-0 focus-visible:outline-2 focus-visible:outline-brand-orange focus-visible:outline-offset-2"
         >
           <GitFork className="w-4 h-4" aria-hidden="true" />

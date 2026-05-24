@@ -2,12 +2,30 @@
 
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
-import { updatePromptStatus, createProject, toggleVote, toggleBookmark } from './data'
+import {
+  approveSuggestionById,
+  createProject,
+  createSuggestion,
+  createSuggestionResponse,
+  declineSuggestionById,
+  keepSuggestionPrivateById,
+  toggleBookmark,
+  toggleSuggestionVote,
+  toggleVote,
+  updatePromptStatus,
+  updateSuggestionPublicStatusById,
+} from './data'
+import type { SuggestionPublicStatus, SuggestionResponseVisibility } from './types'
+
+export type SuggestionSubmitState = {
+  error: string | null
+}
 
 export async function approvePrompt(id: string) {
   await updatePromptStatus(id, 'approved')
   revalidatePath('/admin')
   revalidatePath('/browse')
+  revalidatePath('/paths')
   revalidatePath('/')
 }
 
@@ -29,6 +47,7 @@ export async function voteOnProject(promptId: string) {
     const result = await toggleVote(promptId)
     revalidatePath(`/prompt/${promptId}`)
     revalidatePath('/browse')
+    revalidatePath('/paths')
     revalidatePath('/')
     return result
   } catch {
@@ -76,4 +95,70 @@ export async function submitProject(data: {
   } catch (err) {
     return { success: false, error: err instanceof Error ? err.message : 'Failed to submit project' }
   }
+}
+
+export async function submitSuggestion(
+  _prevState: SuggestionSubmitState,
+  formData: FormData
+): Promise<SuggestionSubmitState> {
+  try {
+    await createSuggestion({
+      title: String(formData.get('title') ?? ''),
+      body: String(formData.get('body') ?? ''),
+    })
+  } catch (err) {
+    return { error: err instanceof Error ? err.message : 'Failed to send suggestion' }
+  }
+
+  revalidatePath('/suggestion-box')
+  revalidatePath('/suggestion-box/mine')
+  revalidatePath('/admin')
+  redirect('/suggestion-box/mine?submitted=1')
+}
+
+export async function approveSuggestion(id: string) {
+  await approveSuggestionById(id)
+  revalidatePath('/admin')
+  revalidatePath('/suggestion-box')
+  revalidatePath('/suggestion-box/mine')
+}
+
+export async function declineSuggestion(id: string) {
+  await declineSuggestionById(id)
+  revalidatePath('/admin')
+  revalidatePath('/suggestion-box/mine')
+}
+
+export async function keepSuggestionPrivate(formData: FormData) {
+  const id = String(formData.get('suggestion_id') ?? '')
+  if (id) await keepSuggestionPrivateById(id)
+  revalidatePath('/suggestion-box')
+  revalidatePath('/suggestion-box/mine')
+}
+
+export async function updateSuggestionPublicStatus(formData: FormData) {
+  const id = String(formData.get('suggestion_id') ?? '')
+  const status = String(formData.get('public_status') ?? 'under_review') as SuggestionPublicStatus
+  if (id) await updateSuggestionPublicStatusById(id, status)
+  revalidatePath('/admin')
+  revalidatePath('/suggestion-box')
+  revalidatePath('/suggestion-box/mine')
+}
+
+export async function respondToSuggestion(formData: FormData) {
+  const suggestionId = String(formData.get('suggestion_id') ?? '')
+  const body = String(formData.get('body') ?? '')
+  const visibility = String(formData.get('visibility') ?? 'submitter') as SuggestionResponseVisibility
+  if (suggestionId) {
+    await createSuggestionResponse({ suggestionId, body, visibility })
+  }
+  revalidatePath('/admin')
+  revalidatePath('/suggestion-box')
+  revalidatePath('/suggestion-box/mine')
+}
+
+export async function voteOnSuggestion(formData: FormData) {
+  const suggestionId = String(formData.get('suggestion_id') ?? '')
+  if (suggestionId) await toggleSuggestionVote(suggestionId)
+  revalidatePath('/suggestion-box')
 }

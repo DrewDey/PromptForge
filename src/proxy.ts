@@ -1,8 +1,15 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 
-export async function middleware(request: NextRequest) {
-  if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
+export async function proxy(request: NextRequest) {
+  const pathname = request.nextUrl.pathname
+  const authAwareRoute = pathname.startsWith('/admin')
+
+  if (
+    !authAwareRoute ||
+    !process.env.NEXT_PUBLIC_SUPABASE_URL ||
+    !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+  ) {
     return NextResponse.next()
   }
 
@@ -20,14 +27,19 @@ export async function middleware(request: NextRequest) {
           cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value))
           response = NextResponse.next({ request })
           cookiesToSet.forEach(({ name, value, options }) =>
-            response.cookies.set(name, value, options)
+            response.cookies.set(name, value, options),
           )
         },
       },
-    }
+    },
   )
 
-  await supabase.auth.getUser()
+  try {
+    await supabase.auth.getUser()
+  } catch {
+    // Protected pages still run their own guard; keep transient local-network
+    // Supabase failures from taking over the dev overlay.
+  }
 
   return response
 }

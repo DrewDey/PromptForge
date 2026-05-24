@@ -1,31 +1,65 @@
-import { Category, Profile, PromptWithRelations } from './types'
-import { mockCategories, mockPrompts, mockProfiles, mockSteps } from './mock-data'
+import {
+  Category,
+  Profile,
+  PromptWithRelations,
+  SuggestionPublicStatus,
+  SuggestionResponseVisibility,
+  SuggestionWithRelations,
+} from './types'
+import { mockCategories, mockPrompts, mockProfiles, mockSteps, mockSuggestions } from './mock-data'
+
+const APPROVED_PROJECT_IDS = new Set(['snake-gpt55-pro-oneshot'])
+const publicMockPrompts = mockPrompts.filter((prompt) => APPROVED_PROJECT_IDS.has(prompt.id))
+const publicMockSteps = mockSteps.filter((step) => APPROVED_PROJECT_IDS.has(step.prompt_id))
+const publicMockCategories = mockCategories.map((category) => ({
+  ...category,
+  prompt_count: publicMockPrompts.filter((prompt) => (
+    prompt.status === 'approved' && prompt.category_id === category.id
+  )).length,
+}))
 
 const SUPABASE_CONFIGURED = !!(
   process.env.NEXT_PUBLIC_SUPABASE_URL &&
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 )
+const SUPABASE_PUBLIC_READS_ENABLED = SUPABASE_CONFIGURED && process.env.PATHFORGE_ENABLE_SUPABASE_READS === 'true'
+const SUPABASE_READ_TIMEOUT_MS = 3000
+export const SUGGESTION_PUBLIC_DELAY_HOURS = 24
+const SUGGESTION_PUBLIC_DELAY_MS = SUGGESTION_PUBLIC_DELAY_HOURS * 60 * 60 * 1000
+
+async function readWithFallback<T>(fallback: T, read: () => Promise<T>): Promise<T> {
+  if (!SUPABASE_PUBLIC_READS_ENABLED) return fallback
+
+  try {
+    return await Promise.race([
+      read(),
+      new Promise<T>((resolve) => {
+        setTimeout(() => resolve(fallback), SUPABASE_READ_TIMEOUT_MS)
+      }),
+    ])
+  } catch {
+    return fallback
+  }
+}
 
 // ---- Categories ----
 
 export async function getCategories(): Promise<Category[]> {
-  if (!SUPABASE_CONFIGURED) {
-    return mockCategories
-  }
-  const { createClient } = await import('./supabase/server')
-  const supabase = await createClient()
-  const { data } = await supabase.from('categories').select('*').order('name')
-  return data ?? []
+  return readWithFallback(publicMockCategories, async () => {
+    const { createClient } = await import('./supabase/server')
+    const supabase = await createClient()
+    const { data } = await supabase.from('categories').select('*').order('name')
+    return data ?? []
+  })
 }
 
 export async function getCategoryBySlug(slug: string): Promise<Category | null> {
-  if (!SUPABASE_CONFIGURED) {
-    return mockCategories.find(c => c.slug === slug) ?? null
-  }
-  const { createClient } = await import('./supabase/server')
-  const supabase = await createClient()
-  const { data } = await supabase.from('categories').select('*').eq('slug', slug).single()
-  return data
+  return readWithFallback(publicMockCategories.find(c => c.slug === slug) ?? null, async () => {
+    const { createClient } = await import('./supabase/server')
+    const supabase = await createClient()
+    const { data } = await supabase.from('categories').select('*').eq('slug', slug).single()
+    return data
+  })
 }
 
 // ---- Prompts ----
@@ -33,10 +67,54 @@ export async function getCategoryBySlug(slug: string): Promise<Category | null> 
 function attachRelations(prompt: typeof mockPrompts[0]): PromptWithRelations {
   return {
     ...prompt,
-    category: mockCategories.find(c => c.id === prompt.category_id),
+    category: publicMockCategories.find(c => c.id === prompt.category_id),
     author: mockProfiles.find(p => p.id === prompt.author_id),
-    steps: mockSteps.filter(s => s.prompt_id === prompt.id).sort((a, b) => a.step_number - b.step_number),
+    steps: publicMockSteps.filter(s => s.prompt_id === prompt.id).sort((a, b) => a.step_number - b.step_number),
   }
+}
+
+function getMockPrompts(options?: {
+  categorySlug?: string
+  difficulty?: string
+  status?: string
+  search?: string
+  limit?: number
+  sort?: 'newest' | 'popular'
+}): PromptWithRelations[] {
+  let prompts = [...publicMockPrompts]
+
+  // Default to approved only
+  const status = options?.status ?? 'approved'
+  if (status !== 'all') {
+    prompts = prompts.filter(p => p.status === status)
+  }
+
+  if (options?.categorySlug) {
+    const cat = publicMockCategories.find(c => c.slug === options.categorySlug)
+    if (cat) prompts = prompts.filter(p => p.category_id === cat.id)
+  }
+  if (options?.difficulty) {
+    prompts = prompts.filter(p => p.difficulty === options.difficulty)
+  }
+  if (options?.search) {
+    const q = options.search.toLowerCase()
+    prompts = prompts.filter(p =>
+      p.title.toLowerCase().includes(q) ||
+      p.description.toLowerCase().includes(q) ||
+      p.tags.some(t => t.toLowerCase().includes(q))
+    )
+  }
+
+  // Sort
+  if (options?.sort === 'popular') {
+    prompts.sort((a, b) => b.vote_count - a.vote_count)
+  } else {
+    prompts.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+  }
+
+  if (options?.limit) prompts = prompts.slice(0, options.limit)
+
+  return prompts.map(attachRelations)
 }
 
 export async function getPrompts(options?: {
@@ -47,160 +125,125 @@ export async function getPrompts(options?: {
   limit?: number
   sort?: 'newest' | 'popular'
 }): Promise<PromptWithRelations[]> {
-  if (!SUPABASE_CONFIGURED) {
-    let prompts = [...mockPrompts]
+  return readWithFallback(getMockPrompts(options), async () => {
+    const { createClient } = await import('./supabase/server')
+    const supabase = await createClient()
+    let query = supabase
+      .from('prompts')
+      .select('*, category:categories(*), author:profiles(*), steps:prompt_steps(*)')
 
-    // Default to approved only
     const status = options?.status ?? 'approved'
     if (status !== 'all') {
-      prompts = prompts.filter(p => p.status === status)
+      query = query.eq('status', status)
     }
 
+    // Category filtering — look up category ID from slug
     if (options?.categorySlug) {
-      const cat = mockCategories.find(c => c.slug === options.categorySlug)
-      if (cat) prompts = prompts.filter(p => p.category_id === cat.id)
+      const { data: cat } = await supabase
+        .from('categories')
+        .select('id')
+        .eq('slug', options.categorySlug)
+        .single()
+      if (cat) query = query.eq('category_id', cat.id)
     }
-    if (options?.difficulty) {
-      prompts = prompts.filter(p => p.difficulty === options.difficulty)
-    }
+
+    if (options?.difficulty) query = query.eq('difficulty', options.difficulty)
+
+    // Search title, description, and tags
     if (options?.search) {
-      const q = options.search.toLowerCase()
-      prompts = prompts.filter(p =>
-        p.title.toLowerCase().includes(q) ||
-        p.description.toLowerCase().includes(q) ||
-        p.tags.some(t => t.toLowerCase().includes(q))
-      )
+      const s = options.search
+      query = query.or(`title.ilike.%${s}%,description.ilike.%${s}%,tags.cs.{${s}}`)
     }
 
-    // Sort
     if (options?.sort === 'popular') {
-      prompts.sort((a, b) => b.vote_count - a.vote_count)
+      query = query.order('vote_count', { ascending: false })
     } else {
-      prompts.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+      query = query.order('created_at', { ascending: false })
     }
+    if (options?.limit) query = query.limit(options.limit)
 
-    if (options?.limit) prompts = prompts.slice(0, options.limit)
-
-    return prompts.map(attachRelations)
-  }
-
-  const { createClient } = await import('./supabase/server')
-  const supabase = await createClient()
-  let query = supabase
-    .from('prompts')
-    .select('*, category:categories(*), author:profiles(*), steps:prompt_steps(*)')
-
-  const status = options?.status ?? 'approved'
-  if (status !== 'all') {
-    query = query.eq('status', status)
-  }
-
-  // Category filtering — look up category ID from slug
-  if (options?.categorySlug) {
-    const { data: cat } = await supabase
-      .from('categories')
-      .select('id')
-      .eq('slug', options.categorySlug)
-      .single()
-    if (cat) query = query.eq('category_id', cat.id)
-  }
-
-  if (options?.difficulty) query = query.eq('difficulty', options.difficulty)
-
-  // Search title, description, and tags
-  if (options?.search) {
-    const s = options.search
-    query = query.or(`title.ilike.%${s}%,description.ilike.%${s}%,tags.cs.{${s}}`)
-  }
-
-  if (options?.sort === 'popular') {
-    query = query.order('vote_count', { ascending: false })
-  } else {
-    query = query.order('created_at', { ascending: false })
-  }
-  if (options?.limit) query = query.limit(options.limit)
-
-  const { data } = await query
-  return data ?? []
+    const { data } = await query
+    return data ?? []
+  })
 }
 
 export async function getPromptById(id: string): Promise<PromptWithRelations | null> {
-  if (!SUPABASE_CONFIGURED) {
-    const prompt = mockPrompts.find(p => p.id === id)
-    if (!prompt) return null
-    return attachRelations(prompt)
-  }
-  const { createClient } = await import('./supabase/server')
-  const supabase = await createClient()
-  const { data } = await supabase
-    .from('prompts')
-    .select('*, category:categories(*), author:profiles(*), steps:prompt_steps(*)')
-    .eq('id', id)
-    .single()
-  return data
+  const mockPrompt = publicMockPrompts.find(p => p.id === id)
+  const fallback = mockPrompt ? attachRelations(mockPrompt) : null
+  return readWithFallback(fallback, async () => {
+    const { createClient } = await import('./supabase/server')
+    const supabase = await createClient()
+    const { data } = await supabase
+      .from('prompts')
+      .select('*, category:categories(*), author:profiles(*), steps:prompt_steps(*)')
+      .eq('id', id)
+      .single()
+    return data
+  })
 }
 
 // ---- Profiles ----
 
 export async function getProfileByUsername(username: string): Promise<Profile | null> {
-  if (!SUPABASE_CONFIGURED) {
-    return mockProfiles.find(p => p.username === username) ?? null
-  }
-  const { createClient } = await import('./supabase/server')
-  const supabase = await createClient()
-  const { data } = await supabase
-    .from('profiles')
-    .select('*')
-    .eq('username', username)
-    .single()
-  return data
+  return readWithFallback(mockProfiles.find(p => p.username === username) ?? null, async () => {
+    const { createClient } = await import('./supabase/server')
+    const supabase = await createClient()
+    const { data } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('username', username)
+      .single()
+    return data
+  })
 }
 
 export async function getProjectsByAuthor(authorId: string): Promise<PromptWithRelations[]> {
-  if (!SUPABASE_CONFIGURED) {
-    return mockPrompts
-      .filter(p => p.author_id === authorId && p.status === 'approved')
-      .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
-      .map(attachRelations)
-  }
-  const { createClient } = await import('./supabase/server')
-  const supabase = await createClient()
-  const { data } = await supabase
-    .from('prompts')
-    .select('*, category:categories(*), author:profiles(*), steps:prompt_steps(*)')
-    .eq('author_id', authorId)
-    .eq('status', 'approved')
-    .order('created_at', { ascending: false })
-  return data ?? []
+  const fallback = publicMockPrompts
+    .filter(p => p.author_id === authorId && p.status === 'approved')
+    .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+    .map(attachRelations)
+
+  return readWithFallback(fallback, async () => {
+    const { createClient } = await import('./supabase/server')
+    const supabase = await createClient()
+    const { data } = await supabase
+      .from('prompts')
+      .select('*, category:categories(*), author:profiles(*), steps:prompt_steps(*)')
+      .eq('author_id', authorId)
+      .eq('status', 'approved')
+      .order('created_at', { ascending: false })
+    return data ?? []
+  })
 }
 
 export async function getAuthorStats(authorId: string) {
-  if (!SUPABASE_CONFIGURED) {
-    const authorPrompts = mockPrompts.filter(p => p.author_id === authorId && p.status === 'approved')
-    return {
-      totalProjects: authorPrompts.length,
-      totalUpvotes: authorPrompts.reduce((sum, p) => sum + p.vote_count, 0),
-      totalBookmarks: authorPrompts.reduce((sum, p) => sum + p.bookmark_count, 0),
-      topCategory: getTopCategory(authorPrompts),
-      memberSince: mockProfiles.find(p => p.id === authorId)?.created_at ?? '',
-    }
+  const authorPrompts = publicMockPrompts.filter(p => p.author_id === authorId && p.status === 'approved')
+  const fallback = {
+    totalProjects: authorPrompts.length,
+    totalUpvotes: authorPrompts.reduce((sum, p) => sum + p.vote_count, 0),
+    totalBookmarks: authorPrompts.reduce((sum, p) => sum + p.bookmark_count, 0),
+    topCategory: getTopCategory(authorPrompts),
+    memberSince: mockProfiles.find(p => p.id === authorId)?.created_at ?? '',
   }
-  const { createClient } = await import('./supabase/server')
-  const supabase = await createClient()
-  const { data: prompts } = await supabase
-    .from('prompts')
-    .select('vote_count, bookmark_count, category_id, categories(name, icon)')
-    .eq('author_id', authorId)
-    .eq('status', 'approved')
 
-  const items = prompts ?? []
-  return {
-    totalProjects: items.length,
-    totalUpvotes: items.reduce((sum: number, p: { vote_count: number }) => sum + p.vote_count, 0),
-    totalBookmarks: items.reduce((sum: number, p: { bookmark_count: number }) => sum + p.bookmark_count, 0),
-    topCategory: getTopCategoryFromDb(items),
-    memberSince: '',
-  }
+  return readWithFallback(fallback, async () => {
+    const { createClient } = await import('./supabase/server')
+    const supabase = await createClient()
+    const { data: prompts } = await supabase
+      .from('prompts')
+      .select('vote_count, bookmark_count, category_id, categories(name, icon)')
+      .eq('author_id', authorId)
+      .eq('status', 'approved')
+
+    const items = prompts ?? []
+    return {
+      totalProjects: items.length,
+      totalUpvotes: items.reduce((sum: number, p: { vote_count: number }) => sum + p.vote_count, 0),
+      totalBookmarks: items.reduce((sum: number, p: { bookmark_count: number }) => sum + p.bookmark_count, 0),
+      topCategory: getTopCategoryFromDb(items),
+      memberSince: '',
+    }
+  })
 }
 
 function getTopCategory(prompts: typeof mockPrompts) {
@@ -210,7 +253,7 @@ function getTopCategory(prompts: typeof mockPrompts) {
   }
   const topId = Object.entries(counts).sort((a, b) => b[1] - a[1])[0]?.[0]
   if (!topId) return null
-  const cat = mockCategories.find(c => c.id === topId)
+  const cat = publicMockCategories.find(c => c.id === topId)
   return cat ? { name: cat.name, icon: cat.icon } : null
 }
 
@@ -298,50 +341,365 @@ export async function toggleBookmark(promptId: string): Promise<{ bookmarked: bo
 export async function getUserVotesAndBookmarks(promptIds: string[]): Promise<{ votes: Set<string>; bookmarks: Set<string> }> {
   if (!SUPABASE_CONFIGURED) return { votes: new Set(), bookmarks: new Set() }
 
+  return readWithFallback({ votes: new Set<string>(), bookmarks: new Set<string>() }, async () => {
+    const { createClient } = await import('./supabase/server')
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return { votes: new Set(), bookmarks: new Set() }
+
+    const [votesRes, bookmarksRes] = await Promise.all([
+      supabase.from('votes').select('prompt_id').eq('user_id', user.id).in('prompt_id', promptIds),
+      supabase.from('bookmarks').select('prompt_id').eq('user_id', user.id).in('prompt_id', promptIds),
+    ])
+
+    return {
+      votes: new Set((votesRes.data ?? []).map(v => v.prompt_id)),
+      bookmarks: new Set((bookmarksRes.data ?? []).map(b => b.prompt_id)),
+    }
+  })
+}
+
+// ---- Suggestions ----
+
+function suggestionPublishDate(approvedAt: string) {
+  return new Date(new Date(approvedAt).getTime() + SUGGESTION_PUBLIC_DELAY_MS).toISOString()
+}
+
+function isPublicSuggestion(suggestion: SuggestionWithRelations, now = new Date()) {
+  if (suggestion.moderation_status !== 'approved') return false
+  if (suggestion.visibility === 'public') return true
+  return Boolean(
+    suggestion.visibility === 'scheduled_public' &&
+    suggestion.scheduled_publish_at &&
+    new Date(suggestion.scheduled_publish_at).getTime() <= now.getTime()
+  )
+}
+
+function sortSuggestions<T extends SuggestionWithRelations>(items: T[]) {
+  return [...items].sort((a, b) => {
+    const aTime = new Date(a.updated_at || a.created_at).getTime()
+    const bTime = new Date(b.updated_at || b.created_at).getTime()
+    return bTime - aTime
+  })
+}
+
+function normalizeSuggestionRows(rows: SuggestionWithRelations[] | null | undefined) {
+  return sortSuggestions((rows ?? []).map((row) => ({
+    ...row,
+    responses: [...(row.responses ?? [])].sort((a, b) => (
+      new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+    )),
+  })))
+}
+
+async function readSuggestionsWithFallback<T>(fallback: T, read: () => Promise<T>): Promise<T> {
+  if (!SUPABASE_CONFIGURED) return fallback
+
+  try {
+    return await Promise.race([
+      read(),
+      new Promise<T>((resolve) => {
+        setTimeout(() => resolve(fallback), SUPABASE_READ_TIMEOUT_MS)
+      }),
+    ])
+  } catch {
+    return fallback
+  }
+}
+
+export async function getPublicSuggestions(): Promise<SuggestionWithRelations[]> {
+  const fallback = normalizeSuggestionRows(mockSuggestions).filter((suggestion) => (
+    isPublicSuggestion(suggestion)
+  )).map((suggestion) => ({
+    ...suggestion,
+    responses: (suggestion.responses ?? []).filter((response) => response.visibility === 'public'),
+  }))
+
+  return readSuggestionsWithFallback(fallback, async () => {
+    const { createClient } = await import('./supabase/server')
+    const supabase = await createClient()
+    const now = new Date().toISOString()
+    const { data } = await supabase
+      .from('suggestions')
+      .select('*, author:profiles(*), responses:suggestion_responses(*)')
+      .eq('moderation_status', 'approved')
+      .or(`visibility.eq.public,and(visibility.eq.scheduled_public,scheduled_publish_at.lte.${now})`)
+      .order('updated_at', { ascending: false })
+
+    return normalizeSuggestionRows(data as SuggestionWithRelations[]).map((suggestion) => ({
+      ...suggestion,
+      responses: (suggestion.responses ?? []).filter((response) => response.visibility === 'public'),
+    }))
+  })
+}
+
+export async function getMySuggestions(): Promise<SuggestionWithRelations[]> {
+  if (!SUPABASE_CONFIGURED) return []
+
+  return readSuggestionsWithFallback([], async () => {
+    const { createClient } = await import('./supabase/server')
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return []
+
+    const { data } = await supabase
+      .from('suggestions')
+      .select('*, author:profiles(*), responses:suggestion_responses(*)')
+      .eq('author_id', user.id)
+      .order('updated_at', { ascending: false })
+
+    return normalizeSuggestionRows(data as SuggestionWithRelations[])
+  })
+}
+
+export async function getAllSuggestionsForAdmin(): Promise<SuggestionWithRelations[]> {
+  return readSuggestionsWithFallback(mockSuggestions, async () => {
+    const { createClient } = await import('./supabase/server')
+    const supabase = await createClient()
+    const { data } = await supabase
+      .from('suggestions')
+      .select('*, author:profiles(*), responses:suggestion_responses(*)')
+      .order('updated_at', { ascending: false })
+
+    return normalizeSuggestionRows(data as SuggestionWithRelations[])
+  })
+}
+
+export async function getSuggestionStats() {
+  const fallback = {
+    total: mockSuggestions.length,
+    pending: mockSuggestions.filter(s => s.moderation_status === 'pending').length,
+    approved: mockSuggestions.filter(s => s.moderation_status === 'approved').length,
+    private: mockSuggestions.filter(s => s.visibility === 'private').length,
+    public: mockSuggestions.filter(s => isPublicSuggestion(s)).length,
+  }
+
+  return readSuggestionsWithFallback(fallback, async () => {
+    const { createClient } = await import('./supabase/server')
+    const supabase = await createClient()
+    const now = new Date().toISOString()
+    const [total, pending, approved, privateItems, publicItems] = await Promise.all([
+      supabase.from('suggestions').select('*', { count: 'exact', head: true }),
+      supabase.from('suggestions').select('*', { count: 'exact', head: true }).eq('moderation_status', 'pending'),
+      supabase.from('suggestions').select('*', { count: 'exact', head: true }).eq('moderation_status', 'approved'),
+      supabase.from('suggestions').select('*', { count: 'exact', head: true }).eq('visibility', 'private'),
+      supabase
+        .from('suggestions')
+        .select('*', { count: 'exact', head: true })
+        .eq('moderation_status', 'approved')
+        .or(`visibility.eq.public,and(visibility.eq.scheduled_public,scheduled_publish_at.lte.${now})`),
+    ])
+
+    return {
+      total: total.count ?? 0,
+      pending: pending.count ?? 0,
+      approved: approved.count ?? 0,
+      private: privateItems.count ?? 0,
+      public: publicItems.count ?? 0,
+    }
+  })
+}
+
+export async function createSuggestion(input: { title: string; body: string }) {
+  if (!SUPABASE_CONFIGURED) throw new Error('Suggestion submission requires sign in.')
+
   const { createClient } = await import('./supabase/server')
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return { votes: new Set(), bookmarks: new Set() }
+  if (!user) throw new Error('Log in to send a suggestion.')
 
-  const [votesRes, bookmarksRes] = await Promise.all([
-    supabase.from('votes').select('prompt_id').eq('user_id', user.id).in('prompt_id', promptIds),
-    supabase.from('bookmarks').select('prompt_id').eq('user_id', user.id).in('prompt_id', promptIds),
-  ])
+  const title = input.title.trim()
+  const body = input.body.trim()
+  if (title.length < 4) throw new Error('Add a clearer suggestion title.')
+  if (body.length < 12) throw new Error('Add a little more detail so PathForge can respond.')
 
-  return {
-    votes: new Set((votesRes.data ?? []).map(v => v.prompt_id)),
-    bookmarks: new Set((bookmarksRes.data ?? []).map(b => b.prompt_id)),
+  const { data, error } = await supabase
+    .from('suggestions')
+    .insert({
+      title,
+      body,
+      author_id: user.id,
+      moderation_status: 'pending',
+      public_status: 'under_review',
+      visibility: 'private',
+      vote_count: 0,
+    })
+    .select('id')
+    .single()
+
+  if (error) throw error
+  return { id: data.id as string }
+}
+
+export async function approveSuggestionById(id: string) {
+  if (!SUPABASE_CONFIGURED) return
+
+  const approvedAt = new Date().toISOString()
+  const { createClient } = await import('./supabase/server')
+  const supabase = await createClient()
+  const { error } = await supabase
+    .from('suggestions')
+    .update({
+      moderation_status: 'approved',
+      public_status: 'under_review',
+      visibility: 'scheduled_public',
+      approved_at: approvedAt,
+      scheduled_publish_at: suggestionPublishDate(approvedAt),
+      kept_private_at: null,
+      updated_at: approvedAt,
+    })
+    .eq('id', id)
+
+  if (error) throw error
+}
+
+export async function declineSuggestionById(id: string) {
+  if (!SUPABASE_CONFIGURED) return
+
+  const now = new Date().toISOString()
+  const { createClient } = await import('./supabase/server')
+  const supabase = await createClient()
+  const { error } = await supabase
+    .from('suggestions')
+    .update({
+      moderation_status: 'declined',
+      public_status: 'declined',
+      visibility: 'private',
+      updated_at: now,
+    })
+    .eq('id', id)
+
+  if (error) throw error
+}
+
+export async function keepSuggestionPrivateById(id: string) {
+  if (!SUPABASE_CONFIGURED) return
+
+  const now = new Date().toISOString()
+  const { createClient } = await import('./supabase/server')
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) throw new Error('Log in to update this suggestion.')
+
+  const { error } = await supabase
+    .from('suggestions')
+    .update({
+      visibility: 'private',
+      kept_private_at: now,
+      updated_at: now,
+    })
+    .eq('id', id)
+    .eq('author_id', user.id)
+    .eq('visibility', 'scheduled_public')
+    .gt('scheduled_publish_at', now)
+
+  if (error) throw error
+}
+
+export async function updateSuggestionPublicStatusById(id: string, status: SuggestionPublicStatus) {
+  if (!SUPABASE_CONFIGURED) return
+
+  const now = new Date().toISOString()
+  const { createClient } = await import('./supabase/server')
+  const supabase = await createClient()
+  const { error } = await supabase
+    .from('suggestions')
+    .update({ public_status: status, updated_at: now })
+    .eq('id', id)
+
+  if (error) throw error
+}
+
+export async function createSuggestionResponse(input: {
+  suggestionId: string
+  body: string
+  visibility: SuggestionResponseVisibility
+}) {
+  if (!SUPABASE_CONFIGURED) return
+
+  const body = input.body.trim()
+  if (!body) throw new Error('Write a response first.')
+
+  const { createClient } = await import('./supabase/server')
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) throw new Error('Log in to respond.')
+
+  const now = new Date().toISOString()
+  const { error } = await supabase
+    .from('suggestion_responses')
+    .insert({
+      suggestion_id: input.suggestionId,
+      responder_id: user.id,
+      body,
+      visibility: input.visibility,
+    })
+
+  if (error) throw error
+
+  await supabase
+    .from('suggestions')
+    .update({ updated_at: now })
+    .eq('id', input.suggestionId)
+}
+
+export async function toggleSuggestionVote(suggestionId: string): Promise<{ voted: boolean; newCount: number }> {
+  if (!SUPABASE_CONFIGURED) return { voted: false, newCount: 0 }
+
+  const { createClient } = await import('./supabase/server')
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) throw new Error('Log in to vote.')
+
+  const { data: existing } = await supabase
+    .from('suggestion_votes')
+    .select('id')
+    .eq('user_id', user.id)
+    .eq('suggestion_id', suggestionId)
+    .maybeSingle()
+
+  if (existing) {
+    const { error } = await supabase.from('suggestion_votes').delete().eq('id', existing.id)
+    if (error) throw error
+    const { data: updated } = await supabase.from('suggestions').select('vote_count').eq('id', suggestionId).single()
+    return { voted: false, newCount: updated?.vote_count ?? 0 }
   }
+
+  const { error } = await supabase.from('suggestion_votes').insert({ user_id: user.id, suggestion_id: suggestionId })
+  if (error) throw error
+  const { data: updated } = await supabase.from('suggestions').select('vote_count').eq('id', suggestionId).single()
+  return { voted: true, newCount: updated?.vote_count ?? 0 }
 }
 
 // ---- Admin ----
 
 export async function getPromptStats() {
-  if (!SUPABASE_CONFIGURED) {
+  const fallback = {
+    total: publicMockPrompts.length,
+    pending: publicMockPrompts.filter(p => p.status === 'pending').length,
+    approved: publicMockPrompts.filter(p => p.status === 'approved').length,
+    rejected: publicMockPrompts.filter(p => p.status === 'rejected').length,
+    categories: publicMockCategories.filter(c => (c.prompt_count ?? 0) > 0).length,
+  }
+
+  return readWithFallback(fallback, async () => {
+    const { createClient } = await import('./supabase/server')
+    const supabase = await createClient()
+    const [total, pending, approved, rejected, categories] = await Promise.all([
+      supabase.from('prompts').select('*', { count: 'exact', head: true }),
+      supabase.from('prompts').select('*', { count: 'exact', head: true }).eq('status', 'pending'),
+      supabase.from('prompts').select('*', { count: 'exact', head: true }).eq('status', 'approved'),
+      supabase.from('prompts').select('*', { count: 'exact', head: true }).eq('status', 'rejected'),
+      supabase.from('categories').select('*', { count: 'exact', head: true }),
+    ])
     return {
-      total: mockPrompts.length,
-      pending: mockPrompts.filter(p => p.status === 'pending').length,
-      approved: mockPrompts.filter(p => p.status === 'approved').length,
-      rejected: mockPrompts.filter(p => p.status === 'rejected').length,
-      categories: mockCategories.length,
+      total: total.count ?? 0,
+      pending: pending.count ?? 0,
+      approved: approved.count ?? 0,
+      rejected: rejected.count ?? 0,
+      categories: categories.count ?? 0,
     }
-  }
-  const { createClient } = await import('./supabase/server')
-  const supabase = await createClient()
-  const [total, pending, approved, rejected, categories] = await Promise.all([
-    supabase.from('prompts').select('*', { count: 'exact', head: true }),
-    supabase.from('prompts').select('*', { count: 'exact', head: true }).eq('status', 'pending'),
-    supabase.from('prompts').select('*', { count: 'exact', head: true }).eq('status', 'approved'),
-    supabase.from('prompts').select('*', { count: 'exact', head: true }).eq('status', 'rejected'),
-    supabase.from('categories').select('*', { count: 'exact', head: true }),
-  ])
-  return {
-    total: total.count ?? 0,
-    pending: pending.count ?? 0,
-    approved: approved.count ?? 0,
-    rejected: rejected.count ?? 0,
-    categories: categories.count ?? 0,
-  }
+  })
 }
 
 export async function createProject(project: {
@@ -418,7 +776,7 @@ export async function createProject(project: {
 
 export async function updatePromptStatus(id: string, status: 'approved' | 'rejected') {
   if (!SUPABASE_CONFIGURED) {
-    const prompt = mockPrompts.find(p => p.id === id)
+    const prompt = publicMockPrompts.find(p => p.id === id)
     if (prompt) prompt.status = status
     return
   }

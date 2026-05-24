@@ -15,6 +15,7 @@ import Link from 'next/link'
 import { ArrowUp, Bookmark, Cpu } from 'lucide-react'
 import { PromptWithRelations } from '@/lib/types'
 import { getModelName } from '@/lib/models'
+import { getProjectHref } from '@/lib/project-links'
 
 const difficultyConfig = {
   beginner: { label: 'Beginner', color: 'text-emerald-600 bg-emerald-50 border-emerald-200' },
@@ -44,7 +45,7 @@ export default function PromptCard({ prompt, featured = false }: { prompt: Promp
 
   return (
     <Link
-      href={`/prompt/${prompt.id}`}
+      href={getProjectHref(prompt)}
       className={`group block border transition-all duration-150 relative overflow-hidden focus-visible:outline-2 focus-visible:outline-brand-orange focus-visible:outline-offset-2 active:scale-[0.98] ${
         featured
           ? 'bg-[color-mix(in_srgb,var(--color-brand-orange)_3%,white)] border-l-[3px] border-l-brand-orange border-surface-200 hover:shadow-lg hover:-translate-y-0.5'

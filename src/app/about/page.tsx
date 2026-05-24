@@ -193,7 +193,7 @@ export default function AboutPage() {
               <div style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--color-brand-orange)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '.12em', marginBottom: 10 }}>And</div>
               <h3 style={{ fontSize: 22, fontWeight: 800, marginBottom: 10, color: 'var(--color-surface-900)', letterSpacing: '-0.01em' }}>The curious who want to see what&apos;s actually possible.</h3>
               <p style={{ fontSize: 16, lineHeight: 1.7, color: 'var(--color-surface-700)' }}>
-                AI coverage online is mostly hype screenshots and doomer thinkpieces. If you want to know what people are actually doing with these tools on an average Tuesday, this is the library. Browse without logging in. Read without remixing. It&apos;s fine.
+                AI coverage online is mostly hype screenshots and doomer thinkpieces. If you want to know what people are actually doing with these tools on an average Tuesday, this is the library. Explore without logging in. Read without remixing. It&apos;s fine.
               </p>
             </div>
           </div>
@@ -275,14 +275,14 @@ export default function AboutPage() {
       <section className="finalcta">
         <div className="sect-wrap">
           <div className="eyebrow">Your turn</div>
-          <h2>Browse the library. <span className="serif">Fork</span> something.</h2>
+          <h2>Explore the library. <span className="serif">Fork</span> something.</h2>
           <p>If one path saves you an evening of blank-chat guessing, the whole site has paid for itself. If you end up with something worth sharing, add it back.</p>
           <div className="finalcta-btns">
-            <Link href="/browse" className="btn-primary">
-              Browse build paths
+            <Link href="/paths" className="btn-primary">
+              Build Paths
               <svg className="arrow" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="square"><path d="M5 12H19M13 6L19 12L13 18" /></svg>
             </Link>
-            <Link href="/prompt/new" className="btn-secondary">Share a build</Link>
+            <Link href="/build" className="btn-secondary">Build a path</Link>
           </div>
         </div>
       </section>

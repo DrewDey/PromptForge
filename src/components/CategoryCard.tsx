@@ -4,7 +4,7 @@ import { Category } from '@/lib/types'
 export default function CategoryCard({ category }: { category: Category }) {
   return (
     <Link
-      href={`/browse?category=${category.slug}`}
+      href={`/paths?category=${category.slug}`}
       className="group block bg-white border border-surface-200 p-5 hover:border-brand-orange hover:shadow-[4px_4px_0px_0px_rgba(232,122,44,0.15)] transition-all duration-150 text-center focus-visible:outline-2 focus-visible:outline-brand-orange focus-visible:outline-offset-2"
     >
       <div className="text-3xl mb-2">{category.icon}</div>

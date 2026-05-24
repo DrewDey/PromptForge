@@ -2,7 +2,7 @@ import fs from 'node:fs'
 import path from 'node:path'
 import type { ReactNode } from 'react'
 import Link from 'next/link'
-import { ExternalLink, FileCode2, Gamepad2, GitBranch } from 'lucide-react'
+import { ExternalLink, FileCode2, GitBranch } from 'lucide-react'
 
 const prompt = 'Make me a playable Snake game as a single self-contained HTML file.'
 const artifactPath = '/artifacts/snake-gpt55-pro-oneshot.html'
@@ -228,22 +228,16 @@ export default function SnakeDemoPage() {
             >
               PathForge
             </Link>
-            <div className="inline-flex items-center gap-2 border border-brand-orange/40 px-3 py-1.5 text-[11px] font-mono uppercase tracking-[0.16em] text-brand-orange">
-              <Gamepad2 className="h-3.5 w-3.5" />
-              One-sentence build
-            </div>
           </div>
 
           <div className="mb-5 grid gap-5 lg:grid-cols-[minmax(0,1fr)_430px] lg:items-end">
             <div>
-              <div className="mb-3 inline-flex border border-brand-orange/40 px-3 py-1 text-[11px] font-mono uppercase tracking-[0.16em] text-brand-orange">
-                Final artifact first
-              </div>
               <h1 className="max-w-4xl text-3xl font-black leading-[0.96] tracking-normal sm:text-5xl">
-                One plain prompt. One playable Snake game.
+                Playable Snake game from one prompt.
               </h1>
               <p className="mt-4 max-w-2xl text-sm leading-6 text-surface-300">
-                The embedded result sits at the top. The prompt chain below shows the real path that produced it.
+                A single ChatGPT prompt produced a self-contained HTML game with scoring, keyboard controls, and
+                touch support.
               </p>
             </div>
             <RunSummary />

@@ -1,0 +1,171 @@
+# PathForge Agent Notes
+
+Living notes for the agents and workflows that will eventually become a Codex skill for building PathForge examples. Update this file whenever the product direction changes so the important context survives across chats.
+
+## Current Product Thesis
+
+PathForge helps people get past AI paralysis by showing proven AI build paths: real prompts, real responses, real files, screenshots, and a final artifact they can inspect or use immediately.
+
+The final result should appear first. The prompt and response chain below it explains how the result was made. The site should never replace exact source material with a fake or polished summary when the exact prompt or response is available.
+
+Important language and concepts:
+
+- AI paralysis
+- token maxing
+- burn your tokens
+- one-shot builds
+- multi-prompt builds
+- forks
+- source runs
+- final artifact first
+
+## Core Capture Rule
+
+Source-run import should be the default path whenever a platform supports it. Manual input is a fallback, not the primary workflow.
+
+ChatGPT source runs are currently the best-supported example. For those, the user should be able to provide a source run or export, then let an agent format the run into the PathForge page. The user should not have to manually enter 14 prompts and 14 responses when the platform can provide that information directly.
+
+Manual input still matters because not every AI platform will expose clean source runs or exports. PathForge should not lock users out when source-run import is unavailable.
+
+## Required Page Shape
+
+- Final artifact embedded at the top.
+- Prompt and response chain below the final artifact.
+- The title area should be the project title plus a short description of what the run produced.
+- Each response should preserve the exact response text.
+- Code inside a response should be formatted as code and collapsed when long.
+- The whole response package should also be collapsible.
+- Files, screenshots, and generated artifacts should be tied to the response that produced them.
+- Summaries and verification notes can exist, but they must not replace exact source text.
+- Forks should visually branch from the main chain.
+- The current visual direction for chain connections is chunky green pipe/tube connectors, inspired by Flappy Bird pipes.
+- Avoid response packages that feel like generic attachment grids or hide what actually happened.
+
+## Agent Map
+
+### Source Run Ingestion Agent
+
+Accepts ChatGPT shared/source runs, uploads, exports, or manual fallbacks. Extracts messages, roles, timestamps, model/settings, tool use, files, attachments, code blocks, artifacts, and links.
+
+This agent must preserve exact prompt and response text. It should not rewrite the response into marketing copy.
+
+### Path Structuring Agent
+
+Turns a source run into a PathForge build path. Detects whether the run is one-shot, multi-step, forked, or incomplete.
+
+It maps each prompt to the response that followed it and links generated files, screenshots, or artifacts to the specific response that created them.
+
+### Artifact Mounting Agent
+
+Finds the final artifact, stores it, and mounts it at the top of the page. For runnable HTML or app artifacts, it should avoid internal iframe scrolling when realistic.
+
+For multi-prompt chains, this agent should preserve every generated or modified artifact version, not just the final result. Each response package should be able to show the artifact version produced by that response when one exists.
+
+This agent also needs to think about sandboxing and safety for user-generated runnable code.
+
+### Verification Agent
+
+Uses browser and computer-use workflows to open artifacts, test basic interaction, and capture screenshots.
+
+It produces a concise verification summary, but that summary is metadata. It must not replace the exact AI response.
+
+### Page Composer Agent
+
+Builds the public PathForge page from structured run data.
+
+It keeps the final artifact first, the exact prompt/response chain below, and the visual system consistent with the PathForge direction. It should support pipe/tube connectors and clear forked paths.
+
+### Curation And Approval Agent
+
+Keeps only approved projects public.
+
+Generic or weak examples should stay out of browse until approved. The current approved public seed example is the Snake game.
+
+### Suggestion Response Agent
+
+Reviews suggestion box entries, drafts useful responses, and returns responses to the person who submitted the suggestion when possible.
+
+Public suggestion posting should be delayed by 24 hours. The user should be able to stop a suggestion from being posted publicly during that window.
+
+### Forking Agent
+
+Suggests ways to fork existing paths into adjacent ideas, different audiences, different formats, or stronger versions of the same concept.
+
+The purpose is to help users see horizons when they are staring at an AI screen and do not know what to build.
+
+### Automation And Seeding Agent
+
+Runs regularly to create candidate examples for the site.
+
+It can create one-shot, multi-prompt, and forked project candidates, but it should not publish them without approval.
+
+## Data To Preserve
+
+- Source URL or uploaded source file
+- Platform or provider
+- Model and settings
+- Run date and time
+- Every prompt with exact text
+- Every response with exact text
+- Code blocks with exact code
+- Generated files
+- Generated artifact version for each response when applicable
+- Screenshots
+- Final artifact path
+- Previous artifact paths
+- Verification status and notes
+- Fork and branch relationships
+- Approval status
+- Privacy status
+- Public-delay status
+
+## Multi-Prompt Artifact Versions
+
+For a multi-prompt build, the top of the page should show the final artifact by default, but the user should still be able to inspect earlier builds.
+
+The likely model:
+
+- Every response package can contain the artifact generated or modified by that response.
+- The final artifact remains mounted at the top by default.
+- A version picker or timeline near the top embed should let the user switch between response artifacts when multiple runnable versions exist.
+- Each response package should have a local preview or link for its own artifact version.
+- The agent should detect when a response creates a new file, changes an existing file, or only gives text advice.
+- The agent should summarize what changed between artifact versions, but the exact response remains the source of truth.
+- If a chain has 10 prompts and 10 HTML outputs, PathForge should preserve all 10 outputs and make them easy to cycle through without cluttering the page.
+
+## Submission UX Direction
+
+The preferred submission flow should be:
+
+1. User provides a source run link, upload, or export.
+2. Agent parses the run into a structured path.
+3. Agent attaches files, code, screenshots, and final artifact relationships.
+4. User reviews the formatted path.
+5. User approves whether it appears publicly.
+
+Manual entry should still exist for unsupported platforms. It should support bulk paste or transcript import so multi-prompt examples do not become tedious.
+
+## Current Decisions
+
+- Source-run import is the preferred workflow when available.
+- Manual input remains supported as a fallback.
+- Exact response text is mandatory on project pages.
+- Code should be collapsed inside the response package when long.
+- The entire response package should be collapsible.
+- The final artifact belongs at the top of the page.
+- Attachments should be tied to the response that produced them.
+- Public examples require approval.
+- Suggestion box entries should support private review before public posting.
+- Public suggestion posting should be delayed by 24 hours.
+
+## Open Questions
+
+- Which platforms can reliably provide source runs or exports?
+- Which formats should be accepted: URL, HTML export, JSON export, transcript, zip, screenshots, or all of them?
+- How should private or sensitive chats be handled?
+- How should generated files and artifacts be detected automatically?
+- How should runnable artifacts be stored and sandboxed?
+- How much verifier summary should appear by default?
+- Should public source links be optional?
+- Should source-run import require login?
+- What approval queue interface should the user use for agent-generated seed projects?

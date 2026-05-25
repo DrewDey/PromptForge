@@ -7,37 +7,41 @@ const SUPABASE_CONFIGURED = !!(
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 )
 
+function AccessDenied() {
+  return (
+    <div className="min-h-[60vh] flex items-center justify-center">
+      <div className="text-center">
+        <h1 className="text-2xl font-bold text-gray-900 mb-2">Access Denied</h1>
+        <p className="text-gray-600 mb-4">You don&apos;t have admin access.</p>
+        <Link href="/" className="text-brand-orange hover:opacity-80 font-medium text-sm">
+          Go back home
+        </Link>
+      </div>
+    </div>
+  )
+}
+
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
-  // Protect admin route when Supabase is configured
-  if (SUPABASE_CONFIGURED) {
-    const { createClient } = await import('@/lib/supabase/server')
-    const supabase = await createClient()
-    const { data: { user } } = await supabase.auth.getUser()
+  if (!SUPABASE_CONFIGURED) {
+    return <AccessDenied />
+  }
 
-    if (!user) {
-      redirect('/auth/login')
-    }
+  const { createClient } = await import('@/lib/supabase/server')
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
 
-    // Check if user is admin
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('role')
-      .eq('id', user.id)
-      .single()
+  if (!user) {
+    redirect('/auth/login')
+  }
 
-    if (profile?.role !== 'admin') {
-      return (
-        <div className="min-h-[60vh] flex items-center justify-center">
-          <div className="text-center">
-            <h1 className="text-2xl font-bold text-gray-900 mb-2">Access Denied</h1>
-            <p className="text-gray-600 mb-4">You don&apos;t have admin access.</p>
-            <Link href="/" className="text-brand-orange hover:opacity-80 font-medium text-sm">
-              Go back home
-            </Link>
-          </div>
-        </div>
-      )
-    }
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('role')
+    .eq('id', user.id)
+    .maybeSingle()
+
+  if (profile?.role !== 'admin') {
+    return <AccessDenied />
   }
 
   return (

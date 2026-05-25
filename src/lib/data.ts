@@ -407,6 +407,28 @@ async function readSuggestionsWithFallback<T>(fallback: T, read: () => Promise<T
   }
 }
 
+async function requireAdminAccess() {
+  if (!SUPABASE_CONFIGURED) throw new Error('Admin access requires Supabase.')
+
+  const { createClient } = await import('./supabase/server')
+  const supabase = await createClient()
+  const { data: { user }, error: userError } = await supabase.auth.getUser()
+
+  if (userError || !user) throw new Error('Log in as an admin.')
+
+  const { data: profile, error: profileError } = await supabase
+    .from('profiles')
+    .select('role')
+    .eq('id', user.id)
+    .maybeSingle()
+
+  if (profileError || profile?.role !== 'admin') {
+    throw new Error('Admin access required.')
+  }
+
+  return { supabase, user }
+}
+
 export async function getPublicSuggestions(): Promise<SuggestionWithRelations[]> {
   const fallback = normalizeSuggestionRows(mockSuggestions).filter((suggestion) => (
     isPublicSuggestion(suggestion)
@@ -453,51 +475,46 @@ export async function getMySuggestions(): Promise<SuggestionWithRelations[]> {
 }
 
 export async function getAllSuggestionsForAdmin(): Promise<SuggestionWithRelations[]> {
-  return readSuggestionsWithFallback(mockSuggestions, async () => {
-    const { createClient } = await import('./supabase/server')
-    const supabase = await createClient()
-    const { data } = await supabase
+  if (!SUPABASE_CONFIGURED) return []
+
+  return readSuggestionsWithFallback([], async () => {
+    const { supabase } = await requireAdminAccess()
+    const { data, error } = await supabase
       .from('suggestions')
       .select('*, author:profiles(*), responses:suggestion_responses(*)')
       .order('updated_at', { ascending: false })
 
+    if (error) throw error
     return normalizeSuggestionRows(data as SuggestionWithRelations[])
   })
 }
 
 export async function getSuggestionStats() {
-  const fallback = {
-    total: mockSuggestions.length,
-    pending: mockSuggestions.filter(s => s.moderation_status === 'pending').length,
-    approved: mockSuggestions.filter(s => s.moderation_status === 'approved').length,
-    private: mockSuggestions.filter(s => s.visibility === 'private').length,
-    public: mockSuggestions.filter(s => isPublicSuggestion(s)).length,
+  if (!SUPABASE_CONFIGURED) {
+    return { total: 0, pending: 0, approved: 0, private: 0, public: 0 }
   }
 
-  return readSuggestionsWithFallback(fallback, async () => {
-    const { createClient } = await import('./supabase/server')
-    const supabase = await createClient()
-    const now = new Date().toISOString()
-    const [total, pending, approved, privateItems, publicItems] = await Promise.all([
-      supabase.from('suggestions').select('*', { count: 'exact', head: true }),
-      supabase.from('suggestions').select('*', { count: 'exact', head: true }).eq('moderation_status', 'pending'),
-      supabase.from('suggestions').select('*', { count: 'exact', head: true }).eq('moderation_status', 'approved'),
-      supabase.from('suggestions').select('*', { count: 'exact', head: true }).eq('visibility', 'private'),
-      supabase
-        .from('suggestions')
-        .select('*', { count: 'exact', head: true })
-        .eq('moderation_status', 'approved')
-        .or(`visibility.eq.public,and(visibility.eq.scheduled_public,scheduled_publish_at.lte.${now})`),
-    ])
+  const { supabase } = await requireAdminAccess()
+  const now = new Date().toISOString()
+  const [total, pending, approved, privateItems, publicItems] = await Promise.all([
+    supabase.from('suggestions').select('*', { count: 'exact', head: true }),
+    supabase.from('suggestions').select('*', { count: 'exact', head: true }).eq('moderation_status', 'pending'),
+    supabase.from('suggestions').select('*', { count: 'exact', head: true }).eq('moderation_status', 'approved'),
+    supabase.from('suggestions').select('*', { count: 'exact', head: true }).eq('visibility', 'private'),
+    supabase
+      .from('suggestions')
+      .select('*', { count: 'exact', head: true })
+      .eq('moderation_status', 'approved')
+      .or(`visibility.eq.public,and(visibility.eq.scheduled_public,scheduled_publish_at.lte.${now})`),
+  ])
 
-    return {
-      total: total.count ?? 0,
-      pending: pending.count ?? 0,
-      approved: approved.count ?? 0,
-      private: privateItems.count ?? 0,
-      public: publicItems.count ?? 0,
-    }
-  })
+  return {
+    total: total.count ?? 0,
+    pending: pending.count ?? 0,
+    approved: approved.count ?? 0,
+    private: privateItems.count ?? 0,
+    public: publicItems.count ?? 0,
+  }
 }
 
 export async function createSuggestion(input: { title: string; body: string }) {
@@ -535,8 +552,7 @@ export async function approveSuggestionById(id: string) {
   if (!SUPABASE_CONFIGURED) return
 
   const approvedAt = new Date().toISOString()
-  const { createClient } = await import('./supabase/server')
-  const supabase = await createClient()
+  const { supabase } = await requireAdminAccess()
   const { error } = await supabase
     .from('suggestions')
     .update({
@@ -557,8 +573,7 @@ export async function declineSuggestionById(id: string) {
   if (!SUPABASE_CONFIGURED) return
 
   const now = new Date().toISOString()
-  const { createClient } = await import('./supabase/server')
-  const supabase = await createClient()
+  const { supabase } = await requireAdminAccess()
   const { error } = await supabase
     .from('suggestions')
     .update({
@@ -600,8 +615,7 @@ export async function updateSuggestionPublicStatusById(id: string, status: Sugge
   if (!SUPABASE_CONFIGURED) return
 
   const now = new Date().toISOString()
-  const { createClient } = await import('./supabase/server')
-  const supabase = await createClient()
+  const { supabase } = await requireAdminAccess()
   const { error } = await supabase
     .from('suggestions')
     .update({ public_status: status, updated_at: now })
@@ -620,10 +634,7 @@ export async function createSuggestionResponse(input: {
   const body = input.body.trim()
   if (!body) throw new Error('Write a response first.')
 
-  const { createClient } = await import('./supabase/server')
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) throw new Error('Log in to respond.')
+  const { supabase, user } = await requireAdminAccess()
 
   const now = new Date().toISOString()
   const { error } = await supabase
@@ -674,32 +685,26 @@ export async function toggleSuggestionVote(suggestionId: string): Promise<{ vote
 // ---- Admin ----
 
 export async function getPromptStats() {
-  const fallback = {
-    total: publicMockPrompts.length,
-    pending: publicMockPrompts.filter(p => p.status === 'pending').length,
-    approved: publicMockPrompts.filter(p => p.status === 'approved').length,
-    rejected: publicMockPrompts.filter(p => p.status === 'rejected').length,
-    categories: publicMockCategories.filter(c => (c.prompt_count ?? 0) > 0).length,
+  if (!SUPABASE_CONFIGURED) {
+    return { total: 0, pending: 0, approved: 0, rejected: 0, categories: 0 }
   }
 
-  return readWithFallback(fallback, async () => {
-    const { createClient } = await import('./supabase/server')
-    const supabase = await createClient()
-    const [total, pending, approved, rejected, categories] = await Promise.all([
-      supabase.from('prompts').select('*', { count: 'exact', head: true }),
-      supabase.from('prompts').select('*', { count: 'exact', head: true }).eq('status', 'pending'),
-      supabase.from('prompts').select('*', { count: 'exact', head: true }).eq('status', 'approved'),
-      supabase.from('prompts').select('*', { count: 'exact', head: true }).eq('status', 'rejected'),
-      supabase.from('categories').select('*', { count: 'exact', head: true }),
-    ])
-    return {
-      total: total.count ?? 0,
-      pending: pending.count ?? 0,
-      approved: approved.count ?? 0,
-      rejected: rejected.count ?? 0,
-      categories: categories.count ?? 0,
-    }
-  })
+  const { supabase } = await requireAdminAccess()
+  const [total, pending, approved, rejected, categories] = await Promise.all([
+    supabase.from('prompts').select('*', { count: 'exact', head: true }),
+    supabase.from('prompts').select('*', { count: 'exact', head: true }).eq('status', 'pending'),
+    supabase.from('prompts').select('*', { count: 'exact', head: true }).eq('status', 'approved'),
+    supabase.from('prompts').select('*', { count: 'exact', head: true }).eq('status', 'rejected'),
+    supabase.from('categories').select('*', { count: 'exact', head: true }),
+  ])
+
+  return {
+    total: total.count ?? 0,
+    pending: pending.count ?? 0,
+    approved: approved.count ?? 0,
+    rejected: rejected.count ?? 0,
+    categories: categories.count ?? 0,
+  }
 }
 
 export async function createProject(project: {
@@ -775,13 +780,7 @@ export async function createProject(project: {
 }
 
 export async function updatePromptStatus(id: string, status: 'approved' | 'rejected') {
-  if (!SUPABASE_CONFIGURED) {
-    const prompt = publicMockPrompts.find(p => p.id === id)
-    if (prompt) prompt.status = status
-    return
-  }
-  const { createClient } = await import('./supabase/server')
-  const supabase = await createClient()
+  const { supabase } = await requireAdminAccess()
   const { error } = await supabase.from('prompts').update({ status, updated_at: new Date().toISOString() }).eq('id', id)
   if (error) throw error
 }

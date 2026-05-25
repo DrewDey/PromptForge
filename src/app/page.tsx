@@ -1,5 +1,4 @@
 import Link from 'next/link'
-import { getCategories } from '@/lib/data'
 import './home.css'
 
 /* ─────────────────────────────────────────────────────────
@@ -8,15 +7,32 @@ import './home.css'
    Scoped under .pf-home; styles live in ./home.css.
 
    Real-data wiring:
-   • Category tiles pull from getCategories() (icon + slug + name + count).
+   • Domain tiles stay intentionally broad while the library is seeded.
    • Hero stats + popular paths removed per design comments (must not ship
      fabricated engagement numbers). Community quotes kept as static
      illustrative copy — they read as example stories, not engagement metrics.
    ───────────────────────────────────────────────────────── */
 
-export default async function HomePage() {
-  const categories = await getCategories()
+const HOME_DOMAINS = [
+  {
+    slug: 'productivity',
+    eyebrow: 'Work tools',
+    title: 'Productivity',
+    description: 'Automations, dashboards, planners, writing systems, analysis tools, and practical work artifacts.',
+    count: 'New lane',
+    labels: ['Agent brief', 'Task board', 'Report draft', 'Automation'],
+  },
+  {
+    slug: 'games',
+    eyebrow: 'Playable builds',
+    title: 'Games',
+    description: 'Games, experiments, interactive toys, and fun artifacts that are easy to fork and change.',
+    count: '1 path',
+    labels: ['Snake', 'Arcade loop', 'Touch controls', 'HTML file'],
+  },
+] as const
 
+export default function HomePage() {
   return (
     <div className="pf-home">
       {/* ═══════════ HERO ═══════════ */}
@@ -58,7 +74,7 @@ export default async function HomePage() {
               <div className="exhibit-inner">
                 <div className="ex-tag-row">
                   <span className="ex-tag orange">Approved seed</span>
-                  <span className="ex-tag ghost">Personal &amp; Fun · Game</span>
+                  <span className="ex-tag ghost">Games · Playable build</span>
                 </div>
                 <h3 className="ex-title">Playable Snake game — one-shot path</h3>
                 <div className="ex-sub">PathForge Projects · 1 prompt · GPT 5.5 Pro · live artifact</div>
@@ -167,7 +183,7 @@ export default async function HomePage() {
           <div className="anatomy-diagram">
             <div className="anatomy-side">
               <div className="anatomy-label"><b>Metadata</b><span className="anatomy-tag">header</span></div>
-              <div className="box"><div className="k">Category</div><div className="v">🎮 Personal &amp; Fun</div></div>
+              <div className="box"><div className="k">Domain</div><div className="v">Games</div></div>
               <div className="box"><div className="k">Difficulty</div><div className="v">Beginner</div></div>
               <div className="box"><div className="k">Model</div><div className="v orange">GPT 5.5 Pro</div></div>
               <div className="box"><div className="k">Steps</div><div className="v">1</div></div>
@@ -222,30 +238,45 @@ export default async function HomePage() {
               <div className="eyebrow">Explore by domain</div>
               <h2 className="section-title">A path for <span className="serif">every</span> kind of evening.</h2>
             </div>
-            <Link href="/paths" className="btn-secondary">
-              See all categories
+            <Link href="/paths?panel=open" className="btn-secondary">
+              Search all paths
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="square"><path d="M5 12H19M13 6L19 12L13 18" /></svg>
             </Link>
           </div>
           <div className="cats-grid">
-            {categories.filter(cat => (cat.prompt_count ?? 0) > 0).map((cat) => {
-              const count = cat.prompt_count ?? 0
-              const countLabel = count > 0 ? `${count} paths` : 'New'
-              return (
-                <Link
-                  key={cat.id}
-                  href={`/paths?category=${cat.slug}`}
-                  className="cat"
-                >
-                  <div className="cat-icon">{cat.icon}</div>
-                  <h3>{cat.name}</h3>
-                  <div className="count">{countLabel}</div>
-                  <div className="arrow">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M7 17L17 7M17 7H9M17 7V15" /></svg>
+            {HOME_DOMAINS.map((domain) => (
+              <Link
+                key={domain.slug}
+                href={`/paths?domain=${domain.slug}&panel=open`}
+                className={`domain-tile ${domain.slug}`}
+              >
+                <div className="domain-tile-art" aria-hidden="true">
+                  <div className="domain-main-thumb">
+                    {domain.slug === 'productivity' ? (
+                      <div className="workflow-thumb">
+                        <span />
+                        <span />
+                        <span />
+                      </div>
+                    ) : null}
                   </div>
-                </Link>
-              )
-            })}
+                  {domain.labels.slice(0, 3).map((label, index) => (
+                    <div key={label} className={`domain-mini-thumb mini-${index + 1}`}>
+                      {label}
+                    </div>
+                  ))}
+                </div>
+                <div className="domain-tile-body">
+                  <div className="domain-eyebrow">{domain.eyebrow}</div>
+                  <h3>{domain.title}</h3>
+                  <p>{domain.description}</p>
+                  <div className="domain-foot">
+                    <span>{domain.count}</span>
+                    <span>Open paths →</span>
+                  </div>
+                </div>
+              </Link>
+            ))}
           </div>
         </div>
       </section>

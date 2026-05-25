@@ -135,17 +135,28 @@
 /* ─── Categories ─── */
 .pf-home .cats .sect-wrap { padding: 100px 24px; }
 .pf-home .cats-header { display: flex; justify-content: space-between; align-items: end; margin-bottom: 36px; gap: 32px; flex-wrap: wrap; }
-.pf-home .cats-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; }
-.pf-home .cat { background: #fff; border: 1px solid var(--color-surface-200); padding: 22px; position: relative; transition: all .15s; cursor: pointer; overflow: hidden; display: block; }
-.pf-home .cat::before { content: ""; position: absolute; inset: 0; background: linear-gradient(135deg, var(--color-brand-orange), transparent 60%); opacity: 0; transition: opacity .2s; pointer-events: none; }
-.pf-home .cat:hover { transform: translateY(-2px); border-color: var(--color-surface-900); box-shadow: 0 8px 20px -8px rgba(0,0,0,.12); }
-.pf-home .cat:hover::before { opacity: .06; }
-.pf-home .cat-icon { width: 32px; height: 32px; display: grid; place-items: center; background: var(--color-surface-100); color: var(--color-surface-700); margin-bottom: 16px; font-size: 16px; transition: all .15s; }
-.pf-home .cat:hover .cat-icon { background: var(--color-brand-orange); color: #fff; }
-.pf-home .cat h3 { font-size: 14.5px; font-weight: 700; color: var(--color-surface-900); margin-bottom: 2px; letter-spacing: -0.005em; }
-.pf-home .cat .count { font-family: var(--font-mono); font-size: 11px; color: var(--color-surface-500); }
-.pf-home .cat .arrow { position: absolute; top: 22px; right: 22px; color: var(--color-surface-300); transition: all .15s; }
-.pf-home .cat:hover .arrow { color: var(--color-brand-orange); transform: translate(2px,-2px); }
+.pf-home .cats-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; max-width: 920px; }
+.pf-home .domain-tile { min-height: 270px; background: #fff; border: 1px solid var(--color-surface-200); position: relative; transition: border-color .15s, transform .18s, box-shadow .18s; overflow: hidden; display: flex; flex-direction: column; }
+.pf-home .domain-tile:hover { transform: translateY(-2px); border-color: var(--color-surface-900); box-shadow: 6px 6px 0 rgba(20,20,23,.1); }
+.pf-home .domain-tile-art { position: relative; height: 136px; overflow: hidden; background: var(--color-surface-900); }
+.pf-home .domain-tile.productivity .domain-tile-art { background: #15312d; }
+.pf-home .domain-tile.games .domain-tile-art { background: #111827; }
+.pf-home .domain-tile-art::after { content: ""; position: absolute; inset: 0; background-image: linear-gradient(rgba(255,255,255,.06) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.06) 1px, transparent 1px); background-size: 22px 22px; pointer-events: none; }
+.pf-home .domain-main-thumb { position: absolute; left: 18px; top: 18px; width: 178px; height: 100px; overflow: hidden; border: 1px solid rgba(255,255,255,.18); background: rgba(255,255,255,.1); box-shadow: 0 10px 24px rgba(0,0,0,.22); }
+.pf-home .domain-tile.games .domain-main-thumb { background-image: linear-gradient(rgba(17,24,39,.05), rgba(17,24,39,.4)), url('/screenshots/snake-demo-game-running.png'); background-size: cover; background-position: center; }
+.pf-home .workflow-thumb { height: 100%; padding: 14px; display: grid; gap: 8px; }
+.pf-home .workflow-thumb span { display: block; height: 12px; background: rgba(255,255,255,.65); }
+.pf-home .workflow-thumb span:nth-child(2) { width: 72%; background: rgba(255,255,255,.42); }
+.pf-home .workflow-thumb span:nth-child(3) { width: 48%; background: rgba(232,122,44,.85); }
+.pf-home .domain-mini-thumb { position: absolute; display: grid; place-items: center; height: 32px; padding: 0 8px; border: 1px solid rgba(255,255,255,.18); background: rgba(255,255,255,.1); color: #fff; box-shadow: 0 10px 24px rgba(0,0,0,.22); font-family: var(--font-mono); font-size: 9px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; white-space: nowrap; }
+.pf-home .domain-mini-thumb.mini-1 { right: 20px; top: 16px; width: 112px; transform: rotate(2deg); }
+.pf-home .domain-mini-thumb.mini-2 { right: 76px; bottom: 42px; width: 118px; transform: rotate(-3deg); }
+.pf-home .domain-mini-thumb.mini-3 { right: 24px; bottom: 14px; width: 96px; transform: rotate(1deg); }
+.pf-home .domain-tile-body { padding: 22px; flex: 1; display: flex; flex-direction: column; }
+.pf-home .domain-eyebrow { font-family: var(--font-mono); font-size: 10px; font-weight: 700; letter-spacing: .14em; color: var(--color-brand-orange); text-transform: uppercase; margin-bottom: 8px; }
+.pf-home .domain-tile h3 { font-size: 30px; font-weight: 900; color: var(--color-surface-900); margin: 0 0 10px; line-height: 1; letter-spacing: 0; }
+.pf-home .domain-tile p { font-size: 13px; color: var(--color-surface-500); line-height: 1.5; margin: 0 0 18px; }
+.pf-home .domain-foot { margin-top: auto; padding-top: 12px; border-top: 1px solid var(--color-surface-100); display: flex; align-items: center; justify-content: space-between; gap: 10px; font-family: var(--font-mono); font-size: 10px; color: var(--color-surface-500); text-transform: uppercase; letter-spacing: .08em; }
 
 /* ─── Community ─── */
 .pf-home .community { background: var(--color-surface-50); }
@@ -183,7 +194,7 @@
 @media (max-width: 1024px) {
   .pf-home .hero-wrap { grid-template-columns: 1fr; gap: 48px; padding: 64px 24px; }
   .pf-home .problem .sect-wrap { grid-template-columns: 1fr; }
-  .pf-home .cats-grid { grid-template-columns: repeat(3, 1fr); }
+  .pf-home .cats-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .pf-home .community-grid { grid-template-columns: 1fr; }
   .pf-home .anatomy-diagram { grid-template-columns: 1fr; gap: 24px; }
   .pf-home .hero h1 { font-size: 56px; }
@@ -193,5 +204,5 @@
 }
 @media (max-width: 640px) {
   .pf-home .hero h1 { font-size: 42px; }
-  .pf-home .cats-grid { grid-template-columns: repeat(2, 1fr); }
+  .pf-home .cats-grid { grid-template-columns: 1fr; }
 }

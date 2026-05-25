@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { getAllSuggestionsForAdmin, getPromptStats, getPrompts, getSuggestionStats } from '@/lib/data'
+import { getAllSuggestionsForAdmin, getPrompts } from '@/lib/data'
 import AdminPromptRow from './AdminPromptRow'
 import AdminSuggestionRow from './AdminSuggestionRow'
 
@@ -11,16 +11,38 @@ export default async function AdminDashboard({
   const params = await searchParams
   const tab = params.tab ?? 'overview'
 
-  const [stats, suggestionStats, pendingPrompts, allPrompts, allSuggestions] = await Promise.all([
-    getPromptStats(),
-    getSuggestionStats(),
-    getPrompts({ status: 'pending' }),
+  const [allPrompts, allSuggestions] = await Promise.all([
     getPrompts({ status: 'all' }),
     getAllSuggestionsForAdmin(),
   ])
 
-  const pendingSuggestions = allSuggestions.filter(suggestion => suggestion.moderation_status === 'pending')
-  const reviewedSuggestions = allSuggestions.filter(suggestion => suggestion.moderation_status !== 'pending')
+  const pendingPrompts = allPrompts.filter(prompt => prompt.status === 'pending')
+  const approvedPrompts = allPrompts.filter(prompt => prompt.status === 'approved')
+  const pendingSuggestions = allSuggestions.filter(suggestion => (
+    suggestion.moderation_status === 'pending' && suggestion.public_status === 'under_review'
+  ))
+  const reviewedSuggestions = allSuggestions.filter(suggestion => !pendingSuggestions.includes(suggestion))
+  const publicSuggestions = allSuggestions.filter(suggestion => {
+    if (suggestion.moderation_status !== 'approved') return false
+    if (suggestion.visibility === 'public') return true
+    return Boolean(
+      suggestion.visibility === 'scheduled_public' &&
+      suggestion.scheduled_publish_at &&
+      new Date(suggestion.scheduled_publish_at).getTime() <= Date.now()
+    )
+  })
+
+  const stats = {
+    total: allPrompts.length,
+    pending: pendingPrompts.length,
+    approved: approvedPrompts.length,
+  }
+
+  const suggestionStats = {
+    total: allSuggestions.length,
+    pending: pendingSuggestions.length,
+    public: publicSuggestions.length,
+  }
 
   return (
     <div>

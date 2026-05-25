@@ -30,14 +30,24 @@ function publicStateLabel(suggestion: SuggestionWithRelations) {
   return 'Public board'
 }
 
+function moderationStatusForDisplay(suggestion: SuggestionWithRelations) {
+  if (suggestion.moderation_status === 'pending' && suggestion.public_status !== 'under_review') {
+    return suggestion.public_status === 'declined' ? 'declined' : 'approved'
+  }
+
+  return suggestion.moderation_status
+}
+
 export default function AdminSuggestionRow({ suggestion }: { suggestion: SuggestionWithRelations }) {
+  const moderationStatus = moderationStatusForDisplay(suggestion)
+
   return (
     <div className="border border-gray-200 bg-white p-4">
       <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
         <div className="min-w-0">
           <div className="mb-2 flex flex-wrap items-center gap-2">
-            <span className={`px-2 py-0.5 text-xs font-semibold ${moderationColors[suggestion.moderation_status]}`}>
-              {suggestion.moderation_status}
+            <span className={`px-2 py-0.5 text-xs font-semibold ${moderationColors[moderationStatus]}`}>
+              {moderationStatus}
             </span>
             <span className="bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-600">
               {publicStateLabel(suggestion)}
@@ -53,7 +63,7 @@ export default function AdminSuggestionRow({ suggestion }: { suggestion: Suggest
           </p>
         </div>
 
-        {suggestion.moderation_status === 'pending' && (
+        {moderationStatus === 'pending' && (
           <div className="flex shrink-0 items-center gap-2">
             <button
               type="button"

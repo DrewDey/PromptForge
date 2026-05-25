@@ -616,9 +616,23 @@ export async function updateSuggestionPublicStatusById(id: string, status: Sugge
 
   const now = new Date().toISOString()
   const { supabase } = await requireAdminAccess()
+  const updates: {
+    public_status: SuggestionPublicStatus
+    updated_at: string
+    moderation_status?: 'approved' | 'declined'
+    visibility?: 'private'
+  } = { public_status: status, updated_at: now }
+
+  if (status === 'declined') {
+    updates.moderation_status = 'declined'
+    updates.visibility = 'private'
+  } else if (status === 'planned' || status === 'shipped') {
+    updates.moderation_status = 'approved'
+  }
+
   const { error } = await supabase
     .from('suggestions')
-    .update({ public_status: status, updated_at: now })
+    .update(updates)
     .eq('id', id)
 
   if (error) throw error

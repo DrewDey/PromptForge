@@ -4,7 +4,7 @@ const SUPABASE_CONFIGURED = !!(
   process.env.NEXT_PUBLIC_SUPABASE_URL &&
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 )
-const HEADER_AUTH_TIMEOUT_MS = 1500
+const HEADER_AUTH_TIMEOUT_MS = 3000
 
 async function readHeaderState(): Promise<{ viewer: HeaderViewer; isAdmin: boolean }> {
   try {

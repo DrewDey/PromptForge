@@ -8,6 +8,7 @@ import VoteBookmarkButtons from '@/components/VoteBookmarkButtons'
 import PromptCard from '@/components/PromptCard'
 import CodeBlock from '@/components/CodeBlock'
 import Prose from '@/components/Prose'
+import ProjectCommunityPanel from '@/components/ProjectCommunityPanel'
 import { detectContentKind } from '@/lib/content-kind'
 
 /**
@@ -664,6 +665,8 @@ export default async function PromptDetailPage({
         </div>
       </aside>
     </div>
+
+    <ProjectCommunityPanel projectId={prompt.id} />
 
     {/* ─── Mobile sticky bottom bar (iter 55 — Polish #1) ────────────────
         Below lg the right-rail is hidden; the primary CTA resurfaces here

@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { ArrowLeft, Plus, Trash2, ChevronDown, ChevronUp, LogIn, FileText, GitBranch, Check, AlertCircle, ArrowUp, ArrowDown, ChevronRight, Layers, Cpu, Eye } from 'lucide-react'
+import { ArrowLeft, Plus, Trash2, ChevronDown, ChevronUp, LogIn, FileText, GitBranch, Check, AlertCircle, ArrowUp, ArrowDown, ChevronRight, Layers, Cpu, Eye, Upload, Keyboard, CheckCircle2, Link2 } from 'lucide-react'
 import { getModelsByProvider, getModelName } from '@/lib/models'
 import { submitProject } from '@/lib/actions'
 import ImageUpload from '@/components/ImageUpload'
@@ -22,6 +22,16 @@ const categories = [
 ]
 
 type Step = { title: string; content: string; result_content: string; description: string }
+
+type IntakeMode = 'source-run' | 'manual'
+
+type SourceRunImport = {
+  id: string
+  label: string
+  source: string
+  notes?: string
+  createdAt: string
+}
 
 // Mirrors PromptCard's difficulty chip palette so the preview card reads the same
 // as the Build Paths grid's real cards.
@@ -259,11 +269,28 @@ function FieldError({ message }: { message?: string }) {
   )
 }
 
+function makeSourceRunImportId() {
+  return `project-source-run-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
+}
+
+function intakeCardClass(active: boolean) {
+  return `border p-4 text-left transition ${
+    active
+      ? 'border-brand-orange bg-brand-orange/5 shadow-[0_12px_34px_rgba(247,127,0,0.12)]'
+      : 'border-surface-200 bg-white hover:border-surface-400'
+  }`
+}
+
 export default function SubmitProjectPage() {
   const router = useRouter()
   const [isLoggedIn, setIsLoggedIn] = useState<boolean | null>(null)
 
   // Form state
+  const [intakeMode, setIntakeMode] = useState<IntakeMode>('source-run')
+  const [sourceRunUrl, setSourceRunUrl] = useState('')
+  const [sourceRunFileName, setSourceRunFileName] = useState('')
+  const [sourceRunNotes, setSourceRunNotes] = useState('')
+  const [sourceRunImports, setSourceRunImports] = useState<SourceRunImport[]>([])
   const [title, setTitle] = useState('')
   const [description, setDescription] = useState('')
   const [story, setStory] = useState('')
@@ -366,6 +393,29 @@ export default function SubmitProjectPage() {
     updated[newIndex] = temp
     setSteps(updated)
     setExpandedStep(newIndex)
+  }
+
+  function selectSourceRunFile(event: React.ChangeEvent<HTMLInputElement>) {
+    setSourceRunFileName(event.target.files?.[0]?.name ?? '')
+  }
+
+  function prepareSourceRun(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    const url = sourceRunUrl.trim()
+    const fileName = sourceRunFileName.trim()
+    if (!url && !fileName) return
+
+    setSourceRunImports((current) => [
+      ...current,
+      {
+        id: makeSourceRunImportId(),
+        label: fileName || 'Source run URL',
+        source: url || fileName,
+        notes: sourceRunNotes.trim() || undefined,
+        createdAt: 'Ready for agent extraction',
+      },
+    ])
+    setSourceRunNotes('')
   }
 
   function validateForm(): Record<string, string> {
@@ -559,7 +609,7 @@ export default function SubmitProjectPage() {
           Build your project
         </h1>
         <p className="text-sm text-surface-500 leading-relaxed">
-          Share what you built with AI — the prompts, the process, and the results. Fill in the form; the card on the right shows what it will look like on Build Paths.
+          Start with a source run when you have one. Use manual entry when the AI tool cannot export the conversation cleanly.
         </p>
       </header>
 
@@ -570,10 +620,161 @@ export default function SubmitProjectPage() {
         </div>
       )}
 
+      <section className="mb-8 border border-surface-200 bg-white">
+        <div className="border-b border-surface-200 bg-surface-900 px-5 py-4 text-white">
+          <div className="font-mono text-[10px] uppercase tracking-[0.16em] text-brand-orange">
+            Project intake
+          </div>
+          <h2 className="mt-1 text-xl font-black">Choose how the original path gets built</h2>
+        </div>
+
+        <div className="p-5">
+          <div className="grid gap-3 md:grid-cols-2">
+            <button
+              type="button"
+              onClick={() => setIntakeMode('source-run')}
+              className={intakeCardClass(intakeMode === 'source-run')}
+              aria-pressed={intakeMode === 'source-run'}
+            >
+              <div className="flex items-center justify-between gap-3">
+                <div className="inline-flex h-9 w-9 items-center justify-center border border-brand-orange/35 bg-brand-orange/10 text-brand-orange">
+                  <Upload className="h-4 w-4" aria-hidden="true" />
+                </div>
+                {intakeMode === 'source-run' && <CheckCircle2 className="h-4 w-4 text-brand-orange" aria-hidden="true" />}
+              </div>
+              <div className="mt-3 font-mono text-[10px] uppercase tracking-[0.16em] text-surface-500">
+                Source run
+              </div>
+              <div className="mt-1 text-base font-black text-surface-900">Let the agent structure it</div>
+              <p className="mt-2 text-xs leading-5 text-surface-600">
+                Link or upload the source run. The agent should extract exact prompts, exact responses, code blocks,
+                files, screenshots, and final artifact relationships.
+              </p>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setIntakeMode('manual')}
+              className={intakeCardClass(intakeMode === 'manual')}
+              aria-pressed={intakeMode === 'manual'}
+            >
+              <div className="flex items-center justify-between gap-3">
+                <div className="inline-flex h-9 w-9 items-center justify-center border border-brand-blue/35 bg-brand-blue/10 text-brand-blue">
+                  <Keyboard className="h-4 w-4" aria-hidden="true" />
+                </div>
+                {intakeMode === 'manual' && <CheckCircle2 className="h-4 w-4 text-brand-blue" aria-hidden="true" />}
+              </div>
+              <div className="mt-3 font-mono text-[10px] uppercase tracking-[0.16em] text-surface-500">
+                Manual entry
+              </div>
+              <div className="mt-1 text-base font-black text-surface-900">Build the path by hand</div>
+              <p className="mt-2 text-xs leading-5 text-surface-600">
+                Manually add project basics, prompts, responses, screenshots, and final result when no source export
+                is available.
+              </p>
+            </button>
+          </div>
+        </div>
+
+        {intakeMode === 'source-run' && (
+          <div className="border-t border-surface-200">
+            <form onSubmit={prepareSourceRun} className="space-y-4 p-5">
+              <div>
+                <label htmlFor="project-source-run-url" className="font-mono text-[10px] uppercase tracking-[0.16em] text-surface-500">
+                  Source run link
+                </label>
+                <div className="mt-2 flex items-center border border-surface-200 bg-surface-50 focus-within:border-brand-orange focus-within:bg-white">
+                  <Link2 className="ml-3 h-4 w-4 shrink-0 text-surface-400" aria-hidden="true" />
+                  <input
+                    id="project-source-run-url"
+                    value={sourceRunUrl}
+                    onChange={(event) => setSourceRunUrl(event.target.value)}
+                    placeholder="https://chatgpt.com/c/... or another supported source run"
+                    className="min-w-0 flex-1 bg-transparent px-3 py-2 text-sm text-surface-900 outline-none"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label htmlFor="project-source-run-file" className="font-mono text-[10px] uppercase tracking-[0.16em] text-surface-500">
+                  Source run upload
+                </label>
+                <input
+                  id="project-source-run-file"
+                  type="file"
+                  accept=".html,.json,.md,.txt,.zip"
+                  onChange={selectSourceRunFile}
+                  className="mt-2 block w-full border border-dashed border-surface-300 bg-surface-50 px-3 py-3 text-sm text-surface-700 file:mr-3 file:border-0 file:bg-surface-900 file:px-3 file:py-2 file:text-xs file:font-semibold file:uppercase file:tracking-wider file:text-white"
+                />
+              </div>
+
+              <div>
+                <label htmlFor="project-source-run-notes" className="font-mono text-[10px] uppercase tracking-[0.16em] text-surface-500">
+                  Agent notes
+                </label>
+                <textarea
+                  id="project-source-run-notes"
+                  value={sourceRunNotes}
+                  onChange={(event) => setSourceRunNotes(event.target.value)}
+                  rows={3}
+                  placeholder="Optional: tell the agent which response is the final artifact, what should stay private, or what screenshots/files matter."
+                  className="mt-2 w-full resize-y border border-surface-200 bg-surface-50 px-3 py-2 text-sm leading-6 text-surface-900 outline-none transition focus:border-brand-orange focus:bg-white"
+                />
+              </div>
+
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <p className="text-xs leading-5 text-surface-500">
+                  This prepares the import package. The extraction agent and review queue are the next backend pieces.
+                </p>
+                <button
+                  type="submit"
+                  disabled={!sourceRunUrl.trim() && !sourceRunFileName.trim()}
+                  className="inline-flex items-center justify-center gap-2 border border-brand-orange bg-brand-orange px-3 py-2 text-xs font-semibold uppercase tracking-wider text-white transition hover:bg-brand-orange-dark disabled:cursor-not-allowed disabled:opacity-40"
+                >
+                  <Upload className="h-3.5 w-3.5" aria-hidden="true" />
+                  Prepare source run
+                </button>
+              </div>
+            </form>
+
+            {sourceRunImports.length > 0 && (
+              <div className="border-t border-surface-200 p-5">
+                <div className="mb-3 font-mono text-[10px] uppercase tracking-[0.16em] text-surface-500">
+                  Source run import queue
+                </div>
+                <div className="space-y-3">
+                  {sourceRunImports.map((item) => (
+                    <article key={item.id} className="border border-brand-orange/25 bg-brand-orange/5 p-4">
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="min-w-0">
+                          <div className="font-semibold text-surface-900">{item.label}</div>
+                          <div className="mt-1 truncate text-xs text-surface-500">{item.source}</div>
+                        </div>
+                        <div className="shrink-0 font-mono text-[10px] uppercase tracking-[0.14em] text-brand-orange">
+                          {item.createdAt}
+                        </div>
+                      </div>
+                      {item.notes && <p className="mt-3 text-sm leading-6 text-surface-700">{item.notes}</p>}
+                      <div className="mt-3 grid gap-2 text-xs text-surface-600 sm:grid-cols-4">
+                        <div className="border border-white/80 bg-white px-3 py-2">Extract prompt chain</div>
+                        <div className="border border-white/80 bg-white px-3 py-2">Preserve exact responses</div>
+                        <div className="border border-white/80 bg-white px-3 py-2">Attach artifacts</div>
+                        <div className="border border-white/80 bg-white px-3 py-2">Open review draft</div>
+                      </div>
+                    </article>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+      </section>
+
       {/* Two-pane builder on lg+: form on the left (kept at its original ~680px
           max so no field gets unwieldy), live preview rail on the right. Mobile
           stacks vertically (preview drops below the form so the first interaction
           is always the form). */}
+      {intakeMode === 'manual' ? (
       <div className="lg:grid lg:grid-cols-[minmax(0,1fr)_minmax(0,360px)] lg:gap-10 lg:items-start">
       <form onSubmit={handleSubmit} noValidate className="space-y-4 max-w-2xl">
 
@@ -1020,6 +1221,21 @@ export default function SubmitProjectPage() {
           />
         </aside>
       </div>
+      ) : (
+        <div className="border border-dashed border-surface-300 bg-white px-5 py-8">
+          <div className="max-w-2xl">
+            <div className="font-mono text-[10px] uppercase tracking-[0.16em] text-surface-500">
+              Agent-built draft
+            </div>
+            <h2 className="mt-2 text-2xl font-black text-surface-900">Manual form is hidden for source-run projects.</h2>
+            <p className="mt-3 text-sm leading-6 text-surface-600">
+              Once the extraction agent is wired up, this path should turn the source run into a reviewable project page:
+              final artifact first, exact prompts and responses below, code collapsed inside responses, and generated
+              files tied to the responses that created them.
+            </p>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

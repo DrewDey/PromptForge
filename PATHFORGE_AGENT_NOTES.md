@@ -27,6 +27,11 @@ ChatGPT source runs are currently the best-supported example. For those, the use
 
 Manual input still matters because not every AI platform will expose clean source runs or exports. PathForge should not lock users out when source-run import is unavailable.
 
+Fork and project creation surfaces should present those two paths side by side:
+
+- Source run: provide a shared run URL or uploaded export so an agent can extract the chain.
+- Manual entry: add prompts, exact responses, and artifact references by hand when import is unavailable.
+
 ## Required Page Shape
 
 - Final artifact embedded at the top.
@@ -39,6 +44,8 @@ Manual input still matters because not every AI platform will expose clean sourc
 - Files, screenshots, and generated artifacts should be tied to the response that produced them.
 - Summaries and verification notes can exist, but they must not replace exact source text.
 - Forks should visually branch from the main chain.
+- Each response should be forkable into a new branch where the source chain compacts left and the fork prompt/response chain grows to the right.
+- Project pages should include real community surfaces: upvotes, downvotes, saves/bookmarks, comments, and replies. Counts start at zero and should not be seeded with fake activity.
 - The current visual direction for chain connections is chunky green pipe/tube connectors, inspired by Flappy Bird pipes.
 - Avoid response packages that feel like generic attachment grids or hide what actually happened.
 
@@ -145,6 +152,8 @@ The preferred submission flow should be:
 5. User approves whether it appears publicly.
 
 Manual entry should still exist for unsupported platforms. It should support bulk paste or transcript import so multi-prompt examples do not become tedious.
+
+The Snake demo fork workspace and the original project Build page now reflect this direction locally: source-run import is the default choice, with manual entry beside it as a fallback. The source-run UI currently prepares an import package; the real extraction agent and storage pipeline still need to be built.
 
 ## Current Decisions
 

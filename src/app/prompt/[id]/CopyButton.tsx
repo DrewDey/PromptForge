@@ -8,14 +8,32 @@ type Variant = 'light' | 'dark' | 'ghost'
 export default function CopyButton({
   text,
   variant = 'light',
+  label = 'Copy',
+  visibleLabel = label,
+  copiedLabel = 'Copied',
 }: {
   text: string
   variant?: Variant
+  label?: string
+  visibleLabel?: string
+  copiedLabel?: string
 }) {
   const [copied, setCopied] = useState(false)
 
   async function handleCopy() {
-    await navigator.clipboard.writeText(text)
+    if (navigator.clipboard?.writeText) {
+      await navigator.clipboard.writeText(text)
+    } else {
+      const textArea = document.createElement('textarea')
+      textArea.value = text
+      textArea.style.position = 'fixed'
+      textArea.style.left = '-9999px'
+      textArea.setAttribute('readonly', '')
+      document.body.appendChild(textArea)
+      textArea.select()
+      document.execCommand('copy')
+      document.body.removeChild(textArea)
+    }
     setCopied(true)
     setTimeout(() => setCopied(false), 2500)
   }
@@ -58,18 +76,18 @@ export default function CopyButton({
     <button
       onClick={handleCopy}
       className={`inline-flex items-center gap-1.5 text-[11px] font-mono font-semibold uppercase ${trackingCls} ${shrinkCls} ${focusCls} px-2.5 py-1 border transition-all duration-200 ${variantCls}`}
-      title={copied ? 'Copied to clipboard!' : 'Copy to clipboard'}
-      aria-label={copied ? 'Copied to clipboard' : 'Copy to clipboard'}
+      title={copied ? `${copiedLabel} to clipboard!` : `${label} to clipboard`}
+      aria-label={copied ? `${copiedLabel} to clipboard` : `${label} to clipboard`}
     >
       {copied ? (
         <>
           <Check className="w-3 h-3" />
-          Copied
+          {copiedLabel}
         </>
       ) : (
         <>
           <Copy className="w-3 h-3" />
-          {showLabel && 'Copy'}
+          {showLabel && visibleLabel}
         </>
       )}
     </button>

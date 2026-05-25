@@ -3,6 +3,7 @@ import path from 'node:path'
 import type { ReactNode } from 'react'
 import Link from 'next/link'
 import { ExternalLink, FileCode2, GitBranch } from 'lucide-react'
+import CopyButton from '@/app/prompt/[id]/CopyButton'
 
 const prompt = 'Make me a playable Snake game as a single self-contained HTML file.'
 const artifactPath = '/artifacts/snake-gpt55-pro-oneshot.html'
@@ -142,7 +143,13 @@ function ResponsePackage({ modelResponse }: { modelResponse: string }) {
               Open
             </span>
           </summary>
-          <pre className="max-h-[460px] overflow-auto border-t border-surface-200 bg-surface-900 p-4 text-xs leading-5 text-surface-100">
+          <div className="flex items-center justify-between gap-3 border-t border-surface-800 bg-surface-900 px-4 py-3">
+            <span className="min-w-0 truncate font-mono text-[10px] uppercase tracking-[0.16em] text-surface-400">
+              Full self-contained HTML
+            </span>
+            <CopyButton text={modelResponse} variant="dark" label="Copy code" visibleLabel="Copy" />
+          </div>
+          <pre className="max-h-[460px] overflow-auto bg-surface-900 p-4 text-xs leading-5 text-surface-100">
             <code>{modelResponse}</code>
           </pre>
         </details>
@@ -202,7 +209,12 @@ function BuildPath({ modelResponse }: { modelResponse: string }) {
       <div className="max-w-5xl">
         <div className="space-y-8">
           <PipeNode eyebrow="01 · Prompt" title="One sentence">
-            <p className="border-l-2 border-brand-orange pl-3 font-semibold text-surface-900">{prompt}</p>
+            <div className="group/prompt relative pr-9">
+              <p className="border-l-2 border-brand-orange pl-3 font-semibold text-surface-900">{prompt}</p>
+              <div className="absolute right-0 top-0 opacity-70 transition-opacity duration-200 group-hover/prompt:opacity-100 focus-within:opacity-100">
+                <CopyButton text={prompt} variant="ghost" label="Copy prompt" visibleLabel="Copy" />
+              </div>
+            </div>
           </PipeNode>
 
           <PipeNode eyebrow="02 · Response" title="Response package" terminal>

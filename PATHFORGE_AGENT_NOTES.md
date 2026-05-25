@@ -34,6 +34,7 @@ Manual input still matters because not every AI platform will expose clean sourc
 - The title area should be the project title plus a short description of what the run produced.
 - Each response should preserve the exact response text.
 - Code inside a response should be formatted as code and collapsed when long.
+- Every prompt and every code block should have a one-click copy button.
 - The whole response package should also be collapsible.
 - Files, screenshots, and generated artifacts should be tied to the response that produced them.
 - Summaries and verification notes can exist, but they must not replace exact source text.
@@ -151,6 +152,7 @@ Manual entry should still exist for unsupported platforms. It should support bul
 - Manual input remains supported as a fallback.
 - Exact response text is mandatory on project pages.
 - Code should be collapsed inside the response package when long.
+- Prompts and code blocks must be directly copyable without selecting text manually.
 - The entire response package should be collapsible.
 - The final artifact belongs at the top of the page.
 - Attachments should be tied to the response that produced them.

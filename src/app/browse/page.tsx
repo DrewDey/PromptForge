@@ -10,6 +10,7 @@
 //
 // Styles scoped under .pf-browse in src/app/browse.css.
 import Link from 'next/link'
+import Image from 'next/image'
 import { redirect } from 'next/navigation'
 import { getCategories, getPrompts } from '@/lib/data'
 import type { PromptWithRelations } from '@/lib/types'
@@ -40,12 +41,32 @@ const SUGGESTION_QUERIES = [
   'token maxing demo',
 ]
 
+const BROAD_DOMAINS = [
+  {
+    slug: 'productivity',
+    label: 'Productivity',
+    eyebrow: 'Work tools',
+    description: 'Automations, dashboards, planners, writing systems, analysis tools, and practical work artifacts.',
+    categorySlugs: ['finance', 'marketing', 'writing', 'coding', 'design', 'education', 'productivity', 'data', 'strategy'],
+    previewLabels: ['Agent brief', 'Task board', 'Report draft', 'Automation'],
+  },
+  {
+    slug: 'games',
+    label: 'Games',
+    eyebrow: 'Playable builds',
+    description: 'Games, experiments, interactive toys, and fun artifacts that are easy to fork and change.',
+    categorySlugs: ['personal'],
+    previewLabels: ['Snake', 'Arcade loop', 'Touch controls', 'HTML file'],
+  },
+] as const
+
 type SearchParams = {
   q?: string
   category?: string
+  domain?: string
   difficulty?: string
   model?: string
-  sort?: 'newest' | 'popular'
+  sort?: 'hot' | 'newest' | 'popular'
   panel?: 'open'
 }
 
@@ -57,13 +78,27 @@ export default async function BrowsePage({
   const params = await searchParams
   const q = (params.q ?? '').trim()
   const activeCategory = params.category ?? ''
+  const activeDomain = BROAD_DOMAINS.some(domain => domain.slug === params.domain) ? params.domain ?? '' : ''
   const activeDifficulty = params.difficulty ?? ''
   const activeModel = params.model ?? ''
-  const activeSort = params.sort ?? 'newest'
-  const panelOpen = Boolean(q) || params.panel === 'open' || Boolean(activeCategory || activeDifficulty || activeModel)
+  const activeSort = params.sort ?? 'hot'
+  const dataSort = activeSort === 'newest' ? 'newest' : 'popular'
+  const panelOpen = Boolean(q) || params.panel === 'open' || Boolean(activeDomain || activeCategory || activeDifficulty || activeModel)
+
+  if (activeCategory && !params.domain) {
+    const domain = activeCategory === 'personal' ? 'games' : 'productivity'
+    const redirectParams = new URLSearchParams()
+    if (q) redirectParams.set('q', q)
+    redirectParams.set('domain', domain)
+    if (activeDifficulty) redirectParams.set('difficulty', activeDifficulty)
+    if (activeModel) redirectParams.set('model', activeModel)
+    if (activeSort !== 'hot') redirectParams.set('sort', activeSort)
+    redirectParams.set('panel', 'open')
+    redirect(`/paths?${redirectParams.toString()}`)
+  }
 
   // Redirect empty-string query to canonical /paths to avoid ?q= litter
-  if (params.q !== undefined && q === '' && params.panel !== 'open' && !activeCategory && !activeDifficulty && !activeModel) {
+  if (params.q !== undefined && q === '' && params.panel !== 'open' && !activeDomain && !activeCategory && !activeDifficulty && !activeModel) {
     redirect('/paths')
   }
 
@@ -71,8 +106,23 @@ export default async function BrowsePage({
     getCategories(),
     // Pull everything (up to 200) so we can compute facet counts client-side-ish.
     // For production scale you'd push counts to SQL; at <300 rows this is fine.
-    getPrompts({ sort: activeSort, limit: 300 }),
+    getPrompts({ sort: dataSort, limit: 300 }),
   ])
+
+  const categorySlugById = new Map(categories.map(category => [category.id, category.slug]))
+  const domainCategoryIds = (domainSlug: string) => {
+    const domain = BROAD_DOMAINS.find(item => item.slug === domainSlug)
+    if (!domain) return new Set<string>()
+    return new Set(
+      categories
+        .filter(category => domain.categorySlugs.includes(category.slug as never))
+        .map(category => category.id)
+    )
+  }
+  const promptDomain = (prompt: PromptWithRelations) => {
+    const categorySlug = categorySlugById.get(prompt.category_id)
+    return BROAD_DOMAINS.find(domain => domain.categorySlugs.includes(categorySlug as never))
+  }
 
   // Apply filters in memory so we can show counts for every facet without
   // firing multiple DB calls.
@@ -88,6 +138,10 @@ export default async function BrowsePage({
     )
   }
   function matchesFilters(p: PromptWithRelations, opts: { cat?: boolean; diff?: boolean; mdl?: boolean } = {}) {
+    if (activeDomain && opts.cat !== false) {
+      const categoryIds = domainCategoryIds(activeDomain)
+      if (categoryIds.size > 0 && !categoryIds.has(p.category_id)) return false
+    }
     if (activeCategory && opts.cat !== false) {
       const cat = categories.find(c => c.slug === activeCategory)
       if (!cat || p.category_id !== cat.id) return false
@@ -106,11 +160,12 @@ export default async function BrowsePage({
 
   // Facet counts — keep each facet's "what would this look like if I toggled it"
   // meaningful by excluding itself from the running filter set.
-  const countsByCategory: Record<string, number> = {}
-  for (const cat of categories) {
-    countsByCategory[cat.slug] = queryMatched
+  const countsByDomain: Record<string, number> = {}
+  for (const domain of BROAD_DOMAINS) {
+    const categoryIds = domainCategoryIds(domain.slug)
+    countsByDomain[domain.slug] = queryMatched
       .filter(p => matchesFilters(p, { cat: false }))
-      .filter(p => p.category_id === cat.id).length
+      .filter(p => categoryIds.has(p.category_id)).length
   }
   const countsByDifficulty: Record<string, number> = {}
   for (const d of DIFFICULTIES) {
@@ -130,10 +185,10 @@ export default async function BrowsePage({
   function buildUrl(overrides: Partial<SearchParams>): string {
     const p: Record<string, string | undefined> = {
       q: q || undefined,
-      category: activeCategory || undefined,
+      domain: activeDomain || undefined,
       difficulty: activeDifficulty || undefined,
       model: activeModel || undefined,
-      sort: activeSort !== 'newest' ? activeSort : undefined,
+      sort: activeSort !== 'hot' ? activeSort : undefined,
       panel: panelOpen ? 'open' : undefined,
       ...overrides,
     }
@@ -148,6 +203,15 @@ export default async function BrowsePage({
   // Editorial slices (only relevant when panel is closed)
   const potw = allPrompts[0]
   const shelf = allPrompts.slice(1, 5)
+  const domainCards = BROAD_DOMAINS.map(domain => {
+    const categoryIds = domainCategoryIds(domain.slug)
+    const prompts = allPrompts.filter(prompt => categoryIds.has(prompt.category_id))
+    return {
+      domain,
+      prompts,
+      href: `/paths?domain=${domain.slug}&panel=open`,
+    }
+  })
 
   return (
     <div className="pf-browse">
@@ -169,6 +233,11 @@ export default async function BrowsePage({
           )}
 
           <form action="/paths" method="get" className="ai-box">
+            {panelOpen && <input type="hidden" name="panel" value="open" />}
+            {panelOpen && activeDomain && <input type="hidden" name="domain" value={activeDomain} />}
+            {panelOpen && activeDifficulty && <input type="hidden" name="difficulty" value={activeDifficulty} />}
+            {panelOpen && activeModel && <input type="hidden" name="model" value={activeModel} />}
+            {panelOpen && activeSort !== 'hot' && <input type="hidden" name="sort" value={activeSort} />}
             <div className="ai-box-row">
               <div className="ai-icon" aria-hidden="true">✦</div>
               <div className="ai-input-wrap">
@@ -241,11 +310,15 @@ export default async function BrowsePage({
               )}
             </div>
             <div className="query-meta-sort">
+              <span>Sort</span>
+              <Link href={buildUrl({ sort: 'hot' })} className={activeSort === 'hot' ? 'active' : ''}>
+                Hot
+              </Link>
               <Link href={buildUrl({ sort: 'newest' })} className={activeSort === 'newest' ? 'active' : ''}>
-                Newest
+                New
               </Link>
               <Link href={buildUrl({ sort: 'popular' })} className={activeSort === 'popular' ? 'active' : ''}>
-                Most popular
+                Top
               </Link>
             </div>
           </div>
@@ -280,30 +353,29 @@ export default async function BrowsePage({
               <aside>
                 <div className="facet-group">
                   <div className="facet-head">
-                    <div className="facet-label">Category</div>
-                    {activeCategory && (
-                      <Link href={buildUrl({ category: undefined })} className="facet-clear">clear</Link>
+                    <div className="facet-label">Domain</div>
+                    {activeDomain && (
+                      <Link href={buildUrl({ domain: undefined })} className="facet-clear">clear</Link>
                     )}
                   </div>
                   <div className="facet-list">
                     <Link
-                      href={buildUrl({ category: undefined })}
-                      className={`facet-item ${!activeCategory ? 'active' : ''}`}
+                      href={buildUrl({ domain: undefined })}
+                      className={`facet-item ${!activeDomain ? 'active' : ''}`}
                     >
                       <span>All matches</span>
                       <span className="facet-count">{queryMatched.filter(p => matchesFilters(p, { cat: false })).length}</span>
                     </Link>
-                    {categories.map(cat => {
-                      const count = countsByCategory[cat.slug] ?? 0
-                      const isActive = activeCategory === cat.slug
-                      if (count === 0 && !isActive) return null
+                    {BROAD_DOMAINS.map(domain => {
+                      const count = countsByDomain[domain.slug] ?? 0
+                      const isActive = activeDomain === domain.slug
                       return (
                         <Link
-                          key={cat.id}
-                          href={buildUrl({ category: isActive ? undefined : cat.slug })}
+                          key={domain.slug}
+                          href={buildUrl({ domain: isActive ? undefined : domain.slug })}
                           className={`facet-item ${isActive ? 'active' : ''}`}
                         >
-                          <span>{cat.icon ? `${cat.icon} ` : ''}{cat.name}</span>
+                          <span>{domain.label}</span>
                           <span className="facet-count">{count}</span>
                         </Link>
                       )
@@ -375,7 +447,7 @@ export default async function BrowsePage({
                   <>
                     {filtered.map((p, i) => {
                       const isTop = i === 0
-                      const cat = categories.find(c => c.id === p.category_id)
+                      const domain = promptDomain(p)
                       const modelMeta = AI_MODELS.find(m => m.id === p.model_used)
                       const stepCount = p.steps?.length ?? 0
                       return (
@@ -404,7 +476,7 @@ export default async function BrowsePage({
                             )}
                           </div>
                           <div className="result-meta">
-                            {cat && <span className="mono">{cat.name}</span>}
+                            {domain && <span className="mono">{domain.label}</span>}
                             <span className={`potw-diff ${p.difficulty}`}>{p.difficulty}</span>
                             <span>{stepCount} {stepCount === 1 ? 'step' : 'steps'}{modelMeta ? ` · ${modelMeta.name}` : ''}</span>
                             <span>by {p.author?.display_name ?? p.author?.username ?? 'builder'}</span>
@@ -466,7 +538,7 @@ export default async function BrowsePage({
                   <div className="potw-tagline">
                     <span className="potw-chip">Editor&apos;s pick</span>
                     <span className="potw-meta">
-                      {categories.find(c => c.id === potw.category_id)?.name ?? 'Uncategorized'}
+                      {promptDomain(potw)?.label ?? 'Uncategorized'}
                       {' · shipped '}
                       {relativeTime(potw.created_at)}
                     </span>
@@ -568,7 +640,7 @@ export default async function BrowsePage({
                   <div>
                     <div className="panel-toggle-title">Build Paths</div>
                     <div className="panel-toggle-sub">
-                      Filter all {totalLibrary} paths by category, difficulty, model, and more.
+                      Search everything, or jump into a broad domain.
                     </div>
                   </div>
                 </div>
@@ -588,31 +660,70 @@ export default async function BrowsePage({
                 <h3>
                   Start with a <span className="serif">domain</span>.
                 </h3>
-                <p>Each category opens a curated shortlist — not a dump of every path.</p>
+                <p>Two broad doors for now. The filtered path list handles the details after you pick one.</p>
               </div>
               <div className="domains-grid">
-                {categories.filter(c => (c.prompt_count ?? 0) > 0).map(c => (
-                  <Link key={c.id} href={`/paths?category=${c.slug}`} className="domain-card">
-                    <div className="domain-icon">{c.icon ?? '◇'}</div>
-                    <div className="domain-name">{c.name}</div>
-                    <div className="domain-count">
-                      {c.prompt_count ?? 0} {c.prompt_count === 1 ? 'path' : 'paths'}
-                    </div>
-                    <span className="domain-arrow" aria-hidden="true">→</span>
-                  </Link>
-                ))}
+                {domainCards.map(({ domain, prompts, href }) => {
+                  const count = prompts.length
+                  const countLabel = count === 0 ? 'New lane' : `${count} ${count === 1 ? 'path' : 'paths'}`
+                  return (
+                    <Link key={domain.slug} href={href} className={`domain-card ${domain.slug}`}>
+                      <div className="domain-collage" aria-hidden="true">
+                        <div className="domain-preview main">
+                          {domain.slug === 'games' ? (
+                            <Image
+                              src="/screenshots/snake-demo-game-running.png"
+                              alt=""
+                              fill
+                              sizes="240px"
+                              className="domain-preview-image"
+                            />
+                          ) : (
+                            <div className="domain-workflow-preview">
+                              <span />
+                              <span />
+                              <span />
+                            </div>
+                          )}
+                        </div>
+                        {domain.previewLabels.slice(0, 3).map((label, index) => (
+                          <div key={label} className={`domain-preview mini mini-${index + 1}`}>
+                            {label}
+                          </div>
+                        ))}
+                      </div>
+                      <div className="domain-body">
+                        <div className="domain-kicker">{domain.eyebrow}</div>
+                        <h4>{domain.label}</h4>
+                        <p>{domain.description}</p>
+                        <div className="domain-meta">
+                          <span>{countLabel}</span>
+                          <span>Open paths →</span>
+                        </div>
+                      </div>
+                    </Link>
+                  )
+                })}
               </div>
 
-              <div className="cta-band">
+              <div className="missing-path-panel">
                 <div>
-                  <div className="cta-band-eyebrow">Didn&apos;t find it?</div>
-                  <div className="cta-band-title">
-                    Build it yourself. <span className="serif">Share it back.</span>
+                  <div className="missing-path-eyebrow">Didn&apos;t find the right starting point?</div>
+                  <div className="missing-path-title">
+                    Drop in your own source run, or build the path manually.
                   </div>
+                  <p>
+                    The library gets better when finished attempts come back with the artifact, prompts, responses, and files attached.
+                  </p>
                 </div>
-                <Link href="/build" className="cta-band-btn">
-                  Build a path →
-                </Link>
+                <div className="missing-path-actions">
+                  <Link href="/build" className="cta-band-btn">
+                    Build a path →
+                  </Link>
+                  <Link href="/suggestion-box" className="missing-path-link">
+                    Suggest a missing lane
+                  </Link>
+                </div>
               </div>
             </div>
           </section>

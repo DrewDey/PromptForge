@@ -44,7 +44,7 @@ export default function Footer() {
             <h3 className="text-[11px] font-bold uppercase tracking-widest text-surface-500 mb-4">Company</h3>
             <ul className="space-y-2.5 text-sm">
               <li><Link href="/about" className="text-surface-300 hover:text-brand-orange transition-colors duration-150 focus-visible:outline-2 focus-visible:outline-brand-orange focus-visible:outline-offset-2">Vision</Link></li>
-              <li><Link href="/paths?category=personal" className="text-surface-300 hover:text-brand-orange transition-colors duration-150 focus-visible:outline-2 focus-visible:outline-brand-orange focus-visible:outline-offset-2">Personal &amp; Fun</Link></li>
+              <li><Link href="/paths?domain=games&panel=open" className="text-surface-300 hover:text-brand-orange transition-colors duration-150 focus-visible:outline-2 focus-visible:outline-brand-orange focus-visible:outline-offset-2">Games</Link></li>
             </ul>
           </div>
         </div>

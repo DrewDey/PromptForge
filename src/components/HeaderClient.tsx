@@ -4,7 +4,7 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { useState } from 'react'
 import { usePathname } from 'next/navigation'
-import { BriefcaseBusiness, ChevronDown, Gamepad2, LogOut, Menu, Plus, Search, User, X } from 'lucide-react'
+import { BriefcaseBusiness, ChevronDown, Gamepad2, LogOut, Menu, Plus, RadioTower, Search, User, X } from 'lucide-react'
 import { logout } from '@/lib/actions'
 
 export type HeaderViewer = {
@@ -21,6 +21,7 @@ type HeaderClientProps = {
 const navItems = [
   { href: '/what-to-build', label: 'What to Build' },
   { href: '/paths', label: 'Build Paths' },
+  { href: '/requests', label: 'Build Requests' },
 ]
 
 const pathsMenuItems = [
@@ -40,6 +41,7 @@ function isActivePath(pathname: string, href: string) {
     )
   }
   if (href === '/suggestion-box') return pathname.startsWith('/suggestion-box')
+  if (href === '/requests') return pathname.startsWith('/requests')
   if (href === '/build') return pathname === '/build' || pathname === '/prompt/new'
   return false
 }
@@ -123,6 +125,7 @@ export default function HeaderClient({ viewer, isAdmin }: HeaderClientProps) {
                   </div>
                 ) : (
                   <Link key={item.href} href={item.href} className={navLinkClass(item.href)}>
+                    {item.href === '/requests' && <RadioTower className="mr-1 inline h-3 w-3 text-brand-orange" />}
                     {item.label}
                   </Link>
                 )

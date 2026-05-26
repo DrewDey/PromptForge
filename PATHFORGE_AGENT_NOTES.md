@@ -18,6 +18,8 @@ Important language and concepts:
 - forks
 - source runs
 - final artifact first
+- Build Requests
+- Vault
 
 ## Core Capture Rule
 
@@ -93,7 +95,17 @@ Generic or weak examples should stay out of browse until approved. The current a
 
 Reviews suggestion box entries, drafts useful responses, and returns responses to the person who submitted the suggestion when possible.
 
+The Suggestion Box is only for feedback about PathForge itself: confusing pages, missing product features, bugs, moderation concerns, pricing ideas, and other ways the site should improve. It is not where users ask for examples of things to build.
+
 Public suggestion posting should be delayed by 24 hours. The user should be able to stop a suggestion from being posted publicly during that window.
+
+### Build Request Agent
+
+Maintains a separate Build Requests area where users ask the community for specific builds they want to see created, forked, or found.
+
+Requests should be outcome-focused and can be answered with PathForge links, forks, source-run results, or working artifacts. Build requests should support upvotes so demand is visible before a request becomes an approved seed path.
+
+Build Requests must not be mixed into the Suggestion Box. Suggestion Box is product feedback; Build Requests are community asks for artifacts.
 
 ### Forking Agent
 
@@ -106,6 +118,12 @@ The purpose is to help users see horizons when they are staring at an AI screen 
 Runs regularly to create candidate examples for the site.
 
 It can create one-shot, multi-prompt, and forked project candidates, but it should not publish them without approval.
+
+### Vault Agent
+
+Maintains each user's Vault as the user's own uploaded projects.
+
+The Vault is not a general bookmark shelf, request inbox, or activity feed. It should strictly show projects uploaded by that user, going back over time, so their completed AI build history can be browsed from their profile.
 
 ## Data To Preserve
 
@@ -168,6 +186,9 @@ The Snake demo fork workspace and the original project Build page now reflect th
 - Public examples require approval.
 - Suggestion box entries should support private review before public posting.
 - Public suggestion posting should be delayed by 24 hours.
+- Suggestion Box is only for PathForge feedback.
+- Build Requests are the separate place for users to request builds from the community.
+- Vault means projects uploaded by that user, not all saved or viewed projects.
 
 ## Open Questions
 

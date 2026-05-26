@@ -720,8 +720,8 @@ export default async function BrowsePage({
                   <Link href="/build" className="cta-band-btn">
                     Build a path →
                   </Link>
-                  <Link href="/suggestion-box" className="missing-path-link">
-                    Suggest a missing lane
+                  <Link href="/requests" className="missing-path-link">
+                    Request a build
                   </Link>
                 </div>
               </div>

@@ -101,3 +101,39 @@ export type SuggestionWithRelations = Suggestion & {
   author?: Profile | null
   responses?: SuggestionResponse[]
 }
+
+export type BuildRequestStatus = 'open' | 'answered' | 'closed'
+
+export type BuildRequest = {
+  id: string
+  title: string
+  body: string
+  author_id: string
+  status: BuildRequestStatus
+  vote_count: number
+  accepted_response_id: string | null
+  created_at: string
+  updated_at: string
+}
+
+export type BuildRequestResponse = {
+  id: string
+  request_id: string
+  responder_id: string
+  prompt_id: string | null
+  url: string | null
+  body: string
+  is_accepted: boolean
+  vote_count: number
+  created_at: string
+}
+
+export type BuildRequestResponseWithRelations = BuildRequestResponse & {
+  responder?: Profile | null
+  prompt?: PromptWithRelations | null
+}
+
+export type BuildRequestWithRelations = BuildRequest & {
+  author?: Profile | null
+  responses?: BuildRequestResponseWithRelations[]
+}

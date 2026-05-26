@@ -136,7 +136,7 @@ export default async function MySuggestionBoxPage({
           <LockKeyhole className="mx-auto mb-4 h-8 w-8 text-brand-orange" />
           <h1 className="text-3xl font-black tracking-[-0.025em] text-surface-900">Log in to see your suggestion box.</h1>
           <p className="mx-auto mt-3 max-w-lg text-sm leading-relaxed text-surface-600">
-            Suggestions are tied to your account so PathForge can answer you directly and give you the 24-hour public/private choice.
+            Site feedback is tied to your account so PathForge can answer you directly and give you the 24-hour public/private choice.
           </p>
           <div className="mt-6 flex justify-center gap-3">
             <Link href="/auth/login" className="bg-surface-900 px-4 py-2.5 text-sm font-bold text-white hover:bg-brand-orange">Log in</Link>
@@ -165,11 +165,11 @@ export default async function MySuggestionBoxPage({
             Your suggestion <span className="font-display italic font-normal text-brand-orange">box</span>.
           </h1>
           <p className="mt-4 max-w-2xl text-lg leading-relaxed text-surface-600">
-            Track what you sent, see PathForge responses, and choose whether approved suggestions go public after the 24-hour release window.
+            Track your PathForge feedback, see responses, and choose whether approved suggestions go public after the 24-hour release window.
           </p>
           <div className="mt-7 flex flex-wrap gap-3">
             <Link href="/suggestion-box" className="bg-surface-900 px-4 py-2.5 text-sm font-bold text-white hover:bg-brand-orange">Send another suggestion</Link>
-            <Link href="/what-to-build" className="border border-surface-300 bg-white px-4 py-2.5 text-sm font-bold text-surface-900 hover:border-surface-900">What to build</Link>
+            <Link href="/requests" className="border border-surface-300 bg-white px-4 py-2.5 text-sm font-bold text-surface-900 hover:border-surface-900">Build Requests</Link>
           </div>
         </div>
       </section>
@@ -179,7 +179,7 @@ export default async function MySuggestionBoxPage({
           <div className="border border-dashed border-surface-300 bg-white p-10 text-center">
             <p className="text-lg font-bold text-surface-900">No suggestions in your box yet.</p>
             <p className="mx-auto mt-2 max-w-lg text-sm leading-relaxed text-surface-500">
-              Send one when you notice a missing page, project type, community feature, or anything that would make PathForge more useful.
+              Send one when you notice a confusing page, missing platform feature, bug, policy concern, or anything that would make PathForge more useful.
             </p>
             <Link href="/suggestion-box" className="mt-5 inline-flex bg-surface-900 px-4 py-2.5 text-sm font-bold text-white hover:bg-brand-orange">
               Open suggestion box

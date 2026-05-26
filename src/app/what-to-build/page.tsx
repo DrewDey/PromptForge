@@ -66,15 +66,15 @@ export default async function WhatToBuildPage() {
               What to build when AI gives you too many <span className="font-display italic font-normal text-brand-orange">options</span>.
             </h1>
             <p className="mt-5 max-w-2xl text-lg leading-relaxed text-surface-600">
-              This is the anti-paralysis page: simple directions for turning an empty AI screen into a finished artifact, a forkable path, or a request for PathForge to seed next.
+              This is the anti-paralysis page: simple directions for turning an empty AI screen into a finished artifact, a forkable path, or a build request the community can answer.
             </p>
             <div className="mt-8 flex flex-wrap gap-3">
               <Link href="/paths" className="inline-flex items-center gap-2 bg-surface-900 px-4 py-3 text-sm font-bold text-white hover:bg-brand-orange">
                 See real build paths
                 <ArrowRight className="h-4 w-4" />
               </Link>
-              <Link href="/suggestion-box" className="inline-flex items-center gap-2 border border-surface-300 bg-white px-4 py-3 text-sm font-bold text-surface-900 hover:border-surface-900">
-                Request a seed idea
+              <Link href="/requests" className="inline-flex items-center gap-2 border border-surface-300 bg-white px-4 py-3 text-sm font-bold text-surface-900 hover:border-surface-900">
+                Open Build Requests
               </Link>
             </div>
           </div>
@@ -109,7 +109,7 @@ export default async function WhatToBuildPage() {
             <h2 className="text-3xl font-black tracking-[-0.025em] text-surface-900">Start with the kind of energy you have.</h2>
           </div>
           <p className="max-w-md text-sm leading-relaxed text-surface-500">
-            These are not fake projects. They are starting directions for what PathForge should help users find, fork, or request.
+            These are not fake projects. They are starting directions for what PathForge should help users find, fork, or ask the community to build.
           </p>
         </div>
 
@@ -153,13 +153,13 @@ export default async function WhatToBuildPage() {
         <div className="mx-auto flex max-w-7xl flex-col gap-5 px-4 py-12 sm:px-6 lg:flex-row lg:items-center lg:justify-between lg:px-8">
           <div>
             <div className="mb-2 font-mono text-[11px] font-bold uppercase tracking-[0.14em] text-brand-orange">Missing the thing?</div>
-            <h2 className="text-3xl font-black tracking-[-0.025em]">Ask PathForge to seed it.</h2>
+            <h2 className="text-3xl font-black tracking-[-0.025em]">Ask the community to build it.</h2>
             <p className="mt-2 max-w-2xl text-sm leading-relaxed text-surface-400">
-              If this page does not give you the right starter, put the gap in the Suggestion Box so it can get reviewed, answered, and possibly turned into a public build path.
+              If this page does not give you the right starter, post a focused Build Request so someone can answer with an actual path, fork, or finished artifact.
             </p>
           </div>
-          <Link href="/suggestion-box" className="inline-flex shrink-0 items-center justify-center gap-2 bg-brand-orange px-4 py-3 text-sm font-bold text-white hover:bg-brand-orange-dark">
-            Open Suggestion Box
+          <Link href="/requests" className="inline-flex shrink-0 items-center justify-center gap-2 bg-brand-orange px-4 py-3 text-sm font-bold text-white hover:bg-brand-orange-dark">
+            Open Build Requests
             <ArrowRight className="h-4 w-4" />
           </Link>
         </div>

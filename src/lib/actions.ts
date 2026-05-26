@@ -4,11 +4,14 @@ import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import {
   approveSuggestionById,
+  createBuildRequest,
+  createBuildRequestResponse,
   createProject,
   createSuggestion,
   createSuggestionResponse,
   declineSuggestionById,
   keepSuggestionPrivateById,
+  toggleBuildRequestVote,
   toggleBookmark,
   toggleSuggestionVote,
   toggleVote,
@@ -18,6 +21,10 @@ import {
 import type { SuggestionPublicStatus, SuggestionResponseVisibility } from './types'
 
 export type SuggestionSubmitState = {
+  error: string | null
+}
+
+export type BuildRequestSubmitState = {
   error: string | null
 }
 
@@ -161,4 +168,40 @@ export async function voteOnSuggestion(formData: FormData) {
   const suggestionId = String(formData.get('suggestion_id') ?? '')
   if (suggestionId) await toggleSuggestionVote(suggestionId)
   revalidatePath('/suggestion-box')
+}
+
+export async function submitBuildRequest(
+  _prevState: BuildRequestSubmitState,
+  formData: FormData
+): Promise<BuildRequestSubmitState> {
+  try {
+    await createBuildRequest({
+      title: String(formData.get('title') ?? ''),
+      body: String(formData.get('body') ?? ''),
+    })
+  } catch (err) {
+    return { error: err instanceof Error ? err.message : 'Failed to send build request' }
+  }
+
+  revalidatePath('/requests')
+  redirect('/requests?submitted=1')
+}
+
+export async function respondToBuildRequest(formData: FormData) {
+  const requestId = String(formData.get('request_id') ?? '')
+  if (!requestId) return
+
+  await createBuildRequestResponse({
+    requestId,
+    body: String(formData.get('body') ?? ''),
+    url: String(formData.get('url') ?? ''),
+  })
+
+  revalidatePath('/requests')
+}
+
+export async function voteOnBuildRequest(formData: FormData) {
+  const requestId = String(formData.get('request_id') ?? '')
+  if (requestId) await toggleBuildRequestVote(requestId)
+  revalidatePath('/requests')
 }

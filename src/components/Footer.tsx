@@ -34,6 +34,7 @@ export default function Footer() {
             <ul className="space-y-2.5 text-sm">
               <li><Link href="/what-to-build" className="text-surface-300 hover:text-brand-orange transition-colors duration-150 focus-visible:outline-2 focus-visible:outline-brand-orange focus-visible:outline-offset-2">What to Build</Link></li>
               <li><Link href="/paths" className="text-surface-300 hover:text-brand-orange transition-colors duration-150 focus-visible:outline-2 focus-visible:outline-brand-orange focus-visible:outline-offset-2">Build Paths</Link></li>
+              <li><Link href="/requests" className="text-surface-300 hover:text-brand-orange transition-colors duration-150 focus-visible:outline-2 focus-visible:outline-brand-orange focus-visible:outline-offset-2">Build Requests</Link></li>
               <li><Link href="/suggestion-box" className="text-surface-300 hover:text-brand-orange transition-colors duration-150 focus-visible:outline-2 focus-visible:outline-brand-orange focus-visible:outline-offset-2">Suggestion Box</Link></li>
               <li><Link href="/build" className="text-surface-300 hover:text-brand-orange transition-colors duration-150 focus-visible:outline-2 focus-visible:outline-brand-orange focus-visible:outline-offset-2">Build a path</Link></li>
             </ul>

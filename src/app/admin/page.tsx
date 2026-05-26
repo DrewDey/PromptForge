@@ -153,7 +153,7 @@ export default async function AdminDashboard({
             <div>
               <h2 className="text-lg font-semibold text-gray-900">Suggestion Box ({allSuggestions.length})</h2>
               <p className="mt-1 text-sm text-gray-500">
-                Approve requests, respond to users, and decide what becomes public after the 24-hour release window.
+                Approve PathForge feedback, respond to users, and decide what becomes public after the 24-hour release window.
               </p>
             </div>
             <Link href="/suggestion-box" className="text-sm font-semibold text-brand-orange hover:text-brand-orange-dark">
@@ -162,7 +162,7 @@ export default async function AdminDashboard({
           </div>
           {allSuggestions.length === 0 ? (
             <div className="bg-white border border-gray-200 p-8 text-center text-gray-500 text-sm">
-              No suggestions yet. When users send requests, they will appear here for review.
+              No suggestions yet. When users send PathForge feedback, it will appear here for review.
             </div>
           ) : (
             <div className="space-y-4">

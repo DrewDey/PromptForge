@@ -81,7 +81,7 @@ export default async function UserProfilePage({
               )}
               <span className="flex items-center gap-1.5">
                 <Layers className="w-3.5 h-3.5" aria-hidden="true" />
-                {stats.totalProjects} {stats.totalProjects === 1 ? 'project' : 'projects'}
+                {stats.totalProjects} vault {stats.totalProjects === 1 ? 'project' : 'projects'}
               </span>
               {stats.topCategory && (
                 <span className="flex items-center gap-1.5">
@@ -97,19 +97,19 @@ export default async function UserProfilePage({
 
       {/* Stat tiles — GitHub-cadence: left-aligned label row, big numeric value below */}
       <section className="grid grid-cols-3 gap-3 sm:gap-4 mb-10" aria-label="Profile statistics">
-        <StatTile icon={<Layers className="w-3.5 h-3.5" aria-hidden="true" />} label="Projects" value={stats.totalProjects} />
+        <StatTile icon={<Layers className="w-3.5 h-3.5" aria-hidden="true" />} label="Vault" value={stats.totalProjects} />
         <StatTile icon={<ArrowUp className="w-3.5 h-3.5" aria-hidden="true" />} label="Upvotes" value={stats.totalUpvotes} accent />
         <StatTile icon={<Bookmark className="w-3.5 h-3.5" aria-hidden="true" />} label="Saves" value={stats.totalBookmarks} />
       </section>
 
-      {/* Projects — section heading upgraded to match browse page weight */}
+      {/* Vault — uploaded projects only. */}
       <section>
         <div className="flex items-baseline justify-between mb-6">
           <h2 className="text-xl font-bold text-surface-900">
-            Projects
+            Vault
           </h2>
           <span className="text-sm text-surface-500 font-medium tabular-nums">
-            {projects.length} total
+            {projects.length} uploaded {projects.length === 1 ? 'project' : 'projects'}
           </span>
         </div>
 
@@ -118,9 +118,9 @@ export default async function UserProfilePage({
             <div className="w-12 h-12 mx-auto mb-4 bg-brand-orange/10 border border-brand-orange/20 flex items-center justify-center">
               <Plus className="w-6 h-6 text-brand-orange" aria-hidden="true" />
             </div>
-            <p className="text-surface-900 font-semibold mb-1">No projects yet</p>
+            <p className="text-surface-900 font-semibold mb-1">Vault is empty</p>
             <p className="text-sm text-surface-500 mb-6 max-w-sm mx-auto">
-              This user hasn&apos;t shared any AI projects.
+              This user hasn&apos;t uploaded any public projects yet.
             </p>
             <Link
               href="/build"

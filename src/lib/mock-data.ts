@@ -1,4 +1,12 @@
-import { Category, Profile, Prompt, PromptStep, SuggestionResponse, SuggestionWithRelations } from './types'
+import {
+  BuildRequestWithRelations,
+  Category,
+  Profile,
+  Prompt,
+  PromptStep,
+  SuggestionResponse,
+  SuggestionWithRelations,
+} from './types'
 
 export const mockProfiles: Profile[] = [
   {
@@ -64,3 +72,5 @@ export const mockPrompts: Prompt[] = [
 export const mockSuggestions: SuggestionWithRelations[] = []
 
 export const mockSuggestionResponses: SuggestionResponse[] = []
+
+export const mockBuildRequests: BuildRequestWithRelations[] = []

@@ -1,0 +1,43 @@
+{
+  "title": "Interactive Decision Matrix",
+  "slug": "decision-matrix-gemini-flash-oneshot",
+  "description": "A polished one-file browser tool for weighing criteria, scoring options, ranking the best choice, and exporting results as CSV.",
+  "story": "This source run tested whether a fast model could produce a useful, inspection-ready browser utility from a single practical prompt. Gemini Flash generated a self-contained HTML decision matrix with editable options, weighted criteria, automatic totals, a winner indicator, and CSV export.",
+  "provider": "gemini",
+  "model": "Gemini Flash",
+  "model_settings": "Default Gemini Flash web UI settings visible during the run.",
+  "source_url": "https://gemini.google.com/app/f6b37685972b6868",
+  "run_started_at": "2026-05-28T00:00:00-04:00",
+  "run_finished_at": "2026-05-28T00:00:00-04:00",
+  "chain_type": "one-shot",
+  "category": "productivity",
+  "difficulty": "beginner",
+  "tags": ["one-shot", "productivity", "decision-matrix", "csv-export", "gemini-flash"],
+  "tools_used": ["Gemini", "Chrome"],
+  "status": "verified",
+  "final_artifact_path": "public/artifacts/decision-matrix-gemini-flash-oneshot.html",
+  "artifact_type": "html",
+  "artifact_versions": ["public/artifacts/decision-matrix-gemini-flash-oneshot.html"],
+  "screenshots": [],
+  "verification_notes": "Verified in Chrome from the local HTML file: the page rendered, score edits updated weighted totals and the winner indicator, and Export CSV downloaded decision_matrix.csv.",
+  "result_content": "Self-contained decision matrix HTML verified locally: rendered successfully, score/weight edits recalculated totals, and CSV export generated a download. Artifact path: public/artifacts/decision-matrix-gemini-flash-oneshot.html.",
+  "steps": [
+    {
+      "step_number": 1,
+      "title": "Generate the decision matrix",
+      "prompt_exact": "Make me a polished one-file browser decision matrix where I can score options, weight criteria, and export the result as CSV.",
+      "response_exact": "Your decision matrix tool is ready.\n\ndecision_matrix\nHTML\n\nThis is a clean, dark-themed, single-file HTML app designed for clear visual hierarchy and quick input. Open decision_matrix.html in any browser to score options, adjust metrics, and handle everything locally.\n\nKey Features Included:\n\nInline Editing: Instantly modify names for criteria or options by clicking directly into their labels.\nSmart Computations: Weights (1-5 scale) and scores (0-10 scale) auto-calculate total weighted values instantly as you type.\nVisual Anchors: The highest-scoring option highlights with a subtle accent token to pick out the leading path clearly.\nInstant Structuring: Dynamically add or strip out individual rows or columns without resetting your work.\nNative CSV Generation: Flattens your options, weights, line items, and finalized calculations into a standard schema structure ready for downstream use.",
+      "response_summary": "Gemini generated a one-file HTML decision matrix with editable labels, weighted scoring, winner highlighting, dynamic rows/columns, and CSV export.",
+      "code_blocks": ["public/artifacts/decision-matrix-gemini-flash-oneshot.html"],
+      "generated_files": ["public/artifacts/decision-matrix-gemini-flash-oneshot.html"],
+      "artifact_version_path": "public/artifacts/decision-matrix-gemini-flash-oneshot.html",
+      "notes": "ChatGPT and Claude were also tried with the same prompt but did not complete quickly enough for this seed run; Gemini Flash completed first."
+    }
+  ],
+  "pathforge_submission_url": "https://prompt-forge-sandy.vercel.app/prompt/761b5b40-f3ed-4019-9c03-a00dec07a037",
+  "pathforge_pending_id": "761b5b40-f3ed-4019-9c03-a00dec07a037",
+  "submitted_by_account": "Jordan Lee",
+  "submitted_by_profile_registry_id": "pathforge-seed-001",
+  "submitted_at": "2026-05-29T03:36:28Z",
+  "admin_review_status": "submitted_pending"
+}

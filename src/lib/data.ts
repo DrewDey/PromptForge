@@ -30,7 +30,7 @@ const SUPABASE_CONFIGURED = !!(
   process.env.NEXT_PUBLIC_SUPABASE_URL &&
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 )
-const SUPABASE_PUBLIC_READS_ENABLED = SUPABASE_CONFIGURED && process.env.PATHFORGE_ENABLE_SUPABASE_READS === 'true'
+const SUPABASE_PUBLIC_READS_ENABLED = SUPABASE_CONFIGURED && process.env.PATHFORGE_ENABLE_SUPABASE_READS !== 'false'
 const SUPABASE_READ_TIMEOUT_MS = 3000
 export const SUGGESTION_PUBLIC_DELAY_HOURS = 24
 const SUGGESTION_PUBLIC_DELAY_MS = SUGGESTION_PUBLIC_DELAY_HOURS * 60 * 60 * 1000
@@ -173,6 +173,19 @@ export async function getPrompts(options?: {
     const { data } = await query
     return data ?? []
   })
+}
+
+export async function getAllPromptsForAdmin(): Promise<PromptWithRelations[]> {
+  if (!SUPABASE_CONFIGURED) return []
+
+  const { supabase } = await requireAdminAccess()
+  const { data, error } = await supabase
+    .from('prompts')
+    .select('*, category:categories(*), author:profiles(*), steps:prompt_steps(*)')
+    .order('created_at', { ascending: false })
+
+  if (error) throw error
+  return data ?? []
 }
 
 export async function getPromptById(id: string): Promise<PromptWithRelations | null> {

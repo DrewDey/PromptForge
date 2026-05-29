@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive Decision Matrix</title>
+    <style>
+        :root {
+            --bg-main: #121214;
+            --bg-card: #1a1a1e;
+            --bg-input: #26262b;
+            --border: #33333a;
+            --text-main: #f3f3f5;
+            --text-muted: #a1a1aa;
+            --accent: #6366f1;
+            --accent-hover: #4f46e5;
+            --success: #10b981;
+            --danger: #ef4444;
+            --danger-hover: #dc2626;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-main);
+            color: var(--text-main);
+            padding: 2rem;
+            line-height: 1.5;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        header {
+            margin-bottom: 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        h1 {
+            font-size: 1.75rem;
+            font-weight: 700;
+            letter-spacing: -0.025em;
+        }
+
+        .actions {
+            display: flex;
+            gap: 0.75rem;
+        }
+
+        button {
+            background-color: var(--accent);
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background-color 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.875rem;
+        }
+
+        button:hover {
+            background-color: var(--accent-hover);
+        }
+
+        button.secondary {
+            background-color: var(--bg-input);
+            color: var(--text-main);
+            border: 1px solid var(--border);
+        }
+
+        button.secondary:hover {
+            background-color: var(--border);
+        }
+
+        button.danger {
+            background-color: transparent;
+            color: var(--danger);
+            border: 1px solid transparent;
+        }
+
+        button.danger:hover {
+            background-color: rgba(239, 68, 68, 0.1);
+            border-color: rgba(239, 68, 68, 0.2);
+        }
+
+        .matrix-card {
+            background-color: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            overflow-x: auto;
+            margin-bottom: 1.5rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+            min-width: 600px;
+        }
+
+        th, td {
+            padding: 1rem;
+            border-bottom: 1px solid var(--border);
+        }
+
+        th {
+            background-color: rgba(0,0,0,0.1);
+            font-weight: 600;
+            color: var(--text-muted);
+            font-size: 0.875rem;
+        }
+
+        th.option-header {
+            color: var(--text-main);
+            font-size: 1rem;
+            min-width: 160px;
+        }
+
+        .input-cell {
+            background: transparent;
+            border: 1px solid transparent;
+            color: var(--text-main);
+            font-size: 0.875rem;
+            padding: 0.4rem 0.6rem;
+            border-radius: 4px;
+            width: 100%;
+            transition: all 0.2s;
+        }
+
+        .input-cell:focus {
+            background-color: var(--bg-input);
+            border-color: var(--accent);
+            outline: none;
+        }
+
+        .input-cell::placeholder {
+            color: rgba(255,255,255,0.15);
+        }
+
+        input[type="number"].input-cell {
+            text-align: right;
+        }
+
+        /* Remove arrows from number input */
+        input::-webkit-outer-spin-button,
+        input::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+        input[type=number] {
+            -moz-appearance: textfield;
+        }
+
+        .score-display {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            text-align: right;
+            margin-top: 0.25rem;
+            display: block;
+        }
+
+        .total-row {
+            background-color: rgba(99, 102, 241, 0.05);
+            font-weight: 700;
+        }
+
+        .total-row td {
+            border-top: 2px solid var(--border);
+            color: var(--text-main);
+        }
+
+        .total-score {
+            text-align: right;
+            font-size: 1.1rem;
+            color: var(--success);
+        }
+
+        .winner {
+            position: relative;
+        }
+        .winner::after {
+            content: '★';
+            color: #fbbf24;
+            position: absolute;
+            right: 0.5rem;
+            top: 50%;
+            transform: translateY(-50%);
+        }
+
+        .meta-controls {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+        
+        .meta-btn {
+            font-size: 0.8rem;
+            padding: 0.35rem 0.75rem;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <div>
+            <h1>Decision Matrix</h1>
+        </div>
+        <div class="actions">
+            <button class="secondary" onclick="exportToCSV()">
+                <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+                Export CSV
+            </button>
+        </div>
+    </header>
+
+    <div class="meta-controls">
+        <button class="secondary meta-btn" onclick="addOption()">+ Add Option</button>
+        <button class="secondary meta-btn" onclick="addCriteria()">+ Add Criteria</button>
+    </div>
+
+    <div class="matrix-card">
+        <table id="matrixTable">
+            <thead>
+                <tr id="headerRow">
+                    <th>Criteria</th>
+                    <th style="width: 100px; text-align: right;">Weight (1-5)</th>
+                    </tr>
+            </thead>
+            <tbody id="matrixBody">
+                </tbody>
+            <tfoot>
+                <tr id="totalRow" class="total-row">
+                    <td>Total Score</td>
+                    <td></td>
+                    </tr>
+            </tfoot>
+        </table>
+    </div>
+</div>
+
+<script>
+    // Initial State
+    let data = {
+        criteria: [
+            { id: 'c1', name: 'Cost / Value', weight: 4 },
+            { id: 'c2', name: 'Effort to Implement', weight: 3 },
+            { id: 'c3', name: 'Long-term Impact', weight: 5 }
+        ],
+        options: [
+            { id: 'o1', name: 'Option A' },
+            { id: 'o2', name: 'Option B' }
+        ],
+        scores: {
+            'o1-c1': 4, 'o1-c2': 3, 'o1-c3': 5,
+            'o2-c1': 5, 'o2-c2': 2, 'o2-c3': 3
+        }
+    };
+
+    function render() {
+        const headerRow = document.getElementById('headerRow');
+        const matrixBody = document.getElementById('matrixBody');
+        const totalRow = document.getElementById('totalRow');
+
+        // 1. Render Headers
+        headerRow.innerHTML = `
+            <th>Criteria</th>
+            <th style="width: 100px; text-align: right; padding-right: 1.5rem;">Weight (1-5)</th>
+        `;
+        data.options.forEach((opt, oIdx) => {
+            headerRow.innerHTML += `
+                <th class="option-header">
+                    <div style="display: flex; align-items: center; gap: 0.5rem;">
+                        <input type="text" class="input-cell" value="${opt.name}" onchange="updateOptionName('${opt.id}', this.value)">
+                        <button class="danger" style="padding: 0.2rem 0.4rem; font-size: 0.75rem;" onclick="deleteOption('${opt.id}')">×</button>
+                    </div>
+                </th>
+            `;
+        });
+
+        // 2. Calculate Totals to find the winner
+        const totals = {};
+        let maxScore = -1;
+        let winningOptId = null;
+
+        data.options.forEach(opt => {
+            let total = 0;
+            data.criteria.forEach(crit => {
+                const score = data.scores[`${opt.id}-${crit.id}`] || 0;
+                total += score * crit.weight;
+            });
+            totals[opt.id] = total;
+            if (total > maxScore && total > 0) {
+                maxScore = total;
+                winningOptId = opt.id;
+            }
+        });
+
+        // 3. Render Criteria Rows
+        matrixBody.innerHTML = '';
+        data.criteria.forEach((crit, cIdx) => {
+            let rowHtml = `
+                <tr>
+                    <td>
+                        <div style="display: flex; align-items: center; gap: 0.5rem;">
+                            <button class="danger" style="padding: 0.2rem 0.4rem; font-size: 0.75rem;" onclick="deleteCriteria('${crit.id}')">×</button>
+                            <input type="text" class="input-cell" value="${crit.name}" onchange="updateCriteriaName('${crit.id}', this.value)">
+                        </div>
+                    </td>
+                    <td>
+                        <input type="number" class="input-cell" min="1" max="5" value="${crit.weight}" onchange="updateCriteriaWeight('${crit.id}', this.value)" style="padding-right: 0.5rem;">
+                    </td>
+            `;
+
+            data.options.forEach(opt => {
+                const scoreKey = `${opt.id}-${crit.id}`;
+                const score = data.scores[scoreKey] || 0;
+                const weighted = score * crit.weight;
+
+                rowHtml += `
+                    <td>
+                        <input type="number" class="input-cell" min="0" max="10" placeholder="0-10" value="${score || ''}" onchange="updateScore('${opt.id}', '${crit.id}', this.value)">
+                        <span class="score-display">w: ${weighted}</span>
+                    </td>
+                `;
+            });
+
+            rowHtml += `</tr>`;
+            matrixBody.innerHTML += rowHtml;
+        });
+
+        // 4. Render Total Row
+        totalRow.innerHTML = `
+            <td>Total Score</td>
+            <td></td>
+        `;
+        data.options.forEach(opt => {
+            const isWinner = opt.id === winningOptId && data.options.length > 1;
+            totalRow.innerHTML += `
+                <td class="total-score ${isWinner ? 'winner' : ''}" style="padding-right: ${isWinner ? '1.75rem' : '1rem'}">
+                    ${totals[opt.id]}
+                </td>
+            `;
+        });
+    }
+
+    // State Mutations
+    function updateOptionName(id, val) {
+        const opt = data.options.find(o => o.id === id);
+        if (opt) opt.name = val;
+    }
+
+    function updateCriteriaName(id, val) {
+        const crit = data.criteria.find(c => c.id === id);
+        if (crit) crit.name = val;
+    }
+
+    function updateCriteriaWeight(id, val) {
+        const crit = data.criteria.find(c => c.id === id);
+        if (crit) {
+            crit.weight = parseInt(val) || 0;
+            render();
+        }
+    }
+
+    function updateScore(optId, critId, val) {
+        data.scores[`${optId}-${critId}`] = parseInt(val) || 0;
+        render();
+    }
+
+    function addOption() {
+        const id = 'o' + Date.now();
+        data.options.push({ id: id, name: `Option ${String.fromCharCode(65 + data.options.length)}` });
+        render();
+    }
+
+    function addCriteria() {
+        const id = 'c' + Date.now();
+        data.criteria.push({ id: id, name: 'New Criteria', weight: 3 });
+        render();
+    }
+
+    function deleteOption(id) {
+        data.options = data.options.filter(o => o.id !== id);
+        // clean scores
+        for (let key in data.scores) {
+            if (key.startsWith(id + '-')) delete data.scores[key];
+        }
+        render();
+    }
+
+    function deleteCriteria(id) {
+        data.criteria = data.criteria.filter(c => c.id !== id);
+        // clean scores
+        for (let key in data.scores) {
+            if (key.endsWith('-' + id)) delete data.scores[key];
+        }
+        render();
+    }
+
+    function exportToCSV() {
+        let csv = [];
+        
+        // Header
+        let headers = ['Criteria', 'Weight'];
+        data.options.forEach(opt => headers.push(opt.name));
+        csv.push(headers.join(','));
+
+        // Rows
+        data.criteria.forEach(crit => {
+            let row = [`"${crit.name.replace(/"/g, '""')}"`, crit.weight];
+            data.options.forEach(opt => {
+                row.push(data.scores[`${opt.id}-${crit.id}`] || 0);
+            });
+            csv.push(row.join(','));
+        });
+
+        // Totals Row
+        let totalsRow = ['Total Score', ''];
+        data.options.forEach(opt => {
+            let total = 0;
+            data.criteria.forEach(crit => {
+                total += (data.scores[`${opt.id}-${crit.id}`] || 0) * crit.weight;
+            });
+            totalsRow.push(total);
+        });
+        csv.push(totalsRow.join(','));
+
+        // Download Trigger
+        const csvContent = "data:text/csv;charset=utf-8," + csv.join("\n");
+        const encodedUri = encodeURI(csvContent);
+        const link = document.createElement("a");
+        link.setAttribute("href", encodedUri);
+        link.setAttribute("download", "decision_matrix.csv");
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    }
+
+    // Initial load
+    render();
+</script>
+
+</body>
+</html>

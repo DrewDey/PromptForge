@@ -1,7 +1,9 @@
 import Link from 'next/link'
-import { getAllSuggestionsForAdmin, getPrompts } from '@/lib/data'
+import { getAllPromptsForAdmin, getAllSuggestionsForAdmin } from '@/lib/data'
 import AdminPromptRow from './AdminPromptRow'
 import AdminSuggestionRow from './AdminSuggestionRow'
+
+export const dynamic = 'force-dynamic'
 
 export default async function AdminDashboard({
   searchParams,
@@ -12,7 +14,7 @@ export default async function AdminDashboard({
   const tab = params.tab ?? 'overview'
 
   const [allPrompts, allSuggestions] = await Promise.all([
-    getPrompts({ status: 'all' }),
+    getAllPromptsForAdmin(),
     getAllSuggestionsForAdmin(),
   ])
 

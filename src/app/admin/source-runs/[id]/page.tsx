@@ -1,7 +1,6 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { ArrowLeft, ExternalLink } from 'lucide-react'
-import { dismissSourceRun } from '@/lib/actions'
 import { getSourceRunSubmissionForAdmin } from '@/lib/data'
 
 export const dynamic = 'force-dynamic'
@@ -107,12 +106,6 @@ export default async function AdminSourceRunDetailPage({
             </p>
           </section>
 
-          <form action={dismissSourceRun} className="flex justify-end border-t border-gray-100 pt-4">
-            <input type="hidden" name="source_run_id" value={sourceRun.id} />
-            <button type="submit" className="bg-red-50 px-3 py-2 text-xs font-semibold text-red-700 hover:bg-red-100">
-              Dismiss intake
-            </button>
-          </form>
         </div>
       </div>
     </div>

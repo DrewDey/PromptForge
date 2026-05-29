@@ -1,5 +1,4 @@
 import Link from 'next/link'
-import { dismissSourceRun } from '@/lib/actions'
 import { getAllPromptsForAdmin, getAllSourceRunSubmissionsForAdmin, getAllSuggestionsForAdmin } from '@/lib/data'
 import type { SourceRunSubmissionWithRelations } from '@/lib/types'
 import AdminPromptRow from './AdminPromptRow'
@@ -243,15 +242,6 @@ function SourceRunIntakeRow({ sourceRun }: { sourceRun: SourceRunSubmissionWithR
           {title}
         </Link>
         <p className="mt-1 break-all text-xs text-gray-500">{sourceLabel}</p>
-        {sourceRun.notes && (
-          <p className="mt-2 line-clamp-3 text-xs leading-5 text-gray-600">
-            <span className="font-semibold text-gray-700">Agent notes:</span> {sourceRun.notes}
-          </p>
-        )}
-        <p className="mt-2 text-xs leading-5 text-gray-500">
-          Draft a final-artifact-first project page from the source run, preserve exact prompts and responses, and keep
-          generated code inside collapsed response packages.
-        </p>
       </td>
       <td className="px-4 py-3 align-top text-gray-600">Source run</td>
       <td className="px-4 py-3 align-top text-gray-600">{sourceRun.status.replace('_', ' ')}</td>
@@ -262,20 +252,12 @@ function SourceRunIntakeRow({ sourceRun }: { sourceRun: SourceRunSubmissionWithR
         {new Date(sourceRun.created_at).toLocaleDateString()}
       </td>
       <td className="px-4 py-3 text-right align-top">
-        <div className="flex flex-col items-end gap-2">
-          <Link
-            href={`/admin/source-runs/${sourceRun.id}`}
-            className="inline-flex items-center justify-center bg-amber-100 px-2.5 py-1.5 text-xs font-medium text-amber-800 hover:bg-amber-200"
-          >
-            Review intake
-          </Link>
-          <form action={dismissSourceRun}>
-            <input type="hidden" name="source_run_id" value={sourceRun.id} />
-            <button type="submit" className="text-xs font-medium text-gray-500 hover:text-red-700">
-              Dismiss
-            </button>
-          </form>
-        </div>
+        <Link
+          href={`/admin/source-runs/${sourceRun.id}`}
+          className="inline-flex items-center justify-center bg-amber-100 px-2.5 py-1.5 text-xs font-medium text-amber-800 hover:bg-amber-200"
+        >
+          Review intake
+        </Link>
       </td>
     </tr>
   )

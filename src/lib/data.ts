@@ -3,6 +3,7 @@ import {
   Category,
   Profile,
   PromptWithRelations,
+  SourceRunSubmissionWithRelations,
   SuggestionPublicStatus,
   SuggestionResponseVisibility,
   SuggestionWithRelations,
@@ -407,6 +408,81 @@ export async function getUserVotesAndBookmarks(promptIds: string[]): Promise<{ v
       bookmarks: new Set((bookmarksRes.data ?? []).map(b => b.prompt_id)),
     }
   })
+}
+
+// ---- Source Run Intake ----
+
+function throwReadableSourceRunError(error: { code?: string; message?: string } | null) {
+  if (!error) return
+
+  if (
+    error.code === '42P01' ||
+    error.message?.includes('source_run_submissions')
+  ) {
+    throw new Error('Source run intake is not connected to the database yet.')
+  }
+
+  throw error
+}
+
+export async function createSourceRunSubmission(input: {
+  source_url?: string
+  file_name?: string
+  notes?: string
+}) {
+  if (!SUPABASE_CONFIGURED) throw new Error('Source run intake requires sign in.')
+
+  const { createClient } = await import('./supabase/server')
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) throw new Error('Log in to submit a source run.')
+
+  const sourceUrl = input.source_url?.trim() ?? ''
+  const fileName = input.file_name?.trim() ?? ''
+  const notes = input.notes?.trim() ?? ''
+
+  if (!sourceUrl && !fileName) {
+    throw new Error('Paste a source run link or attach an export file.')
+  }
+
+  if (sourceUrl && !/^https?:\/\/\S+$/i.test(sourceUrl)) {
+    throw new Error('Paste a full source run URL starting with http:// or https://.')
+  }
+
+  const { data, error } = await supabase
+    .from('source_run_submissions')
+    .insert({
+      source_url: sourceUrl || null,
+      file_name: fileName || null,
+      notes: notes || null,
+      author_id: user.id,
+      status: 'queued',
+    })
+    .select('id')
+    .single()
+
+  throwReadableSourceRunError(error)
+  return { id: data?.id as string }
+}
+
+export async function getAllSourceRunSubmissionsForAdmin(): Promise<SourceRunSubmissionWithRelations[]> {
+  if (!SUPABASE_CONFIGURED) return []
+
+  try {
+    const { supabase } = await requireAdminAccess()
+    const { data, error } = await supabase
+      .from('source_run_submissions')
+      .select('*, author:profiles(*), extracted_prompt:prompts(*)')
+      .order('created_at', { ascending: false })
+
+    throwReadableSourceRunError(error)
+    return (data ?? []) as SourceRunSubmissionWithRelations[]
+  } catch (error) {
+    if (error instanceof Error && error.message.includes('Source run intake is not connected')) {
+      return []
+    }
+    throw error
+  }
 }
 
 // ---- Suggestions ----

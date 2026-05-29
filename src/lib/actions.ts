@@ -7,6 +7,7 @@ import {
   createBuildRequest,
   createBuildRequestResponse,
   createProject,
+  createSourceRunSubmission,
   createSuggestion,
   createSuggestionResponse,
   declineSuggestionById,
@@ -26,6 +27,12 @@ export type SuggestionSubmitState = {
 
 export type BuildRequestSubmitState = {
   error: string | null
+}
+
+export type SourceRunSubmitResult = {
+  success: boolean
+  id?: string
+  error?: string
 }
 
 export async function approvePrompt(id: string) {
@@ -101,6 +108,20 @@ export async function submitProject(data: {
     return { success: true, id: result.id }
   } catch (err) {
     return { success: false, error: err instanceof Error ? err.message : 'Failed to submit project' }
+  }
+}
+
+export async function submitSourceRun(data: {
+  source_url?: string
+  file_name?: string
+  notes?: string
+}): Promise<SourceRunSubmitResult> {
+  try {
+    const result = await createSourceRunSubmission(data)
+    revalidatePath('/admin')
+    return { success: true, id: result.id }
+  } catch (err) {
+    return { success: false, error: err instanceof Error ? err.message : 'Failed to submit source run' }
   }
 }
 

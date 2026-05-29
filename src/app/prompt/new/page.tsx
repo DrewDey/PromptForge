@@ -5,7 +5,7 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { ArrowLeft, Plus, Trash2, ChevronDown, ChevronUp, LogIn, FileText, GitBranch, Check, AlertCircle, ArrowUp, ArrowDown, ChevronRight, Layers, Cpu, Eye, Upload, Keyboard, CheckCircle2, Link2 } from 'lucide-react'
 import { getModelsByProvider, getModelName } from '@/lib/models'
-import { submitProject } from '@/lib/actions'
+import { submitProject, submitSourceRun } from '@/lib/actions'
 import ImageUpload from '@/components/ImageUpload'
 
 const categories = [
@@ -31,6 +31,7 @@ type SourceRunImport = {
   source: string
   notes?: string
   createdAt: string
+  status: 'queued' | 'failed'
 }
 
 // Mirrors PromptCard's difficulty chip palette so the preview card reads the same
@@ -291,6 +292,8 @@ export default function SubmitProjectPage() {
   const [sourceRunFileName, setSourceRunFileName] = useState('')
   const [sourceRunNotes, setSourceRunNotes] = useState('')
   const [sourceRunImports, setSourceRunImports] = useState<SourceRunImport[]>([])
+  const [sourceRunSubmitting, setSourceRunSubmitting] = useState(false)
+  const [sourceRunError, setSourceRunError] = useState('')
   const [title, setTitle] = useState('')
   const [description, setDescription] = useState('')
   const [story, setStory] = useState('')
@@ -399,22 +402,38 @@ export default function SubmitProjectPage() {
     setSourceRunFileName(event.target.files?.[0]?.name ?? '')
   }
 
-  function prepareSourceRun(event: React.FormEvent<HTMLFormElement>) {
+  async function prepareSourceRun(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
     const url = sourceRunUrl.trim()
     const fileName = sourceRunFileName.trim()
     if (!url && !fileName) return
 
-    setSourceRunImports((current) => [
-      ...current,
-      {
-        id: makeSourceRunImportId(),
-        label: fileName || 'Source run URL',
-        source: url || fileName,
-        notes: sourceRunNotes.trim() || undefined,
-        createdAt: 'Ready for agent extraction',
-      },
-    ])
+    setSourceRunSubmitting(true)
+    setSourceRunError('')
+
+    const result = await submitSourceRun({
+      source_url: url,
+      file_name: fileName,
+      notes: sourceRunNotes,
+    })
+
+    setSourceRunSubmitting(false)
+
+    if (!result.success) {
+      setSourceRunError(result.error ?? 'Failed to submit source run')
+      return
+    }
+
+    setSourceRunImports((current) => [{
+      id: result.id ?? makeSourceRunImportId(),
+      label: fileName || 'Source run URL',
+      source: url || fileName,
+      notes: sourceRunNotes.trim() || undefined,
+      createdAt: 'Queued for extraction',
+      status: 'queued',
+    }, ...current])
+    setSourceRunUrl('')
+    setSourceRunFileName('')
     setSourceRunNotes('')
   }
 
@@ -609,7 +628,7 @@ export default function SubmitProjectPage() {
           Build your project
         </h1>
         <p className="text-sm text-surface-500 leading-relaxed">
-          Start with a source run when you have one. Use manual entry when the AI tool cannot export the conversation cleanly.
+          Paste the real source run first. Manual entry is the fallback for tools that cannot export or share a usable run.
         </p>
       </header>
 
@@ -623,9 +642,9 @@ export default function SubmitProjectPage() {
       <section className="mb-8 border border-surface-200 bg-white">
         <div className="border-b border-surface-200 bg-surface-900 px-5 py-4 text-white">
           <div className="font-mono text-[10px] uppercase tracking-[0.16em] text-brand-orange">
-            Project intake
+            Preferred intake
           </div>
-          <h2 className="mt-1 text-xl font-black">Choose how the original path gets built</h2>
+          <h2 className="mt-1 text-xl font-black">Start from the actual AI session</h2>
         </div>
 
         <div className="p-5">
@@ -647,8 +666,8 @@ export default function SubmitProjectPage() {
               </div>
               <div className="mt-1 text-base font-black text-surface-900">Let the agent structure it</div>
               <p className="mt-2 text-xs leading-5 text-surface-600">
-                Link or upload the source run. The agent should extract exact prompts, exact responses, code blocks,
-                files, screenshots, and final artifact relationships.
+                Paste the ChatGPT, Gemini, Claude, or OpenRouter run. It goes to an extraction queue so an agent can
+                build a Snake-style project page from the exact prompts, responses, code blocks, files, and artifact links.
               </p>
             </button>
 
@@ -667,7 +686,7 @@ export default function SubmitProjectPage() {
               <div className="mt-3 font-mono text-[10px] uppercase tracking-[0.16em] text-surface-500">
                 Manual entry
               </div>
-              <div className="mt-1 text-base font-black text-surface-900">Build the path by hand</div>
+              <div className="mt-1 text-base font-black text-surface-900">Fallback: build it by hand</div>
               <p className="mt-2 text-xs leading-5 text-surface-600">
                 Manually add project basics, prompts, responses, screenshots, and final result when no source export
                 is available.
@@ -679,6 +698,25 @@ export default function SubmitProjectPage() {
         {intakeMode === 'source-run' && (
           <div className="border-t border-surface-200">
             <form onSubmit={prepareSourceRun} className="space-y-4 p-5">
+              <div className="grid gap-2 border border-brand-orange/20 bg-brand-orange/5 p-3 text-xs text-surface-700 sm:grid-cols-4">
+                <div>
+                  <div className="font-mono text-[10px] uppercase tracking-[0.14em] text-brand-orange">1 · Source</div>
+                  <p className="mt-1 leading-5">Paste the real AI session link or upload its export.</p>
+                </div>
+                <div>
+                  <div className="font-mono text-[10px] uppercase tracking-[0.14em] text-brand-orange">2 · Extract</div>
+                  <p className="mt-1 leading-5">Agent reads prompts, responses, code, files, and screenshots.</p>
+                </div>
+                <div>
+                  <div className="font-mono text-[10px] uppercase tracking-[0.14em] text-brand-orange">3 · Draft</div>
+                  <p className="mt-1 leading-5">Agent builds the final-artifact-first project page.</p>
+                </div>
+                <div>
+                  <div className="font-mono text-[10px] uppercase tracking-[0.14em] text-brand-orange">4 · Approve</div>
+                  <p className="mt-1 leading-5">Admin reviews the draft before it appears publicly.</p>
+                </div>
+              </div>
+
               <div>
                 <label htmlFor="project-source-run-url" className="font-mono text-[10px] uppercase tracking-[0.16em] text-surface-500">
                   Source run link
@@ -724,18 +762,24 @@ export default function SubmitProjectPage() {
 
               <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <p className="text-xs leading-5 text-surface-500">
-                  This prepares the import package. The extraction agent and review queue are the next backend pieces.
+                  Admins can see queued source runs. The extraction agent turns them into pending project pages for review.
                 </p>
                 <button
                   type="submit"
-                  disabled={!sourceRunUrl.trim() && !sourceRunFileName.trim()}
+                  disabled={sourceRunSubmitting || (!sourceRunUrl.trim() && !sourceRunFileName.trim())}
                   className="inline-flex items-center justify-center gap-2 border border-brand-orange bg-brand-orange px-3 py-2 text-xs font-semibold uppercase tracking-wider text-white transition hover:bg-brand-orange-dark disabled:cursor-not-allowed disabled:opacity-40"
                 >
                   <Upload className="h-3.5 w-3.5" aria-hidden="true" />
-                  Prepare source run
+                  {sourceRunSubmitting ? 'Submitting...' : 'Submit source run'}
                 </button>
               </div>
             </form>
+
+            {sourceRunError && (
+              <div className="mx-5 mb-5 border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+                {sourceRunError}
+              </div>
+            )}
 
             {sourceRunImports.length > 0 && (
               <div className="border-t border-surface-200 p-5">
@@ -751,15 +795,15 @@ export default function SubmitProjectPage() {
                           <div className="mt-1 truncate text-xs text-surface-500">{item.source}</div>
                         </div>
                         <div className="shrink-0 font-mono text-[10px] uppercase tracking-[0.14em] text-brand-orange">
-                          {item.createdAt}
+                          {item.status === 'queued' ? item.createdAt : 'Needs retry'}
                         </div>
                       </div>
                       {item.notes && <p className="mt-3 text-sm leading-6 text-surface-700">{item.notes}</p>}
                       <div className="mt-3 grid gap-2 text-xs text-surface-600 sm:grid-cols-4">
-                        <div className="border border-white/80 bg-white px-3 py-2">Extract prompt chain</div>
-                        <div className="border border-white/80 bg-white px-3 py-2">Preserve exact responses</div>
-                        <div className="border border-white/80 bg-white px-3 py-2">Attach artifacts</div>
-                        <div className="border border-white/80 bg-white px-3 py-2">Open review draft</div>
+                        <div className="border border-white/80 bg-white px-3 py-2">Open source run</div>
+                        <div className="border border-white/80 bg-white px-3 py-2">Extract exact chain</div>
+                        <div className="border border-white/80 bg-white px-3 py-2">Build project page</div>
+                        <div className="border border-white/80 bg-white px-3 py-2">Send to approval</div>
                       </div>
                     </article>
                   ))}
@@ -1225,13 +1269,13 @@ export default function SubmitProjectPage() {
         <div className="border border-dashed border-surface-300 bg-white px-5 py-8">
           <div className="max-w-2xl">
             <div className="font-mono text-[10px] uppercase tracking-[0.16em] text-surface-500">
-              Agent-built draft
+              Source-run first
             </div>
-            <h2 className="mt-2 text-2xl font-black text-surface-900">Manual form is hidden for source-run projects.</h2>
+            <h2 className="mt-2 text-2xl font-black text-surface-900">Paste the run and let the page come from the source.</h2>
             <p className="mt-3 text-sm leading-6 text-surface-600">
-              Once the extraction agent is wired up, this path should turn the source run into a reviewable project page:
-              final artifact first, exact prompts and responses below, code collapsed inside responses, and generated
-              files tied to the responses that created them.
+              This path is for captured sessions, not manual reconstruction. The extraction queue is where agents should
+              turn the source run into a reviewable project page: final artifact first, exact prompts and responses below,
+              code collapsed inside responses, and generated files tied to the responses that created them.
             </p>
           </div>
         </div>

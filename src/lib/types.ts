@@ -67,6 +67,26 @@ export type PromptWithRelations = Prompt & {
   images?: ProjectImage[]
 }
 
+export type SourceRunSubmissionStatus = 'queued' | 'extracting' | 'draft_created' | 'failed'
+
+export type SourceRunSubmission = {
+  id: string
+  source_url: string | null
+  file_name: string | null
+  notes: string | null
+  author_id: string
+  status: SourceRunSubmissionStatus
+  extracted_prompt_id: string | null
+  admin_notes: string | null
+  created_at: string
+  updated_at: string
+}
+
+export type SourceRunSubmissionWithRelations = SourceRunSubmission & {
+  author?: Profile | null
+  extracted_prompt?: PromptWithRelations | null
+}
+
 export type SuggestionModerationStatus = 'pending' | 'approved' | 'declined'
 export type SuggestionPublicStatus = 'under_review' | 'planned' | 'shipped' | 'declined'
 export type SuggestionVisibility = 'private' | 'scheduled_public' | 'public'

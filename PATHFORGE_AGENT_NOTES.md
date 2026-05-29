@@ -119,6 +119,32 @@ Runs regularly to create candidate examples for the site.
 
 It can create one-shot, multi-prompt, and forked project candidates, but it should not publish them without approval.
 
+### Source Run Extraction Agent
+
+Turns queued source-run links/uploads into pending PathForge project pages.
+
+The preferred workflow is source-run first, not manual reconstruction:
+
+- User pastes a ChatGPT, Gemini, Claude, OpenRouter, or exported run link into Build your project.
+- The source run is saved to `source_run_submissions` with status `queued`.
+- The extraction agent opens the source run using an authorized browser session or import file.
+- It extracts exact prompts, exact responses, code blocks, generated files, screenshots, model/provider details, and final artifact relationships.
+- It builds a Snake-style project page: final artifact first, source path below, prompt/response packages collapsed where needed, and exact response text preserved.
+- It submits the created project as `pending`, never directly public.
+- Admin review approves/rejects the project before it appears in Build Paths.
+
+Manual entry remains a fallback only for platforms where a usable source run cannot be shared or exported.
+
+Seed ideas should start with obvious, desirable, low-hanging fruit. The site is early and mostly empty, so the first wave should not over-index on huge enterprise workflows or obscure niche builds. The visitor should be able to understand the artifact and want to try/fork it within about 15 seconds.
+
+Prioritize both games and productivity. Early seeding can roughly split 50% games/playful experiments, 40% productivity/work tools, and 10% other broad categories when especially strong. Game examples should lean toward self-contained browser games and remixable mechanics. Productivity examples should lean toward one-file tools that calculate, organize, export, track, or clarify something useful.
+
+First prompts should be simple but well written: specific enough to get a visible artifact, short enough to feel like a real user typed it, and not packed with monstrous feature lists. "Make me a polished one-file Breakout game with one original power-up and keyboard/touch controls" is closer to the bar than "make an advanced full game with everything."
+
+Seed chain lengths should be weighted heavily toward short runs. A good default distribution is about 55% one-prompt, 25% two-prompt, 12% three-prompt, 5% four-prompt, 2% five-prompt, and 1% six-or-more. Longer chains are allowed, but they need to earn their length through actual observed issues, forgotten requirements, useful forks, or artifact fixes.
+
+The agent should not prewrite prompt 2, 3, or 4 before seeing the previous output. Follow-up prompts should react to the artifact: fix something broken, refine something visibly weak, add a requirement the user plausibly forgot, or fork the build in a meaningful direction. If the chain does not relate to the actual project or its issues, it looks fake and should be rejected.
+
 ### Vault Agent
 
 Maintains each user's Vault as the user's own uploaded projects.

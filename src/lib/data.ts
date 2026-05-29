@@ -603,9 +603,12 @@ export async function createDraftProjectFromSourceRun(input: SourceRunDraftInput
     if (!step.content) throw new Error(`Step ${index + 1} needs the exact prompt.`)
   }
 
-  const { supabase } = await requireAdminAccess()
-  const { createAdminClient } = await import('./supabase/admin')
-  const adminSupabase = createAdminClient()
+  const { supabase, user } = await requireAdminAccess()
+  const canUseServiceRole = Boolean(process.env.SUPABASE_SERVICE_ROLE_KEY)
+  const adminSupabase = canUseServiceRole
+    ? (await import('./supabase/admin')).createAdminClient()
+    : null
+  const writer = adminSupabase ?? supabase
 
   const { data: sourceRun, error: sourceRunError } = await supabase
     .from('source_run_submissions')
@@ -618,7 +621,7 @@ export async function createDraftProjectFromSourceRun(input: SourceRunDraftInput
   if (sourceRun.status === 'failed') throw new Error('Dismissed source runs cannot create drafts.')
   if (sourceRun.extracted_prompt_id) return { id: sourceRun.extracted_prompt_id as string }
 
-  const { data: category, error: categoryError } = await adminSupabase
+  const { data: category, error: categoryError } = await writer
     .from('categories')
     .select('id')
     .eq('slug', categorySlug)
@@ -627,7 +630,8 @@ export async function createDraftProjectFromSourceRun(input: SourceRunDraftInput
   if (categoryError) throw categoryError
   if (!category) throw new Error('Invalid category.')
 
-  const { data: prompt, error: promptError } = await adminSupabase
+  const insertAuthorId = adminSupabase ? sourceRun.author_id : user.id
+  const { data: prompt, error: promptError } = await writer
     .from('prompts')
     .insert({
       title,
@@ -641,7 +645,7 @@ export async function createDraftProjectFromSourceRun(input: SourceRunDraftInput
       tools_used: input.tools_used ?? [],
       tags: input.tags ?? [],
       status: 'pending',
-      author_id: sourceRun.author_id,
+      author_id: insertAuthorId,
       vote_count: 0,
       bookmark_count: 0,
     })
@@ -650,7 +654,7 @@ export async function createDraftProjectFromSourceRun(input: SourceRunDraftInput
 
   if (promptError) throw promptError
 
-  const { error: stepsError } = await adminSupabase
+  const { error: stepsError } = await writer
     .from('prompt_steps')
     .insert(steps.map((step, index) => ({
       prompt_id: prompt.id,
@@ -662,11 +666,32 @@ export async function createDraftProjectFromSourceRun(input: SourceRunDraftInput
     })))
 
   if (stepsError) {
-    await adminSupabase.from('prompts').delete().eq('id', prompt.id)
+    if (adminSupabase) {
+      await adminSupabase.from('prompts').delete().eq('id', prompt.id)
+    } else {
+      await supabase.from('prompts').update({ status: 'rejected' }).eq('id', prompt.id)
+    }
     throw stepsError
   }
 
-  const { error: updateError } = await adminSupabase
+  if (!adminSupabase && sourceRun.author_id !== user.id) {
+    const { error: authorError } = await supabase
+      .from('prompts')
+      .update({
+        author_id: sourceRun.author_id,
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', prompt.id)
+
+    if (authorError) {
+      await supabase.from('prompts').update({ status: 'rejected' }).eq('id', prompt.id)
+      throw new Error(
+        'The draft was created, but the database would not reassign it to the source-run author. Add SUPABASE_SERVICE_ROLE_KEY or an admin author reassignment policy.'
+      )
+    }
+  }
+
+  const { error: updateError } = await writer
     .from('source_run_submissions')
     .update({
       status: 'draft_created',

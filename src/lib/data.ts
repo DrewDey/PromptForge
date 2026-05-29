@@ -437,6 +437,42 @@ function titleColumnMissing(error: { code?: string; message?: string } | null) {
   )
 }
 
+function requireDraftString(value: string | undefined, fieldName: string) {
+  const trimmed = value?.trim() ?? ''
+  if (!trimmed) throw new Error(`${fieldName} is required.`)
+  return trimmed
+}
+
+function normalizeDifficulty(value: string | undefined) {
+  const difficulty = value?.trim() ?? ''
+  if (difficulty === 'beginner' || difficulty === 'intermediate' || difficulty === 'advanced') {
+    return difficulty
+  }
+  throw new Error('Difficulty must be beginner, intermediate, or advanced.')
+}
+
+export type SourceRunDraftStepInput = {
+  title?: string
+  content?: string
+  result_content?: string
+  description?: string
+}
+
+export type SourceRunDraftInput = {
+  source_run_id: string
+  title?: string
+  description?: string
+  content?: string
+  result_content?: string
+  category_slug?: string
+  difficulty?: string
+  model_used?: string
+  model_recommendation?: string
+  tools_used?: string[]
+  tags?: string[]
+  steps?: SourceRunDraftStepInput[]
+}
+
 export async function createSourceRunSubmission(input: {
   title?: string
   source_url?: string
@@ -545,6 +581,104 @@ export async function updateSourceRunStatusById(
     .eq('id', id)
 
   throwReadableSourceRunError(error)
+}
+
+export async function createDraftProjectFromSourceRun(input: SourceRunDraftInput) {
+  const sourceRunId = requireDraftString(input.source_run_id, 'Source run')
+  const title = requireDraftString(input.title, 'Title')
+  const description = requireDraftString(input.description, 'Description')
+  const content = requireDraftString(input.content, 'Project story')
+  const categorySlug = requireDraftString(input.category_slug, 'Category')
+  const difficulty = normalizeDifficulty(input.difficulty)
+  const steps = (input.steps ?? []).map((step) => ({
+    title: step.title?.trim() ?? '',
+    content: step.content?.trim() ?? '',
+    result_content: step.result_content?.trim() || null,
+    description: step.description?.trim() || null,
+  })).filter((step) => step.title || step.content || step.result_content || step.description)
+
+  if (steps.length === 0) throw new Error('Add at least one prompt/response step.')
+  for (const [index, step] of steps.entries()) {
+    if (!step.title) throw new Error(`Step ${index + 1} needs a title.`)
+    if (!step.content) throw new Error(`Step ${index + 1} needs the exact prompt.`)
+  }
+
+  const { supabase } = await requireAdminAccess()
+  const { createAdminClient } = await import('./supabase/admin')
+  const adminSupabase = createAdminClient()
+
+  const { data: sourceRun, error: sourceRunError } = await supabase
+    .from('source_run_submissions')
+    .select('id, author_id, status, extracted_prompt_id')
+    .eq('id', sourceRunId)
+    .maybeSingle()
+
+  throwReadableSourceRunError(sourceRunError)
+  if (!sourceRun) throw new Error('Source run intake was not found.')
+  if (sourceRun.status === 'failed') throw new Error('Dismissed source runs cannot create drafts.')
+  if (sourceRun.extracted_prompt_id) return { id: sourceRun.extracted_prompt_id as string }
+
+  const { data: category, error: categoryError } = await adminSupabase
+    .from('categories')
+    .select('id')
+    .eq('slug', categorySlug)
+    .maybeSingle()
+
+  if (categoryError) throw categoryError
+  if (!category) throw new Error('Invalid category.')
+
+  const { data: prompt, error: promptError } = await adminSupabase
+    .from('prompts')
+    .insert({
+      title,
+      description,
+      content,
+      result_content: input.result_content?.trim() || null,
+      category_id: category.id,
+      difficulty,
+      model_used: input.model_used?.trim() || null,
+      model_recommendation: input.model_recommendation?.trim() || input.model_used?.trim() || null,
+      tools_used: input.tools_used ?? [],
+      tags: input.tags ?? [],
+      status: 'pending',
+      author_id: sourceRun.author_id,
+      vote_count: 0,
+      bookmark_count: 0,
+    })
+    .select('id')
+    .single()
+
+  if (promptError) throw promptError
+
+  const { error: stepsError } = await adminSupabase
+    .from('prompt_steps')
+    .insert(steps.map((step, index) => ({
+      prompt_id: prompt.id,
+      step_number: index + 1,
+      title: step.title,
+      content: step.content,
+      result_content: step.result_content,
+      description: step.description,
+    })))
+
+  if (stepsError) {
+    await adminSupabase.from('prompts').delete().eq('id', prompt.id)
+    throw stepsError
+  }
+
+  const { error: updateError } = await adminSupabase
+    .from('source_run_submissions')
+    .update({
+      status: 'draft_created',
+      extracted_prompt_id: prompt.id,
+      admin_notes: 'Pending project draft created under the original source-run submitter.',
+      updated_at: new Date().toISOString(),
+    })
+    .eq('id', sourceRunId)
+
+  throwReadableSourceRunError(updateError)
+
+  return { id: prompt.id as string }
 }
 
 export async function getAllSourceRunSubmissionsForAdmin(): Promise<SourceRunSubmissionWithRelations[]> {

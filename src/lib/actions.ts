@@ -6,6 +6,7 @@ import {
   approveSuggestionById,
   createBuildRequest,
   createBuildRequestResponse,
+  createDraftProjectFromSourceRun,
   createProject,
   createSourceRunSubmission,
   createSuggestion,
@@ -34,6 +35,37 @@ export type SourceRunSubmitResult = {
   success: boolean
   id?: string
   error?: string
+}
+
+export type SourceRunDraftState = {
+  error: string | null
+  promptUrl?: string
+}
+
+function formString(formData: FormData, key: string) {
+  return String(formData.get(key) ?? '').trim()
+}
+
+function splitList(value: string) {
+  return value
+    .split(/[\n,]/)
+    .map((item) => item.trim())
+    .filter(Boolean)
+}
+
+function parseDraftSteps(formData: FormData) {
+  const titles = formData.getAll('step_title').map((value) => String(value).trim())
+  const prompts = formData.getAll('step_content').map((value) => String(value).trim())
+  const responses = formData.getAll('step_result_content').map((value) => String(value).trim())
+  const descriptions = formData.getAll('step_description').map((value) => String(value).trim())
+  const count = Math.max(titles.length, prompts.length, responses.length, descriptions.length)
+
+  return Array.from({ length: count }, (_, index) => ({
+    title: titles[index] ?? '',
+    content: prompts[index] ?? '',
+    result_content: responses[index] ?? '',
+    description: descriptions[index] ?? '',
+  })).filter((step) => step.title || step.content || step.result_content || step.description)
 }
 
 export async function approvePrompt(id: string) {
@@ -137,6 +169,39 @@ export async function dismissSourceRun(formData: FormData) {
   )
   revalidatePath('/admin')
   revalidatePath(`/admin/source-runs/${id}`)
+}
+
+export async function createDraftFromSourceRun(
+  _prevState: SourceRunDraftState,
+  formData: FormData
+): Promise<SourceRunDraftState> {
+  const sourceRunId = formString(formData, 'source_run_id')
+
+  try {
+    const result = await createDraftProjectFromSourceRun({
+      source_run_id: sourceRunId,
+      title: formString(formData, 'title'),
+      description: formString(formData, 'description'),
+      content: formString(formData, 'content'),
+      result_content: formString(formData, 'result_content'),
+      category_slug: formString(formData, 'category_slug'),
+      difficulty: formString(formData, 'difficulty'),
+      model_used: formString(formData, 'model_used'),
+      model_recommendation: formString(formData, 'model_recommendation'),
+      tools_used: splitList(formString(formData, 'tools_used')),
+      tags: splitList(formString(formData, 'tags')),
+      steps: parseDraftSteps(formData),
+    })
+
+    revalidatePath('/admin')
+    revalidatePath(`/admin/source-runs/${sourceRunId}`)
+    revalidatePath(`/prompt/${result.id}`)
+    return { error: null, promptUrl: `/prompt/${result.id}` }
+  } catch (err) {
+    return {
+      error: err instanceof Error ? err.message : 'Failed to create source-run draft',
+    }
+  }
 }
 
 export async function submitSuggestion(

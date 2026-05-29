@@ -1,7 +1,8 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { ArrowLeft, ExternalLink } from 'lucide-react'
-import { getSourceRunSubmissionForAdmin } from '@/lib/data'
+import { getCategories, getSourceRunSubmissionForAdmin } from '@/lib/data'
+import CreateDraftFromSourceRunForm from './CreateDraftFromSourceRunForm'
 
 export const dynamic = 'force-dynamic'
 
@@ -10,19 +11,37 @@ function titleFromNotes(notes: string | null) {
   return match?.[1]?.trim()
 }
 
+function fieldFromNotes(notes: string | null, label: string) {
+  const escapedLabel = label.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+  const match = notes?.match(new RegExp(`^${escapedLabel}:\\s*(.+)$`, 'm'))
+  return match?.[1]?.trim() ?? ''
+}
+
 export default async function AdminSourceRunDetailPage({
   params,
 }: {
   params: Promise<{ id: string }>
 }) {
   const { id } = await params
-  const sourceRun = await getSourceRunSubmissionForAdmin(id)
+  const [sourceRun, categories] = await Promise.all([
+    getSourceRunSubmissionForAdmin(id),
+    getCategories(),
+  ])
 
   if (!sourceRun) notFound()
 
   const title = sourceRun.title?.trim() || titleFromNotes(sourceRun.notes) || 'Source-run intake'
   const author = sourceRun.author?.display_name ?? sourceRun.author?.username ?? 'Anonymous'
   const sourceLabel = sourceRun.source_url ?? sourceRun.file_name ?? 'No source attached'
+  const description = fieldFromNotes(sourceRun.notes, 'Description')
+  const verification = fieldFromNotes(sourceRun.notes, 'Verification')
+  const finalArtifact = fieldFromNotes(sourceRun.notes, 'Final artifact')
+  const providerModel = fieldFromNotes(sourceRun.notes, 'Provider/model')
+  const modelUsed = providerModel.includes('/')
+    ? providerModel.split('/').at(-1)?.trim() ?? ''
+    : providerModel
+  const defaultCategory = categories.find((category) => category.slug === 'productivity') ?? categories[0]
+  const canCreateDraft = sourceRun.status !== 'failed' && !sourceRun.extracted_prompt_id
 
   return (
     <div className="mx-auto max-w-4xl">
@@ -105,6 +124,35 @@ export default async function AdminSourceRunDetailPage({
               code inside collapsed response packages, and create the pending project draft under this submitting profile.
             </p>
           </section>
+
+          {canCreateDraft && (
+            <CreateDraftFromSourceRunForm
+              sourceRunId={sourceRun.id}
+              categories={categories}
+              defaults={{
+                title,
+                description,
+                content: [
+                  description || 'Drafted from the captured AI source run.',
+                  sourceRun.source_url ? `Source run: ${sourceRun.source_url}` : '',
+                ].filter(Boolean).join('\n\n'),
+                result_content: [
+                  finalArtifact ? `Final artifact: ${finalArtifact}` : '',
+                  verification ? `Verification: ${verification}` : '',
+                ].filter(Boolean).join('\n\n'),
+                category_slug: defaultCategory?.slug ?? '',
+                difficulty: 'beginner',
+                model_used: modelUsed,
+                model_recommendation: modelUsed,
+                tools_used: providerModel.toLowerCase().includes('gemini') ? 'Gemini, Chrome' : '',
+                tags: 'source-run',
+                step_title: 'Generate the project artifact',
+                step_content: '',
+                step_result_content: finalArtifact ? `Generated artifact: ${finalArtifact}` : '',
+                step_description: 'Created from the source-run intake.',
+              }}
+            />
+          )}
 
         </div>
       </div>

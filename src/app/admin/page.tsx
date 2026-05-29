@@ -12,7 +12,8 @@ export default async function AdminDashboard({
   searchParams: Promise<{ tab?: string }>
 }) {
   const params = await searchParams
-  const tab = params.tab ?? 'overview'
+  const requestedTab = params.tab ?? 'overview'
+  const tab = requestedTab === 'source-runs' ? 'pending' : requestedTab
 
   const [allPrompts, allSuggestions, sourceRuns] = await Promise.all([
     getAllPromptsForAdmin(),
@@ -48,9 +49,11 @@ export default async function AdminDashboard({
     public: publicSuggestions.length,
   }
 
-  const queuedSourceRuns = sourceRuns.filter(sourceRun => (
-    sourceRun.status === 'queued' || sourceRun.status === 'extracting'
+  const intakeItems = sourceRuns.filter(sourceRun => (
+    (sourceRun.status === 'queued' || sourceRun.status === 'extracting') &&
+    !sourceRun.extracted_prompt_id
   ))
+  const reviewCount = pendingPrompts.length + intakeItems.length
 
   return (
     <div>
@@ -65,7 +68,7 @@ export default async function AdminDashboard({
           Overview
         </Link>
         <Link href="/admin?tab=pending" className={`text-xs font-medium px-3 py-1.5 border ${tab === 'pending' ? 'bg-brand-orange text-white border-brand-orange' : 'bg-white text-gray-600 border-gray-200'}`}>
-          Review ({stats.pending})
+          Review ({reviewCount})
         </Link>
         <Link href="/admin?tab=all" className={`text-xs font-medium px-3 py-1.5 border ${tab === 'all' ? 'bg-brand-orange text-white border-brand-orange' : 'bg-white text-gray-600 border-gray-200'}`}>
           All
@@ -73,25 +76,17 @@ export default async function AdminDashboard({
         <Link href="/admin?tab=suggestions" className={`text-xs font-medium px-3 py-1.5 border ${tab === 'suggestions' ? 'bg-brand-orange text-white border-brand-orange' : 'bg-white text-gray-600 border-gray-200'}`}>
           Suggestions ({suggestionStats.pending})
         </Link>
-        <Link href="/admin?tab=source-runs" className={`text-xs font-medium px-3 py-1.5 border ${tab === 'source-runs' ? 'bg-brand-orange text-white border-brand-orange' : 'bg-white text-gray-600 border-gray-200'}`}>
-          Source Runs ({queuedSourceRuns.length})
-        </Link>
       </div>
 
       {/* Stats Cards */}
-      {(tab === 'overview' || tab === 'pending' || tab === 'all' || tab === 'suggestions' || tab === 'source-runs') && (
-        <div className="grid grid-cols-2 lg:grid-cols-6 gap-4 mb-8">
+      {(tab === 'overview' || tab === 'pending' || tab === 'all' || tab === 'suggestions') && (
+        <div className="grid grid-cols-2 lg:grid-cols-5 gap-4 mb-8">
           <StatCard label="Total Prompts" value={stats.total} />
-          <StatCard label="Pending Review" value={stats.pending} highlight={stats.pending > 0} />
+          <StatCard label="Pending Review" value={reviewCount} highlight={reviewCount > 0} />
           <StatCard label="Approved" value={stats.approved} />
-          <StatCard label="Source Runs" value={queuedSourceRuns.length} highlight={queuedSourceRuns.length > 0} />
           <StatCard label="Pending Suggestions" value={suggestionStats.pending} highlight={suggestionStats.pending > 0} />
           <StatCard label="Public Suggestions" value={suggestionStats.public} />
         </div>
-      )}
-
-      {(tab === 'overview' || tab === 'pending' || tab === 'source-runs') && (
-        <SourceRunQueue sourceRuns={sourceRuns} />
       )}
 
       {/* Pending Review */}
@@ -99,13 +94,13 @@ export default async function AdminDashboard({
         <section className="mb-10">
           <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
             Pending Review
-            {stats.pending > 0 && (
+            {reviewCount > 0 && (
               <span className="bg-amber-50 text-amber-700 text-xs font-semibold px-2 py-0.5">
-                {stats.pending}
+                {reviewCount}
               </span>
             )}
           </h2>
-          {pendingPrompts.length === 0 ? (
+          {reviewCount === 0 ? (
             <div className="bg-white border border-gray-200 p-8 text-center text-gray-500 text-sm">
               No prompts pending review. All caught up!
             </div>
@@ -126,6 +121,9 @@ export default async function AdminDashboard({
                   <tbody>
                     {pendingPrompts.map(prompt => (
                       <AdminPromptRow key={prompt.id} prompt={prompt} />
+                    ))}
+                    {intakeItems.map(sourceRun => (
+                      <SourceRunIntakeRow key={sourceRun.id} sourceRun={sourceRun} />
                     ))}
                   </tbody>
                 </table>
@@ -218,76 +216,41 @@ export default async function AdminDashboard({
   )
 }
 
-function SourceRunQueue({ sourceRuns }: { sourceRuns: SourceRunSubmissionWithRelations[] }) {
-  const queued = sourceRuns.filter(sourceRun => (
-    sourceRun.status === 'queued' || sourceRun.status === 'extracting'
-  ))
-
-  if (queued.length === 0) {
-    return null
-  }
-
+function SourceRunIntakeRow({ sourceRun }: { sourceRun: SourceRunSubmissionWithRelations }) {
   return (
-    <section className="mb-10">
-      <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-        Source Run Queue
-        <span className="bg-amber-50 text-amber-700 text-xs font-semibold px-2 py-0.5">
-          {queued.length}
-        </span>
-      </h2>
-      <div className="bg-white border border-gray-200 overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-gray-200 bg-gray-50">
-                <th className="text-left px-4 py-3 font-medium text-gray-600">Source</th>
-                <th className="text-left px-4 py-3 font-medium text-gray-600">Author</th>
-                <th className="text-left px-4 py-3 font-medium text-gray-600">Status</th>
-                <th className="text-left px-4 py-3 font-medium text-gray-600">Submitted</th>
-              </tr>
-            </thead>
-            <tbody>
-              {queued.map(sourceRun => (
-                <tr key={sourceRun.id} className="border-b border-gray-100 hover:bg-gray-50">
-                  <td className="px-4 py-3">
-                    {sourceRun.source_url ? (
-                      <a
-                        href={sourceRun.source_url}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="font-medium text-gray-900 hover:text-brand-orange"
-                      >
-                        {sourceRun.source_url}
-                      </a>
-                    ) : (
-                      <span className="font-medium text-gray-900">{sourceRun.file_name}</span>
-                    )}
-                    {sourceRun.notes && (
-                      <p className="mt-1 max-w-xl text-xs leading-5 text-gray-500">{sourceRun.notes}</p>
-                    )}
-                    <p className="mt-1 text-xs text-gray-400">
-                      Next agent step: open this source, extract the exact prompt/response chain, attach artifacts,
-                      create a Snake-style draft page, then move it into Pending Review.
-                    </p>
-                  </td>
-                  <td className="px-4 py-3 text-gray-600">
-                    {sourceRun.author?.display_name ?? sourceRun.author?.username ?? 'Anonymous'}
-                  </td>
-                  <td className="px-4 py-3">
-                    <span className="bg-amber-50 px-2 py-0.5 text-xs font-medium text-amber-700">
-                      {sourceRun.status.replace('_', ' ')}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3 text-xs text-gray-500">
-                    {new Date(sourceRun.created_at).toLocaleDateString()}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </section>
+    <tr className="border-b border-gray-100 bg-amber-50/30 hover:bg-amber-50">
+      <td className="px-4 py-3">
+        {sourceRun.source_url ? (
+          <a
+            href={sourceRun.source_url}
+            target="_blank"
+            rel="noreferrer"
+            className="font-medium text-gray-900 hover:text-brand-orange"
+          >
+            {sourceRun.source_url}
+          </a>
+        ) : (
+          <span className="font-medium text-gray-900">{sourceRun.file_name}</span>
+        )}
+        {sourceRun.notes && (
+          <p className="mt-1 line-clamp-2 text-xs text-gray-500">{sourceRun.notes}</p>
+        )}
+        <p className="mt-1 text-xs text-gray-400">
+          Agent needs to turn this intake into a pending project page.
+        </p>
+      </td>
+      <td className="px-4 py-3 text-gray-600">Intake</td>
+      <td className="px-4 py-3 text-gray-600">{sourceRun.status.replace('_', ' ')}</td>
+      <td className="px-4 py-3 text-gray-600">
+        {sourceRun.author?.display_name ?? sourceRun.author?.username ?? 'Anonymous'}
+      </td>
+      <td className="px-4 py-3 text-xs text-gray-500">
+        {new Date(sourceRun.created_at).toLocaleDateString()}
+      </td>
+      <td className="px-4 py-3 text-right">
+        <span className="text-xs font-medium text-amber-700">Needs draft</span>
+      </td>
+    </tr>
   )
 }
 

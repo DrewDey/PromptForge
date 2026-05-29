@@ -420,7 +420,7 @@ export default function SubmitProjectPage() {
     setSourceRunSubmitting(false)
 
     if (!result.success) {
-      setSourceRunError(result.error ?? 'Failed to submit source run')
+      setSourceRunError(result.error ?? 'Failed to submit entry')
       return
     }
 
@@ -628,7 +628,7 @@ export default function SubmitProjectPage() {
           Build your project
         </h1>
         <p className="text-sm text-surface-500 leading-relaxed">
-          Paste the real source run first. Manual entry is the fallback for tools that cannot export or share a usable run.
+          Paste the real AI session link first. Manual entry is the fallback for tools that cannot export or share a usable run.
         </p>
       </header>
 
@@ -662,7 +662,7 @@ export default function SubmitProjectPage() {
                 {intakeMode === 'source-run' && <CheckCircle2 className="h-4 w-4 text-brand-orange" aria-hidden="true" />}
               </div>
               <div className="mt-3 font-mono text-[10px] uppercase tracking-[0.16em] text-surface-500">
-                Source run
+                AI session
               </div>
               <div className="mt-1 text-base font-black text-surface-900">Let the agent structure it</div>
               <p className="mt-2 text-xs leading-5 text-surface-600">
@@ -719,7 +719,7 @@ export default function SubmitProjectPage() {
 
               <div>
                 <label htmlFor="project-source-run-url" className="font-mono text-[10px] uppercase tracking-[0.16em] text-surface-500">
-                  Source run link
+                  AI session link
                 </label>
                 <div className="mt-2 flex items-center border border-surface-200 bg-surface-50 focus-within:border-brand-orange focus-within:bg-white">
                   <Link2 className="ml-3 h-4 w-4 shrink-0 text-surface-400" aria-hidden="true" />
@@ -727,7 +727,7 @@ export default function SubmitProjectPage() {
                     id="project-source-run-url"
                     value={sourceRunUrl}
                     onChange={(event) => setSourceRunUrl(event.target.value)}
-                    placeholder="https://chatgpt.com/c/... or another supported source run"
+                    placeholder="https://chatgpt.com/c/... or another supported session link"
                     className="min-w-0 flex-1 bg-transparent px-3 py-2 text-sm text-surface-900 outline-none"
                   />
                 </div>
@@ -735,7 +735,7 @@ export default function SubmitProjectPage() {
 
               <div>
                 <label htmlFor="project-source-run-file" className="font-mono text-[10px] uppercase tracking-[0.16em] text-surface-500">
-                  Source run upload
+                  AI session upload
                 </label>
                 <input
                   id="project-source-run-file"
@@ -762,7 +762,7 @@ export default function SubmitProjectPage() {
 
               <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <p className="text-xs leading-5 text-surface-500">
-                  Admins can see queued source runs. The extraction agent turns them into pending project pages for review.
+                  This enters the normal review queue. The agent drafts the project page when the entry starts from a link or upload.
                 </p>
                 <button
                   type="submit"
@@ -770,7 +770,7 @@ export default function SubmitProjectPage() {
                   className="inline-flex items-center justify-center gap-2 border border-brand-orange bg-brand-orange px-3 py-2 text-xs font-semibold uppercase tracking-wider text-white transition hover:bg-brand-orange-dark disabled:cursor-not-allowed disabled:opacity-40"
                 >
                   <Upload className="h-3.5 w-3.5" aria-hidden="true" />
-                  {sourceRunSubmitting ? 'Submitting...' : 'Submit source run'}
+                  {sourceRunSubmitting ? 'Submitting...' : 'Submit to queue'}
                 </button>
               </div>
             </form>
@@ -784,7 +784,7 @@ export default function SubmitProjectPage() {
             {sourceRunImports.length > 0 && (
               <div className="border-t border-surface-200 p-5">
                 <div className="mb-3 font-mono text-[10px] uppercase tracking-[0.16em] text-surface-500">
-                  Source run import queue
+                  Entry queued
                 </div>
                 <div className="space-y-3">
                   {sourceRunImports.map((item) => (
@@ -800,7 +800,7 @@ export default function SubmitProjectPage() {
                       </div>
                       {item.notes && <p className="mt-3 text-sm leading-6 text-surface-700">{item.notes}</p>}
                       <div className="mt-3 grid gap-2 text-xs text-surface-600 sm:grid-cols-4">
-                        <div className="border border-white/80 bg-white px-3 py-2">Open source run</div>
+                        <div className="border border-white/80 bg-white px-3 py-2">Open session</div>
                         <div className="border border-white/80 bg-white px-3 py-2">Extract exact chain</div>
                         <div className="border border-white/80 bg-white px-3 py-2">Build project page</div>
                         <div className="border border-white/80 bg-white px-3 py-2">Send to approval</div>
@@ -1271,11 +1271,11 @@ export default function SubmitProjectPage() {
             <div className="font-mono text-[10px] uppercase tracking-[0.16em] text-surface-500">
               Source-run first
             </div>
-            <h2 className="mt-2 text-2xl font-black text-surface-900">Paste the run and let the page come from the source.</h2>
+            <h2 className="mt-2 text-2xl font-black text-surface-900">Paste the run and let the agent draft the page.</h2>
             <p className="mt-3 text-sm leading-6 text-surface-600">
-              This path is for captured sessions, not manual reconstruction. The extraction queue is where agents should
-              turn the source run into a reviewable project page: final artifact first, exact prompts and responses below,
-              code collapsed inside responses, and generated files tied to the responses that created them.
+              This path is for captured sessions, not manual reconstruction. The agent turns the entry into a reviewable
+              project page: final artifact first, exact prompts and responses below, code collapsed inside responses,
+              and generated files tied to the responses that created them.
             </p>
           </div>
         </div>

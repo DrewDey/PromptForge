@@ -1,6 +1,6 @@
 import Link from 'next/link'
 import { redirect } from 'next/navigation'
-import { Inbox, LayoutDashboard, FileText, Link2, Settings } from 'lucide-react'
+import { Inbox, LayoutDashboard, FileText, Settings } from 'lucide-react'
 
 const SUPABASE_CONFIGURED = !!(
   process.env.NEXT_PUBLIC_SUPABASE_URL &&
@@ -79,13 +79,6 @@ export default async function AdminLayout({ children }: { children: React.ReactN
           >
             <Inbox className="w-4 h-4" />
             Suggestion Box
-          </Link>
-          <Link
-            href="/admin?tab=source-runs"
-            className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-gray-600 hover:bg-gray-100 hover:text-gray-900 transition-colors duration-200"
-          >
-            <Link2 className="w-4 h-4" />
-            Source Runs
           </Link>
         </nav>
       </aside>

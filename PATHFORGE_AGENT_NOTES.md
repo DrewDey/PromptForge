@@ -16,7 +16,7 @@ Important language and concepts:
 - one-shot builds
 - multi-prompt builds
 - forks
-- source runs
+- captured AI sessions
 - final artifact first
 - Build Requests
 - Vault
@@ -25,9 +25,9 @@ Important language and concepts:
 
 Source-run import should be the default path whenever a platform supports it. Manual input is a fallback, not the primary workflow.
 
-ChatGPT source runs are currently the best-supported example. For those, the user should be able to provide a source run or export, then let an agent format the run into the PathForge page. The user should not have to manually enter 14 prompts and 14 responses when the platform can provide that information directly.
+ChatGPT shared sessions are currently the best-supported example. For those, the user should be able to provide a session link or export, then let an agent format the run into the PathForge page. The user should not have to manually enter 14 prompts and 14 responses when the platform can provide that information directly.
 
-Manual input still matters because not every AI platform will expose clean source runs or exports. PathForge should not lock users out when source-run import is unavailable.
+Manual input still matters because not every AI platform will expose clean session links or exports. PathForge should not lock users out when import is unavailable.
 
 Fork and project creation surfaces should present those two paths side by side:
 
@@ -53,15 +53,15 @@ Fork and project creation surfaces should present those two paths side by side:
 
 ## Agent Map
 
-### Source Run Ingestion Agent
+### Captured Session Ingestion Agent
 
-Accepts ChatGPT shared/source runs, uploads, exports, or manual fallbacks. Extracts messages, roles, timestamps, model/settings, tool use, files, attachments, code blocks, artifacts, and links.
+Accepts ChatGPT shared sessions, uploads, exports, or manual fallbacks. Extracts messages, roles, timestamps, model/settings, tool use, files, attachments, code blocks, artifacts, and links.
 
 This agent must preserve exact prompt and response text. It should not rewrite the response into marketing copy.
 
 ### Path Structuring Agent
 
-Turns a source run into a PathForge build path. Detects whether the run is one-shot, multi-step, forked, or incomplete.
+Turns a captured session into a PathForge build path. Detects whether the run is one-shot, multi-step, forked, or incomplete.
 
 It maps each prompt to the response that followed it and links generated files, screenshots, or artifacts to the specific response that created them.
 
@@ -103,7 +103,7 @@ Public suggestion posting should be delayed by 24 hours. The user should be able
 
 Maintains a separate Build Requests area where users ask the community for specific builds they want to see created, forked, or found.
 
-Requests should be outcome-focused and can be answered with PathForge links, forks, source-run results, or working artifacts. Build requests should support upvotes so demand is visible before a request becomes an approved seed path.
+Requests should be outcome-focused and can be answered with PathForge links, forks, captured-session results, or working artifacts. Build requests should support upvotes so demand is visible before a request becomes an approved seed path.
 
 Build Requests must not be mixed into the Suggestion Box. Suggestion Box is product feedback; Build Requests are community asks for artifacts.
 
@@ -119,21 +119,21 @@ Runs regularly to create candidate examples for the site.
 
 It can create one-shot, multi-prompt, and forked project candidates, but it should not publish them without approval.
 
-### Source Run Extraction Agent
+### Entry Drafting Agent
 
-Turns queued source-run links/uploads into pending PathForge project pages.
+Turns queued links/uploads into pending PathForge project pages.
 
-The preferred workflow is source-run first, not manual reconstruction:
+The preferred workflow is captured session first, not manual reconstruction:
 
 - User pastes a ChatGPT, Gemini, Claude, OpenRouter, or exported run link into Build your project.
-- The source run is saved to `source_run_submissions` with status `queued`.
-- The extraction agent opens the source run using an authorized browser session or import file.
+- The entry is saved to `source_run_submissions` with status `queued`.
+- The extraction agent opens the captured session using an authorized browser session or import file.
 - It extracts exact prompts, exact responses, code blocks, generated files, screenshots, model/provider details, and final artifact relationships.
 - It builds a Snake-style project page: final artifact first, source path below, prompt/response packages collapsed where needed, and exact response text preserved.
-- It submits the created project as `pending`, never directly public.
+- The created project enters the same `pending` review queue as manual submissions, never directly public.
 - Admin review approves/rejects the project before it appears in Build Paths.
 
-Manual entry remains a fallback only for platforms where a usable source run cannot be shared or exported.
+Manual entry remains a fallback only for platforms where a usable session cannot be shared or exported.
 
 Seed ideas should start with obvious, desirable, low-hanging fruit. The site is early and mostly empty, so the first wave should not over-index on huge enterprise workflows or obscure niche builds. The visitor should be able to understand the artifact and want to try/fork it within about 15 seconds.
 
@@ -189,7 +189,7 @@ The likely model:
 
 The preferred submission flow should be:
 
-1. User provides a source run link, upload, or export.
+1. User provides a session link, upload, or export.
 2. Agent parses the run into a structured path.
 3. Agent attaches files, code, screenshots, and final artifact relationships.
 4. User reviews the formatted path.
@@ -197,7 +197,7 @@ The preferred submission flow should be:
 
 Manual entry should still exist for unsupported platforms. It should support bulk paste or transcript import so multi-prompt examples do not become tedious.
 
-The Snake demo fork workspace and the original project Build page now reflect this direction locally: source-run import is the default choice, with manual entry beside it as a fallback. The source-run UI currently prepares an import package; the real extraction agent and storage pipeline still need to be built.
+The Snake demo fork workspace and the original project Build page now reflect this direction locally: captured-session import is the default choice, with manual entry beside it as a fallback. The intake UI stores an entry for drafting; the real extraction agent still needs to be built.
 
 ## Current Decisions
 
@@ -218,12 +218,12 @@ The Snake demo fork workspace and the original project Build page now reflect th
 
 ## Open Questions
 
-- Which platforms can reliably provide source runs or exports?
+- Which platforms can reliably provide session links or exports?
 - Which formats should be accepted: URL, HTML export, JSON export, transcript, zip, screenshots, or all of them?
 - How should private or sensitive chats be handled?
 - How should generated files and artifacts be detected automatically?
 - How should runnable artifacts be stored and sandboxed?
 - How much verifier summary should appear by default?
 - Should public source links be optional?
-- Should source-run import require login?
+- Should captured-session import require login?
 - What approval queue interface should the user use for agent-generated seed projects?

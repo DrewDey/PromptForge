@@ -81,6 +81,22 @@ export default function AdminPromptRow({
               Unpublish
             </button>
           </div>
+        ) : prompt.status === 'rejected' ? (
+          <div className="flex items-center justify-end gap-2">
+            <Link
+              href={`/prompt/${prompt.id}`}
+              className="text-xs text-gray-500 hover:text-brand-orange"
+            >
+              View
+            </Link>
+            <button
+              onClick={() => approvePrompt(prompt.id)}
+              className="flex items-center gap-1 text-xs font-medium text-green-700 hover:text-green-900 bg-green-50 hover:bg-green-100 px-2.5 py-1.5 transition-colors duration-200 focus:outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-green-600"
+            >
+              <CheckCircle className="w-3.5 h-3.5" />
+              Publish
+            </button>
+          </div>
         ) : (
           <Link
             href={`/prompt/${prompt.id}`}

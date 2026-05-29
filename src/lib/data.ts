@@ -20,6 +20,7 @@ import {
 
 const APPROVED_PROJECT_IDS = new Set(['snake-gpt55-pro-oneshot'])
 const PUBLIC_LIBRARY_START_AT = '2026-05-28T00:00:00.000Z'
+const DECISION_MATRIX_PROJECT_ID = '069d354a-ec99-4ee4-aed4-aa1baaec8b29'
 const publicMockPrompts = mockPrompts.filter((prompt) => APPROVED_PROJECT_IDS.has(prompt.id))
 const publicMockSteps = mockSteps.filter((step) => APPROVED_PROJECT_IDS.has(step.prompt_id))
 const publicMockCategories = mockCategories.map((category) => ({
@@ -42,6 +43,25 @@ function isPublicLibraryPrompt(prompt: { id: string; created_at?: string | null 
   if (APPROVED_PROJECT_IDS.has(prompt.id)) return true
   if (!prompt.created_at) return false
   return new Date(prompt.created_at).getTime() >= new Date(PUBLIC_LIBRARY_START_AT).getTime()
+}
+
+function normalizeProjectPresentation<T extends PromptWithRelations>(prompt: T): T {
+  if (prompt.id !== DECISION_MATRIX_PROJECT_ID) return prompt
+
+  return {
+    ...prompt,
+    title: 'Interactive Decision Matrix - Gemini Flash One-Shot',
+    description:
+      'One plain Gemini prompt produced a working browser decision matrix, with the final artifact mounted first and the exact response package collapsed below it.',
+    content:
+      'This source run tests the same shape as the Snake seed: one normal prompt, one captured model response, and one working browser artifact. The finished tool lets a user edit options and criteria, weight each criterion, score every option, see the leading choice, and export the result as CSV.',
+    result_content:
+      'A working decision matrix embedded directly on the page. The response package includes the exact prompt, the generated HTML artifact, CSV export behavior, and verification notes.',
+    model_used: 'Gemini Flash',
+    model_recommendation: 'Gemini Flash',
+    tools_used: ['Gemini', 'Chrome', 'HTML', 'Browser'],
+    tags: ['decision matrix', 'productivity', 'html', 'csv export', 'one-shot', 'playable artifact'],
+  }
 }
 
 async function readWithFallback<T>(fallback: T, read: () => Promise<T>): Promise<T> {
@@ -184,7 +204,7 @@ export async function getPrompts(options?: {
       query = query.order('created_at', { ascending: false })
     }
     const { data } = await query
-    const filtered = (data ?? []).filter(isPublicLibraryPrompt)
+    const filtered = (data ?? []).filter(isPublicLibraryPrompt).map(normalizeProjectPresentation)
     const merged = mergeWithPublicMockPrompts(filtered, options)
     return options?.limit ? merged.slice(0, options.limit) : merged
   })
@@ -200,7 +220,9 @@ export async function getAllPromptsForAdmin(): Promise<PromptWithRelations[]> {
     .order('created_at', { ascending: false })
 
   if (error) throw error
-  const filtered = (data ?? []).filter(prompt => prompt.status === 'pending' || isPublicLibraryPrompt(prompt))
+  const filtered = (data ?? [])
+    .filter(prompt => prompt.status === 'pending' || isPublicLibraryPrompt(prompt))
+    .map(normalizeProjectPresentation)
   return mergeWithPublicMockPrompts(filtered, { status: 'all' })
 }
 
@@ -217,11 +239,11 @@ export async function getPromptById(id: string): Promise<PromptWithRelations | n
       .maybeSingle()
 
     if (!data) return null
-    if (data.status !== 'approved' || isPublicLibraryPrompt(data)) return data
+    if (data.status !== 'approved' || isPublicLibraryPrompt(data)) return normalizeProjectPresentation(data)
 
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return fallback
-    if (data.author_id === user.id) return data
+    if (data.author_id === user.id) return normalizeProjectPresentation(data)
 
     const { data: profile } = await supabase
       .from('profiles')
@@ -229,7 +251,7 @@ export async function getPromptById(id: string): Promise<PromptWithRelations | n
       .eq('id', user.id)
       .maybeSingle()
 
-    if (profile?.role === 'admin') return data
+    if (profile?.role === 'admin') return normalizeProjectPresentation(data)
     return fallback
   })
 }
@@ -264,7 +286,7 @@ export async function getProjectsByAuthor(authorId: string): Promise<PromptWithR
       .eq('author_id', authorId)
       .eq('status', 'approved')
       .order('created_at', { ascending: false })
-    return (data ?? []).filter(isPublicLibraryPrompt)
+    return (data ?? []).filter(isPublicLibraryPrompt).map(normalizeProjectPresentation)
   })
 }
 

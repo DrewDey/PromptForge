@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { ArrowLeft, Plus, Trash2, ChevronDown, ChevronUp, LogIn, FileText, GitBranch, Check, AlertCircle, ArrowUp, ArrowDown, ChevronRight, Layers, Cpu, Eye, Upload, Keyboard, CheckCircle2, Link2 } from 'lucide-react'
+import { ArrowLeft, Plus, Trash2, ChevronDown, ChevronUp, LogIn, FileText, GitBranch, Check, AlertCircle, ArrowUp, ArrowDown, ChevronRight, Layers, Cpu, Eye, Keyboard, CheckCircle2, Link2 } from 'lucide-react'
 import { getModelsByProvider, getModelName } from '@/lib/models'
 import { submitProject, submitSourceRun } from '@/lib/actions'
 import ImageUpload from '@/components/ImageUpload'
@@ -288,8 +288,8 @@ export default function SubmitProjectPage() {
 
   // Form state
   const [intakeMode, setIntakeMode] = useState<IntakeMode>('source-run')
+  const [sourceRunTitle, setSourceRunTitle] = useState('')
   const [sourceRunUrl, setSourceRunUrl] = useState('')
-  const [sourceRunFileName, setSourceRunFileName] = useState('')
   const [sourceRunNotes, setSourceRunNotes] = useState('')
   const [sourceRunImports, setSourceRunImports] = useState<SourceRunImport[]>([])
   const [sourceRunSubmitting, setSourceRunSubmitting] = useState(false)
@@ -398,22 +398,18 @@ export default function SubmitProjectPage() {
     setExpandedStep(newIndex)
   }
 
-  function selectSourceRunFile(event: React.ChangeEvent<HTMLInputElement>) {
-    setSourceRunFileName(event.target.files?.[0]?.name ?? '')
-  }
-
   async function prepareSourceRun(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
+    const title = sourceRunTitle.trim()
     const url = sourceRunUrl.trim()
-    const fileName = sourceRunFileName.trim()
-    if (!url && !fileName) return
+    if (!title || !url) return
 
     setSourceRunSubmitting(true)
     setSourceRunError('')
 
     const result = await submitSourceRun({
+      title,
       source_url: url,
-      file_name: fileName,
       notes: sourceRunNotes,
     })
 
@@ -426,14 +422,14 @@ export default function SubmitProjectPage() {
 
     setSourceRunImports((current) => [{
       id: result.id ?? makeSourceRunImportId(),
-      label: fileName || 'Source run URL',
-      source: url || fileName,
+      label: title,
+      source: url,
       notes: sourceRunNotes.trim() || undefined,
       createdAt: 'Queued for extraction',
       status: 'queued',
     }, ...current])
+    setSourceRunTitle('')
     setSourceRunUrl('')
-    setSourceRunFileName('')
     setSourceRunNotes('')
   }
 
@@ -657,7 +653,7 @@ export default function SubmitProjectPage() {
             >
               <div className="flex items-center justify-between gap-3">
                 <div className="inline-flex h-9 w-9 items-center justify-center border border-brand-orange/35 bg-brand-orange/10 text-brand-orange">
-                  <Upload className="h-4 w-4" aria-hidden="true" />
+                  <Link2 className="h-4 w-4" aria-hidden="true" />
                 </div>
                 {intakeMode === 'source-run' && <CheckCircle2 className="h-4 w-4 text-brand-orange" aria-hidden="true" />}
               </div>
@@ -688,8 +684,8 @@ export default function SubmitProjectPage() {
               </div>
               <div className="mt-1 text-base font-black text-surface-900">Fallback: build it by hand</div>
               <p className="mt-2 text-xs leading-5 text-surface-600">
-                Manually add project basics, prompts, responses, screenshots, and final result when no source export
-                is available.
+                Manually add project basics, prompts, responses, screenshots, and final result when no usable source
+                link is available.
               </p>
             </button>
           </div>
@@ -701,7 +697,7 @@ export default function SubmitProjectPage() {
               <div className="grid gap-2 border border-brand-orange/20 bg-brand-orange/5 p-3 text-xs text-surface-700 sm:grid-cols-4">
                 <div>
                   <div className="font-mono text-[10px] uppercase tracking-[0.14em] text-brand-orange">1 · Source</div>
-                  <p className="mt-1 leading-5">Paste the real AI session link or upload its export.</p>
+                  <p className="mt-1 leading-5">Paste the real AI session link.</p>
                 </div>
                 <div>
                   <div className="font-mono text-[10px] uppercase tracking-[0.14em] text-brand-orange">2 · Extract</div>
@@ -715,6 +711,19 @@ export default function SubmitProjectPage() {
                   <div className="font-mono text-[10px] uppercase tracking-[0.14em] text-brand-orange">4 · Approve</div>
                   <p className="mt-1 leading-5">Admin reviews the draft before it appears publicly.</p>
                 </div>
+              </div>
+
+              <div>
+                <label htmlFor="project-source-run-title" className="font-mono text-[10px] uppercase tracking-[0.16em] text-surface-500">
+                  Title
+                </label>
+                <input
+                  id="project-source-run-title"
+                  value={sourceRunTitle}
+                  onChange={(event) => setSourceRunTitle(event.target.value)}
+                  placeholder="Decision matrix from Gemini Flash"
+                  className="mt-2 w-full border border-surface-200 bg-surface-50 px-3 py-2 text-sm text-surface-900 outline-none transition focus:border-brand-orange focus:bg-white"
+                />
               </div>
 
               <div>
@@ -734,19 +743,6 @@ export default function SubmitProjectPage() {
               </div>
 
               <div>
-                <label htmlFor="project-source-run-file" className="font-mono text-[10px] uppercase tracking-[0.16em] text-surface-500">
-                  AI session upload
-                </label>
-                <input
-                  id="project-source-run-file"
-                  type="file"
-                  accept=".html,.json,.md,.txt,.zip"
-                  onChange={selectSourceRunFile}
-                  className="mt-2 block w-full border border-dashed border-surface-300 bg-surface-50 px-3 py-3 text-sm text-surface-700 file:mr-3 file:border-0 file:bg-surface-900 file:px-3 file:py-2 file:text-xs file:font-semibold file:uppercase file:tracking-wider file:text-white"
-                />
-              </div>
-
-              <div>
                 <label htmlFor="project-source-run-notes" className="font-mono text-[10px] uppercase tracking-[0.16em] text-surface-500">
                   Agent notes
                 </label>
@@ -762,14 +758,14 @@ export default function SubmitProjectPage() {
 
               <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <p className="text-xs leading-5 text-surface-500">
-                  This enters the normal review queue. The agent drafts the project page when the entry starts from a link or upload.
+                  This enters the normal review queue. The agent drafts the project page from the source link and notes.
                 </p>
                 <button
                   type="submit"
-                  disabled={sourceRunSubmitting || (!sourceRunUrl.trim() && !sourceRunFileName.trim())}
+                  disabled={sourceRunSubmitting || !sourceRunTitle.trim() || !sourceRunUrl.trim()}
                   className="inline-flex items-center justify-center gap-2 border border-brand-orange bg-brand-orange px-3 py-2 text-xs font-semibold uppercase tracking-wider text-white transition hover:bg-brand-orange-dark disabled:cursor-not-allowed disabled:opacity-40"
                 >
-                  <Upload className="h-3.5 w-3.5" aria-hidden="true" />
+                  <Link2 className="h-3.5 w-3.5" aria-hidden="true" />
                   {sourceRunSubmitting ? 'Submitting...' : 'Submit to queue'}
                 </button>
               </div>

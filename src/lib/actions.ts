@@ -17,6 +17,7 @@ import {
   toggleSuggestionVote,
   toggleVote,
   updatePromptStatus,
+  updateSourceRunStatusById,
   updateSuggestionPublicStatusById,
 } from './data'
 import type { SuggestionPublicStatus, SuggestionResponseVisibility } from './types'
@@ -112,8 +113,8 @@ export async function submitProject(data: {
 }
 
 export async function submitSourceRun(data: {
+  title?: string
   source_url?: string
-  file_name?: string
   notes?: string
 }): Promise<SourceRunSubmitResult> {
   try {
@@ -123,6 +124,19 @@ export async function submitSourceRun(data: {
   } catch (err) {
     return { success: false, error: err instanceof Error ? err.message : 'Failed to submit source run' }
   }
+}
+
+export async function dismissSourceRun(formData: FormData) {
+  const id = String(formData.get('source_run_id') ?? '')
+  if (!id) return
+
+  await updateSourceRunStatusById(
+    id,
+    'failed',
+    'Dismissed from admin pending review. This intake should not be drafted.'
+  )
+  revalidatePath('/admin')
+  revalidatePath(`/admin/source-runs/${id}`)
 }
 
 export async function submitSuggestion(

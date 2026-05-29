@@ -71,6 +71,7 @@ export type SourceRunSubmissionStatus = 'queued' | 'extracting' | 'draft_created
 
 export type SourceRunSubmission = {
   id: string
+  title?: string | null
   source_url: string | null
   file_name: string | null
   notes: string | null

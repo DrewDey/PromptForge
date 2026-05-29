@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import { dismissSourceRun } from '@/lib/actions'
 import { getAllPromptsForAdmin, getAllSourceRunSubmissionsForAdmin, getAllSuggestionsForAdmin } from '@/lib/data'
 import type { SourceRunSubmissionWithRelations } from '@/lib/types'
 import AdminPromptRow from './AdminPromptRow'
@@ -216,39 +217,65 @@ export default async function AdminDashboard({
   )
 }
 
+function titleFromNotes(notes: string | null) {
+  const match = notes?.match(/^Title:\s*(.+)$/m)
+  return match?.[1]?.trim()
+}
+
 function SourceRunIntakeRow({ sourceRun }: { sourceRun: SourceRunSubmissionWithRelations }) {
+  const title = sourceRun.title?.trim() || titleFromNotes(sourceRun.notes) || sourceRun.source_url || sourceRun.file_name || 'Source-run intake'
+  const sourceLabel = sourceRun.source_url ?? sourceRun.file_name ?? 'Source run'
+
   return (
-    <tr className="border-b border-gray-100 bg-amber-50/30 hover:bg-amber-50">
-      <td className="px-4 py-3">
-        {sourceRun.source_url ? (
-          <a
-            href={sourceRun.source_url}
-            target="_blank"
-            rel="noreferrer"
-            className="font-medium text-gray-900 hover:text-brand-orange"
-          >
-            {sourceRun.source_url}
-          </a>
-        ) : (
-          <span className="font-medium text-gray-900">{sourceRun.file_name}</span>
-        )}
+    <tr
+      className="border-b border-gray-100 bg-amber-50/30 hover:bg-amber-50"
+      data-source-run-id={sourceRun.id}
+      data-source-url={sourceRun.source_url ?? undefined}
+    >
+      <td className="px-4 py-3 align-top">
+        <div className="mb-1 inline-flex items-center gap-1.5 bg-amber-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.12em] text-amber-800">
+          Let the agent structure it
+        </div>
+        <Link
+          href={`/admin/source-runs/${sourceRun.id}`}
+          className="block font-medium text-gray-900 hover:text-brand-orange"
+        >
+          {title}
+        </Link>
+        <p className="mt-1 break-all text-xs text-gray-500">{sourceLabel}</p>
         {sourceRun.notes && (
-          <p className="mt-1 line-clamp-2 text-xs text-gray-500">{sourceRun.notes}</p>
+          <p className="mt-2 line-clamp-3 text-xs leading-5 text-gray-600">
+            <span className="font-semibold text-gray-700">Agent notes:</span> {sourceRun.notes}
+          </p>
         )}
-        <p className="mt-1 text-xs text-gray-400">
-          Agent needs to turn this intake into a pending project page.
+        <p className="mt-2 text-xs leading-5 text-gray-500">
+          Draft a final-artifact-first project page from the source run, preserve exact prompts and responses, and keep
+          generated code inside collapsed response packages.
         </p>
       </td>
-      <td className="px-4 py-3 text-gray-600">Intake</td>
-      <td className="px-4 py-3 text-gray-600">{sourceRun.status.replace('_', ' ')}</td>
-      <td className="px-4 py-3 text-gray-600">
+      <td className="px-4 py-3 align-top text-gray-600">Source run</td>
+      <td className="px-4 py-3 align-top text-gray-600">{sourceRun.status.replace('_', ' ')}</td>
+      <td className="px-4 py-3 align-top text-gray-600">
         {sourceRun.author?.display_name ?? sourceRun.author?.username ?? 'Anonymous'}
       </td>
-      <td className="px-4 py-3 text-xs text-gray-500">
+      <td className="px-4 py-3 align-top text-xs text-gray-500">
         {new Date(sourceRun.created_at).toLocaleDateString()}
       </td>
-      <td className="px-4 py-3 text-right">
-        <span className="text-xs font-medium text-amber-700">Needs draft</span>
+      <td className="px-4 py-3 text-right align-top">
+        <div className="flex flex-col items-end gap-2">
+          <Link
+            href={`/admin/source-runs/${sourceRun.id}`}
+            className="inline-flex items-center justify-center bg-amber-100 px-2.5 py-1.5 text-xs font-medium text-amber-800 hover:bg-amber-200"
+          >
+            Review intake
+          </Link>
+          <form action={dismissSourceRun}>
+            <input type="hidden" name="source_run_id" value={sourceRun.id} />
+            <button type="submit" className="text-xs font-medium text-gray-500 hover:text-red-700">
+              Dismiss
+            </button>
+          </form>
+        </div>
       </td>
     </tr>
   )

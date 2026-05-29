@@ -23,16 +23,24 @@ Important language and concepts:
 
 ## Core Capture Rule
 
-Source-run import should be the default path whenever a platform supports it. Manual input is a fallback, not the primary workflow.
+Captured-session intake should be the default path whenever a platform supports it. Manual input is a fallback, not the primary workflow.
 
 ChatGPT shared sessions are currently the best-supported example. For those, the user should be able to provide a session link or export, then let an agent format the run into the PathForge page. The user should not have to manually enter 14 prompts and 14 responses when the platform can provide that information directly.
 
 Manual input still matters because not every AI platform will expose clean session links or exports. PathForge should not lock users out when import is unavailable.
 
-Fork and project creation surfaces should present those two paths side by side:
+Fork and project creation surfaces should present these two input methods side by side:
 
-- Source run: provide a shared run URL or uploaded export so an agent can extract the chain.
+- AI session link: provide a short intake title, shared run URL, and agent notes so an agent can extract the chain.
 - Manual entry: add prompts, exact responses, and artifact references by hand when import is unavailable.
+
+## One Queue Rule
+
+There is one review queue for getting work onto the website.
+
+Do not create separate product surfaces, nav items, stats, or queue language for session links. A session link is only an input method. Manual submissions and session-link entries both feed the same review flow.
+
+If an entry starts as a session link, the agent drafts the project page first. Once that draft exists, the original intake entry should not appear as a second item to review. The admin reviews the draft page, not the intake record.
 
 ## Required Page Shape
 
@@ -55,7 +63,7 @@ Fork and project creation surfaces should present those two paths side by side:
 
 ### Captured Session Ingestion Agent
 
-Accepts ChatGPT shared sessions, uploads, exports, or manual fallbacks. Extracts messages, roles, timestamps, model/settings, tool use, files, attachments, code blocks, artifacts, and links.
+Accepts ChatGPT shared sessions, supported shared-run links, or manual fallbacks. Extracts messages, roles, timestamps, model/settings, tool use, files, attachments, code blocks, artifacts, and links.
 
 This agent must preserve exact prompt and response text. It should not rewrite the response into marketing copy.
 
@@ -121,19 +129,20 @@ It can create one-shot, multi-prompt, and forked project candidates, but it shou
 
 ### Entry Drafting Agent
 
-Turns queued links/uploads into pending PathForge project pages.
+Turns queued session links into pending PathForge project pages.
 
 The preferred workflow is captured session first, not manual reconstruction:
 
-- User pastes a ChatGPT, Gemini, Claude, OpenRouter, or exported run link into Build your project.
+- User pastes a ChatGPT, Gemini, Claude, or OpenRouter run link into Build your project.
+- User adds a short title so the admin review queue has a clickable intake record.
 - The entry is saved to `source_run_submissions` with status `queued`.
 - The extraction agent opens the captured session using an authorized browser session or import file.
 - It extracts exact prompts, exact responses, code blocks, generated files, screenshots, model/provider details, and final artifact relationships.
-- It builds a Snake-style project page: final artifact first, source path below, prompt/response packages collapsed where needed, and exact response text preserved.
+- It builds a Snake-style project page: final artifact first, prompt/response path below, response packages collapsed where needed, and exact response text preserved.
 - The created project enters the same `pending` review queue as manual submissions, never directly public.
 - Admin review approves/rejects the project before it appears in Build Paths.
 
-Manual entry remains a fallback only for platforms where a usable session cannot be shared or exported.
+Manual entry remains a fallback only for platforms where a usable session cannot be shared.
 
 Seed ideas should start with obvious, desirable, low-hanging fruit. The site is early and mostly empty, so the first wave should not over-index on huge enterprise workflows or obscure niche builds. The visitor should be able to understand the artifact and want to try/fork it within about 15 seconds.
 
@@ -153,7 +162,7 @@ The Vault is not a general bookmark shelf, request inbox, or activity feed. It s
 
 ## Data To Preserve
 
-- Source URL or uploaded source file
+- Source URL
 - Platform or provider
 - Model and settings
 - Run date and time
@@ -189,7 +198,7 @@ The likely model:
 
 The preferred submission flow should be:
 
-1. User provides a session link, upload, or export.
+1. User provides a session link.
 2. Agent parses the run into a structured path.
 3. Agent attaches files, code, screenshots, and final artifact relationships.
 4. User reviews the formatted path.

@@ -34,10 +34,14 @@
       "notes": "ChatGPT and Claude were also tried with the same prompt but did not complete quickly enough for this seed run; Gemini Flash completed first."
     }
   ],
-  "pathforge_submission_url": "https://prompt-forge-sandy.vercel.app/prompt/761b5b40-f3ed-4019-9c03-a00dec07a037",
-  "pathforge_pending_id": "761b5b40-f3ed-4019-9c03-a00dec07a037",
-  "submitted_by_account": "Jordan Lee",
-  "submitted_by_profile_registry_id": "pathforge-seed-001",
-  "submitted_at": "2026-05-29T03:36:28Z",
-  "admin_review_status": "submitted_pending"
+  "pathforge_submission_url": "https://prompt-forge-sandy.vercel.app/admin?tab=pending",
+  "pathforge_pending_id": "ee3641c3-6137-4fa6-8fc3-4561af7cfcde",
+  "pathforge_pending_type": "source_run_submission",
+  "original_pathforge_submission_url": "https://prompt-forge-sandy.vercel.app/prompt/761b5b40-f3ed-4019-9c03-a00dec07a037",
+  "original_pathforge_pending_id": "761b5b40-f3ed-4019-9c03-a00dec07a037",
+  "submitted_by_account": "Riley Park",
+  "submitted_by_profile_registry_id": "pathforge-seed-003",
+  "submitted_at": "2026-05-29T15:02:54Z",
+  "admin_review_status": "source_run_queued_pending_draft",
+  "admin_requeue_note": "The original direct pending prompt draft was rejected because it bypassed source-run intake. A new Gemini source-run intake is queued in admin pending review under the non-admin Riley Park profile."
 }

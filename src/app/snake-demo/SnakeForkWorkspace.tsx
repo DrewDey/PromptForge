@@ -1,6 +1,6 @@
 'use client'
 
-import { ChangeEvent, FormEvent, useState } from 'react'
+import { FormEvent, useState } from 'react'
 import {
   ArrowRight,
   CheckCircle2,
@@ -10,7 +10,6 @@ import {
   Keyboard,
   Link2,
   Plus,
-  Upload,
 } from 'lucide-react'
 import CopyButton from '@/app/prompt/[id]/CopyButton'
 
@@ -61,8 +60,8 @@ export default function SnakeForkWorkspace({
   const [manualPrompt, setManualPrompt] = useState('')
   const [manualResponse, setManualResponse] = useState('')
   const [manualArtifact, setManualArtifact] = useState('')
+  const [sourceRunTitle, setSourceRunTitle] = useState('Snake fork source run')
   const [sourceRunUrl, setSourceRunUrl] = useState(initialSourceRunUrl)
-  const [sourceRunFileName, setSourceRunFileName] = useState('')
   const [sourceRunNotes, setSourceRunNotes] = useState('')
   const [stages, setStages] = useState<ForkStage[]>([])
   const [sourceRunImports, setSourceRunImports] = useState<SourceRunImport[]>([])
@@ -88,22 +87,18 @@ export default function SnakeForkWorkspace({
     setManualArtifact('')
   }
 
-  function selectSourceRunFile(event: ChangeEvent<HTMLInputElement>) {
-    setSourceRunFileName(event.target.files?.[0]?.name ?? '')
-  }
-
   function queueSourceRun(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
+    const title = sourceRunTitle.trim()
     const url = sourceRunUrl.trim()
-    const fileName = sourceRunFileName.trim()
-    if (!url && !fileName) return
+    if (!title || !url) return
 
     setSourceRunImports((current) => [
       ...current,
       {
         id: makeImportId(),
-        label: fileName || 'Source run URL',
-        source: url || fileName,
+        label: title,
+        source: url,
         notes: sourceRunNotes.trim() || undefined,
         createdAt: 'Ready for agent extraction',
       },
@@ -182,7 +177,7 @@ export default function SnakeForkWorkspace({
                   >
                     <div className="flex items-center justify-between gap-3">
                       <div className="inline-flex h-9 w-9 items-center justify-center border border-brand-orange/35 bg-brand-orange/10 text-brand-orange">
-                        <Upload className="h-4 w-4" aria-hidden="true" />
+                        <Link2 className="h-4 w-4" aria-hidden="true" />
                       </div>
                       {mode === 'source-run' && <CheckCircle2 className="h-4 w-4 text-brand-orange" aria-hidden="true" />}
                     </div>
@@ -191,8 +186,7 @@ export default function SnakeForkWorkspace({
                     </div>
                     <div className="mt-1 text-base font-black text-surface-900">Let the agent structure it</div>
                     <p className="mt-2 text-xs leading-5 text-surface-600">
-                      Upload or link the ChatGPT run. The agent extracts prompts, exact responses, code blocks, and
-                      artifacts.
+                      Paste the ChatGPT run. The agent extracts prompts, exact responses, code blocks, and artifacts.
                     </p>
                   </button>
 
@@ -212,7 +206,8 @@ export default function SnakeForkWorkspace({
                     </div>
                     <div className="mt-1 text-base font-black text-surface-900">Build the chain by hand</div>
                     <p className="mt-2 text-xs leading-5 text-surface-600">
-                      Add each prompt, exact response, and artifact reference yourself when there is no source export.
+                      Add each prompt, exact response, and artifact reference yourself when there is no usable source
+                      link.
                     </p>
                   </button>
                 </div>
@@ -220,6 +215,19 @@ export default function SnakeForkWorkspace({
 
               {mode === 'source-run' ? (
                 <form onSubmit={queueSourceRun} className="space-y-4 p-5">
+                  <div>
+                    <label htmlFor="source-run-title" className="font-mono text-[10px] uppercase tracking-[0.16em] text-surface-500">
+                      Title
+                    </label>
+                    <input
+                      id="source-run-title"
+                      value={sourceRunTitle}
+                      onChange={(event) => setSourceRunTitle(event.target.value)}
+                      placeholder="Snake fork from ChatGPT"
+                      className="mt-2 w-full border border-surface-200 bg-surface-50 px-3 py-2 text-sm text-surface-900 outline-none transition focus:border-brand-orange focus:bg-white"
+                    />
+                  </div>
+
                   <div>
                     <label htmlFor="source-run-url" className="font-mono text-[10px] uppercase tracking-[0.16em] text-surface-500">
                       Source run link
@@ -234,19 +242,6 @@ export default function SnakeForkWorkspace({
                         className="min-w-0 flex-1 bg-transparent px-3 py-2 text-sm text-surface-900 outline-none"
                       />
                     </div>
-                  </div>
-
-                  <div>
-                    <label htmlFor="source-run-file" className="font-mono text-[10px] uppercase tracking-[0.16em] text-surface-500">
-                      Source run upload
-                    </label>
-                    <input
-                      id="source-run-file"
-                      type="file"
-                      accept=".html,.json,.md,.txt"
-                      onChange={selectSourceRunFile}
-                      className="mt-2 block w-full border border-dashed border-surface-300 bg-surface-50 px-3 py-3 text-sm text-surface-700 file:mr-3 file:border-0 file:bg-surface-900 file:px-3 file:py-2 file:text-xs file:font-semibold file:uppercase file:tracking-wider file:text-white"
-                    />
                   </div>
 
                   <div>
@@ -269,10 +264,10 @@ export default function SnakeForkWorkspace({
                     </p>
                     <button
                       type="submit"
-                      disabled={!sourceRunUrl.trim() && !sourceRunFileName.trim()}
+                      disabled={!sourceRunTitle.trim() || !sourceRunUrl.trim()}
                       className="inline-flex items-center gap-2 border border-brand-orange bg-brand-orange px-3 py-2 text-xs font-semibold uppercase tracking-wider text-white transition hover:bg-brand-orange-dark disabled:cursor-not-allowed disabled:opacity-40"
                     >
-                      <Upload className="h-3.5 w-3.5" aria-hidden="true" />
+                      <Link2 className="h-3.5 w-3.5" aria-hidden="true" />
                       Prepare source run
                     </button>
                   </div>
@@ -315,7 +310,7 @@ export default function SnakeForkWorkspace({
                       id="manual-fork-artifact"
                       value={manualArtifact}
                       onChange={(event) => setManualArtifact(event.target.value)}
-                      placeholder="/artifacts/forked-snake.html or uploaded file name"
+                      placeholder="/artifacts/forked-snake.html or generated artifact path"
                       className="mt-2 w-full border border-surface-200 bg-surface-50 px-3 py-2 text-sm text-surface-900 outline-none transition focus:border-brand-orange focus:bg-white"
                     />
                   </div>

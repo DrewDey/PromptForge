@@ -4,6 +4,7 @@
 
 CREATE TABLE IF NOT EXISTS source_run_submissions (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  title TEXT NOT NULL DEFAULT 'Untitled source run',
   source_url TEXT,
   file_name TEXT,
   notes TEXT,
@@ -18,6 +19,9 @@ CREATE TABLE IF NOT EXISTS source_run_submissions (
     OR NULLIF(BTRIM(COALESCE(file_name, '')), '') IS NOT NULL
   )
 );
+
+ALTER TABLE source_run_submissions
+  ADD COLUMN IF NOT EXISTS title TEXT NOT NULL DEFAULT 'Untitled source run';
 
 CREATE INDEX IF NOT EXISTS idx_source_run_submissions_author ON source_run_submissions(author_id);
 CREATE INDEX IF NOT EXISTS idx_source_run_submissions_status ON source_run_submissions(status);

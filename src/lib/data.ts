@@ -3,6 +3,7 @@ import {
   Category,
   Profile,
   PromptWithRelations,
+  SourceRunSubmissionStatus,
   SourceRunSubmissionWithRelations,
   SuggestionPublicStatus,
   SuggestionResponseVisibility,
@@ -425,9 +426,20 @@ function throwReadableSourceRunError(error: { code?: string; message?: string } 
   throw error
 }
 
+function titleColumnMissing(error: { code?: string; message?: string } | null) {
+  return Boolean(
+    error &&
+    (
+      error.code === '42703' ||
+      error.message?.toLowerCase().includes('title') &&
+      error.message?.toLowerCase().includes('source_run_submissions')
+    )
+  )
+}
+
 export async function createSourceRunSubmission(input: {
+  title?: string
   source_url?: string
-  file_name?: string
   notes?: string
 }) {
   if (!SUPABASE_CONFIGURED) throw new Error('Source run intake requires sign in.')
@@ -437,32 +449,102 @@ export async function createSourceRunSubmission(input: {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) throw new Error('Log in to submit a source run.')
 
+  const title = input.title?.trim() ?? ''
   const sourceUrl = input.source_url?.trim() ?? ''
-  const fileName = input.file_name?.trim() ?? ''
   const notes = input.notes?.trim() ?? ''
 
-  if (!sourceUrl && !fileName) {
-    throw new Error('Paste a source run link or attach an export file.')
+  if (!title) {
+    throw new Error('Add a title for this source run.')
+  }
+
+  if (!sourceUrl) {
+    throw new Error('Paste a source run link.')
   }
 
   if (sourceUrl && !/^https?:\/\/\S+$/i.test(sourceUrl)) {
     throw new Error('Paste a full source run URL starting with http:// or https://.')
   }
 
+  const payload = {
+    title,
+    source_url: sourceUrl || null,
+    file_name: null,
+    notes: notes || null,
+    author_id: user.id,
+    status: 'queued',
+  }
+
   const { data, error } = await supabase
     .from('source_run_submissions')
-    .insert({
-      source_url: sourceUrl || null,
-      file_name: fileName || null,
-      notes: notes || null,
-      author_id: user.id,
-      status: 'queued',
-    })
+    .insert(payload)
     .select('id')
     .single()
 
+  if (titleColumnMissing(error)) {
+    const { data: fallbackData, error: fallbackError } = await supabase
+      .from('source_run_submissions')
+      .insert({
+        source_url: sourceUrl || null,
+        file_name: null,
+        notes: [`Title: ${title}`, notes].filter(Boolean).join('\n\n') || null,
+        author_id: user.id,
+        status: 'queued',
+      })
+      .select('id')
+      .single()
+
+    throwReadableSourceRunError(fallbackError)
+    return { id: fallbackData?.id as string }
+  }
+
   throwReadableSourceRunError(error)
   return { id: data?.id as string }
+}
+
+export async function getSourceRunSubmissionForAdmin(id: string): Promise<SourceRunSubmissionWithRelations | null> {
+  if (!SUPABASE_CONFIGURED) return null
+
+  try {
+    const { supabase } = await requireAdminAccess()
+    const { data, error } = await supabase
+      .from('source_run_submissions')
+      .select('*, author:profiles(*), extracted_prompt:prompts(*)')
+      .eq('id', id)
+      .maybeSingle()
+
+    throwReadableSourceRunError(error)
+    return data as SourceRunSubmissionWithRelations | null
+  } catch (error) {
+    if (error instanceof Error && error.message.includes('Source run intake is not connected')) {
+      return null
+    }
+    throw error
+  }
+}
+
+export async function updateSourceRunStatusById(
+  id: string,
+  status: SourceRunSubmissionStatus,
+  adminNotes?: string
+) {
+  const { supabase } = await requireAdminAccess()
+  const patch: {
+    status: SourceRunSubmissionStatus
+    admin_notes?: string
+    updated_at: string
+  } = {
+    status,
+    updated_at: new Date().toISOString(),
+  }
+
+  if (adminNotes?.trim()) patch.admin_notes = adminNotes.trim()
+
+  const { error } = await supabase
+    .from('source_run_submissions')
+    .update(patch)
+    .eq('id', id)
+
+  throwReadableSourceRunError(error)
 }
 
 export async function getAllSourceRunSubmissionsForAdmin(): Promise<SourceRunSubmissionWithRelations[]> {

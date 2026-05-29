@@ -719,6 +719,7 @@ export default function SubmitProjectPage() {
                 </label>
                 <input
                   id="project-source-run-title"
+                  name="title"
                   value={sourceRunTitle}
                   onChange={(event) => setSourceRunTitle(event.target.value)}
                   placeholder="Decision matrix from Gemini Flash"
@@ -734,6 +735,7 @@ export default function SubmitProjectPage() {
                   <Link2 className="ml-3 h-4 w-4 shrink-0 text-surface-400" aria-hidden="true" />
                   <input
                     id="project-source-run-url"
+                    name="source_url"
                     value={sourceRunUrl}
                     onChange={(event) => setSourceRunUrl(event.target.value)}
                     placeholder="https://chatgpt.com/c/... or another supported session link"
@@ -748,6 +750,7 @@ export default function SubmitProjectPage() {
                 </label>
                 <textarea
                   id="project-source-run-notes"
+                  name="notes"
                   value={sourceRunNotes}
                   onChange={(event) => setSourceRunNotes(event.target.value)}
                   rows={3}

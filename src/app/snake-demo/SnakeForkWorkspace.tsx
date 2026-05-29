@@ -221,6 +221,7 @@ export default function SnakeForkWorkspace({
                     </label>
                     <input
                       id="source-run-title"
+                      name="title"
                       value={sourceRunTitle}
                       onChange={(event) => setSourceRunTitle(event.target.value)}
                       placeholder="Snake fork from ChatGPT"
@@ -236,6 +237,7 @@ export default function SnakeForkWorkspace({
                       <Link2 className="ml-3 h-4 w-4 shrink-0 text-surface-400" aria-hidden="true" />
                       <input
                         id="source-run-url"
+                        name="source_url"
                         value={sourceRunUrl}
                         onChange={(event) => setSourceRunUrl(event.target.value)}
                         placeholder="https://chatgpt.com/c/..."
@@ -250,6 +252,7 @@ export default function SnakeForkWorkspace({
                     </label>
                     <textarea
                       id="source-run-notes"
+                      name="notes"
                       value={sourceRunNotes}
                       onChange={(event) => setSourceRunNotes(event.target.value)}
                       rows={3}

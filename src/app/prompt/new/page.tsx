@@ -666,8 +666,8 @@ export default function SubmitProjectPage() {
               </div>
               <div className="mt-1 text-base font-black text-surface-900">Let the agent structure it</div>
               <p className="mt-2 text-xs leading-5 text-surface-600">
-                Paste the ChatGPT, Gemini, Claude, or OpenRouter run. It goes to an extraction queue so an agent can
-                build a Snake-style project page from the exact prompts, responses, code blocks, files, and artifact links.
+                Paste the ChatGPT, Gemini, Claude, or OpenRouter run. It enters the same review queue, and an agent
+                drafts the project page from the exact prompts, responses, code blocks, files, and artifact links.
               </p>
             </button>
 
@@ -1269,7 +1269,7 @@ export default function SubmitProjectPage() {
         <div className="border border-dashed border-surface-300 bg-white px-5 py-8">
           <div className="max-w-2xl">
             <div className="font-mono text-[10px] uppercase tracking-[0.16em] text-surface-500">
-              Source-run first
+              Session first
             </div>
             <h2 className="mt-2 text-2xl font-black text-surface-900">Paste the run and let the agent draft the page.</h2>
             <p className="mt-3 text-sm leading-6 text-surface-600">

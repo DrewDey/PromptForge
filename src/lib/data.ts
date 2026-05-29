@@ -132,6 +132,12 @@ function getMockPrompts(options?: {
   return prompts.map(attachRelations)
 }
 
+function mergeWithPublicMockPrompts(prompts: PromptWithRelations[], options?: Parameters<typeof getMockPrompts>[0]) {
+  const seen = new Set(prompts.map(prompt => prompt.id))
+  const mockPrompts = getMockPrompts(options).filter(prompt => !seen.has(prompt.id))
+  return [...prompts, ...mockPrompts]
+}
+
 export async function getPrompts(options?: {
   categorySlug?: string
   difficulty?: string
@@ -177,8 +183,8 @@ export async function getPrompts(options?: {
     }
     const { data } = await query
     const filtered = (data ?? []).filter(isPublicLibraryPrompt)
-    const limited = options?.limit ? filtered.slice(0, options.limit) : filtered
-    return limited.length ? limited : getMockPrompts(options)
+    const merged = mergeWithPublicMockPrompts(filtered, options)
+    return options?.limit ? merged.slice(0, options.limit) : merged
   })
 }
 
@@ -192,7 +198,8 @@ export async function getAllPromptsForAdmin(): Promise<PromptWithRelations[]> {
     .order('created_at', { ascending: false })
 
   if (error) throw error
-  return (data ?? []).filter(prompt => prompt.status === 'pending' || isPublicLibraryPrompt(prompt))
+  const filtered = (data ?? []).filter(prompt => prompt.status === 'pending' || isPublicLibraryPrompt(prompt))
+  return mergeWithPublicMockPrompts(filtered, { status: 'all' })
 }
 
 export async function getPromptById(id: string): Promise<PromptWithRelations | null> {

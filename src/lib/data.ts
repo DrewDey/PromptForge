@@ -17,6 +17,7 @@ import {
 } from './mock-data'
 
 const APPROVED_PROJECT_IDS = new Set(['snake-gpt55-pro-oneshot'])
+const PUBLIC_LIBRARY_START_AT = '2026-05-28T00:00:00.000Z'
 const publicMockPrompts = mockPrompts.filter((prompt) => APPROVED_PROJECT_IDS.has(prompt.id))
 const publicMockSteps = mockSteps.filter((step) => APPROVED_PROJECT_IDS.has(step.prompt_id))
 const publicMockCategories = mockCategories.map((category) => ({
@@ -34,6 +35,20 @@ const SUPABASE_PUBLIC_READS_ENABLED = SUPABASE_CONFIGURED && process.env.PATHFOR
 const SUPABASE_READ_TIMEOUT_MS = 3000
 export const SUGGESTION_PUBLIC_DELAY_HOURS = 24
 const SUGGESTION_PUBLIC_DELAY_MS = SUGGESTION_PUBLIC_DELAY_HOURS * 60 * 60 * 1000
+
+function publicLibraryFilter() {
+  return `id.in.(${Array.from(APPROVED_PROJECT_IDS).join(',')}),created_at.gte.${PUBLIC_LIBRARY_START_AT}`
+}
+
+function adminLibraryFilter() {
+  return `status.eq.pending,id.in.(${Array.from(APPROVED_PROJECT_IDS).join(',')}),created_at.gte.${PUBLIC_LIBRARY_START_AT}`
+}
+
+function isPublicLibraryPrompt(prompt: { id: string; created_at?: string | null }) {
+  if (APPROVED_PROJECT_IDS.has(prompt.id)) return true
+  if (!prompt.created_at) return false
+  return new Date(prompt.created_at).getTime() >= new Date(PUBLIC_LIBRARY_START_AT).getTime()
+}
 
 async function readWithFallback<T>(fallback: T, read: () => Promise<T>): Promise<T> {
   if (!SUPABASE_PUBLIC_READS_ENABLED) return fallback
@@ -139,6 +154,7 @@ export async function getPrompts(options?: {
     let query = supabase
       .from('prompts')
       .select('*, category:categories(*), author:profiles(*), steps:prompt_steps(*)')
+      .or(publicLibraryFilter())
 
     const status = options?.status ?? 'approved'
     if (status !== 'all') {
@@ -171,7 +187,7 @@ export async function getPrompts(options?: {
     if (options?.limit) query = query.limit(options.limit)
 
     const { data } = await query
-    return data ?? []
+    return data?.length ? data : getMockPrompts(options)
   })
 }
 
@@ -182,6 +198,7 @@ export async function getAllPromptsForAdmin(): Promise<PromptWithRelations[]> {
   const { data, error } = await supabase
     .from('prompts')
     .select('*, category:categories(*), author:profiles(*), steps:prompt_steps(*)')
+    .or(adminLibraryFilter())
     .order('created_at', { ascending: false })
 
   if (error) throw error
@@ -198,8 +215,23 @@ export async function getPromptById(id: string): Promise<PromptWithRelations | n
       .from('prompts')
       .select('*, category:categories(*), author:profiles(*), steps:prompt_steps(*)')
       .eq('id', id)
-      .single()
-    return data
+      .maybeSingle()
+
+    if (!data) return null
+    if (data.status !== 'approved' || isPublicLibraryPrompt(data)) return data
+
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return fallback
+    if (data.author_id === user.id) return data
+
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('role')
+      .eq('id', user.id)
+      .maybeSingle()
+
+    if (profile?.role === 'admin') return data
+    return fallback
   })
 }
 
@@ -232,6 +264,7 @@ export async function getProjectsByAuthor(authorId: string): Promise<PromptWithR
       .select('*, category:categories(*), author:profiles(*), steps:prompt_steps(*)')
       .eq('author_id', authorId)
       .eq('status', 'approved')
+      .or(publicLibraryFilter())
       .order('created_at', { ascending: false })
     return data ?? []
   })
@@ -255,6 +288,7 @@ export async function getAuthorStats(authorId: string) {
       .select('vote_count, bookmark_count, category_id, categories(name, icon)')
       .eq('author_id', authorId)
       .eq('status', 'approved')
+      .or(publicLibraryFilter())
 
     const items = prompts ?? []
     return {

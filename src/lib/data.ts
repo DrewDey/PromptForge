@@ -36,14 +36,6 @@ const SUPABASE_READ_TIMEOUT_MS = 3000
 export const SUGGESTION_PUBLIC_DELAY_HOURS = 24
 const SUGGESTION_PUBLIC_DELAY_MS = SUGGESTION_PUBLIC_DELAY_HOURS * 60 * 60 * 1000
 
-function publicLibraryFilter() {
-  return `id.in.(${Array.from(APPROVED_PROJECT_IDS).join(',')}),created_at.gte.${PUBLIC_LIBRARY_START_AT}`
-}
-
-function adminLibraryFilter() {
-  return `status.eq.pending,id.in.(${Array.from(APPROVED_PROJECT_IDS).join(',')}),created_at.gte.${PUBLIC_LIBRARY_START_AT}`
-}
-
 function isPublicLibraryPrompt(prompt: { id: string; created_at?: string | null }) {
   if (APPROVED_PROJECT_IDS.has(prompt.id)) return true
   if (!prompt.created_at) return false
@@ -154,7 +146,6 @@ export async function getPrompts(options?: {
     let query = supabase
       .from('prompts')
       .select('*, category:categories(*), author:profiles(*), steps:prompt_steps(*)')
-      .or(publicLibraryFilter())
 
     const status = options?.status ?? 'approved'
     if (status !== 'all') {
@@ -184,10 +175,10 @@ export async function getPrompts(options?: {
     } else {
       query = query.order('created_at', { ascending: false })
     }
-    if (options?.limit) query = query.limit(options.limit)
-
     const { data } = await query
-    return data?.length ? data : getMockPrompts(options)
+    const filtered = (data ?? []).filter(isPublicLibraryPrompt)
+    const limited = options?.limit ? filtered.slice(0, options.limit) : filtered
+    return limited.length ? limited : getMockPrompts(options)
   })
 }
 
@@ -198,11 +189,10 @@ export async function getAllPromptsForAdmin(): Promise<PromptWithRelations[]> {
   const { data, error } = await supabase
     .from('prompts')
     .select('*, category:categories(*), author:profiles(*), steps:prompt_steps(*)')
-    .or(adminLibraryFilter())
     .order('created_at', { ascending: false })
 
   if (error) throw error
-  return data ?? []
+  return (data ?? []).filter(prompt => prompt.status === 'pending' || isPublicLibraryPrompt(prompt))
 }
 
 export async function getPromptById(id: string): Promise<PromptWithRelations | null> {
@@ -264,9 +254,8 @@ export async function getProjectsByAuthor(authorId: string): Promise<PromptWithR
       .select('*, category:categories(*), author:profiles(*), steps:prompt_steps(*)')
       .eq('author_id', authorId)
       .eq('status', 'approved')
-      .or(publicLibraryFilter())
       .order('created_at', { ascending: false })
-    return data ?? []
+    return (data ?? []).filter(isPublicLibraryPrompt)
   })
 }
 
@@ -285,12 +274,11 @@ export async function getAuthorStats(authorId: string) {
     const supabase = await createClient()
     const { data: prompts } = await supabase
       .from('prompts')
-      .select('vote_count, bookmark_count, category_id, categories(name, icon)')
+      .select('id, created_at, vote_count, bookmark_count, category_id, categories(name, icon)')
       .eq('author_id', authorId)
       .eq('status', 'approved')
-      .or(publicLibraryFilter())
 
-    const items = prompts ?? []
+    const items = (prompts ?? []).filter(isPublicLibraryPrompt)
     return {
       totalProjects: items.length,
       totalUpvotes: items.reduce((sum: number, p: { vote_count: number }) => sum + p.vote_count, 0),

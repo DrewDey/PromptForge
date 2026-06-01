@@ -41,6 +41,19 @@ Every local fix should move PathForge closer to something that can safely run on
 - When a change is intentionally local for daytime review, distinguish "verified locally" from "production-ready" and name the remaining production step.
 - Prefer small guards that prevent bad production states over after-the-fact manual cleanup.
 
+## Source-Run Approval And Page Publishing Standard
+
+Use this standard whenever a submitted source-run project is being approved, converted into a public page, repaired, or checked for consistency. Treat the HP 10Bii+ calculator page as the current regression test for this workflow.
+
+- Preserve the full source sequence. Every user prompt must be followed by the response package that came after it. Do not collapse a multi-prompt run into one final "story" or one summary response.
+- Response packages must preserve the visible model response text from the source chat. Summaries, titles, verification notes, and page copy can exist, but they must not replace the exact source response.
+- If a response produced or changed a file/artifact, tie that file to that exact response package. Long HTML, code, or file bodies should be collapsed/shrinkable and copyable.
+- If the run has multiple artifact versions, the public page needs a visible way to select the response/artifact version. The selected response should have an obvious selected state, and the mounted artifact above must match that selection.
+- The final approved artifact should load first by default, but earlier response artifacts still need to be inspectable when they exist.
+- Keep the public page visually consistent with the approved PathForge page shape: final artifact first, prompt/response path below, chunky green pipe connectors, real engagement controls, no fake activity.
+- Before calling a source-run page done, verify the page itself: route loads, artifact is nonblank, package switching works, prompt count and response-package count match the source, code blocks collapse, copy/open controls exist, browse card/profile links route to the special page, and the stale generic `/prompt/[id]` page is not what users see.
+- Keep iterating this standard when a publishing issue exposes a new consistency rule. Add the rule here instead of relying on memory or one-off judgment.
+
 ## Default Priority Order
 
 When the user gives a direct task, do that first. When they ask to keep moving or asks what should be fixed next, prioritize:

@@ -44,7 +44,7 @@ export const HP_10BII_SHOWCASE_PROJECT: PreparedShowcaseProject = {
   content:
     'Taylor Grant used Claude to build a one-page HTML mock of an HP 10Bii+ financial calculator. The run produced a working financial calculator with TVM, cash flows, interest conversion, statistics, amortization, memory registers, keyboard input, and a visible readout panel. A short follow-up removed the original warm hue and finalized the calculator in a neutral black and silver hardware style.',
   resultContent:
-    'A working HP 10Bii+ calculator embedded directly on the page. The response package includes the exact prompts, source-run link, generated HTML artifact, and verification notes.',
+    'A working HP 10Bii+ calculator embedded directly on the page. The public page preserves both prompts, both response packages, selectable artifact versions, collapsed HTML code, the source-run link, and verification notes.',
   categorySlug: 'finance',
   mockCategoryId: 'cat-1',
   difficulty: 'beginner',
@@ -65,7 +65,7 @@ export const HP_10BII_SHOWCASE_PROJECT: PreparedShowcaseProject = {
       title: 'Generate the calculator',
       content: 'Can you create a one page html mock fully functional HP 10Bii+ calculator from scratch?',
       resultContent:
-        'Claude generated a self-contained HTML calculator with TVM, cash-flow, interest conversion, amortization, statistics, memory, math, and keyboard behavior.',
+        'Claude generated the first self-contained HTML calculator artifact with TVM, cash-flow, interest conversion, amortization, statistics, memory, math, and keyboard behavior.',
       description: 'Initial source-run prompt that produced the working calculator artifact.',
     },
     {

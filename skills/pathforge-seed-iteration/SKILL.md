@@ -236,7 +236,7 @@ Use source-run mode every time:
 2. Queue the package with `scripts/import-pathforge-source-run.mjs --package <path> --username <profile-username>`. The script uses the service-role provisioner path when available; otherwise it tries normal public signup with a generated synthetic account and proceeds only if PathForge returns an active session. For a browser-created profile in the same run, use `--auth-mode password --email <login>` so the intake item and Chrome session belong to the same profile.
 3. If public signup requires email confirmation, stop and report that the app needs either a service-role key locally or an app-owned seed-profile endpoint.
 4. Confirm the result lands in the admin Pending Review queue as a source-run intake item labeled "Let the agent structure it", not as a manual project draft.
-5. Use `--submit-draft` only after an extraction/page-composer agent has converted the source run into the final-artifact-first project page with exact prompts, responses, artifacts, and verification attached.
+5. Use `--submit-draft` only after an extraction/page-composer agent has converted the source run into the final-artifact-first project page with exact prompts, responses, artifacts, and verification attached. For approval/page-publishing work, also apply the project root `employee-1` skill's Source-Run Approval And Page Publishing Standard before calling the page ready.
 6. Update `references/profile-registry.md` plus the seed package submission fields.
 
 Browser UI fallback:

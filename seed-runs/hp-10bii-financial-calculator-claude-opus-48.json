@@ -18,9 +18,19 @@
   "artifact_type": "html",
   "artifact_versions": [
     {
-      "path": "public/artifacts/hp-10bii-financial-calculator-claude-opus-48.html",
+      "path": "public/artifacts/hp-10bii-financial-calculator-claude-opus-48-initial.html",
+      "source": "Claude first response package artifact version",
+      "notes": "Initial warm/plum calculator artifact version tied to response package 1 so the public page can show the refinement instead of only the final artifact."
+    },
+    {
+      "path": "public/artifacts/hp-10bii-financial-calculator-claude-opus-48-claude-final.html",
       "source": "Claude artifact panel, final recolored version",
-      "notes": "Extracted from the logged-in Claude chat after the color-correction prompt. Direct download failed in Claude, so the artifact was recovered from the code view. During verification, the embedded mortgage demo instruction was corrected from 360 shifted N to 30 shifted N so it matches the calculator's xP/YR behavior, and a narrow-screen CSS guard was added so the calculator does not clip inside the mounted iframe."
+      "notes": "Exact final Claude HTML artifact copied from the Claude artifact panel. This preserves the verbatim generated file, including Claude's original 360 shifted-N demo text."
+    },
+    {
+      "path": "public/artifacts/hp-10bii-financial-calculator-claude-opus-48.html",
+      "source": "PathForge mounted public artifact",
+      "notes": "Verified public mounted version. During verification, the embedded mortgage demo instruction was corrected from 360 shifted N to 30 shifted N so it matches the calculator's xP/YR behavior, and a narrow-screen CSS guard was added so the calculator does not clip inside the mounted iframe."
     }
   ],
   "screenshots": [],
@@ -29,19 +39,22 @@
     {
       "step_number": 1,
       "prompt_exact": "Can you create a one page html mock fully functional HP 10Bii+ calculator from scratch?",
-      "response_exact": "Claude generated a working HP 10Bii+ financial calculator as a single self-contained HTML file and presented the file in the shared source run. The backend page-creation agent should extract the exact response and artifact from the Claude share before drafting the PathForge page.",
+      "response_exact": "Claude responded: I'll build you a working HP 10bII+.\n\nArchitecting faithful hardware replica with industrial precision\n\nI'll build you a working HP 10bII+. Let me first check the design guidelines for this environment, confirm the exact key layout, then build it.\n\nCataloging calculator functions and key mappings\n\nNow let me confirm the exact key layout and shifted functions of the HP 10bII+.\n\nReconstructing the HP 10bII+ calculator layout from knowledge\n\nLet me pull the official HP layout reference to get the secondary-function legends exactly right.\n\nArchitected comprehensive financial calculator with TVM, cash flows, and statistics functionality\n\nI have what I need. The HP 10bII+ uses three functions per key (white primary, orange secondary via the ▼ shift, blue tertiary), defaults to 12 payments/year, and the financial core is TVM, interest conversion, cash flows (NPV/IRR/NFV), amortization, and statistics. I'll build a faithful, fully-working recreation of that financial core as a single self-contained HTML file.\n\nVerified code completeness and cross-checked function implementations\n\nThe calculator is complete and verified — all the financial logic is in place. Let me surface it.\n\nPresented file\n\nHere's your HP 10bII+ — a single self-contained HTML file, no dependencies beyond two web fonts. It's styled as a faithful hardware replica (plum body, orange shift accent, recessed green LCD) rather than a reinterpretation.",
       "response_summary": "Claude produced a faithful HP 10Bii+ financial calculator mockup with TVM, interest conversion, cash flows, amortization, statistics, memory, and algebraic math behavior.",
-      "code_blocks": [],
-      "generated_files": ["public/artifacts/hp-10bii-financial-calculator-claude-opus-48.html"],
+      "code_blocks": ["public/artifacts/hp-10bii-financial-calculator-claude-opus-48-initial.html"],
+      "generated_files": ["public/artifacts/hp-10bii-financial-calculator-claude-opus-48-initial.html"],
       "notes": "Initial artifact generation prompt."
     },
     {
       "step_number": 2,
       "prompt_exact": "There is a red hue to it that is unwanted. It should be a standard black and white/silver color, with green-ish backround on the screen, with black writing.",
-      "response_exact": "Claude stripped out the plum body and warm/orange tones, kept the green LCD with dark writing, neutralized the side Readout panel to slate/charcoal, and kept the calculator functionality unchanged.",
+      "response_exact": "Claude responded: Got it — I'll strip out the plum body and all the warm/orange tones and rebuild it in a neutral black/silver palette, keeping the green LCD with dark ink.\n\nDeliberated color palette neutralization from warm to cool tones\n\nGot it — I'll strip out the plum body and all the warm/orange tones and rebuild it in a neutral black/silver palette, keeping the green LCD with dark ink. Let me view the full stylesheet first so I edit precisely.\n\nAll warm tones are gone and the file is intact. Let me surface the updated version.\n\nPresented file\n\nDone. The plum body and every orange/warm element are gone, replaced with a neutral graphite-and-silver palette. Functionally nothing changed; this was purely a recolor. If the silver reads too light or too dark against the keys on your screen, tell me which way to push it.",
       "response_summary": "Claude finalized the artifact in a neutral graphite-and-silver palette with a green LCD and near-black screen text.",
-      "code_blocks": [],
-      "generated_files": ["public/artifacts/hp-10bii-financial-calculator-claude-opus-48.html"],
+      "code_blocks": ["public/artifacts/hp-10bii-financial-calculator-claude-opus-48-claude-final.html"],
+      "generated_files": [
+        "public/artifacts/hp-10bii-financial-calculator-claude-opus-48-claude-final.html",
+        "public/artifacts/hp-10bii-financial-calculator-claude-opus-48.html"
+      ],
       "notes": "Final artifact used for the public PathForge page."
     }
   ],

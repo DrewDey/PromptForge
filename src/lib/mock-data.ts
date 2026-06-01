@@ -8,6 +8,7 @@ import {
   SuggestionWithRelations,
 } from './types'
 import { SNAKE_PROJECT_ID } from './featured-projects'
+import { HP_10BII_SHOWCASE_PROJECT } from './prepared-showcase-projects'
 
 export const mockProfiles: Profile[] = [
   {
@@ -19,6 +20,16 @@ export const mockProfiles: Profile[] = [
     role: 'user',
     created_at: '2026-04-01T00:00:00Z',
     updated_at: '2026-05-24T16:15:00Z',
+  },
+  {
+    id: '22222222-2222-2222-2222-222222222212',
+    username: HP_10BII_SHOWCASE_PROJECT.authorUsername,
+    display_name: HP_10BII_SHOWCASE_PROJECT.authorDisplayName,
+    avatar_url: null,
+    bio: 'Finance and browser-tool builds submitted through PathForge source runs.',
+    role: 'user',
+    created_at: '2026-06-01T01:07:00Z',
+    updated_at: HP_10BII_SHOWCASE_PROJECT.updatedAt,
   },
 ]
 
@@ -46,6 +57,16 @@ export const mockSteps: PromptStep[] = [
     description: 'One plain prompt that generated the playable browser game',
     created_at: '2026-05-23T18:00:00Z',
   },
+  ...HP_10BII_SHOWCASE_PROJECT.steps.map((step) => ({
+    id: step.id,
+    prompt_id: HP_10BII_SHOWCASE_PROJECT.id,
+    step_number: step.stepNumber,
+    title: step.title,
+    content: step.content,
+    result_content: step.resultContent,
+    description: step.description,
+    created_at: HP_10BII_SHOWCASE_PROJECT.createdAt,
+  })),
 ]
 
 export const mockPrompts: Prompt[] = [
@@ -67,6 +88,25 @@ export const mockPrompts: Prompt[] = [
     bookmark_count: 0,
     created_at: '2026-05-23T18:00:00Z',
     updated_at: '2026-05-24T16:15:00Z',
+  },
+  {
+    id: HP_10BII_SHOWCASE_PROJECT.id,
+    title: HP_10BII_SHOWCASE_PROJECT.title,
+    description: HP_10BII_SHOWCASE_PROJECT.description,
+    content: HP_10BII_SHOWCASE_PROJECT.content,
+    result_content: HP_10BII_SHOWCASE_PROJECT.resultContent,
+    category_id: HP_10BII_SHOWCASE_PROJECT.mockCategoryId,
+    difficulty: HP_10BII_SHOWCASE_PROJECT.difficulty,
+    model_used: HP_10BII_SHOWCASE_PROJECT.modelUsed,
+    model_recommendation: HP_10BII_SHOWCASE_PROJECT.modelRecommendation,
+    tools_used: HP_10BII_SHOWCASE_PROJECT.toolsUsed,
+    tags: HP_10BII_SHOWCASE_PROJECT.tags,
+    status: 'approved',
+    author_id: '22222222-2222-2222-2222-222222222212',
+    vote_count: 0,
+    bookmark_count: 0,
+    created_at: HP_10BII_SHOWCASE_PROJECT.createdAt,
+    updated_at: HP_10BII_SHOWCASE_PROJECT.updatedAt,
   },
 ]
 

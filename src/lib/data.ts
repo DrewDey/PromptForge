@@ -18,9 +18,10 @@ import {
   mockSuggestions,
 } from './mock-data'
 import { isPersistableProjectId } from './project-engagement'
-import { DECISION_MATRIX_PROJECT_ID, SNAKE_PROJECT_ID, SNAKE_PROJECT_LEGACY_ID } from './featured-projects'
+import { DECISION_MATRIX_PROJECT_ID, HP_10BII_PROJECT_ID, SNAKE_PROJECT_ID, SNAKE_PROJECT_LEGACY_ID } from './featured-projects'
+import type { PreparedShowcaseProject } from './prepared-showcase-projects'
 
-const APPROVED_PROJECT_IDS = new Set([SNAKE_PROJECT_ID])
+const APPROVED_PROJECT_IDS = new Set([SNAKE_PROJECT_ID, HP_10BII_PROJECT_ID])
 const PUBLIC_LIBRARY_START_AT = '2026-05-28T00:00:00.000Z'
 const publicMockPrompts = mockPrompts.filter((prompt) => APPROVED_PROJECT_IDS.has(prompt.id))
 const publicMockSteps = mockSteps.filter((step) => APPROVED_PROJECT_IDS.has(step.prompt_id))
@@ -604,6 +605,94 @@ export async function updateSourceRunStatusById(
     .eq('id', id)
 
   throwReadableSourceRunError(error)
+}
+
+export async function publishPreparedShowcaseProjectFromSourceRun(
+  sourceRunId: string,
+  project: PreparedShowcaseProject
+) {
+  if (sourceRunId !== project.sourceRunId) {
+    throw new Error('Prepared project does not match this source run.')
+  }
+
+  const { supabase, user } = await requireAdminAccess()
+  const { data: sourceRun, error: sourceRunError } = await supabase
+    .from('source_run_submissions')
+    .select('id, author_id')
+    .eq('id', sourceRunId)
+    .maybeSingle()
+
+  throwReadableSourceRunError(sourceRunError)
+  if (!sourceRun) throw new Error('Source run not found.')
+
+  const { data: category, error: categoryError } = await supabase
+    .from('categories')
+    .select('id')
+    .eq('slug', project.categorySlug)
+    .maybeSingle()
+
+  if (categoryError) throw categoryError
+  if (!category) throw new Error(`Category not found: ${project.categorySlug}.`)
+
+  const promptPatch = {
+    title: project.title,
+    description: project.description,
+    content: project.content,
+    result_content: project.resultContent,
+    category_id: category.id as string,
+    difficulty: project.difficulty,
+    model_used: project.modelUsed,
+    model_recommendation: project.modelRecommendation,
+    tools_used: project.toolsUsed,
+    tags: project.tags,
+    status: 'approved',
+    updated_at: new Date().toISOString(),
+  }
+
+  const { data: existingPrompt, error: existingPromptError } = await supabase
+    .from('prompts')
+    .select('id')
+    .eq('id', project.id)
+    .maybeSingle()
+
+  if (existingPromptError) throw existingPromptError
+
+  if (!existingPrompt) {
+    const { error: insertError } = await supabase
+      .from('prompts')
+      .insert({
+        id: project.id,
+        ...promptPatch,
+        author_id: user.id,
+        vote_count: 0,
+        bookmark_count: 0,
+        created_at: project.createdAt,
+      })
+
+    if (insertError) throw insertError
+  }
+
+  const { error: updatePromptError } = await supabase
+    .from('prompts')
+    .update({
+      ...promptPatch,
+      author_id: sourceRun.author_id,
+    })
+    .eq('id', project.id)
+
+  if (updatePromptError) throw updatePromptError
+
+  const { error: updateSourceRunError } = await supabase
+    .from('source_run_submissions')
+    .update({
+      status: 'draft_created',
+      extracted_prompt_id: project.id,
+      admin_notes: `Published to ${project.href}.`,
+      updated_at: new Date().toISOString(),
+    })
+    .eq('id', sourceRunId)
+
+  throwReadableSourceRunError(updateSourceRunError)
 }
 
 export async function getAllSourceRunSubmissionsForAdmin(): Promise<SourceRunSubmissionWithRelations[]> {

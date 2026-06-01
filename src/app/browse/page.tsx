@@ -35,6 +35,7 @@ const DIFFICULTIES = [
 
 // Most popular models for the facet list (keep it short — 4-6 options)
 const FACET_MODELS = [
+  'claude-opus-4-8-max',
   'claude-opus-4-6',
   'claude-sonnet-4-6',
   'claude-opus-4-7',

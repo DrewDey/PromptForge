@@ -196,7 +196,7 @@ export function getPromptModelEra(prompt: PromptWithRelations): PromptModelEra {
     return 'older'
   }
 
-  if (/(5\.?5|chatgpt\s*5|claude\s*4\.?[67]|gemini\s*2\.?5|llama\s*4|grok\s*3|latest)/i.test(label)) {
+  if (/(5\.?5|chatgpt\s*5|claude\s*4\.?[678]|gemini\s*2\.?5|llama\s*4|grok\s*3|latest)/i.test(label)) {
     return 'newer'
   }
 

@@ -12,6 +12,7 @@ import {
   createSuggestionResponse,
   declineSuggestionById,
   keepSuggestionPrivateById,
+  publishPreparedShowcaseProjectFromSourceRun,
   toggleBuildRequestVote,
   toggleBookmark,
   toggleSuggestionVote,
@@ -20,6 +21,7 @@ import {
   updateSourceRunStatusById,
   updateSuggestionPublicStatusById,
 } from './data'
+import { getPreparedShowcaseProjectById } from './prepared-showcase-projects'
 import type { SuggestionPublicStatus, SuggestionResponseVisibility } from './types'
 
 export type SuggestionSubmitState = {
@@ -137,6 +139,22 @@ export async function dismissSourceRun(formData: FormData) {
   )
   revalidatePath('/admin')
   revalidatePath(`/admin/source-runs/${id}`)
+}
+
+export async function publishPreparedShowcaseSourceRun(formData: FormData) {
+  const sourceRunId = String(formData.get('source_run_id') ?? '')
+  const projectId = String(formData.get('project_id') ?? '')
+  const project = getPreparedShowcaseProjectById(projectId)
+
+  if (!sourceRunId || !project) return
+
+  await publishPreparedShowcaseProjectFromSourceRun(sourceRunId, project)
+  revalidatePath('/admin')
+  revalidatePath(`/admin/source-runs/${sourceRunId}`)
+  revalidatePath(project.href)
+  revalidatePath('/paths')
+  revalidatePath('/browse')
+  revalidatePath(`/user/${project.authorUsername}`)
 }
 
 export async function submitSuggestion(

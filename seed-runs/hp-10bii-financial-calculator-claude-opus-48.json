@@ -7,18 +7,24 @@
   "source_url": "https://claude.ai/share/35271fee-8723-4210-8923-16c909d9789c",
   "run_started_at": "2026-06-01T01:07:00.000Z",
   "run_finished_at": "2026-06-01T01:10:00.000Z",
-  "chain_type": "one-shot source run",
+  "chain_type": "two-prompt source run",
   "category": "finance",
   "difficulty": "beginner",
-  "tags": ["finance", "calculator", "hp-10bii", "html", "one-shot", "source-run"],
+  "tags": ["finance", "calculator", "hp-10bii", "html", "source-run", "artifact-refinement"],
   "tools_used": ["Claude", "HTML"],
-  "status": "submitted_pending",
+  "status": "prepared_for_publish",
   "description": "A Claude source run that produced a one-page, self-contained HP 10Bii+ financial calculator mockup.",
   "agent_notes": "Claude share for a one-page fully functional HP 10Bii+ financial calculator. Use the linked AI session as the source of truth. Keep the project title clean; model/provider belong in metadata, not the title. Backend agent should extract the exact prompt, response, and any presented artifact from the share before creating the project page. Do not approve a public page unless any embedded calculator artifact is committed, deployed, or otherwise production-servable.",
   "artifact_type": "html",
-  "artifact_versions": [],
+  "artifact_versions": [
+    {
+      "path": "public/artifacts/hp-10bii-financial-calculator-claude-opus-48.html",
+      "source": "Claude artifact panel, final recolored version",
+      "notes": "Extracted from the logged-in Claude chat after the color-correction prompt. Direct download failed in Claude, so the artifact was recovered from the code view. During verification, the embedded mortgage demo instruction was corrected from 360 shifted N to 30 shifted N so it matches the calculator's xP/YR behavior, and a narrow-screen CSS guard was added so the calculator does not clip inside the mounted iframe."
+    }
+  ],
   "screenshots": [],
-  "verification_notes": "Source-run intake only. The shared Claude page states the calculator was completed and presented as a file, but no production-served artifact was attached by this intake step.",
+  "verification_notes": "Artifact extracted and mounted at /artifacts/hp-10bii-financial-calculator-claude-opus-48.html. The final version uses a neutral black/silver calculator body, green LCD background, and dark screen writing. Local smoke test returned -1,419.47 for a 30-year, $250k mortgage at 5.5% using 30 shifted N, 5.5 I/YR, 250000 PV, 0 FV, PMT.",
   "steps": [
     {
       "step_number": 1,
@@ -26,17 +32,26 @@
       "response_exact": "Claude generated a working HP 10Bii+ financial calculator as a single self-contained HTML file and presented the file in the shared source run. The backend page-creation agent should extract the exact response and artifact from the Claude share before drafting the PathForge page.",
       "response_summary": "Claude produced a faithful HP 10Bii+ financial calculator mockup with TVM, interest conversion, cash flows, amortization, statistics, memory, and algebraic math behavior.",
       "code_blocks": [],
-      "generated_files": [],
-      "notes": "No local artifact was attached during source-run intake; production readiness depends on extracting and serving the calculator artifact during page creation."
+      "generated_files": ["public/artifacts/hp-10bii-financial-calculator-claude-opus-48.html"],
+      "notes": "Initial artifact generation prompt."
+    },
+    {
+      "step_number": 2,
+      "prompt_exact": "There is a red hue to it that is unwanted. It should be a standard black and white/silver color, with green-ish backround on the screen, with black writing.",
+      "response_exact": "Claude stripped out the plum body and warm/orange tones, kept the green LCD with dark writing, neutralized the side Readout panel to slate/charcoal, and kept the calculator functionality unchanged.",
+      "response_summary": "Claude finalized the artifact in a neutral graphite-and-silver palette with a green LCD and near-black screen text.",
+      "code_blocks": [],
+      "generated_files": ["public/artifacts/hp-10bii-financial-calculator-claude-opus-48.html"],
+      "notes": "Final artifact used for the public PathForge page."
     }
   ],
   "pathforge_submission_url": "https://prompt-forge-sandy.vercel.app/admin/source-runs/cb968686-6546-4218-93df-14c5113b1624",
   "pathforge_pending_id": "cb968686-6546-4218-93df-14c5113b1624",
   "submitted_by_account": "Taylor Grant / /user/TaylorGrant",
   "submitted_by_profile_registry_id": "pathforge-seed-005",
-  "admin_review_status": "queued_source_run_only_artifact_not_extracted",
+  "admin_review_status": "prepared_public_showcase_page_ready",
   "vote_count": 0,
   "bookmark_count": 0,
   "comments": [],
-  "public_status": "pending"
+  "public_status": "prepared"
 }

@@ -6,6 +6,7 @@ export type AIModel = {
 
 export const AI_MODELS: AIModel[] = [
   // Anthropic
+  { id: 'claude-opus-4-8-max', name: 'Claude Opus 4.8 Max', provider: 'Anthropic' },
   { id: 'claude-opus-4-7', name: 'Claude 4.7 Opus', provider: 'Anthropic' },
   { id: 'claude-opus-4-6-ext', name: 'Claude 4.6 Opus Extended', provider: 'Anthropic' },
   { id: 'claude-opus-4-6', name: 'Claude 4.6 Opus', provider: 'Anthropic' },

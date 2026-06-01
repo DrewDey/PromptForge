@@ -26,9 +26,15 @@ export default async function AdminSourceRunDetailPage({
   const author = sourceRun.author?.display_name ?? sourceRun.author?.username ?? 'Anonymous'
   const sourceLabel = sourceRun.source_url ?? sourceRun.file_name ?? 'No source attached'
   const preparedProject = getPreparedShowcaseProjectBySourceRunId(sourceRun.id)
-  const publishedHref = sourceRun.extracted_prompt_id
+  const isPublished = sourceRun.extracted_prompt?.status === 'approved'
+  const publishedHref = isPublished && sourceRun.extracted_prompt_id
     ? preparedProject?.href ?? `/prompt/${sourceRun.extracted_prompt_id}`
     : null
+  const reviewStatusLabel = isPublished
+    ? 'Published source run'
+    : sourceRun.extracted_prompt_id
+      ? 'Pending source-run approval'
+      : 'Pending source-run review'
 
   return (
     <div className="mx-auto max-w-4xl">
@@ -40,7 +46,7 @@ export default async function AdminSourceRunDetailPage({
       <div className="border border-gray-200 bg-white">
         <div className="border-b border-gray-200 px-6 py-5">
           <div className="mb-2 inline-flex items-center bg-amber-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.12em] text-amber-800">
-            {sourceRun.extracted_prompt_id ? 'Published source run' : 'Pending source-run review'}
+            {reviewStatusLabel}
           </div>
           <h1 className="text-2xl font-bold text-gray-950">{title}</h1>
           <p className="mt-2 text-sm text-gray-500">
@@ -82,7 +88,7 @@ export default async function AdminSourceRunDetailPage({
                     Public page published
                   </h2>
                   <p className="mt-1 text-sm text-green-800">
-                    This intake has been connected to the public project page.
+                    This intake has been connected to an approved public project page.
                   </p>
                 </div>
                 <Link
@@ -98,7 +104,9 @@ export default async function AdminSourceRunDetailPage({
             <section className="border border-green-200 bg-green-50 p-4">
               <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                 <div>
-                  <h2 className="text-sm font-bold text-green-900">Prepared public page ready</h2>
+                  <h2 className="text-sm font-bold text-green-900">
+                    {sourceRun.extracted_prompt_id ? 'Prepared public page needs approval' : 'Prepared public page ready'}
+                  </h2>
                   <p className="mt-1 text-sm text-green-800">
                     The artifact has been extracted and mounted in the PathForge showcase format.
                   </p>
@@ -111,7 +119,7 @@ export default async function AdminSourceRunDetailPage({
                     className="inline-flex items-center justify-center gap-2 bg-green-700 px-3 py-2 text-sm font-semibold text-white hover:bg-green-800"
                   >
                     <CheckCircle className="h-4 w-4" aria-hidden="true" />
-                    Publish prepared page
+                    {sourceRun.extracted_prompt_id ? 'Approve prepared page' : 'Publish prepared page'}
                   </button>
                 </form>
               </div>

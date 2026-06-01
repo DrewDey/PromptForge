@@ -288,7 +288,7 @@ export async function getPromptById(id: string): Promise<PromptWithRelations | n
       .maybeSingle()
 
     if (!data) return fallback
-    if (data.status !== 'approved' || isPublicLibraryPrompt(data)) return normalizeProjectPresentation(data)
+    if (data.status === 'approved' && isPublicLibraryPrompt(data)) return normalizeProjectPresentation(data)
 
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return fallback

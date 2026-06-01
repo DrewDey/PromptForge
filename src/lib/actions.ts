@@ -11,6 +11,7 @@ import {
   createSuggestion,
   createSuggestionResponse,
   declineSuggestionById,
+  getSourceRunSubmissionByPromptIdForAdmin,
   keepSuggestionPrivateById,
   publishPreparedShowcaseProjectFromSourceRun,
   toggleBuildRequestVote,
@@ -40,7 +41,9 @@ export type SourceRunSubmitResult = {
 
 export async function approvePrompt(id: string) {
   await updatePromptStatus(id, 'approved')
+  const sourceRun = await getSourceRunSubmissionByPromptIdForAdmin(id)
   revalidatePath('/admin')
+  if (sourceRun) revalidatePath(`/admin/source-runs/${sourceRun.id}`)
   revalidatePath('/browse')
   revalidatePath('/paths')
   revalidatePath('/')

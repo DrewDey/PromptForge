@@ -42,6 +42,17 @@ Do not create separate product surfaces, nav items, stats, or queue language for
 
 If an entry starts as a session link, the agent drafts the project page first. Once that draft exists, the original intake entry should not appear as a second item to review. The admin reviews the draft page, not the intake record.
 
+Approval is the first real publishing checkpoint, not an afterthought. A project is not fully live because a route exists, an artifact file deploys, or a source-run row has `extracted_prompt_id`. The prompt itself must be approved, the source-run row must point to that approved prompt, and the admin dashboard must no longer show the item in Pending Review.
+
+For every source-run promotion, verify the whole chain in this order:
+
+1. The public artifact route exists and production can serve it.
+2. The project page is wired to the correct route and data.
+3. The prompt is approved through the admin flow or prepared-source publish action.
+4. The admin dashboard Pending Review count drops and the row is gone.
+5. The source-run detail says published only when the linked prompt is approved.
+6. Browse, profile, direct project route, artifact URL, and stale `/prompt/[id]` links all land on the intended public experience.
+
 ## Required Page Shape
 
 - Final artifact embedded at the top.
@@ -221,7 +232,7 @@ The Snake demo fork workspace and the original project Build page now reflect th
 - The entire response package should be collapsible.
 - The final artifact belongs at the top of the page.
 - Attachments should be tied to the response that produced them.
-- Public examples require approval.
+- Public examples require approval, and approval means the admin Pending Review row is cleared, not just that a page can be opened.
 - Suggestion box entries should support private review before public posting.
 - Public suggestion posting should be delayed by 24 hours.
 - Suggestion Box is only for PathForge feedback.

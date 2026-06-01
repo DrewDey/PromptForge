@@ -45,6 +45,9 @@ Every local fix should move PathForge closer to something that can safely run on
 
 Use this standard whenever a submitted source-run project is being approved, converted into a public page, repaired, or checked for consistency. Treat the HP 10Bii+ calculator page as the current regression test for this workflow.
 
+- Approval is not optional cleanup. A source-run project is not fully live until the `prompts` row is approved, the source-run record is linked to that approved prompt, and the admin review queue no longer shows the item as pending.
+- Do not treat a working special route, deployed artifact file, or `source_run_submissions.extracted_prompt_id` as approval by itself. Those are necessary wiring, not the approval state.
+- The first admin-side check after publishing work is the review queue: the relevant item must leave Pending Review, the dashboard count must drop, and the source-run detail must say published only because the linked prompt is approved.
 - Treat custom showcase routes as renderer overrides, not exceptions. A special mounted page still needs the same public project shell as every other public project page.
 - Pick the closest existing pattern before building: Snake for one-shot playable artifact pages, Decision Matrix for one-shot productivity artifacts, and HP 10Bii+ for multi-prompt source-run pages with artifact versions.
 - Preserve the full source sequence. Every user prompt must be followed by the response package that came after it. Do not collapse a multi-prompt run into one final "story" or one summary response.
@@ -55,7 +58,7 @@ Use this standard whenever a submitted source-run project is being approved, con
 - Keep the public page visually consistent with the approved PathForge page shape: final artifact first, prompt/response path below, chunky green pipe connectors, real engagement controls, no fake activity.
 - Every public project page needs an obvious fork action, not only a passive fork count. The action should open the build flow with the source project identified, and Employee 1 must verify it appears on special mounted pages as well as generic project pages.
 - Use shared components for shared project behavior whenever possible. Do not hand-copy fork, engagement, or discussion UI into one-off pages if a shared component can carry it across all pages.
-- Before calling a source-run page done, verify the page itself: route loads, artifact is nonblank, package switching works, prompt count and response-package count match the source, code blocks collapse, copy/open controls exist, fork action is visible and routes to `/build?fork=PROJECT_ID`, engagement clicks do not open the project page, browse card/profile links route to the special page, and the stale generic `/prompt/[id]` page is not what users see.
+- Before calling a source-run page done, verify the full approval-to-live chain: admin Pending Review is clear, source-run detail shows a published approved prompt, route loads, artifact is nonblank, package switching works when relevant, prompt count and response-package count match the source, code blocks collapse, copy/open controls exist, fork action is visible and routes to `/build?fork=PROJECT_ID`, engagement clicks do not open the project page, browse card/profile links route to the special page, and the stale generic `/prompt/[id]` page is not what users see.
 - Keep iterating this standard when a publishing issue exposes a new consistency rule. Add the rule here instead of relying on memory or one-off judgment.
 
 ## Public Project Page Consistency Contract
@@ -80,9 +83,11 @@ Use this checklist before approving, publishing, pushing, or telling the user a 
 3. Confirm the production artifact strategy: committed file, approved production storage, or another source production can serve.
 4. Wire the data and route: project id, prepared project record if needed, special route, browse/profile link override, and admin review link.
 5. Build the public page shell from the consistency contract above.
-6. Verify locally with the real route: page loads, artifact renders, artifact interaction works, response count matches source, copy/open controls exist, fork action works, engagement buttons do not click through, and browse/profile/admin links point to the intended page.
-7. Run code checks that match the change, normally `npx tsc --noEmit`, `git diff --check`, and `npm run build` for public page work.
-8. If any checklist item fails, keep fixing before reporting back. Do not call the page done because the changed component looks right in isolation.
+6. Complete approval before calling it live: approve the prompt or run the prepared-source publish action, then verify the item is gone from Pending Review and the source-run detail is connected to an approved public prompt.
+7. Verify locally or live with the real routes: admin dashboard, source-run detail, public page, artifact URL, browse listing, author profile, and any old `/prompt/[id]` URL.
+8. Confirm page behavior: artifact renders, artifact interaction works, response count matches source, copy/open controls exist, fork action works, engagement buttons do not click through, and browse/profile/admin links point to the intended page.
+9. Run code checks that match the change, normally `npx tsc --noEmit`, `git diff --check`, and `npm run build` for public page work.
+10. If any checklist item fails, keep fixing before reporting back. Do not call the page done because the changed component looks right in isolation.
 
 ## Default Priority Order
 

@@ -198,6 +198,16 @@ function mergeWithPublicMockPrompts(prompts: PromptWithRelations[], options?: Pa
   return [...prompts, ...mockPrompts]
 }
 
+function getPublicMockPromptsForProfile(profile: Pick<Profile, 'id'> & { username?: string | null }) {
+  return publicMockPrompts.filter((prompt) => {
+    if (prompt.author_id === profile.id) return true
+    if (!profile.username) return false
+
+    const mockAuthor = mockProfiles.find(author => author.id === prompt.author_id)
+    return mockAuthor?.username === profile.username
+  })
+}
+
 export async function getPrompts(options?: {
   categorySlug?: string
   difficulty?: string
@@ -310,9 +320,9 @@ export async function getProfileByUsername(username: string): Promise<Profile | 
   })
 }
 
-export async function getProjectsByAuthor(authorId: string): Promise<PromptWithRelations[]> {
-  const fallback = publicMockPrompts
-    .filter(p => p.author_id === authorId && p.status === 'approved')
+export async function getProjectsByAuthor(authorId: string, username?: string): Promise<PromptWithRelations[]> {
+  const fallback = getPublicMockPromptsForProfile({ id: authorId, username })
+    .filter(p => p.status === 'approved')
     .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
     .map(attachRelations)
 
@@ -331,14 +341,15 @@ export async function getProjectsByAuthor(authorId: string): Promise<PromptWithR
   })
 }
 
-export async function getAuthorStats(authorId: string) {
-  const authorPrompts = publicMockPrompts.filter(p => p.author_id === authorId && p.status === 'approved')
+export async function getAuthorStats(authorId: string, username?: string) {
+  const authorPrompts = getPublicMockPromptsForProfile({ id: authorId, username })
+    .filter(p => p.status === 'approved')
   const fallback = {
     totalProjects: authorPrompts.length,
     totalUpvotes: authorPrompts.reduce((sum, p) => sum + p.vote_count, 0),
     totalBookmarks: authorPrompts.reduce((sum, p) => sum + p.bookmark_count, 0),
     topCategory: getTopCategory(authorPrompts),
-    memberSince: mockProfiles.find(p => p.id === authorId)?.created_at ?? '',
+    memberSince: mockProfiles.find(p => p.id === authorId || p.username === username)?.created_at ?? '',
   }
 
   return readWithFallback(fallback, async () => {

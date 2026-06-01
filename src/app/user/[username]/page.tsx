@@ -32,8 +32,8 @@ export default async function UserProfilePage({
   if (!profile) notFound()
 
   const [projects, stats] = await Promise.all([
-    getProjectsByAuthor(profile.id),
-    getAuthorStats(profile.id),
+    getProjectsByAuthor(profile.id, profile.username),
+    getAuthorStats(profile.id, profile.username),
   ])
 
   const joinDate = profile.created_at

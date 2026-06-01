@@ -1,8 +1,13 @@
 import Link from 'next/link'
-import { notFound } from 'next/navigation'
+import { notFound, redirect } from 'next/navigation'
 import { Fragment } from 'react'
 import { ChevronRight, Tag, Cpu, Wrench, ArrowRight, GitFork } from 'lucide-react'
-import { getPromptById, getUserVotesAndBookmarks, getPrompts } from '@/lib/data'
+import {
+  getPromptById,
+  getSourceRunSubmissionByPromptIdForAdmin,
+  getUserVotesAndBookmarks,
+  getPrompts,
+} from '@/lib/data'
 import { getModelName } from '@/lib/models'
 import VoteBookmarkButtons from '@/components/VoteBookmarkButtons'
 import PromptCard from '@/components/PromptCard'
@@ -91,6 +96,11 @@ export default async function PromptDetailPage({
   const prompt = await getPromptById(id)
 
   if (!prompt) notFound()
+
+  if (prompt.status === 'pending') {
+    const sourceRun = await getSourceRunSubmissionByPromptIdForAdmin(prompt.id)
+    if (sourceRun) redirect(`/admin/source-runs/${sourceRun.id}`)
+  }
 
   const hasSteps = prompt.steps && prompt.steps.length > 0
   const modelDisplay = prompt.model_used ? getModelName(prompt.model_used) : prompt.model_recommendation

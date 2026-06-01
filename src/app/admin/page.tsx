@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import { getAllPromptsForAdmin, getAllSourceRunSubmissionsForAdmin, getAllSuggestionsForAdmin } from '@/lib/data'
+import { titleForSourceRunReview } from '@/lib/source-run-review'
 import type { SourceRunSubmissionWithRelations } from '@/lib/types'
 import AdminPromptRow from './AdminPromptRow'
 import AdminSuggestionRow from './AdminSuggestionRow'
@@ -53,6 +54,11 @@ export default async function AdminDashboard({
     (sourceRun.status === 'queued' || sourceRun.status === 'extracting') &&
     !sourceRun.extracted_prompt_id
   ))
+  const sourceRunByPromptId = new Map(
+    sourceRuns
+      .filter(sourceRun => sourceRun.extracted_prompt_id)
+      .map(sourceRun => [sourceRun.extracted_prompt_id, sourceRun])
+  )
   const reviewCount = pendingPrompts.length + intakeItems.length
 
   return (
@@ -119,9 +125,16 @@ export default async function AdminDashboard({
                     </tr>
                   </thead>
                   <tbody>
-                    {pendingPrompts.map(prompt => (
-                      <AdminPromptRow key={prompt.id} prompt={prompt} />
-                    ))}
+                    {pendingPrompts.map(prompt => {
+                      const sourceRun = sourceRunByPromptId.get(prompt.id)
+                      return (
+                        <AdminPromptRow
+                          key={prompt.id}
+                          prompt={prompt}
+                          sourceRunHref={sourceRun ? `/admin/source-runs/${sourceRun.id}` : undefined}
+                        />
+                      )
+                    })}
                     {intakeItems.map(sourceRun => (
                       <SourceRunIntakeRow key={sourceRun.id} sourceRun={sourceRun} />
                     ))}
@@ -216,13 +229,13 @@ export default async function AdminDashboard({
   )
 }
 
-function titleFromNotes(notes: string | null) {
-  const match = notes?.match(/^Title:\s*(.+)$/m)
-  return match?.[1]?.trim()
-}
-
 function SourceRunIntakeRow({ sourceRun }: { sourceRun: SourceRunSubmissionWithRelations }) {
-  const title = sourceRun.title?.trim() || titleFromNotes(sourceRun.notes) || sourceRun.source_url || sourceRun.file_name || 'Source-run intake'
+  const title = titleForSourceRunReview({
+    title: sourceRun.title,
+    notes: sourceRun.notes,
+    sourceUrl: sourceRun.source_url,
+    fileName: sourceRun.file_name,
+  })
   const sourceLabel = sourceRun.source_url ?? sourceRun.file_name ?? 'Source run'
 
   return (

@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { CheckCircle, XCircle } from 'lucide-react'
 import { PromptWithRelations } from '@/lib/types'
 import { approvePrompt, rejectPrompt } from '@/lib/actions'
+import { cleanGeneratedProjectTitle } from '@/lib/source-run-review'
 
 const statusColors: Record<string, string> = {
   pending: 'bg-amber-50 text-amber-700',
@@ -14,15 +15,22 @@ const statusColors: Record<string, string> = {
 export default function AdminPromptRow({
   prompt,
   showStatus,
+  sourceRunHref,
 }: {
   prompt: PromptWithRelations
   showStatus?: boolean
+  sourceRunHref?: string
 }) {
+  const title = prompt.status === 'pending'
+    ? cleanGeneratedProjectTitle(prompt.title)
+    : prompt.title
+  const detailHref = sourceRunHref ?? `/prompt/${prompt.id}`
+
   return (
     <tr className="border-b border-gray-100 hover:bg-gray-50">
       <td className="px-4 py-3">
-        <Link href={`/prompt/${prompt.id}`} className="font-medium text-gray-900 hover:text-brand-orange">
-          {prompt.title}
+        <Link href={detailHref} className="font-medium text-gray-900 hover:text-brand-orange">
+          {title}
         </Link>
         <p className="text-xs text-gray-500 line-clamp-1 mt-0.5">{prompt.description}</p>
       </td>
@@ -68,7 +76,7 @@ export default function AdminPromptRow({
         ) : prompt.status === 'approved' ? (
           <div className="flex items-center justify-end gap-2">
             <Link
-              href={`/prompt/${prompt.id}`}
+              href={detailHref}
               className="text-xs text-gray-500 hover:text-brand-orange"
             >
               View
@@ -84,7 +92,7 @@ export default function AdminPromptRow({
         ) : prompt.status === 'rejected' ? (
           <div className="flex items-center justify-end gap-2">
             <Link
-              href={`/prompt/${prompt.id}`}
+              href={detailHref}
               className="text-xs text-gray-500 hover:text-brand-orange"
             >
               View
@@ -99,7 +107,7 @@ export default function AdminPromptRow({
           </div>
         ) : (
           <Link
-            href={`/prompt/${prompt.id}`}
+            href={detailHref}
             className="text-xs text-gray-500 hover:text-brand-orange"
           >
             View

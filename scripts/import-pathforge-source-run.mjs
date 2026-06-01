@@ -89,20 +89,8 @@ function mapSteps(pkg) {
   }))
 }
 
-function makeAgentNotes(pkg, packageArg) {
-  return [
-    'Let the agent structure this captured source run into a PathForge project page.',
-    'Page shape: final artifact embedded first, then exact prompt/response chain below. Preserve exact response text. Keep generated code in collapsed response packages. Tie generated files to the response that produced them.',
-    `Title: ${pkg.title}`,
-    `Description: ${pkg.description}`,
-    pkg.provider || pkg.model ? `Provider/model: ${[pkg.provider, pkg.model].filter(Boolean).join(' / ')}` : '',
-    pkg.chain_type ? `Chain type: ${pkg.chain_type}` : '',
-    pkg.source_url ? `Source run: ${pkg.source_url}` : '',
-    pkg.final_artifact_path ? `Final artifact: ${pkg.final_artifact_path}` : '',
-    pkg.verification_notes ? `Verification: ${pkg.verification_notes}` : '',
-    packageArg ? `Seed package: ${packageArg}` : '',
-    pkg.submitted_by_profile_registry_id ? `Profile registry ID: ${pkg.submitted_by_profile_registry_id}` : '',
-  ].filter(Boolean).join('\n')
+function makeAgentNotes(pkg) {
+  return typeof pkg.agent_notes === 'string' ? pkg.agent_notes.trim() : ''
 }
 
 function publicResult({ mode, sourceRunId, promptId, promptUrl, pkg, profile, dryRun, loginIdentifier, stepsImported }) {
@@ -235,13 +223,13 @@ async function createPasswordSessionClient(supabaseUrl, anonKey, args) {
   }
 }
 
-async function insertSourceRunSubmission(importClient, pkg, profile, packageArg) {
+async function insertSourceRunSubmission(importClient, pkg, profile) {
   const sourceUrl = requireString(pkg.source_url, 'source_url')
   const payload = {
     title: pkg.title,
     source_url: sourceUrl,
     file_name: null,
-    notes: makeAgentNotes(pkg, packageArg),
+    notes: makeAgentNotes(pkg),
     author_id: profile.id,
     status: 'queued',
   }
@@ -351,7 +339,7 @@ async function main() {
   }
 
   if (!args.submitDraft) {
-    const sourceRun = await insertSourceRunSubmission(importClient, pkg, profile, args.package)
+    const sourceRun = await insertSourceRunSubmission(importClient, pkg, profile)
 
     console.log(JSON.stringify(publicResult({
       mode: 'source-run-intake',

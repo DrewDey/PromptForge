@@ -19,7 +19,8 @@ import {
 } from './mock-data'
 import { isPersistableProjectId } from './project-engagement'
 import { DECISION_MATRIX_PROJECT_ID, HP_10BII_PROJECT_ID, SNAKE_PROJECT_ID, SNAKE_PROJECT_LEGACY_ID } from './featured-projects'
-import type { PreparedShowcaseProject } from './prepared-showcase-projects'
+import { HP_10BII_SHOWCASE_PROJECT } from './prepared-showcase-projects'
+import type { PreparedShowcaseProject, PreparedShowcaseStep } from './prepared-showcase-projects'
 
 const APPROVED_PROJECT_IDS = new Set([SNAKE_PROJECT_ID, HP_10BII_PROJECT_ID])
 const PUBLIC_LIBRARY_START_AT = '2026-05-28T00:00:00.000Z'
@@ -48,6 +49,21 @@ function isPublicLibraryPrompt(prompt: { id: string; created_at?: string | null 
 }
 
 function normalizeProjectPresentation<T extends PromptWithRelations>(prompt: T): T {
+  if (prompt.id === HP_10BII_PROJECT_ID) {
+    return {
+      ...prompt,
+      title: HP_10BII_SHOWCASE_PROJECT.title,
+      description: HP_10BII_SHOWCASE_PROJECT.description,
+      content: HP_10BII_SHOWCASE_PROJECT.content,
+      result_content: HP_10BII_SHOWCASE_PROJECT.resultContent,
+      model_used: HP_10BII_SHOWCASE_PROJECT.modelUsed,
+      model_recommendation: HP_10BII_SHOWCASE_PROJECT.modelRecommendation,
+      tools_used: HP_10BII_SHOWCASE_PROJECT.toolsUsed,
+      tags: HP_10BII_SHOWCASE_PROJECT.tags,
+      steps: HP_10BII_SHOWCASE_PROJECT.steps.map((step) => preparedStepToPromptStep(step, HP_10BII_SHOWCASE_PROJECT.id)),
+    }
+  }
+
   if (prompt.id !== DECISION_MATRIX_PROJECT_ID) return prompt
 
   return {
@@ -63,6 +79,19 @@ function normalizeProjectPresentation<T extends PromptWithRelations>(prompt: T):
     model_recommendation: 'Gemini Flash',
     tools_used: ['Gemini', 'Chrome', 'HTML', 'Browser'],
     tags: ['decision matrix', 'productivity', 'html', 'csv export', 'one-shot', 'playable artifact'],
+  }
+}
+
+function preparedStepToPromptStep(step: PreparedShowcaseStep, promptId: string) {
+  return {
+    id: step.id,
+    prompt_id: promptId,
+    step_number: step.stepNumber,
+    title: step.title,
+    content: step.content,
+    result_content: step.resultContent,
+    description: step.description,
+    created_at: HP_10BII_SHOWCASE_PROJECT.createdAt,
   }
 }
 

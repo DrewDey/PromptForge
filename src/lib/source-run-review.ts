@@ -30,12 +30,17 @@ export function titleForSourceRunReview(input: {
 export function agentNotesForSourceRunReview(notes: string | null) {
   const raw = notes?.trim() ?? ''
   if (!raw) return ''
+  const withoutRedundantTitle = raw
+    .split(/\r?\n/)
+    .filter((line) => !line.trim().startsWith('Title:'))
+    .join('\n')
+    .trim()
 
   const hasLegacyGeneratedNotes = raw.includes('Let the agent structure this captured source run into a PathForge project page.')
     || raw.includes('Page shape: final artifact embedded first')
     || raw.includes('Seed package:')
 
-  if (!hasLegacyGeneratedNotes) return raw
+  if (!hasLegacyGeneratedNotes) return withoutRedundantTitle
 
   const hiddenPrefixes = [
     'Title:',
@@ -49,7 +54,7 @@ export function agentNotesForSourceRunReview(notes: string | null) {
     'Profile registry ID:',
   ]
 
-  return raw
+  return withoutRedundantTitle
     .split(/\r?\n/)
     .map((line) => line.trim())
     .filter((line) => {

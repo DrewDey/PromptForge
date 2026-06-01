@@ -1,0 +1,46 @@
+import Link from 'next/link'
+import { ArrowRight, GitFork } from 'lucide-react'
+
+export default function ProjectForkCallout({
+  projectId,
+  projectTitle,
+}: {
+  projectId: string
+  projectTitle?: string
+}) {
+  const forkParams = new URLSearchParams({ fork: projectId })
+  if (projectTitle) forkParams.set('forkTitle', projectTitle)
+  const forkHref = `/build?${forkParams.toString()}`
+
+  return (
+    <div className="mb-10 border border-surface-200 bg-white">
+      <div className="grid gap-0 lg:grid-cols-[minmax(0,1fr)_320px]">
+        <div className="p-5 sm:p-6">
+          <div className="flex items-center gap-2 font-mono text-[10px] font-semibold uppercase tracking-[0.16em] text-surface-500">
+            <GitFork className="h-3.5 w-3.5 text-brand-orange" aria-hidden="true" />
+            Fork this path
+          </div>
+          <h2 className="mt-2 text-2xl font-black text-surface-900">Build your own version.</h2>
+          <p className="mt-2 max-w-2xl text-sm leading-6 text-surface-600">
+            Use this project as the starting point for a new draft. Swap in your own prompt, source run, or
+            refinement, then publish the version that actually works.
+          </p>
+        </div>
+
+        <div className="border-t border-surface-200 bg-surface-900 p-5 text-white lg:border-l lg:border-t-0">
+          <Link
+            href={forkHref}
+            className="inline-flex w-full items-center justify-center gap-2 bg-brand-orange px-4 py-3 text-sm font-semibold text-white transition hover:bg-brand-orange-dark focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange"
+          >
+            <GitFork className="h-4 w-4" aria-hidden="true" />
+            Fork this path
+            <ArrowRight className="h-4 w-4" aria-hidden="true" />
+          </Link>
+          <p className="mt-3 text-xs leading-5 text-surface-400">
+            Opens the build flow with this project attached as the fork source.
+          </p>
+        </div>
+      </div>
+    </div>
+  )
+}

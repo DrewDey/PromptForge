@@ -38,6 +38,8 @@ function isActivePath(pathname: string, href: string) {
       pathname === '/browse' ||
       pathname === '/snake-demo' ||
       pathname === '/decision-matrix-demo' ||
+      pathname === '/hp-10bii-calculator-demo' ||
+      pathname === '/tic-tac-toe-demo' ||
       (pathname.startsWith('/prompt/') && pathname !== '/prompt/new')
     )
   }

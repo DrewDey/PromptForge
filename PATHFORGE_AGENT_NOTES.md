@@ -46,6 +46,7 @@ If an entry starts as a session link, the agent drafts the project page first. O
 
 - Final artifact embedded at the top.
 - Prompt and response chain below the final artifact.
+- Custom showcase routes are renderer overrides, not exceptions. They still need the same public project shell as generic project pages.
 - The title area should be the project title plus a short description of what the run produced.
 - Each response should preserve the exact response text.
 - Code inside a response should be formatted as code and collapsed when long.
@@ -55,9 +56,11 @@ If an entry starts as a session link, the agent drafts the project page first. O
 - Summaries and verification notes can exist, but they must not replace exact source text.
 - Forks should visually branch from the main chain.
 - Each response should be forkable into a new branch where the source chain compacts left and the fork prompt/response chain grows to the right.
+- Every public project page should expose an obvious fork action that opens the build flow with the source project identified. A passive fork count by itself is not enough.
 - Project pages should include real community surfaces: upvotes, downvotes, saves/bookmarks, comments, and replies. Counts start at zero and should not be seeded with fake activity.
 - The current visual direction for chain connections is chunky green pipe/tube connectors, inspired by Flappy Bird pipes.
 - Avoid response packages that feel like generic attachment grids or hide what actually happened.
+- Before publication, verify the page by route, not component assumption: artifact loads, source count matches, fork action exists, engagement does not click through, browse/profile links route correctly, and the page does not fall back to stale generic `/prompt/[id]` presentation.
 
 ## Agent Map
 

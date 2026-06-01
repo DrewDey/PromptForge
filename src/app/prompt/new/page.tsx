@@ -285,6 +285,7 @@ function intakeCardClass(active: boolean) {
 export default function SubmitProjectPage() {
   const router = useRouter()
   const [isLoggedIn, setIsLoggedIn] = useState<boolean | null>(null)
+  const [forkSource, setForkSource] = useState<{ id: string; title: string } | null>(null)
 
   // Form state
   const [intakeMode, setIntakeMode] = useState<IntakeMode>('source-run')
@@ -327,6 +328,18 @@ export default function SubmitProjectPage() {
   // Client-side validation state
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({})
   const [hasAttemptedSubmit, setHasAttemptedSubmit] = useState(false)
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    const fork = params.get('fork')?.trim()
+    if (!fork) return
+
+    const forkTitle = params.get('forkTitle')?.trim() || ''
+    setForkSource({ id: fork, title: forkTitle })
+    setSourceRunNotes(current => (
+      current.trim() ? current : `Fork source project: ${forkTitle || fork}`
+    ))
+  }, [])
 
   const modelsByProvider = getModelsByProvider()
 
@@ -627,6 +640,25 @@ export default function SubmitProjectPage() {
           Paste the real AI session link first. Manual entry is the fallback for tools that cannot export or share a usable run.
         </p>
       </header>
+
+      {forkSource && (
+        <div className="mb-8 border border-brand-orange/40 bg-brand-orange/5 p-4">
+          <div className="flex flex-wrap items-start gap-3">
+            <GitBranch className="mt-0.5 h-5 w-5 text-brand-orange" aria-hidden="true" />
+            <div className="min-w-0 flex-1">
+              <div className="font-mono text-[10px] font-semibold uppercase tracking-[0.16em] text-brand-orange">
+                Fork source attached
+              </div>
+              <p className="mt-1 text-sm font-semibold text-surface-900">
+                {forkSource.title ? `Forking from ${forkSource.title}` : 'Forking from an existing PathForge project'}
+              </p>
+              <p className="mt-1 text-xs leading-5 text-surface-600">
+                Add your source-run link or prompt changes here. The fork source is already included in the agent notes.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
 
       {error && (
         <div className="bg-red-50 border border-red-200 text-red-700 text-sm px-4 py-3 mb-6 max-w-2xl flex items-start gap-2">

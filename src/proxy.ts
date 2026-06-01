@@ -1,8 +1,18 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
+import { getProjectRouteOverride } from './lib/project-links'
 
 export async function proxy(request: NextRequest) {
   const pathname = request.nextUrl.pathname
+  const promptMatch = pathname.match(/^\/prompt\/([^/]+)$/)
+
+  if (promptMatch) {
+    const routeOverride = getProjectRouteOverride(decodeURIComponent(promptMatch[1]))
+    if (routeOverride) {
+      return NextResponse.redirect(new URL(routeOverride, request.url))
+    }
+  }
+
   const authAwareRoute = pathname.startsWith('/admin')
 
   if (

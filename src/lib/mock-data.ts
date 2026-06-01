@@ -8,7 +8,7 @@ import {
   SuggestionWithRelations,
 } from './types'
 import { SNAKE_PROJECT_ID } from './featured-projects'
-import { HP_10BII_SHOWCASE_PROJECT } from './prepared-showcase-projects'
+import { HP_10BII_SHOWCASE_PROJECT, TIC_TAC_TOE_SHOWCASE_PROJECT } from './prepared-showcase-projects'
 
 export const mockProfiles: Profile[] = [
   {
@@ -30,6 +30,16 @@ export const mockProfiles: Profile[] = [
     role: 'user',
     created_at: '2026-06-01T01:07:00Z',
     updated_at: HP_10BII_SHOWCASE_PROJECT.updatedAt,
+  },
+  {
+    id: '22222222-2222-2222-2222-222222222213',
+    username: TIC_TAC_TOE_SHOWCASE_PROJECT.authorUsername,
+    display_name: TIC_TAC_TOE_SHOWCASE_PROJECT.authorDisplayName,
+    avatar_url: null,
+    bio: 'Basic browser-game builds submitted through PathForge source runs.',
+    role: 'user',
+    created_at: '2026-05-30T21:30:00Z',
+    updated_at: TIC_TAC_TOE_SHOWCASE_PROJECT.updatedAt,
   },
 ]
 
@@ -66,6 +76,16 @@ export const mockSteps: PromptStep[] = [
     result_content: step.resultContent,
     description: step.description,
     created_at: HP_10BII_SHOWCASE_PROJECT.createdAt,
+  })),
+  ...TIC_TAC_TOE_SHOWCASE_PROJECT.steps.map((step) => ({
+    id: step.id,
+    prompt_id: TIC_TAC_TOE_SHOWCASE_PROJECT.id,
+    step_number: step.stepNumber,
+    title: step.title,
+    content: step.content,
+    result_content: step.resultContent,
+    description: step.description,
+    created_at: TIC_TAC_TOE_SHOWCASE_PROJECT.createdAt,
   })),
 ]
 
@@ -107,6 +127,25 @@ export const mockPrompts: Prompt[] = [
     bookmark_count: 0,
     created_at: HP_10BII_SHOWCASE_PROJECT.createdAt,
     updated_at: HP_10BII_SHOWCASE_PROJECT.updatedAt,
+  },
+  {
+    id: TIC_TAC_TOE_SHOWCASE_PROJECT.id,
+    title: TIC_TAC_TOE_SHOWCASE_PROJECT.title,
+    description: TIC_TAC_TOE_SHOWCASE_PROJECT.description,
+    content: TIC_TAC_TOE_SHOWCASE_PROJECT.content,
+    result_content: TIC_TAC_TOE_SHOWCASE_PROJECT.resultContent,
+    category_id: TIC_TAC_TOE_SHOWCASE_PROJECT.mockCategoryId,
+    difficulty: TIC_TAC_TOE_SHOWCASE_PROJECT.difficulty,
+    model_used: TIC_TAC_TOE_SHOWCASE_PROJECT.modelUsed,
+    model_recommendation: TIC_TAC_TOE_SHOWCASE_PROJECT.modelRecommendation,
+    tools_used: TIC_TAC_TOE_SHOWCASE_PROJECT.toolsUsed,
+    tags: TIC_TAC_TOE_SHOWCASE_PROJECT.tags,
+    status: 'approved',
+    author_id: '22222222-2222-2222-2222-222222222213',
+    vote_count: 0,
+    bookmark_count: 0,
+    created_at: TIC_TAC_TOE_SHOWCASE_PROJECT.createdAt,
+    updated_at: TIC_TAC_TOE_SHOWCASE_PROJECT.updatedAt,
   },
 ]
 

@@ -1,6 +1,6 @@
 ---
 name: employee-1
-description: Project-local Employee 1 operating skill for PathForge in /Users/ddtuchfarber/Desktop/Business Ideas/Prompt Project Platform. Use when Codex is working in this repo throughout the day, receiving product notes, bug reports, screenshots, voice-dictated brainstorming, implementation requests, local verification tasks, production-readiness checks, or night-end commit preparation. Keep daytime work local while always working toward production-ready outcomes, act as the user's practical engineering worker, verify changes, protect user intent, avoid over-interpreting rough voice notes as broad rewrite mandates, and only commit, push, deploy, or apply production data changes after explicit user approval.
+description: Project-local Employee 1 operating skill for PathForge in /Users/ddtuchfarber/Desktop/Business Ideas/Prompt Project Platform. Use when Codex is working in this repo throughout the day, receiving product notes, bug reports, screenshots, voice-dictated brainstorming, implementation requests, local verification tasks, public project page repairs, source-run approvals, page-publishing consistency checks, production-readiness checks, or night-end commit preparation. Keep daytime work local while always working toward production-ready outcomes, act as the user's practical engineering worker, verify changes, protect user intent, avoid over-interpreting rough voice notes as broad rewrite mandates, and only commit, push, deploy, or apply production data changes after explicit user approval.
 ---
 
 # Employee 1
@@ -45,14 +45,44 @@ Every local fix should move PathForge closer to something that can safely run on
 
 Use this standard whenever a submitted source-run project is being approved, converted into a public page, repaired, or checked for consistency. Treat the HP 10Bii+ calculator page as the current regression test for this workflow.
 
+- Treat custom showcase routes as renderer overrides, not exceptions. A special mounted page still needs the same public project shell as every other public project page.
+- Pick the closest existing pattern before building: Snake for one-shot playable artifact pages, Decision Matrix for one-shot productivity artifacts, and HP 10Bii+ for multi-prompt source-run pages with artifact versions.
 - Preserve the full source sequence. Every user prompt must be followed by the response package that came after it. Do not collapse a multi-prompt run into one final "story" or one summary response.
 - Response packages must preserve the visible model response text from the source chat. Summaries, titles, verification notes, and page copy can exist, but they must not replace the exact source response.
 - If a response produced or changed a file/artifact, tie that file to that exact response package. Long HTML, code, or file bodies should be collapsed/shrinkable and copyable.
 - If the run has multiple artifact versions, the public page needs a visible way to select the response/artifact version. The selected response should have an obvious selected state, and the mounted artifact above must match that selection.
 - The final approved artifact should load first by default, but earlier response artifacts still need to be inspectable when they exist.
 - Keep the public page visually consistent with the approved PathForge page shape: final artifact first, prompt/response path below, chunky green pipe connectors, real engagement controls, no fake activity.
-- Before calling a source-run page done, verify the page itself: route loads, artifact is nonblank, package switching works, prompt count and response-package count match the source, code blocks collapse, copy/open controls exist, browse card/profile links route to the special page, and the stale generic `/prompt/[id]` page is not what users see.
+- Every public project page needs an obvious fork action, not only a passive fork count. The action should open the build flow with the source project identified, and Employee 1 must verify it appears on special mounted pages as well as generic project pages.
+- Use shared components for shared project behavior whenever possible. Do not hand-copy fork, engagement, or discussion UI into one-off pages if a shared component can carry it across all pages.
+- Before calling a source-run page done, verify the page itself: route loads, artifact is nonblank, package switching works, prompt count and response-package count match the source, code blocks collapse, copy/open controls exist, fork action is visible and routes to `/build?fork=PROJECT_ID`, engagement clicks do not open the project page, browse card/profile links route to the special page, and the stale generic `/prompt/[id]` page is not what users see.
 - Keep iterating this standard when a publishing issue exposes a new consistency rule. Add the rule here instead of relying on memory or one-off judgment.
+
+## Public Project Page Consistency Contract
+
+Every public project page, generic or special, must expose the same core page experience. The artifact and response details can vary; the product shell should not.
+
+- Header/title area: project title, short description, author/date where available, category/domain, difficulty, model, tools, and real engagement controls.
+- Primary result: the final artifact or outcome appears first and loads without blank frames, broken paths, local-only files, or hidden required context.
+- Build path: each prompt is paired with the response that followed it, with copy controls and collapsed long code/artifact bodies.
+- Versioning: multi-response artifact pages can select earlier and final artifacts, and the selected response state is obvious.
+- Forking: a visible fork action exists on the page and opens the build flow with the source project identified.
+- Community: comments/discussion and real zero-state counts appear without fake activity.
+- Routing: `/paths`, profile pages, admin rows, and direct project links all resolve to the correct public page shape.
+- Mobile: the same essential actions remain reachable without text overlap, hidden buttons, or broken sticky controls.
+
+## Publish Or Repair Checklist
+
+Use this checklist before approving, publishing, pushing, or telling the user a project page is fixed.
+
+1. Identify the source type: one-shot artifact, multi-prompt source run, fork, manual submission, or incomplete intake.
+2. Choose the closest existing page pattern and reuse its structure before inventing new layout.
+3. Confirm the production artifact strategy: committed file, approved production storage, or another source production can serve.
+4. Wire the data and route: project id, prepared project record if needed, special route, browse/profile link override, and admin review link.
+5. Build the public page shell from the consistency contract above.
+6. Verify locally with the real route: page loads, artifact renders, artifact interaction works, response count matches source, copy/open controls exist, fork action works, engagement buttons do not click through, and browse/profile/admin links point to the intended page.
+7. Run code checks that match the change, normally `npx tsc --noEmit`, `git diff --check`, and `npm run build` for public page work.
+8. If any checklist item fails, keep fixing before reporting back. Do not call the page done because the changed component looks right in isolation.
 
 ## Default Priority Order
 
@@ -86,7 +116,7 @@ Treat screenshot/file hygiene as lower priority than broken product behavior unl
 - Main browse/search surface: `/paths` implemented mostly in `src/app/browse/page.tsx` and `src/app/browse.css`.
 - New project/build intake: `src/app/prompt/new/page.tsx`.
 - Project detail route: `src/app/prompt/[id]/page.tsx`.
-- Special mounted artifacts include `/snake-demo` and `/decision-matrix-demo`.
+- Special mounted artifacts include `/snake-demo`, `/decision-matrix-demo`, and `/hp-10bii-calculator-demo`.
 - Shared engagement UI lives in `src/components/VoteBookmarkButtons.tsx` and special project engagement in `src/components/ProjectEngagementBar.tsx`.
 - Data access and Supabase fallbacks live in `src/lib/data.ts`; server actions live in `src/lib/actions.ts`.
 - Supabase schema or policy updates belong in `supabase/*.sql` and stay local until the user approves running them.

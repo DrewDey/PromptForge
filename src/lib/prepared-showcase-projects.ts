@@ -1,4 +1,4 @@
-import { HP_10BII_PROJECT_ID } from './featured-projects'
+import { HP_10BII_PROJECT_ID, TIC_TAC_TOE_PROJECT_ID } from './featured-projects'
 import type { Prompt } from './types'
 
 export type PreparedShowcaseStep = {
@@ -81,7 +81,44 @@ export const HP_10BII_SHOWCASE_PROJECT: PreparedShowcaseProject = {
   ],
 }
 
-export const PREPARED_SHOWCASE_PROJECTS = [HP_10BII_SHOWCASE_PROJECT]
+export const TIC_TAC_TOE_SHOWCASE_PROJECT: PreparedShowcaseProject = {
+  id: TIC_TAC_TOE_PROJECT_ID,
+  sourceRunId: '08b06ee4-203b-40c8-a4da-aa299bc79d48',
+  href: '/tic-tac-toe-demo',
+  title: 'Playable Tic-Tac-Toe',
+  description:
+    'A basic Gemini Flash source run produced a self-contained browser Tic-Tac-Toe game with turn handling, win detection, draw detection, and a reset control.',
+  content:
+    'Alex Rivera used Gemini Flash for the simplest possible workflow proof: one plain prompt asking for a playable Tic-Tac-Toe game as a single HTML file. The run produced a working browser artifact without a follow-up prompt.',
+  resultContent:
+    'A playable Tic-Tac-Toe game embedded directly on the page. The response package includes the exact prompt, Gemini response intro, generated HTML artifact, source-run link, and verification notes.',
+  categorySlug: 'personal',
+  mockCategoryId: 'cat-10',
+  difficulty: 'beginner',
+  modelUsed: 'Gemini Flash',
+  modelRecommendation: 'Gemini Flash',
+  toolsUsed: ['Gemini', 'Chrome', 'HTML', 'Browser'],
+  tags: ['tic-tac-toe', 'game', 'html', 'one-file', 'basic-build', 'playable artifact'],
+  artifactPath: '/artifacts/tic-tac-toe-gemini-flash-basic.html',
+  sourceUrl: 'https://gemini.google.com/app/07bc959af275ca09',
+  authorDisplayName: 'Alex Rivera',
+  authorUsername: 'AlexRivera',
+  createdAt: '2026-05-30T21:32:29.000Z',
+  updatedAt: '2026-06-01T03:20:00.000Z',
+  steps: [
+    {
+      id: `${TIC_TAC_TOE_PROJECT_ID}-step-1`,
+      stepNumber: 1,
+      title: 'Generate the game',
+      content: 'Make me a playable Tic-Tac-Toe game as a single self-contained HTML file.',
+      resultContent:
+        'Gemini returned a complete self-contained Tic-Tac-Toe HTML artifact with styling, turn logic, win/draw detection, and reset behavior.',
+      description: 'One plain Gemini prompt that generated the playable browser game.',
+    },
+  ],
+}
+
+export const PREPARED_SHOWCASE_PROJECTS = [HP_10BII_SHOWCASE_PROJECT, TIC_TAC_TOE_SHOWCASE_PROJECT]
 
 export function getPreparedShowcaseProjectBySourceRunId(sourceRunId: string) {
   return PREPARED_SHOWCASE_PROJECTS.find(project => project.sourceRunId === sourceRunId) ?? null

@@ -16,6 +16,7 @@ import Prose from '@/components/Prose'
 import ProjectCommunityPanel from '@/components/ProjectCommunityPanel'
 import { detectContentKind } from '@/lib/content-kind'
 import { isPersistableProjectId } from '@/lib/project-engagement'
+import { getProjectRouteOverride } from '@/lib/project-links'
 
 /**
  * Pick the right renderer AND the right eyebrow label for a step's payload.
@@ -93,6 +94,9 @@ export default async function PromptDetailPage({
   params: Promise<{ id: string }>
 }) {
   const { id } = await params
+  const routeOverride = getProjectRouteOverride(id)
+  if (routeOverride) redirect(routeOverride)
+
   const prompt = await getPromptById(id)
 
   if (!prompt) notFound()
@@ -105,6 +109,8 @@ export default async function PromptDetailPage({
   const hasSteps = prompt.steps && prompt.steps.length > 0
   const modelDisplay = prompt.model_used ? getModelName(prompt.model_used) : prompt.model_recommendation
   const difficulty = difficultyConfig[prompt.difficulty] || difficultyConfig.beginner
+  const forkParams = new URLSearchParams({ fork: prompt.id, forkTitle: prompt.title })
+  const forkHref = `/build?${forkParams.toString()}`
 
   // Hero "Final output" exhibit (iter 51 — Polish #1).
   // Prefer the project-level final result_content; if absent, fall back to
@@ -649,11 +655,11 @@ export default async function PromptDetailPage({
             </div>
             <div className="px-5 py-4 space-y-4">
               <Link
-                href="/build"
+                href={forkHref}
                 className="flex w-full items-center justify-center gap-2 bg-brand-orange hover:bg-brand-orange-dark text-white text-sm font-semibold px-4 py-2.5 transition-colors duration-200 focus-visible:outline-2 focus-visible:outline-brand-orange focus-visible:outline-offset-2"
               >
                 <GitFork className="w-4 h-4" aria-hidden="true" />
-                Use as starting point
+                Fork this path
               </Link>
               <ul className="text-[11px] text-surface-500 space-y-1.5 pt-1 border-t border-surface-200/80">
                 <li className="flex items-center justify-between gap-3 pt-2">
@@ -707,11 +713,11 @@ export default async function PromptDetailPage({
           </p>
         </div>
         <Link
-          href="/build"
+          href={forkHref}
           className="inline-flex items-center justify-center gap-1.5 bg-brand-orange hover:bg-brand-orange-dark text-white text-[13px] font-semibold px-3.5 py-2.5 transition-colors duration-200 shrink-0 focus-visible:outline-2 focus-visible:outline-brand-orange focus-visible:outline-offset-2"
         >
           <GitFork className="w-4 h-4" aria-hidden="true" />
-          Use this
+          Fork
         </Link>
       </div>
     </nav>

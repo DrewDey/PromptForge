@@ -18,11 +18,17 @@ import {
   mockSuggestions,
 } from './mock-data'
 import { isPersistableProjectId } from './project-engagement'
-import { DECISION_MATRIX_PROJECT_ID, HP_10BII_PROJECT_ID, SNAKE_PROJECT_ID, SNAKE_PROJECT_LEGACY_ID } from './featured-projects'
+import {
+  DECISION_MATRIX_PROJECT_ID,
+  HP_10BII_PROJECT_ID,
+  SNAKE_PROJECT_ID,
+  SNAKE_PROJECT_LEGACY_ID,
+  TIC_TAC_TOE_PROJECT_ID,
+} from './featured-projects'
 import { getPreparedShowcaseProjectById } from './prepared-showcase-projects'
 import type { PreparedShowcaseProject, PreparedShowcaseStep } from './prepared-showcase-projects'
 
-const APPROVED_PROJECT_IDS = new Set([SNAKE_PROJECT_ID, HP_10BII_PROJECT_ID])
+const APPROVED_PROJECT_IDS = new Set([SNAKE_PROJECT_ID, HP_10BII_PROJECT_ID, TIC_TAC_TOE_PROJECT_ID])
 const PUBLIC_LIBRARY_START_AT = '2026-05-28T00:00:00.000Z'
 const publicMockPrompts = mockPrompts.filter((prompt) => APPROVED_PROJECT_IDS.has(prompt.id))
 const publicMockSteps = mockSteps.filter((step) => APPROVED_PROJECT_IDS.has(step.prompt_id))

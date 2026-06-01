@@ -19,7 +19,7 @@ import {
 } from './mock-data'
 import { isPersistableProjectId } from './project-engagement'
 import { DECISION_MATRIX_PROJECT_ID, HP_10BII_PROJECT_ID, SNAKE_PROJECT_ID, SNAKE_PROJECT_LEGACY_ID } from './featured-projects'
-import { HP_10BII_SHOWCASE_PROJECT } from './prepared-showcase-projects'
+import { getPreparedShowcaseProjectById } from './prepared-showcase-projects'
 import type { PreparedShowcaseProject, PreparedShowcaseStep } from './prepared-showcase-projects'
 
 const APPROVED_PROJECT_IDS = new Set([SNAKE_PROJECT_ID, HP_10BII_PROJECT_ID])
@@ -49,18 +49,19 @@ function isPublicLibraryPrompt(prompt: { id: string; created_at?: string | null 
 }
 
 function normalizeProjectPresentation<T extends PromptWithRelations>(prompt: T): T {
-  if (prompt.id === HP_10BII_PROJECT_ID) {
+  const preparedProject = getPreparedShowcaseProjectById(prompt.id)
+  if (preparedProject) {
     return {
       ...prompt,
-      title: HP_10BII_SHOWCASE_PROJECT.title,
-      description: HP_10BII_SHOWCASE_PROJECT.description,
-      content: HP_10BII_SHOWCASE_PROJECT.content,
-      result_content: HP_10BII_SHOWCASE_PROJECT.resultContent,
-      model_used: HP_10BII_SHOWCASE_PROJECT.modelUsed,
-      model_recommendation: HP_10BII_SHOWCASE_PROJECT.modelRecommendation,
-      tools_used: HP_10BII_SHOWCASE_PROJECT.toolsUsed,
-      tags: HP_10BII_SHOWCASE_PROJECT.tags,
-      steps: HP_10BII_SHOWCASE_PROJECT.steps.map((step) => preparedStepToPromptStep(step, HP_10BII_SHOWCASE_PROJECT.id)),
+      title: preparedProject.title,
+      description: preparedProject.description,
+      content: preparedProject.content,
+      result_content: preparedProject.resultContent,
+      model_used: preparedProject.modelUsed,
+      model_recommendation: preparedProject.modelRecommendation,
+      tools_used: preparedProject.toolsUsed,
+      tags: preparedProject.tags,
+      steps: preparedProject.steps.map((step) => preparedStepToPromptStep(step, preparedProject)),
     }
   }
 
@@ -82,16 +83,16 @@ function normalizeProjectPresentation<T extends PromptWithRelations>(prompt: T):
   }
 }
 
-function preparedStepToPromptStep(step: PreparedShowcaseStep, promptId: string) {
+function preparedStepToPromptStep(step: PreparedShowcaseStep, project: PreparedShowcaseProject) {
   return {
     id: step.id,
-    prompt_id: promptId,
+    prompt_id: project.id,
     step_number: step.stepNumber,
     title: step.title,
     content: step.content,
     result_content: step.resultContent,
     description: step.description,
-    created_at: HP_10BII_SHOWCASE_PROJECT.createdAt,
+    created_at: project.createdAt,
   }
 }
 

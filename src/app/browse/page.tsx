@@ -15,6 +15,7 @@ import { redirect } from 'next/navigation'
 import { getCategories, getPrompts, getUserVotesAndBookmarks } from '@/lib/data'
 import type { PromptWithRelations } from '@/lib/types'
 import { AI_MODELS } from '@/lib/models'
+import { getPreparedShowcaseProjectById } from '@/lib/prepared-showcase-projects'
 import { isPersistableProjectId } from '@/lib/project-engagement'
 import { getProjectHref } from '@/lib/project-links'
 import VoteBookmarkButtons from '@/components/VoteBookmarkButtons'
@@ -51,6 +52,10 @@ const SUGGESTION_QUERIES = [
   'playable artifact',
   'token maxing demo',
 ]
+
+function getPromptStepCount(prompt: PromptWithRelations) {
+  return getPreparedShowcaseProjectById(prompt.id)?.steps.length ?? prompt.steps?.length ?? 0
+}
 
 const BROAD_DOMAINS = [
   {
@@ -556,7 +561,7 @@ export default async function BrowsePage({
                       const isTop = i === 0
                       const domain = promptDomain(p)
                       const modelLabel = getPromptModelLabel(p)
-                      const stepCount = p.steps?.length ?? 0
+                      const stepCount = getPromptStepCount(p)
                       return (
                         <article
                           key={p.id}
@@ -674,7 +679,7 @@ export default async function BrowsePage({
                       <span>by <b>{potw.author?.display_name ?? potw.author?.username ?? 'builder'}</b></span>
                     </div>
                     <span className={`potw-diff ${potw.difficulty}`}>{potw.difficulty}</span>
-                    <span className="potw-meta">{potw.steps?.length ?? 0} steps</span>
+                    <span className="potw-meta">{getPromptStepCount(potw)} steps</span>
                     {potwModelLabel && potwModelLabel !== 'Unknown model' && (
                       <span className="potw-meta">
                         {potwModelLabel}
@@ -741,7 +746,7 @@ export default async function BrowsePage({
                           <span>by {p.author?.display_name ?? p.author?.username ?? 'builder'}</span>
                         </div>
                         <div className="shelf-foot-row">
-                          <span>{p.steps?.length ?? 0} steps{modelLabel !== 'Unknown model' ? ` · ${modelLabel}` : ''}</span>
+                          <span>{getPromptStepCount(p)} steps{modelLabel !== 'Unknown model' ? ` · ${modelLabel}` : ''}</span>
                           <span>{p.vote_count} upvotes · {p.bookmark_count} saves</span>
                         </div>
                       </Link>
@@ -964,7 +969,7 @@ function ComparisonResults({
             {group.prompts.map((prompt) => {
               const modelLabel = getPromptModelLabel(prompt)
               const era = getPromptModelEra(prompt)
-              const stepCount = prompt.steps?.length ?? 0
+              const stepCount = getPromptStepCount(prompt)
               const domainLabel = getDomainLabel(prompt)
 
               return (

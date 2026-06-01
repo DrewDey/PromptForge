@@ -17,10 +17,11 @@ import {
   mockSteps,
   mockSuggestions,
 } from './mock-data'
+import { isPersistableProjectId } from './project-engagement'
+import { DECISION_MATRIX_PROJECT_ID, SNAKE_PROJECT_ID, SNAKE_PROJECT_LEGACY_ID } from './featured-projects'
 
-const APPROVED_PROJECT_IDS = new Set(['snake-gpt55-pro-oneshot'])
+const APPROVED_PROJECT_IDS = new Set([SNAKE_PROJECT_ID])
 const PUBLIC_LIBRARY_START_AT = '2026-05-28T00:00:00.000Z'
-const DECISION_MATRIX_PROJECT_ID = '069d354a-ec99-4ee4-aed4-aa1baaec8b29'
 const publicMockPrompts = mockPrompts.filter((prompt) => APPROVED_PROJECT_IDS.has(prompt.id))
 const publicMockSteps = mockSteps.filter((step) => APPROVED_PROJECT_IDS.has(step.prompt_id))
 const publicMockCategories = mockCategories.map((category) => ({
@@ -227,7 +228,8 @@ export async function getAllPromptsForAdmin(): Promise<PromptWithRelations[]> {
 }
 
 export async function getPromptById(id: string): Promise<PromptWithRelations | null> {
-  const mockPrompt = publicMockPrompts.find(p => p.id === id)
+  const resolvedId = id === SNAKE_PROJECT_LEGACY_ID ? SNAKE_PROJECT_ID : id
+  const mockPrompt = publicMockPrompts.find(p => p.id === resolvedId)
   const fallback = mockPrompt ? attachRelations(mockPrompt) : null
   return readWithFallback(fallback, async () => {
     const { createClient } = await import('./supabase/server')
@@ -235,10 +237,10 @@ export async function getPromptById(id: string): Promise<PromptWithRelations | n
     const { data } = await supabase
       .from('prompts')
       .select('*, category:categories(*), author:profiles(*), steps:prompt_steps(*)')
-      .eq('id', id)
+      .eq('id', resolvedId)
       .maybeSingle()
 
-    if (!data) return null
+    if (!data) return fallback
     if (data.status !== 'approved' || isPublicLibraryPrompt(data)) return normalizeProjectPresentation(data)
 
     const { data: { user } } = await supabase.auth.getUser()
@@ -286,7 +288,9 @@ export async function getProjectsByAuthor(authorId: string): Promise<PromptWithR
       .eq('author_id', authorId)
       .eq('status', 'approved')
       .order('created_at', { ascending: false })
-    return (data ?? []).filter(isPublicLibraryPrompt).map(normalizeProjectPresentation)
+    const dbProjects = (data ?? []).filter(isPublicLibraryPrompt).map(normalizeProjectPresentation)
+    const seen = new Set(dbProjects.map(prompt => prompt.id))
+    return [...dbProjects, ...fallback.filter(prompt => !seen.has(prompt.id))]
   })
 }
 
@@ -309,7 +313,10 @@ export async function getAuthorStats(authorId: string) {
       .eq('author_id', authorId)
       .eq('status', 'approved')
 
-    const items = (prompts ?? []).filter(isPublicLibraryPrompt)
+    const dbItems = (prompts ?? []).filter(isPublicLibraryPrompt)
+    const seen = new Set(dbItems.map(prompt => prompt.id))
+    const mockItems = authorPrompts.filter(prompt => !seen.has(prompt.id))
+    const items = [...dbItems, ...mockItems]
     return {
       totalProjects: items.length,
       totalUpvotes: items.reduce((sum: number, p: { vote_count: number }) => sum + p.vote_count, 0),
@@ -331,12 +338,13 @@ function getTopCategory(prompts: typeof mockPrompts) {
   return cat ? { name: cat.name, icon: cat.icon } : null
 }
 
-function getTopCategoryFromDb(prompts: { category_id: string; categories: unknown }[]) {
+function getTopCategoryFromDb(prompts: { category_id: string; categories?: unknown }[]) {
   const counts: Record<string, { count: number; name: string; icon: string }> = {}
   for (const p of prompts) {
     const cat = p.categories as { name: string; icon: string } | null
-    if (!cat) continue
-    if (!counts[p.category_id]) counts[p.category_id] = { count: 0, name: cat.name, icon: cat.icon }
+    const category = cat ?? publicMockCategories.find(item => item.id === p.category_id)
+    if (!category) continue
+    if (!counts[p.category_id]) counts[p.category_id] = { count: 0, name: category.name, icon: category.icon }
     counts[p.category_id].count++
   }
   const top = Object.values(counts).sort((a, b) => b.count - a.count)[0]
@@ -347,6 +355,7 @@ function getTopCategoryFromDb(prompts: { category_id: string; categories: unknow
 
 export async function toggleVote(promptId: string): Promise<{ voted: boolean; newCount: number }> {
   if (!SUPABASE_CONFIGURED) return { voted: false, newCount: 0 }
+  if (!isPersistableProjectId(promptId)) throw new Error('This project is not connected to voting yet.')
 
   const { createClient } = await import('./supabase/server')
   const supabase = await createClient()
@@ -354,66 +363,67 @@ export async function toggleVote(promptId: string): Promise<{ voted: boolean; ne
   if (!user) throw new Error('Must be logged in')
 
   // Check if already voted
-  const { data: existing } = await supabase
+  const { data: existing, error: existingError } = await supabase
     .from('votes')
     .select('id')
     .eq('user_id', user.id)
     .eq('prompt_id', promptId)
-    .single()
+    .maybeSingle()
+  if (existingError) throw existingError
 
   if (existing) {
     // Remove vote
-    await supabase.from('votes').delete().eq('id', existing.id)
-    await supabase.from('prompts').update({
-      vote_count: Math.max(0, (await supabase.from('prompts').select('vote_count').eq('id', promptId).single()).data?.vote_count - 1 || 0)
-    }).eq('id', promptId)
-    const { data: updated } = await supabase.from('prompts').select('vote_count').eq('id', promptId).single()
-    return { voted: false, newCount: updated?.vote_count ?? 0 }
+    const { error } = await supabase.from('votes').delete().eq('id', existing.id)
+    if (error) throw error
+    const { count, error: countError } = await supabase.from('votes').select('id', { count: 'exact', head: true }).eq('prompt_id', promptId)
+    if (countError) throw countError
+    return { voted: false, newCount: count ?? 0 }
   } else {
     // Add vote
-    await supabase.from('votes').insert({ user_id: user.id, prompt_id: promptId })
-    await supabase.from('prompts').update({
-      vote_count: ((await supabase.from('prompts').select('vote_count').eq('id', promptId).single()).data?.vote_count || 0) + 1
-    }).eq('id', promptId)
-    const { data: updated } = await supabase.from('prompts').select('vote_count').eq('id', promptId).single()
-    return { voted: true, newCount: updated?.vote_count ?? 0 }
+    const { error } = await supabase.from('votes').insert({ user_id: user.id, prompt_id: promptId })
+    if (error) throw error
+    const { count, error: countError } = await supabase.from('votes').select('id', { count: 'exact', head: true }).eq('prompt_id', promptId)
+    if (countError) throw countError
+    return { voted: true, newCount: count ?? 0 }
   }
 }
 
 export async function toggleBookmark(promptId: string): Promise<{ bookmarked: boolean; newCount: number }> {
   if (!SUPABASE_CONFIGURED) return { bookmarked: false, newCount: 0 }
+  if (!isPersistableProjectId(promptId)) throw new Error('This project is not connected to bookmarks yet.')
 
   const { createClient } = await import('./supabase/server')
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) throw new Error('Must be logged in')
 
-  const { data: existing } = await supabase
+  const { data: existing, error: existingError } = await supabase
     .from('bookmarks')
     .select('id')
     .eq('user_id', user.id)
     .eq('prompt_id', promptId)
-    .single()
+    .maybeSingle()
+  if (existingError) throw existingError
 
   if (existing) {
-    await supabase.from('bookmarks').delete().eq('id', existing.id)
-    await supabase.from('prompts').update({
-      bookmark_count: Math.max(0, (await supabase.from('prompts').select('bookmark_count').eq('id', promptId).single()).data?.bookmark_count - 1 || 0)
-    }).eq('id', promptId)
-    const { data: updated } = await supabase.from('prompts').select('bookmark_count').eq('id', promptId).single()
+    const { error } = await supabase.from('bookmarks').delete().eq('id', existing.id)
+    if (error) throw error
+    const { data: updated, error: countError } = await supabase.from('prompts').select('bookmark_count').eq('id', promptId).single()
+    if (countError) throw countError
     return { bookmarked: false, newCount: updated?.bookmark_count ?? 0 }
   } else {
-    await supabase.from('bookmarks').insert({ user_id: user.id, prompt_id: promptId })
-    await supabase.from('prompts').update({
-      bookmark_count: ((await supabase.from('prompts').select('bookmark_count').eq('id', promptId).single()).data?.bookmark_count || 0) + 1
-    }).eq('id', promptId)
-    const { data: updated } = await supabase.from('prompts').select('bookmark_count').eq('id', promptId).single()
+    const { error } = await supabase.from('bookmarks').insert({ user_id: user.id, prompt_id: promptId })
+    if (error) throw error
+    const { data: updated, error: countError } = await supabase.from('prompts').select('bookmark_count').eq('id', promptId).single()
+    if (countError) throw countError
     return { bookmarked: true, newCount: updated?.bookmark_count ?? 0 }
   }
 }
 
 export async function getUserVotesAndBookmarks(promptIds: string[]): Promise<{ votes: Set<string>; bookmarks: Set<string> }> {
   if (!SUPABASE_CONFIGURED) return { votes: new Set(), bookmarks: new Set() }
+  const persistablePromptIds = promptIds.filter(isPersistableProjectId)
+  if (persistablePromptIds.length === 0) return { votes: new Set(), bookmarks: new Set() }
 
   return readWithFallback({ votes: new Set<string>(), bookmarks: new Set<string>() }, async () => {
     const { createClient } = await import('./supabase/server')
@@ -422,8 +432,8 @@ export async function getUserVotesAndBookmarks(promptIds: string[]): Promise<{ v
     if (!user) return { votes: new Set(), bookmarks: new Set() }
 
     const [votesRes, bookmarksRes] = await Promise.all([
-      supabase.from('votes').select('prompt_id').eq('user_id', user.id).in('prompt_id', promptIds),
-      supabase.from('bookmarks').select('prompt_id').eq('user_id', user.id).in('prompt_id', promptIds),
+      supabase.from('votes').select('prompt_id').eq('user_id', user.id).in('prompt_id', persistablePromptIds),
+      supabase.from('bookmarks').select('prompt_id').eq('user_id', user.id).in('prompt_id', persistablePromptIds),
     ])
 
     return {
@@ -781,6 +791,21 @@ function normalizeSuggestionRows(rows: SuggestionWithRelations[] | null | undefi
   })))
 }
 
+function throwReadableSuggestionError(error: { code?: string; message?: string } | null) {
+  if (!error) return
+
+  if (
+    error.code === '42P01' ||
+    error.message?.includes('suggestions') ||
+    error.message?.includes('suggestion_responses') ||
+    error.message?.includes('suggestion_votes')
+  ) {
+    throw new Error('Suggestion Box is not connected to the database yet.')
+  }
+
+  throw error
+}
+
 async function readSuggestionsWithFallback<T>(fallback: T, read: () => Promise<T>): Promise<T> {
   if (!SUPABASE_CONFIGURED) return fallback
 
@@ -933,7 +958,8 @@ export async function createSuggestion(input: { title: string; body: string }) {
     .select('id')
     .single()
 
-  if (error) throw error
+  throwReadableSuggestionError(error)
+  if (!data) throw new Error('Suggestion could not be created.')
   return { id: data.id as string }
 }
 
@@ -1057,31 +1083,57 @@ export async function createSuggestionResponse(input: {
     .eq('id', input.suggestionId)
 }
 
+export async function getUserSuggestionVotes(suggestionIds: string[]): Promise<Set<string>> {
+  if (!SUPABASE_CONFIGURED || suggestionIds.length === 0) return new Set()
+
+  const uniqueIds = [...new Set(suggestionIds.filter(Boolean))]
+  if (uniqueIds.length === 0) return new Set()
+
+  return readSuggestionsWithFallback(new Set<string>(), async () => {
+    const { createClient } = await import('./supabase/server')
+    const supabase = await createClient()
+    const { data: { user }, error: userError } = await supabase.auth.getUser()
+    if (userError || !user) return new Set()
+
+    const { data, error } = await supabase
+      .from('suggestion_votes')
+      .select('suggestion_id')
+      .eq('user_id', user.id)
+      .in('suggestion_id', uniqueIds)
+
+    throwReadableSuggestionError(error)
+    return new Set((data ?? []).map(v => v.suggestion_id).filter(Boolean))
+  })
+}
+
 export async function toggleSuggestionVote(suggestionId: string): Promise<{ voted: boolean; newCount: number }> {
   if (!SUPABASE_CONFIGURED) return { voted: false, newCount: 0 }
 
   const { createClient } = await import('./supabase/server')
   const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) throw new Error('Log in to vote.')
+  const { data: { user }, error: userError } = await supabase.auth.getUser()
+  if (userError || !user) throw new Error('Log in to vote.')
 
-  const { data: existing } = await supabase
+  const { data: existing, error: existingError } = await supabase
     .from('suggestion_votes')
     .select('id')
     .eq('user_id', user.id)
     .eq('suggestion_id', suggestionId)
     .maybeSingle()
+  throwReadableSuggestionError(existingError)
 
   if (existing) {
     const { error } = await supabase.from('suggestion_votes').delete().eq('id', existing.id)
-    if (error) throw error
-    const { data: updated } = await supabase.from('suggestions').select('vote_count').eq('id', suggestionId).single()
+    throwReadableSuggestionError(error)
+    const { data: updated, error: countError } = await supabase.from('suggestions').select('vote_count').eq('id', suggestionId).single()
+    throwReadableSuggestionError(countError)
     return { voted: false, newCount: updated?.vote_count ?? 0 }
   }
 
   const { error } = await supabase.from('suggestion_votes').insert({ user_id: user.id, suggestion_id: suggestionId })
-  if (error) throw error
-  const { data: updated } = await supabase.from('suggestions').select('vote_count').eq('id', suggestionId).single()
+  throwReadableSuggestionError(error)
+  const { data: updated, error: countError } = await supabase.from('suggestions').select('vote_count').eq('id', suggestionId).single()
+  throwReadableSuggestionError(countError)
   return { voted: true, newCount: updated?.vote_count ?? 0 }
 }
 
@@ -1201,31 +1253,57 @@ export async function createBuildRequestResponse(input: {
   throwReadableBuildRequestError(error)
 }
 
+export async function getUserBuildRequestVotes(requestIds: string[]): Promise<Set<string>> {
+  if (!SUPABASE_CONFIGURED || requestIds.length === 0) return new Set()
+
+  const uniqueIds = [...new Set(requestIds.filter(Boolean))]
+  if (uniqueIds.length === 0) return new Set()
+
+  return readBuildRequestsWithFallback(new Set<string>(), async () => {
+    const { createClient } = await import('./supabase/server')
+    const supabase = await createClient()
+    const { data: { user }, error: userError } = await supabase.auth.getUser()
+    if (userError || !user) return new Set()
+
+    const { data, error } = await supabase
+      .from('build_request_votes')
+      .select('request_id')
+      .eq('user_id', user.id)
+      .in('request_id', uniqueIds)
+
+    throwReadableBuildRequestError(error)
+    return new Set((data ?? []).map(v => v.request_id).filter(Boolean))
+  })
+}
+
 export async function toggleBuildRequestVote(requestId: string): Promise<{ voted: boolean; newCount: number }> {
   if (!SUPABASE_CONFIGURED) return { voted: false, newCount: 0 }
 
   const { createClient } = await import('./supabase/server')
   const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) throw new Error('Log in to vote.')
+  const { data: { user }, error: userError } = await supabase.auth.getUser()
+  if (userError || !user) throw new Error('Log in to vote.')
 
-  const { data: existing } = await supabase
+  const { data: existing, error: existingError } = await supabase
     .from('build_request_votes')
     .select('id')
     .eq('user_id', user.id)
     .eq('request_id', requestId)
     .maybeSingle()
+  throwReadableBuildRequestError(existingError)
 
   if (existing) {
     const { error } = await supabase.from('build_request_votes').delete().eq('id', existing.id)
     throwReadableBuildRequestError(error)
-    const { data: updated } = await supabase.from('build_requests').select('vote_count').eq('id', requestId).single()
+    const { data: updated, error: countError } = await supabase.from('build_requests').select('vote_count').eq('id', requestId).single()
+    throwReadableBuildRequestError(countError)
     return { voted: false, newCount: updated?.vote_count ?? 0 }
   }
 
   const { error } = await supabase.from('build_request_votes').insert({ user_id: user.id, request_id: requestId })
   throwReadableBuildRequestError(error)
-  const { data: updated } = await supabase.from('build_requests').select('vote_count').eq('id', requestId).single()
+  const { data: updated, error: countError } = await supabase.from('build_requests').select('vote_count').eq('id', requestId).single()
+  throwReadableBuildRequestError(countError)
   return { voted: true, newCount: updated?.vote_count ?? 0 }
 }
 

@@ -12,7 +12,7 @@
 // title-led layout so it still composes — no empty gradient frame.
 
 import Link from 'next/link'
-import { ArrowUp, Bookmark, Cpu } from 'lucide-react'
+import { Cpu } from 'lucide-react'
 import { PromptWithRelations } from '@/lib/types'
 import { getModelName } from '@/lib/models'
 import { getProjectHref } from '@/lib/project-links'
@@ -171,14 +171,12 @@ export default function PromptCard({ prompt, featured = false }: { prompt: Promp
               by <span className="text-surface-700 font-medium">{prompt.author?.display_name ?? 'Anonymous'}</span>
             </span>
             <span aria-hidden="true" className="hidden sm:inline text-surface-300">·</span>
-            <span className="flex items-center gap-1 tabular-nums" aria-label={`${prompt.vote_count} upvotes`}>
-              <ArrowUp className="w-3 h-3" aria-hidden="true" />
-              {prompt.vote_count}
+            <span className="tabular-nums" aria-label={`${prompt.vote_count} upvotes`}>
+              {prompt.vote_count} upvotes
             </span>
             <span aria-hidden="true" className="text-surface-300">·</span>
-            <span className="flex items-center gap-1 tabular-nums text-surface-400" aria-label={`${prompt.bookmark_count} bookmarks`}>
-              <Bookmark className="w-3 h-3" aria-hidden="true" />
-              {prompt.bookmark_count}
+            <span className="tabular-nums text-surface-400" aria-label={`${prompt.bookmark_count} bookmarks`}>
+              {prompt.bookmark_count} saves
             </span>
           </div>
         </div>

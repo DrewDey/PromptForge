@@ -4,9 +4,12 @@ import type { ReactNode } from 'react'
 import Link from 'next/link'
 import { ExternalLink, FileCode2, GitBranch } from 'lucide-react'
 import CopyButton from '@/app/prompt/[id]/CopyButton'
+import ProjectEngagementBar from '@/components/ProjectEngagementBar'
 import ProjectCommunityPanel from '@/components/ProjectCommunityPanel'
+import { SNAKE_PROJECT_ID } from '@/lib/featured-projects'
 import SnakeForkWorkspace from './SnakeForkWorkspace'
 
+const projectId = SNAKE_PROJECT_ID
 const prompt = 'Make me a playable Snake game as a single self-contained HTML file.'
 const artifactPath = '/artifacts/snake-gpt55-pro-oneshot.html'
 const chatUrl = 'https://chatgpt.com/c/6a122064-6094-832a-9228-e239ce31e79b'
@@ -257,13 +260,14 @@ export default function SnakeDemoPage() {
             <RunSummary />
           </div>
 
+          <ProjectEngagementBar projectId={projectId} loginNextPath="/snake-demo" />
           <ArtifactFrame />
         </div>
       </section>
 
       <BuildPath modelResponse={modelResponse} />
       <SnakeForkWorkspace sourcePrompt={prompt} initialSourceRunUrl={chatUrl} />
-      <ProjectCommunityPanel projectId="snake-gpt55-pro-oneshot" />
+      <ProjectCommunityPanel projectId={projectId} />
     </main>
   )
 }

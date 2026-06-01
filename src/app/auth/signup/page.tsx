@@ -3,15 +3,23 @@
 import Link from 'next/link'
 import Image from 'next/image'
 import { useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+
+function safeNextPath(next: string | null) {
+  if (!next || !next.startsWith('/') || next.startsWith('//')) return '/'
+  return next
+}
 
 export default function SignupPage() {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
   const [success, setSuccess] = useState(false)
   const [password, setPassword] = useState('')
+  const nextPath = safeNextPath(searchParams.get('next'))
+  const loginHref = `/auth/login?next=${encodeURIComponent(nextPath)}`
 
   const passwordLongEnough = password.length >= 8
 
@@ -49,7 +57,7 @@ export default function SignupPage() {
         return
       }
 
-      router.push('/')
+      router.push(nextPath)
       router.refresh()
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Something went wrong. Please try again.')
@@ -70,7 +78,7 @@ export default function SignupPage() {
           <p className="text-surface-600 text-sm mb-6">
             We sent you a confirmation link. Click it to activate your account.
           </p>
-          <Link href="/auth/login" className="text-brand-orange hover:text-brand-orange-dark focus-visible:outline-2 focus-visible:outline-brand-orange focus-visible:outline-offset-2 transition-colors duration-150 font-semibold text-sm">
+          <Link href={loginHref} className="text-brand-orange hover:text-brand-orange-dark focus-visible:outline-2 focus-visible:outline-brand-orange focus-visible:outline-offset-2 transition-colors duration-150 font-semibold text-sm">
             Go to login
           </Link>
         </div>
@@ -213,7 +221,7 @@ export default function SignupPage() {
 
           <p className="text-center text-sm text-surface-500 mt-6">
             Already have an account?{' '}
-            <Link href="/auth/login" className="text-brand-orange hover:text-brand-orange-dark focus-visible:outline-2 focus-visible:outline-brand-orange focus-visible:outline-offset-2 transition-colors duration-150 font-semibold">
+            <Link href={loginHref} className="text-brand-orange hover:text-brand-orange-dark focus-visible:outline-2 focus-visible:outline-brand-orange focus-visible:outline-offset-2 transition-colors duration-150 font-semibold">
               Log in
             </Link>
           </p>

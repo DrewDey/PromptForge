@@ -69,7 +69,7 @@ export default function HomePage() {
             <div className="exhibit-frame">
               <div className="exhibit-chrome">
                 <span className="dot" /><span className="dot" /><span className="dot" />
-                <span className="url">pathforge.app/path/<b>snake-gpt55-pro-oneshot</b></span>
+                <span className="url">pathforge.app/<b>snake-demo</b></span>
               </div>
               <div className="exhibit-inner">
                 <div className="ex-tag-row">

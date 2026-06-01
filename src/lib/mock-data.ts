@@ -7,10 +7,11 @@ import {
   SuggestionResponse,
   SuggestionWithRelations,
 } from './types'
+import { SNAKE_PROJECT_ID } from './featured-projects'
 
 export const mockProfiles: Profile[] = [
   {
-    id: 'user-11',
+    id: '22222222-2222-2222-2222-222222222211',
     username: 'pathforge_projects',
     display_name: 'PathForge Projects',
     avatar_url: null,
@@ -37,7 +38,7 @@ export const mockCategories: Category[] = [
 export const mockSteps: PromptStep[] = [
   {
     id: 'step-snake-gpt55-pro-oneshot-1',
-    prompt_id: 'snake-gpt55-pro-oneshot',
+    prompt_id: SNAKE_PROJECT_ID,
     step_number: 1,
     title: 'One-sentence Snake game build',
     content: 'Make me a playable Snake game as a single self-contained HTML file.',
@@ -49,7 +50,7 @@ export const mockSteps: PromptStep[] = [
 
 export const mockPrompts: Prompt[] = [
   {
-    id: 'snake-gpt55-pro-oneshot',
+    id: SNAKE_PROJECT_ID,
     title: 'Playable Snake Game - GPT 5.5 Pro One-Shot',
     description: 'A first-taste demo path: one plain sentence produced a playable Snake game, with the final artifact embedded at the top and the captured response package below it.',
     content: 'This is the simplest approved PathForge seed: one normal user prompt, one captured model response, one playable result. It exists to show how a finished artifact, exact prompt, exact response package, attachments, and verification can live together on a project page.',
@@ -61,7 +62,7 @@ export const mockPrompts: Prompt[] = [
     tools_used: ['ChatGPT', 'GPT 5.5 Pro', 'HTML', 'Browser'],
     tags: ['snake', 'game', 'arcade', 'html', 'one-shot', 'playable artifact', 'personal fun', 'token maxing', 'AI paralysis'],
     status: 'approved',
-    author_id: 'user-11',
+    author_id: '22222222-2222-2222-2222-222222222211',
     vote_count: 0,
     bookmark_count: 0,
     created_at: '2026-05-23T18:00:00Z',

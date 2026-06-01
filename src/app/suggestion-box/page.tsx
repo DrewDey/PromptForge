@@ -1,7 +1,7 @@
 import Link from 'next/link'
 import { ArrowUp, Clock, Inbox, LockKeyhole, MessageSquare, ShieldCheck } from 'lucide-react'
 import SuggestionSubmitForm from '@/components/SuggestionSubmitForm'
-import { getPublicSuggestions, SUGGESTION_PUBLIC_DELAY_HOURS } from '@/lib/data'
+import { getPublicSuggestions, getUserSuggestionVotes, SUGGESTION_PUBLIC_DELAY_HOURS } from '@/lib/data'
 import { voteOnSuggestion } from '@/lib/actions'
 import type { SuggestionWithRelations } from '@/lib/types'
 
@@ -27,7 +27,32 @@ function statusLabel(status: string) {
   return status.replace('_', ' ')
 }
 
-function SuggestionCard({ suggestion, canVote }: { suggestion: SuggestionWithRelations; canVote: boolean }) {
+function loginHref(next: string) {
+  return `/auth/login?next=${encodeURIComponent(next)}`
+}
+
+function signupHref(next: string) {
+  return `/auth/signup?next=${encodeURIComponent(next)}`
+}
+
+function voteButtonClass(hasVoted: boolean) {
+  return [
+    'inline-flex items-center gap-1.5 border px-3 py-1.5 text-xs font-bold',
+    hasVoted
+      ? 'border-brand-orange bg-brand-orange/10 text-brand-orange hover:border-brand-orange-dark hover:text-brand-orange-dark'
+      : 'border-surface-300 text-surface-700 hover:border-surface-900 hover:text-surface-900',
+  ].join(' ')
+}
+
+function SuggestionCard({
+  suggestion,
+  canVote,
+  hasVoted,
+}: {
+  suggestion: SuggestionWithRelations
+  canVote: boolean
+  hasVoted: boolean
+}) {
   const publicResponses = (suggestion.responses ?? []).filter(response => response.visibility === 'public')
 
   return (
@@ -65,13 +90,18 @@ function SuggestionCard({ suggestion, canVote }: { suggestion: SuggestionWithRel
         {canVote ? (
           <form action={voteOnSuggestion}>
             <input type="hidden" name="suggestion_id" value={suggestion.id} />
-            <button className="inline-flex items-center gap-1.5 border border-surface-300 px-3 py-1.5 text-xs font-bold text-surface-700 hover:border-surface-900 hover:text-surface-900">
+            <button
+              className={voteButtonClass(hasVoted)}
+              aria-pressed={hasVoted}
+              aria-label={hasVoted ? 'Remove vote from suggestion' : 'Vote for suggestion'}
+              title={hasVoted ? 'Remove vote' : 'Vote'}
+            >
               <ArrowUp className="h-3.5 w-3.5" />
               {suggestion.vote_count}
             </button>
           </form>
         ) : (
-          <Link href="/auth/login" className="inline-flex items-center gap-1.5 border border-surface-300 px-3 py-1.5 text-xs font-bold text-surface-500 hover:border-brand-orange hover:text-brand-orange">
+          <Link href={loginHref('/suggestion-box')} className="inline-flex items-center gap-1.5 border border-surface-300 px-3 py-1.5 text-xs font-bold text-surface-500 hover:border-brand-orange hover:text-brand-orange">
             <ArrowUp className="h-3.5 w-3.5" />
             Log in to vote
           </Link>
@@ -86,6 +116,9 @@ export default async function SuggestionBoxPage() {
     getViewer(),
     getPublicSuggestions(),
   ])
+  const votedSuggestionIds = viewer
+    ? await getUserSuggestionVotes(suggestions.map(suggestion => suggestion.id))
+    : new Set<string>()
 
   return (
     <div className="bg-surface-50">
@@ -155,9 +188,9 @@ export default async function SuggestionBoxPage() {
             <div className="mt-6 border border-surface-200 bg-white p-4 text-sm text-surface-600">
               You need to log in before sending suggestions so PathForge can respond to your personal box.
               <div className="mt-3">
-                <Link href="/auth/login" className="font-bold text-brand-orange hover:text-brand-orange-dark">Log in</Link>
+                <Link href={loginHref('/suggestion-box')} className="font-bold text-brand-orange hover:text-brand-orange-dark">Log in</Link>
                 <span className="mx-2 text-surface-300">/</span>
-                <Link href="/auth/signup" className="font-bold text-brand-orange hover:text-brand-orange-dark">Sign up</Link>
+                <Link href={signupHref('/suggestion-box')} className="font-bold text-brand-orange hover:text-brand-orange-dark">Sign up</Link>
               </div>
             </div>
           )}
@@ -192,7 +225,12 @@ export default async function SuggestionBoxPage() {
           ) : (
             <div className="grid gap-4 lg:grid-cols-2">
               {suggestions.map(suggestion => (
-                <SuggestionCard key={suggestion.id} suggestion={suggestion} canVote={Boolean(viewer)} />
+                <SuggestionCard
+                  key={suggestion.id}
+                  suggestion={suggestion}
+                  canVote={Boolean(viewer)}
+                  hasVoted={votedSuggestionIds.has(suggestion.id)}
+                />
               ))}
             </div>
           )}

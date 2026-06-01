@@ -12,10 +12,19 @@
 import Link from 'next/link'
 import Image from 'next/image'
 import { redirect } from 'next/navigation'
-import { getCategories, getPrompts } from '@/lib/data'
+import { getCategories, getPrompts, getUserVotesAndBookmarks } from '@/lib/data'
 import type { PromptWithRelations } from '@/lib/types'
 import { AI_MODELS } from '@/lib/models'
+import { isPersistableProjectId } from '@/lib/project-engagement'
 import { getProjectHref } from '@/lib/project-links'
+import VoteBookmarkButtons from '@/components/VoteBookmarkButtons'
+import {
+  buildPromptComparisonGroups,
+  getPromptModelEra,
+  getPromptModelLabel,
+  promptMatchesModel,
+  type PromptComparisonGroup,
+} from '@/lib/prompt-comparisons'
 import '../browse.css'
 
 const DIFFICULTIES = [
@@ -31,6 +40,7 @@ const FACET_MODELS = [
   'claude-opus-4-7',
   'chatgpt-5-4',
   'gpt-4o',
+  'gemini-2-5-flash',
   'gemini-2-5-pro',
 ]
 
@@ -66,6 +76,7 @@ type SearchParams = {
   domain?: string
   difficulty?: string
   model?: string
+  compare?: 'models'
   sort?: 'hot' | 'newest' | 'popular'
   panel?: 'open'
 }
@@ -81,9 +92,10 @@ export default async function BrowsePage({
   const activeDomain = BROAD_DOMAINS.some(domain => domain.slug === params.domain) ? params.domain ?? '' : ''
   const activeDifficulty = params.difficulty ?? ''
   const activeModel = params.model ?? ''
+  const activeCompare = params.compare === 'models'
   const activeSort = params.sort ?? 'hot'
   const dataSort = activeSort === 'newest' ? 'newest' : 'popular'
-  const panelOpen = Boolean(q) || params.panel === 'open' || Boolean(activeDomain || activeCategory || activeDifficulty || activeModel)
+  const panelOpen = Boolean(q) || params.panel === 'open' || Boolean(activeDomain || activeCategory || activeDifficulty || activeModel || activeCompare)
 
   if (activeCategory && !params.domain) {
     const domain = activeCategory === 'personal' ? 'games' : 'productivity'
@@ -92,13 +104,14 @@ export default async function BrowsePage({
     redirectParams.set('domain', domain)
     if (activeDifficulty) redirectParams.set('difficulty', activeDifficulty)
     if (activeModel) redirectParams.set('model', activeModel)
+    if (activeCompare) redirectParams.set('compare', 'models')
     if (activeSort !== 'hot') redirectParams.set('sort', activeSort)
     redirectParams.set('panel', 'open')
     redirect(`/paths?${redirectParams.toString()}`)
   }
 
   // Redirect empty-string query to canonical /paths to avoid ?q= litter
-  if (params.q !== undefined && q === '' && params.panel !== 'open' && !activeDomain && !activeCategory && !activeDifficulty && !activeModel) {
+  if (params.q !== undefined && q === '' && params.panel !== 'open' && !activeDomain && !activeCategory && !activeDifficulty && !activeModel && !activeCompare) {
     redirect('/paths')
   }
 
@@ -150,13 +163,23 @@ export default async function BrowsePage({
       if (p.difficulty !== activeDifficulty) return false
     }
     if (activeModel && opts.mdl !== false) {
-      if (p.model_used !== activeModel) return false
+      if (!promptMatchesModel(p, activeModel)) return false
     }
     return true
   }
 
   const queryMatched = allPrompts.filter(p => matchesQuery(p, q))
-  const filtered = queryMatched.filter(p => matchesFilters(p))
+  const regularFiltered = queryMatched.filter(p => matchesFilters(p))
+  const comparisonBase = queryMatched.filter(p => matchesFilters(p, { mdl: false }))
+  const comparisonGroups = sortComparisonGroups(
+    buildPromptComparisonGroups(comparisonBase)
+      .filter(group => !activeModel || group.prompts.some(prompt => promptMatchesModel(prompt, activeModel))),
+    activeSort,
+  )
+  const comparisonPromptIds = new Set(comparisonGroups.flatMap(group => group.prompts.map(prompt => prompt.id)))
+  const filtered = activeCompare
+    ? comparisonBase.filter(prompt => comparisonPromptIds.has(prompt.id))
+    : regularFiltered
 
   // Facet counts — keep each facet's "what would this look like if I toggled it"
   // meaningful by excluding itself from the running filter set.
@@ -177,8 +200,11 @@ export default async function BrowsePage({
   for (const m of FACET_MODELS) {
     countsByModel[m] = queryMatched
       .filter(p => matchesFilters(p, { mdl: false }))
-      .filter(p => p.model_used === m).length
+      .filter(p => promptMatchesModel(p, m)).length
   }
+  const comparableGroupCount = buildPromptComparisonGroups(queryMatched.filter(p => matchesFilters(p, { mdl: false })))
+    .filter(group => !activeModel || group.prompts.some(prompt => promptMatchesModel(prompt, activeModel)))
+    .length
 
   const totalLibrary = allPrompts.length
 
@@ -188,6 +214,7 @@ export default async function BrowsePage({
       domain: activeDomain || undefined,
       difficulty: activeDifficulty || undefined,
       model: activeModel || undefined,
+      compare: activeCompare ? 'models' : undefined,
       sort: activeSort !== 'hot' ? activeSort : undefined,
       panel: panelOpen ? 'open' : undefined,
       ...overrides,
@@ -199,9 +226,11 @@ export default async function BrowsePage({
     const qs = new URLSearchParams(p as Record<string, string>).toString()
     return `/paths${qs ? `?${qs}` : ''}`
   }
+  const currentBrowseHref = buildUrl({})
 
   // Editorial slices (only relevant when panel is closed)
   const potw = allPrompts[0]
+  const potwModelLabel = potw ? getPromptModelLabel(potw) : ''
   const shelf = allPrompts.slice(1, 5)
   const domainCards = BROAD_DOMAINS.map(domain => {
     const categoryIds = domainCategoryIds(domain.slug)
@@ -212,6 +241,25 @@ export default async function BrowsePage({
       href: `/paths?domain=${domain.slug}&panel=open`,
     }
   })
+
+  let isLoggedIn = false
+  let votedPromptIds = new Set<string>()
+  let bookmarkedPromptIds = new Set<string>()
+  try {
+    if (process.env.NEXT_PUBLIC_SUPABASE_URL && allPrompts.length > 0) {
+      const { createClient } = await import('@/lib/supabase/server')
+      const supabase = await createClient()
+      const { data: { user } } = await supabase.auth.getUser()
+      isLoggedIn = Boolean(user)
+      if (user) {
+        const userState = await getUserVotesAndBookmarks(allPrompts.map(prompt => prompt.id))
+        votedPromptIds = userState.votes
+        bookmarkedPromptIds = userState.bookmarks
+      }
+    }
+  } catch {
+    // Counts still render when viewer state is unavailable.
+  }
 
   return (
     <div className="pf-browse">
@@ -237,6 +285,7 @@ export default async function BrowsePage({
             {panelOpen && activeDomain && <input type="hidden" name="domain" value={activeDomain} />}
             {panelOpen && activeDifficulty && <input type="hidden" name="difficulty" value={activeDifficulty} />}
             {panelOpen && activeModel && <input type="hidden" name="model" value={activeModel} />}
+            {panelOpen && activeCompare && <input type="hidden" name="compare" value="models" />}
             {panelOpen && activeSort !== 'hot' && <input type="hidden" name="sort" value={activeSort} />}
             <div className="ai-box-row">
               <div className="ai-icon" aria-hidden="true">✦</div>
@@ -303,7 +352,9 @@ export default async function BrowsePage({
           <div className="query-meta-wrap">
             <div className="query-meta-text">
               <span className="sparkle">✦</span>
-              {q ? (
+              {activeCompare ? (
+                <>Found {comparisonGroups.length} model {comparisonGroups.length === 1 ? 'matchup' : 'matchups'} · {filtered.length} comparable runs</>
+              ) : q ? (
                 <>Found {filtered.length} {filtered.length === 1 ? 'match' : 'matches'} for &ldquo;{q}&rdquo; · {totalLibrary - filtered.length} other paths hidden</>
               ) : (
                 <>Browsing {filtered.length} of {totalLibrary} paths · refine with filters on the left</>
@@ -336,10 +387,16 @@ export default async function BrowsePage({
                   <div className="panel-toggle-title">Build Paths</div>
                   <div className="panel-toggle-sub">
                     <span className="mono" style={{ color: 'var(--color-brand-orange)' }}>
-                      {filtered.length} {filtered.length === 1 ? 'match' : 'matches'}
+                      {activeCompare
+                        ? `${comparisonGroups.length} ${comparisonGroups.length === 1 ? 'matchup' : 'matchups'}`
+                        : `${filtered.length} ${filtered.length === 1 ? 'match' : 'matches'}`}
                     </span>
                     {' · '}
-                    {totalLibrary - filtered.length} more paths hidden · refine with filters
+                    {activeCompare
+                      ? `${filtered.length} comparable runs`
+                      : `${totalLibrary - filtered.length} more paths hidden`}
+                    {' · '}
+                    refine with filters
                   </div>
                 </div>
               </div>
@@ -434,6 +491,31 @@ export default async function BrowsePage({
                   })}
                 </div>
 
+                <div className="facet-group">
+                  <div className="facet-head">
+                    <div className="facet-label">Compare</div>
+                    {activeCompare && (
+                      <Link href={buildUrl({ compare: undefined })} className="facet-clear">clear</Link>
+                    )}
+                  </div>
+                  <div className="facet-list">
+                    <Link
+                      href={buildUrl({ compare: undefined })}
+                      className={`facet-item ${!activeCompare ? 'active' : ''}`}
+                    >
+                      <span>All paths</span>
+                      <span className="facet-count">{regularFiltered.length}</span>
+                    </Link>
+                    <Link
+                      href={buildUrl({ compare: activeCompare ? undefined : 'models', panel: 'open' })}
+                      className={`facet-item ${activeCompare ? 'active' : ''}`}
+                    >
+                      <span>Model matchups</span>
+                      <span className="facet-count">{comparableGroupCount}</span>
+                    </Link>
+                  </div>
+                </div>
+
                 <div className="facet-footer">
                   <Link href={q ? `/paths?q=${encodeURIComponent(q)}` : '/paths?panel=open'} className="facet-reset" style={{ display: 'inline-block', textAlign: 'center' }}>
                     Reset all filters
@@ -443,49 +525,87 @@ export default async function BrowsePage({
 
               {/* ─── Results list ─── */}
               <div>
-                {filtered.length > 0 ? (
+                {activeCompare ? (
+                  comparisonGroups.length > 0 ? (
+                    <>
+                      <ComparisonResults
+                        groups={comparisonGroups}
+                        getDomainLabel={(prompt) => promptDomain(prompt)?.label}
+                      />
+
+                      <div className="result-generate">
+                        <div className="result-generate-text">
+                          <span className="sparkle">✦</span>
+                          Add another run to a matchup by publishing the same prompt shape with a different model.
+                        </div>
+                        <Link href="/build" className="btn-dark">Build a path →</Link>
+                      </div>
+                    </>
+                  ) : (
+                    <div className="result-empty">
+                      <div className="result-empty-title">No model matchups yet</div>
+                      <p className="result-empty-sub">
+                        Clear a filter or publish a second run with the same prompt shape under another model.
+                      </p>
+                    </div>
+                  )
+                ) : filtered.length > 0 ? (
                   <>
                     {filtered.map((p, i) => {
                       const isTop = i === 0
                       const domain = promptDomain(p)
-                      const modelMeta = AI_MODELS.find(m => m.id === p.model_used)
+                      const modelLabel = getPromptModelLabel(p)
                       const stepCount = p.steps?.length ?? 0
                       return (
-                        <Link
+                        <article
                           key={p.id}
-                          href={getProjectHref(p)}
                           className={`result-row${isTop ? ' top' : ''}`}
                         >
-                          <div className={`result-rank${isTop ? ' top' : ''}`}>
-                            <div className="result-rank-num">{String(i + 1).padStart(2, '0')}</div>
-                            <div className="result-rank-label">rank</div>
-                            {isTop && <div className="result-top-badge">Top</div>}
-                          </div>
-                          <div>
-                            <div className="result-main-title">{p.title}</div>
-                            <div className="result-main-desc">{p.description}</div>
-                            {p.result_content && (
-                              <div className="result-reason">
-                                <span className="result-reason-icon">✦</span>
-                                <span>
-                                  {p.result_content.length > 180
-                                    ? p.result_content.slice(0, 180).trim() + '…'
-                                    : p.result_content}
-                                </span>
-                              </div>
+                          <Link href={getProjectHref(p)} className="result-row-main">
+                            <div className={`result-rank${isTop ? ' top' : ''}`}>
+                              <div className="result-rank-num">{String(i + 1).padStart(2, '0')}</div>
+                              <div className="result-rank-label">rank</div>
+                              {isTop && <div className="result-top-badge">Top</div>}
+                            </div>
+                            <div>
+                              <div className="result-main-title">{p.title}</div>
+                              <div className="result-main-desc">{p.description}</div>
+                              {p.result_content && (
+                                <div className="result-reason">
+                                  <span className="result-reason-icon">✦</span>
+                                  <span>
+                                    {p.result_content.length > 180
+                                      ? p.result_content.slice(0, 180).trim() + '…'
+                                      : p.result_content}
+                                  </span>
+                                </div>
+                              )}
+                            </div>
+                            <div className="result-meta">
+                              {domain && <span className="mono">{domain.label}</span>}
+                              <span className={`potw-diff ${p.difficulty}`}>{p.difficulty}</span>
+                              <span>{stepCount} {stepCount === 1 ? 'step' : 'steps'}{modelLabel !== 'Unknown model' ? ` · ${modelLabel}` : ''}</span>
+                              <span>by {p.author?.display_name ?? p.author?.username ?? 'builder'}</span>
+                            </div>
+                          </Link>
+                          <div className="result-stats result-actions">
+                            {isPersistableProjectId(p.id) ? (
+                              <VoteBookmarkButtons
+                                promptId={p.id}
+                                initialVoteCount={p.vote_count}
+                                initialBookmarkCount={p.bookmark_count}
+                                initialVoted={votedPromptIds.has(p.id)}
+                                initialBookmarked={bookmarkedPromptIds.has(p.id)}
+                                isLoggedIn={isLoggedIn}
+                                loginNextPath={currentBrowseHref}
+                              />
+                            ) : (
+                              <span className="result-stat-text">
+                                {p.vote_count} upvotes · {p.bookmark_count} saves
+                              </span>
                             )}
                           </div>
-                          <div className="result-meta">
-                            {domain && <span className="mono">{domain.label}</span>}
-                            <span className={`potw-diff ${p.difficulty}`}>{p.difficulty}</span>
-                            <span>{stepCount} {stepCount === 1 ? 'step' : 'steps'}{modelMeta ? ` · ${modelMeta.name}` : ''}</span>
-                            <span>by {p.author?.display_name ?? p.author?.username ?? 'builder'}</span>
-                          </div>
-                          <div className="result-stats">
-                            <span className="result-stats-votes">↑ {p.vote_count}</span>
-                            <span>☆ {p.bookmark_count}</span>
-                          </div>
-                        </Link>
+                        </article>
                       )
                     })}
 
@@ -554,9 +674,9 @@ export default async function BrowsePage({
                     </div>
                     <span className={`potw-diff ${potw.difficulty}`}>{potw.difficulty}</span>
                     <span className="potw-meta">{potw.steps?.length ?? 0} steps</span>
-                    {potw.model_used && (
+                    {potwModelLabel && potwModelLabel !== 'Unknown model' && (
                       <span className="potw-meta">
-                        {AI_MODELS.find(m => m.id === potw.model_used)?.name ?? potw.model_used}
+                        {potwModelLabel}
                       </span>
                     )}
                   </div>
@@ -606,7 +726,7 @@ export default async function BrowsePage({
                 <div className="shelf-grid">
                   {shelf.map(p => {
                     const cat = categories.find(c => c.id === p.category_id)
-                    const modelMeta = AI_MODELS.find(m => m.id === p.model_used)
+                    const modelLabel = getPromptModelLabel(p)
                     return (
                       <Link key={p.id} href={getProjectHref(p)} className="shelf-card">
                         <div className="shelf-cat">{cat?.name ?? '—'}</div>
@@ -620,8 +740,8 @@ export default async function BrowsePage({
                           <span>by {p.author?.display_name ?? p.author?.username ?? 'builder'}</span>
                         </div>
                         <div className="shelf-foot-row">
-                          <span>{p.steps?.length ?? 0} steps{modelMeta ? ` · ${modelMeta.name}` : ''}</span>
-                          <span>↑{p.vote_count} ☆{p.bookmark_count}</span>
+                          <span>{p.steps?.length ?? 0} steps{modelLabel !== 'Unknown model' ? ` · ${modelLabel}` : ''}</span>
+                          <span>{p.vote_count} upvotes · {p.bookmark_count} saves</span>
                         </div>
                       </Link>
                     )
@@ -797,6 +917,83 @@ export default async function BrowsePage({
           </section>
         </>
       )}
+    </div>
+  )
+}
+
+function sortComparisonGroups(groups: PromptComparisonGroup[], sort: SearchParams['sort']) {
+  return [...groups].sort((a, b) => {
+    if (sort === 'newest') return b.latestCreatedAt - a.latestCreatedAt
+    if (sort === 'popular') return b.totalVotes - a.totalVotes || b.latestCreatedAt - a.latestCreatedAt
+    return (
+      b.models.length - a.models.length ||
+      b.prompts.length - a.prompts.length ||
+      b.totalVotes - a.totalVotes ||
+      b.latestCreatedAt - a.latestCreatedAt
+    )
+  })
+}
+
+function ComparisonResults({
+  groups,
+  getDomainLabel,
+}: {
+  groups: PromptComparisonGroup[]
+  getDomainLabel: (prompt: PromptWithRelations) => string | undefined
+}) {
+  return (
+    <div className="compare-stack">
+      {groups.map((group) => (
+        <section key={group.key} className="compare-group">
+          <div className="compare-group-head">
+            <div className="min-w-0">
+              <div className="compare-kicker">
+                Model matchup · {group.models.length} {group.models.length === 1 ? 'model' : 'models'}
+              </div>
+              <h3>{group.label}</h3>
+            </div>
+            <div className="compare-models" aria-label="Models in this matchup">
+              {group.models.map((model) => (
+                <span key={model} className="compare-model-chip">{model}</span>
+              ))}
+            </div>
+          </div>
+
+          <div className="compare-runs">
+            {group.prompts.map((prompt) => {
+              const modelLabel = getPromptModelLabel(prompt)
+              const era = getPromptModelEra(prompt)
+              const stepCount = prompt.steps?.length ?? 0
+              const domainLabel = getDomainLabel(prompt)
+
+              return (
+                <Link key={prompt.id} href={getProjectHref(prompt)} className="compare-run">
+                  <div className="compare-run-top">
+                    <span className={`compare-era ${era}`}>
+                      {era === 'older' ? 'Older' : era === 'newer' ? 'Newer' : 'Ref'}
+                    </span>
+                    <span className="compare-run-model">{modelLabel}</span>
+                  </div>
+                  <div className="compare-run-title">{prompt.title}</div>
+                  <div className="compare-run-desc">{prompt.description}</div>
+                  {prompt.result_content && (
+                    <div className="compare-run-outcome">
+                      {prompt.result_content.length > 150
+                        ? prompt.result_content.slice(0, 150).trim() + '...'
+                        : prompt.result_content}
+                    </div>
+                  )}
+                  <div className="compare-run-foot">
+                    <span>{domainLabel ?? 'Uncategorized'}</span>
+                    <span>{stepCount} {stepCount === 1 ? 'step' : 'steps'}</span>
+                    <span>{prompt.vote_count} upvotes</span>
+                  </div>
+                </Link>
+              )
+            })}
+          </div>
+        </section>
+      ))}
     </div>
   )
 }

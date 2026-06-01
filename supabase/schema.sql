@@ -78,7 +78,73 @@ CREATE INDEX idx_prompts_author ON prompts(author_id);
 CREATE INDEX idx_prompts_difficulty ON prompts(difficulty);
 CREATE INDEX idx_prompt_steps_prompt ON prompt_steps(prompt_id);
 CREATE INDEX idx_votes_prompt ON votes(prompt_id);
+CREATE INDEX idx_votes_user ON votes(user_id);
 CREATE INDEX idx_bookmarks_user ON bookmarks(user_id);
+CREATE INDEX idx_bookmarks_prompt ON bookmarks(prompt_id);
+
+CREATE OR REPLACE FUNCTION update_prompt_vote_count()
+RETURNS TRIGGER
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+BEGIN
+  IF TG_OP = 'INSERT' THEN
+    UPDATE prompts
+    SET vote_count = vote_count + 1,
+        updated_at = NOW()
+    WHERE id = NEW.prompt_id;
+    RETURN NEW;
+  END IF;
+
+  IF TG_OP = 'DELETE' THEN
+    UPDATE prompts
+    SET vote_count = GREATEST(vote_count - 1, 0),
+        updated_at = NOW()
+    WHERE id = OLD.prompt_id;
+    RETURN OLD;
+  END IF;
+
+  RETURN NULL;
+END;
+$$;
+
+DROP TRIGGER IF EXISTS prompt_vote_count_trigger ON votes;
+CREATE TRIGGER prompt_vote_count_trigger
+  AFTER INSERT OR DELETE ON votes
+  FOR EACH ROW EXECUTE FUNCTION update_prompt_vote_count();
+
+CREATE OR REPLACE FUNCTION update_prompt_bookmark_count()
+RETURNS TRIGGER
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+BEGIN
+  IF TG_OP = 'INSERT' THEN
+    UPDATE prompts
+    SET bookmark_count = bookmark_count + 1,
+        updated_at = NOW()
+    WHERE id = NEW.prompt_id;
+    RETURN NEW;
+  END IF;
+
+  IF TG_OP = 'DELETE' THEN
+    UPDATE prompts
+    SET bookmark_count = GREATEST(bookmark_count - 1, 0),
+        updated_at = NOW()
+    WHERE id = OLD.prompt_id;
+    RETURN OLD;
+  END IF;
+
+  RETURN NULL;
+END;
+$$;
+
+DROP TRIGGER IF EXISTS prompt_bookmark_count_trigger ON bookmarks;
+CREATE TRIGGER prompt_bookmark_count_trigger
+  AFTER INSERT OR DELETE ON bookmarks
+  FOR EACH ROW EXECUTE FUNCTION update_prompt_bookmark_count();
 
 -- Auto-create profile on signup
 CREATE OR REPLACE FUNCTION public.handle_new_user()
@@ -141,10 +207,24 @@ CREATE POLICY "Users can update own profile" ON profiles FOR UPDATE USING (auth.
 
 -- Votes
 CREATE POLICY "Votes are viewable by everyone" ON votes FOR SELECT USING (true);
-CREATE POLICY "Users can vote" ON votes FOR INSERT WITH CHECK (auth.uid() = user_id);
+CREATE POLICY "Users can vote" ON votes FOR INSERT WITH CHECK (
+  auth.uid() = user_id
+  AND EXISTS (
+    SELECT 1 FROM prompts
+    WHERE prompts.id = votes.prompt_id
+    AND prompts.status = 'approved'
+  )
+);
 CREATE POLICY "Users can remove own votes" ON votes FOR DELETE USING (auth.uid() = user_id);
 
 -- Bookmarks
 CREATE POLICY "Users can see own bookmarks" ON bookmarks FOR SELECT USING (auth.uid() = user_id);
-CREATE POLICY "Users can bookmark" ON bookmarks FOR INSERT WITH CHECK (auth.uid() = user_id);
+CREATE POLICY "Users can bookmark" ON bookmarks FOR INSERT WITH CHECK (
+  auth.uid() = user_id
+  AND EXISTS (
+    SELECT 1 FROM prompts
+    WHERE prompts.id = bookmarks.prompt_id
+    AND prompts.status = 'approved'
+  )
+);
 CREATE POLICY "Users can remove own bookmarks" ON bookmarks FOR DELETE USING (auth.uid() = user_id);

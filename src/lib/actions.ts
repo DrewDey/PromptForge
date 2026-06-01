@@ -98,7 +98,7 @@ export async function voteOnProject(promptId: string) {
     revalidatePath('/')
     return result
   } catch {
-    return { voted: false, newCount: 0 }
+    return { voted: false, newCount: 0, error: 'Could not save vote.' }
   }
 }
 
@@ -108,7 +108,7 @@ export async function bookmarkProject(promptId: string) {
     revalidatePath(`/prompt/${promptId}`)
     return result
   } catch {
-    return { bookmarked: false, newCount: 0 }
+    return { bookmarked: false, newCount: 0, error: 'Could not save bookmark.' }
   }
 }
 

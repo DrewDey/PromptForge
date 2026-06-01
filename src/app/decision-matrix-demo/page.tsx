@@ -4,6 +4,7 @@ import type { ReactNode } from 'react'
 import Link from 'next/link'
 import { ExternalLink, FileCode2, GitBranch } from 'lucide-react'
 import CopyButton from '@/app/prompt/[id]/CopyButton'
+import ProjectEngagementBar from '@/components/ProjectEngagementBar'
 import ProjectCommunityPanel from '@/components/ProjectCommunityPanel'
 
 const projectId = '069d354a-ec99-4ee4-aed4-aa1baaec8b29'
@@ -172,7 +173,7 @@ function ResponsePackage({ modelResponse }: { modelResponse: string }) {
   )
 }
 
-function MatrixNode({
+function PipeNode({
   eyebrow,
   title,
   children,
@@ -186,11 +187,10 @@ function MatrixNode({
   return (
     <article className="relative pl-[88px]">
       {!terminal && (
-        <div className="absolute left-[23px] top-[80px] h-[calc(100%+30px)] w-7 border-x border-brand-blue/35 bg-brand-blue/15" />
+        <div className="absolute left-[22px] top-[80px] h-[calc(100%+30px)] w-8 border-x-4 border-[#07551f] bg-[#2bd15f] shadow-[inset_5px_0_0_rgba(255,255,255,0.24),inset_-5px_0_0_rgba(0,0,0,0.2)]" />
       )}
-      <div className="absolute left-0 top-8 grid h-14 w-14 place-items-center border border-brand-blue/35 bg-brand-blue/10 font-mono text-xs font-black text-brand-blue">
-        {eyebrow.slice(0, 2)}
-      </div>
+      <div className="absolute left-0 top-8 h-16 w-12 border-4 border-[#07551f] bg-[#2bd15f] shadow-[inset_6px_0_0_rgba(255,255,255,0.28),inset_-6px_0_0_rgba(0,0,0,0.18)]" />
+      <div className="absolute left-11 top-[54px] h-7 w-12 border-y-4 border-[#07551f] bg-[#2bd15f] shadow-[inset_0_5px_0_rgba(255,255,255,0.18),inset_0_-5px_0_rgba(0,0,0,0.16)]" />
       <div className="relative border border-surface-200 bg-white p-5 shadow-[0_18px_44px_rgba(24,24,27,0.07)]">
         <div className="font-mono text-[10px] uppercase tracking-[0.18em] text-surface-500">{eyebrow}</div>
         <h3 className="mt-2 text-xl font-black text-surface-900">{title}</h3>
@@ -203,9 +203,9 @@ function MatrixNode({
 function BuildPath({ modelResponse }: { modelResponse: string }) {
   return (
     <section className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
-      <div className="mb-7 border-l-4 border-brand-blue pl-4">
+      <div className="mb-7 border-l-4 border-[#2bd15f] pl-4">
         <div className="flex items-center gap-2 text-[11px] font-mono uppercase tracking-[0.16em] text-surface-500">
-          <GitBranch className="h-3.5 w-3.5 text-brand-blue" />
+          <GitBranch className="h-3.5 w-3.5 text-[#128135]" />
           Prompt path
         </div>
         <h2 className="mt-1 text-2xl font-black text-surface-900">The one-shot run, locked together.</h2>
@@ -213,18 +213,18 @@ function BuildPath({ modelResponse }: { modelResponse: string }) {
 
       <div className="max-w-5xl">
         <div className="space-y-8">
-          <MatrixNode eyebrow="01 · Prompt" title="One practical ask">
+          <PipeNode eyebrow="01 · Prompt" title="One practical ask">
             <div className="group/prompt relative pr-9">
               <p className="border-l-2 border-brand-orange pl-3 font-semibold text-surface-900">{prompt}</p>
               <div className="absolute right-0 top-0 opacity-70 transition-opacity duration-200 group-hover/prompt:opacity-100 focus-within:opacity-100">
                 <CopyButton text={prompt} variant="ghost" label="Copy prompt" visibleLabel="Copy" />
               </div>
             </div>
-          </MatrixNode>
+          </PipeNode>
 
-          <MatrixNode eyebrow="02 · Response" title="Response package" terminal>
+          <PipeNode eyebrow="02 · Response" title="Response package" terminal>
             <ResponsePackage modelResponse={modelResponse} />
-          </MatrixNode>
+          </PipeNode>
         </div>
       </div>
     </section>
@@ -260,6 +260,7 @@ export default function DecisionMatrixDemoPage() {
             <RunSummary />
           </div>
 
+          <ProjectEngagementBar projectId={projectId} loginNextPath="/decision-matrix-demo" />
           <ArtifactFrame />
         </div>
       </section>

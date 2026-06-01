@@ -10,6 +10,7 @@ import CodeBlock from '@/components/CodeBlock'
 import Prose from '@/components/Prose'
 import ProjectCommunityPanel from '@/components/ProjectCommunityPanel'
 import { detectContentKind } from '@/lib/content-kind'
+import { isPersistableProjectId } from '@/lib/project-engagement'
 
 /**
  * Pick the right renderer AND the right eyebrow label for a step's payload.
@@ -209,15 +210,24 @@ export default async function PromptDetailPage({
               </span>
             </p>
           </div>
-          <VoteBookmarkButtons
-            promptId={prompt.id}
-            initialVoteCount={prompt.vote_count}
-            initialBookmarkCount={prompt.bookmark_count}
-            initialVoted={hasVoted}
-            initialBookmarked={hasBookmarked}
-            isLoggedIn={isLoggedIn}
-            size="large"
-          />
+          {isPersistableProjectId(prompt.id) ? (
+            <VoteBookmarkButtons
+              promptId={prompt.id}
+              initialVoteCount={prompt.vote_count}
+              initialBookmarkCount={prompt.bookmark_count}
+              initialVoted={hasVoted}
+              initialBookmarked={hasBookmarked}
+              isLoggedIn={isLoggedIn}
+              size="large"
+              loginNextPath={`/prompt/${prompt.id}`}
+            />
+          ) : (
+            <div className="flex items-center gap-3 text-sm text-surface-500">
+              <span>{prompt.vote_count} upvotes</span>
+              <span aria-hidden="true">·</span>
+              <span>{prompt.bookmark_count} saves</span>
+            </div>
+          )}
         </div>
 
         {/* Metadata — unified pill spec. One orange-tinted Category (primary

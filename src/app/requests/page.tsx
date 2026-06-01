@@ -3,7 +3,7 @@ import { ArrowRight, ArrowUp, CheckCircle2, ExternalLink, GitFork, MessageSquare
 import BuildRequestResponseForm from '@/components/BuildRequestResponseForm'
 import BuildRequestSubmitForm from '@/components/BuildRequestSubmitForm'
 import { voteOnBuildRequest } from '@/lib/actions'
-import { getPublicBuildRequests } from '@/lib/data'
+import { getPublicBuildRequests, getUserBuildRequestVotes } from '@/lib/data'
 import type { BuildRequestWithRelations } from '@/lib/types'
 
 const SUPABASE_CONFIGURED = !!(
@@ -30,7 +30,32 @@ function statusLabel(status: string) {
   return 'Open'
 }
 
-function BuildRequestCard({ request, viewer }: { request: BuildRequestWithRelations; viewer: Awaited<ReturnType<typeof getViewer>> }) {
+function loginHref(next: string) {
+  return `/auth/login?next=${encodeURIComponent(next)}`
+}
+
+function signupHref(next: string) {
+  return `/auth/signup?next=${encodeURIComponent(next)}`
+}
+
+function voteButtonClass(hasVoted: boolean) {
+  return [
+    'inline-flex items-center gap-1.5 border px-3 py-1.5 text-xs font-bold',
+    hasVoted
+      ? 'border-brand-orange bg-brand-orange/10 text-brand-orange hover:border-brand-orange-dark hover:text-brand-orange-dark'
+      : 'border-surface-300 text-surface-700 hover:border-surface-900 hover:text-surface-900',
+  ].join(' ')
+}
+
+function BuildRequestCard({
+  request,
+  viewer,
+  hasVoted,
+}: {
+  request: BuildRequestWithRelations
+  viewer: Awaited<ReturnType<typeof getViewer>>
+  hasVoted: boolean
+}) {
   const responses = request.responses ?? []
 
   return (
@@ -54,13 +79,18 @@ function BuildRequestCard({ request, viewer }: { request: BuildRequestWithRelati
         {viewer ? (
           <form action={voteOnBuildRequest}>
             <input type="hidden" name="request_id" value={request.id} />
-            <button className="inline-flex items-center gap-1.5 border border-surface-300 px-3 py-1.5 text-xs font-bold text-surface-700 hover:border-surface-900 hover:text-surface-900">
+            <button
+              className={voteButtonClass(hasVoted)}
+              aria-pressed={hasVoted}
+              aria-label={hasVoted ? 'Remove vote from build request' : 'Vote for build request'}
+              title={hasVoted ? 'Remove vote' : 'Vote'}
+            >
               <ArrowUp className="h-3.5 w-3.5" />
               {request.vote_count}
             </button>
           </form>
         ) : (
-          <Link href="/auth/login" className="inline-flex items-center gap-1.5 border border-surface-300 px-3 py-1.5 text-xs font-bold text-surface-500 hover:border-brand-orange hover:text-brand-orange">
+          <Link href={loginHref('/requests')} className="inline-flex items-center gap-1.5 border border-surface-300 px-3 py-1.5 text-xs font-bold text-surface-500 hover:border-brand-orange hover:text-brand-orange">
             <ArrowUp className="h-3.5 w-3.5" />
             Log in to vote
           </Link>
@@ -100,7 +130,8 @@ function BuildRequestCard({ request, viewer }: { request: BuildRequestWithRelati
         <BuildRequestResponseForm requestId={request.id} />
       ) : (
         <div className="mt-5 border border-dashed border-surface-300 bg-surface-50 p-4 text-sm text-surface-500">
-          Log in to respond with a PathForge build, fork, or source-run result.
+          <Link href={loginHref('/requests')} className="font-bold text-brand-orange hover:text-brand-orange-dark">Log in</Link>
+          {' '}to respond with a PathForge build, fork, or source-run result.
         </div>
       )}
     </article>
@@ -117,6 +148,9 @@ export default async function BuildRequestsPage({
     getViewer(),
     getPublicBuildRequests(),
   ])
+  const votedRequestIds = viewer
+    ? await getUserBuildRequestVotes(requests.map(request => request.id))
+    : new Set<string>()
 
   return (
     <div className="bg-surface-50">
@@ -185,9 +219,9 @@ export default async function BuildRequestsPage({
             <div className="mt-6 border border-surface-200 bg-white p-4 text-sm text-surface-600">
               You need to log in before posting a build request or responding to one.
               <div className="mt-3">
-                <Link href="/auth/login" className="font-bold text-brand-orange hover:text-brand-orange-dark">Log in</Link>
+                <Link href={loginHref('/requests')} className="font-bold text-brand-orange hover:text-brand-orange-dark">Log in</Link>
                 <span className="mx-2 text-surface-300">/</span>
-                <Link href="/auth/signup" className="font-bold text-brand-orange hover:text-brand-orange-dark">Sign up</Link>
+                <Link href={signupHref('/requests')} className="font-bold text-brand-orange hover:text-brand-orange-dark">Sign up</Link>
               </div>
             </div>
           )}
@@ -222,7 +256,12 @@ export default async function BuildRequestsPage({
           ) : (
             <div className="grid gap-4 lg:grid-cols-2">
               {requests.map(request => (
-                <BuildRequestCard key={request.id} request={request} viewer={viewer} />
+                <BuildRequestCard
+                  key={request.id}
+                  request={request}
+                  viewer={viewer}
+                  hasVoted={votedRequestIds.has(request.id)}
+                />
               ))}
             </div>
           )}

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { ArrowUp, Bookmark } from 'lucide-react'
 import { voteOnProject, bookmarkProject } from '@/lib/actions'
 
@@ -12,6 +12,7 @@ export default function VoteBookmarkButtons({
   initialBookmarked,
   isLoggedIn,
   size = 'default',
+  loginNextPath,
 }: {
   promptId: string
   initialVoteCount: number
@@ -20,6 +21,7 @@ export default function VoteBookmarkButtons({
   initialBookmarked: boolean
   isLoggedIn: boolean
   size?: 'default' | 'large'
+  loginNextPath?: string
 }) {
   const [voteCount, setVoteCount] = useState(initialVoteCount)
   const [bookmarkCount, setBookmarkCount] = useState(initialBookmarkCount)
@@ -27,92 +29,201 @@ export default function VoteBookmarkButtons({
   const [bookmarked, setBookmarked] = useState(initialBookmarked)
   const [votePending, setVotePending] = useState(false)
   const [bookmarkPending, setBookmarkPending] = useState(false)
+  const [message, setMessage] = useState('')
+  const [loginHref, setLoginHref] = useState(
+    loginNextPath ? `/auth/login?next=${encodeURIComponent(loginNextPath)}` : '/auth/login'
+  )
+
+  useEffect(() => {
+    if (loginNextPath) return
+
+    const next = `${window.location.pathname}${window.location.search}${window.location.hash}`
+    setLoginHref(`/auth/login?next=${encodeURIComponent(next)}`)
+  }, [loginNextPath])
 
   async function handleVote(e: React.MouseEvent) {
     e.preventDefault()
     e.stopPropagation()
-    if (!isLoggedIn || votePending) return
+    if (votePending) return
 
     setVotePending(true)
-    setVoted(!voted)
-    setVoteCount(voted ? voteCount - 1 : voteCount + 1)
+    setMessage('')
+    const previousVoted = voted
+    const previousVoteCount = voteCount
+    setVoted(!previousVoted)
+    setVoteCount(previousVoted ? previousVoteCount - 1 : previousVoteCount + 1)
 
     const result = await voteOnProject(promptId)
-    setVoted(result.voted)
-    setVoteCount(result.newCount)
+    if ('error' in result) {
+      setVoted(previousVoted)
+      setVoteCount(previousVoteCount)
+      setMessage(result.error)
+    } else {
+      setVoted(result.voted)
+      setVoteCount(result.newCount)
+    }
     setVotePending(false)
   }
 
   async function handleBookmark(e: React.MouseEvent) {
     e.preventDefault()
     e.stopPropagation()
-    if (!isLoggedIn || bookmarkPending) return
+    if (bookmarkPending) return
 
     setBookmarkPending(true)
-    setBookmarked(!bookmarked)
-    setBookmarkCount(bookmarked ? bookmarkCount - 1 : bookmarkCount + 1)
+    setMessage('')
+    const previousBookmarked = bookmarked
+    const previousBookmarkCount = bookmarkCount
+    setBookmarked(!previousBookmarked)
+    setBookmarkCount(previousBookmarked ? previousBookmarkCount - 1 : previousBookmarkCount + 1)
 
     const result = await bookmarkProject(promptId)
-    setBookmarked(result.bookmarked)
-    setBookmarkCount(result.newCount)
+    if ('error' in result) {
+      setBookmarked(previousBookmarked)
+      setBookmarkCount(previousBookmarkCount)
+      setMessage(result.error)
+    } else {
+      setBookmarked(result.bookmarked)
+      setBookmarkCount(result.newCount)
+    }
     setBookmarkPending(false)
   }
 
   if (size === 'large') {
     return (
-      <div className="flex items-center gap-3">
-        <button
-          onClick={handleVote}
-          disabled={!isLoggedIn}
-          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-sm font-medium transition-colors duration-150 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange ${
-            voted
-              ? 'bg-brand-orange/10 border-brand-orange/50 text-brand-orange'
-              : 'bg-white border-surface-200 text-surface-500 hover:border-brand-orange/50 hover:text-brand-orange'
-          } ${!isLoggedIn ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
-          title={isLoggedIn ? (voted ? 'Remove upvote' : 'Upvote') : 'Log in to upvote'}
-        >
-          <ArrowUp className={`w-4 h-4 ${voted ? 'text-primary-600' : ''}`} />
-          {voteCount}
-        </button>
-        <button
-          onClick={handleBookmark}
-          disabled={!isLoggedIn}
-          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-sm font-medium transition-colors duration-150 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange ${
-            bookmarked
-              ? 'bg-brand-blue/10 border-brand-blue/50 text-brand-blue'
-              : 'bg-white border-surface-200 text-surface-500 hover:border-brand-blue/50 hover:text-brand-blue'
-          } ${!isLoggedIn ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
-          title={isLoggedIn ? (bookmarked ? 'Remove bookmark' : 'Bookmark') : 'Log in to bookmark'}
-        >
-          <Bookmark className={`w-4 h-4 ${bookmarked ? 'fill-amber-500' : ''}`} />
-          {bookmarkCount}
-        </button>
+      <div className="flex flex-col items-end gap-1">
+        <div className="flex items-center gap-3">
+          {isLoggedIn ? (
+            <button
+              type="button"
+              onClick={handleVote}
+              disabled={votePending}
+              className={`flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-sm font-medium transition-colors duration-150 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange ${
+                voted
+                  ? 'border-brand-orange/50 bg-brand-orange/10 text-brand-orange'
+                  : 'border-surface-200 bg-white text-surface-500 hover:border-brand-orange/50 hover:text-brand-orange'
+              } ${votePending ? 'cursor-wait opacity-60' : 'cursor-pointer'}`}
+              title={voted ? 'Remove upvote' : 'Upvote'}
+              aria-label={voted ? 'Remove upvote' : 'Upvote'}
+              aria-pressed={voted}
+            >
+              <ArrowUp className={`w-4 h-4 ${voted ? 'text-primary-600' : ''}`} />
+              {voteCount}
+            </button>
+          ) : (
+            <a
+              href={loginHref}
+              onClick={(event) => event.stopPropagation()}
+              className="flex items-center gap-1.5 rounded-lg border border-surface-200 bg-white px-3 py-1.5 text-sm font-medium text-surface-500 transition-colors duration-150 hover:border-brand-orange/50 hover:text-brand-orange focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange"
+              title="Log in to upvote"
+              aria-label="Log in to upvote"
+            >
+              <ArrowUp className="w-4 h-4" />
+              {voteCount}
+            </a>
+          )}
+          {isLoggedIn ? (
+            <button
+              type="button"
+              onClick={handleBookmark}
+              disabled={bookmarkPending}
+              className={`flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-sm font-medium transition-colors duration-150 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange ${
+                bookmarked
+                  ? 'border-brand-blue/50 bg-brand-blue/10 text-brand-blue'
+                  : 'border-surface-200 bg-white text-surface-500 hover:border-brand-blue/50 hover:text-brand-blue'
+              } ${bookmarkPending ? 'cursor-wait opacity-60' : 'cursor-pointer'}`}
+              title={bookmarked ? 'Remove bookmark' : 'Bookmark'}
+              aria-label={bookmarked ? 'Remove bookmark' : 'Bookmark'}
+              aria-pressed={bookmarked}
+            >
+              <Bookmark className={`w-4 h-4 ${bookmarked ? 'fill-amber-500' : ''}`} />
+              {bookmarkCount}
+            </button>
+          ) : (
+            <a
+              href={loginHref}
+              onClick={(event) => event.stopPropagation()}
+              className="flex items-center gap-1.5 rounded-lg border border-surface-200 bg-white px-3 py-1.5 text-sm font-medium text-surface-500 transition-colors duration-150 hover:border-brand-blue/50 hover:text-brand-blue focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange"
+              title="Log in to bookmark"
+              aria-label="Log in to bookmark"
+            >
+              <Bookmark className="w-4 h-4" />
+              {bookmarkCount}
+            </a>
+          )}
+        </div>
+        {message && (
+          <div role="status" className="max-w-[12rem] text-right text-[11px] leading-tight text-red-600">
+            {message}
+          </div>
+        )}
       </div>
     )
   }
 
   return (
-    <div className="flex items-center gap-3">
-      <button
-        onClick={handleVote}
-        disabled={!isLoggedIn}
-        className={`flex items-center gap-1 text-sm transition-colors duration-150 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange ${
-          voted ? 'text-primary-600 font-medium' : 'text-surface-400 hover:text-primary-600'
-        } ${!isLoggedIn ? 'cursor-default' : 'cursor-pointer'}`}
-      >
-        <ArrowUp className={`w-3.5 h-3.5 ${voted ? 'text-primary-600' : ''}`} />
-        {voteCount}
-      </button>
-      <button
-        onClick={handleBookmark}
-        disabled={!isLoggedIn}
-        className={`flex items-center gap-1 text-sm transition-colors duration-150 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange ${
-          bookmarked ? 'text-amber-600 font-medium' : 'text-surface-400 hover:text-amber-600'
-        } ${!isLoggedIn ? 'cursor-default' : 'cursor-pointer'}`}
-      >
-        <Bookmark className={`w-3.5 h-3.5 ${bookmarked ? 'fill-amber-500' : ''}`} />
-        {bookmarkCount}
-      </button>
+    <div className="flex flex-col items-end gap-1">
+      <div className="flex items-center gap-3">
+        {isLoggedIn ? (
+          <button
+            type="button"
+            onClick={handleVote}
+            disabled={votePending}
+            className={`flex items-center gap-1 text-sm transition-colors duration-150 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange ${
+              voted ? 'font-medium text-primary-600' : 'text-surface-400 hover:text-primary-600'
+            } ${votePending ? 'cursor-wait opacity-60' : 'cursor-pointer'}`}
+            title={voted ? 'Remove upvote' : 'Upvote'}
+            aria-label={voted ? 'Remove upvote' : 'Upvote'}
+            aria-pressed={voted}
+          >
+            <ArrowUp className={`w-3.5 h-3.5 ${voted ? 'text-primary-600' : ''}`} />
+            {voteCount}
+          </button>
+        ) : (
+          <a
+            href={loginHref}
+            onClick={(event) => event.stopPropagation()}
+            className="flex items-center gap-1 text-sm text-surface-400 transition-colors duration-150 hover:text-primary-600 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange"
+            title="Log in to upvote"
+            aria-label="Log in to upvote"
+          >
+            <ArrowUp className="w-3.5 h-3.5" />
+            {voteCount}
+          </a>
+        )}
+        {isLoggedIn ? (
+          <button
+            type="button"
+            onClick={handleBookmark}
+            disabled={bookmarkPending}
+            className={`flex items-center gap-1 text-sm transition-colors duration-150 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange ${
+              bookmarked ? 'font-medium text-amber-600' : 'text-surface-400 hover:text-amber-600'
+            } ${bookmarkPending ? 'cursor-wait opacity-60' : 'cursor-pointer'}`}
+            title={bookmarked ? 'Remove bookmark' : 'Bookmark'}
+            aria-label={bookmarked ? 'Remove bookmark' : 'Bookmark'}
+            aria-pressed={bookmarked}
+          >
+            <Bookmark className={`w-3.5 h-3.5 ${bookmarked ? 'fill-amber-500' : ''}`} />
+            {bookmarkCount}
+          </button>
+        ) : (
+          <a
+            href={loginHref}
+            onClick={(event) => event.stopPropagation()}
+            className="flex items-center gap-1 text-sm text-surface-400 transition-colors duration-150 hover:text-amber-600 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange"
+            title="Log in to bookmark"
+            aria-label="Log in to bookmark"
+          >
+            <Bookmark className="w-3.5 h-3.5" />
+            {bookmarkCount}
+          </a>
+        )}
+      </div>
+      {message && (
+        <div role="status" className="max-w-[10rem] text-right text-[11px] leading-tight text-red-600">
+          {message}
+        </div>
+      )}
     </div>
   )
 }

@@ -3,13 +3,21 @@
 import Link from 'next/link'
 import Image from 'next/image'
 import { useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+
+function safeNextPath(next: string | null) {
+  if (!next || !next.startsWith('/') || next.startsWith('//')) return '/'
+  return next
+}
 
 export default function LoginPage() {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
+  const nextPath = safeNextPath(searchParams.get('next'))
+  const signupHref = `/auth/signup?next=${encodeURIComponent(nextPath)}`
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
@@ -30,7 +38,7 @@ export default function LoginPage() {
       return
     }
 
-    router.push('/')
+    router.push(nextPath)
     router.refresh()
   }
 
@@ -144,7 +152,7 @@ export default function LoginPage() {
 
           <p className="text-center text-sm text-surface-500 mt-6">
             Don&apos;t have an account?{' '}
-            <Link href="/auth/signup" className="text-brand-orange hover:text-brand-orange-dark focus-visible:outline-2 focus-visible:outline-brand-orange focus-visible:outline-offset-2 transition-colors duration-150 font-semibold">
+            <Link href={signupHref} className="text-brand-orange hover:text-brand-orange-dark focus-visible:outline-2 focus-visible:outline-brand-orange focus-visible:outline-offset-2 transition-colors duration-150 font-semibold">
               Sign up
             </Link>
           </p>

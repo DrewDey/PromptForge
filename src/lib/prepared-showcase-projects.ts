@@ -132,7 +132,7 @@ export const POMODORO_TIMER_SHOWCASE_PROJECT: PreparedShowcaseProject = {
   content:
     'A single ChatGPT conversation on GPT 5.5 Instant built a Pomodoro focus timer one prompt at a time, keeping everything in one self-contained HTML file the whole way. The first prompt produced a working 25-minute work / 5-minute break countdown with Start, Pause, and Reset. Each follow-up layered on a feature without breaking the file: custom work/break lengths plus a completed-sessions counter, then an SVG progress ring and a self-generated Web Audio chime, and finally a polished modern dark theme tuned to look and work great on mobile.',
   resultContent:
-    'A polished dark-theme Pomodoro timer embedded directly on the page. The build path preserves all four exact prompts, the per-step build summaries, selectable progress through the chain, the final self-contained HTML collapsed below, the source-run link, and capture notes.',
+    'A polished dark-theme Pomodoro timer embedded directly on the page. The build path preserves all four exact prompts, each step’s verbatim HTML response, a per-step artifact selector that mounts the selected step above, the source-run link, and capture notes.',
   categorySlug: 'productivity',
   mockCategoryId: 'cat-7',
   difficulty: 'beginner',
@@ -153,8 +153,7 @@ export const POMODORO_TIMER_SHOWCASE_PROJECT: PreparedShowcaseProject = {
       title: 'Build the base timer',
       content:
         'Build a Pomodoro focus timer as a single self-contained HTML file. It should run 25-minute work sessions and 5-minute breaks, with Start, Pause, and Reset buttons, a big readable countdown, and a clean minimal look. Put all the HTML, CSS, and JavaScript in one file I can save and open directly in a browser.',
-      resultContent:
-        'A single-file Pomodoro timer — light card UI, 25:00 countdown, Start/Pause/Reset, auto-switch between 25-min work and 5-min break, title-bar updates with remaining time.',
+      resultContent: '',
       description: 'First prompt that produced the working base 25/5 countdown.',
     },
     {
@@ -163,8 +162,7 @@ export const POMODORO_TIMER_SHOWCASE_PROJECT: PreparedShowcaseProject = {
       title: 'Add custom lengths and a session counter',
       content:
         "Nice. Now add two things to the same single HTML file: a counter that tracks how many work sessions I've completed, and let me set my own work and break lengths in minutes with number inputs before I start. Keep everything in the one file.",
-      resultContent:
-        'Added Work/Break minute inputs (validated, disabled while running) and a "Work sessions completed" counter that increments each time a work block finishes.',
+      resultContent: '',
       description: 'Second prompt that added configurable session lengths and a completed-sessions counter.',
     },
     {
@@ -173,8 +171,7 @@ export const POMODORO_TIMER_SHOWCASE_PROJECT: PreparedShowcaseProject = {
       title: 'Add a progress ring and a chime',
       content:
         'Great. Two more upgrades to the same single file: draw a circular progress ring around the countdown that empties as the current session runs down, and play a soft chime when a work or break session ends. Keep it fully self-contained — no external files or libraries, so generate the chime with the Web Audio API.',
-      resultContent:
-        'Added an SVG progress ring (stroke-dashoffset driven by time left) and a self-contained Web Audio chime — a 3-note ascending arpeggio (C5/E5/G5 sine oscillators) generated on the fly, no audio files.',
+      resultContent: '',
       description: 'Third prompt that added the SVG progress ring and a self-generated Web Audio chime.',
     },
     {
@@ -183,8 +180,7 @@ export const POMODORO_TIMER_SHOWCASE_PROJECT: PreparedShowcaseProject = {
       title: 'Polish the dark theme and mobile layout',
       content:
         'Last step: give it a polished modern dark theme with nicer typography, smooth out the spacing, and make sure it looks and works great on mobile. Keep it the same single self-contained HTML file.',
-      resultContent:
-        'Polished dark theme (CSS variables, #0b1020 base with purple/cyan radial glows), Inter typography, glassmorphism card (backdrop-blur), a purple→cyan gradient progress ring, tabular-nums countdown, and a responsive @media(max-width:420px) layout. This is the final artifact.',
+      resultContent: '',
       description: 'Final prompt that produced the polished dark-theme, mobile-ready artifact mounted on this page.',
     },
   ],

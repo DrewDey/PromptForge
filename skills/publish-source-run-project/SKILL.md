@@ -18,12 +18,13 @@ The pipeline has four phases: **CAPTURE -> BUILD THE PAGE -> VERIFY -> PUBLISH**
 These override convenience. If a step would violate one of these, stop and fix the approach instead.
 
 1. **Never fabricate content.** Real captured runs only. If a run did not happen, do not invent prompts, responses, or an artifact. No imagined transcripts.
-2. **Preserve exact prompts and exact responses.** The page must show the verbatim prompt text the user sent and the verbatim visible model response. Summaries, titles, and page copy are allowed only *in addition to* the exact text, never as a replacement.
+2. **Preserve exact prompts and exact responses — VERBATIM, never summarized.** The page must show the verbatim prompt text the user sent and the verbatim visible model response. For build-style runs the response **is** the generated artifact code: each step's response section must render that step's exact artifact file (the full verbatim code, in a collapsible + copyable code block) — never a paraphrase, recap, or feature blurb of what the code does. Summaries, titles, and page copy are allowed only *in addition to* the exact text, never as a replacement for it. Do not put per-step summary prose in `PreparedShowcaseStep.resultContent` as a stand-in for the response; leave it empty (or purely supplemental) and let the verbatim code be the response.
 3. **Never use the admin profile as author.** Attribute the project to a non-admin seed/house profile (default: `PathForge Projects`, id `22222222-2222-2222-2222-222222222211`). Do not author a public page under the user's personal/admin account just because Chrome is signed into it.
 4. **Artifact-first layout.** The final artifact/outcome mounts first and loads non-blank, before the prompt/response build path.
 5. **Verify before publish.** `npx tsc --noEmit` and `npm run build` must pass, and the mounted artifact must load and be non-blank, before any commit/push.
 6. **No fake engagement.** No invented votes, bookmarks, comments, forks, or fake user activity. Demo pages show read-only zero/static counts; real persistable IDs get real engagement controls. Never seed counts to look popular.
 7. **Push only with explicit approval.** This is a local-first project; pushing `main` deploys to production. Commit locally, then push only when the user explicitly says to.
+8. **Multi-step builds MUST ship a per-step artifact selector.** Any run with more than one prompt that produces a build at each step must save one artifact file per step (`<slug>-step-1.html` … `<slug>-step-N.html`, with the last step being the final) and ship a selector exactly like the HP 10Bii+ explorer (`src/app/hp-10bii-calculator-demo/Hp10BiiSourceRunExplorer.tsx`): selecting a step re-keys the mounted `ArtifactFrame` iframe to THAT step's HTML. Default the mounted view to the final step. A single mounted final artifact with earlier steps reduced to prose is not acceptable — the user must be able to mount and inspect each step's exact artifact.
 
 ## Required Inputs
 
@@ -55,7 +56,7 @@ These are real findings from live capture. Treat them as defaults, not edge case
 
 ### What to save
 
-1. **Final artifact** to `public/artifacts/<slug>.html` (or appropriate extension). Save the exact model code; do not hand-edit it. For multi-prompt runs that produced intermediate artifacts, save each version (e.g. `<slug>-initial.html` and `<slug>.html` final, plus the raw final model response if it differs).
+1. **Final artifact** to `public/artifacts/<slug>.html` (or appropriate extension). Save the exact model code; do not hand-edit it. For multi-prompt build runs, save EVERY step's artifact verbatim — one file per step, `<slug>-step-1.html` … `<slug>-step-N.html` (last step = final) — so the page's per-step selector can mount each step's exact HTML (guardrail 8). Do not summarize a step in place of saving its code.
 2. **Capture notes** to `public/artifacts/<slug>-capture-notes.md` using the template in `references/capture-notes-template.md`. It must contain: source URL, provider/model/tier, final artifact path, and for every step the exact prompt and the exact result. Include a "Capture findings" section noting model-picker/tier/inline-vs-download behavior for this run.
 
 ### Verify the artifact during capture
@@ -88,7 +89,7 @@ Do all of these. Missing any one leaves the page half-wired (e.g. invisible in b
 
 `PreparedShowcaseProject` fields: `id`, `sourceRunId`, `href`, `title`, `description`, `content`, `resultContent`, `categorySlug` (must match an existing mock category slug), `mockCategoryId`, `difficulty` (`beginner|intermediate|advanced`), `modelUsed`, `modelRecommendation`, `toolsUsed[]`, `tags[]`, `artifactPath` (points to a real file in `public/artifacts/`), `sourceUrl`, `authorDisplayName`, `authorUsername`, `createdAt`, `updatedAt`, `steps[]`.
 
-`PreparedShowcaseStep` fields: `id` (must be prefixed with the project id, e.g. `${MY_PROJECT_ID}-step-1`), `stepNumber`, `title`, `content` (the exact prompt), `resultContent` (what the model returned), `description`.
+`PreparedShowcaseStep` fields: `id` (must be prefixed with the project id, e.g. `${MY_PROJECT_ID}-step-1`), `stepNumber`, `title`, `content` (the exact prompt), `resultContent` (leave empty `''` for build steps — the verbatim step artifact code read from `public/artifacts/<slug>-step-N.html` is the response; never put a paraphrased summary here as a stand-in), `description`.
 
 ### Author wiring (non-admin only)
 
@@ -104,7 +105,7 @@ Every showcase page — Snake, Decision Matrix, HP 10Bii, Tic-Tac-Toe, and this 
 - **Header** (dark `bg-surface-900`): PathForge link, project `h1`, description, `RunSummary` (3-col grid: model / run-type / captured date), `ProjectEngagementBar`, then the mounted artifact.
 - **ArtifactFrame** (`id="final-result"` — preserve it; it is the scroll target): dark border/shadow, header bar (label + title + Open link), iframe `sandbox="allow-scripts allow-same-origin"` (add `allow-downloads` only if the artifact emits a CSV), `src` pointing at `/artifacts/*.html`, fixed height per project.
 - **BuildPath**: `PipeNode` components with green pipe styling (exact hex `#2bd15f` bright, `#07551f` dark). Node 01 = prompt (left border brand-orange). Node 02+ = response package (collapsible `details`). Each response: intro text, filename badge, nested code-block `details` (`max-h-[460px] overflow-auto`), `CopyButton variant="dark"`, source-run link.
-- **Multi-response (HP 10Bii pattern only)**: a custom explorer (e.g. `Hp10BiiSourceRunExplorer`) manages selectable response-package tabs (obvious selected state with `CheckCircle2`), an ArtifactFrame keyed to the selected package, and sequential PipeNodes prompt -> response -> refinement -> response. Final approved artifact loads first by default; earlier artifacts stay inspectable.
+- **Multi-response / multi-step (HP 10Bii pattern)**: a custom explorer (e.g. `Hp10BiiSourceRunExplorer`, `PomodoroSourceRunExplorer`) manages a selectable artifact selector — one tab per step/response (obvious selected state with `CheckCircle2`) — plus an `ArtifactFrame` **keyed to the selected step** so the mounted iframe switches to that step's exact HTML, and sequential PipeNodes prompt -> response -> prompt -> response. Each step's response renders that step's verbatim artifact code (collapsible + copyable), never a summary. The final step loads first by default; every earlier step's artifact stays mountable and inspectable. Save one artifact file per step (`<slug>-step-N.html`).
 - **Fork**: a visible fork action (`ProjectForkCallout`) routing to `/build?fork={projectId}` — not just a passive count.
 - **Community**: `ProjectCommunityPanel` (fork callout + comments zero-state + discussion sidebar with real 0 counts). No fake comments/forks.
 - **Engagement**: `ProjectEngagementBar` is async, checks `isPersistableProjectId`; persistable IDs render real `VoteBookmarkButtons size="large"`, demo IDs show static read-only counts.

@@ -1,6 +1,7 @@
 'use client'
 
 import type { ReactNode } from 'react'
+import { useMemo, useState } from 'react'
 import { CheckCircle2, ExternalLink, FileCode2, GitBranch } from 'lucide-react'
 import CopyButton from '@/app/prompt/[id]/CopyButton'
 
@@ -13,9 +14,20 @@ type SourceStep = {
   description: string
 }
 
-function ArtifactFrame({ artifactPath }: { artifactPath: string }) {
+type StepPackage = {
+  id: string
+  stepNumber: number
+  title: string
+  eyebrow: string
+  artifactTitle: string
+  artifactPath: string
+  code: string
+}
+
+function ArtifactFrame({ selectedPackage }: { selectedPackage: StepPackage }) {
   return (
     <div
+      key={selectedPackage.id}
       id="final-result"
       className="overflow-hidden border border-surface-800 bg-[#0b1020] shadow-[0_28px_90px_rgba(0,0,0,0.28)]"
     >
@@ -24,11 +36,11 @@ function ArtifactFrame({ artifactPath }: { artifactPath: string }) {
           <div className="font-mono text-[10px] uppercase tracking-[0.16em] text-brand-orange">
             Mounted response artifact
           </div>
-          <div className="truncate text-sm font-semibold">Pomodoro Focus Timer · final artifact</div>
-          <div className="mt-1 text-xs text-surface-400">04 · Polished dark-theme build</div>
+          <div className="truncate text-sm font-semibold">{selectedPackage.artifactTitle}</div>
+          <div className="mt-1 text-xs text-surface-400">{selectedPackage.eyebrow}</div>
         </div>
         <a
-          href={artifactPath}
+          href={selectedPackage.artifactPath}
           target="_blank"
           rel="noreferrer"
           className="inline-flex shrink-0 items-center gap-1.5 border border-surface-700 px-3 py-1.5 text-xs font-semibold text-surface-300 transition hover:border-brand-orange hover:text-brand-orange"
@@ -38,8 +50,9 @@ function ArtifactFrame({ artifactPath }: { artifactPath: string }) {
         </a>
       </div>
       <iframe
-        title="Pomodoro Focus Timer generated from a GPT 5.5 Instant source run"
-        src={artifactPath}
+        key={selectedPackage.id}
+        title={`${selectedPackage.artifactTitle} generated from a GPT 5.5 Instant source run`}
+        src={selectedPackage.artifactPath}
         sandbox="allow-scripts allow-same-origin"
         className="h-[720px] w-full bg-[#0b1020] sm:h-[680px]"
       />
@@ -85,78 +98,100 @@ function PipeNode({
   )
 }
 
-function ResponseSummaryCard({
-  step,
-  isFinal,
-  artifactPath,
-  finalArtifactCode,
+function ResponsePackageCard({
+  pkg,
+  selected,
+  onSelect,
   sourceRunUrl,
 }: {
-  step: SourceStep
-  isFinal: boolean
-  artifactPath: string
-  finalArtifactCode: string
+  pkg: StepPackage
+  selected: boolean
+  onSelect: () => void
   sourceRunUrl: string
 }) {
+  const fileName = pkg.artifactPath.split('/').pop() ?? 'pomodoro-focus-timer.html'
   return (
-    <div className="border border-surface-200 bg-white">
-      <div className="space-y-4 p-4">
-        <div className="space-y-3 text-sm leading-7 text-surface-900">
-          <p>{step.resultContent}</p>
+    <div
+      className={[
+        'border bg-white transition',
+        selected
+          ? 'border-brand-blue ring-2 ring-brand-blue/25'
+          : 'border-surface-200 hover:border-brand-blue/60',
+      ].join(' ')}
+    >
+      <button
+        type="button"
+        onClick={onSelect}
+        aria-pressed={selected}
+        className="flex w-full items-start justify-between gap-4 p-4 text-left"
+      >
+        <span className="min-w-0">
+          <span className="block font-mono text-[10px] uppercase tracking-[0.16em] text-surface-500">
+            {pkg.eyebrow}
+          </span>
+          <span className="mt-1 block text-base font-black text-surface-900">{pkg.title}</span>
+          <span className="mt-1 block text-sm leading-6 text-surface-600">
+            Selecting this step mounts its exact artifact version above.
+          </span>
+        </span>
+        <span
+          className={[
+            'inline-flex shrink-0 items-center gap-1.5 border px-3 py-2 font-mono text-[10px] uppercase tracking-[0.12em]',
+            selected
+              ? 'border-brand-blue bg-brand-blue text-white'
+              : 'border-surface-300 bg-white text-surface-700',
+          ].join(' ')}
+        >
+          {selected && <CheckCircle2 className="h-3.5 w-3.5" />}
+          {selected ? 'Selected' : 'Select'}
+        </span>
+      </button>
+
+      <div className="space-y-4 border-t border-surface-200 bg-white p-4">
+        <div className="border border-surface-200 bg-surface-50 px-4 py-3">
+          <div className="flex items-center gap-2 font-mono text-[11px] font-bold text-surface-700">
+            <FileCode2 className="h-4 w-4 text-brand-blue" />
+            {fileName}
+          </div>
+          <a
+            href={pkg.artifactPath}
+            target="_blank"
+            rel="noreferrer"
+            className="mt-2 inline-flex items-center gap-2 border-b border-surface-400 text-sm font-semibold text-surface-900 transition hover:border-brand-orange hover:text-brand-orange"
+          >
+            Open this artifact version
+            <ExternalLink className="h-3.5 w-3.5" />
+          </a>
         </div>
 
-        {isFinal ? (
-          <>
-            <div className="border border-surface-200 bg-surface-50 px-4 py-3">
-              <div className="flex items-center gap-2 font-mono text-[11px] font-bold text-surface-700">
-                <FileCode2 className="h-4 w-4 text-brand-blue" />
-                pomodoro-focus-timer.html
-              </div>
-              <a
-                href={artifactPath}
-                target="_blank"
-                rel="noreferrer"
-                className="mt-2 inline-flex items-center gap-2 border-b border-surface-400 text-sm font-semibold text-surface-900 transition hover:border-brand-orange hover:text-brand-orange"
-              >
-                Open the final artifact
-                <ExternalLink className="h-3.5 w-3.5" />
-              </a>
-            </div>
-
-            <details className="group/code border border-surface-200 bg-white">
-              <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-4 py-3">
-                <span className="min-w-0">
-                  <span className="flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.16em] text-surface-500">
-                    <FileCode2 className="h-3.5 w-3.5 text-brand-blue" />
-                    Code block
-                  </span>
-                  <span className="mt-1 block text-sm font-bold text-surface-900">
-                    Final self-contained HTML artifact
-                  </span>
-                  <span className="mt-1 block text-xs leading-5 text-surface-500">
-                    Collapsed because the generated file is long; this is the single file mounted above.
-                  </span>
-                </span>
-                <span className="shrink-0 border border-surface-300 px-2 py-1 font-mono text-[10px] uppercase tracking-[0.12em] text-surface-600">
-                  Open
-                </span>
-              </summary>
-              <div className="flex items-center justify-between gap-3 border-t border-surface-800 bg-surface-900 px-4 py-3">
-                <span className="min-w-0 truncate font-mono text-[10px] uppercase tracking-[0.16em] text-surface-400">
-                  Full self-contained HTML
-                </span>
-                <CopyButton text={finalArtifactCode} variant="dark" label="Copy code" visibleLabel="Copy" />
-              </div>
-              <pre className="max-h-[460px] overflow-auto bg-surface-900 p-4 text-xs leading-5 text-surface-100">
-                <code>{finalArtifactCode}</code>
-              </pre>
-            </details>
-          </>
-        ) : (
-          <div className="border border-surface-200 bg-surface-50 px-4 py-3 text-xs leading-5 text-surface-500">
-            Same single HTML file, carried forward. The full code is collapsed under the final response below.
+        <details className="group/code border border-surface-200 bg-white">
+          <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-4 py-3">
+            <span className="min-w-0">
+              <span className="flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.16em] text-surface-500">
+                <FileCode2 className="h-3.5 w-3.5 text-brand-blue" />
+                Verbatim response
+              </span>
+              <span className="mt-1 block text-sm font-bold text-surface-900">
+                Exact HTML this step returned
+              </span>
+              <span className="mt-1 block text-xs leading-5 text-surface-500">
+                Collapsed because the generated file is long; this is the single file mounted above, verbatim.
+              </span>
+            </span>
+            <span className="shrink-0 border border-surface-300 px-2 py-1 font-mono text-[10px] uppercase tracking-[0.12em] text-surface-600">
+              Open
+            </span>
+          </summary>
+          <div className="flex items-center justify-between gap-3 border-t border-surface-800 bg-surface-900 px-4 py-3">
+            <span className="min-w-0 truncate font-mono text-[10px] uppercase tracking-[0.16em] text-surface-400">
+              Full self-contained HTML
+            </span>
+            <CopyButton text={pkg.code} variant="dark" label="Copy code" visibleLabel="Copy" />
           </div>
-        )}
+          <pre className="max-h-[460px] overflow-auto bg-surface-900 p-4 text-xs leading-5 text-surface-100">
+            <code>{pkg.code}</code>
+          </pre>
+        </details>
 
         <a
           href={sourceRunUrl}
@@ -172,49 +207,69 @@ function ResponseSummaryCard({
   )
 }
 
-function StepChip({ step, isFinal }: { step: SourceStep; isFinal: boolean }) {
-  const stepLabel = String(step.stepNumber).padStart(2, '0')
-  return (
-    <div
-      className={[
-        'border px-4 py-3 text-left',
-        isFinal
-          ? 'border-brand-blue bg-brand-blue/10 text-white ring-2 ring-brand-blue/30'
-          : 'border-surface-800 bg-surface-950 text-surface-300',
-      ].join(' ')}
-    >
-      <span className="flex items-center gap-1.5 font-mono text-[10px] uppercase tracking-[0.16em] text-brand-orange">
-        {isFinal && <CheckCircle2 className="h-3.5 w-3.5" />}
-        {`Prompt ${stepLabel}`}
-      </span>
-      <span className="mt-1 block text-sm font-black">{step.title}</span>
-    </div>
-  )
-}
-
 export default function PomodoroSourceRunExplorer({
   sourceRunUrl,
   steps,
-  artifactPath,
-  finalArtifactCode,
+  stepCodes,
 }: {
   sourceRunUrl: string
   steps: SourceStep[]
-  artifactPath: string
-  finalArtifactCode: string
+  stepCodes: string[]
 }) {
-  const lastStepNumber = steps[steps.length - 1]?.stepNumber
+  const packages = useMemo<StepPackage[]>(
+    () =>
+      steps.map((step, index) => {
+        const responseOrder = String(index * 2 + 2).padStart(2, '0')
+        return {
+          id: step.id,
+          stepNumber: step.stepNumber,
+          title: step.title,
+          eyebrow: `${responseOrder} · Response package`,
+          artifactTitle: `Pomodoro Focus Timer · step ${step.stepNumber} artifact`,
+          artifactPath: `/artifacts/pomodoro-step-${step.stepNumber}.html`,
+          code: stepCodes[index] ?? 'Step Pomodoro artifact capture is unavailable.',
+        }
+      }),
+    [steps, stepCodes],
+  )
+
+  const [selectedPackageId, setSelectedPackageId] = useState<string>(
+    packages[packages.length - 1]?.id ?? packages[0]?.id,
+  )
+  const selectedPackage =
+    packages.find((pkg) => pkg.id === selectedPackageId) ?? packages[packages.length - 1]
 
   return (
     <>
       <section className="border-b border-surface-800 bg-surface-900 px-4 pb-9 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-7xl">
-          <ArtifactFrame artifactPath={artifactPath} />
+          <ArtifactFrame selectedPackage={selectedPackage} />
 
           <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-            {steps.map((step) => (
-              <StepChip key={step.id} step={step} isFinal={step.stepNumber === lastStepNumber} />
-            ))}
+            {packages.map((pkg) => {
+              const isSelected = selectedPackageId === pkg.id
+              const stepLabel = String(pkg.stepNumber).padStart(2, '0')
+              return (
+                <button
+                  key={pkg.id}
+                  type="button"
+                  onClick={() => setSelectedPackageId(pkg.id)}
+                  aria-pressed={isSelected}
+                  className={[
+                    'border px-4 py-3 text-left transition',
+                    isSelected
+                      ? 'border-brand-blue bg-brand-blue/10 text-white ring-2 ring-brand-blue/30'
+                      : 'border-surface-800 bg-surface-950 text-surface-300 hover:border-brand-blue/70',
+                  ].join(' ')}
+                >
+                  <span className="flex items-center gap-1.5 font-mono text-[10px] uppercase tracking-[0.16em] text-brand-orange">
+                    {isSelected && <CheckCircle2 className="h-3.5 w-3.5" />}
+                    {`Prompt ${stepLabel}`}
+                  </span>
+                  <span className="mt-1 block text-sm font-black">{pkg.title}</span>
+                </button>
+              )
+            })}
           </div>
         </div>
       </section>
@@ -231,7 +286,8 @@ export default function PomodoroSourceRunExplorer({
         <div className="max-w-5xl">
           <div className="space-y-8">
             {steps.map((step, index) => {
-              const isFinal = step.stepNumber === lastStepNumber
+              const pkg = packages[index]
+              const isFinal = index === steps.length - 1
               const promptOrder = String(index * 2 + 1).padStart(2, '0')
               const responseOrder = String(index * 2 + 2).padStart(2, '0')
               return (
@@ -245,11 +301,10 @@ export default function PomodoroSourceRunExplorer({
                     title={isFinal ? 'Final polished response' : 'Build response'}
                     terminal={isFinal}
                   >
-                    <ResponseSummaryCard
-                      step={step}
-                      isFinal={isFinal}
-                      artifactPath={artifactPath}
-                      finalArtifactCode={finalArtifactCode}
+                    <ResponsePackageCard
+                      pkg={pkg}
+                      selected={selectedPackageId === pkg.id}
+                      onSelect={() => setSelectedPackageId(pkg.id)}
                       sourceRunUrl={sourceRunUrl}
                     />
                   </PipeNode>

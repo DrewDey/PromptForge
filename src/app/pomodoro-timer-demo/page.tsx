@@ -45,10 +45,12 @@ function RunSummary() {
 }
 
 export default function PomodoroTimerDemoPage() {
-  const finalArtifactCode = readArtifact(
-    'pomodoro-focus-timer-gpt55-instant.html',
-    'Final Pomodoro Focus Timer artifact capture is unavailable.',
-  )
+  const stepCodes = [
+    readArtifact('pomodoro-step-1.html', 'Step 1 Pomodoro artifact capture is unavailable.'),
+    readArtifact('pomodoro-step-2.html', 'Step 2 Pomodoro artifact capture is unavailable.'),
+    readArtifact('pomodoro-step-3.html', 'Step 3 Pomodoro artifact capture is unavailable.'),
+    readArtifact('pomodoro-step-4.html', 'Step 4 Pomodoro artifact capture is unavailable.'),
+  ]
 
   return (
     <main className="min-h-screen bg-surface-50 text-surface-900">
@@ -84,8 +86,7 @@ export default function PomodoroTimerDemoPage() {
       <PomodoroSourceRunExplorer
         sourceRunUrl={sourceRunUrl}
         steps={project.steps}
-        artifactPath={project.artifactPath}
-        finalArtifactCode={finalArtifactCode}
+        stepCodes={stepCodes}
       />
 
       <ProjectCommunityPanel projectId={projectId} />

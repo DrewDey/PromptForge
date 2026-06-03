@@ -23,16 +23,18 @@ Important language and concepts:
 
 ## Core Capture Rule
 
-Captured-session intake should be the default path whenever a platform supports it. Manual input is a fallback, not the primary workflow.
+Captured-session intake is the only active Build page upload path for now. Manual input is closed off and should stay visibly marked as "Not available for now" until the user explicitly reopens it.
 
-ChatGPT shared sessions are currently the best-supported example. For those, the user should be able to provide a session link or export, then let an agent format the run into the PathForge page. The user should not have to manually enter 14 prompts and 14 responses when the platform can provide that information directly.
+Before changing source-run submission behavior, run `npm run check:source-run-intake`. The guard exists to keep upload as title + real AI session link + agent notes, and to prevent agents from reintroducing direct prompt/upvote-page creation into intake.
 
-Manual input still matters because not every AI platform will expose clean session links or exports. PathForge should not lock users out when import is unavailable.
+ChatGPT shared sessions are currently the best-supported example. For those, the user should be able to provide a session link or export, then let an agent queue that source run for review. The user should not have to manually enter 14 prompts and 14 responses when the platform can provide that information directly.
 
-Fork and project creation surfaces should present these two input methods side by side:
+Manual input may matter later because not every AI platform will expose clean session links or exports. For now, the Build page should keep it disabled rather than accepting a second upload shape.
+
+Fork and project creation surfaces should show the intended direction without enabling manual submission:
 
 - AI session link: provide a short intake title, shared run URL, and agent notes so an agent can extract the chain.
-- Manual entry: add prompts, exact responses, and artifact references by hand when import is unavailable.
+- Manual entry: display as closed with a diagonal red "Not available for now" bar.
 
 ## One Queue Rule
 
@@ -40,7 +42,7 @@ There is one review queue for getting work onto the website.
 
 Do not create separate product surfaces, nav items, stats, or queue language for session links. A session link is only an input method. Manual submissions and session-link entries both feed the same review flow.
 
-If an entry starts as a session link, the agent drafts the project page first. Once that draft exists, the original intake entry should not appear as a second item to review. The admin reviews the draft page, not the intake record.
+If an entry starts as a session link, the source-run intake record is the submission. The admin reviews that intake first. A project page should only be drafted after an explicit admin/user decision to build from that intake.
 
 Approval is the first real publishing checkpoint, not an afterthought. A project is not fully live because a route exists, an artifact file deploys, or a source-run row has `extracted_prompt_id`. The prompt itself must be approved, the source-run row must point to that approved prompt, and the admin dashboard must no longer show the item in Pending Review.
 
@@ -141,9 +143,9 @@ Runs regularly to create candidate examples for the site.
 
 It can create one-shot, multi-prompt, and forked project candidates, but it should not publish them without approval.
 
-### Entry Drafting Agent
+### Source-Run Intake Agent
 
-Turns queued session links into pending PathForge project pages.
+Queues captured session links for PathForge review.
 
 The preferred workflow is captured session first, not manual reconstruction:
 
@@ -152,11 +154,11 @@ The preferred workflow is captured session first, not manual reconstruction:
 - The entry is saved to `source_run_submissions` with status `queued`.
 - The extraction agent opens the captured session using an authorized browser session or import file.
 - It extracts exact prompts, exact responses, code blocks, generated files, screenshots, model/provider details, and final artifact relationships.
-- It builds a Snake-style project page: final artifact first, prompt/response path below, response packages collapsed where needed, and exact response text preserved.
-- The created project enters the same `pending` review queue as manual submissions, never directly public.
-- Admin review approves/rejects the project before it appears in Build Paths.
+- It does not create a prompt/upvote page as part of submission.
+- It leaves the entry as a queued source-run intake until a separate explicit page-build action.
+- Admin review decides whether the intake should become a project before anything appears in Build Paths.
 
-Manual entry remains a fallback only for platforms where a usable session cannot be shared.
+Manual entry is visible but closed for now. Do not use it as a submission path unless the user explicitly reopens manual entry in a later turn.
 
 Seed ideas should start with obvious, desirable, low-hanging fruit. The site is early and mostly empty, so the first wave should not over-index on huge enterprise workflows or obscure niche builds. The visitor should be able to understand the artifact and want to try/fork it within about 15 seconds.
 
@@ -213,19 +215,19 @@ The likely model:
 The preferred submission flow should be:
 
 1. User provides a session link.
-2. Agent parses the run into a structured path.
-3. Agent attaches files, code, screenshots, and final artifact relationships.
-4. User reviews the formatted path.
-5. User approves whether it appears publicly.
+2. Agent or user adds short notes.
+3. The source-run intake is queued for review.
+4. Admin reviews the source-run intake.
+5. A separate explicit page-build/publish step decides whether it appears publicly.
 
-Manual entry should still exist for unsupported platforms. It should support bulk paste or transcript import so multi-prompt examples do not become tedious.
+Manual entry may come back later for unsupported platforms. While closed, it should remain visibly disabled rather than accepting a different upload shape.
 
-The Snake demo fork workspace and the original project Build page now reflect this direction locally: captured-session import is the default choice, with manual entry beside it as a fallback. The intake UI stores an entry for drafting; the real extraction agent still needs to be built.
+The Snake demo fork workspace and the original project Build page now reflect this direction locally: captured-session import is the active choice, with manual entry shown beside it as unavailable for now. The intake UI stores a source-run review entry; the real extraction/page-build agent is a later explicit step.
 
 ## Current Decisions
 
 - Source-run import is the preferred workflow when available.
-- Manual input remains supported as a fallback.
+- Manual input is closed on the Build page for now and marked with a red "Not available for now" bar.
 - Exact response text is mandatory on project pages.
 - Code should be collapsed inside the response package when long.
 - Prompts and code blocks must be directly copyable without selecting text manually.

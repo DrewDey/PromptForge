@@ -6,6 +6,7 @@
     "dev": "next dev --turbopack",
     "build": "next build",
     "start": "next start",
+    "check:source-run-intake": "node scripts/check-source-run-intake.mjs",
     "lint": "next lint"
   },
   "dependencies": {

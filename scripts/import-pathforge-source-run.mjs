@@ -28,7 +28,6 @@ function parseArgs(argv) {
     email: '',
     authMode: 'auto',
     passwordEnv: 'PATHFORGE_SEED_PASSWORD',
-    submitDraft: false,
     dryRun: false,
   }
 
@@ -39,8 +38,11 @@ function parseArgs(argv) {
       continue
     }
     if (arg === '--submit-draft') {
-      args.submitDraft = true
-      continue
+      throw new Error(
+        '--submit-draft has been disabled. Source-run imports may only create ' +
+        'source_run_submissions queue entries. Build/public prompt pages must be ' +
+        'created later by an explicit admin review/publish step.'
+      )
     }
     if (arg.startsWith('--') && i + 1 < argv.length) {
       const key = arg.slice(2).replace(/-([a-z])/g, (_, char) => char.toUpperCase())
@@ -50,7 +52,7 @@ function parseArgs(argv) {
   }
 
   if (!args.package) {
-    throw new Error('Usage: node scripts/import-pathforge-source-run.mjs --package seed-runs/example.json [--username JordanLee] [--auth-mode auto|public-signup|password] [--submit-draft] [--dry-run]')
+    throw new Error('Usage: node scripts/import-pathforge-source-run.mjs --package seed-runs/example.json [--username JordanLee] [--auth-mode auto|public-signup|password] [--dry-run]')
   }
 
   return args
@@ -63,42 +65,16 @@ function requireString(value, fieldName) {
   return value.trim()
 }
 
-function asStringArray(value) {
-  return Array.isArray(value)
-    ? value.map((item) => String(item).trim()).filter(Boolean)
-    : []
-}
-
-function makeContent(pkg) {
-  return [
-    pkg.story || pkg.description || 'Imported from a captured source run.',
-    pkg.source_url ? `Source run: ${pkg.source_url}` : '',
-    pkg.final_artifact_path ? `Artifact: ${pkg.final_artifact_path}` : '',
-    pkg.verification_notes ? `Verification: ${pkg.verification_notes}` : '',
-  ].filter(Boolean).join('\n\n')
-}
-
-function mapSteps(pkg) {
-  const steps = Array.isArray(pkg.steps) ? pkg.steps : []
-  return steps.map((step, index) => ({
-    step_number: Number(step.step_number || index + 1),
-    title: String(step.title || step.response_summary || `Step ${index + 1}`).slice(0, 120),
-    content: requireString(step.prompt_exact, `steps[${index}].prompt_exact`),
-    result_content: step.response_exact ? String(step.response_exact) : null,
-    description: step.notes ? String(step.notes) : null,
-  }))
-}
-
 function makeAgentNotes(pkg) {
   return typeof pkg.agent_notes === 'string' ? pkg.agent_notes.trim() : ''
 }
 
-function publicResult({ mode, sourceRunId, promptId, promptUrl, pkg, profile, dryRun, loginIdentifier, stepsImported }) {
+function publicResult({ sourceRunId, pkg, profile, dryRun, loginIdentifier }) {
   const result = {
     dry_run: dryRun,
-    mode,
+    mode: 'source-run-intake',
     title: pkg.title,
-    status: mode === 'draft' ? 'pending' : 'queued',
+    status: 'queued',
     author_username: profile?.username ?? null,
     author_profile_url: profile?.username ? `/user/${profile.username}` : null,
     profile_id: profile?.id ?? null,
@@ -107,20 +83,11 @@ function publicResult({ mode, sourceRunId, promptId, promptUrl, pkg, profile, dr
     login_identifier: loginIdentifier ?? null,
   }
 
-  if (mode === 'draft') {
-    return {
-      ...result,
-      prompt_id: promptId,
-      prompt_url: promptUrl,
-      steps_imported: stepsImported ?? null,
-    }
-  }
-
   return {
     ...result,
     source_run_submission_id: sourceRunId,
     admin_queue: 'pending review',
-    next_step: 'An agent opens the source run, extracts the exact chain, and creates the pending project draft.',
+    next_step: 'Admin reviews the source-run intake. No prompt/upvote page is created by this importer.',
   }
 }
 
@@ -271,26 +238,17 @@ async function main() {
   const pkg = JSON.parse(readFileSync(packagePath, 'utf8'))
 
   pkg.title = requireString(pkg.title, 'title')
-  pkg.description = requireString(pkg.description, 'description')
-  pkg.category = requireString(pkg.category, 'category')
-  pkg.difficulty = requireString(pkg.difficulty, 'difficulty')
-  pkg.tags = asStringArray(pkg.tags)
-  pkg.tools_used = asStringArray(pkg.tools_used)
-  pkg.steps = mapSteps(pkg)
+  pkg.source_url = requireString(pkg.source_url, 'source_url')
 
   if (args.dryRun) {
     console.log(JSON.stringify(publicResult({
-      mode: args.submitDraft ? 'draft' : 'source-run-intake',
       sourceRunId: 'dry-run-source-run-submission-id',
-      promptId: 'dry-run-prompt-id',
-      promptUrl: '/prompt/dry-run-prompt-id',
       pkg,
       profile: {
         id: 'dry-run-user-id',
         username: args.username,
       },
       dryRun: true,
-      stepsImported: pkg.steps.length,
     }), null, 2))
     return
   }
@@ -338,82 +296,14 @@ async function main() {
     loginIdentifier = created.createdEmail
   }
 
-  if (!args.submitDraft) {
-    const sourceRun = await insertSourceRunSubmission(importClient, pkg, profile)
-
-    console.log(JSON.stringify(publicResult({
-      mode: 'source-run-intake',
-      sourceRunId: sourceRun.id,
-      pkg,
-      profile,
-      dryRun: false,
-      loginIdentifier,
-      stepsImported: pkg.steps.length,
-    }), null, 2))
-
-    if (createdEmail) {
-      console.error(`Synthetic signup email used: ${createdEmail}`)
-      console.error('Generated password was not stored or printed.')
-    }
-    return
-  }
-
-  const { data: category, error: categoryError } = await importClient
-    .from('categories')
-    .select('id')
-    .eq('slug', pkg.category)
-    .maybeSingle()
-
-  if (categoryError) throw categoryError
-  if (!category) throw new Error(`No category found for slug ${pkg.category}.`)
-
-  const { data: prompt, error: promptError } = await importClient
-    .from('prompts')
-    .insert({
-      title: pkg.title,
-      description: pkg.description,
-      content: makeContent(pkg),
-      result_content: pkg.result_content || pkg.verification_notes || null,
-      category_id: category.id,
-      difficulty: pkg.difficulty,
-      model_used: pkg.model || null,
-      model_recommendation: pkg.model_recommendation || pkg.model || null,
-      tools_used: pkg.tools_used,
-      tags: pkg.tags,
-      status: 'pending',
-      author_id: profile.id,
-      vote_count: 0,
-      bookmark_count: 0,
-    })
-    .select('id')
-    .single()
-
-  if (promptError) throw promptError
-
-  if (pkg.steps.length > 0) {
-    const { error: stepsError } = await importClient
-      .from('prompt_steps')
-      .insert(pkg.steps.map((step) => ({
-        prompt_id: prompt.id,
-        step_number: step.step_number,
-        title: step.title,
-        content: step.content,
-        result_content: step.result_content,
-        description: step.description,
-      })))
-
-    if (stepsError) throw stepsError
-  }
+  const sourceRun = await insertSourceRunSubmission(importClient, pkg, profile)
 
   console.log(JSON.stringify(publicResult({
-    mode: 'draft',
-    promptId: prompt.id,
-    promptUrl: `/prompt/${prompt.id}`,
+    sourceRunId: sourceRun.id,
     pkg,
     profile,
     dryRun: false,
     loginIdentifier,
-    stepsImported: pkg.steps.length,
   }), null, 2))
 
   if (createdEmail) {

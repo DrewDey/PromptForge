@@ -637,7 +637,7 @@ export default function SubmitProjectPage() {
           Build your project
         </h1>
         <p className="text-sm text-surface-500 leading-relaxed">
-          Paste the real AI session link first. Manual entry is the fallback for tools that cannot export or share a usable run.
+          Paste the real AI session link. Every upload starts from the actual run, with notes for review.
         </p>
       </header>
 
@@ -694,31 +694,38 @@ export default function SubmitProjectPage() {
               </div>
               <div className="mt-1 text-base font-black text-surface-900">Let the agent structure it</div>
               <p className="mt-2 text-xs leading-5 text-surface-600">
-                Paste the ChatGPT, Gemini, Claude, or OpenRouter run. It enters the same review queue, and an agent
-                drafts the project page from the exact prompts, responses, code blocks, files, and artifact links.
+                Paste the ChatGPT, Gemini, Claude, or OpenRouter run. It enters the normal review queue with the
+                source link and notes only.
               </p>
             </button>
 
             <button
               type="button"
-              onClick={() => setIntakeMode('manual')}
-              className={intakeCardClass(intakeMode === 'manual')}
-              aria-pressed={intakeMode === 'manual'}
+              disabled
+              className="relative cursor-not-allowed overflow-hidden border border-red-200 bg-red-50/30 p-4 text-left opacity-85"
+              aria-disabled="true"
             >
-              <div className="flex items-center justify-between gap-3">
-                <div className="inline-flex h-9 w-9 items-center justify-center border border-brand-blue/35 bg-brand-blue/10 text-brand-blue">
-                  <Keyboard className="h-4 w-4" aria-hidden="true" />
+              <div className="relative opacity-45">
+                <div className="flex items-center justify-between gap-3">
+                  <div className="inline-flex h-9 w-9 items-center justify-center border border-brand-blue/35 bg-brand-blue/10 text-brand-blue">
+                    <Keyboard className="h-4 w-4" aria-hidden="true" />
+                  </div>
+                  <CheckCircle2 className="h-4 w-4 text-surface-300" aria-hidden="true" />
                 </div>
-                {intakeMode === 'manual' && <CheckCircle2 className="h-4 w-4 text-brand-blue" aria-hidden="true" />}
+                <div className="mt-3 font-mono text-[10px] uppercase tracking-[0.16em] text-surface-500">
+                  Manual entry
+                </div>
+                <div className="mt-1 text-base font-black text-surface-900">Fallback: build it by hand</div>
+                <p className="mt-2 text-xs leading-5 text-surface-600">
+                  Manually add project basics, prompts, responses, screenshots, and final result when no usable source
+                  link is available.
+                </p>
               </div>
-              <div className="mt-3 font-mono text-[10px] uppercase tracking-[0.16em] text-surface-500">
-                Manual entry
+              <div className="pointer-events-none absolute left-[-12%] top-1/2 flex h-9 w-[124%] -translate-y-1/2 -rotate-6 items-center justify-center bg-red-600 text-white shadow-sm" aria-hidden="true">
+                <span className="font-mono text-[10px] font-black uppercase tracking-[0.16em]">
+                  Not available for now
+                </span>
               </div>
-              <div className="mt-1 text-base font-black text-surface-900">Fallback: build it by hand</div>
-              <p className="mt-2 text-xs leading-5 text-surface-600">
-                Manually add project basics, prompts, responses, screenshots, and final result when no usable source
-                link is available.
-              </p>
             </button>
           </div>
         </div>
@@ -736,12 +743,12 @@ export default function SubmitProjectPage() {
                   <p className="mt-1 leading-5">Agent reads prompts, responses, code, files, and screenshots.</p>
                 </div>
                 <div>
-                  <div className="font-mono text-[10px] uppercase tracking-[0.14em] text-brand-orange">3 · Draft</div>
-                  <p className="mt-1 leading-5">Agent builds the final-artifact-first project page.</p>
+                  <div className="font-mono text-[10px] uppercase tracking-[0.14em] text-brand-orange">3 · Review</div>
+                  <p className="mt-1 leading-5">Admin reviews the source run and notes.</p>
                 </div>
                 <div>
-                  <div className="font-mono text-[10px] uppercase tracking-[0.14em] text-brand-orange">4 · Approve</div>
-                  <p className="mt-1 leading-5">Admin reviews the draft before it appears publicly.</p>
+                  <div className="font-mono text-[10px] uppercase tracking-[0.14em] text-brand-orange">4 · Decide</div>
+                  <p className="mt-1 leading-5">Nothing is public until an explicit publish step.</p>
                 </div>
               </div>
 
@@ -793,7 +800,7 @@ export default function SubmitProjectPage() {
 
               <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <p className="text-xs leading-5 text-surface-500">
-                  This enters the normal review queue. The agent drafts the project page from the source link and notes.
+                  This enters the normal review queue as source link plus notes. It does not create a public project page.
                 </p>
                 <button
                   type="submit"
@@ -833,8 +840,8 @@ export default function SubmitProjectPage() {
                       <div className="mt-3 grid gap-2 text-xs text-surface-600 sm:grid-cols-4">
                         <div className="border border-white/80 bg-white px-3 py-2">Open session</div>
                         <div className="border border-white/80 bg-white px-3 py-2">Extract exact chain</div>
-                        <div className="border border-white/80 bg-white px-3 py-2">Build project page</div>
-                        <div className="border border-white/80 bg-white px-3 py-2">Send to approval</div>
+                        <div className="border border-white/80 bg-white px-3 py-2">Review notes</div>
+                        <div className="border border-white/80 bg-white px-3 py-2">Decide next step</div>
                       </div>
                     </article>
                   ))}
@@ -1302,11 +1309,10 @@ export default function SubmitProjectPage() {
             <div className="font-mono text-[10px] uppercase tracking-[0.16em] text-surface-500">
               Session first
             </div>
-            <h2 className="mt-2 text-2xl font-black text-surface-900">Paste the run and let the agent draft the page.</h2>
+            <h2 className="mt-2 text-2xl font-black text-surface-900">Paste the run and send it to review.</h2>
             <p className="mt-3 text-sm leading-6 text-surface-600">
-              This path is for captured sessions, not manual reconstruction. The agent turns the entry into a reviewable
-              project page: final artifact first, exact prompts and responses below, code collapsed inside responses,
-              and generated files tied to the responses that created them.
+              This path is for captured sessions, not manual reconstruction. The entry stays as source link plus notes
+              until an explicit admin action decides what to do next.
             </p>
           </div>
         </div>

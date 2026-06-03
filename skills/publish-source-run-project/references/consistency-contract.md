@@ -15,7 +15,9 @@ Every public project page — generic `/prompt/[id]` or a special showcase route
 
 ## Engagement
 
-`ProjectEngagementBar` is async and checks `isPersistableProjectId`. Persistable (real-UUID) projects render interactive `VoteBookmarkButtons size="large"`. Demo projects show static read-only counts and no interactive buttons. Engagement clicks must NOT navigate to the project page. Never seed counts to fake popularity.
+`ProjectEngagementBar` is async and checks `isPersistableProjectId(projectId)`, which is `true` only when the ID is a valid UUID **and not** in `CODE_ONLY_SHOWCASE_IDS` (`src/lib/project-engagement.ts`). Persistable projects render interactive `VoteBookmarkButtons size="large"`. Code-only / demo projects show static read-only counts and no interactive buttons. Engagement clicks must NOT navigate to the project page. Never seed counts to fake popularity.
+
+**Code-only showcase projects MUST be in `CODE_ONLY_SHOWCASE_IDS`.** They have no row in the live Supabase `prompts` table, so a vote/bookmark `INSERT` fails the FK + RLS "approved prompts row" check and surfaces the red "Could not save vote." error. Adding the UUID to that set forces read-only counts and avoids the error. Only omit it (and seed a real approved `prompts` row à la Snake in `supabase/prompt-engagement.sql`) when interactive votes are explicitly wanted.
 
 ## Component imports every page.tsx needs
 

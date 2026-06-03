@@ -13,6 +13,10 @@ This is the productionizing pipeline that comes after a run exists: drive a real
 
 The pipeline has four phases: **CAPTURE -> BUILD THE PAGE -> VERIFY -> PUBLISH**. Do them in order. Do not skip VERIFY before PUBLISH.
 
+### This architecture is the current standard, not a frozen spec
+
+What follows is the **validated default** for every new showcase project: real captured run -> verbatim per-step artifacts -> artifact-first showcase route mirroring the HP 10Bii+ / Pomodoro explorers -> the exact file-wiring map below -> the engagement exclusion for code-only projects. Build new projects this way unless there is a reason not to. It is expected to **evolve** as the product grows (new artifact types, new explorers, real-persistence projects, richer engagement). When a better pattern is validated, update this skill and its inverse (`skills/unpublish-showcase-project`) together so both sides stay in sync. Treat this as the current best practice, not an immutable contract.
+
 ## Non-Negotiable Guardrails
 
 These override convenience. If a step would violate one of these, stop and fix the approach instead.
@@ -51,6 +55,8 @@ These are real findings from live capture. Treat them as defaults, not edge case
 - **The model picker is NOT in ChatGPT's accessibility tree at rest.** You cannot select the model by reading the a11y tree. You must *open the model menu* first, then select the target option by element `ref`. A fresh chat frequently defaults to the wrong tier (e.g. **GPT 5.5 Thinking Heavy**).
 - **Confirm the model before sending the first prompt.** Verify the exact tier is selected (e.g. **GPT 5.5 Instant**, not Thinking Heavy / Pro / Max). The model label on the page is the source of truth; record it.
 - **Capture path depends on the tier.** On **Instant**, code typically comes back **INLINE** in the chat — capture it from page text. On **Thinking** tiers, the code often hides in a **downloadable file** instead of inline — capturing it forces a download step. Prefer the faster adequate tier that returns code inline when the artifact is simple, and record the tier you actually used.
+- **ChatGPT virtualizes off-screen turns.** It only keeps the visible turns in the DOM and unmounts/recycles the rest, so a single `get_page_text` / `read_page` call can return an **incomplete or mis-ordered** transcript (missing earlier prompts, missing parts of a long code block, steps out of order). Do NOT trust one page-text grab for a multi-step run. Instead: read the transcript reliably — scroll each turn into view and capture it individually, expand/open every code block before reading it, and reconcile against the prompts you actually sent. The goal is one **byte-exact, verbatim** copy of each step's prompt and each step's full code. If any step's code looks truncated or merged with another step, re-read that turn until you have the complete file.
+- **Save one byte-exact verbatim HTML artifact PER step** to `public/artifacts/<slug>-step-N.html` as you go (last step = the final artifact). Do not reconstruct a step's code from memory or paraphrase it — copy the exact bytes the model returned for that turn.
 - Send only the first prompt, wait for completion, inspect the real output, then decide whether another prompt is genuinely warranted (broken behavior, missing feature, real refinement). Do not pre-script later prompts.
 - Capture per step: exact prompt, exact response (visible text), generated code blocks, generated files/downloads, provider/model/tier, date/time, and the source share URL.
 
@@ -83,9 +89,10 @@ Do all of these. Missing any one leaves the page half-wired (e.g. invisible in b
 2. **`src/lib/prepared-showcase-projects.ts`** — define `const MY_PROJECT_SHOWCASE: PreparedShowcaseProject` (import the new ID), then append it to `PREPARED_SHOWCASE_PROJECTS`. See the field shape and step shape below.
 3. **`src/lib/project-links.ts`** — add `[MY_PROJECT_ID]: '/my-project-demo'` to `PROJECT_ROUTE_OVERRIDES` so browse/profile/admin/`/prompt/[id]` links route to the special page. Required.
 4. **`src/lib/data.ts`** — add `MY_PROJECT_ID` to the `APPROVED_PROJECT_IDS` Set (currently `new Set([SNAKE_PROJECT_ID, HP_10BII_PROJECT_ID, TIC_TAC_TOE_PROJECT_ID])`). Without this the project is not publicly visible.
-5. **`src/lib/mock-data.ts`** — (a) add/confirm the author profile in `mockProfiles` (default: reuse `PathForge Projects`, id `22222222-2222-2222-2222-222222222211`); (b) spread the project steps into `mockSteps` via `...MY_PROJECT_SHOWCASE.steps.map(...)`; (c) add the `mockPrompts` entry with `status: 'approved'` and `author_id` pointing at the chosen non-admin profile.
-6. **`src/app/my-project-demo/page.tsx`** — the special route page (and, for multi-prompt, a sibling explorer component like `Hp10BiiSourceRunExplorer.tsx`). Mirror the chosen pattern's page exactly.
-7. **`public/artifacts/`** — the artifact file(s) saved in CAPTURE must exist at the paths the page reads.
+5. **`src/lib/mock-data.ts`** — (a) add/confirm the author profile in `mockProfiles` (default: reuse `PathForge Projects`, id `22222222-2222-2222-2222-222222222211`); (b) spread the project steps into `mockSteps` via `...MY_PROJECT_SHOWCASE.steps.map(...)`; (c) add the `mockPrompts` entry with `status: 'approved'`, `vote_count: 0`, `bookmark_count: 0`, and `author_id` pointing at the chosen non-admin profile.
+6. **`src/lib/project-engagement.ts`** — add `MY_PROJECT_ID` to the `CODE_ONLY_SHOWCASE_IDS` Set. **This is mandatory for code-only showcase projects** (the default) and was learned from a real production bug. A prepared-showcase project has a valid UUID and renders via the in-memory mock fallback, but it has **NO row in the live Supabase `prompts` table** — so any upvote/bookmark `INSERT` against its ID fails the FK + RLS "approved prompts row" check and surfaces the red **"Could not save vote."** error to users. Adding the ID here makes `isPersistableProjectId()` return `false`, so `ProjectEngagementBar` renders **read-only static counts** instead of interactive controls. Skip this step ONLY if you are also seeding a real approved `prompts` row (see the engagement note below) — in that case the ID must NOT be in this set so the controls stay interactive.
+7. **`src/app/my-project-demo/page.tsx`** — the special route page (and, for multi-prompt, a sibling explorer component like `PomodoroSourceRunExplorer.tsx` / `Hp10BiiSourceRunExplorer.tsx`). Mirror the chosen pattern's page exactly.
+8. **`public/artifacts/`** — the artifact file(s) saved in CAPTURE must exist at the paths the page reads (`<slug>-step-1.html` … `<slug>-step-N.html` for multi-prompt builds, plus the final artifact).
 
 `PreparedShowcaseProject` fields: `id`, `sourceRunId`, `href`, `title`, `description`, `content`, `resultContent`, `categorySlug` (must match an existing mock category slug), `mockCategoryId`, `difficulty` (`beginner|intermediate|advanced`), `modelUsed`, `modelRecommendation`, `toolsUsed[]`, `tags[]`, `artifactPath` (points to a real file in `public/artifacts/`), `sourceUrl`, `authorDisplayName`, `authorUsername`, `createdAt`, `updatedAt`, `steps[]`.
 
@@ -97,6 +104,13 @@ Do all of these. Missing any one leaves the page half-wired (e.g. invisible in b
 
 - **Default:** reuse `PathForge Projects` (`22222222-2222-2222-2222-222222222211`) — already wired, zero new profile needed.
 - **New house profile:** if a distinct builder identity is wanted, add the next sequential mock id `22222222-2222-2222-2222-2222222222NN` with `role: 'user'`, a realistic handle/name, bio, and timestamps. Never use a profile with `role: 'admin'`.
+
+### Engagement: code-only (default) vs real-persistence
+
+Decide this explicitly for every project. There are exactly two valid modes; do not leave one half-wired.
+
+- **Code-only showcase (the default).** The project lives only in the in-memory mock layer — it has a valid UUID and an `approved` `mockPrompts` row, but **no row in the live Supabase `prompts` table**. These MUST be excluded from interactive engagement by adding their UUID to `CODE_ONLY_SHOWCASE_IDS` in `src/lib/project-engagement.ts` (wiring step 6). Otherwise an upvote/bookmark `INSERT` fails the FK + RLS "approved prompts row" check and users see the red **"Could not save vote."** error. Code-only projects render **read-only static counts** (start them at `0`; never seed counts to fake popularity). HP 10Bii, Tic-Tac-Toe, Decision Matrix, and Pomodoro are all code-only today.
+- **Real-persistence project (opt-in only).** If working votes/bookmarks are explicitly wanted, you must seed a real **approved `prompts` row in live Supabase**, the way Snake does in `supabase/prompt-engagement.sql` (insert the prompt + its step with `status = 'approved'`). Only then is the ID persistable: **do NOT** add it to `CODE_ONLY_SHOWCASE_IDS`, and `isPersistableProjectId()` will return `true` so `ProjectEngagementBar` renders interactive `VoteBookmarkButtons`. This is the only path that produces real engagement, and it requires the SQL to actually be applied to live Supabase (a Drew/ops action — flag it, don't fake it). Default to code-only unless real votes are an explicit requirement.
 
 ### Public Project Page Consistency Contract
 
@@ -120,6 +134,7 @@ Every showcase page — Snake, Decision Matrix, HP 10Bii, Tic-Tac-Toe, and this 
 - Every step `id` must be prefixed with the project id and be unique.
 - Forgetting `APPROVED_PROJECT_IDS` -> project never appears in browse.
 - Forgetting the `PROJECT_ROUTE_OVERRIDES` entry -> links go to the generic `/prompt/[id]` page instead of the showcase.
+- Forgetting `CODE_ONLY_SHOWCASE_IDS` for a code-only project -> upvote/bookmark throws the red "Could not save vote." (no live `prompts` row to persist against). Add the UUID there so engagement renders read-only counts.
 - `author_id` must match a real `mockProfiles` id or `attachRelations()` returns `undefined` author.
 - Artifacts must be self-contained (sandboxed iframe); no external scripts/styles/CDN.
 

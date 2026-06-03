@@ -1,0 +1,980 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HP 10bII+ Financial Calculator</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --plum-1:#3c3f44;
+    --plum-2:#2b2e32;
+    --plum-3:#202225;
+    --orange:#aeb4ba;
+    --orange-soft:#cdd3d9;
+    --blue:#8a9098;
+    --key:#2a2d31;
+    --key-2:#1e2024;
+    --key-edge:#070809;
+    --key-tvm:#34373c;
+    --key-op:#303338;
+    --txt:#f4f5f6;
+    --lcd-bg:#a7b89f;
+    --lcd-bg2:#b9c7ad;
+    --lcd-ink:#12180f;
+    --panel-bg:#16181b;
+    --panel-line:#2a2d31;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  html,body{height:100%;}
+  body{
+    font-family:'Archivo',sans-serif;
+    background:
+      radial-gradient(1200px 800px at 70% -10%, #313438 0%, rgba(49,52,56,0) 55%),
+      radial-gradient(900px 700px at 10% 110%, #25282c 0%, rgba(37,40,44,0) 50%),
+      linear-gradient(160deg,#1c1e21 0%,#141618 100%);
+    color:var(--txt);
+    min-height:100%;
+    display:flex;
+    align-items:flex-start;
+    justify-content:center;
+    gap:26px;
+    padding:34px 20px 60px;
+    flex-wrap:wrap;
+  }
+
+  /* ===== DEVICE ===== */
+  .device{
+    width:392px;
+    border-radius:24px;
+    padding:18px 16px 22px;
+    background:
+      linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,0) 18%),
+      linear-gradient(165deg,var(--plum-1) 0%,var(--plum-2) 46%,var(--plum-3) 100%);
+    box-shadow:
+      0 1px 0 rgba(255,255,255,.10) inset,
+      0 -2px 4px rgba(0,0,0,.5) inset,
+      0 30px 70px rgba(0,0,0,.55),
+      0 8px 18px rgba(0,0,0,.4);
+    border:1px solid #0d0f11;
+    position:relative;
+    flex:0 0 auto;
+  }
+  .device::after{
+    content:"";position:absolute;inset:6px;border-radius:18px;pointer-events:none;
+    box-shadow:0 0 0 1px rgba(255,255,255,.04) inset;
+  }
+
+  .brandbar{
+    display:flex;align-items:center;justify-content:space-between;
+    padding:0 4px 12px;
+  }
+  .logo{
+    display:flex;align-items:center;gap:9px;
+  }
+  .hpmark{
+    width:34px;height:24px;border-radius:3px;
+    background:linear-gradient(180deg,#f3f3f3,#cfcfcf);
+    color:#1b1b1b;font-weight:700;font-style:italic;
+    font-size:15px;letter-spacing:.5px;
+    display:flex;align-items:center;justify-content:center;
+    box-shadow:0 1px 2px rgba(0,0,0,.4);
+  }
+  .model{font-weight:700;font-size:15px;letter-spacing:.4px;}
+  .model b{color:var(--orange-soft);}
+  .sub{font-size:9.5px;letter-spacing:3px;color:#aeb4ba;text-transform:uppercase;text-align:right;line-height:1.3;}
+  .accent{height:3px;border-radius:3px;margin:0 2px 14px;
+    background:linear-gradient(90deg,var(--orange) 0%,#6c7176 60%,transparent 100%);}
+
+  /* ===== SCREEN ===== */
+  .screen{
+    margin:0 2px 16px;
+    border-radius:8px;
+    padding:12px 14px 9px;
+    background:linear-gradient(180deg,var(--lcd-bg) 0%,var(--lcd-bg2) 100%);
+    box-shadow:
+      0 2px 5px rgba(0,0,0,.55) inset,
+      0 -1px 2px rgba(255,255,255,.3) inset,
+      0 1px 0 rgba(255,255,255,.05);
+    border:1px solid #0d0d0d;
+    color:var(--lcd-ink);
+    position:relative;
+    overflow:hidden;
+  }
+  .ann{
+    display:flex;justify-content:space-between;align-items:center;
+    font-family:'Archivo',sans-serif;
+    font-size:9px;letter-spacing:1px;height:13px;
+    color:#33402e;font-weight:600;text-transform:uppercase;
+  }
+  .ann .left{display:flex;gap:9px;}
+  .ann .flag{opacity:.18;transition:opacity .12s;}
+  .ann .flag.on{opacity:1;}
+  .expr{
+    font-family:'Share Tech Mono',monospace;
+    font-size:12px;text-align:right;height:16px;
+    color:#3c4734;opacity:.85;white-space:nowrap;overflow:hidden;
+    direction:rtl;
+  }
+  .main{
+    font-family:'Share Tech Mono',monospace;
+    font-size:38px;line-height:1;text-align:right;
+    letter-spacing:1px;
+    text-shadow:0 1px 0 rgba(255,255,255,.25);
+    overflow:hidden;white-space:nowrap;
+    padding-top:1px;
+  }
+
+  /* ===== KEYS ===== */
+  .keys{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;padding:0 2px;}
+  .key{
+    position:relative;
+    border:none;
+    border-radius:8px;
+    padding:9px 4px 8px;
+    min-height:48px;
+    cursor:pointer;
+    background:linear-gradient(180deg,#34373c 0%,var(--key) 42%,var(--key-2) 100%);
+    box-shadow:
+      0 1px 0 rgba(255,255,255,.10) inset,
+      0 -2px 2px rgba(0,0,0,.45) inset,
+      0 2px 3px rgba(0,0,0,.5),
+      0 4px 6px rgba(0,0,0,.3);
+    color:var(--txt);
+    display:flex;flex-direction:column;align-items:center;justify-content:flex-end;
+    gap:2px;
+    font-family:'Archivo',sans-serif;
+    user-select:none;
+    -webkit-tap-highlight-color:transparent;
+    transition:transform .04s, box-shadow .04s, filter .1s;
+  }
+  .key .sec{
+    font-size:8.5px;line-height:1;color:var(--orange-soft);
+    font-weight:600;min-height:9px;letter-spacing:.2px;
+    text-shadow:0 1px 0 rgba(0,0,0,.5);
+  }
+  .key .pri{font-size:13px;font-weight:600;line-height:1;letter-spacing:.2px;}
+  .key .pri.sm{font-size:11px;}
+  .key .pri.big{font-size:18px;}
+  .key:active,.key.press{
+    transform:translateY(2px);
+    box-shadow:
+      0 1px 0 rgba(255,255,255,.06) inset,
+      0 -1px 2px rgba(0,0,0,.5) inset,
+      0 1px 2px rgba(0,0,0,.5);
+    filter:brightness(1.08);
+  }
+  .key.tvm{background:linear-gradient(180deg,#43474d 0%,var(--key-tvm) 45%,#26282c 100%);}
+  .key.op{background:linear-gradient(180deg,#40444a 0%,var(--key-op) 45%,#24262a 100%);}
+  .key.op .pri{color:#eef0f2;}
+  .key.eq{background:linear-gradient(180deg,#9aa0a6 0%,#82888e 55%,#6a7076 100%);}
+  .key.eq .pri{color:#15171a;font-weight:700;}
+  .key.shiftk{background:linear-gradient(180deg,#e8eaec 0%,#cfd4d9 55%,#b3b9bf 100%);}
+  .key.shiftk .pri{color:#15171a;font-size:18px;font-weight:800;}
+  .key.shiftk.armed{box-shadow:0 0 0 2px #eef0f2, 0 0 16px rgba(200,210,220,.6), 0 2px 3px rgba(0,0,0,.5);}
+  .key.zero{grid-column:span 1;}
+  .key.wide{grid-column:span 2;}
+
+  /* ===== READOUT PANEL ===== */
+  .panel{
+    width:330px;flex:0 0 auto;
+    background:linear-gradient(180deg,#1b1d20,#141618);
+    border:1px solid var(--panel-line);
+    border-radius:16px;
+    padding:18px 18px 20px;
+    box-shadow:0 24px 60px rgba(0,0,0,.5);
+    font-family:'Share Tech Mono',monospace;
+    color:#d7dadd;
+    max-height:none;
+  }
+  .panel h2{
+    font-family:'Archivo',sans-serif;font-size:13px;letter-spacing:2px;
+    text-transform:uppercase;color:#aab0b6;font-weight:600;
+    margin-bottom:4px;
+  }
+  .panel .hint{font-family:'Archivo',sans-serif;font-size:11px;color:#7e848a;margin-bottom:14px;line-height:1.4;}
+  .sec-title{
+    font-family:'Archivo',sans-serif;font-size:10px;letter-spacing:1.5px;
+    text-transform:uppercase;color:var(--orange-soft);font-weight:600;
+    margin:14px 0 6px;display:flex;justify-content:space-between;align-items:center;
+  }
+  .sec-title .clr{
+    font-size:9px;color:#9aa0a6;cursor:pointer;border:1px solid #34373c;
+    border-radius:4px;padding:2px 6px;letter-spacing:.5px;background:transparent;
+  }
+  .sec-title .clr:hover{color:#fff;border-color:#565b61;}
+  .reg{display:grid;grid-template-columns:auto 1fr;gap:3px 10px;font-size:13px;}
+  .reg .k{color:#959ba1;}
+  .reg .v{text-align:right;color:#eee;}
+  .reg .v.set{color:#7fd4a0;}
+  .modes{font-size:12px;color:#a4aab0;margin-top:4px;}
+  .modes span{color:#cdd3d9;}
+  .list{font-size:12px;max-height:150px;overflow:auto;border:1px solid #26282c;border-radius:8px;padding:8px;background:#121417;}
+  .list .row{display:flex;justify-content:space-between;padding:1px 0;color:#cdd0d3;}
+  .list .row .lbl{color:#959ba1;}
+  .list .empty{color:#6f757b;font-family:'Archivo',sans-serif;font-size:11px;}
+  .result{font-size:13px;margin-top:6px;display:grid;grid-template-columns:auto 1fr;gap:2px 10px;}
+  .result .k{color:#959ba1;}
+  .result .v{text-align:right;color:#7fd4a0;}
+  .amort{font-size:11px;max-height:170px;overflow:auto;border:1px solid #26282c;border-radius:8px;background:#121417;}
+  .amort table{width:100%;border-collapse:collapse;}
+  .amort th{position:sticky;top:0;background:#1b1d20;color:#aab0b6;font-weight:600;padding:5px 6px;font-size:10px;letter-spacing:.5px;text-align:right;}
+  .amort th:first-child{text-align:left;}
+  .amort td{padding:3px 6px;text-align:right;color:#cdd0d3;border-top:1px solid #24262a;}
+  .amort td:first-child{text-align:left;color:#959ba1;}
+  .amort tr.tot td{color:#cdd3d9;border-top:1px solid #34373c;font-weight:600;}
+  .foot{font-family:'Archivo',sans-serif;font-size:10.5px;color:#6f757b;margin-top:16px;line-height:1.5;}
+  .foot code{color:#a4aab0;background:#1b1d20;padding:1px 4px;border-radius:3px;}
+
+  @media (max-width:760px){
+    body{gap:20px;padding-top:22px;}
+    .panel{width:392px;}
+  }
+</style>
+</head>
+<body>
+
+  <div class="device" id="device">
+    <div class="brandbar">
+      <div class="logo">
+        <div class="hpmark">hp</div>
+        <div class="model">10b<b>II+</b></div>
+      </div>
+      <div class="sub">financial<br>calculator</div>
+    </div>
+    <div class="accent"></div>
+
+    <div class="screen">
+      <div class="ann">
+        <div class="left">
+          <span class="flag" id="fl-shift">▼</span>
+          <span class="flag" id="fl-begin">BEGIN</span>
+          <span class="flag" id="fl-sto">STO</span>
+          <span class="flag" id="fl-rcl">RCL</span>
+          <span class="flag" id="fl-stat">STAT</span>
+        </div>
+        <div class="flag on" id="fl-pyr">P/YR&nbsp;12</div>
+      </div>
+      <div class="expr" id="expr">&nbsp;</div>
+      <div class="main" id="main">0.00</div>
+    </div>
+
+    <div class="keys" id="keys"></div>
+  </div>
+
+  <div class="panel">
+    <h2>Readout</h2>
+    <div class="hint">A live tape that mirrors the calculator's registers — the real device only shows one line at a time, so this is here to help you follow along.</div>
+
+    <div class="sec-title">Time Value of Money</div>
+    <div class="reg" id="tvmregs"></div>
+    <div class="modes" id="modes"></div>
+
+    <div class="sec-title">Interest Conversion</div>
+    <div class="reg" id="intregs"></div>
+
+    <div class="sec-title">Cash Flows <button class="clr" onclick="clearCF()">clear</button></div>
+    <div class="list" id="cflist"></div>
+    <div class="result" id="cfresult"></div>
+
+    <div class="sec-title">Statistics <button class="clr" onclick="clearStat()">clear</button></div>
+    <div class="reg" id="statregs"></div>
+
+    <div class="sec-title">Amortization <button class="clr" onclick="clearAmort()">clear</button></div>
+    <div class="amort" id="amort"></div>
+
+    <div class="foot">
+      Try it: <code>360</code> <code>▼</code><code>N</code> · <code>5.5</code> <code>I/YR</code> · <code>250000</code> <code>PV</code> · <code>0</code> <code>FV</code> · <code>PMT</code> &nbsp;→ monthly payment. Then <code>▼</code><code>FV</code> for the amortization schedule. Physical keys work too (digits, <code>+ − * /</code>, <code>Enter</code>, <code>^</code>, <code>Backspace</code>, <code>Esc</code>).
+    </div>
+  </div>
+
+<script>
+/* ============================================================
+   HP 10bII+ — financial logic
+   ============================================================ */
+const state = {
+  // current entry
+  entry: "0",
+  fresh: true,        // next digit replaces entry
+  entryMade: false,   // a value has been keyed since last register op (controls TVM store vs solve)
+  tokens: [],         // expression tokens before current entry
+  lastResult: 0,
+  error: false,
+
+  // TVM registers
+  n: 0, iyr: 0, pv: 0, pmt: 0, fv: 0,
+  pyr: 12, begin: false,
+  tvmSet: {n:false,iyr:false,pv:false,pmt:false,fv:false},
+
+  // interest conversion
+  nom: 0, eff: 0, nomSet:false, effSet:false,
+
+  // cash flows  [{value,count}]
+  cf: [],
+  npv: null, irr: null, nfv: null,
+
+  // statistics (single variable)
+  stat: [],
+
+  // memory registers 0-9
+  mem: new Array(10).fill(0),
+
+  // display
+  digits: 2,
+
+  // shift / pending
+  shift: false,
+  pendingSto: false,
+  pendingRcl: false,
+  pendingDisp: false,
+
+  amortRows: null
+};
+
+/* ---------- number formatting ---------- */
+function fmt(x){
+  if(!isFinite(x)) return "Error";
+  const d = state.digits;
+  let neg = x < 0;
+  let ax = Math.abs(x);
+  // scientific for extreme magnitudes
+  if(ax !== 0 && (ax >= 1e12 || ax < 1e-9)){
+    let s = x.toExponential(Math.min(d,6));
+    return s;
+  }
+  let s = ax.toFixed(d);
+  let [int, dec] = s.split(".");
+  int = int.replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+  return (neg ? "-" : "") + int + (dec ? "." + dec : "");
+}
+function rawShow(){ return state.error ? "Error" : state.entry; }
+
+/* ---------- expression evaluator (algebraic w/ precedence + parens) ---------- */
+function toRPN(tokens){
+  const out=[], ops=[];
+  const prec={'+':1,'-':1,'*':2,'/':2,'^':3};
+  const right={'^':1};
+  for(const tk of tokens){
+    if(tk.t==='num') out.push(tk);
+    else if(tk.t==='op'){
+      while(ops.length){
+        const top=ops[ops.length-1];
+        if(top.t==='lp') break;
+        if(prec[top.v]>prec[tk.v] || (prec[top.v]===prec[tk.v] && !right[tk.v])) out.push(ops.pop());
+        else break;
+      }
+      ops.push(tk);
+    } else if(tk.t==='lp') ops.push(tk);
+    else if(tk.t==='rp'){
+      while(ops.length && ops[ops.length-1].t!=='lp') out.push(ops.pop());
+      if(ops.length) ops.pop();
+    }
+  }
+  while(ops.length) out.push(ops.pop());
+  return out;
+}
+function evalRPN(rpn){
+  const st=[];
+  for(const tk of rpn){
+    if(tk.t==='num'){ st.push(tk.v); }
+    else{
+      const b=st.pop(), a=st.pop();
+      let r;
+      switch(tk.v){
+        case '+': r=a+b; break;
+        case '-': r=a-b; break;
+        case '*': r=a*b; break;
+        case '/': r=a/b; break;
+        case '^': r=Math.pow(a,b); break;
+      }
+      st.push(r);
+    }
+  }
+  return st.length ? st[st.length-1] : 0;
+}
+function evalTokens(tokens){
+  if(!tokens.length) return parseFloat(state.entry)||0;
+  return evalRPN(toRPN(tokens));
+}
+function curVal(){ return parseFloat(state.entry) || 0; }
+
+/* ---------- input ---------- */
+function clearError(){ if(state.error){ state.error=false; state.entry="0"; state.fresh=true; } }
+
+function inputDigit(d){
+  if(state.pendingSto){ doMem('sto', +d); return; }
+  if(state.pendingRcl){ doMem('rcl', +d); return; }
+  if(state.pendingDisp){ state.digits=Math.max(0,Math.min(9,+d)); state.pendingDisp=false; render(); return; }
+  clearError();
+  if(state.fresh){ state.entry = (d===".") ? "0." : d; state.fresh=false; }
+  else {
+    if(d==="."){ if(!state.entry.includes(".")) state.entry+="."; }
+    else if(state.entry==="0") state.entry=d;
+    else if(state.entry==="-0") state.entry="-"+d;
+    else state.entry+=d;
+  }
+  state.entryMade=true;
+  renderEntry();
+}
+
+function pushOp(op){
+  clearError();
+  // replace trailing operator if user presses two in a row without a number
+  const last=state.tokens[state.tokens.length-1];
+  if(state.fresh && last && last.t==='op'){ last.v=op; renderExpr(); return; }
+  state.tokens.push({t:'num', v:curVal()});
+  state.tokens.push({t:'op', v:op});
+  state.fresh=true;
+  state.entryMade=false;
+  renderExpr();
+}
+function paren(which){
+  clearError();
+  if(which==='('){
+    state.tokens.push({t:'lp'});
+  } else {
+    state.tokens.push({t:'num', v:curVal()});
+    state.tokens.push({t:'rp'});
+    state.fresh=true;
+  }
+  renderExpr();
+}
+function equals(){
+  clearError();
+  state.tokens.push({t:'num', v:curVal()});
+  let r = evalTokens(state.tokens);
+  state.tokens=[];
+  state.lastResult = r;
+  if(!isFinite(r)){ setError(); return; }
+  state.entry = String(r);
+  state.fresh = true;
+  state.entryMade = true;
+  renderResult(r);
+}
+function setError(){ state.error=true; state.tokens=[]; render(); }
+
+function applyUnary(fn){
+  clearError();
+  let v = curVal();
+  let r = fn(v);
+  if(!isFinite(r)){ setError(); return; }
+  state.lastResult=r;
+  state.entry=String(r);
+  state.fresh=true;
+  state.entryMade=true;
+  renderResult(r);
+}
+function changeSign(){
+  clearError();
+  if(state.entry.startsWith("-")) state.entry=state.entry.slice(1);
+  else if(state.entry!=="0") state.entry="-"+state.entry;
+  state.lastResult=curVal();
+  renderEntry();
+}
+function percent(){
+  clearError();
+  let cur=curVal();
+  let base = state.tokens.length>=1 ? evalTokens(state.tokens.slice(0,-1)) : 0;
+  let lastOp = null;
+  for(let i=state.tokens.length-1;i>=0;i--){ if(state.tokens[i].t==='op'){ lastOp=state.tokens[i].v; break; } }
+  let r;
+  if(lastOp==='+'||lastOp==='-') r = base*cur/100;
+  else r = cur/100;
+  state.entry=String(r); state.fresh=true; state.entryMade=true;
+  renderResult(r);
+}
+function percentChange(){ // %CHG : (x - lastY)/lastY * 100
+  clearError();
+  let y=state.lastResult, x=curVal();
+  if(y===0){ setError(); return; }
+  let r=(x-y)/y*100;
+  state.entry=String(r); state.fresh=true; state.entryMade=true;
+  renderResult(r);
+}
+function backspace(){
+  if(state.error){ clearError(); render(); return; }
+  if(state.fresh){ state.entry="0"; renderEntry(); return; }
+  if(state.entry.length<=1 || (state.entry.length===2 && state.entry.startsWith("-"))){
+    state.entry="0"; state.fresh=true;
+  } else state.entry=state.entry.slice(0,-1);
+  renderEntry();
+}
+function clearEntry(){
+  // clears current entry + pending expression, keeps registers
+  state.error=false; state.entry="0"; state.fresh=true; state.tokens=[];
+  state.pendingSto=state.pendingRcl=state.pendingDisp=false;
+  render();
+}
+function clearAll(){
+  // C ALL — wipe everything
+  Object.assign(state,{
+    entry:"0", fresh:true, entryMade:false, tokens:[], lastResult:0, error:false,
+    n:0,iyr:0,pv:0,pmt:0,fv:0, begin:false,
+    tvmSet:{n:false,iyr:false,pv:false,pmt:false,fv:false},
+    nom:0,eff:0,nomSet:false,effSet:false,
+    cf:[], npv:null,irr:null,nfv:null, stat:[],
+    pendingSto:false,pendingRcl:false,pendingDisp:false, amortRows:null
+  });
+  render();
+}
+
+/* ---------- memory ---------- */
+function doMem(kind, idx){
+  if(idx<0||idx>9){ state.pendingSto=state.pendingRcl=false; return; }
+  if(kind==='sto'){ state.mem[idx]=curVal(); state.pendingSto=false; state.fresh=true; render(); }
+  else { state.entry=String(state.mem[idx]); state.pendingRcl=false; state.fresh=true; state.entryMade=true; renderResult(state.mem[idx]); }
+}
+
+/* ---------- TVM ---------- */
+function periodic(){ return (state.iyr/100)/state.pyr; }
+function npvTVM(i){
+  const n=state.n, g=state.begin?1:0;
+  const x=Math.pow(1+i,-n);
+  const a = (i===0)? n : (1-x)/i;
+  const beginAdj = 1 + i*g;
+  return state.pv + state.pmt*beginAdj*a + state.fv*x;
+}
+function solveRate(){
+  let i=0.01;
+  for(let k=0;k<120;k++){
+    const f=npvTVM(i);
+    const h=1e-7;
+    const fp=(npvTVM(i+h)-npvTVM(i-h))/(2*h);
+    if(Math.abs(fp)<1e-13) break;
+    let nx=i-f/fp;
+    if(!isFinite(nx)) break;
+    if(nx<=-1) nx=(i-1)/2;
+    if(Math.abs(nx-i)<1e-13){ i=nx; break; }
+    i=nx;
+  }
+  if(Math.abs(npvTVM(i))<1e-6) return i;
+  // fallback: scan for a bracket then bisect
+  let lo=-0.99999, hi=10, prev=lo, fprev=npvTVM(lo);
+  const steps=4000;
+  for(let s=1;s<=steps;s++){
+    const cur=lo+(hi-lo)*s/steps, fcur=npvTVM(cur);
+    if(isFinite(fprev)&&isFinite(fcur)&&fprev*fcur<0){
+      let a=prev,b=cur;
+      for(let k=0;k<200;k++){ const m=(a+b)/2,fm=npvTVM(m); if((npvTVM(a)<0)===(fm<0)) a=m; else b=m; }
+      return (a+b)/2;
+    }
+    prev=cur; fprev=fcur;
+  }
+  return NaN;
+}
+function tvmKey(which){
+  // store the displayed value if a number was just keyed, otherwise solve
+  const map={N:'n','I/YR':'iyr',PV:'pv',PMT:'pmt',FV:'fv'};
+  const reg=map[which];
+  if(state.entryMade){
+    state[reg]=curVal();
+    state.tvmSet[reg]=true;
+    state.entryMade=false; state.fresh=true;
+    renderResult(state[reg]);
+    return;
+  }
+  // solve
+  const i=periodic(), n=state.n, g=state.begin?1:0;
+  let r;
+  if(which==='N'){
+    if(i===0){ r = state.pmt===0 ? NaN : -(state.pv+state.fv)/state.pmt; }
+    else{
+      const c=(1+i*g)*state.pmt/i;
+      const x=(state.pv+c)/(c-state.fv);
+      r = (x>0) ? -Math.log(x)/Math.log(1+i) : NaN;
+    }
+    state.n=r;
+  } else if(which==='I/YR'){
+    const rate=solveRate();
+    r = rate*state.pyr*100;
+    state.iyr=r;
+  } else {
+    const x=Math.pow(1+i,-n);
+    const a=(i===0)?n:(1-x)/i;
+    const beginAdj=1+i*g;
+    if(which==='PV'){ r=-(state.pmt*beginAdj*a + state.fv*x); state.pv=r; }
+    else if(which==='FV'){ r=(x===0)?NaN:-(state.pv+state.pmt*beginAdj*a)/x; state.fv=r; }
+    else if(which==='PMT'){ const dn=beginAdj*a; r=(dn===0)?NaN:-(state.pv+state.fv*x)/dn; state.pmt=r; }
+  }
+  state.tvmSet[reg]=true;
+  state.entryMade=false; state.fresh=true;
+  if(!isFinite(r)){ setError(); return; }
+  state.lastResult=r;
+  state.entry=String(r);
+  renderResult(r);
+}
+function xPyr(){ // value * P/YR -> N
+  const r=curVal()*state.pyr;
+  state.n=r; state.tvmSet.n=true; state.entryMade=false; state.fresh=true;
+  renderResult(r);
+}
+function setPyr(){
+  if(state.entryMade){ state.pyr=Math.round(curVal())||1; state.entryMade=false; state.fresh=true; }
+  renderResult(state.pyr);
+}
+function toggleBegin(){ state.begin=!state.begin; render(); }
+
+/* ---------- interest conversion ---------- */
+function nomKey(){
+  if(state.entryMade){
+    state.nom=curVal(); state.nomSet=true;
+    state.eff=(Math.pow(1+state.nom/100/state.pyr, state.pyr)-1)*100; state.effSet=true;
+    state.entryMade=false; state.fresh=true;
+    renderResult(state.nom);
+  } else { // solve NOM from EFF
+    state.nom=(Math.pow(1+state.eff/100,1/state.pyr)-1)*state.pyr*100; state.nomSet=true;
+    state.fresh=true; renderResult(state.nom);
+  }
+}
+function effKey(){
+  if(state.entryMade){
+    state.eff=curVal(); state.effSet=true;
+    state.nom=(Math.pow(1+state.eff/100,1/state.pyr)-1)*state.pyr*100; state.nomSet=true;
+    state.entryMade=false; state.fresh=true;
+    renderResult(state.eff);
+  } else {
+    state.eff=(Math.pow(1+state.nom/100/state.pyr,state.pyr)-1)*100; state.effSet=true;
+    state.fresh=true; renderResult(state.eff);
+  }
+}
+
+/* ---------- cash flows ---------- */
+function cfAdd(){
+  state.cf.push({value:curVal(), count:1});
+  state.npv=state.irr=state.nfv=null;
+  state.entryMade=false; state.fresh=true;
+  renderResult(curVal());
+}
+function njSet(){
+  if(state.cf.length===0){ return; }
+  state.cf[state.cf.length-1].count=Math.max(1,Math.round(curVal()));
+  state.npv=state.irr=state.nfv=null;
+  state.entryMade=false; state.fresh=true;
+  renderResult(state.cf[state.cf.length-1].count);
+}
+function npvCF(rate){
+  let t=0,npv=0;
+  for(const f of state.cf){ for(let c=0;c<f.count;c++){ npv+=f.value/Math.pow(1+rate,t); t++; } }
+  return npv;
+}
+function totalPeriods(){ let t=0; for(const f of state.cf) t+=f.count; return t; }
+function calcNPV(){
+  if(state.cf.length===0){ setError(); return; }
+  const rate=periodic();
+  const v=npvCF(rate);
+  state.npv=v;
+  state.lastResult=v; state.entry=String(v); state.fresh=true; state.entryMade=true;
+  renderResult(v);
+}
+function calcNFV(){
+  if(state.cf.length===0){ setError(); return; }
+  const rate=periodic();
+  const lastT=Math.max(0,totalPeriods()-1);
+  const v=npvCF(rate)*Math.pow(1+rate,lastT);
+  state.nfv=v;
+  state.lastResult=v; state.entry=String(v); state.fresh=true; state.entryMade=true;
+  renderResult(v);
+}
+function calcIRR(){
+  if(state.cf.length===0){ setError(); return; }
+  // Newton on rate then fallback scan
+  let r=0.1;
+  for(let k=0;k<200;k++){
+    const f=npvCF(r), h=1e-7;
+    const fp=(npvCF(r+h)-npvCF(r-h))/(2*h);
+    if(Math.abs(fp)<1e-13) break;
+    let nx=r-f/fp;
+    if(!isFinite(nx)) break;
+    if(nx<=-1) nx=(r-1)/2;
+    if(Math.abs(nx-r)<1e-13){ r=nx; break; }
+    r=nx;
+  }
+  if(!(Math.abs(npvCF(r))<1e-6)){
+    let lo=-0.9999,hi=10,prev=lo,fprev=npvCF(lo),found=NaN;
+    for(let s=1;s<=4000;s++){ const cur=lo+(hi-lo)*s/4000,fcur=npvCF(cur);
+      if(isFinite(fprev)&&isFinite(fcur)&&fprev*fcur<0){ let a=prev,b=cur;
+        for(let k=0;k<200;k++){ const m=(a+b)/2,fm=npvCF(m); if((npvCF(a)<0)===(fm<0)) a=m; else b=m; } found=(a+b)/2; break; }
+      prev=cur;fprev=fcur; }
+    r=found;
+  }
+  if(!isFinite(r)){ setError(); return; }
+  const annual=r*state.pyr*100;
+  state.irr=annual;
+  state.lastResult=annual; state.entry=String(annual); state.fresh=true; state.entryMade=true;
+  renderResult(annual);
+}
+
+/* ---------- statistics (single variable) ---------- */
+function statAdd(){ state.stat.push(curVal()); state.entryMade=false; state.fresh=true; renderResult(state.stat.length); }
+function statSub(){ state.stat.pop(); state.entryMade=false; state.fresh=true; renderResult(state.stat.length); }
+function statN(){ const n=state.stat.length; state.entry=String(n); state.fresh=true; state.entryMade=true; renderResult(n); }
+function statMean(){ const s=state.stat; if(!s.length){setError();return;} const m=s.reduce((a,b)=>a+b,0)/s.length; state.entry=String(m); state.fresh=true; state.entryMade=true; renderResult(m); }
+function statSx(){ const s=state.stat; if(s.length<2){setError();return;} const m=s.reduce((a,b)=>a+b,0)/s.length; const v=s.reduce((a,b)=>a+(b-m)**2,0)/(s.length-1); const sd=Math.sqrt(v); state.entry=String(sd); state.fresh=true; state.entryMade=true; renderResult(sd); }
+function statSigx(){ const s=state.stat; if(!s.length){setError();return;} const m=s.reduce((a,b)=>a+b,0)/s.length; const v=s.reduce((a,b)=>a+(b-m)**2,0)/s.length; const sd=Math.sqrt(v); state.entry=String(sd); state.fresh=true; state.entryMade=true; renderResult(sd); }
+
+/* ---------- display helpers ---------- */
+function fact(n){ if(n<0||Math.floor(n)!==n||n>170) return NaN; let r=1; for(let i=2;i<=n;i++) r*=i; return r; }
+function exprString(){
+  let parts=[];
+  for(const tk of state.tokens){
+    if(tk.t==='num') parts.push(fmt(tk.v).replace(/,/g,''));
+    else if(tk.t==='op') parts.push({'+':'+','-':'−','*':'×','/':'÷','^':'^'}[tk.v]);
+    else if(tk.t==='lp') parts.push('(');
+    else if(tk.t==='rp') parts.push(')');
+  }
+  return parts.join(' ');
+}
+
+function renderEntry(){ document.getElementById('main').textContent = rawShow(); renderExpr(); renderPanel(); }
+function renderExpr(){
+  const e=exprString();
+  document.getElementById('expr').textContent = e ? e+' ' : '\u00A0';
+  document.getElementById('main').textContent = rawShow();
+}
+function renderResult(v){ document.getElementById('main').textContent = state.error?"Error":fmt(v); renderExpr2Clear(); renderPanel(); }
+function renderExpr2Clear(){ document.getElementById('expr').textContent = exprString()? exprString()+' ' : '\u00A0'; }
+
+function render(){
+  document.getElementById('main').textContent = state.error ? "Error" : (state.fresh ? fmt(curVal()) : rawShow());
+  document.getElementById('expr').textContent = exprString()? exprString()+' ' : '\u00A0';
+  renderPanel();
+}
+
+function setFlag(id,on){ document.getElementById(id).classList.toggle('on',!!on); }
+function renderFlags(){
+  setFlag('fl-shift', state.shift);
+  setFlag('fl-begin', state.begin);
+  setFlag('fl-sto', state.pendingSto);
+  setFlag('fl-rcl', state.pendingRcl);
+  setFlag('fl-stat', state.stat.length>0);
+  document.getElementById('fl-pyr').innerHTML = 'P/YR&nbsp;'+state.pyr;
+}
+
+function renderPanel(){
+  renderFlags();
+  // TVM
+  const setc=(b)=> b?'v set':'v';
+  document.getElementById('tvmregs').innerHTML =
+    `<div class="k">N</div><div class="${setc(state.tvmSet.n)}">${fmt(state.n)}</div>`+
+    `<div class="k">I/YR</div><div class="${setc(state.tvmSet.iyr)}">${fmt(state.iyr)}</div>`+
+    `<div class="k">PV</div><div class="${setc(state.tvmSet.pv)}">${fmt(state.pv)}</div>`+
+    `<div class="k">PMT</div><div class="${setc(state.tvmSet.pmt)}">${fmt(state.pmt)}</div>`+
+    `<div class="k">FV</div><div class="${setc(state.tvmSet.fv)}">${fmt(state.fv)}</div>`;
+  document.getElementById('modes').innerHTML =
+    `Mode: <span>${state.begin?'BEGIN':'END'}</span> &nbsp;·&nbsp; P/YR: <span>${state.pyr}</span> &nbsp;·&nbsp; Disp: <span>${state.digits}</span>`;
+
+  // interest
+  document.getElementById('intregs').innerHTML =
+    `<div class="k">Nominal %</div><div class="${state.nomSet?'v set':'v'}">${fmt(state.nom)}</div>`+
+    `<div class="k">Effective %</div><div class="${state.effSet?'v set':'v'}">${fmt(state.eff)}</div>`+
+    `<div class="k">Periods/Yr</div><div class="v">${state.pyr}</div>`;
+
+  // cash flows
+  const cl=document.getElementById('cflist');
+  if(state.cf.length===0){ cl.innerHTML='<div class="empty">No cash flows entered. Key a value then CFj. CF0 is the first entry.</div>'; }
+  else cl.innerHTML = state.cf.map((f,i)=>`<div class="row"><span class="lbl">CF${i}${f.count>1?' ×'+f.count:''}</span><span>${fmt(f.value)}</span></div>`).join('');
+  const cr=document.getElementById('cfresult');
+  let crh='';
+  if(state.npv!==null) crh+=`<div class="k">NPV @ I/YR ${fmt(state.iyr)}</div><div class="v">${fmt(state.npv)}</div>`;
+  if(state.irr!==null) crh+=`<div class="k">IRR/YR</div><div class="v">${fmt(state.irr)} %</div>`;
+  if(state.nfv!==null) crh+=`<div class="k">NFV</div><div class="v">${fmt(state.nfv)}</div>`;
+  cr.innerHTML=crh;
+
+  // stats
+  const s=state.stat; const n=s.length;
+  let mean=0,sx=0,sig=0,sum=0,sum2=0;
+  if(n){ sum=s.reduce((a,b)=>a+b,0); sum2=s.reduce((a,b)=>a+b*b,0); mean=sum/n;
+    if(n>1) sx=Math.sqrt((sum2-sum*sum/n)/(n-1));
+    sig=Math.sqrt((sum2-sum*sum/n)/n); }
+  document.getElementById('statregs').innerHTML =
+    `<div class="k">n</div><div class="v">${n}</div>`+
+    `<div class="k">Σx</div><div class="v">${fmt(sum)}</div>`+
+    `<div class="k">mean x̄</div><div class="v">${n?fmt(mean):'—'}</div>`+
+    `<div class="k">Sx (samp)</div><div class="v">${n>1?fmt(sx):'—'}</div>`+
+    `<div class="k">σx (pop)</div><div class="v">${n?fmt(sig):'—'}</div>`;
+
+  // amort
+  const am=document.getElementById('amort');
+  if(!state.amortRows){ am.innerHTML='<div style="padding:10px;font-family:Archivo;font-size:11px;color:#6f757b">Press ▼ FV (AMORT) after solving a TVM problem to build the schedule.</div>'; }
+  else {
+    let rows=state.amortRows.rows.map(r=>`<tr><td>${r.p}</td><td>${fmt(r.interest)}</td><td>${fmt(r.principal)}</td><td>${fmt(r.balance)}</td></tr>`).join('');
+    am.innerHTML=`<table><thead><tr><th>#</th><th>Interest</th><th>Principal</th><th>Balance</th></tr></thead><tbody>${rows}`+
+      `<tr class="tot"><td>Σ</td><td>${fmt(state.amortRows.totI)}</td><td>${fmt(state.amortRows.totP)}</td><td></td></tr></tbody></table>`;
+  }
+}
+
+/* ---------- amortization ---------- */
+function amort(){
+  const n=Math.round(state.n);
+  if(!(n>0) || !isFinite(state.pmt) || state.pmt===0){ setError(); return; }
+  const i=periodic();
+  let bal=state.pv;
+  const beginPay=state.begin;
+  let rows=[], totI=0, totP=0;
+  const cap = Math.min(n, 600);
+  for(let p=1;p<=cap;p++){
+    let interest, principal;
+    if(beginPay && p===1){ interest=0; }
+    else interest = bal*i;
+    // payment reduces balance; HP convention: PMT is signed cash flow
+    principal = -(state.pmt) - interest;     // amount applied to principal (positive reduces loan when PV>0,PMT<0)
+    // For a standard loan PV>0, PMT<0: principal = -PMT - interest
+    bal = bal - principal;
+    totI += interest; totP += principal;
+    rows.push({p, interest, principal, balance:bal});
+  }
+  state.amortRows={rows, totI, totP};
+  renderPanel();
+  // also show last balance on screen
+  state.entry=String(bal); state.fresh=true; state.entryMade=true;
+  renderResult(bal);
+}
+
+/* panel clear buttons */
+function clearCF(){ state.cf=[]; state.npv=state.irr=state.nfv=null; renderPanel(); }
+function clearStat(){ state.stat=[]; renderPanel(); }
+function clearAmort(){ state.amortRows=null; renderPanel(); }
+
+/* ---------- shift ---------- */
+function setShift(on){ state.shift=on; renderFlags(); document.getElementById('btn-shift').classList.toggle('armed',on); }
+function toggleShift(){ setShift(!state.shift); }
+
+/* ============================================================
+   Keypad definition & wiring
+   ============================================================ */
+// each: [primary label, secondary(shift) label, primaryId, shiftId, classes, priClass]
+const KEYS = [
+  // row 1 — TVM
+  ["N","xP/YR","N","xpyr","tvm"], ["I/YR","NOM%","IYR","nom","tvm"], ["PV","EFF%","PV","eff","tvm"], ["PMT","P/YR","PMT","pyr","tvm"], ["FV","AMORT","FV","amort","tvm"],
+  // row 2 — cash flow / stats
+  ["CFj","Σ+","CFj","sumadd",""], ["Nj","Σ−","Nj","sumsub",""], ["IRR/YR","x̄","IRR","mean","","sm"], ["NPV","Sx","NPV","sx",""], ["NFV","σx","NFV","sigx",""],
+  // row 3 — memory / modes
+  ["RCL","","RCL","",""], ["STO","","STO","",""], ["INPUT","BEG/END","INPUT","begend","","sm"], ["SWAP","RND","SWAP","rnd",""], ["⌫","DISP","BS","disp","op"],
+  // row 4 — functions / divide
+  ["(","LN","lp","ln","op"], [")","eˣ","rp","exp","op"], ["%","%CHG","pct","pchg","op"], ["yˣ","LOG","ypow","log","op"], ["÷","10ˣ","div","tenx","op","big"],
+  // row 5
+  ["7","x²","7","x2",""], ["8","n!","8","fact",""], ["9","","9","",""], ["√x","","sqrt","","op"], ["×","","mul","op","big"],
+  // row 6
+  ["4","","4",""], ["5","","5",""], ["6","","6",""], ["1/x","","inv","","op"], ["−","","sub","op","big"],
+  // row 7
+  ["1","","1",""], ["2","","2",""], ["3","","3",""], ["+/−","","chs","",""], ["+","","add","op","big"],
+  // row 8
+  ["▼","","shift","","shiftk","big"], ["0","","0",""], [".","","dot","",""], ["C","C ALL","C","call",""], ["=","","eq","","eq","big"],
+];
+
+function buildKeys(){
+  const wrap=document.getElementById('keys');
+  KEYS.forEach(def=>{
+    const [pri,sec,pid,sid,cls,priCls]=def;
+    const b=document.createElement('button');
+    b.className='key'+(cls?(' '+cls.split(' ').join(' ')):'');
+    if(pid==='shift') b.id='btn-shift';
+    b.innerHTML = `<span class="sec">${sec||'&nbsp;'}</span><span class="pri ${priCls||''}">${pri}</span>`;
+    b.addEventListener('click',()=>handleKey(pid,sid,b));
+    wrap.appendChild(b);
+  });
+}
+
+function press(b){ if(!b) return; b.classList.add('press'); setTimeout(()=>b.classList.remove('press'),90); }
+
+function handleKey(pid, sid, btn){
+  press(btn);
+  if(pid==='shift'){ toggleShift(); return; }
+  if(state.shift){
+    setShift(false);
+    if(sid) runShift(sid);
+    return;
+  }
+  runPrimary(pid);
+}
+
+function runPrimary(id){
+  if(/^[0-9]$/.test(id)){ inputDigit(id); return; }
+  switch(id){
+    case 'dot': inputDigit('.'); break;
+    case 'add': pushOp('+'); break;
+    case 'sub': pushOp('-'); break;
+    case 'mul': pushOp('*'); break;
+    case 'div': pushOp('/'); break;
+    case 'ypow': pushOp('^'); break;
+    case 'lp': paren('('); break;
+    case 'rp': paren(')'); break;
+    case 'eq': equals(); break;
+    case 'pct': percent(); break;
+    case 'chs': changeSign(); break;
+    case 'BS': backspace(); break;
+    case 'C': clearEntry(); break;
+    case 'sqrt': applyUnary(Math.sqrt); break;
+    case 'inv': applyUnary(x=>1/x); break;
+    case 'N': case 'IYR': case 'PV': case 'PMT': case 'FV':
+      tvmKey({N:'N',IYR:'I/YR',PV:'PV',PMT:'PMT',FV:'FV'}[id]); break;
+    case 'CFj': cfAdd(); break;
+    case 'Nj': njSet(); break;
+    case 'NPV': calcNPV(); break;
+    case 'IRR': calcIRR(); break;
+    case 'NFV': calcNFV(); break;
+    case 'STO': state.pendingSto=true; state.pendingRcl=false; renderFlags(); break;
+    case 'RCL': state.pendingRcl=true; state.pendingSto=false; renderFlags(); break;
+    case 'INPUT': equals(); break;            // commit
+    case 'SWAP': { const t=curVal(); state.entry=String(state.lastResult); state.lastResult=t; state.fresh=true; state.entryMade=true; renderResult(curVal()); } break;
+  }
+}
+
+function runShift(id){
+  switch(id){
+    case 'xpyr': xPyr(); break;
+    case 'nom': nomKey(); break;
+    case 'eff': effKey(); break;
+    case 'pyr': setPyr(); break;
+    case 'amort': amort(); break;
+    case 'begend': toggleBegin(); break;
+    case 'rnd': applyUnary(x=>{ const f=Math.pow(10,state.digits); return Math.round(x*f)/f; }); break;
+    case 'disp': state.pendingDisp=true; render(); break;
+    case 'call': clearAll(); break;
+    case 'pchg': percentChange(); break;
+    case 'ln': applyUnary(Math.log); break;
+    case 'exp': applyUnary(Math.exp); break;
+    case 'log': applyUnary(Math.log10); break;
+    case 'tenx': applyUnary(x=>Math.pow(10,x)); break;
+    case 'x2': applyUnary(x=>x*x); break;
+    case 'fact': applyUnary(fact); break;
+    case 'sumadd': statAdd(); break;
+    case 'sumsub': statSub(); break;
+    case 'mean': statMean(); break;
+    case 'sx': statSx(); break;
+    case 'sigx': statSigx(); break;
+  }
+}
+
+/* ---------- physical keyboard ---------- */
+window.addEventListener('keydown',e=>{
+  const k=e.key;
+  if(/^[0-9]$/.test(k)){ inputDigit(k); flash(k); return; }
+  switch(k){
+    case '.': inputDigit('.'); break;
+    case '+': pushOp('+'); break;
+    case '-': pushOp('-'); break;
+    case '*': pushOp('*'); break;
+    case '/': e.preventDefault(); pushOp('/'); break;
+    case '^': pushOp('^'); break;
+    case '(': paren('('); break;
+    case ')': paren(')'); break;
+    case '%': percent(); break;
+    case '=':
+    case 'Enter': e.preventDefault(); equals(); break;
+    case 'Backspace': e.preventDefault(); backspace(); break;
+    case 'Escape': clearEntry(); break;
+    case 's': case 'S': toggleShift(); break;
+    default: return;
+  }
+});
+function flash(){}
+
+/* ---------- init ---------- */
+buildKeys();
+render();
+</script>
+</body>
+</html>

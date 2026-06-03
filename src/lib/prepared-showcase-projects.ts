@@ -68,8 +68,7 @@ export const HP_10BII_SHOWCASE_PROJECT: PreparedShowcaseProject = {
       stepNumber: 1,
       title: 'Generate the calculator',
       content: 'Can you create a one page html mock fully functional HP 10Bii+ calculator from scratch?',
-      resultContent:
-        'Claude generated the first self-contained HTML calculator artifact with TVM, cash-flow, interest conversion, amortization, statistics, memory, math, and keyboard behavior.',
+      resultContent: '',
       description: 'Initial source-run prompt that produced the working calculator artifact.',
     },
     {
@@ -78,8 +77,7 @@ export const HP_10BII_SHOWCASE_PROJECT: PreparedShowcaseProject = {
       title: 'Correct the hardware palette',
       content:
         'There is a red hue to it that is unwanted. It should be a standard black and white/silver color, with green-ish backround on the screen, with black writing.',
-      resultContent:
-        'Claude removed the plum/orange warm styling, kept the financial logic unchanged, and finalized the artifact with a graphite-and-silver body plus a green LCD with dark text.',
+      resultContent: '',
       description: 'Visual refinement prompt that produced the approved public artifact.',
     },
   ],
@@ -115,8 +113,7 @@ export const TIC_TAC_TOE_SHOWCASE_PROJECT: PreparedShowcaseProject = {
       stepNumber: 1,
       title: 'Generate the game',
       content: 'Make me a playable Tic-Tac-Toe game as a single self-contained HTML file.',
-      resultContent:
-        'Gemini returned a complete self-contained Tic-Tac-Toe HTML artifact with styling, turn logic, win/draw detection, and reset behavior.',
+      resultContent: '',
       description: 'One plain Gemini prompt that generated the playable browser game.',
     },
   ],

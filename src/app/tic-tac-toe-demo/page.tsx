@@ -21,7 +21,7 @@ const responseInstruction =
 function getModelResponse() {
   try {
     return fs.readFileSync(
-      path.join(process.cwd(), 'public/artifacts/tic-tac-toe-gemini-flash-basic.html'),
+      path.join(process.cwd(), 'public/artifacts/tic-tac-toe-step-1.html'),
       'utf8',
     )
   } catch {
@@ -135,13 +135,13 @@ function ResponsePackage({ modelResponse }: { modelResponse: string }) {
             <span className="min-w-0">
               <span className="flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.16em] text-surface-500">
                 <FileCode2 className="h-3.5 w-3.5 text-brand-blue" />
-                Code block
+                Verbatim response
               </span>
               <span className="mt-1 block text-sm font-bold text-surface-900">
-                Full HTML response
+                Exact HTML this prompt returned
               </span>
               <span className="mt-1 block text-xs leading-5 text-surface-500">
-                Collapsed because the generated file is long.
+                Collapsed because the generated file is long; this is the single file mounted above, verbatim.
               </span>
             </span>
             <span className="shrink-0 border border-surface-300 px-2 py-1 font-mono text-[10px] uppercase tracking-[0.12em] text-surface-600">

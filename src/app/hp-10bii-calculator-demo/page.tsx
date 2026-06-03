@@ -45,14 +45,10 @@ function RunSummary() {
 }
 
 export default function Hp10BiiCalculatorDemoPage() {
-  const initialArtifactCode = readArtifact(
-    'hp-10bii-financial-calculator-claude-opus-48-initial.html',
-    'Initial HP 10Bii+ artifact capture is unavailable.',
-  )
-  const claudeFinalCode = readArtifact(
-    'hp-10bii-financial-calculator-claude-opus-48-claude-final.html',
-    'Final Claude HP 10Bii+ artifact capture is unavailable.',
-  )
+  const stepCodes = [
+    readArtifact('hp-10bii-step-1.html', 'Step 1 HP 10Bii+ artifact capture is unavailable.'),
+    readArtifact('hp-10bii-step-2.html', 'Step 2 HP 10Bii+ artifact capture is unavailable.'),
+  ]
 
   return (
     <main className="min-h-screen bg-surface-50 text-surface-900">
@@ -86,10 +82,8 @@ export default function Hp10BiiCalculatorDemoPage() {
 
       <Hp10BiiSourceRunExplorer
         sourceRunUrl={sourceRunUrl}
-        firstPrompt={project.steps[0]}
-        secondPrompt={project.steps[1]}
-        initialArtifactCode={initialArtifactCode}
-        claudeFinalCode={claudeFinalCode}
+        steps={project.steps}
+        stepCodes={stepCodes}
       />
 
       <ProjectCommunityPanel projectId={projectId} />

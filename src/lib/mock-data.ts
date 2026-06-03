@@ -8,7 +8,11 @@ import {
   SuggestionWithRelations,
 } from './types'
 import { SNAKE_PROJECT_ID } from './featured-projects'
-import { HP_10BII_SHOWCASE_PROJECT, TIC_TAC_TOE_SHOWCASE_PROJECT } from './prepared-showcase-projects'
+import {
+  HP_10BII_SHOWCASE_PROJECT,
+  POMODORO_TIMER_SHOWCASE_PROJECT,
+  TIC_TAC_TOE_SHOWCASE_PROJECT,
+} from './prepared-showcase-projects'
 
 export const mockProfiles: Profile[] = [
   {
@@ -41,6 +45,16 @@ export const mockProfiles: Profile[] = [
     created_at: '2026-05-30T21:30:00Z',
     updated_at: TIC_TAC_TOE_SHOWCASE_PROJECT.updatedAt,
   },
+  {
+    id: '22222222-2222-2222-2222-222222222214',
+    username: POMODORO_TIMER_SHOWCASE_PROJECT.authorUsername,
+    display_name: POMODORO_TIMER_SHOWCASE_PROJECT.authorDisplayName,
+    avatar_url: null,
+    bio: 'Productivity and focus-tool builds grown one prompt at a time through PathForge source runs.',
+    role: 'user',
+    created_at: '2026-06-02T17:55:00Z',
+    updated_at: POMODORO_TIMER_SHOWCASE_PROJECT.updatedAt,
+  },
 ]
 
 export const mockCategories: Category[] = [
@@ -50,7 +64,7 @@ export const mockCategories: Category[] = [
   { id: 'cat-4', name: 'Coding & Development', slug: 'coding', description: 'Code generation, debugging, architecture, and documentation', icon: '💻', prompt_count: 0, created_at: '2026-03-01T00:00:00Z' },
   { id: 'cat-5', name: 'Design & Creative', slug: 'design', description: 'UI/UX, branding, image generation, and visual design', icon: '🎨', prompt_count: 0, created_at: '2026-03-01T00:00:00Z' },
   { id: 'cat-6', name: 'Education & Learning', slug: 'education', description: 'Study plans, explanations, tutoring, and course creation', icon: '📚', prompt_count: 0, created_at: '2026-03-01T00:00:00Z' },
-  { id: 'cat-7', name: 'Productivity', slug: 'productivity', description: 'Task management, meetings, workflows, and automation', icon: '⚡', prompt_count: 0, created_at: '2026-03-01T00:00:00Z' },
+  { id: 'cat-7', name: 'Productivity', slug: 'productivity', description: 'Task management, meetings, workflows, and automation', icon: '⚡', prompt_count: 1, created_at: '2026-03-01T00:00:00Z' },
   { id: 'cat-8', name: 'Data & Analysis', slug: 'data', description: 'Data visualization, surveys, reporting, and insights', icon: '📊', prompt_count: 0, created_at: '2026-03-01T00:00:00Z' },
   { id: 'cat-9', name: 'Business Strategy', slug: 'strategy', description: 'SWOT analysis, business plans, market research, and OKRs', icon: '🎯', prompt_count: 0, created_at: '2026-03-01T00:00:00Z' },
   { id: 'cat-10', name: 'Personal & Fun', slug: 'personal', description: 'Games, experiments, creative demos, and playful AI builds', icon: '🎮', prompt_count: 1, created_at: '2026-03-01T00:00:00Z' },
@@ -86,6 +100,16 @@ export const mockSteps: PromptStep[] = [
     result_content: step.resultContent,
     description: step.description,
     created_at: TIC_TAC_TOE_SHOWCASE_PROJECT.createdAt,
+  })),
+  ...POMODORO_TIMER_SHOWCASE_PROJECT.steps.map((step) => ({
+    id: step.id,
+    prompt_id: POMODORO_TIMER_SHOWCASE_PROJECT.id,
+    step_number: step.stepNumber,
+    title: step.title,
+    content: step.content,
+    result_content: step.resultContent,
+    description: step.description,
+    created_at: POMODORO_TIMER_SHOWCASE_PROJECT.createdAt,
   })),
 ]
 
@@ -146,6 +170,25 @@ export const mockPrompts: Prompt[] = [
     bookmark_count: 0,
     created_at: TIC_TAC_TOE_SHOWCASE_PROJECT.createdAt,
     updated_at: TIC_TAC_TOE_SHOWCASE_PROJECT.updatedAt,
+  },
+  {
+    id: POMODORO_TIMER_SHOWCASE_PROJECT.id,
+    title: POMODORO_TIMER_SHOWCASE_PROJECT.title,
+    description: POMODORO_TIMER_SHOWCASE_PROJECT.description,
+    content: POMODORO_TIMER_SHOWCASE_PROJECT.content,
+    result_content: POMODORO_TIMER_SHOWCASE_PROJECT.resultContent,
+    category_id: POMODORO_TIMER_SHOWCASE_PROJECT.mockCategoryId,
+    difficulty: POMODORO_TIMER_SHOWCASE_PROJECT.difficulty,
+    model_used: POMODORO_TIMER_SHOWCASE_PROJECT.modelUsed,
+    model_recommendation: POMODORO_TIMER_SHOWCASE_PROJECT.modelRecommendation,
+    tools_used: POMODORO_TIMER_SHOWCASE_PROJECT.toolsUsed,
+    tags: POMODORO_TIMER_SHOWCASE_PROJECT.tags,
+    status: 'approved',
+    author_id: '22222222-2222-2222-2222-222222222214',
+    vote_count: 0,
+    bookmark_count: 0,
+    created_at: POMODORO_TIMER_SHOWCASE_PROJECT.createdAt,
+    updated_at: POMODORO_TIMER_SHOWCASE_PROJECT.updatedAt,
   },
 ]
 

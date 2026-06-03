@@ -15,6 +15,7 @@ export const AI_MODELS: AIModel[] = [
   { id: 'claude-sonnet-3-5', name: 'Claude 3.5 Sonnet', provider: 'Anthropic' },
 
   // OpenAI
+  { id: 'gpt-5-5-instant', name: 'GPT 5.5 Instant', provider: 'OpenAI' },
   { id: 'chatgpt-5-4-thinking', name: 'ChatGPT 5.4 Thinking', provider: 'OpenAI' },
   { id: 'chatgpt-5-4', name: 'ChatGPT 5.4', provider: 'OpenAI' },
   { id: 'gpt-4o', name: 'GPT-4o', provider: 'OpenAI' },

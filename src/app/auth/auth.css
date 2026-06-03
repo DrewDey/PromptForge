@@ -1,0 +1,107 @@
+/* ─────────────────────────────────────────────────────────
+   PathForge — Auth pages CSS (2026-06-02)
+   Scoped under .pf-auth. Shares the homepage VOCABULARY, not
+   its structure: surface-900 dark surface + faint grid +
+   orange radial glow (mirrors .finalcta), the orange mono
+   .eyebrow, Instrument Serif .serif accents, and .btn-primary.
+   See home.css for the canonical patterns.
+   ───────────────────────────────────────────────────────── */
+
+.pf-auth { position: relative; display: flex; min-height: 80vh; background: var(--color-surface-900); color: #fff; overflow: hidden; }
+.pf-auth a { color: inherit; text-decoration: none; }
+.pf-auth button { font: inherit; cursor: pointer; background: none; border: none; color: inherit; }
+.pf-auth svg { display: block; }
+.pf-auth img { display: block; max-width: 100%; }
+
+/* Dark-surface texture: faint grid + warm orange glow (mirrors .finalcta) */
+.pf-auth::before { content: ""; position: absolute; inset: 0; background-image: linear-gradient(rgba(255,255,255,.04) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.04) 1px, transparent 1px); background-size: 56px 56px; pointer-events: none; mask-image: radial-gradient(ellipse 70% 80% at 28% 42%, black 28%, transparent 100%); -webkit-mask-image: radial-gradient(ellipse 70% 80% at 28% 42%, black 28%, transparent 100%); }
+.pf-auth::after { content: ""; position: absolute; bottom: -260px; left: -140px; width: 760px; height: 500px; background: radial-gradient(ellipse, rgba(232,122,44,.22), transparent 70%); pointer-events: none; }
+
+/* ─── Brand panel (left, desktop only) ─── */
+.pf-auth .brand-panel { position: relative; z-index: 1; display: none; flex-direction: column; justify-content: center; width: 45%; padding: 64px 56px; border-right: 1px solid var(--color-surface-800); }
+.pf-auth .brand-logo { display: inline-flex; align-items: center; gap: 10px; font-size: 22px; font-weight: 800; color: #fff; margin-bottom: 44px; letter-spacing: -0.01em; }
+.pf-auth .brand-logo img { filter: brightness(0) invert(1); }
+
+.pf-auth .eyebrow { font-family: var(--font-mono); font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .14em; color: var(--color-brand-orange); display: inline-flex; align-items: center; gap: 8px; margin-bottom: 18px; }
+.pf-auth .eyebrow::before { content: ""; width: 20px; height: 1px; background: var(--color-brand-orange); }
+
+.pf-auth .serif { font-family: var(--font-display); font-style: italic; font-weight: 400; letter-spacing: -0.01em; color: var(--color-brand-orange); }
+
+.pf-auth .brand-panel h2 { font-size: 44px; line-height: 1.05; letter-spacing: -0.03em; font-weight: 900; color: #fff; margin-bottom: 18px; }
+.pf-auth .brand-panel .lead { font-size: 17px; line-height: 1.6; color: var(--color-surface-400); max-width: 420px; margin-bottom: 38px; }
+
+/* Mini flow list */
+.pf-auth .flow { display: flex; flex-direction: column; gap: 14px; max-width: 440px; }
+.pf-auth .flow-item { display: flex; align-items: center; gap: 14px; }
+.pf-auth .flow-num { width: 32px; height: 32px; flex-shrink: 0; display: grid; place-items: center; border: 1px solid var(--color-surface-700); color: var(--color-surface-300); font-family: var(--font-mono); font-size: 13px; font-weight: 700; }
+.pf-auth .flow-rule { height: 1px; width: 28px; background: var(--color-surface-800); flex-shrink: 0; }
+.pf-auth .flow-text { font-size: 14px; color: var(--color-surface-300); }
+.pf-auth .flow-text b { color: #fff; font-weight: 600; }
+.pf-auth .flow-text .desc { color: var(--color-surface-500); margin-left: 6px; }
+
+/* ─── Form panel (right) ─── */
+.pf-auth .form-panel { position: relative; z-index: 1; flex: 1; display: flex; align-items: center; justify-content: center; padding: 56px 24px; }
+.pf-auth .form-card { width: 100%; max-width: 380px; }
+
+.pf-auth .form-head { margin-bottom: 26px; }
+.pf-auth .mobile-logo { display: inline-flex; align-items: center; gap: 8px; font-size: 22px; font-weight: 800; color: #fff; margin-bottom: 22px; }
+.pf-auth .mobile-logo img { filter: brightness(0) invert(1); }
+.pf-auth .form-head h1 { font-size: 34px; line-height: 1.1; letter-spacing: -0.025em; font-weight: 900; color: #fff; margin-bottom: 8px; }
+.pf-auth .form-head p { font-size: 14px; color: var(--color-surface-400); line-height: 1.5; }
+
+/* Error */
+.pf-auth .auth-error { display: flex; align-items: flex-start; gap: 8px; background: rgba(220,38,38,.12); border: 1px solid rgba(248,113,113,.32); color: #fca5a5; font-size: 13px; padding: 11px 14px; margin-bottom: 18px; line-height: 1.45; }
+.pf-auth .auth-error svg { width: 16px; height: 16px; flex-shrink: 0; margin-top: 1px; }
+
+/* Form */
+.pf-auth form { display: flex; flex-direction: column; gap: 16px; }
+.pf-auth .field { display: flex; flex-direction: column; gap: 6px; }
+.pf-auth .field label { font-family: var(--font-mono); font-size: 10.5px; font-weight: 600; text-transform: uppercase; letter-spacing: .1em; color: var(--color-surface-400); }
+.pf-auth .field input { width: 100%; background: var(--color-surface-800); border: 1px solid var(--color-surface-700); color: #fff; padding: 11px 14px; font-size: 14px; font-family: var(--font-sans); transition: border-color .15s, box-shadow .15s; }
+.pf-auth .field input::placeholder { color: var(--color-surface-500); }
+.pf-auth .field input:focus { outline: none; border-color: var(--color-brand-orange); box-shadow: 0 0 0 3px rgba(232,122,44,.18); }
+
+/* Password helper */
+.pf-auth .pw-hint { display: flex; align-items: center; gap: 7px; }
+.pf-auth .pw-box { width: 14px; height: 14px; flex-shrink: 0; border: 1px solid var(--color-surface-600); display: grid; place-items: center; transition: background .15s, border-color .15s; }
+.pf-auth .pw-box.ok { background: var(--color-brand-orange); border-color: var(--color-brand-orange); }
+.pf-auth .pw-box svg { width: 9px; height: 9px; color: #fff; }
+.pf-auth .pw-hint span { font-size: 12px; color: var(--color-surface-500); transition: color .15s; }
+.pf-auth .pw-hint span.ok { color: var(--color-brand-orange); }
+
+/* Submit — orange on dark (mirrors .finalcta .btn-primary) */
+.pf-auth .btn-primary { width: 100%; justify-content: center; background: var(--color-brand-orange); color: #fff; padding: 13px 22px; font-size: 14px; font-weight: 700; display: inline-flex; align-items: center; gap: 8px; transition: background .15s, transform .15s; margin-top: 4px; min-height: 44px; }
+.pf-auth .btn-primary:hover:not(:disabled) { background: var(--color-brand-orange-dark); transform: translateY(-1px); }
+.pf-auth .btn-primary:disabled { opacity: .55; cursor: not-allowed; }
+.pf-auth .btn-primary .arrow { transition: transform .15s; }
+.pf-auth .btn-primary:hover:not(:disabled) .arrow { transform: translateX(3px); }
+.pf-auth .btn-primary .spin { width: 16px; height: 16px; animation: pf-spin .7s linear infinite; }
+@keyframes pf-spin { to { transform: rotate(360deg); } }
+
+/* Footer cross-link */
+.pf-auth .form-foot { text-align: center; font-size: 13px; color: var(--color-surface-500); margin-top: 22px; }
+.pf-auth .form-foot a { color: var(--color-brand-orange); font-weight: 600; transition: color .15s; }
+.pf-auth .form-foot a:hover { color: var(--color-brand-orange-dark); }
+
+/* Success (signup → check email) */
+.pf-auth .success-card { width: 100%; max-width: 380px; text-align: center; position: relative; z-index: 1; }
+.pf-auth .success-icon { width: 60px; height: 60px; margin: 0 auto 20px; display: grid; place-items: center; background: rgba(232,122,44,.12); border: 1px solid rgba(232,122,44,.3); }
+.pf-auth .success-icon svg { width: 28px; height: 28px; color: var(--color-brand-orange); }
+.pf-auth .success-card h1 { font-size: 28px; font-weight: 900; letter-spacing: -0.02em; color: #fff; margin-bottom: 10px; }
+.pf-auth .success-card p { font-size: 14px; color: var(--color-surface-400); line-height: 1.55; margin-bottom: 24px; }
+
+/* Focus-visible */
+.pf-auth a:focus-visible, .pf-auth button:focus-visible { outline: 2px solid var(--color-brand-orange); outline-offset: 2px; }
+
+/* ─── Responsive ─── */
+@media (min-width: 1024px) {
+  .pf-auth .brand-panel { display: flex; }
+  .pf-auth .mobile-logo { display: none; }
+}
+@media (max-width: 1023px) {
+  .pf-auth .form-head { text-align: center; }
+  .pf-auth .form-head h1 { font-size: 30px; }
+}
+@media (max-width: 480px) {
+  .pf-auth .form-panel { padding: 40px 20px; }
+}

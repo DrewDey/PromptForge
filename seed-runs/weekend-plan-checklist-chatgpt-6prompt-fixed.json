@@ -1,0 +1,119 @@
+{
+  "title": "Weekend Plan Checklist from ChatGPT",
+  "slug": "weekend-plan-checklist-chatgpt-6prompt-fixed",
+  "provider": "chatgpt",
+  "model": "ChatGPT web, Instant mode visible",
+  "model_settings": "Default ChatGPT web chat; Instant mode button visible in the composer. Exact backend model name was not exposed in the UI.",
+  "source_url": "https://chatgpt.com/c/6a208694-1e78-8327-8ec7-3b231b18169d",
+  "run_started_at": "2026-06-03T19:46:00-04:00",
+  "run_finished_at": "2026-06-03T20:13:00-04:00",
+  "chain_type": "multi-prompt",
+  "tags": ["productivity", "checklist", "travel", "local-storage"],
+  "status": "verified",
+  "final_artifact_path": "public/artifacts/weekend-plan-checklist-chatgpt-6prompt-fixed.html",
+  "artifact_type": "html",
+  "artifact_versions": [
+    {
+      "step": 1,
+      "path": "/private/tmp/weekend-plan-checklist-step-1.html",
+      "notes": "Initial one-file weekend packing and errand checklist. Rendered and generated a list, but duplicated related items and produced a long 50+ item checklist."
+    },
+    {
+      "step": 2,
+      "path": "/private/tmp/weekend-plan-checklist-step-2.html",
+      "notes": "Added deduping and Essentials/Nice-to-have split. Rendered, but sample output was still long."
+    },
+    {
+      "step": 3,
+      "path": "/private/tmp/weekend-plan-checklist-step-3.html",
+      "notes": "Added filters and a next-five summary. Rendered and generated a checklist."
+    },
+    {
+      "step": 4,
+      "path": "/private/tmp/weekend-plan-checklist-step-4.html",
+      "notes": "Added timing groups: Before leaving, On the way, At arrival, Sunday reset. Rendered and generated a checklist."
+    },
+    {
+      "step": 5,
+      "path": "public/artifacts/weekend-plan-checklist-chatgpt-5prompt.html",
+      "notes": "Attempted cleaner row controls and mobile/print/export polish, but verification found ReferenceError: nextFiveItems is not defined."
+    },
+    {
+      "step": 6,
+      "path": "public/artifacts/weekend-plan-checklist-chatgpt-6prompt-fixed.html",
+      "notes": "Bug-fix prompt restored nextFiveItems while keeping cleaner row controls. Verified with sample generation."
+    }
+  ],
+  "screenshots": [
+    "screenshots/weekend-plan-checklist-chatgpt-6prompt-fixed.png"
+  ],
+  "verification_notes": "Verified final fixed artifact over local HTTP: page renders, sample plan loads, Generate checklist creates 47 checkbox items, Next 5 summary appears, timing groups appear, filters/export/print controls are visible, and the missing nextFiveItems bug from step 5 is fixed in the step 6 artifact.",
+  "steps": [
+    {
+      "step_number": 1,
+      "prompt_exact": "Make me a polished one-file browser tool that turns a messy weekend plan into a clean packing and errand checklist.",
+      "response_exact": "ChatGPT created a one-file HTML artifact named weekend_plan_checklist.html. The exact response and code are preserved in the source session link; the captured code for this version is saved at /private/tmp/weekend-plan-checklist-step-1.html.",
+      "response_summary": "Initial polished weekend checklist generator with local storage, export, print, trip type/weather/travel selectors, chips, and editable generated checklist.",
+      "code_blocks": ["/private/tmp/weekend-plan-checklist-step-1.html"],
+      "generated_files": ["/private/tmp/weekend-plan-checklist-step-1.html"],
+      "artifact_version_path": "/private/tmp/weekend-plan-checklist-step-1.html",
+      "notes": "Observation: worked visually, but sample output duplicated related items and generated a very long checklist."
+    },
+    {
+      "step_number": 2,
+      "prompt_exact": "The generated checklist works, but it repeats things like gift/card and formal outfit and can balloon into 50+ items. Add smarter deduping and split the output into Essentials first and Nice-to-have, while keeping it one self-contained HTML file.",
+      "response_exact": "ChatGPT updated the one-file HTML artifact and stated it would tighten item matching, collapse overlapping triggers, and add Essentials/Nice-to-have sections. The exact response and code are preserved in the source session link; the captured code for this version is saved at /private/tmp/weekend-plan-checklist-step-2.html.",
+      "response_summary": "Added deduping and split generated items into Essentials and Nice-to-have.",
+      "code_blocks": ["/private/tmp/weekend-plan-checklist-step-2.html"],
+      "generated_files": ["/private/tmp/weekend-plan-checklist-step-2.html"],
+      "artifact_version_path": "/private/tmp/weekend-plan-checklist-step-2.html",
+      "notes": "Observation: split helped, but the list was still long and needed focus controls."
+    },
+    {
+      "step_number": 3,
+      "prompt_exact": "This is cleaner, but the generated list is still long and there is no quick way to focus. Add simple filters for All, Essentials, Nice-to-have, and Done, plus a small “next 5 things to do” summary at the top of the checklist.",
+      "response_exact": "ChatGPT updated the one-file HTML artifact with filtering and a next-five summary. The exact response and code are preserved in the source session link; the captured code for this version is saved at /private/tmp/weekend-plan-checklist-step-3.html.",
+      "response_summary": "Added All/Essentials/Nice-to-have/Done filters and a next-five summary.",
+      "code_blocks": ["/private/tmp/weekend-plan-checklist-step-3.html"],
+      "generated_files": ["/private/tmp/weekend-plan-checklist-step-3.html"],
+      "artifact_version_path": "/private/tmp/weekend-plan-checklist-step-3.html",
+      "notes": "Observation: filters and next-five worked, but the list still needed timing context."
+    },
+    {
+      "step_number": 4,
+      "prompt_exact": "The filters help, but the list still feels like one giant pile. Add a time grouping so items can be marked as Before leaving, On the way, At arrival, or Sunday reset, and make the next-5 summary pull from the earliest unfinished group first.",
+      "response_exact": "ChatGPT updated the one-file HTML artifact with time grouping and earliest-group prioritization. The exact response and code are preserved in the source session link; the captured code for this version is saved at /private/tmp/weekend-plan-checklist-step-4.html.",
+      "response_summary": "Added timing groups and made next-five prioritize the earliest unfinished timing group.",
+      "code_blocks": ["/private/tmp/weekend-plan-checklist-step-4.html"],
+      "generated_files": ["/private/tmp/weekend-plan-checklist-step-4.html"],
+      "artifact_version_path": "/private/tmp/weekend-plan-checklist-step-4.html",
+      "notes": "Observation: timing worked, but row-level timing dropdowns made the checklist visually dense."
+    },
+    {
+      "step_number": 5,
+      "prompt_exact": "This is useful now, but the timing dropdown on every row makes the checklist feel dense. Make the row controls cleaner, improve the mobile layout, and make export/print include the timing groups and next-5 summary clearly.",
+      "response_exact": "ChatGPT updated the one-file HTML artifact and stated it would keep the same one-file HTML while cleaning up the interaction layer and reorganizing export/print views. The exact response and code are preserved in the source session link; the captured code for this version is saved at public/artifacts/weekend-plan-checklist-chatgpt-5prompt.html.",
+      "response_summary": "Attempted cleaner row controls, mobile layout, and print/export improvements.",
+      "code_blocks": ["public/artifacts/weekend-plan-checklist-chatgpt-5prompt.html"],
+      "generated_files": ["public/artifacts/weekend-plan-checklist-chatgpt-5prompt.html"],
+      "artifact_version_path": "public/artifacts/weekend-plan-checklist-chatgpt-5prompt.html",
+      "notes": "Verification found a real bug: Generate checklist threw ReferenceError: nextFiveItems is not defined."
+    },
+    {
+      "step_number": 6,
+      "prompt_exact": "The cleaned-up version has a bug: clicking Generate checklist throws ReferenceError: nextFiveItems is not defined, so the list stays empty. Fix that bug, keep the cleaner row controls, and return the full corrected one-file HTML.",
+      "response_exact": "ChatGPT returned a corrected full one-file HTML artifact. The exact response and code are preserved in the source session link; the captured final code is saved at public/artifacts/weekend-plan-checklist-chatgpt-6prompt-fixed.html.",
+      "response_summary": "Fixed missing nextFiveItems and kept cleaner row controls, timing groups, mobile, print, and export behavior.",
+      "code_blocks": ["public/artifacts/weekend-plan-checklist-chatgpt-6prompt-fixed.html"],
+      "generated_files": ["public/artifacts/weekend-plan-checklist-chatgpt-6prompt-fixed.html"],
+      "artifact_version_path": "public/artifacts/weekend-plan-checklist-chatgpt-6prompt-fixed.html",
+      "notes": "Verified final fixed artifact with sample generation."
+    }
+  ],
+  "agent_notes": "PathForge seed source-run intake only. Profile target: non-admin synthetic/random PathForge profile. Source session: https://chatgpt.com/c/6a208694-1e78-8327-8ec7-3b231b18169d. This began as a requested five-prompt adaptive chain; prompt 5 introduced a verified ReferenceError (`nextFiveItems is not defined`), and the user explicitly allowed a sixth prompt to fix it. Final artifact is the verified step 6 file at public/artifacts/weekend-plan-checklist-chatgpt-6prompt-fixed.html. Screenshot: screenshots/weekend-plan-checklist-chatgpt-6prompt-fixed.png. Verification: local HTTP render, sample generation produced 47 checkbox items, Next 5 summary and timing groups appeared, filters/export/print controls visible. Do not publish or create a prompt/upvote page until admin explicitly decides to build from this source-run intake.",
+  "pathforge_submission_url": "https://prompt-forge-sandy.vercel.app/admin/source-runs/f4f0e2df-58c9-4def-bb1c-7785a3989ec9",
+  "source_run_submission_id": "f4f0e2df-58c9-4def-bb1c-7785a3989ec9",
+  "submitted_by_account": "NoraBrooks",
+  "submitted_by_profile_registry_id": "pathforge-seed-006",
+  "admin_review_status": "pending source-run review"
+}

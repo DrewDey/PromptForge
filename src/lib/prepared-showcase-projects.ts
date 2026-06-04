@@ -1,5 +1,6 @@
 import {
   HP_10BII_PROJECT_ID,
+  MEETING_COST_PROJECT_ID,
   NEON_BLOCK_PATROL_PROJECT_ID,
   POMODORO_TIMER_PROJECT_ID,
   SWISH_CITY_PROJECT_ID,
@@ -410,6 +411,44 @@ export const SWISH_CITY_SHOWCASE_PROJECT: PreparedShowcaseProject = {
   ],
 }
 
+export const MEETING_COST_SHOWCASE_PROJECT: PreparedShowcaseProject = {
+  id: MEETING_COST_PROJECT_ID,
+  sourceRunId: '59d48a98-1b9e-4cc0-9522-2f9437680464',
+  href: '/meeting-cost-calculator-demo',
+  title: 'Meeting Cost Calculator',
+  description:
+    'A one-prompt ChatGPT run produced a polished browser calculator that makes the cost of meetings and wasted time visible.',
+  content:
+    'Drew submitted a ChatGPT source run that asked for a polished one-file meeting cost calculator. The result is a self-contained browser artifact with live cost math, wasted-time visuals, and a simple summary export flow.',
+  resultContent:
+    'A working meeting cost calculator embedded directly on the page. The source path preserves the exact prompt, visible ChatGPT response text, generated HTML artifact, source-run link, and verification notes.',
+  categorySlug: 'productivity',
+  mockCategoryId: 'cat-7',
+  difficulty: 'beginner',
+  modelUsed: 'ChatGPT web',
+  modelRecommendation: 'ChatGPT',
+  toolsUsed: ['ChatGPT', 'HTML', 'Browser'],
+  tags: ['meeting cost', 'calculator', 'productivity', 'html', 'one-file', 'export', 'source-run'],
+  artifactPath: '/artifacts/meeting-cost-calculator-chatgpt.html',
+  sourceUrl: 'https://chatgpt.com/c/6a207d18-6938-8327-a6b5-b101bab25857',
+  authorDisplayName: 'Drew',
+  authorUsername: 'Drew',
+  createdAt: '2026-06-03T23:17:21.000Z',
+  updatedAt: '2026-06-04T02:00:00.000Z',
+  steps: [
+    {
+      id: `${MEETING_COST_PROJECT_ID}-step-1`,
+      stepNumber: 1,
+      title: 'Generate the calculator',
+      content:
+        'Make me a polished one-file meeting cost calculator that works in the browser, makes wasted time obvious, and can export a simple summary.',
+      resultContent: '',
+      description:
+        'One ChatGPT prompt that produced the final self-contained meeting cost calculator artifact.',
+    },
+  ],
+}
+
 export const PREPARED_SHOWCASE_PROJECTS = [
   HP_10BII_SHOWCASE_PROJECT,
   TIC_TAC_TOE_SHOWCASE_PROJECT,
@@ -417,6 +456,7 @@ export const PREPARED_SHOWCASE_PROJECTS = [
   WEEKEND_CHECKLIST_SHOWCASE_PROJECT,
   NEON_BLOCK_PATROL_SHOWCASE_PROJECT,
   SWISH_CITY_SHOWCASE_PROJECT,
+  MEETING_COST_SHOWCASE_PROJECT,
 ]
 
 export function getPreparedShowcaseProjectBySourceRunId(sourceRunId: string) {

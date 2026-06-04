@@ -3,19 +3,61 @@ import path from 'node:path'
 import Link from 'next/link'
 import ProjectEngagementBar from '@/components/ProjectEngagementBar'
 import ProjectCommunityPanel from '@/components/ProjectCommunityPanel'
+import SourceRunShowcase, { type SourceRunShowcaseStep } from '@/components/SourceRunShowcase'
 import { HP_10BII_SHOWCASE_PROJECT } from '@/lib/prepared-showcase-projects'
-import Hp10BiiSourceRunExplorer from './Hp10BiiSourceRunExplorer'
+import sourceRunPackage from '../../../seed-runs/hp-10bii-financial-calculator-claude-opus-48.json'
 
 const project = HP_10BII_SHOWCASE_PROJECT
 const projectId = project.id
 const sourceRunUrl = project.sourceUrl
 const capturedAt = 'June 1, 2026'
 
+type Hp10BiiSeedStep = {
+  step_number: number
+  prompt_exact: string
+  response_exact: string
+  generated_files?: string[]
+  notes?: string
+}
+
+function getPublicArtifactPath(filePath?: string) {
+  if (!filePath?.startsWith('public/artifacts/')) return null
+  return `/${filePath.replace(/^public\//, '')}`
+}
+
 function readArtifact(fileName: string, fallback: string) {
   try {
     return fs.readFileSync(path.join(process.cwd(), 'public/artifacts', fileName), 'utf8')
   } catch {
     return fallback
+  }
+}
+
+function artifactFileForStep(step: Hp10BiiSeedStep) {
+  const generatedFiles = step.generated_files ?? []
+  return generatedFiles.find((filePath) => filePath.startsWith('public/artifacts/')) ?? null
+}
+
+function toShowcaseStep(step: Hp10BiiSeedStep): SourceRunShowcaseStep {
+  const projectStep = project.steps.find((item) => item.stepNumber === step.step_number)
+  const sourceFilePath = artifactFileForStep(step)
+  const artifactPath = getPublicArtifactPath(sourceFilePath ?? undefined)
+  const fileName = sourceFilePath ? path.basename(sourceFilePath) : null
+  const code = fileName
+    ? readArtifact(fileName, `Step ${step.step_number} HP 10Bii+ artifact capture is unavailable.`)
+    : null
+
+  return {
+    id: `${projectId}-step-${step.step_number}`,
+    stepNumber: step.step_number,
+    title: projectStep?.title ?? `Prompt ${step.step_number}`,
+    prompt: step.prompt_exact,
+    response: step.response_exact,
+    notes: step.notes,
+    artifactPath,
+    artifactTitle: step.step_number === 2 ? 'Final black/silver HP 10Bii+' : 'Initial HP 10Bii+ calculator',
+    sourceFilePath,
+    code,
   }
 }
 
@@ -45,10 +87,8 @@ function RunSummary() {
 }
 
 export default function Hp10BiiCalculatorDemoPage() {
-  const stepCodes = [
-    readArtifact('hp-10bii-step-1.html', 'Step 1 HP 10Bii+ artifact capture is unavailable.'),
-    readArtifact('hp-10bii-step-2.html', 'Step 2 HP 10Bii+ artifact capture is unavailable.'),
-  ]
+  const sourceRun = sourceRunPackage as { steps: Hp10BiiSeedStep[]; pathforge_submission_url?: string; pathforge_pending_id?: string }
+  const steps = sourceRun.steps.map(toShowcaseStep)
 
   return (
     <main className="min-h-screen bg-surface-50 text-surface-900">
@@ -80,10 +120,13 @@ export default function Hp10BiiCalculatorDemoPage() {
         </div>
       </section>
 
-      <Hp10BiiSourceRunExplorer
+      <SourceRunShowcase
         sourceRunUrl={sourceRunUrl}
-        steps={project.steps}
-        stepCodes={stepCodes}
+        pathforgeSourceRunUrl={sourceRun.pathforge_submission_url}
+        sourceRunId={sourceRun.pathforge_pending_id}
+        providerName="Claude"
+        steps={steps}
+        defaultStepNumber={2}
       />
 
       <ProjectCommunityPanel projectId={projectId} />

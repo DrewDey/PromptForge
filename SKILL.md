@@ -121,7 +121,7 @@ Treat screenshot/file hygiene as lower priority than broken product behavior unl
 - Main browse/search surface: `/paths` implemented mostly in `src/app/browse/page.tsx` and `src/app/browse.css`.
 - New project/build intake: `src/app/prompt/new/page.tsx`.
 - Project detail route: `src/app/prompt/[id]/page.tsx`.
-- Special mounted artifacts include `/snake-demo`, `/decision-matrix-demo`, and `/hp-10bii-calculator-demo`.
+- Special mounted artifacts include `/snake-demo`, `/decision-matrix-demo`, `/hp-10bii-calculator-demo`, `/weekend-plan-checklist-demo`, `/neon-block-patrol-demo`, `/swish-city-timing-hoops-demo`, and `/meeting-cost-calculator-demo`.
 - Shared engagement UI lives in `src/components/VoteBookmarkButtons.tsx` and special project engagement in `src/components/ProjectEngagementBar.tsx`.
 - Data access and Supabase fallbacks live in `src/lib/data.ts`; server actions live in `src/lib/actions.ts`.
 - Supabase schema or policy updates belong in `supabase/*.sql` and stay local until the user approves running them.

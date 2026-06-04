@@ -1,0 +1,557 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Meeting Cost Calculator</title>
+  <style>
+    :root {
+      --bg: #0c111d;
+      --panel: rgba(255, 255, 255, 0.075);
+      --panel-strong: rgba(255, 255, 255, 0.115);
+      --border: rgba(255, 255, 255, 0.14);
+      --text: #f4f7fb;
+      --muted: #9da8ba;
+      --soft: #c9d3e2;
+      --danger: #ff5c7a;
+      --warning: #ffd166;
+      --good: #4ee6a5;
+      --blue: #6ea8fe;
+      --shadow: 0 24px 80px rgba(0, 0, 0, 0.35);
+      --radius: 24px;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(circle at top left, rgba(110, 168, 254, 0.24), transparent 34rem),
+        radial-gradient(circle at top right, rgba(255, 92, 122, 0.18), transparent 32rem),
+        linear-gradient(145deg, #08101d, #111827 58%, #090d16);
+      padding: 28px;
+    }
+
+    .app {
+      width: min(1180px, 100%);
+      margin: 0 auto;
+    }
+
+    header {
+      display: flex;
+      justify-content: space-between;
+      gap: 18px;
+      align-items: flex-end;
+      margin-bottom: 22px;
+    }
+
+    h1 {
+      margin: 0 0 8px;
+      font-size: clamp(2rem, 5vw, 4.4rem);
+      letter-spacing: -0.07em;
+      line-height: 0.92;
+    }
+
+    .subtitle {
+      margin: 0;
+      max-width: 650px;
+      color: var(--muted);
+      font-size: 1rem;
+      line-height: 1.5;
+    }
+
+    .badge {
+      white-space: nowrap;
+      border: 1px solid var(--border);
+      background: rgba(255,255,255,0.06);
+      color: var(--soft);
+      border-radius: 999px;
+      padding: 10px 14px;
+      font-weight: 700;
+      font-size: 0.86rem;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: 0.92fr 1.08fr;
+      gap: 20px;
+      align-items: start;
+    }
+
+    .card {
+      border: 1px solid var(--border);
+      background: linear-gradient(180deg, var(--panel), rgba(255,255,255,0.045));
+      backdrop-filter: blur(18px);
+      box-shadow: var(--shadow);
+      border-radius: var(--radius);
+      padding: 22px;
+    }
+
+    .card h2 {
+      margin: 0 0 16px;
+      font-size: 1.06rem;
+      letter-spacing: -0.02em;
+    }
+
+    label {
+      display: block;
+      color: var(--soft);
+      font-weight: 700;
+      font-size: 0.86rem;
+      margin-bottom: 8px;
+    }
+
+    input, select, textarea {
+      width: 100%;
+      border: 1px solid rgba(255,255,255,0.13);
+      background: rgba(7, 12, 22, 0.74);
+      color: var(--text);
+      border-radius: 14px;
+      padding: 13px 14px;
+      font: inherit;
+      outline: none;
+      transition: border 0.18s ease, box-shadow 0.18s ease, background 0.18s ease;
+    }
+
+    input:focus, select:focus, textarea:focus {
+      border-color: rgba(110,168,254,0.85);
+      box-shadow: 0 0 0 4px rgba(110,168,254,0.13);
+      background: rgba(8, 14, 26, 0.95);
+    }
+
+    textarea {
+      min-height: 92px;
+      resize: vertical;
+    }
+
+    .form-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+      margin-bottom: 14px;
+    }
+
+    .field { margin-bottom: 14px; }
+
+    .attendees-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin: 6px 0 12px;
+    }
+
+    .attendees {
+      display: grid;
+      gap: 10px;
+    }
+
+    .attendee {
+      display: grid;
+      grid-template-columns: 1.35fr 0.75fr 44px;
+      gap: 9px;
+      align-items: center;
+    }
+
+    button {
+      border: 0;
+      cursor: pointer;
+      border-radius: 14px;
+      padding: 12px 15px;
+      color: var(--text);
+      font-weight: 800;
+      background: rgba(255,255,255,0.11);
+      transition: transform 0.16s ease, background 0.16s ease, box-shadow 0.16s ease;
+    }
+
+    button:hover { transform: translateY(-1px); background: rgba(255,255,255,0.16); }
+    button:active { transform: translateY(0); }
+
+    .primary {
+      background: linear-gradient(135deg, #6ea8fe, #8b5cf6);
+      box-shadow: 0 16px 36px rgba(110, 168, 254, 0.2);
+    }
+
+    .danger-btn { color: #ffdce3; }
+
+    .actions {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-top: 14px;
+    }
+
+    .hero-number {
+      border-radius: 28px;
+      padding: 24px;
+      background:
+        linear-gradient(135deg, rgba(255, 92, 122, 0.22), rgba(255, 209, 102, 0.12)),
+        rgba(255,255,255,0.07);
+      border: 1px solid rgba(255,255,255,0.15);
+      margin-bottom: 16px;
+    }
+
+    .hero-label {
+      color: var(--soft);
+      font-size: 0.9rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+
+    .hero-value {
+      font-size: clamp(3rem, 8vw, 6.3rem);
+      font-weight: 950;
+      letter-spacing: -0.08em;
+      line-height: 0.98;
+      margin: 8px 0;
+    }
+
+    .hero-sub {
+      color: var(--muted);
+      line-height: 1.45;
+    }
+
+    .meter-wrap {
+      margin: 18px 0 8px;
+    }
+
+    .meter-top {
+      display: flex;
+      justify-content: space-between;
+      color: var(--soft);
+      font-size: 0.84rem;
+      font-weight: 800;
+      margin-bottom: 8px;
+    }
+
+    .meter {
+      height: 15px;
+      background: rgba(255,255,255,0.1);
+      border-radius: 999px;
+      overflow: hidden;
+      border: 1px solid rgba(255,255,255,0.1);
+    }
+
+    .meter-fill {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, var(--good), var(--warning), var(--danger));
+      border-radius: 999px;
+      transition: width 0.25s ease;
+    }
+
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      margin: 16px 0;
+    }
+
+    .stat {
+      padding: 16px;
+      border-radius: 20px;
+      background: rgba(255,255,255,0.065);
+      border: 1px solid rgba(255,255,255,0.1);
+    }
+
+    .stat span {
+      display: block;
+      color: var(--muted);
+      font-size: 0.78rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      margin-bottom: 8px;
+    }
+
+    .stat strong {
+      font-size: 1.5rem;
+      letter-spacing: -0.04em;
+    }
+
+    .callout {
+      border-radius: 22px;
+      padding: 18px;
+      background: rgba(255,255,255,0.065);
+      border: 1px solid rgba(255,255,255,0.11);
+      color: var(--soft);
+      line-height: 1.5;
+      margin-top: 14px;
+    }
+
+    .callout strong { color: var(--text); }
+
+    .summary-box {
+      margin-top: 16px;
+      border-radius: 20px;
+      padding: 16px;
+      background: rgba(5, 9, 17, 0.58);
+      border: 1px solid rgba(255,255,255,0.1);
+      color: var(--soft);
+      white-space: pre-wrap;
+      line-height: 1.45;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      font-size: 0.9rem;
+    }
+
+    .tiny {
+      color: var(--muted);
+      font-size: 0.78rem;
+      line-height: 1.4;
+      margin-top: 8px;
+    }
+
+    @media (max-width: 880px) {
+      body { padding: 18px; }
+      header { display: block; }
+      .badge { display: inline-flex; margin-top: 16px; }
+      .grid { grid-template-columns: 1fr; }
+      .stats { grid-template-columns: 1fr; }
+    }
+
+    @media (max-width: 560px) {
+      .form-row, .actions { grid-template-columns: 1fr; }
+      .attendee { grid-template-columns: 1fr 0.8fr 42px; }
+      .card { padding: 17px; border-radius: 20px; }
+      .hero-number { padding: 19px; }
+    }
+  </style>
+</head>
+<body>
+  <main class="app">
+    <header>
+      <div>
+        <h1>Meeting Cost Calculator</h1>
+        <p class="subtitle">Price the meeting in real time, expose the burn rate, and export a plain summary you can paste into Slack, email, or meeting notes.</p>
+      </div>
+      <div class="badge" id="burnBadge">$0 / minute burn</div>
+    </header>
+
+    <section class="grid">
+      <div class="card">
+        <h2>Meeting details</h2>
+
+        <div class="field">
+          <label for="meetingName">Meeting name</label>
+          <input id="meetingName" value="Weekly Status Meeting" />
+        </div>
+
+        <div class="form-row">
+          <div>
+            <label for="duration">Duration, minutes</label>
+            <input id="duration" type="number" min="1" step="1" value="60" />
+          </div>
+          <div>
+            <label for="wastePercent">Time likely wasted</label>
+            <select id="wastePercent">
+              <option value="0">0%</option>
+              <option value="10">10%</option>
+              <option value="25" selected>25%</option>
+              <option value="50">50%</option>
+              <option value="75">75%</option>
+              <option value="100">100%</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div>
+            <label for="currency">Currency</label>
+            <select id="currency">
+              <option value="USD" selected>USD</option>
+              <option value="EUR">EUR</option>
+              <option value="GBP">GBP</option>
+              <option value="CAD">CAD</option>
+              <option value="AUD">AUD</option>
+            </select>
+          </div>
+          <div>
+            <label for="overhead">Benefits / overhead add-on</label>
+            <select id="overhead">
+              <option value="0">0%</option>
+              <option value="15">15%</option>
+              <option value="25" selected>25%</option>
+              <option value="35">35%</option>
+              <option value="50">50%</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="attendees-head">
+          <h2 style="margin:0">Attendees</h2>
+          <button id="addAttendee" class="primary" type="button">Add person</button>
+        </div>
+
+        <div id="attendees" class="attendees"></div>
+        <p class="tiny">Use hourly fully loaded cost when you know it. Otherwise salary converted to hourly is fine for a directional estimate.</p>
+
+        <div class="field" style="margin-top:16px">
+          <label for="notes">Purpose / decision expected</label>
+          <textarea id="notes" placeholder="Example: Decide owner, deadline, and next action for the client onboarding workflow."></textarea>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>Live cost</h2>
+
+        <div class="hero-number">
+          <div class="hero-label">Estimated meeting cost</div>
+          <div class="hero-value" id="totalCost">$0</div>
+          <div class="hero-sub" id="heroSub">Add attendees to calculate the real cost.</div>
+          <div class="meter-wrap">
+            <div class="meter-top"><span>Wasted cost visibility</span><span id="wasteLabel">25%</span></div>
+            <div class="meter"><div class="meter-fill" id="meterFill"></div></div>
+          </div>
+        </div>
+
+        <div class="stats">
+          <div class="stat"><span>Burn rate</span><strong id="burnRate">$0/min</strong></div>
+          <div class="stat"><span>Wasted cost</span><strong id="wastedCost">$0</strong></div>
+          <div class="stat"><span>People hours</span><strong id="peopleHours">0.0</strong></div>
+        </div>
+
+        <div class="callout" id="callout">The math will show whether this meeting is cheap coordination or expensive theater.</div>
+
+        <div class="actions">
+          <button id="copySummary" type="button">Copy summary</button>
+          <button id="downloadSummary" type="button">Download summary</button>
+        </div>
+
+        <div class="summary-box" id="summaryBox"></div>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const attendeesEl = document.getElementById('attendees');
+    const fields = ['meetingName', 'duration', 'wastePercent', 'currency', 'overhead', 'notes'];
+
+    const defaultAttendees = [
+      { name: 'Manager', rate: 95 },
+      { name: 'Team member', rate: 60 },
+      { name: 'Team member', rate: 60 },
+      { name: 'Specialist', rate: 80 }
+    ];
+
+    const currencySymbols = { USD: '$', EUR: '€', GBP: '£', CAD: 'C$', AUD: 'A$' };
+
+    function money(value) {
+      const currency = document.getElementById('currency').value;
+      const symbol = currencySymbols[currency] || '$';
+      return symbol + Math.round(value).toLocaleString();
+    }
+
+    function addAttendee(name = '', rate = '') {
+      const row = document.createElement('div');
+      row.className = 'attendee';
+      row.innerHTML = `
+        <input class="person-name" placeholder="Name / role" value="${escapeHtml(name)}" />
+        <input class="person-rate" type="number" min="0" step="1" placeholder="$/hr" value="${rate}" />
+        <button class="danger-btn" type="button" aria-label="Remove attendee">×</button>
+      `;
+      row.querySelectorAll('input').forEach(input => input.addEventListener('input', calculate));
+      row.querySelector('button').addEventListener('click', () => { row.remove(); calculate(); });
+      attendeesEl.appendChild(row);
+      calculate();
+    }
+
+    function escapeHtml(str) {
+      return String(str).replace(/[&<>'"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));
+    }
+
+    function getAttendees() {
+      return [...document.querySelectorAll('.attendee')].map(row => ({
+        name: row.querySelector('.person-name').value.trim() || 'Unnamed attendee',
+        rate: Number(row.querySelector('.person-rate').value) || 0
+      }));
+    }
+
+    function calculate() {
+      const duration = Math.max(Number(document.getElementById('duration').value) || 0, 0);
+      const wastePercent = Math.max(Number(document.getElementById('wastePercent').value) || 0, 0);
+      const overhead = Math.max(Number(document.getElementById('overhead').value) || 0, 0) / 100;
+      const attendees = getAttendees();
+      const loadedHourly = attendees.reduce((sum, person) => sum + person.rate, 0) * (1 + overhead);
+      const burnPerMinute = loadedHourly / 60;
+      const total = burnPerMinute * duration;
+      const wasted = total * (wastePercent / 100);
+      const peopleHours = attendees.length * duration / 60;
+      const wastedMinutes = duration * (wastePercent / 100);
+
+      document.getElementById('totalCost').textContent = money(total);
+      document.getElementById('burnRate').textContent = `${money(burnPerMinute)}/min`;
+      document.getElementById('burnBadge').textContent = `${money(burnPerMinute)} / minute burn`;
+      document.getElementById('wastedCost').textContent = money(wasted);
+      document.getElementById('peopleHours').textContent = peopleHours.toFixed(1);
+      document.getElementById('wasteLabel').textContent = wastePercent + '%';
+      document.getElementById('meterFill').style.width = Math.min(wastePercent, 100) + '%';
+      document.getElementById('heroSub').textContent = `${attendees.length} people × ${duration} minutes = ${peopleHours.toFixed(1)} people-hours.`;
+
+      let tone = 'This looks like normal coordination cost. Still needs a decision or clear output.';
+      if (wasted >= 500 || wastePercent >= 50) tone = 'This meeting is leaking real money. Cut the audience, shorten the slot, or replace it with an async update.';
+      else if (wasted >= 150 || wastePercent >= 25) tone = 'The waste is visible now. A tighter agenda or fewer attendees would matter.';
+      if (total === 0) tone = 'Add attendees and hourly rates to make the cost obvious.';
+      document.getElementById('callout').innerHTML = `<strong>${money(wasted)}</strong> of this meeting is likely wasted. ${tone}`;
+
+      document.getElementById('summaryBox').textContent = buildSummary({ attendees, duration, wastePercent, overhead, burnPerMinute, total, wasted, peopleHours, wastedMinutes });
+    }
+
+    function buildSummary(data) {
+      const name = document.getElementById('meetingName').value.trim() || 'Untitled meeting';
+      const notes = document.getElementById('notes').value.trim() || 'Not specified';
+      const attendeeLines = data.attendees.map(p => `- ${p.name}: ${money(p.rate)}/hr`).join('\n');
+      return `${name}\n\nDuration: ${data.duration} minutes\nAttendees: ${data.attendees.length}\nPeople-hours: ${data.peopleHours.toFixed(1)}\nBenefits / overhead add-on: ${Math.round(data.overhead * 100)}%\nBurn rate: ${money(data.burnPerMinute)} per minute\nTotal estimated cost: ${money(data.total)}\nLikely wasted time: ${data.wastePercent}% (${data.wastedMinutes.toFixed(0)} minutes)\nLikely wasted cost: ${money(data.wasted)}\n\nPurpose / decision expected:\n${notes}\n\nAttendees and hourly rates:\n${attendeeLines || '- None entered'}`;
+    }
+
+    async function copySummary() {
+      const text = document.getElementById('summaryBox').textContent;
+      try {
+        await navigator.clipboard.writeText(text);
+        flashButton('copySummary', 'Copied');
+      } catch (e) {
+        const box = document.getElementById('summaryBox');
+        const range = document.createRange();
+        range.selectNodeContents(box);
+        const selection = window.getSelection();
+        selection.removeAllRanges();
+        selection.addRange(range);
+        flashButton('copySummary', 'Selected');
+      }
+    }
+
+    function downloadSummary() {
+      const text = document.getElementById('summaryBox').textContent;
+      const blob = new Blob([text], { type: 'text/plain' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      const safeName = (document.getElementById('meetingName').value.trim() || 'meeting-cost-summary').replace(/[^a-z0-9]+/gi, '-').replace(/^-|-$/g, '').toLowerCase();
+      a.href = url;
+      a.download = `${safeName || 'meeting-cost-summary'}.txt`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+      flashButton('downloadSummary', 'Downloaded');
+    }
+
+    function flashButton(id, text) {
+      const btn = document.getElementById(id);
+      const old = btn.textContent;
+      btn.textContent = text;
+      setTimeout(() => btn.textContent = old, 1100);
+    }
+
+    document.getElementById('addAttendee').addEventListener('click', () => addAttendee());
+    document.getElementById('copySummary').addEventListener('click', copySummary);
+    document.getElementById('downloadSummary').addEventListener('click', downloadSummary);
+    fields.forEach(id => document.getElementById(id).addEventListener('input', calculate));
+    fields.forEach(id => document.getElementById(id).addEventListener('change', calculate));
+    defaultAttendees.forEach(p => addAttendee(p.name, p.rate));
+    calculate();
+  </script>
+</body>
+</html>

@@ -10,6 +10,7 @@ import {
 import { SNAKE_PROJECT_ID } from './featured-projects'
 import {
   HP_10BII_SHOWCASE_PROJECT,
+  MEETING_COST_SHOWCASE_PROJECT,
   NEON_BLOCK_PATROL_SHOWCASE_PROJECT,
   POMODORO_TIMER_SHOWCASE_PROJECT,
   SWISH_CITY_SHOWCASE_PROJECT,
@@ -87,6 +88,16 @@ export const mockProfiles: Profile[] = [
     role: 'user',
     created_at: '2026-06-04T01:06:00Z',
     updated_at: SWISH_CITY_SHOWCASE_PROJECT.updatedAt,
+  },
+  {
+    id: '22222222-2222-2222-2222-222222222218',
+    username: MEETING_COST_SHOWCASE_PROJECT.authorUsername,
+    display_name: MEETING_COST_SHOWCASE_PROJECT.authorDisplayName,
+    avatar_url: null,
+    bio: 'Meeting and productivity tools submitted through PathForge source runs.',
+    role: 'user',
+    created_at: '2026-06-03T23:17:21Z',
+    updated_at: MEETING_COST_SHOWCASE_PROJECT.updatedAt,
   },
 ]
 
@@ -173,6 +184,16 @@ export const mockSteps: PromptStep[] = [
     result_content: step.resultContent,
     description: step.description,
     created_at: SWISH_CITY_SHOWCASE_PROJECT.createdAt,
+  })),
+  ...MEETING_COST_SHOWCASE_PROJECT.steps.map((step) => ({
+    id: step.id,
+    prompt_id: MEETING_COST_SHOWCASE_PROJECT.id,
+    step_number: step.stepNumber,
+    title: step.title,
+    content: step.content,
+    result_content: step.resultContent,
+    description: step.description,
+    created_at: MEETING_COST_SHOWCASE_PROJECT.createdAt,
   })),
 ]
 
@@ -309,6 +330,25 @@ export const mockPrompts: Prompt[] = [
     bookmark_count: 0,
     created_at: SWISH_CITY_SHOWCASE_PROJECT.createdAt,
     updated_at: SWISH_CITY_SHOWCASE_PROJECT.updatedAt,
+  },
+  {
+    id: MEETING_COST_SHOWCASE_PROJECT.id,
+    title: MEETING_COST_SHOWCASE_PROJECT.title,
+    description: MEETING_COST_SHOWCASE_PROJECT.description,
+    content: MEETING_COST_SHOWCASE_PROJECT.content,
+    result_content: MEETING_COST_SHOWCASE_PROJECT.resultContent,
+    category_id: MEETING_COST_SHOWCASE_PROJECT.mockCategoryId,
+    difficulty: MEETING_COST_SHOWCASE_PROJECT.difficulty,
+    model_used: MEETING_COST_SHOWCASE_PROJECT.modelUsed,
+    model_recommendation: MEETING_COST_SHOWCASE_PROJECT.modelRecommendation,
+    tools_used: MEETING_COST_SHOWCASE_PROJECT.toolsUsed,
+    tags: MEETING_COST_SHOWCASE_PROJECT.tags,
+    status: 'approved',
+    author_id: '22222222-2222-2222-2222-222222222218',
+    vote_count: 0,
+    bookmark_count: 0,
+    created_at: MEETING_COST_SHOWCASE_PROJECT.createdAt,
+    updated_at: MEETING_COST_SHOWCASE_PROJECT.updatedAt,
   },
 ]
 

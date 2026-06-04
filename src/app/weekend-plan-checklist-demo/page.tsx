@@ -3,12 +3,10 @@ import path from 'node:path'
 import Link from 'next/link'
 import ProjectEngagementBar from '@/components/ProjectEngagementBar'
 import ProjectCommunityPanel from '@/components/ProjectCommunityPanel'
+import SourceRunShowcase, { type SourceRunShowcaseStep } from '@/components/SourceRunShowcase'
 import { WEEKEND_CHECKLIST_PROJECT_ID } from '@/lib/featured-projects'
 import { WEEKEND_CHECKLIST_SHOWCASE_PROJECT } from '@/lib/prepared-showcase-projects'
 import sourceRunPackage from '../../../seed-runs/weekend-plan-checklist-chatgpt-6prompt-fixed.json'
-import WeekendPlanChecklistSourceRunExplorer, {
-  type WeekendPlanChecklistStep,
-} from './WeekendPlanChecklistSourceRunExplorer'
 
 type WeekendPlanChecklistSeedStep = {
   step_number: number
@@ -58,7 +56,7 @@ function getPublicArtifactFileName(artifactPath?: string) {
   return path.basename(artifactPath)
 }
 
-function toStep(step: WeekendPlanChecklistSeedStep): WeekendPlanChecklistStep {
+function toStep(step: WeekendPlanChecklistSeedStep): SourceRunShowcaseStep {
   const artifactPath = getPublicArtifactPath(step.artifact_version_path)
   const artifactFileName = getPublicArtifactFileName(step.artifact_version_path)
   const sourceFilePath = step.artifact_version_path ?? 'No local artifact file captured'
@@ -73,12 +71,29 @@ function toStep(step: WeekendPlanChecklistSeedStep): WeekendPlanChecklistStep {
     id: `${projectId}-step-${step.step_number}`,
     stepNumber: step.step_number,
     title: `Prompt ${step.step_number}`,
-    promptExact: step.prompt_exact,
-    responseExact: step.response_exact,
+    prompt: step.prompt_exact,
+    response: step.response_exact,
     notes: step.notes ?? '',
     artifactPath,
+    artifactTitle: step.step_number === 6
+      ? 'Final fixed weekend checklist'
+      : `Weekend checklist step ${step.step_number}`,
     sourceFilePath,
     code,
+    callout: step.step_number === 5
+      ? {
+          tone: 'warning',
+          title: 'Verified broken intermediate artifact',
+          body:
+            'This version is preserved because ChatGPT produced it, but verification found ReferenceError: nextFiveItems is not defined. Prompt 6 fixed that bug.',
+        }
+      : step.step_number === 6
+        ? {
+            tone: 'success',
+            title: 'Default approved artifact',
+            body: 'This is the fixed version that loads first on the public page.',
+          }
+        : undefined,
   }
 }
 
@@ -151,11 +166,14 @@ export default function WeekendPlanChecklistDemoPage() {
         </div>
       </section>
 
-      <WeekendPlanChecklistSourceRunExplorer
+      <SourceRunShowcase
         sourceRunUrl={sourceRunUrl}
         pathforgeSourceRunUrl={sourceRun.pathforge_submission_url}
+        sourceRunId={sourceRun.source_run_submission_id}
+        providerName="ChatGPT"
         verificationNotes={sourceRun.verification_notes}
         steps={steps}
+        defaultStepNumber={6}
       />
 
       <ProjectCommunityPanel projectId={projectId} />

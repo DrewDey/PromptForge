@@ -3,10 +3,10 @@ import path from 'node:path'
 import Link from 'next/link'
 import ProjectEngagementBar from '@/components/ProjectEngagementBar'
 import ProjectCommunityPanel from '@/components/ProjectCommunityPanel'
+import SourceRunShowcase from '@/components/SourceRunShowcase'
 import { NEON_BLOCK_PATROL_PROJECT_ID } from '@/lib/featured-projects'
 import { NEON_BLOCK_PATROL_SHOWCASE_PROJECT } from '@/lib/prepared-showcase-projects'
 import sourceRunPackage from '../../../seed-runs/gta-style-fps-chatgpt-gpt55-heavy-five-prompt.json'
-import NeonBlockPatrolSourceRunExplorer from './NeonBlockPatrolSourceRunExplorer'
 
 type RawSourceRunStep = {
   step_number: number
@@ -47,7 +47,16 @@ function readArtifact(artifactVersionPath?: string | null) {
 
 function sourceFileName(artifactVersionPath?: string | null) {
   if (!artifactVersionPath) return null
-  return path.basename(artifactVersionPath)
+  return artifactVersionPath
+}
+
+function visibleResponseText(step: RawSourceRunStep) {
+  if (!step.artifact_version_path) return step.response_exact
+
+  const htmlStart = step.response_exact.indexOf('<!DOCTYPE html>')
+  if (htmlStart === -1) return step.response_exact
+
+  return step.response_exact.slice(0, htmlStart).trimEnd()
 }
 
 function RunSummary() {
@@ -80,13 +89,30 @@ export default function NeonBlockPatrolDemoPage() {
     id: `${projectId}-step-${step.step_number}`,
     stepNumber: step.step_number,
     title: stepTitles[step.step_number] ?? `Step ${step.step_number}`,
-    content: step.prompt_exact,
-    responseExact: step.response_exact,
-    responseSummary: step.response_summary ?? '',
+    prompt: step.prompt_exact,
+    response: visibleResponseText(step),
+    responseCopyText: step.response_exact,
     notes: step.notes ?? '',
     artifactPath: toPublicArtifactPath(step.artifact_version_path),
+    artifactTitle: step.step_number === 5
+      ? 'Neon Block Patrol v3 final'
+      : `Neon Block Patrol step ${step.step_number}`,
     sourceFilePath: sourceFileName(step.artifact_version_path),
     code: readArtifact(step.artifact_version_path),
+    callout: step.step_number === 2
+      ? {
+          tone: 'neutral' as const,
+          title: 'Duplicate artifact preserved',
+          body:
+            'This downloaded file was byte-identical to step 1. The duplicate is still selectable because it is part of the real source-run history.',
+        }
+      : step.step_number === 5
+        ? {
+            tone: 'success' as const,
+            title: 'Default approved artifact',
+            body: 'This inline v3 HTML is the final artifact that loads first on the public page.',
+          }
+        : undefined,
   }))
 
   return (
@@ -120,11 +146,14 @@ export default function NeonBlockPatrolDemoPage() {
         </div>
       </section>
 
-      <NeonBlockPatrolSourceRunExplorer
+      <SourceRunShowcase
         sourceRunUrl={sourceRunUrl}
         pathforgeSourceRunUrl={sourceRunPackage.pathforge_submission_url}
         sourceRunId={sourceRunPackage.source_run_submission_id}
+        providerName="ChatGPT"
         steps={steps}
+        defaultStepNumber={5}
+        verificationNotes={sourceRunPackage.verification_notes}
       />
 
       <ProjectCommunityPanel projectId={projectId} />

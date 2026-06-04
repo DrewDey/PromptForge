@@ -67,6 +67,8 @@ For every source-run promotion, verify the whole chain in this order:
 - The whole response package should also be collapsible.
 - Files, screenshots, and generated artifacts should be tied to the response that produced them.
 - Summaries and verification notes can exist, but they must not replace exact source text.
+- Multi-prompt source-run pages must use `SourceRunShowcase`. Do not reintroduce one-off source-run explorer components for HP, Weekend, Neon, Swish, Meeting Cost, or future pages with the same shape.
+- Run `npm run check:source-run-showcases` after adding or repairing a source-run public page. The guard exists to catch the recurring misses: summary text in `response_exact`, missing selectable artifact versions, missing route overrides, missing public fallback wiring, and local-only artifact paths.
 - Forks should visually branch from the main chain.
 - Each response should be forkable into a new branch where the source chain compacts left and the fork prompt/response chain grows to the right.
 - Every public project page should expose an obvious fork action that opens the build flow with the source project identified. A passive fork count by itself is not enough.

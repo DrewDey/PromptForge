@@ -2,6 +2,7 @@ import type { Prompt, PromptWithRelations } from './types'
 import {
   DECISION_MATRIX_PROJECT_ID,
   HP_10BII_PROJECT_ID,
+  MEETING_COST_PROJECT_ID,
   NEON_BLOCK_PATROL_PROJECT_ID,
   POMODORO_TIMER_PROJECT_ID,
   SNAKE_PROJECT_ID,
@@ -21,6 +22,7 @@ const PROJECT_ROUTE_OVERRIDES: Record<string, string> = {
   [WEEKEND_CHECKLIST_PROJECT_ID]: '/weekend-plan-checklist-demo',
   [NEON_BLOCK_PATROL_PROJECT_ID]: '/neon-block-patrol-demo',
   [SWISH_CITY_PROJECT_ID]: '/swish-city-timing-hoops-demo',
+  [MEETING_COST_PROJECT_ID]: '/meeting-cost-calculator-demo',
 }
 
 export function getProjectRouteOverride(projectId: string) {

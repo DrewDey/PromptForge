@@ -52,7 +52,7 @@
     {
       "step_number": 1,
       "prompt_exact": "Make me a polished one-file browser tool that turns a messy weekend plan into a clean packing and errand checklist.",
-      "response_exact": "ChatGPT created a one-file HTML artifact named weekend_plan_checklist.html. The exact response and code are preserved in the source session link; the captured code for this version is saved at public/artifacts/weekend-plan-checklist-chatgpt-step-1.html.",
+      "response_exact": "I’ll build it as a single self-contained HTML file with the planner, checklist generator, editable checklist items, and export/print options baked in.\n\nDone.\nDownload the one-file weekend checklist tool\n\nweekend_plan_checklist.html",
       "response_summary": "Initial polished weekend checklist generator with local storage, export, print, trip type/weather/travel selectors, chips, and editable generated checklist.",
       "code_blocks": ["public/artifacts/weekend-plan-checklist-chatgpt-step-1.html"],
       "generated_files": ["public/artifacts/weekend-plan-checklist-chatgpt-step-1.html"],
@@ -62,7 +62,7 @@
     {
       "step_number": 2,
       "prompt_exact": "The generated checklist works, but it repeats things like gift/card and formal outfit and can balloon into 50+ items. Add smarter deduping and split the output into Essentials first and Nice-to-have, while keeping it one self-contained HTML file.",
-      "response_exact": "ChatGPT updated the one-file HTML artifact and stated it would tighten item matching, collapse overlapping triggers, and add Essentials/Nice-to-have sections. The exact response and code are preserved in the source session link; the captured code for this version is saved at public/artifacts/weekend-plan-checklist-chatgpt-step-2.html.",
+      "response_exact": "I’ll update the existing HTML directly, tighten the item matching so overlapping triggers collapse into one item, and add two clear sections for must-pack versus optional extras.\n\nUpdated.\nDownload the improved one-file checklist tool\n\nweekend_plan_checklist.html",
       "response_summary": "Added deduping and split generated items into Essentials and Nice-to-have.",
       "code_blocks": ["public/artifacts/weekend-plan-checklist-chatgpt-step-2.html"],
       "generated_files": ["public/artifacts/weekend-plan-checklist-chatgpt-step-2.html"],
@@ -72,7 +72,7 @@
     {
       "step_number": 3,
       "prompt_exact": "This is cleaner, but the generated list is still long and there is no quick way to focus. Add simple filters for All, Essentials, Nice-to-have, and Done, plus a small “next 5 things to do” summary at the top of the checklist.",
-      "response_exact": "ChatGPT updated the one-file HTML artifact with filtering and a next-five summary. The exact response and code are preserved in the source session link; the captured code for this version is saved at public/artifacts/weekend-plan-checklist-chatgpt-step-3.html.",
+      "response_exact": "I’ll keep the same file and add lightweight checklist controls without changing the single-file setup. The summary will pull the first five unchecked items from the visible priority flow.\n\nUpdated.\nDownload the filtered checklist tool\n\nweekend_plan_checklist.html",
       "response_summary": "Added All/Essentials/Nice-to-have/Done filters and a next-five summary.",
       "code_blocks": ["public/artifacts/weekend-plan-checklist-chatgpt-step-3.html"],
       "generated_files": ["public/artifacts/weekend-plan-checklist-chatgpt-step-3.html"],
@@ -82,7 +82,7 @@
     {
       "step_number": 4,
       "prompt_exact": "The filters help, but the list still feels like one giant pile. Add a time grouping so items can be marked as Before leaving, On the way, At arrival, or Sunday reset, and make the next-5 summary pull from the earliest unfinished group first.",
-      "response_exact": "ChatGPT updated the one-file HTML artifact with time grouping and earliest-group prioritization. The exact response and code are preserved in the source session link; the captured code for this version is saved at public/artifacts/weekend-plan-checklist-chatgpt-step-4.html.",
+      "response_exact": "I’ll update the current file so every generated item gets a time bucket, add bucket controls on each item, and make the next-five logic respect that timeline order.\n\nUpdated.\nDownload the time-grouped checklist tool\n\nweekend_plan_checklist.html",
       "response_summary": "Added timing groups and made next-five prioritize the earliest unfinished timing group.",
       "code_blocks": ["public/artifacts/weekend-plan-checklist-chatgpt-step-4.html"],
       "generated_files": ["public/artifacts/weekend-plan-checklist-chatgpt-step-4.html"],
@@ -92,7 +92,7 @@
     {
       "step_number": 5,
       "prompt_exact": "This is useful now, but the timing dropdown on every row makes the checklist feel dense. Make the row controls cleaner, improve the mobile layout, and make export/print include the timing groups and next-5 summary clearly.",
-      "response_exact": "ChatGPT updated the one-file HTML artifact and stated it would keep the same one-file HTML while cleaning up the interaction layer and reorganizing export/print views. The exact response and code are preserved in the source session link; the captured code for this version is saved at public/artifacts/weekend-plan-checklist-chatgpt-5prompt.html.",
+      "response_exact": "I’ll keep the same one-file HTML and clean up the interaction layer rather than adding more controls. The export and print views will be reorganized so the timeline groups and next actions are readable outside the app too.\n\nUpdated.\nDownload the cleaned-up checklist tool\n\nweekend_plan_checklist.html",
       "response_summary": "Attempted cleaner row controls, mobile layout, and print/export improvements.",
       "code_blocks": ["public/artifacts/weekend-plan-checklist-chatgpt-5prompt.html"],
       "generated_files": ["public/artifacts/weekend-plan-checklist-chatgpt-5prompt.html"],
@@ -102,7 +102,7 @@
     {
       "step_number": 6,
       "prompt_exact": "The cleaned-up version has a bug: clicking Generate checklist throws ReferenceError: nextFiveItems is not defined, so the list stays empty. Fix that bug, keep the cleaner row controls, and return the full corrected one-file HTML.",
-      "response_exact": "ChatGPT returned a corrected full one-file HTML artifact. The exact response and code are preserved in the source session link; the captured final code is saved at public/artifacts/weekend-plan-checklist-chatgpt-6prompt-fixed.html.",
+      "response_exact": "I’ll fix the missing nextFiveItems reference and regenerate the full single HTML file, keeping the cleaner row controls and export/print structure intact.\n\nFixed.\nDownload the corrected one-file HTML\n\nweekend_plan_checklist.html",
       "response_summary": "Fixed missing nextFiveItems and kept cleaner row controls, timing groups, mobile, print, and export behavior.",
       "code_blocks": ["public/artifacts/weekend-plan-checklist-chatgpt-6prompt-fixed.html"],
       "generated_files": ["public/artifacts/weekend-plan-checklist-chatgpt-6prompt-fixed.html"],

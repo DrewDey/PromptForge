@@ -1,0 +1,49 @@
+{
+  "title": "Meeting Cost Calculator from ChatGPT",
+  "slug": "meeting-cost-calculator-chatgpt",
+  "description": "A one-prompt ChatGPT source run produced a polished browser meeting cost calculator that makes wasted meeting time visible and exports a simple summary.",
+  "provider": "ChatGPT",
+  "model": "ChatGPT web",
+  "model_settings": "ChatGPT UI",
+  "source_url": "https://chatgpt.com/c/6a207d18-6938-8327-a6b5-b101bab25857",
+  "run_started_at": "2026-06-03T23:17:00.000Z",
+  "run_finished_at": "2026-06-03T23:18:00.000Z",
+  "chain_type": "one-shot artifact",
+  "category": "productivity",
+  "difficulty": "beginner",
+  "tags": ["meeting cost", "calculator", "productivity", "html", "one-file", "export"],
+  "tools_used": ["ChatGPT", "HTML", "Browser"],
+  "status": "artifact captured",
+  "final_artifact_path": "public/artifacts/meeting-cost-calculator-chatgpt.html",
+  "artifact_type": "single-file HTML",
+  "artifact_versions": [
+    {
+      "step": 1,
+      "path": "public/artifacts/meeting-cost-calculator-chatgpt.html",
+      "notes": "Final one-shot artifact extracted from the ChatGPT source session."
+    }
+  ],
+  "verification_notes": "Static artifact verification passed: extracted JavaScript compiled with vm.Script, HTML title is Meeting Cost Calculator, and the file contains embedded CSS and JavaScript for the calculator UI.",
+  "result_content": "A self-contained meeting cost calculator embedded directly on the page. It calculates meeting cost as time and attendance change, visualizes wasted time, and includes a simple exported summary flow.",
+  "agent_notes": "Source-run intake was submitted on PathForge as Meeting Cost Calculator from ChatGPT. Admin source-run id 59d48a98-1b9e-4cc0-9522-2f9437680464 had no prepared page wired before this repair.",
+  "steps": [
+    {
+      "step_number": 1,
+      "prompt_exact": "Make me a polished one-file meeting cost calculator that works in the browser, makes wasted time obvious, and can export a simple summary.",
+      "response_exact": "I\u2019ll build this as a single standalone HTML file with embedded CSS/JS, including live cost math, \u201cwaste\u201d visuals, and export options for a simple meeting summary.\n\nThought for 51s\n\nDone: meeting-cost-calculator.html",
+      "response_summary": "ChatGPT produced a single-file meeting cost calculator artifact.",
+      "code_blocks": ["public/artifacts/meeting-cost-calculator-chatgpt.html"],
+      "generated_files": ["public/artifacts/meeting-cost-calculator-chatgpt.html"],
+      "artifact_version_path": "public/artifacts/meeting-cost-calculator-chatgpt.html",
+      "notes": "One-prompt ChatGPT artifact capture."
+    }
+  ],
+  "pathforge_submission_url": "https://prompt-forge-sandy.vercel.app/admin/source-runs/59d48a98-1b9e-4cc0-9522-2f9437680464",
+  "source_run_submission_id": "59d48a98-1b9e-4cc0-9522-2f9437680464",
+  "submitted_by_account": "Drew",
+  "submitted_by_profile_registry_id": "drew",
+  "admin_review_status": "pending source-run review",
+  "vote_count": 0,
+  "bookmark_count": 0,
+  "comments": []
+}

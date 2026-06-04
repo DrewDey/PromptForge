@@ -1,7 +1,7 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { ArrowLeft, CheckCircle, ExternalLink } from 'lucide-react'
-import { publishPreparedShowcaseSourceRun } from '@/lib/actions'
+import { dismissSourceRun, publishPreparedShowcaseSourceRun } from '@/lib/actions'
 import { getSourceRunSubmissionForAdmin } from '@/lib/data'
 import { getPreparedShowcaseProjectBySourceRunId } from '@/lib/prepared-showcase-projects'
 import { agentNotesForSourceRunReview, titleForSourceRunReview } from '@/lib/source-run-review'
@@ -55,6 +55,23 @@ export default async function AdminSourceRunDetailPage({
         </div>
 
         <div className="grid gap-5 p-6">
+          <section className="border border-blue-200 bg-blue-50 p-4">
+            <h2 className="text-sm font-bold text-blue-950">How this gets approved</h2>
+            <p className="mt-1 text-sm leading-6 text-blue-900">
+              This is the captured AI-session intake. It becomes public only after a prepared showcase page exists
+              and an admin publishes that prepared page from here. Until then it stays out of Build Paths.
+            </p>
+            {preparedProject ? (
+              <p className="mt-2 text-sm font-semibold text-blue-950">
+                Prepared route ready: {preparedProject.href}
+              </p>
+            ) : (
+              <p className="mt-2 text-sm font-semibold text-blue-950">
+                No prepared page is wired for this source run yet.
+              </p>
+            )}
+          </section>
+
           <section>
             <h2 className="mb-2 text-xs font-bold uppercase tracking-wider text-gray-500">AI session link</h2>
             {sourceRun.source_url ? (
@@ -108,7 +125,8 @@ export default async function AdminSourceRunDetailPage({
                     {sourceRun.extracted_prompt_id ? 'Prepared public page needs approval' : 'Prepared public page ready'}
                   </h2>
                   <p className="mt-1 text-sm text-green-800">
-                    The artifact has been extracted and mounted in the PathForge showcase format.
+                    The artifact has been extracted and mounted in the PathForge showcase format. Publishing here
+                    creates or updates the approved project page and removes this intake from Pending Review.
                   </p>
                 </div>
                 <form action={publishPreparedShowcaseSourceRun}>
@@ -119,12 +137,34 @@ export default async function AdminSourceRunDetailPage({
                     className="inline-flex items-center justify-center gap-2 bg-green-700 px-3 py-2 text-sm font-semibold text-white hover:bg-green-800"
                   >
                     <CheckCircle className="h-4 w-4" aria-hidden="true" />
-                    {sourceRun.extracted_prompt_id ? 'Approve prepared page' : 'Publish prepared page'}
+                    {sourceRun.extracted_prompt_id ? 'Approve prepared page' : 'Publish public page'}
                   </button>
                 </form>
               </div>
             </section>
           ) : null}
+
+          {!isPublished && (
+            <section className="border border-red-200 bg-red-50 p-4">
+              <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <h2 className="text-sm font-bold text-red-900">Decline this intake</h2>
+                  <p className="mt-1 text-sm text-red-800">
+                    Use this if the source run should not become a public PathForge page.
+                  </p>
+                </div>
+                <form action={dismissSourceRun}>
+                  <input type="hidden" name="source_run_id" value={sourceRun.id} />
+                  <button
+                    type="submit"
+                    className="inline-flex items-center justify-center border border-red-300 bg-white px-3 py-2 text-sm font-semibold text-red-900 hover:border-red-500"
+                  >
+                    Decline intake
+                  </button>
+                </form>
+              </div>
+            </section>
+          )}
         </div>
       </div>
     </div>

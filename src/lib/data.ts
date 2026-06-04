@@ -21,10 +21,13 @@ import { isPersistableProjectId } from './project-engagement'
 import {
   DECISION_MATRIX_PROJECT_ID,
   HP_10BII_PROJECT_ID,
+  NEON_BLOCK_PATROL_PROJECT_ID,
   POMODORO_TIMER_PROJECT_ID,
   SNAKE_PROJECT_ID,
   SNAKE_PROJECT_LEGACY_ID,
+  SWISH_CITY_PROJECT_ID,
   TIC_TAC_TOE_PROJECT_ID,
+  WEEKEND_CHECKLIST_PROJECT_ID,
 } from './featured-projects'
 import { getPreparedShowcaseProjectById } from './prepared-showcase-projects'
 import type { PreparedShowcaseProject, PreparedShowcaseStep } from './prepared-showcase-projects'
@@ -34,6 +37,9 @@ const APPROVED_PROJECT_IDS = new Set([
   HP_10BII_PROJECT_ID,
   TIC_TAC_TOE_PROJECT_ID,
   POMODORO_TIMER_PROJECT_ID,
+  WEEKEND_CHECKLIST_PROJECT_ID,
+  NEON_BLOCK_PATROL_PROJECT_ID,
+  SWISH_CITY_PROJECT_ID,
 ])
 const PUBLIC_LIBRARY_START_AT = '2026-05-28T00:00:00.000Z'
 const publicMockPrompts = mockPrompts.filter((prompt) => APPROVED_PROJECT_IDS.has(prompt.id))

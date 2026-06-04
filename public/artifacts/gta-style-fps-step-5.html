@@ -1,0 +1,1427 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Neon Block Patrol v3</title>
+<style>
+  :root {
+    --bg: #07111f;
+    --panel: rgba(7, 15, 29, 0.78);
+    --panel2: rgba(11, 25, 45, 0.82);
+    --text: #eaf7ff;
+    --muted: #9db5c9;
+    --cyan: #33e7ff;
+    --pink: #ff4fd8;
+    --lime: #a7ff52;
+    --gold: #ffd166;
+    --red: #ff5d73;
+  }
+
+  * {
+    box-sizing: border-box;
+  }
+
+  html,
+  body {
+    margin: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    background: var(--bg);
+    color: var(--text);
+    font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  }
+
+  canvas {
+    display: block;
+    width: 100vw;
+    height: 100vh;
+    background: #07111f;
+  }
+
+  #hud {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+  }
+
+  .topbar {
+    position: absolute;
+    top: 14px;
+    left: 14px;
+    right: 14px;
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+  }
+
+  .panel {
+    background: var(--panel);
+    border: 1px solid rgba(124, 220, 255, 0.22);
+    box-shadow: 0 14px 50px rgba(0, 0, 0, 0.35);
+    backdrop-filter: blur(14px);
+    border-radius: 18px;
+  }
+
+  .mission {
+    width: min(560px, calc(100vw - 140px));
+    padding: 14px 16px;
+  }
+
+  .mission-title {
+    font-size: 13px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--cyan);
+    font-weight: 800;
+    margin-bottom: 7px;
+  }
+
+  #missionText {
+    font-size: 15px;
+    line-height: 1.35;
+    color: #f2fbff;
+  }
+
+  .stats {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+  }
+
+  .stat {
+    min-width: 74px;
+    padding: 10px 12px;
+    text-align: center;
+  }
+
+  .stat b {
+    display: block;
+    font-size: 22px;
+    line-height: 1;
+  }
+
+  .stat span {
+    display: block;
+    margin-top: 5px;
+    color: var(--muted);
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: 0.12em;
+  }
+
+  #leftValue.ready {
+    color: var(--lime);
+    text-shadow: 0 0 16px rgba(167, 255, 82, 0.55);
+  }
+
+  #crosshair {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 34px;
+    height: 34px;
+    margin-left: -17px;
+    margin-top: -17px;
+    transition: transform 90ms ease, filter 90ms ease;
+  }
+
+  #crosshair::before,
+  #crosshair::after {
+    content: "";
+    position: absolute;
+    background: rgba(238, 250, 255, 0.9);
+    box-shadow: 0 0 12px rgba(51, 231, 255, 0.7);
+    border-radius: 999px;
+  }
+
+  #crosshair::before {
+    left: 15px;
+    top: 3px;
+    width: 4px;
+    height: 28px;
+  }
+
+  #crosshair::after {
+    top: 15px;
+    left: 3px;
+    width: 28px;
+    height: 4px;
+  }
+
+  #crosshair .dot {
+    position: absolute;
+    left: 12px;
+    top: 12px;
+    width: 10px;
+    height: 10px;
+    border-radius: 999px;
+    background: var(--cyan);
+    box-shadow: 0 0 18px rgba(51, 231, 255, 0.95);
+  }
+
+  #crosshair.hit {
+    transform: scale(1.55);
+    filter: drop-shadow(0 0 18px rgba(167, 255, 82, 0.95));
+  }
+
+  #crosshair.hit::before,
+  #crosshair.hit::after,
+  #crosshair.hit .dot {
+    background: var(--lime);
+  }
+
+  #hitToast {
+    position: absolute;
+    left: 50%;
+    top: calc(50% + 46px);
+    transform: translateX(-50%) scale(0.92);
+    padding: 10px 16px;
+    border-radius: 999px;
+    background: rgba(18, 40, 20, 0.82);
+    border: 1px solid rgba(167, 255, 82, 0.75);
+    color: #eaffd2;
+    box-shadow: 0 0 28px rgba(167, 255, 82, 0.36);
+    font-weight: 900;
+    letter-spacing: 0.08em;
+    opacity: 0;
+    transition: opacity 120ms ease, transform 120ms ease;
+  }
+
+  #hitToast.show {
+    opacity: 1;
+    transform: translateX(-50%) scale(1);
+  }
+
+  #directionStrip {
+    position: absolute;
+    left: 50%;
+    top: 96px;
+    transform: translateX(-50%);
+    width: min(560px, calc(100vw - 32px));
+    height: 52px;
+    pointer-events: none;
+  }
+
+  .marker {
+    position: absolute;
+    top: 0;
+    transform: translateX(-50%);
+    padding: 7px 10px;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 950;
+    letter-spacing: 0.07em;
+    white-space: nowrap;
+    color: #06101b;
+    border: 2px solid rgba(255, 255, 255, 0.92);
+    box-shadow: 0 12px 28px rgba(0, 0, 0, 0.36), 0 0 18px currentColor;
+  }
+
+  .marker.target {
+    background: var(--lime);
+  }
+
+  .marker.checkpoint {
+    background: var(--gold);
+  }
+
+  #minimap {
+    position: absolute;
+    right: 14px;
+    bottom: 14px;
+    width: 154px;
+    height: 154px;
+    border-radius: 22px;
+    background: rgba(6, 13, 25, 0.78);
+    border: 1px solid rgba(124, 220, 255, 0.25);
+    box-shadow: 0 18px 50px rgba(0, 0, 0, 0.38);
+    overflow: hidden;
+  }
+
+  #help {
+    position: absolute;
+    left: 14px;
+    bottom: 14px;
+    max-width: min(520px, calc(100vw - 190px));
+    padding: 12px 14px;
+    color: var(--muted);
+    font-size: 12px;
+    line-height: 1.4;
+  }
+
+  #help b {
+    color: #eaf7ff;
+  }
+
+  #startOverlay {
+    position: fixed;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    background:
+      radial-gradient(circle at 30% 20%, rgba(255, 79, 216, 0.28), transparent 28%),
+      radial-gradient(circle at 70% 70%, rgba(51, 231, 255, 0.24), transparent 32%),
+      rgba(2, 6, 15, 0.76);
+    z-index: 10;
+    padding: 20px;
+  }
+
+  .start-card {
+    width: min(760px, 100%);
+    padding: 28px;
+    border-radius: 28px;
+    background: rgba(5, 14, 27, 0.88);
+    border: 1px solid rgba(124, 220, 255, 0.28);
+    box-shadow: 0 28px 90px rgba(0, 0, 0, 0.58);
+    backdrop-filter: blur(18px);
+  }
+
+  .badge-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 14px;
+  }
+
+  .game-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 7px 12px;
+    border-radius: 999px;
+    background: rgba(51, 231, 255, 0.14);
+    border: 1px solid rgba(51, 231, 255, 0.42);
+    color: var(--cyan);
+    font-size: 12px;
+    font-weight: 900;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+  }
+
+  .v3-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 9px 14px;
+    border-radius: 999px;
+    background: linear-gradient(135deg, #a7ff52, #33e7ff);
+    color: #06101b;
+    font-size: 13px;
+    font-weight: 1000;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    box-shadow: 0 0 28px rgba(167, 255, 82, 0.4);
+  }
+
+  h1 {
+    margin: 0 0 10px;
+    font-size: clamp(34px, 6vw, 68px);
+    line-height: 0.96;
+    letter-spacing: -0.06em;
+  }
+
+  .subtitle {
+    color: #bdd1df;
+    font-size: 16px;
+    line-height: 1.55;
+    max-width: 660px;
+    margin: 0 0 20px;
+  }
+
+  .start-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin: 20px 0 22px;
+  }
+
+  .info-card {
+    padding: 14px;
+    border-radius: 18px;
+    background: rgba(255, 255, 255, 0.055);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+  }
+
+  .info-card strong {
+    display: block;
+    color: #fff;
+    margin-bottom: 5px;
+  }
+
+  .info-card span {
+    color: #aabdd0;
+    font-size: 13px;
+    line-height: 1.35;
+  }
+
+  button {
+    appearance: none;
+    border: 0;
+    cursor: pointer;
+    width: 100%;
+    padding: 16px 18px;
+    border-radius: 18px;
+    background: linear-gradient(135deg, var(--pink), var(--cyan));
+    color: #06101b;
+    font-size: 16px;
+    font-weight: 1000;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    box-shadow: 0 20px 60px rgba(51, 231, 255, 0.23);
+  }
+
+  .safe-note {
+    margin-top: 12px;
+    color: #8fa8ba;
+    font-size: 12px;
+    line-height: 1.4;
+  }
+
+  #pauseHint {
+    position: absolute;
+    left: 50%;
+    top: 18px;
+    transform: translateX(-50%);
+    color: rgba(234, 247, 255, 0.58);
+    font-size: 12px;
+    letter-spacing: 0.08em;
+    display: none;
+  }
+
+  @media (max-width: 760px) {
+    .topbar {
+      align-items: stretch;
+      flex-direction: column;
+    }
+
+    .mission {
+      width: 100%;
+    }
+
+    .stats {
+      justify-content: flex-start;
+    }
+
+    #directionStrip {
+      top: 176px;
+    }
+
+    #help {
+      display: none;
+    }
+
+    #minimap {
+      width: 126px;
+      height: 126px;
+    }
+
+    .start-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>
+</head>
+<body>
+<canvas id="game"></canvas>
+
+<div id="hud">
+  <div class="topbar">
+    <div class="mission panel">
+      <div class="mission-title">Mission</div>
+      <div id="missionText">Tag 3 bright mascots, then glide through the giant gold checkpoint beam.</div>
+    </div>
+
+    <div class="stats">
+      <div class="stat panel"><b id="scoreValue">0</b><span>Score</span></div>
+      <div class="stat panel"><b id="leftValue" class="ready">3</b><span>Left</span></div>
+      <div class="stat panel"><b id="waveValue">1</b><span>Wave</span></div>
+    </div>
+  </div>
+
+  <div id="directionStrip"></div>
+
+  <div id="crosshair">
+    <div class="dot"></div>
+  </div>
+
+  <div id="hitToast">TAGGED +100</div>
+
+  <canvas id="minimap"></canvas>
+
+  <div id="help" class="panel">
+    <b>WASD</b> move · <b>Mouse</b> look · <b>Click</b> foam tag · <b>Shift</b> sprint · <b>Esc</b> release mouse
+  </div>
+
+  <div id="pauseHint">Click the game to lock mouse aim</div>
+</div>
+
+<div id="startOverlay">
+  <div class="start-card">
+    <div class="badge-row">
+      <div class="game-badge">Neon Block Patrol</div>
+      <div class="v3-badge">v3 readability build</div>
+    </div>
+
+    <h1>Open-city foam tag patrol.</h1>
+
+    <p class="subtitle">
+      Arcade-only browser prototype. Bright city blocks, cartoon mascots, giant checkpoint beams, clear hit flashes, and a fixed pre-start HUD showing the correct target count before play begins.
+    </p>
+
+    <div class="start-grid">
+      <div class="info-card">
+        <strong>Opening view is intentional</strong>
+        <span>The first mascots and checkpoint beacon are placed directly ahead so the readability upgrades are obvious immediately.</span>
+      </div>
+      <div class="info-card">
+        <strong>Clear hit feedback</strong>
+        <span>Successful foam tags trigger a green crosshair pulse, floating score text, a sound pop, and a visible burst on the mascot.</span>
+      </div>
+      <div class="info-card">
+        <strong>Safe arcade tone</strong>
+        <span>No gore, no realistic crime tasks, no real-world weapon behavior. This is neon carnival target-tag gameplay.</span>
+      </div>
+      <div class="info-card">
+        <strong>Controls</strong>
+        <span>WASD to move, mouse to look, click to tag, Shift to sprint. Click start to enable pointer-lock aiming.</span>
+      </div>
+    </div>
+
+    <button id="startButton">Start patrol</button>
+    <div class="safe-note">
+      Browser note. Pointer lock needs a click. Audio feedback starts after the first user interaction.
+    </div>
+  </div>
+</div>
+
+<script>
+(() => {
+  "use strict";
+
+  const canvas = document.getElementById("game");
+  const ctx = canvas.getContext("2d");
+
+  const mini = document.getElementById("minimap");
+  const mctx = mini.getContext("2d");
+
+  const startOverlay = document.getElementById("startOverlay");
+  const startButton = document.getElementById("startButton");
+  const missionText = document.getElementById("missionText");
+  const scoreValue = document.getElementById("scoreValue");
+  const leftValue = document.getElementById("leftValue");
+  const waveValue = document.getElementById("waveValue");
+  const crosshair = document.getElementById("crosshair");
+  const hitToast = document.getElementById("hitToast");
+  const directionStrip = document.getElementById("directionStrip");
+  const pauseHint = document.getElementById("pauseHint");
+
+  let W = 0;
+  let H = 0;
+  let DPR = 1;
+
+  const FOV = Math.PI / 2.25;
+  const CAMERA_HEIGHT = 1.55;
+  const FAR = 76;
+
+  const player = {
+    x: 0,
+    z: -15,
+    a: 0,
+    speed: 8.8
+  };
+
+  const keys = new Set();
+  let started = false;
+  let score = 0;
+  let wave = 1;
+  let shots = [];
+  let particles = [];
+  let floaters = [];
+  let lastTime = performance.now();
+  let audioCtx = null;
+  let hitFlash = 0;
+
+  const buildings = [
+    { x: -18, z: -8, w: 8, d: 14, h: 7, c: "#152a56", trim: "#33e7ff" },
+    { x: 17, z: -6, w: 9, d: 16, h: 10, c: "#341c59", trim: "#ff4fd8" },
+    { x: -26, z: 18, w: 12, d: 10, h: 12, c: "#21335f", trim: "#ffd166" },
+    { x: 24, z: 20, w: 10, d: 12, h: 8, c: "#17324e", trim: "#a7ff52" },
+    { x: -8, z: 34, w: 12, d: 10, h: 10, c: "#2a285f", trim: "#33e7ff" },
+    { x: 10, z: 42, w: 10, d: 16, h: 13, c: "#102a44", trim: "#ff4fd8" },
+    { x: -33, z: 48, w: 10, d: 18, h: 9, c: "#22314d", trim: "#a7ff52" },
+    { x: 34, z: 52, w: 14, d: 12, h: 11, c: "#332447", trim: "#ffd166" },
+    { x: -4, z: 68, w: 20, d: 8, h: 6, c: "#14334d", trim: "#33e7ff" },
+    { x: -38, z: -26, w: 12, d: 12, h: 8, c: "#1b2c58", trim: "#ff4fd8" },
+    { x: 35, z: -26, w: 13, d: 13, h: 9, c: "#11314a", trim: "#ffd166" }
+  ];
+
+  let targets = [
+    makeTarget(-7, 6, "BOP", "#a7ff52", "#1b3d1f"),
+    makeTarget(8, 9, "ZAP", "#ff4fd8", "#40113a"),
+    makeTarget(0, 23, "POP", "#33e7ff", "#123a48")
+  ];
+
+  let checkpoint = {
+    x: 0,
+    z: 34,
+    r: 4.8,
+    active: false,
+    pulse: 0
+  };
+
+  function makeTarget(x, z, name, color, dark) {
+    return {
+      x,
+      z,
+      y: 0,
+      r: 1.05,
+      h: 2.25,
+      name,
+      color,
+      dark,
+      alive: true,
+      bob: Math.random() * Math.PI * 2,
+      hitPulse: 0,
+      noticed: 0
+    };
+  }
+
+  function resize() {
+    DPR = Math.max(1, Math.min(window.devicePixelRatio || 1, 2));
+    W = Math.floor(window.innerWidth);
+    H = Math.floor(window.innerHeight);
+
+    canvas.width = Math.floor(W * DPR);
+    canvas.height = Math.floor(H * DPR);
+    canvas.style.width = W + "px";
+    canvas.style.height = H + "px";
+    ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+
+    const ms = Math.floor(154 * DPR);
+    mini.width = ms;
+    mini.height = ms;
+    mctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+  }
+
+  window.addEventListener("resize", resize);
+  resize();
+
+  function aliveTargets() {
+    return targets.filter(t => t.alive);
+  }
+
+  function syncHUD() {
+    const left = aliveTargets().length;
+    scoreValue.textContent = score;
+    leftValue.textContent = left;
+    leftValue.classList.toggle("ready", left > 0);
+    waveValue.textContent = wave;
+
+    checkpoint.active = left === 0;
+
+    if (left > 0) {
+      missionText.textContent = `Tag ${left} bright mascot${left === 1 ? "" : "s"}, then glide through the giant gold checkpoint beam.`;
+    } else {
+      missionText.textContent = "All mascots tagged. Head into the giant gold checkpoint beam to start the next wave.";
+    }
+  }
+
+  syncHUD();
+
+  function clamp(v, min, max) {
+    return Math.max(min, Math.min(max, v));
+  }
+
+  function wrapAngle(a) {
+    while (a > Math.PI) a -= Math.PI * 2;
+    while (a < -Math.PI) a += Math.PI * 2;
+    return a;
+  }
+
+  function dist2(ax, az, bx, bz) {
+    const dx = ax - bx;
+    const dz = az - bz;
+    return dx * dx + dz * dz;
+  }
+
+  function project(x, z, y = 0) {
+    const dx = x - player.x;
+    const dz = z - player.z;
+
+    const sin = Math.sin(player.a);
+    const cos = Math.cos(player.a);
+
+    const side = dx * cos - dz * sin;
+    const forward = dx * sin + dz * cos;
+
+    if (forward <= 0.12) return null;
+
+    const f = W / (2 * Math.tan(FOV / 2));
+    const sx = W / 2 + side * f / forward;
+    const sy = H * 0.54 - (y - CAMERA_HEIGHT) * f / forward;
+
+    return { sx, sy, side, forward, scale: f / forward };
+  }
+
+  function visibleAngleTo(x, z) {
+    const dx = x - player.x;
+    const dz = z - player.z;
+    const worldAngle = Math.atan2(dx, dz);
+    return wrapAngle(worldAngle - player.a);
+  }
+
+  function collides(nx, nz) {
+    for (const b of buildings) {
+      if (
+        nx > b.x - b.w / 2 - 1.2 &&
+        nx < b.x + b.w / 2 + 1.2 &&
+        nz > b.z - b.d / 2 - 1.2 &&
+        nz < b.z + b.d / 2 + 1.2
+      ) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  function movePlayer(dt) {
+    let ix = 0;
+    let iz = 0;
+
+    if (keys.has("KeyW")) iz += 1;
+    if (keys.has("KeyS")) iz -= 1;
+    if (keys.has("KeyA")) ix -= 1;
+    if (keys.has("KeyD")) ix += 1;
+
+    const len = Math.hypot(ix, iz) || 1;
+    ix /= len;
+    iz /= len;
+
+    const sprint = keys.has("ShiftLeft") || keys.has("ShiftRight");
+    const spd = player.speed * (sprint ? 1.55 : 1) * dt;
+
+    const sin = Math.sin(player.a);
+    const cos = Math.cos(player.a);
+
+    const vx = (sin * iz + cos * ix) * spd;
+    const vz = (cos * iz - sin * ix) * spd;
+
+    const nx = clamp(player.x + vx, -46, 46);
+    const nz = clamp(player.z + vz, -36, 78);
+
+    if (!collides(nx, player.z)) player.x = nx;
+    if (!collides(player.x, nz)) player.z = nz;
+
+    if (checkpoint.active && dist2(player.x, player.z, checkpoint.x, checkpoint.z) < checkpoint.r * checkpoint.r) {
+      nextWave();
+    }
+  }
+
+  function nextWave() {
+    wave += 1;
+    checkpoint.active = false;
+
+    const baseZ = 12 + wave * 5;
+    const spread = Math.min(28, 12 + wave * 3);
+    const count = Math.min(7, 3 + wave);
+
+    const names = ["BOP", "ZAP", "POP", "WUB", "ZIP", "WOW", "BONK"];
+    const colors = [
+      ["#a7ff52", "#1b3d1f"],
+      ["#ff4fd8", "#40113a"],
+      ["#33e7ff", "#123a48"],
+      ["#ffd166", "#4a3510"],
+      ["#c084fc", "#2d174a"]
+    ];
+
+    targets = [];
+    for (let i = 0; i < count; i++) {
+      const lane = i - (count - 1) / 2;
+      const pair = colors[i % colors.length];
+      targets.push(makeTarget(
+        clamp(lane * (spread / count) + Math.sin(i * 2.1) * 4, -34, 34),
+        baseZ + i * 7 + Math.cos(i * 1.7) * 3,
+        names[i % names.length],
+        pair[0],
+        pair[1]
+      ));
+    }
+
+    checkpoint.x = 0;
+    checkpoint.z = baseZ + count * 8 + 8;
+
+    floaters.push({
+      text: "NEXT WAVE",
+      x: W / 2,
+      y: H * 0.32,
+      life: 1.4,
+      max: 1.4,
+      screen: true,
+      color: "#33e7ff"
+    });
+
+    syncHUD();
+  }
+
+  function shoot() {
+    if (!started) return;
+
+    const centerX = W / 2;
+    const centerY = H / 2;
+    let best = null;
+    let bestScore = Infinity;
+
+    for (const t of targets) {
+      if (!t.alive) continue;
+
+      const p = project(t.x, t.z, 1.1 + Math.sin(performance.now() / 400 + t.bob) * 0.1);
+      if (!p || p.forward > 55) continue;
+
+      const size = clamp(t.h * p.scale, 24, 140);
+      const dx = p.sx - centerX;
+      const dy = (p.sy - size * 0.42) - centerY;
+      const radius = Math.max(28, size * 0.42);
+      const aimDist = Math.hypot(dx, dy);
+
+      if (aimDist < radius && aimDist < bestScore) {
+        best = t;
+        bestScore = aimDist;
+      }
+    }
+
+    shots.push({ life: 0.13, max: 0.13 });
+
+    if (best) {
+      best.alive = false;
+      best.hitPulse = 1;
+      score += 100;
+      hitFlash = 0.22;
+
+      const p = project(best.x, best.z, 1.2);
+      if (p) {
+        floaters.push({
+          text: "TAGGED +100",
+          x: p.sx,
+          y: p.sy - 70,
+          life: 0.85,
+          max: 0.85,
+          screen: true,
+          color: "#a7ff52"
+        });
+      }
+
+      for (let i = 0; i < 26; i++) {
+        particles.push({
+          x: best.x + (Math.random() - 0.5) * 0.9,
+          z: best.z + (Math.random() - 0.5) * 0.9,
+          y: 0.8 + Math.random() * 1.3,
+          vx: (Math.random() - 0.5) * 4.4,
+          vz: (Math.random() - 0.5) * 4.4,
+          vy: Math.random() * 3.2,
+          life: 0.65,
+          max: 0.65,
+          color: best.color
+        });
+      }
+
+      crosshair.classList.add("hit");
+      hitToast.classList.add("show");
+      window.setTimeout(() => crosshair.classList.remove("hit"), 120);
+      window.setTimeout(() => hitToast.classList.remove("show"), 420);
+
+      sound(true);
+      syncHUD();
+    } else {
+      sound(false);
+    }
+  }
+
+  function sound(hit) {
+    try {
+      if (!audioCtx) {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      }
+
+      const now = audioCtx.currentTime;
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+
+      osc.type = hit ? "triangle" : "sine";
+      osc.frequency.setValueAtTime(hit ? 660 : 210, now);
+      osc.frequency.exponentialRampToValueAtTime(hit ? 990 : 150, now + 0.08);
+
+      gain.gain.setValueAtTime(hit ? 0.09 : 0.035, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.14);
+
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      osc.start(now);
+      osc.stop(now + 0.16);
+    } catch (e) {}
+  }
+
+  window.addEventListener("keydown", e => {
+    keys.add(e.code);
+  });
+
+  window.addEventListener("keyup", e => {
+    keys.delete(e.code);
+  });
+
+  document.addEventListener("mousemove", e => {
+    if (document.pointerLockElement === canvas) {
+      player.a = wrapAngle(player.a + e.movementX * 0.0022);
+    }
+  });
+
+  window.addEventListener("mousedown", e => {
+    if (e.button !== 0) return;
+
+    if (started && document.pointerLockElement !== canvas) {
+      canvas.requestPointerLock?.();
+      return;
+    }
+
+    shoot();
+  });
+
+  document.addEventListener("pointerlockchange", () => {
+    pauseHint.style.display = started && document.pointerLockElement !== canvas ? "block" : "none";
+  });
+
+  startButton.addEventListener("click", () => {
+    started = true;
+    startOverlay.style.display = "none";
+    canvas.requestPointerLock?.();
+    syncHUD();
+  });
+
+  function drawBackground(time) {
+    const grad = ctx.createLinearGradient(0, 0, 0, H);
+    grad.addColorStop(0, "#07111f");
+    grad.addColorStop(0.38, "#0f2442");
+    grad.addColorStop(0.39, "#112036");
+    grad.addColorStop(1, "#08101d");
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, W, H);
+
+    ctx.fillStyle = "rgba(51, 231, 255, 0.16)";
+    for (let i = -6; i <= 6; i++) {
+      const y = H * 0.54 + i * 38 + Math.sin(time * 0.0005 + i) * 3;
+      ctx.fillRect(0, y, W, 1);
+    }
+
+    ctx.strokeStyle = "rgba(51, 231, 255, 0.13)";
+    ctx.lineWidth = 1;
+    const roadCenter = project(0, player.z + 20, 0);
+    const roadFar = project(0, player.z + 68, 0);
+
+    if (roadCenter && roadFar) {
+      for (let lane = -4; lane <= 4; lane++) {
+        const near = project(lane * 6, player.z + 5, 0);
+        const far = project(lane * 6, player.z + 72, 0);
+        if (near && far) {
+          ctx.beginPath();
+          ctx.moveTo(near.sx, near.sy);
+          ctx.lineTo(far.sx, far.sy);
+          ctx.stroke();
+        }
+      }
+    }
+
+    ctx.fillStyle = "rgba(255, 209, 102, 0.16)";
+    const laneCount = 16;
+    for (let i = 0; i < laneCount; i++) {
+      const z = player.z + 8 + i * 5;
+      const p1 = project(-0.25, z, 0.01);
+      const p2 = project(0.25, z + 2.2, 0.01);
+      if (p1 && p2) {
+        const w = Math.max(2, 18 / p1.forward);
+        ctx.fillRect(p1.sx - w / 2, p2.sy, w, Math.max(3, p1.sy - p2.sy));
+      }
+    }
+
+    ctx.fillStyle = "rgba(255, 79, 216, 0.12)";
+    ctx.fillRect(0, H * 0.54, W, 2);
+  }
+
+  function drawBuilding(b) {
+    const corners = [
+      project(b.x - b.w / 2, b.z - b.d / 2, 0),
+      project(b.x + b.w / 2, b.z - b.d / 2, 0),
+      project(b.x + b.w / 2, b.z + b.d / 2, 0),
+      project(b.x - b.w / 2, b.z + b.d / 2, 0),
+      project(b.x - b.w / 2, b.z - b.d / 2, b.h),
+      project(b.x + b.w / 2, b.z - b.d / 2, b.h),
+      project(b.x + b.w / 2, b.z + b.d / 2, b.h),
+      project(b.x - b.w / 2, b.z + b.d / 2, b.h)
+    ];
+
+    if (corners.some(Boolean) === false) return;
+
+    const visible = corners.filter(Boolean);
+    const minX = Math.min(...visible.map(p => p.sx));
+    const maxX = Math.max(...visible.map(p => p.sx));
+    const minY = Math.min(...visible.map(p => p.sy));
+    const maxY = Math.max(...visible.map(p => p.sy));
+
+    if (maxX < -100 || minX > W + 100 || maxY < -120 || minY > H + 120) return;
+
+    function poly(ids, fill, stroke) {
+      const pts = ids.map(i => corners[i]);
+      if (pts.some(p => !p)) return;
+      ctx.beginPath();
+      ctx.moveTo(pts[0].sx, pts[0].sy);
+      for (let i = 1; i < pts.length; i++) ctx.lineTo(pts[i].sx, pts[i].sy);
+      ctx.closePath();
+      ctx.fillStyle = fill;
+      ctx.fill();
+      ctx.strokeStyle = stroke;
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+    }
+
+    poly([0, 1, 5, 4], b.c, "rgba(255,255,255,0.16)");
+    poly([1, 2, 6, 5], shade(b.c, 0.78), "rgba(255,255,255,0.12)");
+    poly([4, 5, 6, 7], shade(b.c, 1.2), "rgba(255,255,255,0.12)");
+
+    ctx.strokeStyle = b.trim;
+    ctx.lineWidth = 2;
+    ctx.globalAlpha = 0.75;
+    for (let i = 0; i < 4; i++) {
+      const a = corners[i];
+      const top = corners[i + 4];
+      if (!a || !top) continue;
+      ctx.beginPath();
+      ctx.moveTo(top.sx, top.sy);
+      ctx.lineTo(a.sx, a.sy);
+      ctx.stroke();
+    }
+    ctx.globalAlpha = 1;
+  }
+
+  function shade(hex, amount) {
+    const n = parseInt(hex.slice(1), 16);
+    let r = (n >> 16) & 255;
+    let g = (n >> 8) & 255;
+    let b = n & 255;
+    r = clamp(Math.floor(r * amount), 0, 255);
+    g = clamp(Math.floor(g * amount), 0, 255);
+    b = clamp(Math.floor(b * amount), 0, 255);
+    return `rgb(${r},${g},${b})`;
+  }
+
+  function drawTarget(t, time) {
+    if (!t.alive && t.hitPulse <= 0) return;
+
+    const bob = Math.sin(time * 0.004 + t.bob) * 0.14;
+    const p = project(t.x, t.z, 0.1 + bob);
+    if (!p || p.forward > FAR) return;
+
+    const size = clamp(t.h * p.scale, 34, 190);
+    const x = p.sx;
+    const y = p.sy;
+    const alpha = t.alive ? 1 : t.hitPulse;
+
+    ctx.save();
+    ctx.globalAlpha = alpha;
+
+    const ringPulse = 1 + Math.sin(time * 0.009 + t.bob) * 0.08;
+    ctx.strokeStyle = t.color;
+    ctx.lineWidth = Math.max(4, size * 0.05);
+    ctx.shadowColor = t.color;
+    ctx.shadowBlur = 28;
+    ctx.beginPath();
+    ctx.arc(x, y - size * 0.52, size * 0.62 * ringPulse, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.shadowBlur = 0;
+
+    ctx.fillStyle = "rgba(2, 8, 18, 0.88)";
+    roundRect(x - size * 0.68, y - size * 1.45, size * 1.36, size * 0.36, size * 0.12);
+    ctx.fill();
+
+    ctx.strokeStyle = t.color;
+    ctx.lineWidth = Math.max(2, size * 0.025);
+    roundRectStroke(x - size * 0.68, y - size * 1.45, size * 1.36, size * 0.36, size * 0.12);
+
+    ctx.fillStyle = "#06101b";
+    ctx.font = `900 ${Math.max(12, size * 0.16)}px system-ui`;
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillStyle = t.color;
+    ctx.fillText(`${t.name} TARGET`, x, y - size * 1.27);
+
+    ctx.fillStyle = t.dark;
+    ctx.strokeStyle = "#ffffff";
+    ctx.lineWidth = Math.max(4, size * 0.05);
+
+    ctx.beginPath();
+    ctx.ellipse(x, y - size * 0.55, size * 0.42, size * 0.54, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
+
+    ctx.fillStyle = t.color;
+    ctx.beginPath();
+    ctx.ellipse(x, y - size * 0.62, size * 0.35, size * 0.43, 0, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.fillStyle = "#06101b";
+    ctx.beginPath();
+    ctx.arc(x - size * 0.14, y - size * 0.68, size * 0.055, 0, Math.PI * 2);
+    ctx.arc(x + size * 0.14, y - size * 0.68, size * 0.055, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.strokeStyle = "#06101b";
+    ctx.lineWidth = Math.max(2, size * 0.018);
+    ctx.beginPath();
+    ctx.arc(x, y - size * 0.58, size * 0.15, 0.08, Math.PI - 0.08);
+    ctx.stroke();
+
+    ctx.strokeStyle = "#ffffff";
+    ctx.lineWidth = Math.max(5, size * 0.045);
+    ctx.lineCap = "round";
+    ctx.beginPath();
+    ctx.moveTo(x - size * 0.28, y - size * 0.15);
+    ctx.lineTo(x - size * 0.52, y + size * 0.32);
+    ctx.moveTo(x + size * 0.28, y - size * 0.15);
+    ctx.lineTo(x + size * 0.52, y + size * 0.32);
+    ctx.stroke();
+
+    ctx.fillStyle = "#ffffff";
+    ctx.beginPath();
+    ctx.arc(x - size * 0.5, y + size * 0.34, size * 0.09, 0, Math.PI * 2);
+    ctx.arc(x + size * 0.5, y + size * 0.34, size * 0.09, 0, Math.PI * 2);
+    ctx.fill();
+
+    if (t.alive) {
+      ctx.fillStyle = "rgba(167,255,82,0.18)";
+      ctx.beginPath();
+      ctx.ellipse(x, y + size * 0.42, size * 0.52, size * 0.13, 0, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.fillStyle = "#06101b";
+      ctx.strokeStyle = "#ffffff";
+      ctx.lineWidth = 2;
+      const label = `${Math.round(p.forward)}m`;
+      ctx.font = `900 ${Math.max(11, size * 0.11)}px system-ui`;
+      const tw = ctx.measureText(label).width + 16;
+      roundRect(x - tw / 2, y - size * 1.02, tw, 22, 11);
+      ctx.fill();
+      ctx.stroke();
+      ctx.fillStyle = "#ffffff";
+      ctx.fillText(label, x, y - size * 1.02 + 11);
+    }
+
+    ctx.restore();
+  }
+
+  function drawCheckpoint(time) {
+    const p = project(checkpoint.x, checkpoint.z, 0);
+    if (!p || p.forward > FAR) return;
+
+    const x = p.sx;
+    const baseY = p.sy;
+    const height = clamp(9 * p.scale, 90, 460);
+    const width = clamp(checkpoint.r * 1.9 * p.scale, 50, 280);
+    const pulse = 1 + Math.sin(time * 0.006) * 0.08;
+
+    ctx.save();
+
+    ctx.globalAlpha = checkpoint.active ? 0.95 : 0.62;
+    const grad = ctx.createLinearGradient(x, baseY - height, x, baseY + 30);
+    grad.addColorStop(0, "rgba(255, 209, 102, 0)");
+    grad.addColorStop(0.28, "rgba(255, 209, 102, 0.62)");
+    grad.addColorStop(0.72, "rgba(255, 79, 216, 0.32)");
+    grad.addColorStop(1, "rgba(255, 209, 102, 0)");
+
+    ctx.fillStyle = grad;
+    ctx.beginPath();
+    ctx.moveTo(x - width * pulse, baseY + 18);
+    ctx.lineTo(x - width * 0.34, baseY - height);
+    ctx.lineTo(x + width * 0.34, baseY - height);
+    ctx.lineTo(x + width * pulse, baseY + 18);
+    ctx.closePath();
+    ctx.fill();
+
+    ctx.strokeStyle = checkpoint.active ? "#ffd166" : "rgba(255,209,102,0.58)";
+    ctx.lineWidth = Math.max(4, width * 0.045);
+    ctx.shadowColor = "#ffd166";
+    ctx.shadowBlur = 34;
+    ctx.beginPath();
+    ctx.ellipse(x, baseY, width * 0.92 * pulse, width * 0.22, 0, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.shadowBlur = 0;
+
+    ctx.fillStyle = "rgba(2, 8, 18, 0.9)";
+    roundRect(x - width * 0.76, baseY - height - 42, width * 1.52, 34, 13);
+    ctx.fill();
+
+    ctx.strokeStyle = "#ffd166";
+    ctx.lineWidth = 2;
+    roundRectStroke(x - width * 0.76, baseY - height - 42, width * 1.52, 34, 13);
+
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.font = `1000 ${clamp(width * 0.13, 12, 24)}px system-ui`;
+    ctx.fillStyle = "#ffd166";
+    ctx.fillText(checkpoint.active ? "CHECKPOINT OPEN" : "CHECKPOINT LOCKED", x, baseY - height - 25);
+
+    ctx.restore();
+  }
+
+  function drawShots() {
+    for (const s of shots) {
+      const a = s.life / s.max;
+      ctx.strokeStyle = `rgba(51, 231, 255, ${0.7 * a})`;
+      ctx.lineWidth = 3 * a;
+      ctx.beginPath();
+      ctx.moveTo(W / 2, H / 2);
+      ctx.lineTo(W / 2 + Math.sin(a * 12) * 8, H / 2 - 90 * a);
+      ctx.stroke();
+    }
+  }
+
+  function drawParticles(dt) {
+    for (const p of particles) {
+      const pr = project(p.x, p.z, p.y);
+      if (!pr) continue;
+
+      const a = p.life / p.max;
+      const r = clamp(0.18 * pr.scale, 2, 12) * a;
+
+      ctx.fillStyle = p.color;
+      ctx.globalAlpha = a;
+      ctx.beginPath();
+      ctx.arc(pr.sx, pr.sy, r, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.globalAlpha = 1;
+    }
+  }
+
+  function drawFloaters() {
+    ctx.save();
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+
+    for (const f of floaters) {
+      const a = clamp(f.life / f.max, 0, 1);
+      ctx.globalAlpha = a;
+      ctx.font = "1000 22px system-ui";
+      ctx.fillStyle = f.color;
+      ctx.strokeStyle = "rgba(2,8,18,0.88)";
+      ctx.lineWidth = 6;
+      ctx.strokeText(f.text, f.x, f.y - (1 - a) * 26);
+      ctx.fillText(f.text, f.x, f.y - (1 - a) * 26);
+    }
+
+    ctx.restore();
+  }
+
+  function roundRect(x, y, w, h, r) {
+    ctx.beginPath();
+    ctx.moveTo(x + r, y);
+    ctx.arcTo(x + w, y, x + w, y + h, r);
+    ctx.arcTo(x + w, y + h, x, y + h, r);
+    ctx.arcTo(x, y + h, x, y, r);
+    ctx.arcTo(x, y, x + w, y, r);
+    ctx.closePath();
+  }
+
+  function roundRectStroke(x, y, w, h, r) {
+    roundRect(x, y, w, h, r);
+    ctx.stroke();
+  }
+
+  function updateMarkers() {
+    directionStrip.innerHTML = "";
+
+    const items = [];
+    for (const t of targets) {
+      if (!t.alive) continue;
+      items.push({
+        type: "target",
+        label: `${t.name} ${Math.round(Math.sqrt(dist2(player.x, player.z, t.x, t.z)))}m`,
+        angle: visibleAngleTo(t.x, t.z)
+      });
+    }
+
+    items.push({
+      type: "checkpoint",
+      label: `${checkpoint.active ? "OPEN" : "BEAM"} ${Math.round(Math.sqrt(dist2(player.x, player.z, checkpoint.x, checkpoint.z)))}m`,
+      angle: visibleAngleTo(checkpoint.x, checkpoint.z)
+    });
+
+    for (const item of items) {
+      const normalized = clamp(item.angle / (FOV * 0.9), -1, 1);
+      const el = document.createElement("div");
+      el.className = `marker ${item.type}`;
+      el.style.left = `${50 + normalized * 46}%`;
+      el.style.opacity = Math.abs(item.angle) > FOV * 0.9 ? "0.55" : "1";
+      el.textContent = item.label;
+      directionStrip.appendChild(el);
+    }
+  }
+
+  function drawMinimap() {
+    const size = mini.clientWidth || 154;
+    mctx.clearRect(0, 0, size, size);
+
+    mctx.fillStyle = "rgba(6,13,25,0.78)";
+    mctx.fillRect(0, 0, size, size);
+
+    const cx = size / 2;
+    const cy = size / 2;
+    const scale = 2.1;
+
+    mctx.strokeStyle = "rgba(51,231,255,0.12)";
+    mctx.lineWidth = 1;
+    for (let i = -3; i <= 3; i++) {
+      mctx.beginPath();
+      mctx.moveTo(0, cy + i * 22);
+      mctx.lineTo(size, cy + i * 22);
+      mctx.stroke();
+
+      mctx.beginPath();
+      mctx.moveTo(cx + i * 22, 0);
+      mctx.lineTo(cx + i * 22, size);
+      mctx.stroke();
+    }
+
+    for (const b of buildings) {
+      const x = cx + (b.x - player.x) * scale;
+      const y = cy + (b.z - player.z) * scale;
+      mctx.fillStyle = "rgba(130, 158, 186, 0.22)";
+      mctx.fillRect(x - b.w * scale / 2, y - b.d * scale / 2, b.w * scale, b.d * scale);
+    }
+
+    const cpX = cx + (checkpoint.x - player.x) * scale;
+    const cpY = cy + (checkpoint.z - player.z) * scale;
+    mctx.strokeStyle = "#ffd166";
+    mctx.lineWidth = 3;
+    mctx.beginPath();
+    mctx.arc(cpX, cpY, 8, 0, Math.PI * 2);
+    mctx.stroke();
+
+    for (const t of targets) {
+      if (!t.alive) continue;
+      const x = cx + (t.x - player.x) * scale;
+      const y = cy + (t.z - player.z) * scale;
+      mctx.fillStyle = t.color;
+      mctx.strokeStyle = "#ffffff";
+      mctx.lineWidth = 2;
+      mctx.beginPath();
+      mctx.arc(x, y, 5.5, 0, Math.PI * 2);
+      mctx.fill();
+      mctx.stroke();
+    }
+
+    mctx.save();
+    mctx.translate(cx, cy);
+    mctx.rotate(player.a);
+    mctx.fillStyle = "#33e7ff";
+    mctx.strokeStyle = "#ffffff";
+    mctx.lineWidth = 2;
+    mctx.beginPath();
+    mctx.moveTo(0, -10);
+    mctx.lineTo(7, 8);
+    mctx.lineTo(0, 4);
+    mctx.lineTo(-7, 8);
+    mctx.closePath();
+    mctx.fill();
+    mctx.stroke();
+    mctx.restore();
+  }
+
+  function update(dt, time) {
+    if (started) movePlayer(dt);
+
+    checkpoint.pulse += dt;
+
+    for (const t of targets) {
+      t.bob += dt * 1.5;
+      if (t.hitPulse > 0) t.hitPulse -= dt * 2.2;
+    }
+
+    for (const s of shots) s.life -= dt;
+    shots = shots.filter(s => s.life > 0);
+
+    for (const p of particles) {
+      p.life -= dt;
+      p.x += p.vx * dt;
+      p.z += p.vz * dt;
+      p.y += p.vy * dt;
+      p.vy -= 6.8 * dt;
+    }
+    particles = particles.filter(p => p.life > 0);
+
+    for (const f of floaters) f.life -= dt;
+    floaters = floaters.filter(f => f.life > 0);
+
+    if (hitFlash > 0) hitFlash -= dt;
+
+    updateMarkers();
+  }
+
+  function render(time, dt) {
+    drawBackground(time);
+
+    const renderables = [];
+
+    for (const b of buildings) {
+      const d = Math.sqrt(dist2(player.x, player.z, b.x, b.z));
+      renderables.push({ d, fn: () => drawBuilding(b) });
+    }
+
+    renderables.push({
+      d: Math.sqrt(dist2(player.x, player.z, checkpoint.x, checkpoint.z)),
+      fn: () => drawCheckpoint(time)
+    });
+
+    for (const t of targets) {
+      const d = Math.sqrt(dist2(player.x, player.z, t.x, t.z));
+      renderables.push({ d, fn: () => drawTarget(t, time) });
+    }
+
+    renderables.sort((a, b) => b.d - a.d);
+    for (const r of renderables) r.fn();
+
+    drawParticles(dt);
+    drawShots();
+    drawFloaters();
+    drawMinimap();
+
+    if (hitFlash > 0) {
+      ctx.fillStyle = `rgba(167,255,82,${hitFlash * 0.6})`;
+      ctx.fillRect(0, 0, W, H);
+    }
+
+    if (!started) {
+      ctx.fillStyle = "rgba(167,255,82,0.95)";
+      ctx.font = "1000 18px system-ui";
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.shadowColor = "#a7ff52";
+      ctx.shadowBlur = 22;
+      ctx.fillText("VISIBLE TARGETS AHEAD", W / 2, H * 0.72);
+      ctx.shadowBlur = 0;
+    }
+  }
+
+  function loop(now) {
+    const dt = Math.min(0.033, (now - lastTime) / 1000);
+    lastTime = now;
+
+    update(dt, now);
+    render(now, dt);
+    requestAnimationFrame(loop);
+  }
+
+  requestAnimationFrame(loop);
+})();
+</script>
+</body>
+</html>

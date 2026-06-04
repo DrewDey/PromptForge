@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import { getAllPromptsForAdmin, getAllSourceRunSubmissionsForAdmin, getAllSuggestionsForAdmin } from '@/lib/data'
+import { getPreparedShowcaseProjectBySourceRunId } from '@/lib/prepared-showcase-projects'
 import { titleForSourceRunReview } from '@/lib/source-run-review'
 import type { SourceRunSubmissionWithRelations } from '@/lib/types'
 import AdminPromptRow from './AdminPromptRow'
@@ -230,6 +231,7 @@ export default async function AdminDashboard({
 }
 
 function SourceRunIntakeRow({ sourceRun }: { sourceRun: SourceRunSubmissionWithRelations }) {
+  const preparedProject = getPreparedShowcaseProjectBySourceRunId(sourceRun.id)
   const title = titleForSourceRunReview({
     title: sourceRun.title,
     notes: sourceRun.notes,
@@ -246,7 +248,7 @@ function SourceRunIntakeRow({ sourceRun }: { sourceRun: SourceRunSubmissionWithR
     >
       <td className="px-4 py-3 align-top">
         <div className="mb-1 inline-flex items-center gap-1.5 bg-amber-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.12em] text-amber-800">
-          Let the agent structure it
+          {preparedProject ? 'Prepared page ready' : 'Let the agent structure it'}
         </div>
         <Link
           href={`/admin/source-runs/${sourceRun.id}`}
@@ -255,6 +257,15 @@ function SourceRunIntakeRow({ sourceRun }: { sourceRun: SourceRunSubmissionWithR
           {title}
         </Link>
         <p className="mt-1 break-all text-xs text-gray-500">{sourceLabel}</p>
+        {preparedProject ? (
+          <p className="mt-1 text-xs font-medium text-green-700">
+            Ready to publish as {preparedProject.href}
+          </p>
+        ) : (
+          <p className="mt-1 text-xs text-gray-500">
+            Needs a prepared public page before approve/decline actions appear.
+          </p>
+        )}
       </td>
       <td className="px-4 py-3 align-top text-gray-600">Source run</td>
       <td className="px-4 py-3 align-top text-gray-600">{sourceRun.status.replace('_', ' ')}</td>
@@ -267,9 +278,14 @@ function SourceRunIntakeRow({ sourceRun }: { sourceRun: SourceRunSubmissionWithR
       <td className="px-4 py-3 text-right align-top">
         <Link
           href={`/admin/source-runs/${sourceRun.id}`}
-          className="inline-flex items-center justify-center bg-amber-100 px-2.5 py-1.5 text-xs font-medium text-amber-800 hover:bg-amber-200"
+          className={[
+            'inline-flex items-center justify-center px-2.5 py-1.5 text-xs font-medium',
+            preparedProject
+              ? 'bg-green-100 text-green-800 hover:bg-green-200'
+              : 'bg-amber-100 text-amber-800 hover:bg-amber-200',
+          ].join(' ')}
         >
-          Review intake
+          {preparedProject ? 'Publish page' : 'Review intake'}
         </Link>
       </td>
     </tr>

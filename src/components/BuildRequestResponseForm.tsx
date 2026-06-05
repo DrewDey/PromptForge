@@ -2,8 +2,11 @@ import { respondToBuildRequest } from '@/lib/actions'
 
 export default function BuildRequestResponseForm({ requestId }: { requestId: string }) {
   return (
-    <form action={respondToBuildRequest} className="mt-5 border-t border-surface-100 pt-4">
+    <form action={respondToBuildRequest} className="mt-5 border-t border-surface-800 pt-4">
       <input type="hidden" name="request_id" value={requestId} />
+      <div className="mb-3 font-mono text-[10px] font-bold uppercase tracking-[0.14em] text-brand-orange">
+        Attach build answer
+      </div>
       <div className="grid gap-3 lg:grid-cols-[1fr_1.2fr_auto]">
         <label htmlFor={`build-request-url-${requestId}`} className="sr-only">
           Link to a PathForge build or fork
@@ -13,7 +16,7 @@ export default function BuildRequestResponseForm({ requestId }: { requestId: str
           name="url"
           type="url"
           placeholder="Link to a PathForge build or fork"
-          className="border border-surface-300 bg-white px-3 py-2.5 text-sm text-surface-900 placeholder:text-surface-400 focus:border-[#07551f] focus:outline-none"
+          className="border border-surface-700 bg-[#111113] px-3 py-2.5 text-sm text-white placeholder:text-surface-500 focus:border-brand-orange focus:outline-none"
         />
         <label htmlFor={`build-request-note-${requestId}`} className="sr-only">
           Short note about what you made
@@ -22,9 +25,9 @@ export default function BuildRequestResponseForm({ requestId }: { requestId: str
           id={`build-request-note-${requestId}`}
           name="body"
           placeholder="Short note about what you made"
-          className="border border-surface-300 bg-white px-3 py-2.5 text-sm text-surface-900 placeholder:text-surface-400 focus:border-[#07551f] focus:outline-none"
+          className="border border-surface-700 bg-[#111113] px-3 py-2.5 text-sm text-white placeholder:text-surface-500 focus:border-brand-orange focus:outline-none"
         />
-        <button type="submit" className="bg-[#07551f] px-4 py-2.5 text-sm font-bold text-white hover:bg-surface-900">
+        <button type="submit" className="bg-brand-orange px-4 py-2.5 text-sm font-black text-white hover:bg-brand-orange-dark">
           Respond
         </button>
       </div>

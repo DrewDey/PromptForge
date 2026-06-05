@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { ArrowRight, ArrowUp, CheckCircle2, ExternalLink, Hammer, MessageSquare, RadioTower, Search } from 'lucide-react'
+import { ArrowUp, CheckCircle2, ExternalLink, Hammer, MessageSquare, RadioTower, Search, Target } from 'lucide-react'
 import BuildRequestResponseForm from '@/components/BuildRequestResponseForm'
 import BuildRequestSubmitForm from '@/components/BuildRequestSubmitForm'
 import { voteOnBuildRequest } from '@/lib/actions'
@@ -40,17 +40,17 @@ function signupHref(next: string) {
 
 function voteButtonClass(hasVoted: boolean) {
   return [
-    'inline-flex items-center gap-1.5 border px-3 py-1.5 text-xs font-bold',
+    'inline-flex min-h-10 items-center justify-center gap-1.5 border px-3 py-2 text-xs font-black',
     hasVoted
-      ? 'border-[#07551f] bg-[#effdf3] text-[#07551f] hover:bg-[#daf7df]'
-      : 'border-[#07551f]/30 bg-white text-[#07551f] hover:border-[#07551f]',
+      ? 'border-brand-orange bg-brand-orange text-white hover:bg-brand-orange-dark'
+      : 'border-brand-orange/40 bg-white text-surface-900 hover:border-brand-orange hover:bg-primary-50',
   ].join(' ')
 }
 
 function statusPillClass(status: string) {
-  if (status === 'answered') return 'bg-brand-orange text-white'
-  if (status === 'closed') return 'bg-surface-700 text-white'
-  return 'bg-[#07551f] text-white'
+  if (status === 'answered') return 'border-brand-orange bg-brand-orange text-white'
+  if (status === 'closed') return 'border-surface-700 bg-surface-700 text-white'
+  return 'border-[#2bd15f] bg-[#123923] text-[#8ee29b]'
 }
 
 function BuildRequestCard({
@@ -65,15 +65,15 @@ function BuildRequestCard({
   const responses = request.responses ?? []
 
   return (
-    <article className="grid overflow-hidden border border-surface-200 bg-white transition hover:border-[#07551f] hover:shadow-[8px_8px_0_rgba(7,85,31,0.10)] lg:grid-cols-[118px_1fr]">
-      <div className="border-b border-[#cfead4] bg-[#effdf3] p-4 lg:border-b-0 lg:border-r">
+    <article className="grid border border-surface-800 bg-[#17171a] text-white transition hover:border-brand-orange lg:grid-cols-[132px_1fr]">
+      <div className="border-b border-surface-800 bg-[#0f0f11] p-4 lg:border-b-0 lg:border-r">
         <div className="flex items-start justify-between gap-3 lg:block">
-          <span className={`inline-flex px-2 py-1 text-[10px] font-bold uppercase tracking-[0.14em] ${statusPillClass(request.status)}`}>
+          <span className={`inline-flex border px-2 py-1 text-[10px] font-black uppercase tracking-[0.14em] ${statusPillClass(request.status)}`}>
             {statusLabel(request.status)}
           </span>
           <div className="text-right lg:mt-6 lg:text-left">
-            <div className="font-mono text-[9px] font-bold uppercase tracking-[0.14em] text-[#07551f]">Demand</div>
-            <div className="mt-1 text-4xl font-black tabular-nums text-surface-900">{request.vote_count}</div>
+            <div className="font-mono text-[9px] font-bold uppercase tracking-[0.14em] text-brand-orange">Demand</div>
+            <div className="mt-1 text-5xl font-black tabular-nums text-white">{request.vote_count}</div>
           </div>
         </div>
         {viewer ? (
@@ -90,30 +90,30 @@ function BuildRequestCard({
             </button>
           </form>
         ) : (
-          <Link href={loginHref('/requests')} className="mt-4 inline-flex items-center gap-1.5 border border-[#07551f]/30 bg-white px-3 py-1.5 text-xs font-bold text-[#07551f] hover:border-[#07551f]">
+          <Link href={loginHref('/requests')} className="mt-4 inline-flex min-h-10 items-center justify-center gap-1.5 border border-brand-orange/50 bg-white px-3 py-2 text-xs font-black text-surface-900 hover:border-brand-orange">
             <ArrowUp className="h-3.5 w-3.5" />
             Log in
           </Link>
         )}
-        <div className="mt-5 border-t border-[#cfead4] pt-4 font-mono text-[10px] font-bold uppercase tracking-[0.14em] text-[#07551f]">
+        <div className="mt-5 border-t border-surface-800 pt-4 font-mono text-[10px] font-bold uppercase tracking-[0.14em] text-surface-400">
           {responses.length} {responses.length === 1 ? 'answer' : 'answers'}
         </div>
       </div>
 
       <div className="p-5 sm:p-6">
         <div className="mb-4 flex flex-wrap items-center gap-2">
-          <span className="border border-[#07551f]/25 bg-[#effdf3] px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.14em] text-[#07551f]">
-            Wanted build
+          <span className="bg-brand-orange px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.14em] text-white">
+            Build brief
           </span>
-          <span className="border border-surface-200 bg-surface-50 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.14em] text-surface-500">
-            Community queue
+          <span className="border border-surface-700 bg-surface-900 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.14em] text-surface-400">
+            Needs artifact
           </span>
         </div>
 
-        <h2 className="text-xl font-black text-surface-900">{request.title}</h2>
-        <p className="mt-3 text-sm leading-relaxed text-surface-600">{request.body}</p>
+        <h2 className="text-xl font-black text-white">{request.title}</h2>
+        <p className="mt-3 text-sm leading-relaxed text-surface-300">{request.body}</p>
 
-        <div className="mt-5 border-t border-surface-100 pt-4">
+        <div className="mt-5 border-t border-surface-800 pt-4">
           <p className="text-xs text-surface-500">
             Requested by {request.author?.display_name ?? request.author?.username ?? 'a PathForge user'} · {new Date(request.created_at).toLocaleDateString()}
           </p>
@@ -121,24 +121,24 @@ function BuildRequestCard({
 
         {responses.length > 0 && (
           <div className="mt-5 space-y-3">
-            <div className="flex items-center gap-2 font-mono text-[10px] font-bold uppercase tracking-[0.14em] text-[#07551f]">
+            <div className="flex items-center gap-2 font-mono text-[10px] font-bold uppercase tracking-[0.14em] text-brand-orange">
               <MessageSquare className="h-3.5 w-3.5" />
               Builder answers
             </div>
             {responses.map(response => (
-              <div key={response.id} className="border border-[#d7ead9] bg-[#f8fcf7] p-4">
+              <div key={response.id} className="border border-surface-700 bg-[#111113] p-4">
                 <div className="mb-2 flex flex-wrap items-center gap-2 text-[10px] font-bold uppercase tracking-[0.12em] text-surface-500">
                   {response.is_accepted && (
-                    <span className="inline-flex items-center gap-1 text-[#07551f]">
+                    <span className="inline-flex items-center gap-1 text-[#8ee29b]">
                       <CheckCircle2 className="h-3.5 w-3.5" />
                       Accepted
                     </span>
                   )}
                   <span>{new Date(response.created_at).toLocaleDateString()}</span>
                 </div>
-                <p className="text-sm leading-relaxed text-surface-700">{response.body}</p>
+                <p className="text-sm leading-relaxed text-surface-300">{response.body}</p>
                 {response.url && (
-                  <Link href={response.url} className="mt-3 inline-flex items-center gap-1.5 text-sm font-bold text-[#07551f] hover:text-brand-orange">
+                  <Link href={response.url} className="mt-3 inline-flex items-center gap-1.5 text-sm font-bold text-brand-orange hover:text-white">
                     Open linked build
                     <ExternalLink className="h-3.5 w-3.5" />
                   </Link>
@@ -151,8 +151,8 @@ function BuildRequestCard({
         {viewer ? (
           <BuildRequestResponseForm requestId={request.id} />
         ) : (
-          <div className="mt-5 border border-dashed border-[#cfead4] bg-[#f8fcf7] p-4 text-sm text-surface-500">
-            <Link href={loginHref('/requests')} className="font-bold text-[#07551f] hover:text-brand-orange">Log in</Link>
+          <div className="mt-5 border border-dashed border-surface-700 bg-[#111113] p-4 text-sm text-surface-400">
+            <Link href={loginHref('/requests')} className="font-bold text-brand-orange hover:text-white">Log in</Link>
             {' '}to respond with a PathForge build, fork, or source-run result.
           </div>
         )}
@@ -174,127 +174,137 @@ export default async function BuildRequestsPage({
   const votedRequestIds = viewer
     ? await getUserBuildRequestVotes(requests.map(request => request.id))
     : new Set<string>()
+  const openRequestCount = requests.filter(request => request.status === 'open').length
+  const answeredRequestCount = requests.filter(request => request.status === 'answered').length
+  const responseCount = requests.reduce((count, request) => count + (request.responses?.length ?? 0), 0)
 
   return (
-    <div className="bg-[#f7fbf4]">
-      <section className="relative overflow-hidden border-b border-[#cfead4] bg-[#effdf3]">
-        <div className="absolute inset-0 opacity-70 [background-image:linear-gradient(rgba(7,85,31,.08)_1px,transparent_1px),linear-gradient(90deg,rgba(7,85,31,.08)_1px,transparent_1px)] [background-size:46px_46px]" aria-hidden="true" />
-        <div className="relative mx-auto grid max-w-7xl gap-10 px-4 py-14 sm:px-6 lg:grid-cols-[minmax(0,1fr)_430px] lg:px-8 lg:py-16">
-          <div>
-            <div className="mb-5 inline-flex items-center gap-2 border border-[#07551f]/25 bg-white px-3 py-1.5 font-mono text-[11px] font-bold uppercase tracking-[0.14em] text-[#07551f]">
-              <RadioTower className="h-3.5 w-3.5" />
-              Wanted build board
+    <div className="min-h-screen bg-[#111113] text-white">
+      <section className="border-b border-surface-800 bg-[#0f0f11]">
+        <div className="mx-auto grid max-w-7xl gap-6 px-4 py-8 sm:px-6 lg:grid-cols-[minmax(0,1fr)_420px] lg:px-8">
+          <div className="border-l-4 border-brand-orange pl-5">
+            <div className="inline-flex items-center gap-2 font-mono text-[10px] font-bold uppercase tracking-[0.16em] text-brand-orange">
+              <RadioTower className="h-3.5 w-3.5" aria-hidden="true" />
+              Build queue
             </div>
-            <h1 className="max-w-4xl text-5xl font-black leading-[1.02] text-surface-900 sm:text-6xl">
-              Build Requests
-            </h1>
-            <p className="mt-5 max-w-2xl text-lg leading-relaxed text-surface-700">
-              Post the artifact you wish existed. Builders can answer with a PathForge project, a fork, or a source-run result that solves the brief.
+            <h1 className="mt-3 text-4xl font-black leading-none text-white sm:text-6xl">Build Requests</h1>
+            <p className="mt-4 max-w-2xl text-base leading-7 text-surface-300">
+              A dispatch board for wanted artifacts. Post the thing that should exist, then let builders answer with real PathForge projects, forks, or source-run results.
             </p>
-            <div className="mt-8 flex flex-wrap gap-3">
-              <Link href="#post-request" className="inline-flex items-center gap-2 bg-[#07551f] px-4 py-3 text-sm font-bold text-white transition hover:bg-surface-900">
-                Post a request
-                <ArrowRight className="h-4 w-4" />
-              </Link>
-              <Link href="/paths" className="inline-flex items-center gap-2 border border-[#07551f]/30 bg-white px-4 py-3 text-sm font-bold text-[#07551f] transition hover:border-[#07551f]">
-                Search build paths
-                <Search className="h-4 w-4" />
-              </Link>
-            </div>
           </div>
 
-          <aside className="border border-[#07551f] bg-white p-5 shadow-[14px_14px_0_rgba(7,85,31,0.16)]">
-            <div className="mb-5 flex items-center justify-between border-b border-[#cfead4] pb-4">
-              <div>
-                <div className="font-mono text-[10px] font-bold uppercase tracking-[0.14em] text-[#07551f]">
-                  Brief lifecycle
-                </div>
-                <h2 className="mt-1 text-xl font-black text-surface-900">From request to path</h2>
+          <div className="grid grid-cols-3 border border-surface-800 bg-[#17171a]">
+            {[
+              ['Open', openRequestCount],
+              ['Answered', answeredRequestCount],
+              ['Replies', responseCount],
+            ].map(([label, value]) => (
+              <div key={label} className="border-r border-surface-800 p-4 last:border-r-0">
+                <div className="font-mono text-[10px] font-bold uppercase tracking-[0.14em] text-surface-500">{label}</div>
+                <div className="mt-2 text-4xl font-black tabular-nums text-brand-orange">{value}</div>
               </div>
-              <div className="flex h-11 w-11 items-center justify-center bg-[#07551f] text-white">
-                <Hammer className="h-5 w-5" aria-hidden="true" />
-              </div>
-            </div>
-            <div className="grid gap-3">
-              {[
-                ['Brief', 'Name the artifact, workflow, game, or prompt chain.'],
-                ['Demand', 'Votes show which requests have pull.'],
-                ['Answer', 'Builders reply with actual PathForge links or artifacts.'],
-              ].map(([title, body], index) => (
-                <div key={title} className="grid grid-cols-[42px_1fr] gap-3 border border-[#d7ead9] bg-[#f8fcf7] p-3">
-                  <div className="flex h-10 w-10 items-center justify-center bg-[#07551f] font-mono text-xs font-black text-white">
-                    {index + 1}
-                  </div>
-                  <div className="min-w-0">
-                    <h3 className="text-sm font-black text-surface-900">{title}</h3>
-                    <p className="mt-1 text-xs leading-5 text-surface-600">{body}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </aside>
+            ))}
+          </div>
         </div>
       </section>
 
-      <section id="post-request" className="border-b border-[#cfead4] bg-[#f7fbf4]">
-        <div className="mx-auto grid max-w-7xl gap-8 px-4 py-12 sm:px-6 lg:grid-cols-[390px_1fr] lg:px-8 lg:py-16">
-        <div>
+      <section className="border-b border-[#3b2817] bg-[#f7efe6] text-surface-900">
+        <div className="mx-auto grid max-w-7xl gap-4 px-4 py-4 sm:px-6 lg:grid-cols-3 lg:px-8">
+          {[
+            ['1. Brief', 'Describe the missing artifact, workflow, game, or prompt chain.'],
+            ['2. Demand', 'Votes push the requests that people actually want built.'],
+            ['3. Build answer', 'Responses should link to a real build, fork, or source-run result.'],
+          ].map(([title, body]) => (
+            <div key={title} className="border border-[#d8b48a] bg-white px-4 py-3">
+              <div className="font-mono text-[10px] font-black uppercase tracking-[0.14em] text-brand-orange">{title}</div>
+              <p className="mt-1 text-sm leading-6 text-surface-700">{body}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <section className="mx-auto grid max-w-7xl gap-5 px-4 py-6 sm:px-6 lg:grid-cols-[250px_minmax(0,1fr)_360px] lg:px-8">
+        <aside className="space-y-4">
+          <div className="border border-surface-800 bg-[#17171a]">
+            <div className="border-b border-surface-800 px-4 py-3 font-mono text-[10px] font-bold uppercase tracking-[0.14em] text-brand-orange">
+              Request lanes
+            </div>
+            <div className="divide-y divide-surface-800">
+              <div className="flex items-center justify-between px-4 py-4">
+                <span className="text-sm font-semibold text-surface-300">Needs build</span>
+                <span className="bg-[#123923] px-2.5 py-1 font-mono text-xs font-black text-[#8ee29b]">{openRequestCount}</span>
+              </div>
+              <div className="flex items-center justify-between px-4 py-4">
+                <span className="text-sm font-semibold text-surface-300">Has answer</span>
+                <span className="bg-brand-orange px-2.5 py-1 font-mono text-xs font-black text-white">{answeredRequestCount}</span>
+              </div>
+              <div className="flex items-center justify-between px-4 py-4">
+                <span className="text-sm font-semibold text-surface-300">Builder replies</span>
+                <span className="bg-white px-2.5 py-1 font-mono text-xs font-black text-surface-900">{responseCount}</span>
+              </div>
+            </div>
+          </div>
+
+          <div className="border border-brand-orange bg-[#21150f] p-4">
+            <div className="flex items-center gap-2 font-mono text-[10px] font-bold uppercase tracking-[0.14em] text-brand-orange">
+              <Target className="h-3.5 w-3.5" aria-hidden="true" />
+              Not feedback
+            </div>
+            <p className="mt-2 text-sm leading-6 text-surface-300">
+              This page is for wanted finished artifacts. Site bugs, UX confusion, and product feedback still go to Suggestion Box.
+            </p>
+            <Link href="/suggestion-box" className="mt-4 inline-flex min-h-10 items-center border border-brand-orange/50 px-3 py-2 text-sm font-black text-brand-orange hover:bg-brand-orange hover:text-white">
+              Open Suggestion Box
+            </Link>
+          </div>
+
+          <Link href="/paths" className="inline-flex w-full min-h-11 items-center justify-center gap-2 border border-surface-700 bg-[#17171a] px-4 py-3 text-sm font-black text-white hover:border-brand-orange">
+            <Search className="h-4 w-4" aria-hidden="true" />
+            Search existing paths
+          </Link>
+        </aside>
+
+        <main className="min-h-[640px] border border-surface-800 bg-[#17171a]">
+          <div className="flex flex-col gap-3 border-b border-surface-800 bg-[#0f0f11] px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <div className="font-mono text-[10px] font-bold uppercase tracking-[0.14em] text-brand-orange">
+                Active docket
+              </div>
+              <h2 className="mt-1 text-2xl font-black text-white">Wanted builds waiting for makers</h2>
+            </div>
+            <Link href="#post-request" className="inline-flex min-h-10 items-center justify-center gap-2 bg-brand-orange px-4 py-2 text-sm font-black text-white hover:bg-brand-orange-dark">
+              <Hammer className="h-4 w-4" aria-hidden="true" />
+              Add brief
+            </Link>
+          </div>
+
           {params.submitted && (
-            <div className="mb-6 inline-flex items-center gap-2 border border-green-200 bg-green-50 px-3 py-2 text-sm font-semibold text-green-700">
+            <div className="m-4 inline-flex items-center gap-2 border border-[#2bd15f] bg-[#123923] px-3 py-2 text-sm font-semibold text-[#8ee29b]">
               <CheckCircle2 className="h-4 w-4" />
               Build request posted.
             </div>
           )}
-          <div className="mb-3 font-mono text-[11px] font-bold uppercase tracking-[0.14em] text-[#07551f]">Post a build brief</div>
-          <h2 className="text-3xl font-black text-surface-900">Ask for the path you wish existed.</h2>
-          <p className="mt-3 max-w-xl text-sm leading-relaxed text-surface-600">
-            Keep it outcome-focused: what should exist at the end, what platform or model matters, and what would make the answer useful.
-          </p>
-          <div className="mt-6 grid gap-2 text-xs text-surface-600">
-            <div className="border-l-2 border-[#07551f] bg-white px-3 py-2">This is for wanted artifacts and build paths.</div>
-            <div className="border-l-2 border-brand-orange bg-white px-3 py-2">Website feedback still belongs in Suggestion Box.</div>
-          </div>
-          {!viewer && (
-            <div className="mt-6 border border-[#cfead4] bg-white p-4 text-sm text-surface-600">
-              You need to log in before posting a build request or responding to one.
-              <div className="mt-3">
-                <Link href={loginHref('/requests')} className="font-bold text-[#07551f] hover:text-brand-orange">Log in</Link>
-                <span className="mx-2 text-surface-300">/</span>
-                <Link href={signupHref('/requests')} className="font-bold text-[#07551f] hover:text-brand-orange">Sign up</Link>
-              </div>
-            </div>
-          )}
-        </div>
-
-        {viewer ? <BuildRequestSubmitForm /> : (
-          <div className="border border-dashed border-[#a8d9b0] bg-white p-8 text-center text-sm text-surface-500">
-            The build request form appears after login.
-          </div>
-        )}
-        </div>
-      </section>
-
-      <section className="border-t border-[#cfead4] bg-white">
-        <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8 lg:py-16">
-          <div className="mb-8 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-            <div>
-              <div className="mb-3 font-mono text-[11px] font-bold uppercase tracking-[0.14em] text-[#07551f]">Open build briefs</div>
-              <h2 className="text-3xl font-black text-surface-900">What people want built next.</h2>
-            </div>
-            <p className="max-w-md text-sm leading-relaxed text-surface-500">
-              No filler content. This board stays empty until real users ask for real builds.
-            </p>
-          </div>
 
           {requests.length === 0 ? (
-            <div className="border border-dashed border-[#a8d9b0] bg-[#f8fcf7] p-10 text-center">
-              <p className="text-lg font-bold text-surface-900">No build requests yet.</p>
-              <p className="mx-auto mt-2 max-w-lg text-sm leading-relaxed text-surface-500">
-                The first request should be specific enough that someone can answer it with an actual project page.
-              </p>
+            <div className="grid min-h-[500px] place-items-center bg-[linear-gradient(rgba(232,122,44,.12)_1px,transparent_1px),linear-gradient(90deg,rgba(232,122,44,.12)_1px,transparent_1px)] [background-size:34px_34px] p-6">
+              <div className="w-full max-w-lg border border-brand-orange bg-[#0f0f11] p-6 shadow-[12px_12px_0_rgba(232,122,44,0.20)]">
+                <div className="flex items-center justify-between border-b border-surface-800 pb-4">
+                  <div className="font-mono text-[10px] font-black uppercase tracking-[0.14em] text-brand-orange">No tickets loaded</div>
+                  <Hammer className="h-5 w-5 text-brand-orange" aria-hidden="true" />
+                </div>
+                <p className="mt-5 text-2xl font-black text-white">No open build briefs yet.</p>
+                <p className="mt-3 text-sm leading-7 text-surface-300">
+                  The first request should be concrete enough for a builder to answer with an actual PathForge project page.
+                </p>
+                <div className="mt-5 grid gap-2 font-mono text-[10px] font-bold uppercase tracking-[0.14em] text-surface-400">
+                  <div className="border border-surface-800 bg-[#17171a] px-3 py-2">Artifact wanted</div>
+                  <div className="border border-surface-800 bg-[#17171a] px-3 py-2">Source-run accepted</div>
+                  <div className="border border-surface-800 bg-[#17171a] px-3 py-2">Forks welcome</div>
+                </div>
+              </div>
             </div>
           ) : (
-            <div className="grid gap-4 lg:grid-cols-2">
+            <div className="grid gap-4 p-4 xl:grid-cols-2">
               {requests.map(request => (
                 <BuildRequestCard
                   key={request.id}
@@ -305,7 +315,32 @@ export default async function BuildRequestsPage({
               ))}
             </div>
           )}
-        </div>
+        </main>
+
+        <aside id="post-request" className="space-y-4 lg:sticky lg:top-4 lg:self-start">
+          <div className="border border-brand-orange bg-[#21150f]">
+            <div className="border-b border-brand-orange/40 px-4 py-3">
+              <div className="font-mono text-[10px] font-bold uppercase tracking-[0.14em] text-brand-orange">
+                Brief intake
+              </div>
+              <h2 className="mt-1 text-xl font-black text-white">Request the artifact.</h2>
+            </div>
+            <div className="border-b border-brand-orange/20 px-4 py-3 text-sm leading-6 text-surface-300">
+              Name the result, the constraints, and what would make a builder's answer useful.
+            </div>
+            {viewer ? <BuildRequestSubmitForm /> : (
+              <div className="p-4">
+                <div className="border border-dashed border-brand-orange/60 bg-[#0f0f11] p-4 text-sm leading-6 text-surface-300">
+                  The request composer unlocks after login so a builder can reply to the right account.
+                  <div className="mt-4 flex flex-wrap gap-2">
+                    <Link href={loginHref('/requests')} className="inline-flex min-h-10 items-center bg-brand-orange px-3 py-2 text-sm font-black text-white hover:bg-brand-orange-dark">Log in</Link>
+                    <Link href={signupHref('/requests')} className="inline-flex min-h-10 items-center border border-brand-orange/50 px-3 py-2 text-sm font-black text-brand-orange hover:bg-brand-orange hover:text-white">Sign up</Link>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        </aside>
       </section>
     </div>
   )

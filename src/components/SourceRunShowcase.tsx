@@ -23,14 +23,30 @@ export type SourceRunShowcaseStep = {
   artifactTitle?: string
   sourceFilePath?: string | null
   code?: string | null
+  artifactVersions?: SourceRunShowcaseArtifactVersion[]
   callout?: SourceRunShowcaseCallout
 }
 
-type ArtifactPackage = SourceRunShowcaseStep & {
+export type SourceRunShowcaseArtifactVersion = {
+  id?: string
   artifactPath: string
   artifactTitle: string
   sourceFilePath: string
   code: string
+  notes?: string
+  isDefault?: boolean
+}
+
+type ArtifactPackage = SourceRunShowcaseStep & {
+  stepId: string
+  artifactPath: string
+  artifactTitle: string
+  sourceFilePath: string
+  code: string
+  artifactVersionNotes?: string
+  artifactOrdinal: number
+  artifactCount: number
+  isDefaultArtifact: boolean
 }
 
 function ArtifactFrame({
@@ -215,26 +231,33 @@ function SourceLink({
 
 function ResponsePackageCard({
   step,
-  artifactPackage,
-  selected,
+  artifactPackages,
+  selectedPackage,
   onSelect,
   sourceRunUrl,
   providerName,
 }: {
   step: SourceRunShowcaseStep
-  artifactPackage?: ArtifactPackage
-  selected: boolean
-  onSelect?: () => void
+  artifactPackages: ArtifactPackage[]
+  selectedPackage?: ArtifactPackage
+  onSelect?: (packageId: string) => void
   sourceRunUrl: string
   providerName: string
 }) {
   const copyText = step.responseCopyText ?? step.response
+  const hasArtifactPackages = artifactPackages.length > 0
+  const selected = Boolean(selectedPackage)
+  const detailPackage = selectedPackage ?? artifactPackages[0]
+  const artifactCopy =
+    artifactPackages.length === 1
+      ? 'This response produced a selectable artifact version.'
+      : `This response produced ${artifactPackages.length} selectable artifact versions.`
 
   return (
     <div
       className={[
         'border bg-white transition',
-        artifactPackage && selected
+        hasArtifactPackages && selected
           ? 'border-brand-blue ring-2 ring-brand-blue/25'
           : 'border-surface-200 hover:border-brand-blue/60',
       ].join(' ')}
@@ -246,15 +269,15 @@ function ResponsePackageCard({
           </div>
           <div className="mt-1 block text-base font-black text-surface-900">{step.title}</div>
           <div className="mt-1 block text-sm leading-6 text-surface-600">
-            {artifactPackage
-              ? 'This response produced a selectable artifact version.'
+            {hasArtifactPackages
+              ? artifactCopy
               : 'This response is preserved as transcript-only because no public artifact was produced.'}
           </div>
         </div>
-        {artifactPackage && onSelect && (
+        {detailPackage && onSelect && (
           <button
             type="button"
-            onClick={onSelect}
+            onClick={() => onSelect(detailPackage.id)}
             aria-pressed={selected}
             className={[
               'inline-flex shrink-0 items-center gap-1.5 border px-3 py-2 font-mono text-[10px] uppercase tracking-[0.12em]',
@@ -272,14 +295,42 @@ function ResponsePackageCard({
       <div className="space-y-4 border-t border-surface-200 bg-white p-4">
         {step.callout && <StepCallout callout={step.callout} />}
 
-        {artifactPackage ? (
+        {detailPackage ? (
           <div className="border border-surface-200 bg-surface-50 px-4 py-3">
             <div className="flex items-center gap-2 font-mono text-[11px] font-bold text-surface-700">
               <FileCode2 className="h-4 w-4 text-brand-blue" />
-              {artifactPackage.sourceFilePath}
+              {detailPackage.sourceFilePath}
             </div>
+            {artifactPackages.length > 1 && onSelect && (
+              <div className="mt-3 flex flex-wrap gap-2">
+                {artifactPackages.map((pkg) => {
+                  const packageSelected = selectedPackage?.id === pkg.id
+                  return (
+                    <button
+                      key={pkg.id}
+                      type="button"
+                      onClick={() => onSelect(pkg.id)}
+                      aria-pressed={packageSelected}
+                      className={[
+                        'border px-2.5 py-1.5 text-left font-mono text-[10px] uppercase tracking-[0.12em]',
+                        packageSelected
+                          ? 'border-brand-blue bg-brand-blue text-white'
+                          : 'border-surface-300 bg-white text-surface-700 hover:border-brand-blue',
+                      ].join(' ')}
+                    >
+                      Version {pkg.artifactOrdinal}
+                    </button>
+                  )
+                })}
+              </div>
+            )}
+            {detailPackage.artifactVersionNotes && (
+              <p className="mt-3 text-xs leading-5 text-surface-600">
+                {detailPackage.artifactVersionNotes}
+              </p>
+            )}
             <a
-              href={artifactPackage.artifactPath}
+              href={detailPackage.artifactPath}
               target="_blank"
               rel="noreferrer"
               className="mt-2 inline-flex items-center gap-2 border-b border-surface-400 text-sm font-semibold text-surface-900 transition hover:border-brand-orange hover:text-brand-orange"
@@ -296,7 +347,7 @@ function ResponsePackageCard({
 
         <ExactResponseBlock text={step.response} copyText={copyText} />
 
-        {artifactPackage && <ArtifactCodeBlock pkg={artifactPackage} />}
+        {detailPackage && <ArtifactCodeBlock pkg={detailPackage} />}
 
         {step.notes && (
           <div className="border border-surface-200 bg-white px-4 py-3 text-sm leading-6 text-surface-700">
@@ -329,25 +380,53 @@ export default function SourceRunShowcase({
 }) {
   const packages = useMemo(
     () =>
-      steps
-        .filter(
-          (step): step is ArtifactPackage =>
-            !!step.artifactPath &&
-            !!step.sourceFilePath &&
-            !!step.code &&
-            !!step.artifactTitle,
-        )
-        .map((step) => ({
+      steps.flatMap((step) => {
+        const explicitVersions = (step.artifactVersions ?? []).filter((version) => (
+          !!version.artifactPath &&
+          !!version.sourceFilePath &&
+          !!version.code &&
+          !!version.artifactTitle
+        ))
+
+        if (explicitVersions.length > 0) {
+          return explicitVersions.map((version, index) => ({
+            ...step,
+            id: version.id ?? `${step.id}-artifact-${index + 1}`,
+            stepId: step.id,
+            artifactPath: version.artifactPath,
+            artifactTitle: version.artifactTitle,
+            sourceFilePath: version.sourceFilePath,
+            code: version.code,
+            artifactVersionNotes: version.notes,
+            artifactOrdinal: index + 1,
+            artifactCount: explicitVersions.length,
+            isDefaultArtifact: Boolean(version.isDefault),
+          }))
+        }
+
+        if (!step.artifactPath || !step.sourceFilePath || !step.code || !step.artifactTitle) {
+          return []
+        }
+
+        return [{
           ...step,
+          stepId: step.id,
           artifactPath: step.artifactPath,
           artifactTitle: step.artifactTitle,
           sourceFilePath: step.sourceFilePath,
           code: step.code,
-        })),
+          artifactOrdinal: 1,
+          artifactCount: 1,
+          isDefaultArtifact: false,
+        }]
+      }),
     [steps],
   )
+  const defaultStepPackages = packages.filter((pkg) => pkg.stepNumber === defaultStepNumber)
   const defaultPackage =
-    packages.find((pkg) => pkg.stepNumber === defaultStepNumber) ?? packages[packages.length - 1]
+    packages.find((pkg) => pkg.isDefaultArtifact) ??
+    defaultStepPackages[defaultStepPackages.length - 1] ??
+    packages[packages.length - 1]
   const [selectedPackageId, setSelectedPackageId] = useState(defaultPackage?.id ?? '')
   const selectedPackage =
     packages.find((pkg) => pkg.id === selectedPackageId) ?? defaultPackage ?? packages[0]
@@ -416,7 +495,11 @@ export default function SourceRunShowcase({
                   </div>
                   <div className="mt-1 text-sm font-black">{pkg.artifactTitle}</div>
                   <div className={['mt-2 text-xs leading-5', selected ? 'text-white/80' : 'text-surface-600'].join(' ')}>
-                    {selected ? 'Mounted above' : 'Select to mount above'}
+                    {pkg.artifactCount > 1
+                      ? `Version ${pkg.artifactOrdinal} of ${pkg.artifactCount}`
+                      : selected
+                        ? 'Mounted above'
+                        : 'Select to mount above'}
                   </div>
                 </button>
               )
@@ -426,8 +509,8 @@ export default function SourceRunShowcase({
 
         <div className="space-y-7">
           {steps.map((step, index) => {
-            const artifactPackage = packages.find((pkg) => pkg.id === step.id)
-            const selected = !!artifactPackage && selectedPackage?.id === artifactPackage.id
+            const artifactPackages = packages.filter((pkg) => pkg.stepId === step.id)
+            const selectedStepPackage = artifactPackages.find((pkg) => selectedPackage?.id === pkg.id)
 
             return (
               <PipeNode
@@ -440,9 +523,9 @@ export default function SourceRunShowcase({
                 <div className="mt-4">
                   <ResponsePackageCard
                     step={step}
-                    artifactPackage={artifactPackage}
-                    selected={selected}
-                    onSelect={artifactPackage ? () => setSelectedPackageId(artifactPackage.id) : undefined}
+                    artifactPackages={artifactPackages}
+                    selectedPackage={selectedStepPackage}
+                    onSelect={artifactPackages.length > 0 ? setSelectedPackageId : undefined}
                     sourceRunUrl={sourceRunUrl}
                     providerName={providerName}
                   />

@@ -57,6 +57,14 @@ mustNotMatch(importer, /\.from\(['"`]prompt_steps['"`]\)/, 'importer must not in
 mustNotMatch(importer, /args\.submitDraft\s*=\s*true|submitDraft:\s*true|mode:\s*['"`]draft['"`]/, 'importer must not support direct pending draft mode')
 mustNotMatch(importer, /vote_count|bookmark_count|category_id:\s*category\.id|result_content:\s*pkg/, 'importer must not populate public/upvote-page fields')
 
+const legacySeeder = 'scripts/seed-submission.mjs'
+optionalMustInclude(legacySeeder, 'Deprecated compatibility shim', 'legacy seed-submission script must stay a safe wrapper, not a second importer')
+optionalMustInclude(legacySeeder, 'import-pathforge-source-run.mjs', 'legacy seed-submission script must delegate to the canonical importer')
+optionalMustInclude(legacySeeder, 'Old --title/--link/--notes usage is refused', 'legacy seed-submission script must refuse metadata-light submissions')
+optionalMustNotInclude(legacySeeder, 'SUPABASE_SERVICE_ROLE_KEY', 'legacy seed-submission script must not load service-role credentials')
+optionalMustNotInclude(legacySeeder, "from('source_run_submissions')", 'legacy seed-submission script must not insert source-run rows directly')
+optionalMustNotInclude(legacySeeder, 'createClient(', 'legacy seed-submission script must not create its own Supabase client')
+
 const buildPage = 'src/app/prompt/new/page.tsx'
 mustInclude(buildPage, 'source link, model info, and notes only', 'source-run card must describe the actual intake fields')
 mustInclude(buildPage, 'AI service', 'source-run form must ask where the run happened separately from the model')
@@ -97,6 +105,11 @@ mustInclude('src/lib/source-run-review.ts', "labeledValue(notes, 'Provider/model
 mustInclude('src/lib/source-run-review.ts', "labeledValue(notes, 'Provider/model/settings')", 'admin metadata parser must preserve legacy provider/model/settings notes')
 mustInclude('src/app/admin/page.tsx', 'modelMetadataForSourceRunReview', 'admin pending rows must surface model metadata')
 mustInclude('src/app/admin/source-runs/[id]/page.tsx', 'Model captured', 'admin source-run detail must surface captured model metadata')
+mustInclude('src/app/admin/source-runs/[id]/page.tsx', 'linkedPromptStatus', 'admin detail must inspect linked prompt status before labeling source-run review state')
+mustInclude('src/app/admin/source-runs/[id]/page.tsx', 'Rejected source-run page', 'admin detail must not label rejected linked pages as pending')
+mustInclude('src/app/admin/source-runs/[id]/page.tsx', 'Declined source run', 'admin detail must not label declined source-run intakes as pending')
+mustInclude('src/app/admin/source-runs/[id]/page.tsx', 'Prepared page pending approval', 'admin detail must distinguish prepared pages from raw queued intakes')
+mustInclude('src/app/admin/source-runs/[id]/page.tsx', '!isPublished && !isDeclined', 'admin detail must hide decline controls for terminal source-run states')
 
 const skillBase = join(homedir(), '.codex/skills/pathforge-seed-iteration')
 const skillFiles = [

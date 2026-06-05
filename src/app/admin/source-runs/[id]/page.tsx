@@ -30,15 +30,29 @@ export default async function AdminSourceRunDetailPage({
   const author = sourceRun.author?.display_name ?? sourceRun.author?.username ?? 'Anonymous'
   const sourceLabel = sourceRun.source_url ?? sourceRun.file_name ?? 'No source attached'
   const preparedProject = getPreparedShowcaseProjectBySourceRunId(sourceRun.id)
+  const linkedPromptStatus = sourceRun.extracted_prompt?.status ?? null
   const isPublished = sourceRun.extracted_prompt?.status === 'approved'
+  const isDeclined = sourceRun.status === 'failed' || linkedPromptStatus === 'rejected'
+  const isPreparedPending = Boolean(sourceRun.extracted_prompt_id) && !isPublished && !isDeclined
   const publishedHref = isPublished && sourceRun.extracted_prompt_id
     ? preparedProject?.href ?? `/prompt/${sourceRun.extracted_prompt_id}`
     : null
   const reviewStatusLabel = isPublished
     ? 'Published source run'
-    : sourceRun.extracted_prompt_id
-      ? 'Pending source-run approval'
-      : 'Pending source-run review'
+    : isDeclined
+      ? linkedPromptStatus === 'rejected'
+        ? 'Rejected source-run page'
+        : 'Declined source run'
+      : isPreparedPending
+        ? 'Prepared page pending approval'
+        : sourceRun.status === 'extracting'
+          ? 'Extracting source run'
+          : 'Pending source-run review'
+  const reviewStatusClass = isPublished
+    ? 'bg-green-100 text-green-800'
+    : isDeclined
+      ? 'bg-red-100 text-red-800'
+      : 'bg-amber-100 text-amber-800'
 
   return (
     <div className="mx-auto max-w-4xl">
@@ -49,7 +63,7 @@ export default async function AdminSourceRunDetailPage({
 
       <div className="border border-gray-200 bg-white">
         <div className="border-b border-gray-200 px-6 py-5">
-          <div className="mb-2 inline-flex items-center bg-amber-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.12em] text-amber-800">
+          <div className={`mb-2 inline-flex items-center px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.12em] ${reviewStatusClass}`}>
             {reviewStatusLabel}
           </div>
           <h1 className="text-2xl font-bold text-gray-950">{title}</h1>
@@ -62,8 +76,9 @@ export default async function AdminSourceRunDetailPage({
           <section className="border border-blue-200 bg-blue-50 p-4">
             <h2 className="text-sm font-bold text-blue-950">How this gets approved</h2>
             <p className="mt-1 text-sm leading-6 text-blue-900">
-              This is the captured AI-session intake. It becomes public only after a prepared showcase page exists
-              and an admin publishes that prepared page from here. Until then it stays out of Build Paths.
+              {isDeclined
+                ? 'This source-run review is closed. It should stay out of Build Paths unless an admin explicitly reopens or republishes it later.'
+                : 'This is the captured AI-session intake. It becomes public only after a prepared showcase page exists and an admin publishes that prepared page from here. Until then it stays out of Build Paths.'}
             </p>
             {preparedProject ? (
               <p className="mt-2 text-sm font-semibold text-blue-950">
@@ -124,6 +139,16 @@ export default async function AdminSourceRunDetailPage({
             </div>
           </section>
 
+          {isDeclined && (
+            <section className="border border-red-200 bg-red-50 p-4">
+              <h2 className="text-sm font-bold text-red-900">Review closed</h2>
+              <p className="mt-1 text-sm leading-6 text-red-800">
+                This intake is no longer waiting for approval.
+                {sourceRun.admin_notes ? ` ${sourceRun.admin_notes}` : ''}
+              </p>
+            </section>
+          )}
+
           {publishedHref ? (
             <section className="border border-green-200 bg-green-50 p-4">
               <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -145,7 +170,7 @@ export default async function AdminSourceRunDetailPage({
                 </Link>
               </div>
             </section>
-          ) : preparedProject ? (
+          ) : preparedProject && !isDeclined ? (
             <section className="border border-green-200 bg-green-50 p-4">
               <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                 <div>
@@ -172,7 +197,7 @@ export default async function AdminSourceRunDetailPage({
             </section>
           ) : null}
 
-          {!isPublished && (
+          {!isPublished && !isDeclined && (
             <section className="border border-red-200 bg-red-50 p-4">
               <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                 <div>

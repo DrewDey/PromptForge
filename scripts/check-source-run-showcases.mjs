@@ -15,6 +15,20 @@ const sourceRunProjects = [
     packagePath: 'seed-runs/hp-10bii-financial-calculator-claude-opus-48.json',
   },
   {
+    name: 'Pomodoro Focus Timer',
+    route: 'src/app/pomodoro-timer-demo/page.tsx',
+    projectId: 'POMODORO_TIMER_PROJECT_ID',
+    showcaseExport: 'POMODORO_TIMER_SHOWCASE_PROJECT',
+    href: '/pomodoro-timer-demo',
+    artifactPaths: [
+      'public/artifacts/pomodoro-step-1.html',
+      'public/artifacts/pomodoro-step-2.html',
+      'public/artifacts/pomodoro-step-3.html',
+      'public/artifacts/pomodoro-step-4.html',
+      'public/artifacts/pomodoro-focus-timer-gpt55-instant.html',
+    ],
+  },
+  {
     name: 'Weekend Plan Checklist',
     route: 'src/app/weekend-plan-checklist-demo/page.tsx',
     projectId: 'WEEKEND_CHECKLIST_PROJECT_ID',
@@ -78,6 +92,8 @@ const sharedComponentContent = read(sharedComponent)
 mustInclude(sharedComponent, sharedComponentContent, 'packages.length > 0', 'shared showcase must render an artifact selector when artifacts exist')
 mustInclude(sharedComponent, sharedComponentContent, 'setSelectedPackageId', 'shared showcase must keep artifact package selection state')
 mustInclude(sharedComponent, sharedComponentContent, 'defaultStepNumber', 'shared showcase must support final-artifact default selection')
+mustInclude(sharedComponent, sharedComponentContent, 'artifactVersions?: SourceRunShowcaseArtifactVersion[]', 'shared showcase must allow multiple artifact versions per response package')
+mustInclude(sharedComponent, sharedComponentContent, 'isDefaultArtifact', 'shared showcase must support an explicit default artifact version')
 mustInclude(sharedComponent, sharedComponentContent, 'Verbatim artifact', 'shared showcase must preserve long generated code as collapsible artifact text')
 mustNotInclude(sharedComponent, sharedComponentContent, 'ProjectEngagementBar', 'shared showcase should not own page-shell engagement controls')
 
@@ -86,6 +102,7 @@ for (const deletedExplorer of [
   'src/app/weekend-plan-checklist-demo/WeekendPlanChecklistSourceRunExplorer.tsx',
   'src/app/neon-block-patrol-demo/NeonBlockPatrolSourceRunExplorer.tsx',
   'src/app/swish-city-timing-hoops-demo/SwishCitySourceRunExplorer.tsx',
+  'src/app/pomodoro-timer-demo/PomodoroSourceRunExplorer.tsx',
 ]) {
   if (existsSync(deletedExplorer)) failures.push(`${deletedExplorer}: old one-off source-run explorer must not come back`)
 }
@@ -113,6 +130,19 @@ for (const project of sourceRunProjects) {
   mustInclude('src/lib/project-engagement.ts', engagement, project.projectId, `${project.name} must be non-persistable until a real prompts row exists`)
   mustInclude('src/lib/mock-data.ts', mockData, project.showcaseExport, `${project.name} must be present in mock prompt/profile data`)
 
+  for (const artifactPath of project.artifactPaths ?? []) {
+    if (!existsSync(artifactPath)) failures.push(`${project.name}: missing artifact file ${artifactPath}`)
+  }
+
+  if (project.name === 'Pomodoro Focus Timer') {
+    mustInclude(project.route, routeContent, 'artifactVersions: step.stepNumber === 4', 'Pomodoro must preserve the captured step 4 and public final artifacts as selectable versions')
+    mustInclude(project.route, routeContent, 'pomodoro-focus-timer-gpt55-instant.html', 'Pomodoro must keep the current public final artifact selectable')
+    mustInclude(project.route, routeContent, 'isDefault: true', 'Pomodoro must default to the current public final artifact')
+    mustInclude(project.route, routeContent, 'response: code', 'Pomodoro must use the captured HTML file as the exact response text')
+  }
+
+  if (!project.packagePath) continue
+
   const pkg = parseJson(project.packagePath)
   if (!pkg) continue
   if (!Array.isArray(pkg.steps) || pkg.steps.length === 0) {
@@ -130,6 +160,7 @@ for (const project of sourceRunProjects) {
       'exact response is preserved in the source session link',
       'captured code for this version is saved at',
       'captured final code is saved at',
+      'saved verbatim at',
     ]) {
       if (response.includes(forbidden)) {
         failures.push(`${stepLabel}: response_exact must not defer exact text to a source link or artifact summary`)
@@ -150,6 +181,16 @@ for (const project of sourceRunProjects) {
   }
 
   const artifactVersions = Array.isArray(pkg.artifact_versions) ? pkg.artifact_versions : []
+  const generatedArtifactPaths = new Set()
+  for (const step of pkg.steps) {
+    if (!Array.isArray(step.generated_files)) continue
+    for (const filePath of step.generated_files) {
+      if (typeof filePath === 'string' && filePath.startsWith('public/artifacts/')) {
+        generatedArtifactPaths.add(filePath)
+      }
+    }
+  }
+
   for (const artifactVersion of artifactVersions) {
     const artifactPath = typeof artifactVersion === 'string' ? artifactVersion : artifactVersion.path
     if (typeof artifactPath !== 'string') {
@@ -160,6 +201,14 @@ for (const project of sourceRunProjects) {
       failures.push(`${project.packagePath}: artifact version ${artifactPath} is not production-servable`)
     } else if (!existsSync(join(process.cwd(), artifactPath))) {
       failures.push(`${project.packagePath}: artifact version file missing at ${artifactPath}`)
+    }
+  }
+
+  if (project.name === 'HP 10Bii+') {
+    mustInclude(project.route, routeContent, 'artifactVersionsForStep', 'HP must map every generated artifact file into selectable showcase versions')
+    mustInclude(project.route, routeContent, 'isDefault: filePath === finalArtifactPath', 'HP must default to the verified public mounted artifact')
+    if (artifactVersions.length !== generatedArtifactPaths.size) {
+      failures.push(`${project.packagePath}: HP artifact_versions must match generated public artifact files so every version can mount above`)
     }
   }
 }

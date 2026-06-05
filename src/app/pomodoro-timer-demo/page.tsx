@@ -3,8 +3,8 @@ import path from 'node:path'
 import Link from 'next/link'
 import ProjectEngagementBar from '@/components/ProjectEngagementBar'
 import ProjectCommunityPanel from '@/components/ProjectCommunityPanel'
+import SourceRunShowcase, { type SourceRunShowcaseStep } from '@/components/SourceRunShowcase'
 import { POMODORO_TIMER_SHOWCASE_PROJECT } from '@/lib/prepared-showcase-projects'
-import PomodoroSourceRunExplorer from './PomodoroSourceRunExplorer'
 
 const project = POMODORO_TIMER_SHOWCASE_PROJECT
 const projectId = project.id
@@ -16,6 +16,63 @@ function readArtifact(fileName: string, fallback: string) {
     return fs.readFileSync(path.join(process.cwd(), 'public/artifacts', fileName), 'utf8')
   } catch {
     return fallback
+  }
+}
+
+function getPublicArtifactPath(fileName: string) {
+  return `/artifacts/${fileName}`
+}
+
+function getSourceFilePath(fileName: string) {
+  return `public/artifacts/${fileName}`
+}
+
+function toStep({
+  step,
+  code,
+  finalArtifactCode,
+}: {
+  step: (typeof project.steps)[number]
+  code: string
+  finalArtifactCode: string
+}): SourceRunShowcaseStep {
+  const fileName = `pomodoro-step-${step.stepNumber}.html`
+  const sourceFilePath = getSourceFilePath(fileName)
+  const artifactTitle = `Pomodoro Focus Timer · step ${step.stepNumber} artifact`
+
+  return {
+    id: step.id,
+    stepNumber: step.stepNumber,
+    title: step.title,
+    prompt: step.content,
+    response: code,
+    responseCopyText: code,
+    notes: step.description,
+    artifactPath: getPublicArtifactPath(fileName),
+    artifactTitle,
+    sourceFilePath,
+    code,
+    artifactVersions: step.stepNumber === 4
+      ? [
+          {
+            id: `${step.id}-captured-step-4`,
+            artifactPath: getPublicArtifactPath(fileName),
+            artifactTitle,
+            sourceFilePath,
+            code,
+            notes: 'Captured step 4 HTML response from the ChatGPT run.',
+          },
+          {
+            id: `${step.id}-public-final`,
+            artifactPath: getPublicArtifactPath('pomodoro-focus-timer-gpt55-instant.html'),
+            artifactTitle: 'Pomodoro Focus Timer · verified public final',
+            sourceFilePath: getSourceFilePath('pomodoro-focus-timer-gpt55-instant.html'),
+            code: finalArtifactCode,
+            notes: 'Current public final artifact path preserved as a selectable mount.',
+            isDefault: true,
+          },
+        ]
+      : undefined,
   }
 }
 
@@ -51,6 +108,15 @@ export default function PomodoroTimerDemoPage() {
     readArtifact('pomodoro-step-3.html', 'Step 3 Pomodoro artifact capture is unavailable.'),
     readArtifact('pomodoro-step-4.html', 'Step 4 Pomodoro artifact capture is unavailable.'),
   ]
+  const finalArtifactCode = readArtifact(
+    'pomodoro-focus-timer-gpt55-instant.html',
+    'Final Pomodoro artifact capture is unavailable.',
+  )
+  const steps = project.steps.map((step, index) => toStep({
+    step,
+    code: stepCodes[index] ?? 'Step Pomodoro artifact capture is unavailable.',
+    finalArtifactCode,
+  }))
 
   return (
     <main className="min-h-screen bg-surface-50 text-surface-900">
@@ -83,10 +149,12 @@ export default function PomodoroTimerDemoPage() {
         </div>
       </section>
 
-      <PomodoroSourceRunExplorer
+      <SourceRunShowcase
         sourceRunUrl={sourceRunUrl}
-        steps={project.steps}
-        stepCodes={stepCodes}
+        providerName="ChatGPT"
+        steps={steps}
+        defaultStepNumber={4}
+        verificationNotes="Captured from a real ChatGPT GPT 5.5 Instant run. The final public artifact path is selectable separately because it differs from the captured step 4 file."
       />
 
       <ProjectCommunityPanel projectId={projectId} />

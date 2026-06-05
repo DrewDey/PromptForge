@@ -10,19 +10,19 @@ export default function BuildRequestSubmitForm() {
   const [state, formAction, pending] = useActionState(submitBuildRequest, initialState)
 
   return (
-    <form action={formAction} className="bg-[#21150f]">
-      <div className="border-b border-brand-orange/30 px-4 py-4">
+    <form action={formAction} className="bg-white">
+      <div className="border-b border-[#ead2b8] bg-[#fff7ed] px-4 py-4">
         <div className="flex items-center gap-2 font-mono text-[10px] font-bold uppercase tracking-[0.14em] text-brand-orange">
           <Hammer className="h-3.5 w-3.5" aria-hidden="true" />
           Build ticket
         </div>
-        <p className="mt-2 text-sm leading-6 text-surface-300">
+        <p className="mt-2 text-sm leading-6 text-surface-600">
           Write the ask like a builder is picking up a work order.
         </p>
       </div>
 
       <div className="p-4">
-        <div className="mb-4 border border-brand-orange/30 bg-[#0f0f11] p-3">
+        <div className="mb-4 border border-[#d8b48a] bg-[#fffaf5] p-3">
           <label htmlFor="request-title" className="mb-2 flex items-center justify-between gap-3 text-xs font-black uppercase tracking-[0.14em] text-brand-orange">
             <span>01 Request title</span>
             <span className="font-mono text-[10px] text-surface-500">max 120</span>
@@ -34,11 +34,11 @@ export default function BuildRequestSubmitForm() {
             minLength={4}
             maxLength={120}
             placeholder="Example: A one-file Tetris game I can fork"
-            className="w-full border border-surface-700 bg-[#17171a] px-3 py-3 text-sm font-semibold text-white placeholder:text-surface-500 focus:border-brand-orange focus:outline-none"
+            className="w-full border border-[#d8b48a] bg-white px-3 py-3 text-sm font-semibold text-surface-900 placeholder:text-surface-400 focus:border-brand-orange focus:outline-none"
           />
         </div>
 
-        <div className="mb-4 border border-brand-orange/30 bg-[#0f0f11] p-3">
+        <div className="mb-4 border border-[#d8b48a] bg-[#fffaf5] p-3">
           <label htmlFor="request-body" className="mb-2 flex items-center justify-between gap-3 text-xs font-black uppercase tracking-[0.14em] text-brand-orange">
             <span>02 Build spec</span>
             <span className="font-mono text-[10px] text-surface-500">artifact needed</span>
@@ -50,12 +50,12 @@ export default function BuildRequestSubmitForm() {
             minLength={20}
             rows={7}
             placeholder="Describe the artifact you want, the model or platform you care about, and what would count as a good finished result."
-            className="w-full border border-surface-700 bg-[#17171a] px-3 py-3 text-sm leading-relaxed text-white placeholder:text-surface-500 focus:border-brand-orange focus:outline-none"
+            className="w-full border border-[#d8b48a] bg-white px-3 py-3 text-sm leading-relaxed text-surface-900 placeholder:text-surface-400 focus:border-brand-orange focus:outline-none"
           />
         </div>
 
         {state.error && (
-          <p className="mb-4 border border-red-300 bg-red-950/40 px-3 py-2 text-sm font-medium text-red-100" role="alert">
+          <p className="mb-4 border border-red-200 bg-red-50 px-3 py-2 text-sm font-medium text-red-700" role="alert">
             {state.error}
           </p>
         )}

@@ -2,7 +2,7 @@ import { respondToBuildRequest } from '@/lib/actions'
 
 export default function BuildRequestResponseForm({ requestId }: { requestId: string }) {
   return (
-    <form action={respondToBuildRequest} className="mt-5 border-t border-surface-800 pt-4">
+    <form action={respondToBuildRequest} className="mt-5 border-t border-[#f0dfcc] pt-4">
       <input type="hidden" name="request_id" value={requestId} />
       <div className="mb-3 font-mono text-[10px] font-bold uppercase tracking-[0.14em] text-brand-orange">
         Attach build answer
@@ -16,7 +16,7 @@ export default function BuildRequestResponseForm({ requestId }: { requestId: str
           name="url"
           type="url"
           placeholder="Link to a PathForge build or fork"
-          className="border border-surface-700 bg-[#111113] px-3 py-2.5 text-sm text-white placeholder:text-surface-500 focus:border-brand-orange focus:outline-none"
+          className="border border-[#d8b48a] bg-white px-3 py-2.5 text-sm text-surface-900 placeholder:text-surface-400 focus:border-brand-orange focus:outline-none"
         />
         <label htmlFor={`build-request-note-${requestId}`} className="sr-only">
           Short note about what you made
@@ -25,7 +25,7 @@ export default function BuildRequestResponseForm({ requestId }: { requestId: str
           id={`build-request-note-${requestId}`}
           name="body"
           placeholder="Short note about what you made"
-          className="border border-surface-700 bg-[#111113] px-3 py-2.5 text-sm text-white placeholder:text-surface-500 focus:border-brand-orange focus:outline-none"
+          className="border border-[#d8b48a] bg-white px-3 py-2.5 text-sm text-surface-900 placeholder:text-surface-400 focus:border-brand-orange focus:outline-none"
         />
         <button type="submit" className="bg-brand-orange px-4 py-2.5 text-sm font-black text-white hover:bg-brand-orange-dark">
           Respond

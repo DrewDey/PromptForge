@@ -39,8 +39,8 @@ function voteButtonClass(hasVoted: boolean) {
   return [
     'inline-flex items-center gap-1.5 border px-3 py-1.5 text-xs font-bold',
     hasVoted
-      ? 'border-brand-orange bg-brand-orange/10 text-brand-orange hover:border-brand-orange-dark hover:text-brand-orange-dark'
-      : 'border-surface-300 text-surface-700 hover:border-surface-900 hover:text-surface-900',
+      ? 'border-brand-blue bg-accent-100 text-brand-blue-dark hover:border-brand-blue-dark'
+      : 'border-brand-blue/30 bg-white text-brand-blue-dark hover:border-brand-blue',
   ].join(' ')
 }
 
@@ -56,39 +56,14 @@ function SuggestionCard({
   const publicResponses = (suggestion.responses ?? []).filter(response => response.visibility === 'public')
 
   return (
-    <article className="border border-surface-200 bg-white p-5 sm:p-6">
-      <div className="mb-4 flex flex-wrap items-center gap-2">
-        <span className="bg-surface-900 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.14em] text-white">
-          {statusLabel(suggestion.public_status)}
-        </span>
-        <span className="border border-surface-200 bg-surface-50 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.14em] text-surface-500">
-          PathForge feedback
-        </span>
-      </div>
-
-      <h2 className="text-xl font-black tracking-[-0.02em] text-surface-900">{suggestion.title}</h2>
-      <p className="mt-3 text-sm leading-relaxed text-surface-600">{suggestion.body}</p>
-
-      {publicResponses.length > 0 && (
-        <div className="mt-5 border-l-2 border-brand-orange bg-brand-orange/[0.04] px-4 py-3">
-          <div className="mb-2 flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.14em] text-brand-orange">
-            <MessageSquare className="h-3.5 w-3.5" />
-            PathForge response
-          </div>
-          <div className="space-y-3">
-            {publicResponses.map(response => (
-              <p key={response.id} className="text-sm leading-relaxed text-surface-700">{response.body}</p>
-            ))}
-          </div>
+    <article className="grid overflow-hidden border border-surface-200 bg-white transition hover:border-surface-900 hover:shadow-[8px_8px_0_rgba(24,24,27,0.08)] sm:grid-cols-[88px_1fr]">
+      <div className="flex items-center justify-between border-b border-surface-200 bg-accent-50 px-5 py-4 sm:flex-col sm:items-center sm:justify-start sm:border-b-0 sm:border-r sm:px-3 sm:py-5">
+        <div className="text-center">
+          <div className="font-mono text-[9px] font-bold uppercase tracking-[0.14em] text-brand-blue-dark">Votes</div>
+          <div className="mt-1 text-3xl font-black tabular-nums text-surface-900">{suggestion.vote_count}</div>
         </div>
-      )}
-
-      <div className="mt-5 flex flex-wrap items-center justify-between gap-3 border-t border-surface-100 pt-4">
-        <p className="text-xs text-surface-500">
-          Sent by {suggestion.author?.display_name ?? suggestion.author?.username ?? 'a PathForge user'} · {new Date(suggestion.created_at).toLocaleDateString()}
-        </p>
         {canVote ? (
-          <form action={voteOnSuggestion}>
+          <form action={voteOnSuggestion} className="sm:mt-4">
             <input type="hidden" name="suggestion_id" value={suggestion.id} />
             <button
               className={voteButtonClass(hasVoted)}
@@ -97,15 +72,49 @@ function SuggestionCard({
               title={hasVoted ? 'Remove vote' : 'Vote'}
             >
               <ArrowUp className="h-3.5 w-3.5" />
-              {suggestion.vote_count}
+              {hasVoted ? 'Voted' : 'Vote'}
             </button>
           </form>
         ) : (
-          <Link href={loginHref('/suggestion-box')} className="inline-flex items-center gap-1.5 border border-surface-300 px-3 py-1.5 text-xs font-bold text-surface-500 hover:border-brand-orange hover:text-brand-orange">
+          <Link href={loginHref('/suggestion-box')} className="inline-flex items-center gap-1.5 border border-brand-blue/30 bg-white px-3 py-1.5 text-xs font-bold text-brand-blue-dark hover:border-brand-blue">
             <ArrowUp className="h-3.5 w-3.5" />
-            Log in to vote
+            Log in
           </Link>
         )}
+      </div>
+
+      <div className="p-5 sm:p-6">
+        <div className="mb-4 flex flex-wrap items-center gap-2">
+          <span className="bg-brand-blue px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.14em] text-white">
+            {statusLabel(suggestion.public_status)}
+          </span>
+          <span className="border border-surface-200 bg-surface-50 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.14em] text-surface-500">
+            Product feedback
+          </span>
+        </div>
+
+        <h2 className="text-xl font-black tracking-[-0.02em] text-surface-900">{suggestion.title}</h2>
+        <p className="mt-3 text-sm leading-relaxed text-surface-600">{suggestion.body}</p>
+
+        {publicResponses.length > 0 && (
+          <div className="mt-5 border-l-2 border-brand-blue bg-accent-50 px-4 py-3">
+            <div className="mb-2 flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.14em] text-brand-blue-dark">
+              <MessageSquare className="h-3.5 w-3.5" />
+              PathForge response
+            </div>
+            <div className="space-y-3">
+              {publicResponses.map(response => (
+                <p key={response.id} className="text-sm leading-relaxed text-surface-700">{response.body}</p>
+              ))}
+            </div>
+          </div>
+        )}
+
+        <div className="mt-5 border-t border-surface-100 pt-4">
+          <p className="text-xs text-surface-500">
+            Sent by {suggestion.author?.display_name ?? suggestion.author?.username ?? 'a PathForge user'} · {new Date(suggestion.created_at).toLocaleDateString()}
+          </p>
+        </div>
       </div>
     </article>
   )
@@ -121,94 +130,86 @@ export default async function SuggestionBoxPage() {
     : new Set<string>()
 
   return (
-    <div className="bg-surface-50">
-      <section className="relative overflow-hidden border-b border-surface-200 bg-white">
-        <div className="absolute inset-0 opacity-50 [background-image:linear-gradient(var(--color-surface-100)_1px,transparent_1px),linear-gradient(90deg,var(--color-surface-100)_1px,transparent_1px)] [background-size:52px_52px]" aria-hidden="true" />
-        <div className="relative mx-auto grid max-w-7xl gap-10 px-4 py-16 sm:px-6 lg:grid-cols-[1.05fr_0.95fr] lg:px-8 lg:py-20">
-          <div>
-            <div className="mb-5 inline-flex items-center gap-2 border border-surface-200 bg-surface-100 px-3 py-1.5 font-mono text-[11px] font-semibold uppercase tracking-[0.14em] text-surface-600">
-              <Inbox className="h-3.5 w-3.5 text-brand-orange" />
-              Platform feedback
+    <div className="bg-[#f8fbff]">
+      <section className="relative overflow-hidden border-b border-accent-100 bg-white">
+        <div className="absolute inset-0 opacity-70 [background-image:linear-gradient(var(--color-accent-50)_1px,transparent_1px),linear-gradient(90deg,var(--color-accent-50)_1px,transparent_1px)] [background-size:48px_48px]" aria-hidden="true" />
+        <div className="relative mx-auto max-w-7xl px-4 py-14 sm:px-6 lg:px-8 lg:py-16">
+          <div className="max-w-3xl">
+            <div className="mb-5 inline-flex items-center gap-2 border border-accent-200 bg-accent-50 px-3 py-1.5 font-mono text-[11px] font-bold uppercase tracking-[0.14em] text-brand-blue-dark">
+              <Inbox className="h-3.5 w-3.5 text-brand-blue" />
+              Product feedback
             </div>
-            <h1 className="max-w-3xl text-5xl font-black leading-[1.02] tracking-[-0.035em] text-surface-900 sm:text-6xl">
-              Tell us how PathForge should <span className="font-display italic font-normal text-brand-orange">improve</span>.
+            <h1 className="text-5xl font-black leading-[1.02] tracking-[-0.035em] text-surface-900 sm:text-6xl">
+              Suggestion Box
             </h1>
             <p className="mt-5 max-w-2xl text-lg leading-relaxed text-surface-600">
-              Use this for feedback about the website itself: confusing pages, missing features, bugs, moderation concerns, pricing ideas, or anything that would make PathForge better.
+              Send feedback about PathForge itself: confusing pages, missing controls, bugs, moderation concerns, pricing ideas, or anything that would make the site better.
             </p>
             <div className="mt-8 flex flex-wrap gap-3">
-              <Link href="/suggestion-box/mine" className="inline-flex items-center gap-2 bg-surface-900 px-4 py-3 text-sm font-bold text-white hover:bg-brand-orange">
+              <Link href="/suggestion-box/mine" className="inline-flex items-center gap-2 bg-brand-blue px-4 py-3 text-sm font-bold text-white transition hover:bg-brand-blue-dark">
+                <Inbox className="h-4 w-4" aria-hidden="true" />
                 My suggestion box
               </Link>
-              <Link href="/requests" className="inline-flex items-center gap-2 border border-surface-300 bg-white px-4 py-3 text-sm font-bold text-surface-900 hover:border-surface-900">
+              <Link href="/requests" className="inline-flex items-center gap-2 border border-surface-300 bg-white px-4 py-3 text-sm font-bold text-surface-900 transition hover:border-surface-900">
                 Request a build
               </Link>
             </div>
           </div>
 
-          <div className="border border-surface-200 bg-surface-900 p-5 text-white sm:p-6">
-            <div className="mb-5 font-mono text-[11px] font-semibold uppercase tracking-[0.14em] text-brand-orange">
-              How public posting works
+          <div className="mt-10 grid gap-3 lg:grid-cols-3">
+            <div className="border border-accent-200 bg-accent-50 p-5">
+              <ShieldCheck className="h-5 w-5 text-brand-blue" aria-hidden="true" />
+              <h2 className="mt-3 text-base font-black text-surface-900">Private inbox first</h2>
+              <p className="mt-2 text-sm leading-6 text-surface-600">You must be logged in. New feedback goes to review before it can appear on the board.</p>
             </div>
-            <div className="space-y-4">
-              <div className="flex gap-3">
-                <ShieldCheck className="mt-0.5 h-5 w-5 shrink-0 text-brand-orange" />
-                <div>
-                  <h2 className="text-sm font-bold">Feedback starts private.</h2>
-                  <p className="mt-1 text-sm leading-relaxed text-surface-400">You must be logged in. New feedback goes to review first, not straight to the public board.</p>
-                </div>
-              </div>
-              <div className="flex gap-3">
-                <Clock className="mt-0.5 h-5 w-5 shrink-0 text-brand-orange" />
-                <div>
-                  <h2 className="text-sm font-bold">{SUGGESTION_PUBLIC_DELAY_HOURS}-hour release window.</h2>
-                  <p className="mt-1 text-sm leading-relaxed text-surface-400">After approval, you get 24 hours to keep the feedback private before it appears publicly.</p>
-                </div>
-              </div>
-              <div className="flex gap-3">
-                <LockKeyhole className="mt-0.5 h-5 w-5 shrink-0 text-brand-orange" />
-                <div>
-                  <h2 className="text-sm font-bold">Responses can stay personal.</h2>
-                  <p className="mt-1 text-sm leading-relaxed text-surface-400">PathForge can reply to your suggestion box even if the feedback never appears on the public page.</p>
-                </div>
-              </div>
+            <div className="border border-surface-200 bg-white p-5">
+              <Clock className="h-5 w-5 text-brand-orange" aria-hidden="true" />
+              <h2 className="mt-3 text-base font-black text-surface-900">{SUGGESTION_PUBLIC_DELAY_HOURS}-hour release window</h2>
+              <p className="mt-2 text-sm leading-6 text-surface-600">After approval, you have time to keep it private before it appears publicly.</p>
+            </div>
+            <div className="border border-surface-200 bg-surface-900 p-5 text-white">
+              <LockKeyhole className="h-5 w-5 text-brand-orange" aria-hidden="true" />
+              <h2 className="mt-3 text-base font-black">Personal replies stay possible</h2>
+              <p className="mt-2 text-sm leading-6 text-surface-400">PathForge can respond to your private box even when the public board never sees the note.</p>
             </div>
           </div>
         </div>
       </section>
 
-      <section className="mx-auto grid max-w-7xl gap-8 px-4 py-12 sm:px-6 lg:grid-cols-[0.9fr_1.1fr] lg:px-8 lg:py-16">
+      <section className="border-b border-accent-100 bg-[#f8fbff]">
+        <div className="mx-auto grid max-w-7xl gap-8 px-4 py-12 sm:px-6 lg:grid-cols-[380px_1fr] lg:px-8 lg:py-16">
         <div>
-          <div className="mb-3 font-mono text-[11px] font-bold uppercase tracking-[0.14em] text-brand-orange">Send one in</div>
-          <h2 className="text-3xl font-black tracking-[-0.025em] text-surface-900">Your box to PathForge.</h2>
+          <div className="mb-3 font-mono text-[11px] font-bold uppercase tracking-[0.14em] text-brand-blue-dark">Send feedback</div>
+          <h2 className="text-3xl font-black tracking-[-0.025em] text-surface-900">Private note to PathForge.</h2>
           <p className="mt-3 max-w-xl text-sm leading-relaxed text-surface-600">
-            Use this for PathForge product feedback only. For a game, workflow, prompt chain, or artifact you want someone to build, use Build Requests instead.
+            Use this for website feedback only. For a game, workflow, prompt chain, or artifact you want built, use Build Requests instead.
           </p>
           {!viewer && (
-            <div className="mt-6 border border-surface-200 bg-white p-4 text-sm text-surface-600">
+            <div className="mt-6 border border-accent-200 bg-white p-4 text-sm text-surface-600">
               You need to log in before sending suggestions so PathForge can respond to your personal box.
               <div className="mt-3">
-                <Link href={loginHref('/suggestion-box')} className="font-bold text-brand-orange hover:text-brand-orange-dark">Log in</Link>
+                <Link href={loginHref('/suggestion-box')} className="font-bold text-brand-blue-dark hover:text-brand-blue">Log in</Link>
                 <span className="mx-2 text-surface-300">/</span>
-                <Link href={signupHref('/suggestion-box')} className="font-bold text-brand-orange hover:text-brand-orange-dark">Sign up</Link>
+                <Link href={signupHref('/suggestion-box')} className="font-bold text-brand-blue-dark hover:text-brand-blue">Sign up</Link>
               </div>
             </div>
           )}
         </div>
 
         {viewer ? <SuggestionSubmitForm /> : (
-          <div className="border border-dashed border-surface-300 bg-white p-8 text-center text-sm text-surface-500">
+          <div className="border border-dashed border-accent-200 bg-white p-8 text-center text-sm text-surface-500">
             The suggestion form appears after login.
           </div>
         )}
+        </div>
       </section>
 
       <section className="border-t border-surface-200 bg-white">
-        <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8 lg:py-16">
+        <div id="public-suggestions" className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8 lg:py-16">
           <div className="mb-8 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
             <div>
-              <div className="mb-3 font-mono text-[11px] font-bold uppercase tracking-[0.14em] text-brand-orange">Public board</div>
-              <h2 className="text-3xl font-black tracking-[-0.025em] text-surface-900">Approved feedback people can rally around.</h2>
+              <div className="mb-3 font-mono text-[11px] font-bold uppercase tracking-[0.14em] text-brand-blue-dark">Public board</div>
+              <h2 className="text-3xl font-black tracking-[-0.025em] text-surface-900">Approved feedback people can vote on.</h2>
             </div>
             <p className="max-w-md text-sm leading-relaxed text-surface-500">
               This stays quiet until real approved feedback exists. Public suggestions only appear after review and the 24-hour privacy window.
@@ -216,7 +217,7 @@ export default async function SuggestionBoxPage() {
           </div>
 
           {suggestions.length === 0 ? (
-            <div className="border border-dashed border-surface-300 bg-surface-50 p-10 text-center">
+            <div className="border border-dashed border-accent-200 bg-accent-50 p-10 text-center">
               <p className="text-lg font-bold text-surface-900">No public suggestions yet.</p>
               <p className="mx-auto mt-2 max-w-lg text-sm leading-relaxed text-surface-500">
                 That is intentional. The board only fills with approved, user-confirmed suggestions instead of fake launch content.

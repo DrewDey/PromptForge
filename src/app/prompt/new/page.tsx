@@ -8,6 +8,8 @@ import { getModelsByProvider, getModelName } from '@/lib/models'
 import { submitProject, submitSourceRun } from '@/lib/actions'
 import { detectSourceRunProvider } from '@/lib/source-run-review'
 import {
+  PROJECT_FORK_MAX_DEPTH,
+  PROJECT_FORK_MAX_WIDTH,
   parseProjectForkSearchParams,
   serializeProjectForkSourceForNotes,
   type ProjectForkSource,
@@ -35,6 +37,7 @@ type SourceRunImport = {
   id: string
   label: string
   source: string
+  forkSource?: ProjectForkSource
   provider?: string
   modelUsed?: string
   modelSettings?: string
@@ -304,10 +307,104 @@ function intakeCardClass(active: boolean) {
   }`
 }
 
+function ForkCapacityDots({
+  value,
+  max,
+}: {
+  value: number
+  max: number
+}) {
+  return (
+    <div className="grid grid-cols-10 gap-1">
+      {Array.from({ length: max }).map((_, index) => (
+        <span
+          key={index}
+          className={[
+            'h-2 border',
+            index < value ? 'border-[#07551f] bg-[#2bd15f]' : 'border-surface-200 bg-white',
+          ].join(' ')}
+          aria-hidden="true"
+        />
+      ))}
+    </div>
+  )
+}
+
+function ForkSourcePanel({ forkSource }: { forkSource: ProjectForkSource }) {
+  const depthValue = Math.min(forkSource.depth + 1, PROJECT_FORK_MAX_DEPTH)
+  const branchValue = Math.min(forkSource.branchIndex + 1, PROJECT_FORK_MAX_WIDTH)
+
+  return (
+    <div className="mb-8 overflow-hidden border border-[#07551f] bg-white shadow-[0_18px_44px_rgba(7,85,31,0.08)]">
+      <div className="grid gap-0 lg:grid-cols-[minmax(0,1fr)_320px]">
+        <div className="relative p-5 sm:p-6">
+          <div className="absolute left-0 top-0 h-full w-3 border-x-2 border-[#07551f] bg-[#2bd15f] shadow-[inset_3px_0_0_rgba(255,255,255,0.24),inset_-3px_0_0_rgba(0,0,0,0.18)]" aria-hidden="true" />
+          <div className="pl-5">
+            <div className="flex items-center gap-2 font-mono text-[10px] font-bold uppercase tracking-[0.16em] text-[#07551f]">
+              <GitBranch className="h-4 w-4" aria-hidden="true" />
+              Fork source attached
+            </div>
+            <h2 className="mt-2 text-2xl font-black text-surface-900">
+              {forkSource.sourceProjectTitle
+                ? `Forking from ${forkSource.sourceProjectTitle}`
+                : 'Forking from an existing PathForge project'}
+            </h2>
+            <div className="mt-4 flex flex-wrap gap-2 font-mono text-[10px] uppercase tracking-[0.12em] text-surface-600">
+              {forkSource.sourceStepNumber && (
+                <span className="border border-[#07551f]/30 bg-[#effdf3] px-2 py-1 text-[#07551f]">
+                  Response {String(forkSource.sourceStepNumber).padStart(2, '0')}
+                </span>
+              )}
+              {forkSource.sourceStepId && (
+                <span className="border border-surface-200 bg-surface-50 px-2 py-1">
+                  Step id locked
+                </span>
+              )}
+              {forkSource.promptFamilyId && (
+                <span className="border border-surface-200 bg-surface-50 px-2 py-1">
+                  Prompt family attached
+                </span>
+              )}
+              {forkSource.parentForkId && (
+                <span className="border border-surface-200 bg-surface-50 px-2 py-1">
+                  Parent fork attached
+                </span>
+              )}
+            </div>
+          </div>
+        </div>
+
+        <aside className="border-t border-[#07551f] bg-[#effdf3] p-5 lg:border-l lg:border-t-0">
+          <div className="font-mono text-[10px] font-bold uppercase tracking-[0.16em] text-[#07551f]">
+            Branch coordinates
+          </div>
+          <div className="mt-3 grid gap-4">
+            <div>
+              <div className="mb-2 flex items-center justify-between gap-2 text-xs font-semibold text-surface-700">
+                <span>Depth</span>
+                <span>{depthValue} / {PROJECT_FORK_MAX_DEPTH}</span>
+              </div>
+              <ForkCapacityDots value={depthValue} max={PROJECT_FORK_MAX_DEPTH} />
+            </div>
+            <div>
+              <div className="mb-2 flex items-center justify-between gap-2 text-xs font-semibold text-surface-700">
+                <span>Branch</span>
+                <span>{branchValue} / {PROJECT_FORK_MAX_WIDTH}</span>
+              </div>
+              <ForkCapacityDots value={branchValue} max={PROJECT_FORK_MAX_WIDTH} />
+            </div>
+          </div>
+        </aside>
+      </div>
+    </div>
+  )
+}
+
 export default function SubmitProjectPage() {
   const router = useRouter()
   const [isLoggedIn, setIsLoggedIn] = useState<boolean | null>(null)
   const [forkSource, setForkSource] = useState<ProjectForkSource | null>(null)
+  const [authReturnPath, setAuthReturnPath] = useState('/build')
 
   // Form state
   const [intakeMode, setIntakeMode] = useState<IntakeMode>('source-run')
@@ -358,10 +455,14 @@ export default function SubmitProjectPage() {
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search)
+    setAuthReturnPath(`${window.location.pathname}${window.location.search}`)
     const parsedForkSource = parseProjectForkSearchParams(params)
     if (!parsedForkSource) return
 
     setForkSource(parsedForkSource)
+    setSourceRunTitle(current => (
+      current.trim() ? current : `${parsedForkSource.sourceProjectTitle || 'Forked Path'} fork`
+    ))
     setSourceRunNotes(current => (
       current.trim() ? current : serializeProjectForkSourceForNotes(parsedForkSource)
     ))
@@ -376,20 +477,38 @@ export default function SubmitProjectPage() {
 
   // Check auth
   useEffect(() => {
+    let active = true
+    const finishAuthCheck = (value: boolean) => {
+      if (!active) return
+      setIsLoggedIn(value)
+    }
+    const authTimeout = window.setTimeout(() => finishAuthCheck(false), 3000)
+
     if (!process.env.NEXT_PUBLIC_SUPABASE_URL) {
-      setIsLoggedIn(false)
-      return
+      finishAuthCheck(false)
+      window.clearTimeout(authTimeout)
+      return () => {
+        active = false
+      }
     }
     import('@/lib/supabase/client').then(({ createClient }) => {
       const supabase = createClient()
       supabase.auth.getUser().then(({ data: { user } }) => {
-        setIsLoggedIn(!!user)
+        window.clearTimeout(authTimeout)
+        finishAuthCheck(!!user)
       }).catch(() => {
-        setIsLoggedIn(false)
+        window.clearTimeout(authTimeout)
+        finishAuthCheck(false)
       })
     }).catch(() => {
-      setIsLoggedIn(false)
+      window.clearTimeout(authTimeout)
+      finishAuthCheck(false)
     })
+
+    return () => {
+      active = false
+      window.clearTimeout(authTimeout)
+    }
   }, [])
 
   function computeErrors(): Record<string, string> {
@@ -474,6 +593,7 @@ export default function SubmitProjectPage() {
       model_used: modelUsed,
       model_settings: modelSettings,
       notes: sourceRunNotes,
+      fork_source: forkSource,
     })
 
     setSourceRunSubmitting(false)
@@ -487,6 +607,7 @@ export default function SubmitProjectPage() {
       id: result.id ?? makeSourceRunImportId(),
       label: title,
       source: url,
+      forkSource: forkSource ?? undefined,
       provider: provider || undefined,
       modelUsed: modelUsed || undefined,
       modelSettings: modelSettings || undefined,
@@ -494,14 +615,14 @@ export default function SubmitProjectPage() {
       createdAt: 'Queued for extraction',
       status: 'queued',
     }, ...current])
-    setSourceRunTitle('')
+    setSourceRunTitle(forkSource ? `${forkSource.sourceProjectTitle || 'Forked Path'} fork` : '')
     setSourceRunUrl('')
     setSourceRunProvider('')
     setSourceRunCustomProvider('')
     setSourceRunProviderTouched(false)
     setSourceRunModel('')
     setSourceRunModelSettings('')
-    setSourceRunNotes('')
+    setSourceRunNotes(forkSource ? serializeProjectForkSourceForNotes(forkSource) : '')
   }
 
   function validateForm(): Record<string, string> {
@@ -555,6 +676,7 @@ export default function SubmitProjectPage() {
       tools_used: tools.split(',').map(t => t.trim()).filter(Boolean),
       tags: tags.split(',').map(t => t.trim().toLowerCase()).filter(Boolean),
       steps: projectSteps,
+      fork_source: forkSource,
     })
 
     setSubmitting(false)
@@ -566,22 +688,65 @@ export default function SubmitProjectPage() {
     }
   }
 
+  const loginHref = `/auth/login?next=${encodeURIComponent(authReturnPath)}`
+  const signupHref = `/auth/signup?next=${encodeURIComponent(authReturnPath)}`
+
   // Not logged in
   if (isLoggedIn === false) {
     return (
-      <div className="max-w-md mx-auto px-4 py-20 text-center">
-        <LogIn className="w-10 h-10 text-surface-400 mx-auto mb-4" />
-        <h1 className="text-xl font-bold text-surface-900 mb-2">Log in to share a project</h1>
-        <p className="text-surface-600 text-sm mb-6">
-          You need an account to submit projects to PathForge.
-        </p>
-        <div className="flex items-center justify-center gap-4">
-          <Link href="/auth/login" className="bg-brand-orange text-white px-5 py-2.5 text-sm font-medium hover:opacity-90 transition-opacity">
-            Log in
-          </Link>
-          <Link href="/auth/signup" className="text-surface-500 hover:text-surface-900 text-sm font-medium transition-colors duration-150">
-            Sign up
-          </Link>
+      <div className="bg-surface-50">
+        <section className="border-b border-surface-800 bg-surface-900 text-white">
+          <div className="mx-auto grid max-w-7xl gap-10 px-4 py-14 sm:px-6 lg:grid-cols-[1fr_420px] lg:px-8 lg:py-16">
+            <div>
+              <Link href="/paths" className="mb-7 inline-flex items-center gap-2 text-sm text-surface-400 transition-colors hover:text-white">
+                <ArrowLeft className="h-4 w-4" aria-hidden="true" />
+                Back to Build Paths
+              </Link>
+              <div className="mb-4 inline-flex items-center gap-2 border border-brand-orange/35 bg-brand-orange/10 px-3 py-1.5 font-mono text-[11px] font-bold uppercase tracking-[0.14em] text-brand-orange">
+                <Link2 className="h-3.5 w-3.5" aria-hidden="true" />
+                Build intake
+              </div>
+              <h1 className="max-w-3xl text-4xl font-black leading-[1.04] tracking-[-0.03em] sm:text-5xl">
+                Submit the AI run, not a reconstructed project.
+              </h1>
+              <p className="mt-5 max-w-2xl text-base leading-relaxed text-surface-300">
+                PathForge starts from the real ChatGPT, Claude, Gemini, or OpenRouter session link. The entry goes to review first and becomes public only after an explicit publish step.
+              </p>
+              <div className="mt-8 flex flex-wrap gap-3">
+                <Link href={loginHref} className="inline-flex items-center gap-2 bg-brand-orange px-5 py-3 text-sm font-bold text-white transition hover:bg-brand-orange-dark">
+                  <LogIn className="h-4 w-4" aria-hidden="true" />
+                  Log in to submit
+                </Link>
+                <Link href={signupHref} className="inline-flex items-center gap-2 border border-surface-700 px-5 py-3 text-sm font-bold text-white transition hover:border-white">
+                  Sign up
+                </Link>
+              </div>
+            </div>
+
+            <div className="border border-surface-700 bg-surface-800/70 p-5">
+              <div className="font-mono text-[11px] font-bold uppercase tracking-[0.14em] text-brand-orange">
+                What happens here
+              </div>
+              <div className="mt-5 space-y-3">
+                {['Paste session link', 'Attach model info', 'Add review notes', 'Queue for admin review'].map((label, index) => (
+                  <div key={label} className="grid grid-cols-[34px_1fr] items-center gap-3 border border-surface-700 bg-surface-900 px-3 py-3">
+                    <span className="flex h-8 w-8 items-center justify-center bg-brand-orange font-mono text-xs font-black text-white">
+                      {index + 1}
+                    </span>
+                    <span className="text-sm font-semibold text-surface-100">{label}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </section>
+        <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
+          <div className="max-w-xl border border-surface-200 bg-white p-5">
+            <h2 className="text-xl font-black text-surface-900">Account required</h2>
+            <p className="mt-2 text-sm leading-6 text-surface-600">
+              Build submissions are tied to your profile so review can keep source links, notes, and publish decisions attached to the right person.
+            </p>
+          </div>
         </div>
       </div>
     )
@@ -589,7 +754,14 @@ export default function SubmitProjectPage() {
 
   // Loading auth state
   if (isLoggedIn === null) {
-    return <div className="max-w-2xl mx-auto px-4 py-20 text-center text-surface-400">Loading...</div>
+    return (
+      <div className="mx-auto max-w-2xl px-4 py-20 text-center text-surface-400">
+        <span className="inline-flex items-center gap-2 font-mono text-[11px] uppercase tracking-[0.14em]">
+          <span className="h-2 w-2 animate-pulse bg-brand-orange" aria-hidden="true" />
+          Checking account
+        </span>
+      </div>
+    )
   }
 
   // Success
@@ -697,62 +869,76 @@ export default function SubmitProjectPage() {
   }
 
   return (
-    <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
-      <Link href="/paths" className="text-sm text-surface-500 hover:text-surface-900 flex items-center gap-1 mb-6 transition-colors duration-150">
-        <ArrowLeft className="w-4 h-4" />
-        Back to Build Paths
-      </Link>
-
-      {/* Page hero — the Build page had no H1, just stranded subtext. Gives the
-          page a proper anchor and sets up the two-column layout below. */}
-      <header className="mb-8 max-w-2xl">
-        <h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-surface-900 mb-2">
-          Build your project
-        </h1>
-        <p className="text-sm text-surface-500 leading-relaxed">
-          Paste the real AI session link. Every upload starts from the actual run, with model info and notes for review.
-        </p>
-      </header>
-
-      {forkSource && (
-        <div className="mb-8 border border-brand-orange/40 bg-brand-orange/5 p-4">
-          <div className="flex flex-wrap items-start gap-3">
-            <GitBranch className="mt-0.5 h-5 w-5 text-brand-orange" aria-hidden="true" />
-            <div className="min-w-0 flex-1">
-              <div className="font-mono text-[10px] font-semibold uppercase tracking-[0.16em] text-brand-orange">
-                Fork source attached
+    <div className="bg-surface-50">
+      <section className="relative overflow-hidden border-b border-surface-800 bg-surface-900 text-white">
+        <div className="absolute inset-0 opacity-25 [background-image:linear-gradient(rgba(255,255,255,.08)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,.08)_1px,transparent_1px)] [background-size:54px_54px]" aria-hidden="true" />
+        <div className="relative mx-auto grid max-w-7xl gap-10 px-4 py-14 sm:px-6 lg:grid-cols-[minmax(0,1fr)_440px] lg:px-8 lg:py-16">
+          <div>
+            <Link href="/paths" className="mb-7 inline-flex items-center gap-2 text-sm text-surface-400 transition-colors hover:text-white">
+              <ArrowLeft className="h-4 w-4" aria-hidden="true" />
+              Back to Build Paths
+            </Link>
+            <div className="mb-4 inline-flex items-center gap-2 border border-brand-orange/35 bg-brand-orange/10 px-3 py-1.5 font-mono text-[11px] font-bold uppercase tracking-[0.14em] text-brand-orange">
+              <Link2 className="h-3.5 w-3.5" aria-hidden="true" />
+              Build intake
+            </div>
+            <h1 className="max-w-3xl text-4xl font-black leading-[1.04] tracking-[-0.03em] sm:text-5xl lg:text-6xl">
+              Submit the run. Let PathForge structure the project.
+            </h1>
+            <p className="mt-5 max-w-2xl text-base leading-relaxed text-surface-300">
+              This page is for real AI sessions: a source link, exact model details, and notes for review. It is not the suggestion box, and it does not publish anything by itself.
+            </p>
+            <div className="mt-8 grid max-w-2xl gap-3 sm:grid-cols-3">
+              <div className="border border-surface-700 bg-surface-800/70 p-3">
+                <div className="font-mono text-[10px] uppercase tracking-[0.14em] text-brand-orange">Input</div>
+                <div className="mt-1 text-sm font-bold">AI session link</div>
               </div>
-              <p className="mt-1 text-sm font-semibold text-surface-900">
-                {forkSource.sourceProjectTitle
-                  ? `Forking from ${forkSource.sourceProjectTitle}`
-                  : 'Forking from an existing PathForge project'}
-              </p>
-              <p className="mt-1 text-xs leading-5 text-surface-600">
-                Add your source-run link or prompt changes here. The fork source is already included in the agent notes.
-              </p>
-              {(forkSource.sourceStepNumber || forkSource.parentForkId || forkSource.promptFamilyId) && (
-                <div className="mt-3 flex flex-wrap gap-2 font-mono text-[10px] uppercase tracking-[0.12em] text-surface-500">
-                  {forkSource.sourceStepNumber && (
-                    <span className="border border-brand-orange/30 bg-white px-2 py-1">
-                      Response {String(forkSource.sourceStepNumber).padStart(2, '0')}
-                    </span>
-                  )}
-                  {forkSource.parentForkId && (
-                    <span className="border border-brand-orange/30 bg-white px-2 py-1">
-                      Parent fork attached
-                    </span>
-                  )}
-                  {forkSource.promptFamilyId && (
-                    <span className="border border-brand-orange/30 bg-white px-2 py-1">
-                      Prompt family attached
-                    </span>
-                  )}
-                </div>
-              )}
+              <div className="border border-surface-700 bg-surface-800/70 p-3">
+                <div className="font-mono text-[10px] uppercase tracking-[0.14em] text-brand-orange">Queue</div>
+                <div className="mt-1 text-sm font-bold">Normal review</div>
+              </div>
+              <div className="border border-surface-700 bg-surface-800/70 p-3">
+                <div className="font-mono text-[10px] uppercase tracking-[0.14em] text-brand-orange">Publish</div>
+                <div className="mt-1 text-sm font-bold">Admin decision</div>
+              </div>
             </div>
           </div>
+
+          <aside className="border border-surface-700 bg-black/20 p-5 shadow-[16px_16px_0_rgba(232,122,44,0.18)]">
+            <div className="flex items-center justify-between border-b border-surface-700 pb-4">
+              <div>
+                <div className="font-mono text-[10px] uppercase tracking-[0.14em] text-surface-500">Source package</div>
+                <div className="mt-1 text-lg font-black">Review-ready intake</div>
+              </div>
+              <div className="flex h-11 w-11 items-center justify-center bg-brand-orange text-white">
+                <Link2 className="h-5 w-5" aria-hidden="true" />
+              </div>
+            </div>
+            <div className="mt-5 space-y-3">
+              {[
+                ['01', 'Session URL', 'The original conversation stays attached.'],
+                ['02', 'Model evidence', 'Provider, exact model, and settings stay separate.'],
+                ['03', 'Review notes', 'Point review toward the final artifact and caveats.'],
+                ['04', 'No auto-publish', 'The entry waits for an explicit admin step.'],
+              ].map(([number, title, body]) => (
+                <div key={number} className="grid grid-cols-[42px_1fr] gap-3">
+                  <div className="flex h-10 w-10 items-center justify-center border border-surface-700 bg-surface-900 font-mono text-xs font-black text-brand-orange">
+                    {number}
+                  </div>
+                  <div className="border-l border-surface-700 pl-3">
+                    <div className="text-sm font-bold text-white">{title}</div>
+                    <p className="mt-0.5 text-xs leading-5 text-surface-400">{body}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </aside>
         </div>
-      )}
+      </section>
+
+      <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8 lg:py-10">
+
+      {forkSource && <ForkSourcePanel forkSource={forkSource} />}
 
       {error && (
         <div className="bg-red-50 border border-red-200 text-red-700 text-sm px-4 py-3 mb-6 max-w-2xl flex items-start gap-2">
@@ -761,16 +947,22 @@ export default function SubmitProjectPage() {
         </div>
       )}
 
-      <section className="mb-8 border border-surface-200 bg-white">
-        <div className="border-b border-surface-200 bg-surface-900 px-5 py-4 text-white">
-          <div className="font-mono text-[10px] uppercase tracking-[0.16em] text-brand-orange">
-            Preferred intake
-          </div>
-          <h2 className="mt-1 text-xl font-black">Start from the actual AI session</h2>
-        </div>
+      <section className="mb-8 overflow-hidden border border-surface-200 bg-white shadow-[10px_10px_0_rgba(24,24,27,0.06)]">
+        <div className="grid gap-0 lg:grid-cols-[minmax(0,1fr)_330px]">
+          <div>
+            <div className="border-b border-surface-200 bg-white px-5 py-5 sm:px-6">
+              <div className="font-mono text-[10px] font-bold uppercase tracking-[0.16em] text-brand-orange">
+                Preferred intake
+              </div>
+              <h2 className="mt-1 text-2xl font-black tracking-[-0.02em] text-surface-900">
+                Start from the actual AI session
+              </h2>
+              <p className="mt-2 max-w-2xl text-sm leading-6 text-surface-600">
+                Paste the share link and the model info. The agent structures it after review, keeping this separate from product feedback and build requests.
+              </p>
+            </div>
 
-        <div className="p-5">
-          <div className="grid gap-3 md:grid-cols-2">
+            <div className="grid gap-3 border-b border-surface-200 bg-surface-50 p-5 sm:p-6 md:grid-cols-2">
             <button
               type="button"
               onClick={() => setIntakeMode('source-run')}
@@ -821,27 +1013,26 @@ export default function SubmitProjectPage() {
                 </span>
               </div>
             </button>
-          </div>
-        </div>
+            </div>
 
         {intakeMode === 'source-run' && (
-          <div className="border-t border-surface-200">
-            <form onSubmit={prepareSourceRun} className="space-y-4 p-5">
-              <div className="grid gap-2 border border-brand-orange/20 bg-brand-orange/5 p-3 text-xs text-surface-700 sm:grid-cols-4">
+          <div>
+            <form onSubmit={prepareSourceRun} className="space-y-5 p-5 sm:p-6">
+              <div className="grid gap-3 border border-brand-orange/25 bg-brand-orange/[0.04] p-3 text-xs text-surface-700 sm:grid-cols-4">
                 <div>
-                  <div className="font-mono text-[10px] uppercase tracking-[0.14em] text-brand-orange">1 · Source</div>
+                  <div className="font-mono text-[10px] font-bold uppercase tracking-[0.14em] text-brand-orange">1 · Source</div>
                   <p className="mt-1 leading-5">Paste the real AI session link.</p>
                 </div>
                 <div>
-                  <div className="font-mono text-[10px] uppercase tracking-[0.14em] text-brand-orange">2 · Extract</div>
+                  <div className="font-mono text-[10px] font-bold uppercase tracking-[0.14em] text-brand-orange">2 · Extract</div>
                   <p className="mt-1 leading-5">Agent reads prompts, responses, code, files, and screenshots.</p>
                 </div>
                 <div>
-                  <div className="font-mono text-[10px] uppercase tracking-[0.14em] text-brand-orange">3 · Review</div>
+                  <div className="font-mono text-[10px] font-bold uppercase tracking-[0.14em] text-brand-orange">3 · Review</div>
                   <p className="mt-1 leading-5">Admin reviews the source run and notes.</p>
                 </div>
                 <div>
-                  <div className="font-mono text-[10px] uppercase tracking-[0.14em] text-brand-orange">4 · Decide</div>
+                  <div className="font-mono text-[10px] font-bold uppercase tracking-[0.14em] text-brand-orange">4 · Decide</div>
                   <p className="mt-1 leading-5">Nothing is public until an explicit publish step.</p>
                 </div>
               </div>
@@ -1015,6 +1206,13 @@ export default function SubmitProjectPage() {
                           <div className="font-semibold text-surface-900">{item.label}</div>
                           <div className="mt-1 truncate text-xs text-surface-500">{item.source}</div>
                           <div className="mt-2 flex flex-wrap gap-1.5 text-[11px] text-surface-600">
+                            {item.forkSource && (
+                              <span className="border border-[#07551f]/25 bg-[#effdf3] px-2 py-1 text-[#07551f]">
+                                {item.forkSource.sourceStepNumber
+                                  ? `Fork: response ${String(item.forkSource.sourceStepNumber).padStart(2, '0')}`
+                                  : 'Fork source attached'}
+                              </span>
+                            )}
                             <span className="border border-white/80 bg-white px-2 py-1">
                               Provider: {item.provider || 'Not specified'}
                             </span>
@@ -1046,6 +1244,42 @@ export default function SubmitProjectPage() {
             )}
           </div>
         )}
+          </div>
+
+          <aside className="border-t border-surface-200 bg-surface-900 p-5 text-white lg:border-l lg:border-t-0">
+            <div className="font-mono text-[10px] font-bold uppercase tracking-[0.16em] text-brand-orange">
+              This page is for
+            </div>
+            <div className="mt-4 space-y-4">
+              <div className="border border-surface-700 bg-surface-800/70 p-4">
+                <div className="flex items-center gap-2 text-sm font-bold">
+                  <Link2 className="h-4 w-4 text-brand-orange" aria-hidden="true" />
+                  Captured AI runs
+                </div>
+                <p className="mt-2 text-xs leading-5 text-surface-400">
+                  Submit the actual session so review can preserve the prompt and response chain.
+                </p>
+              </div>
+              <div className="border border-surface-700 bg-surface-800/70 p-4">
+                <div className="flex items-center gap-2 text-sm font-bold">
+                  <FileText className="h-4 w-4 text-brand-orange" aria-hidden="true" />
+                  Evidence for review
+                </div>
+                <p className="mt-2 text-xs leading-5 text-surface-400">
+                  Model, settings, source link, and notes stay attached before anything is public.
+                </p>
+              </div>
+              <div className="border border-brand-blue/35 bg-brand-blue/10 p-4">
+                <div className="font-mono text-[10px] font-bold uppercase tracking-[0.14em] text-brand-blue-light">
+                  Not the suggestion box
+                </div>
+                <p className="mt-2 text-xs leading-5 text-surface-300">
+                  Website feedback, feature ideas, and moderation concerns belong in Suggestion Box.
+                </p>
+              </div>
+            </div>
+          </aside>
+        </div>
       </section>
 
       {/* Two-pane builder on lg+: form on the left (kept at its original ~680px
@@ -1513,6 +1747,7 @@ export default function SubmitProjectPage() {
           </div>
         </div>
       )}
+      </div>
     </div>
   )
 }

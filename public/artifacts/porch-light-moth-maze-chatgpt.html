@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no" />
+<title>Porch Light Moth Maze</title>
+<style>
+*{box-sizing:border-box}
+html,body{margin:0;width:100%;min-height:100%;overflow:hidden;background:#100c18;color:#fff6d8;font-family:system-ui,-apple-system,Segoe UI,sans-serif;touch-action:none}
+body{display:flex;justify-content:center;align-items:start;padding:8px}
+.wrap{width:min(100%,760px);display:grid;gap:8px;max-height:100vh}
+.hud{display:grid;grid-template-columns:repeat(5,1fr);gap:7px}
+.box{min-width:0;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.16);border-radius:12px;padding:7px 6px;text-align:center}
+.label{font-size:10px;opacity:.75;text-transform:uppercase;letter-spacing:.05em;white-space:nowrap}
+.value{font-size:16px;font-weight:850;white-space:nowrap}
+.stage{position:relative;width:100%;aspect-ratio:16/10;border-radius:18px;overflow:hidden;border:2px solid rgba(255,255,255,.18);background:#120d1c;min-height:0}
+canvas{width:100%;height:100%;display:block;touch-action:none;cursor:crosshair}
+.overlay{position:absolute;inset:0;display:grid;place-items:center;padding:10px;background:rgba(8,5,14,.72);backdrop-filter:blur(5px)}
+.panel{width:min(100%,470px);max-height:100%;overflow:auto;background:rgba(30,22,42,.96);border:1px solid rgba(255,255,255,.18);border-radius:18px;padding:14px;text-align:center;box-shadow:0 20px 70px rgba(0,0,0,.45)}
+h1{margin:0 0 8px;font-size:clamp(24px,7vw,38px);line-height:1}
+p{margin:7px 0;line-height:1.32;color:#f5e8c5}
+button{border:0;border-radius:999px;padding:12px 16px;font-size:16px;font-weight:850;color:#1b1024;background:linear-gradient(180deg,#ffe68a,#ffb949);cursor:pointer;min-height:44px}
+.levels{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin:12px 0 6px}
+.level{background:rgba(255,255,255,.09);border:1px solid rgba(255,255,255,.18);color:#fff6d8;padding-inline:8px}
+.level.active{background:linear-gradient(180deg,#ffe68a,#ffb949);color:#1b1024}
+.scorecard{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:12px 0}
+.stat{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.14);border-radius:12px;padding:9px 7px}
+.stat b{display:block;font-size:11px;text-transform:uppercase;letter-spacing:.05em;opacity:.72;margin-bottom:2px}
+.stat span{font-size:18px;font-weight:850}
+.controls{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;width:min(100%,320px);margin:0 auto}
+.controls button{margin:0;min-height:46px;font-size:20px;padding:8px}
+.controls .wide{grid-column:span 3}
+.hint{font-size:12px;opacity:.82;text-align:center;line-height:1.25}
+.small{font-size:12px;opacity:.85}
+@media(max-width:520px){
+  body{padding:6px}
+  .wrap{gap:6px}
+  .hud{grid-template-columns:repeat(3,1fr);gap:6px}
+  .box{padding:5px 4px;border-radius:10px}
+  .label{font-size:9px;letter-spacing:.03em}
+  .value{font-size:14px}
+  .stage{aspect-ratio:10/12.2;border-radius:15px}
+  .panel{padding:12px;border-radius:16px}
+  .levels{grid-template-columns:1fr 1fr 1fr;gap:6px}
+  .level{font-size:14px;padding:10px 6px}
+  .controls{width:100%;max-width:390px;gap:7px}
+  .controls button{min-height:44px}
+  .hint{font-size:11px}
+  .scorecard{gap:6px}
+  .stat{padding:7px 5px}
+  .stat span{font-size:15px}
+}
+@media(max-width:390px){
+  .hud{grid-template-columns:repeat(3,1fr)}
+  .stage{aspect-ratio:10/11.8}
+  .levels{grid-template-columns:1fr}
+  .level{width:100%;font-size:15px}
+  h1{font-size:24px}
+  p{font-size:13px}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="hud">
+    <div class="box"><div class="label">Glow</div><div class="value" id="score">0</div></div>
+    <div class="box"><div class="label">Best</div><div class="value" id="best">0</div></div>
+    <div class="box"><div class="label">Time</div><div class="value" id="time">0.0</div></div>
+    <div class="box"><div class="label">Nectar</div><div class="value" id="nectar">0/7</div></div>
+    <div class="box"><div class="label">Danger</div><div class="value" id="danger">Safe</div></div>
+  </div>
+
+  <div class="stage" id="stage">
+    <canvas id="game"></canvas>
+    <div class="overlay" id="overlay"></div>
+  </div>
+
+  <div class="controls">
+    <button data-dir="up" aria-label="Move up">▲</button>
+    <button data-dir="left" aria-label="Move left">◀</button>
+    <button data-dir="right" aria-label="Move right">▶</button>
+    <button data-dir="down" class="wide" aria-label="Move down">▼</button>
+  </div>
+
+  <div class="hint">Drag, arrows/WASD, or hold buttons. Enter/Space replay. 1/2/3 choose Easy/Porch/Storm.</div>
+</div>
+
+<script>
+(() => {
+const canvas=document.getElementById("game"),ctx=canvas.getContext("2d"),stage=document.getElementById("stage"),overlay=document.getElementById("overlay");
+const scoreEl=document.getElementById("score"),bestEl=document.getElementById("best"),timeEl=document.getElementById("time"),nectarEl=document.getElementById("nectar"),dangerEl=document.getElementById("danger");
+const W=800,H=500;
+let running=false,keys={},score=0,nectar=0,last=0,t=0,elapsed=0,mode="Porch",lastResult=null;
+let best=JSON.parse(localStorage.getItem("mothMazeBestFinal")||"{}");
+const drag={active:false,x:0,y:0},moth={x:46,y:456,vx:0,vy:0,r:9,trapped:0},exit={x:738,y:28,w:42,h:64};
+const modes={Easy:{pull:.78,speed:.90,trap:.62,bonusBase:1300},Porch:{pull:1,speed:1,trap:.45,bonusBase:1700},Storm:{pull:1.25,speed:1.12,trap:.36,bonusBase:2300}};
+const modeList=["Easy","Porch","Storm"];
+const walls=[[0,0,800,18],[0,482,800,18],[0,0,18,500],[782,0,18,500],[70,70,18,412],[70,70,120,18],[135,140,18,285],[18,220,135,18],[190,70,18,355],[190,407,145,18],[255,18,18,290],[255,290,118,18],[335,88,18,337],[335,88,128,18],[415,160,18,265],[415,160,110,18],[505,18,18,320],[505,320,125,18],[585,88,18,260],[585,88,140,18],[665,160,18,322],[665,160,117,18],[720,250,18,160],[88,300,102,18],[208,150,65,18],[353,235,80,18],[523,405,142,18],[603,250,117,18],[433,18,90,18]];
+const bulbs=[{x:126,y:112,r:57,core:18,pulse:.2},{x:294,y:345,r:66,core:20,pulse:1.5},{x:460,y:124,r:63,core:20,pulse:2.7},{x:555,y:372,r:72,core:23,pulse:3.8},{x:708,y:213,r:67,core:21,pulse:4.6}];
+const sparks=[{x:42,y:76,got:false},{x:164,y:456,got:false},{x:230,y:112,got:false},{x:314,y:454,got:false},{x:390,y:137,got:false},{x:554,y:70,got:false},{x:738,y:446,got:false}];
+
+function bestForMode(){return best[mode]||0}
+function updateBestLabel(){bestEl.textContent=bestForMode()}
+function levelButtons(){
+ return `<div class="levels">${modeList.map((m,i)=>`<button class="level ${m===mode?"active":""}" data-mode="${m}" aria-label="Select ${m} level">${i+1}. ${m}</button>`).join("")}</div>`;
+}
+function wirePanel(){
+ overlay.querySelectorAll(".level").forEach(b=>b.onclick=()=>{mode=b.dataset.mode;showStart()});
+ const start=document.getElementById("startBtn"),again=document.getElementById("againBtn");
+ if(start)start.onclick=reset;
+ if(again)again.onclick=reset;
+}
+function showStart(){
+ running=false;drag.active=false;lastResult=null;updateBestLabel();
+ overlay.style.display="grid";
+ overlay.innerHTML=`<div class="panel">
+ <h1>Porch Light Moth Maze</h1>
+ <p>Pick a flight, collect 7 nectar sparks, then escape through the screen door.</p>
+ <p>Fast clears earn a timer bonus. Bright bulbs pull harder on higher levels.</p>
+ ${levelButtons()}
+ <p class="small"><strong>Enter/Space:</strong> start. <strong>1/2/3:</strong> select level.</p>
+ <button id="startBtn">Start ${mode} Flight</button>
+ </div>`;
+ wirePanel();
+}
+function resize(){
+ const r=stage.getBoundingClientRect();
+ canvas.width=Math.floor(r.width*devicePixelRatio);canvas.height=Math.floor(r.height*devicePixelRatio);
+ ctx.setTransform(canvas.width/W,0,0,canvas.height/H,0,0);draw();
+}
+addEventListener("resize",resize);
+function reset(){
+ moth.x=46;moth.y=456;moth.vx=0;moth.vy=0;moth.trapped=0;score=0;nectar=0;t=0;elapsed=0;lastResult=null;
+ sparks.forEach(s=>s.got=false);running=true;overlay.style.display="none";last=performance.now();requestAnimationFrame(loop);
+}
+addEventListener("keydown",e=>{
+ const k=e.key.toLowerCase();
+ if(k==="1"||k==="2"||k==="3"){mode=modeList[Number(k)-1];updateBestLabel();if(!running)showStart();return}
+ keys[k]=true;
+ if(["arrowup","arrowdown","arrowleft","arrowright"," "].includes(k))e.preventDefault();
+ if(!running&&(e.key==="Enter"||e.key===" ")){e.preventDefault();reset()}
+},{passive:false});
+addEventListener("keyup",e=>keys[e.key.toLowerCase()]=false);
+function pointerToGame(e){const r=canvas.getBoundingClientRect();return{x:(e.clientX-r.left)/r.width*W,y:(e.clientY-r.top)/r.height*H}}
+canvas.addEventListener("pointerdown",e=>{e.preventDefault();if(!running)return;const p=pointerToGame(e);drag.active=true;drag.x=p.x;drag.y=p.y;canvas.setPointerCapture(e.pointerId)});
+canvas.addEventListener("pointermove",e=>{if(!drag.active)return;e.preventDefault();const p=pointerToGame(e);drag.x=p.x;drag.y=p.y});
+canvas.addEventListener("pointerup",e=>{e.preventDefault();drag.active=false});
+canvas.addEventListener("pointercancel",()=>drag.active=false);
+document.querySelectorAll(".controls button").forEach(btn=>{const dir=btn.dataset.dir,set=v=>{if(dir==="up")keys.arrowup=v;if(dir==="down")keys.arrowdown=v;if(dir==="left")keys.arrowleft=v;if(dir==="right")keys.arrowright=v};btn.addEventListener("pointerdown",e=>{e.preventDefault();set(true);btn.setPointerCapture(e.pointerId)});btn.addEventListener("pointerup",e=>{e.preventDefault();set(false)});btn.addEventListener("pointercancel",()=>set(false));btn.addEventListener("pointerleave",()=>set(false))});
+function circleRect(cx,cy,cr,r){const x=Math.max(r[0],Math.min(cx,r[0]+r[2])),y=Math.max(r[1],Math.min(cy,r[1]+r[3]));return(cx-x)**2+(cy-y)**2<cr**2}
+function collideWalls(nx,ny){return walls.some(w=>circleRect(nx,ny,moth.r,w))}
+function update(dt){
+ const cfg=modes[mode];t+=dt;elapsed+=dt;let ax=0,ay=0;
+ if(keys.arrowup||keys.w)ay-=1;if(keys.arrowdown||keys.s)ay+=1;if(keys.arrowleft||keys.a)ax-=1;if(keys.arrowright||keys.d)ax+=1;
+ if(drag.active){const dx=drag.x-moth.x,dy=drag.y-moth.y,d=Math.hypot(dx,dy);if(d>8){ax+=dx/d*Math.min(1.4,d/65);ay+=dy/d*Math.min(1.4,d/65)}}
+ const len=Math.hypot(ax,ay)||1;ax/=len;ay/=len;moth.vx+=ax*560*cfg.speed*dt;moth.vy+=ay*560*cfg.speed*dt;
+ let danger=0;
+ bulbs.forEach(b=>{const rr=b.r+Math.sin(t*3.4+b.pulse)*5,dx=b.x-moth.x,dy=b.y-moth.y,d=Math.hypot(dx,dy);if(d<rr){const pull=(1-d/rr)*310*cfg.pull;moth.vx+=dx/Math.max(d,1)*pull*dt;moth.vy+=dy/Math.max(d,1)*pull*dt;danger=Math.max(danger,1-d/rr)}if(d<b.core+2)moth.trapped+=dt});
+ moth.vx*=Math.pow(.055,dt);moth.vy*=Math.pow(.055,dt);
+ const nx=moth.x+moth.vx*dt,ny=moth.y+moth.vy*dt;
+ if(!collideWalls(nx,moth.y))moth.x=nx;else moth.vx*=-.28;
+ if(!collideWalls(moth.x,ny))moth.y=ny;else moth.vy*=-.28;
+ moth.x=Math.max(24,Math.min(W-24,moth.x));moth.y=Math.max(24,Math.min(H-24,moth.y));
+ sparks.forEach(s=>{if(!s.got&&Math.hypot(s.x-moth.x,s.y-moth.y)<20){s.got=true;nectar++;score+=120}});
+ score+=dt*9;
+ if(moth.trapped>cfg.trap)end(false);
+ if(nectar>=7&&moth.x>exit.x&&moth.y<exit.y+exit.h)end(true);
+ scoreEl.textContent=Math.floor(score);timeEl.textContent=elapsed.toFixed(1);nectarEl.textContent=nectar+"/7";dangerEl.textContent=danger>.55?"Bright!":danger>.2?"Pulling":"Safe";
+}
+function end(success){
+ running=false;drag.active=false;const cfg=modes[mode];let timerBonus=0;
+ if(success){timerBonus=Math.max(0,Math.floor(cfg.bonusBase-elapsed*28));score+=400+timerBonus}
+ const finalScore=Math.floor(score);best[mode]=Math.max(bestForMode(),finalScore);localStorage.setItem("mothMazeBestFinal",JSON.stringify(best));updateBestLabel();
+ lastResult={success,level:mode,time:elapsed.toFixed(1),bonus:timerBonus,nectar:`${nectar}/7`,score:finalScore,best:bestForMode()};
+ overlay.style.display="grid";
+ overlay.innerHTML=`<div class="panel">
+ <h1>${success?"You Escaped":"Trapped by Light"}</h1>
+ <p>${success?"Try again to shave seconds off the route and push the bonus higher.":"Retry the same level or switch difficulty with 1/2/3."}</p>
+ <div class="scorecard">
+  <div class="stat"><b>Level</b><span>${lastResult.level}</span></div>
+  <div class="stat"><b>Time</b><span>${lastResult.time}s</span></div>
+  <div class="stat"><b>Bonus</b><span>${lastResult.bonus}</span></div>
+  <div class="stat"><b>Nectar</b><span>${lastResult.nectar}</span></div>
+  <div class="stat"><b>Score</b><span>${lastResult.score}</span></div>
+  <div class="stat"><b>Best</b><span>${lastResult.best}</span></div>
+ </div>
+ ${levelButtons()}
+ <p class="small"><strong>Enter/Space:</strong> replay. <strong>1/2/3:</strong> Easy, Porch, Storm.</p>
+ <button id="againBtn">${success?"Try Faster":"Retry Flight"}</button>
+ </div>`;
+ wirePanel();
+}
+function draw(){
+ ctx.clearRect(0,0,W,H);
+ const bg=ctx.createRadialGradient(400,250,30,400,250,540);bg.addColorStop(0,"#251637");bg.addColorStop(1,"#0e0a15");ctx.fillStyle=bg;ctx.fillRect(0,0,W,H);
+ ctx.strokeStyle="rgba(255,244,194,.08)";ctx.lineWidth=1;for(let x=40;x<W;x+=40){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,H);ctx.stroke()}for(let y=40;y<H;y+=40){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(W,y);ctx.stroke()}
+ bulbs.forEach(b=>{const cfg=modes[mode],rr=b.r*cfg.pull+Math.sin(t*3.4+b.pulse)*5,g=ctx.createRadialGradient(b.x,b.y,4,b.x,b.y,rr);g.addColorStop(0,"rgba(255,248,180,.95)");g.addColorStop(.28,"rgba(255,197,70,.33)");g.addColorStop(1,"rgba(255,184,42,0)");ctx.fillStyle=g;ctx.beginPath();ctx.arc(b.x,b.y,rr,0,Math.PI*2);ctx.fill()});
+ ctx.fillStyle="rgba(104,66,37,.96)";walls.forEach(w=>{ctx.fillRect(...w);ctx.fillStyle="rgba(190,130,74,.42)";ctx.fillRect(w[0],w[1],w[2],Math.min(5,w[3]));ctx.fillStyle="rgba(104,66,37,.96)"});
+ bulbs.forEach(b=>{ctx.fillStyle="#fff7bd";ctx.beginPath();ctx.arc(b.x,b.y,b.core,0,Math.PI*2);ctx.fill();ctx.strokeStyle="rgba(255,255,255,.7)";ctx.lineWidth=3;ctx.stroke()});
+ ctx.fillStyle=nectar>=7?"rgba(158,255,207,.9)":"rgba(110,160,140,.35)";ctx.fillRect(exit.x,exit.y,exit.w,exit.h);ctx.strokeStyle="rgba(255,255,255,.5)";ctx.strokeRect(exit.x,exit.y,exit.w,exit.h);ctx.fillStyle="#fff6d8";ctx.font="14px system-ui";ctx.fillText("EXIT",exit.x+5,exit.y+37);
+ sparks.forEach((s,i)=>{if(s.got)return;const bob=Math.sin(t*4+i)*3;ctx.fillStyle="#9fffe1";ctx.beginPath();ctx.arc(s.x,s.y+bob,7,0,Math.PI*2);ctx.fill();ctx.strokeStyle="rgba(159,255,225,.45)";ctx.lineWidth=8;ctx.stroke()});
+ if(drag.active){ctx.strokeStyle="rgba(159,255,225,.45)";ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(moth.x,moth.y);ctx.lineTo(drag.x,drag.y);ctx.stroke();ctx.fillStyle="rgba(159,255,225,.22)";ctx.beginPath();ctx.arc(drag.x,drag.y,14,0,Math.PI*2);ctx.fill()}
+ if(nectar>=7){ctx.strokeStyle="rgba(158,255,207,.45)";ctx.lineWidth=3;ctx.setLineDash([8,8]);ctx.beginPath();ctx.moveTo(moth.x,moth.y);ctx.lineTo(exit.x+21,exit.y+32);ctx.stroke();ctx.setLineDash([])}
+ ctx.save();ctx.translate(moth.x,moth.y);ctx.rotate(Math.atan2(moth.vy,moth.vx||.01));ctx.fillStyle="rgba(255,236,170,.55)";ctx.beginPath();ctx.ellipse(-5,-9,13,7,-.5,0,Math.PI*2);ctx.ellipse(-5,9,13,7,.5,0,Math.PI*2);ctx.fill();ctx.fillStyle="#f7dca0";ctx.beginPath();ctx.ellipse(2,0,12,6,0,0,Math.PI*2);ctx.fill();ctx.fillStyle="#fff8c9";ctx.beginPath();ctx.arc(12,0,4,0,Math.PI*2);ctx.fill();ctx.restore();
+}
+function loop(now){if(!running)return;const dt=Math.min(.033,(now-last)/1000);last=now;update(dt);draw();requestAnimationFrame(loop)}
+resize();showStart();
+})();
+</script>
+</body>
+</html>

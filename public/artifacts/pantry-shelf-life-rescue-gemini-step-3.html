@@ -1,0 +1,568 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kitchen Rescue Mission Plan</title>
+    <style>
+        :root {
+            --bg-color: #f4f7f6;
+            --card-bg: #ffffff;
+            --text-main: #2c3e50;
+            --text-muted: #7f8c8d;
+            --accent-urgent: #e74c3c;
+            --accent-warning: #f39c12;
+            --accent-safe: #2ecc71;
+            --border-color: #dcdde1;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 1200px;
+            display: grid;
+            grid-template-columns: 1.2fr 1.5fr;
+            gap: 25px;
+        }
+
+        @media (max-width: 950px) {
+            .container {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .panel {
+            background: var(--card-bg);
+            border-radius: 12px;
+            padding: 25px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+            height: fit-content;
+        }
+
+        h1, h2, h3 {
+            margin-top: 0;
+            color: var(--text-main);
+        }
+
+        h1 {
+            font-size: 24px;
+            margin-bottom: 5px;
+        }
+
+        .subtitle {
+            color: var(--text-muted);
+            font-size: 14px;
+            margin-bottom: 25px;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 12px;
+        }
+
+        .form-group {
+            margin-bottom: 12px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        label {
+            font-weight: 600;
+            margin-bottom: 6px;
+            font-size: 13px;
+        }
+
+        input, select {
+            padding: 10px;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            font-family: inherit;
+            font-size: 14px;
+            box-sizing: border-box;
+            width: 100%;
+        }
+
+        input:focus, select:focus {
+            outline: none;
+            border-color: var(--text-main);
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+            margin-bottom: 25px;
+        }
+
+        button {
+            padding: 12px;
+            font-size: 14px;
+            font-weight: 600;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background 0.2s, border-color 0.2s;
+            box-sizing: border-box;
+        }
+
+        .btn-primary {
+            flex: 2;
+            background-color: var(--text-main);
+            color: white;
+            border: none;
+        }
+
+        .btn-primary:hover {
+            background-color: #1a252f;
+        }
+
+        .btn-secondary {
+            flex: 1;
+            background-color: transparent;
+            color: var(--text-main);
+            border: 1px solid var(--text-main);
+        }
+
+        .btn-secondary:hover {
+            background-color: #eee;
+        }
+
+        .inventory-section {
+            border-top: 1px solid var(--border-color);
+            padding-top: 20px;
+        }
+
+        .inventory-table-wrapper {
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+            text-align: left;
+        }
+
+        th, td {
+            padding: 10px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        th {
+            font-weight: 600;
+            background-color: #f8f9fa;
+        }
+
+        .tag {
+            display: inline-block;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 600;
+            margin-right: 3px;
+            background-color: #e2e8f0;
+            color: #4a5568;
+            text-transform: lowercase;
+        }
+
+        .delete-btn {
+            background: none;
+            border: none;
+            color: var(--accent-urgent);
+            cursor: pointer;
+            font-weight: bold;
+            padding: 2px 6px;
+        }
+
+        .placeholder-text {
+            color: var(--text-muted);
+            text-align: center;
+            padding: 40px 20px;
+            font-style: italic;
+        }
+
+        .section-block {
+            margin-bottom: 35px;
+        }
+
+        .section-title {
+            font-size: 18px;
+            font-weight: 700;
+            margin-bottom: 15px;
+            padding-bottom: 5px;
+            border-bottom: 2px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .badge {
+            font-size: 11px;
+            padding: 3px 8px;
+            border-radius: 20px;
+            color: white;
+            text-transform: uppercase;
+            font-weight: bold;
+        }
+
+        .badge.now { background-color: var(--accent-urgent); }
+        .badge.tier { background-color: var(--text-main); }
+
+        .combo-card {
+            background: #ffffff;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 18px;
+            margin-bottom: 15px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.02);
+        }
+
+        .combo-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 10px;
+        }
+
+        .combo-name {
+            font-weight: 700;
+            font-size: 16px;
+            color: #2c3e50;
+        }
+
+        .match-tags {
+            display: flex;
+            gap: 4px;
+            flex-wrap: wrap;
+        }
+
+        .match-tag {
+            font-size: 10px;
+            background: #eef2f7;
+            color: #34495e;
+            padding: 2px 6px;
+            border-radius: 4px;
+            border: 1px solid #dcdde1;
+            font-weight: 600;
+        }
+
+        .used-ingredients {
+            font-size: 13px;
+            margin-bottom: 12px;
+            color: #2c3e50;
+            background: #f8f9fa;
+            padding: 8px 12px;
+            border-radius: 6px;
+        }
+
+        .used-ingredients strong {
+            color: #e74c3c;
+        }
+
+        .combo-steps {
+            font-size: 13px;
+            line-height: 1.5;
+            color: #57606f;
+            margin: 0;
+            padding-left: 18px;
+        }
+
+        .combo-steps li {
+            margin-bottom: 6px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="panel">
+        <h1>Kitchen Rescue</h1>
+        <div class="subtitle">Log structured ingredients to engineer your real-time strategy.</div>
+
+        <form id="ingredientForm" onsubmit="addIngredient(event)">
+            <div class="form-group">
+                <label for="itemName">Item Name</label>
+                <input type="text" id="itemName" placeholder="e.g., Heavy Cream, Spinach, Eggs" required>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="itemLocation">Location</label>
+                    <select id="itemLocation">
+                        <option value="Fridge">Fridge</option>
+                        <option value="Pantry">Pantry</option>
+                        <option value="Freezer">Freezer</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="itemExpiry">Days Until Expiry</label>
+                    <input type="number" id="itemExpiry" placeholder="e.g., 1" min="0" required>
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="itemPortions">Portions / Vol</label>
+                    <input type="text" id="itemPortions" placeholder="e.g., 2 cups, 3 eggs">
+                </div>
+                <div class="form-group">
+                    <label for="itemConstraints">Constraint/Type Tags</label>
+                    <input type="text" id="itemConstraints" placeholder="e.g., vegetarian, dairy-free, quick">
+                </div>
+            </div>
+
+            <div class="btn-group">
+                <button type="submit" class="btn-primary">Add Item</button>
+                <button type="button" class="btn-secondary" onclick="clearInventory()">Clear All</button>
+            </div>
+        </form>
+
+        <div class="inventory-section">
+            <h3>Current Inventory</h3>
+            <div class="inventory-table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Item</th>
+                            <th>Loc</th>
+                            <th>Exp</th>
+                            <th>Qty</th>
+                            <th>Tags</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody id="inventoryTableBody">
+                        <!-- Dynamic items -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="panel" id="outputPanel">
+        <div class="placeholder-text">Add ingredients to see your active rescue strategy auto-update here.</div>
+    </div>
+</div>
+
+<script>
+    let inventory = [];
+
+    window.addEventListener('DOMContentLoaded', () => {
+        const stored = localStorage.getItem('kitchenRescueInventory');
+        if (stored) {
+            inventory = JSON.parse(stored);
+            updateUI();
+        }
+    });
+
+    function saveToStorage() {
+        localStorage.setItem('kitchenRescueInventory', JSON.stringify(inventory));
+    }
+
+    function addIngredient(e) {
+        e.preventDefault();
+
+        const name = document.getElementById('itemName').value.trim();
+        const location = document.getElementById('itemLocation').value;
+        const expiry = parseInt(document.getElementById('itemExpiry').value);
+        const portions = document.getElementById('itemPortions').value.trim() || '1 unit';
+        const constraintsRaw = document.getElementById('itemConstraints').value;
+
+        const constraints = constraintsRaw ? constraintsRaw.split(',').map(t => t.trim().toLowerCase()).filter(t => t.length > 0) : [];
+
+        const newItem = {
+            id: Date.now(),
+            name,
+            location,
+            expiry,
+            portions,
+            constraints
+        };
+
+        inventory.push(newItem);
+        saveToStorage();
+        updateUI();
+
+        document.getElementById('itemName').value = '';
+        document.getElementById('itemExpiry').value = '';
+        document.getElementById('itemPortions').value = '';
+        document.getElementById('itemConstraints').value = '';
+        document.getElementById('itemName').focus();
+    }
+
+    function deleteItem(id) {
+        inventory = inventory.filter(item => item.id !== id);
+        saveToStorage();
+        updateUI();
+    }
+
+    function clearInventory() {
+        inventory = [];
+        saveToStorage();
+        updateUI();
+    }
+
+    function updateUI() {
+        renderTable();
+        generateRescuePlan();
+    }
+
+    function renderTable() {
+        const tbody = document.getElementById('inventoryTableBody');
+        tbody.innerHTML = '';
+
+        if (inventory.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; color: #7f8c8d; font-style: italic;">No items tracking</td></tr>`;
+            return;
+        }
+
+        const sortedDisplay = [...inventory].sort((a, b) => a.expiry - b.expiry);
+
+        sortedDisplay.forEach(item => {
+            const tr = document.createElement('tr');
+            const tagsHtml = item.constraints.map(t => `<span class="tag">${t}</span>`).join('');
+
+            tr.innerHTML = `
+                <td><strong>${item.name}</strong></td>
+                <td>${item.location}</td>
+                <td style="color: ${item.expiry <= 2 ? 'var(--accent-urgent)' : 'inherit'}; font-weight: ${item.expiry <= 2 ? 'bold' : 'normal'};">${item.expiry}d</td>
+                <td>${item.portions}</td>
+                <td>${tagsHtml}</td>
+                <td><button class="delete-btn" onclick="deleteItem(${item.id})">&times;</button></td>
+            `;
+            tbody.appendChild(tr);
+        });
+    }
+
+    function generateRescuePlan() {
+        const outputPanel = document.getElementById('outputPanel');
+
+        if (inventory.length === 0) {
+            outputPanel.innerHTML = '<div class="placeholder-text">Add ingredients to see your active rescue strategy auto-update here.</div>';
+            return;
+        }
+
+        // Filter out expiring items needing urgent rescue (0-2 days remaining)
+        const expiringItems = inventory.filter(i => i.expiry <= 2);
+
+        let html = `<h2>Active Rescue Strategy</h2><div class="subtitle">Live meal generation and bucket tracking.</div>`;
+
+        // USE-NOW SECTION: MEAL COMBOS BASED ON CONSTRAINT TAGS
+        if (expiringItems.length > 0) {
+            html += `
+            <div class="section-block">
+                <div class="section-title">
+                    <span class="badge now">Use Now</span> Simple Meal Suggestions
+                </div>`;
+
+            // Collect global tag constraints present in the expiring batch
+            const allExpiringTags = expiringItems.flatMap(i => i.constraints);
+            const isVegetarian = allExpiringTags.includes('vegetarian');
+            const isDairyFree = allExpiringTags.includes('dairy-free');
+            const isNoOven = allExpiringTags.includes('no oven') || allExpiringTags.includes('no-oven');
+            const isQuick = allExpiringTags.includes('quick');
+
+            // Generate Strategy 1: Skillet/Stir-Fry (Dynamic match)
+            let combo1Title = isQuick ? "The 10-Minute Flash Scramble/Stir-Fry" : "The Unified Skillet Toss";
+            if (isNoOven) combo1Title += " (Stovetop Only)";
+
+            let combo1Steps = [
+                `Heat oil or fat in a skillet over high heat. ${isNoOven ? 'Avoid using your oven entirely.' : ''}`,
+                `Toss in your high-alert items: ${expiringItems.map(i => i.name).join(', ')}.`,
+                isDairyFree ? "Season heavily with herbs or hot sauce; avoid adding butter, cream, or cheese blocks." : "Whisk in any open cream, sour cream, or shredded cheeses to form a rich binding sauce."
+            ];
+
+            html += `
+            <div class="combo-card">
+                <div class="combo-header">
+                    <div class="combo-name">${combo1Title}</div>
+                    <div class="match-tags">
+                        ${isVegetarian ? '<span class="match-tag">Vegetarian Friendly</span>' : ''}
+                        ${isDairyFree ? '<span class="match-tag">Dairy-Free</span>' : ''}
+                        ${isQuick ? '<span class="match-tag">Quick Execution</span>' : ''}
+                    </div>
+                </div>
+                <div class="used-ingredients"><strong>Rescuing:</strong> All high-alert items (${expiringItems.map(i => i.name).join(', ')})</div>
+                <ol class="combo-steps">
+                    ${combo1Steps.map(step => `<li>${step}</li>`).join('')}
+                </ol>
+            </div>`;
+
+            // Generate Strategy 2: High Stability Bowl/Simmer
+            if (expiringItems.length > 1) {
+                const subBatch1 = expiringItems.slice(0, Math.ceil(expiringItems.length / 2));
+                const subBatch2 = expiringItems.slice(Math.ceil(expiringItems.length / 2));
+
+                let combo2Title = isVegetarian ? "The Plant-Forward Power Bowl" : "The Tactical Multi-Layer Protein Base";
+
+                html += `
+                <div class="combo-card">
+                    <div class="combo-header">
+                        <div class="combo-name">${combo2Title}</div>
+                        <div class="match-tags">
+                            <span class="match-tag">Split Processing</span>
+                        </div>
+                    </div>
+                    <div class="used-ingredients"><strong>Layer A:</strong> ${subBatch1.map(i => i.name).join(', ')} | <strong>Layer B:</strong> ${subBatch2.map(i => i.name).join(', ')}</div>
+                    <ol class="combo-steps">
+                        <li><strong>Layer A Processing:</strong> Sauté or dress ${subBatch1.map(i => i.name).join(', ')} separately to build a foundational flavor core.</li>
+                        <li><strong>Layer B Integration:</strong> ${isQuick ? 'Quick-toss' : 'Simmer'} ${subBatch2.map(i => i.name).join(', ')} and stack directly on top.</li>
+                        <li><strong>The Dressing Rule:</strong> Use any available kitchen acids (lemon juice, hot sauce) to blend contrasting textures smoothly.</li>
+                    </ol>
+                </div>`;
+            }
+
+            html += `</div>`;
+        }
+
+        // TRACKING BUCKETS SECTION
+        const tier1 = inventory.filter(i => i.expiry <= 2);
+        const tier2 = inventory.filter(i => i.expiry > 2 && i.expiry <= 5);
+        const tier3 = inventory.filter(i => i.expiry > 5);
+
+        html += `<div class="section-block">
+            <div class="section-title"><span class="badge tier">Tracking</span> Pipeline Management</div>`;
+
+        if (tier1.length > 0) {
+            html += `
+            <div class="recipe-card critical" style="border-left-color: var(--accent-urgent);">
+                <div class="recipe-title">Tier 1: Critical Window (0-2 Days Remaining)</div>
+                <div class="used-ingredients">Must deplete immediately. Consolidate these items into the meal combos generated above.</div>
+            </div>`;
+        }
+
+        if (tier2.length > 0) {
+            html += `
+            <div class="recipe-card warning" style="border-left-color: var(--accent-warning);">
+                <div class="recipe-title">Tier 2: Intermediate Window (3-5 Days Remaining)</div>
+                <div class="used-ingredients"><strong>Items:</strong> ${tier2.map(i => i.name).join(', ')}</div>
+                <p style="font-size: 13px; margin: 0; padding-left: 5px; color: #57606f;">Prep strategy: Consider par-cooking or roasting these items mid-week to reset their moisture baseline and stop degradation.</p>
+            </div>`;
+        }
+
+        if (tier3.length > 0) {
+            html += `
+            <div class="recipe-card flex" style="border-left-color: var(--accent-safe);">
+                <div class="recipe-title">Tier 3: Stable Inventory (6+ Days Remaining)</div>
+                <div class="used-ingredients"><strong>Items:</strong> ${tier3.map(i => i.name).join(', ')}</div>
+                <p style="font-size: 13px; margin: 0; padding-left: 5px; color: #57606f;">Holding phase: Retain in storage. Do not open or touch until high-alert tiers are completely clear.</p>
+            </div>`;
+        }
+
+        html += `</div>`;
+        outputPanel.innerHTML = html;
+    }
+</script>
+
+</body>
+</html>

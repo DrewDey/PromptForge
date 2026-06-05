@@ -1,0 +1,821 @@
+<!DOCTYPE html>
+
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Late-Night Beat Sketcher</title>
+
+    <style>
+
+        * {
+
+            margin: 0;
+
+            padding: 0;
+
+            box-sizing: border-box;
+
+        }
+
+
+
+        body {
+
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+
+            color: #eee;
+
+            display: flex;
+
+            justify-content: center;
+
+            align-items: center;
+
+            min-height: 100vh;
+
+            padding: 20px;
+
+        }
+
+
+
+        .container {
+
+            background: #0f3460;
+
+            padding: 30px;
+
+            border-radius: 12px;
+
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+
+            max-width: 800px;
+
+        }
+
+
+
+        h1 {
+
+            text-align: center;
+
+            margin-bottom: 20px;
+
+            font-size: 24px;
+
+            color: #00d4ff;
+
+            text-shadow: 0 0 10px rgba(0, 212, 255, 0.3);
+
+        }
+
+
+
+        .controls {
+
+            display: flex;
+
+            gap: 10px;
+
+            justify-content: center;
+
+            margin-bottom: 30px;
+
+            flex-wrap: wrap;
+
+        }
+
+
+
+        button {
+
+            padding: 12px 24px;
+
+            font-size: 16px;
+
+            border: none;
+
+            border-radius: 6px;
+
+            cursor: pointer;
+
+            font-weight: bold;
+
+            transition: all 0.2s;
+
+            text-transform: uppercase;
+
+            letter-spacing: 1px;
+
+        }
+
+
+
+        #playBtn {
+
+            background: #00d4ff;
+
+            color: #0f3460;
+
+        }
+
+
+
+        #playBtn:hover {
+
+            transform: scale(1.05);
+
+            box-shadow: 0 0 20px rgba(0, 212, 255, 0.6);
+
+        }
+
+
+
+        #playBtn.playing {
+
+            background: #ff006e;
+
+        }
+
+
+
+        .tempo-control {
+
+            display: flex;
+
+            align-items: center;
+
+            gap: 10px;
+
+            justify-content: center;
+
+        }
+
+
+
+        input[type="range"] {
+
+            width: 100px;
+
+        }
+
+
+
+        .tempo-display {
+
+            min-width: 60px;
+
+            text-align: right;
+
+            font-weight: bold;
+
+            color: #00d4ff;
+
+        }
+
+
+
+        .grid-container {
+
+            display: grid;
+
+            grid-template-columns: repeat(4, 1fr);
+
+            gap: 8px;
+
+            margin-bottom: 20px;
+
+        }
+
+
+
+        .track {
+
+            background: #162a47;
+
+            padding: 12px;
+
+            border-radius: 8px;
+
+            border: 1px solid #1e3a5f;
+
+        }
+
+
+
+        .track-label {
+
+            font-size: 12px;
+
+            color: #00d4ff;
+
+            font-weight: bold;
+
+            margin-bottom: 8px;
+
+            text-transform: uppercase;
+
+            letter-spacing: 0.5px;
+
+        }
+
+
+
+        .steps {
+
+            display: grid;
+
+            grid-template-columns: repeat(4, 1fr);
+
+            gap: 4px;
+
+        }
+
+
+
+        .step {
+
+            aspect-ratio: 1;
+
+            background: #1a3a52;
+
+            border: 2px solid #2a5a7f;
+
+            border-radius: 4px;
+
+            cursor: pointer;
+
+            transition: all 0.1s;
+
+            font-size: 10px;
+
+            display: flex;
+
+            align-items: center;
+
+            justify-content: center;
+
+        }
+
+
+
+        .step:hover {
+
+            border-color: #00d4ff;
+
+            box-shadow: inset 0 0 8px rgba(0, 212, 255, 0.2);
+
+        }
+
+
+
+        .step.active {
+
+            background: #00d4ff;
+
+            border-color: #00a8cc;
+
+            box-shadow: 0 0 12px rgba(0, 212, 255, 0.5);
+
+            color: #0f3460;
+
+            font-weight: bold;
+
+        }
+
+
+
+        .step.playing {
+
+            animation: pulse 0.15s;
+
+        }
+
+
+
+        @keyframes pulse {
+
+            0% {
+
+                transform: scale(1);
+
+            }
+
+            50% {
+
+                transform: scale(1.15);
+
+            }
+
+            100% {
+
+                transform: scale(1);
+
+            }
+
+        }
+
+
+
+        .info {
+
+            text-align: center;
+
+            font-size: 12px;
+
+            color: #888;
+
+            margin-top: 20px;
+
+        }
+
+    </style>
+
+</head>
+
+<body>
+
+    <div class="container">
+
+        <h1>🎵 Late-Night Beat Sketcher</h1>
+
+
+
+        <div class="controls">
+
+            <button id="playBtn">▶ Play</button>
+
+            <div class="tempo-control">
+
+                <label for="tempoSlider">BPM:</label>
+
+                <input type="range" id="tempoSlider" min="40" max="200" value="120">
+
+                <div class="tempo-display" id="tempoDisplay">120</div>
+
+            </div>
+
+        </div>
+
+
+
+        <div class="grid-container" id="grid"></div>
+
+
+
+        <div class="info">
+
+            Click grid cells to toggle sounds. Press Play to hear the pattern.
+
+        </div>
+
+    </div>
+
+
+
+    <script>
+
+        // Web Audio context
+
+        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+
+
+
+        // Beat state
+
+        let isPlaying = false;
+
+        let currentStep = 0;
+
+        let tempo = 120;
+
+        let nextNoteTime = 0.0;
+
+        let scheduleAheadTime = 0.1;
+
+        let lookAhead = 25.0;
+
+        let lastScheduledNote = -1;
+
+        let timerID = null;
+
+
+
+        // Track configuration: 4 tracks, 16 steps each
+
+        const tracks = [
+
+            { name: 'Kick', color: '#ff006e', synthFn: synthKick },
+
+            { name: 'Snare', color: '#00d4ff', synthFn: synthSnare },
+
+            { name: 'HiHat', color: '#ffd60a', synthFn: synthHiHat },
+
+            { name: 'Perc', color: '#8338ec', synthFn: synthPerc }
+
+        ];
+
+
+
+        // Grid state: 4 tracks × 16 steps
+
+        const grid = Array(4).fill().map(() => Array(16).fill(false));
+
+
+
+        // ============ Sound Synthesis Functions ============
+
+
+
+        function synthKick(time) {
+
+            const osc = audioContext.createOscillator();
+
+            const gain = audioContext.createGain();
+
+
+
+            osc.connect(gain);
+
+            gain.connect(audioContext.destination);
+
+
+
+            osc.frequency.setValueAtTime(150, time);
+
+            osc.frequency.exponentialRampToValueAtTime(0.01, time + 0.5);
+
+
+
+            gain.gain.setValueAtTime(1, time);
+
+            gain.gain.exponentialRampToValueAtTime(0.01, time + 0.5);
+
+
+
+            osc.start(time);
+
+            osc.stop(time + 0.5);
+
+        }
+
+
+
+        function synthSnare(time) {
+
+            const noise = audioContext.createBufferSource();
+
+            const buffer = audioContext.createBuffer(1, audioContext.sampleRate * 0.2, audioContext.sampleRate);
+
+            const data = buffer.getChannelData(0);
+
+            for (let i = 0; i < buffer.length; i++) {
+
+                data[i] = Math.random() * 2 - 1;
+
+            }
+
+            noise.buffer = buffer;
+
+
+
+            const gain = audioContext.createGain();
+
+            noise.connect(gain);
+
+            gain.connect(audioContext.destination);
+
+
+
+            gain.gain.setValueAtTime(0.8, time);
+
+            gain.gain.exponentialRampToValueAtTime(0.01, time + 0.2);
+
+
+
+            noise.start(time);
+
+            noise.stop(time + 0.2);
+
+        }
+
+
+
+        function synthHiHat(time) {
+
+            const noise = audioContext.createBufferSource();
+
+            const buffer = audioContext.createBuffer(1, audioContext.sampleRate * 0.1, audioContext.sampleRate);
+
+            const data = buffer.getChannelData(0);
+
+            for (let i = 0; i < buffer.length; i++) {
+
+                data[i] = Math.random() * 2 - 1;
+
+            }
+
+            noise.buffer = buffer;
+
+
+
+            const filter = audioContext.createBiquadFilter();
+
+            filter.type = 'highpass';
+
+            filter.frequency.setValueAtTime(8000, time);
+
+
+
+            const gain = audioContext.createGain();
+
+            noise.connect(filter);
+
+            filter.connect(gain);
+
+            gain.connect(audioContext.destination);
+
+
+
+            gain.gain.setValueAtTime(0.5, time);
+
+            gain.gain.exponentialRampToValueAtTime(0.01, time + 0.1);
+
+
+
+            noise.start(time);
+
+            noise.stop(time + 0.1);
+
+        }
+
+
+
+        function synthPerc(time) {
+
+            const osc = audioContext.createOscillator();
+
+            const gain = audioContext.createGain();
+
+
+
+            osc.connect(gain);
+
+            gain.connect(audioContext.destination);
+
+
+
+            osc.frequency.setValueAtTime(300, time);
+
+            osc.frequency.exponentialRampToValueAtTime(50, time + 0.15);
+
+
+
+            gain.gain.setValueAtTime(0.7, time);
+
+            gain.gain.exponentialRampToValueAtTime(0.01, time + 0.15);
+
+
+
+            osc.start(time);
+
+            osc.stop(time + 0.15);
+
+        }
+
+
+
+        // ============ Scheduling ============
+
+
+
+        function scheduleNote(step) {
+
+            for (let track = 0; track < tracks.length; track++) {
+
+                if (grid[track][step]) {
+
+                    const time = audioContext.currentTime + (nextNoteTime - audioContext.currentTime);
+
+                    tracks[track].synthFn(time);
+
+                }
+
+            }
+
+        }
+
+
+
+        function nextNote() {
+
+            const secondsPerBeat = 60.0 / tempo;
+
+            nextNoteTime += 0.25 * secondsPerBeat;
+
+        }
+
+
+
+        function scheduler() {
+
+            while (nextNoteTime < audioContext.currentTime + scheduleAheadTime) {
+
+                scheduleNote(lastScheduledNote + 1);
+
+                lastScheduledNote++;
+
+                if (lastScheduledNote >= 16) {
+
+                    lastScheduledNote = 0;
+
+                }
+
+                nextNote();
+
+            }
+
+        }
+
+
+
+        function timerWorker() {
+
+            scheduler();
+
+        }
+
+
+
+        function startPlay() {
+
+            isPlaying = true;
+
+            currentStep = 0;
+
+            lastScheduledNote = -1;
+
+            nextNoteTime = audioContext.currentTime;
+
+            timerID = setInterval(timerWorker, lookAhead);
+
+        }
+
+
+
+        function stopPlay() {
+
+            isPlaying = false;
+
+            clearInterval(timerID);
+
+        }
+
+
+
+        // ============ UI ============
+
+
+
+        const playBtn = document.getElementById('playBtn');
+
+        const tempoSlider = document.getElementById('tempoSlider');
+
+        const tempoDisplay = document.getElementById('tempoDisplay');
+
+        const gridContainer = document.getElementById('grid');
+
+
+
+        playBtn.addEventListener('click', () => {
+
+            if (isPlaying) {
+
+                stopPlay();
+
+                playBtn.textContent = '▶ Play';
+
+                playBtn.classList.remove('playing');
+
+            } else {
+
+                startPlay();
+
+                playBtn.textContent = '⏹ Stop';
+
+                playBtn.classList.add('playing');
+
+            }
+
+        });
+
+
+
+        tempoSlider.addEventListener('input', (e) => {
+
+            tempo = parseInt(e.target.value);
+
+            tempoDisplay.textContent = tempo;
+
+        });
+
+
+
+        // Build grid UI
+
+        tracks.forEach((track, trackIdx) => {
+
+            const trackDiv = document.createElement('div');
+
+            trackDiv.className = 'track';
+
+
+
+            const label = document.createElement('div');
+
+            label.className = 'track-label';
+
+            label.textContent = track.name;
+
+            trackDiv.appendChild(label);
+
+
+
+            const stepsDiv = document.createElement('div');
+
+            stepsDiv.className = 'steps';
+
+
+
+            for (let step = 0; step < 16; step++) {
+
+                const stepBtn = document.createElement('div');
+
+                stepBtn.className = 'step';
+
+                stepBtn.dataset.track = trackIdx;
+
+                stepBtn.dataset.step = step;
+
+
+
+                stepBtn.addEventListener('click', () => {
+
+                    grid[trackIdx][step] = !grid[trackIdx][step];
+
+                    stepBtn.classList.toggle('active');
+
+                });
+
+
+
+                stepsDiv.appendChild(stepBtn);
+
+            }
+
+
+
+            trackDiv.appendChild(stepsDiv);
+
+            gridContainer.appendChild(trackDiv);
+
+        });
+
+
+
+        // Update UI when steps play
+
+        setInterval(() => {
+
+            if (isPlaying) {
+
+                currentStep = lastScheduledNote % 16;
+
+                document.querySelectorAll('.step').forEach(btn => {
+
+                    btn.classList.remove('playing');
+
+                    if (parseInt(btn.dataset.step) === currentStep) {
+
+                        btn.classList.add('playing');
+
+                    }
+
+                });
+
+            }
+
+        }, 25);
+
+    </script>
+
+</body>
+
+</html>

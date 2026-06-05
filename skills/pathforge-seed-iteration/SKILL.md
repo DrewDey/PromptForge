@@ -109,6 +109,7 @@ Use an appropriate model for the seed. A seed should usually optimize for realis
 - Prefer fast/default tiers such as Gemini Flash, Claude Sonnet, ChatGPT default/fast models, or equivalent models for one-shot browser tools and simple games.
 - Use heavier models such as Claude Opus Max, GPT Pro/extended thinking, or Gemini Pro only when the user requested that exact model or the brief clearly needs deeper reasoning.
 - If a high-thinking or model-finalizing attempt shows no useful progress, wait much longer before treating it as blocked. Do not use quick fallback as the default for premium/deep-thinking runs.
+- If a normal provider lane hits a real usage-limit wall, do not wait for reset. Move that lane to OpenRouter with a cheaper routed model appropriate to the seed, then record OpenRouter as the service/provider plus the exact routed model, upstream route when visible, settings, and source URL. This fallback is for explicit quota/limit blockers, not ordinary slow finalizing.
 - Record slow or abandoned model attempts in notes when they affect the final source package.
 
 ## Provider Run Workflow
@@ -137,9 +138,10 @@ If a lane has a 2-10 prompt target or the builder has already decided the next
 prompt is justified, let that chain finish before pass/reject review. Do not
 panic-cancel a candidate because prompt 1 produced a Claude Visualize/Gemini/
 ChatGPT preview without an immediately mountable file. Capture the exact
-prompt/response and continue. Only stop early for hard blockers such as usage
-limit, login/CAPTCHA, missing source link/export, unsafe content, or user
-interruption.
+prompt/response and continue. If the lane hits an explicit usage limit, move to
+a cheaper OpenRouter routed model instead of waiting for reset. Only stop early
+for hard blockers that cannot be routed around, such as login/CAPTCHA, missing
+source link/export, unsafe content, or user interruption.
 
 For preview-only steps:
 
@@ -231,6 +233,13 @@ If verification fails, keep the seed as `blocked` and record why. Do not submit 
 Close-but-rejected candidates should be saved under `seed-runs/rejected/` with
 the source link, prompt count, exact captured evidence, rejection reason, and
 repair notes. Do not upload them until they pass the normal gates.
+
+## Browser Cleanup
+
+Close every Chrome browser tab group opened for the seed lane before the lane is
+complete or blocked. When using the Chrome browser tooling, call
+`browser.tabs.finalize({ keep: [] })` unless a tab is explicitly waiting on user
+login, CAPTCHA, or another handoff blocker.
 
 ## PathForge Submission Workflow
 

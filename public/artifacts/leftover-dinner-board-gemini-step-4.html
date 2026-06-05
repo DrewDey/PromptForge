@@ -1,0 +1,635 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Fridge Clearing Dinner Board</title>
+    <style>
+        :root {
+            --bg-color: #f8fafc;
+            --card-bg: #ffffff;
+            --text-color: #1e293b;
+            --border-color: #cbd5e1;
+            --danger-color: #ef4444;
+            --danger-bg: #fee2e2;
+            --primary-color: #2563eb;
+            --primary-hover: #1d4ed8;
+            --success-color: #16a34a;
+            --suggest-color: #7c3aed;
+            --suggest-hover: #6d28d9;
+            --clear-color: #475569;
+            --clear-hover: #334155;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            line-height: 1.5;
+            padding: 2rem 1rem;
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+
+        h1, h2, h3 {
+            color: #0f172a;
+            margin-top: 0;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        @media (min-width: 768px) {
+            .grid {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+
+        .card {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 1.5rem;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+
+        .input-row {
+            display: flex;
+            gap: 0.4rem;
+            margin-bottom: 0.75rem;
+        }
+
+        input[type="text"], textarea, select {
+            padding: 0.5rem;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            font-size: 0.95rem;
+        }
+
+        textarea {
+            resize: vertical;
+            height: 70px;
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        button {
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 4px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        button:hover {
+            background-color: var(--primary-hover);
+        }
+
+        .suggest-btn {
+            background-color: var(--suggest-color);
+            width: 100%;
+            margin-top: 0.5rem;
+            padding: 0.75rem;
+        }
+
+        .suggest-btn:hover {
+            background-color: var(--suggest-hover);
+        }
+
+        .clear-btn {
+            background-color: var(--clear-color);
+        }
+
+        .clear-btn:hover {
+            background-color: var(--clear-hover);
+        }
+
+        button.danger-btn {
+            background-color: transparent;
+            color: var(--danger-color);
+            border: 1px solid var(--danger-color);
+            padding: 0.2rem 0.4rem;
+            font-size: 0.8rem;
+        }
+
+        button.danger-btn:hover {
+            background-color: var(--danger-bg);
+        }
+
+        .ingredient-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            max-height: 250px;
+            overflow-y: auto;
+        }
+
+        .ingredient-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0.4rem 0;
+            border-bottom: 1px solid #f1f5f9;
+            font-size: 0.95rem;
+        }
+
+        .ingredient-details {
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+
+        .badge {
+            font-size: 0.7rem;
+            padding: 0.125rem 0.375rem;
+            border-radius: 4px;
+            font-weight: bold;
+        }
+
+        .badge-danger { background-color: var(--danger-bg); color: var(--danger-color); }
+        .badge-warning { background-color: #fef3c7; color: #d97706; }
+        .badge-success { background-color: #dcfce7; color: var(--success-color); }
+        .badge-stable { background-color: #e2e8f0; color: #475569; }
+
+        .idea-item {
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            padding: 1rem;
+            margin-bottom: 1rem;
+            background-color: #fff;
+        }
+
+        .idea-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.5rem;
+        }
+
+        .score-tag {
+            background-color: #e0f2fe;
+            color: #0369a1;
+            font-size: 0.85rem;
+            font-weight: bold;
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+        }
+
+        .reason-box {
+            font-size: 0.85rem;
+            background-color: #f8fafc;
+            border-left: 3px solid #64748b;
+            padding: 0.4rem 0.75rem;
+            margin: 0.5rem 0;
+            color: #334155;
+            font-style: italic;
+        }
+
+        .used-ingredients {
+            font-size: 0.875rem;
+            color: #64748b;
+            margin-top: 0.5rem;
+        }
+
+        .action-bar {
+            display: flex;
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        .export-btn {
+            background-color: #0f172a;
+        }
+        .export-btn:hover {
+            background-color: #1e293b;
+        }
+
+        @media print {
+            body {
+                background: white;
+                color: black;
+                padding: 0;
+                font-size: 11pt;
+            }
+            .no-print, button, input, select, header, .grid {
+                display: none !important;
+            }
+            .card {
+                border: none !important;
+                box-shadow: none !important;
+                padding: 0 !important;
+                margin: 0 !important;
+                width: 100%;
+            }
+            #outputSection h2 {
+                font-size: 18pt;
+                border-bottom: 2px solid #000;
+                padding-bottom: 4px;
+                margin-bottom: 15px;
+            }
+            .idea-item {
+                page-break-inside: avoid;
+                border: 1px solid #ccc !important;
+                margin-bottom: 1.2rem !important;
+                padding: 0.8rem !important;
+            }
+            .score-tag {
+                border: 1px solid #000 !important;
+                background: transparent !important;
+                color: black !important;
+            }
+            .reason-box {
+                border-left: 2px solid #000;
+                background: transparent;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <header class="no-print" style="margin-bottom: 1.5rem; display: flex; justify-content: space-between; align-items: center;">
+        <div>
+            <h1 style="margin:0; font-size: 1.75rem;">Fridge Clearing Dinner Board</h1>
+            <p style="margin:0; color:#64748b; font-size: 0.9rem;">Auto-saves variables locally to your current browser window.</p>
+        </div>
+        <button class="clear-btn" onclick="clearBoard()">🧹 Clear Everything</button>
+    </header>
+
+    <div class="grid">
+        <!-- Column 1: Speed Inventory Tracker -->
+        <div class="card no-print">
+            <h2>1. Log Ingredients</h2>
+            <div class="input-row">
+                <input type="text" id="ingQty" placeholder="Qty (e.g. 2 cups, 1/2 bag)" style="width: 25%;">
+                <input type="text" id="ingName" placeholder="Ingredient name..." style="width: 45%;">
+                <select id="ingUrgency" style="width: 30%;">
+                    <option value="10">🚨 Use Tonight</option>
+                    <option value="6">⚠️ 1-2 Days Left</option>
+                    <option value="3">🍏 Still Good</option>
+                    <option value="1">📦 Pantry Staple</option>
+                </select>
+            </div>
+            <button style="width:100%; margin-bottom:1rem;" onclick="addIngredient()">Add Component</button>
+
+            <ul id="ingredientList" class="ingredient-list"></ul>
+            <button class="suggest-btn" onclick="triggerAutoSuggestions()">✨ Auto-Suggest Matches</button>
+        </div>
+
+        <!-- Column 2: Custom Sandbox -->
+        <div class="card no-print">
+            <h2>2. Custom Setup Choice</h2>
+            <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+                <input type="text" id="recipeName" placeholder="Meal Name (e.g., Turkey Tacos)">
+                <textarea id="recipeNotes" placeholder="Quick steps or execution notes..."></textarea>
+
+                <div>
+                    <span style="font-size: 0.85rem; font-weight: 600; display: block; margin-bottom: 0.25rem;">Select components used:</span>
+                    <div id="recipeIngredientsCheckboxes" style="max-height: 90px; overflow-y: auto; border: 1px solid var(--border-color); padding: 0.4rem; border-radius: 4px; font-size: 0.9rem;">
+                        <!-- Checkboxes generation -->
+                    </div>
+                </div>
+
+                <button onclick="addRecipe()">Inject Custom Layout</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Output View -->
+    <div class="card" id="outputSection">
+        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #e2e8f0; padding-bottom: 0.5rem; margin-bottom: 1rem;">
+            <h2 style="margin:0; font-size: 1.4rem;">Tonight's Ranked Menu Options</h2>
+            <div class="action-bar no-print" style="margin:0;">
+                <button class="export-btn" onclick="window.print()">🖨️ Print Menu Plan</button>
+                <button class="export-btn" onclick="exportAsText()">📋 Export Text</button>
+            </div>
+        </div>
+
+        <div id="rankedContainer"></div>
+    </div>
+
+    <script>
+        let ingredients = [];
+        let recipes = [];
+
+        const dynamicPatterns = [
+            { name: "Kitchen Sink Scramble / Frittata", notes: "Whisk up eggs, chop inventory components, and cook over medium heat until set.", requiresOneOf: ["Eggs", "Cheese", "Cream"], flexibleFillers: true },
+            { name: "Clear-Out Stir Fry & Rice", notes: "High heat skillet flash-fry. Toss with soy sauce or available condiments over a hot grain base.", requiresOneOf: ["Rice", "Grains", "Noodles"], flexibleFillers: true },
+            { name: "The Everything Loaded Bowl", notes: "Warm up base elements. Reheat any proteins or cooked leftovers, then layer everything in a single bowl with a quick sauce choice.", requiresOneOf: ["Rice", "Quinoa", "Spinach", "Greens", "Lettuce"], flexibleFillers: true },
+            { name: "Pan-Fried Quesadilla / Melt", notes: "Crisp up your starch vehicle in a hot buttered pan. Pack with cheese and shifting protein ingredients until melted.", requiresOneOf: ["Tortillas", "Bread", "Cheese"], flexibleFillers: true },
+            { name: "Rustic Fridge Clearing Soup", notes: "Simmer broth or cream bases. Toss in any chopped cooked meats and wilting green roughage until everything is uniform and hot.", requiresOneOf: ["Broth", "Heavy Cream", "Water", "Soup"], flexibleFillers: true }
+        ];
+
+        function saveToLocalStorage() {
+            localStorage.setItem('fridge_v2_ingredients', JSON.stringify(ingredients));
+            localStorage.setItem('fridge_v2_recipes', JSON.stringify(recipes));
+        }
+
+        function loadFromLocalStorage() {
+            const storedIngredients = localStorage.getItem('fridge_v2_ingredients');
+            const storedRecipes = localStorage.getItem('fridge_v2_recipes');
+
+            if (storedIngredients) {
+                ingredients = JSON.parse(storedIngredients);
+            } else {
+                ingredients = [
+                    { id: 1, qty: "2 cups", name: "Cooked Chicken", urgency: 10 },
+                    { id: 2, qty: "1/2 bag", name: "Spinach", urgency: 6 },
+                    { id: 3, qty: "1/4 pint", name: "Heavy Cream", urgency: 3 },
+                    { id: 4, qty: "Some", name: "Rice", urgency: 1 },
+                    { id: 5, qty: "6 total", name: "Eggs", urgency: 1 }
+                ];
+            }
+            recipes = storedRecipes ? JSON.parse(storedRecipes) : [];
+        }
+
+        function clearBoard() {
+            if(confirm("Wipe everything clean?")) {
+                ingredients = [];
+                recipes = [];
+                saveToLocalStorage();
+                renderIngredients();
+                renderRecipes();
+            }
+        }
+
+        function init() {
+            loadFromLocalStorage();
+            renderIngredients();
+            if (recipes.length === 0 && ingredients.length > 0) {
+                autoSuggestMeals(false);
+            } else {
+                renderRecipes();
+            }
+        }
+
+        function addIngredient() {
+            const qtyInput = document.getElementById('ingQty');
+            const nameInput = document.getElementById('ingName');
+            const urgencyInput = document.getElementById('ingUrgency');
+
+            if (!nameInput.value.trim()) return;
+
+            ingredients.push({
+                id: Date.now(),
+                qty: qtyInput.value.trim() || "1 unit",
+                name: nameInput.value.trim(),
+                urgency: parseInt(urgencyInput.value)
+            });
+
+            qtyInput.value = '';
+            nameInput.value = '';
+
+            saveToLocalStorage();
+            renderIngredients();
+            autoSuggestMeals(false);
+        }
+
+        function deleteIngredient(id) {
+            ingredients = ingredients.filter(ing => ing.id !== id);
+            recipes.forEach(r => {
+                r.ingredientIds = r.ingredientIds.filter(ingId => ingId !== id);
+            });
+            saveToLocalStorage();
+            renderIngredients();
+            renderRecipes();
+        }
+
+        function getUrgencyBadge(val) {
+            if (val === 10) return `<span class="badge badge-danger">TONIGHT</span>`;
+            if (val === 6) return `<span class="badge badge-warning">1-2 DAYS</span>`;
+            if (val === 3) return `<span class="badge badge-success">GOOD</span>`;
+            return `<span class="badge badge-stable">STAPLE</span>`;
+        }
+
+        function renderIngredients() {
+            const list = document.getElementById('ingredientList');
+            const checkboxContainer = document.getElementById('recipeIngredientsCheckboxes');
+            list.innerHTML = '';
+            checkboxContainer.innerHTML = '';
+
+            if(ingredients.length === 0) {
+                list.innerHTML = '<li style="color: #64748b; font-style: italic; padding: 0.5rem 0;">No items active.</li>';
+                checkboxContainer.innerHTML = '<span style="color: #64748b;">Add ingredients first.</span>';
+                return;
+            }
+
+            ingredients.forEach(ing => {
+                const li = document.createElement('li');
+                li.className = 'ingredient-item';
+                li.innerHTML = `
+                    <div class="ingredient-details">
+                        ${getUrgencyBadge(ing.urgency)}
+                        <strong>${ing.qty}</strong> <span>${ing.name}</span>
+                    </div>
+                    <button class="danger-btn" onclick="deleteIngredient(${ing.id})">Remove</button>
+                `;
+                list.appendChild(li);
+
+                const label = document.createElement('label');
+                label.style.display = 'flex';
+                label.style.alignItems = 'center';
+                label.style.gap = '0.4rem';
+                label.style.marginBottom = '0.2rem';
+                label.style.cursor = 'pointer';
+                label.innerHTML = `
+                    <input type="checkbox" value="${ing.id}" class="recipe-ing-check">
+                    <span>(${ing.qty}) ${ing.name}</span>
+                `;
+                checkboxContainer.appendChild(label);
+            });
+        }
+
+        function triggerAutoSuggestions() {
+            autoSuggestMeals(true);
+        }
+
+        function autoSuggestMeals(alertUser) {
+            recipes = recipes.filter(r => r.isCustom);
+            if (ingredients.length === 0) {
+                renderRecipes();
+                return;
+            }
+
+            dynamicPatterns.forEach((pattern, patternIdx) => {
+                let matchedIngredientIds = [];
+                let hasAnchorIngredient = false;
+
+                ingredients.forEach(ing => {
+                    const matchesAnchor = pattern.requiresOneOf.some(keyword =>
+                        ing.name.toLowerCase().includes(keyword.toLowerCase())
+                    );
+
+                    if (matchesAnchor) {
+                        hasAnchorIngredient = true;
+                        matchedIngredientIds.push(ing.id);
+                    } else if (pattern.flexibleFillers) {
+                        matchedIngredientIds.push(ing.id);
+                    }
+                });
+
+                if (hasAnchorIngredient && matchedIngredientIds.length > 0) {
+                    recipes.push({
+                        id: `auto-${patternIdx}-${Date.now()}`,
+                        name: pattern.name,
+                        notes: pattern.notes,
+                        ingredientIds: matchedIngredientIds,
+                        isCustom: false
+                    });
+                }
+            });
+
+            saveToLocalStorage();
+            renderRecipes();
+            if(alertUser) alert("Suggestions synchronized to current inventory metrics!");
+        }
+
+        function addRecipe() {
+            const nameInput = document.getElementById('recipeName');
+            const notesInput = document.getElementById('recipeNotes');
+            const checkboxes = document.querySelectorAll('.recipe-ing-check:checked');
+
+            if (!nameInput.value.trim()) return;
+
+            const selectedIds = Array.from(checkboxes).map(cb => parseInt(cb.value));
+
+            recipes.push({
+                id: Date.now(),
+                name: nameInput.value.trim(),
+                notes: notesInput.value.trim(),
+                ingredientIds: selectedIds,
+                isCustom: true
+            });
+
+            nameInput.value = '';
+            notesInput.value = '';
+
+            saveToLocalStorage();
+            renderRecipes();
+        }
+
+        function deleteRecipe(id) {
+            recipes = recipes.filter(r => String(r.id) !== String(id));
+            saveToLocalStorage();
+            renderRecipes();
+        }
+
+        function renderRecipes() {
+            const container = document.getElementById('rankedContainer');
+            container.innerHTML = '';
+
+            if (recipes.length === 0) {
+                container.innerHTML = '<p style="color: #64748b; font-style: italic;">No meal configurations targeted yet.</p>';
+                return;
+            }
+
+            const ranked = recipes.map(recipe => {
+                let totalScore = 0;
+                let highUrgencyNames = [];
+                let midUrgencyNames = [];
+                let totalUsedCount = 0;
+                let descriptionItems = [];
+
+                recipe.ingredientIds.forEach(id => {
+                    const ing = ingredients.find(i => i.id === id);
+                    if (ing) {
+                        totalScore += ing.urgency;
+                        totalUsedCount++;
+                        if (ing.urgency === 10) highUrgencyNames.push(ing.name);
+                        if (ing.urgency === 6) midUrgencyNames.push(ing.name);
+                        descriptionItems.push(`${ing.qty} ${ing.name}`);
+                    }
+                });
+
+                // Generate plain English reason statement
+                let reasonStr = "";
+                if (highUrgencyNames.length > 0) {
+                    reasonStr = `Ranked high because it clears critical items that must go tonight: ${highUrgencyNames.join(', ')}.`;
+                } else if (midUrgencyNames.length > 0) {
+                    reasonStr = `Prioritized to rescue ingredients with 1-2 days left: ${midUrgencyNames.join(', ')}.`;
+                } else if (totalUsedCount > 0) {
+                    reasonStr = `Utilizes ${totalUsedCount} stable fridge/pantry items to protect them from tracking forward.`;
+                } else {
+                    reasonStr = "Contains zero items matching your logged tracker components.";
+                }
+
+                return { ...recipe, score: totalScore, reason: reasonStr, componentSummary: descriptionItems };
+            });
+
+            // Primary sort: aggregate urgency scores. Secondary sort: total count cleared.
+            ranked.sort((a, b) => b.score - a.score || b.componentSummary.length - a.componentSummary.length);
+
+            ranked.forEach((recipe, idx) => {
+                const item = document.createElement('div');
+                item.className = 'idea-item';
+
+                const badgeStyle = idx === 0 && recipe.score > 5
+                    ? `background-color: var(--danger-bg); color: var(--danger-color); border: 1px solid var(--danger-color);`
+                    : ``;
+
+                item.innerHTML = `
+                    <div class="idea-header">
+                        <h3 style="margin: 0; font-size: 1.15rem;">${idx + 1}. ${recipe.name}</h3>
+                        <span class="score-tag" style="${badgeStyle}">Score Weight: ${recipe.score}</span>
+                    </div>
+                    <div class="reason-box"><strong>Strategy:</strong> ${recipe.reason}</div>
+                    <p style="margin: 0.5rem 0; font-size: 0.9rem; color: #1e293b; white-space: pre-wrap;">${recipe.notes || 'No execution details typed.'}</p>
+                    <div class="used-ingredients">
+                        <strong>Clears out:</strong> ${recipe.componentSummary.length > 0 ? recipe.componentSummary.join(' | ') : 'None'}
+                    </div>
+                    <button class="danger-btn no-print" style="margin-top: 0.5rem;" onclick="deleteRecipe('${recipe.id}')">Dismiss Choice</button>
+                `;
+                container.appendChild(item);
+            });
+        }
+
+        function exportAsText() {
+            let outputText = "MY FRIDGE OUTLINE & DINNER PLAN\n=================================\n\n";
+
+            const container = document.createElement('div');
+            // Mock map for matching text sorting output values
+            const txtRecipes = recipes.map(recipe => {
+                let totalScore = 0;
+                let descriptionItems = [];
+                let highUrgencyNames = [];
+                let midUrgencyNames = [];
+                recipe.ingredientIds.forEach(id => {
+                    const ing = ingredients.find(i => i.id === id);
+                    if (ing) {
+                        totalScore += ing.urgency;
+                        descriptionItems.push(`${ing.qty} ${ing.name}`);
+                        if (ing.urgency === 10) highUrgencyNames.push(ing.name);
+                        if (ing.urgency === 6) midUrgencyNames.push(ing.name);
+                    }
+                });
+                let reasonStr = highUrgencyNames.length > 0 ? `Clears tonight: ${highUrgencyNames.join(', ')}` : (midUrgencyNames.length > 0 ? `Rescues: ${midUrgencyNames.join(', ')}` : "Uses stable stock");
+                return { ...recipe, score: totalScore, summary: descriptionItems.join(', '), reason: reasonStr };
+            }).sort((a, b) => b.score - a.score);
+
+            outputText += "RANKED OPTIONS MENU:\n";
+            txtRecipes.forEach((r, i) => {
+                outputText += `${i + 1}. ${r.name} (Score: ${r.score})\n`;
+                outputText += `   Reasoning: ${r.reason}\n`;
+                outputText += `   Steps: ${r.notes || 'N/A'}\n`;
+                outputText += `   Includes: ${r.summary}\n\n`;
+            });
+
+            const tempTexarea = document.createElement('textarea');
+            tempTexarea.value = outputText;
+            document.body.appendChild(tempTexarea);
+            tempTexarea.select();
+            document.execCommand('copy');
+            document.body.removeChild(tempTexarea);
+            alert('Dinner plan exported to clipboard!');
+        }
+
+        window.onload = init;
+    </script>
+</body>
+</html>

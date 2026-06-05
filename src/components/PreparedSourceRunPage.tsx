@@ -24,7 +24,7 @@ type SourceRunPackage = {
   model_settings?: string | Record<string, string>
   provider?: string
   source_url?: string
-  verification_notes?: string
+  verification_notes?: string | string[]
   final_artifact_path?: string
   pathforge_submission_url?: string
   pathforge_pending_id?: string
@@ -64,6 +64,11 @@ function modelSettingsText(settings: SourceRunPackage['model_settings']) {
     .join('; ')
 }
 
+function verificationNotesText(notes: SourceRunPackage['verification_notes']) {
+  if (Array.isArray(notes)) return notes.join('\n')
+  return notes
+}
+
 function sourceRunId(sourceRun: SourceRunPackage, project: PreparedShowcaseProject) {
   return sourceRun.source_run_submission_id ?? sourceRun.pathforge_pending_id ?? project.sourceRunId
 }
@@ -90,12 +95,14 @@ function artifactVersionsForStep(
   step: SourceRunPackageStep,
   project: PreparedShowcaseProject,
   finalArtifactPath?: string,
+  includeFinalArtifact = false,
 ): SourceRunShowcaseArtifactVersion[] {
   const files = new Set<string>()
   if (step.artifact_version_path?.startsWith('public/artifacts/')) files.add(step.artifact_version_path)
   for (const filePath of step.generated_files ?? []) {
     if (filePath.startsWith('public/artifacts/')) files.add(filePath)
   }
+  if (includeFinalArtifact && finalArtifactPath?.startsWith('public/artifacts/')) files.add(finalArtifactPath)
 
   return [...files].reduce<SourceRunShowcaseArtifactVersion[]>((versions, filePath, index) => {
       const publicArtifactPath = getPublicArtifactPath(filePath)
@@ -124,7 +131,13 @@ function toShowcaseStep(
   project: PreparedShowcaseProject,
 ): SourceRunShowcaseStep {
   const projectStep = project.steps.find((item) => item.stepNumber === step.step_number)
-  const artifactVersions = artifactVersionsForStep(step, project, sourceRun.final_artifact_path)
+  const finalStepNumber = defaultStepNumber(sourceRun)
+  const artifactVersions = artifactVersionsForStep(
+    step,
+    project,
+    sourceRun.final_artifact_path,
+    step.step_number === finalStepNumber,
+  )
   const primaryArtifact =
     artifactVersions.find((version) => version.isDefault) ??
     artifactVersions[artifactVersions.length - 1]
@@ -252,8 +265,10 @@ export default function PreparedSourceRunPage({
         sourceRunUrl={sourceUrl}
         pathforgeSourceRunUrl={sourceRun.pathforge_submission_url}
         sourceRunId={sourceRunId(sourceRun, project)}
+        projectId={project.id}
+        projectTitle={project.title}
         providerName={providerName}
-        verificationNotes={sourceRun.verification_notes}
+        verificationNotes={verificationNotesText(sourceRun.verification_notes)}
         steps={steps}
         defaultStepNumber={defaultStepNumber(sourceRun)}
       />

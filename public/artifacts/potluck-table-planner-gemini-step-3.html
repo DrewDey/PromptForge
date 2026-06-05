@@ -1,0 +1,622 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Potluck Planner & Layout Dashboard</title>
+    <style>
+        :root {
+            --bg-color: #f3f4f6;
+            --card-bg: #ffffff;
+            --text-main: #1f2937;
+            --text-muted: #4b5563;
+            --primary: #4f46e5;
+            --primary-hover: #4338ca;
+            --border: #e5e7eb;
+            --accent-gap: #fef3c7;
+            --accent-gap-text: #92400e;
+            --danger: #ef4444;
+            --danger-hover: #dc2626;
+            --success: #10b981;
+            --success-bg: #d1fae5;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            line-height: 1.5;
+            padding: 2rem 1rem;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            font-size: 2.25rem;
+            font-weight: 800;
+            margin-bottom: 0.5rem;
+            color: var(--primary);
+        }
+
+        p.subtitle {
+            color: var(--text-muted);
+            margin-bottom: 1.5rem;
+        }
+
+        .stats-bar {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .stat-card {
+            background: var(--card-bg);
+            padding: 1rem;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            text-align: center;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        }
+
+        .stat-card .num {
+            font-size: 1.75rem;
+            font-weight: 700;
+            color: var(--primary);
+        }
+
+        .stat-card .num.gaps {
+            color: #d97706;
+        }
+
+        .stat-card .label {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            font-weight: 500;
+        }
+
+        /* Layout Grid split into Main app and Map view */
+        .workspace-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 2rem;
+            align-items: start;
+        }
+
+        @media (min-width: 1024px) {
+            .workspace-grid {
+                grid-template-columns: 3fr 2fr;
+            }
+        }
+
+        .controls {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1rem;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        select, input, button {
+            font-size: 0.95rem;
+            padding: 0.5rem 0.75rem;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            background-color: #fff;
+        }
+
+        select:focus, input:focus {
+            outline: 2px solid var(--primary);
+            outline-offset: -1px;
+        }
+
+        button {
+            background-color: var(--primary);
+            color: white;
+            font-weight: 600;
+            border: none;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        button:hover {
+            background-color: var(--primary-hover);
+        }
+
+        button.btn-danger {
+            background-color: var(--danger);
+        }
+        button.btn-danger:hover {
+            background-color: var(--danger-hover);
+        }
+
+        button.btn-secondary {
+            background-color: #6b7280;
+        }
+        button.btn-secondary:hover {
+            background-color: #555b66;
+        }
+
+        .table-container {
+            background: var(--card-bg);
+            border-radius: 8px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            overflow-x: auto;
+            border: 1px solid var(--border);
+            margin-bottom: 1.5rem;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+        }
+
+        th, td {
+            padding: 0.75rem 1rem;
+            border-bottom: 1px solid var(--border);
+            vertical-align: middle;
+        }
+
+        th {
+            background-color: #f3f4f6;
+            font-weight: 700;
+            text-transform: uppercase;
+            font-size: 0.75rem;
+            letter-spacing: 0.05em;
+            color: var(--text-muted);
+        }
+
+        .tag {
+            display: inline-block;
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.85rem;
+            font-weight: 500;
+            background-color: #e0f2fe;
+            color: #0369a1;
+        }
+
+        .gap-row td {
+            background-color: var(--accent-gap);
+            color: var(--accent-gap-text);
+        }
+
+        .gap-badge {
+            background-color: #d97706;
+            color: white;
+            font-weight: bold;
+        }
+
+        .action-btns {
+            display: flex;
+            gap: 0.25rem;
+        }
+
+        .action-btns button {
+            padding: 0.25rem 0.5rem;
+            font-size: 0.8rem;
+        }
+
+        /* Map and Zone Styles */
+        .layout-map-container {
+            background: var(--card-bg);
+            padding: 1.5rem;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+
+        .layout-map-container h2 {
+            font-size: 1.5rem;
+            margin-top: 0;
+            margin-bottom: 0.25rem;
+            color: var(--text-main);
+        }
+
+        .zone-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 1.25rem;
+            margin-top: 1.5rem;
+        }
+
+        .table-zone {
+            border: 2px dashed #cbd5e1;
+            border-radius: 8px;
+            padding: 1rem;
+            background-color: #f8fafc;
+        }
+
+        .table-zone.has-gap {
+            border-color: #f59e0b;
+            background-color: #fffbdf;
+        }
+
+        .table-zone.empty-zone {
+            border-color: var(--danger);
+            background-color: #fef2f2;
+        }
+
+        .zone-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-weight: 700;
+            font-size: 1rem;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 0.5rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .zone-warning {
+            font-size: 0.75rem;
+            padding: 0.15rem 0.4rem;
+            border-radius: 4px;
+            font-weight: bold;
+        }
+
+        .zone-warning.warning-gap {
+            background-color: #d97706;
+            color: white;
+        }
+
+        .zone-warning.warning-empty {
+            background-color: var(--danger);
+            color: white;
+        }
+
+        .zone-warning.warning-ok {
+            background-color: var(--success);
+            color: white;
+        }
+
+        .zone-items {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            font-size: 0.9rem;
+        }
+
+        .zone-items li {
+            padding: 0.25rem 0;
+            display: flex;
+            justify-content: space-between;
+            border-bottom: 1px dotted #e2e8f0;
+        }
+
+        .zone-items li:last-child {
+            border-bottom: none;
+        }
+
+        .zone-items li.gap-item {
+            color: #b45309;
+            font-style: italic;
+            font-weight: 500;
+        }
+
+        .form-grid {
+            background: var(--card-bg);
+            padding: 1.5rem;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 1rem;
+            align-items: flex-end;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .form-group label {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--text-muted);
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Potluck Planner</h1>
+    <p class="subtitle">Assign items to designated table setups and flag station resource shortages seamlessly.</p>
+
+    <div class="stats-bar">
+        <div class="stat-card">
+            <div class="num" id="totalItems">0</div>
+            <div class="label">Total Scope Items</div>
+        </div>
+        <div class="stat-card">
+            <div class="num gaps" id="totalGaps">0</div>
+            <div class="label">Total Gaps Found</div>
+        </div>
+        <div class="stat-card">
+            <div class="num" id="filledItems" style="color: var(--success);">0</div>
+            <div class="label">Confirmed / Filled</div>
+        </div>
+    </div>
+
+    <div class="workspace-grid">
+
+        <div>
+            <div class="controls">
+                <div>
+                    <label for="categoryFilter" style="font-weight: 600; margin-right: 0.5rem;">Filter List:</label>
+                    <select id="categoryFilter" onchange="renderAll()">
+                        <option value="all">All Sections</option>
+                        <option value="Main Course">Mains</option>
+                        <option value="Side Dish">Sides</option>
+                        <option value="Dessert">Desserts</option>
+                        <option value="Drinks">Drinks</option>
+                        <option value="Supplies">Supplies & Utensils</option>
+                    </select>
+                </div>
+                <button class="btn-secondary" onclick="resetToDefault()">Reset Sample Layout</button>
+            </div>
+
+            <div class="table-container">
+                <table id="potluckTable">
+                    <thead>
+                        <tr>
+                            <th style="width: 20%;">Zone Setup</th>
+                            <th style="width: 35%;">Dish / Supply</th>
+                            <th style="width: 20%;">Brought By</th>
+                            <th style="width: 15%;">Needs</th>
+                            <th style="width: 10%;">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        </tbody>
+                </table>
+            </div>
+
+            <div class="form-grid" id="entryForm">
+                <input type="hidden" id="editIndex" value="">
+                <div class="form-group">
+                    <label id="formActionLabel" style="font-weight: bold; color: var(--primary);">Add Item to Setup</label>
+                    <select id="newCategory">
+                        <option value="Main Course">Main Course Table</option>
+                        <option value="Side Dish">Side Dish Table</option>
+                        <option value="Dessert">Dessert Table</option>
+                        <option value="Drinks">Drinks Cooler / Station</option>
+                        <option value="Supplies">Supplies & Essentials Table</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="newDish">Item Name</label>
+                    <input type="text" id="newDish" placeholder="e.g., Plates, Cups, Potato Salad">
+                </div>
+                <div class="form-group">
+                    <label for="newHost">Who's Bringing It</label>
+                    <input type="text" id="newHost" placeholder="Leave blank to mark as 'Needed'">
+                </div>
+                <div class="form-group">
+                    <label for="newUtensils">Utensil Needs</label>
+                    <input type="text" id="newUtensils" placeholder="e.g., Tongs, Ice chest, None">
+                </div>
+                <div style="display: flex; gap: 0.5rem;">
+                    <button id="submitBtn" onclick="handleSubmit()">Save</button>
+                    <button id="cancelBtn" class="btn-secondary" onclick="clearForm()" style="display: none;">Cancel</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="layout-map-container">
+            <h2>Visual Table Map</h2>
+            <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1rem;">
+                Live physical zoning configurations. Red/Amber indicator notes warn you about missing items or unassigned roles.
+            </p>
+
+            <div class="zone-grid" id="zoneVisualGrid">
+                </div>
+        </div>
+
+    </div>
+
+    <script>
+        // Seed layout data setup
+        const defaultData = [
+            { category: "Main Course", dish: "Pulled Pork Sliders", host: "Marcus", utensils: "No" },
+            { category: "Main Course", dish: "Vegetarian Alternative Main", host: "Needed", utensils: "—" },
+            { category: "Side Dish", dish: "Mac & Cheese", host: "Sarah", utensils: "Serving spoon" },
+            { category: "Side Dish", dish: "Potato Salad", host: "Uncle Bob", utensils: "Large fork" },
+            { category: "Dessert", dish: "Chocolate Brownies", host: "Needed", utensils: "—" },
+            { category: "Drinks", dish: "Craft Beers & Sodas", host: "Jessica", utensils: "Ice box" },
+            { category: "Supplies", dish: "Plates, Forks & Napkins", host: "Needed", utensils: "Disposables" }
+        ];
+
+        const definedZones = [
+            { id: "Main Course", name: "Mains Table" },
+            { id: "Side Dish", name: "Sides Table" },
+            { id: "Dessert", name: "Dessert Table" },
+            { id: "Drinks", name: "Drinks Station" },
+            { id: "Supplies", name: "Supplies & Essentials" }
+        ];
+
+        let potluckItems = [];
+
+        window.onload = function() {
+            const stored = localStorage.getItem('potluckLayoutData');
+            if (stored) {
+                potluckItems = JSON.parse(stored);
+            } else {
+                potluckItems = [...defaultData];
+                saveToStorage();
+            }
+            renderAll();
+        };
+
+        function saveToStorage() {
+            localStorage.setItem('potluckLayoutData', JSON.stringify(potluckItems));
+        }
+
+        function renderAll() {
+            renderTable();
+            renderZoneMap();
+        }
+
+        function renderTable() {
+            const tbody = document.querySelector('#potluckTable tbody');
+            const filterValue = document.getElementById('categoryFilter').value;
+            tbody.innerHTML = '';
+
+            let total = potluckItems.length;
+            let gaps = potluckItems.filter(item => item.host.toLowerCase() === 'needed').length;
+
+            document.getElementById('totalItems').innerText = total;
+            document.getElementById('totalGaps').innerText = gaps;
+            document.getElementById('filledItems').innerText = total - gaps;
+
+            potluckItems.forEach((item, index) => {
+                if (filterValue !== 'all' && item.category !== filterValue) return;
+
+                const tr = document.createElement('tr');
+                const isGap = item.host.toLowerCase() === 'needed';
+                if (isGap) tr.classList.add('gap-row');
+
+                tr.innerHTML = `
+                    <td><span class="tag ${isGap ? 'gap-badge' : ''}">${isGap ? 'GAP: ' : ''}${item.category}</span></td>
+                    <td><strong>${escapeHtml(item.dish)}</strong></td>
+                    <td>${escapeHtml(item.host)}</td>
+                    <td>${escapeHtml(item.utensils || '—')}</td>
+                    <td>
+                        <div class="action-btns">
+                            <button onclick="editItem(${index})">Edit</button>
+                            <button class="btn-danger" onclick="deleteItem(${index})">X</button>
+                        </div>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function renderZoneMap() {
+            const mapContainer = document.getElementById('zoneVisualGrid');
+            mapContainer.innerHTML = '';
+
+            definedZones.forEach(zone => {
+                const zoneItems = potluckItems.filter(item => item.category === zone.id);
+                const gaps = zoneItems.filter(item => item.host.toLowerCase() === 'needed');
+
+                const zoneEl = document.createElement('div');
+                zoneEl.className = 'table-zone';
+
+                let warningTag = `<span class="zone-warning warning-ok">Filled</span>`;
+                if (zoneItems.length === 0) {
+                    zoneEl.classList.add('empty-zone');
+                    warningTag = `<span class="zone-warning warning-empty">No Items Planned</span>`;
+                } else if (gaps.length > 0) {
+                    zoneEl.classList.add('has-gap');
+                    warningTag = `<span class="zone-warning warning-gap">${gaps.length} Gap${gaps.length > 1 ? 's' : ''} Open</span>`;
+                }
+
+                let itemsListHtml = '';
+                if (zoneItems.length === 0) {
+                    itemsListHtml = `<p style="font-size:0.85rem; color:var(--danger); margin:0; font-style:italic;">Nothing allocated to this station yet.</p>`;
+                } else {
+                    itemsListHtml = '<ul class="zone-items">';
+                    zoneItems.forEach(item => {
+                        const isGap = item.host.toLowerCase() === 'needed';
+                        itemsListHtml += `
+                            <li class="${isGap ? 'gap-item' : ''}">
+                                <span>${isGap ? '⚠️ ' : '✓ '} ${escapeHtml(item.dish)}</span>
+                                <small>(${escapeHtml(item.host)})</small>
+                            </li>
+                        `;
+                    });
+                    itemsListHtml += '</ul>';
+                }
+
+                zoneEl.innerHTML = `
+                    <div class="zone-header">
+                        <span>${zone.name}</span>
+                        ${warningTag}
+                    </div>
+                    ${itemsListHtml}
+                `;
+                mapContainer.appendChild(zoneEl);
+            });
+        }
+
+        function handleSubmit() {
+            const category = document.getElementById('newCategory').value;
+            const dish = document.getElementById('newDish').value.trim();
+            let host = document.getElementById('newHost').value.trim();
+            const utensils = document.getElementById('newUtensils').value.trim() || '—';
+            const editIndex = document.getElementById('editIndex').value;
+
+            if (!dish) {
+                alert('Please enter an item name.');
+                return;
+            }
+
+            if (!host) host = 'Needed';
+
+            const itemData = { category, dish, host, utensils };
+
+            if (editIndex !== "") {
+                potluckItems[parseInt(editIndex)] = itemData;
+            } else {
+                potluckItems.push(itemData);
+            }
+
+            saveToStorage();
+            clearForm();
+            renderAll();
+        }
+
+        function editItem(index) {
+            const item = potluckItems[index];
+            document.getElementById('editIndex').value = index;
+            document.getElementById('newCategory').value = item.category;
+            document.getElementById('newDish').value = item.dish;
+            document.getElementById('newHost').value = item.host === 'Needed' ? '' : item.host;
+            document.getElementById('newUtensils').value = item.utensils === '—' ? '' : item.utensils;
+
+            document.getElementById('formActionLabel').innerText = "Update Record Options";
+            document.getElementById('submitBtn').innerText = "Apply Changes";
+            document.getElementById('cancelBtn').style.display = "inline-block";
+        }
+
+        function deleteItem(index) {
+            if (confirm(`Remove "${potluckItems[index].dish}"?`)) {
+                potluckItems.splice(index, 1);
+                saveToStorage();
+                renderAll();
+                if (document.getElementById('editIndex').value === String(index)) {
+                    clearForm();
+                }
+            }
+        }
+
+        function clearForm() {
+            document.getElementById('editIndex').value = "";
+            document.getElementById('newDish').value = "";
+            document.getElementById('newHost').value = "";
+            document.getElementById('newUtensils').value = "";
+
+            document.getElementById('formActionLabel').innerText = "Add Item to Setup";
+            document.getElementById('submitBtn').innerText = "Save";
+            document.getElementById('cancelBtn').style.display = "none";
+        }
+
+        function resetToDefault() {
+            if (confirm("Reset layout planner data back to default items? Current configurations will clear.")) {
+                potluckItems = [...defaultData];
+                saveToStorage();
+                clearForm();
+                renderAll();
+            }
+        }
+
+        function escapeHtml(string) {
+            return String(string).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+        }
+    </script>
+</body>
+</html>

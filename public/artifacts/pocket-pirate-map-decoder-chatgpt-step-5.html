@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Pocket Pirate Map Puzzle</title>
+<style>
+*{box-sizing:border-box}html,body{width:100%;max-width:100%;overflow-x:hidden}
+body{margin:0;min-height:100vh;font-family:Georgia,"Times New Roman",serif;background:radial-gradient(circle at top,#4b2e16,#17100a 72%);color:#2b1a0d;display:grid;place-items:center;padding:10px}
+.game{width:min(440px,100%);max-width:100%;background:#ead19a;border:4px solid #3b210f;border-radius:22px;box-shadow:0 18px 45px #0009;overflow:hidden}
+header{padding:14px 12px;text-align:center;background:linear-gradient(#b87530,#7d431d);color:#fff0c0;border-bottom:4px solid #3b210f}
+h1{margin:0;font-size:1.32rem}.sub{font-size:.84rem;opacity:.95;margin-top:4px}
+.panel{padding:12px;max-width:100%;overflow:hidden}
+.status,.cluebox,.decoder,.scorebar{background:#fff0c9;border:2px solid #8a5728;border-radius:14px;padding:10px;max-width:100%}
+.status{border-style:dashed;font-size:.92rem;line-height:1.35;margin-bottom:10px}
+.scorebar{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:10px;font-weight:bold;font-size:.9rem}
+.scorebar span{background:#f6dfaa;border-radius:10px;padding:7px;text-align:center}
+.map{width:100%;display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:6px;background:#7d431d;border:4px solid #3b210f;border-radius:16px;padding:7px;touch-action:manipulation}
+.cell{min-width:0;aspect-ratio:1;border:0;border-radius:10px;background:#f6dfaa;color:#3b210f;font-size:clamp(1.15rem,7vw,1.45rem);font-weight:bold;cursor:pointer;position:relative;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+.cell.start{background:#a9d08e}.cell.treasure{background:#ffd966}.cell.path{background:#8ecae6}.cell.preview{outline:3px solid #5d8aa8;outline-offset:-3px}.cell.wrong{background:#d65a31;color:white}
+.cell::after{content:attr(data-step);position:absolute;right:4px;bottom:3px;font-size:.68rem;color:#3b210f}
+.cluebox,.decoder{margin-top:12px}.label{font-weight:bold;margin-bottom:6px}
+.symbols{display:flex;flex-wrap:wrap;gap:7px;font-size:clamp(1.28rem,7vw,1.55rem);line-height:1.45}
+.symbols span{display:grid;place-items:center;min-width:36px;min-height:36px;background:#f6dfaa;border:1px solid #c28b50;border-radius:10px}
+.mapName{font-size:.9rem;font-weight:bold;margin-bottom:6px;color:#5a3217}
+.decoderGrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.dial{min-width:0;border:2px solid #8a5728;background:#f6dfaa;border-radius:12px;padding:8px;text-align:center}
+.glyph{font-size:1.65rem;display:block;margin-bottom:5px}
+.dial button,.action{width:100%;min-height:44px;border:0;border-radius:10px;padding:9px;background:#3b210f;color:#ffe3a0;font-weight:bold;cursor:pointer;font-size:.95rem;touch-action:manipulation}
+.hint{font-size:.85rem;margin-top:8px;opacity:.85;line-height:1.3}
+.buttons{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:12px}.action{border-radius:12px;padding:11px}
+.win{display:none;margin-top:12px;background:#244f26;color:#fff6c9;border-radius:14px;padding:12px;text-align:left;font-weight:bold;line-height:1.4}
+@media(max-width:390px){
+body{padding:7px;display:block}.game{border-width:3px;border-radius:18px;margin:0 auto}header{padding:12px 9px}h1{font-size:1.18rem}.sub{font-size:.78rem}.panel{padding:9px}
+.status,.cluebox,.decoder,.scorebar{padding:9px;border-radius:12px}.map{gap:5px;padding:6px;border-width:3px;border-radius:14px}.cell{border-radius:9px;min-height:54px}
+.decoderGrid{grid-template-columns:1fr;gap:7px}.dial{display:grid;grid-template-columns:48px 1fr;align-items:center;gap:8px;padding:7px}.glyph{margin:0;font-size:1.55rem}.dial button{min-height:46px;font-size:1rem}
+.buttons{grid-template-columns:1fr;gap:7px}.action{min-height:46px;font-size:.92rem;padding:9px 6px}.symbols{gap:6px}.symbols span{min-width:39px;min-height:39px}
+}
+</style>
+</head>
+<body>
+<div class="game">
+<header><h1>🏴‍☠️ Pocket Pirate Map</h1><div class="sub">Decode glyphs, trace the route, claim treasure.</div></header>
+<main class="panel">
+  <div class="status" id="status"></div>
+  <div class="scorebar"><span id="scoreNow">Score: 100</span><span id="bestScore">Best: 0</span></div>
+  <div class="map" id="map"></div>
+  <div class="cluebox"><div class="mapName" id="mapName"></div><div class="label" id="clueText"></div><div class="symbols" id="routeSymbols"></div></div>
+  <div class="decoder"><div class="label">Decoder dials:</div><div class="decoderGrid" id="decoderGrid"></div><div class="hint">Rotate glyph meanings. Hints cost 15 points. Wrong route taps cost 10.</div></div>
+  <div class="buttons">
+    <button class="action" onclick="useHint()">Hint -15</button>
+    <button class="action" onclick="resetPath()">Reset</button>
+    <button class="action" onclick="newMap()">New Map</button>
+  </div>
+  <div class="win" id="win"></div>
+</main>
+</div>
+
+<script>
+const $=id=>document.getElementById(id);
+const mapEl=$("map"),statusEl=$("status"),routeSymbolsEl=$("routeSymbols"),decoderGridEl=$("decoderGrid"),winEl=$("win"),mapNameEl=$("mapName"),clueTextEl=$("clueText"),scoreNow=$("scoreNow"),bestScoreEl=$("bestScore");
+
+const maps=[
+{name:"Map 1: Parrot Cove",clue:"The parrot scratched this route into driftwood:",route:["R","R","D","D","L","D","R","R"],glyphs:["☀","🌙","🦜","⭐"],terrain:["🌴","🪨","🐚","⚓","🦀","💀","🌊","🗿","☠️"]},
+{name:"Map 2: Skull Reef",clue:"The old captain marked this one in reef signs:",route:["D","D","R","R","U","R","D","L"],glyphs:["💀","🐚","🔥","⚓"],terrain:["🌊","🦀","🪨","🐚","⚓","🌴","☠️","🗿","🦑"]},
+{name:"Map 3: Moonlit Lagoon",clue:"The moon map hides the route in night symbols:",route:["R","D","D","R","U","R","D","D"],glyphs:["🌙","⭐","🦉","🕯️"],terrain:["🌴","🌊","🪨","🐚","🦀","🗿","⚓","☠️","🦜"]}
+];
+
+const dirs=["U","R","D","L"],dirNames=["Up","Right","Down","Left"],arrows={U:"↑",R:"→",D:"↓",L:"←"},moves={U:[-1,0],R:[0,1],D:[1,0],L:[0,-1]};
+let mapIndex=-1,currentMap,trueRoute,encodedRoute=[],decoder={},solutionDecoder={},cells=[],currentStep=0,solvedPreview=[],score=100,hints=0,mistakes=0,rotations=0;
+let best=Number(localStorage.getItem("pirateMapBestScore")||0);
+
+function posToIndex(r,c){return r*5+c}
+function shuffle(a){return [...a].sort(()=>Math.random()-.5)}
+function updateScore(){scoreNow.textContent="Score: "+score;bestScoreEl.textContent="Best: "+best}
+
+function positionsFromRoute(route){
+ let r=0,c=0,p=[[r,c]];
+ for(const d of route){r+=moves[d][0];c+=moves[d][1];if(r<0||r>4||c<0||c>4)return null;p.push([r,c])}
+ return p;
+}
+function truePositions(){return positionsFromRoute(trueRoute)}
+function buildCells(){cells=Array.from({length:25},()=>({icon:currentMap.terrain[Math.floor(Math.random()*currentMap.terrain.length)],state:"",step:""}))}
+
+function setupCipher(){
+ const shuffled=shuffle(currentMap.glyphs),trueMap={}; solutionDecoder={};
+ dirs.forEach((d,i)=>{trueMap[d]=shuffled[i];solutionDecoder[shuffled[i]]=d});
+ encodedRoute=trueRoute.map(d=>trueMap[d]);
+ decoder={};
+ currentMap.glyphs.forEach((g,i)=>decoder[g]=dirs[(i+1+Math.floor(Math.random()*3))%4]);
+}
+function decodedDirections(){return encodedRoute.map(g=>decoder[g])}
+function checkPreview(){
+ const positions=positionsFromRoute(decodedDirections());
+ if(!positions){solvedPreview=[];return false}
+ const final=positions.at(-1),treasure=truePositions().at(-1);
+ const valid=final[0]===treasure[0]&&final[1]===treasure[1];
+ solvedPreview=valid?positions:[];
+ return valid;
+}
+function renderSymbols(){
+ routeSymbolsEl.innerHTML="";
+ encodedRoute.forEach(g=>{const s=document.createElement("span");s.textContent=g;routeSymbolsEl.appendChild(s)});
+}
+function renderDecoder(){
+ decoderGridEl.innerHTML="";
+ currentMap.glyphs.forEach(g=>{
+  const card=document.createElement("div");card.className="dial";
+  card.innerHTML=`<span class="glyph">${g}</span><button type="button">${arrows[decoder[g]]} ${dirNames[dirs.indexOf(decoder[g])]}</button>`;
+  card.querySelector("button").onclick=()=>rotateGlyph(g);
+  decoderGridEl.appendChild(card);
+ });
+}
+function render(){
+ mapEl.innerHTML="";
+ const tPos=truePositions(),treasure=tPos.at(-1),treasureIndex=posToIndex(treasure[0],treasure[1]),previews=new Set(solvedPreview.map(p=>posToIndex(p[0],p[1])));
+ cells.forEach((cell,i)=>{
+  const btn=document.createElement("button");btn.className="cell";btn.textContent=cell.icon;btn.dataset.step=cell.step||"";
+  if(previews.has(i)&&i!==0&&!cell.state)btn.classList.add("preview");
+  if(i===0){btn.classList.add("start");btn.textContent="🧭"}
+  if(i===treasureIndex){btn.classList.add("treasure");btn.textContent="💰"}
+  if(cell.state)btn.classList.add(cell.state);
+  btn.onclick=()=>tapCell(i);mapEl.appendChild(btn);
+ });
+ mapNameEl.textContent=currentMap.name;clueTextEl.textContent=currentMap.clue;
+ renderSymbols();renderDecoder();updateScore();
+}
+function rotateGlyph(g){
+ decoder[g]=dirs[(dirs.indexOf(decoder[g])+1)%4];rotations++;
+ resetPath(false);
+ statusEl.textContent=checkPreview()?"The decoded trail reaches the chest. Trace the highlighted route.":"That route misses the treasure. Keep rotating the glyph meanings.";
+ render();
+}
+function useHint(){
+ hints++;score=Math.max(0,score-15);
+ const wrong=currentMap.glyphs.find(g=>decoder[g]!==solutionDecoder[g]);
+ if(wrong){decoder[wrong]=solutionDecoder[wrong];statusEl.textContent=`Hint used: ${wrong} now points ${arrows[decoder[wrong]]} ${dirNames[dirs.indexOf(decoder[wrong])]}.`}
+ else statusEl.textContent="No hint needed. The decoder is already solved.";
+ resetPath(false);checkPreview();render();
+}
+function tapCell(index){
+ if(!checkPreview()){statusEl.textContent="Decode the glyphs first. The route must preview before tracing.";render();return}
+ if(currentStep>=trueRoute.length)return;
+ const needed=solvedPreview[currentStep+1],neededIndex=posToIndex(needed[0],needed[1]);
+ if(index===neededIndex){
+  currentStep++;cells[index].state="path";cells[index].step=currentStep;
+  statusEl.textContent=currentStep===trueRoute.length?"X marks the spot. You solved this treasure map.":`Correct. Step ${currentStep} of ${trueRoute.length} traced.`;
+  if(currentStep===trueRoute.length)winGame();
+ }else{
+  mistakes++;score=Math.max(0,score-10);cells[index].state="wrong";statusEl.textContent="Wrong turn. Reset and follow the decoded trail.";
+ }
+ render();
+}
+function winGame(){
+ if(score>best){best=score;localStorage.setItem("pirateMapBestScore",best)}
+ winEl.style.display="block";
+ winEl.innerHTML=`Treasure Log 💰<br>${currentMap.name} solved.<br>Final score: ${score}<br>Hints used: ${hints}<br>Wrong taps: ${mistakes}<br>Decoder turns: ${rotations}<br>Best score: ${best}`;
+ updateScore();
+}
+function resetPath(showMessage=true){
+ currentStep=0;winEl.style.display="none";
+ cells.forEach(c=>{c.state="";c.step=""});
+ if(showMessage)statusEl.textContent="Route cleared. Decode and trace again from the compass.";
+ render();
+}
+function newMap(){
+ mapIndex=(mapIndex+1)%maps.length;currentMap=maps[mapIndex];trueRoute=currentMap.route;
+ buildCells();setupCipher();currentStep=0;solvedPreview=[];score=100;hints=0;mistakes=0;rotations=0;winEl.style.display="none";
+ statusEl.textContent=`${currentMap.name} drawn. Rotate the glyphs until the route reaches the treasure.`;
+ checkPreview();render();
+}
+newMap();
+</script>
+</body>
+</html>

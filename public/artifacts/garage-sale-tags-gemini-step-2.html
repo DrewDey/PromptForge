@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Garage Sale Tag & Inventory Generator</title>
+    <style>
+        :root {
+            --primary: #2563eb;
+            --primary-hover: #1d4ed8;
+            --bg: #f8fafc;
+            --panel-bg: #ffffff;
+            --border: #e2e8f0;
+            --text: #1e293b;
+            --danger: #ef4444;
+            --danger-hover: #dc2626;
+            --success: #10b981;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg);
+            color: var(--text);
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1100px;
+            margin: 0 auto;
+        }
+
+        header {
+            margin-bottom: 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        h1 { font-size: 1.5rem; color: #0f172a; }
+
+        .btn {
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            font-weight: 600;
+            cursor: pointer;
+            font-size: 0.95rem;
+        }
+
+        .btn:hover { background-color: var(--primary-hover); }
+        .btn-print { background-color: #059669; }
+        .btn-print:hover { background-color: #047857; }
+
+        .btn-sm {
+            padding: 4px 8px;
+            font-size: 0.8rem;
+            border-radius: 4px;
+            font-weight: 500;
+            margin-left: 4px;
+        }
+        .btn-edit { background-color: #64748b; }
+        .btn-edit:hover { background-color: #475569; }
+        .btn-delete { background-color: var(--danger); }
+        .btn-delete:hover { background-color: var(--danger-hover); }
+        .btn-save { background-color: var(--success); }
+
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr 2fr;
+            gap: 24px;
+        }
+
+        .panel {
+            background: var(--panel-bg);
+            padding: 20px;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        }
+
+        h2 {
+            font-size: 1.1rem;
+            margin-bottom: 16px;
+            padding-bottom: 8px;
+            border-bottom: 2px solid var(--border);
+            color: #334155;
+        }
+
+        .form-group {
+            margin-bottom: 12px;
+        }
+
+        label {
+            display: block;
+            font-size: 0.85rem;
+            font-weight: 600;
+            margin-bottom: 4px;
+            color: #475569;
+        }
+
+        input {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            font-size: 0.95rem;
+        }
+
+        input:focus {
+            outline: 2px solid var(--primary);
+        }
+
+        .inline-edit-input {
+            padding: 4px 8px;
+            font-size: 0.9rem;
+        }
+
+        .preview-section {
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+        }
+
+        .tags-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+            gap: 12px;
+        }
+
+        .tag {
+            border: 2px dashed #94a3b8;
+            padding: 12px;
+            text-align: center;
+            border-radius: 4px;
+            background: white;
+            position: relative;
+        }
+
+        .tag-title {
+            font-size: 0.85rem;
+            font-weight: bold;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            text-transform: uppercase;
+            color: #475569;
+        }
+
+        .tag-price {
+            font-size: 1.6rem;
+            font-weight: 800;
+            margin: 4px 0;
+            color: #000;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.9rem;
+        }
+
+        th, td {
+            padding: 8px 12px;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+        }
+
+        th { background-color: #f1f5f9; font-weight: 600; }
+        .text-right { text-align: right; }
+
+        .total-row {
+            font-weight: bold;
+            background-color: #f8fafc;
+            font-size: 1rem;
+        }
+
+        @media print {
+            body { background: white; padding: 0; }
+            .no-print { display: none !important; }
+            .grid { display: block; }
+            .panel { border: none; box-shadow: none; padding: 0; }
+            .page-break { page-break-before: always; margin-top: 30px; }
+
+            .tags-container {
+                grid-template-columns: repeat(4, 1fr);
+                gap: 15px;
+            }
+            .tag {
+                border: 2px dashed #000;
+            }
+            .tag-price { font-size: 2rem; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header class="no-print">
+        <h1>Garage Sale Manager</h1>
+        <button class="btn btn-print" onclick="window.print()">Print Tags & Sheets</button>
+    </header>
+
+    <div class="grid">
+        <div class="panel no-print">
+            <h2>Add New Item</h2>
+            <form id="itemForm" onsubmit="addItem(event)">
+                <div class="form-group">
+                    <label for="itemName">Item Description</label>
+                    <input type="text" id="itemName" placeholder="e.g., Mountain Bike" required autofocus>
+                </div>
+                <div class="form-group">
+                    <label for="itemPrice">Price ($)</label>
+                    <input type="number" id="itemPrice" step="0.25" min="0" placeholder="0.00" required>
+                </div>
+                <button type="submit" class="btn" style="width: 100%; margin-top: 8px;">Add Item</button>
+            </form>
+        </div>
+
+        <div class="preview-section">
+            <div class="panel">
+                <h2>Price Tags</h2>
+                <div class="tags-container" id="tagsContainer"></div>
+            </div>
+
+            <div class="panel page-break">
+                <h2>Inventory & Total Sheet</h2>
+                <table>
+                    <thead>
+                        <tr>
+                            <th style="width: 70px;">Item #</th>
+                            <th>Description</th>
+                            <th class="text-right" style="width: 100px;">Price</th>
+                            <th class="text-right no-print" style="width: 130px;">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="inventoryBody"></tbody>
+                    <tfoot>
+                        <tr class="total-row">
+                            <td colspan="2" class="text-right-print">Total Potential Sales:</td>
+                            <td class="text-right" id="totalAmount">$0.00</td>
+                            <td class="no-print"></td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    let items = [];
+    let itemCount = 0;
+    let editingId = null;
+
+    function addItem(event) {
+        event.preventDefault();
+
+        const nameInput = document.getElementById('itemName');
+        const priceInput = document.getElementById('itemPrice');
+
+        itemCount++;
+        const item = {
+            id: itemCount,
+            name: nameInput.value.trim(),
+            price: parseFloat(priceInput.value).toFixed(2)
+        };
+
+        items.push(item);
+        updateUI();
+
+        nameInput.value = '';
+        priceInput.value = '';
+        nameInput.focus();
+    }
+
+    function deleteItem(id) {
+        items = items.filter(item => item.id !== id);
+        updateUI();
+    }
+
+    function startEdit(id) {
+        editingId = id;
+        updateUI();
+    }
+
+    function saveEdit(id) {
+        const nameInput = document.getElementById(`edit-name-${id}`);
+        const priceInput = document.getElementById(`edit-price-${id}`);
+
+        const item = items.find(item => item.id === id);
+        if (item) {
+            item.name = nameInput.value.trim() || item.name;
+            item.price = parseFloat(priceInput.value || 0).toFixed(2);
+        }
+
+        editingId = null;
+        updateUI();
+    }
+
+    function cancelEdit() {
+        editingId = null;
+        updateUI();
+    }
+
+    function updateUI() {
+        const tagsContainer = document.getElementById('tagsContainer');
+        const inventoryBody = document.getElementById('inventoryBody');
+        const totalAmount = document.getElementById('totalAmount');
+
+        tagsContainer.innerHTML = '';
+        inventoryBody.innerHTML = '';
+
+        let total = 0;
+
+        items.forEach(item => {
+            // Render Tag
+            const tagHtml = `
+                <div class="tag">
+                    <div class="tag-title">${item.name}</div>
+                    <div class="tag-price">$${item.price}</div>
+                    <div style="font-size: 0.65rem; color: #64748b;">#${item.id}</div>
+                </div>
+            `;
+            tagsContainer.insertAdjacentHTML('beforeend', tagHtml);
+
+            // Render Table Row (Normal vs Edit Mode)
+            let rowHtml = '';
+            if (editingId === item.id) {
+                rowHtml = `
+                    <tr>
+                        <td>#${item.id}</td>
+                        <td><input type="text" id="edit-name-${item.id}" class="inline-edit-input" value="${item.name}"></td>
+                        <td class="text-right"><input type="number" id="edit-price-${item.id}" class="inline-edit-input text-right" step="0.25" min="0" value="${item.price}"></td>
+                        <td class="text-right no-print">
+                            <button class="btn btn-sm btn-save" onclick="saveEdit(${item.id})">Save</button>
+                            <button class="btn btn-sm btn-edit" onclick="cancelEdit()">X</button>
+                        </td>
+                    </tr>
+                `;
+            } else {
+                rowHtml = `
+                    <tr>
+                        <td>#${item.id}</td>
+                        <td>${item.name}</td>
+                        <td class="text-right">$${item.price}</td>
+                        <td class="text-right no-print">
+                            <button class="btn btn-sm btn-edit" onclick="startEdit(${item.id})">Edit</button>
+                            <button class="btn btn-sm btn-delete" onclick="deleteItem(${item.id})">Delete</button>
+                        </td>
+                    </tr>
+                `;
+            }
+            inventoryBody.insertAdjacentHTML('beforeend', rowHtml);
+
+            total += parseFloat(item.price);
+        });
+
+        totalAmount.textContent = `$${total.toFixed(2)}`;
+    }
+</script>
+
+</body>
+</html>

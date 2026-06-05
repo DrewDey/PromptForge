@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kitchen Rescue Mission Plan</title>
+    <style>
+        :root {
+            --bg-color: #f4f7f6;
+            --card-bg: #ffffff;
+            --text-main: #2c3e50;
+            --text-muted: #7f8c8d;
+            --accent-urgent: #e74c3c;
+            --accent-warning: #f39c12;
+            --accent-safe: #2ecc71;
+            --border-color: #dcdde1;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 1100px;
+            display: grid;
+            grid-template-columns: 1fr 1.5fr;
+            gap: 25px;
+        }
+
+        @media (max-width: 850px) {
+            .container {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .panel {
+            background: var(--card-bg);
+            border-radius: 12px;
+            padding: 25px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+            height: fit-content;
+        }
+
+        h1, h2, h3 {
+            margin-top: 0;
+            color: var(--text-main);
+        }
+
+        h1 {
+            font-size: 24px;
+            margin-bottom: 5px;
+        }
+
+        .subtitle {
+            color: var(--text-muted);
+            font-size: 14px;
+            margin-bottom: 25px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+
+        textarea {
+            width: 100%;
+            height: 150px;
+            padding: 12px;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            resize: vertical;
+            font-family: inherit;
+            font-size: 14px;
+            box-sizing: border-box;
+        }
+
+        textarea:focus {
+            outline: none;
+            border-color: var(--text-main);
+        }
+
+        .hint {
+            font-size: 12px;
+            color: var(--text-muted);
+            margin-top: 5px;
+        }
+
+        button {
+            width: 100%;
+            background-color: var(--text-main);
+            color: white;
+            border: none;
+            padding: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        button:hover {
+            background-color: #1a252f;
+        }
+
+        .placeholder-text {
+            color: var(--text-muted);
+            text-align: center;
+            padding: 40px 20px;
+            font-style: italic;
+        }
+
+        .timeline-section {
+            margin-bottom: 30px;
+        }
+
+        .timeline-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 18px;
+            font-weight: 700;
+            margin-bottom: 15px;
+            padding-bottom: 5px;
+            border-bottom: 2px solid var(--border-color);
+        }
+
+        .badge {
+            font-size: 11px;
+            padding: 3px 8px;
+            border-radius: 20px;
+            color: white;
+            text-transform: uppercase;
+            font-weight: bold;
+        }
+
+        .badge.critical { background-color: var(--accent-urgent); }
+        .badge.warning { background-color: var(--accent-warning); }
+        .badge.flex { background-color: var(--accent-safe); }
+
+        .recipe-card {
+            background: #fdfdfd;
+            border: 1px solid var(--border-color);
+            border-left: 5px solid transparent;
+            border-radius: 6px;
+            padding: 15px;
+            margin-bottom: 15px;
+        }
+
+        .recipe-card.critical { border-left-color: var(--accent-urgent); }
+        .recipe-card.warning { border-left-color: var(--accent-warning); }
+        .recipe-card.flex { border-left-color: var(--accent-safe); }
+
+        .recipe-title {
+            font-weight: 700;
+            font-size: 16px;
+            margin-bottom: 5px;
+        }
+
+        .used-ingredients {
+            font-size: 13px;
+            margin-bottom: 10px;
+        }
+
+        .used-ingredients span {
+            background: #eee;
+            padding: 2px 6px;
+            border-radius: 4px;
+            margin-right: 5px;
+            display: inline-block;
+            margin-top: 4px;
+        }
+
+        .instructions {
+            font-size: 14px;
+            line-height: 1.4;
+            color: #34495e;
+            margin: 0;
+            padding-left: 20px;
+        }
+
+        .instructions li {
+            margin-bottom: 4px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="panel">
+        <h1>Kitchen Rescue</h1>
+        <div class="subtitle">Turn expiring scraps into an immediate use-today culinary plan.</div>
+
+        <div class="form-group">
+            <label for="ingredientsInput">What needs rescuing?</label>
+            <textarea id="ingredientsInput" placeholder="2 eggs (expires tomorrow)&#10;Half a pack of bacon&#10;Wilted spinach&#10;1 can black beans&#10;Leftover heavy cream (open 4 days)&#10;Sour cream"></textarea>
+            <div class="hint">List items line by line. Mention expiry or condition if you want it prioritized.</div>
+        </div>
+
+        <button onclick="generateRescuePlan()">Generate Rescue Plan</button>
+    </div>
+
+    <div class="panel" id="outputPanel">
+        <div class="placeholder-text">Input your ingredients and hit generate to construct your culinary battle plan.</div>
+    </div>
+</div>
+
+<script>
+function generateRescuePlan() {
+    const input = document.getElementById('ingredientsInput').value.trim();
+    const outputPanel = document.getElementById('outputPanel');
+
+    if (!input) {
+        outputPanel.innerHTML = '<div class="placeholder-text">Please enter some ingredients first.</div>';
+        return;
+    }
+
+    const lines = input.split('\n').map(line => line.trim()).filter(line => line.length > 0);
+
+    let criticalItems = [];
+    let warningItems = [];
+    let standardItems = [];
+
+    // Simple heuristic parser for expiration/urgency
+    lines.forEach(item => {
+        const lower = item.toLowerCase();
+        if (lower.includes('tomorrow') || lower.includes('today') || lower.includes('expire') || lower.includes('wilt') || lower.includes('open') || lower.includes('bad') || lower.includes('critical')) {
+            criticalItems.push(item);
+        } else if (lower.includes('days') || lower.includes('week') || lower.includes('old') || lower.includes('soft')) {
+            warningItems.push(item);
+        } else {
+            standardItems.push(item);
+        }
+    });
+
+    // Fallbacks if categories are empty to ensure all items are mapped somewhere
+    if (criticalItems.length === 0 && warningItems.length === 0 && standardItems.length > 0) {
+        criticalItems = [standardItems.shift()];
+        if (standardItems.length > 0) warningItems = [standardItems.shift()];
+    }
+
+    let html = `<h2>Culinary Rescue Plan</h2><div class="subtitle">Generated tactical strategy based on item priorities.</div>`;
+
+    // Strategy 1: Immediate Execution (Critical items)
+    if (criticalItems.length > 0) {
+        const combinedCritical = criticalItems.map(i => `<span>${i}</span>`).join('');
+        html += `
+        <div class="timeline-section">
+            <div class="timeline-header">
+                <span class="badge critical">Priority 1</span> Use Within 12 Hours
+            </div>
+            <div class="recipe-card critical">
+                <div class="recipe-title">The "Clear the Fridge" Main Event</div>
+                <div class="used-ingredients"><strong>Rescuing:</strong> ${combinedCritical}</div>
+                <ul class="instructions">
+                    <li><strong>The Base:</strong> If you have grains (rice, pasta) or eggs, make a scramble, fried rice, or hash. If liquid-heavy, pivot to a soup or sauce base.</li>
+                    <li><strong>The Prep:</strong> Chop all priority ingredients uniformly to ensure even cooking. Sauté hard ingredients first (bacon, onions), then add soft items, and throw in greens or pre-cooked proteins at the very end.</li>
+                    <li><strong>The Binding Force:</strong> Use those open dairy items, cheeses, or a splash of stock to bind the ingredients together into a cohesive skillet meal or bake.</li>
+                </ul>
+            </div>
+        </div>`;
+    }
+
+    // Strategy 2: Next Meal Setup (Warning items)
+    if (warningItems.length > 0 || standardItems.length > 0) {
+        const remaining = [...warningItems, ...standardItems];
+        const combinedWarning = remaining.map(i => `<span>${i}</span>`).join('');
+        html += `
+        <div class="timeline-section">
+            <div class="timeline-header">
+                <span class="badge warning">Priority 2</span> The Next Meal / Prep Ahead
+            </div>
+            <div class="recipe-card warning">
+                <div class="recipe-title">The Secondary Defensive Strategy</div>
+                <div class="used-ingredients"><strong>Utilizing:</strong> ${combinedWarning}</div>
+                <ul class="instructions">
+                    <li><strong>Roast or Boil:</strong> Toss remaining vegetables in olive oil, salt, and pepper, then roast at 400°F (200°C) to extend their lifespan by 3-4 days.</li>
+                    <li><strong>The Sauce/Marinade Hack:</strong> Blend herbs, fading greens, and leftover oils or acids (lemon, vinegar) into a pesto or marinade for future proteins.</li>
+                    <li><strong>Canned Goods Integration:</strong> Open up the identified cans to stretch the meal. Simmer beans or proteins into a quick chili, stew, or cold bean salad.</li>
+                </ul>
+            </div>
+        </div>`;
+    }
+
+    // Strategy 3: Preservation (Long-term save)
+    html += `
+    <div class="timeline-section">
+        <div class="timeline-header">
+            <span class="badge flex">Preservation</span> The Deep Freeze Escape Hatch
+        </div>
+        <div class="recipe-card flex">
+            <div class="recipe-title">When You Can't Eat It All Today</div>
+            <ul class="instructions">
+                <li><strong>Ice Cube Tray Hack:</strong> Pour excess heavy cream, sauces, or blended herb pastes into ice cube trays. Freeze, then transfer to a zip bag.</li>
+                <li><strong>The Scrap Bag:</strong> Toss raw vegetable trim, stems, and leftover onion pieces into a gallon bag in the freezer. When full, boil for homemade vegetable stock.</li>
+                <li><strong>Pre-emptive Freezing:</strong> Most proteins, cheeses (shredded), and breads can go straight into the freezer right now to halt the expiration clock completely.</li>
+            </ul>
+        </div>
+    </div>`;
+
+    outputPanel.innerHTML = html;
+}
+</script>
+
+</body>
+</html>

@@ -1,0 +1,767 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Snake-Style Chore Draft Board</title>
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+        @page {
+            size: A4;
+            margin: 10mm;
+        }
+        body {
+            font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, Helvetica, Arial, sans-serif;
+            color: #2c3e50;
+            background-color: #ffffff;
+            margin: 0;
+            padding: 0;
+            font-size: 10pt;
+            line-height: 1.4;
+        }
+        .container {
+            width: 100%;
+            max-width: 100%;
+            padding: 10px;
+        }
+        header {
+            border-bottom: 3px solid #34495e;
+            padding-bottom: 8px;
+            margin-bottom: 15px;
+        }
+        h1 {
+            font-size: 18pt;
+            color: #2c3e50;
+            margin: 0 0 5px 0;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        .subtitle {
+            font-size: 9.5pt;
+            color: #7f8c8d;
+            margin: 0;
+        }
+        .meta-controls {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-bottom: 10px;
+        }
+        .status-line {
+            font-size: 8.5pt;
+            color: #64748b;
+            align-self: center;
+            font-style: italic;
+            margin-left: auto;
+        }
+
+        .setup-actions {
+            background-color: #f8f9fa;
+            border: 1px solid #e2e8f0;
+            border-radius: 6px;
+            padding: 12px;
+            margin-bottom: 15px;
+        }
+        .input-row {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        .input-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            width: 100%;
+        }
+        .input-group label {
+            font-weight: bold;
+            color: #34495e;
+            white-space: nowrap;
+            width: 110px;
+        }
+        input[type="text"], select.setup-select {
+            flex: 1;
+            padding: 6px 8px;
+            border: 1px solid #cbd5e1;
+            border-radius: 4px;
+            font-size: 9.5pt;
+            min-width: 0;
+        }
+        button {
+            background-color: #34495e;
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 9.5pt;
+            white-space: nowrap;
+        }
+        button:hover {
+            background-color: #2c3e50;
+        }
+        .print-btn { background-color: #27ae60; }
+        .print-btn:hover { background-color: #219653; }
+        .share-btn { background-color: #4f46e5; }
+        .share-btn:hover { background-color: #4338ca; }
+        .reset-btn { background-color: #ef4444; }
+        .reset-btn:hover { background-color: #dc2626; }
+
+        /* Snake Draft Engine Panel */
+        .draft-engine {
+            background-color: #e0f2fe;
+            border: 1px solid #7dd3fc;
+            border-radius: 6px;
+            padding: 15px;
+            margin-bottom: 15px;
+        }
+        .current-turn-display {
+            font-size: 13pt;
+            font-weight: bold;
+            color: #0369a1;
+            margin-bottom: 10px;
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 8px;
+        }
+        .direction-indicator {
+            font-size: 9pt;
+            background-color: #bae6fd;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-weight: normal;
+            color: #0369a1;
+        }
+
+        /* Queue Track UI */
+        .queue-container {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            overflow-x: auto;
+            padding: 4px 0;
+            margin-bottom: 12px;
+        }
+        .queue-item {
+            padding: 4px 10px;
+            background-color: #f1f5f9;
+            border: 1px solid #cbd5e1;
+            border-radius: 4px;
+            font-size: 9pt;
+            color: #475569;
+            white-space: nowrap;
+        }
+        .queue-item.active {
+            background-color: #0284c7;
+            color: white;
+            border-color: #0284c7;
+            font-weight: bold;
+        }
+        .queue-arrow {
+            color: #94a3b8;
+            font-size: 10pt;
+        }
+
+        /* Pools */
+        .pool-block {
+            background-color: #fdfefe;
+            border: 1px dashed #b2bec3;
+            border-radius: 6px;
+            padding: 10px;
+            margin-bottom: 15px;
+        }
+        .pool-title {
+            font-size: 10pt;
+            font-weight: bold;
+            color: #2c3e50;
+            margin-top: 0;
+            margin-bottom: 8px;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 3px;
+        }
+        .pill-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        .chore-pill {
+            background-color: #ffffff;
+            color: #1e293b;
+            border: 1px solid #cbd5e1;
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 9.5pt;
+            font-weight: 500;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+        }
+        .chore-pill:hover {
+            border-color: #0284c7;
+            background-color: #f0f9ff;
+        }
+        .effort-badge {
+            font-size: 8pt;
+            background-color: #e2e8f0;
+            color: #475569;
+            padding: 1px 6px;
+            border-radius: 4px;
+            font-weight: bold;
+        }
+
+        /* Assignment Matrix Grid */
+        .board-title {
+            font-size: 12pt;
+            font-weight: bold;
+            color: #2c3e50;
+            margin-bottom: 10px;
+            border-left: 4px solid #34495e;
+            padding-left: 8px;
+            text-transform: uppercase;
+        }
+
+        .grid-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .grid-table th {
+            background-color: #34495e;
+            color: white;
+            text-align: left;
+            padding: 10px 12px;
+            font-size: 10pt;
+            font-weight: 600;
+            border: 1px solid #34495e;
+        }
+        .grid-table td {
+            padding: 10px;
+            border: 1px solid #cbd5e1;
+            vertical-align: top;
+            background-color: #fafafa;
+        }
+        .load-indicator {
+            display: block;
+            font-size: 8.5pt;
+            font-weight: normal;
+            color: #cbd5e1;
+            margin-top: 2px;
+        }
+        .assigned-chore {
+            background-color: #ffffff;
+            border: 1px solid #e2e8f0;
+            border-left: 3px solid #27ae60;
+            padding: 6px 10px;
+            margin-bottom: 6px;
+            border-radius: 4px;
+            font-size: 9.5pt;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .remove-assignment {
+            color: #e74c3c;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 10pt;
+            padding-left: 8px;
+        }
+
+        /* Self-contained Alert Toast */
+        .toast {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%) translateY(100px);
+            background-color: #1e293b;
+            color: #ffffff;
+            padding: 10px 20px;
+            border-radius: 20px;
+            font-size: 9.5pt;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            transition: transform 0.3s ease;
+            z-index: 10000;
+            pointer-events: none;
+            opacity: 0;
+        }
+        .toast.visible {
+            transform: translateX(-50%) translateY(0);
+            opacity: 1;
+        }
+
+        /* Pure CSS Completion Animation banner */
+        .completion-banner {
+            display: none;
+            background: linear-gradient(135deg, #22c55e, #15803d);
+            color: white;
+            padding: 12px;
+            border-radius: 6px;
+            text-align: center;
+            font-weight: bold;
+            font-size: 11pt;
+            margin-bottom: 15px;
+            animation: bounceIn 0.6s ease;
+        }
+        @keyframes bounceIn {
+            0% { transform: scale(0.9); opacity: 0; }
+            70% { transform: scale(1.03); }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        /* Responsiveness Layer */
+        @media (max-width: 600px) {
+            .input-row { width: 100%; }
+            .grid-table, .grid-table thead, .grid-table tbody, .grid-table th, .grid-table td, .grid-table tr {
+                display: block;
+                width: 100% !important;
+            }
+            .grid-table tr { margin-bottom: 15px; }
+            .grid-table th { border-radius: 4px 4px 0 0; }
+            .grid-table td {
+                border-top: none;
+                min-height: auto !important;
+                background-color: #ffffff;
+                border-radius: 0 0 4px 4px;
+            }
+            .status-line { width: 100%; text-align: left; margin-top: 5px; }
+        }
+
+        @media (min-width: 601px) {
+            .input-row { flex-direction: row; }
+        }
+
+        /* Print Configuration */
+        @media print {
+            .setup-actions, .draft-engine, .pool-block, .remove-assignment, .meta-controls, button {
+                display: none !important;
+            }
+            .grid-table, .grid-table td, .grid-table th, .grid-table tr {
+                display: table !important;
+                width: auto !important;
+            }
+            .grid-table { width: 100% !important; }
+            .grid-table td { display: table-cell !important; background-color: #ffffff !important; }
+            .grid-table th { display: table-cell !important; color: #000000 !important; border-bottom: 2px solid #000000 !important; background: none !important; }
+            .load-indicator { color: #475569 !important; font-weight: bold; }
+            .assigned-chore { border: 1px solid #cbd5e1 !important; border-left: 4px solid #27ae60 !important; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <div class="meta-controls">
+            <button class="reset-btn" onclick="resetBoard()">Reset Board</button>
+            <button class="share-btn" onclick="shareSummary()">Copy text summary</button>
+            <button class="print-btn" onclick="window.print()">Print Plan</button>
+            <div class="status-line" id="save-status">State loaded from browser cache</div>
+        </div>
+        <h1>Apartment Chore Draft Board</h1>
+        <div class="subtitle">Snake Draft Engine: Balance work profiles live by reviewing effort load values.</div>
+    </header>
+
+    <div class="completion-banner" id="finish-banner">
+        🎉 All chores successfully drafted! The schedule is locked and balanced.
+    </div>
+
+    <div class="setup-actions" id="setup-panel">
+        <div class="input-row">
+            <div class="input-group">
+                <label for="roommate-input">Roommate:</label>
+                <input type="text" id="roommate-input" placeholder="e.g., Alex" onkeydown="if(event.key==='Enter') addRoommate()">
+                <button onclick="addRoommate()">Add</button>
+            </div>
+            <div class="input-group">
+                <label for="chore-input">Chore:</label>
+                <input type="text" id="chore-input" style="flex: 2;" placeholder="e.g., Clean Shower" onkeydown="if(event.key==='Enter') addChore()">
+                <label for="chore-weight" style="width: auto; margin-left: 5px;">Weight:</label>
+                <select id="chore-weight" class="setup-select" style="flex: 0 0 70px;">
+                    <option value="1">1 (Easy)</option>
+                    <option value="2">2</option>
+                    <option value="3" selected>3</option>
+                    <option value="4">4</option>
+                    <option value="5">5 (Heavy)</option>
+                </select>
+                <button onclick="addChore()">Add</button>
+            </div>
+        </div>
+        <div style="margin-top: 12px; text-align: right;">
+            <button onclick="startDraft()" style="background-color: #27ae60; padding: 7px 20px; font-size: 10pt;">Lock Settings & Start Snake Draft</button>
+        </div>
+    </div>
+
+    <div class="draft-engine" id="draft-panel" style="display:none;">
+        <div class="current-turn-display">
+            On the Clock: <span id="active-picker" style="text-decoration: underline; color:#0284c7;">Nobody</span>
+            <span class="direction-indicator" id="direction-tag">Round 1</span>
+        </div>
+
+        <div style="font-size: 8.5pt; font-weight: bold; margin-bottom: 4px; color: #475569; text-transform: uppercase;">Draft Pipeline Order:</div>
+        <div class="queue-container" id="queue-track"></div>
+
+        <div style="font-size: 9pt; color: #475569; margin-top: 8px;">
+            💡 <em>Click an available chore from the pool below to allocate it to the active picker.</em>
+        </div>
+    </div>
+
+    <div class="pool-block" id="pool-panel">
+        <div class="pool-title" id="pool-title-text">Available Chores Pool</div>
+        <div id="chores-pool" class="pill-container"></div>
+    </div>
+
+    <div class="board-title">Weekly Load Distribution Matrix</div>
+    <table class="grid-table">
+        <thead>
+            <tr id="table-headers"></tr>
+        </thead>
+        <tbody>
+            <tr id="table-columns"></tr>
+        </tbody>
+    </table>
+</div>
+
+<div class="toast" id="toast-alert">Summary copied to clipboard!</div>
+
+<script>
+    // App Core Configurations
+    let roommates = ["Alex", "Taylor", "Jordan"];
+    let chores = [
+        { name: "Deep Clean Bathroom", weight: 5 },
+        { name: "Mop Common Room Floors", weight: 4 },
+        { name: "Wipe Down Kitchen Counters", weight: 3 },
+        { name: "Load/Empty Dishwasher", weight: 2 },
+        { name: "Take Out Trash & Recycling", weight: 1 }
+    ];
+    let assignments = {};
+
+    let draftActive = false;
+    let currentTurnIndex = 0;
+    let snakeOrderQueue = [];
+
+    function saveState() {
+        const payload = { roommates, chores, assignments, draftActive, currentTurnIndex, snakeOrderQueue };
+        localStorage.setItem('apt_balanced_chore_state', JSON.stringify(payload));
+
+        const now = new Date();
+        document.getElementById('save-status').textContent = `Autosaved at ${now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}`;
+    }
+
+    function loadState() {
+        const data = localStorage.getItem('apt_balanced_chore_state');
+        if (data) {
+            try {
+                const parsed = JSON.parse(data);
+                roommates = parsed.roommates || [];
+                chores = parsed.chores || [];
+                assignments = parsed.assignments || {};
+                draftActive = !!parsed.draftActive;
+                currentTurnIndex = parsed.currentTurnIndex || 0;
+                snakeOrderQueue = parsed.snakeOrderQueue || [];
+                document.getElementById('save-status').textContent = "State loaded from browser storage";
+                return true;
+            } catch(e) {
+                console.error(e);
+            }
+        }
+        return false;
+    }
+
+    function resetBoard() {
+        if (confirm("Reset everything and return to step-one setup configuration?")) {
+            localStorage.removeItem('apt_balanced_chore_state');
+            roommates = ["Alex", "Taylor", "Jordan"];
+            chores = [
+                { name: "Deep Clean Bathroom", weight: 5 },
+                { name: "Mop Common Room Floors", weight: 4 },
+                { name: "Wipe Down Kitchen Counters", weight: 3 },
+                { name: "Load/Empty Dishwasher", weight: 2 },
+                { name: "Take Out Trash & Recycling", weight: 1 }
+            ];
+            assignments = {};
+            draftActive = false;
+            currentTurnIndex = 0;
+            snakeOrderQueue = [];
+
+            document.getElementById('setup-panel').style.display = 'block';
+            document.getElementById('draft-panel').style.display = 'none';
+            document.getElementById('finish-banner').style.display = 'none';
+            document.getElementById('pool-title-text').textContent = "Available Chores Pool";
+
+            initMatrixStructure();
+            renderEngineUI();
+            document.getElementById('save-status').textContent = "Board completely reset";
+        }
+    }
+
+    function buildSnakeStructure() {
+        if (roommates.length === 0 || chores.length === 0) return [];
+        let totalTaskCount = chores.length + Object.values(assignments).flat().length;
+        let roundsNeeded = Math.ceil(totalTaskCount / roommates.length);
+        let queue = [];
+
+        for (let r = 0; r < roundsNeeded; r++) {
+            if (r % 2 === 0) {
+                for (let i = 0; i < roommates.length; i++) {
+                    queue.push({ name: roommates[i], round: r + 1, direction: 'Forward' });
+                }
+            } else {
+                for (let i = roommates.length - 1; i >= 0; i--) {
+                    queue.push({ name: roommates[i], round: r + 1, direction: 'Reverse' });
+                }
+            }
+        }
+        return queue;
+    }
+
+    function initMatrixStructure() {
+        const tHeaders = document.getElementById('table-headers');
+        const tColumns = document.getElementById('table-columns');
+        tHeaders.innerHTML = ''; tColumns.innerHTML = '';
+
+        if (roommates.length === 0) {
+            tHeaders.innerHTML = '<th style="color:#cbd5e1; font-weight:normal; font-style:italic;">No roommates added yet</th>';
+            tColumns.innerHTML = '<td style="color:#94a3b8; font-style:italic;">Columns will populate when names are entered above.</td>';
+            return;
+        }
+
+        let widthPct = (100 / roommates.length).toFixed(2) + '%';
+        roommates.forEach(rm => {
+            if (!assignments[rm]) assignments[rm] = [];
+
+            const th = document.createElement('th');
+            th.style.width = widthPct;
+            th.innerHTML = `${rm} <span class="load-indicator" id="load-label-${btoa(rm).replace(/=/g,'')}">Total Effort: 0 pts</span>`;
+            tHeaders.appendChild(th);
+
+            const td = document.createElement('td');
+            td.id = `box-${btoa(rm).replace(/=/g, '')}`;
+            td.style.width = widthPct;
+            tColumns.appendChild(td);
+        });
+        calculateWorkloads();
+    }
+
+    function calculateWorkloads() {
+        let totalAssignedPoints = 0;
+        roommates.forEach(rm => {
+            const list = assignments[rm] || [];
+            let sum = 0;
+            list.forEach(item => sum += item.weight);
+            totalAssignedPoints += sum;
+
+            const lbl = document.getElementById(`load-label-${btoa(rm).replace(/=/g,'')}`);
+            if (lbl) lbl.textContent = `Total Effort: ${sum} pt${sum !== 1 ? 's' : ''}`;
+
+            const box = document.getElementById(`box-${btoa(rm).replace(/=/g, '')}`);
+            if (!box) return;
+            box.innerHTML = '';
+
+            if (list.length === 0) {
+                box.innerHTML = '<div style="color: #cbd5e1; font-style: italic; font-size: 9pt; padding: 4px 0;">No items drafted</div>';
+            } else {
+                list.forEach((chore, index) => {
+                    const div = document.createElement('div');
+                    div.className = 'assigned-chore';
+                    div.innerHTML = `<span>${chore.name} <span class="effort-badge">${chore.weight}</span></span>`;
+
+                    const del = document.createElement('span');
+                    del.className = 'remove-assignment';
+                    del.innerHTML = '&times;';
+                    del.onclick = () => dropAssignmentItem(rm, index, chore);
+
+                    div.appendChild(del);
+                    box.appendChild(div);
+                });
+            }
+        });
+
+        // Toggle CSS banner if draft is complete
+        if (draftActive && chores.length === 0 && totalAssignedPoints > 0) {
+            document.getElementById('finish-banner').style.display = 'block';
+        } else {
+            document.getElementById('finish-banner').style.display = 'none';
+        }
+    }
+
+    function renderEngineUI() {
+        const pool = document.getElementById('chores-pool');
+        pool.innerHTML = '';
+
+        if (chores.length === 0) {
+            pool.innerHTML = '<span style="color:#94a3b8; font-style:italic; font-size:9.5pt; padding:4px 0;">All items have been allocated.</span>';
+        } else {
+            chores.forEach((chore, index) => {
+                const span = document.createElement('span');
+                span.className = 'chore-pill';
+                span.innerHTML = `${chore.name} <span class="effort-badge">${chore.weight} pts</span>`;
+                if (draftActive) {
+                    span.onclick = () => chooseChore(chore, index);
+                } else {
+                    span.innerHTML += `<span style="font-size:8pt; color:#ef4444; font-weight:bold; cursor:pointer;" onclick="event.stopPropagation(); deleteSetupChore(${index})">&times;</span>`;
+                }
+                pool.appendChild(span);
+            });
+        }
+
+        if (!draftActive) return;
+
+        const container = document.getElementById('queue-track');
+        container.innerHTML = '';
+
+        if (currentTurnIndex >= snakeOrderQueue.length || chores.length === 0) {
+            document.getElementById('active-picker').textContent = "Draft Complete";
+            document.getElementById('direction-tag').textContent = "Finished";
+            return;
+        }
+
+        const currentTurn = snakeOrderQueue[currentTurnIndex];
+        document.getElementById('active-picker').textContent = currentTurn.name;
+        document.getElementById('direction-tag').textContent = `Round ${currentTurn.round} (${currentTurn.direction})`;
+
+        let endIdx = Math.min(currentTurnIndex + 5, snakeOrderQueue.length);
+        for (let i = currentTurnIndex; i < endIdx; i++) {
+            if (i > currentTurnIndex) {
+                const arrow = document.createElement('span');
+                arrow.className = 'queue-arrow';
+                arrow.innerHTML = '&#10142;';
+                container.appendChild(arrow);
+            }
+            const node = document.createElement('div');
+            node.className = `queue-item ${i === currentTurnIndex ? 'active' : ''}`;
+            node.textContent = `${snakeOrderQueue[i].name} (R${snakeOrderQueue[i].round})`;
+            container.appendChild(node);
+        }
+    }
+
+    function addRoommate() {
+        if (draftActive) return;
+        const input = document.getElementById('roommate-input');
+        const val = input.value.trim();
+        if (val && !roommates.includes(val)) {
+            roommates.push(val);
+            input.value = '';
+            initMatrixStructure();
+            renderEngineUI();
+            saveState();
+        }
+    }
+
+    function addChore() {
+        const input = document.getElementById('chore-input');
+        const weightSelect = document.getElementById('chore-weight');
+        const val = input.value.trim();
+        if (val) {
+            chores.push({ name: val, weight: parseInt(weightSelect.value) });
+            input.value = '';
+            renderEngineUI();
+            saveState();
+        }
+    }
+
+    function deleteSetupChore(index) {
+        if (draftActive) return;
+        chores.splice(index, 1);
+        renderEngineUI();
+        saveState();
+    }
+
+    function startDraft() {
+        if (roommates.length === 0 || chores.length === 0) return;
+        draftActive = true;
+        snakeOrderQueue = buildSnakeStructure();
+        currentTurnIndex = 0;
+
+        document.getElementById('setup-panel').style.display = 'none';
+        document.getElementById('draft-panel').style.display = 'block';
+        document.getElementById('pool-title-text').textContent = "Available Pool Chores (Click item to choose)";
+
+        renderEngineUI();
+        calculateWorkloads();
+        saveState();
+    }
+
+    function chooseChore(chore, index) {
+        if (!draftActive || currentTurnIndex >= snakeOrderQueue.length) return;
+
+        const activeUser = snakeOrderQueue[currentTurnIndex].name;
+        assignments[activeUser].push(chore);
+        chores.splice(index, 1);
+        currentTurnIndex++;
+
+        calculateWorkloads();
+        renderEngineUI();
+        saveState();
+    }
+
+    function dropAssignmentItem(user, index, chore) {
+        assignments[user].splice(index, 1);
+        chores.push(chore);
+
+        if (draftActive) {
+            snakeOrderQueue = buildSnakeStructure();
+            if (currentTurnIndex > 0) currentTurnIndex--;
+        }
+
+        calculateWorkloads();
+        renderEngineUI();
+        saveState();
+    }
+
+    function showToast(msg) {
+        const box = document.getElementById('toast-alert');
+        box.textContent = msg;
+        box.classList.add('visible');
+        setTimeout(() => box.classList.remove('visible'), 2800);
+    }
+
+    function shareSummary() {
+        let text = `🧹 WEEKLY APARTMENT CHORE SHEET 🧹\n\n`;
+        roommates.forEach(rm => {
+            const list = assignments[rm] || [];
+            let total = 0;
+            list.forEach(c => total += c.weight);
+
+            text += `👤 ${rm.toUpperCase()} (Total Effort: ${total} pts)\n`;
+            if (list.length === 0) {
+                text += `  - No chores drafted\n`;
+            } else {
+                list.forEach(c => {
+                    text += `  ▪ ${c.name} [Effort Value: ${c.weight}]\n`;
+                });
+            }
+            text += `\n`;
+        });
+
+        if (chores.length > 0) {
+            text += `⏳ UNASSIGNED POOL:\n`;
+            chores.forEach(c => text += `  ▪ ${c.name} (${c.weight} pts)\n`);
+        }
+
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(text).then(() => showToast("Summary text copied to clipboard!"))
+                                              .catch(() => showToast("Failed to write to clipboard."));
+        } else {
+            showToast("Clipboard unavailable in this context.");
+        }
+    }
+
+    window.onload = function() {
+        loadState();
+        initMatrixStructure();
+        if (draftActive) {
+            document.getElementById('setup-panel').style.display = 'none';
+            document.getElementById('draft-panel').style.display = 'block';
+            document.getElementById('pool-title-text').textContent = "Available Pool Chores (Click item to choose)";
+        }
+        renderEngineUI();
+    };
+</script>
+
+</body>
+</html>

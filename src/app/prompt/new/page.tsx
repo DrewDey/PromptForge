@@ -1,8 +1,8 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { ArrowLeft, Plus, Trash2, ChevronDown, ChevronUp, LogIn, FileText, GitBranch, Check, AlertCircle, ArrowUp, ArrowDown, ChevronRight, Layers, Cpu, Eye, Keyboard, CheckCircle2, Link2 } from 'lucide-react'
 import { getModelsByProvider, getModelName } from '@/lib/models'
 import { submitProject, submitSourceRun } from '@/lib/actions'
@@ -402,8 +402,9 @@ function ForkSourcePanel({ forkSource }: { forkSource: ProjectForkSource }) {
 
 export default function SubmitProjectPage() {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const [isLoggedIn, setIsLoggedIn] = useState<boolean | null>(null)
-  const [forkSource, setForkSource] = useState<ProjectForkSource | null>(null)
+  const forkSource = useMemo(() => parseProjectForkSearchParams(searchParams), [searchParams])
   const [authReturnPath, setAuthReturnPath] = useState('/build')
 
   // Form state
@@ -454,19 +455,16 @@ export default function SubmitProjectPage() {
   const [hasAttemptedSubmit, setHasAttemptedSubmit] = useState(false)
 
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search)
     setAuthReturnPath(`${window.location.pathname}${window.location.search}`)
-    const parsedForkSource = parseProjectForkSearchParams(params)
-    if (!parsedForkSource) return
+    if (!forkSource) return
 
-    setForkSource(parsedForkSource)
     setSourceRunTitle(current => (
-      current.trim() ? current : `${parsedForkSource.sourceProjectTitle || 'Forked Path'} fork`
+      current.trim() ? current : `${forkSource.sourceProjectTitle || 'Forked Path'} fork`
     ))
     setSourceRunNotes(current => (
-      current.trim() ? current : serializeProjectForkSourceForNotes(parsedForkSource)
+      current.trim() ? current : serializeProjectForkSourceForNotes(forkSource)
     ))
-  }, [])
+  }, [forkSource])
 
   useEffect(() => {
     if (sourceRunProviderTouched) return
@@ -741,6 +739,7 @@ export default function SubmitProjectPage() {
           </div>
         </section>
         <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
+          {forkSource && <ForkSourcePanel forkSource={forkSource} />}
           <div className="max-w-xl border border-surface-200 bg-white p-5">
             <h2 className="text-xl font-black text-surface-900">Account required</h2>
             <p className="mt-2 text-sm leading-6 text-surface-600">
@@ -755,11 +754,16 @@ export default function SubmitProjectPage() {
   // Loading auth state
   if (isLoggedIn === null) {
     return (
-      <div className="mx-auto max-w-2xl px-4 py-20 text-center text-surface-400">
-        <span className="inline-flex items-center gap-2 font-mono text-[11px] uppercase tracking-[0.14em]">
-          <span className="h-2 w-2 animate-pulse bg-brand-orange" aria-hidden="true" />
-          Checking account
-        </span>
+      <div className="bg-surface-50">
+        <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
+          {forkSource && <ForkSourcePanel forkSource={forkSource} />}
+          <div className="max-w-2xl border border-surface-200 bg-white px-5 py-8 text-center text-surface-500">
+            <span className="inline-flex items-center gap-2 font-mono text-[11px] uppercase tracking-[0.14em]">
+              <span className="h-2 w-2 animate-pulse bg-brand-orange" aria-hidden="true" />
+              Checking account
+            </span>
+          </div>
+        </div>
       </div>
     )
   }

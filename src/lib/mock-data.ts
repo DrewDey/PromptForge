@@ -24,8 +24,15 @@ import {
   TRIP_PACKING_SHOWCASE_PROJECT,
   WEEKEND_CHECKLIST_SHOWCASE_PROJECT,
   WORD_LADDER_SPRINT_SHOWCASE_PROJECT,
+  PENDING_SOURCE_RUN_SHOWCASE_PROJECTS,
 } from './prepared-showcase-projects'
 import type { PreparedShowcaseProject } from './prepared-showcase-projects'
+
+const PENDING_SOURCE_RUN_PROFILE_ID_START = 227
+
+function pendingSourceRunProfileId(index: number) {
+  return `22222222-2222-2222-2222-${String(PENDING_SOURCE_RUN_PROFILE_ID_START + index).padStart(12, '2')}`
+}
 
 export const mockProfiles: Profile[] = [
   {
@@ -188,6 +195,16 @@ export const mockProfiles: Profile[] = [
     created_at: LANE_DEFENSE_SHOWCASE_PROJECT.createdAt,
     updated_at: LANE_DEFENSE_SHOWCASE_PROJECT.updatedAt,
   },
+  ...PENDING_SOURCE_RUN_SHOWCASE_PROJECTS.map((project, index) => ({
+    id: pendingSourceRunProfileId(index),
+    username: project.authorUsername,
+    display_name: project.authorDisplayName,
+    avatar_url: null,
+    bio: 'Prepared source-run project author profile.',
+    role: 'user' as const,
+    created_at: project.createdAt,
+    updated_at: project.updatedAt,
+  })),
 ]
 
 export const mockCategories: Category[] = [
@@ -305,6 +322,7 @@ export const mockSteps: PromptStep[] = [
   ...stepsForShowcase(FOLLOW_UP_CRM_SHOWCASE_PROJECT),
   ...stepsForShowcase(REACTION_TRAINER_SHOWCASE_PROJECT),
   ...stepsForShowcase(LANE_DEFENSE_SHOWCASE_PROJECT),
+  ...PENDING_SOURCE_RUN_SHOWCASE_PROJECTS.flatMap(stepsForShowcase),
 ]
 
 function promptForShowcase(project: PreparedShowcaseProject, authorId: string): Prompt {
@@ -324,6 +342,7 @@ function promptForShowcase(project: PreparedShowcaseProject, authorId: string): 
     author_id: authorId,
     vote_count: 0,
     bookmark_count: 0,
+    prompt_family_id: project.promptFamilyId ?? null,
     created_at: project.createdAt,
     updated_at: project.updatedAt,
   }
@@ -490,6 +509,7 @@ export const mockPrompts: Prompt[] = [
   promptForShowcase(FOLLOW_UP_CRM_SHOWCASE_PROJECT, '22222222-2222-2222-2222-222222222224'),
   promptForShowcase(REACTION_TRAINER_SHOWCASE_PROJECT, '22222222-2222-2222-2222-222222222225'),
   promptForShowcase(LANE_DEFENSE_SHOWCASE_PROJECT, '22222222-2222-2222-2222-222222222226'),
+  ...PENDING_SOURCE_RUN_SHOWCASE_PROJECTS.map((project, index) => promptForShowcase(project, pendingSourceRunProfileId(index))),
 ]
 
 export const mockSuggestions: SuggestionWithRelations[] = []

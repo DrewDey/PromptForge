@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Tiny Tugboat Harbor</title>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: system-ui, Arial, sans-serif;
+    background: #dff7ff;
+    color: #123;
+    overflow-x: hidden;
+  }
+  .wrap {
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 14px;
+  }
+  h1 { margin: 6px 0 8px; font-size: 1.6rem; }
+  .hud, .controls {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    align-items: center;
+    margin-bottom: 10px;
+  }
+  .pill {
+    background: white;
+    border: 2px solid #9bd7e8;
+    border-radius: 999px;
+    padding: 8px 12px;
+    font-weight: 700;
+  }
+  button {
+    border: 0;
+    border-radius: 12px;
+    padding: 10px 14px;
+    font-weight: 800;
+    background: #126b8f;
+    color: white;
+    cursor: pointer;
+    min-height: 44px;
+  }
+  button.secondary { background: #4b6b75; }
+  canvas {
+    width: 100%;
+    max-width: 680px;
+    height: auto;
+    display: block;
+    background: linear-gradient(#8fe4ff, #49bfe8);
+    border: 4px solid #176f90;
+    border-radius: 18px;
+    touch-action: none;
+  }
+  .hint {
+    margin-top: 8px;
+    background: #fff9d7;
+    border: 2px solid #e9ca62;
+    border-radius: 14px;
+    padding: 10px;
+    font-weight: 650;
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>🚢 Tiny Tugboat Harbor</h1>
+
+  <div class="hud">
+    <div class="pill">Score: <span id="score">0</span></div>
+    <div class="pill">Best: <span id="best">0</span></div>
+    <div class="pill">Lives: <span id="lives">5</span></div>
+    <div class="pill">Docked: <span id="docked">0</span>/12</div>
+  </div>
+
+  <div class="controls">
+    <button id="startBtn">Start Harbor</button>
+    <button id="pauseBtn" class="secondary">Pause</button>
+    <button id="resetBtn" class="secondary">Reset</button>
+  </div>
+
+  <canvas id="game" width="680" height="430" aria-label="Tiny tugboat harbor game"></canvas>
+
+  <div class="hint">
+    Tap switches or press <b>1–6</b> to cycle arrows. Press <b>P</b> or <b>Space</b> to pause. Dock each tug at the matching colored pier.
+  </div>
+</div>
+
+<script>
+(() => {
+  const canvas = document.getElementById("game");
+  const ctx = canvas.getContext("2d");
+
+  const scoreEl = document.getElementById("score");
+  const bestEl = document.getElementById("best");
+  const livesEl = document.getElementById("lives");
+  const dockedEl = document.getElementById("docked");
+
+  const W = canvas.width;
+  const H = canvas.height;
+  const BEST_KEY = "tinyTugboatHarborBest";
+
+  const lanes = [115, 215, 315];
+  const colors = [
+    { name: "Red", fill: "#e94b4b" },
+    { name: "Yellow", fill: "#ffd54a" },
+    { name: "Blue", fill: "#3d7cff" }
+  ];
+
+  let score = 0;
+  let best = Number(localStorage.getItem(BEST_KEY) || 0);
+  let lives = 5;
+  let docked = 0;
+  let running = false;
+  let paused = false;
+  let runEnded = false;
+  let lastTime = 0;
+  let spawnTimer = 0;
+  let boats = [];
+  let message = "Tap Start Harbor";
+
+  const switches = [
+    { x: 235, lane: 0, dir: 0 },
+    { x: 235, lane: 1, dir: 0 },
+    { x: 235, lane: 2, dir: 0 },
+    { x: 420, lane: 0, dir: 0 },
+    { x: 420, lane: 1, dir: 0 },
+    { x: 420, lane: 2, dir: 0 }
+  ];
+
+  function saveBest() {
+    if (score > best) {
+      best = score;
+      localStorage.setItem(BEST_KEY, String(best));
+    }
+  }
+
+  function endRun(text) {
+    if (runEnded) return;
+    runEnded = true;
+    running = false;
+    paused = false;
+    saveBest();
+    updateHud();
+    message = text;
+  }
+
+  function reset() {
+    score = 0;
+    lives = 5;
+    docked = 0;
+    boats = [];
+    spawnTimer = 0;
+    running = false;
+    paused = false;
+    runEnded = false;
+    message = "Tap Start Harbor";
+    switches.forEach(s => s.dir = 0);
+    updateHud();
+    draw();
+  }
+
+  function updateHud() {
+    scoreEl.textContent = score;
+    bestEl.textContent = best;
+    livesEl.textContent = lives;
+    dockedEl.textContent = docked;
+  }
+
+  function spawnBoat() {
+    const target = Math.floor(Math.random() * 3);
+    boats.push({
+      x: -70,
+      lane: Math.floor(Math.random() * 3),
+      y: lanes[Math.floor(Math.random() * 3)],
+      target,
+      speed: 72 + docked * 2.5,
+      used: new Set()
+    });
+  }
+
+  function cycleSwitch(index) {
+    const s = switches[index];
+    if (!s) return;
+    s.dir += 1;
+    if (s.dir > 1) s.dir = -1;
+    message = `Switch ${index + 1} changed!`;
+    draw();
+  }
+
+  function switchSymbol(dir) {
+    if (dir === -1) return "↑";
+    if (dir === 1) return "↓";
+    return "→";
+  }
+
+  function drawWater() {
+    ctx.fillStyle = "#55c8ee";
+    ctx.fillRect(0, 0, W, H);
+
+    for (let i = 0; i < lanes.length; i++) {
+      ctx.strokeStyle = "rgba(255,255,255,.7)";
+      ctx.lineWidth = 24;
+      ctx.beginPath();
+      ctx.moveTo(0, lanes[i]);
+      ctx.lineTo(W, lanes[i]);
+      ctx.stroke();
+
+      ctx.strokeStyle = "rgba(23,111,144,.35)";
+      ctx.lineWidth = 2;
+      ctx.setLineDash([10, 12]);
+      ctx.beginPath();
+      ctx.moveTo(0, lanes[i]);
+      ctx.lineTo(W, lanes[i]);
+      ctx.stroke();
+      ctx.setLineDash([]);
+    }
+
+    ctx.fillStyle = "#c98b45";
+    ctx.fillRect(W - 88, 60, 70, 310);
+
+    colors.forEach((c, i) => {
+      const y = lanes[i];
+      ctx.fillStyle = c.fill;
+      ctx.fillRect(W - 76, y - 30, 52, 60);
+      ctx.fillStyle = "#123";
+      ctx.font = "bold 16px system-ui";
+      ctx.textAlign = "center";
+      ctx.fillText(c.name, W - 50, y + 5);
+    });
+  }
+
+  function drawSwitches() {
+    switches.forEach((s, i) => {
+      const y = lanes[s.lane];
+
+      ctx.fillStyle = "#ffffff";
+      ctx.strokeStyle = "#126b8f";
+      ctx.lineWidth = 4;
+      ctx.beginPath();
+      ctx.roundRect(s.x - 28, y - 28, 56, 56, 12);
+      ctx.fill();
+      ctx.stroke();
+
+      ctx.fillStyle = "#126b8f";
+      ctx.font = "bold 30px system-ui";
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillText(switchSymbol(s.dir), s.x, y - 2);
+
+      ctx.fillStyle = "#123";
+      ctx.font = "bold 12px system-ui";
+      ctx.fillText(String(i + 1), s.x, y + 24);
+    });
+  }
+
+  function drawBoat(b) {
+    const y = b.y;
+
+    ctx.fillStyle = "#5a341f";
+    ctx.beginPath();
+    ctx.moveTo(b.x - 34, y + 13);
+    ctx.lineTo(b.x + 30, y + 13);
+    ctx.lineTo(b.x + 42, y - 2);
+    ctx.lineTo(b.x - 42, y - 2);
+    ctx.closePath();
+    ctx.fill();
+
+    ctx.fillStyle = colors[b.target].fill;
+    ctx.beginPath();
+    ctx.roundRect(b.x - 22, y - 30, 42, 28, 8);
+    ctx.fill();
+
+    ctx.fillStyle = "white";
+    ctx.beginPath();
+    ctx.arc(b.x - 8, y - 16, 4, 0, Math.PI * 2);
+    ctx.arc(b.x + 8, y - 16, 4, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.fillStyle = "#123";
+    ctx.font = "bold 13px system-ui";
+    ctx.textAlign = "center";
+    ctx.fillText(colors[b.target].name, b.x, y + 32);
+  }
+
+  function drawMessage() {
+    if (!message) return;
+    ctx.fillStyle = "rgba(255,255,255,.9)";
+    ctx.strokeStyle = "#176f90";
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.roundRect(115, 15, 450, 46, 14);
+    ctx.fill();
+    ctx.stroke();
+
+    ctx.fillStyle = "#123";
+    ctx.font = "bold 20px system-ui";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText(message, W / 2, 39);
+  }
+
+  function draw() {
+    drawWater();
+    drawSwitches();
+    boats.forEach(drawBoat);
+    drawMessage();
+  }
+
+  function update(dt) {
+    if (!running || paused) return;
+
+    spawnTimer -= dt;
+    if (spawnTimer <= 0) {
+      spawnBoat();
+      spawnTimer = Math.max(1.15, 2.15 - docked * 0.04);
+    }
+
+    boats.forEach(b => {
+      b.x += b.speed * dt;
+
+      switches.forEach((s, index) => {
+        if (b.used.has(index)) return;
+        if (Math.abs(b.x - s.x) < 4 && b.lane === s.lane) {
+          b.used.add(index);
+          b.lane = Math.max(0, Math.min(2, b.lane + s.dir));
+        }
+      });
+
+      const targetY = lanes[b.lane];
+      b.y += (targetY - b.y) * Math.min(1, dt * 8);
+    });
+
+    boats = boats.filter(b => {
+      if (b.x < W - 95) return true;
+
+      if (b.lane === b.target) {
+        score += 10;
+        docked += 1;
+        message = "Nice docking!";
+      } else {
+        lives -= 1;
+        message = "Wrong pier!";
+      }
+
+      updateHud();
+
+      if (docked >= 12) {
+        endRun("Harbor complete!");
+      }
+
+      if (lives <= 0) {
+        endRun("Harbor closed!");
+      }
+
+      return false;
+    });
+  }
+
+  function loop(t) {
+    const dt = Math.min(0.033, (t - lastTime) / 1000 || 0);
+    lastTime = t;
+    update(dt);
+    draw();
+    requestAnimationFrame(loop);
+  }
+
+  function pointerToCanvas(e) {
+    const rect = canvas.getBoundingClientRect();
+    return {
+      x: (e.clientX - rect.left) * (canvas.width / rect.width),
+      y: (e.clientY - rect.top) * (canvas.height / rect.height)
+    };
+  }
+
+  canvas.addEventListener("pointerdown", e => {
+    e.preventDefault();
+    const p = pointerToCanvas(e);
+
+    for (let i = 0; i < switches.length; i++) {
+      const s = switches[i];
+      const y = lanes[s.lane];
+      if (p.x >= s.x - 34 && p.x <= s.x + 34 && p.y >= y - 34 && p.y <= y + 34) {
+        cycleSwitch(i);
+        return;
+      }
+    }
+  });
+
+  window.addEventListener("keydown", e => {
+    const n = Number(e.key);
+
+    if (n >= 1 && n <= 6) {
+      e.preventDefault();
+      cycleSwitch(n - 1);
+    }
+
+    if (e.key === " " || e.key.toLowerCase() === "p") {
+      e.preventDefault();
+      if (!running) return;
+      paused = !paused;
+      message = paused ? "Paused" : "Match boats to piers!";
+    }
+  });
+
+  document.getElementById("startBtn").addEventListener("click", () => {
+    if (!running && (lives <= 0 || docked >= 12 || runEnded)) reset();
+    running = true;
+    paused = false;
+    runEnded = false;
+    message = "Match boats to piers!";
+    if (boats.length === 0) spawnBoat();
+  });
+
+  document.getElementById("pauseBtn").addEventListener("click", () => {
+    if (!running) return;
+    paused = !paused;
+    message = paused ? "Paused" : "Match boats to piers!";
+  });
+
+  document.getElementById("resetBtn").addEventListener("click", () => {
+    saveBest();
+    reset();
+  });
+
+  if (!CanvasRenderingContext2D.prototype.roundRect) {
+    CanvasRenderingContext2D.prototype.roundRect = function(x, y, w, h, r) {
+      this.beginPath();
+      this.moveTo(x + r, y);
+      this.arcTo(x + w, y, x + w, y + h, r);
+      this.arcTo(x + w, y + h, x, y + h, r);
+      this.arcTo(x, y + h, x, y, r);
+      this.arcTo(x, y, x + w, y, r);
+      this.closePath();
+      return this;
+    };
+  }
+
+  reset();
+  requestAnimationFrame(loop);
+})();
+</script>
+</body>
+</html>

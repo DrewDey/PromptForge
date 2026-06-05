@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Bake Sale Calculator</title>
+<style>
+  body { font-family: sans-serif; padding: 20px; line-height: 1.6; }
+  .section { border: 1px solid #ccc; padding: 15px; margin-bottom: 20px; border-radius: 8px; }
+  input { width: 100px; }
+  table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+  th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+</style>
+</head>
+<body>
+
+<h2>Bake Sale Margin Calculator</h2>
+
+<div class="section">
+  <h3>1. Batch Cost & Yield</h3>
+  <label>Total Ingredients Cost ($): </label><input type="number" id="ingCost" value="0" oninput="calc()">
+  <label style="margin-left:20px;">Total Cookies per Batch: </label><input type="number" id="yield" value="1" oninput="calc()">
+</div>
+
+<div class="section">
+  <h3>2. Packaging</h3>
+  <label>Cost per Bag/Box ($): </label><input type="number" id="pkgCost" value="0" oninput="calc()">
+</div>
+
+<div class="section">
+  <h3>3. Pricing & Margin</h3>
+  <label>Selling Price per Unit ($): </label><input type="number" id="price" value="0" oninput="calc()">
+
+  <table>
+    <tr><th>Metric</th><th>Result</th></tr>
+    <tr><td>Cost per Cookie</td><td id="resCostPer">0.00</td></tr>
+    <tr><td>Profit per Cookie</td><td id="resProfit">0.00</td></tr>
+    <tr><td>Margin (%)</td><td id="resMargin">0.00</td></tr>
+  </table>
+</div>
+
+<script>
+function calc() {
+  const ingCost = parseFloat(document.getElementById('ingCost').value) || 0;
+  const yield = parseFloat(document.getElementById('yield').value) || 1;
+  const pkgCost = parseFloat(document.getElementById('pkgCost').value) || 0;
+  const price = parseFloat(document.getElementById('price').value) || 0;
+
+  const costPer = (ingCost / yield) + pkgCost;
+  const profit = price - costPer;
+  const margin = price > 0 ? (profit / price) * 100 : 0;
+
+  document.getElementById('resCostPer').innerText = costPer.toFixed(2);
+  document.getElementById('resProfit').innerText = profit.toFixed(2);
+  document.getElementById('resMargin').innerText = margin.toFixed(2) + "%";
+}
+</script>
+</body>
+</html>

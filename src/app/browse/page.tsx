@@ -950,11 +950,14 @@ function ComparisonResults({
   return (
     <div className="compare-stack">
       {groups.map((group) => (
-        <section key={group.key} className="compare-group">
+        <section
+          key={group.key}
+          className={`compare-group ${group.matchBasis === 'prompt-family' ? 'is-prompt-family' : 'is-heuristic-match'}`}
+        >
           <div className="compare-group-head">
             <div className="min-w-0">
               <div className="compare-kicker">
-                Model matchup · {group.models.length} {group.models.length === 1 ? 'model' : 'models'}
+                {group.matchBasis === 'prompt-family' ? 'Same prompt family' : 'Model matchup'} · {group.models.length} {group.models.length === 1 ? 'model' : 'models'}
               </div>
               <h3>{group.label}</h3>
             </div>

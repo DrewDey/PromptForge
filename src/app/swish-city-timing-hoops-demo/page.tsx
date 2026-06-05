@@ -141,6 +141,8 @@ export default function SwishCityTimingHoopsDemoPage() {
         sourceRunUrl={sourceRunUrl}
         pathforgeSourceRunUrl={pathforgeSourceRunUrl}
         sourceRunId={sourceRunId}
+        projectId={projectId}
+        projectTitle={project.title}
         providerName="Claude"
         steps={steps}
         defaultStepNumber={3}

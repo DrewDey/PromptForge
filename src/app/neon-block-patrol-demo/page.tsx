@@ -150,6 +150,8 @@ export default function NeonBlockPatrolDemoPage() {
         sourceRunUrl={sourceRunUrl}
         pathforgeSourceRunUrl={sourceRunPackage.pathforge_submission_url}
         sourceRunId={sourceRunPackage.source_run_submission_id}
+        projectId={projectId}
+        projectTitle={project.title}
         providerName="ChatGPT"
         steps={steps}
         defaultStepNumber={5}

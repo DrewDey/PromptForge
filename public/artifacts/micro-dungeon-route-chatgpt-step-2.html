@@ -1,0 +1,1229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Dungeon Route Puzzle</title>
+<style>
+  :root {
+    --bg: #101018;
+    --panel: #191929;
+    --panel-2: #222238;
+    --tile: #2b2b42;
+    --tile-border: #3f3f61;
+    --text: #f4f1ff;
+    --muted: #aaa4c7;
+    --good: #75f0a8;
+    --bad: #ff6f91;
+    --warn: #ffd166;
+    --blue: #79c7ff;
+    --purple: #c792ea;
+    --path: #5d8cff;
+    --plan: #ffd166;
+    --shadow: rgba(0,0,0,.35);
+  }
+
+  * {
+    box-sizing: border-box;
+  }
+
+  body {
+    margin: 0;
+    min-height: 100vh;
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    background:
+      radial-gradient(circle at top left, rgba(93,140,255,.18), transparent 35%),
+      radial-gradient(circle at bottom right, rgba(199,146,234,.14), transparent 35%),
+      var(--bg);
+    color: var(--text);
+    display: flex;
+    justify-content: center;
+    padding: 22px;
+  }
+
+  .app {
+    width: min(1180px, 100%);
+    display: grid;
+    grid-template-columns: 1fr 360px;
+    gap: 18px;
+    align-items: start;
+  }
+
+  header {
+    grid-column: 1 / -1;
+    background: linear-gradient(135deg, rgba(34,34,56,.96), rgba(25,25,41,.96));
+    border: 1px solid rgba(255,255,255,.08);
+    border-radius: 22px;
+    padding: 20px;
+    box-shadow: 0 16px 50px var(--shadow);
+  }
+
+  h1 {
+    margin: 0 0 8px;
+    font-size: clamp(1.8rem, 4vw, 3rem);
+    letter-spacing: -.04em;
+  }
+
+  .subtitle {
+    color: var(--muted);
+    line-height: 1.45;
+    max-width: 900px;
+    margin: 0;
+  }
+
+  .game-panel,
+  .side-panel {
+    background: rgba(25,25,41,.94);
+    border: 1px solid rgba(255,255,255,.08);
+    border-radius: 22px;
+    box-shadow: 0 16px 50px var(--shadow);
+  }
+
+  .game-panel {
+    padding: 18px;
+  }
+
+  .topbar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 14px;
+  }
+
+  .controls {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+
+  select,
+  button {
+    border: 0;
+    border-radius: 13px;
+    padding: 11px 13px;
+    background: var(--panel-2);
+    color: var(--text);
+    font: inherit;
+  }
+
+  select {
+    border: 1px solid rgba(255,255,255,.1);
+    min-width: 230px;
+  }
+
+  button {
+    cursor: pointer;
+    font-weight: 850;
+    transition: transform .12s ease, background .12s ease, opacity .12s ease;
+  }
+
+  button:hover {
+    transform: translateY(-1px);
+    background: #30304d;
+  }
+
+  button:disabled {
+    opacity: .45;
+    cursor: not-allowed;
+    transform: none;
+  }
+
+  .primary {
+    background: linear-gradient(135deg, #5d8cff, #8b5cf6);
+  }
+
+  .gold {
+    background: linear-gradient(135deg, #f4b942, #ff8fab);
+    color: #16131d;
+  }
+
+  .danger {
+    background: rgba(255,111,145,.18);
+    color: #ffd7e0;
+  }
+
+  .stats {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(80px, 1fr));
+    gap: 10px;
+    margin-bottom: 14px;
+  }
+
+  .stat {
+    background: rgba(255,255,255,.055);
+    border: 1px solid rgba(255,255,255,.08);
+    border-radius: 16px;
+    padding: 10px 12px;
+  }
+
+  .stat b {
+    display: block;
+    font-size: .72rem;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: .08em;
+    margin-bottom: 4px;
+  }
+
+  .stat span {
+    font-size: 1.05rem;
+    font-weight: 900;
+  }
+
+  .grid-wrap {
+    overflow: auto;
+    padding: 8px;
+    background: rgba(0,0,0,.2);
+    border-radius: 18px;
+  }
+
+  .grid {
+    display: grid;
+    gap: 7px;
+    margin: auto;
+    width: max-content;
+  }
+
+  .cell {
+    width: 72px;
+    height: 72px;
+    border-radius: 15px;
+    border: 1px solid var(--tile-border);
+    background: linear-gradient(145deg, #30304a, #232338);
+    color: var(--text);
+    display: grid;
+    place-items: center;
+    position: relative;
+    user-select: none;
+    cursor: pointer;
+    box-shadow: inset 0 -8px 15px rgba(0,0,0,.14);
+    transition: transform .08s ease, border-color .12s ease, background .12s ease, box-shadow .12s ease, opacity .12s ease;
+  }
+
+  .cell:hover {
+    transform: translateY(-1px);
+  }
+
+  .cell.wall {
+    background: #11111c;
+    border-color: #1b1b2b;
+    cursor: not-allowed;
+    box-shadow: inset 0 0 18px rgba(0,0,0,.6);
+  }
+
+  .icon {
+    font-size: 1.95rem;
+    line-height: 1;
+  }
+
+  .label {
+    position: absolute;
+    bottom: 5px;
+    right: 7px;
+    font-size: .62rem;
+    color: var(--muted);
+    font-weight: 900;
+    letter-spacing: .03em;
+  }
+
+  .step-num {
+    position: absolute;
+    top: 5px;
+    left: 6px;
+    min-width: 19px;
+    height: 19px;
+    padding: 0 5px;
+    border-radius: 999px;
+    display: grid;
+    place-items: center;
+    color: white;
+    font-size: .7rem;
+    font-weight: 900;
+  }
+
+  .cell.planned {
+    background: linear-gradient(145deg, rgba(255,209,102,.50), rgba(46,46,79,.95));
+    border-color: rgba(255,209,102,.88);
+  }
+
+  .cell.planned .step-num {
+    background: var(--plan);
+    color: #20170a;
+  }
+
+  .cell.ran {
+    background: linear-gradient(145deg, rgba(93,140,255,.55), rgba(46,46,79,.95));
+    border-color: rgba(121,199,255,.8);
+  }
+
+  .cell.ran .step-num {
+    background: var(--path);
+  }
+
+  .cell.current {
+    outline: 3px solid var(--good);
+    outline-offset: 2px;
+  }
+
+  .cell.cursor {
+    border-color: var(--good);
+    box-shadow: 0 0 0 3px rgba(117,240,168,.14), inset 0 -8px 15px rgba(0,0,0,.14);
+  }
+
+  .cell.next-plan {
+    border-color: var(--plan);
+    box-shadow: 0 0 0 3px rgba(255,209,102,.15), inset 0 -8px 15px rgba(0,0,0,.14);
+  }
+
+  .cell.blocked {
+    opacity: .58;
+  }
+
+  .cell.failed {
+    border-color: var(--bad);
+    box-shadow: 0 0 0 4px rgba(255,111,145,.22), inset 0 -8px 15px rgba(0,0,0,.14);
+  }
+
+  .cell.exit-ready {
+    animation: pulse 1.2s infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(117,240,168,.32), inset 0 -8px 15px rgba(0,0,0,.14); }
+    50% { box-shadow: 0 0 0 7px rgba(117,240,168,0), inset 0 -8px 15px rgba(0,0,0,.14); }
+  }
+
+  .side-panel {
+    padding: 18px;
+    position: sticky;
+    top: 18px;
+  }
+
+  .side-section {
+    background: rgba(255,255,255,.045);
+    border: 1px solid rgba(255,255,255,.075);
+    border-radius: 17px;
+    padding: 14px;
+    margin-bottom: 12px;
+  }
+
+  .side-section h2 {
+    font-size: 1rem;
+    margin: 0 0 9px;
+  }
+
+  .rules {
+    margin: 0;
+    padding-left: 18px;
+    color: var(--muted);
+    line-height: 1.45;
+  }
+
+  .rules li {
+    margin: 5px 0;
+  }
+
+  .legend {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    color: var(--muted);
+  }
+
+  .legend-item {
+    background: rgba(0,0,0,.16);
+    border-radius: 12px;
+    padding: 8px;
+    font-size: .88rem;
+  }
+
+  .message {
+    min-height: 48px;
+    color: var(--text);
+    line-height: 1.4;
+    font-weight: 750;
+  }
+
+  .message.good {
+    color: var(--good);
+  }
+
+  .message.bad {
+    color: var(--bad);
+  }
+
+  .message.warn {
+    color: var(--warn);
+  }
+
+  .path-list {
+    color: var(--muted);
+    font-size: .9rem;
+    line-height: 1.4;
+    max-height: 190px;
+    overflow: auto;
+  }
+
+  .path-row {
+    display: grid;
+    grid-template-columns: 28px 1fr auto;
+    gap: 8px;
+    padding: 6px 0;
+    border-bottom: 1px solid rgba(255,255,255,.06);
+  }
+
+  .path-row:last-child {
+    border-bottom: 0;
+  }
+
+  .path-row.ok .badge {
+    color: var(--good);
+  }
+
+  .path-row.bad .badge {
+    color: var(--bad);
+  }
+
+  .path-row.pending .badge {
+    color: var(--warn);
+  }
+
+  .level-note {
+    color: var(--muted);
+    line-height: 1.45;
+    margin: 0;
+  }
+
+  .mini-help {
+    color: var(--muted);
+    line-height: 1.45;
+    margin: 0;
+  }
+
+  .mode-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    border-radius: 999px;
+    padding: 7px 10px;
+    background: rgba(255,209,102,.12);
+    color: var(--warn);
+    font-size: .84rem;
+    font-weight: 850;
+    border: 1px solid rgba(255,209,102,.22);
+  }
+
+  @media (max-width: 960px) {
+    body {
+      padding: 12px;
+    }
+
+    .app {
+      grid-template-columns: 1fr;
+    }
+
+    .side-panel {
+      position: static;
+    }
+
+    .cell {
+      width: 58px;
+      height: 58px;
+      border-radius: 13px;
+    }
+
+    .icon {
+      font-size: 1.55rem;
+    }
+
+    .stats {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+
+  @media (max-width: 520px) {
+    header,
+    .game-panel,
+    .side-panel {
+      border-radius: 17px;
+      padding: 14px;
+    }
+
+    .cell {
+      width: 45px;
+      height: 45px;
+      border-radius: 10px;
+    }
+
+    .icon {
+      font-size: 1.25rem;
+    }
+
+    .label {
+      display: none;
+    }
+
+    .topbar {
+      display: grid;
+      grid-template-columns: 1fr;
+    }
+
+    .controls {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+    }
+
+    select,
+    .controls button {
+      width: 100%;
+    }
+  }
+</style>
+</head>
+<body>
+  <main class="app">
+    <header>
+      <h1>Dungeon Route Puzzle</h1>
+      <p class="subtitle">
+        Sketch the full route first, then run it. Your plan has to collect keys before doors, survive traps, avoid collapsed floors, and reach the exit alive.
+      </p>
+    </header>
+
+    <section class="game-panel">
+      <div class="topbar">
+        <select id="levelSelect" aria-label="Choose level"></select>
+        <div class="controls">
+          <button id="undoPlanBtn">Undo Step</button>
+          <button id="clearPlanBtn">Clear Plan</button>
+          <button id="runBtn" class="gold">Run Route</button>
+          <button id="resetBtn" class="danger">Reset</button>
+          <button id="nextBtn" class="primary">Next Level</button>
+        </div>
+      </div>
+
+      <div class="stats">
+        <div class="stat"><b>Mode</b><span id="modeText">Plan</span></div>
+        <div class="stat"><b>Health</b><span id="hpText">3</span></div>
+        <div class="stat"><b>Keys</b><span id="keyText">0</span></div>
+        <div class="stat"><b>Planned</b><span id="plannedText">0</span></div>
+        <div class="stat"><b>Result</b><span id="goalText">Not run</span></div>
+      </div>
+
+      <div class="grid-wrap">
+        <div id="grid" class="grid"></div>
+      </div>
+    </section>
+
+    <aside class="side-panel">
+      <div class="side-section">
+        <h2>Current Puzzle</h2>
+        <p id="levelNote" class="level-note"></p>
+      </div>
+
+      <div class="side-section">
+        <h2>Planning Mode</h2>
+        <p class="mini-help">
+          Click adjacent rooms to draw a complete route. Click the previous step or use Undo Step to back up.
+          Yellow numbers are your planned path. Press <b>Run Route</b> to animate the attempt.
+        </p>
+      </div>
+
+      <div class="side-section">
+        <h2>Status</h2>
+        <div id="message" class="message">Plan your route from the start room.</div>
+      </div>
+
+      <div class="side-section">
+        <h2>Rules</h2>
+        <ol class="rules">
+          <li>Routes move only up, down, left, or right.</li>
+          <li>Keys add to your key count.</li>
+          <li>Locked doors consume one key.</li>
+          <li>Traps cost one health.</li>
+          <li>Cracked floors collapse after you leave them.</li>
+          <li>You win only if the route reaches the exit alive.</li>
+        </ol>
+      </div>
+
+      <div class="side-section">
+        <h2>Legend</h2>
+        <div class="legend">
+          <div class="legend-item">🧍 Start</div>
+          <div class="legend-item">🔑 Key</div>
+          <div class="legend-item">🔒 Door</div>
+          <div class="legend-item">☠️ Trap</div>
+          <div class="legend-item">🕳️ Crack</div>
+          <div class="legend-item">🏁 Exit</div>
+          <div class="legend-item">🧱 Wall</div>
+          <div class="legend-item">⬚ Room</div>
+        </div>
+      </div>
+
+      <div class="side-section">
+        <h2>Your Planned Route</h2>
+        <div id="pathList" class="path-list">Start</div>
+      </div>
+    </aside>
+  </main>
+
+<script>
+(() => {
+  const levels = [
+    {
+      name: "Level 1: First Lock",
+      hp: 3,
+      note: "Plan the whole path: collect the key, spend it on the locked door, then reach the exit.",
+      map: [
+        "#######",
+        "#S..K.#",
+        "#.###.#",
+        "#...#L#",
+        "###.#.#",
+        "#.....E",
+        "#######"
+      ]
+    },
+    {
+      name: "Level 2: Trap Toll",
+      hp: 2,
+      note: "You can survive one trap, but not two. A valid plan needs the key and a safe route to the door.",
+      map: [
+        "########",
+        "#S..T..#",
+        "###.##.#",
+        "#K..#L.#",
+        "#.###..#",
+        "#....T.E",
+        "########"
+      ]
+    },
+    {
+      name: "Level 3: Collapsing Floor",
+      hp: 3,
+      note: "Cracked floors collapse after your route leaves them. Do not plan to step on the same crack twice.",
+      map: [
+        "#########",
+        "#S.C..K.#",
+        "#.#.###.#",
+        "#.#...#.#",
+        "#.###.#L#",
+        "#...C...E",
+        "#########"
+      ]
+    },
+    {
+      name: "Level 4: Two Doors",
+      hp: 3,
+      note: "Two keys, two doors. Route order matters because each door consumes a key.",
+      map: [
+        "#########",
+        "#S..K...#",
+        "###.###L#",
+        "#...#...#",
+        "#.K.#.###",
+        "#...L...E",
+        "#########"
+      ]
+    },
+    {
+      name: "Level 5: The Clean Route",
+      hp: 2,
+      note: "A compact final puzzle: one trap is survivable, but the wrong detour ruins the route.",
+      map: [
+        "##########",
+        "#S...#...#",
+        "#.##.#.K.#",
+        "#..T.#.#L#",
+        "##.#...#.#",
+        "#K.###.#.#",
+        "#....L...E",
+        "##########"
+      ]
+    }
+  ];
+
+  const icons = {
+    "#": "🧱",
+    ".": "",
+    "S": "🧍",
+    "K": "🔑",
+    "L": "🔒",
+    "T": "☠️",
+    "E": "🏁",
+    "C": "🕳️"
+  };
+
+  const names = {
+    "#": "Wall",
+    ".": "Room",
+    "S": "Start",
+    "K": "Key",
+    "L": "Door",
+    "T": "Trap",
+    "E": "Exit",
+    "C": "Crack"
+  };
+
+  const gridEl = document.getElementById("grid");
+  const levelSelect = document.getElementById("levelSelect");
+  const undoPlanBtn = document.getElementById("undoPlanBtn");
+  const clearPlanBtn = document.getElementById("clearPlanBtn");
+  const runBtn = document.getElementById("runBtn");
+  const resetBtn = document.getElementById("resetBtn");
+  const nextBtn = document.getElementById("nextBtn");
+  const hpText = document.getElementById("hpText");
+  const keyText = document.getElementById("keyText");
+  const plannedText = document.getElementById("plannedText");
+  const goalText = document.getElementById("goalText");
+  const modeText = document.getElementById("modeText");
+  const messageEl = document.getElementById("message");
+  const pathList = document.getElementById("pathList");
+  const levelNote = document.getElementById("levelNote");
+
+  let levelIndex = 0;
+  let baseMap = [];
+  let plan = [];
+  let sim = null;
+  let mode = "plan";
+  let failedCell = null;
+
+  levels.forEach((level, index) => {
+    const option = document.createElement("option");
+    option.value = index;
+    option.textContent = level.name;
+    levelSelect.appendChild(option);
+  });
+
+  function cloneMap(map) {
+    return map.map(row => row.split(""));
+  }
+
+  function findStart(map) {
+    for (let y = 0; y < map.length; y++) {
+      for (let x = 0; x < map[y].length; x++) {
+        if (map[y][x] === "S") return { x, y };
+      }
+    }
+    return { x: 0, y: 0 };
+  }
+
+  function keyOf(x, y) {
+    return `${x},${y}`;
+  }
+
+  function inBounds(map, x, y) {
+    return y >= 0 && y < map.length && x >= 0 && x < map[y].length;
+  }
+
+  function getTile(map, x, y) {
+    if (!inBounds(map, x, y)) return "#";
+    return map[y][x];
+  }
+
+  function isAdjacent(a, b) {
+    return Math.abs(a.x - b.x) + Math.abs(a.y - b.y) === 1;
+  }
+
+  function startLevel(index) {
+    levelIndex = index;
+    const level = levels[levelIndex];
+    baseMap = cloneMap(level.map);
+    const start = findStart(baseMap);
+    plan = [{ x: start.x, y: start.y, tile: "S" }];
+    sim = makeFreshSim();
+    mode = "plan";
+    failedCell = null;
+
+    levelSelect.value = String(levelIndex);
+    levelNote.textContent = level.note;
+    setMessage("Plan the full route first. Click adjacent rooms to sketch it.");
+    render();
+  }
+
+  function makeFreshSim() {
+    const level = levels[levelIndex];
+    const map = cloneMap(level.map);
+    const start = findStart(map);
+    return {
+      map,
+      hp: level.hp,
+      keys: 0,
+      pos: start,
+      ranPath: [{ x: start.x, y: start.y, tile: "S" }],
+      collapsed: new Set(),
+      won: false,
+      lost: false,
+      currentStep: 0,
+      result: "Not run"
+    };
+  }
+
+  function setMessage(text, type = "") {
+    messageEl.textContent = text;
+    messageEl.className = `message ${type}`;
+  }
+
+  function plannedCursor() {
+    return plan[plan.length - 1];
+  }
+
+  function planStep(x, y) {
+    if (mode === "running") return;
+
+    failedCell = null;
+
+    const last = plannedCursor();
+    const previous = plan[plan.length - 2];
+
+    if (previous && previous.x === x && previous.y === y) {
+      plan.pop();
+      sim = makeFreshSim();
+      mode = "plan";
+      setMessage("Backed up one planned step.");
+      render();
+      return;
+    }
+
+    if (!isAdjacent(last, { x, y })) {
+      setMessage("Plan routes one adjacent room at a time.", "bad");
+      return;
+    }
+
+    const tile = getTile(baseMap, x, y);
+
+    if (tile === "#") {
+      setMessage("Walls cannot be added to the route.", "bad");
+      return;
+    }
+
+    plan.push({ x, y, tile });
+    sim = makeFreshSim();
+    mode = "plan";
+
+    const preview = validatePlan(false);
+    if (preview.ok) {
+      if (tile === "E") {
+        setMessage("Route reaches the exit. Run it to confirm. 🏁", "good");
+      } else {
+        setMessage("Step added. Keep planning or run the route.");
+      }
+    } else {
+      setMessage(`Plan warning at step ${preview.failStep}: ${preview.reason}`, "warn");
+    }
+
+    render();
+  }
+
+  function validatePlan(stopAtFailure = true) {
+    const test = makeFreshSim();
+
+    for (let i = 1; i < plan.length; i++) {
+      const target = plan[i];
+      const result = applyMove(test, target.x, target.y, i, false);
+
+      if (!result.ok) {
+        return {
+          ok: false,
+          failStep: i,
+          reason: result.reason,
+          x: target.x,
+          y: target.y
+        };
+      }
+
+      if (result.won && i < plan.length - 1) {
+        return {
+          ok: false,
+          failStep: i + 1,
+          reason: "the route keeps going after the exit",
+          x: plan[i + 1].x,
+          y: plan[i + 1].y
+        };
+      }
+
+      if (stopAtFailure && result.won) break;
+    }
+
+    const final = plan[plan.length - 1];
+    const finalTile = getTile(test.map, final.x, final.y);
+    const originalFinalTile = getTile(baseMap, final.x, final.y);
+
+    if (originalFinalTile !== "E") {
+      return {
+        ok: false,
+        failStep: plan.length - 1,
+        reason: "the planned route does not end at the exit",
+        x: final.x,
+        y: final.y
+      };
+    }
+
+    return { ok: true, reason: "valid route" };
+  }
+
+  function applyMove(targetState, x, y, stepIndex, mutateVisual = true) {
+    const tile = getTile(targetState.map, x, y);
+    const old = { ...targetState.pos };
+    const oldTile = getTile(targetState.map, old.x, old.y);
+
+    if (!isAdjacent(targetState.pos, { x, y })) {
+      return { ok: false, reason: "that move is not adjacent" };
+    }
+
+    if (tile === "#") {
+      return { ok: false, reason: "a wall blocks the route" };
+    }
+
+    if (targetState.collapsed.has(keyOf(x, y))) {
+      return { ok: false, reason: "that cracked floor has already collapsed" };
+    }
+
+    if (tile === "L" && targetState.keys < 1) {
+      return { ok: false, reason: "the door needs one key" };
+    }
+
+    if (tile === "T" && targetState.hp <= 1) {
+      return { ok: false, reason: "the trap would reduce health to zero" };
+    }
+
+    if (oldTile === "C") {
+      targetState.collapsed.add(keyOf(old.x, old.y));
+    }
+
+    if (tile === "K") {
+      targetState.keys += 1;
+      targetState.map[y][x] = ".";
+    }
+
+    if (tile === "L") {
+      targetState.keys -= 1;
+      targetState.map[y][x] = ".";
+    }
+
+    if (tile === "T") {
+      targetState.hp -= 1;
+      targetState.map[y][x] = ".";
+    }
+
+    targetState.pos = { x, y };
+    targetState.currentStep = stepIndex;
+    targetState.ranPath.push({ x, y, tile });
+
+    if (tile === "E") {
+      targetState.won = true;
+      targetState.result = "Escaped";
+      return { ok: true, won: true, reason: "escaped" };
+    }
+
+    return { ok: true, won: false, reason: "moved" };
+  }
+
+  function sleep(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+  }
+
+  async function runRoute() {
+    if (mode === "running") return;
+
+    failedCell = null;
+
+    if (plan.length < 2) {
+      setMessage("Sketch a route before running it.", "bad");
+      return;
+    }
+
+    mode = "running";
+    sim = makeFreshSim();
+    setMessage("Running route...");
+    render();
+
+    for (let i = 1; i < plan.length; i++) {
+      await sleep(330);
+
+      const target = plan[i];
+      const result = applyMove(sim, target.x, target.y, i, true);
+
+      if (!result.ok) {
+        mode = "failed";
+        sim.lost = true;
+        sim.result = "Failed";
+        failedCell = { x: target.x, y: target.y };
+        setMessage(`Route failed at step ${i}: ${result.reason}.`, "bad");
+        render();
+        return;
+      }
+
+      render();
+
+      if (result.won) {
+        if (i === plan.length - 1) {
+          mode = "won";
+          setMessage(`Route solved in ${i} steps. 🏁`, "good");
+          render();
+          return;
+        } else {
+          await sleep(250);
+          mode = "failed";
+          sim.lost = true;
+          sim.result = "Failed";
+          failedCell = { x: plan[i + 1].x, y: plan[i + 1].y };
+          setMessage(`Route reached the exit at step ${i}, but your plan keeps going after the exit.`, "bad");
+          render();
+          return;
+        }
+      }
+    }
+
+    mode = "failed";
+    sim.result = "Incomplete";
+    const final = plan[plan.length - 1];
+    failedCell = { x: final.x, y: final.y };
+    setMessage("Route ended without reaching the exit.", "bad");
+    render();
+  }
+
+  function undoPlan() {
+    if (mode === "running") return;
+    if (plan.length <= 1) return;
+
+    plan.pop();
+    sim = makeFreshSim();
+    mode = "plan";
+    failedCell = null;
+    setMessage("Removed the last planned step.");
+    render();
+  }
+
+  function clearPlan() {
+    if (mode === "running") return;
+    const start = findStart(baseMap);
+    plan = [{ x: start.x, y: start.y, tile: "S" }];
+    sim = makeFreshSim();
+    mode = "plan";
+    failedCell = null;
+    setMessage("Plan cleared. Sketch a new route.");
+    render();
+  }
+
+  function resetRunOnly() {
+    if (mode === "running") return;
+    sim = makeFreshSim();
+    failedCell = null;
+    mode = "plan";
+    setMessage("Run reset. Your planned route is still on the board.");
+    render();
+  }
+
+  function getNextPlanCandidates() {
+    if (mode === "running") return new Set();
+    const last = plannedCursor();
+    const dirs = [
+      { x: 1, y: 0 },
+      { x: -1, y: 0 },
+      { x: 0, y: 1 },
+      { x: 0, y: -1 }
+    ];
+
+    return new Set(
+      dirs
+        .map(d => ({ x: last.x + d.x, y: last.y + d.y }))
+        .filter(p => getTile(baseMap, p.x, p.y) !== "#")
+        .map(p => keyOf(p.x, p.y))
+    );
+  }
+
+  function render() {
+    const rows = baseMap.length;
+    const cols = Math.max(...baseMap.map(r => r.length));
+    const nextCandidates = getNextPlanCandidates();
+
+    const planMap = new Map();
+    plan.forEach((p, i) => {
+      planMap.set(keyOf(p.x, p.y), i);
+    });
+
+    const ranMap = new Map();
+    if (sim) {
+      sim.ranPath.forEach((p, i) => {
+        ranMap.set(keyOf(p.x, p.y), i);
+      });
+    }
+
+    gridEl.innerHTML = "";
+    gridEl.style.gridTemplateColumns = `repeat(${cols}, 1fr)`;
+
+    for (let y = 0; y < rows; y++) {
+      for (let x = 0; x < cols; x++) {
+        const liveMap = mode === "running" || mode === "won" || mode === "failed" ? sim.map : baseMap;
+        const tile = getTile(liveMap, x, y);
+        const baseTile = getTile(baseMap, x, y);
+        const cell = document.createElement("button");
+        cell.className = "cell";
+        cell.type = "button";
+        cell.setAttribute("aria-label", `${names[baseTile] || "Room"} at row ${y + 1}, column ${x + 1}`);
+
+        if (baseTile === "#") cell.classList.add("wall");
+        if (sim && sim.collapsed.has(keyOf(x, y))) cell.classList.add("wall");
+
+        if (planMap.has(keyOf(x, y))) cell.classList.add("planned");
+        if (ranMap.has(keyOf(x, y))) cell.classList.add("ran");
+
+        if (mode === "plan" && plannedCursor().x === x && plannedCursor().y === y) {
+          cell.classList.add("cursor");
+        }
+
+        if (sim && sim.pos.x === x && sim.pos.y === y && mode !== "plan") {
+          cell.classList.add("current");
+        }
+
+        if (nextCandidates.has(keyOf(x, y)) && mode === "plan") {
+          cell.classList.add("next-plan");
+        }
+
+        if (failedCell && failedCell.x === x && failedCell.y === y) {
+          cell.classList.add("failed");
+        }
+
+        if (baseTile === "E" && nextCandidates.has(keyOf(x, y))) {
+          cell.classList.add("exit-ready");
+        }
+
+        const icon = document.createElement("div");
+        icon.className = "icon";
+
+        if (sim && sim.collapsed.has(keyOf(x, y))) {
+          icon.textContent = "⬛";
+        } else {
+          icon.textContent = icons[tile] || icons[baseTile] || "";
+        }
+
+        cell.appendChild(icon);
+
+        if (baseTile !== "." && baseTile !== "#") {
+          const label = document.createElement("div");
+          label.className = "label";
+          label.textContent = names[baseTile];
+          cell.appendChild(label);
+        }
+
+        const stepIndex = ranMap.has(keyOf(x, y)) ? ranMap.get(keyOf(x, y)) : planMap.get(keyOf(x, y));
+        if (stepIndex !== undefined) {
+          const step = document.createElement("div");
+          step.className = "step-num";
+          step.textContent = stepIndex;
+          cell.appendChild(step);
+        }
+
+        if (baseTile === "#" || mode === "running") {
+          cell.disabled = true;
+        }
+
+        if (!nextCandidates.has(keyOf(x, y)) && !planMap.has(keyOf(x, y)) && baseTile !== "#") {
+          cell.classList.add("blocked");
+        }
+
+        cell.addEventListener("click", () => planStep(x, y));
+        gridEl.appendChild(cell);
+      }
+    }
+
+    hpText.textContent = sim ? ("❤️".repeat(sim.hp) || "0") : "0";
+    keyText.textContent = sim && sim.keys > 0 ? `🔑 ${sim.keys}` : "0";
+    plannedText.textContent = String(Math.max(0, plan.length - 1));
+    goalText.textContent = sim ? sim.result : "Not run";
+    modeText.textContent = mode === "running" ? "Running" : mode === "won" ? "Solved" : mode === "failed" ? "Failed" : "Plan";
+
+    undoPlanBtn.disabled = mode === "running" || plan.length <= 1;
+    clearPlanBtn.disabled = mode === "running" || plan.length <= 1;
+    runBtn.disabled = mode === "running" || plan.length <= 1;
+    resetBtn.disabled = mode === "running";
+    nextBtn.disabled = mode === "running" || levelIndex >= levels.length - 1;
+
+    renderPathList();
+  }
+
+  function renderPathList() {
+    if (plan.length === 1) {
+      pathList.innerHTML = `<div class="path-row ok"><span class="badge">●</span><span>0. Start</span><span></span></div>`;
+      return;
+    }
+
+    const preview = previewRows();
+    pathList.innerHTML = preview.map(row => {
+      const cls = row.status === "ok" ? "ok" : row.status === "bad" ? "bad" : "pending";
+      const badge = row.status === "ok" ? "✓" : row.status === "bad" ? "!" : "•";
+      return `
+        <div class="path-row ${cls}">
+          <span class="badge">${badge}</span>
+          <span>${row.text}</span>
+          <span>${row.meta}</span>
+        </div>
+      `;
+    }).join("");
+  }
+
+  function previewRows() {
+    const rows = [];
+    const test = makeFreshSim();
+
+    rows.push({
+      status: "ok",
+      text: "0. Start",
+      meta: `❤️${test.hp} 🔑${test.keys}`
+    });
+
+    let failed = false;
+
+    for (let i = 1; i < plan.length; i++) {
+      const p = plan[i];
+
+      if (failed) {
+        rows.push({
+          status: "pending",
+          text: `${i}. ${names[p.tile] || "Room"} (${p.x + 1},${p.y + 1})`,
+          meta: "not checked"
+        });
+        continue;
+      }
+
+      const result = applyMove(test, p.x, p.y, i, false);
+
+      if (!result.ok) {
+        failed = true;
+        rows.push({
+          status: "bad",
+          text: `${i}. ${names[p.tile] || "Room"} (${p.x + 1},${p.y + 1})`,
+          meta: result.reason
+        });
+      } else {
+        rows.push({
+          status: "ok",
+          text: `${i}. ${names[p.tile] || "Room"} (${p.x + 1},${p.y + 1})`,
+          meta: `❤️${test.hp} 🔑${test.keys}`
+        });
+      }
+    }
+
+    return rows;
+  }
+
+  runBtn.addEventListener("click", runRoute);
+  undoPlanBtn.addEventListener("click", undoPlan);
+  clearPlanBtn.addEventListener("click", clearPlan);
+  resetBtn.addEventListener("click", resetRunOnly);
+
+  nextBtn.addEventListener("click", () => {
+    if (levelIndex < levels.length - 1) startLevel(levelIndex + 1);
+  });
+
+  levelSelect.addEventListener("change", () => {
+    startLevel(Number(levelSelect.value));
+  });
+
+  startLevel(0);
+})();
+</script>
+</body>
+</html>

@@ -3,6 +3,7 @@ import { ArrowRight, GitFork } from 'lucide-react'
 import {
   buildProjectForkHref,
   createProjectForkDraftContract,
+  PROJECT_FORK_MAX_DEPTH,
   type ProjectForkSourceStep,
 } from '@/lib/project-forks'
 import ProjectForkLineageScaffold from './ProjectForkLineageScaffold'
@@ -42,12 +43,15 @@ export default function ProjectForkCallout({
     ? createProjectForkDraftContract({ source, sourceSteps })
     : null
   const forkPointStep = contract?.forkPointStep
-  const forkHref = buildProjectForkHref({
-    ...source,
-    sourceStepId: sourceStepId ?? forkPointStep?.id,
-    sourceStepNumber: sourceStepNumber ?? forkPointStep?.stepNumber,
-    promptFamilyId: promptFamilyId ?? contract?.promptFamilyId,
-  })
+  const canForkDeeper = depth < PROJECT_FORK_MAX_DEPTH
+  const forkHref = canForkDeeper
+    ? buildProjectForkHref({
+        ...source,
+        sourceStepId: sourceStepId ?? forkPointStep?.id,
+        sourceStepNumber: sourceStepNumber ?? forkPointStep?.stepNumber,
+        promptFamilyId: promptFamilyId ?? contract?.promptFamilyId,
+      })
+    : null
 
   return (
     <div className="mb-10 border border-surface-200 bg-white">
@@ -70,17 +74,35 @@ export default function ProjectForkCallout({
         </div>
 
         <div className="border-t border-surface-200 bg-surface-900 p-5 text-white lg:border-l lg:border-t-0">
-          <Link
-            href={forkHref}
-            className="inline-flex w-full items-center justify-center gap-2 bg-brand-orange px-4 py-3 text-sm font-semibold text-white transition hover:bg-brand-orange-dark focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange"
-          >
-            <GitFork className="h-4 w-4" aria-hidden="true" />
-            Fork this path
-            <ArrowRight className="h-4 w-4" aria-hidden="true" />
-          </Link>
-          <p className="mt-3 text-xs leading-5 text-surface-400">
-            Opens the build flow with this project attached as the fork source.
-          </p>
+          {forkHref ? (
+            <>
+              <Link
+                href={forkHref}
+                className="inline-flex w-full items-center justify-center gap-2 bg-brand-orange px-4 py-3 text-sm font-semibold text-white transition hover:bg-brand-orange-dark focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange"
+              >
+                <GitFork className="h-4 w-4" aria-hidden="true" />
+                Fork this path
+                <ArrowRight className="h-4 w-4" aria-hidden="true" />
+              </Link>
+              <p className="mt-3 text-xs leading-5 text-surface-400">
+                Opens the build flow with this project attached as the fork source.
+              </p>
+            </>
+          ) : (
+            <>
+              <button
+                type="button"
+                disabled
+                className="inline-flex w-full cursor-not-allowed items-center justify-center gap-2 border border-surface-700 bg-surface-800 px-4 py-3 text-sm font-semibold text-surface-400"
+              >
+                <GitFork className="h-4 w-4" aria-hidden="true" />
+                Max fork depth reached
+              </button>
+              <p className="mt-3 text-xs leading-5 text-surface-400">
+                This branch is already at {PROJECT_FORK_MAX_DEPTH} linked fork levels.
+              </p>
+            </>
+          )}
         </div>
       </div>
       {contract && (

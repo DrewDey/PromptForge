@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Bake Sale Profitability Planner</title>
+<style>
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; padding: 20px; background: #f4f7f6; }
+    .container { max-width: 800px; margin: auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+    h2 { color: #2c3e50; }
+    table { width: 100%; border-collapse: collapse; margin: 15px 0; }
+    th, td { padding: 10px; border: 1px solid #ddd; text-align: left; }
+    input { width: 90%; padding: 5px; }
+    .summary { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 20px; padding: 15px; border-radius: 5px; }
+    #status { padding: 10px; font-weight: bold; border-radius: 4px; text-align: center; margin-top: 10px; }
+    button { background: #27ae60; color: white; border: none; padding: 10px; cursor: pointer; border-radius: 4px; }
+</style>
+</head>
+<body>
+
+<div class="container">
+    <h2>Bake Sale Planner</h2>
+
+    <h3>Ingredients</h3>
+    <table id="ingTable">
+        <thead>
+            <tr><th>Ingredient</th><th>Pkg Price ($)</th><th>Total Pkg Size</th><th>Used Amt</th></tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td><input type="text" placeholder="Flour"></td>
+                <td><input type="number" class="pkgPrice" value="0" oninput="calc()"></td>
+                <td><input type="number" class="pkgAmount" value="1" oninput="calc()"></td>
+                <td><input type="number" class="amtUsed" value="0" oninput="calc()"></td>
+            </tr>
+        </tbody>
+    </table>
+    <button onclick="addRow()">+ Add Ingredient</button>
+
+    <div style="margin-top:20px;">
+        <label>Total Cookies: </label><input type="number" id="yield" value="1" oninput="calc()" style="width:60px;">
+        <label>Pkg Cost/Unit: </label><input type="number" id="pkgCost" value="0" oninput="calc()" style="width:60px;">
+        <label>Your Target Price: </label><input type="number" id="targetPrice" value="0" oninput="calc()" style="width:60px;">
+        <label>Table Goal ($): </label><input type="number" id="tableGoal" value="100" oninput="calc()" style="width:60px;">
+    </div>
+
+    <div class="summary" style="background: #eee;">
+        <div><strong>Total Batch Cost:</strong> $<span id="totBatch">0.00</span></div>
+        <div><strong>Cost Per Item:</strong> $<span id="costPer">0.00</span></div>
+        <div><strong>Profit per Item:</strong> $<span id="profitPer">0.00</span></div>
+        <div><strong>Margin:</strong> <span id="marginPer">0</span>%</div>
+    </div>
+
+    <div id="status">Enter your price to see status</div>
+    <div style="margin-top:10px;"><strong>Break-even (to reach goal):</strong> <span id="breakEven">0</span> units</div>
+</div>
+
+<script>
+function addRow() {
+    const table = document.getElementById("ingTable").getElementsByTagName('tbody')[0];
+    const row = table.insertRow();
+    row.innerHTML = '<td><input type="text"></td><td><input type="number" class="pkgPrice" value="0" oninput="calc()"></td><td><input type="number" class="pkgAmount" value="1" oninput="calc()"></td><td><input type="number" class="amtUsed" value="0" oninput="calc()"></td>';
+}
+
+function calc() {
+    let totIngCost = 0;
+    document.querySelectorAll('#ingTable tbody tr').forEach(row => {
+        const p = parseFloat(row.querySelector('.pkgPrice').value) || 0;
+        const a = parseFloat(row.querySelector('.pkgAmount').value) || 1;
+        const u = parseFloat(row.querySelector('.amtUsed').value) || 0;
+        totIngCost += (p / a) * u;
+    });
+
+    const yieldCount = parseFloat(document.getElementById('yield').value) || 1;
+    const pkg = parseFloat(document.getElementById('pkgCost').value) || 0;
+    const targetPrice = parseFloat(document.getElementById('targetPrice').value) || 0;
+    const goal = parseFloat(document.getElementById('tableGoal').value) || 0;
+
+    const costPer = (totIngCost / yieldCount) + pkg;
+    const profitPer = targetPrice - costPer;
+    const marginPer = targetPrice > 0 ? (profitPer / targetPrice) * 100 : 0;
+    const breakEven = profitPer > 0 ? Math.ceil(goal / profitPer) : 0;
+
+    document.getElementById('totBatch').innerText = totIngCost.toFixed(2);
+    document.getElementById('costPer').innerText = costPer.toFixed(2);
+    document.getElementById('profitPer').innerText = profitPer.toFixed(2);
+    document.getElementById('marginPer').innerText = marginPer.toFixed(1);
+    document.getElementById('breakEven').innerText = breakEven;
+
+    const status = document.getElementById('status');
+    if (targetPrice <= costPer) {
+        status.innerText = "LOSS - Raise your price!";
+        status.style.background = "#ffcdd2";
+    } else if (marginPer < 20) {
+        status.innerText = "LOW MARGIN - Consider increasing price.";
+        status.style.background = "#fff9c4";
+    } else {
+        status.innerText = "HEALTHY MARGIN - Good to go.";
+        status.style.background = "#c8e6c9";
+    }
+}
+</script>
+</body>
+</html>

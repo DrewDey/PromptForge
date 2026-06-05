@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Potluck Planner Dashboard</title>
+    <style>
+        :root {
+            --bg-color: #f9fafb;
+            --card-bg: #ffffff;
+            --text-main: #1f2937;
+            --text-muted: #4b5563;
+            --primary: #4f46e5;
+            --primary-hover: #4338ca;
+            --border: #e5e7eb;
+            --accent-gap: #fef3c7;
+            --accent-gap-text: #92400e;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            line-height: 1.5;
+            padding: 2rem 1rem;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            font-size: 2.25rem;
+            font-weight: 800;
+            margin-bottom: 0.5rem;
+            color: var(--primary);
+        }
+
+        p.subtitle {
+            color: var(--text-muted);
+            margin-bottom: 2rem;
+        }
+
+        .controls {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1rem;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        select, input, button {
+            font-size: 0.95rem;
+            padding: 0.5rem 0.75rem;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            background-color: #fff;
+        }
+
+        select:focus, input:focus {
+            outline: 2px solid var(--primary);
+            outline-offset: -1px;
+        }
+
+        button {
+            background-color: var(--primary);
+            color: white;
+            font-weight: 600;
+            border: none;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        button:hover {
+            background-color: var(--primary-hover);
+        }
+
+        .table-container {
+            background: var(--card-bg);
+            border-radius: 8px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            overflow-x: auto;
+            border: 1px solid var(--border);
+            margin-bottom: 2rem;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+        }
+
+        th, td {
+            padding: 1rem;
+            border-bottom: 1px solid var(--border);
+        }
+
+        th {
+            background-color: #f3f4f6;
+            font-weight: 700;
+            text-transform: uppercase;
+            font-size: 0.75rem;
+            letter-spacing: 0.05em;
+            color: var(--text-muted);
+        }
+
+        tr:last-child td {
+            border-bottom: none;
+        }
+
+        .tag {
+            display: inline-block;
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.85rem;
+            font-weight: 500;
+            background-color: #e0f2fe;
+            color: #0369a1;
+        }
+
+        .gap-row td {
+            background-color: var(--accent-gap);
+            color: var(--accent-gap-text);
+            font-style: italic;
+        }
+
+        .gap-badge {
+            background-color: #d97706;
+            color: white;
+            font-weight: bold;
+            font-style: normal;
+        }
+
+        .form-grid {
+            background: var(--card-bg);
+            padding: 1.5rem;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 1rem;
+            align-items: flex-end;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .form-group label {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--text-muted);
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Potluck Planner</h1>
+    <p class="subtitle">Track coordination details and spot coverage gaps instantly.</p>
+
+    <div class="controls">
+        <div>
+            <label for="categoryFilter" style="font-weight: 600; margin-right: 0.5rem;">Filter Category:</label>
+            <select id="categoryFilter" onchange="filterTable()">
+                <option value="all">All Items</option>
+                <option value="Appetizer">Appetizers</option>
+                <option value="Main Course">Main Courses</option>
+                <option value="Side Dish">Side Dishes</option>
+                <option value="Dessert">Desserts</option>
+                <option value="Drinks">Drinks</option>
+            </select>
+        </div>
+    </div>
+
+    <div class="table-container">
+        <table id="potluckTable">
+            <thead>
+                <tr>
+                    <th>Category</th>
+                    <th>Dish / Item</th>
+                    <th>Who's Bringing It</th>
+                    <th>Serving Utensil Needed?</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr data-category="Appetizer">
+                    <td><span class="tag">Appetizer</span></td>
+                    <td>Spinach Artichoke Dip</td>
+                    <td>Sarah</td>
+                    <td>Yes - Serving spoon</td>
+                </tr>
+                <tr data-category="Main Course">
+                    <td><span class="tag">Main Course</span></td>
+                    <td>Pulled Pork Sliders</td>
+                    <td>Marcus</td>
+                    <td>No</td>
+                </tr>
+                <tr data-category="Main Course" class="gap-row">
+                    <td><span class="tag gap-badge">GAP</span></td>
+                    <td>Vegetarian Main Course</td>
+                    <td>Needed</td>
+                    <td>—</td>
+                </tr>
+                <tr data-category="Side Dish">
+                    <td><span class="tag">Side Dish</span></td>
+                    <td>Potato Salad</td>
+                    <td>Uncle Bob</td>
+                    <td>Yes - Large fork/spoon</td>
+                </tr>
+                <tr data-category="Dessert" class="gap-row">
+                    <td><span class="tag gap-badge">GAP</span></td>
+                    <td>Dessert Item (Brownies/Cookies)</td>
+                    <td>Needed</td>
+                    <td>—</td>
+                </tr>
+                <tr data-category="Drinks">
+                    <td><span class="tag">Drinks</span></td>
+                    <td>Craft Beer & Soda</td>
+                    <td>Jessica</td>
+                    <td>No (Brought ice chest)</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="form-grid">
+        <div class="form-group">
+            <label for="newCategory">Category</label>
+            <select id="newCategory">
+                <option value="Appetizer">Appetizer</option>
+                <option value="Main Course">Main Course</option>
+                <option value="Side Dish">Side Dish</option>
+                <option value="Dessert">Dessert</option>
+                <option value="Drinks">Drinks</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label for="newDish">Dish / Item Name</label>
+            <input type="text" id="newDish" placeholder="e.g., Fruit Platter" required>
+        </div>
+        <div class="form-group">
+            <label for="newHost">Who's Bringing It</label>
+            <input type="text" id="newHost" placeholder="e.g., Name (or 'Needed')">
+        </div>
+        <div class="form-group">
+            <label for="newUtensils">Utensil Needs</label>
+            <input type="text" id="newUtensils" placeholder="e.g., Tongs, None">
+        </div>
+        <button onclick="addItem()">Add to List</button>
+    </div>
+
+    <script>
+        function addItem() {
+            const category = document.getElementById('newCategory').value;
+            const dish = document.getElementById('newDish').value.trim();
+            const host = document.getElementById('newHost').value.trim() || 'Needed';
+            const utensils = document.getElementById('newUtensils').value.trim() || '—';
+
+            if (!dish) {
+                alert('Please enter a dish or description item.');
+                return;
+            }
+
+            const tbody = document.querySelector('#potluckTable tbody');
+            const tr = document.createElement('tr');
+            tr.setAttribute('data-category', category);
+
+            const isGap = host.toLowerCase() === 'needed';
+            if (isGap) {
+                tr.classList.add('gap-row');
+            }
+
+            tr.innerHTML = `
+                <td><span class="tag ${isGap ? 'gap-badge' : ''}">${isGap ? 'GAP' : category}</span></td>
+                <td>${dish}</td>
+                <td>${host}</td>
+                <td>${utensils}</td>
+            `;
+
+            tbody.appendChild(tr);
+
+            // Reset inputs
+            document.getElementById('newDish').value = '';
+            document.getElementById('newHost').value = '';
+            document.getElementById('newUtensils').value = '';
+
+            // Trigger filter update in case they are looking at a specific category
+            filterTable();
+        }
+
+        function filterTable() {
+            const filterValue = document.getElementById('categoryFilter').value;
+            const rows = document.querySelectorAll('#potluckTable tbody tr');
+
+            rows.forEach(row => {
+                const category = row.getAttribute('data-category');
+                if (filterValue === 'all' || category === filterValue) {
+                    row.style.display = '';
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+        }
+    </script>
+</body>
+</html>

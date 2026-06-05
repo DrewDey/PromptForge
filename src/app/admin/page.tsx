@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { getAllPromptsForAdmin, getAllSourceRunSubmissionsForAdmin, getAllSuggestionsForAdmin } from '@/lib/data'
 import { getPreparedShowcaseProjectBySourceRunId } from '@/lib/prepared-showcase-projects'
+import { projectForkSourceFromSubmissionFields } from '@/lib/project-forks'
 import { modelMetadataForSourceRunReview, titleForSourceRunReview } from '@/lib/source-run-review'
 import type { SourceRunSubmissionWithRelations } from '@/lib/types'
 import AdminPromptRow from './AdminPromptRow'
@@ -243,6 +244,7 @@ function SourceRunIntakeRow({ sourceRun }: { sourceRun: SourceRunSubmissionWithR
     notes: sourceRun.notes,
     sourceUrl: sourceRun.source_url,
   })
+  const forkSource = projectForkSourceFromSubmissionFields(sourceRun)
 
   return (
     <tr
@@ -262,6 +264,13 @@ function SourceRunIntakeRow({ sourceRun }: { sourceRun: SourceRunSubmissionWithR
         </Link>
         <p className="mt-1 break-all text-xs text-gray-500">{sourceLabel}</p>
         <div className="mt-2 flex flex-wrap gap-1.5 text-[11px] text-gray-700">
+          {forkSource && (
+            <span className="border border-green-100 bg-green-50 px-2 py-1 text-green-800">
+              Fork: {forkSource.sourceStepNumber
+                ? `response ${String(forkSource.sourceStepNumber).padStart(2, '0')}`
+                : 'source attached'}
+            </span>
+          )}
           <span className="border border-amber-100 bg-white px-2 py-1">
             Provider: {modelMetadata.provider || 'Not specified'}
           </span>

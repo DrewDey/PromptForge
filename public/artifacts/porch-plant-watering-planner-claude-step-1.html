@@ -1,0 +1,647 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Porch Planner</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,600;1,400&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --soil: #3b2a1a;
+    --bark: #6b4226;
+    --moss: #4a5e3a;
+    --sage: #7a9464;
+    --fern: #a8bf8a;
+    --mist: #dce8cf;
+    --petal: #f0ead6;
+    --cream: #faf6ee;
+    --terra: #c4622d;
+    --terra-light: #e8916a;
+    --terra-pale: #fceee7;
+    --overdue: #b03020;
+    --due: #a0620a;
+    --ok: #3a6630;
+    --card-border: rgba(74,94,58,0.18);
+    --shadow: 0 2px 12px rgba(59,42,26,0.10);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Lora', Georgia, serif;
+    background: var(--cream);
+    color: var(--soil);
+    min-height: 100vh;
+    max-width: 520px;
+    margin: 0 auto;
+    padding: 0 0 80px;
+  }
+  header {
+    background: var(--moss);
+    padding: 20px 20px 16px;
+    position: sticky; top: 0; z-index: 100;
+    border-bottom: 3px solid var(--bark);
+  }
+  header h1 {
+    font-size: 1.6rem;
+    color: var(--mist);
+    font-weight: 600;
+    letter-spacing: -0.02em;
+  }
+  header p {
+    font-size: 0.78rem;
+    color: var(--fern);
+    margin-top: 3px;
+    font-family: 'DM Mono', monospace;
+  }
+  .tabs {
+    display: flex;
+    background: var(--bark);
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+  .tabs::-webkit-scrollbar { display: none; }
+  .tab-btn {
+    flex: 1;
+    min-width: 80px;
+    padding: 10px 8px;
+    background: none;
+    border: none;
+    color: var(--fern);
+    font-family: 'DM Mono', monospace;
+    font-size: 0.72rem;
+    cursor: pointer;
+    border-bottom: 3px solid transparent;
+    transition: all 0.15s;
+    white-space: nowrap;
+  }
+  .tab-btn.active { color: var(--mist); border-bottom-color: var(--terra-light); }
+  .tab-btn:active { background: rgba(255,255,255,0.06); }
+  .view { display: none; padding: 16px; }
+  .view.active { display: block; }
+
+  /* TODAY VIEW */
+  .today-date {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.75rem;
+    color: var(--sage);
+    margin-bottom: 14px;
+    letter-spacing: 0.04em;
+  }
+  .status-row {
+    display: flex; gap: 8px; margin-bottom: 18px;
+  }
+  .stat-pill {
+    flex: 1; text-align: center;
+    padding: 10px 6px;
+    border-radius: 10px;
+    font-family: 'DM Mono', monospace;
+  }
+  .stat-pill .n { font-size: 1.5rem; font-weight: 500; display: block; }
+  .stat-pill .lbl { font-size: 0.65rem; display: block; margin-top: 2px; }
+  .pill-overdue { background: #fceaea; color: var(--overdue); }
+  .pill-due { background: #fff6e0; color: var(--due); }
+  .pill-ok { background: #edf5e8; color: var(--ok); }
+
+  .section-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.68rem;
+    letter-spacing: 0.08em;
+    color: var(--sage);
+    text-transform: uppercase;
+    margin: 16px 0 8px;
+  }
+  .plant-card {
+    background: #fff;
+    border: 1.5px solid var(--card-border);
+    border-radius: 14px;
+    padding: 14px 14px 12px;
+    margin-bottom: 10px;
+    box-shadow: var(--shadow);
+    transition: transform 0.1s;
+  }
+  .plant-card:active { transform: scale(0.99); }
+  .plant-card.overdue { border-left: 4px solid var(--overdue); }
+  .plant-card.due-today { border-left: 4px solid var(--due); }
+  .plant-card.ok { border-left: 4px solid var(--ok); }
+  .plant-header {
+    display: flex; align-items: flex-start; justify-content: space-between; gap: 8px;
+  }
+  .plant-name { font-size: 1rem; font-weight: 600; }
+  .plant-meta {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.7rem;
+    color: var(--sage);
+    margin-top: 3px;
+  }
+  .status-badge {
+    flex-shrink: 0;
+    font-family: 'DM Mono', monospace;
+    font-size: 0.65rem;
+    padding: 3px 9px;
+    border-radius: 20px;
+    font-weight: 500;
+    margin-top: 2px;
+  }
+  .badge-overdue { background: #fceaea; color: var(--overdue); }
+  .badge-due { background: #fff6e0; color: var(--due); }
+  .badge-ok { background: #edf5e8; color: var(--ok); }
+  .badge-soon { background: #e8f0fc; color: #2a5aa0; }
+
+  .water-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    width: 100%;
+    margin-top: 11px;
+    padding: 11px;
+    background: var(--moss);
+    color: var(--mist);
+    border: none;
+    border-radius: 10px;
+    font-family: 'DM Mono', monospace;
+    font-size: 0.8rem;
+    cursor: pointer;
+    transition: background 0.15s, transform 0.1s;
+  }
+  .water-btn:active { background: var(--bark); transform: scale(0.98); }
+  .water-btn.watered { background: #c7e0bb; color: var(--ok); }
+  .water-btn svg { width: 16px; height: 16px; }
+
+  /* ZONES VIEW */
+  .zone-card {
+    background: #fff;
+    border: 1.5px solid var(--card-border);
+    border-radius: 14px;
+    margin-bottom: 12px;
+    overflow: hidden;
+    box-shadow: var(--shadow);
+  }
+  .zone-header {
+    background: var(--petal);
+    padding: 12px 14px;
+    display: flex; align-items: center; justify-content: space-between;
+    cursor: pointer;
+  }
+  .zone-title { font-size: 1rem; font-weight: 600; }
+  .zone-count {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.72rem;
+    color: var(--sage);
+  }
+  .zone-body { padding: 10px 14px 14px; }
+  .zone-plant-row {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 8px 0;
+    border-bottom: 1px solid #f2ece0;
+    font-size: 0.88rem;
+  }
+  .zone-plant-row:last-child { border-bottom: none; }
+  .zone-plant-info { flex: 1; }
+  .zone-plant-name { font-weight: 600; font-size: 0.9rem; }
+  .zone-plant-cadence { font-family: 'DM Mono', monospace; font-size: 0.68rem; color: var(--sage); }
+
+  /* ADD PLANT */
+  .form-section { margin-bottom: 20px; }
+  .form-section label {
+    display: block;
+    font-family: 'DM Mono', monospace;
+    font-size: 0.72rem;
+    color: var(--sage);
+    letter-spacing: 0.05em;
+    margin-bottom: 5px;
+    text-transform: uppercase;
+  }
+  .form-section input,
+  .form-section select,
+  .form-section textarea {
+    width: 100%;
+    padding: 11px 13px;
+    border: 1.5px solid var(--card-border);
+    border-radius: 10px;
+    font-family: 'Lora', serif;
+    font-size: 0.92rem;
+    color: var(--soil);
+    background: #fff;
+    outline: none;
+    transition: border-color 0.15s;
+    -webkit-appearance: none;
+  }
+  .form-section input:focus,
+  .form-section select:focus { border-color: var(--sage); }
+  .form-section textarea { resize: vertical; min-height: 60px; }
+  .add-btn {
+    width: 100%;
+    padding: 14px;
+    background: var(--terra);
+    color: #fff;
+    border: none;
+    border-radius: 12px;
+    font-family: 'DM Mono', monospace;
+    font-size: 0.9rem;
+    cursor: pointer;
+    letter-spacing: 0.04em;
+    transition: background 0.15s, transform 0.1s;
+  }
+  .add-btn:active { background: var(--bark); transform: scale(0.98); }
+
+  /* ALL PLANTS LIST */
+  .all-plant-row {
+    background: #fff;
+    border: 1.5px solid var(--card-border);
+    border-radius: 12px;
+    padding: 12px 14px;
+    margin-bottom: 8px;
+    display: flex; align-items: center; gap: 12px;
+  }
+  .all-plant-info { flex: 1; }
+  .all-plant-name { font-weight: 600; font-size: 0.92rem; }
+  .all-plant-sub { font-family: 'DM Mono', monospace; font-size: 0.68rem; color: var(--sage); margin-top: 2px; }
+  .delete-btn {
+    background: none; border: none; cursor: pointer;
+    color: #ccc; font-size: 1.2rem; padding: 4px;
+    line-height: 1;
+    transition: color 0.15s;
+  }
+  .delete-btn:hover { color: var(--overdue); }
+
+  .empty-state {
+    text-align: center;
+    padding: 40px 20px;
+    color: var(--sage);
+    font-style: italic;
+    font-size: 0.9rem;
+  }
+  .empty-state .icon { font-size: 2.5rem; margin-bottom: 10px; }
+
+  .toast {
+    position: fixed;
+    bottom: 24px; left: 50%;
+    transform: translateX(-50%) translateY(80px);
+    background: var(--moss);
+    color: var(--mist);
+    padding: 11px 22px;
+    border-radius: 30px;
+    font-family: 'DM Mono', monospace;
+    font-size: 0.8rem;
+    z-index: 999;
+    transition: transform 0.3s cubic-bezier(.34,1.56,.64,1);
+    pointer-events: none;
+    white-space: nowrap;
+  }
+  .toast.show { transform: translateX(-50%) translateY(0); }
+
+  .zone-tag {
+    display: inline-block;
+    font-family: 'DM Mono', monospace;
+    font-size: 0.62rem;
+    background: var(--petal);
+    color: var(--bark);
+    padding: 2px 7px;
+    border-radius: 6px;
+    margin-left: 6px;
+    vertical-align: middle;
+  }
+
+  select option { font-family: sans-serif; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>🌿 Porch Planner</h1>
+  <p id="header-date"></p>
+</header>
+
+<div class="tabs">
+  <button class="tab-btn active" onclick="switchTab('today')">Today</button>
+  <button class="tab-btn" onclick="switchTab('zones')">Zones</button>
+  <button class="tab-btn" onclick="switchTab('all')">All Plants</button>
+  <button class="tab-btn" onclick="switchTab('add')">+ Add</button>
+</div>
+
+<!-- TODAY -->
+<div id="view-today" class="view active">
+  <div class="today-date" id="today-date"></div>
+  <div class="status-row">
+    <div class="stat-pill pill-overdue"><span class="n" id="cnt-overdue">0</span><span class="lbl">overdue</span></div>
+    <div class="stat-pill pill-due"><span class="n" id="cnt-due">0</span><span class="lbl">due today</span></div>
+    <div class="stat-pill pill-ok"><span class="n" id="cnt-ok">0</span><span class="lbl">all good</span></div>
+  </div>
+  <div id="urgent-section"></div>
+  <div id="upcoming-section"></div>
+</div>
+
+<!-- ZONES -->
+<div id="view-zones" class="view">
+  <div id="zones-content"></div>
+</div>
+
+<!-- ALL PLANTS -->
+<div id="view-all" class="view">
+  <div id="all-plants-content"></div>
+</div>
+
+<!-- ADD PLANT -->
+<div id="view-add" class="view">
+  <div class="form-section">
+    <label>Plant name *</label>
+    <input type="text" id="f-name" placeholder="e.g. Pothos, Rosemary…">
+  </div>
+  <div class="form-section">
+    <label>Zone</label>
+    <select id="f-zone">
+      <option value="">— choose or type below —</option>
+      <option>Front steps</option>
+      <option>Back porch</option>
+      <option>Side rail</option>
+      <option>Window boxes</option>
+      <option>Hanging baskets</option>
+      <option>Indoor shelf</option>
+      <option>Other</option>
+    </select>
+  </div>
+  <div class="form-section">
+    <label>Custom zone (overrides dropdown)</label>
+    <input type="text" id="f-zone-custom" placeholder="e.g. East corner, Pergola…">
+  </div>
+  <div class="form-section">
+    <label>Water every N days *</label>
+    <input type="number" id="f-cadence" min="1" max="60" placeholder="e.g. 3">
+  </div>
+  <div class="form-section">
+    <label>Last watered</label>
+    <input type="date" id="f-last">
+  </div>
+  <div class="form-section">
+    <label>Notes (optional)</label>
+    <textarea id="f-notes" placeholder="Sun exposure, soil type, tips…"></textarea>
+  </div>
+  <button class="add-btn" onclick="addPlant()">Add plant →</button>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const STORAGE_KEY = 'porch-planner-v1';
+
+function loadPlants() {
+  try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || []; } catch { return []; }
+}
+function savePlants(plants) {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(plants));
+}
+
+function today() {
+  const d = new Date();
+  return d.toISOString().slice(0,10);
+}
+
+function daysUntilWater(plant) {
+  if (!plant.lastWatered) return 0;
+  const last = new Date(plant.lastWatered + 'T12:00:00');
+  const now = new Date();
+  now.setHours(12,0,0,0);
+  const diff = Math.round((now - last) / 86400000);
+  return plant.cadence - diff;
+}
+
+function getStatus(plant) {
+  const d = daysUntilWater(plant);
+  if (d < 0) return 'overdue';
+  if (d === 0) return 'due';
+  if (d <= 2) return 'soon';
+  return 'ok';
+}
+
+function dayLabel(n) {
+  if (n < 0) return Math.abs(n) + 'd overdue';
+  if (n === 0) return 'due today';
+  if (n === 1) return 'due tomorrow';
+  return 'in ' + n + 'd';
+}
+
+function formatDate(iso) {
+  if (!iso) return 'not recorded';
+  const [y,m,d] = iso.split('-');
+  return new Date(iso+'T12:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric'});
+}
+
+function cadenceText(n) {
+  return 'every ' + n + (n===1?' day':' days');
+}
+
+function waterDropSVG() {
+  return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 C12 2 5 10 5 15 a7 7 0 0 0 14 0 C19 10 12 2 12 2z"/></svg>`;
+}
+
+function renderToday() {
+  const plants = loadPlants();
+  const t = today();
+  const todayFmt = new Date().toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric',year:'numeric'});
+  document.getElementById('today-date').textContent = todayFmt;
+  document.getElementById('header-date').textContent = todayFmt;
+
+  const overdue = plants.filter(p => getStatus(p) === 'overdue');
+  const due = plants.filter(p => getStatus(p) === 'due');
+  const soon = plants.filter(p => getStatus(p) === 'soon');
+  const ok = plants.filter(p => getStatus(p) === 'ok');
+
+  document.getElementById('cnt-overdue').textContent = overdue.length;
+  document.getElementById('cnt-due').textContent = due.length;
+  document.getElementById('cnt-ok').textContent = ok.length;
+
+  const urgent = document.getElementById('urgent-section');
+  const upcoming = document.getElementById('upcoming-section');
+
+  const urgentPlants = [...overdue, ...due];
+  const upcomingPlants = [...soon];
+
+  if (urgentPlants.length === 0 && upcomingPlants.length === 0 && plants.length > 0) {
+    urgent.innerHTML = `<div class="empty-state"><div class="icon">🌱</div>All plants are happily watered!</div>`;
+    upcoming.innerHTML = '';
+    return;
+  }
+  if (plants.length === 0) {
+    urgent.innerHTML = `<div class="empty-state"><div class="icon">🪴</div>No plants yet — tap <strong>+ Add</strong> to get started.</div>`;
+    upcoming.innerHTML = '';
+    return;
+  }
+
+  urgent.innerHTML = urgentPlants.length ? `<div class="section-label">Needs water now</div>` + urgentPlants.map(p => plantCard(p, true)).join('') : '';
+  upcoming.innerHTML = upcomingPlants.length ? `<div class="section-label">Coming up soon</div>` + upcomingPlants.map(p => plantCard(p, false)).join('') : '';
+
+  if (ok.length && !upcomingPlants.length) {
+    upcoming.innerHTML += `<div class="section-label">Looking good</div>` + ok.slice(0,3).map(p => plantCard(p, false)).join('');
+  }
+}
+
+function plantCard(plant, showWaterBtn) {
+  const status = getStatus(plant);
+  const days = daysUntilWater(plant);
+  const badgeClass = status === 'overdue' ? 'badge-overdue' : status === 'due' ? 'badge-due' : status === 'soon' ? 'badge-soon' : 'badge-ok';
+  const cardClass = status === 'overdue' ? 'overdue' : status === 'due' ? 'due-today' : 'ok';
+  const alreadyWatered = plant.lastWatered === today() && days >= 0;
+
+  return `<div class="plant-card ${cardClass}">
+    <div class="plant-header">
+      <div>
+        <div class="plant-name">${esc(plant.name)}</div>
+        <div class="plant-meta">${esc(plant.zone || 'No zone')} · ${cadenceText(plant.cadence)}</div>
+        <div class="plant-meta">Last: ${formatDate(plant.lastWatered)}</div>
+      </div>
+      <span class="status-badge ${badgeClass}">${dayLabel(days)}</span>
+    </div>
+    ${showWaterBtn || status === 'overdue' || status === 'due' ? `<button class="water-btn ${alreadyWatered?'watered':''}" onclick="markWatered('${plant.id}')">
+      ${waterDropSVG()} ${alreadyWatered ? 'Watered today ✓' : 'Mark as watered'}
+    </button>` : ''}
+  </div>`;
+}
+
+function renderZones() {
+  const plants = loadPlants();
+  const zones = {};
+  plants.forEach(p => {
+    const z = p.zone || 'Unassigned';
+    if (!zones[z]) zones[z] = [];
+    zones[z].push(p);
+  });
+  const el = document.getElementById('zones-content');
+  if (plants.length === 0) {
+    el.innerHTML = `<div class="empty-state"><div class="icon">🌿</div>Add plants to see them by zone.</div>`;
+    return;
+  }
+  el.innerHTML = Object.entries(zones).map(([zone, ps]) => {
+    const rows = ps.map(p => {
+      const status = getStatus(p);
+      const days = daysUntilWater(p);
+      const badgeClass = status === 'overdue' ? 'badge-overdue' : status === 'due' ? 'badge-due' : status === 'soon' ? 'badge-soon' : 'badge-ok';
+      return `<div class="zone-plant-row">
+        <div class="zone-plant-info">
+          <div class="zone-plant-name">${esc(p.name)}</div>
+          <div class="zone-plant-cadence">${cadenceText(p.cadence)} · last ${formatDate(p.lastWatered)}</div>
+        </div>
+        <span class="status-badge ${badgeClass}">${dayLabel(days)}</span>
+      </div>`;
+    }).join('');
+    return `<div class="zone-card">
+      <div class="zone-header">
+        <span class="zone-title">${esc(zone)}</span>
+        <span class="zone-count">${ps.length} plant${ps.length>1?'s':''}</span>
+      </div>
+      <div class="zone-body">${rows}</div>
+    </div>`;
+  }).join('');
+}
+
+function renderAll() {
+  const plants = loadPlants();
+  const el = document.getElementById('all-plants-content');
+  if (plants.length === 0) {
+    el.innerHTML = `<div class="empty-state"><div class="icon">🪴</div>Your plant list is empty.<br>Tap <strong>+ Add</strong> to begin.</div>`;
+    return;
+  }
+  el.innerHTML = plants.map(p => {
+    const status = getStatus(p);
+    const days = daysUntilWater(p);
+    const badgeClass = status === 'overdue' ? 'badge-overdue' : status === 'due' ? 'badge-due' : status === 'soon' ? 'badge-soon' : 'badge-ok';
+    return `<div class="all-plant-row">
+      <div class="all-plant-info">
+        <div class="all-plant-name">${esc(p.name)}<span class="zone-tag">${esc(p.zone||'?')}</span></div>
+        <div class="all-plant-sub">${cadenceText(p.cadence)} · <span class="status-badge ${badgeClass}" style="font-size:0.6rem;padding:1px 7px">${dayLabel(days)}</span></div>
+        ${p.notes ? `<div style="font-size:0.78rem;color:#888;margin-top:4px;font-style:italic">${esc(p.notes)}</div>` : ''}
+      </div>
+      <button class="delete-btn" onclick="deletePlant('${p.id}')" title="Delete plant">×</button>
+    </div>`;
+  }).join('');
+}
+
+function markWatered(id) {
+  const plants = loadPlants();
+  const p = plants.find(x => x.id === id);
+  if (!p) return;
+  p.lastWatered = today();
+  savePlants(plants);
+  showToast('💧 ' + p.name + ' watered!');
+  renderAll();
+  renderToday();
+  renderZones();
+}
+
+function deletePlant(id) {
+  const plants = loadPlants();
+  const p = plants.find(x => x.id === id);
+  if (!p) return;
+  if (!confirm('Remove ' + p.name + '?')) return;
+  savePlants(plants.filter(x => x.id !== id));
+  showToast('Removed ' + p.name);
+  renderAll();
+  renderToday();
+  renderZones();
+}
+
+function addPlant() {
+  const name = document.getElementById('f-name').value.trim();
+  const cadenceRaw = parseInt(document.getElementById('f-cadence').value);
+  if (!name) { showToast('⚠️ Plant name required'); return; }
+  if (!cadenceRaw || cadenceRaw < 1) { showToast('⚠️ Set watering cadence'); return; }
+  const zoneCustom = document.getElementById('f-zone-custom').value.trim();
+  const zoneSelect = document.getElementById('f-zone').value;
+  const zone = zoneCustom || zoneSelect || 'Unassigned';
+  const lastWatered = document.getElementById('f-last').value || today();
+  const notes = document.getElementById('f-notes').value.trim();
+  const plants = loadPlants();
+  plants.push({ id: Date.now().toString(36) + Math.random().toString(36).slice(2,6), name, zone, cadence: cadenceRaw, lastWatered, notes });
+  savePlants(plants);
+  document.getElementById('f-name').value = '';
+  document.getElementById('f-cadence').value = '';
+  document.getElementById('f-last').value = '';
+  document.getElementById('f-notes').value = '';
+  document.getElementById('f-zone').value = '';
+  document.getElementById('f-zone-custom').value = '';
+  showToast('🌿 ' + name + ' added!');
+  switchTab('today');
+}
+
+function switchTab(name) {
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('view-' + name).classList.add('active');
+  event.currentTarget.classList.add('active');
+  if (name === 'today') renderToday();
+  if (name === 'zones') renderZones();
+  if (name === 'all') renderAll();
+}
+
+function esc(str) {
+  return String(str||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+let toastTimer;
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 2400);
+}
+
+// Set default date to today
+document.getElementById('f-last').value = today();
+
+// Seed demo data if empty
+if (loadPlants().length === 0) {
+  const demo = [
+    { id: 'demo1', name: 'Pothos', zone: 'Back porch', cadence: 5, lastWatered: (() => { const d=new Date(); d.setDate(d.getDate()-6); return d.toISOString().slice(0,10); })(), notes: 'Indirect light only' },
+    { id: 'demo2', name: 'Rosemary', zone: 'Front steps', cadence: 4, lastWatered: (() => { const d=new Date(); d.setDate(d.getDate()-4); return d.toISOString().slice(0,10); })(), notes: '' },
+    { id: 'demo3', name: 'Impatiens', zone: 'Window boxes', cadence: 2, lastWatered: (() => { const d=new Date(); d.setDate(d.getDate()-1); return d.toISOString().slice(0,10); })(), notes: 'Keep moist' },
+    { id: 'demo4', name: 'Lavender', zone: 'Front steps', cadence: 7, lastWatered: today(), notes: '' },
+    { id: 'demo5', name: 'Hosta', zone: 'Side rail', cadence: 3, lastWatered: (() => { const d=new Date(); d.setDate(d.getDate()-2); return d.toISOString().slice(0,10); })(), notes: '' },
+  ];
+  savePlants(demo);
+}
+
+renderToday();
+</script>
+</body>
+</html>

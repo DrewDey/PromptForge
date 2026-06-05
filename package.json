@@ -7,6 +7,8 @@
     "build": "next build",
     "start": "next start",
     "check:hourly-seed-manager": "node scripts/check-hourly-seed-manager.mjs",
+    "check:prompt-comparisons": "node scripts/check-prompt-comparisons.mjs",
+    "check:project-forks": "node scripts/check-project-forks.mjs && node scripts/check-project-fork-behavior.mjs && node scripts/check-prompt-comparisons.mjs",
     "check:source-run-intake": "node scripts/check-source-run-intake.mjs",
     "check:source-run-showcases": "node scripts/check-source-run-showcases.mjs",
     "lint": "next lint"

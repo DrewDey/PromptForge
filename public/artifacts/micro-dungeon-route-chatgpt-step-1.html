@@ -1,0 +1,853 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Dungeon Route Puzzle</title>
+<style>
+  :root {
+    --bg: #101018;
+    --panel: #191929;
+    --panel-2: #222238;
+    --tile: #2b2b42;
+    --tile-border: #3f3f61;
+    --text: #f4f1ff;
+    --muted: #aaa4c7;
+    --good: #75f0a8;
+    --bad: #ff6f91;
+    --warn: #ffd166;
+    --blue: #79c7ff;
+    --purple: #c792ea;
+    --path: #5d8cff;
+    --shadow: rgba(0,0,0,.35);
+  }
+
+  * {
+    box-sizing: border-box;
+  }
+
+  body {
+    margin: 0;
+    min-height: 100vh;
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    background:
+      radial-gradient(circle at top left, rgba(93,140,255,.18), transparent 35%),
+      radial-gradient(circle at bottom right, rgba(199,146,234,.14), transparent 35%),
+      var(--bg);
+    color: var(--text);
+    display: flex;
+    justify-content: center;
+    padding: 22px;
+  }
+
+  .app {
+    width: min(1120px, 100%);
+    display: grid;
+    grid-template-columns: 1fr 340px;
+    gap: 18px;
+    align-items: start;
+  }
+
+  header {
+    grid-column: 1 / -1;
+    background: linear-gradient(135deg, rgba(34,34,56,.96), rgba(25,25,41,.96));
+    border: 1px solid rgba(255,255,255,.08);
+    border-radius: 22px;
+    padding: 20px;
+    box-shadow: 0 16px 50px var(--shadow);
+  }
+
+  h1 {
+    margin: 0 0 8px;
+    font-size: clamp(1.8rem, 4vw, 3rem);
+    letter-spacing: -.04em;
+  }
+
+  .subtitle {
+    color: var(--muted);
+    line-height: 1.45;
+    max-width: 850px;
+    margin: 0;
+  }
+
+  .game-panel,
+  .side-panel {
+    background: rgba(25,25,41,.94);
+    border: 1px solid rgba(255,255,255,.08);
+    border-radius: 22px;
+    box-shadow: 0 16px 50px var(--shadow);
+  }
+
+  .game-panel {
+    padding: 18px;
+  }
+
+  .topbar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 14px;
+  }
+
+  select,
+  button {
+    border: 0;
+    border-radius: 13px;
+    padding: 11px 13px;
+    background: var(--panel-2);
+    color: var(--text);
+    font: inherit;
+  }
+
+  select {
+    border: 1px solid rgba(255,255,255,.1);
+  }
+
+  button {
+    cursor: pointer;
+    font-weight: 800;
+    transition: transform .12s ease, background .12s ease, opacity .12s ease;
+  }
+
+  button:hover {
+    transform: translateY(-1px);
+    background: #30304d;
+  }
+
+  button:disabled {
+    opacity: .45;
+    cursor: not-allowed;
+    transform: none;
+  }
+
+  .primary {
+    background: linear-gradient(135deg, #5d8cff, #8b5cf6);
+  }
+
+  .danger {
+    background: rgba(255,111,145,.18);
+    color: #ffd7e0;
+  }
+
+  .stats {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(80px, 1fr));
+    gap: 10px;
+    margin-bottom: 14px;
+  }
+
+  .stat {
+    background: rgba(255,255,255,.055);
+    border: 1px solid rgba(255,255,255,.08);
+    border-radius: 16px;
+    padding: 10px 12px;
+  }
+
+  .stat b {
+    display: block;
+    font-size: .76rem;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: .08em;
+    margin-bottom: 4px;
+  }
+
+  .stat span {
+    font-size: 1.1rem;
+    font-weight: 900;
+  }
+
+  .grid-wrap {
+    overflow: auto;
+    padding: 8px;
+    background: rgba(0,0,0,.2);
+    border-radius: 18px;
+  }
+
+  .grid {
+    display: grid;
+    gap: 7px;
+    margin: auto;
+    width: max-content;
+  }
+
+  .cell {
+    width: 72px;
+    height: 72px;
+    border-radius: 15px;
+    border: 1px solid var(--tile-border);
+    background: linear-gradient(145deg, #30304a, #232338);
+    color: var(--text);
+    display: grid;
+    place-items: center;
+    position: relative;
+    user-select: none;
+    cursor: pointer;
+    box-shadow: inset 0 -8px 15px rgba(0,0,0,.14);
+    transition: transform .08s ease, border-color .12s ease, background .12s ease;
+  }
+
+  .cell:hover {
+    transform: translateY(-1px);
+  }
+
+  .cell.wall {
+    background: #11111c;
+    border-color: #1b1b2b;
+    cursor: not-allowed;
+    box-shadow: inset 0 0 18px rgba(0,0,0,.6);
+  }
+
+  .icon {
+    font-size: 1.95rem;
+    line-height: 1;
+  }
+
+  .label {
+    position: absolute;
+    bottom: 5px;
+    right: 7px;
+    font-size: .62rem;
+    color: var(--muted);
+    font-weight: 900;
+    letter-spacing: .03em;
+  }
+
+  .step-num {
+    position: absolute;
+    top: 5px;
+    left: 6px;
+    min-width: 19px;
+    height: 19px;
+    padding: 0 5px;
+    border-radius: 999px;
+    display: grid;
+    place-items: center;
+    background: var(--path);
+    color: white;
+    font-size: .7rem;
+    font-weight: 900;
+  }
+
+  .cell.current {
+    outline: 3px solid var(--good);
+    outline-offset: 2px;
+  }
+
+  .cell.path {
+    background: linear-gradient(145deg, rgba(93,140,255,.55), rgba(46,46,79,.95));
+    border-color: rgba(121,199,255,.8);
+  }
+
+  .cell.available {
+    border-color: var(--good);
+    box-shadow: 0 0 0 3px rgba(117,240,168,.14), inset 0 -8px 15px rgba(0,0,0,.14);
+  }
+
+  .cell.blocked {
+    opacity: .58;
+  }
+
+  .cell.exit-ready {
+    animation: pulse 1.2s infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(117,240,168,.32), inset 0 -8px 15px rgba(0,0,0,.14); }
+    50% { box-shadow: 0 0 0 7px rgba(117,240,168,0), inset 0 -8px 15px rgba(0,0,0,.14); }
+  }
+
+  .side-panel {
+    padding: 18px;
+    position: sticky;
+    top: 18px;
+  }
+
+  .side-section {
+    background: rgba(255,255,255,.045);
+    border: 1px solid rgba(255,255,255,.075);
+    border-radius: 17px;
+    padding: 14px;
+    margin-bottom: 12px;
+  }
+
+  .side-section h2 {
+    font-size: 1rem;
+    margin: 0 0 9px;
+  }
+
+  .rules {
+    margin: 0;
+    padding-left: 18px;
+    color: var(--muted);
+    line-height: 1.45;
+  }
+
+  .rules li {
+    margin: 5px 0;
+  }
+
+  .legend {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    color: var(--muted);
+  }
+
+  .legend-item {
+    background: rgba(0,0,0,.16);
+    border-radius: 12px;
+    padding: 8px;
+    font-size: .88rem;
+  }
+
+  .message {
+    min-height: 48px;
+    color: var(--text);
+    line-height: 1.4;
+    font-weight: 700;
+  }
+
+  .message.good {
+    color: var(--good);
+  }
+
+  .message.bad {
+    color: var(--bad);
+  }
+
+  .path-list {
+    color: var(--muted);
+    font-size: .9rem;
+    line-height: 1.4;
+    max-height: 150px;
+    overflow: auto;
+  }
+
+  .level-note {
+    color: var(--muted);
+    line-height: 1.45;
+    margin: 0;
+  }
+
+  @media (max-width: 920px) {
+    body {
+      padding: 12px;
+    }
+
+    .app {
+      grid-template-columns: 1fr;
+    }
+
+    .side-panel {
+      position: static;
+    }
+
+    .cell {
+      width: 58px;
+      height: 58px;
+      border-radius: 13px;
+    }
+
+    .icon {
+      font-size: 1.55rem;
+    }
+
+    .stats {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+
+  @media (max-width: 460px) {
+    header,
+    .game-panel,
+    .side-panel {
+      border-radius: 17px;
+      padding: 14px;
+    }
+
+    .cell {
+      width: 45px;
+      height: 45px;
+      border-radius: 10px;
+    }
+
+    .icon {
+      font-size: 1.25rem;
+    }
+
+    .label {
+      display: none;
+    }
+
+    .topbar {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+    }
+
+    select {
+      grid-column: 1 / -1;
+      width: 100%;
+    }
+  }
+</style>
+</head>
+<body>
+  <main class="app">
+    <header>
+      <h1>Dungeon Route Puzzle</h1>
+      <p class="subtitle">
+        Pick a route one room at a time. Grab keys, spend them on locked doors, survive traps, and reach the exit.
+        The glowing rooms are your legal next moves.
+      </p>
+    </header>
+
+    <section class="game-panel">
+      <div class="topbar">
+        <select id="levelSelect" aria-label="Choose level"></select>
+        <button id="undoBtn">Undo</button>
+        <button id="resetBtn" class="danger">Reset</button>
+        <button id="nextBtn" class="primary">Next Level</button>
+      </div>
+
+      <div class="stats">
+        <div class="stat"><b>Health</b><span id="hpText">3</span></div>
+        <div class="stat"><b>Keys</b><span id="keyText">0</span></div>
+        <div class="stat"><b>Steps</b><span id="stepText">0</span></div>
+        <div class="stat"><b>Goal</b><span id="goalText">Exit</span></div>
+      </div>
+
+      <div class="grid-wrap">
+        <div id="grid" class="grid"></div>
+      </div>
+    </section>
+
+    <aside class="side-panel">
+      <div class="side-section">
+        <h2>Current Puzzle</h2>
+        <p id="levelNote" class="level-note"></p>
+      </div>
+
+      <div class="side-section">
+        <h2>Status</h2>
+        <div id="message" class="message">Choose a glowing adjacent room to begin your route.</div>
+      </div>
+
+      <div class="side-section">
+        <h2>Rules</h2>
+        <ol class="rules">
+          <li>Move only up, down, left, or right.</li>
+          <li>Keys add to your key count.</li>
+          <li>Locked doors consume one key.</li>
+          <li>Traps cost one health.</li>
+          <li>Cracked floors collapse after you leave them.</li>
+          <li>You win by stepping onto the exit alive.</li>
+        </ol>
+      </div>
+
+      <div class="side-section">
+        <h2>Legend</h2>
+        <div class="legend">
+          <div class="legend-item">🧍 Start</div>
+          <div class="legend-item">🔑 Key</div>
+          <div class="legend-item">🔒 Door</div>
+          <div class="legend-item">☠️ Trap</div>
+          <div class="legend-item">🕳️ Pit</div>
+          <div class="legend-item">🏁 Exit</div>
+          <div class="legend-item">🧱 Wall</div>
+          <div class="legend-item">⬚ Empty</div>
+        </div>
+      </div>
+
+      <div class="side-section">
+        <h2>Your Route</h2>
+        <div id="pathList" class="path-list">Start</div>
+      </div>
+    </aside>
+  </main>
+
+<script>
+(() => {
+  const levels = [
+    {
+      name: "Level 1: First Lock",
+      hp: 3,
+      note: "Learn the basic tradeoff: reach the key before trying the locked door.",
+      map: [
+        "#######",
+        "#S..K.#",
+        "#.###.#",
+        "#...#L#",
+        "###.#.#",
+        "#.....E",
+        "#######"
+      ]
+    },
+    {
+      name: "Level 2: Trap Toll",
+      hp: 2,
+      note: "You can survive one trap, but not two. Find the route that spends health carefully.",
+      map: [
+        "########",
+        "#S..T..#",
+        "###.##.#",
+        "#K..#L.#",
+        "#.###..#",
+        "#....T.E",
+        "########"
+      ]
+    },
+    {
+      name: "Level 3: Collapsing Floor",
+      hp: 3,
+      note: "Cracked floors disappear after you leave them, so route order matters.",
+      map: [
+        "#########",
+        "#S.C..K.#",
+        "#.#.###.#",
+        "#.#...#.#",
+        "#.###.#L#",
+        "#...C...E",
+        "#########"
+      ]
+    },
+    {
+      name: "Level 4: Two Doors",
+      hp: 3,
+      note: "There are two keys and two doors. Taking the obvious first door can strand you.",
+      map: [
+        "#########",
+        "#S..K...#",
+        "###.###L#",
+        "#...#...#",
+        "#.K.#.###",
+        "#...L...E",
+        "#########"
+      ]
+    },
+    {
+      name: "Level 5: The Clean Route",
+      hp: 2,
+      note: "A compact final puzzle: one trap is acceptable, the wrong detour is fatal.",
+      map: [
+        "##########",
+        "#S...#...#",
+        "#.##.#.K.#",
+        "#..T.#.#L#",
+        "##.#...#.#",
+        "#K.###.#.#",
+        "#....L...E",
+        "##########"
+      ]
+    }
+  ];
+
+  const icons = {
+    "#": "🧱",
+    ".": "",
+    "S": "🧍",
+    "K": "🔑",
+    "L": "🔒",
+    "T": "☠️",
+    "E": "🏁",
+    "C": "🕳️"
+  };
+
+  const names = {
+    "#": "Wall",
+    ".": "Room",
+    "S": "Start",
+    "K": "Key",
+    "L": "Door",
+    "T": "Trap",
+    "E": "Exit",
+    "C": "Crack"
+  };
+
+  const gridEl = document.getElementById("grid");
+  const levelSelect = document.getElementById("levelSelect");
+  const undoBtn = document.getElementById("undoBtn");
+  const resetBtn = document.getElementById("resetBtn");
+  const nextBtn = document.getElementById("nextBtn");
+  const hpText = document.getElementById("hpText");
+  const keyText = document.getElementById("keyText");
+  const stepText = document.getElementById("stepText");
+  const goalText = document.getElementById("goalText");
+  const messageEl = document.getElementById("message");
+  const pathList = document.getElementById("pathList");
+  const levelNote = document.getElementById("levelNote");
+
+  let levelIndex = 0;
+  let state;
+
+  levels.forEach((level, index) => {
+    const option = document.createElement("option");
+    option.value = index;
+    option.textContent = level.name;
+    levelSelect.appendChild(option);
+  });
+
+  function cloneMap(map) {
+    return map.map(row => row.split(""));
+  }
+
+  function findStart(map) {
+    for (let y = 0; y < map.length; y++) {
+      for (let x = 0; x < map[y].length; x++) {
+        if (map[y][x] === "S") return { x, y };
+      }
+    }
+  }
+
+  function startLevel(index) {
+    levelIndex = index;
+    const level = levels[levelIndex];
+    const map = cloneMap(level.map);
+    const start = findStart(map);
+
+    state = {
+      map,
+      hp: level.hp,
+      keys: 0,
+      pos: start,
+      path: [{ x: start.x, y: start.y, tile: "S" }],
+      history: [],
+      won: false,
+      lost: false,
+      collapsed: new Set()
+    };
+
+    levelSelect.value = String(levelIndex);
+    levelNote.textContent = level.note;
+    setMessage("Choose a glowing adjacent room to continue your route.");
+    render();
+  }
+
+  function keyOf(x, y) {
+    return `${x},${y}`;
+  }
+
+  function inBounds(x, y) {
+    return y >= 0 && y < state.map.length && x >= 0 && x < state.map[y].length;
+  }
+
+  function getTile(x, y) {
+    if (!inBounds(x, y)) return "#";
+    return state.map[y][x];
+  }
+
+  function isAdjacent(a, b) {
+    return Math.abs(a.x - b.x) + Math.abs(a.y - b.y) === 1;
+  }
+
+  function canEnter(x, y) {
+    if (state.won || state.lost) return { ok: false, reason: "The puzzle is already over. Reset or go next." };
+    if (!inBounds(x, y)) return { ok: false, reason: "That is outside the dungeon." };
+    if (!isAdjacent(state.pos, { x, y })) return { ok: false, reason: "Move one room at a time." };
+
+    const tile = getTile(x, y);
+    if (tile === "#") return { ok: false, reason: "A wall blocks that route." };
+    if (state.collapsed.has(keyOf(x, y))) return { ok: false, reason: "That cracked floor already collapsed." };
+    if (tile === "L" && state.keys < 1) return { ok: false, reason: "That door needs one key." };
+    if (tile === "T" && state.hp <= 1) return { ok: false, reason: "That trap would drop you to zero health." };
+
+    return { ok: true, reason: "" };
+  }
+
+  function availableMoves() {
+    const dirs = [
+      { x: 1, y: 0 },
+      { x: -1, y: 0 },
+      { x: 0, y: 1 },
+      { x: 0, y: -1 }
+    ];
+
+    return dirs
+      .map(d => ({ x: state.pos.x + d.x, y: state.pos.y + d.y }))
+      .filter(p => canEnter(p.x, p.y).ok)
+      .map(p => keyOf(p.x, p.y));
+  }
+
+  function saveHistory() {
+    state.history.push(JSON.stringify({
+      map: state.map,
+      hp: state.hp,
+      keys: state.keys,
+      pos: state.pos,
+      path: state.path,
+      won: state.won,
+      lost: state.lost,
+      collapsed: Array.from(state.collapsed)
+    }));
+  }
+
+  function restore(snapshot) {
+    const data = JSON.parse(snapshot);
+    state.map = data.map;
+    state.hp = data.hp;
+    state.keys = data.keys;
+    state.pos = data.pos;
+    state.path = data.path;
+    state.won = data.won;
+    state.lost = data.lost;
+    state.collapsed = new Set(data.collapsed);
+  }
+
+  function moveTo(x, y) {
+    const check = canEnter(x, y);
+    if (!check.ok) {
+      setMessage(check.reason, "bad");
+      return;
+    }
+
+    saveHistory();
+
+    const old = { ...state.pos };
+    const oldTile = getTile(old.x, old.y);
+    const tile = getTile(x, y);
+
+    if (oldTile === "C") {
+      state.collapsed.add(keyOf(old.x, old.y));
+    }
+
+    let note = "";
+
+    if (tile === "K") {
+      state.keys += 1;
+      state.map[y][x] = ".";
+      note = "Key collected. You can open one locked door.";
+    }
+
+    if (tile === "L") {
+      state.keys -= 1;
+      state.map[y][x] = ".";
+      note = "Door opened. One key spent.";
+    }
+
+    if (tile === "T") {
+      state.hp -= 1;
+      state.map[y][x] = ".";
+      note = "Trap triggered. You lost one health.";
+    }
+
+    state.pos = { x, y };
+    state.path.push({ x, y, tile });
+
+    if (tile === "E") {
+      state.won = true;
+      setMessage(`You escaped in ${state.path.length - 1} steps. Clean route. 🏁`, "good");
+    } else if (availableMoves().length === 0) {
+      state.lost = true;
+      setMessage("No legal moves left. Reset or undo and try another route.", "bad");
+    } else {
+      setMessage(note || "Good move. Keep routing.");
+    }
+
+    render();
+  }
+
+  function setMessage(text, type = "") {
+    messageEl.textContent = text;
+    messageEl.className = `message ${type}`;
+  }
+
+  function render() {
+    const level = levels[levelIndex];
+    const rows = state.map.length;
+    const cols = Math.max(...state.map.map(r => r.length));
+    const avail = new Set(availableMoves());
+    const pathMap = new Map();
+
+    state.path.forEach((p, i) => {
+      pathMap.set(keyOf(p.x, p.y), i);
+    });
+
+    gridEl.innerHTML = "";
+    gridEl.style.gridTemplateColumns = `repeat(${cols}, 1fr)`;
+
+    for (let y = 0; y < rows; y++) {
+      for (let x = 0; x < cols; x++) {
+        const tile = getTile(x, y);
+        const cell = document.createElement("button");
+        cell.className = "cell";
+        cell.type = "button";
+        cell.setAttribute("aria-label", `${names[tile] || "Room"} at row ${y + 1}, column ${x + 1}`);
+
+        if (tile === "#") cell.classList.add("wall");
+        if (state.collapsed.has(keyOf(x, y))) cell.classList.add("wall");
+        if (pathMap.has(keyOf(x, y))) cell.classList.add("path");
+        if (state.pos.x === x && state.pos.y === y) cell.classList.add("current");
+        if (avail.has(keyOf(x, y))) cell.classList.add("available");
+        if (tile === "E" && avail.has(keyOf(x, y))) cell.classList.add("exit-ready");
+
+        const icon = document.createElement("div");
+        icon.className = "icon";
+        icon.textContent = state.collapsed.has(keyOf(x, y)) ? "⬛" : icons[tile] || "";
+        cell.appendChild(icon);
+
+        if (tile !== "." && tile !== "#") {
+          const label = document.createElement("div");
+          label.className = "label";
+          label.textContent = names[tile];
+          cell.appendChild(label);
+        }
+
+        if (pathMap.has(keyOf(x, y))) {
+          const step = document.createElement("div");
+          step.className = "step-num";
+          step.textContent = pathMap.get(keyOf(x, y));
+          cell.appendChild(step);
+        }
+
+        if (tile === "#" || state.collapsed.has(keyOf(x, y))) {
+          cell.disabled = true;
+        }
+
+        if (!avail.has(keyOf(x, y)) && !(state.pos.x === x && state.pos.y === y)) {
+          cell.classList.add("blocked");
+        }
+
+        cell.addEventListener("click", () => moveTo(x, y));
+        gridEl.appendChild(cell);
+      }
+    }
+
+    hpText.textContent = "❤️".repeat(state.hp) || "0";
+    keyText.textContent = state.keys > 0 ? `🔑 ${state.keys}` : "0";
+    stepText.textContent = String(state.path.length - 1);
+    goalText.textContent = state.won ? "Escaped" : "Exit";
+    undoBtn.disabled = state.history.length === 0;
+    nextBtn.disabled = levelIndex >= levels.length - 1;
+
+    pathList.textContent = state.path.map((p, i) => {
+      const label = i === 0 ? "Start" : names[p.tile] || "Room";
+      return `${i}. ${label} (${p.x + 1},${p.y + 1})`;
+    }).join(" → ");
+  }
+
+  undoBtn.addEventListener("click", () => {
+    if (!state.history.length) return;
+    restore(state.history.pop());
+    setMessage("Undone. Try a different branch.");
+    render();
+  });
+
+  resetBtn.addEventListener("click", () => {
+    startLevel(levelIndex);
+  });
+
+  nextBtn.addEventListener("click", () => {
+    if (levelIndex < levels.length - 1) startLevel(levelIndex + 1);
+  });
+
+  levelSelect.addEventListener("change", () => {
+    startLevel(Number(levelSelect.value));
+  });
+
+  startLevel(0);
+})();
+</script>
+</body>
+</html>

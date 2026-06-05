@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Apartment Chore Draft Board</title>
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+        @page {
+            size: A4;
+            margin: 10mm;
+            background-color: #ffffff;
+        }
+        body {
+            font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, Helvetica, Arial, sans-serif;
+            color: #2c3e50;
+            background-color: #ffffff;
+            margin: 0;
+            padding: 0;
+            font-size: 10pt;
+            line-height: 1.4;
+        }
+        .container {
+            width: 100%;
+            max-width: 100%;
+        }
+        header {
+            border-bottom: 3px solid #34495e;
+            padding-bottom: 8px;
+            margin-bottom: 15px;
+        }
+        h1 {
+            font-size: 20pt;
+            color: #2c3e50;
+            margin: 0 0 5px 0;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        .subtitle {
+            font-size: 10pt;
+            color: #7f8c8d;
+            margin: 0;
+            font-style: italic;
+        }
+
+        /* Setup Phase Controls (Hidden during print if empty, but active for interactive use) */
+        .setup-actions {
+            background-color: #f8f9fa;
+            border: 1px solid #e2e8f0;
+            border-radius: 6px;
+            padding: 12px;
+            margin-bottom: 15px;
+        }
+        .input-group {
+            display: block;
+            margin-bottom: 10px;
+        }
+        .input-group label {
+            font-weight: bold;
+            display: inline-block;
+            width: 90px;
+            color: #34495e;
+        }
+        input[type="text"] {
+            width: 250px;
+            padding: 5px 8px;
+            border: 1px solid #cbd5e1;
+            border-radius: 4px;
+            font-size: 9pt;
+        }
+        button {
+            background-color: #34495e;
+            color: white;
+            border: none;
+            padding: 5px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 9pt;
+        }
+        button:hover {
+            background-color: #2c3e50;
+        }
+        .print-btn {
+            background-color: #27ae60;
+            float: right;
+            padding: 7px 15px;
+            font-size: 10pt;
+        }
+        .print-btn:hover {
+            background-color: #219653;
+        }
+        .clear {
+            clear: both;
+        }
+
+        /* Draft Pool Sections */
+        .draft-pools {
+            display: block;
+            margin-bottom: 15px;
+        }
+        .pool-block {
+            display: block;
+            background-color: #fdfefe;
+            border: 1px dashed #b2bec3;
+            border-radius: 6px;
+            padding: 10px;
+            margin-bottom: 15px;
+        }
+        .pool-title {
+            font-size: 11pt;
+            font-weight: bold;
+            color: #2c3e50;
+            margin-top: 0;
+            margin-bottom: 8px;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 3px;
+        }
+        .pill-container {
+            display: block;
+        }
+        .pill {
+            display: inline-block;
+            background-color: #e2e8f0;
+            color: #334155;
+            padding: 4px 10px;
+            border-radius: 20px;
+            margin-right: 6px;
+            margin-bottom: 6px;
+            font-size: 9.5pt;
+            font-weight: 500;
+            border: 1px solid #cbd5e1;
+        }
+        .chore-pill {
+            background-color: #e0f2fe;
+            color: #0369a1;
+            border-color: #bae6fd;
+            cursor: pointer;
+        }
+        .chore-pill:hover {
+            background-color: #bae6fd;
+            text-decoration: line-through;
+        }
+
+        /* Interactive Draft Panel */
+        .draft-mechanism {
+            background-color: #edf2f7;
+            border: 1px solid #cbd5e1;
+            border-radius: 6px;
+            padding: 12px;
+            margin-bottom: 20px;
+        }
+        .draft-mechanism select {
+            padding: 5px;
+            font-size: 9.5pt;
+            border-radius: 4px;
+            border: 1px solid #cbd5e1;
+            margin-right: 10px;
+            width: 160px;
+        }
+
+        /* Final Assignment Board Grid (Simulated via Table structures for WeasyPrint/Layout safety) */
+        .board-title {
+            font-size: 13pt;
+            font-weight: bold;
+            color: #2c3e50;
+            margin-bottom: 10px;
+            border-left: 4px solid #34495e;
+            padding-left: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .grid-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+        .grid-table th {
+            background-color: #34495e;
+            color: white;
+            text-align: left;
+            padding: 8px 12px;
+            font-size: 10pt;
+            font-weight: 600;
+            border: 1px solid #34495e;
+            width: 33.33%;
+        }
+        .grid-table td {
+            padding: 12px;
+            border: 1px solid #cbd5e1;
+            vertical-align: top;
+            background-color: #fafafa;
+            min-height: 80px;
+        }
+        .assigned-chore {
+            background-color: #ffffff;
+            border: 1px solid #e2e8f0;
+            border-left: 3px solid #27ae60;
+            padding: 6px 10px;
+            margin-bottom: 6px;
+            border-radius: 4px;
+            font-size: 9.5pt;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+        }
+        .remove-assignment {
+            float: right;
+            color: #e74c3c;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 8pt;
+            margin-left: 5px;
+        }
+
+        /* Print Optimization */
+        @media print {
+            .setup-actions, .draft-mechanism, .remove-assignment, .pool-block, button {
+                display: none !important;
+            }
+            body {
+                background-color: #ffffff;
+                font-size: 11pt;
+            }
+            .grid-table td {
+                background-color: #ffffff !important;
+                min-height: 120px;
+            }
+            .assigned-chore {
+                border: 1px solid #cbd5e1 !important;
+                border-left: 4px solid #27ae60 !important;
+                box-shadow: none;
+            }
+            header {
+                margin-bottom: 25px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <button class="print-btn" onclick="window.print()">Print Final Plan</button>
+        <h1>Apartment Chore Draft Board</h1>
+        <div class="subtitle">Add options, take turns drafting, and lock in the weekly schedule.</div>
+        <div class="clear"></div>
+    </header>
+
+    <div class="setup-actions">
+        <div class="input-group">
+            <label for="roommate-input">Roommate:</label>
+            <input type="text" id="roommate-input" placeholder="e.g., Alex" onkeydown="if(event.key==='Enter') addRoommate()">
+            <button onclick="addRoommate()">Add</button>
+        </div>
+        <div class="input-group">
+            <label for="chore-input">Chore:</label>
+            <input type="text" id="chore-input" placeholder="e.g., Take out trash" onkeydown="if(event.key==='Enter') addChore()">
+            <button onclick="addChore()">Add</button>
+        </div>
+    </div>
+
+    <div class="draft-pools">
+        <div class="pool-block" id="roommates-pool-wrapper">
+            <div class="pool-title">Drafting Order / Roommates</div>
+            <div id="roommates-pool" class="pill-container">
+                </div>
+        </div>
+
+        <div class="pool-block" id="chores-pool-wrapper">
+            <div class="pool-title">Available Chores Pool (Click to clear from pool if drafted manually)</div>
+            <div id="chores-pool" class="pill-container">
+                </div>
+        </div>
+    </div>
+
+    <div class="draft-mechanism">
+        <strong style="font-size: 10pt; color: #2c3e50; margin-right: 10px;">Draft Turn:</strong>
+        <select id="select-roommate">
+            <option value="">-- Select Roommate --</option>
+        </select>
+        <select id="select-chore">
+            <option value="">-- Select Chore --</option>
+        </select>
+        <button onclick="assignChore()">Confirm Selection</button>
+    </div>
+
+    <div class="board-title">Weekly Assignments</div>
+
+    <table class="grid-table">
+        <thead>
+            <tr id="table-headers">
+                <th style="color: #cbd5e1; font-style: italic; font-weight: normal;">No roommates added yet.</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr id="table-columns">
+                <td style="color: #94a3b8; font-style: italic;">Add roommates above to initialize the draft board columns.</td>
+            </tr>
+        </tbody>
+    </table>
+</div>
+
+<script>
+    // State management
+    let roommates = [];
+    let chores = [];
+    let assignments = {}; // Structure: { roommateName: [chore1, chore2] }
+
+    function updateUI() {
+        // 1. Update Roommates Pool View
+        const rmPool = document.getElementById('roommates-pool');
+        rmPool.innerHTML = roommates.length === 0 ? '<span style="color:#94a3b8; font-style:italic; font-size:9pt;">No roommates added yet.</span>' : '';
+        roommates.forEach(rm => {
+            const span = document.createElement('span');
+            span.className = 'pill';
+            span.textContent = rm;
+            rmPool.appendChild(span);
+        });
+
+        // 2. Update Chores Pool View
+        const chorePool = document.getElementById('chores-pool');
+        chorePool.innerHTML = chores.length === 0 ? '<span style="color:#94a3b8; font-style:italic; font-size:9pt;">No available chores remaining.</span>' : '';
+        chores.forEach((chore, index) => {
+            const span = document.createElement('span');
+            span.className = 'pill chore-pill';
+            span.innerHTML = `${chore} <span style="font-size:7pt; margin-left:4px; opacity:0.6;">&times;</span>`;
+            span.onclick = () => removeChoreFromPool(index);
+            chorePool.appendChild(span);
+        });
+
+        // 3. Update Dropdown selectors
+        const rmSelect = document.getElementById('select-roommate');
+        const currentRmSel = rmSelect.value;
+        rmSelect.innerHTML = '<option value="">-- Select Roommate --</option>';
+        roommates.forEach(rm => {
+            const opt = document.createElement('option');
+            opt.value = rm;
+            opt.textContent = rm;
+            if (rm === currentRmSel) opt.selected = true;
+            rmSelect.appendChild(opt);
+        });
+
+        const choreSelect = document.getElementById('select-chore');
+        choreSelect.innerHTML = '<option value="">-- Select Chore --</option>';
+        chores.forEach(chore => {
+            const opt = document.createElement('option');
+            opt.value = chore;
+            opt.textContent = chore;
+            choreSelect.appendChild(opt);
+        });
+
+        // 4. Update Board Matrix Grid (Table Columns)
+        const tHeaders = document.getElementById('table-headers');
+        const tColumns = document.getElementById('table-columns');
+
+        if (roommates.length === 0) {
+            tHeaders.innerHTML = '<th style="color: #cbd5e1; font-style: italic; font-weight: normal;">No roommates added yet.</th>';
+            tColumns.innerHTML = '<td style="color: #94a3b8; font-style: italic;">Add roommates above to initialize the draft board columns.</td>';
+            return;
+        }
+
+        tHeaders.innerHTML = '';
+        tColumns.innerHTML = '';
+
+        roommates.forEach(rm => {
+            // Header cell
+            const th = document.createElement('th');
+            th.textContent = rm;
+            tHeaders.appendChild(th);
+
+            // Data cell matching roommate
+            const td = document.createElement('td');
+            const rmChores = assignments[rm] || [];
+
+            if (rmChores.length === 0) {
+                td.innerHTML = '<div style="color: #cbd5e1; font-style: italic; font-size: 9pt; padding: 5px 0;">No chores drafted</div>';
+            } else {
+                rmChores.forEach((chore, cIdx) => {
+                    const cDiv = document.createElement('div');
+                    cDiv.className = 'assigned-chore';
+
+                    const removeBtn = document.createElement('span');
+                    removeBtn.className = 'remove-assignment';
+                    removeBtn.innerHTML = '&times;';
+                    removeBtn.onclick = () => unassignChore(rm, cIdx);
+
+                    cDiv.appendChild(removeBtn);
+                    cDiv.appendChild(document.createTextNode(chore));
+                    td.appendChild(cDiv);
+                });
+            }
+            tColumns.appendChild(td);
+        });
+    }
+
+    function addRoommate() {
+        const input = document.getElementById('roommate-input');
+        const val = input.value.trim();
+        if (val && !roommates.includes(val)) {
+            roommates.push(val);
+            if (!assignments[val]) assignments[val] = [];
+            input.value = '';
+            updateUI();
+        }
+    }
+
+    function addChore() {
+        const input = document.getElementById('chore-input');
+        const val = input.value.trim();
+        if (val && !chores.includes(val)) {
+            chores.push(val);
+            input.value = '';
+            updateUI();
+        }
+    }
+
+    function removeChoreFromPool(index) {
+        chores.splice(index, 1);
+        updateUI();
+    }
+
+    function assignChore() {
+        const rm = document.getElementById('select-roommate').value;
+        const chore = document.getElementById('select-chore').value;
+
+        if (!rm || !chore) return;
+
+        // Add to assigned track
+        assignments[rm].push(chore);
+
+        // Pluck from available pool
+        const cIndex = chores.indexOf(chore);
+        if (cIndex > -1) chores.splice(cIndex, 1);
+
+        updateUI();
+    }
+
+    function unassignChore(roommate, index) {
+        const returnedChore = assignments[roommate][index];
+        assignments[roommate].splice(index, 1);
+        chores.push(returnedChore);
+        updateUI();
+    }
+
+    // Initialize with standard sample values for immediate quick testing
+    window.onload = function() {
+        roommates = ["Roommate 1", "Roommate 2", "Roommate 3"];
+        chores = ["Kitchen Counters & Sink", "Bathroom Deep Clean", "Living Room Vacuuming", "Trash & Recycling", "Mop Hardwood Floors"];
+        roommates.forEach(rm => assignments[rm] = []);
+        updateUI();
+    };
+</script>
+
+</body>
+</html>

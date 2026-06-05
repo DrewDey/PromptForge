@@ -23,6 +23,7 @@ import {
   updateSuggestionPublicStatusById,
 } from './data'
 import { getPreparedShowcaseProjectById } from './prepared-showcase-projects'
+import type { ProjectForkSource } from './project-forks'
 import type { SuggestionPublicStatus, SuggestionResponseVisibility } from './types'
 
 export type SuggestionSubmitState = {
@@ -97,6 +98,7 @@ export async function submitProject(data: {
   tools_used: string[]
   tags: string[]
   steps: { title: string; content: string; result_content: string; description: string }[]
+  fork_source?: ProjectForkSource | null
 }) {
   try {
     const result = await createProject({
@@ -124,6 +126,7 @@ export async function submitSourceRun(data: {
   model_used?: string
   model_settings?: string
   notes?: string
+  fork_source?: ProjectForkSource | null
 }): Promise<SourceRunSubmitResult> {
   try {
     const result = await createSourceRunSubmission(data)

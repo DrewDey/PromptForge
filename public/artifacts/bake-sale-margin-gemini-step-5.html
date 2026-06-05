@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Bake Sale Business Planner</title>
+<style>
+    body { font-family: sans-serif; padding: 20px; background: #f4f7f6; }
+    .container { max-width: 800px; margin: auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+    h2, h3 { color: #2c3e50; }
+    table { width: 100%; border-collapse: collapse; margin: 15px 0; }
+    th, td { padding: 8px; border: 1px solid #ddd; text-align: left; }
+    input { width: 90%; padding: 5px; }
+    .row { display: flex; gap: 20px; margin-bottom: 10px; }
+    .summary-area { margin-top: 20px; padding: 15px; background: #f9f9f9; border: 1px dashed #999; }
+    .label-preview { border: 2px solid #333; padding: 20px; width: 200px; text-align: center; margin-top: 20px; }
+    #status { padding: 10px; font-weight: bold; text-align: center; margin: 10px 0; border-radius: 4px; }
+    @media print { .no-print { display: none; } }
+</style>
+</head>
+<body>
+
+<div class="container">
+    <h2>Bake Sale Planner</h2>
+
+    <div class="row">
+        <div><label>Product Name:</label><br><input type="text" id="prodName" oninput="updateLabels()"></div>
+        <div><label>Items per Pack:</label><br><input type="number" id="packSize" value="1" oninput="calc()"></div>
+    </div>
+
+    <h3>Ingredients</h3>
+    <table id="ingTable">
+        <thead><tr><th>Ingredient</th><th>Pkg Price ($)</th><th>Pkg Size</th><th>Used Amt</th></tr></thead>
+        <tbody>
+            <tr>
+                <td><input type="text" placeholder="Flour"></td>
+                <td><input type="number" class="pkgPrice" value="0" oninput="calc()"></td>
+                <td><input type="number" class="pkgAmount" value="1" oninput="calc()"></td>
+                <td><input type="number" class="amtUsed" value="0" oninput="calc()"></td>
+            </tr>
+        </tbody>
+    </table>
+    <button class="no-print" onclick="addRow()">+ Add Ingredient</button>
+
+    <div class="row" style="margin-top:20px;">
+        <div><label>Total Items Produced:</label><br><input type="number" id="yield" value="1" oninput="calc()"></div>
+        <div><label>Pkg Cost/Unit:</label><br><input type="number" id="pkgCost" value="0" oninput="calc()"></div>
+        <div><label>Target Price ($):</label><br><input type="number" id="targetPrice" value="0" oninput="calc()"></div>
+        <div><label>Table Goal ($):</label><br><input type="number" id="tableGoal" value="100" oninput="calc()"></div>
+    </div>
+
+    <div id="status">Enter price to see margin status</div>
+
+    <div class="summary-area" id="printableArea">
+        <h3>Summary: <span id="sumName">...</span></h3>
+        <p><strong>Cost per Item:</strong> $<span id="costPer">0.00</span></p>
+        <p><strong>Target Price:</strong> $<span id="sumPrice">0.00</span></p>
+        <p><strong>Margin:</strong> <span id="marginPer">0</span>%</p>
+        <p><strong>Break-even (to goal):</strong> <span id="breakEven">0</span> packs</p>
+        <p><strong>Total Batch Profit:</strong> $<span id="batchProfit">0.00</span></p>
+    </div>
+
+    <h3>Price Label</h3>
+    <div class="label-preview">
+        <h2 id="labelName" style="margin:0;">[Product]</h2>
+        <p style="font-size: 2em; margin: 10px 0;">$<span id="labelPrice">0.00</span></p>
+    </div>
+
+    <button class="no-print" style="margin-top:20px;" onclick="window.print()">Print Summary & Label</button>
+</div>
+
+<script>
+function addRow() {
+    const table = document.getElementById("ingTable").getElementsByTagName('tbody')[0];
+    const row = table.insertRow();
+    row.innerHTML = '<td><input type="text"></td><td><input type="number" class="pkgPrice" value="0" oninput="calc()"></td><td><input type="number" class="pkgAmount" value="1" oninput="calc()"></td><td><input type="number" class="amtUsed" value="0" oninput="calc()"></td>';
+}
+
+function updateLabels() {
+    document.getElementById('sumName').innerText = document.getElementById('prodName').value || "...";
+    document.getElementById('labelName').innerText = document.getElementById('prodName').value || "[Product]";
+}
+
+function calc() {
+    let totIngCost = 0;
+    document.querySelectorAll('#ingTable tbody tr').forEach(row => {
+        const p = parseFloat(row.querySelector('.pkgPrice').value) || 0;
+        const a = parseFloat(row.querySelector('.pkgAmount').value) || 1;
+        const u = parseFloat(row.querySelector('.amtUsed').value) || 0;
+        totIngCost += (p / a) * u;
+    });
+
+    const yieldCount = parseFloat(document.getElementById('yield').value) || 1;
+    const pkg = parseFloat(document.getElementById('pkgCost').value) || 0;
+    const target = parseFloat(document.getElementById('targetPrice').value) || 0;
+    const goal = parseFloat(document.getElementById('tableGoal').value) || 0;
+    const pack = parseFloat(document.getElementById('packSize').value) || 1;
+
+    const costPer = (totIngCost / yieldCount) + pkg;
+    const itemCost = costPer * pack;
+    const profitPer = target - itemCost;
+    const margin = target > 0 ? (profitPer / target) * 100 : 0;
+    const breakEven = profitPer > 0 ? Math.ceil(goal / profitPer) : 0;
+
+    document.getElementById('costPer').innerText = itemCost.toFixed(2);
+    document.getElementById('sumPrice').innerText = target.toFixed(2);
+    document.getElementById('labelPrice').innerText = target.toFixed(2);
+    document.getElementById('marginPer').innerText = margin.toFixed(1);
+    document.getElementById('breakEven').innerText = breakEven;
+    document.getElementById('batchProfit').innerText = (profitPer * (yieldCount / pack)).toFixed(2);
+
+    const status = document.getElementById('status');
+    if (target <= itemCost) {
+        status.innerText = "LOSS: Raise Price";
+        status.style.background = "#ffcdd2";
+    } else if (margin < 20) {
+        status.innerText = "LOW MARGIN: Consider Increasing";
+        status.style.background = "#fff9c4";
+    } else {
+        status.innerText = "HEALTHY MARGIN: Ready";
+        status.style.background = "#c8e6c9";
+    }
+}
+</script>
+</body>
+</html>

@@ -38,6 +38,14 @@ CREATE TABLE prompts (
   author_id UUID REFERENCES profiles(id),
   vote_count INT DEFAULT 0,
   bookmark_count INT DEFAULT 0,
+  fork_source_project_id TEXT,
+  fork_source_project_title TEXT,
+  fork_source_step_id TEXT,
+  fork_source_step_number INT CHECK (fork_source_step_number IS NULL OR fork_source_step_number > 0),
+  fork_parent_submission_id TEXT,
+  prompt_family_id TEXT,
+  fork_depth INT NOT NULL DEFAULT 0 CHECK (fork_depth >= 0 AND fork_depth < 10),
+  fork_branch_index INT NOT NULL DEFAULT 0 CHECK (fork_branch_index >= 0 AND fork_branch_index < 10),
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
@@ -76,6 +84,9 @@ CREATE INDEX idx_prompts_category ON prompts(category_id);
 CREATE INDEX idx_prompts_status ON prompts(status);
 CREATE INDEX idx_prompts_author ON prompts(author_id);
 CREATE INDEX idx_prompts_difficulty ON prompts(difficulty);
+CREATE INDEX idx_prompts_fork_source_project ON prompts(fork_source_project_id);
+CREATE INDEX idx_prompts_prompt_family ON prompts(prompt_family_id);
+CREATE INDEX idx_prompts_parent_fork ON prompts(fork_parent_submission_id);
 CREATE INDEX idx_prompt_steps_prompt ON prompt_steps(prompt_id);
 CREATE INDEX idx_votes_prompt ON votes(prompt_id);
 CREATE INDEX idx_votes_user ON votes(user_id);

@@ -1,0 +1,1473 @@
+<!DOCTYPE html>
+
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Late-Night Beat Sketcher</title>
+
+    <style>
+
+        * {
+
+            margin: 0;
+
+            padding: 0;
+
+            box-sizing: border-box;
+
+        }
+
+
+
+        html, body {
+
+            width: 100%;
+
+            height: 100%;
+
+            overflow-x: hidden;
+
+        }
+
+
+
+        body {
+
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+
+            color: #eee;
+
+            display: flex;
+
+            justify-content: center;
+
+            align-items: center;
+
+            min-height: 100vh;
+
+            padding: 12px;
+
+        }
+
+
+
+        .container {
+
+            background: #0f3460;
+
+            padding: 16px;
+
+            border-radius: 12px;
+
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+
+            width: 100%;
+
+            max-width: 100%;
+
+        }
+
+
+
+        h1 {
+
+            text-align: center;
+
+            margin-bottom: 16px;
+
+            font-size: 20px;
+
+            color: #00d4ff;
+
+            text-shadow: 0 0 10px rgba(0, 212, 255, 0.3);
+
+        }
+
+
+
+        .controls {
+
+            display: flex;
+
+            gap: 8px;
+
+            justify-content: center;
+
+            margin-bottom: 16px;
+
+            flex-wrap: wrap;
+
+        }
+
+
+
+        button {
+
+            padding: 10px 16px;
+
+            font-size: 14px;
+
+            border: none;
+
+            border-radius: 6px;
+
+            cursor: pointer;
+
+            font-weight: bold;
+
+            transition: all 0.2s;
+
+            text-transform: uppercase;
+
+            letter-spacing: 0.5px;
+
+            touch-action: manipulation;
+
+        }
+
+
+
+        #playBtn {
+
+            background: #00d4ff;
+
+            color: #0f3460;
+
+            padding: 10px 20px;
+
+            font-size: 15px;
+
+        }
+
+
+
+        #playBtn:hover {
+
+            transform: scale(1.05);
+
+            box-shadow: 0 0 20px rgba(0, 212, 255, 0.6);
+
+        }
+
+
+
+        #playBtn:active {
+
+            transform: scale(0.98);
+
+        }
+
+
+
+        #playBtn.playing {
+
+            background: #ff006e;
+
+        }
+
+
+
+        .tempo-control {
+
+            display: flex;
+
+            align-items: center;
+
+            gap: 8px;
+
+            justify-content: center;
+
+        }
+
+
+
+        .tempo-control label {
+
+            font-size: 12px;
+
+        }
+
+
+
+        input[type="range"] {
+
+            width: 80px;
+
+            height: 6px;
+
+            -webkit-appearance: none;
+
+            appearance: none;
+
+            background: #1e3a5f;
+
+            border-radius: 3px;
+
+            outline: none;
+
+        }
+
+
+
+        input[type="range"]::-webkit-slider-thumb {
+
+            -webkit-appearance: none;
+
+            appearance: none;
+
+            width: 18px;
+
+            height: 18px;
+
+            background: #00d4ff;
+
+            border-radius: 50%;
+
+            cursor: pointer;
+
+            box-shadow: 0 0 8px rgba(0, 212, 255, 0.5);
+
+        }
+
+
+
+        input[type="range"]::-moz-range-thumb {
+
+            width: 18px;
+
+            height: 18px;
+
+            background: #00d4ff;
+
+            border-radius: 50%;
+
+            cursor: pointer;
+
+            border: none;
+
+            box-shadow: 0 0 8px rgba(0, 212, 255, 0.5);
+
+        }
+
+
+
+        .tempo-display {
+
+            min-width: 50px;
+
+            text-align: right;
+
+            font-weight: bold;
+
+            color: #00d4ff;
+
+            font-size: 13px;
+
+        }
+
+
+
+        .grid-wrapper {
+
+            margin-bottom: 16px;
+
+            overflow-x: auto;
+
+            -webkit-overflow-scrolling: touch;
+
+            padding-bottom: 4px;
+
+        }
+
+
+
+        .beat-numbers {
+
+            display: grid;
+
+            grid-template-columns: repeat(16, 1fr);
+
+            gap: 4px;
+
+            margin-bottom: 8px;
+
+            min-width: min-content;
+
+            padding: 0 4px;
+
+        }
+
+
+
+        .beat-number {
+
+            font-size: 10px;
+
+            color: #888;
+
+            font-weight: bold;
+
+            text-align: center;
+
+            padding: 4px 2px;
+
+            border-radius: 3px;
+
+            aspect-ratio: 1;
+
+            min-width: 28px;
+
+            display: flex;
+
+            align-items: center;
+
+            justify-content: center;
+
+        }
+
+
+
+        .beat-number.downbeat {
+
+            background: #1e3a5f;
+
+            color: #00d4ff;
+
+            font-weight: bold;
+
+        }
+
+
+
+        .grid-container {
+
+            display: flex;
+
+            flex-direction: column;
+
+            gap: 8px;
+
+            min-width: min-content;
+
+        }
+
+
+
+        .track-row {
+
+            display: flex;
+
+            gap: 8px;
+
+            align-items: flex-start;
+
+        }
+
+
+
+        .track-header {
+
+            display: flex;
+
+            flex-direction: column;
+
+            gap: 4px;
+
+            background: #162a47;
+
+            padding: 8px;
+
+            border-radius: 6px;
+
+            border: 1px solid #1e3a5f;
+
+            min-width: 70px;
+
+            flex-shrink: 0;
+
+        }
+
+
+
+        .track-label {
+
+            font-size: 11px;
+
+            color: #00d4ff;
+
+            font-weight: bold;
+
+            text-transform: uppercase;
+
+            letter-spacing: 0.4px;
+
+        }
+
+
+
+        .track-buttons {
+
+            display: flex;
+
+            gap: 3px;
+
+            flex-wrap: wrap;
+
+        }
+
+
+
+        .mini-btn {
+
+            padding: 4px 6px;
+
+            font-size: 9px;
+
+            background: #0f3460;
+
+            color: #888;
+
+            border: 1px solid #2a5a7f;
+
+            border-radius: 3px;
+
+            cursor: pointer;
+
+            transition: all 0.15s;
+
+            font-weight: bold;
+
+            flex: 1;
+
+            min-width: 30px;
+
+            touch-action: manipulation;
+
+        }
+
+
+
+        .mini-btn:active {
+
+            background: #162a47;
+
+            color: #00d4ff;
+
+            border-color: #00d4ff;
+
+        }
+
+
+
+        .mini-btn:hover {
+
+            color: #00d4ff;
+
+            border-color: #00d4ff;
+
+            background: #162a47;
+
+        }
+
+
+
+        .track {
+
+            display: grid;
+
+            grid-template-columns: repeat(16, 1fr);
+
+            gap: 4px;
+
+            min-width: min-content;
+
+        }
+
+
+
+        .step {
+
+            aspect-ratio: 1;
+
+            background: #1a3a52;
+
+            border: 2px solid #2a5a7f;
+
+            border-radius: 3px;
+
+            cursor: pointer;
+
+            transition: all 0.1s;
+
+            font-size: 10px;
+
+            display: flex;
+
+            align-items: center;
+
+            justify-content: center;
+
+            min-width: 32px;
+
+            min-height: 32px;
+
+            touch-action: manipulation;
+
+            user-select: none;
+
+            -webkit-user-select: none;
+
+        }
+
+
+
+        .step:active {
+
+            border-color: #00d4ff;
+
+            box-shadow: inset 0 0 8px rgba(0, 212, 255, 0.3);
+
+        }
+
+
+
+        .step:hover {
+
+            border-color: #00d4ff;
+
+            box-shadow: inset 0 0 8px rgba(0, 212, 255, 0.2);
+
+        }
+
+
+
+        .step.active {
+
+            background: #00d4ff;
+
+            border-color: #00a8cc;
+
+            box-shadow: 0 0 12px rgba(0, 212, 255, 0.5);
+
+            color: #0f3460;
+
+            font-weight: bold;
+
+        }
+
+
+
+        .step.playing {
+
+            animation: pulse 0.15s;
+
+        }
+
+
+
+        @keyframes pulse {
+
+            0% {
+
+                transform: scale(1);
+
+            }
+
+            50% {
+
+                transform: scale(1.1);
+
+            }
+
+            100% {
+
+                transform: scale(1);
+
+            }
+
+        }
+
+
+
+        .info {
+
+            text-align: center;
+
+            font-size: 11px;
+
+            color: #888;
+
+            margin-top: 12px;
+
+        }
+
+
+
+        /* Downbeat column styling */
+
+        .step:nth-child(1),
+
+        .step:nth-child(5),
+
+        .step:nth-child(9),
+
+        .step:nth-child(13) {
+
+            border-left: 3px solid #00d4ff;
+
+        }
+
+
+
+        @media (max-width: 480px) {
+
+            .container {
+
+                padding: 12px;
+
+                border-radius: 8px;
+
+            }
+
+
+
+            h1 {
+
+                font-size: 18px;
+
+                margin-bottom: 12px;
+
+            }
+
+
+
+            .controls {
+
+                gap: 6px;
+
+                margin-bottom: 12px;
+
+            }
+
+
+
+            button {
+
+                padding: 9px 14px;
+
+                font-size: 13px;
+
+            }
+
+
+
+            #playBtn {
+
+                padding: 9px 18px;
+
+                font-size: 14px;
+
+            }
+
+
+
+            .tempo-control {
+
+                gap: 6px;
+
+            }
+
+
+
+            .tempo-control label {
+
+                font-size: 11px;
+
+            }
+
+
+
+            input[type="range"] {
+
+                width: 70px;
+
+            }
+
+
+
+            .tempo-display {
+
+                min-width: 45px;
+
+                font-size: 12px;
+
+            }
+
+
+
+            .beat-number {
+
+                font-size: 9px;
+
+                min-width: 26px;
+
+                padding: 2px 0;
+
+            }
+
+
+
+            .track-row {
+
+                gap: 6px;
+
+            }
+
+
+
+            .track-header {
+
+                min-width: 65px;
+
+                padding: 6px;
+
+            }
+
+
+
+            .track-label {
+
+                font-size: 10px;
+
+            }
+
+
+
+            .step {
+
+                min-width: 30px;
+
+                min-height: 30px;
+
+            }
+
+
+
+            .mini-btn {
+
+                padding: 3px 5px;
+
+                font-size: 8px;
+
+                min-width: 28px;
+
+            }
+
+
+
+            .info {
+
+                font-size: 10px;
+
+                margin-top: 10px;
+
+            }
+
+        }
+
+
+
+        @media (max-width: 360px) {
+
+            .step {
+
+                min-width: 28px;
+
+                min-height: 28px;
+
+            }
+
+
+
+            .beat-number {
+
+                min-width: 24px;
+
+                font-size: 8px;
+
+            }
+
+
+
+            .track-header {
+
+                min-width: 60px;
+
+                padding: 5px;
+
+            }
+
+
+
+            .track-label {
+
+                font-size: 9px;
+
+            }
+
+
+
+            .mini-btn {
+
+                padding: 2px 4px;
+
+                font-size: 7px;
+
+                min-width: 26px;
+
+            }
+
+
+
+            .tempo-control label {
+
+                display: none;
+
+            }
+
+
+
+            input[type="range"] {
+
+                width: 60px;
+
+            }
+
+        }
+
+    </style>
+
+</head>
+
+<body>
+
+    <div class="container">
+
+        <h1>🎵 Beat Sketcher</h1>
+
+
+
+        <div class="controls">
+
+            <button id="playBtn">▶ Play</button>
+
+            <div class="tempo-control">
+
+                <label for="tempoSlider">BPM:</label>
+
+                <input type="range" id="tempoSlider" min="40" max="200" value="120">
+
+                <div class="tempo-display" id="tempoDisplay">120</div>
+
+            </div>
+
+        </div>
+
+
+
+        <div class="grid-wrapper">
+
+            <div class="beat-numbers" id="beatNumbers"></div>
+
+            <div class="grid-container" id="grid"></div>
+
+        </div>
+
+
+
+        <div class="info">
+
+            Tap cells to toggle. Use Clear/Random per track. Hit Play to start.
+
+        </div>
+
+    </div>
+
+
+
+    <script>
+
+        // Web Audio context
+
+        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+
+
+
+        // Beat state
+
+        let isPlaying = false;
+
+        let tempo = 120;
+
+        let nextNoteTime = 0.0;
+
+        let scheduleAheadTime = 0.1;
+
+        let lookAhead = 25.0;
+
+        let scheduledSteps = new Set();
+
+        let timerID = null;
+
+
+
+        // Track configuration: 4 tracks, 16 steps each
+
+        const tracks = [
+
+            { name: 'Kick', color: '#ff006e', synthFn: synthKick },
+
+            { name: 'Snare', color: '#00d4ff', synthFn: synthSnare },
+
+            { name: 'HiHat', color: '#ffd60a', synthFn: synthHiHat },
+
+            { name: 'Perc', color: '#8338ec', synthFn: synthPerc }
+
+        ];
+
+
+
+        // Grid state: 4 tracks × 16 steps
+
+        const grid = Array(4).fill().map(() => Array(16).fill(false));
+
+
+
+        // ============ Sound Synthesis Functions ============
+
+
+
+        function synthKick(time) {
+
+            const osc = audioContext.createOscillator();
+
+            const gain = audioContext.createGain();
+
+
+
+            osc.connect(gain);
+
+            gain.connect(audioContext.destination);
+
+
+
+            osc.frequency.setValueAtTime(150, time);
+
+            osc.frequency.exponentialRampToValueAtTime(0.01, time + 0.5);
+
+
+
+            gain.gain.setValueAtTime(1, time);
+
+            gain.gain.exponentialRampToValueAtTime(0.01, time + 0.5);
+
+
+
+            osc.start(time);
+
+            osc.stop(time + 0.5);
+
+        }
+
+
+
+        function synthSnare(time) {
+
+            const noise = audioContext.createBufferSource();
+
+            const buffer = audioContext.createBuffer(1, audioContext.sampleRate * 0.2, audioContext.sampleRate);
+
+            const data = buffer.getChannelData(0);
+
+            for (let i = 0; i < buffer.length; i++) {
+
+                data[i] = Math.random() * 2 - 1;
+
+            }
+
+            noise.buffer = buffer;
+
+
+
+            const gain = audioContext.createGain();
+
+            noise.connect(gain);
+
+            gain.connect(audioContext.destination);
+
+
+
+            gain.gain.setValueAtTime(0.8, time);
+
+            gain.gain.exponentialRampToValueAtTime(0.01, time + 0.2);
+
+
+
+            noise.start(time);
+
+            noise.stop(time + 0.2);
+
+        }
+
+
+
+        function synthHiHat(time) {
+
+            const noise = audioContext.createBufferSource();
+
+            const buffer = audioContext.createBuffer(1, audioContext.sampleRate * 0.1, audioContext.sampleRate);
+
+            const data = buffer.getChannelData(0);
+
+            for (let i = 0; i < buffer.length; i++) {
+
+                data[i] = Math.random() * 2 - 1;
+
+            }
+
+            noise.buffer = buffer;
+
+
+
+            const filter = audioContext.createBiquadFilter();
+
+            filter.type = 'highpass';
+
+            filter.frequency.setValueAtTime(8000, time);
+
+
+
+            const gain = audioContext.createGain();
+
+            noise.connect(filter);
+
+            filter.connect(gain);
+
+            gain.connect(audioContext.destination);
+
+
+
+            gain.gain.setValueAtTime(0.5, time);
+
+            gain.gain.exponentialRampToValueAtTime(0.01, time + 0.1);
+
+
+
+            noise.start(time);
+
+            noise.stop(time + 0.1);
+
+        }
+
+
+
+        function synthPerc(time) {
+
+            const osc = audioContext.createOscillator();
+
+            const gain = audioContext.createGain();
+
+
+
+            osc.connect(gain);
+
+            gain.connect(audioContext.destination);
+
+
+
+            osc.frequency.setValueAtTime(300, time);
+
+            osc.frequency.exponentialRampToValueAtTime(50, time + 0.15);
+
+
+
+            gain.gain.setValueAtTime(0.7, time);
+
+            gain.gain.exponentialRampToValueAtTime(0.01, time + 0.15);
+
+
+
+            osc.start(time);
+
+            osc.stop(time + 0.15);
+
+        }
+
+
+
+        // ============ Scheduling ============
+
+
+
+        function scheduleNote(step) {
+
+            for (let track = 0; track < tracks.length; track++) {
+
+                if (grid[track][step]) {
+
+                    const time = audioContext.currentTime + (nextNoteTime - audioContext.currentTime);
+
+                    tracks[track].synthFn(time);
+
+                }
+
+            }
+
+        }
+
+
+
+        function nextNote() {
+
+            const secondsPerBeat = 60.0 / tempo;
+
+            nextNoteTime += 0.25 * secondsPerBeat;
+
+        }
+
+
+
+        function scheduler() {
+
+            while (nextNoteTime < audioContext.currentTime + scheduleAheadTime) {
+
+                const stepNum = scheduledSteps.size % 16;
+
+                scheduleNote(stepNum);
+
+                scheduledSteps.add(nextNoteTime);
+
+                nextNote();
+
+            }
+
+        }
+
+
+
+        function timerWorker() {
+
+            scheduler();
+
+        }
+
+
+
+        function startPlay() {
+
+            isPlaying = true;
+
+            scheduledSteps = new Set();
+
+            nextNoteTime = audioContext.currentTime;
+
+            timerID = setInterval(timerWorker, lookAhead);
+
+        }
+
+
+
+        function stopPlay() {
+
+            isPlaying = false;
+
+            clearInterval(timerID);
+
+            scheduledSteps = new Set();
+
+            document.querySelectorAll('.step').forEach(btn => {
+
+                btn.classList.remove('playing');
+
+            });
+
+        }
+
+
+
+        // ============ Grid Utilities ============
+
+
+
+        function clearTrack(trackIdx) {
+
+            grid[trackIdx].fill(false);
+
+            updateTrackUI(trackIdx);
+
+        }
+
+
+
+        function randomizeTrack(trackIdx) {
+
+            for (let step = 0; step < 16; step++) {
+
+                grid[trackIdx][step] = Math.random() > 0.5;
+
+            }
+
+            updateTrackUI(trackIdx);
+
+        }
+
+
+
+        function updateTrackUI(trackIdx) {
+
+            document.querySelectorAll(`[data-track="${trackIdx}"]`).forEach(btn => {
+
+                const step = parseInt(btn.dataset.step);
+
+                if (grid[trackIdx][step]) {
+
+                    btn.classList.add('active');
+
+                } else {
+
+                    btn.classList.remove('active');
+
+                }
+
+            });
+
+        }
+
+
+
+        // ============ UI ============
+
+
+
+        const playBtn = document.getElementById('playBtn');
+
+        const tempoSlider = document.getElementById('tempoSlider');
+
+        const tempoDisplay = document.getElementById('tempoDisplay');
+
+        const gridContainer = document.getElementById('grid');
+
+        const beatNumbersContainer = document.getElementById('beatNumbers');
+
+
+
+        playBtn.addEventListener('click', () => {
+
+            if (isPlaying) {
+
+                stopPlay();
+
+                playBtn.textContent = '▶ Play';
+
+                playBtn.classList.remove('playing');
+
+            } else {
+
+                startPlay();
+
+                playBtn.textContent = '⏹ Stop';
+
+                playBtn.classList.add('playing');
+
+            }
+
+        });
+
+
+
+        tempoSlider.addEventListener('input', (e) => {
+
+            tempo = parseInt(e.target.value);
+
+            tempoDisplay.textContent = tempo;
+
+        });
+
+
+
+        // Build beat numbers header
+
+        for (let i = 0; i < 16; i++) {
+
+            const beatNum = document.createElement('div');
+
+            beatNum.className = 'beat-number';
+
+            if (i % 4 === 0) {
+
+                beatNum.classList.add('downbeat');
+
+            }
+
+            beatNum.textContent = i + 1;
+
+            beatNumbersContainer.appendChild(beatNum);
+
+        }
+
+
+
+        // Build grid UI
+
+        tracks.forEach((track, trackIdx) => {
+
+            const trackRowDiv = document.createElement('div');
+
+            trackRowDiv.className = 'track-row';
+
+
+
+            // Header with label and buttons
+
+            const headerDiv = document.createElement('div');
+
+            headerDiv.className = 'track-header';
+
+
+
+            const labelDiv = document.createElement('div');
+
+            labelDiv.className = 'track-label';
+
+            labelDiv.textContent = track.name;
+
+            headerDiv.appendChild(labelDiv);
+
+
+
+            const buttonsDiv = document.createElement('div');
+
+            buttonsDiv.className = 'track-buttons';
+
+
+
+            const clearBtn = document.createElement('button');
+
+            clearBtn.className = 'mini-btn';
+
+            clearBtn.textContent = 'CLR';
+
+            clearBtn.addEventListener('click', () => clearTrack(trackIdx));
+
+            buttonsDiv.appendChild(clearBtn);
+
+
+
+            const randomBtn = document.createElement('button');
+
+            randomBtn.className = 'mini-btn';
+
+            randomBtn.textContent = 'RND';
+
+            randomBtn.addEventListener('click', () => randomizeTrack(trackIdx));
+
+            buttonsDiv.appendChild(randomBtn);
+
+
+
+            headerDiv.appendChild(buttonsDiv);
+
+            trackRowDiv.appendChild(headerDiv);
+
+
+
+            // Steps grid
+
+            const trackDiv = document.createElement('div');
+
+            trackDiv.className = 'track';
+
+
+
+            for (let step = 0; step < 16; step++) {
+
+                const stepBtn = document.createElement('div');
+
+                stepBtn.className = 'step';
+
+                stepBtn.dataset.track = trackIdx;
+
+                stepBtn.dataset.step = step;
+
+
+
+                stepBtn.addEventListener('click', () => {
+
+                    grid[trackIdx][step] = !grid[trackIdx][step];
+
+                    stepBtn.classList.toggle('active');
+
+                });
+
+
+
+                trackDiv.appendChild(stepBtn);
+
+            }
+
+
+
+            trackRowDiv.appendChild(trackDiv);
+
+            gridContainer.appendChild(trackRowDiv);
+
+        });
+
+
+
+        // Update playhead display smoothly
+
+        function updatePlayhead() {
+
+            if (!isPlaying) return;
+
+
+
+            const secondsPerBeat = 60.0 / tempo;
+
+            const elapsedBeats = (nextNoteTime - audioContext.currentTime) / secondsPerBeat;
+
+            const currentStep = Math.floor(elapsedBeats / 4) % 16;
+
+
+
+            document.querySelectorAll('.step').forEach(btn => {
+
+                btn.classList.remove('playing');
+
+                if (parseInt(btn.dataset.step) === currentStep) {
+
+                    btn.classList.add('playing');
+
+                }
+
+            });
+
+        }
+
+
+
+        setInterval(updatePlayhead, 16);
+
+    </script>
+
+</body>
+
+</html>

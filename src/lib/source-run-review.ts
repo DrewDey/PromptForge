@@ -120,7 +120,10 @@ export function titleForSourceRunReview(input: {
   return cleanGeneratedProjectTitle(rawTitle)
 }
 
-export function agentNotesForSourceRunReview(notes: string | null) {
+export function agentNotesForSourceRunReview(
+  notes: string | null,
+  options: { hideForkMetadata?: boolean } = {},
+) {
   const raw = notes?.trim() ?? ''
   if (!raw) return ''
   const hiddenMetadataPrefixes = [
@@ -131,9 +134,21 @@ export function agentNotesForSourceRunReview(notes: string | null) {
     'Model used:',
     'Model settings:',
   ]
+  const forkMetadataPrefixes = [
+    'Fork source project:',
+    'Fork point response:',
+    'Parent fork:',
+    'Prompt family:',
+    'Fork coordinates:',
+  ]
   const withoutRedundantTitle = raw
     .split(/\r?\n/)
-    .filter((line) => !hiddenMetadataPrefixes.some((prefix) => line.trim().startsWith(prefix)))
+    .filter((line) => {
+      const trimmed = line.trim()
+      if (hiddenMetadataPrefixes.some((prefix) => trimmed.startsWith(prefix))) return false
+      if (options.hideForkMetadata && forkMetadataPrefixes.some((prefix) => trimmed.startsWith(prefix))) return false
+      return true
+    })
     .join('\n')
     .trim()
 

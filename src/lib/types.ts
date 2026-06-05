@@ -35,6 +35,14 @@ export type Prompt = {
   author_id: string
   vote_count: number
   bookmark_count: number
+  fork_source_project_id?: string | null
+  fork_source_project_title?: string | null
+  fork_source_step_id?: string | null
+  fork_source_step_number?: number | null
+  fork_parent_submission_id?: string | null
+  prompt_family_id?: string | null
+  fork_depth?: number | null
+  fork_branch_index?: number | null
   created_at: string
   updated_at: string
 }
@@ -75,6 +83,14 @@ export type SourceRunSubmission = {
   source_url: string | null
   file_name: string | null
   notes: string | null
+  fork_source_project_id?: string | null
+  fork_source_project_title?: string | null
+  fork_source_step_id?: string | null
+  fork_source_step_number?: number | null
+  fork_parent_submission_id?: string | null
+  prompt_family_id?: string | null
+  fork_depth?: number | null
+  fork_branch_index?: number | null
   author_id: string
   status: SourceRunSubmissionStatus
   extracted_prompt_id: string | null

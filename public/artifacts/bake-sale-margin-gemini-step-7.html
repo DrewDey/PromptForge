@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bake Sale Planner</title>
+<style>
+    body { font-family: sans-serif; padding: 10px; background: #f4f7f6; font-size: 14px; }
+    .container { max-width: 600px; margin: auto; background: white; padding: 15px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+    table { width: 100%; border-collapse: collapse; margin: 10px 0; table-layout: fixed; }
+    th, td { padding: 5px; border: 1px solid #ddd; overflow: hidden; }
+    input { width: 90%; padding: 4px; box-sizing: border-box; }
+    .row { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 10px; }
+    .row > div { flex: 1 1 120px; }
+    .summary-area { margin-top: 15px; padding: 10px; background: #f9f9f9; border: 1px dashed #999; }
+    .btn-group { display: flex; gap: 5px; margin-top: 10px; flex-wrap: wrap; }
+    button { padding: 8px; cursor: pointer; border: none; border-radius: 4px; background: #27ae60; color: white; }
+    @media print { .no-print { display: none; } }
+</style>
+</head>
+<body>
+
+<div class="container">
+    <h2>Bake Sale Planner</h2>
+
+    <div class="row">
+        <div><label>Product Name:</label><input type="text" id="prodName" oninput="saveData()"></div>
+        <div><label>Items/Pack:</label><input type="number" id="packSize" value="1" oninput="saveData()"></div>
+    </div>
+
+    <table id="ingTable">
+        <thead><tr><th>Ingred.</th><th>Price $</th><th>Size</th><th>Used</th></tr></thead>
+        <tbody>
+            </tbody>
+    </table>
+    <button class="no-print" onclick="addRow('',0,1,0)">+ Add Row</button>
+
+    <div class="row" style="margin-top:15px;">
+        <div><label>Total Yield:</label><input type="number" id="yield" value="1" oninput="saveData()"></div>
+        <div><label>Pkg Cost/Unit:</label><input type="number" id="pkgCost" value="0" oninput="saveData()"></div>
+        <div><label>Target Price:</label><input type="number" id="targetPrice" value="0" oninput="saveData()"></div>
+        <div><label>Goal $:</label><input type="number" id="tableGoal" value="100" oninput="saveData()"></div>
+    </div>
+
+    <div class="summary-area" id="printableArea">
+        <h3>Summary: <span id="sumName">...</span></h3>
+        <p>Cost per Item: $<span id="costPer">0.00</span> | Margin: <span id="marginPer">0</span>%</p>
+        <p>Break-even: <span id="breakEven">0</span> packs | Batch Profit: $<span id="batchProfit">0.00</span></p>
+    </div>
+
+    <div class="btn-group no-print">
+        <button onclick="copySummary()">Copy Summary</button>
+        <button onclick="downloadSummary()">Export File</button>
+        <button onclick="window.print()">Print</button>
+    </div>
+</div>
+
+<script>
+function addRow(name='', price=0, size=1, used=0) {
+    const tbody = document.getElementById("ingTable").getElementsByTagName('tbody')[0];
+    const row = tbody.insertRow();
+    row.innerHTML = `<td><input type="text" class="name" value="${name}" oninput="saveData()"></td>
+                     <td><input type="number" class="pkgPrice" value="${price}" oninput="saveData()"></td>
+                     <td><input type="number" class="pkgAmount" value="${size}" oninput="saveData()"></td>
+                     <td><input type="number" class="amtUsed" value="${used}" oninput="saveData()"></td>`;
+}
+
+function saveData() {
+    const ingredients = [];
+    document.querySelectorAll('#ingTable tbody tr').forEach(r => {
+        ingredients.push({
+            name: r.querySelector('.name').value,
+            price: r.querySelector('.pkgPrice').value,
+            size: r.querySelector('.pkgAmount').value,
+            used: r.querySelector('.amtUsed').value
+        });
+    });
+
+    const data = {
+        name: document.getElementById('prodName').value,
+        yield: document.getElementById('yield').value,
+        pkgCost: document.getElementById('pkgCost').value,
+        target: document.getElementById('targetPrice').value,
+        goal: document.getElementById('tableGoal').value,
+        pack: document.getElementById('packSize').value,
+        ingredients: ingredients
+    };
+    localStorage.setItem('bakeSaleData', JSON.stringify(data));
+    calc();
+}
+
+function calc() {
+    let tot = 0;
+    document.querySelectorAll('#ingTable tbody tr').forEach(r => {
+        const p = parseFloat(r.querySelector('.pkgPrice').value) || 0;
+        const a = parseFloat(r.querySelector('.pkgAmount').value) || 1;
+        const u = parseFloat(r.querySelector('.amtUsed').value) || 0;
+        tot += (p/a) * u;
+    });
+
+    const y = parseFloat(document.getElementById('yield').value) || 1;
+    const pk = parseFloat(document.getElementById('pkgCost').value) || 0;
+    const t = parseFloat(document.getElementById('targetPrice').value) || 0;
+    const g = parseFloat(document.getElementById('tableGoal').value) || 0;
+    const pSize = parseFloat(document.getElementById('packSize').value) || 1;
+
+    const costPer = (tot / y) + pk;
+    const itemCost = costPer * pSize;
+    const profit = t - itemCost;
+    const margin = t > 0 ? (profit/t)*100 : 0;
+    const be = profit > 0 ? Math.ceil(g/profit) : 0;
+
+    document.getElementById('sumName').innerText = document.getElementById('prodName').value || "...";
+    document.getElementById('costPer').innerText = itemCost.toFixed(2);
+    document.getElementById('marginPer').innerText = margin.toFixed(1);
+    document.getElementById('breakEven').innerText = be;
+    document.getElementById('batchProfit').innerText = (profit * (y/pSize)).toFixed(2);
+}
+
+function copySummary() {
+    const text = `Summary for ${document.getElementById('prodName').value}: Cost/Item: $${document.getElementById('costPer').innerText}, Margin: ${document.getElementById('marginPer').innerText}%, Break-Even: ${document.getElementById('breakEven').innerText} packs, Total Profit: $${document.getElementById('batchProfit').innerText}`;
+    navigator.clipboard.writeText(text);
+    alert("Copied!");
+}
+
+function downloadSummary() {
+    const blob = new Blob([document.getElementById('printableArea').innerText], {type: "text/plain"});
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = "summary.txt";
+    a.click();
+}
+
+window.onload = () => {
+    const saved = JSON.parse(localStorage.getItem('bakeSaleData'));
+    if(saved) {
+        document.getElementById('prodName').value = saved.name || "";
+        document.getElementById('yield').value = saved.yield || 1;
+        document.getElementById('pkgCost').value = saved.pkgCost || 0;
+        document.getElementById('targetPrice').value = saved.target || 0;
+        document.getElementById('tableGoal').value = saved.goal || 100;
+        document.getElementById('packSize').value = saved.pack || 1;
+
+        if(saved.ingredients && saved.ingredients.length > 0) {
+            saved.ingredients.forEach(i => addRow(i.name, i.price, i.size, i.used));
+        } else {
+            addRow();
+        }
+        calc();
+    } else {
+        addRow();
+    }
+}
+</script>
+</body>
+</html>

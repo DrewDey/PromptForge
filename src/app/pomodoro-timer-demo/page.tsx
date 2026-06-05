@@ -151,6 +151,8 @@ export default function PomodoroTimerDemoPage() {
 
       <SourceRunShowcase
         sourceRunUrl={sourceRunUrl}
+        projectId={projectId}
+        projectTitle={project.title}
         providerName="ChatGPT"
         steps={steps}
         defaultStepNumber={4}

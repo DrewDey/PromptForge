@@ -1,9 +1,11 @@
 'use client'
 
 import { Fragment, type ReactNode } from 'react'
+import Link from 'next/link'
 import { useMemo, useState } from 'react'
-import { AlertTriangle, CheckCircle2, ExternalLink, FileCode2, GitBranch } from 'lucide-react'
+import { AlertTriangle, ArrowRight, CheckCircle2, ExternalLink, FileCode2, GitBranch, GitFork } from 'lucide-react'
 import CopyButton from '@/app/prompt/[id]/CopyButton'
+import { buildProjectForkHref } from '@/lib/project-forks'
 
 export type SourceRunShowcaseCallout = {
   tone: 'warning' | 'success' | 'neutral'
@@ -106,6 +108,45 @@ function PromptText({ text }: { text: string }) {
   )
 }
 
+function ResponseForkHoverRail({
+  forkHref,
+  forkLabel,
+}: {
+  forkHref: string
+  forkLabel?: string
+}) {
+  return (
+    <>
+      <span
+        data-response-fork-socket
+        className="absolute right-[-18px] top-[46px] z-10 hidden h-12 w-12 border-4 border-[#07551f] bg-[#effdf3] shadow-[0_0_0_0_rgba(43,209,95,0)] transition duration-300 group-hover/source-fork-node:shadow-[0_0_0_8px_rgba(43,209,95,0.18)] group-focus-within/source-fork-node:shadow-[0_0_0_8px_rgba(43,209,95,0.18)] motion-safe:group-hover/source-fork-node:animate-pulse xl:block"
+        aria-hidden="true"
+      >
+        <span className="absolute left-1/2 top-1/2 h-4 w-4 -translate-x-1/2 -translate-y-1/2 border-2 border-[#07551f] bg-[#2bd15f]" />
+      </span>
+
+      <div
+        data-response-fork-hover-rail
+        className="pointer-events-none absolute right-[-8px] top-[47px] z-20 hidden translate-x-3 items-center opacity-0 transition duration-300 group-hover/source-fork-node:pointer-events-auto group-hover/source-fork-node:translate-x-0 group-hover/source-fork-node:opacity-100 group-focus-within/source-fork-node:pointer-events-auto group-focus-within/source-fork-node:translate-x-0 group-focus-within/source-fork-node:opacity-100 xl:flex"
+      >
+        <div className="relative h-12 w-32 shrink-0" aria-hidden="true">
+          <span className="absolute left-0 top-1/2 h-5 w-full origin-left -translate-y-1/2 scale-x-0 border-y-4 border-[#07551f] bg-[#2bd15f] shadow-[inset_0_5px_0_rgba(255,255,255,0.2),inset_0_-5px_0_rgba(0,0,0,0.16)] transition-transform duration-300 group-hover/source-fork-node:scale-x-100 group-focus-within/source-fork-node:scale-x-100" />
+          <span className="absolute right-[-2px] top-1/2 h-9 w-9 -translate-y-1/2 border-4 border-[#07551f] bg-[#effdf3] shadow-[0_0_0_6px_rgba(43,209,95,0.16)]" />
+        </div>
+        <Link
+          href={forkHref}
+          className="inline-flex min-h-11 shrink-0 translate-x-[-10px] items-center gap-2 border-2 border-[#07551f] bg-white px-3 py-2 text-xs font-black uppercase tracking-[0.12em] text-[#07551f] shadow-[0_14px_34px_rgba(7,85,31,0.18)] transition duration-300 hover:bg-[#effdf3] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#2bd15f] group-hover/source-fork-node:translate-x-0 group-focus-within/source-fork-node:translate-x-0"
+          aria-label={forkLabel}
+        >
+          <GitFork className="h-3.5 w-3.5" aria-hidden="true" />
+          Fork here
+          <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
+        </Link>
+      </div>
+    </>
+  )
+}
+
 function PipeNode({
   eyebrow,
   title,
@@ -113,6 +154,8 @@ function PipeNode({
   terminal = false,
   variant = 'prompt',
   selected = false,
+  forkHref,
+  forkLabel,
 }: {
   eyebrow: string
   title: string
@@ -120,6 +163,8 @@ function PipeNode({
   terminal?: boolean
   variant?: 'prompt' | 'response'
   selected?: boolean
+  forkHref?: string
+  forkLabel?: string
 }) {
   const cardClassName = [
     'relative border bg-white p-5 shadow-[0_18px_44px_rgba(24,24,27,0.07)]',
@@ -127,20 +172,37 @@ function PipeNode({
       ? 'border-brand-blue ring-2 ring-brand-blue/25'
       : 'border-surface-200',
   ].join(' ')
+  const canFork = variant === 'response' && Boolean(forkHref)
 
   return (
-    <article className="relative pl-[88px]" data-source-run-node={variant}>
+    <article className="group/source-fork-node relative pl-[88px]" data-source-run-node={variant}>
       {!terminal && (
         <div className="absolute left-[22px] top-[80px] h-[calc(100%+30px)] w-8 border-x-4 border-[#07551f] bg-[#2bd15f] shadow-[inset_5px_0_0_rgba(255,255,255,0.24),inset_-5px_0_0_rgba(0,0,0,0.2)]" />
       )}
       <div className="absolute left-0 top-8 h-16 w-12 border-4 border-[#07551f] bg-[#2bd15f] shadow-[inset_6px_0_0_rgba(255,255,255,0.28),inset_-6px_0_0_rgba(0,0,0,0.18)]" />
       <div className="absolute left-11 top-[54px] h-7 w-12 border-y-4 border-[#07551f] bg-[#2bd15f] shadow-[inset_0_5px_0_rgba(255,255,255,0.18),inset_0_-5px_0_rgba(0,0,0,0.16)]" />
+      {canFork && forkHref && (
+        <ResponseForkHoverRail forkHref={forkHref} forkLabel={forkLabel} />
+      )}
       <div className={cardClassName}>
         <div className="font-mono text-[10px] uppercase tracking-[0.18em] text-surface-500">
           {eyebrow}
         </div>
         <h3 className="mt-2 text-xl font-black text-surface-900">{title}</h3>
         <div className="mt-4 text-sm leading-6 text-surface-700">{children}</div>
+        {canFork && forkHref && (
+          <Link
+            href={forkHref}
+            className="relative mt-4 inline-flex min-h-11 items-center gap-2 border border-[#07551f] bg-[#effdf3] py-2 pl-10 pr-3 text-xs font-black uppercase tracking-[0.12em] text-[#07551f] transition hover:bg-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#2bd15f] xl:hidden"
+            aria-label={forkLabel}
+          >
+            <span className="absolute left-0 top-1/2 h-2 w-8 -translate-y-1/2 border-y border-[#07551f] bg-[#2bd15f]" aria-hidden="true" />
+            <span className="absolute left-6 top-1/2 h-4 w-4 -translate-y-1/2 border-2 border-[#07551f] bg-white" aria-hidden="true" />
+            <GitFork className="h-3.5 w-3.5" aria-hidden="true" />
+            Fork from this response
+            <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
+          </Link>
+        )}
       </div>
     </article>
   )
@@ -386,6 +448,8 @@ export default function SourceRunShowcase({
   sourceRunUrl,
   pathforgeSourceRunUrl,
   sourceRunId,
+  projectId,
+  projectTitle,
   providerName,
   steps,
   defaultStepNumber,
@@ -394,6 +458,8 @@ export default function SourceRunShowcase({
   sourceRunUrl: string
   pathforgeSourceRunUrl?: string
   sourceRunId?: string
+  projectId?: string
+  projectTitle?: string
   providerName: string
   steps: SourceRunShowcaseStep[]
   defaultStepNumber?: number
@@ -532,6 +598,15 @@ export default function SourceRunShowcase({
           {steps.map((step, index) => {
             const artifactPackages = packages.filter((pkg) => pkg.stepId === step.id)
             const selectedStepPackage = artifactPackages.find((pkg) => selectedPackage?.id === pkg.id)
+            const forkHref = projectId
+              ? buildProjectForkHref({
+                sourceProjectId: projectId,
+                sourceProjectTitle: projectTitle,
+                sourceStepId: step.id,
+                sourceStepNumber: step.stepNumber,
+                promptFamilyId: `${projectId}:${step.id}`,
+              })
+              : undefined
 
             return (
               <Fragment key={step.id}>
@@ -550,6 +625,8 @@ export default function SourceRunShowcase({
                   terminal={index === steps.length - 1}
                   variant="response"
                   selected={Boolean(selectedStepPackage)}
+                  forkHref={forkHref}
+                  forkLabel={`Fork ${projectTitle ?? 'this path'} from response package ${String(step.stepNumber).padStart(2, '0')}`}
                 >
                   <ResponsePackageCard
                     step={step}

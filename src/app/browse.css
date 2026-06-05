@@ -184,7 +184,8 @@
 .pf-browse .result-actions > div { justify-content: flex-end; }
 
 .pf-browse .compare-stack { display: grid; gap: 18px; }
-.pf-browse .compare-group { border: 1px solid var(--color-surface-200); background: #fff; }
+.pf-browse .compare-group { position: relative; border: 1px solid var(--color-surface-200); background: #fff; }
+.pf-browse .compare-group.is-prompt-family { border-left-color: var(--color-brand-orange); box-shadow: inset 3px 0 0 var(--color-brand-orange); }
 .pf-browse .compare-group-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 18px; border-bottom: 1px solid var(--color-surface-200); padding: 18px; }
 .pf-browse .compare-kicker { font-family: var(--font-mono); font-size: 10px; font-weight: 700; letter-spacing: .14em; color: var(--color-brand-orange); text-transform: uppercase; }
 .pf-browse .compare-group h3 { margin: 5px 0 0; color: var(--color-surface-900); font-size: 19px; font-weight: 850; letter-spacing: 0; line-height: 1.15; }

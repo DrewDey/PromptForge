@@ -1,0 +1,707 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Kitchen Rescue Mobile-First</title>
+    <style>
+        :root {
+            --bg-color: #f4f7f6;
+            --card-bg: #ffffff;
+            --text-main: #2c3e50;
+            --text-muted: #7f8c8d;
+            --accent-urgent: #e74c3c;
+            --accent-warning: #f39c12;
+            --accent-safe: #2ecc71;
+            --border-color: #dcdde1;
+        }
+
+        /* Prevent global mobile overflows */
+        html, body {
+            max-width: 100%;
+            overflow-x: hidden;
+            margin: 0;
+            padding: 0;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            -webkit-text-size-adjust: 100%;
+        }
+
+        body {
+            padding: 12px;
+            box-sizing: border-box;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            box-sizing: border-box;
+        }
+
+        .panel {
+            background: var(--card-bg);
+            border-radius: 12px;
+            padding: 16px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+            box-sizing: border-box;
+            width: 100%;
+            overflow: hidden; /* Clamp children */
+        }
+
+        h1 {
+            font-size: 20px;
+            margin: 0 0 4px 0;
+            color: var(--text-main);
+        }
+
+        h2 {
+            font-size: 18px;
+            margin: 0 0 12px 0;
+        }
+
+        h3 {
+            font-size: 15px;
+            margin: 0 0 10px 0;
+        }
+
+        .subtitle {
+            color: var(--text-muted);
+            font-size: 13px;
+            margin-bottom: 16px;
+            line-height: 1.4;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            margin-bottom: 8px;
+        }
+
+        .form-group {
+            margin-bottom: 8px;
+            display: flex;
+            flex-direction: column;
+            min-width: 0; /* Prevent flex box blowing past boundaries */
+        }
+
+        label {
+            font-weight: 600;
+            margin-bottom: 4px;
+            font-size: 12px;
+        }
+
+        input, select {
+            padding: 10px;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            font-family: inherit;
+            font-size: 14px;
+            box-sizing: border-box;
+            width: 100%;
+            height: 40px; /* Reliable tap target size */
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 8px;
+            margin-top: 12px;
+            margin-bottom: 16px;
+            flex-wrap: wrap;
+            width: 100%;
+        }
+
+        button {
+            padding: 10px 12px;
+            font-size: 13px;
+            font-weight: 600;
+            border-radius: 8px;
+            cursor: pointer;
+            box-sizing: border-box;
+            border: none;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 40px;
+            flex: 1 1 auto;
+        }
+
+        .btn-primary {
+            background-color: var(--text-main);
+            color: white;
+        }
+
+        .btn-secondary {
+            background-color: transparent;
+            color: var(--text-main);
+            border: 1px solid var(--text-main);
+        }
+
+        .btn-action {
+            background-color: #eef2f7;
+            color: #34495e;
+            border: 1px solid var(--border-color);
+            font-size: 12px;
+        }
+
+        .btn-demo {
+            background-color: #e8f8f0;
+            color: #1e7e34;
+            border: 1px solid #c3e6cb;
+            width: 100%;
+            font-weight: 700;
+        }
+
+        /* Isolated scrolling frame for internal data tables */
+        .inventory-section {
+            border-top: 1px solid var(--border-color);
+            padding-top: 16px;
+            width: 100%;
+        }
+
+        .inventory-table-wrapper {
+            width: 100%;
+            overflow-x: auto;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            background: #f8f9fa;
+            -webkit-overflow-scrolling: touch; /* Butter scroll iOS */
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 12px;
+            text-align: left;
+            min-width: 340px; /* Keeps layout proportional within containment frame */
+        }
+
+        th, td {
+            padding: 8px;
+            border-bottom: 1px solid var(--border-color);
+            white-space: nowrap;
+        }
+
+        th {
+            font-weight: 600;
+            background-color: #eaeded;
+        }
+
+        .tag {
+            display: inline-block;
+            padding: 2px 4px;
+            border-radius: 4px;
+            font-size: 10px;
+            font-weight: 600;
+            margin-right: 2px;
+            background-color: #e2e8f0;
+            color: #4a5568;
+        }
+
+        .delete-btn {
+            background: none;
+            border: none;
+            color: var(--accent-urgent);
+            cursor: pointer;
+            font-weight: bold;
+            padding: 4px 8px;
+            font-size: 16px;
+        }
+
+        .placeholder-text {
+            color: var(--text-muted);
+            text-align: center;
+            padding: 30px 10px;
+            font-style: italic;
+            font-size: 13px;
+        }
+
+        .section-block {
+            margin-bottom: 24px;
+        }
+
+        .section-title {
+            font-size: 15px;
+            font-weight: 700;
+            margin-bottom: 12px;
+            padding-bottom: 4px;
+            border-bottom: 2px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .badge {
+            font-size: 10px;
+            padding: 2px 6px;
+            border-radius: 10px;
+            color: white;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+
+        .badge.now { background-color: var(--accent-urgent); }
+        .badge.tier { background-color: var(--text-main); }
+
+        .combo-card {
+            background: #ffffff;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 12px;
+            margin-bottom: 12px;
+        }
+
+        .combo-header {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            margin-bottom: 8px;
+        }
+
+        .combo-name {
+            font-weight: 700;
+            font-size: 14px;
+            color: #2c3e50;
+        }
+
+        .match-tags {
+            display: flex;
+            gap: 4px;
+            flex-wrap: wrap;
+        }
+
+        .match-tag {
+            font-size: 9px;
+            background: #eef2f7;
+            color: #34495e;
+            padding: 1px 4px;
+            border-radius: 4px;
+            border: 1px solid #dcdde1;
+        }
+
+        .used-ingredients {
+            font-size: 12px;
+            margin-bottom: 8px;
+            color: #2c3e50;
+            background: #f8f9fa;
+            padding: 6px 10px;
+            border-radius: 6px;
+            line-height: 1.3;
+        }
+
+        .used-ingredients strong {
+            color: #e74c3c;
+        }
+
+        .combo-steps {
+            font-size: 12px;
+            line-height: 1.4;
+            color: #57606f;
+            margin: 0;
+            padding-left: 16px;
+        }
+
+        .combo-steps li {
+            margin-bottom: 4px;
+        }
+
+        .recipe-card {
+            background: #fdfdfd;
+            border: 1px solid var(--border-color);
+            border-left: 4px solid transparent;
+            border-radius: 6px;
+            padding: 10px;
+            margin-bottom: 10px;
+            font-size: 12px;
+        }
+
+        .recipe-title {
+            font-weight: 700;
+            margin-bottom: 4px;
+        }
+
+        .hidden-file-input {
+            display: none;
+        }
+
+        /* Desktop grid pairing setup */
+        @media (min-width: 768px) {
+            body { padding: 20px; }
+            .container {
+                display: grid;
+                grid-template-columns: 1.1fr 1.4fr;
+                gap: 20px;
+            }
+            .combo-header {
+                flex-direction: row;
+                justify-content: space-between;
+                align-items: center;
+            }
+        }
+
+        /* Print Media Override */
+        @media print {
+            body { background: white; color: black; padding: 0; }
+            .container { display: block; }
+            .panel:first-child { display: none !important; }
+            .btn-group, #outputUtilities, .subtitle { display: none !important; }
+            .panel { box-shadow: none; padding: 0; }
+            .combo-card, .recipe-card { border: 1px solid #000; page-break-inside: avoid; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <!-- Controls/Input Panel -->
+    <div class="panel">
+        <h1>Kitchen Rescue</h1>
+        <div class="subtitle">Log inventory items to assemble real-time adaptive strategies.</div>
+
+        <div style="margin-bottom: 12px;">
+            <button type="button" class="btn-demo" onclick="loadDemoData()">⚡ Load Demo Inventory</button>
+        </div>
+
+        <form id="ingredientForm" onsubmit="addIngredient(event)">
+            <div class="form-group">
+                <label for="itemName">Item Name</label>
+                <input type="text" id="itemName" placeholder="e.g., Eggs, Milk, Spinach" required>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="itemLocation">Location</label>
+                    <select id="itemLocation">
+                        <option value="Fridge">Fridge</option>
+                        <option value="Pantry">Pantry</option>
+                        <option value="Freezer">Freezer</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="itemExpiry">Days left</label>
+                    <input type="number" id="itemExpiry" placeholder="e.g. 1" min="0" required>
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="itemPortions">Qty / Volume</label>
+                    <input type="text" id="itemPortions" placeholder="e.g., 3 cups">
+                </div>
+                <div class="form-group">
+                    <label for="itemConstraints">Tags</label>
+                    <input type="text" id="itemConstraints" placeholder="quick, dairy-free">
+                </div>
+            </div>
+
+            <div class="btn-group">
+                <button type="submit" class="btn-primary" style="flex: 2 1 60%;">Add Item</button>
+                <button type="button" class="btn-secondary" style="flex: 1 1 30%;" onclick="clearInventory()">Reset</button>
+            </div>
+        </form>
+
+        <div style="border-top: 1px solid var(--border-color); padding-top: 12px; margin-bottom: 16px;">
+            <label style="display:block; margin-bottom:6px;">Data Maintenance</label>
+            <div class="btn-group" style="margin-top: 0; gap: 6px;">
+                <button type="button" class="btn-action" onclick="exportInventory()">Export JSON</button>
+                <button type="button" class="btn-action" onclick="document.getElementById('importFileInput').click()">Import JSON</button>
+                <input type="file" id="importFileInput" class="hidden-file-input" accept=".json" onchange="importInventory(event)">
+            </div>
+        </div>
+
+        <div class="inventory-section">
+            <h3>Current Inventory</h3>
+            <!-- Scrolling isolated to block-level table containment -->
+            <div class="inventory-table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Item</th>
+                            <th>Loc</th>
+                            <th>Exp</th>
+                            <th>Qty</th>
+                            <th>Tags</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody id="inventoryTableBody">
+                        <!-- Dynamic lines template -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Live Execution Output Panel -->
+    <div class="panel">
+        <div class="btn-group" style="margin-top: 0; margin-bottom: 12px; gap: 6px;" id="outputUtilities">
+            <button type="button" class="btn-secondary" onclick="copyPlanToClipboard()">Copy Plan</button>
+            <button type="button" class="btn-primary" onclick="window.print()">Print Sheet</button>
+        </div>
+        <div id="outputPanel">
+            <div class="placeholder-text">Load the demo data or enter items manually to build structural strategy lines.</div>
+        </div>
+    </div>
+</div>
+
+<script>
+    let inventory = [];
+
+    window.addEventListener('DOMContentLoaded', () => {
+        const stored = localStorage.getItem('kitchenRescueInventory');
+        if (stored) {
+            inventory = JSON.parse(stored);
+            updateUI();
+        }
+    });
+
+    function saveToStorage() {
+        localStorage.setItem('kitchenRescueInventory', JSON.stringify(inventory));
+    }
+
+    function loadDemoData() {
+        inventory = [
+            { id: 1, name: "Baby Spinach", location: "Fridge", expiry: 1, portions: "2 bags", constraints: ["vegetarian", "dairy-free", "quick"] },
+            { id: 2, name: "Firm Tofu", location: "Fridge", expiry: 2, portions: "1 block", constraints: ["vegetarian", "dairy-free", "no oven"] },
+            { id: 3, name: "Almond Milk", location: "Fridge", expiry: 5, portions: "0.5 gal", constraints: ["vegetarian", "dairy-free"] },
+            { id: 4, name: "Rolled Oats", location: "Pantry", expiry: 20, portions: "1 tub", constraints: ["vegetarian", "dairy-free", "quick"] }
+        ];
+        saveToStorage();
+        updateUI();
+    }
+
+    function addIngredient(e) {
+        e.preventDefault();
+
+        const name = document.getElementById('itemName').value.trim();
+        const location = document.getElementById('itemLocation').value;
+        const expiry = parseInt(document.getElementById('itemExpiry').value);
+        const portions = document.getElementById('itemPortions').value.trim() || '1 unit';
+        const constraintsRaw = document.getElementById('itemConstraints').value;
+
+        const constraints = constraintsRaw ? constraintsRaw.split(',').map(t => t.trim().toLowerCase()).filter(t => t.length > 0) : [];
+
+        const newItem = {
+            id: Date.now(),
+            name,
+            location,
+            expiry,
+            portions,
+            constraints
+        };
+
+        inventory.push(newItem);
+        saveToStorage();
+        updateUI();
+
+        document.getElementById('itemName').value = '';
+        document.getElementById('itemExpiry').value = '';
+        document.getElementById('itemPortions').value = '';
+        document.getElementById('itemConstraints').value = '';
+    }
+
+    function deleteItem(id) {
+        inventory = inventory.filter(item => item.id !== id);
+        saveToStorage();
+        updateUI();
+    }
+
+    function clearInventory() {
+        if(confirm("Wipe active tracking window?")) {
+            inventory = [];
+            saveToStorage();
+            updateUI();
+        }
+    }
+
+    function updateUI() {
+        renderTable();
+        generateRescuePlan();
+    }
+
+    function renderTable() {
+        const tbody = document.getElementById('inventoryTableBody');
+        tbody.innerHTML = '';
+
+        if (inventory.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; color: #7f8c8d; font-style: italic; padding:15px;">No items tracked</td></tr>`;
+            return;
+        }
+
+        const sortedDisplay = [...inventory].sort((a, b) => a.expiry - b.expiry);
+
+        sortedDisplay.forEach(item => {
+            const tr = document.createElement('tr');
+            const tagsHtml = item.constraints.map(t => `<span class="tag">${t}</span>`).join('');
+
+            tr.innerHTML = `
+                <td><strong>${item.name}</strong></td>
+                <td>${item.location}</td>
+                <td style="color: ${item.expiry <= 2 ? 'var(--accent-urgent)' : 'inherit'}; font-weight: ${item.expiry <= 2 ? 'bold' : 'normal'};">${item.expiry}d</td>
+                <td>${item.portions}</td>
+                <td><div style="max-width:80px; overflow:hidden; text-overflow:ellipsis;">${tagsHtml}</div></td>
+                <td><button class="delete-btn" onclick="deleteItem(${item.id})">&times;</button></td>
+            `;
+            tbody.appendChild(tr);
+        });
+    }
+
+    function generateRescuePlan() {
+        const outputPanel = document.getElementById('outputPanel');
+        const utils = document.getElementById('outputUtilities');
+
+        if (inventory.length === 0) {
+            outputPanel.innerHTML = '<div class="placeholder-text">Load the demo data or enter items manually to build structural strategy lines.</div>';
+            utils.style.display = 'none';
+            return;
+        }
+        utils.style.display = 'flex';
+
+        const expiringItems = inventory.filter(i => i.expiry <= 2);
+        let html = `<h2>Active Rescue Strategy</h2>`;
+
+        if (expiringItems.length > 0) {
+            html += `
+            <div class="section-block">
+                <div class="section-title">
+                    <span class="badge now">Use Now</span> Immediate Combinations
+                </div>`;
+
+            const allExpiringTags = expiringItems.flatMap(i => i.constraints);
+            const isVegetarian = allExpiringTags.includes('vegetarian');
+            const isDairyFree = allExpiringTags.includes('dairy-free');
+            const isNoOven = allExpiringTags.includes('no oven') || allExpiringTags.includes('no-oven');
+            const isQuick = allExpiringTags.includes('quick');
+
+            let combo1Title = isQuick ? "10-Min Flash Scramble/Stir-Fry" : "Unified Skillet Toss";
+            if (isNoOven) combo1Title += " (Stovetop)";
+
+            let combo1Steps = [
+                `Heat cooking oil in a pan over high heat. ${isNoOven ? 'Keep oven off completely.' : ''}`,
+                `Throw in high-alert elements: ${expiringItems.map(i => i.name).join(', ')}.`,
+                isDairyFree ? "Season aggressively with chili flakes, salt, or sauce; omit butter/dairy blocks entirely." : "Stir in cheese shreds or sour cream ends to link ingredients."
+            ];
+
+            html += `
+            <div class="combo-card">
+                <div class="combo-header">
+                    <div class="combo-name">${combo1Title}</div>
+                    <div class="match-tags">
+                        ${isVegetarian ? '<span class="match-tag">Veg</span>' : ''}
+                        ${isDairyFree ? '<span class="match-tag">DF</span>' : ''}
+                        ${isQuick ? '<span class="match-tag">Quick</span>' : ''}
+                    </div>
+                </div>
+                <div class="used-ingredients"><strong>Processing:</strong> ${expiringItems.map(i => i.name).join(', ')}</div>
+                <ol class="combo-steps">
+                    ${combo1Steps.map(step => `<li>${step}</li>`).join('')}
+                </ol>
+            </div>`;
+
+            if (expiringItems.length > 1) {
+                const subBatch1 = expiringItems.slice(0, Math.ceil(expiringItems.length / 2));
+                const subBatch2 = expiringItems.slice(Math.ceil(expiringItems.length / 2));
+                let combo2Title = isVegetarian ? "Plant-Forward Cleanse Bowl" : "Layered Protein Base";
+
+                html += `
+                <div class="combo-card">
+                    <div class="combo-header">
+                        <div class="combo-name">${combo2Title}</div>
+                    </div>
+                    <div class="used-ingredients"><strong>Base:</strong> ${subBatch1.map(i => i.name).join(', ')} | <strong>Top:</strong> ${subBatch2.map(i => i.name).join(', ')}</div>
+                    <ol class="combo-steps">
+                        <li>Sauté and dress ${subBatch1.map(i => i.name).join(', ')} separately to establish flavor core.</li>
+                        <li>Add a swift heat-flash to ${subBatch2.map(i => i.name).join(', ')} and layer on top.</li>
+                    </ol>
+                </div>`;
+            }
+            html += `</div>`;
+        }
+
+        const tier1 = inventory.filter(i => i.expiry <= 2);
+        const tier2 = inventory.filter(i => i.expiry > 2 && i.expiry <= 5);
+        const tier3 = inventory.filter(i => i.expiry > 5);
+
+        html += `<div class="section-block">
+            <div class="section-title"><span class="badge tier">Tracking</span> Pipeline Buckets</div>`;
+
+        if (tier1.length > 0) {
+            html += `
+            <div class="recipe-card" style="border-left-color: var(--accent-urgent);">
+                <div class="recipe-title">Tier 1: Critical (0-2 Days)</div>
+                <div>Exhaust immediately using the combo layouts mapped above.</div>
+            </div>`;
+        }
+
+        if (tier2.length > 0) {
+            html += `
+            <div class="recipe-card" style="border-left-color: var(--accent-warning);">
+                <div class="recipe-title">Tier 2: Intermediate (3-5 Days)</div>
+                <div><strong>Items:</strong> ${tier2.map(i => i.name).join(', ')}</div>
+            </div>`;
+        }
+
+        if (tier3.length > 0) {
+            html += `
+            <div class="recipe-card" style="border-left-color: var(--accent-safe);">
+                <div class="recipe-title">Tier 3: Stable (6+ Days)</div>
+                <div><strong>Items:</strong> ${tier3.map(i => i.name).join(', ')}</div>
+            </div>`;
+        }
+
+        html += `</div>`;
+        outputPanel.innerHTML = html;
+    }
+
+    function copyPlanToClipboard() {
+        const expiringItems = inventory.filter(i => i.expiry <= 2);
+        if (expiringItems.length === 0) {
+            alert("No critical items current to copy.");
+            return;
+        }
+        let txt = `RESCUE PLAN\\n\\nURGENT:\\n`;
+        expiringItems.forEach(i => { txt += `- ${i.portions} ${i.name}\\n`; });
+        txt += `\\nCOMBOS:\\n1. Skillet Toss (${expiringItems.map(i => i.name).join(', ')})`;
+
+        navigator.clipboard.writeText(txt).then(() => {
+            alert("Copied directly to clipboard!");
+        });
+    }
+
+    function exportInventory() {
+        if (inventory.length === 0) return alert("Nothing to export.");
+        const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(inventory, null, 2));
+        const anchor = document.createElement('a');
+        anchor.setAttribute("href", dataStr);
+        anchor.setAttribute("download", "kitchen_inventory.json");
+        document.body.appendChild(anchor);
+        anchor.click();
+        anchor.remove();
+    }
+
+    function importInventory(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            try {
+                const parsed = JSON.parse(e.target.result);
+                if (Array.isArray(parsed)) {
+                    inventory = parsed;
+                    saveToStorage();
+                    updateUI();
+                }
+            } catch (err) { alert("Invalid format."); }
+        };
+        reader.readAsText(file);
+        event.target.value = '';
+    }
+</script>
+
+</body>
+</html>

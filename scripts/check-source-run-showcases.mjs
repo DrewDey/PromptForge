@@ -7,6 +7,166 @@ const failures = []
 
 const sourceRunProjects = [
   {
+    name: "Tiny Train Platform Dispatcher",
+    route: 'src/app/tiny-train-platform-dispatcher-demo/page.tsx',
+    projectId: 'TINY_TRAIN_DISPATCHER_PROJECT_ID',
+    showcaseExport: 'PENDING_SOURCE_RUN_SHOWCASE_PROJECTS',
+    href: '/tiny-train-platform-dispatcher-demo',
+    packagePath: 'seed-runs/tiny-train-platform-dispatcher-claude-source-run.json',
+  },
+  {
+    name: "Breakroom Snack Restock Planner",
+    route: 'src/app/breakroom-snack-restock-planner-demo/page.tsx',
+    projectId: 'BREAKROOM_SNACK_RESTOCK_PROJECT_ID',
+    showcaseExport: 'PENDING_SOURCE_RUN_SHOWCASE_PROJECTS',
+    href: '/breakroom-snack-restock-planner-demo',
+    packagePath: 'seed-runs/breakroom-snack-restock-planner-gemini-source-run.json',
+  },
+  {
+    name: "Porch Light Moth Maze",
+    route: 'src/app/porch-light-moth-maze-demo/page.tsx',
+    projectId: 'PORCH_LIGHT_MOTH_MAZE_PROJECT_ID',
+    showcaseExport: 'PENDING_SOURCE_RUN_SHOWCASE_PROJECTS',
+    href: '/porch-light-moth-maze-demo',
+    packagePath: 'seed-runs/porch-light-moth-maze-chatgpt-source-run.json',
+  },
+  {
+    name: "Pantry Shelf-Life Rescue Planner",
+    route: 'src/app/pantry-shelf-life-rescue-planner-demo/page.tsx',
+    projectId: 'PANTRY_SHELF_LIFE_RESCUE_PROJECT_ID',
+    showcaseExport: 'PENDING_SOURCE_RUN_SHOWCASE_PROJECTS',
+    href: '/pantry-shelf-life-rescue-planner-demo',
+    packagePath: 'seed-runs/pantry-shelf-life-rescue-gemini-source-run.json',
+  },
+  {
+    name: "Mini Harbor Tugboat Switcher",
+    route: 'src/app/mini-harbor-tugboat-switcher-demo/page.tsx',
+    projectId: 'MINI_HARBOR_TUGBOAT_PROJECT_ID',
+    showcaseExport: 'PENDING_SOURCE_RUN_SHOWCASE_PROJECTS',
+    href: '/mini-harbor-tugboat-switcher-demo',
+    packagePath: 'seed-runs/mini-harbor-tugboat-switcher-chatgpt-source-run.json',
+  },
+  {
+    name: "Tiny Farmers Market Booth Simulator",
+    route: 'src/app/tiny-farmers-market-booth-simulator-demo/page.tsx',
+    projectId: 'TINY_FARMERS_MARKET_PROJECT_ID',
+    showcaseExport: 'PENDING_SOURCE_RUN_SHOWCASE_PROJECTS',
+    href: '/tiny-farmers-market-booth-simulator-demo',
+    packagePath: 'seed-runs/tiny-farmers-market-booth-claude-source-run.json',
+  },
+  {
+    name: "Roommate Chore Draft Board",
+    route: 'src/app/roommate-chore-draft-board-demo/page.tsx',
+    projectId: 'ROOMMATE_CHORE_DRAFT_PROJECT_ID',
+    showcaseExport: 'PENDING_SOURCE_RUN_SHOWCASE_PROJECTS',
+    href: '/roommate-chore-draft-board-demo',
+    packagePath: 'seed-runs/roommate-chore-draft-board-gemini-source-run.json',
+  },
+  {
+    name: "Pocket Pirate Map Decoder",
+    route: 'src/app/pocket-pirate-map-decoder-demo/page.tsx',
+    projectId: 'POCKET_PIRATE_MAP_PROJECT_ID',
+    showcaseExport: 'PENDING_SOURCE_RUN_SHOWCASE_PROJECTS',
+    href: '/pocket-pirate-map-decoder-demo',
+    packagePath: 'seed-runs/pocket-pirate-map-decoder-chatgpt-source-run.json',
+  },
+  {
+    name: "Potluck Table Planner",
+    route: 'src/app/potluck-table-planner-demo/page.tsx',
+    projectId: 'POTLUCK_TABLE_PLANNER_PROJECT_ID',
+    showcaseExport: 'PENDING_SOURCE_RUN_SHOWCASE_PROJECTS',
+    href: '/potluck-table-planner-demo',
+    packagePath: 'seed-runs/potluck-table-planner-gemini-source-run.json',
+  },
+  {
+    name: "Rainy Window Cafe Rush",
+    route: 'src/app/rainy-window-cafe-rush-demo/page.tsx',
+    projectId: 'RAINY_WINDOW_CAFE_RUSH_PROJECT_ID',
+    showcaseExport: 'PENDING_SOURCE_RUN_SHOWCASE_PROJECTS',
+    href: '/rainy-window-cafe-rush-demo',
+    packagePath: 'seed-runs/rainy-window-cafe-rush-chatgpt-source-run.json',
+  },
+  {
+    name: "Lunchbox Conveyor Sorter",
+    route: 'src/app/lunchbox-conveyor-sorter-demo/page.tsx',
+    projectId: 'LUNCHBOX_CONVEYOR_SORTER_PROJECT_ID',
+    showcaseExport: 'PENDING_SOURCE_RUN_SHOWCASE_PROJECTS',
+    href: '/lunchbox-conveyor-sorter-demo',
+    packagePath: 'seed-runs/lunchbox-conveyor-sorter-chatgpt-source-run.json',
+  },
+  {
+    name: "Porch Plant Watering Planner",
+    route: 'src/app/porch-plant-watering-planner-demo/page.tsx',
+    projectId: 'PORCH_PLANT_WATERING_PROJECT_ID',
+    showcaseExport: 'PENDING_SOURCE_RUN_SHOWCASE_PROJECTS',
+    href: '/porch-plant-watering-planner-demo',
+    packagePath: 'seed-runs/porch-plant-watering-planner-claude-source-run.json',
+  },
+  {
+    name: "Shared Errand Route Board",
+    route: 'src/app/shared-errand-route-board-demo/page.tsx',
+    projectId: 'SHARED_ERRAND_ROUTE_PROJECT_ID',
+    showcaseExport: 'PENDING_SOURCE_RUN_SHOWCASE_PROJECTS',
+    href: '/shared-errand-route-board-demo',
+    packagePath: 'seed-runs/shared-errand-route-board-gemini-source-run.json',
+  },
+  {
+    name: "Mini Golf Windmill Putt",
+    route: 'src/app/mini-golf-windmill-putt-demo/page.tsx',
+    projectId: 'MINI_GOLF_WINDMILL_PROJECT_ID',
+    showcaseExport: 'PENDING_SOURCE_RUN_SHOWCASE_PROJECTS',
+    href: '/mini-golf-windmill-putt-demo',
+    packagePath: 'seed-runs/mini-golf-windmill-putt-chatgpt-source-run.json',
+  },
+  {
+    name: "Leftover Dinner Decision Board",
+    route: 'src/app/leftover-dinner-decision-board-demo/page.tsx',
+    projectId: 'LEFTOVER_DINNER_BOARD_PROJECT_ID',
+    showcaseExport: 'PENDING_SOURCE_RUN_SHOWCASE_PROJECTS',
+    href: '/leftover-dinner-decision-board-demo',
+    packagePath: 'seed-runs/leftover-dinner-board-gemini-source-run.json',
+  },
+  {
+    name: "Tiny Loop Sequencer",
+    route: 'src/app/tiny-loop-sequencer-demo/page.tsx',
+    projectId: 'TINY_LOOP_SEQUENCER_PROJECT_ID',
+    showcaseExport: 'PENDING_SOURCE_RUN_SHOWCASE_PROJECTS',
+    href: '/tiny-loop-sequencer-demo',
+    packagePath: 'seed-runs/tiny-loop-sequencer-claude-source-run.json',
+  },
+  {
+    name: "Garage Sale Price Tag Maker",
+    route: 'src/app/garage-sale-price-tag-maker-demo/page.tsx',
+    projectId: 'GARAGE_SALE_TAGS_PROJECT_ID',
+    showcaseExport: 'PENDING_SOURCE_RUN_SHOWCASE_PROJECTS',
+    href: '/garage-sale-price-tag-maker-demo',
+    packagePath: 'seed-runs/garage-sale-tags-gemini-source-run.json',
+  },
+  {
+    name: "Micro Dungeon Route Puzzle",
+    route: 'src/app/micro-dungeon-route-puzzle-demo/page.tsx',
+    projectId: 'MICRO_DUNGEON_ROUTE_PROJECT_ID',
+    showcaseExport: 'PENDING_SOURCE_RUN_SHOWCASE_PROJECTS',
+    href: '/micro-dungeon-route-puzzle-demo',
+    packagePath: 'seed-runs/micro-dungeon-route-chatgpt-source-run.json',
+  },
+  {
+    name: "Pocket Bake-Sale Margin Calculator",
+    route: 'src/app/pocket-bake-sale-margin-calculator-demo/page.tsx',
+    projectId: 'BAKE_SALE_MARGIN_PROJECT_ID',
+    showcaseExport: 'PENDING_SOURCE_RUN_SHOWCASE_PROJECTS',
+    href: '/pocket-bake-sale-margin-calculator-demo',
+    packagePath: 'seed-runs/bake-sale-margin-gemini-source-run.json',
+  },
+  {
+    name: "Backyard Star-Map Scavenger Hunt Builder",
+    route: 'src/app/backyard-star-map-scavenger-hunt-builder-demo/page.tsx',
+    projectId: 'STAR_MAP_SCAVENGER_PROJECT_ID',
+    showcaseExport: 'PENDING_SOURCE_RUN_SHOWCASE_PROJECTS',
+    href: '/backyard-star-map-scavenger-hunt-builder-demo',
+    packagePath: 'seed-runs/star-map-scavenger-chatgpt-source-run.json',
+  },
+  {
     name: 'HP 10Bii+',
     route: 'src/app/hp-10bii-calculator-demo/page.tsx',
     projectId: 'HP_10BII_PROJECT_ID',
@@ -254,6 +414,7 @@ const mockData = read('src/lib/mock-data.ts')
 const adminDashboard = read('src/app/admin/page.tsx')
 const adminSourceRunDetail = read('src/app/admin/source-runs/[id]/page.tsx')
 const preparedSourceRunPage = read('src/components/PreparedSourceRunPage.tsx')
+const pendingSourceRunShowcases = read('src/lib/pending-source-run-showcases.ts')
 const guardedRouteSet = new Set(sourceRunProjects.map((project) => project.route))
 
 for (const routePath of sharedShowcaseRoutes()) {
@@ -282,8 +443,12 @@ for (const project of sourceRunProjects) {
   mustInclude(project.route, routeShellContent, 'ProjectCommunityPanel', `${project.name} must keep the community panel`)
 
   mustInclude('src/lib/featured-projects.ts', featuredProjects, project.projectId, `${project.name} must have a featured project id`)
-  mustInclude('src/lib/prepared-showcase-projects.ts', preparedShowcase, project.showcaseExport, `${project.name} must have prepared showcase metadata`)
-  mustInclude('src/lib/prepared-showcase-projects.ts', preparedShowcase, project.href, `${project.name} prepared showcase must point to its special route`)
+  if (!preparedShowcase.includes(project.showcaseExport) && !pendingSourceRunShowcases.includes(project.showcaseExport)) {
+    failures.push(`src/lib/prepared-showcase-projects.ts: ${project.name} must have prepared showcase metadata`)
+  }
+  if (!preparedShowcase.includes(project.href) && !pendingSourceRunShowcases.includes(project.href)) {
+    failures.push(`src/lib/prepared-showcase-projects.ts: ${project.name} prepared showcase must point to its special route`)
+  }
   mustInclude('src/lib/project-links.ts', projectLinks, project.projectId, `${project.name} must have a route override`)
   mustInclude('src/lib/project-links.ts', projectLinks, project.href, `${project.name} route override must point to the special page`)
   mustInclude('src/lib/data.ts', data, project.projectId, `${project.name} must be approved in public fallback data`)
@@ -370,7 +535,9 @@ for (const project of sourceRunProjects) {
   }
 
   for (const artifactVersion of artifactVersions) {
-    const artifactPath = typeof artifactVersion === 'string' ? artifactVersion : artifactVersion.path
+    const artifactPath = typeof artifactVersion === 'string'
+      ? artifactVersion
+      : artifactVersion.path ?? artifactVersion.artifact_path
     if (typeof artifactPath !== 'string') {
       failures.push(`${project.packagePath}: artifact_versions entries must include a path`)
       continue

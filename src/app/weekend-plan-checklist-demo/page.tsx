@@ -170,6 +170,8 @@ export default function WeekendPlanChecklistDemoPage() {
         sourceRunUrl={sourceRunUrl}
         pathforgeSourceRunUrl={sourceRun.pathforge_submission_url}
         sourceRunId={sourceRun.source_run_submission_id}
+        projectId={projectId}
+        projectTitle={project.title}
         providerName="ChatGPT"
         verificationNotes={sourceRun.verification_notes}
         steps={steps}

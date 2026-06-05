@@ -1,0 +1,478 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Roommate Chore Draft</title>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <style>
+        :root {
+            --primary: #4f46e5;
+            --primary-hover: #4338ca;
+            --background: #f8fafc;
+            --card-bg: #ffffff;
+            --text: #0f172a;
+            --text-light: #64748b;
+            --border: #e2e8f0;
+            --shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        }
+
+        body {
+            background-color: var(--background);
+            color: var(--text);
+            line-height: 1.5;
+            padding: 1rem;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 2rem;
+            padding: 1rem 0;
+        }
+
+        h1 {
+            font-size: 1.8rem;
+            color: var(--text);
+            margin-bottom: 0.5rem;
+        }
+
+        .subtitle {
+            color: var(--text-light);
+            font-size: 0.95rem;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        @media (min-width: 768px) {
+            .grid {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+
+        .card {
+            background: var(--card-bg);
+            border-radius: 12px;
+            padding: 1.25rem;
+            border: 1px solid var(--border);
+            box-shadow: var(--shadow);
+        }
+
+        h2 {
+            font-size: 1.2rem;
+            margin-bottom: 1rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 2px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .points-badge {
+            font-size: 0.8rem;
+            background: #e0e7ff;
+            color: var(--primary);
+            padding: 0.2rem 0.6rem;
+            border-radius: 9999px;
+            font-weight: 600;
+        }
+
+        .list {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+
+        .chore-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.75rem;
+            background: var(--background);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            cursor: grab;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .chore-item:active {
+            cursor: grabbing;
+        }
+
+        .chore-info {
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
+        }
+
+        .chore-name {
+            font-weight: 500;
+            font-size: 0.95rem;
+        }
+
+        .chore-pts {
+            font-size: 0.8rem;
+            color: var(--text-light);
+        }
+
+        .btn {
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            padding: 0.75rem 1.25rem;
+            font-size: 0.95rem;
+            font-weight: 600;
+            border-radius: 8px;
+            cursor: pointer;
+            width: 100%;
+            transition: background-color 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+        }
+
+        .btn:hover {
+            background-color: var(--primary-hover);
+        }
+
+        .btn-secondary {
+            background-color: #f1f5f9;
+            color: #334155;
+            border: 1px solid var(--border);
+            margin-top: 1rem;
+        }
+
+        .btn-secondary:hover {
+            background-color: #e2e8f0;
+        }
+
+        .roommate-pool {
+            min-height: 80px;
+            border: 2px dashed var(--border);
+            border-radius: 8px;
+            padding: 0.5rem;
+            background: #fafafa;
+            transition: background-color 0.2s;
+        }
+
+        .roommate-pool.drag-over {
+            background: #f0fdf4;
+            border-color: #22c55e;
+        }
+
+        .toast {
+            position: fixed;
+            bottom: 2rem;
+            left: 50%;
+            transform: translateX(-50%) translateY(100px);
+            background: #0f172a;
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border-radius: 9999px;
+            font-size: 0.9rem;
+            font-weight: 500;
+            box-shadow: 0 10px 15px -3px rgba(0,0,0,0.3);
+            transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            pointer-events: none;
+            z-index: 1000;
+        }
+
+        .toast.show {
+            transform: translateX(-50%) translateY(0);
+        }
+
+        /* Mobile optimizations for drag and drop alternative */
+        .select-wrapper {
+            display: none;
+        }
+
+        @media (max-width: 600px) {
+            .chore-item {
+                flex-direction: column;
+                align-items: stretch;
+                gap: 0.75rem;
+            }
+            .select-wrapper {
+                display: block;
+                width: 100%;
+            }
+            .roommate-select {
+                width: 100%;
+                padding: 0.5rem;
+                border-radius: 6px;
+                border: 1px solid var(--border);
+                background-color: white;
+                font-size: 0.9rem;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <h1>Roommate Chore Draft</h1>
+        <div class="subtitle">Assign chores fairly using effort points</div>
+    </header>
+
+    <div class="grid">
+        <!-- Chores Pool -->
+        <div class="card">
+            <h2>Unassigned Chores</h2>
+            <div id="chorePool" class="list roommate-pool" data-roommate="unassigned">
+                <div class="chore-item" draggable="true" id="chore-1" data-points="5">
+                    <div class="chore-info">
+                        <span class="chore-name">Deep Clean Bathroom</span>
+                        <span class="chore-pts">Effort: 5 pts</span>
+                    </div>
+                    <div class="select-wrapper">
+                        <select class="roommate-select" onchange="handleMobileAssign(this, 'chore-1')">
+                            <option value="unassigned">Assign to...</option>
+                            <option value="rm1">Roommate A</option>
+                            <option value="rm2">Roommate B</option>
+                            <option value="rm3">Roommate C</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="chore-item" draggable="true" id="chore-2" data-points="4">
+                    <div class="chore-info">
+                        <span class="chore-name">Mop Common Room Floors</span>
+                        <span class="chore-pts">Effort: 4 pts</span>
+                    </div>
+                    <div class="select-wrapper">
+                        <select class="roommate-select" onchange="handleMobileAssign(this, 'chore-2')">
+                            <option value="unassigned">Assign to...</option>
+                            <option value="rm1">Roommate A</option>
+                            <option value="rm2">Roommate B</option>
+                            <option value="rm3">Roommate C</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="chore-item" draggable="true" id="chore-3" data-points="3">
+                    <div class="chore-info">
+                        <span class="chore-name">Wipe Down Kitchen Counters</span>
+                        <span class="chore-pts">Effort: 3 pts</span>
+                    </div>
+                    <div class="select-wrapper">
+                        <select class="roommate-select" onchange="handleMobileAssign(this, 'chore-3')">
+                            <option value="unassigned">Assign to...</option>
+                            <option value="rm1">Roommate A</option>
+                            <option value="rm2">Roommate B</option>
+                            <option value="rm3">Roommate C</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="chore-item" draggable="true" id="chore-4" data-points="2">
+                    <div class="chore-info">
+                        <span class="chore-name">Load/Empty Dishwasher</span>
+                        <span class="chore-pts">Effort: 2 pts</span>
+                    </div>
+                    <div class="select-wrapper">
+                        <select class="roommate-select" onchange="handleMobileAssign(this, 'chore-4')">
+                            <option value="unassigned">Assign to...</option>
+                            <option value="rm1">Roommate A</option>
+                            <option value="rm2">Roommate B</option>
+                            <option value="rm3">Roommate C</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="chore-item" draggable="true" id="chore-5" data-points="1">
+                    <div class="chore-info">
+                        <span class="chore-name">Take Out Trash & Recycling</span>
+                        <span class="chore-pts">Effort: 1 pt</span>
+                    </div>
+                    <div class="select-wrapper">
+                        <select class="roommate-select" onchange="handleMobileAssign(this, 'chore-5')">
+                            <option value="unassigned">Assign to...</option>
+                            <option value="rm1">Roommate A</option>
+                            <option value="rm2">Roommate B</option>
+                            <option value="rm3">Roommate C</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Roommates Column -->
+        <div class="list">
+            <!-- Roommate A -->
+            <div class="card">
+                <h2>Roommate A <span id="load-rm1" class="points-badge">0 pts</span></h2>
+                <div id="rm1" class="list roommate-pool" data-roommate="rm1"></div>
+            </div>
+
+            <!-- Roommate B -->
+            <div class="card">
+                <h2>Roommate B <span id="load-rm2" class="points-badge">0 pts</span></h2>
+                <div id="rm2" class="list roommate-pool" data-roommate="rm2"></div>
+            </div>
+
+            <!-- Roommate C -->
+            <div class="card">
+                <h2>Roommate C <span id="load-rm3" class="points-badge">0 pts</span></h2>
+                <div id="rm3" class="list roommate-pool" data-roommate="rm3"></div>
+            </div>
+        </div>
+    </div>
+
+    <button class="btn" onclick="shareSummary()">
+        <svg style="width:20px;height:20px" viewBox="0 0 24 24"><path fill="currentColor" d="M18,16.08C17.24,16.08 16.56,16.38 16.04,16.85L8.91,12.7C8.96,12.47 9,12.24 9,12C9,11.76 8.96,11.53 8.91,11.3L15.96,7.19C16.5,7.69 17.21,8 18,8A3,3 0 0,0 21,5A3,3 0 0,0 18,2A3,3 0 0,0 15,5C15,5.24 15.04,5.47 15.09,5.7L8.04,9.81C7.5,9.31 6.79,9 6,9A3,3 0 0,0 3,12A3,3 0 0,0 6,15C6.79,15 7.5,14.69 8.04,14.19L15.14,18.3C15.09,18.53 15.06,18.76 15.06,19C15.06,20.61 16.39,21.91 18,21.91C19.61,21.91 20.91,20.61 20.91,19C20.91,17.39 19.61,16.08 18,16.08Z" /></svg>
+        Copy / Share Summary
+    </button>
+</div>
+
+<div id="toast" class="toast">Summary copied to clipboard!</div>
+
+<script>
+    const pools = document.querySelectorAll('.roommate-pool');
+    const chores = document.querySelectorAll('.chore-item');
+
+    chores.forEach(chore => {
+        chore.addEventListener('dragstart', () => {
+            chore.classList.add('dragging');
+        });
+
+        chore.addEventListener('dragend', () => {
+            chore.classList.remove('dragging');
+            calculateLoads();
+        });
+    });
+
+    pools.forEach(pool => {
+        pool.addEventListener('dragover', e => {
+            e.preventDefault();
+            pool.classList.add('drag-over');
+        });
+
+        pool.addEventListener('dragleave', () => {
+            pool.classList.remove('drag-over');
+        });
+
+        pool.addEventListener('drop', e => {
+            e.preventDefault();
+            pool.classList.remove('drag-over');
+            const draggingChore = document.querySelector('.dragging');
+            if (draggingChore) {
+                pool.appendChild(draggingChore);
+
+                // Sync the mobile fallback select dropdown value
+                const select = draggingChore.querySelector('.roommate-select');
+                if (select) {
+                    select.value = pool.dataset.roommate;
+                }
+            }
+        });
+    });
+
+    function handleMobileAssign(selectElement, choreId) {
+        const chore = document.getElementById(choreId);
+        const targetPoolId = selectElement.value;
+        const targetPool = targetPoolId === 'unassigned' ? document.getElementById('chorePool') : document.getElementById(targetPoolId);
+
+        targetPool.appendChild(chore);
+        calculateLoads();
+    }
+
+    function calculateLoads() {
+        const roommates = ['rm1', 'rm2', 'rm3'];
+        let allAssigned = true;
+
+        roommates.forEach(id => {
+            const pool = document.getElementById(id);
+            const assignedChores = pool.querySelectorAll('.chore-item');
+            let total = 0;
+
+            assignedChores.forEach(chore => {
+                total += parseInt(chore.dataset.points);
+            });
+
+            document.getElementById(`load-${id}`).innerText = `${total} pts`;
+        });
+
+        // Check if unassigned pool is empty
+        if (document.getElementById('chorePool').querySelectorAll('.chore-item').length > 0) {
+            allAssigned = false;
+        }
+
+        if (allAssigned && window.confetti) {
+            confetti({
+                particleCount: 100,
+                spread: 70,
+                origin: { y: 0.6 }
+            });
+        }
+    }
+
+    function shareSummary() {
+        const data = {
+            'Roommate A': { total: document.getElementById('load-rm1').innerText, chores: [] },
+            'Roommate B': { total: document.getElementById('load-rm2').innerText, chores: [] },
+            'Roommate C': { total: document.getElementById('load-rm3').innerText, chores: [] },
+            'Unassigned': { chores: [] }
+        };
+
+        document.querySelectorAll('.chore-item').forEach(chore => {
+            const name = chore.querySelector('.chore-name').innerText;
+            const pts = chore.dataset.points;
+            const parentId = chore.parentElement.id;
+
+            const formatString = `${name} (${pts} pts)`;
+
+            if (parentId === 'rm1') data['Roommate A'].chores.push(formatString);
+            else if (parentId === 'rm2') data['Roommate B'].chores.push(formatString);
+            else if (parentId === 'rm3') data['Roommate C'].chores.push(formatString);
+            else data['Unassigned'].chores.push(formatString);
+        });
+
+        let summaryText = `🧹 **Chore Draft Summary** 🧹\n\n`;
+        for (const [roommate, info] of Object.entries(data)) {
+            if (roommate === 'Unassigned') {
+                if (info.chores.length > 0) {
+                    summaryText += `❌ **Unassigned:**\n` + info.chores.map(c => `  - ${c}`).join('\n') + `\n\n`;
+                }
+            } else {
+                summaryText += `👤 **${roommate}** (${info.total})\n`;
+                summaryText += info.chores.length > 0
+                    ? info.chores.map(c => `  • ${c}`).join('\n') + `\n\n`
+                    : `  • No chores assigned\n\n`;
+            }
+        }
+
+        if (navigator.share) {
+            navigator.share({
+                title: 'Chore Draft Results',
+                text: summaryText
+            }).catch(err => copyToClipboard(summaryText));
+        } else {
+            copyToClipboard(summaryText);
+        }
+    }
+
+    function copyToClipboard(text) {
+        navigator.clipboard.writeText(text).then(() => {
+            const toast = document.getElementById('toast');
+            toast.classList.add('show');
+            setTimeout(() => toast.classList.remove('show'), 3000);
+        });
+    }
+</script>
+
+</body>
+</html>

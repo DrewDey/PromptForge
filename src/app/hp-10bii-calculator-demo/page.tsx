@@ -170,6 +170,8 @@ export default function Hp10BiiCalculatorDemoPage() {
         sourceRunUrl={sourceRunUrl}
         pathforgeSourceRunUrl={sourceRun.pathforge_submission_url}
         sourceRunId={sourceRun.pathforge_pending_id}
+        projectId={projectId}
+        projectTitle={project.title}
         providerName="Claude"
         steps={steps}
         defaultStepNumber={2}

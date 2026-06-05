@@ -19,30 +19,77 @@ import {
 } from './mock-data'
 import { isPersistableProjectId } from './project-engagement'
 import {
+  BAKE_SALE_MARGIN_PROJECT_ID,
+  BREAKROOM_SNACK_RESTOCK_PROJECT_ID,
   DECISION_MATRIX_PROJECT_ID,
   FLASHCARD_CRAM_PROJECT_ID,
   FOLLOW_UP_CRM_PROJECT_ID,
+  GARAGE_SALE_TAGS_PROJECT_ID,
   HP_10BII_PROJECT_ID,
   LANE_DEFENSE_PROJECT_ID,
+  LEFTOVER_DINNER_BOARD_PROJECT_ID,
+  LUNCHBOX_CONVEYOR_SORTER_PROJECT_ID,
   MEETING_COST_PROJECT_ID,
+  MICRO_DUNGEON_ROUTE_PROJECT_ID,
+  MINI_GOLF_WINDMILL_PROJECT_ID,
+  MINI_HARBOR_TUGBOAT_PROJECT_ID,
   NEON_BLOCK_PATROL_PROJECT_ID,
+  PANTRY_SHELF_LIFE_RESCUE_PROJECT_ID,
+  POCKET_PIRATE_MAP_PROJECT_ID,
   POCKET_RALLY_PROJECT_ID,
   POMODORO_TIMER_PROJECT_ID,
+  PORCH_LIGHT_MOTH_MAZE_PROJECT_ID,
+  PORCH_PLANT_WATERING_PROJECT_ID,
+  POTLUCK_TABLE_PLANNER_PROJECT_ID,
   PUZZLE_BOX_ESCAPE_PROJECT_ID,
+  RAINY_WINDOW_CAFE_RUSH_PROJECT_ID,
   REACTION_TRAINER_PROJECT_ID,
+  ROOMMATE_CHORE_DRAFT_PROJECT_ID,
+  SHARED_ERRAND_ROUTE_PROJECT_ID,
   SNAKE_PROJECT_ID,
   SNAKE_PROJECT_LEGACY_ID,
+  STAR_MAP_SCAVENGER_PROJECT_ID,
   SWISH_CITY_PROJECT_ID,
   TIC_TAC_TOE_PROJECT_ID,
+  TINY_FARMERS_MARKET_PROJECT_ID,
+  TINY_LOOP_SEQUENCER_PROJECT_ID,
+  TINY_TRAIN_DISPATCHER_PROJECT_ID,
   TRIP_PACKING_PROJECT_ID,
   WEEKEND_CHECKLIST_PROJECT_ID,
   WORD_LADDER_SPRINT_PROJECT_ID,
 } from './featured-projects'
 import { getPreparedShowcaseProjectById } from './prepared-showcase-projects'
 import type { PreparedShowcaseProject, PreparedShowcaseStep } from './prepared-showcase-projects'
+import {
+  PROJECT_FORK_MAX_WIDTH,
+  projectForkSourceFromSubmissionFields,
+  projectForkSourceToSubmissionFields,
+  type ProjectForkNetworkItem,
+  type ProjectForkSource,
+} from './project-forks'
 import { composeSourceRunReviewNotes, detectSourceRunProvider } from './source-run-review'
 
 const APPROVED_PROJECT_IDS = new Set([
+  TINY_TRAIN_DISPATCHER_PROJECT_ID,
+  BREAKROOM_SNACK_RESTOCK_PROJECT_ID,
+  PORCH_LIGHT_MOTH_MAZE_PROJECT_ID,
+  PANTRY_SHELF_LIFE_RESCUE_PROJECT_ID,
+  MINI_HARBOR_TUGBOAT_PROJECT_ID,
+  TINY_FARMERS_MARKET_PROJECT_ID,
+  ROOMMATE_CHORE_DRAFT_PROJECT_ID,
+  POCKET_PIRATE_MAP_PROJECT_ID,
+  POTLUCK_TABLE_PLANNER_PROJECT_ID,
+  RAINY_WINDOW_CAFE_RUSH_PROJECT_ID,
+  LUNCHBOX_CONVEYOR_SORTER_PROJECT_ID,
+  PORCH_PLANT_WATERING_PROJECT_ID,
+  SHARED_ERRAND_ROUTE_PROJECT_ID,
+  MINI_GOLF_WINDMILL_PROJECT_ID,
+  LEFTOVER_DINNER_BOARD_PROJECT_ID,
+  TINY_LOOP_SEQUENCER_PROJECT_ID,
+  GARAGE_SALE_TAGS_PROJECT_ID,
+  MICRO_DUNGEON_ROUTE_PROJECT_ID,
+  BAKE_SALE_MARGIN_PROJECT_ID,
+  STAR_MAP_SCAVENGER_PROJECT_ID,
   SNAKE_PROJECT_ID,
   HP_10BII_PROJECT_ID,
   TIC_TAC_TOE_PROJECT_ID,
@@ -351,6 +398,42 @@ export async function getProfileByUsername(username: string): Promise<Profile | 
   })
 }
 
+export async function getApprovedProjectForks(projectId: string): Promise<ProjectForkNetworkItem[]> {
+  if (!projectId) return []
+
+  return readWithFallback([], async () => {
+    const { createClient } = await import('./supabase/server')
+    const supabase = await createClient()
+    const { data, error } = await supabase
+      .from('prompts')
+      .select('id,title,description,model_used,created_at,status,fork_source_project_id,fork_source_project_title,fork_source_step_id,fork_source_step_number,fork_parent_submission_id,prompt_family_id,fork_depth,fork_branch_index')
+      .eq('status', 'approved')
+      .or(`fork_source_project_id.eq.${projectId},fork_parent_submission_id.eq.${projectId}`)
+      .order('created_at', { ascending: false })
+      .limit(PROJECT_FORK_MAX_WIDTH)
+
+    if (forkColumnsMissing(error)) return []
+    if (error) throw error
+
+    return (data ?? [])
+      .filter(isPublicLibraryPrompt)
+      .reduce<ProjectForkNetworkItem[]>((forks, prompt) => {
+        const forkSource = projectForkSourceFromSubmissionFields(prompt)
+        if (!forkSource) return forks
+
+        forks.push({
+          id: prompt.id,
+          title: prompt.title,
+          description: prompt.description,
+          modelUsed: prompt.model_used,
+          createdAt: prompt.created_at,
+          forkSource,
+        })
+        return forks
+      }, [])
+  })
+}
+
 export async function getProjectsByAuthor(authorId: string, username?: string): Promise<PromptWithRelations[]> {
   const fallback = getPublicMockPromptsForProfile({ id: authorId, username })
     .filter(p => p.status === 'approved')
@@ -548,6 +631,42 @@ function titleColumnMissing(error: { code?: string; message?: string } | null) {
   )
 }
 
+function sourceRunForkColumnsMissing(error: { code?: string; message?: string } | null) {
+  const message = error?.message?.toLowerCase() ?? ''
+  return Boolean(
+    error?.code === '42703' &&
+    (
+      message.includes('fork_source_project_id') ||
+      message.includes('fork_source_project_title') ||
+      message.includes('fork_source_step_id') ||
+      message.includes('fork_source_step_number') ||
+      message.includes('fork_parent_submission_id') ||
+      message.includes('prompt_family_id') ||
+      message.includes('fork_depth') ||
+      message.includes('fork_branch_index')
+    )
+  )
+}
+
+function forkColumnsMissing(error: { code?: string; message?: string } | null) {
+  return sourceRunForkColumnsMissing(error)
+}
+
+function omitForkFields<T extends Record<string, unknown>>(payload: T) {
+  const {
+    fork_source_project_id: _forkSourceProjectId,
+    fork_source_project_title: _forkSourceProjectTitle,
+    fork_source_step_id: _forkSourceStepId,
+    fork_source_step_number: _forkSourceStepNumber,
+    fork_parent_submission_id: _forkParentSubmissionId,
+    prompt_family_id: _promptFamilyId,
+    fork_depth: _forkDepth,
+    fork_branch_index: _forkBranchIndex,
+    ...rest
+  } = payload
+  return rest
+}
+
 export async function createSourceRunSubmission(input: {
   title?: string
   source_url?: string
@@ -555,6 +674,7 @@ export async function createSourceRunSubmission(input: {
   model_used?: string
   model_settings?: string
   notes?: string
+  fork_source?: ProjectForkSource | null
 }) {
   if (!SUPABASE_CONFIGURED) throw new Error('Source run intake requires sign in.')
 
@@ -596,12 +716,14 @@ export async function createSourceRunSubmission(input: {
     modelSettings,
     notes: input.notes,
   })
+  const forkFields = projectForkSourceToSubmissionFields(input.fork_source)
 
   const payload = {
     title,
     source_url: sourceUrl || null,
     file_name: null,
     notes,
+    ...forkFields,
     author_id: user.id,
     status: 'queued',
   }
@@ -612,16 +734,29 @@ export async function createSourceRunSubmission(input: {
     .select('id')
     .single()
 
-  if (titleColumnMissing(error)) {
-    const { data: fallbackData, error: fallbackError } = await supabase
-      .from('source_run_submissions')
-      .insert({
+  if (titleColumnMissing(error) || sourceRunForkColumnsMissing(error)) {
+    const fallbackNotes = titleColumnMissing(error)
+      ? [`Title: ${title}`, notes].filter(Boolean).join('\n\n') || null
+      : notes
+    const fallbackPayload = titleColumnMissing(error)
+      ? {
         source_url: sourceUrl || null,
         file_name: null,
-        notes: [`Title: ${title}`, notes].filter(Boolean).join('\n\n') || null,
+        notes: fallbackNotes,
         author_id: user.id,
         status: 'queued',
-      })
+      }
+      : {
+        title,
+        source_url: sourceUrl || null,
+        file_name: null,
+        notes: fallbackNotes,
+        author_id: user.id,
+        status: 'queued',
+      }
+    const { data: fallbackData, error: fallbackError } = await supabase
+      .from('source_run_submissions')
+      .insert(fallbackPayload)
       .select('id')
       .single()
 
@@ -717,12 +852,13 @@ export async function publishPreparedShowcaseProjectFromSourceRun(
   const { supabase, user } = await requireAdminAccess()
   const { data: sourceRun, error: sourceRunError } = await supabase
     .from('source_run_submissions')
-    .select('id, author_id')
+    .select('id, author_id, fork_source_project_id, fork_source_project_title, fork_source_step_id, fork_source_step_number, fork_parent_submission_id, prompt_family_id, fork_depth, fork_branch_index')
     .eq('id', sourceRunId)
     .maybeSingle()
 
   throwReadableSourceRunError(sourceRunError)
   if (!sourceRun) throw new Error('Source run not found.')
+  const sourceForkFields = projectForkSourceToSubmissionFields(projectForkSourceFromSubmissionFields(sourceRun))
 
   const { data: category, error: categoryError } = await supabase
     .from('categories')
@@ -745,6 +881,7 @@ export async function publishPreparedShowcaseProjectFromSourceRun(
     tools_used: project.toolsUsed,
     tags: project.tags,
     status: 'approved',
+    ...sourceForkFields,
     updated_at: new Date().toISOString(),
   }
 
@@ -757,29 +894,46 @@ export async function publishPreparedShowcaseProjectFromSourceRun(
   if (existingPromptError) throw existingPromptError
 
   if (!existingPrompt) {
+    const insertPayload = {
+      id: project.id,
+      ...promptPatch,
+      author_id: user.id,
+      vote_count: 0,
+      bookmark_count: 0,
+      created_at: project.createdAt,
+    }
     const { error: insertError } = await supabase
       .from('prompts')
-      .insert({
-        id: project.id,
-        ...promptPatch,
-        author_id: user.id,
-        vote_count: 0,
-        bookmark_count: 0,
-        created_at: project.createdAt,
-      })
+      .insert(insertPayload)
 
-    if (insertError) throw insertError
+    if (insertError) {
+      if (!forkColumnsMissing(insertError)) throw insertError
+
+      const { error: fallbackInsertError } = await supabase
+        .from('prompts')
+        .insert(omitForkFields(insertPayload))
+      if (fallbackInsertError) throw fallbackInsertError
+    }
   }
 
+  const updatePayload = {
+    ...promptPatch,
+    author_id: sourceRun.author_id,
+  }
   const { error: updatePromptError } = await supabase
     .from('prompts')
-    .update({
-      ...promptPatch,
-      author_id: sourceRun.author_id,
-    })
+    .update(updatePayload)
     .eq('id', project.id)
 
-  if (updatePromptError) throw updatePromptError
+  if (updatePromptError) {
+    if (!forkColumnsMissing(updatePromptError)) throw updatePromptError
+
+    const { error: fallbackUpdateError } = await supabase
+      .from('prompts')
+      .update(omitForkFields(updatePayload))
+      .eq('id', project.id)
+    if (fallbackUpdateError) throw fallbackUpdateError
+  }
 
   const { error: updateSourceRunError } = await supabase
     .from('source_run_submissions')
@@ -1400,6 +1554,7 @@ export async function createProject(project: {
   tools_used: string[]
   tags: string[]
   steps: { title: string; content: string; result_content: string | null; description: string | null }[]
+  fork_source?: ProjectForkSource | null
 }) {
   if (!SUPABASE_CONFIGURED) return { id: 'mock-id' }
 
@@ -1418,26 +1573,41 @@ export async function createProject(project: {
   if (!cat) throw new Error('Invalid category')
 
   // Insert the project
-  const { data: prompt, error: promptError } = await supabase
+  const promptPayload = {
+    title: project.title,
+    description: project.description,
+    content: project.content,
+    result_content: project.result_content || null,
+    category_id: cat.id,
+    difficulty: project.difficulty,
+    model_used: project.model_used || null,
+    model_recommendation: project.model_recommendation || null,
+    tools_used: project.tools_used,
+    tags: project.tags,
+    ...projectForkSourceToSubmissionFields(project.fork_source),
+    status: 'pending',
+    author_id: user.id,
+  }
+  let { data: prompt, error: promptError } = await supabase
     .from('prompts')
-    .insert({
-      title: project.title,
-      description: project.description,
-      content: project.content,
-      result_content: project.result_content || null,
-      category_id: cat.id,
-      difficulty: project.difficulty,
-      model_used: project.model_used || null,
-      model_recommendation: project.model_recommendation || null,
-      tools_used: project.tools_used,
-      tags: project.tags,
-      status: 'pending',
-      author_id: user.id,
-    })
+    .insert(promptPayload)
     .select('id')
     .single()
 
+  if (promptError) {
+    if (!forkColumnsMissing(promptError)) throw promptError
+
+    const fallbackResult = await supabase
+      .from('prompts')
+      .insert(omitForkFields(promptPayload))
+      .select('id')
+      .single()
+    prompt = fallbackResult.data
+    promptError = fallbackResult.error
+  }
+
   if (promptError) throw promptError
+  if (!prompt) throw new Error('Project submission did not return an id.')
 
   // Insert steps if any
   if (project.steps.length > 0) {

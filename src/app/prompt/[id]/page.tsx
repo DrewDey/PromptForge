@@ -17,7 +17,13 @@ import ProjectCommunityPanel from '@/components/ProjectCommunityPanel'
 import { detectContentKind } from '@/lib/content-kind'
 import { isPersistableProjectId } from '@/lib/project-engagement'
 import { getProjectRouteOverride } from '@/lib/project-links'
-import { buildProjectForkHref, createProjectForkDraftContract, toProjectForkSourceSteps } from '@/lib/project-forks'
+import {
+  PROJECT_FORK_MAX_DEPTH,
+  buildProjectForkHref,
+  createProjectForkDraftContract,
+  projectForkSourceFromSubmissionFields,
+  toProjectForkSourceSteps,
+} from '@/lib/project-forks'
 
 /**
  * Pick the right renderer AND the right eyebrow label for a step's payload.
@@ -110,18 +116,25 @@ export default async function PromptDetailPage({
   const hasSteps = prompt.steps && prompt.steps.length > 0
   const modelDisplay = prompt.model_used ? getModelName(prompt.model_used) : prompt.model_recommendation
   const difficulty = difficultyConfig[prompt.difficulty] || difficultyConfig.beginner
+  const existingForkSource = projectForkSourceFromSubmissionFields(prompt)
   const forkSourceSteps = toProjectForkSourceSteps(prompt)
   const forkContract = createProjectForkDraftContract({
     source: { sourceProjectId: prompt.id, sourceProjectTitle: prompt.title },
     sourceSteps: forkSourceSteps,
   })
-  const forkHref = buildProjectForkHref({
-    sourceProjectId: prompt.id,
-    sourceProjectTitle: prompt.title,
-    sourceStepId: forkContract.forkPointStep?.id,
-    sourceStepNumber: forkContract.forkPointStep?.stepNumber,
-    promptFamilyId: forkContract.promptFamilyId,
-  })
+  const nextForkDepth = existingForkSource ? existingForkSource.depth + 1 : 0
+  const canForkDeeper = nextForkDepth < PROJECT_FORK_MAX_DEPTH
+  const forkHref = canForkDeeper
+    ? buildProjectForkHref({
+        sourceProjectId: prompt.id,
+        sourceProjectTitle: prompt.title,
+        sourceStepId: forkContract.forkPointStep?.id,
+        sourceStepNumber: forkContract.forkPointStep?.stepNumber,
+        parentForkId: existingForkSource ? prompt.id : undefined,
+        depth: nextForkDepth,
+        promptFamilyId: existingForkSource?.promptFamilyId ?? forkContract.promptFamilyId,
+      })
+    : null
 
   // Hero "Final output" exhibit (iter 51 — Polish #1).
   // Prefer the project-level final result_content; if absent, fall back to
@@ -661,17 +674,28 @@ export default async function PromptDetailPage({
               </div>
               <p className="text-sm font-semibold leading-snug">Inspired? Build your own version.</p>
               <p className="text-xs text-surface-400 mt-1 leading-snug">
-                Start a new draft from this blueprint — auto-prefill coming soon.
+                Opens build intake with this path attached.
               </p>
             </div>
             <div className="px-5 py-4 space-y-4">
-              <Link
-                href={forkHref}
-                className="flex w-full items-center justify-center gap-2 bg-brand-orange hover:bg-brand-orange-dark text-white text-sm font-semibold px-4 py-2.5 transition-colors duration-200 focus-visible:outline-2 focus-visible:outline-brand-orange focus-visible:outline-offset-2"
-              >
-                <GitFork className="w-4 h-4" aria-hidden="true" />
-                Fork this path
-              </Link>
+              {forkHref ? (
+                <Link
+                  href={forkHref}
+                  className="flex w-full items-center justify-center gap-2 bg-brand-orange hover:bg-brand-orange-dark text-white text-sm font-semibold px-4 py-2.5 transition-colors duration-200 focus-visible:outline-2 focus-visible:outline-brand-orange focus-visible:outline-offset-2"
+                >
+                  <GitFork className="w-4 h-4" aria-hidden="true" />
+                  Fork this path
+                </Link>
+              ) : (
+                <button
+                  type="button"
+                  disabled
+                  className="flex w-full cursor-not-allowed items-center justify-center gap-2 border border-surface-300 bg-surface-100 px-4 py-2.5 text-sm font-semibold text-surface-400"
+                >
+                  <GitFork className="w-4 h-4" aria-hidden="true" />
+                  Max fork depth reached
+                </button>
+              )}
               <ul className="text-[11px] text-surface-500 space-y-1.5 pt-1 border-t border-surface-200/80">
                 <li className="flex items-center justify-between gap-3 pt-2">
                   <span className="font-mono uppercase tracking-[0.14em] text-surface-400">Difficulty</span>
@@ -720,16 +744,27 @@ export default async function PromptDetailPage({
         <div className="min-w-0 flex-1">
           <p className="text-[13px] font-semibold text-white leading-tight truncate">Inspired? Build your own.</p>
           <p className="text-[11px] text-surface-400 leading-tight truncate mt-0.5">
-            Start a draft — auto-prefill coming soon.
+            Build intake opens with this path attached.
           </p>
         </div>
-        <Link
-          href={forkHref}
-          className="inline-flex items-center justify-center gap-1.5 bg-brand-orange hover:bg-brand-orange-dark text-white text-[13px] font-semibold px-3.5 py-2.5 transition-colors duration-200 shrink-0 focus-visible:outline-2 focus-visible:outline-brand-orange focus-visible:outline-offset-2"
-        >
-          <GitFork className="w-4 h-4" aria-hidden="true" />
-          Fork
-        </Link>
+        {forkHref ? (
+          <Link
+            href={forkHref}
+            className="inline-flex items-center justify-center gap-1.5 bg-brand-orange hover:bg-brand-orange-dark text-white text-[13px] font-semibold px-3.5 py-2.5 transition-colors duration-200 shrink-0 focus-visible:outline-2 focus-visible:outline-brand-orange focus-visible:outline-offset-2"
+          >
+            <GitFork className="w-4 h-4" aria-hidden="true" />
+            Fork
+          </Link>
+        ) : (
+          <button
+            type="button"
+            disabled
+            className="inline-flex shrink-0 cursor-not-allowed items-center justify-center gap-1.5 border border-surface-700 bg-surface-800 px-3.5 py-2.5 text-[13px] font-semibold text-surface-400"
+          >
+            <GitFork className="w-4 h-4" aria-hidden="true" />
+            Maxed
+          </button>
+        )}
       </div>
     </nav>
     </>

@@ -1,0 +1,2070 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Backyard Stargazing Scavenger Hunt</title>
+  <style>
+    :root {
+      --bg: #07111f;
+      --ink: #f5f7fb;
+      --muted: #aebbd1;
+      --line: rgba(255,255,255,.14);
+      --accent: #ffd166;
+      --accent2: #7dd3fc;
+      --good: #9ef01a;
+      --shadow: 0 20px 60px rgba(0,0,0,.35);
+      --radius: 22px;
+      --tap: 48px;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background:
+        radial-gradient(circle at 18% 8%, rgba(125, 211, 252, .18), transparent 28%),
+        radial-gradient(circle at 82% 16%, rgba(255, 209, 102, .15), transparent 26%),
+        linear-gradient(145deg, #040912, var(--bg) 45%, #0d1b2f);
+      color: var(--ink);
+      min-height: 100vh;
+    }
+
+    .stars {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      opacity: .55;
+      background-image:
+        radial-gradient(circle, rgba(255,255,255,.8) 1px, transparent 1.6px),
+        radial-gradient(circle, rgba(255,255,255,.55) 1px, transparent 1.6px),
+        radial-gradient(circle, rgba(255,255,255,.35) 1px, transparent 1.6px);
+      background-size: 90px 90px, 140px 140px, 210px 210px;
+      background-position: 10px 20px, 50px 80px, 120px 20px;
+    }
+
+    .app {
+      position: relative;
+      width: min(1180px, calc(100% - 32px));
+      margin: 0 auto;
+      padding: 36px 0 56px;
+    }
+
+    header {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 20px;
+      align-items: start;
+      margin-bottom: 22px;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(2rem, 5vw, 4.6rem);
+      line-height: .95;
+      letter-spacing: -0.06em;
+    }
+
+    .subtitle {
+      margin: 14px 0 0;
+      max-width: 860px;
+      color: var(--muted);
+      font-size: 1.05rem;
+      line-height: 1.55;
+    }
+
+    .moon-badge {
+      border: 1px solid var(--line);
+      background: rgba(255,255,255,.06);
+      border-radius: 999px;
+      padding: 12px 16px;
+      color: var(--accent);
+      font-weight: 800;
+      white-space: nowrap;
+      box-shadow: var(--shadow);
+    }
+
+    .layout {
+      display: grid;
+      grid-template-columns: 390px 1fr;
+      gap: 20px;
+      align-items: start;
+    }
+
+    .panel {
+      background: linear-gradient(180deg, rgba(255,255,255,.08), rgba(255,255,255,.04));
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+      backdrop-filter: blur(12px);
+    }
+
+    .panel-inner {
+      padding: 20px;
+    }
+
+    .panel-title {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+
+    .panel-title h2 {
+      margin: 0;
+      font-size: 1.05rem;
+      letter-spacing: -0.02em;
+    }
+
+    .chip {
+      font-size: .78rem;
+      font-weight: 800;
+      color: #07111f;
+      background: var(--accent);
+      border-radius: 999px;
+      padding: 6px 10px;
+    }
+
+    label {
+      display: block;
+      margin: 14px 0 7px;
+      color: var(--muted);
+      font-size: .88rem;
+      font-weight: 700;
+    }
+
+    input,
+    textarea,
+    select {
+      width: 100%;
+      border: 1px solid rgba(255,255,255,.16);
+      background: rgba(5, 13, 25, .7);
+      color: var(--ink);
+      border-radius: 14px;
+      padding: 12px 13px;
+      font: inherit;
+      outline: none;
+    }
+
+    input,
+    select {
+      min-height: var(--tap);
+    }
+
+    textarea {
+      min-height: 94px;
+      resize: vertical;
+    }
+
+    #exportText {
+      min-height: 285px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+      font-size: .84rem;
+      line-height: 1.45;
+    }
+
+    input:focus,
+    textarea:focus,
+    select:focus {
+      border-color: rgba(125, 211, 252, .75);
+      box-shadow: 0 0 0 4px rgba(125, 211, 252, .13);
+    }
+
+    .row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    .actions {
+      display: grid;
+      gap: 10px;
+      margin-top: 18px;
+    }
+
+    .action-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    button {
+      border: 0;
+      cursor: pointer;
+      border-radius: 16px;
+      min-height: var(--tap);
+      padding: 13px 15px;
+      font: inherit;
+      font-weight: 900;
+      color: #07111f;
+      background: var(--accent);
+      box-shadow: 0 10px 24px rgba(0,0,0,.24);
+      touch-action: manipulation;
+    }
+
+    button.secondary {
+      background: rgba(255,255,255,.1);
+      color: var(--ink);
+      border: 1px solid var(--line);
+    }
+
+    button.small {
+      min-height: 44px;
+      padding: 9px 10px;
+      border-radius: 12px;
+      font-size: .86rem;
+    }
+
+    button:hover {
+      filter: brightness(1.04);
+      transform: translateY(-1px);
+    }
+
+    .hint {
+      color: var(--muted);
+      font-size: .85rem;
+      line-height: 1.45;
+      margin-top: 12px;
+    }
+
+    .status {
+      color: var(--good);
+      font-size: .86rem;
+      font-weight: 800;
+      min-height: 20px;
+      margin-top: 8px;
+    }
+
+    .custom-add {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 8px;
+      margin-top: 8px;
+    }
+
+    .preview {
+      display: grid;
+      gap: 20px;
+    }
+
+    .print-toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: rgba(255,255,255,.05);
+    }
+
+    .print-toolbar span {
+      color: var(--muted);
+      font-size: .92rem;
+      line-height: 1.35;
+    }
+
+    .print-sheet,
+    .answer-sheet,
+    .export-sheet {
+      background: rgba(255,255,255,.05);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      overflow: hidden;
+    }
+
+    .sheet-head {
+      padding: 22px;
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 14px;
+      align-items: start;
+      border-bottom: 1px solid var(--line);
+      background:
+        radial-gradient(circle at 10% 20%, rgba(255, 209, 102, .16), transparent 25%),
+        linear-gradient(135deg, rgba(255,255,255,.08), rgba(255,255,255,.03));
+    }
+
+    .sheet-head h2 {
+      margin: 0;
+      font-size: clamp(1.4rem, 3vw, 2.1rem);
+      letter-spacing: -0.04em;
+    }
+
+    .sheet-meta {
+      margin-top: 8px;
+      color: var(--muted);
+      display: grid;
+      gap: 4px;
+      font-size: .95rem;
+    }
+
+    .night-note {
+      border: 1px dashed rgba(255,255,255,.25);
+      border-radius: 16px;
+      padding: 12px;
+      color: var(--muted);
+      max-width: 370px;
+      font-size: .92rem;
+      line-height: 1.4;
+    }
+
+    .sky-map-wrap {
+      padding: 20px 20px 0;
+    }
+
+    .sky-map-panel {
+      border: 1px solid var(--line);
+      border-radius: 22px;
+      background:
+        radial-gradient(circle at 50% 45%, rgba(125,211,252,.14), transparent 34%),
+        linear-gradient(180deg, rgba(255,255,255,.08), rgba(255,255,255,.035));
+      padding: 18px;
+      page-break-inside: avoid;
+      break-inside: avoid;
+    }
+
+    .map-title-row {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: baseline;
+      margin-bottom: 14px;
+    }
+
+    .map-title-row h3 {
+      margin: 0;
+      letter-spacing: -0.03em;
+    }
+
+    .map-title-row span {
+      color: var(--muted);
+      font-size: .88rem;
+    }
+
+    .sky-map {
+      position: relative;
+      width: min(100%, 560px);
+      aspect-ratio: 1 / 1;
+      margin: 0 auto;
+      border-radius: 50%;
+      border: 2px solid rgba(255,255,255,.28);
+      background:
+        radial-gradient(circle at 50% 50%, rgba(255,255,255,.10), transparent 10%),
+        radial-gradient(circle at 50% 50%, rgba(255,255,255,.05), transparent 31%),
+        radial-gradient(circle at 50% 50%, rgba(255,255,255,.03), transparent 52%),
+        rgba(2, 8, 19, .55);
+      overflow: hidden;
+      box-shadow: inset 0 0 35px rgba(0,0,0,.4);
+    }
+
+    .sky-map::before,
+    .sky-map::after {
+      content: "";
+      position: absolute;
+      background: rgba(255,255,255,.12);
+      z-index: 1;
+    }
+
+    .sky-map::before {
+      left: 50%;
+      top: 0;
+      width: 1px;
+      height: 100%;
+    }
+
+    .sky-map::after {
+      left: 0;
+      top: 50%;
+      width: 100%;
+      height: 1px;
+    }
+
+    .horizon-ring {
+      position: absolute;
+      inset: 14%;
+      border-radius: 50%;
+      border: 1px dashed rgba(255,255,255,.22);
+      z-index: 1;
+    }
+
+    .zenith {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      transform: translate(-50%, -50%);
+      width: 76px;
+      height: 76px;
+      border-radius: 50%;
+      border: 1px solid rgba(255,255,255,.22);
+      display: grid;
+      place-items: center;
+      color: var(--muted);
+      font-size: .75rem;
+      font-weight: 900;
+      z-index: 2;
+      background: rgba(255,255,255,.04);
+    }
+
+    .dir {
+      position: absolute;
+      z-index: 4;
+      font-weight: 1000;
+      color: #07111f;
+      background: var(--accent);
+      border-radius: 999px;
+      width: 38px;
+      height: 38px;
+      display: grid;
+      place-items: center;
+      box-shadow: 0 8px 16px rgba(0,0,0,.28);
+    }
+
+    .dir.n { top: 8px; left: 50%; transform: translateX(-50%); }
+    .dir.e { right: 8px; top: 50%; transform: translateY(-50%); }
+    .dir.s { bottom: 8px; left: 50%; transform: translateX(-50%); }
+    .dir.w { left: 8px; top: 50%; transform: translateY(-50%); }
+
+    .zone-label {
+      position: absolute;
+      z-index: 3;
+      color: rgba(255,255,255,.82);
+      font-weight: 900;
+      font-size: .78rem;
+      letter-spacing: .04em;
+      text-transform: uppercase;
+    }
+
+    .zone-label.north { top: 17%; left: 50%; transform: translateX(-50%); }
+    .zone-label.east { right: 15%; top: 50%; transform: translateY(-50%) rotate(90deg); }
+    .zone-label.south { bottom: 17%; left: 50%; transform: translateX(-50%); }
+    .zone-label.west { left: 15%; top: 50%; transform: translateY(-50%) rotate(-90deg); }
+
+    .marker {
+      position: absolute;
+      z-index: 5;
+      transform: translate(-50%, -50%);
+      display: grid;
+      place-items: center;
+      width: 30px;
+      height: 30px;
+      border-radius: 999px;
+      color: #07111f;
+      background: var(--accent2);
+      font-weight: 1000;
+      font-size: .86rem;
+      border: 2px solid rgba(255,255,255,.75);
+      box-shadow: 0 8px 18px rgba(0,0,0,.3);
+    }
+
+    .map-legend {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 8px 14px;
+      margin-top: 14px;
+      color: var(--muted);
+      font-size: .88rem;
+      line-height: 1.35;
+    }
+
+    .legend-item {
+      display: grid;
+      grid-template-columns: 26px 1fr;
+      gap: 8px;
+      align-items: start;
+      min-width: 0;
+    }
+
+    .legend-item span:last-child {
+      min-width: 0;
+      overflow-wrap: anywhere;
+    }
+
+    .legend-num {
+      display: inline-grid;
+      place-items: center;
+      width: 22px;
+      height: 22px;
+      border-radius: 999px;
+      background: rgba(125,211,252,.22);
+      color: var(--ink);
+      font-weight: 900;
+      font-size: .78rem;
+    }
+
+    .cards {
+      padding: 20px;
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 14px;
+    }
+
+    .card {
+      min-height: 190px;
+      border: 1px solid rgba(255,255,255,.16);
+      border-radius: 20px;
+      padding: 17px;
+      background: linear-gradient(180deg, rgba(255,255,255,.09), rgba(255,255,255,.035));
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      page-break-inside: avoid;
+      break-inside: avoid;
+    }
+
+    .card-top {
+      display: flex;
+      align-items: start;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .card h3 {
+      margin: 0;
+      font-size: 1.14rem;
+      letter-spacing: -0.03em;
+    }
+
+    .emoji {
+      width: 44px;
+      height: 44px;
+      display: grid;
+      place-items: center;
+      background: rgba(255,255,255,.1);
+      border-radius: 14px;
+      font-size: 1.55rem;
+      flex: 0 0 auto;
+    }
+
+    .look-zone {
+      display: inline-flex;
+      width: fit-content;
+      margin-top: 10px;
+      padding: 6px 9px;
+      border-radius: 999px;
+      color: #07111f;
+      background: var(--accent2);
+      font-size: .78rem;
+      font-weight: 1000;
+    }
+
+    .clue {
+      margin: 12px 0 0;
+      color: var(--muted);
+      line-height: 1.42;
+      font-size: .95rem;
+    }
+
+    .find-line {
+      margin-top: 14px;
+      border-top: 1px solid rgba(255,255,255,.13);
+      padding-top: 11px;
+      color: var(--accent2);
+      font-size: .9rem;
+      font-weight: 800;
+    }
+
+    .checklist-wrap,
+    .answer-wrap,
+    .export-wrap {
+      padding: 0 20px 20px;
+    }
+
+    .checklist,
+    .answer-key,
+    .export-box,
+    .setup-key {
+      background: rgba(255,255,255,.06);
+      border: 1px solid var(--line);
+      border-radius: 20px;
+      padding: 18px;
+    }
+
+    .checklist h3,
+    .answer-key h3,
+    .export-box h3,
+    .setup-key h3 {
+      margin: 0 0 12px;
+      letter-spacing: -0.03em;
+    }
+
+    .check-grid,
+    .setup-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 8px 14px;
+    }
+
+    .check-item {
+      display: grid;
+      grid-template-columns: 24px 1fr;
+      gap: 9px;
+      align-items: start;
+      color: var(--ink);
+      line-height: 1.3;
+      min-width: 0;
+    }
+
+    .check-item span:last-child {
+      min-width: 0;
+      overflow-wrap: anywhere;
+    }
+
+    .check-item small {
+      display: block;
+      color: var(--muted);
+      margin-top: 2px;
+      font-size: .78rem;
+      font-weight: 800;
+    }
+
+    .box {
+      width: 20px;
+      height: 20px;
+      border: 2px solid rgba(255,255,255,.65);
+      border-radius: 5px;
+      margin-top: 1px;
+      flex: 0 0 auto;
+    }
+
+    .parent-notes {
+      margin-top: 14px;
+      color: var(--muted);
+      font-size: .9rem;
+      line-height: 1.45;
+    }
+
+    .answers {
+      display: grid;
+      gap: 12px;
+    }
+
+    .answer-item {
+      border: 1px solid rgba(255,255,255,.14);
+      border-radius: 16px;
+      padding: 13px;
+      background: rgba(255,255,255,.04);
+      page-break-inside: avoid;
+      break-inside: avoid;
+    }
+
+    .answer-item strong {
+      display: block;
+      margin-bottom: 6px;
+      color: var(--accent);
+    }
+
+    .answer-item div {
+      color: var(--muted);
+      line-height: 1.42;
+      font-size: .94rem;
+    }
+
+    .answer-zone {
+      display: inline-flex;
+      margin: 2px 0 8px;
+      padding: 5px 8px;
+      border-radius: 999px;
+      background: rgba(125,211,252,.18);
+      color: var(--ink);
+      font-size: .78rem;
+      font-weight: 900;
+    }
+
+    .empty-state {
+      color: var(--muted);
+      padding: 30px;
+      text-align: center;
+      line-height: 1.5;
+    }
+
+    .library {
+      margin-top: 14px;
+      display: grid;
+      gap: 8px;
+    }
+
+    .library-row {
+      display: grid;
+      grid-template-columns: 28px minmax(0, 1fr);
+      gap: 10px;
+      align-items: start;
+      color: var(--muted);
+      font-size: .92rem;
+      line-height: 1.35;
+      border: 1px solid rgba(255,255,255,.08);
+      border-radius: 14px;
+      padding: 10px;
+      background: rgba(255,255,255,.035);
+      cursor: pointer;
+    }
+
+    .library-row strong {
+      color: var(--ink);
+    }
+
+    .library-row .library-copy {
+      min-width: 0;
+      overflow-wrap: anywhere;
+    }
+
+    .library-row input {
+      width: 20px;
+      height: 20px;
+      margin: 2px 0 0;
+      accent-color: var(--accent);
+    }
+
+    @media (max-width: 900px) {
+      header {
+        grid-template-columns: 1fr;
+      }
+
+      .moon-badge {
+        width: fit-content;
+      }
+
+      .layout {
+        grid-template-columns: 1fr;
+      }
+
+      .cards {
+        grid-template-columns: 1fr;
+      }
+
+      .sheet-head {
+        grid-template-columns: 1fr;
+      }
+
+      .night-note {
+        max-width: none;
+      }
+
+      .controls {
+        position: static;
+      }
+    }
+
+    @media (max-width: 560px) {
+      :root {
+        --radius: 18px;
+        --tap: 52px;
+      }
+
+      body {
+        background:
+          radial-gradient(circle at 20% 0%, rgba(125, 211, 252, .15), transparent 28%),
+          linear-gradient(160deg, #040912, #09182c 55%, #0d1b2f);
+      }
+
+      .app {
+        width: min(100% - 18px, 1180px);
+        padding-top: 20px;
+        padding-bottom: 40px;
+      }
+
+      header {
+        margin-bottom: 14px;
+        gap: 12px;
+      }
+
+      h1 {
+        font-size: clamp(2rem, 12vw, 3.15rem);
+        line-height: .96;
+      }
+
+      .subtitle {
+        font-size: .96rem;
+        line-height: 1.45;
+        margin-top: 10px;
+      }
+
+      .moon-badge {
+        padding: 10px 13px;
+        font-size: .88rem;
+      }
+
+      .layout,
+      .preview {
+        gap: 14px;
+      }
+
+      .panel-inner {
+        padding: 14px;
+      }
+
+      .panel-title {
+        margin-bottom: 10px;
+      }
+
+      label {
+        margin-top: 11px;
+        margin-bottom: 6px;
+      }
+
+      input,
+      select,
+      textarea {
+        border-radius: 13px;
+        padding: 12px;
+        font-size: 16px;
+      }
+
+      textarea {
+        min-height: 76px;
+      }
+
+      .row,
+      .check-grid,
+      .setup-grid,
+      .map-legend {
+        grid-template-columns: 1fr;
+      }
+
+      .custom-add {
+        grid-template-columns: 1fr;
+      }
+
+      .custom-add button {
+        width: 100%;
+      }
+
+      .actions {
+        gap: 9px;
+        margin-top: 14px;
+      }
+
+      .action-row {
+        grid-template-columns: 1fr;
+        gap: 9px;
+      }
+
+      button,
+      button.small {
+        width: 100%;
+        min-height: 52px;
+        border-radius: 15px;
+        padding: 14px 15px;
+        font-size: .98rem;
+      }
+
+      .library {
+        gap: 7px;
+      }
+
+      .library-row {
+        grid-template-columns: 34px minmax(0, 1fr);
+        gap: 9px;
+        padding: 10px 9px;
+        border-radius: 14px;
+        font-size: .88rem;
+      }
+
+      .library-row input {
+        width: 24px;
+        height: 24px;
+        margin-top: 1px;
+      }
+
+      .library-row strong {
+        display: block;
+        font-size: .94rem;
+        margin-bottom: 2px;
+      }
+
+      .hint {
+        font-size: .82rem;
+        margin-top: 10px;
+      }
+
+      .print-toolbar {
+        display: grid;
+        gap: 11px;
+        padding: 12px;
+      }
+
+      .print-toolbar span {
+        font-size: .86rem;
+      }
+
+      .sheet-head,
+      .sky-map-wrap,
+      .cards,
+      .checklist-wrap,
+      .answer-wrap,
+      .export-wrap {
+        padding: 14px;
+      }
+
+      .sheet-head {
+        gap: 10px;
+      }
+
+      .sheet-head h2 {
+        font-size: 1.45rem;
+      }
+
+      .sheet-meta,
+      .night-note {
+        font-size: .86rem;
+      }
+
+      .sky-map-panel,
+      .checklist,
+      .answer-key,
+      .setup-key,
+      .export-box {
+        border-radius: 17px;
+        padding: 14px;
+      }
+
+      .map-title-row {
+        display: grid;
+        gap: 4px;
+        margin-bottom: 10px;
+      }
+
+      .map-title-row span {
+        font-size: .82rem;
+      }
+
+      .sky-map {
+        width: min(100%, 390px);
+      }
+
+      .dir {
+        width: 34px;
+        height: 34px;
+        font-size: .88rem;
+      }
+
+      .zenith {
+        width: 66px;
+        height: 66px;
+        font-size: .68rem;
+      }
+
+      .marker {
+        width: 28px;
+        height: 28px;
+        font-size: .78rem;
+      }
+
+      .zone-label {
+        font-size: .66rem;
+      }
+
+      .map-legend {
+        font-size: .84rem;
+      }
+
+      .cards {
+        gap: 10px;
+      }
+
+      .card {
+        min-height: unset;
+        border-radius: 17px;
+        padding: 14px;
+      }
+
+      .card h3 {
+        font-size: 1.05rem;
+      }
+
+      .emoji {
+        width: 40px;
+        height: 40px;
+        border-radius: 12px;
+        font-size: 1.35rem;
+      }
+
+      .look-zone {
+        font-size: .74rem;
+        padding: 6px 8px;
+        max-width: 100%;
+        overflow-wrap: anywhere;
+      }
+
+      .clue {
+        font-size: .91rem;
+      }
+
+      .find-line {
+        font-size: .86rem;
+      }
+
+      .check-item {
+        gap: 8px;
+        font-size: .92rem;
+      }
+
+      .answer-item {
+        padding: 12px;
+      }
+
+      #exportText {
+        min-height: 240px;
+        font-size: .8rem;
+      }
+    }
+
+    body.print-kids .answer-sheet,
+    body.print-kids .export-sheet {
+      display: none;
+    }
+
+    body.print-answer .print-sheet,
+    body.print-answer .export-sheet {
+      display: none;
+    }
+
+    @media print {
+      :root {
+        --ink: #111827;
+        --muted: #374151;
+        --line: #d1d5db;
+        --accent: #111827;
+        --accent2: #111827;
+      }
+
+      body {
+        background: #fff;
+        color: #111827;
+      }
+
+      .stars,
+      header,
+      .controls,
+      .hint,
+      .no-print,
+      .print-toolbar,
+      .export-sheet {
+        display: none !important;
+      }
+
+      .app {
+        width: 100%;
+        padding: 0;
+        margin: 0;
+      }
+
+      .layout {
+        display: block;
+      }
+
+      .preview,
+      .print-sheet,
+      .answer-sheet {
+        display: block;
+      }
+
+      .print-sheet,
+      .answer-sheet {
+        border: 0;
+        border-radius: 0;
+        background: #fff;
+        overflow: visible;
+      }
+
+      .answer-sheet {
+        page-break-before: always;
+      }
+
+      body.print-kids .answer-sheet {
+        display: none !important;
+      }
+
+      body.print-answer .print-sheet {
+        display: none !important;
+      }
+
+      body.print-answer .answer-sheet {
+        page-break-before: auto;
+      }
+
+      .sheet-head {
+        background: #fff;
+        color: #111827;
+        border: 2px solid #111827;
+        border-radius: 12px;
+        margin-bottom: 14px;
+        padding: 16px;
+      }
+
+      .sheet-head h2 {
+        font-size: 28px;
+      }
+
+      .sheet-meta,
+      .night-note,
+      .clue,
+      .parent-notes,
+      .answer-item div,
+      .map-title-row span,
+      .map-legend,
+      .check-item small {
+        color: #374151;
+      }
+
+      .night-note {
+        border-color: #9ca3af;
+      }
+
+      .sky-map-wrap {
+        padding: 0 0 14px;
+      }
+
+      .sky-map-panel,
+      .checklist,
+      .answer-key,
+      .setup-key {
+        background: #fff;
+        border: 2px solid #111827;
+        border-radius: 12px;
+      }
+
+      .sky-map {
+        width: 460px;
+        max-width: 100%;
+        background: #fff;
+        border-color: #111827;
+        box-shadow: none;
+      }
+
+      .sky-map::before,
+      .sky-map::after {
+        background: #d1d5db;
+      }
+
+      .horizon-ring {
+        border-color: #9ca3af;
+      }
+
+      .zenith {
+        color: #111827;
+        background: #fff;
+        border-color: #9ca3af;
+      }
+
+      .dir {
+        background: #111827;
+        color: #fff;
+        box-shadow: none;
+      }
+
+      .zone-label {
+        color: #374151;
+      }
+
+      .marker {
+        background: #fff;
+        color: #111827;
+        border: 2px solid #111827;
+        box-shadow: none;
+      }
+
+      .legend-num {
+        background: #fff;
+        color: #111827;
+        border: 1px solid #111827;
+      }
+
+      .cards {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 10px;
+        padding: 0;
+      }
+
+      .card {
+        background: #fff;
+        color: #111827;
+        border: 2px solid #111827;
+        border-radius: 12px;
+        min-height: 160px;
+        padding: 13px;
+      }
+
+      .emoji {
+        background: #f3f4f6;
+        border: 1px solid #d1d5db;
+      }
+
+      .look-zone {
+        background: #fff;
+        color: #111827;
+        border: 1px solid #111827;
+      }
+
+      .find-line {
+        border-color: #d1d5db;
+        color: #111827;
+      }
+
+      .checklist-wrap,
+      .answer-wrap {
+        padding: 14px 0 0;
+      }
+
+      .check-grid,
+      .setup-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+
+      .box {
+        border-color: #111827;
+      }
+
+      .answer-item {
+        background: #fff;
+        border: 1px solid #9ca3af;
+      }
+
+      .answer-item strong,
+      .answer-zone {
+        color: #111827;
+      }
+
+      .answer-zone {
+        background: #fff;
+        border: 1px solid #111827;
+      }
+
+      .library-row {
+        border: 0;
+        background: transparent;
+        padding: 0;
+      }
+
+      @page {
+        margin: .45in;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="stars"></div>
+
+  <main class="app">
+    <header>
+      <div>
+        <h1>Backyard Stargazing Scavenger Hunt</h1>
+        <p class="subtitle">
+          Enter tonight’s details, choose what kids should search for, then print clue cards, a compass sky map, a kid checklist, a separate parent answer key, an adult setup checklist, and a copyable text version.
+        </p>
+      </div>
+      <div class="moon-badge">🌙 Offline ready</div>
+    </header>
+
+    <section class="layout">
+      <aside class="panel controls">
+        <div class="panel-inner">
+          <div class="panel-title">
+            <h2>Hunt setup</h2>
+            <span class="chip">One file</span>
+          </div>
+
+          <label for="huntTitle">Hunt name</label>
+          <input id="huntTitle" value="Tonight’s Backyard Sky Quest" />
+
+          <div class="row">
+            <div>
+              <label for="huntDate">Date</label>
+              <input id="huntDate" type="date" />
+            </div>
+            <div>
+              <label for="difficulty">Kid level</label>
+              <select id="difficulty">
+                <option value="little">Little explorers</option>
+                <option value="mixed" selected>Mixed ages</option>
+                <option value="older">Older kids</option>
+              </select>
+            </div>
+          </div>
+
+          <label for="skyNote">Rough location or sky note</label>
+          <textarea id="skyNote">Backyard. Look away from porch lights. Trees block part of the western sky.</textarea>
+
+          <label for="leaderNote">Leader note for the printout</label>
+          <textarea id="leaderNote">Use red or dim flashlights if you have them. Let your eyes adjust for 10 minutes. Not every clue needs to be visible tonight.</textarea>
+
+          <label>Choose clue cards</label>
+          <div class="library" id="library"></div>
+
+          <label for="customItem">Add a custom thing to find</label>
+          <div class="custom-add">
+            <input id="customItem" placeholder="Example: airplane blinking lights" />
+            <button class="small secondary" id="addCustom" type="button">Add</button>
+          </div>
+
+          <div class="actions">
+            <button id="sampleBtn" type="button">Load sample backyard night</button>
+            <button class="secondary" id="buildBtn" type="button">Build printable hunt</button>
+            <div class="action-row">
+              <button class="secondary" id="printKidsBtn" type="button">Print kid hunt</button>
+              <button class="secondary" id="printAnswerBtn" type="button">Print parent pack</button>
+            </div>
+            <button class="secondary" id="copyBtn" type="button">Copy text export</button>
+            <button class="secondary" id="resetBtn" type="button">Reset</button>
+            <div class="status" id="copyStatus"></div>
+          </div>
+
+          <p class="hint">
+            The sky map is a simple orientation guide, not a live astronomy chart. It suggests where to start looking while the notes handle trees, clouds, porch lights, and timing.
+          </p>
+        </div>
+      </aside>
+
+      <section class="preview">
+        <div class="print-toolbar no-print">
+          <span>
+            Use “Load sample backyard night” to preview the whole flow fast. Print the kid hunt separately from the parent pack.
+          </span>
+          <div class="action-row">
+            <button class="small secondary" id="toolbarPrintKids" type="button">Print kid hunt</button>
+            <button class="small secondary" id="toolbarPrintAnswer" type="button">Print parent pack</button>
+          </div>
+        </div>
+
+        <div class="print-sheet" id="printSheet">
+          <div class="sheet-head">
+            <div>
+              <h2 id="outTitle">Tonight’s Backyard Sky Quest</h2>
+              <div class="sheet-meta">
+                <div><strong>Date:</strong> <span id="outDate">Tonight</span></div>
+                <div><strong>Sky note:</strong> <span id="outSky">Backyard. Look away from porch lights.</span></div>
+              </div>
+            </div>
+            <div class="night-note">
+              <strong>Leader note:</strong>
+              <div id="outLeader">Use red or dim flashlights if you have them. Let your eyes adjust for 10 minutes.</div>
+            </div>
+          </div>
+
+          <div class="sky-map-wrap">
+            <div class="sky-map-panel">
+              <div class="map-title-row">
+                <h3>Simple backyard sky map</h3>
+                <span>Face each direction and scan from horizon to overhead.</span>
+              </div>
+              <div class="sky-map" id="skyMap">
+                <div class="horizon-ring"></div>
+                <div class="zenith">OVERHEAD</div>
+                <div class="dir n">N</div>
+                <div class="dir e">E</div>
+                <div class="dir s">S</div>
+                <div class="dir w">W</div>
+                <div class="zone-label north">north</div>
+                <div class="zone-label east">east</div>
+                <div class="zone-label south">south</div>
+                <div class="zone-label west">west</div>
+              </div>
+              <div class="map-legend" id="mapLegend"></div>
+              <div class="parent-notes">
+                <strong>Map rule:</strong> These zones are search hints, not exact positions. If something is hidden, mark it as “not visible tonight” and keep going.
+              </div>
+            </div>
+          </div>
+
+          <div class="cards" id="cards"></div>
+
+          <div class="checklist-wrap">
+            <div class="checklist">
+              <h3>Finder checklist</h3>
+              <div class="check-grid" id="checklist"></div>
+              <div class="parent-notes">
+                <strong>Bonus challenge:</strong> Pick your favorite find and draw it on the back of a clue card. Add one sentence about where you saw it in the sky.
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="answer-sheet" id="answerSheet">
+          <div class="sheet-head">
+            <div>
+              <h2>Parent Pack</h2>
+              <div class="sheet-meta">
+                <div><strong>Hunt:</strong> <span id="keyTitle">Tonight’s Backyard Sky Quest</span></div>
+                <div><strong>Date:</strong> <span id="keyDate">Tonight</span></div>
+              </div>
+            </div>
+            <div class="night-note">
+              <strong>Use this quietly:</strong>
+              <div>These are guide answers, not strict astronomy rules. Visibility depends on clouds, trees, light pollution, time, and direction.</div>
+            </div>
+          </div>
+
+          <div class="answer-wrap">
+            <div class="setup-key">
+              <h3>Adult setup checklist</h3>
+              <div class="setup-grid" id="setupChecklist"></div>
+              <div class="parent-notes">
+                <strong>Cloud plan:</strong> If clouds roll in, switch to moving lights, cloud windows, moon shadows, night sounds, and “why can’t we see it?” observations.
+              </div>
+            </div>
+          </div>
+
+          <div class="answer-wrap">
+            <div class="answer-key">
+              <h3>Parent answer key</h3>
+              <div class="answers" id="answers"></div>
+              <div class="parent-notes">
+                <strong>Parent tip:</strong> If a clue is not visible, turn it into an observation question: “Why might this be hard to see tonight?”
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="export-sheet no-print">
+          <div class="sheet-head">
+            <div>
+              <h2>Copy or export text version</h2>
+              <div class="sheet-meta">
+                <div>Use this to text or email another parent.</div>
+              </div>
+            </div>
+            <div class="night-note">
+              <strong>Included:</strong>
+              <div>Hunt details, sky map zones, adult setup checklist, kid clues, checklist, and parent answer key.</div>
+            </div>
+          </div>
+
+          <div class="export-wrap">
+            <div class="export-box">
+              <h3>Text export</h3>
+              <textarea id="exportText" readonly></textarea>
+              <div class="actions">
+                <button class="secondary" id="copyBtn2" type="button">Copy text export</button>
+              </div>
+              <div class="status" id="copyStatus2"></div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </section>
+  </main>
+
+  <script>
+    const setupItems = [
+      "Dim flashlights or red-light mode ready",
+      "Blankets, chairs, or towels for looking up",
+      "Clear yard boundaries explained to kids",
+      "Trip hazards checked: hoses, toys, steps, fire pits",
+      "Porch and indoor lights turned down if possible",
+      "Warm layers or bug spray if needed",
+      "One adult knows north/east/south/west",
+      "Cloud backup plan ready: moving lights, sounds, cloud gaps",
+      "Bathroom and water break before starting",
+      "Pencils or crayons ready for drawing shapes"
+    ];
+
+    const clueBank = [
+      {
+        id: "moon",
+        emoji: "🌙",
+        title: "The Moon",
+        checklist: "Moon",
+        zone: "Any open sky",
+        mapX: 50,
+        mapY: 38,
+        clue: {
+          little: "Find the biggest glowing shape in the sky. Is it round, skinny, half, or missing tonight?",
+          mixed: "Look for the Moon. Scan any open part of the sky and notice its shape, color, and brightness.",
+          older: "Find the Moon if it is up. Sketch its phase and note whether the bright side points east, west, up, or down."
+        },
+        find: "Draw its shape.",
+        answer: "The Moon, if it is above the horizon. Kids should notice its phase, brightness, color, and whether it makes shadows. If it is not up yet or is hidden, that is still a valid observation."
+      },
+      {
+        id: "bright",
+        emoji: "✨",
+        title: "Brightest Point",
+        checklist: "Brightest star or planet",
+        zone: "Open sky, east through south",
+        mapX: 66,
+        mapY: 43,
+        clue: {
+          little: "Find the brightest tiny light that is not the Moon. Start in the open sky and ask if it twinkles or shines steady.",
+          mixed: "Find the brightest point of light. Start with the most open view from east through south. Stars usually twinkle. Planets often shine more steadily.",
+          older: "Compare the brightest point with nearby stars. Record whether it twinkles strongly or looks steady."
+        },
+        find: "Circle twinkle or steady.",
+        answer: "Usually the brightest visible star or planet. A steady bright point may be a planet. A twinkling point is more likely a star. Exact identity depends on date, time, and direction."
+      },
+      {
+        id: "dipper",
+        emoji: "🥄",
+        title: "Big Dipper Shape",
+        checklist: "Big Dipper or spoon shape",
+        zone: "North sky",
+        mapX: 38,
+        mapY: 24,
+        clue: {
+          little: "Face north and look for stars shaped like a giant spoon or wagon. Count how many stars you can see.",
+          mixed: "Face north and try to find a spoon shape. It may be high, low, tilted, or partly hidden.",
+          older: "Find the Big Dipper if visible. Use the two stars at the outer bowl edge as pointer stars toward north."
+        },
+        find: "Count the stars in the shape.",
+        answer: "The Big Dipper asterism, part of Ursa Major. It looks like a spoon, ladle, or wagon. It is generally found in the northern sky from most northern hemisphere backyards."
+      },
+      {
+        id: "north",
+        emoji: "🧭",
+        title: "North Star",
+        checklist: "North Star",
+        zone: "North sky",
+        mapX: 50,
+        mapY: 18,
+        clue: {
+          little: "Face north. Find the star that seems like the sky turns around it. A grownup can help point north.",
+          mixed: "Use a compass or phone compass to face north. Look for a medium bright star that stays in nearly the same place.",
+          older: "Use the Big Dipper pointer stars to estimate Polaris, the North Star, then mark north on your checklist."
+        },
+        find: "Write which way north is.",
+        answer: "Polaris, the North Star. It is not the brightest star, but it is useful because it sits close to true north in the northern hemisphere."
+      },
+      {
+        id: "triangle",
+        emoji: "🔺",
+        title: "Summer Triangle",
+        checklist: "Three bright stars making a triangle",
+        zone: "East to overhead",
+        mapX: 70,
+        mapY: 28,
+        clue: {
+          little: "Look east and upward. Try to find three bright stars that make a huge triangle.",
+          mixed: "Start in the eastern sky and scan upward for three bright stars spread far apart. Together they can make a big summer sky triangle.",
+          older: "Find three bright stars forming a large triangle. Estimate which corner is highest above the horizon."
+        },
+        find: "Draw the triangle.",
+        answer: "The Summer Triangle, made from Vega, Deneb, and Altair. It is easiest during summer and early fall evenings in the northern hemisphere, but visibility depends on time and sky view."
+      },
+      {
+        id: "colors",
+        emoji: "🎨",
+        title: "Star Colors",
+        checklist: "Two stars with different colors",
+        zone: "Any dark open sky",
+        mapX: 44,
+        mapY: 58,
+        clue: {
+          little: "Look anywhere with darker sky. Find one star that looks white or blue and one that looks yellow or orange.",
+          mixed: "Scan a dark open patch of sky and compare stars carefully. Some look icy white, some blue white, some yellow, and some orange.",
+          older: "Find two stars with different color temperatures. Record the colors without using a phone screen."
+        },
+        find: "Write two colors.",
+        answer: "Stars can appear blue white, white, yellow, orange, or reddish. Color differences are easier to see with bright stars and after eyes adjust to the dark."
+      },
+      {
+        id: "satellite",
+        emoji: "🛰️",
+        title: "Silent Mover",
+        checklist: "Satellite or slow moving light",
+        zone: "Overhead sweep",
+        mapX: 54,
+        mapY: 50,
+        clue: {
+          little: "Look overhead and wait. Watch for a tiny light moving smoothly across the sky with no blinking.",
+          mixed: "Scan overhead and across the open sky. A satellite looks like a steady dot sliding across the sky. It usually does not blink like a plane.",
+          older: "Track a steady moving dot. Estimate its path from horizon to horizon and how long you watched it."
+        },
+        find: "Point where it started.",
+        answer: "A satellite. It usually appears as a steady moving point of light with no blinking. It may fade as it moves into Earth’s shadow."
+      },
+      {
+        id: "plane",
+        emoji: "✈️",
+        title: "Blinking Plane",
+        checklist: "Blinking airplane",
+        zone: "Horizon to horizon",
+        mapX: 76,
+        mapY: 66,
+        clue: {
+          little: "Look around the edges of the sky. Find a light that blinks red, green, or white. That is probably an airplane.",
+          mixed: "Scan low and across the sky for a blinking moving light. Compare it with a satellite, which usually looks steady.",
+          older: "Watch a blinking aircraft and note its direction. Compare its speed with any steady moving object."
+        },
+        find: "Write blink colors.",
+        answer: "An airplane or helicopter. Blinking lights and colored lights are the big giveaway. This is useful because kids learn not every light in the sky is a star."
+      },
+      {
+        id: "cloud",
+        emoji: "☁️",
+        title: "Cloud Window",
+        checklist: "A clear patch between clouds",
+        zone: "Clearest sky zone",
+        mapX: 28,
+        mapY: 62,
+        clue: {
+          little: "Look for the clearest part of the sky. Find a hole in the clouds where stars peek through.",
+          mixed: "Look for a clear window between clouds. Watch whether it grows, shrinks, or moves.",
+          older: "Track a cloud gap for two minutes. Estimate which direction the clouds are drifting."
+        },
+        find: "Draw the cloud gap.",
+        answer: "A clear patch of sky between clouds. This is included so the hunt still works on imperfect nights."
+      },
+      {
+        id: "milky",
+        emoji: "🌌",
+        title: "Faint Glow Hunt",
+        checklist: "Faint glow or crowded star patch",
+        zone: "Darkest sky zone",
+        mapX: 36,
+        mapY: 40,
+        clue: {
+          little: "Look in the darkest part of the yard. Search for a soft cloudy glow made of many tiny stars.",
+          mixed: "Find the darkest sky patch you can. It might show a crowded star area, thin cloud, or sky glow.",
+          older: "Search the darkest part of the sky for a faint band or dense star region. Note how light pollution affects it."
+        },
+        find: "Mark easy or hard.",
+        answer: "A faint star rich area, possible Milky Way glow, thin cloud, or general sky glow. In suburbs or cities, the honest answer may be that it is too bright to see."
+      },
+      {
+        id: "shadow",
+        emoji: "👤",
+        title: "Moon Shadow",
+        checklist: "Shadow made by moonlight",
+        zone: "Ground check",
+        mapX: 18,
+        mapY: 82,
+        clue: {
+          little: "Look down near your feet. If the Moon is bright, stand still and look for your moon shadow.",
+          mixed: "Try to make a shadow using only moonlight. This works best when the Moon is bright and high.",
+          older: "Test whether the Moon casts a visible shadow. Record what object made the clearest shadow."
+        },
+        find: "Write yes or no.",
+        answer: "A visible shadow caused by moonlight. This usually needs a bright Moon, a darker yard, and a pale surface like concrete, sidewalk, or paper."
+      },
+      {
+        id: "quiet",
+        emoji: "👂",
+        title: "Night Sound",
+        checklist: "One nighttime sound",
+        zone: "Anywhere, eyes closed",
+        mapX: 82,
+        mapY: 82,
+        clue: {
+          little: "Pause anywhere in the yard. Close your eyes for ten seconds. What night sound can you hear?",
+          mixed: "Take a quiet listening break. Find one sound from nature and one sound from people or cars.",
+          older: "Listen for 30 seconds and separate sounds into nature, people, traffic, and weather."
+        },
+        find: "Write one sound.",
+        answer: "Any real nighttime sound. Crickets, wind, leaves, dogs, cars, distant voices, airplanes, and insects all count."
+      }
+    ];
+
+    let selectedIds = ["moon", "bright", "dipper", "north", "triangle", "colors", "satellite", "plane"];
+    let customClues = [];
+
+    const $ = (id) => document.getElementById(id);
+
+    function todayForInput() {
+      const now = new Date();
+      const offset = now.getTimezoneOffset();
+      const local = new Date(now.getTime() - offset * 60000);
+      return local.toISOString().slice(0, 10);
+    }
+
+    function prettyDate(value) {
+      if (!value) return "Tonight";
+      const date = new Date(value + "T12:00:00");
+      return date.toLocaleDateString(undefined, {
+        weekday: "long",
+        month: "long",
+        day: "numeric",
+        year: "numeric"
+      });
+    }
+
+    function escapeHTML(str) {
+      return String(str)
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+    }
+
+    function getDifficulty() {
+      return $("difficulty").value || "mixed";
+    }
+
+    function customPosition(index) {
+      const positions = [
+        { x: 24, y: 32, zone: "Northwest or open sky" },
+        { x: 68, y: 34, zone: "East or open sky" },
+        { x: 60, y: 70, zone: "South or open sky" },
+        { x: 32, y: 72, zone: "West or open sky" },
+        { x: 50, y: 50, zone: "Overhead or open sky" }
+      ];
+      return positions[index % positions.length];
+    }
+
+    function allClues() {
+      return [
+        ...clueBank,
+        ...customClues.map((name, index) => {
+          const pos = customPosition(index);
+          return {
+            id: "custom-" + index + "-" + name.toLowerCase().replace(/[^a-z0-9]+/g, ""),
+            emoji: "⭐",
+            title: name,
+            checklist: name,
+            zone: pos.zone,
+            mapX: pos.x,
+            mapY: pos.y,
+            clue: {
+              little: "Find this special item: " + name + ". Start in the map zone and ask a grownup for a hint if you need one.",
+              mixed: "Find this custom sky item: " + name + ". Start in the suggested zone, then record where you saw it.",
+              older: "Find this custom target: " + name + ". Start in the suggested zone and note what helped you identify it."
+            },
+            find: "Write where you found it.",
+            answer: "Custom item chosen by the parent: " + name + ". Decide what counts before starting, then accept reasonable kid observations.",
+            custom: true
+          };
+        })
+      ];
+    }
+
+    function chosenClues() {
+      return allClues().filter(item => selectedIds.includes(item.id) || item.custom);
+    }
+
+    function renderLibrary() {
+      const library = $("library");
+      library.innerHTML = "";
+
+      clueBank.forEach(item => {
+        const row = document.createElement("label");
+        row.className = "library-row";
+        row.innerHTML = `
+          <input type="checkbox" value="${item.id}" ${selectedIds.includes(item.id) ? "checked" : ""}>
+          <span class="library-copy"><strong>${item.emoji} ${escapeHTML(item.title)}</strong>${escapeHTML(item.zone)} · ${escapeHTML(item.checklist)}</span>
+        `;
+        library.appendChild(row);
+      });
+
+      library.querySelectorAll("input[type='checkbox']").forEach(box => {
+        box.addEventListener("change", () => {
+          selectedIds = Array.from(library.querySelectorAll("input[type='checkbox']:checked")).map(input => input.value);
+          saveState();
+          buildHunt();
+        });
+      });
+    }
+
+    function buildExportText(chosen, title, date, sky, leader, difficulty) {
+      const difficultyLabel = {
+        little: "Little explorers",
+        mixed: "Mixed ages",
+        older: "Older kids"
+      }[difficulty] || "Mixed ages";
+
+      let text = "";
+      text += title + "\n";
+      text += "Date: " + date + "\n";
+      text += "Kid level: " + difficultyLabel + "\n";
+      text += "Sky note: " + sky + "\n";
+      text += "Leader note: " + leader + "\n\n";
+
+      text += "ADULT SETUP CHECKLIST\n";
+      text += "=====================\n";
+      setupItems.forEach(item => {
+        text += "[ ] " + item + "\n";
+      });
+      text += "\nCloud plan: If clouds roll in, switch to moving lights, cloud windows, moon shadows, night sounds, and why-can't-we-see-it observations.\n\n";
+
+      text += "SIMPLE SKY MAP GUIDE\n";
+      text += "====================\n";
+      text += "Use north, east, south, and west as starting zones. These are search hints, not exact calculated positions.\n";
+      text += "Scan from the horizon up toward overhead. If a target is hidden by clouds, trees, houses, or timing, mark it not visible tonight.\n\n";
+
+      chosen.forEach((item, idx) => {
+        text += (idx + 1) + ". " + item.title + " · Look zone: " + item.zone + "\n";
+      });
+
+      text += "\nKID CLUE CARDS\n";
+      text += "==============\n";
+      chosen.forEach((item, idx) => {
+        text += (idx + 1) + ". " + item.emoji + " " + item.title + "\n";
+        text += "Look zone: " + item.zone + "\n";
+        text += "Clue: " + (item.clue[difficulty] || item.clue.mixed) + "\n";
+        text += "Task: " + item.find + "\n\n";
+      });
+
+      text += "FINDER CHECKLIST\n";
+      text += "================\n";
+      chosen.forEach(item => {
+        text += "[ ] " + item.checklist + " · " + item.zone + "\n";
+      });
+
+      text += "\nPARENT ANSWER KEY\n";
+      text += "=================\n";
+      text += "These are guide answers, not strict astronomy rules. Visibility depends on clouds, trees, light pollution, time, and direction.\n\n";
+      chosen.forEach((item, idx) => {
+        text += (idx + 1) + ". " + item.title + "\n";
+        text += "Look zone: " + item.zone + "\n";
+        text += "Answer: " + item.answer + "\n\n";
+      });
+
+      text += "Parent tip: If a clue is not visible, turn it into an observation question: Why might this be hard to see tonight?\n";
+
+      return text;
+    }
+
+    function clearMapMarkers() {
+      $("skyMap").querySelectorAll(".marker").forEach(marker => marker.remove());
+      $("mapLegend").innerHTML = "";
+    }
+
+    function renderSkyMap(chosen) {
+      clearMapMarkers();
+
+      chosen.forEach((item, idx) => {
+        const marker = document.createElement("div");
+        marker.className = "marker";
+        marker.style.left = item.mapX + "%";
+        marker.style.top = item.mapY + "%";
+        marker.textContent = idx + 1;
+        marker.title = item.title + " · " + item.zone;
+        $("skyMap").appendChild(marker);
+
+        const legend = document.createElement("div");
+        legend.className = "legend-item";
+        legend.innerHTML = `
+          <span class="legend-num">${idx + 1}</span>
+          <span><strong>${escapeHTML(item.title)}</strong><br>${escapeHTML(item.zone)}</span>
+        `;
+        $("mapLegend").appendChild(legend);
+      });
+    }
+
+    function renderSetupChecklist() {
+      const setup = $("setupChecklist");
+      setup.innerHTML = "";
+
+      setupItems.forEach(item => {
+        const row = document.createElement("div");
+        row.className = "check-item";
+        row.innerHTML = `
+          <span class="box"></span>
+          <span>${escapeHTML(item)}</span>
+        `;
+        setup.appendChild(row);
+      });
+    }
+
+    function buildHunt() {
+      const difficulty = getDifficulty();
+      const title = $("huntTitle").value.trim() || "Tonight’s Backyard Sky Quest";
+      const date = prettyDate($("huntDate").value);
+      const sky = $("skyNote").value.trim() || "Backyard sky check.";
+      const leader = $("leaderNote").value.trim() || "Let your eyes adjust and only search for what is visible tonight.";
+
+      $("outTitle").textContent = title;
+      $("outDate").textContent = date;
+      $("outSky").textContent = sky;
+      $("outLeader").textContent = leader;
+      $("keyTitle").textContent = title;
+      $("keyDate").textContent = date;
+
+      const chosen = chosenClues();
+      const cards = $("cards");
+      const checklist = $("checklist");
+      const answers = $("answers");
+
+      cards.innerHTML = "";
+      checklist.innerHTML = "";
+      answers.innerHTML = "";
+
+      renderSetupChecklist();
+
+      if (!chosen.length) {
+        clearMapMarkers();
+        cards.innerHTML = `<div class="empty-state">Pick at least one clue card to build the hunt.</div>`;
+        $("exportText").value = "";
+        return;
+      }
+
+      renderSkyMap(chosen);
+
+      chosen.forEach((item, idx) => {
+        const card = document.createElement("article");
+        card.className = "card";
+        card.innerHTML = `
+          <div>
+            <div class="card-top">
+              <h3>${idx + 1}. ${escapeHTML(item.title)}</h3>
+              <div class="emoji">${item.emoji}</div>
+            </div>
+            <div class="look-zone">Look zone: ${escapeHTML(item.zone)}</div>
+            <p class="clue">${escapeHTML(item.clue[difficulty] || item.clue.mixed)}</p>
+          </div>
+          <div class="find-line">${escapeHTML(item.find)}</div>
+        `;
+        cards.appendChild(card);
+
+        const check = document.createElement("div");
+        check.className = "check-item";
+        check.innerHTML = `
+          <span class="box"></span>
+          <span>${escapeHTML(item.checklist)}<small>${escapeHTML(item.zone)}</small></span>
+        `;
+        checklist.appendChild(check);
+
+        const answer = document.createElement("div");
+        answer.className = "answer-item";
+        answer.innerHTML = `
+          <strong>${idx + 1}. ${escapeHTML(item.title)}</strong>
+          <span class="answer-zone">Look zone: ${escapeHTML(item.zone)}</span>
+          <div>${escapeHTML(item.answer)}</div>
+        `;
+        answers.appendChild(answer);
+      });
+
+      $("exportText").value = buildExportText(chosen, title, date, sky, leader, difficulty);
+
+      saveState();
+    }
+
+    function saveState() {
+      const state = {
+        huntTitle: $("huntTitle").value,
+        huntDate: $("huntDate").value,
+        skyNote: $("skyNote").value,
+        leaderNote: $("leaderNote").value,
+        difficulty: $("difficulty").value,
+        selectedIds,
+        customClues
+      };
+      localStorage.setItem("stargazing-hunt-state", JSON.stringify(state));
+    }
+
+    function loadState() {
+      const raw = localStorage.getItem("stargazing-hunt-state");
+      if (!raw) {
+        $("huntDate").value = todayForInput();
+        return;
+      }
+
+      try {
+        const state = JSON.parse(raw);
+        $("huntTitle").value = state.huntTitle || "Tonight’s Backyard Sky Quest";
+        $("huntDate").value = state.huntDate || todayForInput();
+        $("skyNote").value = state.skyNote || "";
+        $("leaderNote").value = state.leaderNote || "";
+        $("difficulty").value = state.difficulty || "mixed";
+        selectedIds = Array.isArray(state.selectedIds) ? state.selectedIds : selectedIds;
+        customClues = Array.isArray(state.customClues) ? state.customClues : [];
+      } catch {
+        $("huntDate").value = todayForInput();
+      }
+    }
+
+    function resetHunt() {
+      localStorage.removeItem("stargazing-hunt-state");
+      selectedIds = ["moon", "bright", "dipper", "north", "triangle", "colors", "satellite", "plane"];
+      customClues = [];
+      $("huntTitle").value = "Tonight’s Backyard Sky Quest";
+      $("huntDate").value = todayForInput();
+      $("difficulty").value = "mixed";
+      $("skyNote").value = "Backyard. Look away from porch lights. Trees block part of the western sky.";
+      $("leaderNote").value = "Use red or dim flashlights if you have them. Let your eyes adjust for 10 minutes. Not every clue needs to be visible tonight.";
+      $("customItem").value = "";
+      $("copyStatus").textContent = "";
+      $("copyStatus2").textContent = "";
+      renderLibrary();
+      buildHunt();
+    }
+
+    function loadSampleNight() {
+      selectedIds = ["moon", "bright", "dipper", "north", "triangle", "colors", "satellite", "plane", "cloud", "quiet"];
+      customClues = ["porch light glow", "favorite constellation shape"];
+
+      $("huntTitle").value = "Sample Backyard Star Quest";
+      $("huntDate").value = todayForInput();
+      $("difficulty").value = "mixed";
+      $("skyNote").value = "Sample backyard night. Face away from porch lights. North is near the back fence. Trees block part of the west. The clearest view is east and overhead.";
+      $("leaderNote").value = "Start with 10 quiet seconds, then scan one direction at a time. If clouds roll in, switch to cloud windows, moving lights, moon shadows, and night sounds.";
+
+      renderLibrary();
+      buildHunt();
+      $("copyStatus").textContent = "Sample night loaded.";
+      setTimeout(() => {
+        $("copyStatus").textContent = "";
+      }, 2200);
+    }
+
+    function printMode(mode) {
+      buildHunt();
+      document.body.classList.remove("print-kids", "print-answer");
+      document.body.classList.add(mode);
+      window.print();
+      setTimeout(() => {
+        document.body.classList.remove("print-kids", "print-answer");
+      }, 500);
+    }
+
+    async function copyExportText(statusId) {
+      buildHunt();
+      const text = $("exportText").value;
+      const status = $(statusId);
+
+      try {
+        await navigator.clipboard.writeText(text);
+        status.textContent = "Copied.";
+      } catch {
+        $("exportText").focus();
+        $("exportText").select();
+        const ok = document.execCommand("copy");
+        status.textContent = ok ? "Copied." : "Select the text box and copy manually.";
+      }
+
+      setTimeout(() => {
+        status.textContent = "";
+      }, 2200);
+    }
+
+    $("sampleBtn").addEventListener("click", loadSampleNight);
+    $("buildBtn").addEventListener("click", buildHunt);
+    $("printKidsBtn").addEventListener("click", () => printMode("print-kids"));
+    $("printAnswerBtn").addEventListener("click", () => printMode("print-answer"));
+    $("toolbarPrintKids").addEventListener("click", () => printMode("print-kids"));
+    $("toolbarPrintAnswer").addEventListener("click", () => printMode("print-answer"));
+    $("copyBtn").addEventListener("click", () => copyExportText("copyStatus"));
+    $("copyBtn2").addEventListener("click", () => copyExportText("copyStatus2"));
+    $("resetBtn").addEventListener("click", resetHunt);
+
+    $("addCustom").addEventListener("click", () => {
+      const value = $("customItem").value.trim();
+      if (!value) return;
+      customClues.push(value);
+      $("customItem").value = "";
+      buildHunt();
+    });
+
+    $("customItem").addEventListener("keydown", (event) => {
+      if (event.key === "Enter") {
+        event.preventDefault();
+        $("addCustom").click();
+      }
+    });
+
+    ["huntTitle", "huntDate", "skyNote", "leaderNote", "difficulty"].forEach(id => {
+      $(id).addEventListener("input", buildHunt);
+      $(id).addEventListener("change", buildHunt);
+    });
+
+    loadState();
+    renderLibrary();
+    buildHunt();
+  </script>
+</body>
+</html>

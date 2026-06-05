@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+<title>Porch Light Moth Maze</title>
+<style>
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    min-height: 100%;
+    overflow-x: hidden;
+    background: #100c18;
+    color: #fff6d8;
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    touch-action: none;
+  }
+  body {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 12px;
+  }
+  .wrap {
+    width: min(100%, 760px);
+    display: grid;
+    gap: 10px;
+  }
+  .hud {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+  }
+  .box {
+    background: rgba(255,255,255,.08);
+    border: 1px solid rgba(255,255,255,.16);
+    border-radius: 14px;
+    padding: 8px 10px;
+    text-align: center;
+    box-shadow: 0 0 18px rgba(255,210,112,.08);
+  }
+  .label {
+    font-size: 11px;
+    opacity: .75;
+    text-transform: uppercase;
+    letter-spacing: .08em;
+  }
+  .value {
+    font-size: 18px;
+    font-weight: 800;
+  }
+  .stage {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 16 / 10;
+    border-radius: 20px;
+    overflow: hidden;
+    border: 2px solid rgba(255,255,255,.18);
+    background: radial-gradient(circle at center, #211634 0%, #120d1c 70%);
+  }
+  canvas {
+    width: 100%;
+    height: 100%;
+    display: block;
+    touch-action: none;
+  }
+  .overlay {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    padding: 16px;
+    background: rgba(8,5,14,.72);
+    backdrop-filter: blur(5px);
+  }
+  .panel {
+    width: min(92%, 430px);
+    background: rgba(30,22,42,.96);
+    border: 1px solid rgba(255,255,255,.18);
+    border-radius: 20px;
+    padding: 18px;
+    text-align: center;
+    box-shadow: 0 20px 70px rgba(0,0,0,.45);
+  }
+  h1 {
+    margin: 0 0 8px;
+    font-size: clamp(25px, 7vw, 40px);
+    line-height: 1;
+  }
+  p {
+    margin: 8px 0;
+    line-height: 1.35;
+    color: #f5e8c5;
+  }
+  button {
+    border: 0;
+    border-radius: 999px;
+    padding: 12px 18px;
+    margin-top: 12px;
+    font-size: 16px;
+    font-weight: 850;
+    color: #1b1024;
+    background: linear-gradient(180deg, #ffe68a, #ffb949);
+    cursor: pointer;
+  }
+  .controls {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 8px;
+    max-width: 320px;
+    margin: 0 auto;
+  }
+  .controls button {
+    margin: 0;
+    min-height: 48px;
+    font-size: 20px;
+  }
+  .controls .wide {
+    grid-column: span 3;
+  }
+  .hint {
+    font-size: 13px;
+    opacity: .82;
+    text-align: center;
+  }
+  @media (max-width: 520px) {
+    body { padding: 8px; align-items: start; }
+    .hud { grid-template-columns: repeat(2, 1fr); }
+    .stage { aspect-ratio: 10 / 13; }
+    .box { padding: 7px; }
+    .value { font-size: 16px; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="hud">
+    <div class="box"><div class="label">Glow</div><div class="value" id="score">0</div></div>
+    <div class="box"><div class="label">Best</div><div class="value" id="best">0</div></div>
+    <div class="box"><div class="label">Nectar</div><div class="value" id="nectar">0/6</div></div>
+    <div class="box"><div class="label">Danger</div><div class="value" id="danger">Safe</div></div>
+  </div>
+
+  <div class="stage" id="stage">
+    <canvas id="game"></canvas>
+    <div class="overlay" id="overlay">
+      <div class="panel">
+        <h1>Porch Light Moth Maze</h1>
+        <p>Steer the moth through the porch maze. Collect 6 nectar sparks, then escape through the screen door.</p>
+        <p>Avoid the brightest bulbs. Their glow pulls you in and traps careless moths.</p>
+        <button id="startBtn">Start Flight</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="controls" aria-label="Touch controls">
+    <button data-dir="up" aria-label="Move up">▲</button>
+    <button data-dir="left" aria-label="Move left">◀</button>
+    <button data-dir="right" aria-label="Move right">▶</button>
+    <button data-dir="down" class="wide" aria-label="Move down">▼</button>
+  </div>
+  <div class="hint">Keyboard: arrows or WASD. Touch: hold a direction. Collect sparks, dodge bright bulbs, escape.</div>
+</div>
+
+<script>
+(() => {
+  const canvas = document.getElementById("game");
+  const ctx = canvas.getContext("2d");
+  const stage = document.getElementById("stage");
+  const overlay = document.getElementById("overlay");
+  const startBtn = document.getElementById("startBtn");
+  const scoreEl = document.getElementById("score");
+  const bestEl = document.getElementById("best");
+  const nectarEl = document.getElementById("nectar");
+  const dangerEl = document.getElementById("danger");
+
+  let W = 800, H = 500, scale = 1;
+  let running = false, won = false, lost = false;
+  let keys = {};
+  let score = 0;
+  let best = Number(localStorage.getItem("mothMazeBest") || 0);
+  let nectar = 0;
+  let last = 0;
+  let t = 0;
+
+  bestEl.textContent = best;
+
+  const moth = { x: 70, y: 430, vx: 0, vy: 0, r: 10, trapped: 0 };
+  const exit = { x: 735, y: 55, w: 50, h: 70 };
+
+  const walls = [
+    [0,0,800,18],[0,482,800,18],[0,0,18,500],[782,0,18,500],
+    [90,80,18,330],[90,80,170,18],[180,160,18,230],
+    [260,18,18,250],[260,330,18,150],[345,95,18,320],
+    [430,18,18,250],[430,330,18,120],[515,80,18,330],
+    [600,18,18,250],[600,330,18,152],[665,150,117,18],
+    [665,250,18,145],[520,410,160,18],[345,18,115,18],
+    [185,390,160,18],[18,250,90,18]
+  ];
+
+  const bulbs = [
+    { x: 150, y: 48, r: 63, core: 21, pulse: .1 },
+    { x: 310, y: 285, r: 72, core: 24, pulse: 1.8 },
+    { x: 475, y: 295, r: 82, core: 25, pulse: 3.2 },
+    { x: 645, y: 205, r: 78, core: 26, pulse: 4.5 },
+    { x: 700, y: 445, r: 68, core: 22, pulse: 2.4 }
+  ];
+
+  const sparks = [
+    { x: 55, y: 105, got: false },
+    { x: 225, y: 135, got: false },
+    { x: 305, y: 445, got: false },
+    { x: 390, y: 60, got: false },
+    { x: 555, y: 300, got: false },
+    { x: 725, y: 115, got: false }
+  ];
+
+  function resize() {
+    const rect = stage.getBoundingClientRect();
+    canvas.width = Math.floor(rect.width * devicePixelRatio);
+    canvas.height = Math.floor(rect.height * devicePixelRatio);
+    ctx.setTransform(1,0,0,1,0,0);
+    ctx.scale(canvas.width / W, canvas.height / H);
+  }
+  addEventListener("resize", resize);
+  resize();
+
+  function reset() {
+    moth.x = 70; moth.y = 430; moth.vx = 0; moth.vy = 0; moth.trapped = 0;
+    score = 0; nectar = 0; t = 0; won = false; lost = false;
+    sparks.forEach(s => s.got = false);
+    running = true;
+    overlay.style.display = "none";
+    last = performance.now();
+    requestAnimationFrame(loop);
+  }
+
+  startBtn.onclick = reset;
+
+  addEventListener("keydown", e => {
+    keys[e.key.toLowerCase()] = true;
+    if (["arrowup","arrowdown","arrowleft","arrowright"," "].includes(e.key.toLowerCase())) e.preventDefault();
+    if (!running && (e.key === "Enter" || e.key === " ")) reset();
+  }, { passive: false });
+  addEventListener("keyup", e => keys[e.key.toLowerCase()] = false);
+
+  document.querySelectorAll(".controls button").forEach(btn => {
+    const dir = btn.dataset.dir;
+    const set = v => {
+      if (dir === "up") keys.arrowup = v;
+      if (dir === "down") keys.arrowdown = v;
+      if (dir === "left") keys.arrowleft = v;
+      if (dir === "right") keys.arrowright = v;
+    };
+    btn.addEventListener("pointerdown", e => { e.preventDefault(); set(true); btn.setPointerCapture(e.pointerId); });
+    btn.addEventListener("pointerup", e => { e.preventDefault(); set(false); });
+    btn.addEventListener("pointercancel", () => set(false));
+    btn.addEventListener("pointerleave", () => set(false));
+  });
+
+  function circleRect(cx, cy, cr, r) {
+    const x = Math.max(r[0], Math.min(cx, r[0] + r[2]));
+    const y = Math.max(r[1], Math.min(cy, r[1] + r[3]));
+    return (cx - x) ** 2 + (cy - y) ** 2 < cr ** 2;
+  }
+
+  function collideWalls(nx, ny) {
+    return walls.some(w => circleRect(nx, ny, moth.r, w));
+  }
+
+  function update(dt) {
+    t += dt;
+    let ax = 0, ay = 0;
+    if (keys.arrowup || keys.w) ay -= 1;
+    if (keys.arrowdown || keys.s) ay += 1;
+    if (keys.arrowleft || keys.a) ax -= 1;
+    if (keys.arrowright || keys.d) ax += 1;
+
+    const len = Math.hypot(ax, ay) || 1;
+    ax /= len; ay /= len;
+
+    moth.vx += ax * 520 * dt;
+    moth.vy += ay * 520 * dt;
+
+    let danger = 0;
+    bulbs.forEach(b => {
+      const pulse = Math.sin(t * 3 + b.pulse) * 6;
+      const rr = b.r + pulse;
+      const dx = b.x - moth.x, dy = b.y - moth.y;
+      const d = Math.hypot(dx, dy);
+      if (d < rr) {
+        const pull = (1 - d / rr) * 360;
+        moth.vx += (dx / Math.max(d, 1)) * pull * dt;
+        moth.vy += (dy / Math.max(d, 1)) * pull * dt;
+        danger = Math.max(danger, 1 - d / rr);
+      }
+      if (d < b.core + 2) moth.trapped += dt;
+    });
+
+    moth.vx *= Math.pow(.065, dt);
+    moth.vy *= Math.pow(.065, dt);
+
+    let nx = moth.x + moth.vx * dt;
+    let ny = moth.y + moth.vy * dt;
+
+    if (!collideWalls(nx, moth.y)) moth.x = nx; else moth.vx *= -.25;
+    if (!collideWalls(moth.x, ny)) moth.y = ny; else moth.vy *= -.25;
+
+    moth.x = Math.max(24, Math.min(W - 24, moth.x));
+    moth.y = Math.max(24, Math.min(H - 24, moth.y));
+
+    sparks.forEach(s => {
+      if (!s.got && Math.hypot(s.x - moth.x, s.y - moth.y) < 22) {
+        s.got = true;
+        nectar++;
+        score += 100;
+      }
+    });
+
+    score += dt * 8;
+
+    if (moth.trapped > .45) end(false);
+    if (nectar >= 6 && moth.x > exit.x && moth.y < exit.y + exit.h) end(true);
+
+    dangerEl.textContent = danger > .55 ? "Bright!" : danger > .2 ? "Pulling" : "Safe";
+    nectarEl.textContent = nectar + "/6";
+    scoreEl.textContent = Math.floor(score);
+  }
+
+  function end(success) {
+    running = false;
+    won = success;
+    lost = !success;
+    if (success) score += 350;
+    best = Math.max(best, Math.floor(score));
+    localStorage.setItem("mothMazeBest", best);
+    bestEl.textContent = best;
+
+    overlay.style.display = "grid";
+    overlay.innerHTML = `
+      <div class="panel">
+        <h1>${success ? "You Escaped" : "Trapped by Light"}</h1>
+        <p>${success ? "The moth slipped through the maze and found the cool night air." : "The bulb glow got too strong and pulled the moth in."}</p>
+        <p><strong>Score:</strong> ${Math.floor(score)} &nbsp; <strong>Best:</strong> ${best}</p>
+        <button id="againBtn">Fly Again</button>
+      </div>`;
+    document.getElementById("againBtn").onclick = reset;
+  }
+
+  function draw() {
+    ctx.clearRect(0,0,W,H);
+
+    const bg = ctx.createRadialGradient(400,250,30,400,250,520);
+    bg.addColorStop(0, "#231532");
+    bg.addColorStop(1, "#0e0a15");
+    ctx.fillStyle = bg;
+    ctx.fillRect(0,0,W,H);
+
+    ctx.fillStyle = "rgba(111,74,40,.8)";
+    walls.forEach(w => {
+      ctx.fillRect(...w);
+      ctx.fillStyle = "rgba(151,101,56,.38)";
+      ctx.fillRect(w[0], w[1], w[2], Math.min(5,w[3]));
+      ctx.fillStyle = "rgba(111,74,40,.8)";
+    });
+
+    bulbs.forEach(b => {
+      const pulse = Math.sin(t * 3 + b.pulse) * 6;
+      const rr = b.r + pulse;
+      const g = ctx.createRadialGradient(b.x,b.y,4,b.x,b.y,rr);
+      g.addColorStop(0,"rgba(255,245,170,.95)");
+      g.addColorStop(.28,"rgba(255,197,70,.34)");
+      g.addColorStop(1,"rgba(255,184,42,0)");
+      ctx.fillStyle = g;
+      ctx.beginPath(); ctx.arc(b.x,b.y,rr,0,Math.PI*2); ctx.fill();
+
+      ctx.fillStyle = "#fff7bd";
+      ctx.beginPath(); ctx.arc(b.x,b.y,b.core,0,Math.PI*2); ctx.fill();
+      ctx.strokeStyle = "rgba(255,255,255,.7)";
+      ctx.lineWidth = 3;
+      ctx.stroke();
+    });
+
+    ctx.fillStyle = nectar >= 6 ? "rgba(158,255,207,.9)" : "rgba(110,160,140,.35)";
+    ctx.fillRect(exit.x, exit.y, exit.w, exit.h);
+    ctx.strokeStyle = "rgba(255,255,255,.5)";
+    ctx.strokeRect(exit.x, exit.y, exit.w, exit.h);
+    ctx.fillStyle = "#fff6d8";
+    ctx.font = "14px system-ui";
+    ctx.fillText("EXIT", exit.x + 8, exit.y + 40);
+
+    sparks.forEach((s, i) => {
+      if (s.got) return;
+      const bob = Math.sin(t * 4 + i) * 3;
+      ctx.fillStyle = "#9fffe1";
+      ctx.beginPath();
+      ctx.arc(s.x, s.y + bob, 7, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.strokeStyle = "rgba(159,255,225,.45)";
+      ctx.lineWidth = 8;
+      ctx.stroke();
+    });
+
+    ctx.save();
+    ctx.translate(moth.x, moth.y);
+    ctx.rotate(Math.atan2(moth.vy, moth.vx || .01));
+    ctx.fillStyle = "rgba(255,236,170,.55)";
+    ctx.beginPath();
+    ctx.ellipse(-5, -9, 13, 7, -.5, 0, Math.PI * 2);
+    ctx.ellipse(-5, 9, 13, 7, .5, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = "#f7dca0";
+    ctx.beginPath();
+    ctx.ellipse(2, 0, 12, 6, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = "#fff8c9";
+    ctx.beginPath();
+    ctx.arc(12, 0, 4, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+
+    if (nectar >= 6) {
+      ctx.strokeStyle = "rgba(158,255,207,.42)";
+      ctx.lineWidth = 3;
+      ctx.setLineDash([8,8]);
+      ctx.beginPath();
+      ctx.moveTo(moth.x, moth.y);
+      ctx.lineTo(exit.x + 25, exit.y + 35);
+      ctx.stroke();
+      ctx.setLineDash([]);
+    }
+  }
+
+  function loop(now) {
+    if (!running) return;
+    const dt = Math.min(.033, (now - last) / 1000);
+    last = now;
+    update(dt);
+    draw();
+    requestAnimationFrame(loop);
+  }
+
+  draw();
+})();
+</script>
+</body>
+</html>

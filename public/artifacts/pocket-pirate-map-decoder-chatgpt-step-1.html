@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Pocket Pirate Map Puzzle</title>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    min-height: 100vh;
+    font-family: Georgia, "Times New Roman", serif;
+    background: radial-gradient(circle at top, #4b2e16, #17100a 70%);
+    color: #2b1a0d;
+    display: grid;
+    place-items: center;
+    padding: 14px;
+  }
+  .game {
+    width: min(430px, 100%);
+    background: #ead19a;
+    border: 5px solid #3b210f;
+    border-radius: 22px;
+    box-shadow: 0 18px 45px #0009;
+    overflow: hidden;
+  }
+  header {
+    padding: 14px;
+    text-align: center;
+    background: linear-gradient(#b87530, #7d431d);
+    color: #fff0c0;
+    border-bottom: 4px solid #3b210f;
+  }
+  h1 { margin: 0; font-size: 1.35rem; }
+  .sub { font-size: .85rem; opacity: .95; margin-top: 4px; }
+  .panel { padding: 12px; }
+  .status {
+    background: #fff0c9;
+    border: 2px dashed #7d431d;
+    border-radius: 14px;
+    padding: 10px;
+    font-size: .92rem;
+    line-height: 1.35;
+    margin-bottom: 12px;
+  }
+  .map {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 6px;
+    background: #7d431d;
+    border: 4px solid #3b210f;
+    border-radius: 16px;
+    padding: 7px;
+    touch-action: none;
+  }
+  .cell {
+    aspect-ratio: 1;
+    border: 0;
+    border-radius: 10px;
+    background: #f6dfaa;
+    color: #3b210f;
+    font-size: 1.55rem;
+    font-weight: bold;
+    cursor: pointer;
+    position: relative;
+  }
+  .cell.start { background: #a9d08e; }
+  .cell.treasure { background: #ffd966; }
+  .cell.path { background: #8ecae6; }
+  .cell.wrong { background: #d65a31; color: white; }
+  .cell::after {
+    content: attr(data-step);
+    position: absolute;
+    right: 5px;
+    bottom: 3px;
+    font-size: .7rem;
+    color: #3b210f;
+  }
+  .legend, .clues {
+    display: grid;
+    gap: 8px;
+    margin-top: 12px;
+  }
+  .legend {
+    grid-template-columns: repeat(4, 1fr);
+  }
+  .tag {
+    background: #fff0c9;
+    border: 2px solid #8a5728;
+    border-radius: 12px;
+    padding: 8px 6px;
+    text-align: center;
+    font-size: .9rem;
+  }
+  .tag b { display:block; font-size:1.35rem; }
+  .cluebox {
+    background: #fff0c9;
+    border: 2px solid #8a5728;
+    border-radius: 14px;
+    padding: 10px;
+    font-size: .95rem;
+  }
+  .symbols {
+    font-size: 1.45rem;
+    letter-spacing: 4px;
+    margin-top: 5px;
+    word-break: break-word;
+  }
+  .buttons {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    margin-top: 12px;
+  }
+  button.action {
+    border: 0;
+    border-radius: 12px;
+    padding: 11px;
+    font-weight: bold;
+    cursor: pointer;
+    background: #3b210f;
+    color: #ffe3a0;
+    font-size: .95rem;
+  }
+  .win {
+    display: none;
+    margin-top: 12px;
+    background: #244f26;
+    color: #fff6c9;
+    border-radius: 14px;
+    padding: 12px;
+    text-align: center;
+    font-weight: bold;
+  }
+  @media (max-width: 390px) {
+    body { padding: 8px; }
+    .panel { padding: 10px; }
+    .cell { font-size: 1.35rem; }
+    .legend { grid-template-columns: repeat(2, 1fr); }
+  }
+</style>
+</head>
+<body>
+<div class="game">
+  <header>
+    <h1>🏴‍☠️ Pocket Pirate Map</h1>
+    <div class="sub">Decode the symbols, then trace the route to treasure.</div>
+  </header>
+
+  <main class="panel">
+    <div class="status" id="status">
+      Start at the green compass. Decode the clue symbols using the key, then tap the map cells in order.
+    </div>
+
+    <div class="map" id="map"></div>
+
+    <div class="legend">
+      <div class="tag"><b>☀</b>Up</div>
+      <div class="tag"><b>🌊</b>Down</div>
+      <div class="tag"><b>🦜</b>Left</div>
+      <div class="tag"><b>⭐</b>Right</div>
+    </div>
+
+    <div class="clues">
+      <div class="cluebox">
+        Captain’s route:
+        <div class="symbols" id="routeSymbols"></div>
+      </div>
+    </div>
+
+    <div class="buttons">
+      <button class="action" onclick="resetPath()">Reset Route</button>
+      <button class="action" onclick="newMap()">New Map</button>
+    </div>
+
+    <div class="win" id="win">Treasure found! The chest is yours. 💰</div>
+  </main>
+</div>
+
+<script>
+const mapEl = document.getElementById("map");
+const statusEl = document.getElementById("status");
+const routeSymbolsEl = document.getElementById("routeSymbols");
+const winEl = document.getElementById("win");
+
+const icons = ["🌴","🪨","🐚","⚓","🦀","💀","🌊","🧭","🗿","☠️"];
+const dirToSymbol = { U:"☀", D:"🌊", L:"🦜", R:"⭐" };
+const moves = {
+  U: [-1, 0],
+  D: [1, 0],
+  L: [0, -1],
+  R: [0, 1]
+};
+
+let route = [];
+let cells = [];
+let currentStep = 0;
+
+function posToIndex(r, c) { return r * 5 + c; }
+
+function makeRoute() {
+  const routeChoices = [
+    ["R","R","D","D","L","D","R","R"],
+    ["D","R","R","U","R","D","D","L"],
+    ["R","D","D","R","U","R","D","D"],
+    ["D","D","R","R","U","R","D","L"]
+  ];
+  return routeChoices[Math.floor(Math.random() * routeChoices.length)];
+}
+
+function buildCells() {
+  cells = Array.from({ length: 25 }, (_, i) => ({
+    icon: icons[Math.floor(Math.random() * icons.length)],
+    state: "",
+    step: ""
+  }));
+}
+
+function routePositions() {
+  let r = 0, c = 0;
+  const positions = [[r, c]];
+  route.forEach(d => {
+    r += moves[d][0];
+    c += moves[d][1];
+    positions.push([r, c]);
+  });
+  return positions;
+}
+
+function render() {
+  mapEl.innerHTML = "";
+  const positions = routePositions();
+  const startIndex = posToIndex(positions[0][0], positions[0][1]);
+  const treasure = positions[positions.length - 1];
+  const treasureIndex = posToIndex(treasure[0], treasure[1]);
+
+  cells.forEach((cell, i) => {
+    const btn = document.createElement("button");
+    btn.className = "cell";
+    btn.textContent = cell.icon;
+    btn.dataset.step = cell.step || "";
+
+    if (i === startIndex) {
+      btn.classList.add("start");
+      btn.textContent = "🧭";
+    }
+    if (i === treasureIndex) {
+      btn.classList.add("treasure");
+      btn.textContent = "💰";
+    }
+    if (cell.state) btn.classList.add(cell.state);
+
+    btn.addEventListener("click", () => tapCell(i));
+    mapEl.appendChild(btn);
+  });
+
+  routeSymbolsEl.textContent = route.map(d => dirToSymbol[d]).join(" ");
+}
+
+function tapCell(index) {
+  if (currentStep >= route.length) return;
+
+  const positions = routePositions();
+  const needed = positions[currentStep + 1];
+  const neededIndex = posToIndex(needed[0], needed[1]);
+
+  if (index === neededIndex) {
+    currentStep++;
+    cells[index].state = "path";
+    cells[index].step = currentStep;
+    statusEl.textContent = currentStep === route.length
+      ? "X marks the spot. You solved the pirate route."
+      : `Correct. Step ${currentStep} of ${route.length} traced.`;
+    if (currentStep === route.length) winEl.style.display = "block";
+  } else {
+    cells[index].state = "wrong";
+    statusEl.textContent = "Wrong turn. Reset the route and decode again.";
+  }
+  render();
+}
+
+function resetPath() {
+  currentStep = 0;
+  winEl.style.display = "none";
+  cells.forEach(c => {
+    c.state = "";
+    c.step = "";
+  });
+  statusEl.textContent = "Route cleared. Start again from the compass.";
+  render();
+}
+
+function newMap() {
+  route = makeRoute();
+  buildCells();
+  currentStep = 0;
+  winEl.style.display = "none";
+  statusEl.textContent = "New pirate map drawn. Decode the route and trace it.";
+  render();
+}
+
+newMap();
+</script>
+</body>
+</html>

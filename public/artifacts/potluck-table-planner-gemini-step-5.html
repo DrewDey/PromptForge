@@ -1,0 +1,671 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Potluck Mobile Planner</title>
+    <style>
+        :root {
+            --bg-color: #f3f4f6;
+            --card-bg: #ffffff;
+            --text-main: #1f2937;
+            --text-muted: #4b5563;
+            --primary: #4f46e5;
+            --primary-hover: #4338ca;
+            --border: #e5e7eb;
+            --accent-gap: #fee2e2;
+            --accent-gap-text: #991b1b;
+            --danger: #ef4444;
+            --danger-hover: #dc2626;
+            --success: #10b981;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            line-height: 1.4;
+            padding: 1rem 0.5rem;
+            max-width: 100%;
+            overflow-x: hidden;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            width: 100%;
+        }
+
+        h1 {
+            font-size: 1.75rem;
+            font-weight: 800;
+            color: var(--primary);
+            margin-bottom: 0.25rem;
+            padding: 0 0.25rem;
+        }
+
+        p.subtitle {
+            color: var(--text-muted);
+            font-size: 0.85rem;
+            margin-bottom: 1rem;
+            padding: 0 0.25rem;
+        }
+
+        .stats-bar {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .stat-card {
+            background: var(--card-bg);
+            padding: 0.5rem;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            text-align: center;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+        }
+
+        .stat-card .num {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: var(--primary);
+        }
+
+        .stat-card .num.gaps {
+            color: var(--danger);
+        }
+
+        .stat-card .label {
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            font-weight: 600;
+        }
+
+        .controls {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+            padding: 0 0.25rem;
+        }
+
+        .controls select {
+            flex: 1;
+            min-width: 0;
+        }
+
+        select, input, button, textarea {
+            font-size: 0.9rem;
+            padding: 0.5rem;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            background-color: #fff;
+            height: 38px;
+        }
+
+        textarea {
+            height: auto;
+        }
+
+        button {
+            background-color: var(--primary);
+            color: white;
+            font-weight: 600;
+            border: none;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            white-space: nowrap;
+        }
+
+        button.btn-danger { background-color: var(--danger); }
+        button.btn-secondary { background-color: #6b7280; }
+
+        /* Responsive Mobile Cards instead of traditional tables */
+        .mobile-cards-container {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .item-card {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 0.75rem;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
+            position: relative;
+        }
+
+        .item-card.gap-card {
+            background-color: var(--accent-gap);
+            border-color: #fca5a5;
+        }
+
+        .card-row-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.25rem;
+        }
+
+        .tag {
+            display: inline-block;
+            padding: 0.15rem 0.4rem;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            background-color: #e0f2fe;
+            color: #0369a1;
+            text-transform: uppercase;
+        }
+
+        .tag.gap-badge {
+            background-color: var(--danger);
+            color: white;
+        }
+
+        .card-actions {
+            display: flex;
+            gap: 0.25rem;
+        }
+
+        .card-actions button {
+            height: 28px;
+            padding: 0 0.5rem;
+            font-size: 0.75rem;
+            border-radius: 4px;
+        }
+
+        .dish-title {
+            font-size: 1rem;
+            font-weight: 700;
+        }
+
+        .card-meta {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+        }
+
+        .card-meta strong {
+            color: var(--text-main);
+        }
+
+        /* Form Styling optimized for small viewports */
+        .form-container {
+            background: var(--card-bg);
+            padding: 1rem;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            margin-bottom: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
+        }
+
+        .form-group label {
+            font-size: 0.8rem;
+            font-weight: 700;
+            color: var(--text-muted);
+        }
+
+        .form-buttons {
+            display: flex;
+            gap: 0.5rem;
+            margin-top: 0.25rem;
+        }
+
+        .form-buttons button {
+            flex: 1;
+        }
+
+        /* Map and Visual Zones View */
+        .layout-map-container {
+            background: var(--card-bg);
+            padding: 1rem;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            margin-bottom: 1.5rem;
+        }
+
+        .layout-map-container h2 {
+            font-size: 1.25rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .zone-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+
+        .table-zone {
+            border: 2px dashed #cbd5e1;
+            border-radius: 8px;
+            padding: 0.75rem;
+            background-color: #f8fafc;
+        }
+
+        .table-zone.has-gap {
+            border-color: var(--danger);
+            background-color: #fff5f5;
+        }
+
+        .table-zone.empty-zone {
+            border-color: #94a3b8;
+            background-color: #f1f5f9;
+        }
+
+        .zone-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-weight: 700;
+            font-size: 0.9rem;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 0.25rem;
+            margin-bottom: 0.25rem;
+        }
+
+        .zone-warning {
+            font-size: 0.7rem;
+            padding: 0.1rem 0.3rem;
+            border-radius: 4px;
+            color: white;
+            font-weight: bold;
+        }
+
+        .zone-warning.warning-gap { background-color: var(--danger); }
+        .zone-warning.warning-empty { background-color: #6b7280; }
+        .zone-warning.warning-ok { background-color: var(--success); }
+
+        .zone-items {
+            list-style: none;
+            font-size: 0.85rem;
+        }
+
+        .zone-items li {
+            padding: 0.15rem 0;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .zone-items li.gap-item {
+            color: var(--accent-gap-text);
+            font-style: italic;
+            font-weight: 600;
+        }
+
+        /* Sharing Hub Area */
+        .sharing-section {
+            background: var(--card-bg);
+            padding: 1rem;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+
+        .sharing-section h2 {
+            font-size: 1.25rem;
+        }
+
+        .sharing-section textarea {
+            font-family: monospace;
+            font-size: 0.8rem;
+            min-height: 140px;
+            width: 100%;
+        }
+
+        /* Hide full table on tiny mobile viewport, use card injection instead */
+        #potluckTable { display: none; }
+
+        @media print {
+            .controls, .form-container, .sharing-section, .card-actions, .stats-bar {
+                display: none !important;
+            }
+            .item-card {
+                box-shadow: none;
+                border: 1px solid #000;
+                page-break-inside: avoid;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>Potluck Planner</h1>
+        <p class="subtitle">Mobile running board. Zero side-scrolling, automatic storage sync.</p>
+
+        <div class="stats-bar">
+            <div class="stat-card">
+                <div class="num" id="totalItems">0</div>
+                <div class="label">Total Items</div>
+            </div>
+            <div class="stat-card">
+                <div class="num gaps" id="totalGaps">0</div>
+                <div class="label">Gaps Left</div>
+            </div>
+            <div class="stat-card">
+                <div class="num" id="filledItems" style="color: var(--success);">0</div>
+                <div class="label">Confirmed</div>
+            </div>
+        </div>
+
+        <div class="controls">
+            <select id="categoryFilter" onchange="renderAll()">
+                <option value="all">All Stations</option>
+                <option value="Main Course">Mains Table</option>
+                <option value="Side Dish">Sides Table</option>
+                <option value="Dessert">Dessert Table</option>
+                <option value="Drinks">Drinks Cooler</option>
+                <option value="Supplies">Supplies Section</option>
+            </select>
+            <button class="btn-secondary" onclick="resetToDefault()" style="font-size: 0.8rem; padding: 0 0.5rem;">Reset Data</button>
+        </div>
+
+        <div class="mobile-cards-container" id="mobileCardsList">
+            </div>
+
+        <div class="form-container" id="entryForm">
+            <input type="hidden" id="editIndex" value="">
+            <div class="form-group">
+                <label id="formActionLabel" style="color: var(--primary);">Add Item to Setup</label>
+                <select id="newCategory">
+                    <option value="Main Course">Main Course Table</option>
+                    <option value="Side Dish">Side Dish Table</option>
+                    <option value="Dessert">Dessert Table</option>
+                    <option value="Drinks">Drinks Cooler</option>
+                    <option value="Supplies">Supplies Section</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="newDish">Item Name</label>
+                <input type="text" id="newDish" placeholder="e.g., Paper Plates, Sliders">
+            </div>
+            <div class="form-group">
+                <label for="newHost">Who's Bringing It</label>
+                <input type="text" id="newHost" placeholder="Leave blank if unassigned gap">
+            </div>
+            <div class="form-group">
+                <label for="newUtensils">Utensils / Notes</label>
+                <input type="text" id="newUtensils" placeholder="e.g., Tongs, Ice box">
+            </div>
+            <div class="form-buttons">
+                <button id="submitBtn" onclick="handleSubmit()">Save Item</button>
+                <button id="cancelBtn" class="btn-secondary" onclick="clearForm()" style="display: none;">Cancel</button>
+            </div>
+        </div>
+
+        <div class="layout-map-container">
+            <h2>Zoned Layout Map</h2>
+            <div class="zone-grid" id="zoneVisualGrid">
+                </div>
+        </div>
+
+        <div class="sharing-section">
+            <h2>Handoff Export</h2>
+            <textarea id="groupChatText" readonly onclick="this.select()"></textarea>
+            <div class="form-buttons">
+                <button onclick="copyTextSummary()">Copy Group Text Layout</button>
+                <button class="btn-secondary" onclick="window.print()">Print PDF</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const defaultData = [
+            { category: "Main Course", dish: "Pulled Pork Sliders", host: "Marcus", utensils: "No" },
+            { category: "Main Course", dish: "Vegetarian Alternative Main", host: "Needed", utensils: "—" },
+            { category: "Side Dish", dish: "Mac & Cheese", host: "Sarah", utensils: "Serving spoon" },
+            { category: "Side Dish", dish: "Potato Salad", host: "Uncle Bob", utensils: "Large fork" },
+            { category: "Dessert", dish: "Chocolate Brownies", host: "Needed", utensils: "—" },
+            { category: "Drinks", dish: "Craft Beers & Sodas", host: "Jessica", utensils: "Ice box" },
+            { category: "Supplies", dish: "Plates, Forks & Napkins", host: "Needed", utensils: "Disposables" }
+        ];
+
+        const definedZones = [
+            { id: "Main Course", name: "Mains Table" },
+            { id: "Side Dish", name: "Sides Table" },
+            { id: "Dessert", name: "Dessert Table" },
+            { id: "Drinks", name: "Drinks Station" },
+            { id: "Supplies", name: "Supplies & Essentials" }
+        ];
+
+        let potluckItems = [];
+
+        window.onload = function() {
+            const stored = localStorage.getItem('potluckMobileLayoutData');
+            if (stored) {
+                potluckItems = JSON.parse(stored);
+            } else {
+                potluckItems = [...defaultData];
+                saveToStorage();
+            }
+            renderAll();
+        };
+
+        function saveToStorage() {
+            localStorage.setItem('potluckMobileLayoutData', JSON.stringify(potluckItems));
+        }
+
+        function renderAll() {
+            renderCards();
+            renderZoneMap();
+            generateTextSummary();
+        }
+
+        function renderCards() {
+            const container = document.getElementById('mobileCardsList');
+            const filterValue = document.getElementById('categoryFilter').value;
+            container.innerHTML = '';
+
+            let total = potluckItems.length;
+            let gaps = potluckItems.filter(item => item.host.toLowerCase() === 'needed').length;
+
+            document.getElementById('totalItems').innerText = total;
+            document.getElementById('totalGaps').innerText = gaps;
+            document.getElementById('filledItems').innerText = total - gaps;
+
+            potluckItems.forEach((item, index) => {
+                if (filterValue !== 'all' && item.category !== filterValue) return;
+
+                const isGap = item.host.toLowerCase() === 'needed';
+                const card = document.createElement('div');
+                card.className = `item-card ${isGap ? 'gap-card' : ''}`;
+
+                card.innerHTML = `
+                    <div class="card-row-top">
+                        <span class="tag ${isGap ? 'gap-badge' : ''}">${isGap ? 'GAP' : item.category}</span>
+                        <div class="card-actions">
+                            <button onclick="editItem(${index})">Edit</button>
+                            <button class="btn-danger" onclick="deleteItem(${index})">X</button>
+                        </div>
+                    </div>
+                    <div class="dish-title">${escapeHtml(item.dish)}</div>
+                    <div class="card-meta">Brought by: <strong>${escapeHtml(item.host)}</strong></div>
+                    <div class="card-meta">Needs: ${escapeHtml(item.utensils || '—')}</div>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        function renderZoneMap() {
+            const mapContainer = document.getElementById('zoneVisualGrid');
+            mapContainer.innerHTML = '';
+
+            definedZones.forEach(zone => {
+                const zoneItems = potluckItems.filter(item => item.category === zone.id);
+                const gaps = zoneItems.filter(item => item.host.toLowerCase() === 'needed');
+
+                const zoneEl = document.createElement('div');
+                zoneEl.className = 'table-zone';
+
+                let warningTag = `<span class="zone-warning warning-ok">Filled</span>`;
+                if (zoneItems.length === 0) {
+                    zoneEl.classList.add('empty-zone');
+                    warningTag = `<span class="zone-warning warning-empty">Empty</span>`;
+                } else if (gaps.length > 0) {
+                    zoneEl.classList.add('has-gap');
+                    warningTag = `<span class="zone-warning warning-gap">${gaps.length} GAP</span>`;
+                }
+
+                let itemsListHtml = '';
+                if (zoneItems.length === 0) {
+                    itemsListHtml = `<p style="font-size:0.8rem; color:var(--text-muted); font-style:italic; margin-top:2px;">No items allocated.</p>`;
+                } else {
+                    itemsListHtml = '<ul class="zone-items">';
+                    zoneItems.forEach(item => {
+                        const isGap = item.host.toLowerCase() === 'needed';
+                        itemsListHtml += `
+                            <li class="${isGap ? 'gap-item' : ''}">
+                                <span>${isGap ? '🚨 ' : '✓ '} ${escapeHtml(item.dish)}</span>
+                                <small>(${escapeHtml(item.host)})</small>
+                            </li>
+                        `;
+                    });
+                    itemsListHtml += '</ul>';
+                }
+
+                zoneEl.innerHTML = `
+                    <div class="zone-header">
+                        <span>${zone.name}</span>
+                        ${warningTag}
+                    </div>
+                    ${itemsListHtml}
+                `;
+                mapContainer.appendChild(zoneEl);
+            });
+        }
+
+        function generateTextSummary() {
+            let summaryText = "🍔 POTLUCK RUN SHEET 🍔\n\n";
+            definedZones.forEach(zone => {
+                summaryText += `🔹 ${zone.name.toUpperCase()} 🔹\n`;
+                const zoneItems = potluckItems.filter(item => item.category === zone.id);
+                if (zoneItems.length === 0) {
+                    summaryText += "  (Empty)\n";
+                } else {
+                    zoneItems.forEach(item => {
+                        if (item.host.toLowerCase() === 'needed') {
+                            summaryText += `  ⚠️ NEEDED: ${item.dish}\n`;
+                        } else {
+                            summaryText += `  ✓ ${item.dish} (${item.host})\n`;
+                        }
+                    });
+                }
+                summaryText += "\n";
+            });
+
+            const openGaps = potluckItems.filter(item => item.host.toLowerCase() === 'needed').length;
+            summaryText += openGaps > 0 ? `🚨 Alert: ${openGaps} slots open above!` : "🎉 Setup checks complete!";
+            document.getElementById('groupChatText').value = summaryText;
+        }
+
+        function copyTextSummary() {
+            const textarea = document.getElementById('groupChatText');
+            textarea.select();
+            textarea.setSelectionRange(0, 99999); /* For mobile screen compliance */
+            document.execCommand('copy');
+            alert('Copied to clipboard!');
+        }
+
+        function handleSubmit() {
+            const category = document.getElementById('newCategory').value;
+            const dish = document.getElementById('newDish').value.trim();
+            let host = document.getElementById('newHost').value.trim();
+            const utensils = document.getElementById('newUtensils').value.trim() || '—';
+            const editIndex = document.getElementById('editIndex').value;
+
+            if (!dish) {
+                alert('Please provide an item name.');
+                return;
+            }
+
+            if (!host) host = 'Needed';
+            const itemData = { category, dish, host, utensils };
+
+            if (editIndex !== "") {
+                potluckItems[parseInt(editIndex)] = itemData;
+            } else {
+                potluckItems.push(itemData);
+            }
+
+            saveToStorage();
+            clearForm();
+            renderAll();
+        }
+
+        function editItem(index) {
+            const item = potluckItems[index];
+            document.getElementById('editIndex').value = index;
+            document.getElementById('newCategory').value = item.category;
+            document.getElementById('newDish').value = item.dish;
+            document.getElementById('newHost').value = item.host === 'Needed' ? '' : item.host;
+            document.getElementById('newUtensils').value = item.utensils === '—' ? '' : item.utensils;
+
+            document.getElementById('formActionLabel').innerText = "Edit Details Below";
+            document.getElementById('submitBtn').innerText = "Update";
+            document.getElementById('cancelBtn').style.display = "inline-block";
+            document.getElementById('entryForm').scrollIntoView({ behavior: 'smooth' });
+        }
+
+        function deleteItem(index) {
+            if (confirm(`Remove "${potluckItems[index].dish}"?`)) {
+                potluckItems.splice(index, 1);
+                saveToStorage();
+                renderAll();
+                if (document.getElementById('editIndex').value === String(index)) {
+                    clearForm();
+                }
+            }
+        }
+
+        function clearForm() {
+            document.getElementById('editIndex').value = "";
+            document.getElementById('newDish').value = "";
+            document.getElementById('newHost').value = "";
+            document.getElementById('newUtensils').value = "";
+            document.getElementById('formActionLabel').innerText = "Add Item to Setup";
+            document.getElementById('submitBtn').innerText = "Save Item";
+            document.getElementById('cancelBtn').style.display = "none";
+        }
+
+        function resetToDefault() {
+            if (confirm("Reset layout to base data template?")) {
+                potluckItems = [...defaultData];
+                saveToStorage();
+                clearForm();
+                renderAll();
+            }
+        }
+
+        function escapeHtml(string) {
+            return String(string).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+        }
+    </script>
+</body>
+</html>

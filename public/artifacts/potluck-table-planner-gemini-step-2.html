@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Potluck Planner Dashboard</title>
+    <style>
+        :root {
+            --bg-color: #f9fafb;
+            --card-bg: #ffffff;
+            --text-main: #1f2937;
+            --text-muted: #4b5563;
+            --primary: #4f46e5;
+            --primary-hover: #4338ca;
+            --border: #e5e7eb;
+            --accent-gap: #fef3c7;
+            --accent-gap-text: #92400e;
+            --danger: #ef4444;
+            --danger-hover: #dc2626;
+            --success: #10b981;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            line-height: 1.5;
+            padding: 2rem 1rem;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            font-size: 2.25rem;
+            font-weight: 800;
+            margin-bottom: 0.5rem;
+            color: var(--primary);
+        }
+
+        p.subtitle {
+            color: var(--text-muted);
+            margin-bottom: 1.5rem;
+        }
+
+        .stats-bar {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: var(--card-bg);
+            padding: 1rem;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            text-align: center;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        }
+
+        .stat-card .num {
+            font-size: 1.75rem;
+            font-weight: 700;
+            color: var(--primary);
+        }
+
+        .stat-card .num.gaps {
+            color: #d97706;
+        }
+
+        .stat-card .label {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            font-weight: 500;
+        }
+
+        .controls {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1rem;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        select, input, button {
+            font-size: 0.95rem;
+            padding: 0.5rem 0.75rem;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            background-color: #fff;
+        }
+
+        select:focus, input:focus {
+            outline: 2px solid var(--primary);
+            outline-offset: -1px;
+        }
+
+        button {
+            background-color: var(--primary);
+            color: white;
+            font-weight: 600;
+            border: none;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        button:hover {
+            background-color: var(--primary-hover);
+        }
+
+        button.btn-danger {
+            background-color: var(--danger);
+        }
+        button.btn-danger:hover {
+            background-color: var(--danger-hover);
+        }
+
+        button.btn-secondary {
+            background-color: #6b7280;
+        }
+        button.btn-secondary:hover {
+            background-color: #555b66;
+        }
+
+        .table-container {
+            background: var(--card-bg);
+            border-radius: 8px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            overflow-x: auto;
+            border: 1px solid var(--border);
+            margin-bottom: 2rem;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+        }
+
+        th, td {
+            padding: 1rem;
+            border-bottom: 1px solid var(--border);
+            vertical-align: middle;
+        }
+
+        th {
+            background-color: #f3f4f6;
+            font-weight: 700;
+            text-transform: uppercase;
+            font-size: 0.75rem;
+            letter-spacing: 0.05em;
+            color: var(--text-muted);
+        }
+
+        tr:last-child td {
+            border-bottom: none;
+        }
+
+        .tag {
+            display: inline-block;
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.85rem;
+            font-weight: 500;
+            background-color: #e0f2fe;
+            color: #0369a1;
+        }
+
+        .gap-row td {
+            background-color: var(--accent-gap);
+            color: var(--accent-gap-text);
+        }
+
+        .gap-badge {
+            background-color: #d97706;
+            color: white;
+            font-weight: bold;
+        }
+
+        .action-btns {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .action-btns button {
+            padding: 0.25rem 0.5rem;
+            font-size: 0.85rem;
+        }
+
+        .form-grid {
+            background: var(--card-bg);
+            padding: 1.5rem;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 1rem;
+            align-items: flex-end;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .form-group label {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--text-muted);
+        }
+
+        /* Edit Mode Styles */
+        .editing input, .editing select {
+            width: 100%;
+            box-sizing: border-box;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Potluck Planner</h1>
+    <p class="subtitle">Track coordination details, log entries, and spot gaps. Automatically saved to your browser.</p>
+
+    <div class="stats-bar">
+        <div class="stat-card">
+            <div class="num" id="totalItems">0</div>
+            <div class="label">Total Items</div>
+        </div>
+        <div class="stat-card">
+            <div class="num gaps" id="totalGaps">0</div>
+            <div class="label">Unassigned Gaps</div>
+        </div>
+        <div class="stat-card">
+            <div class="num" id="filledItems" style="color: var(--success);">0</div>
+            <div class="label">Confirmed Dishes</div>
+        </div>
+    </div>
+
+    <div class="controls">
+        <div>
+            <label for="categoryFilter" style="font-weight: 600; margin-right: 0.5rem;">Filter Category:</label>
+            <select id="categoryFilter" onchange="renderTable()">
+                <option value="all">All Items</option>
+                <option value="Appetizer">Appetizers</option>
+                <option value="Main Course">Main Courses</option>
+                <option value="Side Dish">Side Dishes</option>
+                <option value="Dessert">Desserts</option>
+                <option value="Drinks">Drinks</option>
+            </select>
+        </div>
+        <button class="btn-secondary" onclick="resetToDefault()">Reset to Sample Data</button>
+    </div>
+
+    <div class="table-container">
+        <table id="potluckTable">
+            <thead>
+                <tr>
+                    <th style="width: 15%;">Category</th>
+                    <th style="width: 35%;">Dish / Item</th>
+                    <th style="width: 20%;">Who's Bringing It</th>
+                    <th style="width: 15%;">Utensil Needs</th>
+                    <th style="width: 15%;">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                </tbody>
+        </table>
+    </div>
+
+    <div class="form-grid" id="entryForm">
+        <input type="hidden" id="editIndex" value="">
+        <div class="form-group">
+            <label id="formActionLabel" style="font-weight: bold; color: var(--primary);">Add New Item</label>
+            <select id="newCategory">
+                <option value="Appetizer">Appetizer</option>
+                <option value="Main Course">Main Course</option>
+                <option value="Side Dish">Side Dish</option>
+                <option value="Dessert">Dessert</option>
+                <option value="Drinks">Drinks</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label for="newDish">Dish / Item Name</label>
+            <input type="text" id="newDish" placeholder="e.g., Fruit Platter">
+        </div>
+        <div class="form-group">
+            <label for="newHost">Who's Bringing It</label>
+            <input type="text" id="newHost" placeholder="Leave blank or type 'Needed' for a gap">
+        </div>
+        <div class="form-group">
+            <label for="newUtensils">Utensil Needs</label>
+            <input type="text" id="newUtensils" placeholder="e.g., Tongs, None">
+        </div>
+        <div style="display: flex; gap: 0.5rem;">
+            <button id="submitBtn" onclick="handleSubmit()">Add to List</button>
+            <button id="cancelBtn" class="btn-secondary" onclick="clearForm()" style="display: none;">Cancel</button>
+        </div>
+    </div>
+
+    <script>
+        // Seed configuration if storage is empty
+        const defaultData = [
+            { category: "Appetizer", dish: "Spinach Artichoke Dip", host: "Sarah", utensils: "Yes - Serving spoon" },
+            { category: "Main Course", dish: "Pulled Pork Sliders", host: "Marcus", utensils: "No" },
+            { category: "Main Course", dish: "Vegetarian Main Course", host: "Needed", utensils: "—" },
+            { category: "Side Dish", dish: "Potato Salad", host: "Uncle Bob", utensils: "Yes - Large fork/spoon" },
+            { category: "Dessert", dish: "Dessert Item (Brownies/Cookies)", host: "Needed", utensils: "—" },
+            { category: "Drinks", dish: "Craft Beer & Soda", host: "Jessica", utensils: "No (Brought ice chest)" }
+        ];
+
+        let potluckItems = [];
+
+        // Initialize App
+        window.onload = function() {
+            const stored = localStorage.getItem('potluckPlannerData');
+            if (stored) {
+                potluckItems = JSON.parse(stored);
+            } else {
+                potluckItems = [...defaultData];
+                saveToStorage();
+            }
+            renderTable();
+        };
+
+        function saveToStorage() {
+            localStorage.setItem('potluckPlannerData', JSON.stringify(potluckItems));
+        }
+
+        function updateStats() {
+            const total = potluckItems.length;
+            const gaps = potluckItems.filter(item => item.host.toLowerCase() === 'needed').length;
+            const filled = total - gaps;
+
+            document.getElementById('totalItems').innerText = total;
+            document.getElementById('totalGaps').innerText = gaps;
+            document.getElementById('filledItems').innerText = filled;
+        }
+
+        function renderTable() {
+            const tbody = document.querySelector('#potluckTable tbody');
+            const filterValue = document.getElementById('categoryFilter').value;
+            tbody.innerHTML = '';
+
+            potluckItems.forEach((item, index) => {
+                // Apply filter
+                if (filterValue !== 'all' && item.category !== filterValue) return;
+
+                const tr = document.createElement('tr');
+                const isGap = item.host.toLowerCase() === 'needed';
+
+                if (isGap) {
+                    tr.classList.add('gap-row');
+                }
+
+                tr.innerHTML = `
+                    <td><span class="tag ${isGap ? 'gap-badge' : ''}">${isGap ? 'GAP' : item.category}</span></td>
+                    <td><strong>${escapeHtml(item.dish)}</strong></td>
+                    <td>${escapeHtml(item.host)}</td>
+                    <td>${escapeHtml(item.utensils || '—')}</td>
+                    <td>
+                        <div class="action-btns">
+                            <button onclick="editItem(${index})">Edit</button>
+                            <button class="btn-danger" onclick="deleteItem(${index})">Delete</button>
+                        </div>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+
+            updateStats();
+        }
+
+        function handleSubmit() {
+            const category = document.getElementById('newCategory').value;
+            const dish = document.getElementById('newDish').value.trim();
+            let host = document.getElementById('newHost').value.trim();
+            const utensils = document.getElementById('newUtensils').value.trim() || '—';
+            const editIndex = document.getElementById('editIndex').value;
+
+            if (!dish) {
+                alert('Please enter a dish name or description.');
+                return;
+            }
+
+            if (!host) {
+                host = 'Needed';
+            }
+
+            const itemData = { category, dish, host, utensils };
+
+            if (editIndex !== "") {
+                // Updating existing record
+                potluckItems[parseInt(editIndex)] = itemData;
+            } else {
+                // Adding new record
+                potluckItems.push(itemData);
+            }
+
+            saveToStorage();
+            clearForm();
+            renderTable();
+        }
+
+        function editItem(index) {
+            const item = potluckItems[index];
+            document.getElementById('editIndex').value = index;
+            document.getElementById('newCategory').value = item.category;
+            document.getElementById('newDish').value = item.dish;
+            document.getElementById('newHost').value = item.host === 'Needed' ? '' : item.host;
+            document.getElementById('newUtensils').value = item.utensils === '—' ? '' : item.utensils;
+
+            document.getElementById('formActionLabel').innerText = "Edit Item Details";
+            document.getElementById('submitBtn').innerText = "Save Changes";
+            document.getElementById('cancelBtn').style.display = "inline-block";
+
+            document.getElementById('entryForm').scrollIntoView({ behavior: 'smooth' });
+        }
+
+        function deleteItem(index) {
+            if (confirm(`Remove "${potluckItems[index].dish}" from the planner?`)) {
+                potluckItems.splice(index, 1);
+                saveToStorage();
+                renderTable();
+                if (document.getElementById('editIndex').value === String(index)) {
+                    clearForm();
+                }
+            }
+        }
+
+        function clearForm() {
+            document.getElementById('editIndex').value = "";
+            document.getElementById('newDish').value = "";
+            document.getElementById('newHost').value = "";
+            document.getElementById('newUtensils').value = "";
+
+            document.getElementById('formActionLabel').innerText = "Add New Item";
+            document.getElementById('submitBtn').innerText = "Add to List";
+            document.getElementById('cancelBtn').style.display = "none";
+        }
+
+        function resetToDefault() {
+            if (confirm("Reset the list back to the initial sample data? Your current items will be lost.")) {
+                potluckItems = [...defaultData];
+                saveToStorage();
+                clearForm();
+                renderTable();
+            }
+        }
+
+        function escapeHtml(string) {
+            return String(string).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+        }
+    </script>
+</body>
+</html>

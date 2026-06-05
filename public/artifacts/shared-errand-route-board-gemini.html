@@ -1,0 +1,736 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Roommate & Family Errand Board</title>
+    <style>
+        :root {
+            --bg-color: #121212;
+            --surface-color: #1e1e1e;
+            --surface-hover: #2a2a2a;
+            --primary-color: #bb86fc;
+            --secondary-color: #03dac6;
+            --text-color: #e0e0e0;
+            --text-muted: #a0a0a0;
+            --border-color: #333333;
+            --danger-color: #cf6679;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            padding: 12px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 900px;
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 12px;
+        }
+
+        h1 {
+            font-size: 1.2rem;
+            color: var(--primary-color);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 45%;
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 6px;
+        }
+
+        .btn {
+            background-color: var(--primary-color);
+            color: #000;
+            border: none;
+            padding: 6px 10px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 0.8rem;
+            transition: opacity 0.2s;
+            white-space: nowrap;
+        }
+
+        .btn:hover {
+            opacity: 0.9;
+        }
+
+        .btn-secondary {
+            background-color: transparent;
+            color: var(--secondary-color);
+            border: 1px solid var(--secondary-color);
+        }
+
+        /* Dashboard Widget */
+        .summary-dashboard {
+            background: linear-gradient(145deg, #1e1e1e, #151515);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 12px;
+            display: grid;
+            grid-template-columns: 1.4fr 1fr;
+            gap: 10px;
+        }
+
+        .next-up-box {
+            border-right: 1px solid var(--border-color);
+            padding-right: 6px;
+            min-width: 0;
+        }
+
+        .stat-label {
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--text-muted);
+            font-weight: 600;
+            margin-bottom: 2px;
+        }
+
+        .next-stop-title {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: var(--text-color);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .next-stop-owner {
+            font-size: 0.75rem;
+            color: var(--secondary-color);
+        }
+
+        .metrics-box {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            gap: 4px;
+            padding-left: 2px;
+        }
+
+        .metric-line {
+            font-size: 0.8rem;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .metric-val {
+            font-weight: 600;
+            color: var(--primary-color);
+        }
+
+        .form-container {
+            background-color: var(--surface-color);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 12px;
+        }
+
+        .errand-form {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+        }
+
+        input, select {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            border: 1px solid var(--border-color);
+            padding: 8px;
+            border-radius: 6px;
+            font-size: 0.8rem;
+            width: 100%;
+            min-width: 0;
+        }
+
+        input:focus, select:focus {
+            outline: none;
+            border-color: var(--primary-color);
+        }
+
+        /* Filter Bar Styles */
+        .filter-bar {
+            background-color: #161616;
+            border: 1px dashed var(--border-color);
+            border-radius: 8px;
+            padding: 8px;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .filter-title {
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--text-muted);
+            font-weight: 600;
+        }
+
+        .filter-selectors {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+        }
+
+        .filter-group select {
+            padding: 6px;
+            font-size: 0.75rem;
+        }
+
+        .errand-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .errand-item {
+            background-color: var(--surface-color);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 10px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .errand-item.dragging {
+            opacity: 0.4;
+        }
+
+        .errand-item.filtered-out {
+            display: none !important;
+        }
+
+        .drag-handle {
+            color: var(--text-muted);
+            font-size: 1rem;
+            user-select: none;
+            cursor: grab;
+            padding: 6px 4px;
+        }
+
+        .errand-details {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            min-width: 0;
+        }
+
+        .fields-top-row {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 4px;
+        }
+
+        .fields-meta-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 6px;
+        }
+
+        /* Clean Inline Inputs */
+        .editable-field {
+            background: transparent;
+            border: 1px solid transparent;
+            color: var(--text-color);
+            padding: 4px;
+            border-radius: 4px;
+            width: 100%;
+            font-size: 0.8rem;
+            text-overflow: ellipsis;
+        }
+
+        .editable-field:hover {
+            background-color: rgba(255, 255, 255, 0.03);
+            border-color: #3a3a3a;
+        }
+
+        .editable-field:focus {
+            background-color: var(--bg-color);
+            border-color: var(--primary-color);
+            outline: none;
+        }
+
+        .editable-field.stop-name {
+            font-weight: 600;
+            font-size: 0.85rem;
+        }
+
+        .editable-field.assignee {
+            color: var(--secondary-color);
+        }
+
+        .editable-field.category {
+            color: #ffb74d;
+        }
+
+        .editable-field.notes {
+            color: var(--text-muted);
+            font-style: italic;
+        }
+
+        .actions {
+            display: flex;
+            align-items: center;
+        }
+
+        .delete-btn {
+            background: none;
+            border: none;
+            color: var(--danger-color);
+            cursor: pointer;
+            font-size: 0.95rem;
+            padding: 4px;
+        }
+
+        .empty-state {
+            text-align: center;
+            color: var(--text-muted);
+            padding: 20px;
+            font-size: 0.8rem;
+            font-style: italic;
+            background-color: var(--surface-color);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+        }
+
+        .toast {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: var(--secondary-color);
+            color: #000;
+            padding: 8px 14px;
+            border-radius: 20px;
+            font-weight: 600;
+            font-size: 0.75rem;
+            opacity: 0;
+            transition: opacity 0.3s;
+            pointer-events: none;
+            z-index: 1000;
+            white-space: nowrap;
+        }
+
+        .toast.show {
+            opacity: 1;
+        }
+
+        /* Layout adjustment for slightly larger mobile screens and desktops */
+        @media (min-width: 601px) {
+            body { padding: 20px; }
+            h1 { font-size: 1.5rem; max-width: 100%; }
+            .errand-form { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr auto; }
+            .form-row { display: contents; }
+            .filter-bar { flex-direction: row; align-items: center; justify-content: space-between; }
+            .filter-selectors { display: flex; gap: 12px; }
+            .fields-top-row { display: grid; grid-template-columns: 2fr 2fr; gap: 8px; }
+            .fields-meta-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+            .errand-details { display: grid; grid-template-columns: 2fr 1fr 1fr 2fr; gap: 8px; }
+            .header-actions { gap: 10px; }
+            .btn { font-size: 0.85rem; padding: 8px 14px; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <header>
+            <h1>Errand Board</h1>
+            <div class="header-actions">
+                <button class="btn btn-secondary" onclick="copyRoutePlan()">Copy</button>
+                <button class="btn btn-secondary" onclick="downloadBackup()">Export File</button>
+            </div>
+        </header>
+
+        <div class="summary-dashboard" id="dashboard">
+            <div class="next-up-box">
+                <div class="stat-label">Next Stop</div>
+                <div class="next-stop-title" id="dashNextStop">None scheduled</div>
+                <div class="next-stop-owner" id="dashNextOwner">-</div>
+            </div>
+            <div class="metrics-box">
+                <div class="metric-line">Total stops: <span class="metric-val" id="dashTotalCount">0</span></div>
+                <div class="metric-line">Unassigned: <span class="metric-val" id="dashUnassignedCount">0</span></div>
+            </div>
+        </div>
+
+        <div class="form-container">
+            <form id="errandForm" class="errand-form" onsubmit="addErrand(event)">
+                <input type="text" id="stopName" placeholder="Where to? (e.g., Target)" required>
+                <div class="form-row">
+                    <input type="text" id="assignee" placeholder="Who?" list="assigneeSuggestions">
+                    <input type="text" id="category" placeholder="Category" list="categorySuggestions">
+                </div>
+                <input type="text" id="notes" placeholder="Notes (e.g., pick up milk)">
+                <button type="submit" class="btn">Add Stop</button>
+
+                <datalist id="assigneeSuggestions"></datalist>
+                <datalist id="categorySuggestions"></datalist>
+            </form>
+        </div>
+
+        <div class="filter-bar">
+            <div class="filter-title">🔍 Quick Filters</div>
+            <div class="filter-selectors">
+                <div class="filter-group">
+                    <select id="filterAssignee" onchange="applyFilters()">
+                        <option value="all">All People</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <select id="filterCategory" onchange="applyFilters()">
+                        <option value="all">All Categories</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <div id="errandList" class="errand-list"></div>
+        <div id="emptyState" class="empty-state" style="display: none;">No errands found matching filters.</div>
+    </div>
+
+    <div id="toast" class="toast">Route summary copied with breakdown!</div>
+
+    <script>
+        let errands = JSON.parse(localStorage.getItem('roommateErrands')) || [];
+
+        function saveErrands() {
+            localStorage.setItem('roommateErrands', JSON.stringify(errands));
+            updateFilterOptions();
+            updateDashboard();
+        }
+
+        function addErrand(e) {
+            e.preventDefault();
+            const stopName = document.getElementById('stopName').value.trim();
+            let assignee = document.getElementById('assignee').value.trim();
+            let category = document.getElementById('category').value.trim();
+            const notes = document.getElementById('notes').value.trim();
+
+            if (!stopName) return;
+
+            assignee = assignee || 'Unassigned';
+            category = category || 'General';
+
+            errands.push({
+                id: Date.now().toString(),
+                stopName,
+                assignee,
+                category,
+                notes
+            });
+
+            document.getElementById('errandForm').reset();
+            saveErrands();
+            renderErrands();
+        }
+
+        function updateField(id, field, value) {
+            const errand = errands.find(e => e.id === id);
+            if (errand) {
+                let cleanValue = value.trim();
+                if (!cleanValue) {
+                    if (field === 'assignee') cleanValue = 'Unassigned';
+                    if (field === 'category') cleanValue = 'General';
+                }
+                errand[field] = cleanValue;
+                saveErrands();
+            }
+        }
+
+        function deleteErrand(id) {
+            errands = errands.filter(errand => errand.id !== id);
+            saveErrands();
+            renderErrands();
+        }
+
+        function updateDashboard() {
+            const nextStopTitle = document.getElementById('dashNextStop');
+            const nextStopOwner = document.getElementById('dashNextOwner');
+            const totalCount = document.getElementById('dashTotalCount');
+            const unassignedCount = document.getElementById('dashUnassignedCount');
+
+            totalCount.textContent = errands.length;
+            unassignedCount.textContent = errands.filter(e => e.assignee.toLowerCase() === 'unassigned').length;
+
+            if (errands.length > 0) {
+                nextStopTitle.textContent = errands[0].stopName;
+                nextStopOwner.textContent = `👤 ${errands[0].assignee}`;
+            } else {
+                nextStopTitle.textContent = "None scheduled";
+                nextStopOwner.textContent = "-";
+            }
+        }
+
+        function renderErrands() {
+            const list = document.getElementById('errandList');
+            list.innerHTML = '';
+
+            errands.forEach((errand) => {
+                const item = document.createElement('div');
+                item.className = 'errand-item';
+                item.dataset.id = errand.id;
+                item.dataset.assignee = errand.assignee.toLowerCase();
+                item.dataset.category = errand.category.toLowerCase();
+
+                item.innerHTML = `
+                    <div class="drag-handle" draggable="true">☰</div>
+                    <div class="errand-details">
+                        <div class="fields-top-row">
+                            <input type="text" class="editable-field stop-name" value="${escapeHtml(errand.stopName)}" placeholder="Stop name" onchange="updateField('${errand.id}', 'stopName', this.value); updateDashboard();">
+                            <input type="text" class="editable-field notes" value="${escapeHtml(errand.notes)}" placeholder="Add notes..." onchange="updateField('${errand.id}', 'notes', this.value)">
+                        </div>
+                        <div class="fields-meta-row">
+                            <input type="text" class="editable-field assignee" value="${escapeHtml(errand.assignee)}" placeholder="Who?" onchange="updateField('${errand.id}', 'assignee', this.value); saveErrands();">
+                            <input type="text" class="editable-field category" value="${escapeHtml(errand.category)}" placeholder="Category" onchange="updateField('${errand.id}', 'category', this.value); saveErrands();">
+                        </div>
+                    </div>
+                    <div class="actions">
+                        <button class="delete-btn" onclick="deleteErrand('${errand.id}')" title="Remove stop">✕</button>
+                    </div>
+                `;
+
+                setupDragAndDrop(item);
+                list.appendChild(item);
+            });
+
+            updateFilterOptions();
+            updateDashboard();
+            applyFilters();
+        }
+
+        function setupDragAndDrop(item) {
+            const handle = item.querySelector('.drag-handle');
+
+            handle.addEventListener('dragstart', (e) => {
+                item.classList.add('dragging');
+                e.dataTransfer.setData('text/plain', item.dataset.id);
+            });
+
+            handle.addEventListener('dragend', () => {
+                item.classList.remove('dragging');
+                reorderErrands();
+            });
+        }
+
+        const listContainer = document.getElementById('errandList');
+        listContainer.addEventListener('dragover', e => {
+            e.preventDefault();
+            const dragging = document.querySelector('.dragging');
+            if (!dragging) return;
+
+            const afterElement = getDragAfterElement(listContainer, e.clientY);
+            if (afterElement == null) {
+                listContainer.appendChild(dragging);
+            } else {
+                listContainer.insertBefore(dragging, afterElement);
+            }
+        });
+
+        function getDragAfterElement(container, y) {
+            const draggableElements = [...container.querySelectorAll('.errand-item:not(.dragging)')];
+
+            return draggableElements.reduce((closest, child) => {
+                const box = child.getBoundingClientRect();
+                const offset = y - box.top - box.height / 2;
+                if (offset < 0 && offset > closest.offset) {
+                    return { offset: offset, element: child };
+                } else {
+                    return closest;
+                }
+            }, { offset: -Infinity }).element;
+        }
+
+        function reorderErrands() {
+            const currentIds = [...listContainer.querySelectorAll('.errand-item')].map(item => item.dataset.id);
+            errands = currentIds.map(id => errands.find(errand => errand.id === id));
+            localStorage.setItem('roommateErrands', JSON.stringify(errands));
+            updateDashboard();
+        }
+
+        function updateFilterOptions() {
+            const filterAssignee = document.getElementById('filterAssignee');
+            const filterCategory = document.getElementById('filterCategory');
+            const assigneeDL = document.getElementById('assigneeSuggestions');
+            const categoryDL = document.getElementById('categorySuggestions');
+
+            const currentAssigneeFilter = filterAssignee.value;
+            const currentCategoryFilter = filterCategory.value;
+
+            const assignees = [...new Set(errands.map(e => e.assignee))].filter(Boolean).sort();
+            const categories = [...new Set(errands.map(e => e.category))].filter(Boolean).sort();
+
+            assigneeDL.innerHTML = assignees.map(a => `<option value="${escapeHtml(a)}">`).join('');
+            categoryDL.innerHTML = categories.map(c => `<option value="${escapeHtml(c)}">`).join('');
+
+            filterAssignee.innerHTML = '<option value="all">All People</option>';
+            filterCategory.innerHTML = '<option value="all">All Categories</option>';
+
+            assignees.forEach(a => {
+                filterAssignee.innerHTML += `<option value="${escapeHtml(a.toLowerCase())}">${escapeHtml(a)}</option>`;
+            });
+            categories.forEach(c => {
+                filterCategory.innerHTML += `<option value="${escapeHtml(c.toLowerCase())}">${escapeHtml(c)}</option>`;
+            });
+
+            if ([...filterAssignee.options].some(o => o.value === currentAssigneeFilter)) {
+                filterAssignee.value = currentAssigneeFilter;
+            }
+            if ([...filterCategory.options].some(o => o.value === currentCategoryFilter)) {
+                filterCategory.value = currentCategoryFilter;
+            }
+        }
+
+        function applyFilters() {
+            const targetAssignee = document.getElementById('filterAssignee').value;
+            const targetCategory = document.getElementById('filterCategory').value;
+            const items = listContainer.querySelectorAll('.errand-item');
+            const emptyState = document.getElementById('emptyState');
+
+            let visibleCount = 0;
+
+            items.forEach(item => {
+                const matchesAssignee = (targetAssignee === 'all' || item.dataset.assignee === targetAssignee);
+                const matchesCategory = (targetCategory === 'all' || item.dataset.category === targetCategory);
+
+                if (matchesAssignee && matchesCategory) {
+                    item.classList.remove('filtered-out');
+                    visibleCount++;
+                } else {
+                    item.classList.add('filtered-out');
+                }
+            });
+
+            emptyState.style.display = (visibleCount === 0) ? 'block' : 'none';
+        }
+
+        function generatePlanText() {
+            const visibleItems = [...listContainer.querySelectorAll('.errand-item:not(.filtered-out)')];
+            if (visibleItems.length === 0) return '';
+
+            const visibleErrands = visibleItems.map(item => errands.find(e => e.id === item.dataset.id)).filter(Boolean);
+
+            let text = `📍 ERRAND MASTER PLAN - ${new Date().toLocaleDateString()}\n`;
+            text += `==========================================\n\n`;
+
+            // Section 1: Pure Chronological Route Order
+            text += `🗺️ ROUTE ORDER FLOW\n`;
+            text += `------------------------------------------\n`;
+            visibleErrands.forEach((errand, index) => {
+                text += `[ ] ${index + 1}. ${errand.stopName.toUpperCase()} (${errand.assignee})\n`;
+                if (errand.notes) text += `    Notes: ${errand.notes}\n`;
+            });
+            text += `\n`;
+
+            // Section 2: Grouped By Assignee Checklist
+            text += `👤 BREAKDOWN BY ASSIGNEE\n`;
+            text += `------------------------------------------\n`;
+            const groupedByPerson = {};
+            visibleErrands.forEach(e => {
+                if (!groupedByPerson[e.assignee]) groupedByPerson[e.assignee] = [];
+                groupedByPerson[e.assignee].push(e);
+            });
+
+            for (const person in groupedByPerson) {
+                text += `▶ ${person.toUpperCase()}\n`;
+                groupedByPerson[person].forEach(e => {
+                    text += `  [ ] ${e.stopName} [${e.category}]\n`;
+                    if (e.notes) text += `      Info: ${e.notes}\n`;
+                });
+                text += `\n`;
+            }
+
+            // Section 3: Grouped By Category Checklist
+            text += `🏷️ BREAKDOWN BY CATEGORY\n`;
+            text += `------------------------------------------\n`;
+            const groupedByCat = {};
+            visibleErrands.forEach(e => {
+                if (!groupedByCat[e.category]) groupedByCat[e.category] = [];
+                groupedByCat[e.category].push(e);
+            });
+
+            for (const cat in groupedByCat) {
+                text += `▶ ${cat.toUpperCase()}\n`;
+                groupedByCat[cat].forEach(e => {
+                    text += `  [ ] ${e.stopName} (By: ${e.assignee})\n`;
+                    if (e.notes) text += `      Info: ${e.notes}\n`;
+                });
+                text += `\n`;
+            }
+
+            return text;
+        }
+
+        function copyRoutePlan() {
+            const textToCopy = generatePlanText();
+            if (!textToCopy) return;
+
+            navigator.clipboard.writeText(textToCopy).then(() => {
+                const toast = document.getElementById('toast');
+                toast.classList.add('show');
+                setTimeout(() => toast.classList.remove('show'), 2500);
+            });
+        }
+
+        function downloadBackup() {
+            const textToDownload = generatePlanText();
+            if (!textToDownload) return;
+
+            const blob = new Blob([textToDownload], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `errand_plan_${new Date().toISOString().slice(0,10)}.txt`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
+        function escapeHtml(str) {
+            if (!str) return '';
+            return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+        }
+
+        // Initial render
+        renderErrands();
+    </script>
+</body>
+</html>

@@ -59,6 +59,61 @@ export type CreateProjectForkDraftInput = {
   sourceRunUrl?: string
 }
 
+export type ProjectForkSourceSubmissionFields = {
+  fork_source_project_id?: string | null
+  fork_source_project_title?: string | null
+  fork_source_step_id?: string | null
+  fork_source_step_number?: number | null
+  fork_parent_submission_id?: string | null
+  prompt_family_id?: string | null
+  fork_depth?: number | null
+  fork_branch_index?: number | null
+}
+
+export type ProjectForkNetworkItem = {
+  id: string
+  title: string
+  description?: string | null
+  modelUsed?: string | null
+  createdAt: string
+  forkSource: ProjectForkSource
+}
+
+export type ProjectForkNetworkRow = {
+  step: ProjectForkSourceStep
+  forks: ProjectForkNetworkItem[]
+}
+
+export type ProjectForkNetworkGrouping = {
+  rows: ProjectForkNetworkRow[]
+  unmatchedForks: ProjectForkNetworkItem[]
+}
+
+export type ProjectForkTrailProject = ProjectForkSourceSubmissionFields & {
+  id: string
+  title: string
+}
+
+export type ProjectForkTrailNode = {
+  id: string
+  title: string
+  forkSource?: ProjectForkSource
+  isCurrent: boolean
+  isMissingSource: boolean
+}
+
+export type ProjectForkTrail<TProject extends ProjectForkTrailProject = ProjectForkTrailProject> = {
+  nodes: ProjectForkTrailNode[]
+  immediateSourceProject: TProject | null
+  missingSourceProjectId?: string
+  cycleDetected: boolean
+  truncated: boolean
+}
+
+export type ProjectForkTrailProjectResolver<TProject extends ProjectForkTrailProject> = (
+  projectId: string
+) => TProject | null | Promise<TProject | null>
+
 function parsePositiveInteger(value: string | null, fallback: number) {
   if (!value) return fallback
   const parsed = Number.parseInt(value, 10)
@@ -124,6 +179,41 @@ export function buildProjectForkHref(source: Partial<ProjectForkSource> & { sour
   if (normalized.promptFamilyId) params.set(PROJECT_FORK_QUERY_KEYS.promptFamilyId, normalized.promptFamilyId)
 
   return `/build?${params.toString()}`
+}
+
+export function projectForkSourceToSubmissionFields(
+  source?: ProjectForkSource | null,
+): ProjectForkSourceSubmissionFields {
+  if (!source?.sourceProjectId) return {}
+  const normalized = normalizeProjectForkSource(source)
+
+  return {
+    fork_source_project_id: normalized.sourceProjectId,
+    fork_source_project_title: normalized.sourceProjectTitle ?? null,
+    fork_source_step_id: normalized.sourceStepId ?? null,
+    fork_source_step_number: normalized.sourceStepNumber ?? null,
+    fork_parent_submission_id: normalized.parentForkId ?? null,
+    prompt_family_id: normalized.promptFamilyId ?? null,
+    fork_depth: normalized.depth,
+    fork_branch_index: normalized.branchIndex,
+  }
+}
+
+export function projectForkSourceFromSubmissionFields(
+  fields: ProjectForkSourceSubmissionFields,
+): ProjectForkSource | null {
+  if (!fields.fork_source_project_id) return null
+
+  return normalizeProjectForkSource({
+    sourceProjectId: fields.fork_source_project_id,
+    sourceProjectTitle: fields.fork_source_project_title ?? undefined,
+    sourceStepId: fields.fork_source_step_id ?? undefined,
+    sourceStepNumber: fields.fork_source_step_number ?? undefined,
+    parentForkId: fields.fork_parent_submission_id ?? undefined,
+    depth: fields.fork_depth ?? 0,
+    branchIndex: fields.fork_branch_index ?? 0,
+    promptFamilyId: fields.prompt_family_id ?? undefined,
+  })
 }
 
 export function toProjectForkSourceSteps(project: Pick<PromptWithRelations, 'steps'>): ProjectForkSourceStep[] {
@@ -194,6 +284,104 @@ export function createProjectForkDraftContract({
     promptFamilyId: normalizedSource.promptFamilyId ?? (
       forkPointStep ? `${normalizedSource.sourceProjectId}:${forkPointStep.responsePackageId}` : undefined
     ),
+  }
+}
+
+export function groupProjectForkNetworkBySourceStep(
+  sourceSteps: ProjectForkSourceStep[],
+  forks: ProjectForkNetworkItem[],
+): ProjectForkNetworkGrouping {
+  const matchedForkIds = new Set<string>()
+  const rows = sourceSteps.map<ProjectForkNetworkRow>((step) => {
+    const rowForks = forks.filter((fork) => {
+      const matches = fork.forkSource.sourceStepId === step.id ||
+        fork.forkSource.sourceStepNumber === step.stepNumber
+      if (matches) matchedForkIds.add(fork.id)
+      return matches
+    })
+    return { step, forks: rowForks }
+  })
+  const unmatchedForks = forks.filter((fork) => !matchedForkIds.has(fork.id))
+
+  return { rows, unmatchedForks }
+}
+
+export async function resolveProjectForkTrail<TProject extends ProjectForkTrailProject>(
+  currentProject: TProject,
+  getProjectById: ProjectForkTrailProjectResolver<TProject>,
+  maxDepth = PROJECT_FORK_MAX_DEPTH,
+): Promise<ProjectForkTrail<TProject>> {
+  const edges: Array<{
+    childProject: TProject
+    forkSource: ProjectForkSource
+    parentProject: TProject | null
+  }> = []
+  const seenProjectIds = new Set<string>([currentProject.id])
+  let childProject = currentProject
+  let missingSourceProjectId: string | undefined
+  let cycleDetected = false
+  let truncated = false
+
+  for (let depth = 0; depth < maxDepth; depth += 1) {
+    const forkSource = projectForkSourceFromSubmissionFields(childProject)
+    if (!forkSource) break
+
+    if (seenProjectIds.has(forkSource.sourceProjectId)) {
+      cycleDetected = true
+      break
+    }
+
+    const parentProject = await getProjectById(forkSource.sourceProjectId)
+    if (!parentProject) missingSourceProjectId = forkSource.sourceProjectId
+
+    edges.push({ childProject, forkSource, parentProject })
+    if (!parentProject) break
+
+    seenProjectIds.add(parentProject.id)
+    childProject = parentProject
+
+    if (depth === maxDepth - 1 && projectForkSourceFromSubmissionFields(parentProject)) {
+      truncated = true
+    }
+  }
+
+  if (edges.length === 0) {
+    return {
+      nodes: [],
+      immediateSourceProject: null,
+      cycleDetected,
+      truncated,
+    }
+  }
+
+  const orderedEdges = [...edges].reverse()
+  const rootEdge = orderedEdges[0]
+  const rootProject = rootEdge.parentProject
+  const rootId = rootProject?.id ?? rootEdge.forkSource.sourceProjectId
+  const rootTitle = rootProject?.title ?? rootEdge.forkSource.sourceProjectTitle ?? 'Source project'
+  const nodes: ProjectForkTrailNode[] = [{
+    id: rootId,
+    title: rootTitle,
+    isCurrent: rootId === currentProject.id,
+    isMissingSource: !rootProject,
+  }]
+
+  for (const edge of orderedEdges) {
+    nodes.push({
+      id: edge.childProject.id,
+      title: edge.childProject.title,
+      forkSource: edge.forkSource,
+      isCurrent: edge.childProject.id === currentProject.id,
+      isMissingSource: false,
+    })
+  }
+
+  return {
+    nodes,
+    immediateSourceProject: edges[0]?.parentProject ?? null,
+    missingSourceProjectId,
+    cycleDetected,
+    truncated,
   }
 }
 

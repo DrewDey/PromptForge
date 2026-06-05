@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Tiny Windmill Mini Golf</title>
+<style>
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    min-height: 100vh;
+    display: grid;
+    place-items: center;
+    background:
+      radial-gradient(circle at top, #2d6a3b 0%, #12311c 58%, #08190f 100%);
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    color: #f4ffe8;
+  }
+
+  .wrap {
+    width: min(94vw, 760px);
+    text-align: center;
+    padding: 10px 0 18px;
+  }
+
+  h1 {
+    margin: 8px 0 6px;
+    font-size: clamp(24px, 5vw, 40px);
+    line-height: 1.05;
+  }
+
+  .instructions {
+    margin: 0 auto 10px;
+    max-width: 620px;
+    opacity: 0.9;
+    font-size: clamp(14px, 3.2vw, 16px);
+    line-height: 1.35;
+  }
+
+  .hud {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+    margin: 10px 0;
+  }
+
+  .pill {
+    background: #244b2e;
+    border: 1px solid #78b86b;
+    border-radius: 999px;
+    padding: 9px 10px;
+    font-weight: 800;
+    font-size: 14px;
+    white-space: nowrap;
+  }
+
+  #status {
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  canvas {
+    width: 100%;
+    display: block;
+    background: #6fc66b;
+    border: 5px solid #d6b46c;
+    border-radius: 18px;
+    box-shadow: 0 20px 50px #0008;
+    touch-action: none;
+  }
+
+  button {
+    margin: 12px 6px 0;
+    padding: 12px 18px;
+    border: 0;
+    border-radius: 12px;
+    font-weight: 900;
+    cursor: pointer;
+    background: #ffe082;
+    color: #243018;
+    min-width: 130px;
+  }
+
+  @media (max-width: 520px) {
+    .wrap {
+      width: 96vw;
+      padding-top: 6px;
+    }
+
+    h1 {
+      margin-top: 4px;
+      font-size: 25px;
+    }
+
+    .instructions {
+      font-size: 13px;
+      margin-bottom: 8px;
+    }
+
+    .hud {
+      grid-template-columns: 1fr 1fr;
+      gap: 6px;
+    }
+
+    .pill {
+      padding: 8px 8px;
+      font-size: 13px;
+    }
+
+    #status {
+      grid-column: 1 / -1;
+    }
+
+    canvas {
+      border-width: 4px;
+      border-radius: 14px;
+    }
+
+    button {
+      width: 100%;
+      margin: 10px 0 0;
+      padding: 14px 18px;
+      font-size: 16px;
+    }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Tiny Windmill Mini Golf</h1>
+  <p class="instructions">
+    Drag back from the ball, then release. On phones, use a short pull for control. Time the spinning blade. Par 3.
+  </p>
+
+  <div class="hud">
+    <div class="pill">Strokes: <span id="strokes">0</span></div>
+    <div class="pill">Par: 3</div>
+    <div class="pill" id="status">Ready</div>
+  </div>
+
+  <canvas id="game" width="760" height="500"></canvas>
+  <button onclick="resetGame()">Reset Hole</button>
+</div>
+
+<script>
+const canvas = document.getElementById("game");
+const ctx = canvas.getContext("2d");
+const strokesEl = document.getElementById("strokes");
+const statusEl = document.getElementById("status");
+
+const ballStart = { x: 95, y: 250 };
+const hole = { x: 680, y: 250, r: 18 };
+const windmill = { x: 390, y: 250, r: 92, angle: 0, speed: 0.035 };
+
+let ball, strokes, dragging, dragStart, dragNow, won;
+
+function resetGame() {
+  ball = { x: ballStart.x, y: ballStart.y, vx: 0, vy: 0, r: 9 };
+  strokes = 0;
+  dragging = false;
+  dragStart = null;
+  dragNow = null;
+  won = false;
+  strokesEl.textContent = strokes;
+  statusEl.textContent = "Ready";
+}
+
+function pointerPos(e) {
+  const rect = canvas.getBoundingClientRect();
+  const p = e.touches ? e.touches[0] : e;
+  return {
+    x: (p.clientX - rect.left) * canvas.width / rect.width,
+    y: (p.clientY - rect.top) * canvas.height / rect.height
+  };
+}
+
+function ballSpeed() {
+  return Math.hypot(ball.vx, ball.vy);
+}
+
+function ballStopped() {
+  return ballSpeed() < 0.08;
+}
+
+canvas.addEventListener("pointerdown", e => {
+  if (won || !ballStopped()) return;
+
+  const p = pointerPos(e);
+  if (Math.hypot(p.x - ball.x, p.y - ball.y) < 48) {
+    dragging = true;
+    dragStart = { x: ball.x, y: ball.y };
+    dragNow = p;
+    statusEl.textContent = "Aim, then release";
+  }
+});
+
+canvas.addEventListener("pointermove", e => {
+  if (!dragging) return;
+  dragNow = pointerPos(e);
+});
+
+canvas.addEventListener("pointerup", () => {
+  if (!dragging || won) return;
+
+  const dx = dragStart.x - dragNow.x;
+  const dy = dragStart.y - dragNow.y;
+  const pull = Math.hypot(dx, dy);
+  const power = Math.min(pull, 120);
+  const scale = power / Math.max(pull, 1) * 0.13;
+
+  ball.vx = dx * scale;
+  ball.vy = dy * scale;
+
+  strokes++;
+  strokesEl.textContent = strokes;
+  statusEl.textContent = "Rolling";
+
+  dragging = false;
+});
+
+canvas.addEventListener("pointercancel", () => {
+  dragging = false;
+  statusEl.textContent = "Ready";
+});
+
+function drawCourse() {
+  ctx.fillStyle = "#6fc66b";
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  ctx.strokeStyle = "#3c8b43";
+  ctx.lineWidth = 34;
+  ctx.lineCap = "round";
+  ctx.beginPath();
+  ctx.moveTo(75, 250);
+  ctx.lineTo(685, 250);
+  ctx.stroke();
+
+  ctx.fillStyle = "#4ca653";
+  ctx.beginPath();
+  ctx.arc(150, 128, 48, 0, Math.PI * 2);
+  ctx.arc(600, 380, 55, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.fillStyle = "#213020";
+  ctx.beginPath();
+  ctx.arc(hole.x, hole.y, hole.r, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.strokeStyle = "#f7f1d1";
+  ctx.lineWidth = 3;
+  ctx.beginPath();
+  ctx.arc(hole.x, hole.y, hole.r + 7, 0, Math.PI * 2);
+  ctx.stroke();
+
+  ctx.fillStyle = "#b57634";
+  ctx.fillRect(windmill.x - 34, windmill.y - 55, 68, 110);
+
+  ctx.fillStyle = "#f6d28a";
+  ctx.beginPath();
+  ctx.moveTo(windmill.x - 48, windmill.y - 55);
+  ctx.lineTo(windmill.x, windmill.y - 105);
+  ctx.lineTo(windmill.x + 48, windmill.y - 55);
+  ctx.closePath();
+  ctx.fill();
+
+  ctx.fillStyle = "#8d5d2a";
+  ctx.fillRect(windmill.x - 52, windmill.y + 52, 104, 14);
+}
+
+function drawWindmill() {
+  ctx.save();
+  ctx.translate(windmill.x, windmill.y);
+  ctx.rotate(windmill.angle);
+
+  for (let i = 0; i < 4; i++) {
+    ctx.rotate(Math.PI / 2);
+    ctx.fillStyle = "#f9f0c7";
+    ctx.fillRect(-8, -windmill.r, 16, windmill.r);
+    ctx.strokeStyle = "#8d5d2a";
+    ctx.lineWidth = 3;
+    ctx.strokeRect(-8, -windmill.r, 16, windmill.r);
+  }
+
+  ctx.fillStyle = "#5b341d";
+  ctx.beginPath();
+  ctx.arc(0, 0, 14, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.restore();
+}
+
+function bladeCollision() {
+  const dx = ball.x - windmill.x;
+  const dy = ball.y - windmill.y;
+  const dist = Math.hypot(dx, dy);
+
+  if (dist > windmill.r + ball.r || dist < 18) return;
+
+  for (let i = 0; i < 4; i++) {
+    const a = windmill.angle + i * Math.PI / 2;
+    const px = Math.cos(a);
+    const py = Math.sin(a);
+    const along = dx * px + dy * py;
+    const side = Math.abs(dx * -py + dy * px);
+
+    if (along > 12 && along < windmill.r && side < ball.r + 8) {
+      ball.vx = -ball.vx * 0.65 + px * 2.2;
+      ball.vy = -ball.vy * 0.65 + py * 2.2;
+      statusEl.textContent = "Blade hit";
+    }
+  }
+}
+
+function updateBall() {
+  ball.x += ball.vx;
+  ball.y += ball.vy;
+
+  ball.vx *= 0.985;
+  ball.vy *= 0.985;
+
+  if (ballStopped()) {
+    ball.vx = 0;
+    ball.vy = 0;
+    if (!won) statusEl.textContent = "Ready";
+  }
+
+  if (ball.x < 35 || ball.x > canvas.width - 35) ball.vx *= -0.75;
+  if (ball.y < 45 || ball.y > canvas.height - 45) ball.vy *= -0.75;
+
+  ball.x = Math.max(35, Math.min(canvas.width - 35, ball.x));
+  ball.y = Math.max(45, Math.min(canvas.height - 45, ball.y));
+
+  const dHole = Math.hypot(ball.x - hole.x, ball.y - hole.y);
+
+  if (dHole < hole.r && ballSpeed() < 2.6 && !won) {
+    won = true;
+    ball.x = hole.x;
+    ball.y = hole.y;
+    ball.vx = 0;
+    ball.vy = 0;
+
+    if (strokes === 1) statusEl.textContent = "Hole in one";
+    else if (strokes <= 3) statusEl.textContent = "Under par";
+    else statusEl.textContent = "Over par";
+  }
+}
+
+function drawBall() {
+  ctx.fillStyle = "#ffffff";
+  ctx.beginPath();
+  ctx.arc(ball.x, ball.y, ball.r, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.strokeStyle = "#c9c9c9";
+  ctx.lineWidth = 2;
+  ctx.stroke();
+}
+
+function drawAim() {
+  if (!dragging) return;
+
+  const dx = dragStart.x - dragNow.x;
+  const dy = dragStart.y - dragNow.y;
+  const pull = Math.min(Math.hypot(dx, dy), 120);
+  const angle = Math.atan2(dy, dx);
+
+  const endX = ball.x + Math.cos(angle) * pull;
+  const endY = ball.y + Math.sin(angle) * pull;
+
+  ctx.strokeStyle = "#ffffffdd";
+  ctx.lineWidth = 5;
+  ctx.setLineDash([9, 8]);
+  ctx.beginPath();
+  ctx.moveTo(ball.x, ball.y);
+  ctx.lineTo(endX, endY);
+  ctx.stroke();
+  ctx.setLineDash([]);
+
+  ctx.fillStyle = "#ffffff33";
+  ctx.beginPath();
+  ctx.arc(ball.x, ball.y, pull, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.fillStyle = "#213020";
+  ctx.font = "700 16px system-ui, sans-serif";
+  ctx.textAlign = "center";
+  ctx.fillText("Release to putt", ball.x, Math.max(28, ball.y - 32));
+}
+
+function loop() {
+  windmill.angle += windmill.speed;
+
+  drawCourse();
+  drawWindmill();
+  bladeCollision();
+  updateBall();
+  drawAim();
+  drawBall();
+
+  requestAnimationFrame(loop);
+}
+
+resetGame();
+loop();
+</script>
+</body>
+</html>

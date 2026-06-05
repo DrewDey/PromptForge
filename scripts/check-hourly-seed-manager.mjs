@@ -42,7 +42,11 @@ mustInclude(packageJson, '"check:hourly-seed-manager"', 'package.json must expos
 for (const path of [runbook, automation]) {
   mustIncludeNormalized(path, 'Let each lane complete its intended 5-8 prompt chain before pass/reject', `${path} must forbid mid-chain rejection before the current 5-8 target finishes`)
   mustInclude(path, 'Wait much longer on high-thinking/model-finalizing stalls', `${path} must require longer waits for slow high-thinking runs`)
+  mustInclude(path, 'usage-limit wall', `${path} must handle real provider usage limits as a distinct blocker`)
+  mustInclude(path, 'cheaper OpenRouter routed model', `${path} must route quota-limited lanes to cheaper OpenRouter models instead of waiting for reset`)
   mustInclude(path, 'One blocked or rejected lane does not cancel', `${path} must keep the three lanes independent`)
+  mustInclude(path, 'Close every Chrome browser tab group', `${path} must require manager/subagent Chrome group cleanup`)
+  mustInclude(path, 'browser.tabs.finalize({ keep: [] })', `${path} must name the Chrome cleanup API`)
   mustInclude(path, 'seed-runs/rejected/', `${path} must preserve close rejected candidates`)
   mustInclude(path, 'OpenRouter is optional variety, not a default and not forced', `${path} must not force OpenRouter`)
   mustInclude(path, 'No non-verbatim response packages', `${path} must keep verbatim responses as a hard gate`)
@@ -68,6 +72,10 @@ mustInclude(automation, 'npm run check:hourly-seed-manager', 'automation must ru
 
 mustInclude(seedSkill, 'Let the lane finish, then judge the completed package.', 'seed skill must require completed-run judgment')
 mustInclude(seedSkill, 'wait much longer before treating it as blocked', 'seed skill must require longer waits')
+mustInclude(seedSkill, 'usage-limit wall', 'seed skill must treat explicit provider usage limits as an OpenRouter fallback case')
+mustInclude(seedSkill, 'cheaper OpenRouter routed model', 'seed skill must route quota-limited lanes to cheaper OpenRouter models')
+mustInclude(seedSkill, 'Close every Chrome browser tab group', 'seed skill must require Chrome group cleanup')
+mustInclude(seedSkill, 'browser.tabs.finalize({ keep: [] })', 'seed skill must name the Chrome cleanup API')
 mustInclude(seedSkill, 'preview-only steps', 'seed skill must document preview-only steps')
 mustInclude(seedSkill, 'seed-runs/rejected/', 'seed skill must preserve promising rejects')
 mustInclude(seedSkill, 'Do not treat examples, prior successful seeds, or the phrase "single-file HTML"', 'seed skill must avoid template cloning')

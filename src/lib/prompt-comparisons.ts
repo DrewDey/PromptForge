@@ -2,10 +2,13 @@ import type { PromptWithRelations } from './types'
 import { AI_MODELS, getModelName } from './models'
 
 export type PromptModelEra = 'newer' | 'older' | 'reference'
+export type PromptComparisonMatchBasis = 'prompt-family' | 'heuristic'
 
 export type PromptComparisonGroup = {
   key: string
   label: string
+  matchBasis: PromptComparisonMatchBasis
+  promptFamilyId?: string
   prompts: PromptWithRelations[]
   models: string[]
   latestCreatedAt: number
@@ -120,7 +123,12 @@ function addTokenScores(scores: Map<string, number>, text: string | null | undef
   }
 }
 
-function familyKey(prompt: PromptWithRelations) {
+function normalizePromptFamilyId(value: string | null | undefined) {
+  const trimmed = value?.trim()
+  return trimmed || null
+}
+
+function heuristicFamilyKey(prompt: PromptWithRelations) {
   const scores = new Map<string, number>()
   addTokenScores(scores, cleanTitleRoot(prompt.title), 4)
   addTokenScores(scores, prompt.title, 2)
@@ -134,6 +142,25 @@ function familyKey(prompt: PromptWithRelations) {
 
   if (tokens.length < 2) return null
   return `${prompt.category_id}:${tokens.join('-')}`
+}
+
+function comparisonFamilyKey(prompt: PromptWithRelations): {
+  key: string
+  matchBasis: PromptComparisonMatchBasis
+  promptFamilyId?: string
+} | null {
+  const promptFamilyId = normalizePromptFamilyId(prompt.prompt_family_id)
+  if (promptFamilyId) {
+    return {
+      key: `prompt-family:${promptFamilyId}`,
+      matchBasis: 'prompt-family',
+      promptFamilyId,
+    }
+  }
+
+  const key = heuristicFamilyKey(prompt)
+  if (!key) return null
+  return { key: `heuristic:${key}`, matchBasis: 'heuristic' }
 }
 
 function modelCompareKey(label: string) {
@@ -204,30 +231,38 @@ export function getPromptModelEra(prompt: PromptWithRelations): PromptModelEra {
 }
 
 export function buildPromptComparisonGroups(prompts: PromptWithRelations[]): PromptComparisonGroup[] {
-  const buckets = new Map<string, PromptWithRelations[]>()
+  const buckets = new Map<string, {
+    prompts: PromptWithRelations[]
+    matchBasis: PromptComparisonMatchBasis
+    promptFamilyId?: string
+  }>()
 
   for (const prompt of prompts) {
-    const key = familyKey(prompt)
-    if (!key) continue
+    const family = comparisonFamilyKey(prompt)
+    if (!family) continue
 
-    const bucket = buckets.get(key) ?? []
-    bucket.push(prompt)
-    buckets.set(key, bucket)
+    const bucket = buckets.get(family.key) ?? {
+      prompts: [],
+      matchBasis: family.matchBasis,
+      promptFamilyId: family.promptFamilyId,
+    }
+    bucket.prompts.push(prompt)
+    buckets.set(family.key, bucket)
   }
 
   const groups: PromptComparisonGroup[] = []
 
   for (const [key, bucket] of buckets) {
     const modelLabels = new Map<string, string>()
-    for (const prompt of bucket) {
+    for (const prompt of bucket.prompts) {
       const label = getPromptModelLabel(prompt)
       if (label === 'Unknown model') continue
       modelLabels.set(modelCompareKey(label), label)
     }
 
-    if (bucket.length < 2 || modelLabels.size < 2) continue
+    if (bucket.prompts.length < 2 || modelLabels.size < 2) continue
 
-    const sortedPrompts = [...bucket].sort((a, b) => (
+    const sortedPrompts = [...bucket.prompts].sort((a, b) => (
       new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
     ))
     const rootLabels = sortedPrompts.map((prompt) => cleanTitleRoot(prompt.title)).filter(Boolean)
@@ -236,10 +271,12 @@ export function buildPromptComparisonGroups(prompts: PromptWithRelations[]): Pro
     groups.push({
       key,
       label,
+      matchBasis: bucket.matchBasis,
+      promptFamilyId: bucket.promptFamilyId,
       prompts: sortedPrompts,
       models: [...modelLabels.values()],
-      latestCreatedAt: Math.max(...bucket.map((prompt) => new Date(prompt.created_at).getTime())),
-      totalVotes: bucket.reduce((sum, prompt) => sum + prompt.vote_count, 0),
+      latestCreatedAt: Math.max(...bucket.prompts.map((prompt) => new Date(prompt.created_at).getTime())),
+      totalVotes: bucket.prompts.reduce((sum, prompt) => sum + prompt.vote_count, 0),
     })
   }
 

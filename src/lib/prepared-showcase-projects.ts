@@ -15,6 +15,8 @@ import {
   WEEKEND_CHECKLIST_PROJECT_ID,
   WORD_LADDER_SPRINT_PROJECT_ID,
 } from './featured-projects'
+import { PENDING_SOURCE_RUN_SHOWCASE_PROJECTS } from './pending-source-run-showcases'
+export * from './pending-source-run-showcases'
 import type { Prompt } from './types'
 
 export type PreparedShowcaseStep = {
@@ -39,6 +41,7 @@ export type PreparedShowcaseProject = {
   difficulty: Prompt['difficulty']
   modelUsed: string
   modelRecommendation: string
+  promptFamilyId?: string
   toolsUsed: string[]
   tags: string[]
   artifactPath: string
@@ -882,6 +885,7 @@ export const PREPARED_SHOWCASE_PROJECTS = [
   FOLLOW_UP_CRM_SHOWCASE_PROJECT,
   REACTION_TRAINER_SHOWCASE_PROJECT,
   LANE_DEFENSE_SHOWCASE_PROJECT,
+  ...PENDING_SOURCE_RUN_SHOWCASE_PROJECTS,
 ]
 
 export function getPreparedShowcaseProjectBySourceRunId(sourceRunId: string) {

@@ -46,6 +46,12 @@ record the exact model name, provider route when visible, settings, and source
 URL; do not label a run only as "OpenRouter" when a specific model produced the
 artifact.
 
+If a normal provider lane hits a real usage-limit wall, do not wait for the
+limit to reset. Move that lane to OpenRouter with a cheaper routed model that
+fits the seed, then record OpenRouter as the service/provider plus the exact
+routed model, upstream route when visible, settings, and source URL. This
+fallback is for explicit quota/limit blockers, not ordinary slow finalizing.
+
 Normal user source-run uploads now separate AI service from exact model. The AI
 service is where the run happened, such as ChatGPT, Claude, Gemini, OpenRouter,
 or a custom service entered through `Other`. OpenRouter is a router/service, not
@@ -71,9 +77,11 @@ guessing from the source URL.
 5. Let each lane complete its intended 5-8 prompt chain before pass/reject
    review. Do not reject mid-chain because prompt 1 is a provider preview, a
    high-thinking model is still finalizing, or capture is temporarily awkward.
-6. Wait much longer on high-thinking/model-finalizing stalls. Only stop a lane
-   early for hard blockers: usage limits, login/CAPTCHA, missing or unsupported
-   source link/export, unsafe content, or user interruption.
+6. Wait much longer on high-thinking/model-finalizing stalls. If a lane hits an
+   explicit usage-limit wall, move it to a cheaper OpenRouter routed model
+   instead of waiting for reset. Only stop a lane early for hard blockers that
+   cannot be routed around: login/CAPTCHA, missing or unsupported source
+   link/export, unsafe content, or user interruption.
 7. Keep lanes independent. One blocked or rejected lane does not cancel the
    whole manager run; still upload other passing lanes.
 8. Keep first prompts from sounding cloned. Do not steer builders into a fixed
@@ -88,7 +96,11 @@ guessing from the source URL.
    `node scripts/import-pathforge-source-run.mjs --package <package> --username <seed-profile-username>`
 12. Confirm each accepted upload appears as a queued source-run intake in admin
    review, attributed to a non-admin seed profile.
-13. Report accepted pending IDs, rejected candidates, blockers, and any follow-up
+13. Close every Chrome browser tab group the manager or builder subagents opened
+   before completing the run. When using the Chrome browser tooling, call
+   `browser.tabs.finalize({ keep: [] })` unless a tab is explicitly waiting on
+   user login, CAPTCHA, or another handoff blocker.
+14. Report accepted pending IDs, rejected candidates, blockers, and any follow-up
     needed before public page creation.
 
 If subagent tooling is unavailable, stop and report blocked. Do not silently run
@@ -194,6 +206,9 @@ Hard gates:
 - Verify the final artifact is nonblank and usable.
 - Do not create public pages, votes, comments, bookmarks, or manual submissions.
 - Do not upload weak or incomplete work.
+- Close every Chrome browser tab group you opened before returning. When using
+  the Chrome browser tooling, call `browser.tabs.finalize({ keep: [] })` unless
+  the manager explicitly needs a handoff tab kept open.
 
 Return:
 - package path

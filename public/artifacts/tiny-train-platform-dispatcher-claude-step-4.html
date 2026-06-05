@@ -1,0 +1,560 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Platform Dispatcher</title>
+<style>
+  :root {
+    --bg: #0e1117;
+    --surface: #161b25;
+    --surface2: #1e2535;
+    --border: #2a3347;
+    --border2: #3a4a66;
+    --text: #e8edf5;
+    --muted: #6b7a99;
+    --faint: #3a4455;
+    --green: #3ecf78;
+    --amber: #f5a623;
+    --red: #f04444;
+    --blue: #4a9eff;
+    --blue-dim: #1a3a6a;
+    --mono: 'Courier New', Courier, monospace;
+    --sans: system-ui, -apple-system, 'Segoe UI', sans-serif;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1.5rem;
+  }
+
+  #game {
+    width: 100%;
+    max-width: 680px;
+    position: relative;
+  }
+
+  .header {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    margin-bottom: 1.5rem;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 0.75rem;
+  }
+  .station-name {
+    font-family: var(--mono);
+    font-size: 13px;
+    color: var(--muted);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+  }
+  .station-name strong { color: var(--blue); font-weight: 400; }
+
+  .hud {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr 2fr 60px;
+    gap: 8px;
+    margin-bottom: 1.25rem;
+    align-items: center;
+  }
+  .stat {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 8px 12px;
+    text-align: center;
+  }
+  .stat-label {
+    font-size: 10px;
+    font-family: var(--mono);
+    color: var(--muted);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    display: block;
+    margin-bottom: 3px;
+  }
+  .stat-val {
+    font-family: var(--mono);
+    font-size: 20px;
+    color: var(--text);
+    line-height: 1;
+  }
+
+  .urgency-wrap {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 8px 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+  }
+  .urgency-label {
+    font-size: 10px;
+    font-family: var(--mono);
+    color: var(--muted);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+  #timer-bar-track {
+    height: 6px;
+    background: var(--faint);
+    border-radius: 3px;
+    overflow: hidden;
+  }
+  #timer-bar {
+    height: 100%;
+    width: 100%;
+    border-radius: 3px;
+    transition: width 0.15s linear, background 0.4s;
+    background: var(--green);
+  }
+
+  .level-badge {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 8px 0;
+    text-align: center;
+  }
+
+  .section-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 8px;
+  }
+  .section-title {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.14em;
+    color: var(--muted);
+    text-transform: uppercase;
+    white-space: nowrap;
+  }
+  .section-line { flex: 1; height: 1px; background: var(--border); }
+  .section-hint { font-size: 11px; color: var(--faint); font-style: italic; }
+
+  #arrivals-area {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    min-height: 80px;
+    margin-bottom: 1.5rem;
+  }
+
+  .train-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 10px 14px;
+    cursor: pointer;
+    transition: border-color 0.15s, background 0.15s, transform 0.1s;
+    min-width: 130px;
+    position: relative;
+    overflow: hidden;
+  }
+  .train-card:hover { border-color: var(--border2); background: var(--surface2); transform: translateY(-1px); }
+  .train-card.selected { border-color: var(--blue); background: var(--blue-dim); }
+  .train-card.selected::before {
+    content: '\25B6';
+    position: absolute;
+    top: 10px; right: 11px;
+    font-size: 9px;
+    color: var(--blue);
+  }
+  .train-id { font-family: var(--mono); font-size: 14px; color: var(--text); margin-bottom: 2px; }
+  .train-dest { font-size: 11px; color: var(--muted); margin-bottom: 7px; }
+  .train-dest span { color: var(--text); font-size: 12px; }
+  .ttl-track { height: 3px; background: var(--faint); border-radius: 2px; overflow: hidden; }
+  .ttl-fill { height: 100%; border-radius: 2px; transition: width 0.2s linear, background 0.3s; }
+  .dot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; margin-right: 5px; vertical-align: middle; }
+
+  .no-trains {
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--faint);
+    padding: 20px 0;
+    letter-spacing: 0.08em;
+  }
+
+  #platforms-area {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 10px;
+    margin-bottom: 1.25rem;
+  }
+
+  .platform {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 14px;
+    min-height: 100px;
+    cursor: pointer;
+    transition: border-color 0.15s, background 0.15s;
+    position: relative;
+  }
+  .platform:hover:not(.busy) { border-color: var(--border2); }
+  .platform.accepting { border-color: var(--blue); background: var(--blue-dim); }
+  .platform.accepting::after {
+    content: 'ASSIGN';
+    position: absolute;
+    bottom: 10px; right: 12px;
+    font-family: var(--mono);
+    font-size: 9px;
+    color: var(--blue);
+    letter-spacing: 0.1em;
+  }
+  .platform.busy { cursor: not-allowed; }
+
+  .plat-num {
+    font-family: var(--mono);
+    font-size: 9px;
+    color: var(--muted);
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    margin-bottom: 10px;
+  }
+  .plat-empty { font-size: 12px; color: var(--faint); font-style: italic; }
+  .plat-train-id { font-family: var(--mono); font-size: 14px; color: var(--text); margin-bottom: 2px; }
+  .plat-train-dest { font-size: 11px; color: var(--muted); margin-bottom: 8px; }
+  .plat-train-dest span { color: var(--text); }
+  .plat-dwell-track { height: 3px; background: var(--faint); border-radius: 2px; overflow: hidden; margin-bottom: 4px; }
+  .plat-dwell-fill { height: 100%; background: var(--green); border-radius: 2px; transition: width 0.25s linear; opacity: 0.7; }
+  .plat-clear-label {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--muted);
+    position: absolute;
+    bottom: 12px; right: 12px;
+  }
+
+  #log {
+    height: 38px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    margin-bottom: 0.25rem;
+  }
+  .log-line { font-family: var(--mono); font-size: 11px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .log-line.fresh { color: var(--text); }
+  .log-line.ok { color: var(--green); }
+  .log-line.bad { color: var(--red); }
+
+  #screen-over {
+    display: none;
+    position: absolute;
+    inset: -20px;
+    background: rgba(14, 17, 23, 0.97);
+    border-radius: 16px;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    text-align: center;
+    z-index: 20;
+  }
+  #screen-over.show { display: flex; }
+  .over-tag { font-family: var(--mono); font-size: 10px; letter-spacing: 0.2em; color: var(--red); text-transform: uppercase; }
+  .over-title { font-size: 28px; font-weight: 600; color: var(--text); line-height: 1.2; }
+  .over-score { font-family: var(--mono); font-size: 36px; color: var(--blue); letter-spacing: -1px; }
+  .over-score small { font-size: 14px; color: var(--muted); letter-spacing: 0; margin-left: 4px; }
+  .over-stats { font-family: var(--mono); font-size: 13px; color: var(--muted); line-height: 2; }
+  .over-stats strong { color: var(--text); font-weight: 400; }
+  .play-btn {
+    margin-top: 8px;
+    background: var(--blue);
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    padding: 10px 28px;
+    font-family: var(--mono);
+    font-size: 13px;
+    letter-spacing: 0.1em;
+    cursor: pointer;
+    text-transform: uppercase;
+    transition: opacity 0.15s, transform 0.1s;
+  }
+  .play-btn:hover { opacity: 0.85; transform: scale(1.02); }
+  .play-btn:active { transform: scale(0.98); }
+
+  @keyframes pulse-border {
+    0%, 100% { border-color: var(--red); }
+    50% { border-color: var(--faint); }
+  }
+  .train-card.urgent-pulse { animation: pulse-border 0.7s ease-in-out infinite; }
+</style>
+</head>
+<body>
+<div id="game">
+  <div class="header">
+    <span class="station-name">VICTORIA <strong>DISPATCH</strong> CONTROL</span>
+    <span class="station-name" style="font-size:11px;">MISS <strong id="miss-limit-label">0/5</strong> &rarr; STATION CLOSED</span>
+  </div>
+
+  <div class="hud">
+    <div class="stat">
+      <span class="stat-label">Score</span>
+      <span class="stat-val" id="score-val">0</span>
+    </div>
+    <div class="stat">
+      <span class="stat-label">Routed</span>
+      <span class="stat-val" id="routed-val">0</span>
+    </div>
+    <div class="stat">
+      <span class="stat-label">Missed</span>
+      <span class="stat-val" id="missed-val" style="color:var(--red)">0</span>
+    </div>
+    <div class="urgency-wrap">
+      <span class="urgency-label">Most urgent TTL</span>
+      <div id="timer-bar-track"><div id="timer-bar"></div></div>
+    </div>
+    <div class="level-badge">
+      <span class="stat-label">Level</span>
+      <span class="stat-val" id="level-val" style="color:var(--blue);font-size:18px;">1</span>
+    </div>
+  </div>
+
+  <div style="position:relative;">
+    <div class="section-row">
+      <span class="section-title">Arrivals</span>
+      <span class="section-line"></span>
+      <span class="section-hint">click train &rarr; click platform</span>
+    </div>
+    <div id="arrivals-area"></div>
+
+    <div class="section-row">
+      <span class="section-title">Platforms</span>
+      <span class="section-line"></span>
+    </div>
+    <div id="platforms-area">
+      <div class="platform" id="plat-0" data-idx="0"><div class="plat-num">Platform 1</div><div class="plat-empty">&mdash; empty &mdash;</div></div>
+      <div class="platform" id="plat-1" data-idx="1"><div class="plat-num">Platform 2</div><div class="plat-empty">&mdash; empty &mdash;</div></div>
+      <div class="platform" id="plat-2" data-idx="2"><div class="plat-num">Platform 3</div><div class="plat-empty">&mdash; empty &mdash;</div></div>
+    </div>
+
+    <div id="log"></div>
+
+    <div id="screen-over">
+      <span class="over-tag">Station closed</span>
+      <div class="over-title" id="over-title">Too many misses</div>
+      <div class="over-score" id="over-score">0 <small>pts</small></div>
+      <div class="over-stats" id="over-stats"></div>
+      <button class="play-btn" onclick="startGame()">New shift</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const DESTS = ['Edinburgh Waverley','Bristol Temple Meads','Leeds Central','Brighton','Oxford Parkway','York','Bath Spa','Cardiff Central','Derby Midland','Exeter St Davids'];
+const TYPES = ['EXP','LCL','REG','ITC','SHT'];
+const MAX_MISSED = 5;
+const PLATFORM_DWELL = 8000;
+
+let trains, platforms, selected, score, routed, missed, level;
+let spawnTimer, levelTimer, loopId, lastTick, clearTimers;
+
+function uid() {
+  const L = 'ABCDEFGHJKLMNPQRSTUVWXYZ', D = '0123456789';
+  return L[Math.random()*L.length|0] + L[Math.random()*L.length|0] + D[Math.random()*D.length|0] + D[Math.random()*D.length|0];
+}
+function rnd(a) { return a[Math.random()*a.length|0]; }
+function urgColor(f) { return f < 0.25 ? 'var(--red)' : f < 0.55 ? 'var(--amber)' : 'var(--green)'; }
+
+function spawnTrain() {
+  const maxTtl = Math.max(6, 16 - (level - 1) * 1.1);
+  trains.push({ id: uid(), dest: rnd(DESTS), type: rnd(TYPES), ttl: maxTtl, maxTtl });
+}
+
+function renderArrivals() {
+  const area = document.getElementById('arrivals-area');
+  area.innerHTML = '';
+  if (!trains.length) {
+    const d = document.createElement('div');
+    d.className = 'no-trains';
+    d.textContent = '\u2014 awaiting incoming services \u2014';
+    area.appendChild(d);
+    return;
+  }
+  trains.forEach(t => {
+    const frac = Math.max(0, t.ttl / t.maxTtl);
+    const col = urgColor(frac);
+    const isSel = selected === t.id;
+    const card = document.createElement('div');
+    card.className = 'train-card' + (isSel ? ' selected' : '') + (frac < 0.25 && !isSel ? ' urgent-pulse' : '');
+    card.innerHTML =
+      '<div class="train-id"><span class="dot" style="background:' + col + '"></span>' + t.type + ' ' + t.id + '</div>' +
+      '<div class="train-dest">\u2192 <span>' + t.dest + '</span></div>' +
+      '<div class="ttl-track"><div class="ttl-fill" style="width:' + (frac*100) + '%;background:' + col + '"></div></div>';
+    card.onclick = () => selectTrain(t.id);
+    area.appendChild(card);
+  });
+}
+
+function selectTrain(id) {
+  selected = selected === id ? null : id;
+  renderArrivals();
+  renderPlatforms();
+}
+
+function renderPlatforms() {
+  platforms.forEach((p, i) => {
+    const el = document.getElementById('plat-' + i);
+    const empty = !p.train;
+    el.className = 'platform' + (!empty ? ' busy' : (selected ? ' accepting' : ''));
+    if (!empty) {
+      const frac = Math.max(0, p.dwellLeft / PLATFORM_DWELL);
+      el.innerHTML =
+        '<div class="plat-num">Platform ' + (i+1) + '</div>' +
+        '<div class="plat-train-id">' + p.train.type + ' ' + p.train.id + '</div>' +
+        '<div class="plat-train-dest">\u2192 <span>' + p.train.dest + '</span></div>' +
+        '<div class="plat-dwell-track"><div class="plat-dwell-fill" style="width:' + (frac*100) + '%"></div></div>' +
+        '<div class="plat-clear-label">' + Math.ceil(p.dwellLeft/1000) + 's</div>';
+    } else {
+      el.innerHTML = '<div class="plat-num">Platform ' + (i+1) + '</div><div class="plat-empty">\u2014 empty \u2014</div>';
+    }
+  });
+}
+
+function assignToPlatform(idx) {
+  if (!selected) return;
+  if (platforms[idx].train) { addLog('Platform ' + (idx+1) + ' occupied.', 'log-line'); return; }
+  const t = trains.find(x => x.id === selected);
+  if (!t) { selected = null; renderArrivals(); renderPlatforms(); return; }
+  trains = trains.filter(x => x.id !== selected);
+  platforms[idx].train = t;
+  platforms[idx].dwellLeft = PLATFORM_DWELL;
+  const pts = 10 + Math.round((t.ttl / t.maxTtl) * 20) + level * 2;
+  score += pts;
+  routed++;
+  addLog(t.type + ' ' + t.id + ' \u2192 Platform ' + (idx+1) + '  +' + pts + 'pts', 'log-line ok');
+  selected = null;
+  updateHUD();
+  renderArrivals();
+  if (clearTimers[idx]) clearTimeout(clearTimers[idx]);
+  clearTimers[idx] = setTimeout(() => {
+    platforms[idx].train = null;
+    platforms[idx].dwellLeft = 0;
+    addLog('Platform ' + (idx+1) + ' cleared.', 'log-line');
+    renderPlatforms();
+  }, PLATFORM_DWELL);
+}
+
+document.querySelectorAll('.platform').forEach(el => {
+  el.addEventListener('click', () => assignToPlatform(parseInt(el.dataset.idx)));
+});
+
+function addLog(msg, cls) {
+  const log = document.getElementById('log');
+  const line = document.createElement('div');
+  line.className = (cls || 'log-line') + ' fresh';
+  line.textContent = msg;
+  log.prepend(line);
+  setTimeout(() => line.classList.remove('fresh'), 1200);
+  while (log.children.length > 3) log.removeChild(log.lastChild);
+}
+
+function updateHUD() {
+  document.getElementById('score-val').textContent = score;
+  document.getElementById('routed-val').textContent = routed;
+  document.getElementById('missed-val').textContent = missed;
+  document.getElementById('level-val').textContent = level;
+  document.getElementById('miss-limit-label').textContent = missed + '/' + MAX_MISSED;
+}
+
+function tick(ts) {
+  if (!loopId) return;
+  if (!lastTick) lastTick = ts;
+  const dt = Math.min(ts - lastTick, 200);
+  lastTick = ts;
+
+  spawnTimer -= dt;
+  levelTimer += dt;
+
+  const spawnInterval = Math.max(2200, 5800 - (level - 1) * 380);
+  if (spawnTimer <= 0 && trains.length < 7) {
+    spawnTrain();
+    spawnTimer = spawnInterval + (Math.random() - 0.5) * 800;
+  }
+  if (levelTimer >= 30000) {
+    level++;
+    levelTimer = 0;
+    addLog('Level ' + level + ' \u2014 faster arrivals, shorter TTL.', 'log-line fresh');
+    updateHUD();
+  }
+
+  const dtSec = dt / 1000;
+  trains.forEach(t => { t.ttl = Math.max(0, t.ttl - dtSec); });
+
+  const expired = trains.filter(t => t.ttl <= 0);
+  expired.forEach(t => {
+    missed++;
+    score = Math.max(0, score - 15);
+    addLog('MISSED: ' + t.type + ' ' + t.id + ' to ' + t.dest + '  \u221215pts', 'log-line bad');
+    if (selected === t.id) selected = null;
+  });
+  trains = trains.filter(t => t.ttl > 0);
+  if (expired.length) updateHUD();
+
+  platforms.forEach(p => { if (p.train) p.dwellLeft = Math.max(0, p.dwellLeft - dt); });
+
+  if (missed >= MAX_MISSED) { endGame(); return; }
+
+  const bar = document.getElementById('timer-bar');
+  if (trains.length) {
+    const minFrac = Math.min(...trains.map(t => t.ttl / t.maxTtl));
+    bar.style.width = (minFrac * 100) + '%';
+    bar.style.background = urgColor(minFrac);
+  } else {
+    bar.style.width = '100%';
+    bar.style.background = 'var(--green)';
+  }
+
+  renderArrivals();
+  renderPlatforms();
+  loopId = requestAnimationFrame(tick);
+}
+
+function endGame() {
+  loopId = null;
+  clearTimers.forEach(t => t && clearTimeout(t));
+  document.getElementById('over-score').innerHTML = score + ' <small>pts</small>';
+  document.getElementById('over-title').textContent = missed >= MAX_MISSED ? 'Station overwhelmed' : 'Shift complete';
+  document.getElementById('over-stats').innerHTML =
+    'Trains routed: <strong>' + routed + '</strong><br>' +
+    'Trains missed: <strong>' + missed + '</strong><br>' +
+    'Level reached: <strong>' + level + '</strong>';
+  document.getElementById('screen-over').classList.add('show');
+}
+
+function startGame() {
+  trains = []; platforms = [{},{},{}]; selected = null;
+  score = 0; routed = 0; missed = 0; level = 1;
+  spawnTimer = 0; levelTimer = 0; lastTick = null;
+  clearTimers = [null, null, null];
+  loopId = null;
+  document.getElementById('screen-over').classList.remove('show');
+  document.getElementById('log').innerHTML = '';
+  updateHUD();
+  renderArrivals();
+  renderPlatforms();
+  addLog('Shift started. Route incoming services.', 'log-line fresh');
+  loopId = true;
+  loopId = requestAnimationFrame(tick);
+}
+
+startGame();
+</script>
+</body>
+</html>

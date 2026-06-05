@@ -1,0 +1,1108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Market Booth</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,700;1,500&family=Lato:wght@300;400;700&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --cream: #FAF6EE;
+    --parchment: #F0E8D5;
+    --bark: #8B6340;
+    --bark-dark: #5C3E25;
+    --sage: #7A9E7E;
+    --sage-dark: #4E6E52;
+    --tomato: #C0392B;
+    --gold: #D4A017;
+    --gold-light: #F5E6B2;
+    --ink: #2C1F0E;
+    --ink-soft: #5A4030;
+    --muted: #9A7E65;
+    --border: rgba(139,99,64,0.25);
+    --shadow: 0 2px 12px rgba(92,62,37,0.10);
+  }
+
+  body {
+    font-family: 'Lato', sans-serif;
+    background: var(--cream);
+    color: var(--ink);
+    min-height: 100vh;
+    padding: 0;
+  }
+
+  /* ── HEADER ── */
+  header {
+    background: var(--bark-dark);
+    padding: 1.1rem 2rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  header h1 {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.5rem;
+    color: var(--gold-light);
+    letter-spacing: 0.03em;
+    line-height: 1.2;
+  }
+  header h1 span {
+    font-style: italic;
+    font-weight: 500;
+  }
+  .header-meta {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+  }
+  .time-display {
+    font-size: 0.9rem;
+    color: var(--parchment);
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    line-height: 1.3;
+  }
+  .time-display .clock {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: #fff;
+  }
+  .weather-badge {
+    background: rgba(255,255,255,0.12);
+    border-radius: 20px;
+    padding: 0.3rem 0.75rem;
+    font-size: 0.85rem;
+    color: var(--gold-light);
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+  }
+
+  /* ── PHASES ── */
+  .phase {
+    display: none;
+    max-width: 860px;
+    margin: 0 auto;
+    padding: 2rem 1.5rem;
+  }
+  .phase.active { display: block; }
+
+  /* ── SECTION TITLES ── */
+  .section-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.3rem;
+    color: var(--bark-dark);
+    margin-bottom: 0.3rem;
+  }
+  .section-sub {
+    font-size: 0.85rem;
+    color: var(--muted);
+    margin-bottom: 1.25rem;
+    line-height: 1.5;
+  }
+
+  /* ── DIVIDER ── */
+  .divider {
+    border: none;
+    border-top: 1.5px dashed var(--border);
+    margin: 1.75rem 0;
+  }
+
+  /* ── PRODUCE GRID ── */
+  .produce-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 0.85rem;
+    margin-bottom: 1.5rem;
+  }
+  .produce-card {
+    background: #fff;
+    border: 1.5px solid var(--border);
+    border-radius: 10px;
+    padding: 0.85rem 1rem;
+    cursor: pointer;
+    transition: border-color 0.15s, transform 0.1s, box-shadow 0.15s;
+    user-select: none;
+    position: relative;
+  }
+  .produce-card:hover {
+    border-color: var(--bark);
+    box-shadow: var(--shadow);
+    transform: translateY(-2px);
+  }
+  .produce-card.selected {
+    border-color: var(--sage-dark);
+    background: #f3faf4;
+    box-shadow: 0 0 0 2px rgba(78,110,82,0.20);
+  }
+  .produce-card.selected::after {
+    content: '✓';
+    position: absolute;
+    top: 7px; right: 10px;
+    font-size: 0.8rem;
+    color: var(--sage-dark);
+    font-weight: 700;
+  }
+  .produce-emoji { font-size: 1.9rem; margin-bottom: 0.35rem; display: block; }
+  .produce-name { font-weight: 700; font-size: 0.95rem; color: var(--ink); }
+  .produce-hint {
+    font-size: 0.75rem;
+    color: var(--muted);
+    margin-top: 0.2rem;
+    line-height: 1.4;
+  }
+  .produce-cost {
+    margin-top: 0.5rem;
+    font-size: 0.8rem;
+    color: var(--bark);
+    font-weight: 700;
+  }
+
+  /* ── SELECTED TABLE ── */
+  .selected-table-wrap {
+    background: var(--parchment);
+    border: 1.5px solid var(--border);
+    border-radius: 10px;
+    padding: 1rem 1.25rem;
+    margin-bottom: 1.5rem;
+  }
+  .selected-table-wrap h3 {
+    font-family: 'Playfair Display', serif;
+    font-size: 1rem;
+    color: var(--bark-dark);
+    margin-bottom: 0.75rem;
+  }
+  table.price-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.88rem;
+  }
+  table.price-table th {
+    text-align: left;
+    padding: 0.35rem 0.5rem;
+    color: var(--muted);
+    font-weight: 700;
+    font-size: 0.78rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    border-bottom: 1px solid var(--border);
+  }
+  table.price-table td {
+    padding: 0.45rem 0.5rem;
+    border-bottom: 1px dashed var(--border);
+    color: var(--ink-soft);
+    vertical-align: middle;
+  }
+  table.price-table tr:last-child td { border-bottom: none; }
+  .price-input {
+    width: 80px;
+    border: 1.5px solid var(--border);
+    border-radius: 6px;
+    padding: 0.3rem 0.5rem;
+    font-size: 0.88rem;
+    font-family: 'Lato', sans-serif;
+    background: #fff;
+    color: var(--ink);
+  }
+  .price-input:focus { outline: none; border-color: var(--bark); }
+  .qty-input {
+    width: 60px;
+    border: 1.5px solid var(--border);
+    border-radius: 6px;
+    padding: 0.3rem 0.5rem;
+    font-size: 0.88rem;
+    font-family: 'Lato', sans-serif;
+    background: #fff;
+    color: var(--ink);
+  }
+  .qty-input:focus { outline: none; border-color: var(--bark); }
+  .remove-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: #bbb;
+    font-size: 1rem;
+    padding: 0.1rem 0.3rem;
+    border-radius: 4px;
+    transition: color 0.15s;
+  }
+  .remove-btn:hover { color: var(--tomato); }
+  .suggestion-tag {
+    display: inline-block;
+    font-size: 0.7rem;
+    background: var(--gold-light);
+    color: #7a5a00;
+    border-radius: 4px;
+    padding: 1px 5px;
+    margin-left: 4px;
+    vertical-align: middle;
+  }
+
+  /* ── COST SUMMARY ── */
+  .cost-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: var(--bark-dark);
+    color: var(--gold-light);
+    border-radius: 8px;
+    padding: 0.75rem 1.25rem;
+    font-size: 0.9rem;
+    margin-bottom: 1.5rem;
+  }
+  .cost-bar .val { font-size: 1.1rem; font-weight: 700; color: #fff; }
+
+  /* ── BUTTONS ── */
+  .btn {
+    display: inline-block;
+    font-family: 'Lato', sans-serif;
+    font-size: 0.9rem;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    padding: 0.65rem 1.75rem;
+    border-radius: 8px;
+    border: none;
+    cursor: pointer;
+    transition: transform 0.1s, box-shadow 0.1s;
+  }
+  .btn:active { transform: scale(0.97); }
+  .btn-primary {
+    background: var(--sage-dark);
+    color: #fff;
+    box-shadow: 0 3px 10px rgba(78,110,82,0.3);
+  }
+  .btn-primary:hover { background: var(--sage); box-shadow: 0 4px 14px rgba(78,110,82,0.4); }
+  .btn-secondary {
+    background: var(--parchment);
+    color: var(--bark-dark);
+    border: 1.5px solid var(--border);
+  }
+  .btn-secondary:hover { background: var(--gold-light); }
+  .btn-danger {
+    background: var(--tomato);
+    color: #fff;
+  }
+  .btn-row {
+    display: flex;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+
+  /* ── MARKET DAY PHASE ── */
+  .market-layout {
+    display: grid;
+    grid-template-columns: 1fr 280px;
+    gap: 1.5rem;
+    align-items: start;
+  }
+
+  /* ── BOOTH VISUAL ── */
+  .booth-visual {
+    background: var(--parchment);
+    border: 1.5px solid var(--border);
+    border-radius: 12px;
+    padding: 1.25rem;
+    margin-bottom: 1.25rem;
+    position: relative;
+    overflow: hidden;
+  }
+  .booth-banner {
+    text-align: center;
+    font-family: 'Playfair Display', serif;
+    font-size: 1.05rem;
+    color: var(--bark-dark);
+    font-style: italic;
+    margin-bottom: 0.85rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 1.5px dashed var(--border);
+  }
+  .booth-items {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.6rem;
+  }
+  .booth-item {
+    background: #fff;
+    border: 1.5px solid var(--border);
+    border-radius: 8px;
+    padding: 0.5rem 0.75rem;
+    font-size: 0.82rem;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    min-width: 110px;
+    position: relative;
+    transition: background 0.3s;
+  }
+  .booth-item.selling-out {
+    background: #fffbe8;
+    border-color: var(--gold);
+  }
+  .booth-item.sold-out {
+    background: #f5f5f5;
+    opacity: 0.55;
+  }
+  .booth-item .item-emoji { font-size: 1.2rem; }
+  .booth-item .item-info { flex: 1; }
+  .booth-item .item-name { font-weight: 700; font-size: 0.8rem; color: var(--ink); }
+  .booth-item .item-price { font-size: 0.75rem; color: var(--sage-dark); }
+  .booth-item .item-stock {
+    font-size: 0.7rem;
+    color: var(--muted);
+    margin-top: 1px;
+  }
+
+  /* ── PROGRESS BAR ── */
+  .progress-track {
+    background: var(--border);
+    border-radius: 99px;
+    height: 8px;
+    margin: 0.6rem 0;
+    overflow: hidden;
+  }
+  .progress-fill {
+    height: 100%;
+    border-radius: 99px;
+    background: var(--sage-dark);
+    transition: width 0.8s ease;
+  }
+
+  /* ── LOG FEED ── */
+  .log-feed {
+    background: #fff;
+    border: 1.5px solid var(--border);
+    border-radius: 10px;
+    padding: 0.75rem 1rem;
+    height: 260px;
+    overflow-y: auto;
+    font-size: 0.82rem;
+    line-height: 1.5;
+  }
+  .log-feed::-webkit-scrollbar { width: 5px; }
+  .log-feed::-webkit-scrollbar-thumb { background: var(--border); border-radius: 99px; }
+  .log-entry {
+    padding: 0.3rem 0;
+    border-bottom: 1px dashed rgba(139,99,64,0.12);
+    color: var(--ink-soft);
+    display: flex;
+    gap: 0.5rem;
+    animation: fadeIn 0.3s ease;
+  }
+  .log-entry:last-child { border-bottom: none; }
+  .log-time { color: var(--muted); min-width: 42px; font-size: 0.77rem; }
+  .log-sale { color: var(--sage-dark); font-weight: 700; }
+  .log-event { color: var(--bark); }
+  .log-bad { color: var(--tomato); }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+
+  /* ── STATS PANEL ── */
+  .stats-panel {
+    position: sticky;
+    top: 72px;
+  }
+  .stats-card {
+    background: var(--bark-dark);
+    border-radius: 12px;
+    padding: 1.1rem 1.25rem;
+    color: var(--parchment);
+    margin-bottom: 1rem;
+  }
+  .stats-card h3 {
+    font-family: 'Playfair Display', serif;
+    font-size: 1rem;
+    color: var(--gold-light);
+    margin-bottom: 0.85rem;
+    font-style: italic;
+  }
+  .stat-row {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.85rem;
+    padding: 0.3rem 0;
+    border-bottom: 1px solid rgba(255,255,255,0.08);
+  }
+  .stat-row:last-child { border-bottom: none; }
+  .stat-row .label { color: var(--muted); }
+  .stat-row .value { font-weight: 700; color: #fff; }
+  .stat-row .value.green { color: #7fd9a0; }
+  .stat-row .value.red { color: #f9a09a; }
+
+  .tip-card {
+    background: var(--gold-light);
+    border: 1.5px solid var(--gold);
+    border-radius: 10px;
+    padding: 0.85rem 1rem;
+    font-size: 0.82rem;
+    color: #6b4a00;
+    line-height: 1.5;
+  }
+  .tip-card strong {
+    display: block;
+    font-size: 0.78rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 0.3rem;
+    color: #7a5500;
+  }
+
+  /* ── RESULTS PHASE ── */
+  .results-banner {
+    text-align: center;
+    padding: 2rem 1rem;
+  }
+  .results-banner .grade {
+    font-size: 4rem;
+    line-height: 1;
+    margin-bottom: 0.5rem;
+  }
+  .results-banner h2 {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.7rem;
+    color: var(--bark-dark);
+    margin-bottom: 0.4rem;
+  }
+  .results-banner p {
+    font-size: 0.95rem;
+    color: var(--muted);
+    max-width: 400px;
+    margin: 0 auto;
+    line-height: 1.6;
+  }
+  .results-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 1rem;
+    margin: 1.75rem 0;
+  }
+  .result-box {
+    background: #fff;
+    border: 1.5px solid var(--border);
+    border-radius: 10px;
+    padding: 1rem 1.1rem;
+    text-align: center;
+  }
+  .result-box .rb-label { font-size: 0.75rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.4rem; }
+  .result-box .rb-value { font-size: 1.5rem; font-weight: 700; color: var(--bark-dark); }
+  .result-box .rb-value.profit { color: var(--sage-dark); }
+  .result-box .rb-value.loss { color: var(--tomato); }
+
+  .breakdown-table {
+    background: var(--parchment);
+    border: 1.5px solid var(--border);
+    border-radius: 10px;
+    padding: 1rem 1.25rem;
+    margin-bottom: 1.5rem;
+  }
+  .breakdown-table h3 {
+    font-family: 'Playfair Display', serif;
+    color: var(--bark-dark);
+    font-size: 1rem;
+    margin-bottom: 0.75rem;
+  }
+  .brow {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.85rem;
+    padding: 0.4rem 0;
+    border-bottom: 1px dashed var(--border);
+    color: var(--ink-soft);
+    gap: 0.5rem;
+  }
+  .brow:last-child { border-bottom: none; }
+  .brow .bname { display: flex; align-items: center; gap: 0.4rem; flex: 1; }
+  .brow .bsold { color: var(--muted); font-size: 0.78rem; min-width: 70px; text-align: center; }
+  .brow .brevenue { font-weight: 700; color: var(--sage-dark); min-width: 60px; text-align: right; }
+  .brow .bloss { font-weight: 700; color: var(--tomato); min-width: 60px; text-align: right; }
+
+  /* ── WEATHER MODIFIERS ── */
+  .weather-strip {
+    border-radius: 8px;
+    padding: 0.65rem 1rem;
+    font-size: 0.83rem;
+    margin-bottom: 1.25rem;
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+  }
+  .weather-strip.sunny { background: #fffaed; border: 1px solid #e0c860; color: #7a5a00; }
+  .weather-strip.cloudy { background: #f0f4f8; border: 1px solid #b0bec5; color: #455a64; }
+  .weather-strip.rainy { background: #e8f4fb; border: 1px solid #90caf9; color: #1a5276; }
+  .weather-icon { font-size: 1.2rem; }
+
+  /* ── RESPONSIVE ── */
+  @media (max-width: 640px) {
+    .market-layout { grid-template-columns: 1fr; }
+    .stats-panel { position: static; }
+    header { padding: 0.9rem 1rem; }
+    .phase { padding: 1.25rem 1rem; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>🌿 <span>The Market Booth</span></h1>
+  <div class="header-meta">
+    <div class="time-display">
+      <span id="header-date">Saturday Morning</span>
+      <span class="clock" id="header-time">8:00 AM</span>
+    </div>
+    <div class="weather-badge" id="header-weather">☀️ Sunny</div>
+  </div>
+</header>
+
+<!-- ══════════════════════════════════════════════
+     PHASE 1: SETUP
+═══════════════════════════════════════════════ -->
+<section class="phase active" id="phase-setup">
+
+  <h2 class="section-title">Pick your produce</h2>
+  <p class="section-sub">Choose what to bring to market today. Each item has a wholesale cost — you'll pay it upfront, then try to sell it all before 1 PM. Select at least 2.</p>
+
+  <div class="produce-grid" id="produce-grid">
+    <!-- filled by JS -->
+  </div>
+
+  <hr class="divider">
+
+  <div id="setup-table-wrap" style="display:none;">
+    <div class="selected-table-wrap">
+      <h3>Your booth lineup — set prices & quantities</h3>
+      <table class="price-table" id="price-table">
+        <thead>
+          <tr>
+            <th></th>
+            <th>Item</th>
+            <th>Qty (units)</th>
+            <th>Your price / unit</th>
+            <th>Suggested</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="price-tbody">
+        </tbody>
+      </table>
+    </div>
+
+    <div class="cost-bar">
+      <span>Total wholesale cost today</span>
+      <span class="val" id="total-cost-display">$0.00</span>
+    </div>
+
+    <div class="btn-row">
+      <button class="btn btn-primary" id="open-booth-btn" onclick="openBooth()">Open the booth →</button>
+      <span id="setup-error" style="font-size:0.83rem;color:var(--tomato);"></span>
+    </div>
+  </div>
+
+  <div id="select-prompt" style="font-size:0.88rem;color:var(--muted);margin-top:0.5rem;">
+    Select items above to build your lineup.
+  </div>
+
+</section>
+
+
+<!-- ══════════════════════════════════════════════
+     PHASE 2: MARKET DAY
+═══════════════════════════════════════════════ -->
+<section class="phase" id="phase-market">
+
+  <div id="weather-strip-display" class="weather-strip sunny">
+    <span class="weather-icon">☀️</span>
+    <span id="weather-text-main">Beautiful day — steady foot traffic expected.</span>
+  </div>
+
+  <div class="market-layout">
+
+    <div>
+      <div class="booth-visual">
+        <div class="booth-banner">🪴 Your Booth · Green Hill Farm</div>
+        <div class="booth-items" id="booth-items-display">
+          <!-- filled by JS -->
+        </div>
+      </div>
+
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.5rem;">
+        <span style="font-size:0.83rem;color:var(--muted);">Market day progress</span>
+        <span style="font-size:0.83rem;font-weight:700;color:var(--bark-dark);" id="time-label">8:00 AM</span>
+      </div>
+      <div class="progress-track"><div class="progress-fill" id="progress-fill" style="width:0%"></div></div>
+
+      <div style="display:flex;gap:0.5rem;margin:1rem 0 0.65rem;">
+        <button class="btn btn-primary" id="tick-btn" onclick="doTick()" style="flex:1;">⏱ Next hour</button>
+        <button class="btn btn-secondary" id="fast-btn" onclick="fastForward()">⏩ Fast-forward to close</button>
+      </div>
+
+      <h3 style="font-family:'Playfair Display',serif;font-size:0.95rem;color:var(--bark-dark);margin-bottom:0.5rem;">Market log</h3>
+      <div class="log-feed" id="log-feed"></div>
+    </div>
+
+    <div class="stats-panel">
+      <div class="stats-card">
+        <h3>Live financials</h3>
+        <div class="stat-row"><span class="label">Revenue so far</span><span class="value green" id="live-revenue">$0.00</span></div>
+        <div class="stat-row"><span class="label">Cost paid</span><span class="value" id="live-cost">$0.00</span></div>
+        <div class="stat-row"><span class="label">Net profit</span><span class="value" id="live-profit">–$0.00</span></div>
+        <div class="stat-row"><span class="label">Units sold</span><span class="value" id="live-sold">0</span></div>
+        <div class="stat-row"><span class="label">Units remaining</span><span class="value" id="live-remain">0</span></div>
+      </div>
+      <div class="tip-card" id="tip-card">
+        <strong>Tip</strong>
+        The market opens at 8 AM. Morning is prime time — don't wait too long to see results.
+      </div>
+    </div>
+
+  </div>
+</section>
+
+
+<!-- ══════════════════════════════════════════════
+     PHASE 3: RESULTS
+═══════════════════════════════════════════════ -->
+<section class="phase" id="phase-results">
+
+  <div class="results-banner">
+    <div class="grade" id="result-grade">🌻</div>
+    <h2 id="result-headline">Market's closed!</h2>
+    <p id="result-summary">Here's how your day went at the booth.</p>
+  </div>
+
+  <div class="results-grid">
+    <div class="result-box"><div class="rb-label">Revenue</div><div class="rb-value" id="res-revenue">—</div></div>
+    <div class="result-box"><div class="rb-label">Wholesale cost</div><div class="rb-value" id="res-cost">—</div></div>
+    <div class="result-box"><div class="rb-label">Net profit / loss</div><div class="rb-value" id="res-profit">—</div></div>
+    <div class="result-box"><div class="rb-label">Units sold</div><div class="rb-value" id="res-sold">—</div></div>
+    <div class="result-box"><div class="rb-label">Sell-through rate</div><div class="rb-value" id="res-sellthrough">—</div></div>
+    <div class="result-box"><div class="rb-label">Best seller</div><div class="rb-value" id="res-best">—</div></div>
+  </div>
+
+  <div class="breakdown-table">
+    <h3>Item-by-item breakdown</h3>
+    <div id="breakdown-rows"></div>
+  </div>
+
+  <div class="btn-row">
+    <button class="btn btn-primary" onclick="resetGame()">🌿 New day, new booth</button>
+  </div>
+
+</section>
+
+<script>
+/* ══════════════════════════════════════════════
+   DATA
+══════════════════════════════════════════════ */
+const PRODUCE = [
+  { id:'tomato',    emoji:'🍅', name:'Heirloom Tomatoes', hint:'Always popular. Goes fast.',        costPer:0.45, suggestPrice:1.50, unit:'lb',   defaultQty:30 },
+  { id:'corn',      emoji:'🌽', name:'Sweet Corn',         hint:'Summer staple. Price it right.',   costPer:0.30, suggestPrice:0.90, unit:'ear',  defaultQty:40 },
+  { id:'zucchini',  emoji:'🥒', name:'Zucchini',           hint:'Slow mover. Don\'t overbuy.',      costPer:0.25, suggestPrice:0.80, unit:'each', defaultQty:20 },
+  { id:'peach',     emoji:'🍑', name:'Peaches',            hint:'Premium item. Sell by aroma.',     costPer:0.65, suggestPrice:2.25, unit:'each', defaultQty:25 },
+  { id:'herb',      emoji:'🌿', name:'Mixed Herb Bundles', hint:'Low cost, high margin.',            costPer:0.40, suggestPrice:3.00, unit:'bunch',defaultQty:15 },
+  { id:'pepper',    emoji:'🫑', name:'Bell Peppers',       hint:'Colorful, sells well.',             costPer:0.35, suggestPrice:1.20, unit:'each', defaultQty:30 },
+  { id:'garlic',    emoji:'🧄', name:'Garlic Heads',       hint:'Niche but loyal buyers.',           costPer:0.20, suggestPrice:1.50, unit:'head', defaultQty:20 },
+  { id:'berry',     emoji:'🍓', name:'Mixed Berries',      hint:'High value, short shelf life.',     costPer:0.90, suggestPrice:4.00, unit:'pint', defaultQty:18 },
+  { id:'squash',    emoji:'🎃', name:'Butternut Squash',   hint:'Heavy, low sell-through risk.',     costPer:0.55, suggestPrice:2.00, unit:'each', defaultQty:15 },
+  { id:'lettuce',   emoji:'🥬', name:'Lettuce Heads',      hint:'Morning rush item.',                costPer:0.30, suggestPrice:1.80, unit:'head', defaultQty:20 },
+];
+
+const WEATHERS = [
+  { id:'sunny', icon:'☀️', label:'Sunny & warm', strip:'Beautiful sunny day — steady foot traffic all morning.', trafficMod:1.20, demandMod:1.10 },
+  { id:'cloudy',icon:'⛅', label:'Partly cloudy',strip:'Mild and cloudy — normal turnout, average traffic.',      trafficMod:1.00, demandMod:1.00 },
+  { id:'rainy', icon:'🌧️', label:'Rainy',        strip:'Light rain today — expect lighter crowds than usual.',    trafficMod:0.65, demandMod:0.85 },
+];
+
+const MARKET_OPEN  = 8;   // 8 AM
+const MARKET_CLOSE = 13;  // 1 PM
+const HOURS        = MARKET_CLOSE - MARKET_OPEN; // 5 hours
+
+const TIPS = [
+  'Price sensitive items just below a round number — $0.89 beats $1.00 psychologically.',
+  'Morning rush (8–10 AM) drives the most volume. Mark slower items down by midday.',
+  'Herbs and berries have the best margin per square foot of table space.',
+  'Rainy days cut traffic by ~35%. Diversify so slow-movers don\'t sink you.',
+  'Bundle deals (3 for $2) can move stale stock faster than single-unit discounts.',
+  'Peaches and berries smell like money. Put fragrant items near the front.',
+  'Garlic buyers are loyal — if they love yours, they\'ll be back every week.',
+  'Sell-through rate above 80% is a great day. Under 50% means over-bought or mispriced.',
+];
+
+/* ══════════════════════════════════════════════
+   STATE
+══════════════════════════════════════════════ */
+let selectedIds   = new Set();
+let boothItems    = [];   // { ...produce, qty, price, sold }
+let weather       = null;
+let currentHour   = MARKET_OPEN;
+let totalCost     = 0;
+let totalRevenue  = 0;
+let gameRunning   = false;
+let logEntries    = [];
+
+/* ══════════════════════════════════════════════
+   INIT
+══════════════════════════════════════════════ */
+function init() {
+  renderProduceGrid();
+  weather = WEATHERS[Math.floor(Math.random() * WEATHERS.length)];
+  document.getElementById('header-weather').textContent = weather.icon + ' ' + weather.label;
+  setWeatherStrip();
+}
+
+function renderProduceGrid() {
+  const grid = document.getElementById('produce-grid');
+  grid.innerHTML = PRODUCE.map(p => `
+    <div class="produce-card" id="pc-${p.id}" onclick="toggleProduce('${p.id}')">
+      <span class="produce-emoji">${p.emoji}</span>
+      <div class="produce-name">${p.name}</div>
+      <div class="produce-hint">${p.hint}</div>
+      <div class="produce-cost">Wholesale: $${p.costPer.toFixed(2)} / ${p.unit}</div>
+    </div>
+  `).join('');
+}
+
+function toggleProduce(id) {
+  if (selectedIds.has(id)) {
+    selectedIds.delete(id);
+  } else {
+    selectedIds.add(id);
+  }
+  document.getElementById('pc-' + id).classList.toggle('selected', selectedIds.has(id));
+  updateSetupTable();
+}
+
+function updateSetupTable() {
+  const wrap  = document.getElementById('setup-table-wrap');
+  const tbody = document.getElementById('price-tbody');
+  const prompt= document.getElementById('select-prompt');
+
+  if (selectedIds.size === 0) {
+    wrap.style.display  = 'none';
+    prompt.style.display= 'block';
+    return;
+  }
+  wrap.style.display  = '';
+  prompt.style.display= 'none';
+
+  tbody.innerHTML = [...selectedIds].map(id => {
+    const p = PRODUCE.find(x => x.id === id);
+    return `
+      <tr id="row-${p.id}">
+        <td>${p.emoji}</td>
+        <td><strong style="font-size:0.88rem;">${p.name}</strong></td>
+        <td><input class="qty-input" type="number" id="qty-${p.id}" value="${p.defaultQty}" min="1" max="100" onchange="recalcCost()"></td>
+        <td><input class="price-input" type="number" id="price-${p.id}" value="${p.suggestPrice.toFixed(2)}" min="0.10" step="0.05" onchange="recalcCost()"></td>
+        <td style="font-size:0.78rem;color:var(--muted);">$${p.suggestPrice.toFixed(2)}<br><span class="suggestion-tag">fair</span></td>
+        <td><button class="remove-btn" onclick="removeProduce('${p.id}')" title="Remove">✕</button></td>
+      </tr>
+    `;
+  }).join('');
+  recalcCost();
+}
+
+function removeProduce(id) {
+  selectedIds.delete(id);
+  document.getElementById('pc-' + id).classList.remove('selected');
+  updateSetupTable();
+}
+
+function recalcCost() {
+  let cost = 0;
+  for (const id of selectedIds) {
+    const p   = PRODUCE.find(x => x.id === id);
+    const qty = parseInt(document.getElementById('qty-' + id)?.value || p.defaultQty);
+    cost += qty * p.costPer;
+  }
+  totalCost = cost;
+  document.getElementById('total-cost-display').textContent = '$' + cost.toFixed(2);
+}
+
+function removeProduce(id) {
+  selectedIds.delete(id);
+  document.getElementById('pc-' + id).classList.remove('selected');
+  updateSetupTable();
+}
+
+/* ══════════════════════════════════════════════
+   OPEN BOOTH
+══════════════════════════════════════════════ */
+function openBooth() {
+  const err = document.getElementById('setup-error');
+  if (selectedIds.size < 2) { err.textContent = 'Pick at least 2 items.'; return; }
+  err.textContent = '';
+
+  boothItems = [...selectedIds].map(id => {
+    const p     = PRODUCE.find(x => x.id === id);
+    const qty   = parseInt(document.getElementById('qty-' + id).value || p.defaultQty);
+    const price = parseFloat(document.getElementById('price-' + id).value || p.suggestPrice);
+    return { ...p, qty, price, sold: 0 };
+  });
+
+  currentHour   = MARKET_OPEN;
+  totalRevenue  = 0;
+  logEntries    = [];
+  gameRunning   = true;
+
+  renderBoothItems();
+  updateStats();
+  renderLog();
+  setWeatherStrip();
+
+  showPhase('phase-market');
+  updateTimeDisplay();
+
+  addLog('open', `🌅 Booth is open! You've got ${boothItems.length} items ready to sell.`);
+  addLog('event', `${weather.icon} ${weather.label} — ${weather.id === 'rainy' ? 'Lighter crowd expected today.' : weather.id === 'sunny' ? 'Perfect selling weather.' : 'Normal turnout.'}`);
+
+  randomTip();
+}
+
+/* ══════════════════════════════════════════════
+   MARKET MECHANICS
+══════════════════════════════════════════════ */
+function hourDemand(hour) {
+  const spread = {
+    8: 1.5, 9: 1.8, 10: 1.3, 11: 1.0, 12: 0.7
+  };
+  return (spread[hour] || 1.0) * weather.trafficMod;
+}
+
+function itemDemand(item, hour) {
+  const priceFairness = item.suggestPrice / Math.max(item.price, 0.01);
+  const demandScore   = Math.min(Math.max(priceFairness, 0.3), 2.2);
+  const hd            = hourDemand(hour);
+  const base          = 0.12 * demandScore * hd * weather.demandMod;
+  const remaining     = item.qty - item.sold;
+  const raw           = base * remaining;
+  return Math.max(0, Math.round(raw + (Math.random() - 0.5) * raw * 0.5));
+}
+
+function doTick() {
+  if (!gameRunning || currentHour >= MARKET_CLOSE) return;
+
+  const hour    = currentHour;
+  const timeStr = fmtHour(hour);
+  let soldThisHour = 0;
+
+  for (const item of boothItems) {
+    const remaining = item.qty - item.sold;
+    if (remaining <= 0) continue;
+    const sales = Math.min(itemDemand(item, hour), remaining);
+    if (sales > 0) {
+      item.sold     += sales;
+      totalRevenue  += sales * item.price;
+      soldThisHour  += sales;
+      addLog('sale', `${item.emoji} Sold ${sales} ${item.unit}${sales > 1 ? 's' : ''} of ${item.name} @ $${item.price.toFixed(2)}`);
+    }
+  }
+
+  if (soldThisHour === 0) {
+    addLog('event', `🚶 Quiet stretch — nobody stopped at the booth this hour.`);
+  }
+
+  const allGone = boothItems.every(i => i.qty === i.sold);
+  if (allGone) {
+    addLog('sale', `🎉 Sold out of everything! Packing up early.`);
+    endMarket();
+    return;
+  }
+
+  currentHour++;
+  updateTimeDisplay();
+  renderBoothItems();
+  updateStats();
+  renderLog();
+
+  if (currentHour >= MARKET_CLOSE) {
+    addLog('event', `🔔 1 PM — market closing time. Packing up.`);
+    endMarket();
+  } else {
+    randomTip();
+  }
+}
+
+function fastForward() {
+  while (gameRunning && currentHour < MARKET_CLOSE) {
+    doTick();
+  }
+}
+
+function endMarket() {
+  gameRunning = false;
+  document.getElementById('tick-btn').disabled    = true;
+  document.getElementById('fast-btn').disabled    = true;
+  renderLog();
+  setTimeout(() => showResults(), 900);
+}
+
+/* ══════════════════════════════════════════════
+   RENDER HELPERS
+══════════════════════════════════════════════ */
+function renderBoothItems() {
+  const el = document.getElementById('booth-items-display');
+  el.innerHTML = boothItems.map(item => {
+    const remaining = item.qty - item.sold;
+    const pct       = remaining / item.qty;
+    const cls       = remaining === 0 ? 'sold-out' : pct < 0.25 ? 'selling-out' : '';
+    const tag       = remaining === 0 ? '🚫 Sold out' : pct < 0.25 ? '⚡ Almost gone' : `${remaining} left`;
+    return `
+      <div class="booth-item ${cls}">
+        <span class="item-emoji">${item.emoji}</span>
+        <div class="item-info">
+          <div class="item-name">${item.name}</div>
+          <div class="item-price">$${item.price.toFixed(2)} / ${item.unit}</div>
+          <div class="item-stock">${tag}</div>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+function updateStats() {
+  const soldTotal  = boothItems.reduce((a, b) => a + b.sold, 0);
+  const remaining  = boothItems.reduce((a, b) => a + (b.qty - b.sold), 0);
+  const profit     = totalRevenue - totalCost;
+
+  document.getElementById('live-revenue').textContent = '$' + totalRevenue.toFixed(2);
+  document.getElementById('live-cost').textContent    = '$' + totalCost.toFixed(2);
+  const profitEl = document.getElementById('live-profit');
+  profitEl.textContent = (profit >= 0 ? '+$' : '-$') + Math.abs(profit).toFixed(2);
+  profitEl.classList.toggle('green', profit >= 0);
+  profitEl.classList.toggle('red',   profit < 0);
+  document.getElementById('live-sold').textContent    = soldTotal;
+  document.getElementById('live-remain').textContent  = remaining;
+
+  const pct = Math.min(((currentHour - MARKET_OPEN) / HOURS) * 100, 100);
+  document.getElementById('progress-fill').style.width = pct + '%';
+}
+
+function addLog(type, msg) {
+  logEntries.push({ type, msg, time: fmtHour(currentHour) });
+}
+
+function renderLog() {
+  const feed = document.getElementById('log-feed');
+  feed.innerHTML = [...logEntries].reverse().map(e => {
+    const cls = e.type === 'sale' ? 'log-sale' : e.type === 'bad' ? 'log-bad' : 'log-event';
+    return `<div class="log-entry"><span class="log-time">${e.time}</span><span class="${cls}">${e.msg}</span></div>`;
+  }).join('');
+}
+
+function randomTip() {
+  const tip = TIPS[Math.floor(Math.random() * TIPS.length)];
+  document.getElementById('tip-card').innerHTML = `<strong>Tip</strong>${tip}`;
+}
+
+function updateTimeDisplay() {
+  const t = fmtHour(currentHour);
+  document.getElementById('time-label').textContent  = t;
+  document.getElementById('header-time').textContent = t;
+}
+
+function fmtHour(h) {
+  if (h === 12) return '12:00 PM';
+  if (h === 13) return '1:00 PM';
+  return h + ':00 ' + (h < 12 ? 'AM' : 'PM');
+}
+
+function setWeatherStrip() {
+  const el = document.getElementById('weather-strip-display');
+  el.className = 'weather-strip ' + weather.id;
+  el.innerHTML = `<span class="weather-icon">${weather.icon}</span><span id="weather-text-main">${weather.strip}</span>`;
+}
+
+/* ══════════════════════════════════════════════
+   RESULTS
+══════════════════════════════════════════════ */
+function showResults() {
+  const soldTotal  = boothItems.reduce((a, b) => a + b.sold, 0);
+  const totalUnits = boothItems.reduce((a, b) => a + b.qty,  0);
+  const profit     = totalRevenue - totalCost;
+  const sellPct    = totalUnits > 0 ? (soldTotal / totalUnits * 100) : 0;
+  const best       = [...boothItems].sort((a,b) => (b.sold*b.price) - (a.sold*a.price))[0];
+
+  let grade, headline, summary;
+  if (profit > 0 && sellPct >= 80) {
+    grade = '🌟'; headline = 'Fantastic day!';
+    summary = `You turned a tidy profit and moved most of your inventory. The booth is a hit.`;
+  } else if (profit > 0) {
+    grade = '🌻'; headline = 'Profitable day!';
+    summary = `You made money — nice work. A few items didn't sell through, but you came out ahead.`;
+  } else if (profit > -10) {
+    grade = '🌾'; headline = 'Break-even territory.';
+    summary = `Slim margins today. A few pricing tweaks or less overbuying could flip you to profit next time.`;
+  } else {
+    grade = '🥀'; headline = 'Tough day at the booth.';
+    summary = `Losses this time around. Check what didn't sell and reconsider pricing or quantities.`;
+  }
+
+  document.getElementById('result-grade').textContent    = grade;
+  document.getElementById('result-headline').textContent = headline;
+  document.getElementById('result-summary').textContent  = summary;
+  document.getElementById('res-revenue').textContent     = '$' + totalRevenue.toFixed(2);
+  document.getElementById('res-cost').textContent        = '$' + totalCost.toFixed(2);
+  const profEl = document.getElementById('res-profit');
+  profEl.textContent = (profit >= 0 ? '+$' : '-$') + Math.abs(profit).toFixed(2);
+  profEl.className   = 'rb-value ' + (profit >= 0 ? 'profit' : 'loss');
+  document.getElementById('res-sold').textContent        = soldTotal + ' units';
+  document.getElementById('res-sellthrough').textContent = sellPct.toFixed(0) + '%';
+  document.getElementById('res-best').textContent        = best ? best.emoji + ' ' + best.name : '—';
+
+  const rows = document.getElementById('breakdown-rows');
+  rows.innerHTML = boothItems.map(item => {
+    const rev      = item.sold * item.price;
+    const cost     = item.qty  * item.costPer;
+    const unsold   = item.qty  - item.sold;
+    const itemProfit = rev - cost;
+    return `
+      <div class="brow">
+        <div class="bname">${item.emoji} ${item.name}</div>
+        <div class="bsold">${item.sold} / ${item.qty} sold</div>
+        <div class="${itemProfit >= 0 ? 'brevenue' : 'bloss'}">${itemProfit >= 0 ? '+' : '–'}$${Math.abs(itemProfit).toFixed(2)}</div>
+      </div>
+    `;
+  }).join('');
+
+  showPhase('phase-results');
+}
+
+function resetGame() {
+  selectedIds  = new Set();
+  boothItems   = [];
+  currentHour  = MARKET_OPEN;
+  totalRevenue = 0;
+  totalCost    = 0;
+  logEntries   = [];
+  gameRunning  = false;
+
+  document.getElementById('tick-btn').disabled = false;
+  document.getElementById('fast-btn').disabled = false;
+  document.getElementById('header-time').textContent = '8:00 AM';
+
+  weather = WEATHERS[Math.floor(Math.random() * WEATHERS.length)];
+  document.getElementById('header-weather').textContent = weather.icon + ' ' + weather.label;
+
+  renderProduceGrid();
+  document.getElementById('setup-table-wrap').style.display  = 'none';
+  document.getElementById('select-prompt').style.display     = 'block';
+  showPhase('phase-setup');
+}
+
+function showPhase(id) {
+  document.querySelectorAll('.phase').forEach(p => p.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+/* ── BOOT ── */
+init();
+</script>
+</body>
+</html>

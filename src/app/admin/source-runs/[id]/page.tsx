@@ -1,9 +1,10 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
-import { ArrowLeft, CheckCircle, ExternalLink } from 'lucide-react'
+import { ArrowLeft, CheckCircle, ExternalLink, GitBranch } from 'lucide-react'
 import { dismissSourceRun, publishPreparedShowcaseSourceRun } from '@/lib/actions'
 import { getSourceRunSubmissionForAdmin } from '@/lib/data'
 import { getPreparedShowcaseProjectBySourceRunId } from '@/lib/prepared-showcase-projects'
+import { projectForkSourceFromSubmissionFields } from '@/lib/project-forks'
 import { agentNotesForSourceRunReview, modelMetadataForSourceRunReview, titleForSourceRunReview } from '@/lib/source-run-review'
 
 export const dynamic = 'force-dynamic'
@@ -22,11 +23,12 @@ export default async function AdminSourceRunDetailPage({
     title: sourceRun.title,
     notes: sourceRun.notes,
   })
-  const agentNotes = agentNotesForSourceRunReview(sourceRun.notes)
   const modelMetadata = modelMetadataForSourceRunReview({
     notes: sourceRun.notes,
     sourceUrl: sourceRun.source_url,
   })
+  const forkSource = projectForkSourceFromSubmissionFields(sourceRun)
+  const agentNotes = agentNotesForSourceRunReview(sourceRun.notes, { hideForkMetadata: Boolean(forkSource) })
   const author = sourceRun.author?.display_name ?? sourceRun.author?.username ?? 'Anonymous'
   const sourceLabel = sourceRun.source_url ?? sourceRun.file_name ?? 'No source attached'
   const preparedProject = getPreparedShowcaseProjectBySourceRunId(sourceRun.id)
@@ -131,6 +133,41 @@ export default async function AdminSourceRunDetailPage({
               <p className="text-sm text-gray-600">{sourceLabel}</p>
             )}
           </section>
+
+          {forkSource && (
+            <section className="border border-green-200 bg-green-50 p-4">
+              <h2 className="flex items-center gap-2 text-sm font-bold text-green-950">
+                <GitBranch className="h-4 w-4" aria-hidden="true" />
+                Fork source
+              </h2>
+              <p className="mt-1 text-sm leading-6 text-green-900">
+                This intake starts from {forkSource.sourceProjectTitle || forkSource.sourceProjectId}
+                {forkSource.sourceStepNumber ? ` at response package ${String(forkSource.sourceStepNumber).padStart(2, '0')}` : ''}.
+              </p>
+              <div className="mt-3 grid gap-2 text-xs text-green-950 sm:grid-cols-2">
+                <div className="border border-green-200 bg-white px-3 py-2">
+                  <div className="font-mono text-[10px] uppercase tracking-[0.12em] text-green-700">Source project</div>
+                  <div className="mt-1 break-all font-semibold">{forkSource.sourceProjectId}</div>
+                </div>
+                <div className="border border-green-200 bg-white px-3 py-2">
+                  <div className="font-mono text-[10px] uppercase tracking-[0.12em] text-green-700">Fork point</div>
+                  <div className="mt-1 break-all font-semibold">
+                    {forkSource.sourceStepId || (forkSource.sourceStepNumber ? `response ${forkSource.sourceStepNumber}` : 'Default response')}
+                  </div>
+                </div>
+                <div className="border border-green-200 bg-white px-3 py-2">
+                  <div className="font-mono text-[10px] uppercase tracking-[0.12em] text-green-700">Prompt family</div>
+                  <div className="mt-1 break-all font-semibold">{forkSource.promptFamilyId || 'Not specified'}</div>
+                </div>
+                <div className="border border-green-200 bg-white px-3 py-2">
+                  <div className="font-mono text-[10px] uppercase tracking-[0.12em] text-green-700">Coordinates</div>
+                  <div className="mt-1 font-semibold">
+                    Depth {forkSource.depth + 1} / 10 · Branch {forkSource.branchIndex + 1} / 10
+                  </div>
+                </div>
+              </div>
+            </section>
+          )}
 
           <section>
             <h2 className="mb-2 text-xs font-bold uppercase tracking-wider text-gray-500">Agent notes</h2>

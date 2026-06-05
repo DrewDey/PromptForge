@@ -1,0 +1,738 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Platform Dispatcher</title>
+<style>
+  :root {
+    --bg: #0e1117;
+    --surface: #161b25;
+    --surface2: #1e2535;
+    --border: #2a3347;
+    --border2: #3a4a66;
+    --text: #e8edf5;
+    --muted: #6b7a99;
+    --faint: #3a4455;
+    --green: #3ecf78;
+    --amber: #f5a623;
+    --red: #f04444;
+    --blue: #4a9eff;
+    --blue-dim: #1a3a6a;
+    --mono: 'Courier New', Courier, monospace;
+    --sans: system-ui, -apple-system, 'Segoe UI', sans-serif;
+  }
+ 
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+ 
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    min-height: 100vh;
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    padding: 1.25rem 1rem;
+  }
+ 
+  #game {
+    width: 100%;
+    max-width: 680px;
+    position: relative;
+  }
+ 
+  /* ── Header ── */
+  .header {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 4px;
+    margin-bottom: 1.25rem;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 0.65rem;
+  }
+  .station-name {
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--muted);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+  .station-name strong { color: var(--blue); font-weight: 400; }
+ 
+  /* ── HUD ── */
+  .hud {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 6px;
+    margin-bottom: 10px;
+  }
+  .hud-row2 {
+    display: grid;
+    grid-template-columns: 1fr 48px;
+    gap: 6px;
+    margin-bottom: 1.1rem;
+    align-items: center;
+  }
+  .stat {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 7px 10px;
+    text-align: center;
+  }
+  .stat-label {
+    font-size: 9px;
+    font-family: var(--mono);
+    color: var(--muted);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    display: block;
+    margin-bottom: 3px;
+  }
+  .stat-val {
+    font-family: var(--mono);
+    font-size: 19px;
+    color: var(--text);
+    line-height: 1;
+  }
+  .urgency-wrap {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 7px 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+  }
+  .urgency-label {
+    font-size: 9px;
+    font-family: var(--mono);
+    color: var(--muted);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+  #timer-bar-track {
+    height: 6px;
+    background: var(--faint);
+    border-radius: 3px;
+    overflow: hidden;
+  }
+  #timer-bar {
+    height: 100%;
+    width: 100%;
+    border-radius: 3px;
+    transition: width 0.15s linear, background 0.4s;
+    background: var(--green);
+  }
+  .level-badge {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 7px 0;
+    text-align: center;
+  }
+ 
+  /* ── Section rows ── */
+  .section-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 7px;
+  }
+  .section-title {
+    font-family: var(--mono);
+    font-size: 9px;
+    letter-spacing: 0.14em;
+    color: var(--muted);
+    text-transform: uppercase;
+    white-space: nowrap;
+  }
+  .section-line { flex: 1; height: 1px; background: var(--border); }
+  .section-hint { font-size: 10px; color: var(--faint); font-style: italic; white-space: nowrap; }
+ 
+  /* ── Arrivals ── */
+  #arrivals-area {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 7px;
+    min-height: 76px;
+    margin-bottom: 1.25rem;
+  }
+ 
+  .train-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 9px 13px;
+    cursor: pointer;
+    transition: border-color 0.15s, background 0.15s, transform 0.1s;
+    min-width: 120px;
+    position: relative;
+    overflow: hidden;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .train-card:hover { border-color: var(--border2); background: var(--surface2); transform: translateY(-1px); }
+  .train-card.selected { border-color: var(--blue); background: var(--blue-dim); }
+  .train-card.selected::before {
+    content: '\25B6';
+    position: absolute;
+    top: 9px; right: 10px;
+    font-size: 9px;
+    color: var(--blue);
+  }
+  /* keyboard-focus ring */
+  .train-card:focus-visible {
+    outline: 2px solid var(--blue);
+    outline-offset: 2px;
+  }
+  /* key badge */
+  .key-badge {
+    display: inline-block;
+    font-family: var(--mono);
+    font-size: 9px;
+    background: var(--faint);
+    color: var(--muted);
+    border-radius: 3px;
+    padding: 1px 4px;
+    margin-right: 4px;
+    vertical-align: middle;
+    line-height: 1.4;
+  }
+  .train-card.selected .key-badge { background: var(--blue-dim); color: var(--blue); }
+ 
+  .train-id { font-family: var(--mono); font-size: 13px; color: var(--text); margin-bottom: 2px; }
+  .train-dest { font-size: 11px; color: var(--muted); margin-bottom: 6px; }
+  .train-dest span { color: var(--text); font-size: 11px; }
+  .ttl-track { height: 3px; background: var(--faint); border-radius: 2px; overflow: hidden; }
+  .ttl-fill { height: 100%; border-radius: 2px; transition: width 0.2s linear, background 0.3s; }
+  .dot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; margin-right: 4px; vertical-align: middle; }
+ 
+  .no-trains {
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--faint);
+    padding: 18px 0;
+    letter-spacing: 0.06em;
+  }
+ 
+  /* ── Platforms ── */
+  #platforms-area {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 8px;
+    margin-bottom: 1.1rem;
+  }
+  .platform {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 12px;
+    min-height: 96px;
+    cursor: pointer;
+    transition: border-color 0.15s, background 0.15s;
+    position: relative;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .platform:hover:not(.busy) { border-color: var(--border2); }
+  .platform.accepting { border-color: var(--blue); background: var(--blue-dim); }
+  .platform.accepting::after {
+    content: 'ASSIGN';
+    position: absolute;
+    bottom: 9px; right: 11px;
+    font-family: var(--mono);
+    font-size: 8px;
+    color: var(--blue);
+    letter-spacing: 0.1em;
+  }
+  .platform.busy { cursor: not-allowed; }
+  .platform:focus-visible {
+    outline: 2px solid var(--blue);
+    outline-offset: 2px;
+  }
+ 
+  .plat-num {
+    font-family: var(--mono);
+    font-size: 8px;
+    color: var(--muted);
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+  }
+  .plat-key {
+    display: inline-block;
+    font-family: var(--mono);
+    font-size: 8px;
+    background: var(--faint);
+    color: var(--muted);
+    border-radius: 3px;
+    padding: 1px 4px;
+    line-height: 1.4;
+  }
+  .platform.accepting .plat-key { background: var(--blue-dim); color: var(--blue); }
+ 
+  .plat-empty { font-size: 11px; color: var(--faint); font-style: italic; }
+  .plat-train-id { font-family: var(--mono); font-size: 13px; color: var(--text); margin-bottom: 2px; }
+  .plat-train-dest { font-size: 10px; color: var(--muted); margin-bottom: 7px; }
+  .plat-train-dest span { color: var(--text); }
+  .plat-dwell-track { height: 3px; background: var(--faint); border-radius: 2px; overflow: hidden; margin-bottom: 3px; }
+  .plat-dwell-fill { height: 100%; background: var(--green); border-radius: 2px; transition: width 0.25s linear; opacity: 0.7; }
+  .plat-clear-label {
+    font-family: var(--mono);
+    font-size: 9px;
+    color: var(--muted);
+    position: absolute;
+    bottom: 10px; right: 10px;
+  }
+ 
+  /* ── Log ── */
+  #log {
+    height: 36px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    margin-bottom: 0.2rem;
+  }
+  .log-line { font-family: var(--mono); font-size: 10px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .log-line.fresh { color: var(--text); }
+  .log-line.ok { color: var(--green); }
+  .log-line.bad { color: var(--red); }
+ 
+  /* ── Keyboard hint bar ── */
+  #kb-hint {
+    margin-top: 8px;
+    font-family: var(--mono);
+    font-size: 9px;
+    color: var(--faint);
+    letter-spacing: 0.04em;
+    line-height: 1.7;
+  }
+  #kb-hint .k {
+    display: inline-block;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    padding: 0 4px;
+    color: var(--muted);
+    font-size: 9px;
+    margin: 0 1px;
+  }
+ 
+  /* ── Game over overlay ── */
+  #screen-over {
+    display: none;
+    position: absolute;
+    inset: -20px;
+    background: rgba(14, 17, 23, 0.97);
+    border-radius: 16px;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 11px;
+    text-align: center;
+    z-index: 20;
+    padding: 1rem;
+  }
+  #screen-over.show { display: flex; }
+  .over-tag { font-family: var(--mono); font-size: 10px; letter-spacing: 0.2em; color: var(--red); text-transform: uppercase; }
+  .over-title { font-size: 26px; font-weight: 600; color: var(--text); line-height: 1.2; }
+  .over-score { font-family: var(--mono); font-size: 34px; color: var(--blue); letter-spacing: -1px; }
+  .over-score small { font-size: 14px; color: var(--muted); letter-spacing: 0; margin-left: 4px; }
+  .over-stats { font-family: var(--mono); font-size: 12px; color: var(--muted); line-height: 2; }
+  .over-stats strong { color: var(--text); font-weight: 400; }
+  .play-btn {
+    margin-top: 6px;
+    background: var(--blue);
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    padding: 10px 28px;
+    font-family: var(--mono);
+    font-size: 13px;
+    letter-spacing: 0.1em;
+    cursor: pointer;
+    text-transform: uppercase;
+    transition: opacity 0.15s, transform 0.1s;
+  }
+  .play-btn:hover { opacity: 0.85; transform: scale(1.02); }
+  .play-btn:active { transform: scale(0.98); }
+ 
+  @keyframes pulse-border {
+    0%, 100% { border-color: var(--red); }
+    50% { border-color: var(--faint); }
+  }
+  .train-card.urgent-pulse { animation: pulse-border 0.7s ease-in-out infinite; }
+ 
+  /* ── 390px mobile layout ── */
+  @media (max-width: 480px) {
+    body { padding: 0.75rem 0.6rem; }
+ 
+    .hud {
+      grid-template-columns: 1fr 1fr 1fr;
+    }
+    /* urgency bar + level still in row2, full width */
+    .hud-row2 {
+      grid-template-columns: 1fr 44px;
+    }
+ 
+    #platforms-area {
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 6px;
+    }
+    .platform {
+      padding: 9px 8px;
+      min-height: 84px;
+    }
+    .platform.accepting::after { font-size: 7px; bottom: 7px; right: 7px; }
+ 
+    .train-card { min-width: 100px; padding: 8px 10px; }
+    .key-badge { display: none; }   /* hide kbd hints on touch */
+    #kb-hint { display: none; }     /* hide hint bar on touch */
+    .section-hint { display: none; }
+ 
+    .over-title { font-size: 22px; }
+    .over-score { font-size: 28px; }
+  }
+</style>
+</head>
+<body>
+<div id="game">
+  <div class="header">
+    <span class="station-name">VICTORIA <strong>DISPATCH</strong> CONTROL</span>
+    <span class="station-name" style="font-size:10px;">MISS <strong id="miss-limit-label">0/5</strong> &rarr; CLOSED</span>
+  </div>
+ 
+  <div class="hud">
+    <div class="stat">
+      <span class="stat-label">Score</span>
+      <span class="stat-val" id="score-val">0</span>
+    </div>
+    <div class="stat">
+      <span class="stat-label">Routed</span>
+      <span class="stat-val" id="routed-val">0</span>
+    </div>
+    <div class="stat">
+      <span class="stat-label">Missed</span>
+      <span class="stat-val" id="missed-val" style="color:var(--red)">0</span>
+    </div>
+  </div>
+  <div class="hud-row2">
+    <div class="urgency-wrap">
+      <span class="urgency-label">Most urgent TTL</span>
+      <div id="timer-bar-track"><div id="timer-bar"></div></div>
+    </div>
+    <div class="level-badge">
+      <span class="stat-label">Lv</span>
+      <span class="stat-val" id="level-val" style="color:var(--blue);font-size:17px;">1</span>
+    </div>
+  </div>
+ 
+  <div style="position:relative;">
+    <div class="section-row">
+      <span class="section-title">Arrivals</span>
+      <span class="section-line"></span>
+      <span class="section-hint">click or <span style="font-family:var(--mono);font-size:9px;background:var(--faint);color:var(--muted);padding:1px 4px;border-radius:3px;">1&ndash;7</span> to select</span>
+    </div>
+    <div id="arrivals-area"></div>
+ 
+    <div class="section-row">
+      <span class="section-title">Platforms</span>
+      <span class="section-line"></span>
+      <span class="section-hint"><span style="font-family:var(--mono);font-size:9px;background:var(--faint);color:var(--muted);padding:1px 4px;border-radius:3px;">F J K</span> to assign</span>
+    </div>
+    <div id="platforms-area">
+      <div class="platform" id="plat-0" data-idx="0" tabindex="0">
+        <div class="plat-num">Plat 1 <span class="plat-key">F</span></div>
+        <div class="plat-empty">&mdash; empty &mdash;</div>
+      </div>
+      <div class="platform" id="plat-1" data-idx="1" tabindex="0">
+        <div class="plat-num">Plat 2 <span class="plat-key">J</span></div>
+        <div class="plat-empty">&mdash; empty &mdash;</div>
+      </div>
+      <div class="platform" id="plat-2" data-idx="2" tabindex="0">
+        <div class="plat-num">Plat 3 <span class="plat-key">K</span></div>
+        <div class="plat-empty">&mdash; empty &mdash;</div>
+      </div>
+    </div>
+ 
+    <div id="log"></div>
+ 
+    <div id="kb-hint">
+      <span class="k">1</span>&ndash;<span class="k">7</span> select arrival &nbsp;|&nbsp;
+      <span class="k">F</span> platform 1 &nbsp;
+      <span class="k">J</span> platform 2 &nbsp;
+      <span class="k">K</span> platform 3 &nbsp;|&nbsp;
+      <span class="k">Esc</span> deselect
+    </div>
+ 
+    <div id="screen-over">
+      <span class="over-tag">Station closed</span>
+      <div class="over-title" id="over-title">Too many misses</div>
+      <div class="over-score" id="over-score">0 <small>pts</small></div>
+      <div class="over-stats" id="over-stats"></div>
+      <button class="play-btn" id="restart-btn">New shift</button>
+    </div>
+  </div>
+</div>
+ 
+<script>
+var DESTS = ['Edinburgh Waverley','Bristol Temple Meads','Leeds Central','Brighton','Oxford Parkway','York','Bath Spa','Cardiff Central','Derby Midland','Exeter St Davids'];
+var TYPES = ['EXP','LCL','REG','ITC','SHT'];
+var MAX_MISSED = 5;
+var PLATFORM_DWELL = 8000;
+var PLAT_KEYS = ['f','j','k'];
+var MAX_ARRIVALS = 7;
+ 
+var trains, platforms, selected, score, routed, missed, level;
+var spawnTimer, levelTimer, loopId, lastTick, clearTimers;
+ 
+function uid() {
+  var L='ABCDEFGHJKLMNPQRSTUVWXYZ', D='0123456789';
+  return L[Math.random()*L.length|0]+L[Math.random()*L.length|0]+D[Math.random()*D.length|0]+D[Math.random()*D.length|0];
+}
+function rnd(a) { return a[Math.random()*a.length|0]; }
+function urgColor(f) { return f<0.25?'var(--red)':f<0.55?'var(--amber)':'var(--green)'; }
+ 
+function spawnTrain() {
+  var maxTtl = Math.max(6, 16-(level-1)*1.1);
+  trains.push({id:uid(), dest:rnd(DESTS), type:rnd(TYPES), ttl:maxTtl, maxTtl:maxTtl});
+}
+ 
+function renderArrivals() {
+  var area = document.getElementById('arrivals-area');
+  area.innerHTML = '';
+  if (!trains.length) {
+    var d = document.createElement('div');
+    d.className = 'no-trains';
+    d.textContent = '\u2014 awaiting incoming services \u2014';
+    area.appendChild(d);
+    return;
+  }
+  trains.forEach(function(t, i) {
+    var frac = Math.max(0, t.ttl/t.maxTtl);
+    var col = urgColor(frac);
+    var isSel = selected===t.id;
+    var card = document.createElement('div');
+    card.className = 'train-card'+(isSel?' selected':'')+(frac<0.25&&!isSel?' urgent-pulse':'');
+    card.setAttribute('tabindex','0');
+    card.setAttribute('aria-label', t.type+' '+t.id+' to '+t.dest+(isSel?', selected':''));
+    card.dataset.id = t.id;
+    var keyNum = i+1;
+    card.innerHTML =
+      '<div class="train-id"><span class="key-badge">'+keyNum+'</span><span class="dot" style="background:'+col+'"></span>'+t.type+' '+t.id+'</div>'+
+      '<div class="train-dest">\u2192 <span>'+t.dest+'</span></div>'+
+      '<div class="ttl-track"><div class="ttl-fill" style="width:'+(frac*100)+'%;background:'+col+'"></div></div>';
+    card.addEventListener('click', function(){ selectTrain(t.id); });
+    card.addEventListener('keydown', function(e){
+      if (e.key==='Enter'||e.key===' '){ e.preventDefault(); selectTrain(t.id); }
+    });
+    area.appendChild(card);
+  });
+}
+ 
+function selectTrain(id) {
+  selected = selected===id ? null : id;
+  renderArrivals();
+  renderPlatforms();
+}
+ 
+function renderPlatforms() {
+  var platKeys = ['F','J','K'];
+  platforms.forEach(function(p, i) {
+    var el = document.getElementById('plat-'+i);
+    var empty = !p.train;
+    el.className = 'platform'+(!empty?' busy':(selected?' accepting':''));
+    if (!empty) {
+      var frac = Math.max(0, p.dwellLeft/PLATFORM_DWELL);
+      el.innerHTML =
+        '<div class="plat-num">Plat '+(i+1)+' <span class="plat-key">'+platKeys[i]+'</span></div>'+
+        '<div class="plat-train-id">'+p.train.type+' '+p.train.id+'</div>'+
+        '<div class="plat-train-dest">\u2192 <span>'+p.train.dest+'</span></div>'+
+        '<div class="plat-dwell-track"><div class="plat-dwell-fill" style="width:'+(frac*100)+'%"></div></div>'+
+        '<div class="plat-clear-label">'+Math.ceil(p.dwellLeft/1000)+'s</div>';
+    } else {
+      el.innerHTML =
+        '<div class="plat-num">Plat '+(i+1)+' <span class="plat-key">'+platKeys[i]+'</span></div>'+
+        '<div class="plat-empty">\u2014 empty \u2014</div>';
+    }
+  });
+}
+ 
+function assignToPlatform(idx) {
+  if (!selected) return;
+  if (platforms[idx].train) { addLog('Platform '+(idx+1)+' occupied.','log-line'); return; }
+  var t = trains.filter(function(x){return x.id===selected;})[0];
+  if (!t) { selected=null; renderArrivals(); renderPlatforms(); return; }
+  trains = trains.filter(function(x){return x.id!==selected;});
+  platforms[idx].train = t;
+  platforms[idx].dwellLeft = PLATFORM_DWELL;
+  var pts = 10+Math.round((t.ttl/t.maxTtl)*20)+level*2;
+  score += pts;
+  routed++;
+  addLog(t.type+' '+t.id+' \u2192 Platform '+(idx+1)+'  +'+pts+'pts','log-line ok');
+  selected = null;
+  updateHUD();
+  renderArrivals();
+  if (clearTimers[idx]) clearTimeout(clearTimers[idx]);
+  clearTimers[idx] = setTimeout(function(){
+    platforms[idx].train = null;
+    platforms[idx].dwellLeft = 0;
+    addLog('Platform '+(idx+1)+' cleared.','log-line');
+    renderPlatforms();
+  }, PLATFORM_DWELL);
+}
+ 
+/* click handlers on static platform divs */
+document.querySelectorAll('.platform').forEach(function(el){
+  el.addEventListener('click', function(){ assignToPlatform(parseInt(el.dataset.idx)); });
+  el.addEventListener('keydown', function(e){
+    if (e.key==='Enter'||e.key===' '){ e.preventDefault(); assignToPlatform(parseInt(el.dataset.idx)); }
+  });
+});
+ 
+/* ── Global keyboard handler ── */
+document.addEventListener('keydown', function(e) {
+  if (!loopId) {
+    /* on game-over screen, Enter/Space restarts */
+    if (e.key==='Enter'||e.key===' ') { e.preventDefault(); startGame(); }
+    return;
+  }
+  var key = e.key.toLowerCase();
+ 
+  /* 1–7: select arrival by position */
+  var num = parseInt(e.key);
+  if (!isNaN(num) && num>=1 && num<=MAX_ARRIVALS) {
+    e.preventDefault();
+    var t = trains[num-1];
+    if (t) selectTrain(t.id);
+    return;
+  }
+ 
+  /* F J K: assign to platform 0 1 2 */
+  var platIdx = PLAT_KEYS.indexOf(key);
+  if (platIdx !== -1) {
+    e.preventDefault();
+    assignToPlatform(platIdx);
+    return;
+  }
+ 
+  /* Escape: deselect */
+  if (e.key==='Escape') {
+    e.preventDefault();
+    selected = null;
+    renderArrivals();
+    renderPlatforms();
+  }
+});
+ 
+document.getElementById('restart-btn').addEventListener('click', startGame);
+ 
+function addLog(msg, cls) {
+  var log = document.getElementById('log');
+  var line = document.createElement('div');
+  line.className = (cls||'log-line')+' fresh';
+  line.textContent = msg;
+  log.prepend(line);
+  setTimeout(function(){ line.classList.remove('fresh'); }, 1200);
+  while (log.children.length>3) log.removeChild(log.lastChild);
+}
+ 
+function updateHUD() {
+  document.getElementById('score-val').textContent = score;
+  document.getElementById('routed-val').textContent = routed;
+  document.getElementById('missed-val').textContent = missed;
+  document.getElementById('level-val').textContent = level;
+  document.getElementById('miss-limit-label').textContent = missed+'/'+MAX_MISSED;
+}
+ 
+function tick(ts) {
+  if (!loopId) return;
+  if (!lastTick) lastTick = ts;
+  var dt = Math.min(ts-lastTick, 200);
+  lastTick = ts;
+ 
+  spawnTimer -= dt;
+  levelTimer += dt;
+ 
+  var spawnInterval = Math.max(2200, 5800-(level-1)*380);
+  if (spawnTimer<=0 && trains.length<MAX_ARRIVALS) {
+    spawnTrain();
+    spawnTimer = spawnInterval+(Math.random()-0.5)*800;
+  }
+  if (levelTimer>=30000) {
+    level++;
+    levelTimer = 0;
+    addLog('Level '+level+' \u2014 faster arrivals, shorter TTL.','log-line fresh');
+    updateHUD();
+  }
+ 
+  var dtSec = dt/1000;
+  trains.forEach(function(t){ t.ttl = Math.max(0, t.ttl-dtSec); });
+ 
+  var expired = trains.filter(function(t){ return t.ttl<=0; });
+  expired.forEach(function(t){
+    missed++;
+    score = Math.max(0, score-15);
+    addLog('MISSED: '+t.type+' '+t.id+' to '+t.dest+'  \u221215pts','log-line bad');
+    if (selected===t.id) selected=null;
+  });
+  trains = trains.filter(function(t){ return t.ttl>0; });
+  if (expired.length) updateHUD();
+ 
+  platforms.forEach(function(p){ if (p.train) p.dwellLeft=Math.max(0,p.dwellLeft-dt); });
+ 
+  if (missed>=MAX_MISSED) { endGame(); return; }
+ 
+  var bar = document.getElementById('timer-bar');
+  if (trains.length) {
+    var minFrac = Math.min.apply(null, trains.map(function(t){ return t.ttl/t.maxTtl; }));
+    bar.style.width = (minFrac*100)+'%';
+    bar.style.background = urgColor(minFrac);
+  } else {
+    bar.style.width = '100%';
+    bar.style.background = 'var(--green)';
+  }
+ 
+  renderArrivals();
+  renderPlatforms();
+  loopId = requestAnimationFrame(tick);
+}
+ 
+function endGame() {
+  loopId = null;
+  clearTimers.forEach(function(t){ if(t) clearTimeout(t); });
+  document.getElementById('over-score').innerHTML = score+' <small>pts</small>';
+  document.getElementById('over-title').textContent = missed>=MAX_MISSED?'Station overwhelmed':'Shift complete';
+  document.getElementById('over-stats').innerHTML =
+    'Trains routed: <strong>'+routed+'</strong><br>'+
+    'Trains missed: <strong>'+missed+'</strong><br>'+
+    'Level reached: <strong>'+level+'</strong>';
+  document.getElementById('screen-over').classList.add('show');
+}
+ 
+function startGame() {
+  trains=[]; platforms=[{},{},{}]; selected=null;
+  score=0; routed=0; missed=0; level=1;
+  spawnTimer=0; levelTimer=0; lastTick=null;
+  clearTimers=[null,null,null];
+  loopId=null;
+  document.getElementById('screen-over').classList.remove('show');
+  document.getElementById('log').innerHTML='';
+  updateHUD();
+  renderArrivals();
+  renderPlatforms();
+  addLog('Shift started. Route incoming services.','log-line fresh');
+  loopId = requestAnimationFrame(tick);
+}
+ 
+startGame();
+</script>
+</body>
+</html>
+ 

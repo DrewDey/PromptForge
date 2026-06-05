@@ -1,0 +1,1365 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Market Booth</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --serif: Georgia, 'Times New Roman', serif;
+    --sans:  'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif;
+    --mono:  'Courier New', Courier, monospace;
+    --cream: #FAF6EE;
+    --parchment: #F0E8D5;
+    --bark: #8B6340;
+    --bark-dark: #5C3E25;
+    --sage: #7A9E7E;
+    --sage-dark: #4E6E52;
+    --tomato: #C0392B;
+    --gold: #D4A017;
+    --gold-light: #F5E6B2;
+    --ink: #2C1F0E;
+    --ink-soft: #5A4030;
+    --muted: #9A7E65;
+    --border: rgba(139,99,64,0.25);
+    --shadow: 0 2px 12px rgba(92,62,37,0.10);
+  }
+
+  body {
+    font-family: var(--sans);
+    background: var(--cream);
+    color: var(--ink);
+    min-height: 100vh;
+    padding: 0;
+  }
+
+  /* ── HEADER ── */
+  header {
+    background: var(--bark-dark);
+    padding: 1.1rem 2rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  header h1 {
+    font-family: var(--serif);
+    font-size: 1.5rem;
+    color: var(--gold-light);
+    letter-spacing: 0.03em;
+    line-height: 1.2;
+    font-style: italic;
+  }
+  .header-meta {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+  }
+  .time-display {
+    font-size: 0.9rem;
+    color: var(--parchment);
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    line-height: 1.3;
+  }
+  .time-display .clock {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: #fff;
+  }
+  .weather-badge {
+    background: rgba(255,255,255,0.12);
+    border-radius: 20px;
+    padding: 0.3rem 0.75rem;
+    font-size: 0.85rem;
+    color: var(--gold-light);
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+  }
+
+  /* ── PHASES ── */
+  .phase {
+    display: none;
+    max-width: 860px;
+    margin: 0 auto;
+    padding: 2rem 1.5rem;
+  }
+  .phase.active { display: block; }
+
+  /* ── SECTION TITLES ── */
+  .section-title {
+    font-family: var(--serif);
+    font-size: 1.3rem;
+    color: var(--bark-dark);
+    margin-bottom: 0.3rem;
+  }
+  .section-sub {
+    font-size: 0.85rem;
+    color: var(--muted);
+    margin-bottom: 1.25rem;
+    line-height: 1.5;
+  }
+
+  /* ── DIVIDER ── */
+  .divider {
+    border: none;
+    border-top: 1.5px dashed var(--border);
+    margin: 1.75rem 0;
+  }
+
+  /* ── GOAL PICKER ── */
+  .goal-picker {
+    margin-bottom: 1.5rem;
+  }
+  .goal-picker-label {
+    font-size: 0.8rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    color: var(--muted);
+    margin-bottom: 0.6rem;
+  }
+  .goal-options {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.7rem;
+  }
+  .goal-card {
+    border: 1.5px solid var(--border);
+    border-radius: 10px;
+    padding: 0.85rem 1rem;
+    cursor: pointer;
+    background: #fff;
+    transition: border-color 0.15s, transform 0.1s;
+    user-select: none;
+    position: relative;
+  }
+  .goal-card:hover {
+    border-color: var(--bark);
+    transform: translateY(-2px);
+  }
+  .goal-card.selected {
+    border-color: var(--sage-dark);
+    background: #f3faf4;
+    box-shadow: 0 0 0 2px rgba(78,110,82,0.20);
+  }
+  .goal-card.selected::after {
+    content: '✓';
+    position: absolute;
+    top: 7px; right: 10px;
+    font-size: 0.8rem;
+    color: var(--sage-dark);
+    font-weight: 700;
+  }
+  .goal-icon { font-size: 1.5rem; margin-bottom: 0.3rem; }
+  .goal-name {
+    font-weight: 700;
+    font-size: 0.9rem;
+    color: var(--ink);
+    margin-bottom: 0.2rem;
+  }
+  .goal-desc {
+    font-size: 0.75rem;
+    color: var(--muted);
+    line-height: 1.4;
+  }
+  .goal-target {
+    margin-top: 0.45rem;
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: var(--bark);
+    font-family: var(--mono);
+  }
+  /* goal badge shown during market day & results */
+  .goal-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    background: var(--parchment);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 0.25rem 0.7rem;
+    font-size: 0.78rem;
+    color: var(--bark-dark);
+    font-weight: 700;
+    margin-bottom: 0.75rem;
+  }
+
+  /* ── PRODUCE GRID ── */
+  .produce-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 0.85rem;
+    margin-bottom: 1.5rem;
+  }
+  .produce-card {
+    background: #fff;
+    border: 1.5px solid var(--border);
+    border-radius: 10px;
+    padding: 0.85rem 1rem;
+    cursor: pointer;
+    transition: border-color 0.15s, transform 0.1s, box-shadow 0.15s;
+    user-select: none;
+    position: relative;
+  }
+  .produce-card:hover {
+    border-color: var(--bark);
+    box-shadow: var(--shadow);
+    transform: translateY(-2px);
+  }
+  .produce-card.selected {
+    border-color: var(--sage-dark);
+    background: #f3faf4;
+    box-shadow: 0 0 0 2px rgba(78,110,82,0.20);
+  }
+  .produce-card.selected::after {
+    content: '✓';
+    position: absolute;
+    top: 7px; right: 10px;
+    font-size: 0.8rem;
+    color: var(--sage-dark);
+    font-weight: 700;
+  }
+  .produce-emoji { font-size: 1.9rem; margin-bottom: 0.35rem; display: block; }
+  .produce-name { font-weight: 700; font-size: 0.95rem; color: var(--ink); }
+  .produce-hint {
+    font-size: 0.75rem;
+    color: var(--muted);
+    margin-top: 0.2rem;
+    line-height: 1.4;
+  }
+  .produce-cost {
+    margin-top: 0.5rem;
+    font-size: 0.8rem;
+    color: var(--bark);
+    font-weight: 700;
+  }
+
+  /* ── SELECTED TABLE ── */
+  .selected-table-wrap {
+    background: var(--parchment);
+    border: 1.5px solid var(--border);
+    border-radius: 10px;
+    padding: 1rem 1.25rem;
+    margin-bottom: 1.5rem;
+  }
+  .selected-table-wrap h3 {
+    font-family: var(--serif);
+    font-size: 1rem;
+    color: var(--bark-dark);
+    margin-bottom: 0.75rem;
+  }
+  table.price-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.88rem;
+  }
+  table.price-table th {
+    text-align: left;
+    padding: 0.35rem 0.5rem;
+    color: var(--muted);
+    font-weight: 700;
+    font-size: 0.78rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    border-bottom: 1px solid var(--border);
+  }
+  table.price-table td {
+    padding: 0.45rem 0.5rem;
+    border-bottom: 1px dashed var(--border);
+    color: var(--ink-soft);
+    vertical-align: middle;
+  }
+  table.price-table tr:last-child td { border-bottom: none; }
+  .price-input {
+    width: 80px;
+    border: 1.5px solid var(--border);
+    border-radius: 6px;
+    padding: 0.3rem 0.5rem;
+    font-size: 0.88rem;
+    font-family: var(--sans);
+    background: #fff;
+    color: var(--ink);
+  }
+  .price-input:focus { outline: none; border-color: var(--bark); }
+  .qty-input {
+    width: 60px;
+    border: 1.5px solid var(--border);
+    border-radius: 6px;
+    padding: 0.3rem 0.5rem;
+    font-size: 0.88rem;
+    font-family: var(--sans);
+    background: #fff;
+    color: var(--ink);
+  }
+  .qty-input:focus { outline: none; border-color: var(--bark); }
+  .remove-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: #bbb;
+    font-size: 1rem;
+    padding: 0.1rem 0.3rem;
+    border-radius: 4px;
+    transition: color 0.15s;
+  }
+  .remove-btn:hover { color: var(--tomato); }
+  .suggestion-tag {
+    display: inline-block;
+    font-size: 0.7rem;
+    background: var(--gold-light);
+    color: #7a5a00;
+    border-radius: 4px;
+    padding: 1px 5px;
+    margin-left: 4px;
+    vertical-align: middle;
+  }
+
+  /* ── COST SUMMARY ── */
+  .cost-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: var(--bark-dark);
+    color: var(--gold-light);
+    border-radius: 8px;
+    padding: 0.75rem 1.25rem;
+    font-size: 0.9rem;
+    margin-bottom: 1.5rem;
+  }
+  .cost-bar .val { font-size: 1.1rem; font-weight: 700; color: #fff; }
+
+  /* ── BUTTONS ── */
+  .btn {
+    display: inline-block;
+    font-family: var(--sans);
+    font-size: 0.9rem;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    padding: 0.65rem 1.75rem;
+    border-radius: 8px;
+    border: none;
+    cursor: pointer;
+    transition: transform 0.1s, box-shadow 0.1s;
+  }
+  .btn:active { transform: scale(0.97); }
+  .btn-primary {
+    background: var(--sage-dark);
+    color: #fff;
+    box-shadow: 0 3px 10px rgba(78,110,82,0.3);
+  }
+  .btn-primary:hover { background: var(--sage); box-shadow: 0 4px 14px rgba(78,110,82,0.4); }
+  .btn-secondary {
+    background: var(--parchment);
+    color: var(--bark-dark);
+    border: 1.5px solid var(--border);
+  }
+  .btn-secondary:hover { background: var(--gold-light); }
+  .btn-row {
+    display: flex;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+
+  /* ── MARKET DAY PHASE ── */
+  .market-layout {
+    display: grid;
+    grid-template-columns: 1fr 280px;
+    gap: 1.5rem;
+    align-items: start;
+  }
+
+  /* ── BOOTH VISUAL ── */
+  .booth-visual {
+    background: var(--parchment);
+    border: 1.5px solid var(--border);
+    border-radius: 12px;
+    padding: 1.25rem;
+    margin-bottom: 1.25rem;
+    position: relative;
+    overflow: hidden;
+  }
+  .booth-banner {
+    text-align: center;
+    font-family: var(--serif);
+    font-size: 1.05rem;
+    color: var(--bark-dark);
+    font-style: italic;
+    margin-bottom: 0.85rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 1.5px dashed var(--border);
+  }
+  .booth-items {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.6rem;
+  }
+  .booth-item {
+    background: #fff;
+    border: 1.5px solid var(--border);
+    border-radius: 8px;
+    padding: 0.5rem 0.75rem;
+    font-size: 0.82rem;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    min-width: 110px;
+    position: relative;
+    transition: background 0.3s;
+  }
+  .booth-item.selling-out {
+    background: #fffbe8;
+    border-color: var(--gold);
+  }
+  .booth-item.sold-out {
+    background: #f5f5f5;
+    opacity: 0.55;
+  }
+  .booth-item .item-emoji { font-size: 1.2rem; }
+  .booth-item .item-info { flex: 1; }
+  .booth-item .item-name { font-weight: 700; font-size: 0.8rem; color: var(--ink); }
+  .booth-item .item-price { font-size: 0.75rem; color: var(--sage-dark); }
+  .booth-item .item-stock {
+    font-size: 0.7rem;
+    color: var(--muted);
+    margin-top: 1px;
+  }
+
+  /* ── PROGRESS BAR ── */
+  .progress-track {
+    background: var(--border);
+    border-radius: 99px;
+    height: 8px;
+    margin: 0.6rem 0;
+    overflow: hidden;
+  }
+  .progress-fill {
+    height: 100%;
+    border-radius: 99px;
+    background: var(--sage-dark);
+    transition: width 0.8s ease;
+  }
+
+  /* ── LOG FEED ── */
+  .log-feed {
+    background: #fff;
+    border: 1.5px solid var(--border);
+    border-radius: 10px;
+    padding: 0.75rem 1rem;
+    height: 260px;
+    overflow-y: auto;
+    font-size: 0.82rem;
+    line-height: 1.5;
+  }
+  .log-feed::-webkit-scrollbar { width: 5px; }
+  .log-feed::-webkit-scrollbar-thumb { background: var(--border); border-radius: 99px; }
+  .log-entry {
+    padding: 0.3rem 0;
+    border-bottom: 1px dashed rgba(139,99,64,0.12);
+    color: var(--ink-soft);
+    display: flex;
+    gap: 0.5rem;
+    animation: fadeIn 0.3s ease;
+  }
+  .log-entry:last-child { border-bottom: none; }
+  .log-time { color: var(--muted); min-width: 42px; font-size: 0.77rem; }
+  .log-sale { color: var(--sage-dark); font-weight: 700; }
+  .log-event { color: var(--bark); }
+  .log-bad { color: var(--tomato); }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+
+  /* ── STATS PANEL ── */
+  .stats-panel {
+    position: sticky;
+    top: 72px;
+  }
+  .stats-card {
+    background: var(--bark-dark);
+    border-radius: 12px;
+    padding: 1.1rem 1.25rem;
+    color: var(--parchment);
+    margin-bottom: 1rem;
+  }
+  .stats-card h3 {
+    font-family: var(--serif);
+    font-size: 1rem;
+    color: var(--gold-light);
+    margin-bottom: 0.85rem;
+    font-style: italic;
+  }
+  .stat-row {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.85rem;
+    padding: 0.3rem 0;
+    border-bottom: 1px solid rgba(255,255,255,0.08);
+  }
+  .stat-row:last-child { border-bottom: none; }
+  .stat-row .label { color: var(--muted); }
+  .stat-row .value { font-weight: 700; color: #fff; }
+  .stat-row .value.green { color: #7fd9a0; }
+  .stat-row .value.red { color: #f9a09a; }
+
+  /* goal progress bar inside stats panel */
+  .goal-progress-wrap {
+    margin-top: 0.85rem;
+    padding-top: 0.85rem;
+    border-top: 1px solid rgba(255,255,255,0.10);
+  }
+  .goal-progress-label {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.75rem;
+    color: var(--muted);
+    margin-bottom: 0.3rem;
+  }
+  .goal-progress-label span:last-child { color: var(--gold-light); font-weight: 700; }
+  .goal-track {
+    background: rgba(255,255,255,0.12);
+    border-radius: 99px;
+    height: 6px;
+    overflow: hidden;
+  }
+  .goal-fill {
+    height: 100%;
+    border-radius: 99px;
+    background: var(--gold);
+    transition: width 0.7s ease;
+  }
+
+  .tip-card {
+    background: var(--gold-light);
+    border: 1.5px solid var(--gold);
+    border-radius: 10px;
+    padding: 0.85rem 1rem;
+    font-size: 0.82rem;
+    color: #6b4a00;
+    line-height: 1.5;
+  }
+  .tip-card strong {
+    display: block;
+    font-size: 0.78rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 0.3rem;
+    color: #7a5500;
+  }
+
+  /* ── RESULTS PHASE ── */
+  .results-banner {
+    text-align: center;
+    padding: 2rem 1rem;
+  }
+  .results-banner .grade {
+    font-size: 4rem;
+    line-height: 1;
+    margin-bottom: 0.5rem;
+  }
+  .results-banner h2 {
+    font-family: var(--serif);
+    font-size: 1.7rem;
+    color: var(--bark-dark);
+    margin-bottom: 0.4rem;
+  }
+  .results-banner p {
+    font-size: 0.95rem;
+    color: var(--muted);
+    max-width: 440px;
+    margin: 0 auto;
+    line-height: 1.6;
+  }
+  /* goal verdict chip shown in results */
+  .goal-verdict {
+    display: inline-block;
+    margin-top: 0.75rem;
+    padding: 0.35rem 1rem;
+    border-radius: 20px;
+    font-size: 0.82rem;
+    font-weight: 700;
+    letter-spacing: 0.03em;
+  }
+  .goal-verdict.met { background: #d4f0dc; color: #1a5c31; }
+  .goal-verdict.missed { background: #fde8e6; color: #7a1e1e; }
+  .goal-verdict.partial { background: var(--gold-light); color: #7a5500; }
+
+  .results-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 1rem;
+    margin: 1.75rem 0;
+  }
+  .result-box {
+    background: #fff;
+    border: 1.5px solid var(--border);
+    border-radius: 10px;
+    padding: 1rem 1.1rem;
+    text-align: center;
+  }
+  .result-box .rb-label { font-size: 0.75rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.4rem; }
+  .result-box .rb-value { font-size: 1.5rem; font-weight: 700; color: var(--bark-dark); }
+  .result-box .rb-value.profit { color: var(--sage-dark); }
+  .result-box .rb-value.loss { color: var(--tomato); }
+  /* highlight the metric that the active goal cares about */
+  .result-box.goal-focus {
+    border-color: var(--sage-dark);
+    background: #f3faf4;
+  }
+  .result-box.goal-focus .rb-label::after {
+    content: ' ★';
+    color: var(--sage-dark);
+  }
+
+  .breakdown-table {
+    background: var(--parchment);
+    border: 1.5px solid var(--border);
+    border-radius: 10px;
+    padding: 1rem 1.25rem;
+    margin-bottom: 1.5rem;
+  }
+  .breakdown-table h3 {
+    font-family: var(--serif);
+    color: var(--bark-dark);
+    font-size: 1rem;
+    margin-bottom: 0.75rem;
+  }
+  .brow {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.85rem;
+    padding: 0.4rem 0;
+    border-bottom: 1px dashed var(--border);
+    color: var(--ink-soft);
+    gap: 0.5rem;
+  }
+  .brow:last-child { border-bottom: none; }
+  .brow .bname { display: flex; align-items: center; gap: 0.4rem; flex: 1; }
+  .brow .bsold { color: var(--muted); font-size: 0.78rem; min-width: 70px; text-align: center; }
+  .brow .brevenue { font-weight: 700; color: var(--sage-dark); min-width: 60px; text-align: right; }
+  .brow .bloss { font-weight: 700; color: var(--tomato); min-width: 60px; text-align: right; }
+
+  /* ── WEATHER MODIFIERS ── */
+  .weather-strip {
+    border-radius: 8px;
+    padding: 0.65rem 1rem;
+    font-size: 0.83rem;
+    margin-bottom: 1.25rem;
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+  }
+  .weather-strip.sunny  { background: #fffaed; border: 1px solid #e0c860; color: #7a5a00; }
+  .weather-strip.cloudy { background: #f0f4f8; border: 1px solid #b0bec5; color: #455a64; }
+  .weather-strip.rainy  { background: #e8f4fb; border: 1px solid #90caf9; color: #1a5276; }
+  .weather-icon { font-size: 1.2rem; }
+
+  /* ── RESPONSIVE ── */
+  @media (max-width: 640px) {
+    .market-layout { grid-template-columns: 1fr; }
+    .stats-panel { position: static; }
+    header { padding: 0.9rem 1rem; }
+    .phase { padding: 1.25rem 1rem; }
+    .goal-options { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>🌿 The Market Booth</h1>
+  <div class="header-meta">
+    <div class="time-display">
+      <span id="header-date">Saturday Morning</span>
+      <span class="clock" id="header-time">8:00 AM</span>
+    </div>
+    <div class="weather-badge" id="header-weather">☀️ Sunny</div>
+  </div>
+</header>
+
+
+<!-- ══════════════════════════════════════════════
+     PHASE 1: SETUP
+═══════════════════════════════════════════════ -->
+<section class="phase active" id="phase-setup">
+
+  <h2 class="section-title">What's your goal today?</h2>
+  <p class="section-sub">Pick a focus for the day. Your end-of-market grade will be judged against it — not just raw profit.</p>
+
+  <div class="goal-picker">
+    <div class="goal-picker-label">Booth goal</div>
+    <div class="goal-options">
+
+      <div class="goal-card selected" id="goal-profit" onclick="selectGoal('profit')">
+        <div class="goal-icon">💰</div>
+        <div class="goal-name">Turn a Profit</div>
+        <div class="goal-desc">Maximize net revenue over wholesale cost. Margin is everything.</div>
+        <div class="goal-target">Target: profit &gt; $0</div>
+      </div>
+
+      <div class="goal-card" id="goal-sellthrough" onclick="selectGoal('sellthrough')">
+        <div class="goal-icon">🧺</div>
+        <div class="goal-name">Empty the Booth</div>
+        <div class="goal-desc">Move as much inventory as possible. Don't haul anything home.</div>
+        <div class="goal-target">Target: sell-through ≥ 85%</div>
+      </div>
+
+      <div class="goal-card" id="goal-freshness" onclick="selectGoal('freshness')">
+        <div class="goal-icon">🌱</div>
+        <div class="goal-name">No Waste</div>
+        <div class="goal-desc">Keep unsold units low — this produce won't last another week.</div>
+        <div class="goal-target">Target: waste ≤ 3 units / item</div>
+      </div>
+
+    </div>
+  </div>
+
+  <hr class="divider">
+
+  <h2 class="section-title">Pick your produce</h2>
+  <p class="section-sub">Choose what to bring to market today. Each item has a wholesale cost — you pay it upfront, then try to sell it all before 1 PM. Select at least 2.</p>
+
+  <div class="produce-grid" id="produce-grid"></div>
+
+  <hr class="divider">
+
+  <div id="setup-table-wrap" style="display:none;">
+    <div class="selected-table-wrap">
+      <h3>Your booth lineup — set prices &amp; quantities</h3>
+      <table class="price-table" id="price-table">
+        <thead>
+          <tr>
+            <th></th>
+            <th>Item</th>
+            <th>Qty (units)</th>
+            <th>Your price / unit</th>
+            <th>Suggested</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="price-tbody"></tbody>
+      </table>
+    </div>
+
+    <div class="cost-bar">
+      <span>Total wholesale cost today</span>
+      <span class="val" id="total-cost-display">$0.00</span>
+    </div>
+
+    <div class="btn-row">
+      <button class="btn btn-primary" id="open-booth-btn" onclick="openBooth()">Open the booth →</button>
+      <span id="setup-error" style="font-size:0.83rem;color:var(--tomato);"></span>
+    </div>
+  </div>
+
+  <div id="select-prompt" style="font-size:0.88rem;color:var(--muted);margin-top:0.5rem;">
+    Select items above to build your lineup.
+  </div>
+
+</section>
+
+
+<!-- ══════════════════════════════════════════════
+     PHASE 2: MARKET DAY
+═══════════════════════════════════════════════ -->
+<section class="phase" id="phase-market">
+
+  <div id="weather-strip-display" class="weather-strip sunny">
+    <span class="weather-icon">☀️</span>
+    <span id="weather-text-main">Beautiful day — steady foot traffic expected.</span>
+  </div>
+
+  <div class="market-layout">
+
+    <div>
+      <div style="margin-bottom:0.5rem;" id="market-goal-badge"></div>
+
+      <div class="booth-visual">
+        <div class="booth-banner">🪴 Your Booth · Green Hill Farm</div>
+        <div class="booth-items" id="booth-items-display"></div>
+      </div>
+
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.5rem;">
+        <span style="font-size:0.83rem;color:var(--muted);">Market day progress</span>
+        <span style="font-size:0.83rem;font-weight:700;color:var(--bark-dark);" id="time-label">8:00 AM</span>
+      </div>
+      <div class="progress-track"><div class="progress-fill" id="progress-fill" style="width:0%"></div></div>
+
+      <div style="display:flex;gap:0.5rem;margin:1rem 0 0.65rem;">
+        <button class="btn btn-primary" id="tick-btn" onclick="doTick()" style="flex:1;">⏱ Next hour</button>
+        <button class="btn btn-secondary" id="fast-btn" onclick="fastForward()">⏩ Fast-forward to close</button>
+      </div>
+
+      <h3 style="font-family:Georgia,serif;font-size:0.95rem;color:var(--bark-dark);margin-bottom:0.5rem;">Market log</h3>
+      <div class="log-feed" id="log-feed"></div>
+    </div>
+
+    <div class="stats-panel">
+      <div class="stats-card">
+        <h3>Live financials</h3>
+        <div class="stat-row"><span class="label">Revenue so far</span><span class="value green" id="live-revenue">$0.00</span></div>
+        <div class="stat-row"><span class="label">Cost paid</span><span class="value" id="live-cost">$0.00</span></div>
+        <div class="stat-row"><span class="label">Net profit</span><span class="value" id="live-profit">–$0.00</span></div>
+        <div class="stat-row"><span class="label">Units sold</span><span class="value" id="live-sold">0</span></div>
+        <div class="stat-row"><span class="label">Units remaining</span><span class="value" id="live-remain">0</span></div>
+        <!-- goal-specific live progress -->
+        <div class="goal-progress-wrap" id="goal-progress-wrap">
+          <div class="goal-progress-label">
+            <span id="goal-prog-label">Goal progress</span>
+            <span id="goal-prog-pct">0%</span>
+          </div>
+          <div class="goal-track"><div class="goal-fill" id="goal-fill" style="width:0%"></div></div>
+        </div>
+      </div>
+      <div class="tip-card" id="tip-card">
+        <strong>Tip</strong>
+        The market opens at 8 AM. Morning is prime time — don't wait too long to see results.
+      </div>
+    </div>
+
+  </div>
+</section>
+
+
+<!-- ══════════════════════════════════════════════
+     PHASE 3: RESULTS
+═══════════════════════════════════════════════ -->
+<section class="phase" id="phase-results">
+
+  <div class="results-banner">
+    <div class="grade" id="result-grade">🌻</div>
+    <h2 id="result-headline">Market's closed!</h2>
+    <div id="result-goal-verdict"></div>
+    <p id="result-summary" style="margin-top:0.6rem;">Here's how your day went at the booth.</p>
+  </div>
+
+  <div class="results-grid" id="results-grid">
+    <div class="result-box" id="rbox-revenue"><div class="rb-label">Revenue</div><div class="rb-value" id="res-revenue">—</div></div>
+    <div class="result-box" id="rbox-cost"><div class="rb-label">Wholesale cost</div><div class="rb-value" id="res-cost">—</div></div>
+    <div class="result-box" id="rbox-profit"><div class="rb-label">Net profit / loss</div><div class="rb-value" id="res-profit">—</div></div>
+    <div class="result-box" id="rbox-sold"><div class="rb-label">Units sold</div><div class="rb-value" id="res-sold">—</div></div>
+    <div class="result-box" id="rbox-sellthrough"><div class="rb-label">Sell-through rate</div><div class="rb-value" id="res-sellthrough">—</div></div>
+    <div class="result-box" id="rbox-best"><div class="rb-label">Best seller</div><div class="rb-value" id="res-best">—</div></div>
+  </div>
+
+  <div class="breakdown-table">
+    <h3>Item-by-item breakdown</h3>
+    <div id="breakdown-rows"></div>
+  </div>
+
+  <div class="btn-row">
+    <button class="btn btn-primary" onclick="resetGame()">🌿 New day, new booth</button>
+  </div>
+
+</section>
+
+<script>
+/* ══════════════════════════════════════════════
+   DATA
+══════════════════════════════════════════════ */
+const PRODUCE = [
+  { id:'tomato',   emoji:'🍅', name:'Heirloom Tomatoes', hint:'Always popular. Goes fast.',       costPer:0.45, suggestPrice:1.50, unit:'lb',    defaultQty:30 },
+  { id:'corn',     emoji:'🌽', name:'Sweet Corn',         hint:'Summer staple. Price it right.',  costPer:0.30, suggestPrice:0.90, unit:'ear',   defaultQty:40 },
+  { id:'zucchini', emoji:'🥒', name:'Zucchini',           hint:"Slow mover. Don't overbuy.",      costPer:0.25, suggestPrice:0.80, unit:'each',  defaultQty:20 },
+  { id:'peach',    emoji:'🍑', name:'Peaches',            hint:'Premium item. Sell by aroma.',    costPer:0.65, suggestPrice:2.25, unit:'each',  defaultQty:25 },
+  { id:'herb',     emoji:'🌿', name:'Mixed Herb Bundles', hint:'Low cost, high margin.',           costPer:0.40, suggestPrice:3.00, unit:'bunch', defaultQty:15 },
+  { id:'pepper',   emoji:'🫑', name:'Bell Peppers',       hint:'Colorful, sells well.',            costPer:0.35, suggestPrice:1.20, unit:'each',  defaultQty:30 },
+  { id:'garlic',   emoji:'🧄', name:'Garlic Heads',       hint:'Niche but loyal buyers.',          costPer:0.20, suggestPrice:1.50, unit:'head',  defaultQty:20 },
+  { id:'berry',    emoji:'🍓', name:'Mixed Berries',      hint:'High value, short shelf life.',    costPer:0.90, suggestPrice:4.00, unit:'pint',  defaultQty:18 },
+  { id:'squash',   emoji:'🎃', name:'Butternut Squash',   hint:'Heavy, low sell-through risk.',    costPer:0.55, suggestPrice:2.00, unit:'each',  defaultQty:15 },
+  { id:'lettuce',  emoji:'🥬', name:'Lettuce Heads',      hint:'Morning rush item.',               costPer:0.30, suggestPrice:1.80, unit:'head',  defaultQty:20 },
+];
+
+const WEATHERS = [
+  { id:'sunny',  icon:'☀️',  label:'Sunny & warm',  strip:'Beautiful sunny day — steady foot traffic all morning.', trafficMod:1.20, demandMod:1.10 },
+  { id:'cloudy', icon:'⛅',  label:'Partly cloudy', strip:'Mild and cloudy — normal turnout, average traffic.',     trafficMod:1.00, demandMod:1.00 },
+  { id:'rainy',  icon:'🌧️', label:'Rainy',          strip:'Light rain today — expect lighter crowds than usual.',   trafficMod:0.65, demandMod:0.85 },
+];
+
+/* ── GOAL DEFINITIONS ─────────────────────────
+   Each goal has:
+     scoreOf(stats)  → 0-100 numeric score
+     grade(stats)    → { emoji, headline, verdict, verdictClass, summary }
+     focusBoxId      → which result-box to highlight
+     progressLabel   → live panel label
+     progressOf(stats) → 0-1 fraction for live bar
+══════════════════════════════════════════════ */
+const GOALS = {
+  profit: {
+    label: '💰 Turn a Profit',
+    focusBoxId: 'rbox-profit',
+    progressLabel: 'Profit target',
+    progressOf(s) {
+      // Full bar at +$30 profit; empty at -$20 or below
+      return Math.min(Math.max((s.profit + 20) / 50, 0), 1);
+    },
+    grade(s) {
+      const p = s.profit;
+      if (p >= 50)  return { emoji:'🌟', headline:'Incredible margins!',    verdictClass:'met',     verdict:'Goal met — handsome profit',    summary:`You turned $${p.toFixed(2)} net profit. Pricing strategy paid off.` };
+      if (p >= 20)  return { emoji:'🌻', headline:'Profitable day!',        verdictClass:'met',     verdict:'Goal met — solidly in the black', summary:`$${p.toFixed(2)} net profit. The booth is working.` };
+      if (p >= 1)   return { emoji:'🌾', headline:'Just scraped by.',       verdictClass:'partial', verdict:'Barely profitable',              summary:`Only $${p.toFixed(2)} profit. A closer run than it needed to be.` };
+      if (p >= -10) return { emoji:'☁️', headline:'Break-even territory.', verdictClass:'partial', verdict:'Goal missed — near break-even',  summary:`$${Math.abs(p).toFixed(2)} short of profit. Tighten quantities next time.` };
+      return         { emoji:'🥀', headline:'Tough day at the booth.',       verdictClass:'missed',  verdict:'Goal missed — took a loss',      summary:`Lost $${Math.abs(p).toFixed(2)} today. Revisit pricing or reduce overstock.` };
+    },
+  },
+  sellthrough: {
+    label: '🧺 Empty the Booth',
+    focusBoxId: 'rbox-sellthrough',
+    progressLabel: 'Sell-through target (85%)',
+    progressOf(s) { return Math.min(s.sellPct / 85, 1); },
+    grade(s) {
+      const pct = s.sellPct;
+      if (pct >= 95) return { emoji:'🌟', headline:'Wiped clean!',          verdictClass:'met',     verdict:'Goal crushed — near-total sell-through', summary:`${pct.toFixed(0)}% sold. Virtually nothing left on the table. Masterful.` };
+      if (pct >= 85) return { emoji:'🌻', headline:'Almost nothing left!',  verdictClass:'met',     verdict:'Goal met — 85%+ sold',                   summary:`${pct.toFixed(0)}% sell-through. The booth went home light.` };
+      if (pct >= 70) return { emoji:'🌾', headline:'Pretty good haul.',     verdictClass:'partial', verdict:'Close — a few units lingered',            summary:`${pct.toFixed(0)}% sold. You'll be lugging some produce home, but not much.` };
+      if (pct >= 50) return { emoji:'☁️', headline:'Half left behind.',     verdictClass:'missed',  verdict:'Goal missed — too much unsold',           summary:`Only ${pct.toFixed(0)}% sold through. Consider lower prices or smaller quantities.` };
+      return          { emoji:'🥀', headline:'Booth barely moved.',         verdictClass:'missed',  verdict:'Goal missed — most stock unsold',         summary:`${pct.toFixed(0)}% sell-through. Pricing was likely too high, or quantities too ambitious.` };
+    },
+  },
+  freshness: {
+    label: '🌱 No Waste',
+    focusBoxId: 'rbox-waste',
+    progressLabel: 'Items within waste target',
+    progressOf(s) {
+      const within = s.items.filter(i => (i.qty - i.sold) <= 3).length;
+      return s.items.length > 0 ? within / s.items.length : 0;
+    },
+    grade(s) {
+      const wastedItems = s.items.filter(i => (i.qty - i.sold) > 3);
+      const totalWaste  = s.items.reduce((a, i) => a + Math.max(0, i.qty - i.sold), 0);
+      if (wastedItems.length === 0) return { emoji:'🌟', headline:'Zero waste!',            verdictClass:'met',     verdict:'Goal met — nothing wasted',            summary:`Every item came in at 3 unsold units or fewer. Pristine day.` };
+      if (wastedItems.length === 1) return { emoji:'🌻', headline:'Nearly waste-free.',     verdictClass:'met',     verdict:'Goal met — one item over threshold',    summary:`Just one item went over the waste limit. ${totalWaste} units total unsold.` };
+      if (wastedItems.length === 2) return { emoji:'🌾', headline:'A little left behind.',  verdictClass:'partial', verdict:'Partial — 2 items over threshold',      summary:`${wastedItems.length} items had more than 3 unsold. ${totalWaste} units went home.` };
+      return                         { emoji:'🥀', headline:'Too much unsold.',             verdictClass:'missed',  verdict:'Goal missed — significant waste',       summary:`${wastedItems.length} items exceeded the waste threshold. Overbought or underpriced.` };
+    },
+  },
+};
+
+const MARKET_OPEN  = 8;
+const MARKET_CLOSE = 13;
+const HOURS        = MARKET_CLOSE - MARKET_OPEN;
+
+const TIPS = {
+  profit: [
+    'Margin matters more than volume — a $4 pint of berries beats ten $0.25 corn ears.',
+    'Price slightly above cost at minimum, then push up from there until demand drops.',
+    'Overbuying kills profit — wholesale cost is sunk the moment you open the booth.',
+    'Premium items like peaches and herbs carry the best margin potential.',
+  ],
+  sellthrough: [
+    'To sell everything, price just below where buyers hesitate — watch your stock levels.',
+    'Morning rush is your best window. Stubborn items may need a price cut by 10 AM.',
+    'Garlic and squash are the hardest to fully move. Don\'t overbuy them.',
+    'Rainy days slash traffic 35% — aggressive pricing is the only way to compensate.',
+  ],
+  freshness: [
+    'Buying fewer units keeps waste low — set your max qty conservatively.',
+    'Items priced near fair value sell through fast and rarely leave orphan stock.',
+    'If a item is sitting at 5+ unsold by 11 AM, it\'s at risk of hitting your waste limit.',
+    'Berries and herbs spoil fastest — never over-order them if freshness is the goal.',
+  ],
+};
+
+/* ══════════════════════════════════════════════
+   STATE
+══════════════════════════════════════════════ */
+let selectedGoal  = 'profit';
+let selectedIds   = new Set();
+let boothItems    = [];
+let weather       = null;
+let currentHour   = MARKET_OPEN;
+let totalCost     = 0;
+let totalRevenue  = 0;
+let gameRunning   = false;
+let logEntries    = [];
+
+/* ══════════════════════════════════════════════
+   INIT
+══════════════════════════════════════════════ */
+function init() {
+  renderProduceGrid();
+  weather = WEATHERS[Math.floor(Math.random() * WEATHERS.length)];
+  document.getElementById('header-weather').textContent = weather.icon + ' ' + weather.label;
+}
+
+/* ══════════════════════════════════════════════
+   GOAL SELECTION
+══════════════════════════════════════════════ */
+function selectGoal(id) {
+  selectedGoal = id;
+  ['profit','sellthrough','freshness'].forEach(g => {
+    document.getElementById('goal-' + g).classList.toggle('selected', g === id);
+  });
+}
+
+/* ══════════════════════════════════════════════
+   PRODUCE GRID
+══════════════════════════════════════════════ */
+function renderProduceGrid() {
+  document.getElementById('produce-grid').innerHTML = PRODUCE.map(p => `
+    <div class="produce-card" id="pc-${p.id}" onclick="toggleProduce('${p.id}')">
+      <span class="produce-emoji">${p.emoji}</span>
+      <div class="produce-name">${p.name}</div>
+      <div class="produce-hint">${p.hint}</div>
+      <div class="produce-cost">Wholesale: $${p.costPer.toFixed(2)} / ${p.unit}</div>
+    </div>
+  `).join('');
+}
+
+function toggleProduce(id) {
+  selectedIds.has(id) ? selectedIds.delete(id) : selectedIds.add(id);
+  document.getElementById('pc-' + id).classList.toggle('selected', selectedIds.has(id));
+  updateSetupTable();
+}
+
+function updateSetupTable() {
+  const wrap   = document.getElementById('setup-table-wrap');
+  const tbody  = document.getElementById('price-tbody');
+  const prompt = document.getElementById('select-prompt');
+  if (selectedIds.size === 0) { wrap.style.display = 'none'; prompt.style.display = 'block'; return; }
+  wrap.style.display = ''; prompt.style.display = 'none';
+  tbody.innerHTML = [...selectedIds].map(id => {
+    const p = PRODUCE.find(x => x.id === id);
+    return `
+      <tr id="row-${p.id}">
+        <td>${p.emoji}</td>
+        <td><strong style="font-size:0.88rem;">${p.name}</strong></td>
+        <td><input class="qty-input" type="number" id="qty-${p.id}" value="${p.defaultQty}" min="1" max="100" onchange="recalcCost()"></td>
+        <td><input class="price-input" type="number" id="price-${p.id}" value="${p.suggestPrice.toFixed(2)}" min="0.10" step="0.05" onchange="recalcCost()"></td>
+        <td style="font-size:0.78rem;color:var(--muted);">$${p.suggestPrice.toFixed(2)}<br><span class="suggestion-tag">fair</span></td>
+        <td><button class="remove-btn" onclick="removeProduce('${p.id}')" title="Remove">✕</button></td>
+      </tr>`;
+  }).join('');
+  recalcCost();
+}
+
+function removeProduce(id) {
+  selectedIds.delete(id);
+  document.getElementById('pc-' + id).classList.remove('selected');
+  updateSetupTable();
+}
+
+function recalcCost() {
+  let cost = 0;
+  for (const id of selectedIds) {
+    const p   = PRODUCE.find(x => x.id === id);
+    const qty = parseInt(document.getElementById('qty-' + id)?.value || p.defaultQty);
+    cost += qty * p.costPer;
+  }
+  totalCost = cost;
+  document.getElementById('total-cost-display').textContent = '$' + cost.toFixed(2);
+}
+
+/* ══════════════════════════════════════════════
+   OPEN BOOTH
+══════════════════════════════════════════════ */
+function openBooth() {
+  const err = document.getElementById('setup-error');
+  if (selectedIds.size < 2) { err.textContent = 'Pick at least 2 items.'; return; }
+  err.textContent = '';
+
+  boothItems = [...selectedIds].map(id => {
+    const p     = PRODUCE.find(x => x.id === id);
+    const qty   = parseInt(document.getElementById('qty-' + id).value   || p.defaultQty);
+    const price = parseFloat(document.getElementById('price-' + id).value || p.suggestPrice);
+    return { ...p, qty, price, sold: 0 };
+  });
+
+  currentHour  = MARKET_OPEN;
+  totalRevenue = 0;
+  logEntries   = [];
+  gameRunning  = true;
+
+  // goal badge in market phase
+  const goalDef = GOALS[selectedGoal];
+  document.getElementById('market-goal-badge').innerHTML =
+    `<span class="goal-badge">${goalDef.label}</span>`;
+  document.getElementById('goal-prog-label').textContent = goalDef.progressLabel;
+
+  // ensure freshness goal has its result box
+  ensureWasteBox();
+
+  setWeatherStrip();
+  renderBoothItems();
+  updateStats();
+  renderLog();
+  showPhase('phase-market');
+  updateTimeDisplay();
+
+  addLog('open', `🌅 Booth is open! ${boothItems.length} items ready to sell.`);
+  addLog('event', `${weather.icon} ${weather.label} — ${
+    weather.id === 'rainy'  ? 'Lighter crowd expected today.'  :
+    weather.id === 'sunny'  ? 'Perfect selling weather.'       : 'Normal turnout.'
+  }`);
+
+  randomTip();
+}
+
+/* inject a waste result-box for freshness goal (only if not already present) */
+function ensureWasteBox() {
+  if (!document.getElementById('rbox-waste')) {
+    const grid = document.getElementById('results-grid');
+    const box  = document.createElement('div');
+    box.className = 'result-box';
+    box.id = 'rbox-waste';
+    box.innerHTML = '<div class="rb-label">Max waste / item</div><div class="rb-value" id="res-waste">—</div>';
+    grid.appendChild(box);
+  }
+}
+
+/* ══════════════════════════════════════════════
+   MARKET MECHANICS
+══════════════════════════════════════════════ */
+function hourDemand(hour) {
+  return ({ 8:1.5, 9:1.8, 10:1.3, 11:1.0, 12:0.7 }[hour] || 1.0) * weather.trafficMod;
+}
+
+function itemDemand(item, hour) {
+  const fairness    = item.suggestPrice / Math.max(item.price, 0.01);
+  const demandScore = Math.min(Math.max(fairness, 0.3), 2.2);
+  const hd          = hourDemand(hour);
+  const base        = 0.12 * demandScore * hd * weather.demandMod;
+  const remaining   = item.qty - item.sold;
+  const raw         = base * remaining;
+  return Math.max(0, Math.round(raw + (Math.random() - 0.5) * raw * 0.5));
+}
+
+function doTick() {
+  if (!gameRunning || currentHour >= MARKET_CLOSE) return;
+  const hour = currentHour;
+  let soldThisHour = 0;
+
+  for (const item of boothItems) {
+    const remaining = item.qty - item.sold;
+    if (remaining <= 0) continue;
+    const sales = Math.min(itemDemand(item, hour), remaining);
+    if (sales > 0) {
+      item.sold    += sales;
+      totalRevenue += sales * item.price;
+      soldThisHour += sales;
+      addLog('sale', `${item.emoji} Sold ${sales} ${item.unit}${sales > 1 ? 's' : ''} of ${item.name} @ $${item.price.toFixed(2)}`);
+    }
+  }
+
+  if (soldThisHour === 0) addLog('event', '🚶 Quiet stretch — nobody stopped at the booth this hour.');
+
+  if (boothItems.every(i => i.qty === i.sold)) {
+    addLog('sale', '🎉 Sold out of everything! Packing up early.');
+    endMarket(); return;
+  }
+
+  currentHour++;
+  updateTimeDisplay();
+  renderBoothItems();
+  updateStats();
+  renderLog();
+
+  if (currentHour >= MARKET_CLOSE) {
+    addLog('event', '🔔 1 PM — market closing time. Packing up.');
+    endMarket();
+  } else {
+    randomTip();
+  }
+}
+
+function fastForward() {
+  while (gameRunning && currentHour < MARKET_CLOSE) doTick();
+}
+
+function endMarket() {
+  gameRunning = false;
+  document.getElementById('tick-btn').disabled = true;
+  document.getElementById('fast-btn').disabled = true;
+  renderLog();
+  setTimeout(() => showResults(), 900);
+}
+
+/* ══════════════════════════════════════════════
+   RENDER HELPERS
+══════════════════════════════════════════════ */
+function renderBoothItems() {
+  document.getElementById('booth-items-display').innerHTML = boothItems.map(item => {
+    const remaining = item.qty - item.sold;
+    const pct       = remaining / item.qty;
+    const cls       = remaining === 0 ? 'sold-out' : pct < 0.25 ? 'selling-out' : '';
+    const tag       = remaining === 0 ? '🚫 Sold out' : pct < 0.25 ? '⚡ Almost gone' : `${remaining} left`;
+    return `
+      <div class="booth-item ${cls}">
+        <span class="item-emoji">${item.emoji}</span>
+        <div class="item-info">
+          <div class="item-name">${item.name}</div>
+          <div class="item-price">$${item.price.toFixed(2)} / ${item.unit}</div>
+          <div class="item-stock">${tag}</div>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+function buildStats() {
+  const soldTotal  = boothItems.reduce((a, b) => a + b.sold, 0);
+  const totalUnits = boothItems.reduce((a, b) => a + b.qty,  0);
+  const profit     = totalRevenue - totalCost;
+  const sellPct    = totalUnits > 0 ? (soldTotal / totalUnits * 100) : 0;
+  const maxWaste   = boothItems.reduce((a, b) => Math.max(a, b.qty - b.sold), 0);
+  const best       = [...boothItems].sort((a,b) => (b.sold * b.price) - (a.sold * a.price))[0];
+  return { soldTotal, totalUnits, profit, sellPct, maxWaste, best, items: boothItems };
+}
+
+function updateStats() {
+  const s = buildStats();
+  document.getElementById('live-revenue').textContent = '$' + totalRevenue.toFixed(2);
+  document.getElementById('live-cost').textContent    = '$' + totalCost.toFixed(2);
+  const profitEl = document.getElementById('live-profit');
+  profitEl.textContent = (s.profit >= 0 ? '+$' : '-$') + Math.abs(s.profit).toFixed(2);
+  profitEl.classList.toggle('green', s.profit >= 0);
+  profitEl.classList.toggle('red',   s.profit < 0);
+  document.getElementById('live-sold').textContent   = s.soldTotal;
+  document.getElementById('live-remain').textContent = s.totalUnits - s.soldTotal;
+
+  const timePct = Math.min(((currentHour - MARKET_OPEN) / HOURS) * 100, 100);
+  document.getElementById('progress-fill').style.width = timePct + '%';
+
+  // goal progress bar
+  const goalDef = GOALS[selectedGoal];
+  const frac    = goalDef.progressOf(s);
+  document.getElementById('goal-fill').style.width = Math.round(frac * 100) + '%';
+  document.getElementById('goal-prog-pct').textContent = Math.round(frac * 100) + '%';
+}
+
+function addLog(type, msg) {
+  logEntries.push({ type, msg, time: fmtHour(currentHour) });
+}
+
+function renderLog() {
+  document.getElementById('log-feed').innerHTML = [...logEntries].reverse().map(e => {
+    const cls = e.type === 'sale' ? 'log-sale' : e.type === 'bad' ? 'log-bad' : 'log-event';
+    return `<div class="log-entry"><span class="log-time">${e.time}</span><span class="${cls}">${e.msg}</span></div>`;
+  }).join('');
+}
+
+function randomTip() {
+  const pool = TIPS[selectedGoal] || TIPS.profit;
+  const tip  = pool[Math.floor(Math.random() * pool.length)];
+  document.getElementById('tip-card').innerHTML = `<strong>Tip</strong>${tip}`;
+}
+
+function updateTimeDisplay() {
+  const t = fmtHour(currentHour);
+  document.getElementById('time-label').textContent  = t;
+  document.getElementById('header-time').textContent = t;
+}
+
+function fmtHour(h) {
+  if (h === 12) return '12:00 PM';
+  if (h === 13) return '1:00 PM';
+  return h + ':00 ' + (h < 12 ? 'AM' : 'PM');
+}
+
+function setWeatherStrip() {
+  const el = document.getElementById('weather-strip-display');
+  el.className = 'weather-strip ' + weather.id;
+  el.innerHTML = `<span class="weather-icon">${weather.icon}</span><span>${weather.strip}</span>`;
+}
+
+/* ══════════════════════════════════════════════
+   RESULTS
+══════════════════════════════════════════════ */
+function showResults() {
+  const s       = buildStats();
+  const goalDef = GOALS[selectedGoal];
+  const g       = goalDef.grade(s);
+
+  // banner
+  document.getElementById('result-grade').textContent    = g.emoji;
+  document.getElementById('result-headline').textContent = g.headline;
+  document.getElementById('result-summary').textContent  = g.summary;
+  document.getElementById('result-goal-verdict').innerHTML =
+    `<span class="goal-verdict ${g.verdictClass}">${g.verdict}</span>`;
+
+  // stats boxes
+  document.getElementById('res-revenue').textContent     = '$' + totalRevenue.toFixed(2);
+  document.getElementById('res-cost').textContent        = '$' + totalCost.toFixed(2);
+  const profEl = document.getElementById('res-profit');
+  profEl.textContent = (s.profit >= 0 ? '+$' : '-$') + Math.abs(s.profit).toFixed(2);
+  profEl.className   = 'rb-value ' + (s.profit >= 0 ? 'profit' : 'loss');
+  document.getElementById('res-sold').textContent        = s.soldTotal + ' units';
+  document.getElementById('res-sellthrough').textContent = s.sellPct.toFixed(0) + '%';
+  document.getElementById('res-best').textContent        = s.best ? s.best.emoji + ' ' + s.best.name : '—';
+  if (document.getElementById('res-waste')) {
+    document.getElementById('res-waste').textContent = s.maxWaste + ' units';
+  }
+
+  // highlight the goal-relevant box
+  document.querySelectorAll('.result-box').forEach(b => b.classList.remove('goal-focus'));
+  const focusBox = document.getElementById(goalDef.focusBoxId);
+  if (focusBox) focusBox.classList.add('goal-focus');
+
+  // per-item breakdown
+  document.getElementById('breakdown-rows').innerHTML = boothItems.map(item => {
+    const rev        = item.sold * item.price;
+    const cost       = item.qty  * item.costPer;
+    const itemProfit = rev - cost;
+    const unsold     = item.qty - item.sold;
+    // freshness goal: flag items over 3 unsold
+    const wasteFlag  = (selectedGoal === 'freshness' && unsold > 3)
+      ? `<span style="font-size:0.72rem;color:var(--tomato);margin-left:4px;">⚠ ${unsold} unsold</span>` : '';
+    return `
+      <div class="brow">
+        <div class="bname">${item.emoji} ${item.name}${wasteFlag}</div>
+        <div class="bsold">${item.sold} / ${item.qty} sold</div>
+        <div class="${itemProfit >= 0 ? 'brevenue' : 'bloss'}">${itemProfit >= 0 ? '+' : '–'}$${Math.abs(itemProfit).toFixed(2)}</div>
+      </div>`;
+  }).join('');
+
+  showPhase('phase-results');
+}
+
+/* ══════════════════════════════════════════════
+   RESET
+══════════════════════════════════════════════ */
+function resetGame() {
+  selectedGoal = 'profit';
+  selectedIds  = new Set();
+  boothItems   = [];
+  currentHour  = MARKET_OPEN;
+  totalRevenue = 0;
+  totalCost    = 0;
+  logEntries   = [];
+  gameRunning  = false;
+
+  document.getElementById('tick-btn').disabled = false;
+  document.getElementById('fast-btn').disabled = false;
+  document.getElementById('header-time').textContent = '8:00 AM';
+
+  // reset goal cards
+  ['profit','sellthrough','freshness'].forEach(g => {
+    document.getElementById('goal-' + g).classList.toggle('selected', g === 'profit');
+  });
+
+  weather = WEATHERS[Math.floor(Math.random() * WEATHERS.length)];
+  document.getElementById('header-weather').textContent = weather.icon + ' ' + weather.label;
+
+  renderProduceGrid();
+  document.getElementById('setup-table-wrap').style.display = 'none';
+  document.getElementById('select-prompt').style.display    = 'block';
+  showPhase('phase-setup');
+}
+
+function showPhase(id) {
+  document.querySelectorAll('.phase').forEach(p => p.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+/* ── BOOT ── */
+init();
+</script>
+</body>
+</html>

@@ -1,6 +1,6 @@
 'use client'
 
-import type { ReactNode } from 'react'
+import { Fragment, type ReactNode } from 'react'
 import { useMemo, useState } from 'react'
 import { AlertTriangle, CheckCircle2, ExternalLink, FileCode2, GitBranch } from 'lucide-react'
 import CopyButton from '@/app/prompt/[id]/CopyButton'
@@ -111,20 +111,31 @@ function PipeNode({
   title,
   children,
   terminal = false,
+  variant = 'prompt',
+  selected = false,
 }: {
   eyebrow: string
   title: string
   children: ReactNode
   terminal?: boolean
+  variant?: 'prompt' | 'response'
+  selected?: boolean
 }) {
+  const cardClassName = [
+    'relative border bg-white p-5 shadow-[0_18px_44px_rgba(24,24,27,0.07)]',
+    variant === 'response' && selected
+      ? 'border-brand-blue ring-2 ring-brand-blue/25'
+      : 'border-surface-200',
+  ].join(' ')
+
   return (
-    <article className="relative pl-[88px]">
+    <article className="relative pl-[88px]" data-source-run-node={variant}>
       {!terminal && (
         <div className="absolute left-[22px] top-[80px] h-[calc(100%+30px)] w-8 border-x-4 border-[#07551f] bg-[#2bd15f] shadow-[inset_5px_0_0_rgba(255,255,255,0.24),inset_-5px_0_0_rgba(0,0,0,0.2)]" />
       )}
       <div className="absolute left-0 top-8 h-16 w-12 border-4 border-[#07551f] bg-[#2bd15f] shadow-[inset_6px_0_0_rgba(255,255,255,0.28),inset_-6px_0_0_rgba(0,0,0,0.18)]" />
       <div className="absolute left-11 top-[54px] h-7 w-12 border-y-4 border-[#07551f] bg-[#2bd15f] shadow-[inset_0_5px_0_rgba(255,255,255,0.18),inset_0_-5px_0_rgba(0,0,0,0.16)]" />
-      <div className="relative border border-surface-200 bg-white p-5 shadow-[0_18px_44px_rgba(24,24,27,0.07)]">
+      <div className={cardClassName}>
         <div className="font-mono text-[10px] uppercase tracking-[0.18em] text-surface-500">
           {eyebrow}
         </div>
@@ -258,9 +269,8 @@ function ResponsePackageCard({
     <>
       <div className="min-w-0">
         <div className="block font-mono text-[10px] uppercase tracking-[0.16em] text-surface-500">
-          Response package {String(step.stepNumber).padStart(2, '0')}
+          Artifact selection
         </div>
-        <div className="mt-1 block text-base font-black text-surface-900">{step.title}</div>
         <div className="mt-1 block text-sm leading-6 text-surface-600">
           {hasArtifactPackages
             ? artifactCopy
@@ -284,30 +294,26 @@ function ResponsePackageCard({
   )
 
   return (
-    <div
-      className={[
-        'border bg-white transition',
-        hasArtifactPackages && selected
-          ? 'border-brand-blue ring-2 ring-brand-blue/25'
-          : 'border-surface-200 hover:border-brand-blue/60',
-      ].join(' ')}
-    >
+    <div className="space-y-4">
       {canSelectPackage ? (
         <button
           type="button"
           onClick={() => onSelect?.(detailPackage.id)}
           aria-pressed={selected}
-          className="flex w-full items-start justify-between gap-4 p-4 text-left transition hover:bg-brand-blue/5"
+          className={[
+            'flex w-full items-start justify-between gap-4 border p-4 text-left transition hover:bg-brand-blue/5',
+            selected ? 'border-brand-blue bg-brand-blue/5' : 'border-surface-200 bg-surface-50',
+          ].join(' ')}
         >
           {headerContent}
         </button>
       ) : (
-        <div className="flex w-full items-start justify-between gap-4 p-4 text-left">
+        <div className="flex w-full items-start justify-between gap-4 border border-surface-200 bg-surface-50 p-4 text-left">
           {headerContent}
         </div>
       )}
 
-      <div className="space-y-4 border-t border-surface-200 bg-white p-4">
+      <div className="space-y-4 bg-white">
         {step.callout && <StepCallout callout={step.callout} />}
 
         {detailPackage ? (
@@ -528,14 +534,23 @@ export default function SourceRunShowcase({
             const selectedStepPackage = artifactPackages.find((pkg) => selectedPackage?.id === pkg.id)
 
             return (
-              <PipeNode
-                key={step.id}
-                eyebrow={`Prompt ${String(step.stepNumber).padStart(2, '0')}`}
-                title={step.title}
-                terminal={index === steps.length - 1}
-              >
-                <PromptText text={step.prompt} />
-                <div className="mt-4">
+              <Fragment key={step.id}>
+                <PipeNode
+                  eyebrow={`Prompt ${String(step.stepNumber).padStart(2, '0')}`}
+                  title={step.title}
+                  terminal={false}
+                  variant="prompt"
+                >
+                  <PromptText text={step.prompt} />
+                </PipeNode>
+
+                <PipeNode
+                  eyebrow={`Response package ${String(step.stepNumber).padStart(2, '0')}`}
+                  title={step.title}
+                  terminal={index === steps.length - 1}
+                  variant="response"
+                  selected={Boolean(selectedStepPackage)}
+                >
                   <ResponsePackageCard
                     step={step}
                     artifactPackages={artifactPackages}
@@ -544,8 +559,8 @@ export default function SourceRunShowcase({
                     sourceRunUrl={sourceRunUrl}
                     providerName={providerName}
                   />
-                </div>
-              </PipeNode>
+                </PipeNode>
+              </Fragment>
             )
           })}
         </div>

@@ -48,7 +48,7 @@ Do all of these. Missing one leaves a half-removed project: a 404 link still in 
 4. **`src/lib/data.ts`** — remove `MY_PROJECT_ID` from the `APPROVED_PROJECT_IDS` Set, and remove its now-unused import.
 5. **`src/lib/project-engagement.ts`** — remove `MY_PROJECT_ID` from the `CODE_ONLY_SHOWCASE_IDS` Set (only present if it was a code-only project), and remove its now-unused import.
 6. **`src/lib/mock-data.ts`** — remove (a) the `...MY_PROJECT_SHOWCASE.steps.map(...)` spread from `mockSteps`; (b) the `mockPrompts` entry for this project; (c) the dedicated author profile in `mockProfiles` **only if** it was created solely for this project (e.g. a sequential `22222222-…-2222222222NN` id) and no other project uses it — never remove the shared `PathForge Projects` profile (`22222222-2222-2222-2222-222222222211`) or any profile another showcase still references; and (d) the now-unused `MY_PROJECT_SHOWCASE` import.
-7. **`src/app/my-project-demo/`** — delete the entire route directory: `page.tsx` and, for multi-prompt projects, the sibling explorer component (e.g. `PomodoroSourceRunExplorer.tsx` / `Hp10BiiSourceRunExplorer.tsx`). The explorer is project-specific — it goes with the route.
+7. **`src/app/my-project-demo/`** — delete the entire route directory. Most current multi-prompt source-run pages use a `page.tsx` that passes source-run steps into the shared `SourceRunShowcase`; delete only the project-specific route files, never the shared showcase component.
 8. **`public/artifacts/`** — delete the project's artifact files: the final artifact, every `<slug>-step-N.html`, and the `<slug>-capture-notes.md`. Leave other projects' artifacts untouched.
 
 ### Import-cleanup discipline

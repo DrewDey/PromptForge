@@ -6,8 +6,8 @@ Every public project page — generic `/prompt/[id]` or a special showcase route
 
 - **Header / title area** (dark `bg-surface-900`): project title, short description, author/date where available, category/domain, difficulty, model, tools, and real engagement controls. Includes `RunSummary` (3-col grid: model / run-type / captured date) and `ProjectEngagementBar`.
 - **Primary result (artifact-first)**: the final artifact/outcome appears first and loads without blank frames, broken paths, local-only files, or hidden required context. `ArtifactFrame` carries `id="final-result"` (the scroll target — preserve it), a dark border/shadow, a header bar (label + title + Open link), and an iframe with `sandbox="allow-scripts allow-same-origin"` (add `allow-downloads` only for CSV-emitting artifacts), `src` -> `/artifacts/*.html`, fixed height per project.
-- **Build path**: each prompt is paired with the response that followed it. `PipeNode` components, green pipe styling with exact hex `#2bd15f` (bright) and `#07551f` (dark). Node 01 = prompt (left border brand-orange). Node 02+ = response package in a collapsible `details`. Each response: intro text, filename badge, nested code-block `details` (`max-h-[460px] overflow-auto`, scrolls if longer), `CopyButton variant="dark"`, source-run link.
-- **Versioning (multi-response)**: pages with multiple artifact versions need a visible selector. The selected response state is obvious (`CheckCircle2`), and the mounted artifact above matches the selection. Final approved artifact loads first by default; earlier artifacts stay inspectable. HP 10Bii uses `Hp10BiiSourceRunExplorer` for this (not a plain BuildPath); the main `page.tsx` passes the prompts in.
+- **Build path**: each prompt is paired with the response that followed it. `PipeNode` components, green pipe styling with exact hex `#2bd15f` (bright) and `#07551f` (dark). Prompt nodes and response-package nodes are separate connected pipe nodes. A response package follows the prompt that produced it, connected by piping, but it is never embedded inside the prompt card. Each response: intro text, filename badge, nested code-block `details` (`max-h-[460px] overflow-auto`, scrolls if longer), `CopyButton variant="dark"`, source-run link.
+- **Versioning (multi-response)**: pages with multiple artifact versions need a visible selector. The selected response state is obvious (`CheckCircle2`), and the mounted artifact above matches the selection. Final approved artifact loads first by default; earlier artifacts stay inspectable. HP 10Bii uses the shared `SourceRunShowcase` for this; route pages pass exact source-run steps into that component.
 - **Forking**: a visible fork action (`ProjectForkCallout`) that opens `/build?fork={projectId}&forkTitle={projectTitle}` — not just a passive fork count. Must appear on special mounted pages too, not only generic pages.
 - **Community**: `ProjectCommunityPanel` wraps the fork callout + comments zero-state + discussion-signal sidebar with real zero counts. No fake comments/forks/activity. (`ProjectCommunityPanel` fetches the project and returns null if not found.)
 - **Routing**: `/paths` (browse), profile pages, admin rows, and direct project links all resolve to the correct page shape via `PROJECT_ROUTE_OVERRIDES`.
@@ -49,10 +49,11 @@ Before calling a source-run page done / approving / publishing / pushing:
 3. Mounted artifact is non-blank and the main interaction works.
 4. Package switching works (multi-prompt) and the mounted artifact matches the selected package.
 5. Prompt count and response-package count match the source run exactly.
-6. Code blocks collapse; copy/open controls exist.
-7. Fork action is visible and routes to `/build?fork=PROJECT_ID`.
-8. Engagement clicks do not open/navigate to the project page.
-9. Browse card and author-profile links route to the special page.
-10. The stale generic `/prompt/[id]` page is NOT what users see (route override in place).
+6. Prompt nodes and response-package nodes are visually separate connected pipe nodes. The response package follows the prompt that produced it, but is never embedded inside the prompt card.
+7. Code blocks collapse; copy/open controls exist.
+8. Fork action is visible and routes to `/build?fork=PROJECT_ID`.
+9. Engagement clicks do not open/navigate to the project page.
+10. Browse card and author-profile links route to the special page.
+11. The stale generic `/prompt/[id]` page is NOT what users see (route override in place).
 
 If any item fails, keep fixing before reporting done.

@@ -227,9 +227,13 @@ mustInclude(sharedComponent, sharedComponentContent, '<ArtifactCodeBlock', 'shar
 mustInclude(sharedComponent, sharedComponentContent, '<SourceLink', 'shared showcase must expose the full provider source-run link in each response package')
 mustInclude(sharedComponent, sharedComponentContent, 'pathforgeSourceRunUrl', 'shared showcase must allow a PathForge source-run record link')
 mustInclude(sharedComponent, sharedComponentContent, 'Verbatim artifact', 'shared showcase must preserve long generated code as collapsible artifact text')
+mustInclude(sharedComponent, sharedComponentContent, 'data-source-run-node={variant}', 'shared showcase must label prompt and response nodes for layout verification')
+mustInclude(sharedComponent, sharedComponentContent, 'variant="prompt"', 'shared showcase must render prompts as their own pipe nodes')
+mustInclude(sharedComponent, sharedComponentContent, 'variant="response"', 'shared showcase must render response packages as their own pipe nodes')
 mustNotInclude(sharedComponent, sharedComponentContent, 'ProjectEngagementBar', 'shared showcase should not own page-shell engagement controls')
 mustComeBefore(sharedComponent, sharedComponentContent, '<ArtifactFrame', 'Source-run path', 'shared showcase must mount the artifact before the prompt/response path')
 mustComeBefore(sharedComponent, sharedComponentContent, '<PromptText text={step.prompt}', '<ResponsePackageCard', 'shared showcase must render each prompt before its response package')
+mustComeBefore(sharedComponent, sharedComponentContent, 'variant="prompt"', 'variant="response"', 'shared showcase must connect prompt and response as separate sequential pipe nodes')
 
 for (const deletedExplorer of [
   'src/app/hp-10bii-calculator-demo/Hp10BiiSourceRunExplorer.tsx',

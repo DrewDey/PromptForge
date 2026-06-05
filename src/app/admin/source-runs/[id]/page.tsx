@@ -82,11 +82,11 @@ export default async function AdminSourceRunDetailPage({
             </p>
             {preparedProject ? (
               <p className="mt-2 text-sm font-semibold text-blue-950">
-                Prepared route ready: {preparedProject.href}
+                Prepared route ready: {preparedProject.href}. Next action: publish this prepared page from the review item.
               </p>
             ) : (
               <p className="mt-2 text-sm font-semibold text-blue-950">
-                No prepared page is wired for this source run yet.
+                No prepared page is wired for this source run yet. Next action: structure a prepared public page, then return here to publish or decline it.
               </p>
             )}
           </section>

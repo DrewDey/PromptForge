@@ -17,6 +17,7 @@ import ProjectCommunityPanel from '@/components/ProjectCommunityPanel'
 import { detectContentKind } from '@/lib/content-kind'
 import { isPersistableProjectId } from '@/lib/project-engagement'
 import { getProjectRouteOverride } from '@/lib/project-links'
+import { buildProjectForkHref, createProjectForkDraftContract, toProjectForkSourceSteps } from '@/lib/project-forks'
 
 /**
  * Pick the right renderer AND the right eyebrow label for a step's payload.
@@ -109,8 +110,18 @@ export default async function PromptDetailPage({
   const hasSteps = prompt.steps && prompt.steps.length > 0
   const modelDisplay = prompt.model_used ? getModelName(prompt.model_used) : prompt.model_recommendation
   const difficulty = difficultyConfig[prompt.difficulty] || difficultyConfig.beginner
-  const forkParams = new URLSearchParams({ fork: prompt.id, forkTitle: prompt.title })
-  const forkHref = `/build?${forkParams.toString()}`
+  const forkSourceSteps = toProjectForkSourceSteps(prompt)
+  const forkContract = createProjectForkDraftContract({
+    source: { sourceProjectId: prompt.id, sourceProjectTitle: prompt.title },
+    sourceSteps: forkSourceSteps,
+  })
+  const forkHref = buildProjectForkHref({
+    sourceProjectId: prompt.id,
+    sourceProjectTitle: prompt.title,
+    sourceStepId: forkContract.forkPointStep?.id,
+    sourceStepNumber: forkContract.forkPointStep?.stepNumber,
+    promptFamilyId: forkContract.promptFamilyId,
+  })
 
   // Hero "Final output" exhibit (iter 51 — Polish #1).
   // Prefer the project-level final result_content; if absent, fall back to

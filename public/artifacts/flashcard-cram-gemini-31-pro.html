@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cram Drill Flashcards</title>
+    <style>
+        :root {
+            --primary: #4F46E5;
+            --primary-hover: #4338CA;
+            --bg: #F3F4F6;
+            --surface: #FFFFFF;
+            --text: #1F2937;
+            --text-light: #6B7280;
+            --border: #E5E7EB;
+            --success: #10B981;
+            --danger: #EF4444;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+
+        body { background-color: var(--bg); color: var(--text); line-height: 1.5; padding: 2rem; display: flex; flex-direction: column; align-items: center; min-height: 100vh; }
+
+        .container { max-width: 800px; width: 100%; background: var(--surface); border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); overflow: hidden; }
+
+        header { display: flex; justify-content: space-between; align-items: center; padding: 1.5rem 2rem; border-bottom: 1px solid var(--border); background: #f8fafc; }
+        header h1 { font-size: 1.5rem; color: var(--text); }
+
+        .nav-btns button { padding: 0.5rem 1rem; border: none; background: transparent; cursor: pointer; font-weight: 600; color: var(--text-light); border-radius: 6px; transition: all 0.2s; }
+        .nav-btns button.active { background: var(--primary); color: white; }
+
+        .view { display: none; padding: 2rem; }
+        .view.active { display: block; }
+
+        /* Forms & Inputs */
+        .input-group { margin-bottom: 1rem; display: flex; gap: 1rem; flex-wrap: wrap; }
+        input[type="text"], textarea { flex: 1; padding: 0.75rem; border: 1px solid var(--border); border-radius: 6px; font-size: 1rem; width: 100%; min-width: 200px; }
+        textarea { resize: vertical; min-height: 100px; }
+
+        button.btn { padding: 0.75rem 1.5rem; border: none; background: var(--primary); color: white; border-radius: 6px; font-weight: 600; cursor: pointer; transition: background 0.2s; display: inline-flex; align-items: center; justify-content: center; }
+        button.btn:hover { background: var(--primary-hover); }
+        button.btn-outline { background: transparent; border: 1px solid var(--border); color: var(--text); }
+        button.btn-outline:hover { background: var(--bg); }
+        button.btn-danger { background: var(--danger); }
+        button.btn-success { background: var(--success); }
+        button.btn-sm { padding: 0.4rem 0.8rem; font-size: 0.9rem; }
+
+        /* Deck List */
+        .card-list { margin-top: 2rem; display: grid; gap: 1rem; }
+        .list-item { display: flex; justify-content: space-between; padding: 1rem; border: 1px solid var(--border); border-radius: 8px; align-items: flex-start; flex-wrap: wrap; gap: 1rem; }
+        .list-item-content { flex: 1; min-width: 0; }
+        .list-item-content strong { display: block; margin-bottom: 0.25rem; word-break: break-word; }
+        .list-item-content span { color: var(--text-light); font-size: 0.9rem; word-break: break-word; }
+        .list-item-actions { display: flex; gap: 0.5rem; flex-shrink: 0; }
+        .edit-inputs { flex: 1; display: flex; flex-direction: column; gap: 0.5rem; width: 100%; }
+
+        /* Flashcard UI */
+        .flashcard-container { perspective: 1000px; width: 100%; max-width: 500px; height: 300px; margin: 0 auto 2rem auto; cursor: pointer; }
+        .flashcard { width: 100%; height: 100%; position: relative; transition: transform 0.6s cubic-bezier(0.4, 0.2, 0.2, 1); transform-style: preserve-3d; }
+        .flashcard.is-flipped { transform: rotateY(180deg); }
+        .card-face { position: absolute; width: 100%; height: 100%; backface-visibility: hidden; display: flex; align-items: center; justify-content: center; padding: 2rem; text-align: center; font-size: 1.5rem; border-radius: 12px; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); word-break: break-word; overflow-y: auto; }
+        .card-front { background: white; border: 2px solid var(--border); color: var(--text); }
+        .card-back { background: var(--primary); color: white; transform: rotateY(180deg); }
+
+        .study-controls { display: flex; justify-content: center; gap: 1rem; margin-top: 1rem; }
+        .hidden { display: none !important; }
+        .progress { text-align: center; margin-bottom: 1rem; color: var(--text-light); font-weight: 500; }
+
+        /* Utility */
+        .section-title { font-size: 1.25rem; margin-bottom: 1rem; margin-top: 2rem; border-bottom: 2px solid var(--border); padding-bottom: 0.5rem; }
+        .actions-bar { display: flex; gap: 1rem; margin-top: 2rem; padding-top: 1rem; border-top: 1px solid var(--border); flex-wrap: wrap; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <h1>Cram Drill</h1>
+        <div class="nav-btns">
+            <button id="nav-manage" class="active" onclick="switchView('manage')">Manage Deck</button>
+            <button id="nav-study" onclick="switchView('study')">Cram Mode</button>
+        </div>
+    </header>
+
+    <div id="view-manage" class="view active">
+        <h2 class="section-title" style="margin-top:0">Add Single Card</h2>
+        <div class="input-group">
+            <input type="text" id="card-front" placeholder="Front (Question/Term)">
+            <input type="text" id="card-back" placeholder="Back (Answer/Definition)">
+            <button class="btn" onclick="addCard()">Add Card</button>
+        </div>
+
+        <h2 class="section-title">Bulk Paste Notes</h2>
+        <p style="margin-bottom: 0.5rem; font-size: 0.9rem; color: var(--text-light);">Format: <code>Front | Back</code> (One card per line)</p>
+        <div class="input-group">
+            <textarea id="bulk-input" placeholder="Mitochondria | Powerhouse of the cell&#10;H2O | Water"></textarea>
+        </div>
+        <button class="btn btn-outline" onclick="bulkImport()">Import Notes</button>
+
+        <h2 class="section-title">Your Deck (<span id="deck-count">0</span> cards)</h2>
+        <div class="card-list" id="card-list">
+            </div>
+
+        <div class="actions-bar">
+            <button class="btn btn-outline" onclick="exportDeck()">↓ Export JSON</button>
+            <input type="file" id="import-file" style="display: none" accept=".json" onchange="importDeck(event)">
+            <button class="btn btn-outline" onclick="document.getElementById('import-file').click()">↑ Import JSON</button>
+            <button class="btn btn-danger" style="margin-left: auto;" onclick="clearDeck()">Clear Deck</button>
+        </div>
+    </div>
+
+    <div id="view-study" class="view">
+        <div id="study-active" class="hidden">
+            <div class="progress" id="study-progress">Cards remaining: 0</div>
+
+            <div class="flashcard-container" onclick="flipCard()">
+                <div class="flashcard" id="active-card">
+                    <div class="card-face card-front" id="card-front-display">Front</div>
+                    <div class="card-face card-back" id="card-back-display">Back</div>
+                </div>
+            </div>
+
+            <div class="study-controls" id="pre-flip-controls">
+                <button class="btn" onclick="flipCard()">Show Answer</button>
+            </div>
+
+            <div class="study-controls hidden" id="post-flip-controls">
+                <button class="btn btn-danger" onclick="markCard('hard')">Hard (Review again)</button>
+                <button class="btn btn-success" onclick="markCard('easy')">Easy (Got it)</button>
+            </div>
+        </div>
+
+        <div id="study-empty" class="hidden" style="text-align: center; padding: 3rem 0;">
+            <h2 style="margin-bottom: 1rem;">Deck Complete! 🎉</h2>
+            <p style="color: var(--text-light); margin-bottom: 2rem;">You've reviewed all cards in your queue.</p>
+            <button class="btn" onclick="startStudy()">Restart Cram Drill</button>
+        </div>
+
+        <div id="study-no-cards" style="text-align: center; padding: 3rem 0;">
+            <p>Your deck is empty. Add cards in the Manage tab first.</p>
+        </div>
+    </div>
+</div>
+
+<script>
+    let deck = JSON.parse(localStorage.getItem('cramDeck')) || [];
+    let studyQueue = [];
+    let isFlipped = false;
+
+    // Initialize
+    renderList();
+
+    function escapeHTML(str) {
+        return str.replace(/[&<>'"]/g, tag => ({
+            '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;'
+        }[tag]));
+    }
+
+    function saveDeck() {
+        localStorage.setItem('cramDeck', JSON.stringify(deck));
+        renderList();
+    }
+
+    // --- View Routing ---
+    function switchView(viewName) {
+        document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+        document.querySelectorAll('.nav-btns button').forEach(b => b.classList.remove('active'));
+
+        document.getElementById(`view-${viewName}`).classList.add('active');
+        document.getElementById(`nav-${viewName}`).classList.add('active');
+
+        if (viewName === 'study') {
+            startStudy();
+        }
+    }
+
+    // --- Deck Management ---
+    function addCard() {
+        const front = document.getElementById('card-front').value.trim();
+        const back = document.getElementById('card-back').value.trim();
+
+        if (!front || !back) return alert('Both Front and Back are required.');
+
+        deck.push({ id: Date.now().toString(), front, back });
+
+        document.getElementById('card-front').value = '';
+        document.getElementById('card-back').value = '';
+        saveDeck();
+    }
+
+    function bulkImport() {
+        const text = document.getElementById('bulk-input').value;
+        const lines = text.split('\n');
+        let added = 0;
+
+        lines.forEach(line => {
+            const parts = line.split('|');
+            if (parts.length === 2) {
+                const front = parts[0].trim();
+                const back = parts[1].trim();
+                if (front && back) {
+                    deck.push({ id: Date.now().toString() + Math.random().toString(), front, back });
+                    added++;
+                }
+            }
+        });
+
+        document.getElementById('bulk-input').value = '';
+        saveDeck();
+        if (added > 0) alert(`Imported ${added} cards.`);
+    }
+
+    function deleteCard(id) {
+        deck = deck.filter(c => c.id !== id);
+        saveDeck();
+    }
+
+    function clearDeck() {
+        if (confirm('Are you sure you want to delete all cards?')) {
+            deck = [];
+            saveDeck();
+        }
+    }
+
+    function renderList() {
+        const list = document.getElementById('card-list');
+        document.getElementById('deck-count').innerText = deck.length;
+        list.innerHTML = '';
+
+        deck.forEach(card => {
+            const div = document.createElement('div');
+            div.className = 'list-item';
+            div.id = `card-${card.id}`;
+            div.innerHTML = `
+                <div class="list-item-content">
+                    <strong>${escapeHTML(card.front)}</strong>
+                    <span>${escapeHTML(card.back)}</span>
+                </div>
+                <div class="list-item-actions">
+                    <button class="btn btn-outline btn-sm" onclick="showEditForm('${card.id}')">Edit</button>
+                    <button class="btn btn-outline btn-sm" style="color: var(--danger); border-color: var(--danger);" onclick="deleteCard('${card.id}')">Delete</button>
+                </div>
+            `;
+            list.appendChild(div);
+        });
+    }
+
+    // --- Edit Mode ---
+    function showEditForm(id) {
+        const card = deck.find(c => c.id === id);
+        if (!card) return;
+
+        const div = document.getElementById(`card-${id}`);
+        div.innerHTML = `
+            <div class="edit-inputs">
+                <input type="text" id="edit-front-${id}" value="${escapeHTML(card.front)}" placeholder="Front">
+                <input type="text" id="edit-back-${id}" value="${escapeHTML(card.back)}" placeholder="Back">
+            </div>
+            <div class="list-item-actions" style="align-items: center; align-self: center;">
+                <button class="btn btn-success btn-sm" onclick="saveEdit('${id}')">Save</button>
+                <button class="btn btn-outline btn-sm" onclick="renderList()">Cancel</button>
+            </div>
+        `;
+        document.getElementById(`edit-front-${id}`).focus();
+    }
+
+    function saveEdit(id) {
+        const newFront = document.getElementById(`edit-front-${id}`).value.trim();
+        const newBack = document.getElementById(`edit-back-${id}`).value.trim();
+
+        if (!newFront || !newBack) return alert('Front and Back cannot be empty.');
+
+        const cardIndex = deck.findIndex(c => c.id === id);
+        if (cardIndex > -1) {
+            deck[cardIndex].front = newFront;
+            deck[cardIndex].back = newBack;
+            saveDeck();
+        }
+    }
+
+    // --- Export / Import ---
+    function exportDeck() {
+        if(deck.length === 0) return alert("Deck is empty.");
+        const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(deck));
+        const downloadAnchorNode = document.createElement('a');
+        downloadAnchorNode.setAttribute("href", dataStr);
+        downloadAnchorNode.setAttribute("download", "cram_drill_deck.json");
+        document.body.appendChild(downloadAnchorNode);
+        downloadAnchorNode.click();
+        downloadAnchorNode.remove();
+    }
+
+    function importDeck(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            try {
+                const imported = JSON.parse(e.target.result);
+                if (Array.isArray(imported)) {
+                    deck = deck.concat(imported);
+                    saveDeck();
+                    alert("Deck imported successfully!");
+                }
+            } catch (err) {
+                alert("Invalid JSON file.");
+            }
+        };
+        reader.readAsText(file);
+        event.target.value = '';
+    }
+
+    // --- Study Mode ---
+    function startStudy() {
+        const activeContainer = document.getElementById('study-active');
+        const emptyContainer = document.getElementById('study-empty');
+        const noCardsContainer = document.getElementById('study-no-cards');
+
+        if (deck.length === 0) {
+            activeContainer.classList.add('hidden');
+            emptyContainer.classList.add('hidden');
+            noCardsContainer.classList.remove('hidden');
+            return;
+        }
+
+        noCardsContainer.classList.add('hidden');
+        emptyContainer.classList.add('hidden');
+        activeContainer.classList.remove('hidden');
+
+        studyQueue = [...deck].sort(() => Math.random() - 0.5);
+        loadNextCard();
+    }
+
+    function loadNextCard() {
+        if (studyQueue.length === 0) {
+            document.getElementById('study-active').classList.add('hidden');
+            document.getElementById('study-empty').classList.remove('hidden');
+            return;
+        }
+
+        isFlipped = false;
+        document.getElementById('active-card').classList.remove('is-flipped');
+
+        const card = studyQueue[0];
+        document.getElementById('card-front-display').innerText = card.front;
+        document.getElementById('card-back-display').innerText = card.back;
+        document.getElementById('study-progress').innerText = `Cards remaining: ${studyQueue.length}`;
+
+        document.getElementById('pre-flip-controls').classList.remove('hidden');
+        document.getElementById('post-flip-controls').classList.add('hidden');
+    }
+
+    function flipCard() {
+        if(isFlipped) return;
+        isFlipped = true;
+        document.getElementById('active-card').classList.add('is-flipped');
+        document.getElementById('pre-flip-controls').classList.add('hidden');
+
+        setTimeout(() => {
+            document.getElementById('post-flip-controls').classList.remove('hidden');
+        }, 150);
+    }
+
+    function markCard(difficulty) {
+        const card = studyQueue.shift();
+
+        if (difficulty === 'hard') {
+            const insertIndex = Math.max(1, Math.floor(studyQueue.length / 2) + Math.floor(Math.random() * 2));
+            studyQueue.splice(insertIndex, 0, card);
+        }
+
+        loadNextCard();
+    }
+</script>
+
+</body>
+</html>

@@ -1,0 +1,726 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Packing Checklist Generator</title>
+    <style>
+        :root {
+            --bg: #f8f9fa;
+            --text: #212529;
+            --primary: #0d6efd;
+            --primary-hover: #0b5ed7;
+            --secondary: #6c757d;
+            --secondary-hover: #5c636a;
+            --border: #dee2e6;
+            --card-bg: #ffffff;
+            --danger: #dc3545;
+            --success: #198754;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            line-height: 1.6;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 2rem 1rem;
+        }
+        .card {
+            background: var(--card-bg);
+            padding: 2rem;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            margin-bottom: 2rem;
+        }
+        h1, h2, h3 { margin-top: 0; }
+        .form-group { margin-bottom: 1.5rem; }
+        label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+        input[type="number"], input[type="text"] {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            box-sizing: border-box;
+            font-size: 1rem;
+        }
+        .tag-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.75rem;
+        }
+        .tag-label {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            background: var(--bg);
+            border: 1px solid var(--border);
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            cursor: pointer;
+            user-select: none;
+            transition: all 0.2s;
+            font-weight: normal;
+        }
+        .tag-label:hover { background: #e9ecef; }
+        .tag-label input { margin: 0; cursor: pointer; }
+
+        button {
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            padding: 1rem 2rem;
+            font-size: 1rem;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: background 0.2s;
+        }
+        button:hover { background-color: var(--primary-hover); }
+        .btn-block { width: 100%; font-size: 1.1rem; }
+
+        .category {
+            margin-bottom: 2rem;
+            background: var(--card-bg);
+            padding: 1.5rem;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+        .category h3 {
+            border-bottom: 2px solid var(--bg);
+            padding-bottom: 0.5rem;
+            margin-bottom: 1rem;
+        }
+        .item-row {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin-bottom: 0.75rem;
+            padding: 0.5rem;
+            border-radius: 4px;
+        }
+        .item-row:hover { background: var(--bg); }
+        .item-row input[type="checkbox"] {
+            width: 1.2rem;
+            height: 1.2rem;
+            cursor: pointer;
+        }
+        .item-row label {
+            margin: 0;
+            font-weight: normal;
+            cursor: pointer;
+            flex: 1;
+            word-break: break-word;
+        }
+        .item-row.checked label {
+            text-decoration: line-through;
+            color: var(--secondary);
+        }
+        .item-row .custom-badge {
+            font-size: 0.7rem;
+            background: var(--bg);
+            color: var(--secondary);
+            padding: 0.1rem 0.4rem;
+            border-radius: 10px;
+            margin-left: 0.5rem;
+            border: 1px solid var(--border);
+        }
+        .remove-btn {
+            background: none;
+            border: none;
+            color: var(--danger);
+            font-size: 1.2rem;
+            cursor: pointer;
+            padding: 0 0.5rem;
+            opacity: 0.5;
+            width: auto;
+        }
+        .remove-btn:hover { opacity: 1; background: none; }
+
+        .add-item-row {
+            display: flex;
+            gap: 0.5rem;
+            margin-top: 1rem;
+            padding-top: 1rem;
+            border-top: 1px dashed var(--border);
+        }
+        .add-item-row input { padding: 0.5rem; flex: 1; }
+        .add-item-row button { width: auto; padding: 0.5rem 1rem; font-size: 0.9rem; }
+
+        #output { display: none; }
+
+        .list-header {
+            background: var(--card-bg);
+            padding: 1.5rem;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            margin-bottom: 2rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+        .list-header h2 { margin: 0; }
+        .progress-bar-container {
+            width: 100%;
+            background: var(--bg);
+            border-radius: 8px;
+            height: 8px;
+            overflow: hidden;
+            margin-bottom: 0.5rem;
+        }
+        .progress-bar {
+            height: 100%;
+            background: var(--success);
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+        .progress-text {
+            font-size: 0.9rem;
+            color: var(--secondary);
+            font-weight: 600;
+        }
+
+        .filters {
+            display: flex;
+            gap: 0.5rem;
+            background: var(--bg);
+            padding: 0.25rem;
+            border-radius: 6px;
+            width: fit-content;
+        }
+        .filters button {
+            background: transparent;
+            color: var(--text);
+            padding: 0.4rem 1rem;
+            font-size: 0.9rem;
+        }
+        .filters button.active {
+            background: var(--card-bg);
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        .filters button:hover:not(.active) { background: rgba(0,0,0,0.05); }
+
+        .action-buttons {
+            display: flex;
+            gap: 0.75rem;
+            flex-wrap: wrap;
+        }
+        .action-buttons button {
+            padding: 0.5rem 1rem;
+            font-size: 0.9rem;
+            background-color: var(--secondary);
+        }
+        .action-buttons button:hover { background-color: var(--secondary-hover); }
+        .action-buttons button.clear-packed {
+            background-color: white;
+            color: var(--danger);
+            border: 1px solid var(--danger);
+        }
+        .action-buttons button.clear-packed:hover {
+            background-color: var(--danger);
+            color: white;
+        }
+
+        .reset-btn {
+            background-color: transparent;
+            color: var(--danger);
+            border: 1px solid var(--danger);
+            margin-top: 1rem;
+            width: 100%;
+        }
+        .reset-btn:hover { background-color: var(--danger); color: white; }
+
+        @media print {
+            body { background: white; color: black; padding: 0; }
+            .card, .add-item-row, .remove-btn, .action-buttons, .reset-btn, .filters { display: none !important; }
+            .list-header, .category { box-shadow: none; padding: 0; margin-bottom: 1.5rem; }
+            .category h3 { border-bottom: 1px solid black; }
+            .item-row { padding: 0.25rem 0; }
+            .item-row.checked label { color: black; }
+            .custom-badge { display: none !important; }
+        }
+
+        @media (max-width: 480px) {
+            .card { padding: 1.5rem 1rem; }
+            .tag-label { font-size: 0.9rem; padding: 0.4rem 0.8rem; }
+            .filters { width: 100%; display: flex; }
+            .filters button { flex: 1; padding: 0.4rem 0; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="card">
+        <h1>Packing Checklist Generator</h1>
+
+        <div class="form-group">
+            <label for="destination">Destination / Notes</label>
+            <input type="text" id="destination" placeholder="e.g., flight to London, beach resort, city trip">
+            <small style="color: var(--secondary); font-size: 0.85rem; display: block; margin-top: 0.25rem;">
+                Include words like 'flight', 'beach', 'city', or 'international' to get tailored suggestions.
+            </small>
+        </div>
+
+        <div class="form-group">
+            <label for="days">Trip Length (Days)</label>
+            <input type="number" id="days" min="1" max="90" value="3">
+        </div>
+
+        <div class="form-group">
+            <label>Style & Vibe</label>
+            <div class="tag-group" id="style-tags">
+                <label class="tag-label"><input type="checkbox" value="minimalist"> Minimalist (Pack Light)</label>
+                <label class="tag-label"><input type="checkbox" value="casual" checked> Casual</label>
+                <label class="tag-label"><input type="checkbox" value="dressy"> Dressy / Night Out</label>
+                <label class="tag-label"><input type="checkbox" value="outdoorsy"> Outdoorsy / Rugged</label>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label>Weather & Environment</label>
+            <div class="tag-group" id="weather-tags">
+                <label class="tag-label"><input type="checkbox" value="hot"> Hot / Sunny</label>
+                <label class="tag-label"><input type="checkbox" value="cold"> Cold</label>
+                <label class="tag-label"><input type="checkbox" value="rain"> Rainy</label>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label>Activities & Plans</label>
+            <div class="tag-group" id="activity-tags">
+                <label class="tag-label"><input type="checkbox" value="gym"> Gym / Lifting</label>
+                <label class="tag-label"><input type="checkbox" value="festival"> Music Festival</label>
+                <label class="tag-label"><input type="checkbox" value="water"> Waterpark / Pool</label>
+                <label class="tag-label"><input type="checkbox" value="business"> Business / Event</label>
+            </div>
+        </div>
+
+        <button class="btn-block" onclick="generateNewList()">Generate New Checklist</button>
+    </div>
+
+    <div id="output"></div>
+
+    <script>
+        let tripState = {
+            title: "",
+            categories: {}
+        };
+        let currentFilter = 'all';
+
+        window.onload = () => {
+            const savedInputs = JSON.parse(localStorage.getItem('packingInputs'));
+            if (savedInputs) {
+                document.getElementById('destination').value = savedInputs.dest;
+                document.getElementById('days').value = savedInputs.days;
+
+                document.querySelectorAll('#style-tags input').forEach(cb => {
+                    cb.checked = savedInputs.styles ? savedInputs.styles.includes(cb.value) : (cb.value === 'casual');
+                });
+                document.querySelectorAll('#weather-tags input').forEach(cb => {
+                    cb.checked = savedInputs.weather.includes(cb.value);
+                });
+                document.querySelectorAll('#activity-tags input').forEach(cb => {
+                    cb.checked = savedInputs.activities.includes(cb.value);
+                });
+            }
+
+            const savedList = JSON.parse(localStorage.getItem('packingListState'));
+            if (savedList && Object.keys(savedList.categories).length > 0) {
+                tripState = savedList;
+                renderList();
+            }
+        };
+
+        function saveInputs() {
+            const inputs = {
+                dest: document.getElementById('destination').value,
+                days: document.getElementById('days').value,
+                styles: Array.from(document.querySelectorAll('#style-tags input:checked')).map(cb => cb.value),
+                weather: Array.from(document.querySelectorAll('#weather-tags input:checked')).map(cb => cb.value),
+                activities: Array.from(document.querySelectorAll('#activity-tags input:checked')).map(cb => cb.value)
+            };
+            localStorage.setItem('packingInputs', JSON.stringify(inputs));
+            return inputs;
+        }
+
+        function saveState() {
+            localStorage.setItem('packingListState', JSON.stringify(tripState));
+        }
+
+        function generateNewList() {
+            const inputs = saveInputs();
+            const days = parseInt(inputs.days) || 1;
+            const destText = inputs.dest.toLowerCase();
+
+            // Extract existing custom items before clearing state
+            const customItems = {};
+            for (let cat in tripState.categories) {
+                const custom = tripState.categories[cat].filter(item => item.isCustom);
+                if (custom.length > 0) customItems[cat] = custom;
+            }
+
+            tripState.title = `Trip Checklist ${inputs.dest ? `for ${inputs.dest}` : ''} (${days} Days)`;
+            tripState.categories = {
+                "Clothing": [],
+                "Toiletries": [
+                    { name: "Toothbrush & Toothpaste", checked: false },
+                    { name: "Deodorant", checked: false },
+                    { name: "Body Wash / Soap", checked: false },
+                    { name: "Shampoo & Conditioner", checked: false }
+                ],
+                "Electronics": [
+                    { name: "Phone & Charger", checked: false }
+                ],
+                "Documents & Wallet": [
+                    { name: "ID / Driver's License", checked: false },
+                    { name: "Credit / Debit Cards", checked: false },
+                    { name: "Cash", checked: false }
+                ]
+            };
+
+            const addClothes = (name) => tripState.categories["Clothing"].push({ name, checked: false });
+            const addToiletry = (name) => tripState.categories["Toiletries"].push({ name, checked: false });
+            const addElectronic = (name) => tripState.categories["Electronics"].push({ name, checked: false });
+            const addDoc = (name) => tripState.categories["Documents & Wallet"].push({ name, checked: false });
+            const addMisc = (name) => {
+                if(!tripState.categories["Miscellaneous"]) tripState.categories["Miscellaneous"] = [];
+                tripState.categories["Miscellaneous"].push({ name, checked: false });
+            };
+
+            const isMinimalist = inputs.styles.includes("minimalist");
+
+            // Base Clothing Math
+            let underwearCount = days + 1;
+            let shirtCount = days;
+            let pantsCount = Math.ceil(days / 2);
+
+            if (isMinimalist) {
+                underwearCount = Math.min(days, 5);
+                shirtCount = Math.ceil(days / 2);
+                pantsCount = Math.ceil(days / 4);
+                addMisc("Travel Laundry Detergent");
+            }
+
+            addClothes(`${underwearCount}x Underwear`);
+            addClothes(`${underwearCount}x Pairs of Socks`);
+            addClothes(`${shirtCount}x T-Shirts / Tops`);
+            addClothes(`${pantsCount}x Pants / Jeans`);
+            addClothes(`1x Sleepwear`);
+
+            addToiletry("Skincare routine");
+            addToiletry("Nail clippers");
+            addDoc("Health Insurance Card");
+
+            // Style Logic
+            if (inputs.styles.includes("casual")) {
+                addClothes("Casual Walking Shoes");
+                addClothes("Comfortable Lounge Shirt");
+            }
+            if (inputs.styles.includes("dressy")) {
+                addClothes("Evening / Dress Outfit");
+                addClothes("Dress Shoes / Heels");
+                addClothes("Accessories (Watch, Jewelry)");
+                addToiletry("Cologne / Perfume");
+                addToiletry("Hair Styling Product");
+            }
+            if (inputs.styles.includes("outdoorsy")) {
+                addClothes("Hiking Boots / Trail Shoes");
+                addClothes("Moisture-wicking base layers");
+                addToiletry("Bug Spray");
+                addMisc("First Aid Kit");
+                addMisc("Reusable Water Bottle");
+            }
+
+            // Weather Logic
+            if (inputs.weather.includes("hot")) {
+                addClothes(`${Math.ceil(days / 2)}x Shorts`);
+                addClothes("Sunglasses");
+                addToiletry("Sunscreen");
+            }
+            if (inputs.weather.includes("cold")) {
+                addClothes("Heavy Coat / Jacket");
+                addClothes(`${Math.ceil(days / 3)}x Sweaters / Hoodies`);
+                addClothes("Beanie / Gloves");
+                addToiletry("Lip Balm");
+                addToiletry("Lotion / Moisturizer");
+            }
+            if (inputs.weather.includes("rain")) {
+                addClothes("Rain Jacket");
+                addClothes("Waterproof shoes (optional)");
+                addMisc("Travel Umbrella");
+            }
+
+            // Activity Logic
+            if (inputs.activities.includes("gym")) {
+                const gymDays = isMinimalist ? Math.ceil(days/2) : Math.max(1, Math.floor(days * 0.8));
+                addClothes(`${gymDays}x Gym Shirts`);
+                addClothes(`${gymDays}x Gym Shorts`);
+                addClothes("Lifting Shoes / Sneakers");
+                addElectronic("Pre-workout / Supplements");
+            }
+            if (inputs.activities.includes("festival")) {
+                addClothes("Comfortable Walking/Dancing Shoes");
+                addElectronic("Portable Power Bank");
+                addElectronic("High-Fidelity Earplugs");
+                addDoc("Festival Wristband / Tickets");
+                addMisc("Hydration Pack");
+            }
+            if (inputs.activities.includes("water")) {
+                addClothes("Swimwear");
+                addClothes("Sandals / Slides");
+            }
+            if (inputs.activities.includes("business")) {
+                addClothes("Dress Shirt(s)");
+                addClothes("Dress Pants / Slacks");
+                addClothes("Dress Belt");
+                addElectronic("Laptop & Charger");
+            }
+
+            // Smart Text Parsing
+            if (destText.match(/\b(flight|fly|plane|airport)\b/)) {
+                addDoc("Boarding Pass / App downloaded");
+                addElectronic("Headphones / Noise-canceling");
+                addMisc("Travel Pillow");
+                addMisc("Flight Snacks");
+            } else {
+                addElectronic("Headphones / Earbuds");
+            }
+
+            if (destText.match(/\b(international|abroad|overseas|europe|asia|foreign)\b/)) {
+                addDoc("Passport & Backup Copy");
+                addDoc("No-FX Fee Credit Card");
+                addElectronic("Universal Power Adapter");
+                addMisc("Download Offline Maps (Google Maps)");
+            }
+
+            if (destText.match(/\b(beach|ocean|resort|coast)\b/)) {
+                addClothes("Beach Cover-up");
+                addMisc("Beach Towel");
+                addToiletry("Aloe Vera");
+                if(!inputs.activities.includes("water")) addClothes("Swimwear");
+            }
+
+            if (destText.match(/\b(city|urban|metro)\b/)) {
+                addMisc("Day Bag / Crossbody");
+                addClothes("Comfortable City Walking Shoes");
+            }
+
+            // Re-inject custom items
+            for (const cat in customItems) {
+                if (!tripState.categories[cat]) tripState.categories[cat] = [];
+                tripState.categories[cat].push(...customItems[cat]);
+            }
+
+            // Deduplicate
+            for (let cat in tripState.categories) {
+                const unique = [];
+                const seen = new Set();
+                for (let item of tripState.categories[cat]) {
+                    const checkName = item.name.toLowerCase().replace(/\s+/g, '');
+                    if (!seen.has(checkName)) {
+                        seen.add(checkName);
+                        unique.push(item);
+                    }
+                }
+                tripState.categories[cat] = unique;
+            }
+
+            saveState();
+            renderList();
+            document.getElementById('output').scrollIntoView({ behavior: 'smooth' });
+        }
+
+        function setFilter(filter) {
+            currentFilter = filter;
+            renderList();
+        }
+
+        function toggleItem(category, index) {
+            tripState.categories[category][index].checked = !tripState.categories[category][index].checked;
+            saveState();
+            renderList();
+        }
+
+        function removeItem(category, index) {
+            tripState.categories[category].splice(index, 1);
+            saveState();
+            renderList();
+        }
+
+        function addNewItem(category) {
+            const inputId = `add-input-${category.replace(/\s+/g, '')}`;
+            const inputEl = document.getElementById(inputId);
+            const val = inputEl.value.trim();
+
+            if (val) {
+                tripState.categories[category].push({ name: val, checked: false, isCustom: true });
+                saveState();
+                renderList();
+
+                setTimeout(() => {
+                    const newInputEl = document.getElementById(inputId);
+                    if(newInputEl) newInputEl.focus();
+                }, 10);
+            }
+        }
+
+        function handleAddKeypress(event, category) {
+            if (event.key === 'Enter') {
+                addNewItem(category);
+            }
+        }
+
+        function clearPackedItems() {
+            if(confirm("Remove all checked items from your list?")) {
+                for (let cat in tripState.categories) {
+                    tripState.categories[cat] = tripState.categories[cat].filter(item => !item.checked);
+                }
+                saveState();
+                renderList();
+            }
+        }
+
+        function clearList() {
+            if(confirm("Are you sure you want to completely clear the saved checklist? This will delete custom items.")) {
+                tripState = { title: "", categories: {} };
+                localStorage.removeItem('packingListState');
+                renderList();
+            }
+        }
+
+        function copyToText() {
+            let text = `${tripState.title}\n`;
+            let packed = 0, total = 0;
+
+            for (const cat in tripState.categories) {
+                tripState.categories[cat].forEach(item => {
+                    total++;
+                    if (item.checked) packed++;
+                });
+            }
+
+            text += `Progress: ${packed}/${total} items packed\n\n`;
+
+            for (const [category, items] of Object.entries(tripState.categories)) {
+                if (items.length === 0) continue;
+                text += `${category}:\n`;
+                items.forEach(item => {
+                    text += item.checked ? `[x] ${item.name}\n` : `[ ] ${item.name}\n`;
+                });
+                text += `\n`;
+            }
+
+            navigator.clipboard.writeText(text).then(() => {
+                const btn = document.getElementById('copyBtn');
+                const originalText = btn.innerText;
+                btn.innerText = "Copied to Clipboard!";
+                setTimeout(() => btn.innerText = originalText, 2000);
+            });
+        }
+
+        document.addEventListener('input', (e) => {
+            if (e.target.closest('.form-group')) {
+                saveInputs();
+            }
+        });
+
+        function renderList() {
+            const outputDiv = document.getElementById('output');
+
+            if (Object.keys(tripState.categories).length === 0) {
+                outputDiv.style.display = 'none';
+                return;
+            }
+
+            let totalItems = 0;
+            let packedItems = 0;
+
+            for (const cat in tripState.categories) {
+                tripState.categories[cat].forEach(item => {
+                    totalItems++;
+                    if (item.checked) packedItems++;
+                });
+            }
+
+            const progressPercent = totalItems === 0 ? 0 : (packedItems / totalItems) * 100;
+
+            let html = `
+                <div class="list-header">
+                    <h2>${tripState.title}</h2>
+                    <div>
+                        <div class="progress-bar-container">
+                            <div class="progress-bar" style="width: ${progressPercent}%"></div>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <span class="progress-text">${packedItems} of ${totalItems} items packed</span>
+                        </div>
+                    </div>
+
+                    <div class="filters">
+                        <button class="${currentFilter === 'all' ? 'active' : ''}" onclick="setFilter('all')">All</button>
+                        <button class="${currentFilter === 'unpacked' ? 'active' : ''}" onclick="setFilter('unpacked')">Unpacked</button>
+                        <button class="${currentFilter === 'packed' ? 'active' : ''}" onclick="setFilter('packed')">Packed</button>
+                    </div>
+
+                    <div class="action-buttons">
+                        <button id="copyBtn" onclick="copyToText()">Copy as Text</button>
+                        <button onclick="window.print()">Print</button>
+                        <button class="clear-packed" onclick="clearPackedItems()">Clear Packed</button>
+                    </div>
+                </div>
+            `;
+
+            for (const [category, items] of Object.entries(tripState.categories)) {
+                // Filter items based on selected tab
+                const filteredItems = items.map((item, index) => ({ item, index })).filter(({ item }) => {
+                    if (currentFilter === 'unpacked') return !item.checked;
+                    if (currentFilter === 'packed') return item.checked;
+                    return true;
+                });
+
+                if (filteredItems.length === 0 && currentFilter !== 'all') continue;
+
+                html += `<div class="category"><h3>${category}</h3>`;
+
+                filteredItems.forEach(({ item, index }) => {
+                    const isChecked = item.checked ? 'checked' : '';
+                    const rowClass = item.checked ? 'item-row checked' : 'item-row';
+                    const customBadge = item.isCustom ? `<span class="custom-badge">Custom</span>` : '';
+
+                    html += `
+                        <div class="${rowClass}">
+                            <input type="checkbox" id="item-${category}-${index}" ${isChecked}
+                                   onchange="toggleItem('${category}', ${index})">
+                            <label for="item-${category}-${index}">${item.name} ${customBadge}</label>
+                            <button class="remove-btn" onclick="removeItem('${category}', ${index})" title="Remove item">&times;</button>
+                        </div>
+                    `;
+                });
+
+                // Only show add input if not purely viewing packed items
+                if (currentFilter !== 'packed') {
+                    const safeCatId = category.replace(/\s+/g, '');
+                    html += `
+                        <div class="add-item-row">
+                            <input type="text" id="add-input-${safeCatId}" placeholder="Add new item..."
+                                   onkeypress="handleAddKeypress(event, '${category}')">
+                            <button onclick="addNewItem('${category}')">Add</button>
+                        </div>
+                    `;
+                }
+
+                html += `</div>`;
+            }
+
+            html += `<button class="reset-btn" onclick="clearList()">Clear Saved Checklist (Including Custom Items)</button>`;
+
+            outputDiv.innerHTML = html;
+            outputDiv.style.display = 'block';
+        }
+    </script>
+</body>
+</html>

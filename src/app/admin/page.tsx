@@ -252,7 +252,7 @@ function SourceRunIntakeRow({ sourceRun }: { sourceRun: SourceRunSubmissionWithR
     >
       <td className="px-4 py-3 align-top">
         <div className="mb-1 inline-flex items-center gap-1.5 bg-amber-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.12em] text-amber-800">
-          {preparedProject ? 'Prepared page ready' : 'Let the agent structure it'}
+          {preparedProject ? 'Prepared page ready' : 'Source-run review'}
         </div>
         <Link
           href={`/admin/source-runs/${sourceRun.id}`}
@@ -276,11 +276,11 @@ function SourceRunIntakeRow({ sourceRun }: { sourceRun: SourceRunSubmissionWithR
         </div>
         {preparedProject ? (
           <p className="mt-1 text-xs font-medium text-green-700">
-            Ready to publish as {preparedProject.href}
+            Next action: publish prepared page as {preparedProject.href}.
           </p>
         ) : (
           <p className="mt-1 text-xs text-gray-500">
-            Needs a prepared public page before approve/decline actions appear.
+            No prepared public page yet. Structure it first, then publish from this review item.
           </p>
         )}
       </td>
@@ -302,7 +302,7 @@ function SourceRunIntakeRow({ sourceRun }: { sourceRun: SourceRunSubmissionWithR
               : 'bg-amber-100 text-amber-800 hover:bg-amber-200',
           ].join(' ')}
         >
-          {preparedProject ? 'Publish page' : 'Review intake'}
+          {preparedProject ? 'Publish prepared page' : 'Review source run'}
         </Link>
       </td>
     </tr>

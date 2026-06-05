@@ -1,16 +1,53 @@
 import Link from 'next/link'
 import { ArrowRight, GitFork } from 'lucide-react'
+import {
+  buildProjectForkHref,
+  createProjectForkDraftContract,
+  type ProjectForkSourceStep,
+} from '@/lib/project-forks'
+import ProjectForkLineageScaffold from './ProjectForkLineageScaffold'
 
 export default function ProjectForkCallout({
   projectId,
   projectTitle,
+  sourceSteps = [],
+  sourceStepId,
+  sourceStepNumber,
+  parentForkId,
+  depth = 0,
+  branchIndex = 0,
+  promptFamilyId,
 }: {
   projectId: string
   projectTitle?: string
+  sourceSteps?: ProjectForkSourceStep[]
+  sourceStepId?: string
+  sourceStepNumber?: number
+  parentForkId?: string
+  depth?: number
+  branchIndex?: number
+  promptFamilyId?: string
 }) {
-  const forkParams = new URLSearchParams({ fork: projectId })
-  if (projectTitle) forkParams.set('forkTitle', projectTitle)
-  const forkHref = `/build?${forkParams.toString()}`
+  const source = {
+    sourceProjectId: projectId,
+    sourceProjectTitle: projectTitle,
+    sourceStepId,
+    sourceStepNumber,
+    parentForkId,
+    depth,
+    branchIndex,
+    promptFamilyId,
+  }
+  const contract = sourceSteps.length > 0
+    ? createProjectForkDraftContract({ source, sourceSteps })
+    : null
+  const forkPointStep = contract?.forkPointStep
+  const forkHref = buildProjectForkHref({
+    ...source,
+    sourceStepId: sourceStepId ?? forkPointStep?.id,
+    sourceStepNumber: sourceStepNumber ?? forkPointStep?.stepNumber,
+    promptFamilyId: promptFamilyId ?? contract?.promptFamilyId,
+  })
 
   return (
     <div className="mb-10 border border-surface-200 bg-white">
@@ -25,6 +62,11 @@ export default function ProjectForkCallout({
             Use this project as the starting point for a new draft. Swap in your own prompt, source run, or
             refinement, then publish the version that actually works.
           </p>
+          {forkPointStep && (
+            <p className="mt-3 font-mono text-[10px] uppercase tracking-[0.14em] text-surface-500">
+              Default fork point: response package {String(forkPointStep.stepNumber).padStart(2, '0')}
+            </p>
+          )}
         </div>
 
         <div className="border-t border-surface-200 bg-surface-900 p-5 text-white lg:border-l lg:border-t-0">
@@ -41,6 +83,17 @@ export default function ProjectForkCallout({
           </p>
         </div>
       </div>
+      {contract && (
+        <ProjectForkLineageScaffold
+          source={{
+            ...source,
+            sourceStepId: sourceStepId ?? forkPointStep?.id,
+            sourceStepNumber: sourceStepNumber ?? forkPointStep?.stepNumber,
+            promptFamilyId: promptFamilyId ?? contract.promptFamilyId,
+          }}
+          sourceSteps={sourceSteps}
+        />
+      )}
     </div>
   )
 }

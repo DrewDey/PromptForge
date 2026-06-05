@@ -1,0 +1,1224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Archivist's Study — Escape</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Courier+Prime:wght@400;700&display=swap');
+
+  :root {
+    --ink: #1a1208;
+    --parchment: #f2e8d0;
+    --parchment-dark: #e0d0b0;
+    --parchment-deeper: #c8b88a;
+    --accent: #7a3b1e;
+    --accent-light: #c46b35;
+    --green: #2d5a27;
+    --dim: #6b5a3e;
+    --highlight: #fff9ee;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: #0d0a06;
+    font-family: 'Crimson Pro', Georgia, serif;
+    color: var(--ink);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 20px;
+  }
+
+  #game-frame {
+    width: 100%;
+    max-width: 800px;
+    background: var(--parchment);
+    border: 3px solid var(--parchment-deeper);
+    box-shadow: 0 0 60px rgba(180,120,40,0.3), 0 0 120px rgba(0,0,0,0.6);
+    min-height: 90vh;
+    position: relative;
+    overflow: hidden;
+  }
+
+  #game-frame::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: repeating-linear-gradient(0deg,transparent,transparent 28px,rgba(120,90,40,0.05) 28px,rgba(120,90,40,0.05) 29px);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .screen { position: relative; z-index: 1; }
+
+  /* ── TITLE SCREEN ── */
+  #title-screen {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 90vh;
+    padding: 40px 30px;
+    text-align: center;
+  }
+  .title-ornament { font-size: 28px; color: var(--accent); letter-spacing: 8px; margin-bottom: 8px; }
+  h1.game-title { font-size: clamp(2rem,5vw,3.4rem); font-weight: 300; color: var(--accent); letter-spacing: 2px; line-height: 1.1; margin-bottom: 6px; }
+  h2.game-subtitle { font-size: 1.1rem; font-weight: 300; font-style: italic; color: var(--dim); margin-bottom: 40px; letter-spacing: 1px; }
+  .title-divider { width: 180px; height: 1px; background: linear-gradient(90deg,transparent,var(--accent-light),transparent); margin: 20px auto; }
+  .flavor-text { max-width: 420px; font-size: 1.05rem; line-height: 1.8; color: var(--dim); margin-bottom: 40px; font-style: italic; }
+  .btn-primary {
+    background: var(--accent); color: var(--parchment); border: none;
+    padding: 14px 42px; font-family: 'Crimson Pro', serif; font-size: 1.1rem;
+    font-weight: 600; letter-spacing: 2px; text-transform: uppercase;
+    cursor: pointer; transition: background 0.2s, transform 0.1s;
+    min-height: 48px;
+  }
+  .btn-primary:hover { background: var(--accent-light); transform: translateY(-1px); }
+  .btn-primary:active { transform: translateY(0); }
+
+  /* ── HEADER ── */
+  #game-screen { display: none; }
+  .game-header {
+    background: var(--accent);
+    color: var(--parchment);
+    padding: 0 12px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+    min-height: 48px;
+    font-size: 0.8rem;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+  }
+  #room-label { font-weight: 600; flex: 1; }
+  .header-actions { display: flex; gap: 6px; align-items: center; flex-shrink: 0; }
+
+  /* Header utility buttons */
+  .hdr-btn {
+    background: rgba(255,255,255,0.12);
+    color: var(--parchment);
+    border: 1px solid rgba(255,255,255,0.25);
+    padding: 0 14px;
+    height: 36px;
+    min-width: 44px;
+    font-family: 'Crimson Pro', serif;
+    font-size: 0.8rem;
+    font-weight: 600;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: background 0.15s;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    white-space: nowrap;
+  }
+  .hdr-btn:hover { background: rgba(255,255,255,0.22); }
+  .hdr-btn:active { background: rgba(255,255,255,0.08); }
+  .hdr-btn.hint-btn { background: rgba(220,160,60,0.25); border-color: rgba(220,160,60,0.5); }
+  .hdr-btn.hint-btn:hover { background: rgba(220,160,60,0.38); }
+  .hdr-btn.reset-btn { background: rgba(255,80,40,0.18); border-color: rgba(255,100,60,0.4); }
+  .hdr-btn.reset-btn:hover { background: rgba(255,80,40,0.3); }
+  #move-counter { color: rgba(242,232,208,0.65); font-size: 0.75rem; white-space: nowrap; }
+
+  /* ── GAME BODY LAYOUT ── */
+  .game-body {
+    display: grid;
+    grid-template-columns: 1fr 230px;
+    gap: 0;
+    min-height: calc(90vh - 48px);
+  }
+
+  /* ── ROOM VIEW ── */
+  .room-view {
+    padding: 20px 20px 16px;
+    border-right: 1px solid var(--parchment-deeper);
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+  .room-scene {
+    background: var(--highlight);
+    border: 1px solid var(--parchment-deeper);
+    padding: 18px;
+    min-height: 220px;
+  }
+  .scene-title { font-size: 0.68rem; font-weight: 700; letter-spacing: 3px; text-transform: uppercase; color: var(--accent); margin-bottom: 12px; }
+  .scene-desc { font-size: 1.02rem; line-height: 1.75; color: var(--ink); margin-bottom: 14px; }
+
+  /* Object buttons — bigger tap targets */
+  .objects-grid { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+  .obj-btn {
+    background: var(--parchment);
+    border: 1px solid var(--parchment-deeper);
+    padding: 10px 16px;
+    min-height: 44px;
+    font-family: 'Crimson Pro', serif;
+    font-size: 1rem;
+    color: var(--ink);
+    cursor: pointer;
+    transition: background 0.15s, border-color 0.15s;
+    display: flex;
+    align-items: center;
+    gap: 7px;
+  }
+  .obj-btn:hover { background: var(--parchment-dark); border-color: var(--accent-light); }
+  .obj-btn:active { background: var(--parchment-deeper); }
+  .obj-btn .obj-icon { font-size: 1.15rem; line-height: 1; }
+
+  /* Door nav — full-width tall targets on mobile */
+  .room-nav { display: flex; gap: 8px; }
+  .door-btn {
+    flex: 1;
+    background: transparent;
+    border: 1px solid var(--parchment-deeper);
+    padding: 12px 10px;
+    min-height: 48px;
+    font-family: 'Crimson Pro', serif;
+    font-size: 0.98rem;
+    color: var(--dim);
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s;
+    text-align: center;
+  }
+  .door-btn:hover { background: var(--parchment-dark); color: var(--ink); }
+  .door-btn:active { background: var(--parchment-deeper); }
+
+  /* Inspection panel */
+  .inspect-panel {
+    background: var(--parchment-dark);
+    border: 1px solid var(--parchment-deeper);
+    padding: 13px 16px;
+    min-height: 76px;
+  }
+  .inspect-label { font-size: 0.63rem; font-weight: 700; letter-spacing: 3px; text-transform: uppercase; color: var(--dim); margin-bottom: 7px; }
+  #inspect-text { font-size: 0.97rem; line-height: 1.72; color: var(--ink); font-style: italic; }
+
+  /* ── SIDEBAR ── */
+  .sidebar {
+    padding: 18px 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+    background: rgba(180,140,70,0.07);
+  }
+  .panel-label {
+    font-size: 0.63rem; font-weight: 700; letter-spacing: 3px;
+    text-transform: uppercase; color: var(--dim); margin-bottom: 9px;
+    display: flex; align-items: center; gap: 6px;
+  }
+  .panel-label::after { content: ''; flex: 1; height: 1px; background: var(--parchment-deeper); }
+
+  #inv-list { list-style: none; display: flex; flex-direction: column; gap: 6px; }
+  .inv-item {
+    background: var(--parchment);
+    border: 1px solid var(--parchment-deeper);
+    padding: 10px 10px;
+    min-height: 44px;
+    font-family: 'Crimson Pro', serif;
+    font-size: 0.93rem;
+    color: var(--ink);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: background 0.15s;
+  }
+  .inv-item:hover { background: var(--parchment-dark); }
+  .inv-item:active { background: var(--parchment-deeper); }
+  .inv-item.selected { border-color: var(--accent-light); background: #fef4e4; }
+  .inv-item .item-icon { font-size: 1.1rem; }
+  .inv-empty { font-size: 0.87rem; color: var(--dim); font-style: italic; }
+
+  #notes-list { list-style: none; display: flex; flex-direction: column; gap: 5px; }
+  .note-entry {
+    font-size: 0.82rem; line-height: 1.5; color: var(--dim);
+    padding: 5px 0; border-bottom: 1px dashed var(--parchment-deeper);
+    font-family: 'Courier Prime', monospace;
+  }
+  .note-entry:last-child { border-bottom: none; }
+  .notes-empty { font-size: 0.87rem; color: var(--dim); font-style: italic; }
+
+  /* ── LOCK OVERLAY ── */
+  #lock-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(13,10,6,0.85);
+    z-index: 100;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+  }
+  #lock-overlay.open { display: flex; }
+  .lock-box {
+    background: var(--parchment);
+    border: 2px solid var(--parchment-deeper);
+    padding: 32px 32px 28px;
+    max-width: 380px;
+    width: 100%;
+    text-align: center;
+    box-shadow: 0 20px 80px rgba(0,0,0,0.7);
+  }
+  .lock-title { font-size: 1.35rem; font-weight: 300; color: var(--accent); margin-bottom: 6px; letter-spacing: 1px; }
+  .lock-hint { font-size: 0.92rem; color: var(--dim); font-style: italic; margin-bottom: 26px; line-height: 1.6; }
+  .lock-dials { display: flex; justify-content: center; gap: 14px; margin-bottom: 26px; }
+  .dial-group { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+  .dial-label { font-size: 0.63rem; letter-spacing: 2px; text-transform: uppercase; color: var(--dim); }
+  .dial-up, .dial-down {
+    background: transparent; border: 1px solid var(--parchment-deeper);
+    width: 52px; height: 36px; cursor: pointer; font-size: 1rem; color: var(--dim);
+    transition: background 0.1s; display: flex; align-items: center; justify-content: center;
+  }
+  .dial-up:hover, .dial-down:hover { background: var(--parchment-dark); }
+  .dial-up:active, .dial-down:active { background: var(--parchment-deeper); }
+  .dial-display {
+    width: 52px; height: 64px; background: var(--accent); color: var(--parchment);
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'Courier Prime', monospace; font-size: 2rem; font-weight: 700;
+    border: 2px solid var(--accent-light);
+  }
+  .lock-actions { display: flex; gap: 10px; justify-content: center; }
+  .lock-btn {
+    background: var(--accent); color: var(--parchment); border: none;
+    padding: 13px 32px; min-height: 48px; font-family: 'Crimson Pro', serif;
+    font-size: 1rem; font-weight: 600; letter-spacing: 2px; text-transform: uppercase;
+    cursor: pointer; transition: background 0.2s;
+  }
+  .lock-btn:hover { background: var(--accent-light); }
+  .lock-cancel {
+    background: transparent; color: var(--dim); border: 1px solid var(--parchment-deeper);
+    padding: 13px 20px; min-height: 48px; font-family: 'Crimson Pro', serif;
+    font-size: 0.95rem; cursor: pointer; transition: background 0.15s;
+  }
+  .lock-cancel:hover { background: var(--parchment-dark); }
+  #lock-feedback { margin-top: 14px; font-size: 0.95rem; font-style: italic; min-height: 22px; }
+
+  /* ── HINT OVERLAY ── */
+  #hint-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(13,10,6,0.82);
+    z-index: 110;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+  }
+  #hint-overlay.open { display: flex; }
+  .hint-box {
+    background: var(--parchment);
+    border: 2px solid var(--parchment-deeper);
+    padding: 30px 30px 26px;
+    max-width: 420px;
+    width: 100%;
+    box-shadow: 0 20px 80px rgba(0,0,0,0.7);
+  }
+  .hint-header {
+    display: flex; justify-content: space-between; align-items: flex-start;
+    margin-bottom: 18px;
+  }
+  .hint-title { font-size: 1.2rem; font-weight: 300; color: var(--accent); letter-spacing: 1px; }
+  .hint-close {
+    background: transparent; border: 1px solid var(--parchment-deeper);
+    color: var(--dim); cursor: pointer; font-size: 1.1rem; line-height: 1;
+    width: 32px; height: 32px; display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+  .hint-close:hover { background: var(--parchment-dark); }
+  .hint-stage-row {
+    display: flex; gap: 6px; margin-bottom: 18px; flex-wrap: wrap;
+  }
+  .hint-stage-btn {
+    background: transparent; border: 1px solid var(--parchment-deeper);
+    padding: 6px 14px; min-height: 36px; font-family: 'Crimson Pro', serif;
+    font-size: 0.85rem; color: var(--dim); cursor: pointer; letter-spacing: 1px;
+    transition: background 0.12s, color 0.12s;
+  }
+  .hint-stage-btn.active { background: var(--accent); color: var(--parchment); border-color: var(--accent); }
+  .hint-stage-btn:hover:not(.active) { background: var(--parchment-dark); }
+  .hint-stage-btn.locked { opacity: 0.35; cursor: default; }
+  #hint-body {
+    font-size: 1rem; line-height: 1.75; color: var(--ink);
+    border-left: 3px solid var(--accent-light);
+    padding-left: 14px;
+    font-style: italic;
+    min-height: 60px;
+  }
+  .hint-counter { margin-top: 14px; font-size: 0.78rem; color: var(--dim); letter-spacing: 1px; text-align: right; font-family: 'Courier Prime', monospace; }
+
+  /* ── CONFIRM RESET OVERLAY ── */
+  #confirm-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(13,10,6,0.82);
+    z-index: 120;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+  }
+  #confirm-overlay.open { display: flex; }
+  .confirm-box {
+    background: var(--parchment);
+    border: 2px solid var(--parchment-deeper);
+    padding: 28px 28px 24px;
+    max-width: 340px;
+    width: 100%;
+    text-align: center;
+    box-shadow: 0 20px 80px rgba(0,0,0,0.7);
+  }
+  .confirm-box h3 { font-size: 1.2rem; font-weight: 400; color: var(--accent); margin-bottom: 10px; }
+  .confirm-box p { font-size: 0.97rem; color: var(--dim); font-style: italic; line-height: 1.65; margin-bottom: 22px; }
+  .confirm-actions { display: flex; gap: 10px; justify-content: center; }
+  .confirm-yes {
+    background: var(--accent); color: var(--parchment); border: none;
+    padding: 12px 28px; min-height: 48px; font-family: 'Crimson Pro', serif;
+    font-size: 0.95rem; font-weight: 600; letter-spacing: 1.5px; text-transform: uppercase;
+    cursor: pointer; transition: background 0.2s;
+  }
+  .confirm-yes:hover { background: var(--accent-light); }
+  .confirm-no {
+    background: transparent; color: var(--dim); border: 1px solid var(--parchment-deeper);
+    padding: 12px 22px; min-height: 48px; font-family: 'Crimson Pro', serif;
+    font-size: 0.95rem; cursor: pointer; transition: background 0.15s;
+  }
+  .confirm-no:hover { background: var(--parchment-dark); }
+
+  /* ── WIN SCREEN ── */
+  #win-screen {
+    display: none; flex-direction: column; align-items: center;
+    justify-content: center; min-height: 90vh; padding: 40px 30px; text-align: center;
+  }
+  .win-ornament { font-size: 3rem; margin-bottom: 16px; }
+  h2.win-title { font-size: 2.4rem; font-weight: 300; color: var(--green); margin-bottom: 10px; }
+  .win-sub { font-size: 1.1rem; color: var(--dim); font-style: italic; margin-bottom: 32px; }
+  .win-stats { display: flex; gap: 24px; margin-bottom: 36px; flex-wrap: wrap; justify-content: center; }
+  .stat-box { text-align: center; border: 1px solid var(--parchment-deeper); padding: 14px 22px; background: var(--highlight); }
+  .stat-num { font-size: 2rem; font-weight: 600; color: var(--accent); font-family: 'Courier Prime', monospace; display: block; }
+  .stat-label { font-size: 0.72rem; letter-spacing: 2px; text-transform: uppercase; color: var(--dim); }
+
+  /* ── CLUE PROGRESS STRIP ── */
+  #progress-strip {
+    display: flex;
+    border-bottom: 1px solid var(--parchment-deeper);
+    background: rgba(120,80,30,0.06);
+  }
+  .prog-cell {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    padding: 7px 12px;
+    border-right: 1px solid var(--parchment-deeper);
+    transition: background 0.25s;
+    min-height: 36px;
+  }
+  .prog-cell:last-child { border-right: none; }
+  .prog-cell.found { background: rgba(45,90,39,0.09); }
+  .prog-dot {
+    width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0;
+    border: 1.5px solid var(--parchment-deeper);
+    background: transparent;
+    transition: background 0.25s, border-color 0.25s;
+  }
+  .prog-cell.found .prog-dot {
+    background: var(--green);
+    border-color: var(--green);
+  }
+  .prog-text {
+    font-size: 0.67rem;
+    font-weight: 700;
+    letter-spacing: 1.8px;
+    text-transform: uppercase;
+    color: var(--dim);
+    opacity: 0.55;
+    transition: opacity 0.25s, color 0.25s;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .prog-cell.found .prog-text { color: var(--green); opacity: 1; }
+  .prog-sub {
+    font-size: 0.62rem;
+    color: var(--dim);
+    opacity: 0.4;
+    font-family: 'Courier Prime', monospace;
+    margin-left: auto;
+    flex-shrink: 0;
+    transition: opacity 0.25s;
+  }
+  .prog-cell.found .prog-sub { opacity: 0.7; }
+  @media (max-width: 420px) {
+    .prog-sub { display: none; }
+    .prog-cell { padding: 7px 8px; gap: 5px; }
+    .prog-text { font-size: 0.6rem; letter-spacing: 1.2px; }
+  }
+  #event-log {
+    position: fixed; bottom: 12px; right: 12px; max-width: 260px;
+    z-index: 50; display: flex; flex-direction: column-reverse; gap: 4px; pointer-events: none;
+  }
+  .log-entry {
+    background: var(--ink); color: var(--parchment); font-size: 0.76rem;
+    padding: 6px 10px; font-family: 'Courier Prime', monospace;
+    opacity: 0; transform: translateY(8px);
+    animation: fadeLog 3.5s ease forwards;
+  }
+  @keyframes fadeLog {
+    0%   { opacity:0; transform:translateY(8px); }
+    15%  { opacity:1; transform:translateY(0); }
+    70%  { opacity:1; }
+    100% { opacity:0; }
+  }
+
+  .highlight-clue { color: var(--accent); font-weight: 600; }
+
+  /* ── MOBILE RESPONSIVE ── */
+  @media (max-width: 580px) {
+    body { padding: 0; }
+    #game-frame { border-width: 0 0 3px 0; min-height: 100vh; }
+    .game-body { grid-template-columns: 1fr; }
+    .sidebar { border-top: 1px solid var(--parchment-deeper); padding-bottom: 80px; }
+    .room-view { padding: 16px 14px 12px; }
+    .room-scene { padding: 14px; }
+    .obj-btn { font-size: 1.05rem; padding: 12px 16px; min-height: 48px; }
+    .door-btn { min-height: 52px; font-size: 1.02rem; }
+    #room-label { font-size: 0.72rem; }
+    .hdr-btn { padding: 0 10px; font-size: 0.72rem; height: 34px; }
+    .lock-dials { gap: 10px; }
+    .dial-up, .dial-down { width: 48px; height: 40px; }
+    .dial-display { width: 48px; height: 60px; font-size: 1.8rem; }
+  }
+</style>
+</head>
+<body>
+
+<div id="game-frame">
+
+  <!-- TITLE SCREEN -->
+  <div id="title-screen" class="screen">
+    <div class="title-ornament">✦ ✦ ✦</div>
+    <h1 class="game-title">The Archivist's<br>Study</h1>
+    <h2 class="game-subtitle">A puzzle in three rooms</h2>
+    <div class="title-divider"></div>
+    <p class="flavor-text">
+      You've been locked inside the estate of the late Archivist Pemberton.
+      Somewhere in these three rooms lies the combination to the front door's lock.
+      Nothing here is arbitrary — read carefully.
+    </p>
+    <div class="title-divider"></div>
+    <button class="btn-primary" onclick="startGame()">Begin Investigation</button>
+  </div>
+
+  <!-- GAME SCREEN -->
+  <div id="game-screen" class="screen">
+    <div class="game-header">
+      <span id="room-label">Room 1 — The Study</span>
+      <div class="header-actions">
+        <span id="move-counter">0 moves</span>
+        <button class="hdr-btn hint-btn" onclick="openHint()" title="Get a hint">💡 Hint</button>
+        <button class="hdr-btn reset-btn" onclick="confirmReset()" title="Restart game">↺ Reset</button>
+      </div>
+    </div>
+    <!-- Clue progress strip: shows which dial sources have been discovered -->
+    <div id="progress-strip" aria-label="Clue progress">
+      <div class="prog-cell" id="prog-0">
+        <div class="prog-dot"></div>
+        <span class="prog-text">Dial I</span>
+        <span class="prog-sub">Study</span>
+      </div>
+      <div class="prog-cell" id="prog-1">
+        <div class="prog-dot"></div>
+        <span class="prog-text">Dial II</span>
+        <span class="prog-sub">Garden</span>
+      </div>
+      <div class="prog-cell" id="prog-2">
+        <div class="prog-dot"></div>
+        <span class="prog-text">Dial III</span>
+        <span class="prog-sub">Cross-ref</span>
+      </div>
+    </div>
+
+    <div class="game-body">
+      <div class="room-view">
+        <div class="room-scene">
+          <div class="scene-title" id="scene-title">The Study</div>
+          <p class="scene-desc" id="scene-desc">Loading...</p>
+          <div class="objects-grid" id="objects-grid"></div>
+        </div>
+        <div class="inspect-panel">
+          <div class="inspect-label">Inspection</div>
+          <div id="inspect-text">Click an object or inventory item to examine it.</div>
+        </div>
+        <div class="room-nav" id="room-nav"></div>
+      </div>
+      <div class="sidebar">
+        <div>
+          <div class="panel-label">Inventory</div>
+          <ul id="inv-list"><li class="inv-empty">Nothing collected yet.</li></ul>
+        </div>
+        <div>
+          <div class="panel-label">Notes</div>
+          <ul id="notes-list"><li class="notes-empty">Clues will appear here.</li></ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- WIN SCREEN -->
+  <div id="win-screen" class="screen">
+    <div class="win-ornament">🗝️</div>
+    <h2 class="win-title">You're Free.</h2>
+    <p class="win-sub">The lock yielded. The door swings open onto the evening air.</p>
+    <div class="win-stats">
+      <div class="stat-box"><span class="stat-num" id="final-moves">—</span><span class="stat-label">Moves</span></div>
+      <div class="stat-box"><span class="stat-num" id="final-hints">—</span><span class="stat-label">Hints Used</span></div>
+      <div class="stat-box"><span class="stat-num" id="final-attempts">—</span><span class="stat-label">Lock Attempts</span></div>
+    </div>
+    <button class="btn-primary" onclick="doReset()">Play Again</button>
+  </div>
+
+</div><!-- #game-frame -->
+
+<!-- LOCK OVERLAY -->
+<div id="lock-overlay">
+  <div class="lock-box">
+    <div class="lock-title">🔒 The Front Door</div>
+    <p class="lock-hint">Three digits secure this lock. You've gathered what you need.</p>
+    <div class="lock-dials" id="lock-dials"></div>
+    <div class="lock-actions">
+      <button class="lock-btn" onclick="tryLock()">Unlock</button>
+      <button class="lock-cancel" onclick="closeLock()">Cancel</button>
+    </div>
+    <div id="lock-feedback"></div>
+  </div>
+</div>
+
+<!-- HINT OVERLAY -->
+<div id="hint-overlay">
+  <div class="hint-box">
+    <div class="hint-header">
+      <div class="hint-title">💡 Archivist's Clue</div>
+      <button class="hint-close" onclick="closeHint()" aria-label="Close hints">✕</button>
+    </div>
+    <div class="hint-stage-row" id="hint-stage-row"></div>
+    <div id="hint-body">Select a nudge level above.</div>
+    <div class="hint-counter" id="hint-counter"></div>
+  </div>
+</div>
+
+<!-- CONFIRM RESET OVERLAY -->
+<div id="confirm-overlay">
+  <div class="confirm-box">
+    <h3>Start Over?</h3>
+    <p>All progress, inventory, and notes will be erased.</p>
+    <div class="confirm-actions">
+      <button class="confirm-yes" onclick="doReset()">Reset</button>
+      <button class="confirm-no" onclick="closeConfirm()">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- Event log -->
+<div id="event-log"></div>
+
+<script>
+// ══════════════════════════════════════════
+//  GAME DATA
+// ══════════════════════════════════════════
+
+const SOLUTION = [8, 7, 5];
+
+// Staged hints: each entry is keyed by a condition string evaluated at runtime.
+// Stages are revealed progressively — you must read stage 1 before unlocking stage 2, etc.
+// Each stage object: { label, condition(state), text }
+const HINTS = [
+  {
+    label: 'Nudge 1',
+    condition: () => true,
+    text: 'The combination has three digits. Each digit lives in a different room. Start in the Study — there\'s an object on the mantelpiece that has already stopped moving.'
+  },
+  {
+    label: 'Nudge 2',
+    condition: (s) => s.notes.some(n => n.includes('FIRST DIGIT')),
+    text: 'You\'ve found the first digit. Now head to the Walled Garden. Look closely at the rose beds — one stake in particular carries a number.'
+  },
+  {
+    label: 'Nudge 3',
+    condition: (s) => s.notes.some(n => n.includes('SECOND DIGIT')),
+    text: 'Good — two digits secured. The third requires two pieces of information: a birth year carved in stone, and the year Pemberton retired (the portrait in the Study names it). Subtract to find the age, then take only the units digit.'
+  },
+  {
+    label: 'Nudge 4',
+    condition: (s) => s.notes.some(n => n.includes('units digit')),
+    text: 'You have everything. The Library\'s brass placard confirms the order: clock hour → bloom count → last digit of Margaret\'s age at retirement. Margaret was born in 1912. Pemberton retired in 1947. Do the arithmetic.'
+  },
+];
+
+const ROOMS = {
+  study: {
+    id: 'study',
+    name: 'The Study',
+    label: 'Room 1 — The Study',
+    desc: `Pemberton's private study. Bookshelves line the walls. A grandfather clock stands silent in the corner. A portrait hangs above the mantelpiece, the painted eyes gazing steadily toward the clock.`,
+    objects: [
+      {
+        id: 'portrait',
+        icon: '🖼️',
+        label: 'Portrait',
+        examine: `A formal oil portrait of the Archivist, painted in the year he retired — <span class="highlight-clue">1947</span>. His gaze is fixed, unmistakably, on the clock in the corner.`,
+        note: 'Portrait: painted 1947 (year of retirement). His gaze: the clock.',
+        takeable: false,
+      },
+      {
+        id: 'clock',
+        icon: '🕐',
+        label: 'Mantel Clock',
+        examine: `The clock stopped long ago. The hour hand points squarely to <span class="highlight-clue">8</span>, the minute hand to 12. Engraved on the base: <em>"Time halted — the first dial equals the hour."</em>`,
+        note: 'Clock stopped at 8:00. FIRST DIGIT = 8.',
+        takeable: false,
+      },
+      {
+        id: 'bookshelf',
+        icon: '📚',
+        label: 'Bookshelf',
+        examine: `Rows of numbered journals, spines faded with age. One is pulled halfway out — Volume IX. The rest are flush.`,
+        note: null,
+        takeable: false,
+        spawns: 'journal_ix',
+      },
+      {
+        id: 'journal_ix',
+        icon: '📒',
+        label: 'Journal IX',
+        examine: `Page 1: <em>"My three favourite numbers: the hour the clock stopped, the count of my prize blooms, the last digit of my eldest daughter's age at my retirement."</em> Page 47 is torn out.`,
+        note: "Pemberton's sequence: (1) clock hour, (2) bloom count, (3) units digit of eldest's age at retirement.",
+        takeable: true,
+        spawnsFrom: 'bookshelf',
+      },
+    ],
+    doors: [
+      { to: 'garden', label: '→ Garden' },
+      { to: 'library', label: '→ Library' },
+    ],
+  },
+
+  garden: {
+    id: 'garden',
+    name: 'The Walled Garden',
+    label: 'Room 2 — The Garden',
+    desc: `A high-walled garden, fragrant and overgrown. Rose beds stretch along the southern wall. A stone bench sits beneath an old elm. A small wooden shed stands locked in the far corner.`,
+    objects: [
+      {
+        id: 'rose_bed',
+        icon: '🌹',
+        label: 'Rose Beds',
+        examine: `Five beds in all — three red, two white. Only one bed is fully in bloom: the red bed nearest the wall. A small wooden stake bears a painted count: <span class="highlight-clue">7 blooms this season</span>.`,
+        note: 'Prize bloom count = 7. SECOND DIGIT = 7.',
+        takeable: false,
+      },
+      {
+        id: 'bench',
+        icon: '🪑',
+        label: 'Stone Bench',
+        examine: `Carved into the bench's backrest: <em>"For Margaret, my eldest. Born <span class="highlight-clue">1912</span>."</em> A small brass key rests on the seat.`,
+        note: 'Margaret (eldest) born 1912.',
+        takeable: false,
+        spawns: 'shed_key',
+      },
+      {
+        id: 'shed_key',
+        icon: '🗝️',
+        label: 'Brass Key',
+        examine: `A small brass key. The bow is engraved with one word: <em>SHED</em>.`,
+        note: null,
+        takeable: true,
+        spawnsFrom: 'bench',
+      },
+      {
+        id: 'shed',
+        icon: '🚪',
+        label: 'Locked Shed',
+        examine: `A weathered wooden shed, padlocked shut.`,
+        note: null,
+        takeable: false,
+        requiresItem: 'shed_key',
+        onUnlock: {
+          examine: `The shed opens. Inside, pinned to a corkboard, is a faded letter.`,
+          spawns: 'faded_letter',
+          note: 'Shed unlocked.',
+        },
+      },
+      {
+        id: 'faded_letter',
+        icon: '📜',
+        label: 'Faded Letter',
+        examine: `Written in a shaky hand: <em>"My darling — by the time you read this, our Margaret will be celebrating her third decade with you. I pray she is well. — Pemberton, 1944."</em>`,
+        note: "Letter (1944): Margaret in her \"third decade\" with Pemberton → she's in her 30s at his retirement.",
+        takeable: true,
+        spawnsFrom: 'shed',
+      },
+    ],
+    doors: [
+      { to: 'study', label: '← Study' },
+      { to: 'library', label: '→ Library' },
+    ],
+  },
+
+  library: {
+    id: 'library',
+    name: 'The Library',
+    label: 'Room 3 — The Library',
+    desc: `Floor-to-ceiling shelves heavy with encyclopedias. A writing desk near the window. On the wall beside the door, a small brass placard has been mounted — the only object in the room that looks recently placed.`,
+    objects: [
+      {
+        id: 'encyclopedia',
+        icon: '📖',
+        label: 'Encyclopedia (A–C)',
+        examine: `A thick volume. Opening it, a marginal annotation in pencil reads: <em>"For any sequence involving ages, Pemberton used only the <span class="highlight-clue">units digit</span>."</em>`,
+        note: 'Confirmed: for ages in sequences, use the units digit only.',
+        takeable: false,
+      },
+      {
+        id: 'placard',
+        icon: '🪧',
+        label: 'Brass Placard',
+        examine: `Engraved: <em>"Three dials secure the front door. The Archivist's favourite sequence: the hour that time stopped — the count of his prize blooms — the last digit of his eldest's age at his retirement."</em>`,
+        note: 'PLACARD: dial 1 = clock hour, dial 2 = bloom count, dial 3 = units of Margaret\'s age at 1947.',
+        takeable: false,
+      },
+      {
+        id: 'front_door',
+        icon: '🔒',
+        label: 'The Front Door',
+        examine: `The way out. A three-dial combination lock is set into the frame. You've gathered everything you need.`,
+        note: null,
+        takeable: false,
+        isLock: true,
+      },
+    ],
+    doors: [
+      { to: 'study', label: '← Study' },
+      { to: 'garden', label: '← Garden' },
+    ],
+  },
+};
+
+// ══════════════════════════════════════════
+//  STATE
+// ══════════════════════════════════════════
+
+function freshState() {
+  return {
+    currentRoom: 'study',
+    inventory: [],
+    notes: [],
+    takenItems: new Set(),
+    unlockedShed: false,
+    spawnedItems: new Set(),
+    moves: 0,
+    lockAttempts: 0,
+    dialValues: [0, 0, 0],
+    selectedItem: null,
+    hintsUnlocked: 1,   // how many hint stages are accessible
+    hintsViewed: 0,     // total hint panel opens
+    currentHintStage: 0,
+  };
+}
+
+let state = freshState();
+
+// ══════════════════════════════════════════
+//  START / RESET
+// ══════════════════════════════════════════
+
+function startGame() {
+  document.getElementById('title-screen').style.display = 'none';
+  document.getElementById('game-screen').style.display = 'block';
+  renderRoom();
+  renderProgressStrip();
+}
+
+function confirmReset() {
+  document.getElementById('confirm-overlay').classList.add('open');
+}
+
+function closeConfirm() {
+  document.getElementById('confirm-overlay').classList.remove('open');
+}
+
+function doReset() {
+  // Close every overlay before wiping state so nothing lingers
+  ['confirm-overlay','hint-overlay','lock-overlay'].forEach(id =>
+    document.getElementById(id).classList.remove('open')
+  );
+  document.getElementById('win-screen').style.display = 'none';
+  // Clear hint panel content so it can't flash stale text on next open
+  document.getElementById('hint-stage-row').innerHTML = '';
+  document.getElementById('hint-body').textContent = 'Select a nudge level above.';
+  document.getElementById('hint-counter').textContent = '';
+  state = freshState();
+  document.getElementById('game-screen').style.display = 'block';
+  renderRoom();
+  renderProgressStrip();
+}
+
+// ══════════════════════════════════════════
+//  RENDER
+// ══════════════════════════════════════════
+
+function renderRoom() {
+  const room = ROOMS[state.currentRoom];
+  document.getElementById('room-label').textContent = room.label;
+  document.getElementById('scene-title').textContent = room.name;
+  document.getElementById('scene-desc').textContent = room.desc;
+  document.getElementById('inspect-text').innerHTML = 'Click an object or inventory item to examine it.';
+
+  const grid = document.getElementById('objects-grid');
+  grid.innerHTML = '';
+  room.objects.forEach(obj => {
+    if (obj.spawnsFrom && !state.spawnedItems.has(obj.id)) return;
+    if (state.takenItems.has(obj.id)) return;
+    const btn = document.createElement('button');
+    btn.className = 'obj-btn';
+    btn.innerHTML = `<span class="obj-icon">${obj.icon}</span>${obj.label}`;
+    btn.onclick = () => handleObjectClick(obj.id);
+    grid.appendChild(btn);
+  });
+
+  const nav = document.getElementById('room-nav');
+  nav.innerHTML = '';
+  room.doors.forEach(door => {
+    const btn = document.createElement('button');
+    btn.className = 'door-btn';
+    btn.textContent = door.label;
+    btn.onclick = () => goRoom(door.to);
+    nav.appendChild(btn);
+  });
+
+  renderInventory();
+  renderNotes();
+  document.getElementById('move-counter').textContent = `${state.moves} move${state.moves !== 1 ? 's' : ''}`;
+}
+
+function renderInventory() {
+  const list = document.getElementById('inv-list');
+  if (!state.inventory.length) {
+    list.innerHTML = '<li class="inv-empty">Nothing collected yet.</li>';
+    return;
+  }
+  list.innerHTML = '';
+  state.inventory.forEach(id => {
+    const obj = findObjectById(id);
+    if (!obj) return;
+    const li = document.createElement('li');
+    li.className = 'inv-item' + (state.selectedItem === id ? ' selected' : '');
+    li.innerHTML = `<span class="item-icon">${obj.icon}</span>${obj.label}`;
+    li.onclick = () => examineInventoryItem(id);
+    list.appendChild(li);
+  });
+}
+
+function renderNotes() {
+  const list = document.getElementById('notes-list');
+  if (!state.notes.length) {
+    list.innerHTML = '<li class="notes-empty">Clues will appear here.</li>';
+    return;
+  }
+  list.innerHTML = '';
+  state.notes.forEach(note => {
+    const li = document.createElement('li');
+    li.className = 'note-entry';
+    li.textContent = note;
+    list.appendChild(li);
+  });
+}
+
+// ══════════════════════════════════════════
+//  INTERACTIONS
+// ══════════════════════════════════════════
+
+function findObjectById(id) {
+  for (const room of Object.values(ROOMS)) {
+    const obj = room.objects.find(o => o.id === id);
+    if (obj) return obj;
+  }
+  return null;
+}
+
+function handleObjectClick(objId) {
+  state.moves++;
+  document.getElementById('move-counter').textContent = `${state.moves} move${state.moves !== 1 ? 's' : ''}`;
+
+  const room = ROOMS[state.currentRoom];
+  const obj = room.objects.find(o => o.id === objId);
+  if (!obj) return;
+
+  if (obj.isLock) { openLock(); return; }
+
+  if (obj.requiresItem) {
+    if (state.inventory.includes(obj.requiresItem)) {
+      state.unlockedShed = true;
+      if (obj.onUnlock.note) addNote(obj.onUnlock.note);
+      if (obj.onUnlock.spawns) {
+        state.spawnedItems.add(obj.onUnlock.spawns);
+        state.inventory = state.inventory.filter(i => i !== obj.requiresItem);
+        state.takenItems.add(obj.requiresItem);
+      }
+      inspect(obj.onUnlock.examine);
+      logEvent('Unlocked the shed with the brass key.');
+      renderRoom();
+      return;
+    } else {
+      inspect("The padlock holds firm. You'd need a key that fits.");
+      return;
+    }
+  }
+
+  if (obj.spawns && !state.spawnedItems.has(obj.spawns)) {
+    state.spawnedItems.add(obj.spawns);
+    renderRoom();
+  }
+
+  inspect(obj.examine);
+  if (obj.note) addNote(obj.note);
+  if (obj.takeable && !state.takenItems.has(obj.id)) takeItem(obj.id);
+
+  // Unlock next hint stage when key notes are discovered
+  updateHintUnlocks();
+}
+
+function takeItem(id) {
+  const obj = findObjectById(id);
+  if (!obj) return;
+  state.inventory.push(id);
+  state.takenItems.add(id);
+  logEvent(`Picked up: ${obj.label}`);
+  renderInventory();
+  renderRoom();
+}
+
+function examineInventoryItem(id) {
+  state.selectedItem = id;
+  state.moves++;
+  document.getElementById('move-counter').textContent = `${state.moves} move${state.moves !== 1 ? 's' : ''}`;
+  const obj = findObjectById(id);
+  if (!obj) return;
+  inspect(obj.examine);
+  if (obj.note) addNote(obj.note);
+  updateHintUnlocks();
+  renderInventory();
+}
+
+function inspect(html) {
+  document.getElementById('inspect-text').innerHTML = html;
+}
+
+function addNote(note) {
+  if (!state.notes.includes(note)) {
+    state.notes.push(note);
+    renderNotes();
+    renderProgressStrip();
+    logEvent('Note added.');
+  }
+}
+
+function goRoom(roomId) {
+  state.moves++;
+  state.selectedItem = null;
+  state.currentRoom = roomId;
+  renderRoom();
+}
+
+function logEvent(msg) {
+  const log = document.getElementById('event-log');
+  const el = document.createElement('div');
+  el.className = 'log-entry';
+  el.textContent = '> ' + msg;
+  log.prepend(el);
+  setTimeout(() => { if (el.parentNode) el.parentNode.removeChild(el); }, 3600);
+}
+
+// ══════════════════════════════════════════
+//  PROGRESS STRIP
+// ══════════════════════════════════════════
+
+// Each dial's "found" condition is intentionally vague — it tells you
+// *that* you have the right source, not what the digit is.
+const PROGRESS_CONDITIONS = [
+  // Dial I: clock note collected
+  (s) => s.notes.some(n => n.includes('FIRST DIGIT')),
+  // Dial II: rose bed note collected
+  (s) => s.notes.some(n => n.includes('SECOND DIGIT')),
+  // Dial III: both birth year AND retirement year are in notes
+  (s) => s.notes.some(n => n.includes('born 1912')) && s.notes.some(n => n.includes('1947')),
+];
+
+function renderProgressStrip() {
+  PROGRESS_CONDITIONS.forEach((cond, i) => {
+    const cell = document.getElementById(`prog-${i}`);
+    if (!cell) return;
+    if (cond(state)) {
+      cell.classList.add('found');
+    } else {
+      cell.classList.remove('found');
+    }
+  });
+}
+
+// ══════════════════════════════════════════
+//  HINT SYSTEM
+// ══════════════════════════════════════════
+
+// Evaluate which hint stages should now be unlocked based on progress
+function updateHintUnlocks() {
+  for (let i = 0; i < HINTS.length; i++) {
+    if (HINTS[i].condition(state)) {
+      // Unlock up to this stage + 1 (next stage always accessible once prev condition met)
+      state.hintsUnlocked = Math.max(state.hintsUnlocked, i + 1);
+    }
+  }
+  // Cap at total hints
+  state.hintsUnlocked = Math.min(state.hintsUnlocked, HINTS.length);
+}
+
+function openHint() {
+  updateHintUnlocks();
+  state.hintsViewed++;
+  state.currentHintStage = Math.min(state.currentHintStage, state.hintsUnlocked - 1);
+  renderHintPanel();
+  document.getElementById('hint-overlay').classList.add('open');
+}
+
+function closeHint() {
+  document.getElementById('hint-overlay').classList.remove('open');
+}
+
+function renderHintPanel() {
+  const row = document.getElementById('hint-stage-row');
+  row.innerHTML = '';
+  HINTS.forEach((h, i) => {
+    const btn = document.createElement('button');
+    btn.className = 'hint-stage-btn';
+    btn.textContent = h.label;
+    const unlocked = i < state.hintsUnlocked;
+    if (!unlocked) {
+      btn.classList.add('locked');
+      btn.title = 'Discover more clues to unlock this nudge.';
+      btn.disabled = true;
+    } else {
+      if (i === state.currentHintStage) btn.classList.add('active');
+      btn.onclick = () => selectHintStage(i);
+    }
+    row.appendChild(btn);
+  });
+  const hint = HINTS[state.currentHintStage];
+  document.getElementById('hint-body').textContent = hint ? hint.text : '';
+  document.getElementById('hint-counter').textContent =
+    `Stage ${state.currentHintStage + 1} of ${state.hintsUnlocked} unlocked`;
+}
+
+function selectHintStage(i) {
+  if (i >= state.hintsUnlocked) return;
+  state.currentHintStage = i;
+  renderHintPanel();
+}
+
+// ══════════════════════════════════════════
+//  LOCK
+// ══════════════════════════════════════════
+
+function buildLockDials() {
+  const container = document.getElementById('lock-dials');
+  container.innerHTML = '';
+  const labels = ['Dial I', 'Dial II', 'Dial III'];
+  for (let i = 0; i < 3; i++) {
+    const g = document.createElement('div');
+    g.className = 'dial-group';
+
+    const up = document.createElement('button');
+    up.className = 'dial-up';
+    up.innerHTML = '▲';
+    up.setAttribute('aria-label', `Increase dial ${i + 1}`);
+    up.onclick = () => adjustDial(i, 1);
+
+    const disp = document.createElement('div');
+    disp.className = 'dial-display';
+    disp.id = `dial-${i}`;
+    disp.textContent = state.dialValues[i];
+
+    const down = document.createElement('button');
+    down.className = 'dial-down';
+    down.innerHTML = '▼';
+    down.setAttribute('aria-label', `Decrease dial ${i + 1}`);
+    down.onclick = () => adjustDial(i, -1);
+
+    const lbl = document.createElement('div');
+    lbl.className = 'dial-label';
+    lbl.textContent = labels[i];
+
+    g.appendChild(up);
+    g.appendChild(disp);
+    g.appendChild(down);
+    g.appendChild(lbl);
+    container.appendChild(g);
+  }
+}
+
+function adjustDial(i, delta) {
+  state.dialValues[i] = (state.dialValues[i] + delta + 10) % 10;
+  document.getElementById(`dial-${i}`).textContent = state.dialValues[i];
+  document.getElementById('lock-feedback').textContent = '';
+}
+
+function openLock() {
+  document.getElementById('lock-feedback').textContent = '';
+  document.getElementById('lock-overlay').classList.add('open');
+  buildLockDials();
+}
+
+function closeLock() {
+  document.getElementById('lock-overlay').classList.remove('open');
+}
+
+function tryLock() {
+  state.lockAttempts++;
+  const [a, b, c] = state.dialValues;
+  const [sa, sb, sc] = SOLUTION;
+  if (a === sa && b === sb && c === sc) {
+    document.getElementById('lock-overlay').classList.remove('open');
+    showWin();
+    return;
+  }
+  let feedback = 'The lock does not yield.';
+  if (state.lockAttempts >= 3) {
+    const hints = [];
+    if (a !== sa) hints.push(`Dial I ${a < sa ? 'too low' : 'too high'}`);
+    if (b !== sb) hints.push(`Dial II ${b < sb ? 'too low' : 'too high'}`);
+    if (c !== sc) hints.push(`Dial III ${c < sc ? 'too low' : 'too high'}`);
+    if (hints.length) feedback += ' — ' + hints.join(', ');
+  }
+  const fb = document.getElementById('lock-feedback');
+  fb.style.color = 'var(--accent)';
+  fb.textContent = feedback;
+}
+
+// ══════════════════════════════════════════
+//  WIN
+// ══════════════════════════════════════════
+
+function showWin() {
+  document.getElementById('game-screen').style.display = 'none';
+  const win = document.getElementById('win-screen');
+  win.style.display = 'flex';
+  document.getElementById('final-moves').textContent = state.moves;
+  document.getElementById('final-hints').textContent = state.hintsViewed;
+  document.getElementById('final-attempts').textContent = state.lockAttempts;
+}
+</script>
+</body>
+</html>

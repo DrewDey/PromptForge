@@ -252,6 +252,36 @@ function ResponsePackageCard({
     artifactPackages.length === 1
       ? 'This response produced a selectable artifact version.'
       : `This response produced ${artifactPackages.length} selectable artifact versions.`
+  const canSelectPackage = Boolean(detailPackage && onSelect)
+  const selectLabel = selected ? 'Selected' : 'Select artifact'
+  const headerContent = (
+    <>
+      <div className="min-w-0">
+        <div className="block font-mono text-[10px] uppercase tracking-[0.16em] text-surface-500">
+          Response package {String(step.stepNumber).padStart(2, '0')}
+        </div>
+        <div className="mt-1 block text-base font-black text-surface-900">{step.title}</div>
+        <div className="mt-1 block text-sm leading-6 text-surface-600">
+          {hasArtifactPackages
+            ? artifactCopy
+            : 'This response is preserved as transcript-only because no public artifact was produced.'}
+        </div>
+      </div>
+      {detailPackage && (
+        <span
+          className={[
+            'inline-flex shrink-0 items-center gap-1.5 border px-3 py-2 font-mono text-[10px] uppercase tracking-[0.12em]',
+            selected
+              ? 'border-brand-blue bg-brand-blue text-white'
+              : 'border-surface-300 bg-white text-surface-700',
+          ].join(' ')}
+        >
+          {selected && <CheckCircle2 className="h-3.5 w-3.5" />}
+          {selectLabel}
+        </span>
+      )}
+    </>
+  )
 
   return (
     <div
@@ -262,35 +292,20 @@ function ResponsePackageCard({
           : 'border-surface-200 hover:border-brand-blue/60',
       ].join(' ')}
     >
-      <div className="flex w-full items-start justify-between gap-4 p-4 text-left">
-        <div className="min-w-0">
-          <div className="block font-mono text-[10px] uppercase tracking-[0.16em] text-surface-500">
-            Response package {String(step.stepNumber).padStart(2, '0')}
-          </div>
-          <div className="mt-1 block text-base font-black text-surface-900">{step.title}</div>
-          <div className="mt-1 block text-sm leading-6 text-surface-600">
-            {hasArtifactPackages
-              ? artifactCopy
-              : 'This response is preserved as transcript-only because no public artifact was produced.'}
-          </div>
+      {canSelectPackage ? (
+        <button
+          type="button"
+          onClick={() => onSelect?.(detailPackage.id)}
+          aria-pressed={selected}
+          className="flex w-full items-start justify-between gap-4 p-4 text-left transition hover:bg-brand-blue/5"
+        >
+          {headerContent}
+        </button>
+      ) : (
+        <div className="flex w-full items-start justify-between gap-4 p-4 text-left">
+          {headerContent}
         </div>
-        {detailPackage && onSelect && (
-          <button
-            type="button"
-            onClick={() => onSelect(detailPackage.id)}
-            aria-pressed={selected}
-            className={[
-              'inline-flex shrink-0 items-center gap-1.5 border px-3 py-2 font-mono text-[10px] uppercase tracking-[0.12em]',
-              selected
-                ? 'border-brand-blue bg-brand-blue text-white'
-                : 'border-surface-300 bg-white text-surface-700',
-            ].join(' ')}
-          >
-            {selected && <CheckCircle2 className="h-3.5 w-3.5" />}
-            {selected ? 'Selected' : 'Select'}
-          </button>
-        )}
-      </div>
+      )}
 
       <div className="space-y-4 border-t border-surface-200 bg-white p-4">
         {step.callout && <StepCallout callout={step.callout} />}

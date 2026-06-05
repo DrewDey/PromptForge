@@ -9,14 +9,23 @@ import {
 } from './types'
 import { SNAKE_PROJECT_ID } from './featured-projects'
 import {
+  FLASHCARD_CRAM_SHOWCASE_PROJECT,
+  FOLLOW_UP_CRM_SHOWCASE_PROJECT,
   HP_10BII_SHOWCASE_PROJECT,
+  LANE_DEFENSE_SHOWCASE_PROJECT,
   MEETING_COST_SHOWCASE_PROJECT,
   NEON_BLOCK_PATROL_SHOWCASE_PROJECT,
+  POCKET_RALLY_SHOWCASE_PROJECT,
   POMODORO_TIMER_SHOWCASE_PROJECT,
+  PUZZLE_BOX_ESCAPE_SHOWCASE_PROJECT,
+  REACTION_TRAINER_SHOWCASE_PROJECT,
   SWISH_CITY_SHOWCASE_PROJECT,
   TIC_TAC_TOE_SHOWCASE_PROJECT,
+  TRIP_PACKING_SHOWCASE_PROJECT,
   WEEKEND_CHECKLIST_SHOWCASE_PROJECT,
+  WORD_LADDER_SPRINT_SHOWCASE_PROJECT,
 } from './prepared-showcase-projects'
+import type { PreparedShowcaseProject } from './prepared-showcase-projects'
 
 export const mockProfiles: Profile[] = [
   {
@@ -99,6 +108,86 @@ export const mockProfiles: Profile[] = [
     created_at: '2026-06-03T23:17:21Z',
     updated_at: MEETING_COST_SHOWCASE_PROJECT.updatedAt,
   },
+  {
+    id: '22222222-2222-2222-2222-222222222219',
+    username: WORD_LADDER_SPRINT_SHOWCASE_PROJECT.authorUsername,
+    display_name: WORD_LADDER_SPRINT_SHOWCASE_PROJECT.authorDisplayName,
+    avatar_url: null,
+    bio: 'Playable word and mobile game builds submitted through PathForge source runs.',
+    role: 'user',
+    created_at: WORD_LADDER_SPRINT_SHOWCASE_PROJECT.createdAt,
+    updated_at: WORD_LADDER_SPRINT_SHOWCASE_PROJECT.updatedAt,
+  },
+  {
+    id: '22222222-2222-2222-2222-222222222220',
+    username: PUZZLE_BOX_ESCAPE_SHOWCASE_PROJECT.authorUsername,
+    display_name: PUZZLE_BOX_ESCAPE_SHOWCASE_PROJECT.authorDisplayName,
+    avatar_url: null,
+    bio: 'Puzzle and browser-game builds submitted through PathForge source runs.',
+    role: 'user',
+    created_at: PUZZLE_BOX_ESCAPE_SHOWCASE_PROJECT.createdAt,
+    updated_at: PUZZLE_BOX_ESCAPE_SHOWCASE_PROJECT.updatedAt,
+  },
+  {
+    id: '22222222-2222-2222-2222-222222222221',
+    username: POCKET_RALLY_SHOWCASE_PROJECT.authorUsername,
+    display_name: POCKET_RALLY_SHOWCASE_PROJECT.authorDisplayName,
+    avatar_url: null,
+    bio: 'Racing and arcade browser-game builds submitted through PathForge source runs.',
+    role: 'user',
+    created_at: POCKET_RALLY_SHOWCASE_PROJECT.createdAt,
+    updated_at: POCKET_RALLY_SHOWCASE_PROJECT.updatedAt,
+  },
+  {
+    id: '22222222-2222-2222-2222-222222222222',
+    username: TRIP_PACKING_SHOWCASE_PROJECT.authorUsername,
+    display_name: TRIP_PACKING_SHOWCASE_PROJECT.authorDisplayName,
+    avatar_url: null,
+    bio: 'Travel and productivity tools submitted through PathForge source runs.',
+    role: 'user',
+    created_at: TRIP_PACKING_SHOWCASE_PROJECT.createdAt,
+    updated_at: TRIP_PACKING_SHOWCASE_PROJECT.updatedAt,
+  },
+  {
+    id: '22222222-2222-2222-2222-222222222223',
+    username: FLASHCARD_CRAM_SHOWCASE_PROJECT.authorUsername,
+    display_name: FLASHCARD_CRAM_SHOWCASE_PROJECT.authorDisplayName,
+    avatar_url: null,
+    bio: 'Study and education tools submitted through PathForge source runs.',
+    role: 'user',
+    created_at: FLASHCARD_CRAM_SHOWCASE_PROJECT.createdAt,
+    updated_at: FLASHCARD_CRAM_SHOWCASE_PROJECT.updatedAt,
+  },
+  {
+    id: '22222222-2222-2222-2222-222222222224',
+    username: FOLLOW_UP_CRM_SHOWCASE_PROJECT.authorUsername,
+    display_name: FOLLOW_UP_CRM_SHOWCASE_PROJECT.authorDisplayName,
+    avatar_url: null,
+    bio: 'Sales, follow-up, and solo-operator tools submitted through PathForge source runs.',
+    role: 'user',
+    created_at: FOLLOW_UP_CRM_SHOWCASE_PROJECT.createdAt,
+    updated_at: FOLLOW_UP_CRM_SHOWCASE_PROJECT.updatedAt,
+  },
+  {
+    id: '22222222-2222-2222-2222-222222222225',
+    username: REACTION_TRAINER_SHOWCASE_PROJECT.authorUsername,
+    display_name: REACTION_TRAINER_SHOWCASE_PROJECT.authorDisplayName,
+    avatar_url: null,
+    bio: 'Fast browser-game and reaction trainer builds submitted through PathForge source runs.',
+    role: 'user',
+    created_at: REACTION_TRAINER_SHOWCASE_PROJECT.createdAt,
+    updated_at: REACTION_TRAINER_SHOWCASE_PROJECT.updatedAt,
+  },
+  {
+    id: '22222222-2222-2222-2222-222222222226',
+    username: LANE_DEFENSE_SHOWCASE_PROJECT.authorUsername,
+    display_name: LANE_DEFENSE_SHOWCASE_PROJECT.authorDisplayName,
+    avatar_url: null,
+    bio: 'Tiny strategy game builds submitted through PathForge source runs.',
+    role: 'user',
+    created_at: LANE_DEFENSE_SHOWCASE_PROJECT.createdAt,
+    updated_at: LANE_DEFENSE_SHOWCASE_PROJECT.updatedAt,
+  },
 ]
 
 export const mockCategories: Category[] = [
@@ -113,6 +202,19 @@ export const mockCategories: Category[] = [
   { id: 'cat-9', name: 'Business Strategy', slug: 'strategy', description: 'SWOT analysis, business plans, market research, and OKRs', icon: '🎯', prompt_count: 0, created_at: '2026-03-01T00:00:00Z' },
   { id: 'cat-10', name: 'Personal & Fun', slug: 'personal', description: 'Games, experiments, creative demos, and playful AI builds', icon: '🎮', prompt_count: 1, created_at: '2026-03-01T00:00:00Z' },
 ]
+
+function stepsForShowcase(project: PreparedShowcaseProject): PromptStep[] {
+  return project.steps.map((step) => ({
+    id: step.id,
+    prompt_id: project.id,
+    step_number: step.stepNumber,
+    title: step.title,
+    content: step.content,
+    result_content: step.resultContent,
+    description: step.description,
+    created_at: project.createdAt,
+  }))
+}
 
 export const mockSteps: PromptStep[] = [
   {
@@ -195,7 +297,37 @@ export const mockSteps: PromptStep[] = [
     description: step.description,
     created_at: MEETING_COST_SHOWCASE_PROJECT.createdAt,
   })),
+  ...stepsForShowcase(WORD_LADDER_SPRINT_SHOWCASE_PROJECT),
+  ...stepsForShowcase(PUZZLE_BOX_ESCAPE_SHOWCASE_PROJECT),
+  ...stepsForShowcase(POCKET_RALLY_SHOWCASE_PROJECT),
+  ...stepsForShowcase(TRIP_PACKING_SHOWCASE_PROJECT),
+  ...stepsForShowcase(FLASHCARD_CRAM_SHOWCASE_PROJECT),
+  ...stepsForShowcase(FOLLOW_UP_CRM_SHOWCASE_PROJECT),
+  ...stepsForShowcase(REACTION_TRAINER_SHOWCASE_PROJECT),
+  ...stepsForShowcase(LANE_DEFENSE_SHOWCASE_PROJECT),
 ]
+
+function promptForShowcase(project: PreparedShowcaseProject, authorId: string): Prompt {
+  return {
+    id: project.id,
+    title: project.title,
+    description: project.description,
+    content: project.content,
+    result_content: project.resultContent,
+    category_id: project.mockCategoryId,
+    difficulty: project.difficulty,
+    model_used: project.modelUsed,
+    model_recommendation: project.modelRecommendation,
+    tools_used: project.toolsUsed,
+    tags: project.tags,
+    status: 'approved',
+    author_id: authorId,
+    vote_count: 0,
+    bookmark_count: 0,
+    created_at: project.createdAt,
+    updated_at: project.updatedAt,
+  }
+}
 
 export const mockPrompts: Prompt[] = [
   {
@@ -350,6 +482,14 @@ export const mockPrompts: Prompt[] = [
     created_at: MEETING_COST_SHOWCASE_PROJECT.createdAt,
     updated_at: MEETING_COST_SHOWCASE_PROJECT.updatedAt,
   },
+  promptForShowcase(WORD_LADDER_SPRINT_SHOWCASE_PROJECT, '22222222-2222-2222-2222-222222222219'),
+  promptForShowcase(PUZZLE_BOX_ESCAPE_SHOWCASE_PROJECT, '22222222-2222-2222-2222-222222222220'),
+  promptForShowcase(POCKET_RALLY_SHOWCASE_PROJECT, '22222222-2222-2222-2222-222222222221'),
+  promptForShowcase(TRIP_PACKING_SHOWCASE_PROJECT, '22222222-2222-2222-2222-222222222222'),
+  promptForShowcase(FLASHCARD_CRAM_SHOWCASE_PROJECT, '22222222-2222-2222-2222-222222222223'),
+  promptForShowcase(FOLLOW_UP_CRM_SHOWCASE_PROJECT, '22222222-2222-2222-2222-222222222224'),
+  promptForShowcase(REACTION_TRAINER_SHOWCASE_PROJECT, '22222222-2222-2222-2222-222222222225'),
+  promptForShowcase(LANE_DEFENSE_SHOWCASE_PROJECT, '22222222-2222-2222-2222-222222222226'),
 ]
 
 export const mockSuggestions: SuggestionWithRelations[] = []

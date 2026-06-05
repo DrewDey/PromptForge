@@ -1,5 +1,6 @@
 import { MessageSquare } from 'lucide-react'
 import { getPromptById } from '@/lib/data'
+import { toProjectForkSourceSteps } from '@/lib/project-forks'
 import ProjectForkCallout from './ProjectForkCallout'
 
 export default async function ProjectCommunityPanel({
@@ -8,13 +9,14 @@ export default async function ProjectCommunityPanel({
   projectId: string
 }) {
   const project = await getPromptById(projectId)
+  const sourceSteps = project ? toProjectForkSourceSteps(project) : []
 
   return (
     <section
       className="mx-auto max-w-7xl px-4 pb-28 sm:px-6 lg:px-8 lg:pb-14"
       data-project-id={projectId}
     >
-      <ProjectForkCallout projectId={projectId} projectTitle={project?.title} />
+      <ProjectForkCallout projectId={projectId} projectTitle={project?.title} sourceSteps={sourceSteps} />
       <div className="border-t border-surface-200 pt-10">
         <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_320px] lg:items-start">
           <div>

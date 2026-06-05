@@ -1,0 +1,85 @@
+{
+  "title": "Reaction-Time Trainer from Gemini Pro",
+  "slug": "reaction-trainer-gemini-pro",
+  "description": "A one-prompt Gemini Pro source run produced a self-contained reaction-time trainer with randomized rounds, false-start and missed-start penalty states, touch/click input, and local best-time history.",
+  "provider": "Gemini",
+  "model": "Gemini 3.1 Pro",
+  "model_settings": "Gemini web UI; selected 3.1 Pro (Advanced math and code) with Thinking level Standard; no tools or file uploads.",
+  "source_url": "https://gemini.google.com/app/9143dac6f331e1e5",
+  "run_started_at": "2026-06-04T18:36:00.000Z",
+  "run_finished_at": "2026-06-04T18:41:13.000Z",
+  "chain_type": "one-shot artifact",
+  "category": "game/productivity crossover",
+  "difficulty": "beginner",
+  "tags": [
+    "reaction time",
+    "browser game",
+    "productivity toy",
+    "local storage",
+    "touch controls",
+    "one-file html",
+    "Gemini Pro"
+  ],
+  "tools_used": [
+    "Gemini",
+    "Chrome",
+    "HTML",
+    "local browser verification"
+  ],
+  "status": "submitted_pending",
+  "final_artifact_path": "public/artifacts/reaction-trainer-gemini-pro.html",
+  "artifact_type": "html",
+  "artifact_versions": [
+    {
+      "step": 1,
+      "path": "public/artifacts/reaction-trainer-gemini-pro.html",
+      "is_final": true,
+      "notes": "Only generated artifact version; final default artifact for review."
+    }
+  ],
+  "screenshots": [],
+  "verification_notes": "Verified locally through http://127.0.0.1:8783/public/artifacts/reaction-trainer-gemini-pro.html on 2026-06-04. Browser checks confirmed nonblank render, start round changes to randomized Wait for green state, false-start click shows Too soon / False start penalty, a completed round reached CLICK and recorded 194 ms, best/average/recent history persisted after reload, missed-start timeout shows Too slow / Missed start penalty (> 1500ms), and the captured source includes touchstart handling plus localStorage history.",
+  "result_content": "Self-contained reaction-time trainer browser toy with a full-screen round loop, green-light reaction timing, false-start and missed-start penalty states, saved local best/average/recent history, and mouse/touch listeners.",
+  "agent_notes": "Source-run package only. Do not approve, publish, create a public prompt/upvote page, or create votes/comments/bookmarks during intake. Submitting non-admin seed profile: pathforge-seed-010 / TessaMorgan / Tessa Morgan. Provider/model: Gemini 3.1 Pro, Standard thinking. Prompt count: 1. Final artifact: public/artifacts/reaction-trainer-gemini-pro.html. Artifact versions: one final HTML file. Source URL: https://gemini.google.com/app/9143dac6f331e1e5. Verification passed locally in the manager browser check; click path rendered, entered wait state, handled false-start penalty, and had no console errors.",
+  "recommended_seed_profile": {
+    "registry_id": "pathforge-seed-010",
+    "username": "TessaMorgan",
+    "profile_url": "/user/TessaMorgan",
+    "rationale": "Fresh non-admin profile for importer public-signup path because the local env has no service-role key to reuse existing registry profiles."
+  },
+  "steps": [
+    {
+      "step_number": 1,
+      "prompt_exact": "Make me a polished one-file browser reaction-time trainer with quick randomized rounds, false-start and missed-start penalties, saved local best times/history, touch controls, and an instant replay feeling.",
+      "response_exact": "Save this as an .html file and open it in any modern browser. It handles touch events natively, saves your rolling history to localStorage, and instantly transitions between states so you can quickly grind for a better time.\n\nHTML\n<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n<meta charset=\"UTF-8\">\n<meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no\">\n<title>Reaction Time Trainer</title>\n<style>\n  :root {\n    --blue: #2b87d1;\n    --red: #ce2636;\n    --green: #4caf50;\n    --dark: #1e1e1e;\n    --text: #ffffff;\n  }\n  body, html {\n    margin: 0;\n    padding: 0;\n    height: 100%;\n    font-family: -apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, Helvetica, Arial, sans-serif;\n    background-color: var(--dark);\n    color: var(--text);\n    user-select: none;\n    -webkit-user-select: none;\n    overflow: hidden;\n  }\n  #trainer-area {\n    position: absolute;\n    top: 0;\n    left: 0;\n    width: 100%;\n    height: 100%;\n    display: flex;\n    flex-direction: column;\n    justify-content: center;\n    align-items: center;\n    background-color: var(--blue);\n    cursor: pointer;\n    transition: background-color 0.1s ease;\n  }\n  #trainer-area.ready { background-color: var(--red); }\n  #trainer-area.go { background-color: var(--green); }\n  \n  h1 { \n    font-size: 4rem; \n    margin: 0 0 10px 0; \n    text-align: center; \n    font-weight: 800; \n    pointer-events: none; \n  }\n  p { \n    font-size: 1.5rem; \n    margin: 0; \n    text-align: center; \n    opacity: 0.9; \n    pointer-events: none; \n  }\n  \n  #stats-panel {\n    position: absolute;\n    bottom: 20px;\n    width: 90%;\n    max-width: 600px;\n    display: flex;\n    justify-content: space-between;\n    background: rgba(0, 0, 0, 0.3);\n    padding: 15px 20px;\n    border-radius: 12px;\n    box-sizing: border-box;\n    pointer-events: none;\n  }\n  .stat-box { text-align: center; }\n  .stat-label { font-size: 0.8rem; text-transform: uppercase; letter-spacing: 1px; opacity: 0.7; }\n  .stat-value { font-size: 1.5rem; font-weight: bold; margin-top: 4px; }\n  \n  @media (max-width: 600px) {\n    h1 { font-size: 2.5rem; }\n    p { font-size: 1.2rem; }\n    #stats-panel { flex-direction: column; gap: 10px; bottom: 10px; }\n    .stat-box { \n      display: flex; \n      justify-content: space-between; \n      align-items: center; \n      border-bottom: 1px solid rgba(255,255,255,0.1); \n      padding-bottom: 5px; \n    }\n    .stat-box:last-child { border-bottom: none; padding-bottom: 0; }\n  }\n</style>\n</head>\n<body>\n\n<div id=\"trainer-area\">\n  <h1 id=\"main-text\">Reaction Trainer</h1>\n  <p id=\"sub-text\">Click or tap anywhere to start.</p>\n  \n  <div id=\"stats-panel\">\n    <div class=\"stat-box\">\n      <div class=\"stat-label\">Best Time</div>\n      <div class=\"stat-value\" id=\"best-time\">---</div>\n    </div>\n    <div class=\"stat-box\">\n      <div class=\"stat-label\">Average</div>\n      <div class=\"stat-value\" id=\"avg-time\">---</div>\n    </div>\n    <div class=\"stat-box\">\n      <div class=\"stat-label\">Last 5</div>\n      <div class=\"stat-value\" id=\"recent-history\">---</div>\n    </div>\n  </div>\n</div>\n\n<script>\n  const area = document.getElementById('trainer-area');\n  const mainText = document.getElementById('main-text');\n  const subText = document.getElementById('sub-text');\n  const bestTimeEl = document.getElementById('best-time');\n  const avgTimeEl = document.getElementById('avg-time');\n  const recentHistoryEl = document.getElementById('recent-history');\n\n  let state = 'waiting'; \n  let timeoutId = null;\n  let missedTimeoutId = null;\n  let startTime = 0;\n  \n  const TIME_LIMIT = 1500; \n\n  let history = JSON.parse(localStorage.getItem('reactionHistory')) || [];\n  updateStatsUI();\n\n  function updateStatsUI() {\n    if (history.length === 0) return;\n    \n    const best = Math.min(...history);\n    const avg = Math.round(history.reduce((a, b) => a + b, 0) / history.length);\n    const recent = history.slice(-5).join(', ');\n\n    bestTimeEl.textContent = `${best} ms`;\n    avgTimeEl.textContent = `${avg} ms`;\n    recentHistoryEl.textContent = recent;\n    \n    localStorage.setItem('reactionHistory', JSON.stringify(history));\n  }\n\n  function handleInteraction(e) {\n    if (e.type === 'touchstart') {\n      e.preventDefault(); \n    }\n\n    switch(state) {\n      case 'waiting':\n      case 'result':\n        startReadyPhase();\n        break;\n      case 'ready':\n        triggerFalseStart();\n        break;\n      case 'go':\n        recordReaction();\n        break;\n    }\n  }\n\n  function startReadyPhase() {\n    state = 'ready';\n    area.className = 'ready';\n    mainText.textContent = 'Wait for green...';\n    subText.textContent = '';\n    \n    const randomDelay = Math.floor(Math.random() * 3500) + 1000; \n    \n    timeoutId = setTimeout(() => {\n      startGoPhase();\n    }, randomDelay);\n  }\n\n  function startGoPhase() {\n    state = 'go';\n    area.className = 'go';\n    mainText.textContent = 'CLICK!';\n    startTime = performance.now();\n    \n    missedTimeoutId = setTimeout(() => {\n      triggerMissedStart();\n    }, TIME_LIMIT);\n  }\n\n  function recordReaction() {\n    const reactionTime = Math.round(performance.now() - startTime);\n    clearTimeout(missedTimeoutId);\n    \n    history.push(reactionTime);\n    updateStatsUI();\n    \n    showResult(`${reactionTime} ms`, 'Tap to go again.');\n  }\n\n  function triggerFalseStart() {\n    clearTimeout(timeoutId);\n    showResult('Too soon!', 'False start penalty. Tap to try again.');\n  }\n\n  function triggerMissedStart() {\n    if (state !== 'go') return;\n    showResult('Too slow!', `Missed start penalty (> ${TIME_LIMIT}ms). Tap to try again.`);\n  }\n\n  function showResult(mainMessage, subMessage) {\n    state = 'result';\n    area.className = '';\n    mainText.textContent = mainMessage;\n    subText.textContent = subMessage;\n  }\n\n  area.addEventListener('mousedown', handleInteraction);\n  area.addEventListener('touchstart', handleInteraction, { passive: false });\n</script>\n</body>\n</html>\n",
+      "response_summary": "Gemini returned one self-contained HTML reaction-time trainer with randomized waits, false/missed-start states, localStorage-backed stats, and mouse/touch input.",
+      "code_blocks": [
+        {
+          "language": "html",
+          "content": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n<meta charset=\"UTF-8\">\n<meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no\">\n<title>Reaction Time Trainer</title>\n<style>\n  :root {\n    --blue: #2b87d1;\n    --red: #ce2636;\n    --green: #4caf50;\n    --dark: #1e1e1e;\n    --text: #ffffff;\n  }\n  body, html {\n    margin: 0;\n    padding: 0;\n    height: 100%;\n    font-family: -apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, Helvetica, Arial, sans-serif;\n    background-color: var(--dark);\n    color: var(--text);\n    user-select: none;\n    -webkit-user-select: none;\n    overflow: hidden;\n  }\n  #trainer-area {\n    position: absolute;\n    top: 0;\n    left: 0;\n    width: 100%;\n    height: 100%;\n    display: flex;\n    flex-direction: column;\n    justify-content: center;\n    align-items: center;\n    background-color: var(--blue);\n    cursor: pointer;\n    transition: background-color 0.1s ease;\n  }\n  #trainer-area.ready { background-color: var(--red); }\n  #trainer-area.go { background-color: var(--green); }\n  \n  h1 { \n    font-size: 4rem; \n    margin: 0 0 10px 0; \n    text-align: center; \n    font-weight: 800; \n    pointer-events: none; \n  }\n  p { \n    font-size: 1.5rem; \n    margin: 0; \n    text-align: center; \n    opacity: 0.9; \n    pointer-events: none; \n  }\n  \n  #stats-panel {\n    position: absolute;\n    bottom: 20px;\n    width: 90%;\n    max-width: 600px;\n    display: flex;\n    justify-content: space-between;\n    background: rgba(0, 0, 0, 0.3);\n    padding: 15px 20px;\n    border-radius: 12px;\n    box-sizing: border-box;\n    pointer-events: none;\n  }\n  .stat-box { text-align: center; }\n  .stat-label { font-size: 0.8rem; text-transform: uppercase; letter-spacing: 1px; opacity: 0.7; }\n  .stat-value { font-size: 1.5rem; font-weight: bold; margin-top: 4px; }\n  \n  @media (max-width: 600px) {\n    h1 { font-size: 2.5rem; }\n    p { font-size: 1.2rem; }\n    #stats-panel { flex-direction: column; gap: 10px; bottom: 10px; }\n    .stat-box { \n      display: flex; \n      justify-content: space-between; \n      align-items: center; \n      border-bottom: 1px solid rgba(255,255,255,0.1); \n      padding-bottom: 5px; \n    }\n    .stat-box:last-child { border-bottom: none; padding-bottom: 0; }\n  }\n</style>\n</head>\n<body>\n\n<div id=\"trainer-area\">\n  <h1 id=\"main-text\">Reaction Trainer</h1>\n  <p id=\"sub-text\">Click or tap anywhere to start.</p>\n  \n  <div id=\"stats-panel\">\n    <div class=\"stat-box\">\n      <div class=\"stat-label\">Best Time</div>\n      <div class=\"stat-value\" id=\"best-time\">---</div>\n    </div>\n    <div class=\"stat-box\">\n      <div class=\"stat-label\">Average</div>\n      <div class=\"stat-value\" id=\"avg-time\">---</div>\n    </div>\n    <div class=\"stat-box\">\n      <div class=\"stat-label\">Last 5</div>\n      <div class=\"stat-value\" id=\"recent-history\">---</div>\n    </div>\n  </div>\n</div>\n\n<script>\n  const area = document.getElementById('trainer-area');\n  const mainText = document.getElementById('main-text');\n  const subText = document.getElementById('sub-text');\n  const bestTimeEl = document.getElementById('best-time');\n  const avgTimeEl = document.getElementById('avg-time');\n  const recentHistoryEl = document.getElementById('recent-history');\n\n  let state = 'waiting'; \n  let timeoutId = null;\n  let missedTimeoutId = null;\n  let startTime = 0;\n  \n  const TIME_LIMIT = 1500; \n\n  let history = JSON.parse(localStorage.getItem('reactionHistory')) || [];\n  updateStatsUI();\n\n  function updateStatsUI() {\n    if (history.length === 0) return;\n    \n    const best = Math.min(...history);\n    const avg = Math.round(history.reduce((a, b) => a + b, 0) / history.length);\n    const recent = history.slice(-5).join(', ');\n\n    bestTimeEl.textContent = `${best} ms`;\n    avgTimeEl.textContent = `${avg} ms`;\n    recentHistoryEl.textContent = recent;\n    \n    localStorage.setItem('reactionHistory', JSON.stringify(history));\n  }\n\n  function handleInteraction(e) {\n    if (e.type === 'touchstart') {\n      e.preventDefault(); \n    }\n\n    switch(state) {\n      case 'waiting':\n      case 'result':\n        startReadyPhase();\n        break;\n      case 'ready':\n        triggerFalseStart();\n        break;\n      case 'go':\n        recordReaction();\n        break;\n    }\n  }\n\n  function startReadyPhase() {\n    state = 'ready';\n    area.className = 'ready';\n    mainText.textContent = 'Wait for green...';\n    subText.textContent = '';\n    \n    const randomDelay = Math.floor(Math.random() * 3500) + 1000; \n    \n    timeoutId = setTimeout(() => {\n      startGoPhase();\n    }, randomDelay);\n  }\n\n  function startGoPhase() {\n    state = 'go';\n    area.className = 'go';\n    mainText.textContent = 'CLICK!';\n    startTime = performance.now();\n    \n    missedTimeoutId = setTimeout(() => {\n      triggerMissedStart();\n    }, TIME_LIMIT);\n  }\n\n  function recordReaction() {\n    const reactionTime = Math.round(performance.now() - startTime);\n    clearTimeout(missedTimeoutId);\n    \n    history.push(reactionTime);\n    updateStatsUI();\n    \n    showResult(`${reactionTime} ms`, 'Tap to go again.');\n  }\n\n  function triggerFalseStart() {\n    clearTimeout(timeoutId);\n    showResult('Too soon!', 'False start penalty. Tap to try again.');\n  }\n\n  function triggerMissedStart() {\n    if (state !== 'go') return;\n    showResult('Too slow!', `Missed start penalty (> ${TIME_LIMIT}ms). Tap to try again.`);\n  }\n\n  function showResult(mainMessage, subMessage) {\n    state = 'result';\n    area.className = '';\n    mainText.textContent = mainMessage;\n    subText.textContent = subMessage;\n  }\n\n  area.addEventListener('mousedown', handleInteraction);\n  area.addEventListener('touchstart', handleInteraction, { passive: false });\n</script>\n</body>\n</html>\n"
+        }
+      ],
+      "generated_files": [
+        "public/artifacts/reaction-trainer-gemini-pro.html"
+      ],
+      "artifact_version_path": "public/artifacts/reaction-trainer-gemini-pro.html",
+      "notes": "Stopped after one prompt because the artifact passed verification and no observed interaction/timing/mobile defect required a follow-up."
+    }
+  ],
+  "pathforge_submission_url": "https://prompt-forge-sandy.vercel.app/admin/source-runs/e0661130-054a-42a5-844d-b2475268a690",
+  "pathforge_pending_id": "e0661130-054a-42a5-844d-b2475268a690",
+  "submitted_by_account": {
+    "profile_registry_id": "pathforge-seed-010",
+    "username": "TessaMorgan",
+    "display_name": "Tessa Morgan",
+    "profile_url": "/user/TessaMorgan",
+    "login_identifier": "tessamorgan.20260604190456@pathforge-seed.example.com",
+    "status": "created_by_importer_public_signup"
+  },
+  "submitted_by_profile_registry_id": "pathforge-seed-010",
+  "admin_review_status": "queued_source_run_pending_review_verified_in_admin",
+  "vote_count": 0,
+  "bookmark_count": 0,
+  "comments": [],
+  "public_status": "pending"
+}

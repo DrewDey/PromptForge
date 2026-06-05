@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Reaction Time Trainer</title>
+<style>
+  :root {
+    --blue: #2b87d1;
+    --red: #ce2636;
+    --green: #4caf50;
+    --dark: #1e1e1e;
+    --text: #ffffff;
+  }
+  body, html {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background-color: var(--dark);
+    color: var(--text);
+    user-select: none;
+    -webkit-user-select: none;
+    overflow: hidden;
+  }
+  #trainer-area {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    background-color: var(--blue);
+    cursor: pointer;
+    transition: background-color 0.1s ease;
+  }
+  #trainer-area.ready { background-color: var(--red); }
+  #trainer-area.go { background-color: var(--green); }
+
+  h1 {
+    font-size: 4rem;
+    margin: 0 0 10px 0;
+    text-align: center;
+    font-weight: 800;
+    pointer-events: none;
+  }
+  p {
+    font-size: 1.5rem;
+    margin: 0;
+    text-align: center;
+    opacity: 0.9;
+    pointer-events: none;
+  }
+
+  #stats-panel {
+    position: absolute;
+    bottom: 20px;
+    width: 90%;
+    max-width: 600px;
+    display: flex;
+    justify-content: space-between;
+    background: rgba(0, 0, 0, 0.3);
+    padding: 15px 20px;
+    border-radius: 12px;
+    box-sizing: border-box;
+    pointer-events: none;
+  }
+  .stat-box { text-align: center; }
+  .stat-label { font-size: 0.8rem; text-transform: uppercase; letter-spacing: 1px; opacity: 0.7; }
+  .stat-value { font-size: 1.5rem; font-weight: bold; margin-top: 4px; }
+
+  @media (max-width: 600px) {
+    h1 { font-size: 2.5rem; }
+    p { font-size: 1.2rem; }
+    #stats-panel { flex-direction: column; gap: 10px; bottom: 10px; }
+    .stat-box {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid rgba(255,255,255,0.1);
+      padding-bottom: 5px;
+    }
+    .stat-box:last-child { border-bottom: none; padding-bottom: 0; }
+  }
+</style>
+</head>
+<body>
+
+<div id="trainer-area">
+  <h1 id="main-text">Reaction Trainer</h1>
+  <p id="sub-text">Click or tap anywhere to start.</p>
+
+  <div id="stats-panel">
+    <div class="stat-box">
+      <div class="stat-label">Best Time</div>
+      <div class="stat-value" id="best-time">---</div>
+    </div>
+    <div class="stat-box">
+      <div class="stat-label">Average</div>
+      <div class="stat-value" id="avg-time">---</div>
+    </div>
+    <div class="stat-box">
+      <div class="stat-label">Last 5</div>
+      <div class="stat-value" id="recent-history">---</div>
+    </div>
+  </div>
+</div>
+
+<script>
+  const area = document.getElementById('trainer-area');
+  const mainText = document.getElementById('main-text');
+  const subText = document.getElementById('sub-text');
+  const bestTimeEl = document.getElementById('best-time');
+  const avgTimeEl = document.getElementById('avg-time');
+  const recentHistoryEl = document.getElementById('recent-history');
+
+  let state = 'waiting';
+  let timeoutId = null;
+  let missedTimeoutId = null;
+  let startTime = 0;
+
+  const TIME_LIMIT = 1500;
+
+  let history = JSON.parse(localStorage.getItem('reactionHistory')) || [];
+  updateStatsUI();
+
+  function updateStatsUI() {
+    if (history.length === 0) return;
+
+    const best = Math.min(...history);
+    const avg = Math.round(history.reduce((a, b) => a + b, 0) / history.length);
+    const recent = history.slice(-5).join(', ');
+
+    bestTimeEl.textContent = `${best} ms`;
+    avgTimeEl.textContent = `${avg} ms`;
+    recentHistoryEl.textContent = recent;
+
+    localStorage.setItem('reactionHistory', JSON.stringify(history));
+  }
+
+  function handleInteraction(e) {
+    if (e.type === 'touchstart') {
+      e.preventDefault();
+    }
+
+    switch(state) {
+      case 'waiting':
+      case 'result':
+        startReadyPhase();
+        break;
+      case 'ready':
+        triggerFalseStart();
+        break;
+      case 'go':
+        recordReaction();
+        break;
+    }
+  }
+
+  function startReadyPhase() {
+    state = 'ready';
+    area.className = 'ready';
+    mainText.textContent = 'Wait for green...';
+    subText.textContent = '';
+
+    const randomDelay = Math.floor(Math.random() * 3500) + 1000;
+
+    timeoutId = setTimeout(() => {
+      startGoPhase();
+    }, randomDelay);
+  }
+
+  function startGoPhase() {
+    state = 'go';
+    area.className = 'go';
+    mainText.textContent = 'CLICK!';
+    startTime = performance.now();
+
+    missedTimeoutId = setTimeout(() => {
+      triggerMissedStart();
+    }, TIME_LIMIT);
+  }
+
+  function recordReaction() {
+    const reactionTime = Math.round(performance.now() - startTime);
+    clearTimeout(missedTimeoutId);
+
+    history.push(reactionTime);
+    updateStatsUI();
+
+    showResult(`${reactionTime} ms`, 'Tap to go again.');
+  }
+
+  function triggerFalseStart() {
+    clearTimeout(timeoutId);
+    showResult('Too soon!', 'False start penalty. Tap to try again.');
+  }
+
+  function triggerMissedStart() {
+    if (state !== 'go') return;
+    showResult('Too slow!', `Missed start penalty (> ${TIME_LIMIT}ms). Tap to try again.`);
+  }
+
+  function showResult(mainMessage, subMessage) {
+    state = 'result';
+    area.className = '';
+    mainText.textContent = mainMessage;
+    subText.textContent = subMessage;
+  }
+
+  area.addEventListener('mousedown', handleInteraction);
+  area.addEventListener('touchstart', handleInteraction, { passive: false });
+</script>
+</body>
+</html>

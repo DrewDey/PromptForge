@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Packing Checklist Generator</title>
+    <style>
+        :root {
+            --bg: #f8f9fa;
+            --text: #212529;
+            --primary: #0d6efd;
+            --primary-hover: #0b5ed7;
+            --border: #dee2e6;
+            --card-bg: #ffffff;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            line-height: 1.6;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 2rem 1rem;
+        }
+        .card {
+            background: var(--card-bg);
+            padding: 2rem;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            margin-bottom: 2rem;
+        }
+        h1, h2, h3 { margin-top: 0; }
+        .form-group { margin-bottom: 1.5rem; }
+        label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+        input[type="number"], input[type="text"] {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            box-sizing: border-box;
+            font-size: 1rem;
+        }
+        .tag-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.75rem;
+        }
+        .tag-label {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            background: var(--bg);
+            border: 1px solid var(--border);
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            cursor: pointer;
+            user-select: none;
+            transition: all 0.2s;
+            font-weight: normal;
+        }
+        .tag-label:hover { background: #e9ecef; }
+        .tag-label input { margin: 0; cursor: pointer; }
+        button {
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            padding: 1rem 2rem;
+            font-size: 1.1rem;
+            border-radius: 6px;
+            cursor: pointer;
+            width: 100%;
+            font-weight: 600;
+            transition: background 0.2s;
+        }
+        button:hover { background-color: var(--primary-hover); }
+        .category {
+            margin-bottom: 2rem;
+            background: var(--card-bg);
+            padding: 1.5rem;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+        .category h3 { border-bottom: 2px solid var(--bg); padding-bottom: 0.5rem; margin-bottom: 1rem; }
+        .item-row {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin-bottom: 0.75rem;
+        }
+        .item-row input[type="checkbox"] {
+            width: 1.2rem;
+            height: 1.2rem;
+            cursor: pointer;
+        }
+        .item-row label {
+            margin: 0;
+            font-weight: normal;
+            cursor: pointer;
+            flex: 1;
+        }
+        .item-row input[type="checkbox"]:checked + label {
+            text-decoration: line-through;
+            color: #6c757d;
+        }
+        #output { display: none; }
+    </style>
+</head>
+<body>
+
+    <div class="card">
+        <h1>Packing Checklist Generator</h1>
+
+        <div class="form-group">
+            <label for="destination">Destination / Notes</label>
+            <input type="text" id="destination" placeholder="e.g., Las Vegas, weekend cabin, etc.">
+        </div>
+
+        <div class="form-group">
+            <label for="days">Trip Length (Days)</label>
+            <input type="number" id="days" min="1" max="90" value="3">
+        </div>
+
+        <div class="form-group">
+            <label>Weather & Environment</label>
+            <div class="tag-group" id="weather-tags">
+                <label class="tag-label"><input type="checkbox" value="hot"> Hot / Sunny</label>
+                <label class="tag-label"><input type="checkbox" value="cold"> Cold</label>
+                <label class="tag-label"><input type="checkbox" value="rain"> Rainy</label>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label>Activities & Plans</label>
+            <div class="tag-group" id="activity-tags">
+                <label class="tag-label"><input type="checkbox" value="gym"> Gym / Lifting</label>
+                <label class="tag-label"><input type="checkbox" value="festival"> Music Festival</label>
+                <label class="tag-label"><input type="checkbox" value="water"> Waterpark / Pool</label>
+                <label class="tag-label"><input type="checkbox" value="business"> Business / Event</label>
+            </div>
+        </div>
+
+        <button onclick="generateList()">Generate Checklist</button>
+    </div>
+
+    <div id="output"></div>
+
+    <script>
+        function generateList() {
+            const days = parseInt(document.getElementById('days').value) || 1;
+            const dest = document.getElementById('destination').value;
+
+            const weatherTags = Array.from(document.querySelectorAll('#weather-tags input:checked')).map(cb => cb.value);
+            const activityTags = Array.from(document.querySelectorAll('#activity-tags input:checked')).map(cb => cb.value);
+
+            const list = {
+                "Clothing": [],
+                "Toiletries": [
+                    "Toothbrush & Toothpaste",
+                    "Deodorant",
+                    "Body Wash / Soap",
+                    "Shampoo & Conditioner",
+                    "Skincare routine",
+                    "Cologne",
+                    "Nail clippers"
+                ],
+                "Electronics": [
+                    "Phone & Charger",
+                    "Headphones / Earbuds"
+                ],
+                "Documents & Wallet": [
+                    "ID / Driver's License",
+                    "Credit / Debit Cards",
+                    "Cash",
+                    "Health Insurance Card"
+                ]
+            };
+
+            // Base Clothing Math
+            list["Clothing"].push(`${days + 1}x Underwear`);
+            list["Clothing"].push(`${days + 1}x Pairs of Socks`);
+            list["Clothing"].push(`${days}x T-Shirts / Tops`);
+            list["Clothing"].push(`${Math.ceil(days / 2)}x Pants / Jeans`);
+            list["Clothing"].push(`1x Sleepwear`);
+            list["Clothing"].push(`1x Casual Shoes`);
+
+            // Weather Logic
+            if (weatherTags.includes("hot")) {
+                list["Clothing"].push(`${Math.ceil(days / 2)}x Shorts`);
+                list["Clothing"].push("Sunglasses");
+                list["Toiletries"].push("Sunscreen");
+            }
+            if (weatherTags.includes("cold")) {
+                list["Clothing"].push("Heavy Coat / Jacket");
+                list["Clothing"].push(`${Math.ceil(days / 3)}x Sweaters / Hoodies`);
+                list["Clothing"].push("Beanie / Gloves");
+                list["Toiletries"].push("Lip Balm");
+            }
+            if (weatherTags.includes("rain")) {
+                list["Clothing"].push("Rain Jacket");
+                list["Clothing"].push("Umbrella");
+            }
+
+            // Activity Logic
+            if (activityTags.includes("gym")) {
+                const gymDays = Math.max(1, Math.floor(days * 0.8)); // Assuming frequent lifting
+                list["Clothing"].push(`${gymDays}x Gym Shirts`);
+                list["Clothing"].push(`${gymDays}x Gym Shorts`);
+                list["Clothing"].push("Lifting Shoes / Sneakers");
+                list["Clothing"].push("Gym Socks");
+                list["Electronics"].push("Pre-workout / Supplements");
+            }
+            if (activityTags.includes("festival")) {
+                list["Clothing"].push("Festival Outfits");
+                list["Clothing"].push("Comfortable Walking/Dancing Shoes");
+                list["Electronics"].push("Portable Power Bank");
+                list["Electronics"].push("High-Fidelity Earplugs");
+                list["Documents & Wallet"].push("Festival Wristband / Tickets");
+                list["Toiletries"].push("Hydration Pack / Water Bottle");
+            }
+            if (activityTags.includes("water")) {
+                list["Clothing"].push("2x Swim Trunks");
+                list["Clothing"].push("Sandals / Slides");
+                list["Clothing"].push("Rash Guard (Optional)");
+            }
+            if (activityTags.includes("business")) {
+                list["Clothing"].push("Dress Shirt(s)");
+                list["Clothing"].push("Dress Pants / Slacks");
+                list["Clothing"].push("Dress Shoes & Dress Socks");
+                list["Clothing"].push("Belt");
+                list["Electronics"].push("Laptop & Charger");
+            }
+
+            // Render Logic
+            let html = `<h2>Trip Checklist ${dest ? `for ${dest}` : ''} (${days} Days)</h2>`;
+
+            for (const [category, items] of Object.entries(list)) {
+                if (items.length === 0) continue;
+
+                html += `<div class="category">
+                    <h3>${category}</h3>`;
+
+                // Deduplicate items just in case
+                const uniqueItems = [...new Set(items)];
+
+                uniqueItems.forEach((item, index) => {
+                    const id = `item-${category.replace(/\s+/g, '')}-${index}`;
+                    html += `
+                        <div class="item-row">
+                            <input type="checkbox" id="${id}">
+                            <label for="${id}">${item}</label>
+                        </div>
+                    `;
+                });
+
+                html += `</div>`;
+            }
+
+            const outputDiv = document.getElementById('output');
+            outputDiv.innerHTML = html;
+            outputDiv.style.display = 'block';
+
+            // Scroll to results smoothly
+            outputDiv.scrollIntoView({ behavior: 'smooth' });
+        }
+    </script>
+</body>
+</html>

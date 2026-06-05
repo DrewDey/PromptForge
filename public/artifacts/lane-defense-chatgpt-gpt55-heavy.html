@@ -1,0 +1,987 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Tiny Lane Defense</title>
+<style>
+  * {
+    box-sizing: border-box;
+  }
+
+  body {
+    margin: 0;
+    min-height: 100vh;
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    background: radial-gradient(circle at top, #22314d, #101421 62%, #080a10);
+    color: #eef4ff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 18px;
+  }
+
+  .game-wrap {
+    width: min(980px, 100%);
+    background: rgba(13, 18, 31, 0.92);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 24px;
+    box-shadow: 0 24px 80px rgba(0, 0, 0, 0.45);
+    overflow: hidden;
+  }
+
+  header {
+    padding: 16px 18px 12px;
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 12px;
+    align-items: center;
+  }
+
+  h1 {
+    margin: 0;
+    font-size: clamp(22px, 4vw, 34px);
+    letter-spacing: -0.04em;
+  }
+
+  .subtitle {
+    margin-top: 4px;
+    color: #aab7d4;
+    font-size: 14px;
+  }
+
+  .stats {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    justify-content: flex-end;
+  }
+
+  .pill {
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    padding: 8px 11px;
+    border-radius: 999px;
+    font-weight: 700;
+    font-size: 14px;
+    white-space: nowrap;
+  }
+
+  .main {
+    display: grid;
+    grid-template-columns: 220px 1fr;
+    gap: 14px;
+    padding: 0 18px 18px;
+  }
+
+  .panel {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .card {
+    background: rgba(255, 255, 255, 0.075);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 18px;
+    padding: 12px;
+  }
+
+  .card h2 {
+    font-size: 14px;
+    margin: 0 0 8px;
+    color: #dce7ff;
+  }
+
+  .hint {
+    margin: 0;
+    color: #aebada;
+    font-size: 13px;
+    line-height: 1.4;
+  }
+
+  button {
+    width: 100%;
+    appearance: none;
+    border: 0;
+    border-radius: 14px;
+    padding: 12px 12px;
+    color: white;
+    background: rgba(255, 255, 255, 0.12);
+    font-weight: 800;
+    cursor: pointer;
+    transition: transform 0.12s ease, background 0.12s ease, box-shadow 0.12s ease;
+  }
+
+  button:hover {
+    transform: translateY(-1px);
+    background: rgba(255, 255, 255, 0.18);
+  }
+
+  button:active {
+    transform: translateY(0);
+  }
+
+  button.selected {
+    box-shadow: 0 0 0 3px rgba(111, 207, 255, 0.45);
+    background: linear-gradient(135deg, rgba(50, 148, 255, 0.75), rgba(92, 55, 255, 0.7));
+  }
+
+  button:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+    transform: none;
+  }
+
+  .turret-btn small {
+    display: block;
+    margin-top: 3px;
+    color: rgba(255, 255, 255, 0.78);
+    font-weight: 600;
+  }
+
+  .start {
+    background: linear-gradient(135deg, #22c55e, #16a34a);
+  }
+
+  .reset {
+    background: rgba(255, 255, 255, 0.08);
+  }
+
+  .canvas-card {
+    position: relative;
+    border-radius: 22px;
+    overflow: hidden;
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    background: #121827;
+  }
+
+  canvas {
+    width: 100%;
+    display: block;
+    background: linear-gradient(#172033, #111827);
+    cursor: crosshair;
+  }
+
+  .toast {
+    position: absolute;
+    left: 14px;
+    top: 14px;
+    max-width: calc(100% - 28px);
+    padding: 10px 12px;
+    border-radius: 14px;
+    background: rgba(5, 10, 20, 0.78);
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    color: #dbeafe;
+    font-size: 13px;
+    pointer-events: none;
+    opacity: 1;
+    transform: translateY(0);
+    transition: opacity 0.25s ease, transform 0.25s ease;
+  }
+
+  .toast.hide {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+
+  .footer-note {
+    color: #7f8aa7;
+    font-size: 12px;
+    padding: 0 18px 16px;
+  }
+
+  @media (max-width: 760px) {
+    header {
+      grid-template-columns: 1fr;
+    }
+
+    .stats {
+      justify-content: flex-start;
+    }
+
+    .main {
+      grid-template-columns: 1fr;
+    }
+
+    .panel {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+    }
+
+    .card.full {
+      grid-column: 1 / -1;
+    }
+  }
+</style>
+</head>
+<body>
+  <div class="game-wrap">
+    <header>
+      <div>
+        <h1>Tiny Lane Defense</h1>
+        <div class="subtitle">Pick a turret, click a glowing pad, start waves. Stop runners before they reach the gate.</div>
+      </div>
+      <div class="stats">
+        <div class="pill">Coins <span id="coins">90</span></div>
+        <div class="pill">Gate <span id="lives">12</span></div>
+        <div class="pill">Wave <span id="wave">0</span>/6</div>
+      </div>
+    </header>
+
+    <div class="main">
+      <aside class="panel">
+        <div class="card full">
+          <h2>15-second rules</h2>
+          <p class="hint">
+            Blue pads build towers. Bolt is cheap and fast. Frost slows groups. Enemies only use the center lane.
+          </p>
+        </div>
+
+        <div class="card">
+          <button id="boltBtn" class="turret-btn selected">
+            Bolt Turret · 35
+            <small>Fast single target</small>
+          </button>
+        </div>
+
+        <div class="card">
+          <button id="frostBtn" class="turret-btn">
+            Frost Turret · 55
+            <small>Slows nearby enemies</small>
+          </button>
+        </div>
+
+        <div class="card">
+          <button id="startBtn" class="start">Start Wave</button>
+        </div>
+
+        <div class="card">
+          <button id="resetBtn" class="reset">Reset</button>
+        </div>
+
+        <div class="card full">
+          <h2>Status</h2>
+          <p class="hint" id="status">Build on a pad, then start the first wave.</p>
+        </div>
+      </aside>
+
+      <div class="canvas-card">
+        <canvas id="game" width="900" height="520"></canvas>
+        <div class="toast" id="toast">Click a blue pad to place your selected turret.</div>
+      </div>
+    </div>
+
+    <div class="footer-note">Keyboard shortcuts: 1 for Bolt, 2 for Frost, Space to start a wave.</div>
+  </div>
+
+<script>
+(() => {
+  const canvas = document.getElementById("game");
+  const ctx = canvas.getContext("2d");
+
+  const coinsEl = document.getElementById("coins");
+  const livesEl = document.getElementById("lives");
+  const waveEl = document.getElementById("wave");
+  const statusEl = document.getElementById("status");
+  const toastEl = document.getElementById("toast");
+
+  const boltBtn = document.getElementById("boltBtn");
+  const frostBtn = document.getElementById("frostBtn");
+  const startBtn = document.getElementById("startBtn");
+  const resetBtn = document.getElementById("resetBtn");
+
+  const W = canvas.width;
+  const H = canvas.height;
+  const laneY = 260;
+  const gateX = 835;
+  const spawnX = 35;
+
+  const turretTypes = {
+    bolt: {
+      name: "Bolt",
+      cost: 35,
+      range: 170,
+      cooldown: 0.42,
+      damage: 18,
+      color: "#60a5fa",
+      barrel: "#dbeafe"
+    },
+    frost: {
+      name: "Frost",
+      cost: 55,
+      range: 145,
+      cooldown: 0.9,
+      damage: 8,
+      slow: 0.48,
+      slowTime: 1.2,
+      splash: 52,
+      color: "#67e8f9",
+      barrel: "#ecfeff"
+    }
+  };
+
+  const pads = [
+    { x: 160, y: 145 }, { x: 285, y: 145 }, { x: 410, y: 145 }, { x: 535, y: 145 }, { x: 660, y: 145 },
+    { x: 220, y: 375 }, { x: 345, y: 375 }, { x: 470, y: 375 }, { x: 595, y: 375 }, { x: 720, y: 375 }
+  ];
+
+  let selectedType = "bolt";
+  let coins = 90;
+  let lives = 12;
+  let wave = 0;
+  let waveActive = false;
+  let gameOver = false;
+  let won = false;
+  let spawnQueue = [];
+  let spawnTimer = 0;
+  let enemies = [];
+  let turrets = [];
+  let shots = [];
+  let particles = [];
+  let mouse = { x: -999, y: -999 };
+  let lastTime = performance.now();
+  let toastTimer = 4;
+
+  function showToast(text, seconds = 2.2) {
+    toastEl.textContent = text;
+    toastEl.classList.remove("hide");
+    toastTimer = seconds;
+  }
+
+  function updateHud() {
+    coinsEl.textContent = Math.floor(coins);
+    livesEl.textContent = lives;
+    waveEl.textContent = wave;
+    boltBtn.classList.toggle("selected", selectedType === "bolt");
+    frostBtn.classList.toggle("selected", selectedType === "frost");
+    boltBtn.disabled = coins < turretTypes.bolt.cost;
+    frostBtn.disabled = coins < turretTypes.frost.cost;
+    startBtn.disabled = waveActive || gameOver || won;
+    startBtn.textContent = waveActive ? "Wave Running" : wave >= 6 ? "All Waves Done" : "Start Wave";
+  }
+
+  function setStatus(text) {
+    statusEl.textContent = text;
+  }
+
+  function resetGame() {
+    selectedType = "bolt";
+    coins = 90;
+    lives = 12;
+    wave = 0;
+    waveActive = false;
+    gameOver = false;
+    won = false;
+    spawnQueue = [];
+    spawnTimer = 0;
+    enemies = [];
+    turrets = [];
+    shots = [];
+    particles = [];
+    setStatus("Build on a pad, then start the first wave.");
+    showToast("Click a blue pad to place your selected turret.", 4);
+    updateHud();
+  }
+
+  function startWave() {
+    if (waveActive || gameOver || won) return;
+    if (wave >= 6) return;
+
+    wave++;
+    waveActive = true;
+    spawnTimer = 0.2;
+
+    const count = 7 + wave * 3;
+    spawnQueue = [];
+
+    for (let i = 0; i < count; i++) {
+      const tough = wave >= 3 && i % 5 === 4;
+      const sprinter = wave >= 2 && i % 6 === 2;
+      spawnQueue.push({
+        delay: i * Math.max(0.25, 0.65 - wave * 0.05),
+        hp: tough ? 80 + wave * 14 : 36 + wave * 11,
+        speed: sprinter ? 85 + wave * 7 : 52 + wave * 5,
+        reward: tough ? 12 : 7,
+        radius: tough ? 15 : sprinter ? 9 : 12,
+        color: tough ? "#f97316" : sprinter ? "#facc15" : "#fb7185"
+      });
+    }
+
+    setStatus(`Wave ${wave} is running. Add towers between waves.`);
+    showToast(`Wave ${wave} started.`);
+    updateHud();
+  }
+
+  function spawnEnemy(data) {
+    enemies.push({
+      x: spawnX,
+      y: laneY,
+      hp: data.hp,
+      maxHp: data.hp,
+      speed: data.speed,
+      reward: data.reward,
+      radius: data.radius,
+      color: data.color,
+      slowFactor: 1,
+      slowTimer: 0,
+      hitFlash: 0
+    });
+  }
+
+  function getCanvasPoint(evt) {
+    const rect = canvas.getBoundingClientRect();
+    const scaleX = W / rect.width;
+    const scaleY = H / rect.height;
+    return {
+      x: (evt.clientX - rect.left) * scaleX,
+      y: (evt.clientY - rect.top) * scaleY
+    };
+  }
+
+  function dist(a, b) {
+    return Math.hypot(a.x - b.x, a.y - b.y);
+  }
+
+  function padAt(x, y) {
+    return pads.find(p => Math.hypot(p.x - x, p.y - y) < 34);
+  }
+
+  function turretOnPad(pad) {
+    return turrets.find(t => t.pad === pad);
+  }
+
+  function placeTurret(pad) {
+    if (!pad || turretOnPad(pad) || gameOver || won) return;
+
+    const type = turretTypes[selectedType];
+
+    if (coins < type.cost) {
+      showToast(`Need ${type.cost - coins} more coins for ${type.name}.`);
+      return;
+    }
+
+    coins -= type.cost;
+    turrets.push({
+      pad,
+      x: pad.x,
+      y: pad.y,
+      type: selectedType,
+      cooldown: 0,
+      angle: -Math.PI / 2,
+      target: null
+    });
+
+    burst(pad.x, pad.y, type.color, 14);
+    setStatus(`${type.name} turret placed. Start or survive the next wave.`);
+    showToast(`${type.name} turret placed.`);
+    updateHud();
+  }
+
+  function burst(x, y, color, count = 10) {
+    for (let i = 0; i < count; i++) {
+      const a = Math.random() * Math.PI * 2;
+      const s = 40 + Math.random() * 100;
+      particles.push({
+        x,
+        y,
+        vx: Math.cos(a) * s,
+        vy: Math.sin(a) * s,
+        life: 0.35 + Math.random() * 0.35,
+        maxLife: 0.7,
+        color,
+        size: 2 + Math.random() * 3
+      });
+    }
+  }
+
+  function findTarget(turret, type) {
+    let best = null;
+    let bestProgress = -Infinity;
+
+    for (const enemy of enemies) {
+      const d = Math.hypot(enemy.x - turret.x, enemy.y - turret.y);
+      if (d <= type.range && enemy.x > bestProgress) {
+        best = enemy;
+        bestProgress = enemy.x;
+      }
+    }
+
+    return best;
+  }
+
+  function fire(turret, enemy, type) {
+    const dx = enemy.x - turret.x;
+    const dy = enemy.y - turret.y;
+    turret.angle = Math.atan2(dy, dx);
+
+    shots.push({
+      x: turret.x + Math.cos(turret.angle) * 18,
+      y: turret.y + Math.sin(turret.angle) * 18,
+      tx: enemy.x,
+      ty: enemy.y,
+      target: enemy,
+      type: turret.type,
+      life: 0.16,
+      maxLife: 0.16,
+      color: type.color
+    });
+
+    if (turret.type === "frost") {
+      for (const e of enemies) {
+        if (Math.hypot(e.x - enemy.x, e.y - enemy.y) <= type.splash) {
+          e.hp -= type.damage;
+          e.slowFactor = type.slow;
+          e.slowTimer = type.slowTime;
+          e.hitFlash = 0.16;
+        }
+      }
+      burst(enemy.x, enemy.y, "#a5f3fc", 6);
+    } else {
+      enemy.hp -= type.damage;
+      enemy.hitFlash = 0.12;
+      burst(enemy.x, enemy.y, "#bfdbfe", 4);
+    }
+  }
+
+  function update(dt) {
+    if (toastTimer > 0) {
+      toastTimer -= dt;
+      if (toastTimer <= 0) toastEl.classList.add("hide");
+    }
+
+    if (gameOver || won) {
+      updateParticles(dt);
+      updateHud();
+      return;
+    }
+
+    if (waveActive) {
+      spawnTimer -= dt;
+
+      while (spawnQueue.length && spawnQueue[0].delay <= 0) {
+        spawnEnemy(spawnQueue.shift());
+      }
+
+      for (const item of spawnQueue) {
+        item.delay -= dt;
+      }
+
+      if (!spawnQueue.length && enemies.length === 0) {
+        waveActive = false;
+        coins += 18 + wave * 5;
+
+        if (wave >= 6) {
+          won = true;
+          setStatus("You held the lane. Tiny victory.");
+          showToast("Victory. The gate survived.", 5);
+        } else {
+          setStatus(`Wave ${wave} cleared. Bonus coins added. Build, then start the next wave.`);
+          showToast(`Wave ${wave} cleared. Build more towers.`);
+        }
+      }
+    }
+
+    for (const enemy of enemies) {
+      if (enemy.slowTimer > 0) {
+        enemy.slowTimer -= dt;
+        if (enemy.slowTimer <= 0) enemy.slowFactor = 1;
+      }
+
+      if (enemy.hitFlash > 0) enemy.hitFlash -= dt;
+      enemy.x += enemy.speed * enemy.slowFactor * dt;
+
+      if (enemy.x >= gateX) {
+        enemy.escaped = true;
+        lives -= 1;
+        burst(gateX, laneY, "#ef4444", 16);
+
+        if (lives <= 0) {
+          lives = 0;
+          gameOver = true;
+          setStatus("The gate fell. Reset and tighten the lane.");
+          showToast("Defeat. The gate fell.", 5);
+        }
+      }
+    }
+
+    for (const turret of turrets) {
+      const type = turretTypes[turret.type];
+      turret.cooldown -= dt;
+      const target = findTarget(turret, type);
+      turret.target = target;
+
+      if (target) {
+        turret.angle = Math.atan2(target.y - turret.y, target.x - turret.x);
+
+        if (turret.cooldown <= 0) {
+          fire(turret, target, type);
+          turret.cooldown = type.cooldown;
+        }
+      }
+    }
+
+    for (const shot of shots) {
+      shot.life -= dt;
+    }
+
+    for (let i = enemies.length - 1; i >= 0; i--) {
+      const enemy = enemies[i];
+
+      if (enemy.hp <= 0) {
+        coins += enemy.reward;
+        burst(enemy.x, enemy.y, enemy.color, 12);
+        enemies.splice(i, 1);
+      } else if (enemy.escaped) {
+        enemies.splice(i, 1);
+      }
+    }
+
+    shots = shots.filter(s => s.life > 0);
+    updateParticles(dt);
+    updateHud();
+  }
+
+  function updateParticles(dt) {
+    for (const p of particles) {
+      p.life -= dt;
+      p.x += p.vx * dt;
+      p.y += p.vy * dt;
+      p.vx *= 0.96;
+      p.vy *= 0.96;
+    }
+
+    particles = particles.filter(p => p.life > 0);
+  }
+
+  function draw() {
+    ctx.clearRect(0, 0, W, H);
+
+    drawBackground();
+    drawLane();
+    drawPads();
+    drawTurrets();
+    drawEnemies();
+    drawShots();
+    drawParticles();
+    drawHoverRange();
+
+    if (gameOver || won) {
+      drawEndOverlay();
+    }
+  }
+
+  function drawBackground() {
+    ctx.fillStyle = "#121827";
+    ctx.fillRect(0, 0, W, H);
+
+    ctx.globalAlpha = 0.22;
+    ctx.strokeStyle = "#334155";
+    ctx.lineWidth = 1;
+
+    for (let x = 40; x < W; x += 40) {
+      ctx.beginPath();
+      ctx.moveTo(x, 0);
+      ctx.lineTo(x, H);
+      ctx.stroke();
+    }
+
+    for (let y = 40; y < H; y += 40) {
+      ctx.beginPath();
+      ctx.moveTo(0, y);
+      ctx.lineTo(W, y);
+      ctx.stroke();
+    }
+
+    ctx.globalAlpha = 1;
+  }
+
+  function drawLane() {
+    ctx.fillStyle = "#283044";
+    roundRect(30, laneY - 44, 805, 88, 24, true, false);
+
+    ctx.fillStyle = "#1f2937";
+    roundRect(48, laneY - 26, 760, 52, 16, true, false);
+
+    ctx.strokeStyle = "rgba(255,255,255,0.14)";
+    ctx.setLineDash([16, 14]);
+    ctx.lineWidth = 4;
+    ctx.beginPath();
+    ctx.moveTo(60, laneY);
+    ctx.lineTo(790, laneY);
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    ctx.fillStyle = "#ef4444";
+    roundRect(gateX - 10, laneY - 62, 30, 124, 10, true, false);
+    ctx.fillStyle = "#fecaca";
+    ctx.font = "800 13px system-ui";
+    ctx.textAlign = "center";
+    ctx.fillText("GATE", gateX + 5, laneY - 72);
+
+    ctx.fillStyle = "#86efac";
+    ctx.beginPath();
+    ctx.arc(spawnX, laneY, 18, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = "#052e16";
+    ctx.font = "900 12px system-ui";
+    ctx.fillText("GO", spawnX, laneY + 4);
+  }
+
+  function drawPads() {
+    for (const pad of pads) {
+      const occupied = turretOnPad(pad);
+      const hover = Math.hypot(mouse.x - pad.x, mouse.y - pad.y) < 34;
+
+      ctx.save();
+      ctx.shadowColor = occupied ? "transparent" : hover ? "#93c5fd" : "#38bdf8";
+      ctx.shadowBlur = occupied ? 0 : hover ? 20 : 9;
+
+      ctx.fillStyle = occupied ? "rgba(148,163,184,0.16)" : hover ? "rgba(96,165,250,0.36)" : "rgba(56,189,248,0.22)";
+      ctx.strokeStyle = occupied ? "rgba(148,163,184,0.22)" : "rgba(125,211,252,0.85)";
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.arc(pad.x, pad.y, 28, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
+
+      ctx.fillStyle = occupied ? "rgba(226,232,240,0.25)" : "rgba(219,234,254,0.85)";
+      ctx.font = "900 18px system-ui";
+      ctx.textAlign = "center";
+      ctx.fillText(occupied ? "●" : "+", pad.x, pad.y + 7);
+      ctx.restore();
+    }
+  }
+
+  function drawTurrets() {
+    for (const turret of turrets) {
+      const type = turretTypes[turret.type];
+
+      ctx.save();
+      ctx.translate(turret.x, turret.y);
+
+      ctx.fillStyle = "rgba(0,0,0,0.22)";
+      ctx.beginPath();
+      ctx.ellipse(0, 9, 24, 11, 0, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.rotate(turret.angle);
+      ctx.fillStyle = type.barrel;
+      roundRect(0, -5, 28, 10, 5, true, false);
+      ctx.restore();
+
+      ctx.fillStyle = type.color;
+      ctx.beginPath();
+      ctx.arc(turret.x, turret.y, 19, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.fillStyle = "#0f172a";
+      ctx.beginPath();
+      ctx.arc(turret.x, turret.y, 9, 0, Math.PI * 2);
+      ctx.fill();
+
+      if (turret.target) {
+        ctx.strokeStyle = type.color;
+        ctx.globalAlpha = 0.18;
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(turret.x, turret.y);
+        ctx.lineTo(turret.target.x, turret.target.y);
+        ctx.stroke();
+        ctx.globalAlpha = 1;
+      }
+    }
+  }
+
+  function drawEnemies() {
+    for (const enemy of enemies) {
+      ctx.save();
+
+      if (enemy.slowTimer > 0) {
+        ctx.strokeStyle = "#a5f3fc";
+        ctx.lineWidth = 3;
+        ctx.globalAlpha = 0.65;
+        ctx.beginPath();
+        ctx.arc(enemy.x, enemy.y, enemy.radius + 6, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.globalAlpha = 1;
+      }
+
+      ctx.fillStyle = enemy.hitFlash > 0 ? "#ffffff" : enemy.color;
+      ctx.beginPath();
+      ctx.arc(enemy.x, enemy.y, enemy.radius, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.fillStyle = "#020617";
+      ctx.beginPath();
+      ctx.arc(enemy.x - enemy.radius * 0.3, enemy.y - 2, 2.4, 0, Math.PI * 2);
+      ctx.arc(enemy.x + enemy.radius * 0.3, enemy.y - 2, 2.4, 0, Math.PI * 2);
+      ctx.fill();
+
+      const barW = 34;
+      const barH = 5;
+      const pct = Math.max(0, enemy.hp / enemy.maxHp);
+
+      ctx.fillStyle = "rgba(0,0,0,0.5)";
+      roundRect(enemy.x - barW / 2, enemy.y - enemy.radius - 14, barW, barH, 4, true, false);
+
+      ctx.fillStyle = pct > 0.5 ? "#86efac" : pct > 0.25 ? "#fde047" : "#fb7185";
+      roundRect(enemy.x - barW / 2, enemy.y - enemy.radius - 14, barW * pct, barH, 4, true, false);
+
+      ctx.restore();
+    }
+  }
+
+  function drawShots() {
+    for (const shot of shots) {
+      const t = 1 - shot.life / shot.maxLife;
+      const x = shot.x + (shot.tx - shot.x) * t;
+      const y = shot.y + (shot.ty - shot.y) * t;
+
+      ctx.strokeStyle = shot.color;
+      ctx.lineWidth = shot.type === "frost" ? 5 : 4;
+      ctx.globalAlpha = 0.85;
+      ctx.beginPath();
+      ctx.moveTo(shot.x, shot.y);
+      ctx.lineTo(x, y);
+      ctx.stroke();
+
+      ctx.fillStyle = "#ffffff";
+      ctx.beginPath();
+      ctx.arc(x, y, shot.type === "frost" ? 5 : 4, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.globalAlpha = 1;
+    }
+  }
+
+  function drawParticles() {
+    for (const p of particles) {
+      const a = Math.max(0, p.life / p.maxLife);
+      ctx.globalAlpha = a;
+      ctx.fillStyle = p.color;
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.globalAlpha = 1;
+    }
+  }
+
+  function drawHoverRange() {
+    const pad = padAt(mouse.x, mouse.y);
+    if (!pad || !turretOnPad(pad)) return;
+
+    const turret = turretOnPad(pad);
+    const type = turretTypes[turret.type];
+
+    ctx.strokeStyle = type.color;
+    ctx.globalAlpha = 0.22;
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.arc(turret.x, turret.y, type.range, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.globalAlpha = 1;
+  }
+
+  function drawEndOverlay() {
+    ctx.fillStyle = "rgba(2,6,23,0.72)";
+    ctx.fillRect(0, 0, W, H);
+
+    ctx.fillStyle = "#ffffff";
+    ctx.font = "900 52px system-ui";
+    ctx.textAlign = "center";
+    ctx.fillText(won ? "Victory" : "Gate Down", W / 2, H / 2 - 18);
+
+    ctx.fillStyle = "#cbd5e1";
+    ctx.font = "700 18px system-ui";
+    ctx.fillText(won ? "All 6 quick waves cleared." : "Reset and place more firepower near the middle.", W / 2, H / 2 + 22);
+  }
+
+  function roundRect(x, y, width, height, radius, fill, stroke) {
+    const r = Math.min(radius, width / 2, height / 2);
+    ctx.beginPath();
+    ctx.moveTo(x + r, y);
+    ctx.arcTo(x + width, y, x + width, y + height, r);
+    ctx.arcTo(x + width, y + height, x, y + height, r);
+    ctx.arcTo(x, y + height, x, y, r);
+    ctx.arcTo(x, y, x + width, y, r);
+    ctx.closePath();
+    if (fill) ctx.fill();
+    if (stroke) ctx.stroke();
+  }
+
+  function loop(now) {
+    const dt = Math.min(0.033, (now - lastTime) / 1000);
+    lastTime = now;
+    update(dt);
+    draw();
+    requestAnimationFrame(loop);
+  }
+
+  canvas.addEventListener("mousemove", evt => {
+    mouse = getCanvasPoint(evt);
+  });
+
+  canvas.addEventListener("mouseleave", () => {
+    mouse = { x: -999, y: -999 };
+  });
+
+  canvas.addEventListener("click", evt => {
+    const p = getCanvasPoint(evt);
+    const pad = padAt(p.x, p.y);
+
+    if (!pad) {
+      showToast("Build only on glowing blue pads.");
+      return;
+    }
+
+    if (turretOnPad(pad)) {
+      const turret = turretOnPad(pad);
+      const type = turretTypes[turret.type];
+      showToast(`${type.name} turret. Range shown while hovered.`);
+      return;
+    }
+
+    placeTurret(pad);
+  });
+
+  boltBtn.addEventListener("click", () => {
+    selectedType = "bolt";
+    showToast("Bolt selected. Cheap, fast, reliable.");
+    updateHud();
+  });
+
+  frostBtn.addEventListener("click", () => {
+    selectedType = "frost";
+    showToast("Frost selected. Slows small groups.");
+    updateHud();
+  });
+
+  startBtn.addEventListener("click", startWave);
+  resetBtn.addEventListener("click", resetGame);
+
+  window.addEventListener("keydown", evt => {
+    if (evt.key === "1") {
+      selectedType = "bolt";
+      showToast("Bolt selected.");
+      updateHud();
+    }
+
+    if (evt.key === "2") {
+      selectedType = "frost";
+      showToast("Frost selected.");
+      updateHud();
+    }
+
+    if (evt.code === "Space") {
+      evt.preventDefault();
+      startWave();
+    }
+  });
+
+  resetGame();
+  requestAnimationFrame(loop);
+})();
+</script>
+</body>
+</html>

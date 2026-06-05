@@ -1,0 +1,1221 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+<title>Pocket Rally Time Trial</title>
+<style>
+  * { box-sizing: border-box; }
+
+  html, body {
+    margin: 0;
+    height: 100%;
+    overflow: hidden;
+    background: #101010;
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    color: white;
+    touch-action: none;
+  }
+
+  canvas {
+    display: block;
+    width: 100vw;
+    height: 100vh;
+    background: #151515;
+  }
+
+  .hud {
+    position: fixed;
+    top: 12px;
+    left: 12px;
+    right: 12px;
+    display: flex;
+    justify-content: space-between;
+    gap: 8px;
+    pointer-events: none;
+    font-weight: 850;
+    text-shadow: 0 2px 8px #000;
+    z-index: 3;
+  }
+
+  .panel {
+    background: rgba(0,0,0,.48);
+    border: 1px solid rgba(255,255,255,.16);
+    border-radius: 16px;
+    padding: 9px 11px;
+    backdrop-filter: blur(8px);
+    min-width: 68px;
+  }
+
+  .small {
+    font-size: 11px;
+    opacity: .72;
+    font-weight: 800;
+    letter-spacing: .04em;
+  }
+
+  .big {
+    font-size: clamp(16px, 4vw, 27px);
+    line-height: 1.05;
+  }
+
+  .rightPanel { text-align: right; }
+
+  .progressStrip {
+    position: fixed;
+    top: 76px;
+    left: 12px;
+    right: 12px;
+    z-index: 3;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    pointer-events: none;
+    max-width: 520px;
+  }
+
+  .miniMap {
+    width: 92px;
+    height: 62px;
+    background: rgba(0,0,0,.42);
+    border: 1px solid rgba(255,255,255,.16);
+    border-radius: 14px;
+    backdrop-filter: blur(8px);
+  }
+
+  .dots {
+    flex: 1;
+    display: flex;
+    gap: 6px;
+    padding: 8px;
+    background: rgba(0,0,0,.42);
+    border: 1px solid rgba(255,255,255,.16);
+    border-radius: 14px;
+    backdrop-filter: blur(8px);
+  }
+
+  .dot {
+    flex: 1;
+    height: 8px;
+    border-radius: 99px;
+    background: rgba(255,255,255,.22);
+  }
+
+  .dot.done { background: rgba(124,255,138,.9); }
+  .dot.active { background: #ffd84d; box-shadow: 0 0 14px rgba(255,216,77,.75); }
+  .dot.gate { background: rgba(124,255,138,.35); }
+
+  .center {
+    position: fixed;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    padding: 22px;
+    z-index: 4;
+    background: radial-gradient(circle, rgba(255,255,255,.07), rgba(0,0,0,.76));
+  }
+
+  .card {
+    width: min(620px, 100%);
+    background: rgba(10,10,10,.92);
+    border: 1px solid rgba(255,255,255,.18);
+    border-radius: 24px;
+    padding: 24px;
+    box-shadow: 0 24px 80px rgba(0,0,0,.55);
+  }
+
+  h1 {
+    margin: 0 0 8px;
+    font-size: clamp(30px, 8vw, 54px);
+    letter-spacing: -1px;
+  }
+
+  p {
+    margin: 8px 0;
+    color: rgba(255,255,255,.83);
+    line-height: 1.45;
+  }
+
+  .medals, .summaryGrid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+    margin: 16px 0 6px;
+  }
+
+  .medal, .summaryBox {
+    border-radius: 14px;
+    background: rgba(255,255,255,.08);
+    border: 1px solid rgba(255,255,255,.12);
+    padding: 10px;
+    font-weight: 900;
+    text-align: center;
+  }
+
+  .summaryBox span, .medal span {
+    display: block;
+    font-size: 12px;
+    opacity: .72;
+    margin-top: 3px;
+  }
+
+  button {
+    border: 0;
+    border-radius: 16px;
+    padding: 14px 18px;
+    margin-top: 14px;
+    font-weight: 900;
+    font-size: 16px;
+    background: #ffd84d;
+    color: #1b1600;
+    cursor: pointer;
+    width: 100%;
+  }
+
+  .touch {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 12px;
+    display: none;
+    justify-content: space-between;
+    align-items: end;
+    padding: 0 14px;
+    z-index: 5;
+    pointer-events: none;
+  }
+
+  .wheelBox, .pedalBox {
+    pointer-events: auto;
+    user-select: none;
+    -webkit-user-select: none;
+  }
+
+  .wheel {
+    width: 136px;
+    height: 136px;
+    border-radius: 50%;
+    background:
+      radial-gradient(circle at center, rgba(255,255,255,.12) 0 20%, transparent 21%),
+      conic-gradient(from 0deg, rgba(255,255,255,.08), rgba(255,255,255,.2), rgba(255,255,255,.08));
+    border: 2px solid rgba(255,255,255,.24);
+    box-shadow: 0 12px 40px rgba(0,0,0,.4);
+    backdrop-filter: blur(8px);
+    position: relative;
+    touch-action: none;
+  }
+
+  .wheel:before, .wheel:after {
+    content: "";
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 92px;
+    height: 7px;
+    border-radius: 999px;
+    background: rgba(255,255,255,.32);
+    transform-origin: center;
+  }
+
+  .wheel:before { transform: translate(-50%, -50%) rotate(25deg); }
+  .wheel:after { transform: translate(-50%, -50%) rotate(-25deg); }
+
+  .wheelKnob {
+    position: absolute;
+    left: 50%;
+    top: 13px;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: #ffd84d;
+    transform: translateX(-50%);
+    box-shadow: 0 0 18px rgba(255,216,77,.65);
+  }
+
+  .wheelLabel {
+    text-align: center;
+    margin-top: 6px;
+    font-size: 11px;
+    font-weight: 900;
+    opacity: .72;
+    text-shadow: 0 2px 8px #000;
+  }
+
+  .pedalBox {
+    display: grid;
+    gap: 10px;
+    width: 104px;
+  }
+
+  .pedal {
+    margin: 0;
+    padding: 0;
+    border-radius: 20px;
+    color: white;
+    border: 1px solid rgba(255,255,255,.24);
+    background: rgba(255,255,255,.14);
+    backdrop-filter: blur(8px);
+    box-shadow: 0 12px 40px rgba(0,0,0,.35);
+    touch-action: none;
+  }
+
+  .gas {
+    height: 96px;
+    background: linear-gradient(180deg, rgba(255,216,77,.36), rgba(255,216,77,.18));
+    color: #fff3b0;
+  }
+
+  .brake {
+    height: 62px;
+    background: linear-gradient(180deg, rgba(255,90,90,.28), rgba(255,255,255,.10));
+  }
+
+  .pedal span {
+    display: block;
+    font-size: 22px;
+    line-height: 1;
+  }
+
+  .pedal small {
+    display: block;
+    font-weight: 900;
+    opacity: .76;
+    margin-top: 4px;
+  }
+
+  @media (pointer: coarse), (max-width: 800px) {
+    .touch { display: flex; }
+
+    .hud {
+      top: 8px;
+      left: 8px;
+      right: 8px;
+      display: grid;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      gap: 5px;
+    }
+
+    .panel {
+      min-width: 0;
+      padding: 7px 6px;
+      border-radius: 12px;
+    }
+
+    .small {
+      font-size: 9px;
+    }
+
+    .big {
+      font-size: clamp(13px, 3.8vw, 19px);
+    }
+
+    .progressStrip {
+      top: 60px;
+      left: 8px;
+      right: 8px;
+      max-width: none;
+    }
+
+    .miniMap {
+      width: 76px;
+      height: 50px;
+      border-radius: 12px;
+    }
+
+    .dots {
+      gap: 4px;
+      padding: 6px;
+      border-radius: 12px;
+    }
+
+    .dot {
+      height: 7px;
+    }
+
+    .summaryGrid, .medals {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  @media (max-width: 420px) {
+    .wheel {
+      width: 118px;
+      height: 118px;
+    }
+
+    .wheel:before, .wheel:after {
+      width: 78px;
+    }
+
+    .pedalBox {
+      width: 90px;
+    }
+
+    .gas { height: 86px; }
+    .brake { height: 56px; }
+
+    .touch {
+      padding: 0 10px;
+      bottom: 10px;
+    }
+  }
+</style>
+</head>
+<body>
+<canvas id="game"></canvas>
+
+<div class="hud">
+  <div class="panel">
+    <div class="small">TIME</div>
+    <div class="big" id="time">0.00</div>
+  </div>
+  <div class="panel">
+    <div class="small">LAP</div>
+    <div class="big" id="lap">1 / 2</div>
+  </div>
+  <div class="panel">
+    <div class="small">NEXT</div>
+    <div class="big" id="cp">1 / 5</div>
+  </div>
+  <div class="panel">
+    <div class="small">SPLIT</div>
+    <div class="big" id="split">--</div>
+  </div>
+  <div class="panel rightPanel">
+    <div class="small">BEST</div>
+    <div class="big" id="best">--</div>
+  </div>
+</div>
+
+<div class="progressStrip">
+  <canvas class="miniMap" id="miniMap"></canvas>
+  <div class="dots" id="dots"></div>
+</div>
+
+<div class="center" id="overlay">
+  <div class="card">
+    <h1>Pocket Rally Time Trial</h1>
+    <p>Two laps around a compact loop. Clear the checkpoints, cross the gate, and chase your stored ghost trail.</p>
+    <p><b>Keyboard</b> arrows or WASD. Space brakes. R restarts.</p>
+    <p><b>Phone</b> steer with the wheel, then use gas and brake pedals.</p>
+    <div class="medals">
+      <div class="medal">🥉 Bronze<span>58.00s</span></div>
+      <div class="medal">🥈 Silver<span>50.00s</span></div>
+      <div class="medal">🥇 Gold<span>44.00s</span></div>
+    </div>
+    <button id="startBtn">Start two-lap run</button>
+  </div>
+</div>
+
+<div class="touch">
+  <div class="wheelBox">
+    <div class="wheel" id="wheel">
+      <div class="wheelKnob" id="wheelKnob"></div>
+    </div>
+    <div class="wheelLabel">STEER</div>
+  </div>
+
+  <div class="pedalBox">
+    <button class="pedal gas" data-key="up"><span>▲</span><small>GAS</small></button>
+    <button class="pedal brake" data-key="down"><span>▼</span><small>BRAKE</small></button>
+  </div>
+</div>
+
+<script>
+(() => {
+  const canvas = document.getElementById("game");
+  const ctx = canvas.getContext("2d");
+  const miniMap = document.getElementById("miniMap");
+  const miniCtx = miniMap.getContext("2d");
+  const timeEl = document.getElementById("time");
+  const lapEl = document.getElementById("lap");
+  const cpEl = document.getElementById("cp");
+  const splitEl = document.getElementById("split");
+  const bestEl = document.getElementById("best");
+  const overlay = document.getElementById("overlay");
+  const startBtn = document.getElementById("startBtn");
+  const dotsEl = document.getElementById("dots");
+  const wheel = document.getElementById("wheel");
+  const wheelKnob = document.getElementById("wheelKnob");
+
+  let W = 0, H = 0, scale = 1;
+  let miniW = 0, miniH = 0;
+
+  function resize() {
+    W = canvas.width = Math.floor(innerWidth * devicePixelRatio);
+    H = canvas.height = Math.floor(innerHeight * devicePixelRatio);
+    canvas.style.width = innerWidth + "px";
+    canvas.style.height = innerHeight + "px";
+    scale = Math.min(W / 980, H / 680);
+
+    miniW = miniMap.width = Math.floor(miniMap.clientWidth * devicePixelRatio);
+    miniH = miniMap.height = Math.floor(miniMap.clientHeight * devicePixelRatio);
+  }
+
+  addEventListener("resize", resize);
+  resize();
+
+  CanvasRenderingContext2D.prototype.roundRect ||= function(x, y, w, h, r) {
+    this.beginPath();
+    this.moveTo(x + r, y);
+    this.arcTo(x + w, y, x + w, y + h, r);
+    this.arcTo(x + w, y + h, x, y + h, r);
+    this.arcTo(x, y + h, x, y, r);
+    this.arcTo(x, y, x + w, y, r);
+    this.closePath();
+    return this;
+  };
+
+  const totalLaps = 2;
+  const medals = [
+    { name: "Gold", t: 44, icon: "🥇" },
+    { name: "Silver", t: 50, icon: "🥈" },
+    { name: "Bronze", t: 58, icon: "🥉" }
+  ];
+
+  const bestKey = "pocketRallyBest";
+  const ghostKey = "pocketRallyGhost";
+  let best = Number(localStorage.getItem(bestKey) || 0);
+  let bestGhost = [];
+
+  try {
+    bestGhost = JSON.parse(localStorage.getItem(ghostKey) || "[]");
+    if (!Array.isArray(bestGhost)) bestGhost = [];
+  } catch {
+    bestGhost = [];
+  }
+
+  const keys = { up:false, down:false, left:false, right:false };
+  let touchSteer = 0;
+
+  const startGate = {
+    a: { x: 160, y: 432 },
+    b: { x: 225, y: 508 },
+    center: { x: 192, y: 470 }
+  };
+
+  const car = { x: 192, y: 470, a: -0.72, v: 0, trail: [], runGhost: [], wasNearGate: true };
+  const start = { x: 192, y: 470, a: -0.72 };
+
+  const route = [
+    { x: 192, y: 470 },
+    { x: 245, y: 300 },
+    { x: 430, y: 205 },
+    { x: 660, y: 225 },
+    { x: 815, y: 380 },
+    { x: 745, y: 545 },
+    { x: 510, y: 590 },
+    { x: 300, y: 555 },
+    { x: 192, y: 470 }
+  ];
+
+  const checkpoints = [
+    { x: 250, y: 300, r: 35, target: 5.4 },
+    { x: 430, y: 205, r: 35, target: 10.0 },
+    { x: 660, y: 225, r: 35, target: 15.0 },
+    { x: 815, y: 380, r: 35, target: 20.6 },
+    { x: 745, y: 545, r: 35, target: 25.5 }
+  ];
+
+  const lapTarget = 27.6;
+
+  const scenery = Array.from({ length: 110 }, (_, i) => ({
+    x: (i * 137) % 1160 - 120,
+    y: (i * 91) % 820 - 70,
+    r: 3 + (i % 8),
+    kind: i % 5
+  }));
+
+  let running = false;
+  let done = false;
+  let lap = 1;
+  let cp = 0;
+  let t0 = 0;
+  let elapsed = 0;
+  let lapStartTime = 0;
+  let lastCpTime = 0;
+  let splitText = "--";
+  let message = "";
+  let subMessage = "";
+  let msgTimer = 0;
+  let offRoad = false;
+  let lastGhostStamp = 0;
+
+  function fmt(n) {
+    return n.toFixed(2);
+  }
+
+  function medalFor(t) {
+    if (t <= medals[0].t) return medals[0];
+    if (t <= medals[1].t) return medals[1];
+    if (t <= medals[2].t) return medals[2];
+    return { name: "No medal", icon: "⏱️", t: Infinity };
+  }
+
+  function nextMedalText(t) {
+    if (t <= medals[0].t) return "Gold pace. Now chase the ghost for tenths.";
+    if (t <= medals[1].t) return "Next target is Gold at 44.00s.";
+    if (t <= medals[2].t) return "Next target is Silver at 50.00s.";
+    return "Next target is Bronze at 58.00s.";
+  }
+
+  function deltaText(t, oldBest) {
+    if (!oldBest) return "First saved ghost.";
+    const d = t - oldBest;
+    if (d < 0) return fmt(Math.abs(d)) + "s faster than old best.";
+    if (d > 0) return fmt(d) + "s slower than best.";
+    return "Matched your best exactly.";
+  }
+
+  function renderDots() {
+    dotsEl.innerHTML = "";
+    for (let i = 0; i < checkpoints.length; i++) {
+      const d = document.createElement("div");
+      d.className = "dot";
+      if (i < cp) d.classList.add("done");
+      if (i === cp) d.classList.add("active");
+      dotsEl.appendChild(d);
+    }
+    const gate = document.createElement("div");
+    gate.className = "dot gate";
+    if (cp >= checkpoints.length) gate.classList.add("active");
+    dotsEl.appendChild(gate);
+  }
+
+  function updateHud() {
+    timeEl.textContent = fmt(elapsed);
+    lapEl.textContent = Math.min(lap, totalLaps) + " / " + totalLaps;
+    cpEl.textContent = cp >= checkpoints.length ? "GATE" : (cp + 1) + " / " + checkpoints.length;
+    splitEl.textContent = splitText;
+    bestEl.textContent = best ? fmt(best) : "--";
+    renderDots();
+  }
+
+  function reset(startNow = true) {
+    car.x = start.x;
+    car.y = start.y;
+    car.a = start.a;
+    car.v = 0;
+    car.trail = [];
+    car.runGhost = [];
+    car.wasNearGate = true;
+    lap = 1;
+    cp = 0;
+    elapsed = 0;
+    lapStartTime = 0;
+    lastCpTime = 0;
+    lastGhostStamp = 0;
+    splitText = "--";
+    done = false;
+    offRoad = false;
+    message = "";
+    subMessage = "";
+    msgTimer = 0;
+    running = startNow;
+    t0 = performance.now();
+    overlay.style.display = startNow ? "none" : "grid";
+    updateHud();
+  }
+
+  startBtn.onclick = () => reset(true);
+
+  addEventListener("keydown", e => {
+    if (["ArrowUp","w","W"].includes(e.key)) keys.up = true;
+    if (["ArrowDown","s","S"," "].includes(e.key)) keys.down = true;
+    if (["ArrowLeft","a","A"].includes(e.key)) keys.left = true;
+    if (["ArrowRight","d","D"].includes(e.key)) keys.right = true;
+    if (["r","R"].includes(e.key)) reset(true);
+    if (!running && e.key === "Enter") reset(true);
+  });
+
+  addEventListener("keyup", e => {
+    if (["ArrowUp","w","W"].includes(e.key)) keys.up = false;
+    if (["ArrowDown","s","S"," "].includes(e.key)) keys.down = false;
+    if (["ArrowLeft","a","A"].includes(e.key)) keys.left = false;
+    if (["ArrowRight","d","D"].includes(e.key)) keys.right = false;
+  });
+
+  document.querySelectorAll(".pedal").forEach(btn => {
+    const k = btn.dataset.key;
+    const on = e => { e.preventDefault(); keys[k] = true; };
+    const off = e => { e.preventDefault(); keys[k] = false; };
+    btn.addEventListener("pointerdown", on);
+    btn.addEventListener("pointerup", off);
+    btn.addEventListener("pointercancel", off);
+    btn.addEventListener("pointerleave", off);
+  });
+
+  function setWheelFromPointer(e) {
+    const r = wheel.getBoundingClientRect();
+    const cx = r.left + r.width / 2;
+    const dx = e.clientX - cx;
+    touchSteer = Math.max(-1, Math.min(1, dx / (r.width * .38)));
+    wheel.style.transform = `rotate(${touchSteer * 28}deg)`;
+    wheelKnob.style.transform = `translateX(-50%) rotate(${-touchSteer * 28}deg)`;
+  }
+
+  function releaseWheel() {
+    touchSteer = 0;
+    wheel.style.transform = "rotate(0deg)";
+    wheelKnob.style.transform = "translateX(-50%)";
+  }
+
+  wheel.addEventListener("pointerdown", e => {
+    e.preventDefault();
+    wheel.setPointerCapture(e.pointerId);
+    setWheelFromPointer(e);
+  });
+
+  wheel.addEventListener("pointermove", e => {
+    if (e.buttons) setWheelFromPointer(e);
+  });
+
+  wheel.addEventListener("pointerup", releaseWheel);
+  wheel.addEventListener("pointercancel", releaseWheel);
+
+  function worldToScreen(x, y) {
+    const ox = W / 2 - car.x * scale;
+    const oy = H / 2 - car.y * scale;
+    return { x: ox + x * scale, y: oy + y * scale };
+  }
+
+  function withWorld(fn) {
+    ctx.save();
+    ctx.scale(scale, scale);
+    ctx.translate(W / 2 / scale - car.x, H / 2 / scale - car.y);
+    fn();
+    ctx.restore();
+  }
+
+  function drawRibbon(context, points, width, color, dash = null) {
+    context.save();
+    context.lineCap = "round";
+    context.lineJoin = "round";
+    context.strokeStyle = color;
+    context.lineWidth = width;
+    if (dash) context.setLineDash(dash);
+    context.beginPath();
+    context.moveTo(points[0].x, points[0].y);
+    for (let i = 1; i < points.length - 1; i++) {
+      const mx = (points[i].x + points[i + 1].x) / 2;
+      const my = (points[i].y + points[i + 1].y) / 2;
+      context.quadraticCurveTo(points[i].x, points[i].y, mx, my);
+    }
+    context.lineTo(points[points.length - 1].x, points[points.length - 1].y);
+    context.stroke();
+    context.restore();
+  }
+
+  function distToSegment(px, py, ax, ay, bx, by) {
+    const vx = bx - ax;
+    const vy = by - ay;
+    const wx = px - ax;
+    const wy = py - ay;
+    const len2 = vx * vx + vy * vy;
+    let t = len2 ? (wx * vx + wy * vy) / len2 : 0;
+    t = Math.max(0, Math.min(1, t));
+    const x = ax + vx * t;
+    const y = ay + vy * t;
+    return Math.hypot(px - x, py - y);
+  }
+
+  function pointOnTrack(x, y) {
+    let bestD = Infinity;
+    for (let i = 0; i < route.length - 1; i++) {
+      const a = route[i];
+      const b = route[i + 1];
+      bestD = Math.min(bestD, distToSegment(x, y, a.x, a.y, b.x, b.y));
+    }
+    return bestD < 74;
+  }
+
+  function drawTrack() {
+    withWorld(() => {
+      ctx.fillStyle = "#244323";
+      ctx.fillRect(-450, -350, 1900, 1300);
+
+      scenery.forEach(s => {
+        if (s.kind === 0) {
+          ctx.fillStyle = "rgba(8,25,10,.55)";
+          ctx.beginPath();
+          ctx.arc(s.x, s.y, s.r + 7, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.fillStyle = "rgba(28,78,31,.85)";
+          ctx.beginPath();
+          ctx.arc(s.x, s.y, s.r + 3, 0, Math.PI * 2);
+          ctx.fill();
+        } else {
+          ctx.fillStyle = "rgba(0,0,0,.16)";
+          ctx.beginPath();
+          ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      });
+
+      drawRibbon(ctx, route, 190, "#28231f");
+      drawRibbon(ctx, route, 150, "#655c52");
+      drawRibbon(ctx, route, 122, "#756c60");
+      drawRibbon(ctx, route, 5, "rgba(255,255,255,.18)", [18, 20]);
+      drawRibbon(ctx, route, 3, "rgba(255,216,77,.34)", [38, 28]);
+
+      ctx.lineCap = "butt";
+      ctx.strokeStyle = "#ffffff";
+      ctx.lineWidth = 8;
+      ctx.beginPath();
+      ctx.moveTo(startGate.a.x, startGate.a.y);
+      ctx.lineTo(startGate.b.x, startGate.b.y);
+      ctx.stroke();
+
+      const dx = startGate.b.x - startGate.a.x;
+      const dy = startGate.b.y - startGate.a.y;
+      const len = Math.hypot(dx, dy);
+      const ux = dx / len;
+      const uy = dy / len;
+
+      for (let i = 0; i < 8; i++) {
+        const x = startGate.a.x + ux * i * 12;
+        const y = startGate.a.y + uy * i * 12;
+        ctx.fillStyle = i % 2 ? "#111" : "#fff";
+        ctx.beginPath();
+        ctx.arc(x, y, 7, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      ctx.fillStyle = "#ffd84d";
+      ctx.font = "900 20px system-ui";
+      ctx.textAlign = "center";
+      ctx.fillText("START / FINISH", startGate.center.x - 18, startGate.center.y - 52);
+
+      checkpoints.forEach((p, i) => {
+        ctx.fillStyle = "rgba(255,255,255,.18)";
+        ctx.font = "900 18px system-ui";
+        ctx.textAlign = "center";
+        ctx.fillText(i + 1, p.x, p.y - 52);
+      });
+
+      if (offRoad) {
+        ctx.fillStyle = "rgba(255,216,77,.12)";
+        ctx.font = "900 22px system-ui";
+        ctx.textAlign = "center";
+        ctx.fillText("OFF ROAD", car.x, car.y - 58);
+      }
+    });
+  }
+
+  function drawMiniMap() {
+    miniCtx.clearRect(0, 0, miniW, miniH);
+
+    const xs = route.map(p => p.x);
+    const ys = route.map(p => p.y);
+    const minX = Math.min(...xs) - 80;
+    const maxX = Math.max(...xs) + 80;
+    const minY = Math.min(...ys) - 80;
+    const maxY = Math.max(...ys) + 80;
+
+    const sx = miniW / (maxX - minX);
+    const sy = miniH / (maxY - minY);
+    const s = Math.min(sx, sy);
+
+    function m(p) {
+      return {
+        x: (p.x - minX) * s + (miniW - (maxX - minX) * s) / 2,
+        y: (p.y - minY) * s + (miniH - (maxY - minY) * s) / 2
+      };
+    }
+
+    miniCtx.save();
+    miniCtx.lineCap = "round";
+    miniCtx.lineJoin = "round";
+
+    miniCtx.strokeStyle = "rgba(255,255,255,.22)";
+    miniCtx.lineWidth = 8 * devicePixelRatio;
+    miniCtx.beginPath();
+    let p0 = m(route[0]);
+    miniCtx.moveTo(p0.x, p0.y);
+    for (let i = 1; i < route.length; i++) {
+      const p = m(route[i]);
+      miniCtx.lineTo(p.x, p.y);
+    }
+    miniCtx.stroke();
+
+    checkpoints.forEach((c, i) => {
+      const p = m(c);
+      miniCtx.fillStyle = i < cp ? "#7cff8a" : i === cp ? "#ffd84d" : "rgba(255,255,255,.55)";
+      miniCtx.beginPath();
+      miniCtx.arc(p.x, p.y, 3.2 * devicePixelRatio, 0, Math.PI * 2);
+      miniCtx.fill();
+    });
+
+    const gp = m(startGate.center);
+    miniCtx.fillStyle = cp >= checkpoints.length ? "#7cff8a" : "#ffffff";
+    miniCtx.fillRect(gp.x - 3 * devicePixelRatio, gp.y - 3 * devicePixelRatio, 6 * devicePixelRatio, 6 * devicePixelRatio);
+
+    const carP = m(car);
+    miniCtx.fillStyle = "#e74b3c";
+    miniCtx.beginPath();
+    miniCtx.arc(carP.x, carP.y, 4.2 * devicePixelRatio, 0, Math.PI * 2);
+    miniCtx.fill();
+
+    miniCtx.restore();
+  }
+
+  function drawGhostTrail() {
+    if (!bestGhost.length) return;
+
+    ctx.save();
+    ctx.strokeStyle = "rgba(125, 220, 255, .48)";
+    ctx.lineWidth = 4 * scale;
+    ctx.setLineDash([10 * scale, 12 * scale]);
+    ctx.beginPath();
+
+    for (let i = 0; i < bestGhost.length; i++) {
+      const p = worldToScreen(bestGhost[i].x, bestGhost[i].y);
+      if (i === 0) ctx.moveTo(p.x, p.y);
+      else ctx.lineTo(p.x, p.y);
+    }
+
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    const ghostPoint = bestGhost.find(p => p.t >= elapsed) || bestGhost[bestGhost.length - 1];
+    const gp = worldToScreen(ghostPoint.x, ghostPoint.y);
+
+    ctx.fillStyle = "rgba(125, 220, 255, .78)";
+    ctx.beginPath();
+    ctx.arc(gp.x, gp.y, 9 * scale, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.strokeStyle = "rgba(255,255,255,.8)";
+    ctx.lineWidth = 2 * scale;
+    ctx.beginPath();
+    ctx.arc(gp.x, gp.y, 13 * scale, 0, Math.PI * 2);
+    ctx.stroke();
+
+    ctx.fillStyle = "rgba(255,255,255,.86)";
+    ctx.font = `900 ${Math.max(11, 13 * scale)}px system-ui`;
+    ctx.textAlign = "center";
+    ctx.fillText("GHOST", gp.x, gp.y - 18 * scale);
+
+    ctx.restore();
+  }
+
+  function drawCheckpoints() {
+    checkpoints.forEach((c, i) => {
+      const p = worldToScreen(c.x, c.y);
+      const active = i === cp;
+      const cleared = i < cp;
+
+      ctx.save();
+      ctx.translate(p.x, p.y);
+      ctx.scale(scale, scale);
+      ctx.globalAlpha = cleared ? .18 : 1;
+
+      ctx.fillStyle = active ? "rgba(255,216,77,.20)" : "rgba(255,255,255,.08)";
+      ctx.strokeStyle = active ? "#ffd84d" : "rgba(255,255,255,.72)";
+      ctx.lineWidth = active ? 7 : 4;
+
+      ctx.beginPath();
+      ctx.arc(0, 0, c.r, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
+
+      if (active) {
+        ctx.strokeStyle = "rgba(255,216,77,.36)";
+        ctx.lineWidth = 17;
+        ctx.beginPath();
+        ctx.arc(0, 0, c.r + 13 + Math.sin(performance.now() / 120) * 5, 0, Math.PI * 2);
+        ctx.stroke();
+      }
+
+      ctx.fillStyle = active ? "#ffd84d" : "#fff";
+      ctx.font = "900 26px system-ui";
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillText(i + 1, 0, 1);
+      ctx.restore();
+    });
+  }
+
+  function drawNextArrow() {
+    if (done) return;
+
+    const target = cp >= checkpoints.length ? startGate.center : checkpoints[cp];
+    const dx = target.x - car.x;
+    const dy = target.y - car.y;
+    const ang = Math.atan2(dy, dx);
+    const dist = Math.hypot(dx, dy);
+
+    ctx.save();
+    ctx.translate(W / 2, H / 2);
+    ctx.rotate(ang);
+    ctx.translate(0, -68 * scale);
+
+    ctx.fillStyle = "rgba(0,0,0,.38)";
+    ctx.beginPath();
+    ctx.roundRect(24 * scale, -22 * scale, 124 * scale, 44 * scale, 16 * scale);
+    ctx.fill();
+
+    ctx.fillStyle = cp >= checkpoints.length ? "#7cff8a" : "#ffd84d";
+    ctx.beginPath();
+    ctx.moveTo(70 * scale, 0);
+    ctx.lineTo(25 * scale, -22 * scale);
+    ctx.lineTo(34 * scale, -7 * scale);
+    ctx.lineTo(-12 * scale, -7 * scale);
+    ctx.lineTo(-12 * scale, 7 * scale);
+    ctx.lineTo(34 * scale, 7 * scale);
+    ctx.lineTo(25 * scale, 22 * scale);
+    ctx.closePath();
+    ctx.fill();
+
+    ctx.rotate(-ang);
+    ctx.fillStyle = "#fff";
+    ctx.font = `900 ${Math.max(13, 15 * scale)}px system-ui`;
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText(cp >= checkpoints.length ? "GATE" : Math.round(dist) + "m", 86 * scale, 0);
+    ctx.restore();
+  }
+
+  function drawCar() {
+    const p = worldToScreen(car.x, car.y);
+
+    ctx.save();
+    ctx.strokeStyle = offRoad ? "rgba(255,216,77,.30)" : "rgba(255,255,255,.18)";
+    ctx.lineWidth = 3 * scale;
+    ctx.beginPath();
+    for (let i = 0; i < car.trail.length; i++) {
+      const q = worldToScreen(car.trail[i].x, car.trail[i].y);
+      if (i === 0) ctx.moveTo(q.x, q.y);
+      else ctx.lineTo(q.x, q.y);
+    }
+    ctx.stroke();
+    ctx.restore();
+
+    ctx.save();
+    ctx.translate(p.x, p.y);
+    ctx.rotate(car.a);
+    ctx.scale(scale, scale);
+
+    ctx.fillStyle = "rgba(0,0,0,.38)";
+    ctx.fillRect(-17, -11, 36, 24);
+
+    ctx.fillStyle = "#e74b3c";
+    ctx.beginPath();
+    ctx.roundRect(-17, -11, 34, 22, 6);
+    ctx.fill();
+
+    ctx.fillStyle = "#ffd84d";
+    ctx.beginPath();
+    ctx.moveTo(18, 0);
+    ctx.lineTo(4, -8);
+    ctx.lineTo(4, 8);
+    ctx.closePath();
+    ctx.fill();
+
+    ctx.fillStyle = "rgba(255,255,255,.75)";
+    ctx.fillRect(-5, -7, 9, 14);
+    ctx.restore();
+  }
+
+  function drawMessage() {
+    if (!message || msgTimer <= 0) return;
+
+    ctx.save();
+    ctx.globalAlpha = Math.min(1, msgTimer / 30);
+    ctx.fillStyle = "rgba(0,0,0,.62)";
+    ctx.beginPath();
+    ctx.roundRect(W / 2 - 220, H * .22 - 42, 440, 84, 20);
+    ctx.fill();
+
+    ctx.fillStyle = "#fff";
+    ctx.font = `900 ${Math.max(22, 30 * scale)}px system-ui`;
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText(message, W / 2, H * .22 - 10);
+
+    if (subMessage) {
+      ctx.fillStyle = "rgba(255,255,255,.74)";
+      ctx.font = `800 ${Math.max(13, 15 * scale)}px system-ui`;
+      ctx.fillText(subMessage, W / 2, H * .22 + 22);
+    }
+
+    ctx.restore();
+  }
+
+  function recordGhostPoint() {
+    if (elapsed - lastGhostStamp < 0.10) return;
+    lastGhostStamp = elapsed;
+    car.runGhost.push({
+      t: Number(elapsed.toFixed(2)),
+      x: Math.round(car.x),
+      y: Math.round(car.y)
+    });
+  }
+
+  function finishRun() {
+    running = false;
+    done = true;
+
+    const oldBest = best;
+    const isNewBest = !best || elapsed < best;
+
+    if (isNewBest) {
+      best = elapsed;
+      bestGhost = car.runGhost.slice();
+      localStorage.setItem(bestKey, String(best));
+      localStorage.setItem(ghostKey, JSON.stringify(bestGhost));
+    }
+
+    const medal = medalFor(elapsed);
+    const delta = deltaText(elapsed, oldBest);
+
+    if (isNewBest) {
+      message = oldBest ? "NEW BEST" : "GHOST SAVED";
+      subMessage = oldBest ? delta : medal.icon + " " + medal.name;
+    } else {
+      message = medal.icon + " " + medal.name;
+      subMessage = delta;
+    }
+
+    msgTimer = 190;
+
+    setTimeout(() => {
+      overlay.style.display = "grid";
+      overlay.querySelector("h1").textContent = "Pocket Rally Time Trial";
+
+      overlay.querySelectorAll("p")[0].innerHTML =
+        `Finished in <b>${fmt(elapsed)}s</b>. Medal <b>${medal.icon} ${medal.name}</b>.`;
+
+      overlay.querySelectorAll("p")[1].innerHTML =
+        `Best <b>${fmt(best)}s</b>. Delta <b>${delta}</b> ${isNewBest ? "New ghost trail saved." : "Chase the blue ghost trail next run."}`;
+
+      overlay.querySelectorAll("p")[2].innerHTML =
+        `${nextMedalText(elapsed)} Press <b>R</b> or tap below to retry.`;
+
+      const oldSummary = overlay.querySelector(".summaryGrid");
+      if (oldSummary) oldSummary.remove();
+
+      const summary = document.createElement("div");
+      summary.className = "summaryGrid";
+      summary.innerHTML = `
+        <div class="summaryBox">${medal.icon} ${medal.name}<span>Medal</span></div>
+        <div class="summaryBox">${fmt(elapsed)}s<span>Run time</span></div>
+        <div class="summaryBox">${oldBest ? (elapsed < oldBest ? "-" : "+") + fmt(Math.abs(elapsed - oldBest)) + "s" : "Saved"}<span>Best delta</span></div>
+      `;
+      startBtn.before(summary);
+
+      startBtn.textContent = "Retry two-lap run";
+    }, 900);
+  }
+
+  function completeLap() {
+    const lapTime = elapsed - lapStartTime;
+    const delta = lapTime - lapTarget;
+    splitText = (delta <= 0 ? "-" : "+") + fmt(Math.abs(delta));
+
+    if (lap >= totalLaps) {
+      finishRun();
+      return;
+    }
+
+    message = "LAP " + lap + " COMPLETE";
+    subMessage = splitText + " vs lap target";
+    msgTimer = 78;
+
+    lap++;
+    cp = 0;
+    lapStartTime = elapsed;
+    lastCpTime = elapsed;
+  }
+
+  function physics(dt) {
+    if (!running || done) return;
+
+    offRoad = !pointOnTrack(car.x, car.y);
+
+    const accel = keys.up ? (offRoad ? 185 : 255) : 0;
+    const brake = keys.down ? 355 : 0;
+    const maxSpeed = offRoad ? 235 : 365;
+    const drag = offRoad ? .955 : .985;
+
+    car.v += accel * dt;
+    car.v -= brake * dt * Math.sign(car.v || 1);
+    car.v *= Math.pow(drag, dt * 60);
+    car.v = Math.max(-115, Math.min(maxSpeed, car.v));
+
+    const keyboardSteer = (keys.right ? 1 : 0) - (keys.left ? 1 : 0);
+    const steer = Math.abs(touchSteer) > 0.02 ? touchSteer : keyboardSteer;
+    const grip = Math.min(1, Math.abs(car.v) / 180);
+    car.a += steer * grip * 3.25 * dt * (car.v >= 0 ? 1 : -1);
+
+    car.x += Math.cos(car.a) * car.v * dt;
+    car.y += Math.sin(car.a) * car.v * dt;
+
+    car.trail.push({ x: car.x, y: car.y });
+    if (car.trail.length > 90) car.trail.shift();
+
+    elapsed = (performance.now() - t0) / 1000;
+    recordGhostPoint();
+
+    if (cp < checkpoints.length) {
+      const c = checkpoints[cp];
+      const d = Math.hypot(car.x - c.x, car.y - c.y);
+
+      if (d < c.r) {
+        const segment = elapsed - lastCpTime;
+        const targetSegment = cp === 0 ? checkpoints[0].target : checkpoints[cp].target - checkpoints[cp - 1].target;
+        const delta = segment - targetSegment;
+        splitText = (delta <= 0 ? "-" : "+") + fmt(Math.abs(delta));
+
+        cp++;
+        lastCpTime = elapsed;
+
+        message = delta <= 0 ? "GOOD SPLIT" : "SLOW SPLIT";
+        subMessage = splitText + " vs sector target";
+        msgTimer = 54;
+      }
+    } else {
+      const gateDist = distToSegment(car.x, car.y, startGate.a.x, startGate.a.y, startGate.b.x, startGate.b.y);
+      const nearGate = gateDist < 34;
+
+      if (nearGate && !car.wasNearGate) {
+        completeLap();
+      }
+
+      car.wasNearGate = nearGate;
+    }
+
+    if (cp < checkpoints.length) {
+      car.wasNearGate = false;
+    }
+
+    msgTimer--;
+    updateHud();
+  }
+
+  let last = performance.now();
+
+  function loop(now) {
+    const dt = Math.min(.033, (now - last) / 1000);
+    last = now;
+
+    physics(dt);
+
+    ctx.clearRect(0, 0, W, H);
+    drawTrack();
+    drawGhostTrail();
+    drawCheckpoints();
+    drawNextArrow();
+    drawCar();
+    drawMessage();
+    drawMiniMap();
+
+    requestAnimationFrame(loop);
+  }
+
+  reset(false);
+  requestAnimationFrame(loop);
+})();
+</script>
+</body>
+</html>

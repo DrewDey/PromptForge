@@ -7,6 +7,11 @@ import { ArrowLeft, Plus, Trash2, ChevronDown, ChevronUp, LogIn, FileText, GitBr
 import { getModelsByProvider, getModelName } from '@/lib/models'
 import { submitProject, submitSourceRun } from '@/lib/actions'
 import { detectSourceRunProvider } from '@/lib/source-run-review'
+import {
+  parseProjectForkSearchParams,
+  serializeProjectForkSourceForNotes,
+  type ProjectForkSource,
+} from '@/lib/project-forks'
 import ImageUpload from '@/components/ImageUpload'
 
 const categories = [
@@ -302,7 +307,7 @@ function intakeCardClass(active: boolean) {
 export default function SubmitProjectPage() {
   const router = useRouter()
   const [isLoggedIn, setIsLoggedIn] = useState<boolean | null>(null)
-  const [forkSource, setForkSource] = useState<{ id: string; title: string } | null>(null)
+  const [forkSource, setForkSource] = useState<ProjectForkSource | null>(null)
 
   // Form state
   const [intakeMode, setIntakeMode] = useState<IntakeMode>('source-run')
@@ -353,13 +358,12 @@ export default function SubmitProjectPage() {
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search)
-    const fork = params.get('fork')?.trim()
-    if (!fork) return
+    const parsedForkSource = parseProjectForkSearchParams(params)
+    if (!parsedForkSource) return
 
-    const forkTitle = params.get('forkTitle')?.trim() || ''
-    setForkSource({ id: fork, title: forkTitle })
+    setForkSource(parsedForkSource)
     setSourceRunNotes(current => (
-      current.trim() ? current : `Fork source project: ${forkTitle || fork}`
+      current.trim() ? current : serializeProjectForkSourceForNotes(parsedForkSource)
     ))
   }, [])
 
@@ -719,11 +723,32 @@ export default function SubmitProjectPage() {
                 Fork source attached
               </div>
               <p className="mt-1 text-sm font-semibold text-surface-900">
-                {forkSource.title ? `Forking from ${forkSource.title}` : 'Forking from an existing PathForge project'}
+                {forkSource.sourceProjectTitle
+                  ? `Forking from ${forkSource.sourceProjectTitle}`
+                  : 'Forking from an existing PathForge project'}
               </p>
               <p className="mt-1 text-xs leading-5 text-surface-600">
                 Add your source-run link or prompt changes here. The fork source is already included in the agent notes.
               </p>
+              {(forkSource.sourceStepNumber || forkSource.parentForkId || forkSource.promptFamilyId) && (
+                <div className="mt-3 flex flex-wrap gap-2 font-mono text-[10px] uppercase tracking-[0.12em] text-surface-500">
+                  {forkSource.sourceStepNumber && (
+                    <span className="border border-brand-orange/30 bg-white px-2 py-1">
+                      Response {String(forkSource.sourceStepNumber).padStart(2, '0')}
+                    </span>
+                  )}
+                  {forkSource.parentForkId && (
+                    <span className="border border-brand-orange/30 bg-white px-2 py-1">
+                      Parent fork attached
+                    </span>
+                  )}
+                  {forkSource.promptFamilyId && (
+                    <span className="border border-brand-orange/30 bg-white px-2 py-1">
+                      Prompt family attached
+                    </span>
+                  )}
+                </div>
+              )}
             </div>
           </div>
         </div>

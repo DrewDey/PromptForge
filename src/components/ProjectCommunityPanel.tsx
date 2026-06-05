@@ -742,6 +742,23 @@ export default async function ProjectCommunityPanel({
   const forkLaneSignal = forkNetwork.length > 0
     ? `${forkNetwork.length}/${PROJECT_FORK_MAX_WIDTH}`
     : `${PROJECT_FORK_MAX_WIDTH}x`
+  const calloutDepth = forkSource ? forkSource.depth + 1 : 0
+  const calloutContract = project
+    ? createProjectForkDraftContract({
+        source: {
+          sourceProjectId: projectId,
+          sourceProjectTitle: project.title,
+          depth: calloutDepth,
+          promptFamilyId: forkSource?.promptFamilyId,
+        },
+        sourceSteps,
+      })
+    : null
+  const forkNetworkGrouping = groupProjectForkNetworkBySourceStep(sourceSteps, forkNetwork)
+  const calloutForkPoint = calloutContract?.forkPointStep
+  const calloutBranchIndex = calloutForkPoint
+    ? forkNetworkGrouping.rows.find((row) => row.step.id === calloutForkPoint.id)?.forks.length ?? 0
+    : forkNetwork.length
 
   return (
     <section
@@ -763,7 +780,8 @@ export default async function ProjectCommunityPanel({
         projectTitle={project?.title}
         sourceSteps={sourceSteps}
         parentForkId={forkSource ? projectId : undefined}
-        depth={forkSource ? forkSource.depth + 1 : 0}
+        depth={calloutDepth}
+        branchIndex={calloutBranchIndex}
         promptFamilyId={forkSource?.promptFamilyId}
       />
       <div className="border-t border-surface-200 pt-10">

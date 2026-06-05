@@ -40,6 +40,7 @@ const {
   PROJECT_FORK_MAX_DEPTH,
   PROJECT_FORK_MAX_WIDTH,
   buildProjectForkHref,
+  buildProjectResponseForkHref,
   createProjectForkDraftContract,
   groupProjectForkNetworkBySourceStep,
   normalizeProjectForkSource,
@@ -168,6 +169,49 @@ assert(href.includes('forkStep=source-step-2'), 'fork href should include exact 
 assert(href.includes('forkStepNumber=2'), 'fork href should include response step number')
 assert(href.includes('parentFork=parent-project'), 'fork href should include immediate parent project id')
 assert(href.includes('promptFamily=source-project%3Asource-step-2'), 'fork href should include prompt family identity')
+
+const responseHref = buildProjectResponseForkHref({
+  sourceProjectId: 'source-project',
+  sourceProjectTitle: 'Source Project',
+  sourceStepId: 'source-step-1',
+  sourceStepNumber: 1,
+})
+assert(responseHref?.includes('fork=source-project'), 'response fork href should include source project id')
+assert(responseHref?.includes('forkStep=source-step-1'), 'response fork href should include exact response step id')
+assert(responseHref?.includes('forkStepNumber=1'), 'response fork href should include exact response step number')
+assert(responseHref?.includes('promptFamily=source-project%3Asource-step-1'), 'response fork href should derive a response prompt family id')
+assert(!responseHref?.includes('parentFork='), 'root response fork href should not claim an immediate parent fork')
+
+const nestedResponseHref = buildProjectResponseForkHref({
+  sourceProjectId: 'current-fork-project',
+  sourceProjectTitle: 'Current Fork Project',
+  sourceStepId: 'current-step-3',
+  sourceStepNumber: 3,
+  currentForkSource: {
+    sourceProjectId: 'root-project',
+    sourceStepId: 'root-step-2',
+    sourceStepNumber: 2,
+    depth: 1,
+    branchIndex: 0,
+    promptFamilyId: 'root-project:root-step-2',
+  },
+})
+assert(nestedResponseHref?.includes('fork=current-fork-project'), 'nested response fork href should start from the current fork project')
+assert(nestedResponseHref?.includes('parentFork=current-fork-project'), 'nested response fork href should preserve the immediate parent fork id')
+assert(nestedResponseHref?.includes('forkDepth=2'), 'nested response fork href should advance fork depth')
+assert(nestedResponseHref?.includes('promptFamily=root-project%3Aroot-step-2'), 'nested response fork href should preserve the inherited prompt family id')
+
+const maxedResponseHref = buildProjectResponseForkHref({
+  sourceProjectId: 'maxed-fork-project',
+  sourceStepId: 'maxed-step-1',
+  sourceStepNumber: 1,
+  currentForkSource: {
+    sourceProjectId: 'root-project',
+    depth: PROJECT_FORK_MAX_DEPTH - 1,
+    branchIndex: 0,
+  },
+})
+assert(maxedResponseHref === null, 'response fork href should stop at the max-depth boundary')
 
 const fields = projectForkSourceToSubmissionFields({
   sourceProjectId: 'source-project',

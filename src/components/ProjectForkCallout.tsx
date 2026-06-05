@@ -4,6 +4,7 @@ import {
   buildProjectForkHref,
   createProjectForkDraftContract,
   PROJECT_FORK_MAX_DEPTH,
+  PROJECT_FORK_MAX_WIDTH,
   type ProjectForkSourceStep,
 } from '@/lib/project-forks'
 import ProjectForkLineageScaffold from './ProjectForkLineageScaffold'
@@ -44,7 +45,8 @@ export default function ProjectForkCallout({
     : null
   const forkPointStep = contract?.forkPointStep
   const canForkDeeper = depth < PROJECT_FORK_MAX_DEPTH
-  const forkHref = canForkDeeper
+  const canForkWider = branchIndex < PROJECT_FORK_MAX_WIDTH
+  const forkHref = canForkDeeper && canForkWider
     ? buildProjectForkHref({
         ...source,
         sourceStepId: sourceStepId ?? forkPointStep?.id,
@@ -52,6 +54,16 @@ export default function ProjectForkCallout({
         promptFamilyId: promptFamilyId ?? contract?.promptFamilyId,
       })
     : null
+  const terminalLabel = !canForkDeeper
+    ? 'Max fork depth reached'
+    : !canForkWider
+      ? 'Max branch width reached'
+      : null
+  const terminalBody = !canForkDeeper
+    ? `This branch is already at ${PROJECT_FORK_MAX_DEPTH} linked fork levels.`
+    : !canForkWider
+      ? `This response already has ${PROJECT_FORK_MAX_WIDTH} approved fork branches.`
+      : null
 
   return (
     <div className="mb-10 border border-surface-200 bg-white">
@@ -96,10 +108,10 @@ export default function ProjectForkCallout({
                 className="inline-flex w-full cursor-not-allowed items-center justify-center gap-2 border border-surface-700 bg-surface-800 px-4 py-3 text-sm font-semibold text-surface-400"
               >
                 <GitFork className="h-4 w-4" aria-hidden="true" />
-                Max fork depth reached
+                {terminalLabel}
               </button>
               <p className="mt-3 text-xs leading-5 text-surface-400">
-                This branch is already at {PROJECT_FORK_MAX_DEPTH} linked fork levels.
+                {terminalBody}
               </p>
             </>
           )}

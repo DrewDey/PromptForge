@@ -621,31 +621,47 @@ function throwReadableSourceRunError(error: { code?: string; message?: string } 
 }
 
 function titleColumnMissing(error: { code?: string; message?: string } | null) {
+  const message = error?.message?.toLowerCase() ?? ''
   return Boolean(
     error &&
     (
       error.code === '42703' ||
-      error.message?.toLowerCase().includes('title') &&
-      error.message?.toLowerCase().includes('source_run_submissions')
-    )
+      error.code === 'PGRST204'
+    ) &&
+    message.includes('title') &&
+    message.includes('source_run_submissions')
+  )
+}
+
+const SOURCE_RUN_FORK_COLUMNS = [
+  'fork_source_project_id',
+  'fork_source_project_title',
+  'fork_source_step_id',
+  'fork_source_step_number',
+  'fork_parent_submission_id',
+  'prompt_family_id',
+  'fork_depth',
+  'fork_branch_index',
+]
+
+function errorMentionsAnyColumn(error: { message?: string } | null, columnNames: string[]) {
+  const message = error?.message?.toLowerCase() ?? ''
+  return columnNames.some((columnName) => message.includes(columnName))
+}
+
+function columnMissingError(error: { code?: string; message?: string } | null, columnNames: string[]) {
+  return Boolean(
+    error &&
+    (
+      error.code === '42703' ||
+      error.code === 'PGRST204'
+    ) &&
+    errorMentionsAnyColumn(error, columnNames)
   )
 }
 
 function sourceRunForkColumnsMissing(error: { code?: string; message?: string } | null) {
-  const message = error?.message?.toLowerCase() ?? ''
-  return Boolean(
-    error?.code === '42703' &&
-    (
-      message.includes('fork_source_project_id') ||
-      message.includes('fork_source_project_title') ||
-      message.includes('fork_source_step_id') ||
-      message.includes('fork_source_step_number') ||
-      message.includes('fork_parent_submission_id') ||
-      message.includes('prompt_family_id') ||
-      message.includes('fork_depth') ||
-      message.includes('fork_branch_index')
-    )
-  )
+  return columnMissingError(error, SOURCE_RUN_FORK_COLUMNS)
 }
 
 function forkColumnsMissing(error: { code?: string; message?: string } | null) {
@@ -850,11 +866,31 @@ export async function publishPreparedShowcaseProjectFromSourceRun(
   }
 
   const { supabase, user } = await requireAdminAccess()
-  const { data: sourceRun, error: sourceRunError } = await supabase
+  let { data: sourceRun, error: sourceRunError } = await supabase
     .from('source_run_submissions')
     .select('id, author_id, fork_source_project_id, fork_source_project_title, fork_source_step_id, fork_source_step_number, fork_parent_submission_id, prompt_family_id, fork_depth, fork_branch_index')
     .eq('id', sourceRunId)
     .maybeSingle()
+
+  if (sourceRunForkColumnsMissing(sourceRunError)) {
+    const fallbackResult = await supabase
+      .from('source_run_submissions')
+      .select('id, author_id')
+      .eq('id', sourceRunId)
+      .maybeSingle()
+    sourceRun = fallbackResult.data ? {
+      ...fallbackResult.data,
+      fork_source_project_id: null,
+      fork_source_project_title: null,
+      fork_source_step_id: null,
+      fork_source_step_number: null,
+      fork_parent_submission_id: null,
+      prompt_family_id: null,
+      fork_depth: null,
+      fork_branch_index: null,
+    } : null
+    sourceRunError = fallbackResult.error
+  }
 
   throwReadableSourceRunError(sourceRunError)
   if (!sourceRun) throw new Error('Source run not found.')

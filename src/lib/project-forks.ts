@@ -59,6 +59,16 @@ export type CreateProjectForkDraftInput = {
   sourceRunUrl?: string
 }
 
+export type BuildProjectResponseForkHrefInput = {
+  sourceProjectId: string
+  sourceProjectTitle?: string
+  sourceStepId: string
+  sourceStepNumber?: number
+  currentForkSource?: ProjectForkSource | null
+  promptFamilyId?: string
+  branchIndex?: number
+}
+
 export type ProjectForkSourceSubmissionFields = {
   fork_source_project_id?: string | null
   fork_source_project_title?: string | null
@@ -179,6 +189,30 @@ export function buildProjectForkHref(source: Partial<ProjectForkSource> & { sour
   if (normalized.promptFamilyId) params.set(PROJECT_FORK_QUERY_KEYS.promptFamilyId, normalized.promptFamilyId)
 
   return `/build?${params.toString()}`
+}
+
+export function buildProjectResponseForkHref({
+  sourceProjectId,
+  sourceProjectTitle,
+  sourceStepId,
+  sourceStepNumber,
+  currentForkSource,
+  promptFamilyId,
+  branchIndex = 0,
+}: BuildProjectResponseForkHrefInput) {
+  const nextDepth = currentForkSource ? currentForkSource.depth + 1 : 0
+  if (nextDepth >= PROJECT_FORK_MAX_DEPTH) return null
+
+  return buildProjectForkHref({
+    sourceProjectId,
+    sourceProjectTitle,
+    sourceStepId,
+    sourceStepNumber,
+    parentForkId: currentForkSource ? sourceProjectId : undefined,
+    depth: nextDepth,
+    branchIndex,
+    promptFamilyId: currentForkSource?.promptFamilyId ?? promptFamilyId ?? `${sourceProjectId}:${sourceStepId}`,
+  })
 }
 
 export function projectForkSourceToSubmissionFields(

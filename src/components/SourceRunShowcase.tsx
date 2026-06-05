@@ -5,7 +5,7 @@ import Link from 'next/link'
 import { useMemo, useState } from 'react'
 import { AlertTriangle, ArrowRight, CheckCircle2, ExternalLink, FileCode2, GitBranch, GitFork } from 'lucide-react'
 import CopyButton from '@/app/prompt/[id]/CopyButton'
-import { buildProjectForkHref } from '@/lib/project-forks'
+import { buildProjectResponseForkHref } from '@/lib/project-forks'
 
 export type SourceRunShowcaseCallout = {
   tone: 'warning' | 'success' | 'neutral'
@@ -599,14 +599,14 @@ export default function SourceRunShowcase({
             const artifactPackages = packages.filter((pkg) => pkg.stepId === step.id)
             const selectedStepPackage = artifactPackages.find((pkg) => selectedPackage?.id === pkg.id)
             const forkHref = projectId
-              ? buildProjectForkHref({
+              ? buildProjectResponseForkHref({
                 sourceProjectId: projectId,
                 sourceProjectTitle: projectTitle,
                 sourceStepId: step.id,
                 sourceStepNumber: step.stepNumber,
                 promptFamilyId: `${projectId}:${step.id}`,
               })
-              : undefined
+              : null
 
             return (
               <Fragment key={step.id}>
@@ -625,7 +625,7 @@ export default function SourceRunShowcase({
                   terminal={index === steps.length - 1}
                   variant="response"
                   selected={Boolean(selectedStepPackage)}
-                  forkHref={forkHref}
+                  forkHref={forkHref ?? undefined}
                   forkLabel={`Fork ${projectTitle ?? 'this path'} from response package ${String(step.stepNumber).padStart(2, '0')}`}
                 >
                   <ResponsePackageCard

@@ -5,7 +5,16 @@ import Link from 'next/link'
 import { useMemo, useState } from 'react'
 import { AlertTriangle, ArrowRight, CheckCircle2, ExternalLink, FileCode2, GitBranch, GitFork } from 'lucide-react'
 import CopyButton from '@/app/prompt/[id]/CopyButton'
-import { buildProjectResponseForkHref } from '@/lib/project-forks'
+import {
+  PROJECT_FORK_MAX_DEPTH,
+  PROJECT_FORK_MAX_WIDTH,
+  buildProjectResponseForkHref,
+  formatProjectForkBranchCapacity,
+  groupProjectForkNetworkBySourceStep,
+  nextProjectForkBranchIndex,
+  type ProjectForkNetworkItem,
+  type ProjectForkSource,
+} from '@/lib/project-forks'
 
 export type SourceRunShowcaseCallout = {
   tone: 'warning' | 'success' | 'neutral'
@@ -111,37 +120,90 @@ function PromptText({ text }: { text: string }) {
 function ResponseForkHoverRail({
   forkHref,
   forkLabel,
+  disabledLabel,
+  disabledBody,
+  capacityLabel,
 }: {
-  forkHref: string
+  forkHref?: string
   forkLabel?: string
+  disabledLabel?: string
+  disabledBody?: string
+  capacityLabel?: string
 }) {
+  const isDisabled = !forkHref
+
   return (
     <>
       <span
         data-response-fork-socket
-        className="absolute right-[-18px] top-[46px] z-10 hidden h-12 w-12 border-4 border-[#07551f] bg-[#effdf3] shadow-[0_0_0_0_rgba(43,209,95,0)] transition duration-300 group-hover/source-fork-node:shadow-[0_0_0_8px_rgba(43,209,95,0.18)] group-focus-within/source-fork-node:shadow-[0_0_0_8px_rgba(43,209,95,0.18)] motion-safe:group-hover/source-fork-node:animate-pulse xl:block"
+        data-response-fork-disabled={isDisabled ? 'true' : undefined}
+        className={[
+          'absolute right-[-18px] top-[46px] z-10 hidden h-12 w-12 border-4 shadow-[0_0_0_0_rgba(43,209,95,0)] transition duration-300 group-hover/source-fork-node:shadow-[0_0_0_8px_rgba(43,209,95,0.18)] group-focus-within/source-fork-node:shadow-[0_0_0_8px_rgba(43,209,95,0.18)] xl:block',
+          isDisabled
+            ? 'border-surface-500 bg-surface-100'
+            : 'border-[#07551f] bg-[#effdf3] motion-safe:group-hover/source-fork-node:animate-pulse',
+        ].join(' ')}
         aria-hidden="true"
       >
-        <span className="absolute left-1/2 top-1/2 h-4 w-4 -translate-x-1/2 -translate-y-1/2 border-2 border-[#07551f] bg-[#2bd15f]" />
+        <span
+          className={[
+            'absolute left-1/2 top-1/2 h-4 w-4 -translate-x-1/2 -translate-y-1/2 border-2',
+            isDisabled ? 'border-surface-500 bg-surface-300' : 'border-[#07551f] bg-[#2bd15f]',
+          ].join(' ')}
+        />
       </span>
 
       <div
         data-response-fork-hover-rail
+        data-response-fork-disabled={isDisabled ? 'true' : undefined}
         className="pointer-events-none absolute right-[-8px] top-[47px] z-20 hidden translate-x-3 items-center opacity-0 transition duration-300 group-hover/source-fork-node:pointer-events-auto group-hover/source-fork-node:translate-x-0 group-hover/source-fork-node:opacity-100 group-focus-within/source-fork-node:pointer-events-auto group-focus-within/source-fork-node:translate-x-0 group-focus-within/source-fork-node:opacity-100 xl:flex"
       >
         <div className="relative h-12 w-32 shrink-0" aria-hidden="true">
-          <span className="absolute left-0 top-1/2 h-5 w-full origin-left -translate-y-1/2 scale-x-0 border-y-4 border-[#07551f] bg-[#2bd15f] shadow-[inset_0_5px_0_rgba(255,255,255,0.2),inset_0_-5px_0_rgba(0,0,0,0.16)] transition-transform duration-300 group-hover/source-fork-node:scale-x-100 group-focus-within/source-fork-node:scale-x-100" />
-          <span className="absolute right-[-2px] top-1/2 h-9 w-9 -translate-y-1/2 border-4 border-[#07551f] bg-[#effdf3] shadow-[0_0_0_6px_rgba(43,209,95,0.16)]" />
+          <span
+            className={[
+              'absolute left-0 top-1/2 h-5 w-full origin-left -translate-y-1/2 scale-x-0 border-y-4 shadow-[inset_0_5px_0_rgba(255,255,255,0.2),inset_0_-5px_0_rgba(0,0,0,0.16)] transition-transform duration-300 group-hover/source-fork-node:scale-x-100 group-focus-within/source-fork-node:scale-x-100',
+              isDisabled ? 'border-surface-500 bg-surface-300' : 'border-[#07551f] bg-[#2bd15f]',
+            ].join(' ')}
+          />
+          <span
+            className={[
+              'absolute right-[-2px] top-1/2 h-9 w-9 -translate-y-1/2 border-4',
+              isDisabled
+                ? 'border-surface-500 bg-surface-100 shadow-[0_0_0_6px_rgba(148,163,184,0.16)]'
+                : 'border-[#07551f] bg-[#effdf3] shadow-[0_0_0_6px_rgba(43,209,95,0.16)]',
+            ].join(' ')}
+          />
         </div>
-        <Link
-          href={forkHref}
-          className="inline-flex min-h-11 shrink-0 translate-x-[-10px] items-center gap-2 border-2 border-[#07551f] bg-white px-3 py-2 text-xs font-black uppercase tracking-[0.12em] text-[#07551f] shadow-[0_14px_34px_rgba(7,85,31,0.18)] transition duration-300 hover:bg-[#effdf3] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#2bd15f] group-hover/source-fork-node:translate-x-0 group-focus-within/source-fork-node:translate-x-0"
-          aria-label={forkLabel}
-        >
-          <GitFork className="h-3.5 w-3.5" aria-hidden="true" />
-          Fork here
-          <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
-        </Link>
+        {forkHref ? (
+          <Link
+            href={forkHref}
+            className="inline-flex min-h-11 shrink-0 translate-x-[-10px] items-center gap-2 border-2 border-[#07551f] bg-white px-3 py-2 text-xs font-black uppercase tracking-[0.12em] text-[#07551f] shadow-[0_14px_34px_rgba(7,85,31,0.18)] transition duration-300 hover:bg-[#effdf3] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#2bd15f] group-hover/source-fork-node:translate-x-0 group-focus-within/source-fork-node:translate-x-0"
+            aria-label={forkLabel}
+          >
+            <GitFork className="h-3.5 w-3.5" aria-hidden="true" />
+            <span>Fork here</span>
+            {capacityLabel && (
+              <span className="border-l border-[#07551f]/25 pl-2 font-mono text-[10px] text-[#07551f]/70">
+                {capacityLabel}
+              </span>
+            )}
+            <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
+          </Link>
+        ) : (
+          <span
+            className="inline-flex min-h-11 shrink-0 translate-x-[-10px] items-center gap-2 border-2 border-surface-500 bg-white px-3 py-2 text-xs font-black uppercase tracking-[0.12em] text-surface-500 shadow-[0_14px_34px_rgba(71,85,105,0.12)] transition duration-300 group-hover/source-fork-node:translate-x-0 group-focus-within/source-fork-node:translate-x-0"
+            aria-label={disabledBody}
+            title={disabledBody}
+          >
+            <GitFork className="h-3.5 w-3.5" aria-hidden="true" />
+            <span>{disabledLabel}</span>
+            {capacityLabel && (
+              <span className="border-l border-surface-300 pl-2 font-mono text-[10px] text-surface-400">
+                {capacityLabel}
+              </span>
+            )}
+          </span>
+        )}
       </div>
     </>
   )
@@ -156,6 +218,9 @@ function PipeNode({
   selected = false,
   forkHref,
   forkLabel,
+  forkDisabledLabel,
+  forkDisabledBody,
+  forkCapacityLabel,
 }: {
   eyebrow: string
   title: string
@@ -165,6 +230,9 @@ function PipeNode({
   selected?: boolean
   forkHref?: string
   forkLabel?: string
+  forkDisabledLabel?: string
+  forkDisabledBody?: string
+  forkCapacityLabel?: string
 }) {
   const cardClassName = [
     'relative border bg-white p-5 shadow-[0_18px_44px_rgba(24,24,27,0.07)]',
@@ -173,6 +241,7 @@ function PipeNode({
       : 'border-surface-200',
   ].join(' ')
   const canFork = variant === 'response' && Boolean(forkHref)
+  const hasForkTerminal = variant === 'response' && Boolean(forkDisabledLabel)
 
   return (
     <article className="group/source-fork-node relative pl-[88px]" data-source-run-node={variant}>
@@ -181,8 +250,14 @@ function PipeNode({
       )}
       <div className="absolute left-0 top-8 h-16 w-12 border-4 border-[#07551f] bg-[#2bd15f] shadow-[inset_6px_0_0_rgba(255,255,255,0.28),inset_-6px_0_0_rgba(0,0,0,0.18)]" />
       <div className="absolute left-11 top-[54px] h-7 w-12 border-y-4 border-[#07551f] bg-[#2bd15f] shadow-[inset_0_5px_0_rgba(255,255,255,0.18),inset_0_-5px_0_rgba(0,0,0,0.16)]" />
-      {canFork && forkHref && (
-        <ResponseForkHoverRail forkHref={forkHref} forkLabel={forkLabel} />
+      {(canFork || hasForkTerminal) && (
+        <ResponseForkHoverRail
+          forkHref={forkHref}
+          forkLabel={forkLabel}
+          disabledLabel={forkDisabledLabel}
+          disabledBody={forkDisabledBody}
+          capacityLabel={forkCapacityLabel}
+        />
       )}
       <div className={cardClassName}>
         <div className="font-mono text-[10px] uppercase tracking-[0.18em] text-surface-500">
@@ -199,9 +274,31 @@ function PipeNode({
             <span className="absolute left-0 top-1/2 h-2 w-8 -translate-y-1/2 border-y border-[#07551f] bg-[#2bd15f]" aria-hidden="true" />
             <span className="absolute left-6 top-1/2 h-4 w-4 -translate-y-1/2 border-2 border-[#07551f] bg-white" aria-hidden="true" />
             <GitFork className="h-3.5 w-3.5" aria-hidden="true" />
-            Fork from this response
+            <span>Fork from this response</span>
+            {forkCapacityLabel && (
+              <span className="font-mono text-[10px] text-[#07551f]/70">
+                {forkCapacityLabel}
+              </span>
+            )}
             <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
           </Link>
+        )}
+        {!canFork && hasForkTerminal && (
+          <span
+            data-response-fork-disabled="true"
+            className="relative mt-4 inline-flex min-h-11 items-center gap-2 border border-surface-400 bg-surface-100 py-2 pl-10 pr-3 text-xs font-black uppercase tracking-[0.12em] text-surface-500 xl:hidden"
+            title={forkDisabledBody}
+          >
+            <span className="absolute left-0 top-1/2 h-2 w-8 -translate-y-1/2 border-y border-surface-500 bg-surface-300" aria-hidden="true" />
+            <span className="absolute left-6 top-1/2 h-4 w-4 -translate-y-1/2 border-2 border-surface-500 bg-white" aria-hidden="true" />
+            <GitFork className="h-3.5 w-3.5" aria-hidden="true" />
+            <span>{forkDisabledLabel}</span>
+            {forkCapacityLabel && (
+              <span className="font-mono text-[10px] text-surface-400">
+                {forkCapacityLabel}
+              </span>
+            )}
+          </span>
         )}
       </div>
     </article>
@@ -450,6 +547,8 @@ export default function SourceRunShowcase({
   sourceRunId,
   projectId,
   projectTitle,
+  forkNetwork = [],
+  currentForkSource,
   providerName,
   steps,
   defaultStepNumber,
@@ -460,6 +559,8 @@ export default function SourceRunShowcase({
   sourceRunId?: string
   projectId?: string
   projectTitle?: string
+  forkNetwork?: ProjectForkNetworkItem[]
+  currentForkSource?: ProjectForkSource | null
   providerName: string
   steps: SourceRunShowcaseStep[]
   defaultStepNumber?: number
@@ -517,6 +618,24 @@ export default function SourceRunShowcase({
   const [selectedPackageId, setSelectedPackageId] = useState(defaultPackage?.id ?? '')
   const selectedPackage =
     packages.find((pkg) => pkg.id === selectedPackageId) ?? defaultPackage ?? packages[0]
+  const forkSourceSteps = useMemo(
+    () => steps.map((step) => ({
+      id: step.id,
+      stepNumber: step.stepNumber,
+      promptTitle: step.title,
+      promptText: step.prompt,
+      responseText: step.response,
+      responsePackageId: step.id,
+      artifactPath: step.artifactPath,
+    })),
+    [steps],
+  )
+  const forkBranchIndexByStepId = useMemo(() => (
+    new Map(
+      groupProjectForkNetworkBySourceStep(forkSourceSteps, forkNetwork).rows
+        .map((row) => [row.step.id, nextProjectForkBranchIndex(row.forks)]),
+    )
+  ), [forkNetwork, forkSourceSteps])
 
   return (
     <>
@@ -598,13 +717,37 @@ export default function SourceRunShowcase({
           {steps.map((step, index) => {
             const artifactPackages = packages.filter((pkg) => pkg.stepId === step.id)
             const selectedStepPackage = artifactPackages.find((pkg) => selectedPackage?.id === pkg.id)
-            const forkHref = projectId
+            const nextBranchIndex = forkBranchIndexByStepId.get(step.id)
+            const branchIndex = nextBranchIndex === undefined ? 0 : nextBranchIndex
+            const nextForkDepth = currentForkSource ? currentForkSource.depth + 1 : 0
+            const rootResponseForkSource = {
+              promptFamilyId: `${projectId}:${step.id}`,
+            }
+            const isMaxDepth = nextForkDepth >= PROJECT_FORK_MAX_DEPTH
+            const forkDisabledLabel = projectId
+              ? isMaxDepth
+                ? 'Max depth'
+                : branchIndex === null
+                  ? 'Branch full'
+                  : undefined
+              : undefined
+            const forkDisabledBody = isMaxDepth
+              ? `This branch is already at ${PROJECT_FORK_MAX_DEPTH} linked fork levels.`
+              : branchIndex === null
+                ? `This response already has ${PROJECT_FORK_MAX_WIDTH} approved fork branches.`
+                : undefined
+            const forkCapacityLabel = projectId
+              ? formatProjectForkBranchCapacity(branchIndex)
+              : undefined
+            const forkHref = projectId && !isMaxDepth && branchIndex !== null
               ? buildProjectResponseForkHref({
                 sourceProjectId: projectId,
                 sourceProjectTitle: projectTitle,
                 sourceStepId: step.id,
                 sourceStepNumber: step.stepNumber,
-                promptFamilyId: `${projectId}:${step.id}`,
+                currentForkSource,
+                branchIndex,
+                promptFamilyId: currentForkSource?.promptFamilyId ?? rootResponseForkSource.promptFamilyId,
               })
               : null
 
@@ -627,6 +770,9 @@ export default function SourceRunShowcase({
                   selected={Boolean(selectedStepPackage)}
                   forkHref={forkHref ?? undefined}
                   forkLabel={`Fork ${projectTitle ?? 'this path'} from response package ${String(step.stepNumber).padStart(2, '0')}`}
+                  forkDisabledLabel={forkDisabledLabel}
+                  forkDisabledBody={forkDisabledBody}
+                  forkCapacityLabel={forkCapacityLabel}
                 >
                   <ResponsePackageCard
                     step={step}

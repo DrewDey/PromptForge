@@ -11,9 +11,11 @@ import {
   createSuggestion,
   createSuggestionResponse,
   declineSuggestionById,
+  getAllSourceRunSubmissionsForAdmin,
   getSourceRunSubmissionByPromptIdForAdmin,
   keepSuggestionPrivateById,
   publishPreparedShowcaseProjectFromSourceRun,
+  repairPublishedPreparedShowcasePromptSteps,
   toggleBuildRequestVote,
   toggleBookmark,
   toggleSuggestionVote,
@@ -22,7 +24,7 @@ import {
   updateSourceRunStatusById,
   updateSuggestionPublicStatusById,
 } from './data'
-import { getPreparedShowcaseProjectById } from './prepared-showcase-projects'
+import { getPreparedShowcaseProjectById, getPreparedShowcaseProjectBySourceRunId } from './prepared-showcase-projects'
 import type { ProjectForkSource } from './project-forks'
 import type { SuggestionPublicStatus, SuggestionResponseVisibility } from './types'
 
@@ -164,6 +166,43 @@ export async function publishPreparedShowcaseSourceRun(formData: FormData) {
   revalidatePath('/paths')
   revalidatePath('/browse')
   revalidatePath(`/user/${project.authorUsername}`)
+}
+
+export async function publishAllPreparedShowcaseSourceRuns() {
+  const sourceRuns = await getAllSourceRunSubmissionsForAdmin()
+  const publishableRuns = sourceRuns
+    .filter(sourceRun => (
+      (sourceRun.status === 'queued' || sourceRun.status === 'extracting') &&
+      !sourceRun.extracted_prompt_id
+    ))
+    .map(sourceRun => ({
+      sourceRun,
+      project: getPreparedShowcaseProjectBySourceRunId(sourceRun.id),
+    }))
+    .filter((entry): entry is {
+      sourceRun: typeof sourceRuns[number]
+      project: NonNullable<ReturnType<typeof getPreparedShowcaseProjectBySourceRunId>>
+    } => Boolean(entry.project))
+
+  for (const { sourceRun, project } of publishableRuns) {
+    await publishPreparedShowcaseProjectFromSourceRun(sourceRun.id, project)
+    revalidatePath(`/admin/source-runs/${sourceRun.id}`)
+    revalidatePath(project.href)
+    revalidatePath(`/user/${project.authorUsername}`)
+  }
+
+  revalidatePath('/admin')
+  revalidatePath('/paths')
+  revalidatePath('/browse')
+  revalidatePath('/')
+}
+
+export async function repairPreparedShowcasePromptSteps() {
+  await repairPublishedPreparedShowcasePromptSteps()
+  revalidatePath('/admin')
+  revalidatePath('/paths')
+  revalidatePath('/browse')
+  revalidatePath('/')
 }
 
 export async function submitSuggestion(

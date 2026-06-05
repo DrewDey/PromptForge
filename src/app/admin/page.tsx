@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import { publishAllPreparedShowcaseSourceRuns, repairPreparedShowcasePromptSteps } from '@/lib/actions'
 import { getAllPromptsForAdmin, getAllSourceRunSubmissionsForAdmin, getAllSuggestionsForAdmin } from '@/lib/data'
 import { getPreparedShowcaseProjectBySourceRunId } from '@/lib/prepared-showcase-projects'
 import { projectForkSourceFromSubmissionFields } from '@/lib/project-forks'
@@ -56,6 +57,17 @@ export default async function AdminDashboard({
     (sourceRun.status === 'queued' || sourceRun.status === 'extracting') &&
     !sourceRun.extracted_prompt_id
   ))
+  const preparedIntakeCount = intakeItems.filter(sourceRun => (
+    Boolean(getPreparedShowcaseProjectBySourceRunId(sourceRun.id))
+  )).length
+  const preparedPublishedCount = sourceRuns.filter(sourceRun => {
+    const preparedProject = getPreparedShowcaseProjectBySourceRunId(sourceRun.id)
+    return Boolean(
+      preparedProject &&
+      sourceRun.status !== 'failed' &&
+      sourceRun.extracted_prompt_id === preparedProject.id
+    )
+  }).length
   const sourceRunByPromptId = new Map(
     sourceRuns
       .filter(sourceRun => sourceRun.extracted_prompt_id)
@@ -100,14 +112,38 @@ export default async function AdminDashboard({
       {/* Pending Review */}
       {(tab === 'overview' || tab === 'pending') && (
         <section className="mb-10">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-            Pending Review
-            {reviewCount > 0 && (
-              <span className="bg-amber-50 text-amber-700 text-xs font-semibold px-2 py-0.5">
-                {reviewCount}
-              </span>
-            )}
-          </h2>
+          <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <h2 className="flex items-center gap-2 text-lg font-semibold text-gray-900">
+              Pending Review
+              {reviewCount > 0 && (
+                <span className="bg-amber-50 text-amber-700 text-xs font-semibold px-2 py-0.5">
+                  {reviewCount}
+                </span>
+              )}
+            </h2>
+            <div className="flex flex-wrap gap-2">
+              {preparedPublishedCount > 0 && (
+                <form action={repairPreparedShowcasePromptSteps}>
+                  <button
+                    type="submit"
+                    className="inline-flex items-center justify-center border border-blue-200 bg-blue-50 px-3 py-2 text-xs font-semibold text-blue-800 hover:bg-blue-100"
+                  >
+                    Repair prepared prompt steps ({preparedPublishedCount})
+                  </button>
+                </form>
+              )}
+              {preparedIntakeCount > 0 && (
+                <form action={publishAllPreparedShowcaseSourceRuns}>
+                  <button
+                    type="submit"
+                    className="inline-flex items-center justify-center bg-green-700 px-3 py-2 text-xs font-semibold text-white hover:bg-green-800"
+                  >
+                    Publish all prepared source runs ({preparedIntakeCount})
+                  </button>
+                </form>
+              )}
+            </div>
+          </div>
           {reviewCount === 0 ? (
             <div className="bg-white border border-gray-200 p-8 text-center text-gray-500 text-sm">
               No prompts pending review. All caught up!

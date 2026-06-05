@@ -2,6 +2,7 @@ import type { PromptWithRelations } from './types'
 
 export const PROJECT_FORK_MAX_DEPTH = 10
 export const PROJECT_FORK_MAX_WIDTH = 10
+export const PROJECT_FORK_MAX_NETWORK_ITEMS = PROJECT_FORK_MAX_DEPTH * PROJECT_FORK_MAX_WIDTH
 
 export const PROJECT_FORK_QUERY_KEYS = {
   sourceProjectId: 'fork',
@@ -202,6 +203,7 @@ export function buildProjectResponseForkHref({
 }: BuildProjectResponseForkHrefInput) {
   const nextDepth = currentForkSource ? currentForkSource.depth + 1 : 0
   if (nextDepth >= PROJECT_FORK_MAX_DEPTH) return null
+  if (branchIndex >= PROJECT_FORK_MAX_WIDTH) return null
 
   return buildProjectForkHref({
     sourceProjectId,
@@ -213,6 +215,56 @@ export function buildProjectResponseForkHref({
     branchIndex,
     promptFamilyId: currentForkSource?.promptFamilyId ?? promptFamilyId ?? `${sourceProjectId}:${sourceStepId}`,
   })
+}
+
+export function projectForkMatchesSourceStep(
+  fork: ProjectForkNetworkItem,
+  step: ProjectForkSourceStep,
+) {
+  if (fork.forkSource.sourceStepId) return fork.forkSource.sourceStepId === step.id
+  return fork.forkSource.sourceStepNumber === step.stepNumber
+}
+
+export function projectForkParentProjectId(source: Pick<ProjectForkSource, 'sourceProjectId' | 'parentForkId'>) {
+  return source.parentForkId || source.sourceProjectId
+}
+
+export function projectForkIsDirectChildOfProject(
+  fork: ProjectForkNetworkItem,
+  projectId: string,
+) {
+  return projectForkParentProjectId(fork.forkSource) === projectId
+}
+
+export function nextProjectForkBranchIndex(
+  forks: ProjectForkNetworkItem[],
+  maxWidth = PROJECT_FORK_MAX_WIDTH,
+) {
+  const usedIndexes = new Set(
+    forks
+      .map((fork) => fork.forkSource.branchIndex)
+      .filter((index) => Number.isInteger(index) && index >= 0 && index < maxWidth),
+  )
+
+  for (let index = 0; index < maxWidth; index += 1) {
+    if (!usedIndexes.has(index)) return index
+  }
+
+  return null
+}
+
+export function formatProjectForkBranchCapacity(branchIndex: number | null | undefined) {
+  if (branchIndex === null) return `${PROJECT_FORK_MAX_WIDTH}/${PROJECT_FORK_MAX_WIDTH} full`
+
+  const safeBranchIndex = typeof branchIndex === 'number' && Number.isFinite(branchIndex)
+    ? branchIndex
+    : 0
+  const branchNumber = Math.min(
+    PROJECT_FORK_MAX_WIDTH,
+    Math.max(1, Math.trunc(safeBranchIndex) + 1),
+  )
+
+  return `Branch ${String(branchNumber).padStart(2, '0')}/${PROJECT_FORK_MAX_WIDTH}`
 }
 
 export function projectForkSourceToSubmissionFields(
@@ -328,8 +380,7 @@ export function groupProjectForkNetworkBySourceStep(
   const matchedForkIds = new Set<string>()
   const rows = sourceSteps.map<ProjectForkNetworkRow>((step) => {
     const rowForks = forks.filter((fork) => {
-      const matches = fork.forkSource.sourceStepId === step.id ||
-        fork.forkSource.sourceStepNumber === step.stepNumber
+      const matches = projectForkMatchesSourceStep(fork, step)
       if (matches) matchedForkIds.add(fork.id)
       return matches
     })
@@ -360,13 +411,14 @@ export async function resolveProjectForkTrail<TProject extends ProjectForkTrailP
     const forkSource = projectForkSourceFromSubmissionFields(childProject)
     if (!forkSource) break
 
-    if (seenProjectIds.has(forkSource.sourceProjectId)) {
+    const parentProjectId = projectForkParentProjectId(forkSource)
+    if (seenProjectIds.has(parentProjectId)) {
       cycleDetected = true
       break
     }
 
-    const parentProject = await getProjectById(forkSource.sourceProjectId)
-    if (!parentProject) missingSourceProjectId = forkSource.sourceProjectId
+    const parentProject = await getProjectById(parentProjectId)
+    if (!parentProject) missingSourceProjectId = parentProjectId
 
     edges.push({ childProject, forkSource, parentProject })
     if (!parentProject) break

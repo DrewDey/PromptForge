@@ -106,6 +106,17 @@ function CapacityDots({
   )
 }
 
+function MobileForkLineageBreak({ label }: { label: string }) {
+  return (
+    <div className="relative flex items-center justify-center py-3" aria-hidden="true">
+      <div className="absolute left-1/2 top-0 h-full w-3 -translate-x-1/2 border-x-2 border-[#07551f] bg-[#2bd15f] shadow-[inset_3px_0_0_rgba(255,255,255,0.24),inset_-3px_0_0_rgba(0,0,0,0.18)]" />
+      <div className="relative border-2 border-[#07551f] bg-[#effdf3] px-3 py-1 font-mono text-[10px] font-bold uppercase tracking-[0.12em] text-[#07551f] shadow-[0_0_0_6px_rgba(43,209,95,0.16)]">
+        {label}
+      </div>
+    </div>
+  )
+}
+
 export default function ProjectForkLineageScaffold({
   source,
   sourceSteps,
@@ -127,8 +138,80 @@ export default function ProjectForkLineageScaffold({
     : 'Last response'
 
   return (
-    <div className="overflow-x-auto border-t border-surface-200 bg-surface-50">
-      <div className="min-w-[900px] p-4">
+    <div className="border-t border-surface-200 bg-surface-50">
+      <div className="grid gap-4 p-4 lg:hidden">
+        <section className="border border-surface-200 bg-white p-4">
+          <div className="font-mono text-[10px] font-bold uppercase tracking-[0.16em] text-surface-500">
+            Shared path collapses first
+          </div>
+          <div className="mt-2 text-sm font-black text-surface-900">
+            {sharedSegments.length > 0 ? `${sharedSegments.length} earlier response${sharedSegments.length > 1 ? 's' : ''}` : 'No earlier shared steps'}
+          </div>
+          <div className="mt-3 grid gap-2">
+            {sharedSegments.length > 0 ? sharedSegments.map((segment) => (
+              <ForkSegmentChip key={segment.id} segment={segment} />
+            )) : (
+              <div className="border border-dashed border-surface-300 bg-surface-50 px-3 py-2 text-xs leading-5 text-surface-500">
+                Fork starts from the first response.
+              </div>
+            )}
+          </div>
+          {originalContinuationSegments.length > 0 && (
+            <div className="mt-4 border-t border-surface-200 pt-3">
+              <div className="font-mono text-[10px] uppercase tracking-[0.14em] text-surface-400">
+                Original path after fork point
+              </div>
+              <div className="mt-2 grid gap-2">
+                {originalContinuationSegments.map((segment) => (
+                  <ForkSegmentChip key={segment.id} segment={segment} />
+                ))}
+              </div>
+            </div>
+          )}
+        </section>
+
+        <MobileForkLineageBreak label="Fork socket" />
+
+        <section className="border-2 border-[#07551f] bg-white p-4 shadow-[0_12px_28px_rgba(7,85,31,0.08)]">
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <div className="flex items-center gap-2 font-mono text-[10px] font-bold uppercase tracking-[0.16em] text-[#07551f]">
+                <GitFork className="h-3.5 w-3.5" aria-hidden="true" />
+                New fork lane
+              </div>
+              <div className="mt-2 text-base font-black text-surface-900">
+                Branch starts from {forkLabel}
+              </div>
+            </div>
+            <div className="border border-[#07551f] bg-[#effdf3] px-2 py-1 font-mono text-[10px] font-bold uppercase tracking-[0.12em] text-[#07551f]">
+              Live handoff
+            </div>
+          </div>
+
+          {forkPointSegment && (
+            <div className="mt-4">
+              <ForkSegmentChip segment={forkPointSegment} />
+            </div>
+          )}
+
+          <div className="mt-4 grid gap-3 border border-dashed border-[#07551f] bg-[#effdf3] p-3">
+            <div className="flex items-center gap-2 text-sm font-black text-surface-900">
+              <ArrowRight className="h-4 w-4 text-[#07551f]" aria-hidden="true" />
+              Your next prompt continues here
+            </div>
+            <p className="text-xs leading-5 text-surface-600">
+              The build flow opens with this project, response package, prompt family, depth, and branch coordinates attached.
+            </p>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <CapacityDots label="Depth" value={depthValue} max={contract.maxDepth} />
+              <CapacityDots label="Branch" value={branchValue} max={contract.maxWidth} />
+            </div>
+          </div>
+        </section>
+      </div>
+
+      <div className="hidden lg:block">
+        <div className="min-w-[900px] p-4">
         <div className="grid grid-cols-[minmax(0,1fr)_84px_minmax(0,1fr)] items-start gap-0">
           <section className="relative border border-surface-200 bg-white p-4">
             <div className="font-mono text-[10px] font-bold uppercase tracking-[0.16em] text-surface-500">
@@ -202,6 +285,7 @@ export default function ProjectForkLineageScaffold({
               </div>
             </div>
           </section>
+        </div>
         </div>
       </div>
     </div>

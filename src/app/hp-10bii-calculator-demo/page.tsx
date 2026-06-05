@@ -7,7 +7,9 @@ import SourceRunShowcase, {
   type SourceRunShowcaseArtifactVersion,
   type SourceRunShowcaseStep,
 } from '@/components/SourceRunShowcase'
+import { getApprovedProjectForks, getPublishedPromptByIdNoFallback } from '@/lib/data'
 import { HP_10BII_SHOWCASE_PROJECT } from '@/lib/prepared-showcase-projects'
+import { projectForkSourceFromSubmissionFields } from '@/lib/project-forks'
 import sourceRunPackage from '../../../seed-runs/hp-10bii-financial-calculator-claude-opus-48.json'
 
 const project = HP_10BII_SHOWCASE_PROJECT
@@ -130,11 +132,16 @@ function RunSummary() {
   )
 }
 
-export default function Hp10BiiCalculatorDemoPage() {
+export default async function Hp10BiiCalculatorDemoPage() {
   const sourceRun = sourceRunPackage as Hp10BiiSourceRunPackage
   const steps = sourceRun.steps.map((step) => (
     toShowcaseStep(step, sourceRun.artifact_versions ?? [], sourceRun.final_artifact_path)
   ))
+  const [publishedProject, forkNetwork] = await Promise.all([
+    getPublishedPromptByIdNoFallback(projectId),
+    getApprovedProjectForks(projectId),
+  ])
+  const currentForkSource = publishedProject ? projectForkSourceFromSubmissionFields(publishedProject) : null
 
   return (
     <main className="min-h-screen bg-surface-50 text-surface-900">
@@ -172,6 +179,8 @@ export default function Hp10BiiCalculatorDemoPage() {
         sourceRunId={sourceRun.pathforge_pending_id}
         projectId={projectId}
         projectTitle={project.title}
+        forkNetwork={forkNetwork}
+        currentForkSource={currentForkSource}
         providerName="Claude"
         steps={steps}
         defaultStepNumber={2}

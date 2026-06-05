@@ -425,10 +425,14 @@ for (const routePath of sharedShowcaseRoutes()) {
 
 mustInclude('src/app/admin/page.tsx', adminDashboard, 'Prepared page ready', 'admin dashboard must make prepared source-run rows obvious')
 mustInclude('src/app/admin/page.tsx', adminDashboard, 'Publish prepared page', 'admin dashboard prepared source-run action must be explicit')
+mustInclude('src/app/admin/page.tsx', adminDashboard, 'publishAllPreparedShowcaseSourceRuns', 'admin dashboard must expose the batch prepared source-run publish action')
 mustInclude('src/app/admin/page.tsx', adminDashboard, 'Source-run review', 'admin dashboard queued source runs must read as normal review items')
 mustInclude('src/app/admin/page.tsx', adminDashboard, 'No prepared public page yet.', 'admin dashboard must explain the unprepared source-run next step')
 mustInclude('src/app/admin/source-runs/[id]/page.tsx', adminSourceRunDetail, 'Next action: publish this prepared page from the review item.', 'admin detail must show the prepared-page next action')
 mustInclude('src/app/admin/source-runs/[id]/page.tsx', adminSourceRunDetail, 'Next action: structure a prepared public page, then return here to publish or decline it.', 'admin detail must show the unprepared source-run next action')
+mustInclude('src/components/PreparedSourceRunPage.tsx', preparedSourceRunPage, 'getPublishedPromptByIdNoFallback', 'prepared source-run wrapper must verify a real approved prompt row before rendering')
+mustInclude('src/components/PreparedSourceRunPage.tsx', preparedSourceRunPage, 'PATHFORGE_ALLOW_CODE_ONLY_SHOWCASES', 'prepared source-run wrapper must require an explicit local override for code-only previews')
+mustInclude('src/components/PreparedSourceRunPage.tsx', preparedSourceRunPage, 'notFound()', 'prepared source-run wrapper must reject unpublished routes instead of rendering code-only pages')
 
 for (const project of sourceRunProjects) {
   const routeContent = read(project.route)

@@ -9,7 +9,11 @@
     "check:hourly-seed-manager": "node scripts/check-hourly-seed-manager.mjs",
     "check:prompt-comparisons": "node scripts/check-prompt-comparisons.mjs",
     "check:project-forks": "node scripts/check-project-forks.mjs && node scripts/check-project-fork-behavior.mjs && node scripts/check-prompt-comparisons.mjs",
+    "backfill:source-run-prompt-steps": "node scripts/backfill-prepared-source-run-prompt-steps.mjs",
+    "backfill:source-run-prompt-steps:sql": "node scripts/backfill-prepared-source-run-prompt-steps.mjs --sql",
     "check:source-run-intake": "node scripts/check-source-run-intake.mjs",
+    "check:source-run-publication": "node scripts/check-source-run-publication.mjs",
+    "check:source-run-reupload-fixtures": "node scripts/check-source-run-reupload-fixtures.mjs",
     "check:source-run-showcases": "node scripts/check-source-run-showcases.mjs",
     "lint": "next lint"
   },

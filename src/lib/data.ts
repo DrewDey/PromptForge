@@ -58,14 +58,17 @@ import {
   WEEKEND_CHECKLIST_PROJECT_ID,
   WORD_LADDER_SPRINT_PROJECT_ID,
 } from './featured-projects'
-import { getPreparedShowcaseProjectById } from './prepared-showcase-projects'
+import { getPreparedShowcaseProjectById, getPreparedShowcaseProjectBySourceRunId } from './prepared-showcase-projects'
 import type { PreparedShowcaseProject, PreparedShowcaseStep } from './prepared-showcase-projects'
 import {
-  PROJECT_FORK_MAX_WIDTH,
+  PROJECT_FORK_MAX_DEPTH,
+  PROJECT_FORK_MAX_NETWORK_ITEMS,
+  projectForkIsDirectChildOfProject,
   projectForkSourceFromSubmissionFields,
   projectForkSourceToSubmissionFields,
   type ProjectForkNetworkItem,
   type ProjectForkSource,
+  type ProjectForkSourceSubmissionFields,
 } from './project-forks'
 import { composeSourceRunReviewNotes, detectSourceRunProvider } from './source-run-review'
 
@@ -107,6 +110,15 @@ const APPROVED_PROJECT_IDS = new Set([
   REACTION_TRAINER_PROJECT_ID,
   LANE_DEFENSE_PROJECT_ID,
 ])
+
+type ProjectForkNetworkRow = ProjectForkSourceSubmissionFields & {
+  id: string
+  title: string
+  description?: string | null
+  model_used?: string | null
+  created_at: string
+  status?: string | null
+}
 const PUBLIC_LIBRARY_START_AT = '2026-05-28T00:00:00.000Z'
 const publicMockPrompts = mockPrompts.filter((prompt) => APPROVED_PROJECT_IDS.has(prompt.id))
 const publicMockSteps = mockSteps.filter((step) => APPROVED_PROJECT_IDS.has(step.prompt_id))
@@ -177,6 +189,80 @@ function preparedStepToPromptStep(step: PreparedShowcaseStep, project: PreparedS
     result_content: step.resultContent,
     description: step.description,
     created_at: project.createdAt,
+  }
+}
+
+async function replacePromptStepsForPreparedProject(
+  supabase: { from: (table: 'prompt_steps') => any },
+  project: PreparedShowcaseProject
+) {
+  const { error: deleteError } = await supabase
+    .from('prompt_steps')
+    .delete()
+    .eq('prompt_id', project.id)
+
+  if (deleteError) throw deleteError
+
+  const stepRows = project.steps.map((step) => ({
+    prompt_id: project.id,
+    step_number: step.stepNumber,
+    title: step.title,
+    content: step.content,
+    result_content: step.resultContent || null,
+    description: step.description || null,
+    created_at: project.createdAt,
+  }))
+
+  if (stepRows.length === 0) {
+    throw new Error(`Prepared project ${project.id} has no prompt steps to publish.`)
+  }
+
+  const { error: insertError } = await supabase
+    .from('prompt_steps')
+    .insert(stepRows)
+
+  if (insertError) throw insertError
+
+  await assertPromptStepsForPreparedProject(supabase, project)
+}
+
+async function assertPromptStepsForPreparedProject(
+  supabase: { from: (table: 'prompt_steps') => any },
+  project: PreparedShowcaseProject
+) {
+  const { data, error } = await supabase
+    .from('prompt_steps')
+    .select('step_number,title')
+    .eq('prompt_id', project.id)
+    .order('step_number', { ascending: true })
+
+  if (error) throw error
+
+  const rows = data ?? []
+  if (rows.length !== project.steps.length) {
+    throw new Error(`Prepared project ${project.id} expected ${project.steps.length} prompt steps, found ${rows.length}.`)
+  }
+
+  for (let index = 0; index < project.steps.length; index += 1) {
+    const expected = project.steps[index]
+    const actual = rows[index]
+    if (actual.step_number !== expected.stepNumber) {
+      throw new Error(`Prepared project ${project.id} has non-sequential prompt step ${actual.step_number}; expected ${expected.stepNumber}.`)
+    }
+    if (actual.title !== expected.title) {
+      throw new Error(`Prepared project ${project.id} step ${expected.stepNumber} title mismatch after publish.`)
+    }
+  }
+}
+
+async function getPromptStepWriteClient(fallbackClient: { from: (table: 'prompt_steps') => any }) {
+  if (!process.env.SUPABASE_SERVICE_ROLE_KEY) return fallbackClient
+
+  try {
+    const { createAdminClient } = await import('./supabase/admin')
+    return createAdminClient()
+  } catch {
+    return fallbackClient
   }
 }
 
@@ -383,6 +469,28 @@ export async function getPromptById(id: string): Promise<PromptWithRelations | n
   })
 }
 
+export async function getPublishedPromptByIdNoFallback(id: string): Promise<PromptWithRelations | null> {
+  const resolvedId = id === SNAKE_PROJECT_LEGACY_ID ? SNAKE_PROJECT_ID : id
+  if (!SUPABASE_PUBLIC_READS_ENABLED) return null
+
+  try {
+    const { createClient } = await import('./supabase/server')
+    const supabase = await createClient()
+    const { data, error } = await supabase
+      .from('prompts')
+      .select('*, category:categories(*), author:profiles(*), steps:prompt_steps(*)')
+      .eq('id', resolvedId)
+      .eq('status', 'approved')
+      .maybeSingle()
+
+    if (error || !data) return null
+    if (!isPublicLibraryPrompt(data)) return null
+    return normalizeProjectPresentation(data as PromptWithRelations)
+  } catch {
+    return null
+  }
+}
+
 // ---- Profiles ----
 
 export async function getProfileByUsername(username: string): Promise<Profile | null> {
@@ -410,27 +518,88 @@ export async function getApprovedProjectForks(projectId: string): Promise<Projec
       .eq('status', 'approved')
       .or(`fork_source_project_id.eq.${projectId},fork_parent_submission_id.eq.${projectId}`)
       .order('created_at', { ascending: false })
-      .limit(PROJECT_FORK_MAX_WIDTH)
+      .limit(PROJECT_FORK_MAX_NETWORK_ITEMS)
 
     if (forkColumnsMissing(error)) return []
     if (error) throw error
 
-    return (data ?? [])
-      .filter(isPublicLibraryPrompt)
-      .reduce<ProjectForkNetworkItem[]>((forks, prompt) => {
-        const forkSource = projectForkSourceFromSubmissionFields(prompt)
-        if (!forkSource) return forks
+    return forkRowsToNetworkItems(data ?? [])
+      .filter((fork) => projectForkIsDirectChildOfProject(fork, projectId))
+  })
+}
 
-        forks.push({
-          id: prompt.id,
-          title: prompt.title,
-          description: prompt.description,
-          modelUsed: prompt.model_used,
-          createdAt: prompt.created_at,
-          forkSource,
-        })
-        return forks
-      }, [])
+function forkRowsToNetworkItems(rows: ProjectForkNetworkRow[]): ProjectForkNetworkItem[] {
+  return rows
+    .filter(isPublicLibraryPrompt)
+    .reduce<ProjectForkNetworkItem[]>((forks, prompt) => {
+      const forkSource = projectForkSourceFromSubmissionFields(prompt)
+      if (!forkSource) return forks
+
+      forks.push({
+        id: prompt.id,
+        title: prompt.title,
+        description: prompt.description,
+        modelUsed: prompt.model_used,
+        createdAt: prompt.created_at,
+        forkSource,
+      })
+      return forks
+    }, [])
+}
+
+export async function getApprovedProjectForkNetwork(projectId: string): Promise<ProjectForkNetworkItem[]> {
+  if (!projectId) return []
+
+  return readWithFallback([], async () => {
+    const { createClient } = await import('./supabase/server')
+    const supabase = await createClient()
+    const forks: ProjectForkNetworkItem[] = []
+    const seenForkIds = new Set<string>()
+    let frontierProjectIds = [projectId]
+
+    for (
+      let depth = 0;
+      depth < PROJECT_FORK_MAX_DEPTH && frontierProjectIds.length > 0 && forks.length < PROJECT_FORK_MAX_NETWORK_ITEMS;
+      depth += 1
+    ) {
+      const remaining = PROJECT_FORK_MAX_NETWORK_ITEMS - forks.length
+      const selectFields = 'id,title,description,model_used,created_at,status,fork_source_project_id,fork_source_project_title,fork_source_step_id,fork_source_step_number,fork_parent_submission_id,prompt_family_id,fork_depth,fork_branch_index'
+      const sourceQuery = supabase
+        .from('prompts')
+        .select(selectFields)
+        .eq('status', 'approved')
+        .in('fork_source_project_id', frontierProjectIds)
+        .order('created_at', { ascending: false })
+        .limit(remaining)
+      const parentQuery = supabase
+        .from('prompts')
+        .select(selectFields)
+        .eq('status', 'approved')
+        .in('fork_parent_submission_id', frontierProjectIds)
+        .order('created_at', { ascending: false })
+        .limit(remaining)
+      const [sourceResult, parentResult] = await Promise.all([sourceQuery, parentQuery])
+
+      if (forkColumnsMissing(sourceResult.error) || forkColumnsMissing(parentResult.error)) return []
+      if (sourceResult.error) throw sourceResult.error
+      if (parentResult.error) throw parentResult.error
+
+      const nextFrontierProjectIds: string[] = []
+      for (const fork of forkRowsToNetworkItems([
+        ...(sourceResult.data ?? []),
+        ...(parentResult.data ?? []),
+      ])) {
+        if (seenForkIds.has(fork.id) || fork.id === projectId) continue
+        seenForkIds.add(fork.id)
+        forks.push(fork)
+        nextFrontierProjectIds.push(fork.id)
+        if (forks.length >= PROJECT_FORK_MAX_NETWORK_ITEMS) break
+      }
+
+      frontierProjectIds = nextFrontierProjectIds
+    }
+
+    return forks
   })
 }
 
@@ -664,6 +833,17 @@ function sourceRunForkColumnsMissing(error: { code?: string; message?: string } 
   return columnMissingError(error, SOURCE_RUN_FORK_COLUMNS)
 }
 
+function activeSourceRunDuplicate(error: { code?: string; message?: string } | null) {
+  const message = error?.message?.toLowerCase() ?? ''
+  return Boolean(
+    error?.code === '23505' &&
+    (
+      message.includes('idx_source_run_submissions_active_author_source_url') ||
+      message.includes('source_run_submissions')
+    )
+  )
+}
+
 function forkColumnsMissing(error: { code?: string; message?: string } | null) {
   return sourceRunForkColumnsMissing(error)
 }
@@ -681,6 +861,24 @@ function omitForkFields<T extends Record<string, unknown>>(payload: T) {
     ...rest
   } = payload
   return rest
+}
+
+async function findActiveSourceRunSubmissionId(
+  client: { from: (table: 'source_run_submissions') => any },
+  authorId: string,
+  sourceUrl: string,
+) {
+  const { data, error } = await client
+    .from('source_run_submissions')
+    .select('id')
+    .eq('author_id', authorId)
+    .eq('source_url', sourceUrl)
+    .neq('status', 'failed')
+    .order('created_at', { ascending: false })
+    .limit(1)
+
+  throwReadableSourceRunError(error)
+  return data?.[0]?.id as string | undefined
 }
 
 export async function createSourceRunSubmission(input: {
@@ -733,6 +931,8 @@ export async function createSourceRunSubmission(input: {
     notes: input.notes,
   })
   const forkFields = projectForkSourceToSubmissionFields(input.fork_source)
+  const existingSourceRunId = await findActiveSourceRunSubmissionId(supabase, user.id, sourceUrl)
+  if (existingSourceRunId) return { id: existingSourceRunId }
 
   const payload = {
     title,
@@ -749,6 +949,11 @@ export async function createSourceRunSubmission(input: {
     .insert(payload)
     .select('id')
     .single()
+
+  if (activeSourceRunDuplicate(error)) {
+    const duplicateSourceRunId = await findActiveSourceRunSubmissionId(supabase, user.id, sourceUrl)
+    if (duplicateSourceRunId) return { id: duplicateSourceRunId }
+  }
 
   if (titleColumnMissing(error) || sourceRunForkColumnsMissing(error)) {
     const fallbackNotes = titleColumnMissing(error)
@@ -775,6 +980,11 @@ export async function createSourceRunSubmission(input: {
       .insert(fallbackPayload)
       .select('id')
       .single()
+
+    if (activeSourceRunDuplicate(fallbackError)) {
+      const duplicateSourceRunId = await findActiveSourceRunSubmissionId(supabase, user.id, sourceUrl)
+      if (duplicateSourceRunId) return { id: duplicateSourceRunId }
+    }
 
     throwReadableSourceRunError(fallbackError)
     return { id: fallbackData?.id as string }
@@ -868,14 +1078,14 @@ export async function publishPreparedShowcaseProjectFromSourceRun(
   const { supabase, user } = await requireAdminAccess()
   let { data: sourceRun, error: sourceRunError } = await supabase
     .from('source_run_submissions')
-    .select('id, author_id, fork_source_project_id, fork_source_project_title, fork_source_step_id, fork_source_step_number, fork_parent_submission_id, prompt_family_id, fork_depth, fork_branch_index')
+    .select('id, author_id, status, extracted_prompt_id, fork_source_project_id, fork_source_project_title, fork_source_step_id, fork_source_step_number, fork_parent_submission_id, prompt_family_id, fork_depth, fork_branch_index')
     .eq('id', sourceRunId)
     .maybeSingle()
 
   if (sourceRunForkColumnsMissing(sourceRunError)) {
     const fallbackResult = await supabase
       .from('source_run_submissions')
-      .select('id, author_id')
+      .select('id, author_id, status, extracted_prompt_id')
       .eq('id', sourceRunId)
       .maybeSingle()
     sourceRun = fallbackResult.data ? {
@@ -894,6 +1104,10 @@ export async function publishPreparedShowcaseProjectFromSourceRun(
 
   throwReadableSourceRunError(sourceRunError)
   if (!sourceRun) throw new Error('Source run not found.')
+  if (sourceRun.status === 'failed') throw new Error('Declined source runs cannot be published.')
+  if (sourceRun.extracted_prompt_id && sourceRun.extracted_prompt_id !== project.id) {
+    throw new Error('Source run is already linked to a different project.')
+  }
   const sourceForkFields = projectForkSourceToSubmissionFields(projectForkSourceFromSubmissionFields(sourceRun))
 
   const { data: category, error: categoryError } = await supabase
@@ -916,14 +1130,21 @@ export async function publishPreparedShowcaseProjectFromSourceRun(
     model_recommendation: project.modelRecommendation,
     tools_used: project.toolsUsed,
     tags: project.tags,
-    status: 'approved',
     ...sourceForkFields,
     updated_at: new Date().toISOString(),
+  }
+  const draftPromptPatch = {
+    ...promptPatch,
+    status: 'pending' as const,
+  }
+  const approvedPromptPatch = {
+    ...promptPatch,
+    status: 'approved' as const,
   }
 
   const { data: existingPrompt, error: existingPromptError } = await supabase
     .from('prompts')
-    .select('id')
+    .select('id,status')
     .eq('id', project.id)
     .maybeSingle()
 
@@ -932,7 +1153,7 @@ export async function publishPreparedShowcaseProjectFromSourceRun(
   if (!existingPrompt) {
     const insertPayload = {
       id: project.id,
-      ...promptPatch,
+      ...draftPromptPatch,
       author_id: user.id,
       vote_count: 0,
       bookmark_count: 0,
@@ -953,7 +1174,7 @@ export async function publishPreparedShowcaseProjectFromSourceRun(
   }
 
   const updatePayload = {
-    ...promptPatch,
+    ...(existingPrompt?.status === 'approved' ? approvedPromptPatch : draftPromptPatch),
     author_id: sourceRun.author_id,
   }
   const { error: updatePromptError } = await supabase
@@ -971,6 +1192,28 @@ export async function publishPreparedShowcaseProjectFromSourceRun(
     if (fallbackUpdateError) throw fallbackUpdateError
   }
 
+  const promptStepClient = await getPromptStepWriteClient(supabase)
+  await replacePromptStepsForPreparedProject(promptStepClient, project)
+
+  const approvePayload = {
+    ...approvedPromptPatch,
+    author_id: sourceRun.author_id,
+  }
+  const { error: approvePromptError } = await supabase
+    .from('prompts')
+    .update(approvePayload)
+    .eq('id', project.id)
+
+  if (approvePromptError) {
+    if (!forkColumnsMissing(approvePromptError)) throw approvePromptError
+
+    const { error: fallbackApproveError } = await supabase
+      .from('prompts')
+      .update(omitForkFields(approvePayload))
+      .eq('id', project.id)
+    if (fallbackApproveError) throw fallbackApproveError
+  }
+
   const { error: updateSourceRunError } = await supabase
     .from('source_run_submissions')
     .update({
@@ -982,6 +1225,34 @@ export async function publishPreparedShowcaseProjectFromSourceRun(
     .eq('id', sourceRunId)
 
   throwReadableSourceRunError(updateSourceRunError)
+}
+
+export async function repairPublishedPreparedShowcasePromptSteps() {
+  const sourceRuns = await getAllSourceRunSubmissionsForAdmin()
+  const repairableRuns = sourceRuns
+    .map(sourceRun => ({
+      sourceRun,
+      project: getPreparedShowcaseProjectBySourceRunId(sourceRun.id),
+    }))
+    .filter((entry): entry is {
+      sourceRun: typeof sourceRuns[number]
+      project: PreparedShowcaseProject
+    } => {
+      const { project, sourceRun } = entry
+      return (
+        project !== null &&
+        sourceRun.status !== 'failed' &&
+        sourceRun.extracted_prompt_id === project.id
+      )
+    })
+
+  for (const { sourceRun, project } of repairableRuns) {
+    await publishPreparedShowcaseProjectFromSourceRun(sourceRun.id, project)
+  }
+
+  return {
+    repaired: repairableRuns.length,
+  }
 }
 
 export async function getAllSourceRunSubmissionsForAdmin(): Promise<SourceRunSubmissionWithRelations[]> {

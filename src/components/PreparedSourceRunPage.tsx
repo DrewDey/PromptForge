@@ -1,13 +1,16 @@
 import fs from 'node:fs'
 import path from 'node:path'
 import Link from 'next/link'
+import { notFound } from 'next/navigation'
 import ProjectCommunityPanel from '@/components/ProjectCommunityPanel'
 import ProjectEngagementBar from '@/components/ProjectEngagementBar'
 import SourceRunShowcase, {
   type SourceRunShowcaseArtifactVersion,
   type SourceRunShowcaseStep,
 } from '@/components/SourceRunShowcase'
+import { getApprovedProjectForks, getPublishedPromptByIdNoFallback } from '@/lib/data'
 import type { PreparedShowcaseProject } from '@/lib/prepared-showcase-projects'
+import { projectForkSourceFromSubmissionFields } from '@/lib/project-forks'
 
 type SourceRunPackageStep = {
   step_number: number
@@ -205,7 +208,7 @@ function RunSummary({
   )
 }
 
-export default function PreparedSourceRunPage({
+export default async function PreparedSourceRunPage({
   project,
   sourceRunPackage,
   route,
@@ -221,6 +224,14 @@ export default function PreparedSourceRunPage({
   const sourceUrl = sourceRun.source_url || project.sourceUrl
   const settingsText = modelSettingsText(sourceRun.model_settings)
   const steps = sourceRun.steps.map((step) => toShowcaseStep(step, sourceRun, project))
+  const allowCodeOnlyShowcase = process.env.PATHFORGE_ALLOW_CODE_ONLY_SHOWCASES === 'true'
+  const [publishedProject, forkNetwork] = await Promise.all([
+    getPublishedPromptByIdNoFallback(project.id),
+    getApprovedProjectForks(project.id),
+  ])
+  const currentForkSource = publishedProject ? projectForkSourceFromSubmissionFields(publishedProject) : null
+
+  if (!publishedProject && !allowCodeOnlyShowcase) notFound()
 
   return (
     <main className="min-h-screen bg-surface-50 text-surface-900">
@@ -267,6 +278,8 @@ export default function PreparedSourceRunPage({
         sourceRunId={sourceRunId(sourceRun, project)}
         projectId={project.id}
         projectTitle={project.title}
+        forkNetwork={forkNetwork}
+        currentForkSource={currentForkSource}
         providerName={providerName}
         verificationNotes={verificationNotesText(sourceRun.verification_notes)}
         steps={steps}

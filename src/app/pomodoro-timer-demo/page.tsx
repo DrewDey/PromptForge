@@ -4,7 +4,9 @@ import Link from 'next/link'
 import ProjectEngagementBar from '@/components/ProjectEngagementBar'
 import ProjectCommunityPanel from '@/components/ProjectCommunityPanel'
 import SourceRunShowcase, { type SourceRunShowcaseStep } from '@/components/SourceRunShowcase'
+import { getApprovedProjectForks, getPublishedPromptByIdNoFallback } from '@/lib/data'
 import { POMODORO_TIMER_SHOWCASE_PROJECT } from '@/lib/prepared-showcase-projects'
+import { projectForkSourceFromSubmissionFields } from '@/lib/project-forks'
 
 const project = POMODORO_TIMER_SHOWCASE_PROJECT
 const projectId = project.id
@@ -101,7 +103,7 @@ function RunSummary() {
   )
 }
 
-export default function PomodoroTimerDemoPage() {
+export default async function PomodoroTimerDemoPage() {
   const stepCodes = [
     readArtifact('pomodoro-step-1.html', 'Step 1 Pomodoro artifact capture is unavailable.'),
     readArtifact('pomodoro-step-2.html', 'Step 2 Pomodoro artifact capture is unavailable.'),
@@ -117,6 +119,11 @@ export default function PomodoroTimerDemoPage() {
     code: stepCodes[index] ?? 'Step Pomodoro artifact capture is unavailable.',
     finalArtifactCode,
   }))
+  const [publishedProject, forkNetwork] = await Promise.all([
+    getPublishedPromptByIdNoFallback(projectId),
+    getApprovedProjectForks(projectId),
+  ])
+  const currentForkSource = publishedProject ? projectForkSourceFromSubmissionFields(publishedProject) : null
 
   return (
     <main className="min-h-screen bg-surface-50 text-surface-900">
@@ -153,6 +160,8 @@ export default function PomodoroTimerDemoPage() {
         sourceRunUrl={sourceRunUrl}
         projectId={projectId}
         projectTitle={project.title}
+        forkNetwork={forkNetwork}
+        currentForkSource={currentForkSource}
         providerName="ChatGPT"
         steps={steps}
         defaultStepNumber={4}

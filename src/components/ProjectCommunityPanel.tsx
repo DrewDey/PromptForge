@@ -1,12 +1,17 @@
 import Link from 'next/link'
 import { ArrowRight, GitBranch, MessageSquare } from 'lucide-react'
-import { getApprovedProjectForks, getPromptById } from '@/lib/data'
+import { getApprovedProjectForkNetwork, getApprovedProjectForks, getPromptById } from '@/lib/data'
 import { getProjectRouteOverride } from '@/lib/project-links'
 import {
   PROJECT_FORK_MAX_DEPTH,
+  PROJECT_FORK_MAX_NETWORK_ITEMS,
   PROJECT_FORK_MAX_WIDTH,
   createProjectForkDraftContract,
+  formatProjectForkBranchCapacity,
   groupProjectForkNetworkBySourceStep,
+  nextProjectForkBranchIndex,
+  projectForkIsDirectChildOfProject,
+  projectForkParentProjectId,
   projectForkSourceFromSubmissionFields,
   resolveProjectForkTrail,
   toProjectForkSourceSteps,
@@ -29,8 +34,22 @@ function projectHref(projectId: string) {
   return getProjectRouteOverride(projectId) ?? `/prompt/${projectId}`
 }
 
-function ProjectForkOriginBand({ forkSource }: { forkSource: ProjectForkSource }) {
-  const sourceHref = projectHref(forkSource.sourceProjectId)
+function ProjectForkOriginBand({
+  forkSource,
+  sourceProject,
+}: {
+  forkSource: ProjectForkSource
+  sourceProject: PromptWithRelations | null
+}) {
+  const parentProjectId = sourceProject?.id ?? projectForkParentProjectId(forkSource)
+  const sourceHref = projectHref(parentProjectId)
+  const hasImmediateParent = Boolean(forkSource.parentForkId)
+  const sourceAvailable = Boolean(sourceProject)
+  const sourceTitle = sourceProject?.title ?? (
+    hasImmediateParent
+      ? 'an existing parent path'
+      : forkSource.sourceProjectTitle ?? 'an existing PathForge project'
+  )
   const depthValue = Math.min(forkSource.depth + 1, PROJECT_FORK_MAX_DEPTH)
   const branchValue = Math.min(forkSource.branchIndex + 1, PROJECT_FORK_MAX_WIDTH)
 
@@ -45,9 +64,14 @@ function ProjectForkOriginBand({ forkSource }: { forkSource: ProjectForkSource }
               Fork lineage
             </div>
             <h2 className="mt-2 text-xl font-black text-surface-900">
-              Forked from {forkSource.sourceProjectTitle || 'an existing PathForge project'}
+              Forked from {sourceTitle}
             </h2>
             <div className="mt-3 flex flex-wrap gap-2 font-mono text-[10px] uppercase tracking-[0.12em] text-surface-600">
+              {hasImmediateParent && (
+                <span className="border border-[#07551f]/30 bg-[#effdf3] px-2 py-1 text-[#07551f]">
+                  Immediate parent path
+                </span>
+              )}
               {forkSource.sourceStepNumber && (
                 <span className="border border-[#07551f]/30 bg-[#effdf3] px-2 py-1 text-[#07551f]">
                   Response {String(forkSource.sourceStepNumber).padStart(2, '0')}
@@ -59,13 +83,19 @@ function ProjectForkOriginBand({ forkSource }: { forkSource: ProjectForkSource }
                 </span>
               )}
             </div>
-            <Link
-              href={sourceHref}
-              className="mt-4 inline-flex items-center gap-2 border border-[#07551f] bg-[#effdf3] px-3 py-2 text-xs font-black uppercase tracking-[0.12em] text-[#07551f] transition hover:bg-white"
-            >
-              Open source path
-              <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
-            </Link>
+            {sourceAvailable ? (
+              <Link
+                href={sourceHref}
+                className="mt-4 inline-flex items-center gap-2 border border-[#07551f] bg-[#effdf3] px-3 py-2 text-xs font-black uppercase tracking-[0.12em] text-[#07551f] transition hover:bg-white"
+              >
+                {hasImmediateParent ? 'Open parent path' : 'Open source path'}
+                <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
+              </Link>
+            ) : (
+              <span className="mt-4 inline-flex items-center gap-2 border border-dashed border-surface-300 bg-surface-50 px-3 py-2 text-xs font-black uppercase tracking-[0.12em] text-surface-500">
+                {hasImmediateParent ? 'Parent path unavailable' : 'Source path unavailable'}
+              </span>
+            )}
           </div>
         </div>
         <aside className="border-t border-[#07551f] bg-[#effdf3] p-5 lg:border-l lg:border-t-0">
@@ -270,7 +300,7 @@ function ProjectForkAncestryTrail({ nodes }: { nodes: ProjectForkTrailNode[] }) 
         ))}
       </div>
 
-      <div className="hidden overflow-x-auto lg:block">
+      <div className="hidden lg:block">
         <ol className="flex min-w-[900px] items-stretch p-5">
           {nodes.map((node, index) => (
             <li
@@ -317,7 +347,7 @@ function ProjectForkInheritedPathBand({
     : 'the selected response'
 
   return (
-    <div className="mb-8 overflow-hidden border border-[#07551f] bg-[#f8fff9] shadow-[0_18px_44px_rgba(7,85,31,0.08)]">
+    <div className="mb-8 overflow-visible border border-[#07551f] bg-[#f8fff9] shadow-[0_18px_44px_rgba(7,85,31,0.08)]">
       <div className="border-b border-[#07551f] bg-white p-5">
         <div className="flex items-center gap-2 font-mono text-[10px] font-bold uppercase tracking-[0.16em] text-[#07551f]">
           <GitBranch className="h-4 w-4" aria-hidden="true" />
@@ -382,7 +412,7 @@ function ProjectForkInheritedPathBand({
         </section>
       </div>
 
-      <div className="hidden overflow-x-auto lg:block">
+      <div className="hidden lg:block">
         <div className="min-w-[940px] p-5">
           <div className="grid grid-cols-[minmax(0,1fr)_86px_minmax(0,1fr)] items-start">
             <section className="border border-surface-200 bg-white p-4">
@@ -447,19 +477,38 @@ function ProjectForkInheritedPathBand({
 
 function ProjectForkNetworkBand({
   forks,
+  rootProjectId,
   projectTitle,
   sourceSteps,
 }: {
   forks: ProjectForkNetworkItem[]
+  rootProjectId: string
   projectTitle?: string
   sourceSteps: ProjectForkSourceStep[]
 }) {
   if (forks.length === 0) return null
 
-  const { rows: sourceRows, unmatchedForks } = groupProjectForkNetworkBySourceStep(sourceSteps, forks)
+  const directForks = forks.filter((fork) => projectForkIsDirectChildOfProject(fork, rootProjectId))
+  const directForkIds = new Set(directForks.map((fork) => fork.id))
+  const childrenByParentId = forks.reduce<Map<string, ProjectForkNetworkItem[]>>((children, fork) => {
+    const parentId = projectForkParentProjectId(fork.forkSource)
+    if (!parentId || parentId === rootProjectId || directForkIds.has(fork.id)) return children
+    const siblings = children.get(parentId) ?? []
+    siblings.push(fork)
+    children.set(parentId, siblings)
+    return children
+  }, new Map())
+  const nestedForkIds = new Set(
+    [...childrenByParentId.values()].flatMap((children) => children.map((fork) => fork.id)),
+  )
+  const orphanForks = forks.filter((fork) => (
+    !directForkIds.has(fork.id) &&
+    !nestedForkIds.has(fork.id)
+  ))
+  const { rows: sourceRows, unmatchedForks } = groupProjectForkNetworkBySourceStep(sourceSteps, directForks)
 
   return (
-    <div className="mb-10 overflow-hidden border border-[#07551f] bg-[#f8fff9]">
+    <div className="mb-10 overflow-visible border border-[#07551f] bg-[#f8fff9]">
       <div className="border-b border-[#07551f] bg-white p-5">
         <div className="grid gap-4 md:grid-cols-[minmax(0,1fr)_220px] md:items-end">
           <div>
@@ -475,9 +524,12 @@ function ProjectForkNetworkBand({
             </p>
           </div>
           <div className="border border-[#07551f]/25 bg-[#effdf3] px-4 py-3">
-            <div className="font-mono text-[10px] uppercase tracking-[0.14em] text-[#07551f]">Active forks</div>
+            <div className="font-mono text-[10px] uppercase tracking-[0.14em] text-[#07551f]">Network slots</div>
             <div className="mt-1 text-3xl font-black text-surface-900">
-              {forks.length} / {PROJECT_FORK_MAX_WIDTH}
+              {forks.length} / {PROJECT_FORK_MAX_NETWORK_ITEMS}
+            </div>
+            <div className="mt-1 font-mono text-[10px] uppercase tracking-[0.12em] text-[#07551f]/70">
+              {PROJECT_FORK_MAX_WIDTH} per response
             </div>
           </div>
         </div>
@@ -485,9 +537,18 @@ function ProjectForkNetworkBand({
 
       <div className="grid gap-4 p-4 lg:hidden">
         {sourceRows.length > 0 ? sourceRows.map(({ step, forks: rowForks }) => (
-          <MobileForkNetworkRow key={step.id} step={step} forks={rowForks} />
-        )) : forks.map((fork) => (
-          <ForkNetworkBranchCard key={fork.id} fork={fork} />
+          <MobileForkNetworkRow
+            key={step.id}
+            step={step}
+            forks={rowForks}
+            childrenByParentId={childrenByParentId}
+          />
+        )) : directForks.map((fork) => (
+          <ForkNetworkBranchCard
+            key={fork.id}
+            fork={fork}
+            childrenByParentId={childrenByParentId}
+          />
         ))}
 
         {unmatchedForks.length > 0 && sourceRows.length > 0 && (
@@ -497,6 +558,22 @@ function ProjectForkNetworkBand({
             </div>
             <div className="grid gap-3">
               {unmatchedForks.map((fork) => (
+                <ForkNetworkBranchCard
+                  key={fork.id}
+                  fork={fork}
+                  childrenByParentId={childrenByParentId}
+                />
+              ))}
+            </div>
+          </section>
+        )}
+        {orphanForks.length > 0 && (
+          <section className="border-t border-[#07551f]/25 pt-4">
+            <div className="mb-2 font-mono text-[10px] uppercase tracking-[0.14em] text-surface-500">
+              Nested branches waiting on their visible parent
+            </div>
+            <div className="grid gap-3">
+              {orphanForks.map((fork) => (
                 <ForkNetworkBranchCard key={fork.id} fork={fork} />
               ))}
             </div>
@@ -504,7 +581,7 @@ function ProjectForkNetworkBand({
         )}
       </div>
 
-      <div className="hidden overflow-x-auto lg:block">
+      <div className="hidden lg:block">
         <div className="min-w-[860px] p-5">
           {sourceRows.length > 0 ? (
             <div className="grid gap-3">
@@ -513,13 +590,18 @@ function ProjectForkNetworkBand({
                   key={step.id}
                   step={step}
                   forks={rowForks}
+                  childrenByParentId={childrenByParentId}
                 />
               ))}
             </div>
           ) : (
             <div className="grid gap-3">
-              {forks.map((fork) => (
-                <ForkNetworkBranchCard key={fork.id} fork={fork} />
+              {directForks.map((fork) => (
+                <ForkNetworkBranchCard
+                  key={fork.id}
+                  fork={fork}
+                  childrenByParentId={childrenByParentId}
+                />
               ))}
             </div>
           )}
@@ -531,6 +613,22 @@ function ProjectForkNetworkBand({
               </div>
               <div className="grid gap-3">
                 {unmatchedForks.map((fork) => (
+                  <ForkNetworkBranchCard
+                    key={fork.id}
+                    fork={fork}
+                    childrenByParentId={childrenByParentId}
+                  />
+                ))}
+              </div>
+            </div>
+          )}
+          {orphanForks.length > 0 && (
+            <div className="mt-4 border-t border-[#07551f]/25 pt-4">
+              <div className="mb-2 font-mono text-[10px] uppercase tracking-[0.14em] text-surface-500">
+                Nested branches waiting on their visible parent
+              </div>
+              <div className="grid gap-3">
+                {orphanForks.map((fork) => (
                   <ForkNetworkBranchCard key={fork.id} fork={fork} />
                 ))}
               </div>
@@ -545,9 +643,11 @@ function ProjectForkNetworkBand({
 function MobileForkNetworkRow({
   step,
   forks,
+  childrenByParentId,
 }: {
   step: ProjectForkSourceStep
   forks: ProjectForkNetworkItem[]
+  childrenByParentId?: Map<string, ProjectForkNetworkItem[]>
 }) {
   const hasForks = forks.length > 0
 
@@ -559,7 +659,7 @@ function MobileForkNetworkRow({
             Response {String(step.stepNumber).padStart(2, '0')}
           </span>
           <span className="font-mono text-[10px] uppercase tracking-[0.12em] text-surface-400">
-            {hasForks ? `${forks.length} branch${forks.length > 1 ? 'es' : ''}` : 'Shared'}
+            {hasForks ? `${forks.length}/${PROJECT_FORK_MAX_WIDTH}` : 'Shared'}
           </span>
         </div>
         <div className="mt-1 text-sm font-black text-surface-900">
@@ -590,7 +690,11 @@ function MobileForkNetworkRow({
           <MobileForkBreak label="Branches right" />
           <div className="grid gap-3">
             {forks.map((fork) => (
-              <ForkNetworkBranchCard key={fork.id} fork={fork} />
+              <ForkNetworkBranchCard
+                key={fork.id}
+                fork={fork}
+                childrenByParentId={childrenByParentId}
+              />
             ))}
           </div>
         </>
@@ -606,9 +710,11 @@ function MobileForkNetworkRow({
 function ForkNetworkRow({
   step,
   forks,
+  childrenByParentId,
 }: {
   step: ProjectForkSourceStep
   forks: ProjectForkNetworkItem[]
+  childrenByParentId?: Map<string, ProjectForkNetworkItem[]>
 }) {
   const hasForks = forks.length > 0
 
@@ -628,7 +734,7 @@ function ForkNetworkRow({
             Response {String(step.stepNumber).padStart(2, '0')}
           </span>
           <span className="font-mono text-[10px] uppercase tracking-[0.12em] text-surface-400">
-            {hasForks ? `${forks.length} branch${forks.length > 1 ? 'es' : ''}` : 'Shared'}
+            {hasForks ? `${forks.length}/${PROJECT_FORK_MAX_WIDTH}` : 'Shared'}
           </span>
         </div>
         <div className="mt-1 text-sm font-black text-surface-900">
@@ -673,7 +779,11 @@ function ForkNetworkRow({
         {hasForks ? (
           <div className="grid gap-3 xl:grid-cols-2">
             {forks.map((fork) => (
-              <ForkNetworkBranchCard key={fork.id} fork={fork} />
+              <ForkNetworkBranchCard
+                key={fork.id}
+                fork={fork}
+                childrenByParentId={childrenByParentId}
+              />
             ))}
           </div>
         ) : (
@@ -686,41 +796,83 @@ function ForkNetworkRow({
   )
 }
 
-function ForkNetworkBranchCard({ fork }: { fork: ProjectForkNetworkItem }) {
+function ForkNetworkBranchCard({
+  fork,
+  childrenByParentId,
+  depth = 0,
+}: {
+  fork: ProjectForkNetworkItem
+  childrenByParentId?: Map<string, ProjectForkNetworkItem[]>
+  depth?: number
+}) {
   const forkHref = getProjectRouteOverride(fork.id) ?? `/prompt/${fork.id}`
   const responseNumber = fork.forkSource.sourceStepNumber
     ? String(fork.forkSource.sourceStepNumber).padStart(2, '0')
     : null
+  const depthValue = Math.min(fork.forkSource.depth + 1, PROJECT_FORK_MAX_DEPTH)
+  const branchCapacityLabel = formatProjectForkBranchCapacity(fork.forkSource.branchIndex)
+  const childForks = childrenByParentId?.get(fork.id) ?? []
 
   return (
-    <Link
-      href={forkHref}
-      className="group relative block border border-[#07551f]/25 bg-white p-4 pl-12 transition hover:-translate-y-0.5 hover:border-[#07551f] hover:shadow-[0_14px_32px_rgba(7,85,31,0.12)]"
-    >
-      <span className="absolute left-0 top-1/2 h-1 w-10 -translate-y-1/2 border-y border-[#07551f] bg-[#2bd15f]" aria-hidden="true" />
-      <span className="absolute left-8 top-1/2 h-4 w-4 -translate-y-1/2 rounded-full border-2 border-[#07551f] bg-[#effdf3] shadow-[0_0_0_4px_rgba(43,209,95,0.18)]" aria-hidden="true" />
-      <span className="flex flex-wrap items-center gap-2 font-mono text-[10px] uppercase tracking-[0.14em] text-surface-500">
-        {responseNumber && (
-          <span className="border border-[#07551f]/30 bg-[#effdf3] px-2 py-1 text-[#07551f]">
-            From response {responseNumber}
-          </span>
-        )}
-        {fork.modelUsed && <span>{fork.modelUsed}</span>}
-      </span>
-      <span className="mt-2 flex items-start justify-between gap-3">
-        <span>
-          <span className="block text-lg font-black text-surface-900 group-hover:text-[#07551f]">
-            {fork.title}
-          </span>
-          {fork.description && (
-            <span className="mt-1 line-clamp-2 block text-sm leading-5 text-surface-600">
-              {fork.description}
+    <div className={depth > 0 ? 'relative pl-8' : undefined}>
+      {depth > 0 && (
+        <>
+          <span className="absolute left-0 top-5 h-[calc(100%-1.25rem)] w-3 border-x-2 border-[#07551f] bg-[#2bd15f] opacity-70" aria-hidden="true" />
+          <span className="absolute left-0 top-8 h-2 w-8 border-y-2 border-[#07551f] bg-[#2bd15f]" aria-hidden="true" />
+        </>
+      )}
+      <Link
+        href={forkHref}
+        className="group relative block border border-[#07551f]/25 bg-white p-4 pl-12 transition hover:-translate-y-0.5 hover:border-[#07551f] hover:shadow-[0_14px_32px_rgba(7,85,31,0.12)]"
+      >
+        <span className="absolute left-0 top-1/2 h-1 w-10 -translate-y-1/2 border-y border-[#07551f] bg-[#2bd15f]" aria-hidden="true" />
+        <span className="absolute left-8 top-1/2 h-4 w-4 -translate-y-1/2 rounded-full border-2 border-[#07551f] bg-[#effdf3] shadow-[0_0_0_4px_rgba(43,209,95,0.18)]" aria-hidden="true" />
+        <span className="flex flex-wrap items-center gap-2 font-mono text-[10px] uppercase tracking-[0.14em] text-surface-500">
+          {responseNumber && (
+            <span className="border border-[#07551f]/30 bg-[#effdf3] px-2 py-1 text-[#07551f]">
+              From response {responseNumber}
             </span>
           )}
+          <span className="border border-surface-200 bg-surface-50 px-2 py-1">
+            {branchCapacityLabel}
+          </span>
+          <span className="border border-surface-200 bg-surface-50 px-2 py-1">
+            Depth {depthValue}/{PROJECT_FORK_MAX_DEPTH}
+          </span>
+          {childForks.length > 0 && (
+            <span className="border border-[#07551f]/30 bg-[#effdf3] px-2 py-1 text-[#07551f]">
+              {childForks.length} child branch{childForks.length > 1 ? 'es' : ''}
+            </span>
+          )}
+          {fork.modelUsed && <span>{fork.modelUsed}</span>}
         </span>
-        <ArrowRight className="mt-1 h-4 w-4 shrink-0 text-[#07551f] transition group-hover:translate-x-1" aria-hidden="true" />
-      </span>
-    </Link>
+        <span className="mt-2 flex items-start justify-between gap-3">
+          <span>
+            <span className="block text-lg font-black text-surface-900 group-hover:text-[#07551f]">
+              {fork.title}
+            </span>
+            {fork.description && (
+              <span className="mt-1 line-clamp-2 block text-sm leading-5 text-surface-600">
+                {fork.description}
+              </span>
+            )}
+          </span>
+          <ArrowRight className="mt-1 h-4 w-4 shrink-0 text-[#07551f] transition group-hover:translate-x-1" aria-hidden="true" />
+        </span>
+      </Link>
+      {childForks.length > 0 && (
+        <div className="mt-3 grid gap-3 border-l-2 border-[#07551f]/25 pl-3">
+          {childForks.map((childFork) => (
+            <ForkNetworkBranchCard
+              key={childFork.id}
+              fork={childFork}
+              childrenByParentId={childrenByParentId}
+              depth={depth + 1}
+            />
+          ))}
+        </div>
+      )}
+    </div>
   )
 }
 
@@ -729,9 +881,10 @@ export default async function ProjectCommunityPanel({
 }: {
   projectId: string
 }) {
-  const [project, forkNetwork] = await Promise.all([
+  const [project, directForkNetwork, recursiveForkNetwork] = await Promise.all([
     getPromptById(projectId),
     getApprovedProjectForks(projectId),
+    getApprovedProjectForkNetwork(projectId),
   ])
   const sourceSteps = project ? toProjectForkSourceSteps(project) : []
   const forkSource = project ? projectForkSourceFromSubmissionFields(project) : null
@@ -739,9 +892,9 @@ export default async function ProjectCommunityPanel({
     ? await resolveProjectForkTrail(project, getPromptById)
     : { nodes: [], immediateSourceProject: null, cycleDetected: false, truncated: false }
   const sourceProject = forkTrail.immediateSourceProject
-  const forkLaneSignal = forkNetwork.length > 0
-    ? `${forkNetwork.length}/${PROJECT_FORK_MAX_WIDTH}`
-    : `${PROJECT_FORK_MAX_WIDTH}x`
+  const forkLaneSignal = recursiveForkNetwork.length > 0
+    ? `${recursiveForkNetwork.length}/${PROJECT_FORK_MAX_NETWORK_ITEMS}`
+    : `${PROJECT_FORK_MAX_WIDTH}x${PROJECT_FORK_MAX_WIDTH}`
   const calloutDepth = forkSource ? forkSource.depth + 1 : 0
   const calloutContract = project
     ? createProjectForkDraftContract({
@@ -754,18 +907,20 @@ export default async function ProjectCommunityPanel({
         sourceSteps,
       })
     : null
-  const forkNetworkGrouping = groupProjectForkNetworkBySourceStep(sourceSteps, forkNetwork)
+  const forkNetworkGrouping = groupProjectForkNetworkBySourceStep(sourceSteps, directForkNetwork)
   const calloutForkPoint = calloutContract?.forkPointStep
   const calloutBranchIndex = calloutForkPoint
-    ? forkNetworkGrouping.rows.find((row) => row.step.id === calloutForkPoint.id)?.forks.length ?? 0
-    : forkNetwork.length
+    ? nextProjectForkBranchIndex(
+        forkNetworkGrouping.rows.find((row) => row.step.id === calloutForkPoint.id)?.forks ?? [],
+      ) ?? PROJECT_FORK_MAX_WIDTH
+    : nextProjectForkBranchIndex(directForkNetwork) ?? PROJECT_FORK_MAX_WIDTH
 
   return (
     <section
       className="mx-auto max-w-7xl px-4 pb-28 sm:px-6 lg:px-8 lg:pb-14"
       data-project-id={projectId}
     >
-      {forkSource && <ProjectForkOriginBand forkSource={forkSource} />}
+      {forkSource && <ProjectForkOriginBand forkSource={forkSource} sourceProject={sourceProject} />}
       {forkSource && <ProjectForkAncestryTrail nodes={forkTrail.nodes} />}
       {forkSource && project && (
         <ProjectForkInheritedPathBand
@@ -774,7 +929,12 @@ export default async function ProjectCommunityPanel({
           currentProject={project}
         />
       )}
-      <ProjectForkNetworkBand forks={forkNetwork} projectTitle={project?.title} sourceSteps={sourceSteps} />
+      <ProjectForkNetworkBand
+        forks={recursiveForkNetwork}
+        rootProjectId={projectId}
+        projectTitle={project?.title}
+        sourceSteps={sourceSteps}
+      />
       <ProjectForkCallout
         projectId={projectId}
         projectTitle={project?.title}

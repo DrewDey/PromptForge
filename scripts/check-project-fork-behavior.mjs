@@ -42,8 +42,12 @@ const {
   buildProjectForkHref,
   buildProjectResponseForkHref,
   createProjectForkDraftContract,
+  formatProjectForkBranchCapacity,
   groupProjectForkNetworkBySourceStep,
+  nextProjectForkBranchIndex,
   normalizeProjectForkSource,
+  projectForkIsDirectChildOfProject,
+  projectForkParentProjectId,
   projectForkSourceFromSubmissionFields,
   projectForkSourceToSubmissionFields,
   resolveProjectForkTrail,
@@ -109,6 +113,19 @@ const forks = [
     },
   },
   {
+    id: 'fork-mismatched-step-id',
+    title: 'Fork with stale id but tempting step number',
+    createdAt: '2026-06-05T00:01:30.000Z',
+    forkSource: {
+      sourceProjectId: 'source-project',
+      sourceStepId: 'missing-step-id',
+      sourceStepNumber: 1,
+      depth: 1,
+      branchIndex: 3,
+      promptFamilyId: 'source-project:missing-step-id',
+    },
+  },
+  {
     id: 'fork-unmatched',
     title: 'Fork with stale metadata',
     createdAt: '2026-06-05T00:02:00.000Z',
@@ -128,7 +145,44 @@ assert(grouping.rows.length === 3, 'network grouping should keep one row per sou
 assert(grouping.rows[0].forks.map((fork) => fork.id).join(',') === 'fork-by-step-number', 'step-number fork should map to response 1')
 assert(grouping.rows[1].forks.map((fork) => fork.id).join(',') === 'fork-by-step-id', 'step-id fork should map to response 2')
 assert(grouping.rows[2].forks.length === 0, 'response 3 should remain an empty branch lane')
-assert(grouping.unmatchedForks.map((fork) => fork.id).join(',') === 'fork-unmatched', 'stale fork metadata should remain unmatched instead of being hidden')
+assert(grouping.unmatchedForks.map((fork) => fork.id).join(',') === 'fork-mismatched-step-id,fork-unmatched', 'stale fork metadata should remain unmatched instead of being hidden')
+const nextBranchWithGap = nextProjectForkBranchIndex([
+  forks[0],
+  {
+    ...forks[0],
+    id: 'fork-with-gap-branch-2',
+    forkSource: { ...forks[0].forkSource, branchIndex: 2 },
+  },
+])
+assert(nextBranchWithGap === 1, 'next branch index should fill the first available branch gap')
+const maxedBranchIndexes = Array.from({ length: PROJECT_FORK_MAX_WIDTH }).map((_, index) => ({
+  ...forks[0],
+  id: `fork-branch-${index}`,
+  forkSource: { ...forks[0].forkSource, branchIndex: index },
+}))
+assert(nextProjectForkBranchIndex(maxedBranchIndexes) === null, 'next branch index should return null when every branch slot is used')
+assert(formatProjectForkBranchCapacity(0) === `Branch 01/${PROJECT_FORK_MAX_WIDTH}`, 'branch-capacity labels should show the first available branch slot')
+assert(formatProjectForkBranchCapacity(PROJECT_FORK_MAX_WIDTH - 1) === `Branch ${String(PROJECT_FORK_MAX_WIDTH).padStart(2, '0')}/${PROJECT_FORK_MAX_WIDTH}`, 'branch-capacity labels should show the final available branch slot')
+assert(formatProjectForkBranchCapacity(null) === `${PROJECT_FORK_MAX_WIDTH}/${PROJECT_FORK_MAX_WIDTH} full`, 'branch-capacity labels should show the saturated branch state')
+
+const directFork = {
+  ...forks[0],
+  forkSource: { ...forks[0].forkSource, parentForkId: undefined },
+}
+const nestedLegacyFork = {
+  ...forks[0],
+  id: 'nested-legacy-fork',
+  forkSource: {
+    ...forks[0].forkSource,
+    sourceProjectId: 'source-project',
+    parentForkId: 'first-fork-project',
+  },
+}
+assert(projectForkParentProjectId(directFork.forkSource) === 'source-project', 'root forks should use source project as their parent when no immediate parent is stored')
+assert(projectForkParentProjectId(nestedLegacyFork.forkSource) === 'first-fork-project', 'nested forks should prefer the immediate parent over the original source project')
+assert(projectForkIsDirectChildOfProject(directFork, 'source-project') === true, 'root forks should count as direct children of their source project')
+assert(projectForkIsDirectChildOfProject(nestedLegacyFork, 'source-project') === false, 'nested forks with an immediate parent should not consume root branch slots')
+assert(projectForkIsDirectChildOfProject(nestedLegacyFork, 'first-fork-project') === true, 'nested forks should count as direct children of their immediate parent')
 
 const contract = createProjectForkDraftContract({
   source: {
@@ -213,6 +267,14 @@ const maxedResponseHref = buildProjectResponseForkHref({
 })
 assert(maxedResponseHref === null, 'response fork href should stop at the max-depth boundary')
 
+const maxedBranchResponseHref = buildProjectResponseForkHref({
+  sourceProjectId: 'maxed-branch-project',
+  sourceStepId: 'maxed-branch-step-1',
+  sourceStepNumber: 1,
+  branchIndex: PROJECT_FORK_MAX_WIDTH,
+})
+assert(maxedBranchResponseHref === null, 'response fork href should stop at the max-width boundary')
+
 const fields = projectForkSourceToSubmissionFields({
   sourceProjectId: 'source-project',
   sourceProjectTitle: 'Source Project',
@@ -269,6 +331,16 @@ assert(forkTrail.nodes[2].forkSource?.sourceStepNumber === 1, 'fork trail should
 assert(forkTrail.nodes[2].isCurrent === true, 'fork trail should mark the current project node')
 assert(forkTrail.cycleDetected === false, 'normal fork trails should not report cycles')
 assert(forkTrail.truncated === false, 'normal fork trails should not report truncation')
+
+const flattenedSecondForkProject = {
+  ...secondForkProject,
+  fork_source_project_id: rootProject.id,
+  fork_source_project_title: rootProject.title,
+  fork_parent_submission_id: firstForkProject.id,
+}
+const flattenedForkTrail = await resolveProjectForkTrail(flattenedSecondForkProject, (projectId) => projectFixtures[projectId] ?? null)
+assert(flattenedForkTrail.nodes.map((node) => node.id).join(',') === 'root-project,first-fork-project,second-fork-project', 'fork trail should prefer immediate parent when older data also names the original root source')
+assert(flattenedForkTrail.immediateSourceProject?.id === 'first-fork-project', 'flattened fork metadata should still expose the immediate parent project')
 
 const missingParentFork = {
   id: 'missing-parent-fork',

@@ -4,8 +4,10 @@ import Link from 'next/link'
 import ProjectEngagementBar from '@/components/ProjectEngagementBar'
 import ProjectCommunityPanel from '@/components/ProjectCommunityPanel'
 import SourceRunShowcase from '@/components/SourceRunShowcase'
+import { getApprovedProjectForks, getPublishedPromptByIdNoFallback } from '@/lib/data'
 import { NEON_BLOCK_PATROL_PROJECT_ID } from '@/lib/featured-projects'
 import { NEON_BLOCK_PATROL_SHOWCASE_PROJECT } from '@/lib/prepared-showcase-projects'
+import { projectForkSourceFromSubmissionFields } from '@/lib/project-forks'
 import sourceRunPackage from '../../../seed-runs/gta-style-fps-chatgpt-gpt55-heavy-five-prompt.json'
 
 type RawSourceRunStep = {
@@ -84,7 +86,12 @@ function RunSummary() {
   )
 }
 
-export default function NeonBlockPatrolDemoPage() {
+export default async function NeonBlockPatrolDemoPage() {
+  const [publishedProject, forkNetwork] = await Promise.all([
+    getPublishedPromptByIdNoFallback(projectId),
+    getApprovedProjectForks(projectId),
+  ])
+  const currentForkSource = publishedProject ? projectForkSourceFromSubmissionFields(publishedProject) : null
   const steps = (sourceRunPackage.steps as RawSourceRunStep[]).map((step) => ({
     id: `${projectId}-step-${step.step_number}`,
     stepNumber: step.step_number,
@@ -152,6 +159,8 @@ export default function NeonBlockPatrolDemoPage() {
         sourceRunId={sourceRunPackage.source_run_submission_id}
         projectId={projectId}
         projectTitle={project.title}
+        forkNetwork={forkNetwork}
+        currentForkSource={currentForkSource}
         providerName="ChatGPT"
         steps={steps}
         defaultStepNumber={5}

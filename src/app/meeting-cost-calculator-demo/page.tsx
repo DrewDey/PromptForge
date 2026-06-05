@@ -4,8 +4,10 @@ import Link from 'next/link'
 import ProjectEngagementBar from '@/components/ProjectEngagementBar'
 import ProjectCommunityPanel from '@/components/ProjectCommunityPanel'
 import SourceRunShowcase, { type SourceRunShowcaseStep } from '@/components/SourceRunShowcase'
+import { getApprovedProjectForks, getPublishedPromptByIdNoFallback } from '@/lib/data'
 import { MEETING_COST_PROJECT_ID } from '@/lib/featured-projects'
 import { MEETING_COST_SHOWCASE_PROJECT } from '@/lib/prepared-showcase-projects'
+import { projectForkSourceFromSubmissionFields } from '@/lib/project-forks'
 import sourceRunPackage from '../../../seed-runs/meeting-cost-calculator-chatgpt-source-run.json'
 
 type MeetingCostSeedStep = {
@@ -96,9 +98,14 @@ function RunSummary({ sourceRun }: { sourceRun: MeetingCostSeedRun }) {
   )
 }
 
-export default function MeetingCostCalculatorDemoPage() {
+export default async function MeetingCostCalculatorDemoPage() {
   const sourceRun = sourceRunPackage as MeetingCostSeedRun
   const steps = sourceRun.steps.map(toStep)
+  const [publishedProject, forkNetwork] = await Promise.all([
+    getPublishedPromptByIdNoFallback(projectId),
+    getApprovedProjectForks(projectId),
+  ])
+  const currentForkSource = publishedProject ? projectForkSourceFromSubmissionFields(publishedProject) : null
 
   return (
     <main className="min-h-screen bg-surface-50 text-surface-900">
@@ -144,6 +151,8 @@ export default function MeetingCostCalculatorDemoPage() {
         sourceRunId={sourceRun.source_run_submission_id}
         projectId={projectId}
         projectTitle={project.title}
+        forkNetwork={forkNetwork}
+        currentForkSource={currentForkSource}
         providerName="ChatGPT"
         verificationNotes={sourceRun.verification_notes}
         steps={steps}

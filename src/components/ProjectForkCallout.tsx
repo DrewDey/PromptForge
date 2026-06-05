@@ -3,6 +3,7 @@ import { ArrowRight, GitFork } from 'lucide-react'
 import {
   buildProjectForkHref,
   createProjectForkDraftContract,
+  formatProjectForkBranchCapacity,
   PROJECT_FORK_MAX_DEPTH,
   PROJECT_FORK_MAX_WIDTH,
   type ProjectForkSourceStep,
@@ -64,6 +65,7 @@ export default function ProjectForkCallout({
     : !canForkWider
       ? `This response already has ${PROJECT_FORK_MAX_WIDTH} approved fork branches.`
       : null
+  const branchCapacityLabel = formatProjectForkBranchCapacity(canForkWider ? branchIndex : null)
 
   return (
     <div className="mb-10 border border-surface-200 bg-white">
@@ -80,7 +82,7 @@ export default function ProjectForkCallout({
           </p>
           {forkPointStep && (
             <p className="mt-3 font-mono text-[10px] uppercase tracking-[0.14em] text-surface-500">
-              Default fork point: response package {String(forkPointStep.stepNumber).padStart(2, '0')}
+              Default fork point: response package {String(forkPointStep.stepNumber).padStart(2, '0')} · {branchCapacityLabel}
             </p>
           )}
         </div>
@@ -94,6 +96,9 @@ export default function ProjectForkCallout({
               >
                 <GitFork className="h-4 w-4" aria-hidden="true" />
                 Fork this path
+                <span className="hidden border-l border-white/30 pl-2 font-mono text-[10px] font-black uppercase tracking-[0.14em] text-white/75 sm:inline">
+                  {branchCapacityLabel}
+                </span>
                 <ArrowRight className="h-4 w-4" aria-hidden="true" />
               </Link>
               <p className="mt-3 text-xs leading-5 text-surface-400">

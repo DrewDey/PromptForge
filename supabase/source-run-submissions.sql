@@ -58,6 +58,53 @@ CREATE INDEX IF NOT EXISTS idx_source_run_submissions_created_at ON source_run_s
 CREATE INDEX IF NOT EXISTS idx_source_run_submissions_fork_source_project ON source_run_submissions(fork_source_project_id);
 CREATE INDEX IF NOT EXISTS idx_source_run_submissions_prompt_family ON source_run_submissions(prompt_family_id);
 CREATE INDEX IF NOT EXISTS idx_source_run_submissions_parent_fork ON source_run_submissions(fork_parent_submission_id);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_source_run_submissions_active_author_source_url
+  ON source_run_submissions(author_id, source_url)
+  WHERE source_url IS NOT NULL AND status <> 'failed';
+
+ALTER TABLE prompt_steps
+  ADD COLUMN IF NOT EXISTS result_content TEXT;
+
+DROP POLICY IF EXISTS "Admins can insert prompt steps" ON prompt_steps;
+CREATE POLICY "Admins can insert prompt steps" ON prompt_steps
+  FOR INSERT WITH CHECK (
+    EXISTS (
+      SELECT 1
+      FROM profiles
+      WHERE profiles.id = auth.uid()
+      AND profiles.role = 'admin'
+    )
+  );
+
+DROP POLICY IF EXISTS "Admins can update prompt steps" ON prompt_steps;
+CREATE POLICY "Admins can update prompt steps" ON prompt_steps
+  FOR UPDATE USING (
+    EXISTS (
+      SELECT 1
+      FROM profiles
+      WHERE profiles.id = auth.uid()
+      AND profiles.role = 'admin'
+    )
+  )
+  WITH CHECK (
+    EXISTS (
+      SELECT 1
+      FROM profiles
+      WHERE profiles.id = auth.uid()
+      AND profiles.role = 'admin'
+    )
+  );
+
+DROP POLICY IF EXISTS "Admins can delete prompt steps" ON prompt_steps;
+CREATE POLICY "Admins can delete prompt steps" ON prompt_steps
+  FOR DELETE USING (
+    EXISTS (
+      SELECT 1
+      FROM profiles
+      WHERE profiles.id = auth.uid()
+      AND profiles.role = 'admin'
+    )
+  );
 
 ALTER TABLE source_run_submissions ENABLE ROW LEVEL SECURITY;
 

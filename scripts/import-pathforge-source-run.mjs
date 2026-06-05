@@ -126,6 +126,7 @@ function publicResult({ sourceRunId, pkg, profile, dryRun, loginIdentifier }) {
     source_url: pkg.source_url || null,
     artifact_path: pkg.final_artifact_path || null,
     login_identifier: loginIdentifier ?? null,
+    deduplicated: Boolean(pkg.deduplicated),
   }
 
   return {
@@ -237,6 +238,30 @@ async function createPasswordSessionClient(supabaseUrl, anonKey, args) {
 
 async function insertSourceRunSubmission(importClient, pkg, profile) {
   const sourceUrl = requireString(pkg.source_url, 'source_url')
+  async function findExistingSourceRun() {
+    const { data: existingRows, error: existingError } = await importClient
+      .from('source_run_submissions')
+      .select('id')
+      .eq('author_id', profile.id)
+      .eq('source_url', sourceUrl)
+      .neq('status', 'failed')
+      .order('created_at', { ascending: false })
+      .limit(1)
+
+    if (existingError) throw existingError
+    return existingRows?.[0] ?? null
+  }
+  function activeSourceRunDuplicate(error) {
+    const message = String(error?.message || '').toLowerCase()
+    return error?.code === '23505' && (
+      message.includes('idx_source_run_submissions_active_author_source_url') ||
+      message.includes('source_run_submissions')
+    )
+  }
+
+  const existingRow = await findExistingSourceRun()
+  if (existingRow?.id) return { id: existingRow.id, deduplicated: true }
+
   const payload = {
     title: pkg.title,
     source_url: sourceUrl,
@@ -252,7 +277,11 @@ async function insertSourceRunSubmission(importClient, pkg, profile) {
     .select('id')
     .single()
 
-  if (!error) return data
+  if (!error) return { ...data, deduplicated: false }
+  if (activeSourceRunDuplicate(error)) {
+    const duplicateRow = await findExistingSourceRun()
+    if (duplicateRow?.id) return { id: duplicateRow.id, deduplicated: true }
+  }
 
   const message = String(error.message || '').toLowerCase()
   if (error.code !== '42703' && !(message.includes('title') && message.includes('source_run_submissions'))) {
@@ -271,8 +300,12 @@ async function insertSourceRunSubmission(importClient, pkg, profile) {
     .select('id')
     .single()
 
+  if (activeSourceRunDuplicate(fallbackError)) {
+    const duplicateRow = await findExistingSourceRun()
+    if (duplicateRow?.id) return { id: duplicateRow.id, deduplicated: true }
+  }
   if (fallbackError) throw fallbackError
-  return fallbackData
+  return { ...fallbackData, deduplicated: false }
 }
 
 async function main() {
@@ -344,6 +377,7 @@ async function main() {
   }
 
   const sourceRun = await insertSourceRunSubmission(importClient, pkg, profile)
+  pkg.deduplicated = sourceRun.deduplicated
 
   console.log(JSON.stringify(publicResult({
     sourceRunId: sourceRun.id,

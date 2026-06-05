@@ -7,6 +7,7 @@ import {
   getSourceRunSubmissionByPromptIdForAdmin,
   getUserVotesAndBookmarks,
   getPrompts,
+  getApprovedProjectForks,
 } from '@/lib/data'
 import { getModelName } from '@/lib/models'
 import VoteBookmarkButtons from '@/components/VoteBookmarkButtons'
@@ -19,9 +20,13 @@ import { isPersistableProjectId } from '@/lib/project-engagement'
 import { getProjectRouteOverride } from '@/lib/project-links'
 import {
   PROJECT_FORK_MAX_DEPTH,
+  PROJECT_FORK_MAX_WIDTH,
   buildProjectForkHref,
   buildProjectResponseForkHref,
   createProjectForkDraftContract,
+  formatProjectForkBranchCapacity,
+  groupProjectForkNetworkBySourceStep,
+  nextProjectForkBranchIndex,
   projectForkSourceFromSubmissionFields,
   toProjectForkSourceSteps,
 } from '@/lib/project-forks'
@@ -69,56 +74,131 @@ function StepContent({
 function ResponseStepForkAffordance({
   forkHref,
   forkLabel,
+  disabledLabel,
+  disabledBody,
+  capacityLabel,
 }: {
   forkHref: string | null
   forkLabel: string
+  disabledLabel?: string
+  disabledBody?: string
+  capacityLabel?: string
 }) {
-  if (!forkHref) return null
+  const isDisabled = !forkHref
+  if (isDisabled && !disabledLabel) return null
 
   return (
     <>
       <span
         data-response-fork-socket
         data-generic-response-fork-socket
-        className="absolute right-[-34px] top-5 z-20 hidden h-10 w-10 border-4 border-[#07551f] bg-[#effdf3] shadow-[0_0_0_0_rgba(43,209,95,0)] transition duration-300 group-hover/response-fork-node:shadow-[0_0_0_8px_rgba(43,209,95,0.16)] group-focus-within/response-fork-node:shadow-[0_0_0_8px_rgba(43,209,95,0.16)] xl:block"
+        data-response-fork-disabled={isDisabled ? 'true' : undefined}
+        className={[
+          'absolute right-[-34px] top-5 z-20 hidden h-10 w-10 border-4 shadow-[0_0_0_0_rgba(43,209,95,0)] transition duration-300 group-hover/response-fork-node:shadow-[0_0_0_8px_rgba(43,209,95,0.16)] group-focus-within/response-fork-node:shadow-[0_0_0_8px_rgba(43,209,95,0.16)] xl:block',
+          isDisabled ? 'border-surface-500 bg-surface-100' : 'border-[#07551f] bg-[#effdf3]',
+        ].join(' ')}
         aria-hidden="true"
       >
-        <span className="absolute left-1/2 top-1/2 h-3.5 w-3.5 -translate-x-1/2 -translate-y-1/2 border-2 border-[#07551f] bg-[#2bd15f]" />
+        <span
+          className={[
+            'absolute left-1/2 top-1/2 h-3.5 w-3.5 -translate-x-1/2 -translate-y-1/2 border-2',
+            isDisabled ? 'border-surface-500 bg-surface-300' : 'border-[#07551f] bg-[#2bd15f]',
+          ].join(' ')}
+        />
       </span>
 
       <div
         data-response-fork-hover-rail
         data-generic-response-fork-hover-rail
+        data-response-fork-disabled={isDisabled ? 'true' : undefined}
         className="pointer-events-none absolute right-[-24px] top-5 z-30 hidden translate-x-3 items-center opacity-0 transition duration-300 group-hover/response-fork-node:pointer-events-auto group-hover/response-fork-node:translate-x-0 group-hover/response-fork-node:opacity-100 group-focus-within/response-fork-node:pointer-events-auto group-focus-within/response-fork-node:translate-x-0 group-focus-within/response-fork-node:opacity-100 xl:flex"
       >
         <div className="relative h-10 w-28 shrink-0" aria-hidden="true">
-          <span className="absolute left-0 top-1/2 h-4 w-full origin-left -translate-y-1/2 scale-x-0 border-y-4 border-[#07551f] bg-[#2bd15f] shadow-[inset_0_4px_0_rgba(255,255,255,0.2),inset_0_-4px_0_rgba(0,0,0,0.16)] transition-transform duration-300 group-hover/response-fork-node:scale-x-100 group-focus-within/response-fork-node:scale-x-100" />
-          <span className="absolute right-[-2px] top-1/2 h-8 w-8 -translate-y-1/2 border-4 border-[#07551f] bg-[#effdf3] shadow-[0_0_0_6px_rgba(43,209,95,0.14)]" />
+          <span
+            className={[
+              'absolute left-0 top-1/2 h-4 w-full origin-left -translate-y-1/2 scale-x-0 border-y-4 shadow-[inset_0_4px_0_rgba(255,255,255,0.2),inset_0_-4px_0_rgba(0,0,0,0.16)] transition-transform duration-300 group-hover/response-fork-node:scale-x-100 group-focus-within/response-fork-node:scale-x-100',
+              isDisabled ? 'border-surface-500 bg-surface-300' : 'border-[#07551f] bg-[#2bd15f]',
+            ].join(' ')}
+          />
+          <span
+            className={[
+              'absolute right-[-2px] top-1/2 h-8 w-8 -translate-y-1/2 border-4',
+              isDisabled
+                ? 'border-surface-500 bg-surface-100 shadow-[0_0_0_6px_rgba(148,163,184,0.14)]'
+                : 'border-[#07551f] bg-[#effdf3] shadow-[0_0_0_6px_rgba(43,209,95,0.14)]',
+            ].join(' ')}
+          />
         </div>
+        {forkHref ? (
+          <Link
+            href={forkHref}
+            data-generic-response-fork-action
+            className="inline-flex min-h-10 shrink-0 translate-x-[-10px] items-center gap-2 border-2 border-[#07551f] bg-white px-3 py-2 text-[11px] font-black uppercase tracking-[0.12em] text-[#07551f] shadow-[0_14px_34px_rgba(7,85,31,0.18)] transition duration-300 hover:bg-[#effdf3] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#2bd15f] group-hover/response-fork-node:translate-x-0 group-focus-within/response-fork-node:translate-x-0"
+            aria-label={forkLabel}
+          >
+            <GitFork className="h-3.5 w-3.5" aria-hidden="true" />
+            <span>Fork here</span>
+            {capacityLabel && (
+              <span className="border-l border-[#07551f]/25 pl-2 font-mono text-[10px] text-[#07551f]/70">
+                {capacityLabel}
+              </span>
+            )}
+            <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
+          </Link>
+        ) : (
+          <span
+            data-generic-response-fork-action
+            data-response-fork-disabled="true"
+            className="inline-flex min-h-10 shrink-0 translate-x-[-10px] items-center gap-2 border-2 border-surface-500 bg-white px-3 py-2 text-[11px] font-black uppercase tracking-[0.12em] text-surface-500 shadow-[0_14px_34px_rgba(71,85,105,0.12)] transition duration-300 group-hover/response-fork-node:translate-x-0 group-focus-within/response-fork-node:translate-x-0"
+            title={disabledBody}
+          >
+            <GitFork className="h-3.5 w-3.5" aria-hidden="true" />
+            <span>{disabledLabel}</span>
+            {capacityLabel && (
+              <span className="border-l border-surface-300 pl-2 font-mono text-[10px] text-surface-400">
+                {capacityLabel}
+              </span>
+            )}
+          </span>
+        )}
+      </div>
+
+      {forkHref ? (
         <Link
           href={forkHref}
           data-generic-response-fork-action
-          className="inline-flex min-h-10 shrink-0 translate-x-[-10px] items-center gap-2 border-2 border-[#07551f] bg-white px-3 py-2 text-[11px] font-black uppercase tracking-[0.12em] text-[#07551f] shadow-[0_14px_34px_rgba(7,85,31,0.18)] transition duration-300 hover:bg-[#effdf3] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#2bd15f] group-hover/response-fork-node:translate-x-0 group-focus-within/response-fork-node:translate-x-0"
+          className="relative mt-3 inline-flex min-h-11 items-center gap-2 border border-[#07551f] bg-[#effdf3] py-2 pl-10 pr-3 text-xs font-black uppercase tracking-[0.12em] text-[#07551f] transition hover:bg-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#2bd15f] xl:hidden"
           aria-label={forkLabel}
         >
+          <span className="absolute left-0 top-1/2 h-2 w-8 -translate-y-1/2 border-y border-[#07551f] bg-[#2bd15f]" aria-hidden="true" />
+          <span className="absolute left-6 top-1/2 h-4 w-4 -translate-y-1/2 border-2 border-[#07551f] bg-white" aria-hidden="true" />
           <GitFork className="h-3.5 w-3.5" aria-hidden="true" />
-          Fork here
+          <span>Fork from this response</span>
+          {capacityLabel && (
+            <span className="font-mono text-[10px] text-[#07551f]/70">
+              {capacityLabel}
+            </span>
+          )}
           <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
         </Link>
-      </div>
-
-      <Link
-        href={forkHref}
-        data-generic-response-fork-action
-        className="relative mt-3 inline-flex min-h-11 items-center gap-2 border border-[#07551f] bg-[#effdf3] py-2 pl-10 pr-3 text-xs font-black uppercase tracking-[0.12em] text-[#07551f] transition hover:bg-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#2bd15f] xl:hidden"
-        aria-label={forkLabel}
-      >
-        <span className="absolute left-0 top-1/2 h-2 w-8 -translate-y-1/2 border-y border-[#07551f] bg-[#2bd15f]" aria-hidden="true" />
-        <span className="absolute left-6 top-1/2 h-4 w-4 -translate-y-1/2 border-2 border-[#07551f] bg-white" aria-hidden="true" />
-        <GitFork className="h-3.5 w-3.5" aria-hidden="true" />
-        Fork from this response
-        <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
-      </Link>
+      ) : (
+        <span
+          data-generic-response-fork-action
+          data-response-fork-disabled="true"
+          className="relative mt-3 inline-flex min-h-11 items-center gap-2 border border-surface-400 bg-surface-100 py-2 pl-10 pr-3 text-xs font-black uppercase tracking-[0.12em] text-surface-500 xl:hidden"
+          title={disabledBody}
+        >
+          <span className="absolute left-0 top-1/2 h-2 w-8 -translate-y-1/2 border-y border-surface-500 bg-surface-300" aria-hidden="true" />
+          <span className="absolute left-6 top-1/2 h-4 w-4 -translate-y-1/2 border-2 border-surface-500 bg-white" aria-hidden="true" />
+          <GitFork className="h-3.5 w-3.5" aria-hidden="true" />
+          <span>{disabledLabel}</span>
+          {capacityLabel && (
+            <span className="font-mono text-[10px] text-surface-400">
+              {capacityLabel}
+            </span>
+          )}
+        </span>
+      )}
     </>
   )
 }
@@ -180,9 +260,21 @@ export default async function PromptDetailPage({
     source: { sourceProjectId: prompt.id, sourceProjectTitle: prompt.title },
     sourceSteps: forkSourceSteps,
   })
+  const forkNetwork = await getApprovedProjectForks(prompt.id)
+  const forkNetworkRows = groupProjectForkNetworkBySourceStep(forkSourceSteps, forkNetwork).rows
+  const nextBranchIndexByStepId = new Map(
+    forkNetworkRows.map((row) => [row.step.id, nextProjectForkBranchIndex(row.forks)]),
+  )
+  const defaultForkPointBranchIndex = forkContract.forkPointStep
+    ? nextBranchIndexByStepId.get(forkContract.forkPointStep.id)
+    : undefined
+  const defaultForkBranchIndex = forkContract.forkPointStep
+    ? (defaultForkPointBranchIndex === undefined ? 0 : defaultForkPointBranchIndex)
+    : nextProjectForkBranchIndex(forkNetwork)
   const nextForkDepth = existingForkSource ? existingForkSource.depth + 1 : 0
   const canForkDeeper = nextForkDepth < PROJECT_FORK_MAX_DEPTH
-  const forkHref = canForkDeeper
+  const canForkDefaultBranch = defaultForkBranchIndex !== null
+  const forkHref = canForkDeeper && canForkDefaultBranch
     ? buildProjectForkHref({
         sourceProjectId: prompt.id,
         sourceProjectTitle: prompt.title,
@@ -190,19 +282,50 @@ export default async function PromptDetailPage({
         sourceStepNumber: forkContract.forkPointStep?.stepNumber,
         parentForkId: existingForkSource ? prompt.id : undefined,
         depth: nextForkDepth,
+        branchIndex: defaultForkBranchIndex ?? 0,
         promptFamilyId: existingForkSource?.promptFamilyId ?? forkContract.promptFamilyId,
       })
     : null
-  const getResponseForkHref = (step: NonNullable<typeof prompt.steps>[number]) => canForkDeeper
-    ? buildProjectResponseForkHref({
+  const forkTerminalLabel = !canForkDeeper
+    ? 'Max fork depth reached'
+    : !canForkDefaultBranch
+      ? 'Max branch width reached'
+      : null
+  const getResponseForkState = (step: NonNullable<typeof prompt.steps>[number]) => {
+    if (!canForkDeeper) {
+      return {
+        forkHref: null,
+        disabledLabel: 'Max depth',
+        disabledBody: `This branch is already at ${PROJECT_FORK_MAX_DEPTH} linked fork levels.`,
+        capacityLabel: undefined,
+      }
+    }
+    const nextBranchIndex = nextBranchIndexByStepId.get(step.id)
+    const branchIndex = nextBranchIndex === undefined ? 0 : nextBranchIndex
+    if (branchIndex === null) {
+      return {
+        forkHref: null,
+        disabledLabel: 'Branch full',
+        disabledBody: `This response already has ${PROJECT_FORK_MAX_WIDTH} approved fork branches.`,
+        capacityLabel: formatProjectForkBranchCapacity(null),
+      }
+    }
+
+    return {
+      forkHref: buildProjectResponseForkHref({
         sourceProjectId: prompt.id,
         sourceProjectTitle: prompt.title,
         sourceStepId: step.id,
         sourceStepNumber: step.step_number,
         currentForkSource: existingForkSource,
+        branchIndex,
         promptFamilyId: existingForkSource?.promptFamilyId ?? `${prompt.id}:${step.id}`,
-      })
-    : null
+      }),
+      disabledLabel: undefined,
+      disabledBody: undefined,
+      capacityLabel: formatProjectForkBranchCapacity(branchIndex),
+    }
+  }
 
   // Hero "Final output" exhibit (iter 51 — Polish #1).
   // Prefer the project-level final result_content; if absent, fall back to
@@ -553,7 +676,10 @@ export default async function PromptDetailPage({
             <div className="absolute left-[23px] top-2 bottom-2 w-[2px] bg-gradient-to-b from-brand-orange via-brand-blue to-brand-orange opacity-40" style={{ animation: 'pipeDraw 1s ease-out forwards' }} />
 
             <div className="space-y-5">
-              {prompt.steps!.map((step, idx) => (
+              {prompt.steps!.map((step, idx) => {
+                const responseForkState = getResponseForkState(step)
+
+                return (
                 /* Inter-step "feeds into" chip removed in iter 82 (Polish #1
                    reassessment). The chip used flowchart vocabulary
                    ("step N result → step N+1 prompt") that read as
@@ -632,8 +758,11 @@ export default async function PromptDetailPage({
                               meta={`step ${idx + 1}`}
                             />
                             <ResponseStepForkAffordance
-                              forkHref={getResponseForkHref(step)}
+                              forkHref={responseForkState.forkHref}
                               forkLabel={`Fork ${prompt.title} from response ${String(idx + 1).padStart(2, '0')}`}
+                              disabledLabel={responseForkState.disabledLabel}
+                              disabledBody={responseForkState.disabledBody}
+                              capacityLabel={responseForkState.capacityLabel}
                             />
                           </div>
                           <details className="group border border-surface-200 bg-surface-50/60">
@@ -663,7 +792,8 @@ export default async function PromptDetailPage({
                     </div>
                   </div>
                 </div>
-              ))}
+                )
+              })}
             </div>
           </div>
         </section>
@@ -767,7 +897,7 @@ export default async function PromptDetailPage({
                   className="flex w-full cursor-not-allowed items-center justify-center gap-2 border border-surface-300 bg-surface-100 px-4 py-2.5 text-sm font-semibold text-surface-400"
                 >
                   <GitFork className="w-4 h-4" aria-hidden="true" />
-                  Max fork depth reached
+                  {forkTerminalLabel}
                 </button>
               )}
               <ul className="text-[11px] text-surface-500 space-y-1.5 pt-1 border-t border-surface-200/80">
@@ -836,7 +966,7 @@ export default async function PromptDetailPage({
             className="inline-flex shrink-0 cursor-not-allowed items-center justify-center gap-1.5 border border-surface-700 bg-surface-800 px-3.5 py-2.5 text-[13px] font-semibold text-surface-400"
           >
             <GitFork className="w-4 h-4" aria-hidden="true" />
-            Maxed
+            {forkTerminalLabel === 'Max branch width reached' ? 'Full' : 'Maxed'}
           </button>
         )}
       </div>

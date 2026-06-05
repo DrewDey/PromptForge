@@ -3,6 +3,99 @@ function titleFromNotes(notes: string | null) {
   return match?.[1]?.trim()
 }
 
+export type SourceRunModelMetadata = {
+  provider: string
+  modelUsed: string
+  modelSettings: string
+}
+
+function singleLine(value?: string | null) {
+  return (value ?? '').replace(/\s+/g, ' ').trim()
+}
+
+function storedValue(value?: string | null) {
+  const normalized = singleLine(value)
+  return normalized || 'Not specified'
+}
+
+function reviewValue(value?: string | null) {
+  const normalized = singleLine(value)
+  return /^not specified$/i.test(normalized) ? '' : normalized
+}
+
+function escapeRegExp(value: string) {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+}
+
+function labeledValue(notes: string | null | undefined, label: string) {
+  const match = notes?.match(new RegExp(`^${escapeRegExp(label)}:\\s*(.+)$`, 'im'))
+  return reviewValue(match?.[1])
+}
+
+function providerFromText(value?: string | null) {
+  const raw = singleLine(value).toLowerCase()
+  if (!raw) return ''
+  if (raw.includes('chatgpt') || raw.includes('openai') || /\bgpt\b/.test(raw)) return 'ChatGPT'
+  if (raw.includes('claude') || raw.includes('sonnet') || raw.includes('opus') || raw.includes('haiku')) return 'Claude'
+  if (raw.includes('gemini')) return 'Gemini'
+  if (raw.includes('openrouter')) return 'OpenRouter'
+  return ''
+}
+
+export function detectSourceRunProvider(sourceUrl?: string | null) {
+  const raw = singleLine(sourceUrl)
+  if (!raw) return ''
+
+  let host = ''
+  try {
+    host = new URL(raw).hostname.toLowerCase().replace(/^www\./, '')
+  } catch {
+    host = raw.toLowerCase()
+  }
+
+  if (host === 'chatgpt.com' || host.endsWith('.chatgpt.com')) return 'ChatGPT'
+  if (host === 'chat.openai.com' || host.endsWith('.chat.openai.com')) return 'ChatGPT'
+  if (host === 'claude.ai' || host.endsWith('.claude.ai')) return 'Claude'
+  if (host === 'gemini.google.com' || host.endsWith('.gemini.google.com')) return 'Gemini'
+  if (host === 'openrouter.ai' || host.endsWith('.openrouter.ai')) return 'OpenRouter'
+
+  return ''
+}
+
+export function composeSourceRunReviewNotes(input: {
+  sourceUrl?: string | null
+  provider?: string | null
+  modelUsed?: string | null
+  modelSettings?: string | null
+  notes?: string | null
+}) {
+  const provider = singleLine(input.provider) || detectSourceRunProvider(input.sourceUrl)
+  const metadata = [
+    `Provider: ${storedValue(provider)}`,
+    `Model used: ${storedValue(input.modelUsed)}`,
+    `Model settings: ${storedValue(input.modelSettings)}`,
+  ].join('\n')
+
+  const notes = input.notes?.trim() ?? ''
+  return [metadata, notes].filter(Boolean).join('\n\n')
+}
+
+export function modelMetadataForSourceRunReview(input: {
+  notes?: string | null
+  sourceUrl?: string | null
+}): SourceRunModelMetadata {
+  const notes = input.notes ?? null
+  const legacyProviderModel = labeledValue(notes, 'Provider/model/settings')
+    || labeledValue(notes, 'Provider/model')
+  const provider = labeledValue(notes, 'Provider')
+    || providerFromText(legacyProviderModel)
+    || detectSourceRunProvider(input.sourceUrl)
+  const modelUsed = labeledValue(notes, 'Model used') || legacyProviderModel
+  const modelSettings = labeledValue(notes, 'Model settings')
+
+  return { provider, modelUsed, modelSettings }
+}
+
 export function cleanGeneratedProjectTitle(title: string) {
   return title
     .replace(
@@ -30,9 +123,17 @@ export function titleForSourceRunReview(input: {
 export function agentNotesForSourceRunReview(notes: string | null) {
   const raw = notes?.trim() ?? ''
   if (!raw) return ''
+  const hiddenMetadataPrefixes = [
+    'Title:',
+    'Provider:',
+    'Provider/model:',
+    'Provider/model/settings:',
+    'Model used:',
+    'Model settings:',
+  ]
   const withoutRedundantTitle = raw
     .split(/\r?\n/)
-    .filter((line) => !line.trim().startsWith('Title:'))
+    .filter((line) => !hiddenMetadataPrefixes.some((prefix) => line.trim().startsWith(prefix)))
     .join('\n')
     .trim()
 
@@ -46,6 +147,7 @@ export function agentNotesForSourceRunReview(notes: string | null) {
     'Title:',
     'Description:',
     'Provider/model:',
+    'Provider/model/settings:',
     'Chain type:',
     'Source run:',
     'Final artifact:',

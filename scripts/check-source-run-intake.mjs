@@ -45,6 +45,11 @@ const importer = 'scripts/import-pathforge-source-run.mjs'
 mustInclude(importer, "source_run_submissions", 'importer must write only to source_run_submissions')
 mustInclude(importer, "--submit-draft has been disabled", 'importer must hard-fail the old direct draft flag')
 mustInclude(importer, "pkg.source_url = requireString(pkg.source_url, 'source_url')", 'importer must require a real source_url')
+mustInclude(importer, "pkg.provider = requireString(pkg.provider, 'provider')", 'importer must require provider metadata')
+mustInclude(importer, "pkg.model = requireString(pkg.model || pkg.model_used, 'model')", 'importer must require model metadata')
+mustInclude(importer, 'Array.isArray(value)', 'importer must preserve array-style package notes instead of dropping them')
+mustInclude(importer, '`Provider: ${provider || \'Not specified\'}`', 'importer notes must include stable provider metadata')
+mustInclude(importer, '`Model used: ${modelUsed || \'Not specified\'}`', 'importer notes must include stable model metadata')
 mustInclude(importer, "mode: 'source-run-intake'", 'importer result must identify source-run intake mode')
 mustInclude(importer, 'No prompt/upvote page is created by this importer.', 'importer output must state that it does not create a prompt page')
 mustNotMatch(importer, /\.from\(['"`]prompts['"`]\)/, 'importer must not insert into prompts')
@@ -53,7 +58,17 @@ mustNotMatch(importer, /args\.submitDraft\s*=\s*true|submitDraft:\s*true|mode:\s
 mustNotMatch(importer, /vote_count|bookmark_count|category_id:\s*category\.id|result_content:\s*pkg/, 'importer must not populate public/upvote-page fields')
 
 const buildPage = 'src/app/prompt/new/page.tsx'
-mustInclude(buildPage, 'source link and notes only', 'source-run card must describe the actual intake fields')
+mustInclude(buildPage, 'source link, model info, and notes only', 'source-run card must describe the actual intake fields')
+mustInclude(buildPage, 'AI service', 'source-run form must ask where the run happened separately from the model')
+mustInclude(buildPage, 'Exact model', 'source-run form must ask for the actual visible model')
+mustInclude(buildPage, 'Service name', 'source-run form must let Other providers enter a custom service name')
+mustInclude(buildPage, 'sourceRunCustomProvider', 'source-run form must preserve a custom service name when Other is selected')
+mustInclude(buildPage, "selectedSourceRunProvider === 'Other'", 'source-run form must branch Other into custom provider entry')
+mustInclude(buildPage, 'OpenRouter is the service/router. Put the actual model in the model field.', 'source-run form must not treat OpenRouter as the model')
+mustInclude(buildPage, 'Add the exact model shown for this source run, or type Not sure.', 'source-run form must require a model value or explicit Not sure')
+mustInclude(buildPage, 'Pick the AI service for this source run.', 'source-run form must require provider metadata')
+mustInclude(buildPage, 'disabled={sourceRunSubmitting || !canSubmitSourceRun}', 'source-run submit button must stay disabled until provider/model metadata is present')
+mustInclude(buildPage, 'Model settings', 'source-run form must ask for optional visible model settings')
 mustInclude(buildPage, 'It does not create a public project page.', 'source-run form must say it does not create a public page')
 mustInclude(buildPage, 'Nothing is public until an explicit publish step.', 'source-run flow must preserve the publish boundary')
 mustInclude(buildPage, 'Not available for now', 'manual entry card must stay visibly closed for now')
@@ -75,6 +90,13 @@ for (const path of repoRunbooks) {
   mustNotInclude(path, 'If an entry starts as a session link, the agent drafts the project page first.', `${path} must not say session-link intake creates a page first`)
   mustNotInclude(path, 'Turns queued session links into pending PathForge project pages.', `${path} must not define source-run intake as page creation`)
 }
+
+mustInclude('src/lib/data.ts', 'Add the exact model shown for this source run, or type Not sure.', 'server action must enforce model metadata for user source-run uploads')
+mustInclude('src/lib/data.ts', 'Pick the AI service for this source run.', 'server action must enforce provider metadata for user source-run uploads')
+mustInclude('src/lib/source-run-review.ts', "labeledValue(notes, 'Provider/model')", 'admin metadata parser must preserve legacy provider/model notes')
+mustInclude('src/lib/source-run-review.ts', "labeledValue(notes, 'Provider/model/settings')", 'admin metadata parser must preserve legacy provider/model/settings notes')
+mustInclude('src/app/admin/page.tsx', 'modelMetadataForSourceRunReview', 'admin pending rows must surface model metadata')
+mustInclude('src/app/admin/source-runs/[id]/page.tsx', 'Model captured', 'admin source-run detail must surface captured model metadata')
 
 const skillBase = join(homedir(), '.codex/skills/pathforge-seed-iteration')
 const skillFiles = [

@@ -32,6 +32,7 @@ import {
 } from './featured-projects'
 import { getPreparedShowcaseProjectById } from './prepared-showcase-projects'
 import type { PreparedShowcaseProject, PreparedShowcaseStep } from './prepared-showcase-projects'
+import { composeSourceRunReviewNotes, detectSourceRunProvider } from './source-run-review'
 
 const APPROVED_PROJECT_IDS = new Set([
   SNAKE_PROJECT_ID,
@@ -534,6 +535,9 @@ function titleColumnMissing(error: { code?: string; message?: string } | null) {
 export async function createSourceRunSubmission(input: {
   title?: string
   source_url?: string
+  provider?: string
+  model_used?: string
+  model_settings?: string
   notes?: string
 }) {
   if (!SUPABASE_CONFIGURED) throw new Error('Source run intake requires sign in.')
@@ -545,7 +549,9 @@ export async function createSourceRunSubmission(input: {
 
   const title = input.title?.trim() ?? ''
   const sourceUrl = input.source_url?.trim() ?? ''
-  const notes = input.notes?.trim() ?? ''
+  const provider = input.provider?.trim() || detectSourceRunProvider(sourceUrl)
+  const modelUsed = input.model_used?.trim() ?? ''
+  const modelSettings = input.model_settings?.trim() ?? ''
 
   if (!title) {
     throw new Error('Add a title for this source run.')
@@ -559,11 +565,27 @@ export async function createSourceRunSubmission(input: {
     throw new Error('Paste a full source run URL starting with http:// or https://.')
   }
 
+  if (!provider) {
+    throw new Error('Pick the AI service for this source run.')
+  }
+
+  if (!modelUsed) {
+    throw new Error('Add the exact model shown for this source run, or type Not sure.')
+  }
+
+  const notes = composeSourceRunReviewNotes({
+    sourceUrl,
+    provider,
+    modelUsed,
+    modelSettings,
+    notes: input.notes,
+  })
+
   const payload = {
     title,
     source_url: sourceUrl || null,
     file_name: null,
-    notes: notes || null,
+    notes,
     author_id: user.id,
     status: 'queued',
   }

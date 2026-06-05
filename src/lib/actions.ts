@@ -120,6 +120,9 @@ export async function submitProject(data: {
 export async function submitSourceRun(data: {
   title?: string
   source_url?: string
+  provider?: string
+  model_used?: string
+  model_settings?: string
   notes?: string
 }): Promise<SourceRunSubmitResult> {
   try {

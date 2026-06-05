@@ -1,3 +1,3 @@
 display_name: PathForge Seed Iteration
-short_description: Run real AI seed drafts into PathForge.
-default_prompt: Run a realistic PathForge seed iteration using an authorized logged-in model account. Favor short prompt chains and fast adequate models, use a project-owned provisioner or user-in-browser flow for realistic dedicated seed profiles, capture exact prompts/responses, verify the artifact, update the profile registry, then feed the source run to PathForge's agent-structuring flow as a pending review draft.
+short_description: Run real AI source-run seeds into PathForge.
+default_prompt: Run a realistic PathForge seed iteration using an authorized logged-in model account. Favor short prompt chains and appropriate models, use a project-owned provisioner or user-in-browser flow for realistic dedicated seed profiles, capture exact prompts/responses, verify the artifact, update the profile registry, then submit the source-run package to PathForge as queued source-run intake only. Do not create a public prompt/upvote page unless explicitly asked.

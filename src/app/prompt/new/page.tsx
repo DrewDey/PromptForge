@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation'
 import { ArrowLeft, Plus, Trash2, ChevronDown, ChevronUp, LogIn, FileText, GitBranch, Check, AlertCircle, ArrowUp, ArrowDown, ChevronRight, Layers, Cpu, Eye, Keyboard, CheckCircle2, Link2 } from 'lucide-react'
 import { getModelsByProvider, getModelName } from '@/lib/models'
 import { submitProject, submitSourceRun } from '@/lib/actions'
+import { detectSourceRunProvider } from '@/lib/source-run-review'
 import ImageUpload from '@/components/ImageUpload'
 
 const categories = [
@@ -29,9 +30,25 @@ type SourceRunImport = {
   id: string
   label: string
   source: string
+  provider?: string
+  modelUsed?: string
+  modelSettings?: string
   notes?: string
   createdAt: string
   status: 'queued' | 'failed'
+}
+
+const sourceRunProviderOptions = ['ChatGPT', 'Claude', 'Gemini', 'OpenRouter', 'Other']
+
+const sourceRunModelSuggestions: Record<string, string[]> = {
+  ChatGPT: ['GPT-5.5', 'GPT-5.5 Thinking', 'GPT-5', 'GPT-5 mini'],
+  Claude: ['Claude Sonnet 4.6', 'Claude Opus 4.8', 'Claude Haiku'],
+  Gemini: ['Gemini 3.1 Pro', 'Gemini 3.1 Flash', 'Gemini 2.5 Pro'],
+  OpenRouter: [
+    'anthropic/claude-sonnet-4.6',
+    'openai/gpt-5.5',
+    'google/gemini-3.1-pro',
+  ],
 }
 
 // Mirrors PromptCard's difficulty chip palette so the preview card reads the same
@@ -291,6 +308,11 @@ export default function SubmitProjectPage() {
   const [intakeMode, setIntakeMode] = useState<IntakeMode>('source-run')
   const [sourceRunTitle, setSourceRunTitle] = useState('')
   const [sourceRunUrl, setSourceRunUrl] = useState('')
+  const [sourceRunProvider, setSourceRunProvider] = useState('')
+  const [sourceRunCustomProvider, setSourceRunCustomProvider] = useState('')
+  const [sourceRunProviderTouched, setSourceRunProviderTouched] = useState(false)
+  const [sourceRunModel, setSourceRunModel] = useState('')
+  const [sourceRunModelSettings, setSourceRunModelSettings] = useState('')
   const [sourceRunNotes, setSourceRunNotes] = useState('')
   const [sourceRunImports, setSourceRunImports] = useState<SourceRunImport[]>([])
   const [sourceRunSubmitting, setSourceRunSubmitting] = useState(false)
@@ -340,6 +362,11 @@ export default function SubmitProjectPage() {
       current.trim() ? current : `Fork source project: ${forkTitle || fork}`
     ))
   }, [])
+
+  useEffect(() => {
+    if (sourceRunProviderTouched) return
+    setSourceRunProvider(detectSourceRunProvider(sourceRunUrl))
+  }, [sourceRunUrl, sourceRunProviderTouched])
 
   const modelsByProvider = getModelsByProvider()
 
@@ -416,6 +443,22 @@ export default function SubmitProjectPage() {
     const title = sourceRunTitle.trim()
     const url = sourceRunUrl.trim()
     if (!title || !url) return
+    const providerSelection = sourceRunProvider.trim() || detectSourceRunProvider(url)
+    const provider = providerSelection === 'Other'
+      ? sourceRunCustomProvider.trim()
+      : providerSelection
+    const modelUsed = sourceRunModel.trim()
+    const modelSettings = sourceRunModelSettings.trim()
+
+    if (!provider) {
+      setSourceRunError('Pick the AI service for this source run.')
+      return
+    }
+
+    if (!modelUsed) {
+      setSourceRunError('Add the exact model shown for this source run, or type Not sure.')
+      return
+    }
 
     setSourceRunSubmitting(true)
     setSourceRunError('')
@@ -423,6 +466,9 @@ export default function SubmitProjectPage() {
     const result = await submitSourceRun({
       title,
       source_url: url,
+      provider,
+      model_used: modelUsed,
+      model_settings: modelSettings,
       notes: sourceRunNotes,
     })
 
@@ -437,12 +483,20 @@ export default function SubmitProjectPage() {
       id: result.id ?? makeSourceRunImportId(),
       label: title,
       source: url,
+      provider: provider || undefined,
+      modelUsed: modelUsed || undefined,
+      modelSettings: modelSettings || undefined,
       notes: sourceRunNotes.trim() || undefined,
       createdAt: 'Queued for extraction',
       status: 'queued',
     }, ...current])
     setSourceRunTitle('')
     setSourceRunUrl('')
+    setSourceRunProvider('')
+    setSourceRunCustomProvider('')
+    setSourceRunProviderTouched(false)
+    setSourceRunModel('')
+    setSourceRunModelSettings('')
     setSourceRunNotes('')
   }
 
@@ -604,6 +658,21 @@ export default function SubmitProjectPage() {
     tools.trim() ? `Tools: ${tools.trim().split(',').slice(0, 2).join(', ')}` : '',
     tags.trim() ? `Tags: ${tags.trim().split(',').slice(0, 2).join(', ')}` : '',
   ].filter(Boolean).join(' · ') || undefined
+  const detectedSourceRunProvider = detectSourceRunProvider(sourceRunUrl)
+  const selectedSourceRunProvider = sourceRunProvider.trim() || detectedSourceRunProvider
+  const resolvedSourceRunProvider = selectedSourceRunProvider === 'Other'
+    ? sourceRunCustomProvider.trim()
+    : selectedSourceRunProvider
+  const modelSuggestions = sourceRunModelSuggestions[selectedSourceRunProvider] ?? []
+  const modelPlaceholder = selectedSourceRunProvider === 'OpenRouter'
+    ? 'Paste the exact routed model, e.g. anthropic/claude-sonnet-4.6'
+    : 'Exact model shown, or Not sure'
+  const canSubmitSourceRun = Boolean(
+    sourceRunTitle.trim() &&
+    sourceRunUrl.trim() &&
+    resolvedSourceRunProvider &&
+    sourceRunModel.trim()
+  )
 
   function toggleSection(section: number) {
     setOpenSections(prev => {
@@ -637,7 +706,7 @@ export default function SubmitProjectPage() {
           Build your project
         </h1>
         <p className="text-sm text-surface-500 leading-relaxed">
-          Paste the real AI session link. Every upload starts from the actual run, with notes for review.
+          Paste the real AI session link. Every upload starts from the actual run, with model info and notes for review.
         </p>
       </header>
 
@@ -695,7 +764,7 @@ export default function SubmitProjectPage() {
               <div className="mt-1 text-base font-black text-surface-900">Let the agent structure it</div>
               <p className="mt-2 text-xs leading-5 text-surface-600">
                 Paste the ChatGPT, Gemini, Claude, or OpenRouter run. It enters the normal review queue with the
-                source link and notes only.
+                source link, model info, and notes only.
               </p>
             </button>
 
@@ -783,9 +852,98 @@ export default function SubmitProjectPage() {
                 </div>
               </div>
 
+              <div className="grid gap-4 md:grid-cols-2">
+                <div>
+                  <label htmlFor="project-source-run-provider" className="font-mono text-[10px] uppercase tracking-[0.16em] text-surface-500">
+                    AI service<RequiredDot />
+                  </label>
+                  <select
+                    id="project-source-run-provider"
+                    name="provider"
+                    value={sourceRunProvider}
+                    onChange={(event) => {
+                      setSourceRunProvider(event.target.value)
+                      setSourceRunProviderTouched(Boolean(event.target.value))
+                    }}
+                    className="mt-2 w-full border border-surface-200 bg-surface-50 px-3 py-2 text-sm text-surface-900 outline-none transition focus:border-brand-orange focus:bg-white"
+                  >
+                    <option value="">Auto-detect from link</option>
+                    {sourceRunProviderOptions.map((provider) => (
+                      <option key={provider} value={provider}>{provider}</option>
+                    ))}
+                  </select>
+                  {detectedSourceRunProvider && (
+                    <p className="mt-1 text-xs text-surface-500">
+                      Detected from link: {detectedSourceRunProvider}
+                    </p>
+                  )}
+                  {selectedSourceRunProvider === 'OpenRouter' && (
+                    <p className="mt-1 text-xs text-surface-500">
+                      OpenRouter is the service/router. Put the actual model in the model field.
+                    </p>
+                  )}
+                </div>
+
+                <div>
+                  <label htmlFor="project-source-run-model" className="font-mono text-[10px] uppercase tracking-[0.16em] text-surface-500">
+                    Exact model<RequiredDot />
+                  </label>
+                  <input
+                    id="project-source-run-model"
+                    name="model_used"
+                    list="project-source-run-model-suggestions"
+                    value={sourceRunModel}
+                    onChange={(event) => setSourceRunModel(event.target.value)}
+                    placeholder={modelPlaceholder}
+                    className="mt-2 w-full border border-surface-200 bg-surface-50 px-3 py-2 text-sm text-surface-900 outline-none transition focus:border-brand-orange focus:bg-white"
+                  />
+                  {modelSuggestions.length > 0 && (
+                    <datalist id="project-source-run-model-suggestions">
+                      {modelSuggestions.map((model) => (
+                        <option key={model} value={model} />
+                      ))}
+                    </datalist>
+                  )}
+                  <p className="mt-1 text-xs text-surface-500">
+                    Type Not sure if the session does not show the exact model.
+                  </p>
+                </div>
+              </div>
+
+              {selectedSourceRunProvider === 'Other' && (
+                <div>
+                  <label htmlFor="project-source-run-custom-provider" className="font-mono text-[10px] uppercase tracking-[0.16em] text-surface-500">
+                    Service name<RequiredDot />
+                  </label>
+                  <input
+                    id="project-source-run-custom-provider"
+                    name="custom_provider"
+                    value={sourceRunCustomProvider}
+                    onChange={(event) => setSourceRunCustomProvider(event.target.value)}
+                    placeholder="Name the app or site used"
+                    className="mt-2 w-full border border-surface-200 bg-surface-50 px-3 py-2 text-sm text-surface-900 outline-none transition focus:border-brand-orange focus:bg-white"
+                  />
+                </div>
+              )}
+
+              <div>
+                <label htmlFor="project-source-run-model-settings" className="font-mono text-[10px] uppercase tracking-[0.16em] text-surface-500">
+                  Model settings <span className="font-sans normal-case tracking-normal text-surface-400">(optional)</span>
+                </label>
+                <textarea
+                  id="project-source-run-model-settings"
+                  name="model_settings"
+                  value={sourceRunModelSettings}
+                  onChange={(event) => setSourceRunModelSettings(event.target.value)}
+                  rows={2}
+                  placeholder="Thinking mode, reasoning level, temperature, tools, or any other setting visible in the session."
+                  className="mt-2 w-full resize-y border border-surface-200 bg-surface-50 px-3 py-2 text-sm leading-6 text-surface-900 outline-none transition focus:border-brand-orange focus:bg-white"
+                />
+              </div>
+
               <div>
                 <label htmlFor="project-source-run-notes" className="font-mono text-[10px] uppercase tracking-[0.16em] text-surface-500">
-                  Agent notes
+                  Notes for review
                 </label>
                 <textarea
                   id="project-source-run-notes"
@@ -793,18 +951,18 @@ export default function SubmitProjectPage() {
                   value={sourceRunNotes}
                   onChange={(event) => setSourceRunNotes(event.target.value)}
                   rows={3}
-                  placeholder="Optional: tell the agent which response is the final artifact, what should stay private, or what screenshots/files matter."
+                  placeholder="Optional: tell review which response is the final artifact, what should stay private, or what screenshots/files matter."
                   className="mt-2 w-full resize-y border border-surface-200 bg-surface-50 px-3 py-2 text-sm leading-6 text-surface-900 outline-none transition focus:border-brand-orange focus:bg-white"
                 />
               </div>
 
               <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <p className="text-xs leading-5 text-surface-500">
-                  This enters the normal review queue as source link plus notes. It does not create a public project page.
+                  This enters the normal review queue as source link, model info, and notes. It does not create a public project page.
                 </p>
                 <button
                   type="submit"
-                  disabled={sourceRunSubmitting || !sourceRunTitle.trim() || !sourceRunUrl.trim()}
+                  disabled={sourceRunSubmitting || !canSubmitSourceRun}
                   className="inline-flex items-center justify-center gap-2 border border-brand-orange bg-brand-orange px-3 py-2 text-xs font-semibold uppercase tracking-wider text-white transition hover:bg-brand-orange-dark disabled:cursor-not-allowed disabled:opacity-40"
                 >
                   <Link2 className="h-3.5 w-3.5" aria-hidden="true" />
@@ -831,6 +989,19 @@ export default function SubmitProjectPage() {
                         <div className="min-w-0">
                           <div className="font-semibold text-surface-900">{item.label}</div>
                           <div className="mt-1 truncate text-xs text-surface-500">{item.source}</div>
+                          <div className="mt-2 flex flex-wrap gap-1.5 text-[11px] text-surface-600">
+                            <span className="border border-white/80 bg-white px-2 py-1">
+                              Provider: {item.provider || 'Not specified'}
+                            </span>
+                            <span className="border border-white/80 bg-white px-2 py-1">
+                              Model: {item.modelUsed || 'Not specified'}
+                            </span>
+                            {item.modelSettings && (
+                              <span className="border border-white/80 bg-white px-2 py-1">
+                                Settings: {item.modelSettings}
+                              </span>
+                            )}
+                          </div>
                         </div>
                         <div className="shrink-0 font-mono text-[10px] uppercase tracking-[0.14em] text-brand-orange">
                           {item.status === 'queued' ? item.createdAt : 'Needs retry'}

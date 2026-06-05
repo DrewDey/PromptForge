@@ -4,7 +4,7 @@ import { ArrowLeft, CheckCircle, ExternalLink } from 'lucide-react'
 import { dismissSourceRun, publishPreparedShowcaseSourceRun } from '@/lib/actions'
 import { getSourceRunSubmissionForAdmin } from '@/lib/data'
 import { getPreparedShowcaseProjectBySourceRunId } from '@/lib/prepared-showcase-projects'
-import { agentNotesForSourceRunReview, titleForSourceRunReview } from '@/lib/source-run-review'
+import { agentNotesForSourceRunReview, modelMetadataForSourceRunReview, titleForSourceRunReview } from '@/lib/source-run-review'
 
 export const dynamic = 'force-dynamic'
 
@@ -23,6 +23,10 @@ export default async function AdminSourceRunDetailPage({
     notes: sourceRun.notes,
   })
   const agentNotes = agentNotesForSourceRunReview(sourceRun.notes)
+  const modelMetadata = modelMetadataForSourceRunReview({
+    notes: sourceRun.notes,
+    sourceUrl: sourceRun.source_url,
+  })
   const author = sourceRun.author?.display_name ?? sourceRun.author?.username ?? 'Anonymous'
   const sourceLabel = sourceRun.source_url ?? sourceRun.file_name ?? 'No source attached'
   const preparedProject = getPreparedShowcaseProjectBySourceRunId(sourceRun.id)
@@ -70,6 +74,30 @@ export default async function AdminSourceRunDetailPage({
                 No prepared page is wired for this source run yet.
               </p>
             )}
+          </section>
+
+          <section>
+            <h2 className="mb-2 text-xs font-bold uppercase tracking-wider text-gray-500">Model captured</h2>
+            <div className="grid gap-3 sm:grid-cols-3">
+              <div className="border border-gray-200 bg-gray-50 p-3">
+                <div className="text-[10px] font-bold uppercase tracking-[0.12em] text-gray-500">Provider</div>
+                <div className="mt-1 text-sm font-semibold text-gray-900">
+                  {modelMetadata.provider || 'Not specified'}
+                </div>
+              </div>
+              <div className="border border-gray-200 bg-gray-50 p-3">
+                <div className="text-[10px] font-bold uppercase tracking-[0.12em] text-gray-500">Model used</div>
+                <div className="mt-1 text-sm font-semibold text-gray-900">
+                  {modelMetadata.modelUsed || 'Not specified'}
+                </div>
+              </div>
+              <div className="border border-gray-200 bg-gray-50 p-3">
+                <div className="text-[10px] font-bold uppercase tracking-[0.12em] text-gray-500">Model settings</div>
+                <div className="mt-1 text-sm font-semibold text-gray-900">
+                  {modelMetadata.modelSettings || 'Not specified'}
+                </div>
+              </div>
+            </div>
           </section>
 
           <section>

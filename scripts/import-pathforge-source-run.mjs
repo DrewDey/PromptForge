@@ -65,8 +65,53 @@ function requireString(value, fieldName) {
   return value.trim()
 }
 
+function optionalString(value) {
+  return typeof value === 'string' ? value.trim() : ''
+}
+
+function formatModelSettings(value) {
+  if (!value) return ''
+  if (typeof value === 'string') return value.trim()
+  if (Array.isArray(value)) return value.map(optionalString).filter(Boolean).join('; ')
+  if (typeof value === 'object') {
+    return Object.entries(value)
+      .map(([key, entry]) => {
+        const text = typeof entry === 'string' ? entry.trim() : JSON.stringify(entry)
+        return text ? `${key}: ${text}` : ''
+      })
+      .filter(Boolean)
+      .join('; ')
+  }
+  return String(value).trim()
+}
+
+function packageNotes(value) {
+  if (typeof value === 'string') return value.trim()
+  if (Array.isArray(value)) {
+    return value
+      .map((entry) => {
+        if (typeof entry === 'string') return entry.trim()
+        if (entry && typeof entry === 'object') return JSON.stringify(entry)
+        return ''
+      })
+      .filter(Boolean)
+      .join('\n')
+  }
+  return ''
+}
+
 function makeAgentNotes(pkg) {
-  return typeof pkg.agent_notes === 'string' ? pkg.agent_notes.trim() : ''
+  const provider = optionalString(pkg.provider)
+  const modelUsed = optionalString(pkg.model || pkg.model_used)
+  const modelSettings = formatModelSettings(pkg.model_settings)
+  const notes = packageNotes(pkg.agent_notes)
+
+  return [
+    `Provider: ${provider || 'Not specified'}`,
+    `Model used: ${modelUsed || 'Not specified'}`,
+    `Model settings: ${modelSettings || 'Not specified'}`,
+    notes,
+  ].filter(Boolean).join('\n\n')
 }
 
 function publicResult({ sourceRunId, pkg, profile, dryRun, loginIdentifier }) {
@@ -239,6 +284,8 @@ async function main() {
 
   pkg.title = requireString(pkg.title, 'title')
   pkg.source_url = requireString(pkg.source_url, 'source_url')
+  pkg.provider = requireString(pkg.provider, 'provider')
+  pkg.model = requireString(pkg.model || pkg.model_used, 'model')
 
   if (args.dryRun) {
     console.log(JSON.stringify(publicResult({

@@ -1,7 +1,7 @@
 import Link from 'next/link'
 import { getAllPromptsForAdmin, getAllSourceRunSubmissionsForAdmin, getAllSuggestionsForAdmin } from '@/lib/data'
 import { getPreparedShowcaseProjectBySourceRunId } from '@/lib/prepared-showcase-projects'
-import { titleForSourceRunReview } from '@/lib/source-run-review'
+import { modelMetadataForSourceRunReview, titleForSourceRunReview } from '@/lib/source-run-review'
 import type { SourceRunSubmissionWithRelations } from '@/lib/types'
 import AdminPromptRow from './AdminPromptRow'
 import AdminSuggestionRow from './AdminSuggestionRow'
@@ -239,6 +239,10 @@ function SourceRunIntakeRow({ sourceRun }: { sourceRun: SourceRunSubmissionWithR
     fileName: sourceRun.file_name,
   })
   const sourceLabel = sourceRun.source_url ?? sourceRun.file_name ?? 'Source run'
+  const modelMetadata = modelMetadataForSourceRunReview({
+    notes: sourceRun.notes,
+    sourceUrl: sourceRun.source_url,
+  })
 
   return (
     <tr
@@ -257,6 +261,19 @@ function SourceRunIntakeRow({ sourceRun }: { sourceRun: SourceRunSubmissionWithR
           {title}
         </Link>
         <p className="mt-1 break-all text-xs text-gray-500">{sourceLabel}</p>
+        <div className="mt-2 flex flex-wrap gap-1.5 text-[11px] text-gray-700">
+          <span className="border border-amber-100 bg-white px-2 py-1">
+            Provider: {modelMetadata.provider || 'Not specified'}
+          </span>
+          <span className="border border-amber-100 bg-white px-2 py-1">
+            Model: {modelMetadata.modelUsed || 'Not specified'}
+          </span>
+          {modelMetadata.modelSettings && (
+            <span className="border border-amber-100 bg-white px-2 py-1">
+              Settings: {modelMetadata.modelSettings}
+            </span>
+          )}
+        </div>
         {preparedProject ? (
           <p className="mt-1 text-xs font-medium text-green-700">
             Ready to publish as {preparedProject.href}

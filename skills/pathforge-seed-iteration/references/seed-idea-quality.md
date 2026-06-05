@@ -26,6 +26,11 @@ Avoid:
 - projects where the artifact is only a wall of text,
 - multi-step chains that look planned before the first output exists.
 
+Do not use this reference as a phrase bank. It should help choose good ideas,
+not make every first prompt start the same way. If several prompts in a batch
+sound like one sentence with swapped nouns, rewrite them naturally without using
+a new fixed opener list.
+
 ## First-Taste Standard
 
 Every seed should pass at least three:
@@ -59,20 +64,6 @@ Strong starter ideas:
 - Lemonade-stand sim.
 - Puzzle box with three rooms.
 
-First-prompt examples:
-
-```text
-Make me a polished one-file Breakout game with one original power-up and keyboard/touch controls.
-```
-
-```text
-Make me a cozy one-file lemonade stand sim that is playable in the browser and fun within the first minute.
-```
-
-```text
-Make me a tiny browser tower-defense game in one HTML file with three enemy types and one upgrade path.
-```
-
 ## Productivity Seeds
 
 Prefer practical one-file tools that save time, clarify choices, or turn messy thoughts into usable structure.
@@ -95,20 +86,6 @@ Strong starter ideas:
 - Packing list generator.
 - Resume bullet improver.
 - Simple CRM follow-up tracker.
-
-First-prompt examples:
-
-```text
-Make me a single-file meeting cost calculator that looks polished, works in the browser, and makes wasted time obvious.
-```
-
-```text
-Make me a one-file habit tracker with local storage, streaks, and a clean mobile layout.
-```
-
-```text
-Make me a browser decision matrix where I can score options, weight criteria, and export the result as CSV.
-```
 
 ## Idea Selection Weights
 

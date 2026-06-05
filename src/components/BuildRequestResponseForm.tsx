@@ -13,7 +13,7 @@ export default function BuildRequestResponseForm({ requestId }: { requestId: str
           name="url"
           type="url"
           placeholder="Link to a PathForge build or fork"
-          className="border border-surface-300 bg-white px-3 py-2.5 text-sm text-surface-900 placeholder:text-surface-400 focus:border-brand-orange focus:outline-none"
+          className="border border-surface-300 bg-white px-3 py-2.5 text-sm text-surface-900 placeholder:text-surface-400 focus:border-[#07551f] focus:outline-none"
         />
         <label htmlFor={`build-request-note-${requestId}`} className="sr-only">
           Short note about what you made
@@ -22,9 +22,9 @@ export default function BuildRequestResponseForm({ requestId }: { requestId: str
           id={`build-request-note-${requestId}`}
           name="body"
           placeholder="Short note about what you made"
-          className="border border-surface-300 bg-white px-3 py-2.5 text-sm text-surface-900 placeholder:text-surface-400 focus:border-brand-orange focus:outline-none"
+          className="border border-surface-300 bg-white px-3 py-2.5 text-sm text-surface-900 placeholder:text-surface-400 focus:border-[#07551f] focus:outline-none"
         />
-        <button type="submit" className="bg-surface-900 px-4 py-2.5 text-sm font-bold text-white hover:bg-brand-orange">
+        <button type="submit" className="bg-[#07551f] px-4 py-2.5 text-sm font-bold text-white hover:bg-surface-900">
           Respond
         </button>
       </div>

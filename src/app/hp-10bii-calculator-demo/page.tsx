@@ -7,6 +7,7 @@ import SourceRunShowcase, {
   type SourceRunShowcaseArtifactVersion,
   type SourceRunShowcaseStep,
 } from '@/components/SourceRunShowcase'
+import { getApprovedProjectForks } from '@/lib/data'
 import { HP_10BII_SHOWCASE_PROJECT } from '@/lib/prepared-showcase-projects'
 import sourceRunPackage from '../../../seed-runs/hp-10bii-financial-calculator-claude-opus-48.json'
 
@@ -130,11 +131,12 @@ function RunSummary() {
   )
 }
 
-export default function Hp10BiiCalculatorDemoPage() {
+export default async function Hp10BiiCalculatorDemoPage() {
   const sourceRun = sourceRunPackage as Hp10BiiSourceRunPackage
   const steps = sourceRun.steps.map((step) => (
     toShowcaseStep(step, sourceRun.artifact_versions ?? [], sourceRun.final_artifact_path)
   ))
+  const forkNetwork = await getApprovedProjectForks(projectId)
 
   return (
     <main className="min-h-screen bg-surface-50 text-surface-900">
@@ -174,6 +176,7 @@ export default function Hp10BiiCalculatorDemoPage() {
         projectTitle={project.title}
         providerName="Claude"
         steps={steps}
+        forkNetwork={forkNetwork}
         defaultStepNumber={2}
       />
 

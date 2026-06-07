@@ -4,6 +4,7 @@ import Link from 'next/link'
 import ProjectEngagementBar from '@/components/ProjectEngagementBar'
 import ProjectCommunityPanel from '@/components/ProjectCommunityPanel'
 import SourceRunShowcase from '@/components/SourceRunShowcase'
+import { getApprovedProjectForks } from '@/lib/data'
 import { NEON_BLOCK_PATROL_PROJECT_ID } from '@/lib/featured-projects'
 import { NEON_BLOCK_PATROL_SHOWCASE_PROJECT } from '@/lib/prepared-showcase-projects'
 import sourceRunPackage from '../../../seed-runs/gta-style-fps-chatgpt-gpt55-heavy-five-prompt.json'
@@ -84,7 +85,7 @@ function RunSummary() {
   )
 }
 
-export default function NeonBlockPatrolDemoPage() {
+export default async function NeonBlockPatrolDemoPage() {
   const steps = (sourceRunPackage.steps as RawSourceRunStep[]).map((step) => ({
     id: `${projectId}-step-${step.step_number}`,
     stepNumber: step.step_number,
@@ -114,6 +115,7 @@ export default function NeonBlockPatrolDemoPage() {
           }
         : undefined,
   }))
+  const forkNetwork = await getApprovedProjectForks(projectId)
 
   return (
     <main className="min-h-screen bg-surface-50 text-surface-900">
@@ -155,6 +157,7 @@ export default function NeonBlockPatrolDemoPage() {
         providerName="ChatGPT"
         steps={steps}
         defaultStepNumber={5}
+        forkNetwork={forkNetwork}
         verificationNotes={sourceRunPackage.verification_notes}
       />
 

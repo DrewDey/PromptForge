@@ -4,6 +4,7 @@ import Link from 'next/link'
 import ProjectEngagementBar from '@/components/ProjectEngagementBar'
 import ProjectCommunityPanel from '@/components/ProjectCommunityPanel'
 import SourceRunShowcase, { type SourceRunShowcaseStep } from '@/components/SourceRunShowcase'
+import { getApprovedProjectForks } from '@/lib/data'
 import { POMODORO_TIMER_SHOWCASE_PROJECT } from '@/lib/prepared-showcase-projects'
 
 const project = POMODORO_TIMER_SHOWCASE_PROJECT
@@ -101,7 +102,7 @@ function RunSummary() {
   )
 }
 
-export default function PomodoroTimerDemoPage() {
+export default async function PomodoroTimerDemoPage() {
   const stepCodes = [
     readArtifact('pomodoro-step-1.html', 'Step 1 Pomodoro artifact capture is unavailable.'),
     readArtifact('pomodoro-step-2.html', 'Step 2 Pomodoro artifact capture is unavailable.'),
@@ -117,6 +118,7 @@ export default function PomodoroTimerDemoPage() {
     code: stepCodes[index] ?? 'Step Pomodoro artifact capture is unavailable.',
     finalArtifactCode,
   }))
+  const forkNetwork = await getApprovedProjectForks(projectId)
 
   return (
     <main className="min-h-screen bg-surface-50 text-surface-900">
@@ -155,6 +157,7 @@ export default function PomodoroTimerDemoPage() {
         projectTitle={project.title}
         providerName="ChatGPT"
         steps={steps}
+        forkNetwork={forkNetwork}
         defaultStepNumber={4}
         verificationNotes="Captured from a real ChatGPT GPT 5.5 Instant run. The final public artifact path is selectable separately because it differs from the captured step 4 file."
       />

@@ -1,6 +1,6 @@
 import Link from 'next/link'
 import { ArrowRight, GitBranch, MessageSquare } from 'lucide-react'
-import { getApprovedProjectForks, getPromptById } from '@/lib/data'
+import { getPromptById } from '@/lib/data'
 import { getProjectRouteOverride } from '@/lib/project-links'
 import {
   PROJECT_FORK_MAX_DEPTH,
@@ -17,7 +17,6 @@ import {
   type ProjectForkTrailNode,
 } from '@/lib/project-forks'
 import type { PromptWithRelations } from '@/lib/types'
-import ProjectForkCallout from './ProjectForkCallout'
 
 function compactForkText(value: string | null | undefined, fallback: string, max = 110) {
   const trimmed = value?.trim()
@@ -729,36 +728,13 @@ export default async function ProjectCommunityPanel({
 }: {
   projectId: string
 }) {
-  const [project, forkNetwork] = await Promise.all([
-    getPromptById(projectId),
-    getApprovedProjectForks(projectId),
-  ])
+  const project = await getPromptById(projectId)
   const sourceSteps = project ? toProjectForkSourceSteps(project) : []
   const forkSource = project ? projectForkSourceFromSubmissionFields(project) : null
   const forkTrail = project
     ? await resolveProjectForkTrail(project, getPromptById)
     : { nodes: [], immediateSourceProject: null, cycleDetected: false, truncated: false }
   const sourceProject = forkTrail.immediateSourceProject
-  const forkLaneSignal = forkNetwork.length > 0
-    ? `${forkNetwork.length}/${PROJECT_FORK_MAX_WIDTH}`
-    : `${PROJECT_FORK_MAX_WIDTH}x`
-  const calloutDepth = forkSource ? forkSource.depth + 1 : 0
-  const calloutContract = project
-    ? createProjectForkDraftContract({
-        source: {
-          sourceProjectId: projectId,
-          sourceProjectTitle: project.title,
-          depth: calloutDepth,
-          promptFamilyId: forkSource?.promptFamilyId,
-        },
-        sourceSteps,
-      })
-    : null
-  const forkNetworkGrouping = groupProjectForkNetworkBySourceStep(sourceSteps, forkNetwork)
-  const calloutForkPoint = calloutContract?.forkPointStep
-  const calloutBranchIndex = calloutForkPoint
-    ? forkNetworkGrouping.rows.find((row) => row.step.id === calloutForkPoint.id)?.forks.length ?? 0
-    : forkNetwork.length
 
   return (
     <section
@@ -774,49 +750,21 @@ export default async function ProjectCommunityPanel({
           currentProject={project}
         />
       )}
-      <ProjectForkNetworkBand forks={forkNetwork} projectTitle={project?.title} sourceSteps={sourceSteps} />
-      <ProjectForkCallout
-        projectId={projectId}
-        projectTitle={project?.title}
-        sourceSteps={sourceSteps}
-        parentForkId={forkSource ? projectId : undefined}
-        depth={calloutDepth}
-        branchIndex={calloutBranchIndex}
-        promptFamilyId={forkSource?.promptFamilyId}
-      />
       <div className="border-t border-surface-200 pt-10">
-        <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_320px] lg:items-start">
-          <div>
-            <div className="mb-5 flex items-center gap-2">
-              <MessageSquare className="h-4 w-4 text-brand-blue" aria-hidden="true" />
-              <div>
-                <div className="font-mono text-[10px] uppercase tracking-[0.16em] text-surface-500">
-                  Discussion
-                </div>
-                <h2 className="text-2xl font-black text-surface-900">Comments and replies</h2>
+        <div>
+          <div className="mb-5 flex items-center gap-2">
+            <MessageSquare className="h-4 w-4 text-brand-blue" aria-hidden="true" />
+            <div>
+              <div className="font-mono text-[10px] uppercase tracking-[0.16em] text-surface-500">
+                Discussion
               </div>
-            </div>
-
-            <div className="border border-dashed border-surface-300 bg-white px-4 py-6 text-sm text-surface-500">
-              No comments yet.
+              <h2 className="text-2xl font-black text-surface-900">Comments and replies</h2>
             </div>
           </div>
 
-          <aside className="border border-surface-200 bg-white p-4">
-            <div className="font-mono text-[10px] uppercase tracking-[0.16em] text-surface-500">
-              Discussion signal
-            </div>
-            <div className="mt-4 grid grid-cols-2 gap-2 border-t border-surface-200 pt-4 text-sm">
-              <div>
-                <div className="font-mono text-[10px] uppercase tracking-[0.14em] text-surface-400">Comments</div>
-                <div className="mt-1 text-xl font-black text-surface-900">0</div>
-              </div>
-              <div>
-                <div className="font-mono text-[10px] uppercase tracking-[0.14em] text-surface-400">Fork lanes</div>
-                <div className="mt-1 text-xl font-black text-surface-900">{forkLaneSignal}</div>
-              </div>
-            </div>
-          </aside>
+          <div className="border border-dashed border-surface-300 bg-white px-4 py-6 text-sm text-surface-500">
+            No comments yet.
+          </div>
         </div>
       </div>
     </section>

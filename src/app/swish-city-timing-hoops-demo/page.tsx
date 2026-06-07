@@ -4,6 +4,7 @@ import Link from 'next/link'
 import ProjectEngagementBar from '@/components/ProjectEngagementBar'
 import ProjectCommunityPanel from '@/components/ProjectCommunityPanel'
 import SourceRunShowcase, { type SourceRunShowcaseStep } from '@/components/SourceRunShowcase'
+import { getApprovedProjectForks } from '@/lib/data'
 import { SWISH_CITY_PROJECT_ID } from '@/lib/featured-projects'
 import { SWISH_CITY_SHOWCASE_PROJECT } from '@/lib/prepared-showcase-projects'
 import sourceRunPackage from '../../../seed-runs/swish-city-claude-opus-4-8-source-run.json'
@@ -99,8 +100,9 @@ function RunSummary() {
   )
 }
 
-export default function SwishCityTimingHoopsDemoPage() {
+export default async function SwishCityTimingHoopsDemoPage() {
   const steps = (sourceRunPackage.steps as SwishCitySeedStep[]).map(toStep)
+  const forkNetwork = await getApprovedProjectForks(projectId)
 
   return (
     <main className="min-h-screen bg-surface-50 text-surface-900">
@@ -145,6 +147,7 @@ export default function SwishCityTimingHoopsDemoPage() {
         projectTitle={project.title}
         providerName="Claude"
         steps={steps}
+        forkNetwork={forkNetwork}
         defaultStepNumber={3}
         verificationNotes={sourceRunPackage.verification_notes}
       />

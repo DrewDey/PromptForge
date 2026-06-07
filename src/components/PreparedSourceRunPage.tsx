@@ -7,6 +7,7 @@ import SourceRunShowcase, {
   type SourceRunShowcaseArtifactVersion,
   type SourceRunShowcaseStep,
 } from '@/components/SourceRunShowcase'
+import { getApprovedProjectForks } from '@/lib/data'
 import type { PreparedShowcaseProject } from '@/lib/prepared-showcase-projects'
 
 type SourceRunPackageStep = {
@@ -205,7 +206,7 @@ function RunSummary({
   )
 }
 
-export default function PreparedSourceRunPage({
+export default async function PreparedSourceRunPage({
   project,
   sourceRunPackage,
   route,
@@ -221,6 +222,7 @@ export default function PreparedSourceRunPage({
   const sourceUrl = sourceRun.source_url || project.sourceUrl
   const settingsText = modelSettingsText(sourceRun.model_settings)
   const steps = sourceRun.steps.map((step) => toShowcaseStep(step, sourceRun, project))
+  const forkNetwork = await getApprovedProjectForks(project.id)
 
   return (
     <main className="min-h-screen bg-surface-50 text-surface-900">
@@ -270,6 +272,7 @@ export default function PreparedSourceRunPage({
         providerName={providerName}
         verificationNotes={verificationNotesText(sourceRun.verification_notes)}
         steps={steps}
+        forkNetwork={forkNetwork}
         defaultStepNumber={defaultStepNumber(sourceRun)}
       />
 

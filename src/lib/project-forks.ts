@@ -84,6 +84,8 @@ export type ProjectForkNetworkItem = {
   id: string
   title: string
   description?: string | null
+  authorUsername?: string | null
+  authorDisplayName?: string | null
   modelUsed?: string | null
   createdAt: string
   forkSource: ProjectForkSource

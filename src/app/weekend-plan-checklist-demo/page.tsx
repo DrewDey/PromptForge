@@ -4,6 +4,7 @@ import Link from 'next/link'
 import ProjectEngagementBar from '@/components/ProjectEngagementBar'
 import ProjectCommunityPanel from '@/components/ProjectCommunityPanel'
 import SourceRunShowcase, { type SourceRunShowcaseStep } from '@/components/SourceRunShowcase'
+import { getApprovedProjectForks } from '@/lib/data'
 import { WEEKEND_CHECKLIST_PROJECT_ID } from '@/lib/featured-projects'
 import { WEEKEND_CHECKLIST_SHOWCASE_PROJECT } from '@/lib/prepared-showcase-projects'
 import sourceRunPackage from '../../../seed-runs/weekend-plan-checklist-chatgpt-6prompt-fixed.json'
@@ -122,10 +123,11 @@ function RunSummary({ sourceRun }: { sourceRun: WeekendPlanChecklistSeedRun }) {
   )
 }
 
-export default function WeekendPlanChecklistDemoPage() {
+export default async function WeekendPlanChecklistDemoPage() {
   const sourceRun = sourceRunPackage as WeekendPlanChecklistSeedRun
   const steps = sourceRun.steps.map(toStep)
   const sourceRunUrl = sourceRun.source_url || project.sourceUrl
+  const forkNetwork = await getApprovedProjectForks(projectId)
 
   return (
     <main className="min-h-screen bg-surface-50 text-surface-900">
@@ -175,6 +177,7 @@ export default function WeekendPlanChecklistDemoPage() {
         providerName="ChatGPT"
         verificationNotes={sourceRun.verification_notes}
         steps={steps}
+        forkNetwork={forkNetwork}
         defaultStepNumber={6}
       />
 

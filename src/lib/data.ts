@@ -456,7 +456,7 @@ export async function getApprovedProjectForks(projectId: string): Promise<Projec
     const supabase = await createClient()
     const { data, error } = await supabase
       .from('prompts')
-      .select('id,title,description,model_used,created_at,status,fork_source_project_id,fork_source_project_title,fork_source_step_id,fork_source_step_number,fork_parent_submission_id,prompt_family_id,fork_depth,fork_branch_index')
+      .select('id,title,description,model_used,created_at,status,author:profiles(username,display_name),fork_source_project_id,fork_source_project_title,fork_source_step_id,fork_source_step_number,fork_parent_submission_id,prompt_family_id,fork_depth,fork_branch_index')
       .eq('status', 'approved')
       .or(`fork_source_project_id.eq.${projectId},fork_parent_submission_id.eq.${projectId}`)
       .order('created_at', { ascending: false })
@@ -470,11 +470,14 @@ export async function getApprovedProjectForks(projectId: string): Promise<Projec
       .reduce<ProjectForkNetworkItem[]>((forks, prompt) => {
         const forkSource = projectForkSourceFromSubmissionFields(prompt)
         if (!forkSource) return forks
+        const author = Array.isArray(prompt.author) ? prompt.author[0] : prompt.author
 
         forks.push({
           id: prompt.id,
           title: prompt.title,
           description: prompt.description,
+          authorUsername: author?.username ?? null,
+          authorDisplayName: author?.display_name ?? null,
           modelUsed: prompt.model_used,
           createdAt: prompt.created_at,
           forkSource,

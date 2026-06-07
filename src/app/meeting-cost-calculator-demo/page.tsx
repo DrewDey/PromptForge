@@ -4,6 +4,7 @@ import Link from 'next/link'
 import ProjectEngagementBar from '@/components/ProjectEngagementBar'
 import ProjectCommunityPanel from '@/components/ProjectCommunityPanel'
 import SourceRunShowcase, { type SourceRunShowcaseStep } from '@/components/SourceRunShowcase'
+import { getApprovedProjectForks } from '@/lib/data'
 import { MEETING_COST_PROJECT_ID } from '@/lib/featured-projects'
 import { MEETING_COST_SHOWCASE_PROJECT } from '@/lib/prepared-showcase-projects'
 import sourceRunPackage from '../../../seed-runs/meeting-cost-calculator-chatgpt-source-run.json'
@@ -96,9 +97,10 @@ function RunSummary({ sourceRun }: { sourceRun: MeetingCostSeedRun }) {
   )
 }
 
-export default function MeetingCostCalculatorDemoPage() {
+export default async function MeetingCostCalculatorDemoPage() {
   const sourceRun = sourceRunPackage as MeetingCostSeedRun
   const steps = sourceRun.steps.map(toStep)
+  const forkNetwork = await getApprovedProjectForks(projectId)
 
   return (
     <main className="min-h-screen bg-surface-50 text-surface-900">
@@ -147,6 +149,7 @@ export default function MeetingCostCalculatorDemoPage() {
         providerName="ChatGPT"
         verificationNotes={sourceRun.verification_notes}
         steps={steps}
+        forkNetwork={forkNetwork}
         defaultStepNumber={1}
       />
 

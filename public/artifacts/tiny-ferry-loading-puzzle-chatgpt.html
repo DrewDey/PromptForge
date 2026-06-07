@@ -1,0 +1,308 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Tiny Ferry Balance</title>
+<style>
+  :root{
+    --bg:#dff5ff;
+    --ink:#19313a;
+    --muted:#58707a;
+    --water:#73c7e8;
+    --deck:#f5d28a;
+    --rail:#b1763b;
+    --good:#2f9e44;
+    --bad:#c92a2a;
+    --card:#ffffffdd;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;min-height:100%;font-family:system-ui,-apple-system,Segoe UI,sans-serif;color:var(--ink);background:linear-gradient(#bfefff 0%,var(--bg) 52%,#8bd8ee 52%,#5eb9dc 100%);overflow-x:hidden}
+  .wrap{width:min(980px,100%);margin:0 auto;padding:14px}
+  header{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px}
+  h1{font-size:clamp(24px,5vw,42px);margin:0;letter-spacing:-.04em}
+  .pill{background:var(--card);border:2px solid #ffffff80;border-radius:999px;padding:9px 12px;font-weight:800;box-shadow:0 4px 0 #00000014}
+  .panel{background:var(--card);border:2px solid #ffffff99;border-radius:20px;padding:12px;box-shadow:0 8px 0 #00000010}
+  .hud{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:12px}
+  .stat{font-size:14px}
+  .stat b{display:block;font-size:20px;margin-top:2px}
+  .game{display:grid;grid-template-columns:1fr 250px;gap:12px;align-items:start}
+  .scene{position:relative;min-height:510px;overflow:hidden}
+  .skyline{height:70px;border-radius:14px;background:linear-gradient(#ebfbff,#c9f3ff);position:relative;overflow:hidden}
+  .skyline:before{content:"";position:absolute;bottom:0;left:5%;width:90%;height:36px;background:linear-gradient(90deg,#a8d8de 0 8%,transparent 8% 12%,#a8d8de 12% 23%,transparent 23% 28%,#a8d8de 28% 38%,transparent 38% 44%,#a8d8de 44% 62%,transparent 62% 68%,#a8d8de 68% 84%,transparent 84%)}
+  .water{height:210px;margin-top:18px;border-radius:20px;background:repeating-linear-gradient(0deg,var(--water) 0 18px,#64bddf 18px 22px);position:relative;overflow:hidden}
+  .water:after{content:"";position:absolute;inset:0;background:radial-gradient(circle at 20% 30%,#ffffff80 0 2px,transparent 3px),radial-gradient(circle at 65% 64%,#ffffff80 0 2px,transparent 3px),radial-gradient(circle at 80% 25%,#ffffff80 0 2px,transparent 3px)}
+  .ferryArea{position:absolute;left:50%;top:185px;transform:translateX(-50%);width:min(620px,92%);height:250px;display:grid;place-items:center}
+  .ferry{position:relative;width:100%;max-width:590px;height:170px;transform:rotate(var(--tilt,0deg));transition:transform .28s ease}
+  .deck{position:absolute;left:6%;right:6%;top:35px;height:76px;background:var(--deck);border:4px solid var(--rail);border-radius:16px;display:grid;grid-template-columns:repeat(7,1fr);gap:5px;padding:8px;z-index:2;box-shadow:0 10px 0 #00000012}
+  .hull{position:absolute;left:12%;right:12%;top:104px;height:48px;background:#c76f47;border-radius:0 0 48px 48px;border:4px solid #874227}
+  .dock{position:absolute;left:0;right:0;bottom:18px;height:52px;background:#9b6b41;border-radius:14px;border:3px solid #6d4526;display:grid;grid-template-columns:repeat(4,1fr);gap:8px;padding:8px}
+  .slot{border:2px dashed #9b6b41;border-radius:12px;background:#fff8df;display:grid;place-items:center;min-width:0}
+  .slot.drop-ok{background:#def7df;border-color:var(--good)}
+  .item{border:0;border-radius:12px;padding:6px 8px;min-height:46px;width:100%;font-weight:900;color:white;cursor:pointer;box-shadow:0 4px 0 #00000025;touch-action:manipulation;display:grid;place-items:center;text-align:center}
+  .item small{display:block;font-size:11px;opacity:.92}
+  .car{background:#2f80ed}
+  .truck{background:#845ef7}
+  .crate{background:#b66a2c}
+  .van{background:#0ca678}
+  .selected{outline:4px solid #ffd43b;transform:translateY(-2px)}
+  .empty{opacity:.55;font-size:12px;font-weight:800;color:#7a5c35;text-align:center}
+  .list{display:grid;gap:8px}
+  .info{font-size:14px;color:var(--muted);line-height:1.35}
+  .btn{border:0;border-radius:14px;background:#19313a;color:white;font-weight:900;padding:11px 13px;cursor:pointer;box-shadow:0 4px 0 #00000022;touch-action:manipulation}
+  .btn:active,.item:active{transform:translateY(2px);box-shadow:0 2px 0 #00000022}
+  .ghost{background:#e9f8ff;color:#19313a;border:2px solid #9adced}
+  .meter{height:18px;background:#e9ecef;border-radius:999px;overflow:hidden;border:2px solid #fff;margin-top:7px}
+  .bar{height:100%;width:50%;background:linear-gradient(90deg,#2f9e44,#ffd43b,#c92a2a);transform-origin:left;transition:width .25s}
+  .message{margin-top:10px;font-weight:900;min-height:28px}
+  .overlay{position:fixed;inset:0;background:#102026aa;display:none;align-items:center;justify-content:center;padding:18px;z-index:20}
+  .overlay.show{display:flex}
+  .winbox{max-width:430px;width:100%;background:white;border-radius:24px;padding:20px;text-align:center;box-shadow:0 12px 0 #00000025}
+  .winbox h2{font-size:34px;margin:0 0 8px}
+  .winbox p{color:var(--muted);line-height:1.35}
+  @media(max-width:760px){
+    .hud{grid-template-columns:1fr}
+    .game{grid-template-columns:1fr}
+    .scene{min-height:490px}
+    .side{order:-1}
+    .dock{grid-template-columns:repeat(2,1fr);height:110px}
+    .ferryArea{top:230px}
+    .item{min-height:48px}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>⛴️ Tiny Ferry Balance</h1>
+    <button class="btn ghost" id="resetBtn">New Puzzle</button>
+  </header>
+
+  <section class="hud">
+    <div class="panel stat">Ferry tilt<b id="tiltText">0°</b></div>
+    <div class="panel stat">Deck load<b id="loadText">0 / 16</b></div>
+    <div class="panel stat">Goal<b>Load all 4 safely</b></div>
+  </section>
+
+  <main class="game">
+    <section class="panel scene">
+      <div class="skyline"></div>
+      <div class="water"></div>
+
+      <div class="ferryArea">
+        <div class="ferry" id="ferry">
+          <div class="deck" id="deck"></div>
+          <div class="hull"></div>
+        </div>
+      </div>
+
+      <div class="dock" id="dock"></div>
+    </section>
+
+    <aside class="panel side">
+      <div class="list">
+        <button class="btn ghost" id="removeBtn">Remove selected from ferry</button>
+        <button class="btn ghost" id="clearBtn">Clear deck</button>
+      </div>
+      <p class="info">
+        Tap a car or crate, then tap a ferry slot. Heavy items near the edges tip the ferry more. Keep the tilt under 12° and load everything.
+      </p>
+      <div class="meter"><div class="bar" id="bar"></div></div>
+      <div class="message" id="message">Select something on the dock.</div>
+    </aside>
+  </main>
+</div>
+
+<div class="overlay" id="overlay">
+  <div class="winbox">
+    <h2>Clean Crossing!</h2>
+    <p id="winText">The ferry is balanced and ready to shove off.</p>
+    <button class="btn" id="againBtn">Play Again</button>
+  </div>
+</div>
+
+<script>
+(() => {
+  const maxTilt = 12;
+  const capacity = 16;
+  const slotWeights = [-3,-2,-1,0,0,1,2];
+  const puzzles = [
+    [
+      {id:'car1', name:'Blue Car', type:'car', w:3},
+      {id:'crate1', name:'Crates', type:'crate', w:2},
+      {id:'truck1', name:'Work Truck', type:'truck', w:5},
+      {id:'van1', name:'Green Van', type:'van', w:4}
+    ],
+    [
+      {id:'car2', name:'Red Car', type:'car', w:3},
+      {id:'crate2', name:'Heavy Crate', type:'crate', w:4},
+      {id:'crate3', name:'Light Crate', type:'crate', w:1},
+      {id:'truck2', name:'Box Truck', type:'truck', w:6}
+    ],
+    [
+      {id:'van2', name:'Small Van', type:'van', w:4},
+      {id:'car3', name:'Tiny Car', type:'car', w:2},
+      {id:'truck3', name:'Big Truck', type:'truck', w:6},
+      {id:'crate4', name:'Crate Stack', type:'crate', w:3}
+    ]
+  ];
+
+  const dock = document.getElementById('dock');
+  const deck = document.getElementById('deck');
+  const ferry = document.getElementById('ferry');
+  const tiltText = document.getElementById('tiltText');
+  const loadText = document.getElementById('loadText');
+  const message = document.getElementById('message');
+  const bar = document.getElementById('bar');
+  const overlay = document.getElementById('overlay');
+  const winText = document.getElementById('winText');
+
+  let items = [];
+  let placed = Array(7).fill(null);
+  let selected = null;
+  let puzzleIndex = 0;
+
+  function start(next=false){
+    if(next) puzzleIndex = (puzzleIndex + 1) % puzzles.length;
+    items = puzzles[puzzleIndex].map(x => ({...x, placed:false}));
+    placed = Array(7).fill(null);
+    selected = null;
+    overlay.classList.remove('show');
+    render();
+    setMsg('Select something on the dock.');
+  }
+
+  function itemButton(item){
+    const b = document.createElement('button');
+    b.className = `item ${item.type}` + (selected === item.id ? ' selected' : '');
+    b.innerHTML = `${item.name}<small>weight ${item.w}</small>`;
+    b.setAttribute('aria-label', `Select ${item.name}, weight ${item.w}`);
+    b.onclick = () => {
+      selected = item.id;
+      setMsg(`${item.name} selected. Tap a ferry slot.`);
+      render();
+    };
+    return b;
+  }
+
+  function render(){
+    dock.innerHTML = '';
+    items.filter(i => !i.placed).forEach(i => dock.appendChild(itemButton(i)));
+    while(dock.children.length < 4){
+      const e = document.createElement('div');
+      e.className = 'empty';
+      e.textContent = 'Loaded';
+      dock.appendChild(e);
+    }
+
+    deck.innerHTML = '';
+    placed.forEach((id, idx) => {
+      const s = document.createElement('button');
+      s.className = 'slot';
+      s.setAttribute('aria-label', `Ferry slot ${idx + 1}`);
+      const it = items.find(x => x.id === id);
+      if(it) s.appendChild(itemButton(it));
+      else s.innerHTML = '<span class="empty">Tap slot</span>';
+      s.onclick = (ev) => {
+        ev.stopPropagation();
+        if(it){
+          selected = it.id;
+          setMsg(`${it.name} selected. Tap another open slot or remove it.`);
+          render();
+          return;
+        }
+        if(!selected){ setMsg('Pick a dock item first.'); return; }
+        placeSelected(idx);
+      };
+      deck.appendChild(s);
+    });
+
+    updateStats();
+  }
+
+  function placeSelected(idx){
+    const it = items.find(i => i.id === selected);
+    if(!it) return;
+    const old = placed.indexOf(it.id);
+    if(old !== -1) placed[old] = null;
+    placed[idx] = it.id;
+    it.placed = true;
+    selected = null;
+
+    const t = Math.abs(calcTilt());
+    if(t > maxTilt){
+      setMsg('Whoa, too much tilt. Move weight toward the middle.');
+    } else {
+      setMsg('Good load. Keep balancing.');
+    }
+    render();
+    checkWin();
+  }
+
+  function removeSelected(){
+    if(!selected) { setMsg('Select an item on the ferry first.'); return; }
+    const idx = placed.indexOf(selected);
+    if(idx === -1){ setMsg('That item is already on the dock.'); return; }
+    placed[idx] = null;
+    const it = items.find(i => i.id === selected);
+    it.placed = false;
+    selected = null;
+    setMsg('Item returned to dock.');
+    render();
+  }
+
+  function calcTilt(){
+    return placed.reduce((sum,id,idx) => {
+      const it = items.find(i => i.id === id);
+      return sum + (it ? it.w * slotWeights[idx] : 0);
+    },0);
+  }
+
+  function totalLoad(){
+    return placed.reduce((sum,id) => {
+      const it = items.find(i => i.id === id);
+      return sum + (it ? it.w : 0);
+    },0);
+  }
+
+  function updateStats(){
+    const rawTilt = calcTilt();
+    const degrees = Math.round(rawTilt * 0.9);
+    ferry.style.setProperty('--tilt', `${degrees}deg`);
+    tiltText.textContent = `${Math.abs(degrees)}° ${degrees < 0 ? 'left' : degrees > 0 ? 'right' : ''}`;
+    loadText.textContent = `${totalLoad()} / ${capacity}`;
+    const danger = Math.min(100, Math.round(Math.abs(degrees) / maxTilt * 100));
+    bar.style.width = `${danger}%`;
+  }
+
+  function checkWin(){
+    const allLoaded = items.every(i => i.placed);
+    const safeTilt = Math.abs(Math.round(calcTilt() * 0.9)) <= maxTilt;
+    const safeLoad = totalLoad() <= capacity;
+    if(allLoaded && safeTilt && safeLoad){
+      winText.textContent = `All cargo loaded with ${tiltText.textContent.trim()} tilt and ${totalLoad()} total weight.`;
+      overlay.classList.add('show');
+    }
+  }
+
+  function setMsg(txt){ message.textContent = txt; }
+
+  document.getElementById('removeBtn').onclick = removeSelected;
+  document.getElementById('clearBtn').onclick = () => {
+    placed.forEach(id => {
+      const it = items.find(i => i.id === id);
+      if(it) it.placed = false;
+    });
+    placed = Array(7).fill(null);
+    selected = null;
+    setMsg('Deck cleared.');
+    render();
+  };
+  document.getElementById('resetBtn').onclick = () => start(true);
+  document.getElementById('againBtn').onclick = () => start(true);
+
+  start();
+})();
+</script>
+</body>
+</html>

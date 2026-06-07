@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Moving Day Box Labeler & Summary</title>
+    <style>
+        :root {
+            --bg-color: #f4f6f9;
+            --card-bg: #ffffff;
+            --text-color: #333333;
+            --border-color: #dddddd;
+            --primary-color: #4a90e2;
+            --high-priority: #df4759;
+            --med-priority: #ffc107;
+            --low-priority: #28a745;
+        }
+
+        /* Screen Styles */
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            line-height: 1.5;
+            margin: 0;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+
+        h1, h2, h3 {
+            margin-top: 0;
+        }
+
+        .no-print-section {
+            background: var(--card-bg);
+            padding: 24px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            margin-bottom: 24px;
+        }
+
+        textarea {
+            width: 100%;
+            height: 150px;
+            padding: 12px;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            font-family: monospace;
+            box-sizing: border-box;
+            resize: vertical;
+            margin-bottom: 12px;
+        }
+
+        button {
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            font-size: 16px;
+            font-weight: bold;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        button:hover {
+            background-color: #357abd;
+        }
+
+        .print-btn {
+            background-color: #28a745;
+            margin-left: 10px;
+        }
+
+        .print-btn:hover {
+            background-color: #218838;
+        }
+
+        .dashboard {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+            margin-top: 20px;
+        }
+
+        .stat-card {
+            background: #f8f9fa;
+            border-left: 4px solid var(--primary-color);
+            padding: 16px;
+            border-radius: 4px;
+        }
+
+        .stat-card h4 {
+            margin: 0 0 8px 0;
+            color: #666;
+            font-size: 14px;
+            text-transform: uppercase;
+        }
+
+        .stat-card .value {
+            font-size: 24px;
+            font-weight: bold;
+        }
+
+        /* Label and Summary Layouts */
+        #output-summary {
+            margin-bottom: 40px;
+        }
+
+        .summary-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 12px;
+            background: var(--card-bg);
+        }
+
+        .summary-table th, .summary-table td {
+            border: 1px solid var(--border-color);
+            padding: 10px;
+            text-align: left;
+        }
+
+        .summary-table th {
+            background-color: #f1f3f5;
+        }
+
+        .labels-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px;
+        }
+
+        .box-label {
+            background: var(--card-bg);
+            border: 2px dashed #666;
+            border-radius: 8px;
+            padding: 20px;
+            position: relative;
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            min-height: 200px;
+        }
+
+        .label-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 2px solid #333;
+            padding-bottom: 8px;
+            margin-bottom: 12px;
+        }
+
+        .label-room {
+            font-size: 24px;
+            font-weight: 900;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .label-id {
+            font-size: 14px;
+            background: #333;
+            color: #fff;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-weight: bold;
+        }
+
+        .label-contents {
+            font-size: 16px;
+            font-weight: 600;
+            flex-grow: 1;
+            margin-bottom: 12px;
+            color: #444;
+        }
+
+        .label-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-top: 1px solid var(--border-color);
+            padding-top: 8px;
+        }
+
+        .badge {
+            padding: 4px 12px;
+            border-radius: 4px;
+            font-weight: bold;
+            font-size: 12px;
+            text-transform: uppercase;
+        }
+
+        .badge-high { background-color: var(--high-priority); color: white; }
+        .badge-med { background-color: var(--med-priority); color: black; }
+        .badge-low { background-color: var(--low-priority); color: white; }
+        
+        .fragile-tag {
+            color: var(--high-priority);
+            font-weight: 900;
+            border: 2px solid var(--high-priority);
+            padding: 2px 8px;
+            border-radius: 4px;
+            transform: rotate(-5deg);
+            font-size: 14px;
+            animation: pulse 2s infinite;
+        }
+
+        /* Print Media Styles */
+        @media print {
+            body {
+                background-color: #fff;
+                color: #000;
+                padding: 0;
+            }
+
+            .no-print {
+                display: none !important;
+            }
+
+            .page-break {
+                page-break-before: always;
+            }
+
+            #output-summary {
+                page-break-after: always;
+            }
+
+            .labels-grid {
+                display: block; /* Allows clean page breaks between elements */
+            }
+
+            .box-label {
+                width: 100%;
+                height: 4.5in; /* Fits roughly two labels per US Letter page */
+                max-height: 4.5in;
+                page-break-inside: avoid;
+                margin-bottom: 0.5in;
+                border: 3px dashed #000;
+                padding: 0.3in;
+            }
+
+            .label-id {
+                background: #000;
+                color: #fff;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+
+            .badge-high { background-color: #df4759 !important; color: white !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .badge-med { background-color: #ffc107 !important; color: black !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .badge-low { background-color: #28a745 !important; color: white !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .fragile-tag { border-color: #df4759 !important; color: #df4759 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="no-print-section no-print">
+        <h2>1. Paste Your Messy Box List</h2>
+        <p style="font-size: 14px; color: #666; margin-top: -10px;">
+            Format loosely as: <code>Room - Contents - Priority - Fragile</code> (e.g., <em>Kitchen - Plates & Bowls - High - Fragile</em> or <em>Living Room - Books - Low</em>). The parser will try its best to guess missing fields.
+        </p>
+        <textarea id="box-input" placeholder="Kitchen - Fine China - High - Fragile&#10;Master Bedroom - Winter Clothes - Low&#10;Living Room - Stereo Components - Medium - Fragile&#10;Kitchen - Pots and Pans - High"></textarea>
+        <div>
+            <button onclick="processBoxes()">Generate Labels & Summary</button>
+            <button class="print-btn" onclick="window.print()">Print Labels</button>
+        </div>
+    </div>
+
+    <div id="output-summary">
+        <h2>Moving Morning Dashboard & Summary</h2>
+        <div class="dashboard" id="dashboard-stats">
+            </div>
+        
+        <h3>Manifest Inventory</h3>
+        <table class="summary-table">
+            <thead>
+                <tr>
+                    <th style="width: 10%;">Box ID</th>
+                    <th style="width: 25%;">Destination Room</th>
+                    <th style="width: 40%;">Contents Summary</th>
+                    <th style="width: 15%;">Priority</th>
+                    <th style="width: 10%;">Fragile?</th>
+                </tr>
+            </thead>
+            <tbody id="summary-table-body">
+                <tr>
+                    <td colspan="5" style="text-align: center; color: #999;">No boxes parsed yet. Input text above and click generate.</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="page-break">
+        <h2 class="no-print">Printable Box Labels</h2>
+        <div class="labels-grid" id="labels-container">
+            </div>
+    </div>
+</div>
+
+<script>
+    function processBoxes() {
+        const input = document.getElementById('box-input').value;
+        const lines = input.split('\n').filter(line => line.trim() !== '');
+        
+        const summaryBody = document.getElementById('summary-table-body');
+        const labelsContainer = document.getElementById('labels-container');
+        const dashboard = document.getElementById('dashboard-stats');
+        
+        summaryBody.innerHTML = '';
+        labelsContainer.innerHTML = '';
+        
+        let boxCount = 0;
+        let fragileCount = 0;
+        let highPriorityCount = 0;
+        let roomCounts = {};
+
+        lines.forEach((line, index) => {
+            boxCount++;
+            // Split by dashes, commas, or tabs
+            let parts = line.split(/[-,\t]/).map(p => p.trim());
+            
+            // Fallback parsing strategy if user didn't use delimiters cleanly
+            let room = parts[0] || 'Unassigned';
+            let contents = parts[1] || 'General Items';
+            let priority = 'Medium';
+            let isFragile = false;
+
+            // Search remaining parts for keywords
+            for(let i = 2; i < parts.length; i++) {
+                let partLower = parts[i].toLowerCase();
+                if(partLower.includes('high') || partLower.includes('first')) priority = 'High';
+                if(partLower.includes('low') || partLower.includes('later')) priority = 'Low';
+                if(partLower.includes('med')) priority = 'Medium';
+                if(partLower.includes('fragile') || partLower.includes('glass') || partLower.includes('break')) isFragile = true;
+            }
+            
+            // Backup text scan if priority/fragile flags are buried in text
+            let lineLower = line.toLowerCase();
+            if(lineLower.includes('fragile') || lineLower.includes('break')) isFragile = true;
+            if(lineLower.includes('high priority')) priority = 'High';
+
+            const boxId = `BOX-${String(boxCount).padStart(3, '0')}`;
+            
+            // Metrics accumulation
+            if(isFragile) fragileCount++;
+            if(priority === 'High') highPriorityCount++;
+            roomCounts[room] = (roomCounts[room] || 0) + 1;
+
+            // 1. Append Table Row
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td><strong>${boxId}</strong></td>
+                <td>${room}</td>
+                <td>${contents}</td>
+                <td><span class="badge badge-${priority.toLowerCase()}">${priority}</span></td>
+                <td>${isFragile ? '<span style="color:var(--high-priority); font-weight:bold;">⚠️ YES</span>' : 'No'}</td>
+            `;
+            summaryBody.appendChild(row);
+
+            // 2. Append Print Label Card
+            const label = document.createElement('div');
+            label.className = 'box-label';
+            label.innerHTML = `
+                <div class="label-header">
+                    <div class="label-room">${room}</div>
+                    <div class="label-id">${boxId}</div>
+                </div>
+                <div class="label-contents">${contents}</div>
+                <div class="label-footer">
+                    <span class="badge badge-${priority.toLowerCase()}">${priority} Priority</span>
+                    ${isFragile ? '<div class="fragile-tag">FRAGILE</div>' : ''}
+                </div>
+            `;
+            labelsContainer.appendChild(label);
+        });
+
+        // 3. Render Dashboard Stats
+        if(boxCount > 0) {
+            let topRoom = Object.keys(roomCounts).reduce((a, b) => roomCounts[a] > roomCounts[b] ? a : b);
+            dashboard.innerHTML = `
+                <div class="stat-card"><h4>Total Boxes</h4><div class="value">${boxCount}</div></div>
+                <div class="stat-card" style="border-left-color: var(--high-priority)"><h4>High Priority (Unpack First)</h4><div class="value">${highPriorityCount}</div></div>
+                <div class="stat-card" style="border-left-color: #e67e22"><h4>Fragile Items</h4><div class="value">${fragileCount}</div></div>
+                <div class="stat-card" style="border-left-color: #9b59b6"><h4>Top Room Destination</h4><div class="value" style="font-size:16px; margin-top:8px;">${topRoom} (${roomCounts[topRoom]} boxes)</div></div>
+            `;
+        } else {
+            dashboard.innerHTML = '';
+            summaryBody.innerHTML = '<tr><td colspan="5" style="text-align: center; color: #999;">No boxes parsed yet. Input text above and click generate.</td></tr>';
+        }
+    }
+
+    // Run once on load to show example data
+    document.addEventListener("DOMContentLoaded", function() {
+        processBoxes();
+    });
+</script>
+
+</body>
+</html>

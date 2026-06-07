@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pop-Up Dinner Seating Mixer</title>
+    <style>
+        :root {
+            --primary: #4f46e5;
+            --primary-hover: #4338ca;
+            --bg: #f9fafb;
+            --surface: #ffffff;
+            --text: #111827;
+            --text-light: #6b7280;
+            --border: #e5e7eb;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg);
+            color: var(--text);
+            padding: 2rem;
+            line-height: 1.5;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        header {
+            margin-bottom: 2rem;
+            border-bottom: 2px solid var(--border);
+            padding-bottom: 1rem;
+        }
+
+        h1 { font-size: 2.25rem; color: var(--text); }
+        h2 { font-size: 1.5rem; margin-bottom: 1rem; }
+        
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr 2fr;
+            gap: 2rem;
+        }
+
+        @media (max-width: 768px) {
+            .grid { grid-template-columns: 1fr; }
+        }
+
+        .card {
+            background: var(--surface);
+            padding: 1.5rem;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            margin-bottom: 1.5rem;
+        }
+
+        .form-group {
+            margin-bottom: 1rem;
+        }
+
+        label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            font-size: 0.875rem;
+        }
+
+        input, select {
+            width: 100%;
+            padding: 0.625rem;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            font-size: 1rem;
+        }
+
+        input:focus, select:focus {
+            outline: 2px solid var(--primary);
+        }
+
+        button {
+            background-color: var(--primary);
+            color: white;
+            padding: 0.625rem 1.25rem;
+            border: none;
+            border-radius: 6px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        button:hover { background-color: var(--primary-hover); }
+        button.secondary { background-color: #4b5563; }
+        button.secondary:hover { background-color: #374151; }
+        button.danger { background-color: #dc2626; }
+        button.danger:hover { background-color: #b91c1c; }
+
+        .btn-group {
+            display: flex;
+            gap: 0.5rem;
+            margin-top: 1rem;
+        }
+
+        .guest-list {
+            max-height: 300px;
+            overflow-y: auto;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 0.5rem;
+        }
+
+        .guest-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.5rem;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .guest-item:last-child { border-bottom: none; }
+
+        .tag {
+            display: inline-block;
+            background: #e0e7ff;
+            color: #3730a3;
+            padding: 0.125rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            margin-left: 0.5rem;
+            font-weight: 500;
+        }
+
+        .tag.diet { background: #fee2e2; color: #991b1b; }
+
+        .tables-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .table-card {
+            border: 2px dashed #9ca3af;
+            border-radius: 8px;
+            padding: 1rem;
+            background: #fff;
+        }
+
+        .table-title {
+            font-size: 1.25rem;
+            font-weight: bold;
+            border-bottom: 2px solid var(--text);
+            padding-bottom: 0.25rem;
+            margin-bottom: 0.75rem;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .table-guest {
+            margin-bottom: 0.5rem;
+            font-size: 0.95rem;
+        }
+
+        /* Print Optimization */
+        @media print {
+            body { background: white; color: black; padding: 0; }
+            .no-print { display: none !important; }
+            .grid { grid-template-columns: 1fr; }
+            .table-card { 
+                border: 1px solid black; 
+                page-break-inside: avoid; 
+                margin-bottom: 1rem;
+            }
+            h1 { font-size: 2rem; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header class="no-print">
+        <h1>Pop-Up Dinner Seating Mixer</h1>
+    </header>
+
+    <div class="grid">
+        <div class="no-print">
+            <div class="card">
+                <h2>Add Guest</h2>
+                <form id="guestForm">
+                    <div class="form-group">
+                        <label for="guestName">Name</label>
+                        <input type="text" id="guestName" required placeholder="e.g., Alex Smith">
+                    </div>
+                    <div class="form-group">
+                        <label for="guestDiet">Dietary Restrictions</label>
+                        <input type="text" id="guestDiet" placeholder="e.g., Vegan, Nut Allergy (Leave blank if none)">
+                    </div>
+                    <div class="form-group">
+                        <label for="guestTag">Acquaintance Group / Tag</label>
+                        <input type="text" id="guestTag" placeholder="e.g., Work, College, Host's Family">
+                    </div>
+                    <button type="submit">Add to List</button>
+                </form>
+            </div>
+
+            <div class="card">
+                <h2>Mix & Layout Options</h2>
+                <div class="form-group">
+                    <label for="tableSize">Target Guests per Table</label>
+                    <input type="number" id="tableSize" value="6" min="2" max="20">
+                </div>
+                <div class="btn-group">
+                    <button class="secondary" id="shuffleBtn">Mix Seating</button>
+                    <button class="danger" id="printBtn">Print Layout</button>
+                </div>
+                <div class="btn-group">
+                    <button style="background-color: #059669;" id="demoBtn">Load Demo Data</button>
+                    <button style="background-color: #7c3aed;" id="clearBtn">Clear All</button>
+                </div>
+            </div>
+
+            <div class="card">
+                <h2>Guest Roster (<span id="guestCount">0</span>)</h2>
+                <div class="guest-list" id="guestList"></div>
+            </div>
+        </div>
+
+        <div>
+            <div class="card" style="height: 100%;">
+                <h2 id="planTitle">Seating Layout Plan</h2>
+                <div class="tables-grid" id="tablesContainer">
+                    <p style="color: var(--text-light); grid-column: 1/-1;">Add guests and click "Mix Seating" to generate tables.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    let guests = JSON.parse(localStorage.getItem('popup_guests')) || [];
+
+    const guestForm = document.getElementById('guestForm');
+    const guestList = document.getElementById('guestList');
+    const guestCount = document.getElementById('guestCount');
+    const tablesContainer = document.getElementById('tablesContainer');
+    const tableSizeInput = document.getElementById('tableSize');
+    const shuffleBtn = document.getElementById('shuffleBtn');
+    const printBtn = document.getElementById('printBtn');
+    const demoBtn = document.getElementById('demoBtn');
+    const clearBtn = document.getElementById('clearBtn');
+
+    // Sample data to test easily
+    const demoGuests = [
+        { name: "John Doe", diet: "Vegan", tag: "Tech" },
+        { name: "Jane Doe", diet: "Vegan", tag: "Tech" },
+        { name: "Alice Green", diet: "", tag: "College" },
+        { name: "Bob Rivers", diet: "Gluten-Free", tag: "College" },
+        { name: "Charlie Brown", diet: "", tag: "Work" },
+        { name: "Diana Prince", diet: "", tag: "Work" },
+        { name: "Evan Wright", diet: "Nut Allergy", tag: "Neighbors" },
+        { name: "Fiona Gallagher", diet: "", tag: "Neighbors" },
+        { name: "George Costanza", diet: "", tag: "College" },
+        { name: "Hannah Abbott", diet: "Vegetarian", tag: "Work" },
+        { name: "Ian Malcolm", diet: "", tag: "Tech" },
+        { name: "Julia Roberts", diet: "", tag: "Neighbors" }
+    ];
+
+    function updateStorage() {
+        localStorage.setItem('popup_guests', JSON.stringify(guests));
+        renderGuests();
+    }
+
+    function renderGuests() {
+        guestCount.textContent = guests.length;
+        guestList.innerHTML = '';
+        guests.forEach((g, index) => {
+            const div = document.createElement('div');
+            div.className = 'guest-item';
+            
+            let tagsHtml = '';
+            if (g.diet) tagsHtml += `<span class="tag diet">${g.diet}</span>`;
+            if (g.tag) tagsHtml += `<span class="tag">${g.tag}</span>`;
+
+            div.innerHTML = `
+                <div>
+                    <strong>${g.name}</strong>
+                    ${tagsHtml}
+                </div>
+                <button class="danger" style="padding: 0.25rem 0.5rem; font-size: 0.75rem;" onclick="removeGuest(${index})">✕</button>
+            `;
+            guestList.appendChild(div);
+        });
+    }
+
+    function removeGuest(index) {
+        guests.splice(index, 1);
+        updateStorage();
+    }
+
+    guestForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const name = document.getElementById('guestName').value.trim();
+        const diet = document.getElementById('guestDiet').value.trim();
+        const tag = document.getElementById('guestTag').value.trim();
+
+        guests.push({ name, diet, tag });
+        updateStorage();
+        guestForm.reset();
+        document.getElementById('guestName').focus();
+    });
+
+    // Mixer Engine targeting diversity of tags (acquaintances separated)
+    function generateLayout() {
+        if (guests.length === 0) return;
+
+        const targetSize = parseInt(tableSizeInput.value) || 6;
+        const totalTables = Math.ceil(guests.length / targetSize);
+        
+        // Initialize blank structural tables
+        const tables = Array.from({ length: totalTables }, () => []);
+
+        // Group guests by tag to handle distribution
+        const tagGroups = {};
+        guests.forEach(g => {
+            const t = g.tag.toLowerCase().trim() || 'un-tagged';
+            if (!tagGroups[t]) tagGroups[t] = [];
+            tagGroups[t].push(g);
+        });
+
+        // Convert object to a pool array sorted by group size (largest group first to spread easiest)
+        const groupsArray = Object.values(tagGroups).sort((a, b) => b.length - a.length);
+        
+        // Flatten the pool but interleave elements to ensure tags don't bunch up
+        let pool = [];
+        let maxLen = Math.max(...groupsArray.map(g => g.length));
+        
+        for (let i = 0; i < maxLen; i++) {
+            groupsArray.forEach(group => {
+                if (group[i]) pool.push(group[i]);
+            });
+        }
+
+        // Randomly offset slightly to keep shuffles unique, but maintain structural dispersion
+        // Fisher-Yates chunked or simple alternate deal
+        let tableIndex = 0;
+        pool.forEach(guest => {
+            // Find a table that isn't full yet
+            let checked = 0;
+            while (tables[tableIndex].length >= targetSize && checked < totalTables) {
+                tableIndex = (tableIndex + 1) % totalTables;
+                checked++;
+            }
+            tables[tableIndex].push(guest);
+            tableIndex = (tableIndex + 1) % totalTables;
+        });
+
+        renderTables(tables);
+    }
+
+    function renderTables(tables) {
+        tablesContainer.innerHTML = '';
+        tables.forEach((table, index) => {
+            const card = document.createElement('div');
+            card.className = 'table-card';
+            
+            // Collect metadata summaries for host ease
+            const diets = table.filter(g => g.diet).map(g => g.diet);
+            const dietBadge = diets.length ? `<span class="tag diet" style="float:right;">${diets.length} Alert(s)</span>` : '';
+
+            card.innerHTML = `
+                <div class="table-title">
+                    <span>Table ${index + 1}</span>
+                    ${dietBadge}
+                </div>
+            `;
+
+            table.forEach(g => {
+                const item = document.createElement('div');
+                item.className = 'table-guest';
+                
+                let detail = '';
+                if (g.diet) detail += ` (${g.diet})`;
+                if (g.tag) detail += ` [${g.tag}]`;
+
+                item.innerHTML = `• <strong>${g.name}</strong><span style="font-size:0.8rem; color:var(--text-light)">${detail}</span>`;
+                card.appendChild(item);
+            });
+
+            tablesContainer.appendChild(card);
+        });
+    }
+
+    shuffleBtn.addEventListener('click', generateLayout);
+    printBtn.addEventListener('click', () => window.print());
+    
+    demoBtn.addEventListener('click', () => {
+        guests = JSON.parse(JSON.stringify(demoGuests));
+        updateStorage();
+        generateLayout();
+    });
+
+    clearBtn.addEventListener('click', () => {
+        guests = [];
+        updateStorage();
+        tablesContainer.innerHTML = '<p style="color: var(--text-light); grid-column: 1/-1;">Add guests and click "Mix Seating" to generate tables.</p>';
+    });
+
+    // Initial boot load
+    renderGuests();
+</script>
+</body>
+</html>

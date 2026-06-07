@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Crosswalk Timing Trainer</title>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    min-height: 100vh;
+    display: grid;
+    place-items: center;
+    background: #111827;
+    font-family: system-ui, Arial, sans-serif;
+    color: white;
+    overflow-x: hidden;
+  }
+  .game {
+    width: min(440px, 94vw);
+    background: #1f2937;
+    border: 2px solid #374151;
+    border-radius: 24px;
+    padding: 18px;
+    text-align: center;
+    box-shadow: 0 18px 50px rgba(0,0,0,.35);
+  }
+  h1 {
+    margin: 0 0 8px;
+    font-size: 1.55rem;
+  }
+  .sub {
+    color: #cbd5e1;
+    font-size: .95rem;
+    margin-bottom: 14px;
+  }
+  .street {
+    position: relative;
+    height: 210px;
+    border-radius: 18px;
+    background:
+      repeating-linear-gradient(
+        90deg,
+        transparent 0 34px,
+        rgba(255,255,255,.9) 34px 54px,
+        transparent 54px 88px
+      ),
+      linear-gradient(#374151, #111827);
+    border: 4px solid #0f172a;
+    overflow: hidden;
+    margin-bottom: 14px;
+  }
+  .signal {
+    width: 96px;
+    height: 132px;
+    margin: 18px auto;
+    background: #020617;
+    border-radius: 18px;
+    padding: 12px;
+    border: 3px solid #475569;
+  }
+  .light {
+    height: 48px;
+    border-radius: 14px;
+    margin-bottom: 12px;
+    display: grid;
+    place-items: center;
+    font-weight: 900;
+    letter-spacing: .08em;
+    opacity: .25;
+  }
+  .light.walk { background: #22c55e; color: #052e16; }
+  .light.stop { background: #ef4444; color: #450a0a; }
+  .active { opacity: 1; box-shadow: 0 0 28px currentColor; }
+  .person {
+    position: absolute;
+    bottom: 14px;
+    left: 24px;
+    font-size: 2.4rem;
+    transition: transform .18s ease;
+  }
+  .person.step { transform: translateX(320px); }
+  .hud {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+    margin-bottom: 12px;
+  }
+  .box {
+    background: #0f172a;
+    border: 1px solid #334155;
+    border-radius: 14px;
+    padding: 10px 6px;
+  }
+  .label {
+    color: #94a3b8;
+    font-size: .72rem;
+    text-transform: uppercase;
+  }
+  .value {
+    font-size: 1.25rem;
+    font-weight: 900;
+  }
+  .message {
+    min-height: 42px;
+    display: grid;
+    place-items: center;
+    color: #e5e7eb;
+    font-weight: 700;
+  }
+  button {
+    width: 100%;
+    border: 0;
+    border-radius: 16px;
+    padding: 16px;
+    font-size: 1.05rem;
+    font-weight: 900;
+    cursor: pointer;
+    color: #07111f;
+    background: #facc15;
+  }
+  button:active { transform: scale(.98); }
+  .tap {
+    background: #38bdf8;
+    margin-top: 8px;
+  }
+  .danger { color: #fca5a5; }
+  .good { color: #86efac; }
+</style>
+</head>
+<body>
+  <main class="game">
+    <h1>🚦 Crosswalk Timing Trainer</h1>
+    <div class="sub">Tap only when WALK is lit. Ten quick signals.</div>
+
+    <section class="street" id="street">
+      <div class="signal">
+        <div class="light walk" id="walkLight">WALK</div>
+        <div class="light stop active" id="stopLight">STOP</div>
+      </div>
+      <div class="person" id="person">🚶</div>
+    </section>
+
+    <div class="hud">
+      <div class="box">
+        <div class="label">Score</div>
+        <div class="value" id="score">0</div>
+      </div>
+      <div class="box">
+        <div class="label">Round</div>
+        <div class="value" id="round">0/10</div>
+      </div>
+      <div class="box">
+        <div class="label">Streak</div>
+        <div class="value" id="streak">0</div>
+      </div>
+    </div>
+
+    <div class="message" id="message">Press Start, then react fast.</div>
+    <button id="startBtn">Start Round</button>
+    <button class="tap" id="tapBtn">TAP TO CROSS</button>
+  </main>
+
+<script>
+(() => {
+  const walkLight = document.getElementById("walkLight");
+  const stopLight = document.getElementById("stopLight");
+  const scoreEl = document.getElementById("score");
+  const roundEl = document.getElementById("round");
+  const streakEl = document.getElementById("streak");
+  const msg = document.getElementById("message");
+  const startBtn = document.getElementById("startBtn");
+  const tapBtn = document.getElementById("tapBtn");
+  const person = document.getElementById("person");
+
+  let score = 0, round = 0, streak = 0;
+  let safe = false, playing = false, canTap = false;
+  let signalTimer = null, phaseTimer = null;
+  const maxRounds = 10;
+
+  function setSignal(isSafe) {
+    safe = isSafe;
+    walkLight.classList.toggle("active", safe);
+    stopLight.classList.toggle("active", !safe);
+  }
+
+  function updateHUD() {
+    scoreEl.textContent = score;
+    roundEl.textContent = `${round}/${maxRounds}`;
+    streakEl.textContent = streak;
+  }
+
+  function startGame() {
+    clearTimeout(signalTimer);
+    clearTimeout(phaseTimer);
+    score = 0;
+    round = 0;
+    streak = 0;
+    playing = true;
+    canTap = false;
+    person.classList.remove("step");
+    setSignal(false);
+    updateHUD();
+    startBtn.textContent = "Restart";
+    msg.textContent = "Watch the signal...";
+    nextSignal();
+  }
+
+  function nextSignal() {
+    if (round >= maxRounds) return endGame();
+
+    canTap = false;
+    setSignal(false);
+    msg.textContent = "Wait...";
+    msg.className = "message";
+
+    const delay = 650 + Math.random() * 1100;
+
+    signalTimer = setTimeout(() => {
+      round++;
+      canTap = true;
+
+      const isWalk = Math.random() > 0.38;
+      setSignal(isWalk);
+      updateHUD();
+
+      msg.textContent = isWalk ? "WALK! Tap now!" : "STOP! Do not tap!";
+      msg.className = "message";
+
+      phaseTimer = setTimeout(() => {
+        if (canTap && safe) {
+          score -= 1;
+          streak = 0;
+          msg.textContent = "Too slow.";
+          msg.className = "message danger";
+        } else if (canTap && !safe) {
+          score += 1;
+          msg.textContent = "Good patience.";
+          msg.className = "message good";
+        }
+        canTap = false;
+        updateHUD();
+        setTimeout(nextSignal, 500);
+      }, 900);
+    }, delay);
+  }
+
+  function tapCross() {
+    if (!playing || !canTap) return;
+
+    canTap = false;
+
+    if (safe) {
+      streak++;
+      score += 3 + Math.min(streak, 5);
+      msg.textContent = `Safe cross! +${3 + Math.min(streak, 5)}`;
+      msg.className = "message good";
+      person.classList.add("step");
+      setTimeout(() => person.classList.remove("step"), 260);
+    } else {
+      streak = 0;
+      score -= 4;
+      msg.textContent = "Unsafe tap! -4";
+      msg.className = "message danger";
+    }
+
+    updateHUD();
+    setTimeout(nextSignal, 500);
+  }
+
+  function endGame() {
+    playing = false;
+    canTap = false;
+    setSignal(false);
+    const rating =
+      score >= 45 ? "Crosswalk pro 🟢" :
+      score >= 28 ? "Sharp timing 🟡" :
+      score >= 12 ? "Needs practice 🟠" :
+      "Too risky 🔴";
+    msg.textContent = `Final score: ${score}. ${rating}`;
+    startBtn.textContent = "Play Again";
+  }
+
+  startBtn.addEventListener("click", startGame);
+  tapBtn.addEventListener("click", tapCross);
+  document.addEventListener("keydown", e => {
+    if (e.code === "Space" || e.code === "Enter") {
+      e.preventDefault();
+      playing ? tapCross() : startGame();
+    }
+  });
+
+  updateHUD();
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,579 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Roommate Bill Board</title>
+    <style>
+        :root {
+            --bg-color: #f4f6f9;
+            --card-bg: #ffffff;
+            --text-main: #2d3748;
+            --text-muted: #718096;
+            --accent: #4c51bf;
+            --accent-hover: #434190;
+            --border-color: #e2e8f0;
+            --danger: #e53e3e;
+            --success: #38a169;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            padding: 2rem;
+            line-height: 1.5;
+        }
+
+        .container {
+            max-width: 1100px;
+            margin: 0 auto;
+        }
+
+        header {
+            margin-bottom: 2rem;
+        }
+
+        h1 {
+            font-size: 1.8rem;
+            color: var(--accent);
+            margin-bottom: 0.5rem;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+            align-items: start;
+        }
+
+        @media (max-width: 850px) {
+            .grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .card {
+            background: var(--card-bg);
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+            border: 1px solid var(--border-color);
+            margin-bottom: 1.5rem;
+        }
+
+        .card-title {
+            font-size: 1.2rem;
+            margin-bottom: 1.2rem;
+            font-weight: 600;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .form-group {
+            margin-bottom: 1rem;
+        }
+
+        label {
+            display: block;
+            font-size: 0.85rem;
+            font-weight: 600;
+            margin-bottom: 0.4rem;
+            color: var(--text-muted);
+        }
+
+        input[type="text"], input[type="number"], input[type="date"] {
+            width: 100%;
+            padding: 0.6rem;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            font-size: 0.95rem;
+            color: var(--text-main);
+        }
+
+        input:focus {
+            outline: none;
+            border-color: var(--accent);
+        }
+
+        button {
+            background-color: var(--accent);
+            color: white;
+            border: none;
+            padding: 0.6rem 1.2rem;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 0.95rem;
+            width: 100%;
+            transition: background 0.2s;
+        }
+
+        button:hover {
+            background-color: var(--accent-hover);
+        }
+
+        .roommate-tag-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .roommate-tag {
+            background: #edf2f7;
+            padding: 0.3rem 0.6rem;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+
+        .roommate-tag button {
+            background: none;
+            color: var(--danger);
+            padding: 0;
+            width: auto;
+            font-size: 1rem;
+        }
+
+        .bill-item {
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 1rem;
+            margin-bottom: 1rem;
+            position: relative;
+        }
+
+        .bill-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 0.5rem;
+        }
+
+        .bill-name {
+            font-weight: 600;
+        }
+
+        .bill-meta {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            margin-bottom: 0.8rem;
+        }
+
+        .delete-btn {
+            background: none;
+            color: var(--danger);
+            width: auto;
+            padding: 0;
+            font-size: 0.85rem;
+        }
+        .delete-btn:hover {
+            background: none;
+            text-decoration: underline;
+        }
+
+        .venmo-tracking {
+            background: #f7fafc;
+            padding: 0.6rem;
+            border-radius: 6px;
+            font-size: 0.85rem;
+        }
+
+        .venmo-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.4rem;
+        }
+
+        .venmo-row:last-child {
+            margin-bottom: 0;
+        }
+
+        .venmo-input {
+            width: 70px;
+            padding: 0.2rem 0.4rem;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            text-align: right;
+        }
+
+        .summary-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 0.6rem 0;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .summary-row:last-child {
+            border-bottom: none;
+        }
+
+        .owes-amount {
+            font-weight: 600;
+            color: var(--danger);
+        }
+
+        .settled {
+            color: var(--success);
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <h1>Roommate Bill Board</h1>
+        <p style="color: var(--text-muted); font-size: 0.95rem;">Track shared utilities, uneven due dates, and partial Venmo payments.</p>
+    </header>
+
+    <div class="grid">
+        <div>
+            <div class="card">
+                <div class="card-title">Roommates</div>
+                <div class="roommate-tag-container" id="roommatesList"></div>
+                <div style="display: flex; gap: 0.5rem;">
+                    <input type="text" id="newRoommateInput" placeholder="Add roommate name...">
+                    <button style="width: auto;" onclick="addRoommate()">Add</button>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-title">Add New Bill</div>
+                <div class="form-group">
+                    <label for="billName">Bill Name (e.g., Electric, Wi-Fi)</label>
+                    <input type="text" id="billName" placeholder="Electric Bill">
+                </div>
+                <div class="form-group">
+                    <label for="billTotal">Total Amount ($)</label>
+                    <input type="number" id="billTotal" step="0.01" placeholder="120.00">
+                </div>
+                <div class="form-group">
+                    <label for="billDue">Due Date</label>
+                    <input type="date" id="billDue">
+                </div>
+                <div class="form-group">
+                    <label for="billPayer">Who initially paid/receives the money?</label>
+                    <input type="text" id="billPayer" placeholder="Main account holder's name">
+                </div>
+                <button onclick="addBill()">Add to Board</button>
+            </div>
+        </div>
+
+        <div>
+            <div class="card" style="background: #ebf4ff; border-color: #bee3f8;">
+                <div class="card-title" style="color: #2b6cb0;">Net Board Balances</div>
+                <div id="balancesDisplay">
+                    </div>
+            </div>
+
+            <div class="card">
+                <div class="card-title">Active Bills & Partial Payments</div>
+                <div id="billsContainer">
+                    </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // App State
+    let roommates = ['Alex', 'Taylor', 'Jordan'];
+    let bills = [
+        {
+            id: 1,
+            name: 'Electric Bill',
+            total: 150.00,
+            dueDate: '2026-06-15',
+            payer: 'Alex',
+            partialPayments: { 'Taylor': 20.00, 'Jordan': 0 }
+        },
+        {
+            id: 2,
+            name: 'Wi-Fi',
+            total: 60.00,
+            dueDate: '2026-06-20',
+            payer: 'Taylor',
+            partialPayments: { 'Alex': 0, 'Jordan': 10.00 }
+        }
+    ];
+
+    // Initialize App
+    function init() {
+        renderRoommates();
+        renderBills();
+        calculateBalances();
+    }
+
+    // Render Roommate Tags
+    function renderRoommates() {
+        const container = document.getElementById('roommatesList');
+        container.innerHTML = '';
+        roommates.forEach(name => {
+            const tag = document.createElement('div');
+            tag.className = 'roommate-tag';
+            tag.innerHTML = `${name} <button onclick="removeRoommate('${name}')">&times;</button>`;
+            container.appendChild(tag);
+        });
+    }
+
+    function addRoommate() {
+        const input = document.getElementById('newRoommateInput');
+        const name = input.value.trim();
+        if (name && !roommates.includes(name)) {
+            roommates.push(name);
+            input.value = '';
+            
+            // Sync active bills with new roommate
+            bills.forEach(bill => {
+                if (!(name in bill.partialPayments)) {
+                    bill.partialPayments[name] = 0;
+                }
+            });
+
+            renderRoommates();
+            renderBills();
+            calculateBalances();
+        }
+    }
+
+    function removeRoommate(name) {
+        roommates = roommates.filter(r => r !== name);
+        bills.forEach(bill => {
+            delete bill.partialPayments[name];
+            if (bill.payer === name) bill.payer = roommates[0] || '';
+        });
+        renderRoommates();
+        renderBills();
+        calculateBalances();
+    }
+
+    // Render Bills Board
+    function renderBills() {
+        const container = document.getElementById('billsContainer');
+        container.innerHTML = '';
+
+        if (bills.length === 0) {
+            container.innerHTML = '<p style="color: var(--text-muted); font-size: 0.9rem;">No active bills on the board.</p>';
+            return;
+        }
+
+        bills.forEach(bill => {
+            const splitCount = roommates.length;
+            const targetPerPerson = splitCount > 0 ? (bill.total / splitCount) : 0;
+
+            const billEl = document.createElement('div');
+            billEl.className = 'bill-item';
+
+            let venmoRowsHtml = '';
+            roommates.forEach(rm => {
+                if (rm !== bill.payer) {
+                    const dynamicPaid = bill.partialPayments[rm] || 0;
+                    const remaining = Math.max(0, targetPerPerson - dynamicPaid);
+                    
+                    venmoRowsHtml += `
+                        <div class="venmo-row">
+                            <span>${rm} (Owes $${targetPerPerson.toFixed(2)} total)</span>
+                            <div>
+                                <label style="display:inline; margin-right: 5px;">Venmo'd:</label>
+                                <input type="number" class="venmo-input" step="0.01" value="${dynamicPaid}" 
+                                    onchange="updatePartialPayment(${bill.id}, '${rm}', this.value)">
+                                <span style="font-size: 0.8rem; margin-left: 5px; color: var(--text-muted);">
+                                    Left: $${remaining.toFixed(2)}
+                                </span>
+                            </div>
+                        </div>
+                    `;
+                }
+            });
+
+            billEl.innerHTML = `
+                <div class="bill-header">
+                    <span class="bill-name">${bill.name}</span>
+                    <span style="font-weight: 600;">$${bill.total.toFixed(2)}</span>
+                </div>
+                <div class="bill-meta">
+                    Paid by <strong>${bill.payer}</strong> | Due: ${bill.dueDate || 'No date'}
+                </div>
+                <div class="venmo-tracking">
+                    <div style="font-weight:600; margin-bottom: 0.4rem; font-size: 0.8rem; color: var(--text-muted);">
+                        Partial Venmo Tracking
+                    </div>
+                    ${venmoRowsHtml || '<div style="font-size:0.8rem; color:var(--text-muted);">Add more roommates to split.</div>'}
+                </div>
+                <div style="text-align: right; margin-top: 0.8rem;">
+                    <button class="delete-btn" onclick="deleteBill(${bill.id})">Remove bill</button>
+                </div>
+            `;
+            container.appendChild(billEl);
+        });
+    }
+
+    function addBill() {
+        const name = document.getElementById('billName').value.trim();
+        const total = parseFloat(document.getElementById('billTotal').value);
+        const dueDate = document.getElementById('billDue').value;
+        const payer = document.getElementById('billPayer').value.trim();
+
+        if (!name || isNaN(total) || !payer) {
+            alert('Please fill out Name, Total, and Payer fields.');
+            return;
+        }
+
+        if (!roommates.includes(payer)) {
+            roommates.push(payer);
+            renderRoommates();
+        }
+
+        const partialPayments = {};
+        roommates.forEach(rm => {
+            if (rm !== payer) partialPayments[rm] = 0;
+        });
+
+        const newBill = {
+            id: Date.now(),
+            name,
+            total,
+            dueDate,
+            payer,
+            partialPayments
+        };
+
+        bills.push(newBill);
+        
+        // Reset Inputs
+        document.getElementById('billName').value = '';
+        document.getElementById('billTotal').value = '';
+        document.getElementById('billDue').value = '';
+        document.getElementById('billPayer').value = '';
+
+        renderBills();
+        calculateBalances();
+    }
+
+    function updatePartialPayment(billId, roommate, amount) {
+        const bill = bills.find(b => b.id === billId);
+        if (bill) {
+            bill.partialPayments[roommate] = parseFloat(amount) || 0;
+            renderBills();
+            calculateBalances();
+        }
+    }
+
+    function deleteBill(billId) {
+        bills = bills.filter(b => b.id !== billId);
+        renderBills();
+        calculateBalances();
+    }
+
+    // Core Calculation Logic
+    function calculateBalances() {
+        const balancesDisplay = document.getElementById('balancesDisplay');
+        balancesDisplay.innerHTML = '';
+
+        if (roommates.length === 0) {
+            balancesDisplay.innerHTML = '<p>No roommates defined.</p>';
+            return;
+        }
+
+        // Initialize empty matrix matrix
+        // debts[Ower][Receiver] = amount
+        let debts = {};
+        roommates.forEach(r1 => {
+            debts[r1] = {};
+            roommates.forEach(r2 => {
+                debts[r1][r2] = 0;
+            });
+        });
+
+        // Loop through bills and calculate exact share differences
+        bills.forEach(bill => {
+            const splitCount = roommates.length;
+            if (splitCount <= 1) return;
+            
+            const share = bill.total / splitCount;
+            const payer = bill.payer;
+
+            roommates.forEach(rm => {
+                if (rm !== payer) {
+                    const partial = bill.partialPayments[rm] || 0;
+                    const netOwed = share - partial;
+                    if (netOwed > 0) {
+                        debts[rm][payer] += netOwed;
+                    } else if (netOwed < 0) {
+                        // If someone overpaid via Venmo
+                        debts[payer][rm] += Math.abs(netOwed);
+                    }
+                }
+            });
+        });
+
+        // Simplify Net Positions to avoid cyclical payments
+        let netPositions = {};
+        roommates.forEach(rm => {
+            let incoming = 0;
+            let outgoing = 0;
+            roommates.forEach(other => {
+                incoming += debts[other][rm];
+                outgoing += debts[rm][other];
+            });
+            netPositions[rm] = incoming - outgoing; // positive means they are owed money, negative means they owe money
+        });
+
+        // Match who pays who
+        let summaryHtml = '';
+        let localOwer = [...roommates].filter(r => netPositions[r] < -0.01);
+        let localReceiver = [...roommates].filter(r => netPositions[r] > 0.01);
+
+        // Sort positions to pair largest values
+        localOwer.sort((a,b) => netPositions[a] - netPositions[b]);
+        localReceiver.sort((a,b) => netPositions[b] - netPositions[a]);
+
+        let i = 0, j = 0;
+        while (i < localOwer.length && j < localReceiver.length) {
+            let ower = localOwer[i];
+            let receiver = localReceiver[j];
+            
+            let amountOwed = Math.abs(netPositions[ower]);
+            let amountReceivable = netPositions[receiver];
+            
+            let settlementAmount = Math.min(amountOwed, amountReceivable);
+            
+            if (settlementAmount > 0.01) {
+                summaryHtml += `
+                    <div class="summary-row">
+                        <span><strong>${ower}</strong> pays <strong>${receiver}</strong></span>
+                        <span class="owes-amount">$${settlementAmount.toFixed(2)}</span>
+                    </div>
+                `;
+            }
+
+            netPositions[ower] += settlementAmount;
+            netPositions[receiver] -= settlementAmount;
+
+            if (Math.abs(netPositions[ower]) < 0.01) i++;
+            if (Math.abs(netPositions[receiver]) < 0.01) j++;
+        }
+
+        if (!summaryHtml) {
+            summaryHtml = '<div class="summary-row settled" style="font-weight:600;"> Everything is completely squared away!</div>';
+        }
+
+        balancesDisplay.innerHTML = summaryHtml;
+    }
+
+    // Run app
+    init();
+</script>
+
+</body>
+</html>

@@ -20,6 +20,31 @@ import {
   MICRO_DUNGEON_ROUTE_PROJECT_ID,
   BAKE_SALE_MARGIN_PROJECT_ID,
   STAR_MAP_SCAVENGER_PROJECT_ID,
+  NEIGHBORHOOD_LOST_AND_FOUND_PROJECT_ID,
+  TINY_DINER_TICKET_PROJECT_ID,
+  SMALL_CLINIC_CALLBACK_PROJECT_ID,
+  TINY_BIRTHDAY_RSVP_PROJECT_ID,
+  TINY_AIRPORT_GATE_PROJECT_ID,
+  TINY_FERRY_LOADING_PROJECT_ID,
+  AFTER_SCHOOL_PICKUP_PROJECT_ID,
+  FRIDGE_LEFTOVER_LABEL_PROJECT_ID,
+  TINY_PARKING_LOT_PROJECT_ID,
+  TINY_WINDOW_HERB_PROJECT_ID,
+  POPUP_DINNER_SEATING_PROJECT_ID,
+  TINY_CROSSWALK_TIMING_PROJECT_ID,
+  TINY_INVOICE_NUDGE_PROJECT_ID,
+  MAILROOM_CART_ROUTE_PROJECT_ID,
+  NEIGHBORHOOD_POTLUCK_BALANCER_PROJECT_ID,
+  LAUNDROMAT_SOCK_SORTER_PROJECT_ID,
+  CORNER_STORE_CHANGE_PROJECT_ID,
+  WEEKEND_YARD_SALE_PROJECT_ID,
+  MINI_METRO_SIGNAL_PROJECT_ID,
+  MOVING_DAY_BOX_LABELER_PROJECT_ID,
+  ROOFTOP_COURIER_SWITCHBACKS_PROJECT_ID,
+  NEIGHBORHOOD_SNOW_ROUTE_PROJECT_ID,
+  ROOMMATE_FREEZER_BOARD_PROJECT_ID,
+  UTILITY_BILL_BALANCE_PROJECT_ID,
+  BLOCK_BIKE_COURIER_PROJECT_ID,
 } from './featured-projects'
 
 type PendingSourceRunDescriptor = {
@@ -696,6 +721,990 @@ export const STAR_MAP_SCAVENGER_SHOWCASE_PROJECT = buildPendingSourceRunProject(
   ],
 })
 
+export const NEIGHBORHOOD_LOST_AND_FOUND_SHOWCASE_PROJECT = buildPendingSourceRunProject({
+  "projectId": NEIGHBORHOOD_LOST_AND_FOUND_PROJECT_ID,
+  "sourceRunId": "8bae7fc4-d9d6-4d1a-8769-2edd0db8d02e",
+  "href": "/neighborhood-lost-and-found-claim-board-demo",
+  "title": "Neighborhood Lost-and-Found Claim Board",
+  "description": "Neighborhood Lost-and-Found Claim Board is a verified Gemini source run prepared as an artifact-first public page with 1 preserved prompt.",
+  "content": "Mara Cole used Gemini to build Neighborhood Lost-and-Found Claim Board through a 1-prompt source run. The public page keeps the final artifact first, then preserves each exact prompt and response package in order with selectable artifact versions when the run produced them.",
+  "resultContent": "A mounted single-file HTML artifact with the captured response packages, provider source link, PathForge source-run record, and verification notes preserved.",
+  "categorySlug": "productivity",
+  "mockCategoryId": "cat-7",
+  "difficulty": 'beginner',
+  "modelUsed": "Gemini Flash",
+  "modelRecommendation": "Gemini Flash",
+  "toolsUsed": [
+    "Gemini web in Chrome",
+    "single-file HTML",
+    "local browser verification"
+  ],
+  "tags": [
+    "lost and found",
+    "community organizer",
+    "claim board",
+    "handoff",
+    "local storage",
+    "productivity",
+    "source-run"
+  ],
+  "artifactPath": "/artifacts/neighborhood-lost-and-found-claim-board-gemini.html",
+  "sourceUrl": "https://gemini.google.com/app/80479566d85cf33b",
+  "authorDisplayName": "Mara Cole",
+  "authorUsername": "MaraCole",
+  "createdAt": "2026-06-06T13:00:00-04:00",
+  "updatedAt": "2026-06-06T13:36:14.033Z",
+  "prompts": [
+    "I run a small neighborhood group; build me a single-file HTML lost-and-found claim board where I can add found items, edit details, move items through unclaimed/claimed/returned statuses, and print or copy a handoff summary while keeping anything people type rendered as plain text."
+  ]
+})
+
+export const TINY_DINER_TICKET_SHOWCASE_PROJECT = buildPendingSourceRunProject({
+  "projectId": TINY_DINER_TICKET_PROJECT_ID,
+  "sourceRunId": "44f67a85-7179-449d-83b0-6ebd14457f35",
+  "href": "/tiny-diner-ticket-time-trial-demo",
+  "title": "Tiny Diner Ticket Time Trial",
+  "description": "Tiny Diner Ticket Time Trial is a verified ChatGPT source run prepared as an artifact-first public page with 1 preserved prompt.",
+  "content": "Nico Ward used ChatGPT to build Tiny Diner Ticket Time Trial through a 1-prompt source run. The public page keeps the final artifact first, then preserves each exact prompt and response package in order with selectable artifact versions when the run produced them.",
+  "resultContent": "A mounted single-file HTML artifact with the captured response packages, provider source link, PathForge source-run record, and verification notes preserved.",
+  "categorySlug": "personal",
+  "mockCategoryId": "cat-10",
+  "difficulty": 'beginner',
+  "modelUsed": "ChatGPT Instant visible composer setting (exact model not exposed)",
+  "modelRecommendation": "ChatGPT Instant visible composer setting (exact model not exposed)",
+  "toolsUsed": [
+    "ChatGPT web in Chrome",
+    "single-file HTML",
+    "local browser verification"
+  ],
+  "tags": [
+    "game",
+    "diner",
+    "time trial",
+    "matching",
+    "rush",
+    "browser html",
+    "source-run"
+  ],
+  "artifactPath": "/artifacts/tiny-diner-ticket-time-trial-chatgpt.html",
+  "sourceUrl": "https://chatgpt.com/c/6a241263-03a4-83ea-ab1d-d66457d6b5b4",
+  "authorDisplayName": "Nico Ward",
+  "authorUsername": "NicoWard",
+  "createdAt": "2026-06-06T12:20:00Z",
+  "updatedAt": "2026-06-06T12:34:11Z",
+  "prompts": [
+    "Could you make a tiny browser game called Tiny Diner Ticket Time Trial where I race to match short-order tickets to the right plates before the rush timer runs out? Please give me the whole playable HTML."
+  ]
+})
+
+export const SMALL_CLINIC_CALLBACK_SHOWCASE_PROJECT = buildPendingSourceRunProject({
+  "projectId": SMALL_CLINIC_CALLBACK_PROJECT_ID,
+  "sourceRunId": "9394217d-c956-4337-adb5-b40576b5d130",
+  "href": "/small-clinic-callback-queue-board-demo",
+  "title": "Small Clinic Callback Queue Board",
+  "description": "Small Clinic Callback Queue Board is a verified Gemini source run prepared as an artifact-first public page with 2 preserved prompts.",
+  "content": "Iris Mason used Gemini to build Small Clinic Callback Queue Board through a 2-prompt source run. The public page keeps the final artifact first, then preserves each exact prompt and response package in order with selectable artifact versions when the run produced them.",
+  "resultContent": "A mounted single-file HTML artifact with the captured response packages, provider source link, PathForge source-run record, and verification notes preserved.",
+  "categorySlug": "productivity",
+  "mockCategoryId": "cat-7",
+  "difficulty": 'beginner',
+  "modelUsed": "Gemini Flash",
+  "modelRecommendation": "Gemini Flash",
+  "toolsUsed": [
+    "Gemini web in Chrome",
+    "single-file HTML",
+    "local browser verification"
+  ],
+  "tags": [
+    "clinic",
+    "callbacks",
+    "front desk",
+    "queue board",
+    "handoff",
+    "productivity",
+    "source-run"
+  ],
+  "artifactPath": "/artifacts/small-clinic-callback-queue-board-gemini-v2.html",
+  "sourceUrl": "https://gemini.google.com/app/06735e175baf7b02",
+  "authorDisplayName": "Iris Mason",
+  "authorUsername": "IrisMason",
+  "createdAt": "2026-06-06T12:14:24.155Z",
+  "updatedAt": "2026-06-06T12:39:24.155Z",
+  "prompts": [
+    "I need a front-desk callback queue board for a small clinic: a one-page browser file where staff can add and edit callback requests, move each request through status lanes, and copy or print a handoff list.",
+    "This is close, but on phone-sized screens the three top action buttons may run wide. Make the header actions wrap neatly and return the complete standalone HTML again; keep the existing add/edit/status/copy/print workflow and no external dependencies."
+  ]
+})
+
+export const TINY_BIRTHDAY_RSVP_SHOWCASE_PROJECT = buildPendingSourceRunProject({
+  "projectId": TINY_BIRTHDAY_RSVP_PROJECT_ID,
+  "sourceRunId": "da2a13bf-c168-4429-a327-bc581e8c9d57",
+  "href": "/tiny-birthday-rsvp-table-planner-demo",
+  "title": "Tiny Birthday RSVP Table Planner",
+  "description": "Tiny Birthday RSVP Table Planner is a verified Gemini source run prepared as an artifact-first public page with 2 preserved prompts.",
+  "content": "Mateo Reed used Gemini to build Tiny Birthday RSVP Table Planner through a 2-prompt source run. The public page keeps the final artifact first, then preserves each exact prompt and response package in order with selectable artifact versions when the run produced them.",
+  "resultContent": "A mounted single-file HTML artifact with the captured response packages, provider source link, PathForge source-run record, and verification notes preserved.",
+  "categorySlug": "productivity",
+  "mockCategoryId": "cat-7",
+  "difficulty": 'beginner',
+  "modelUsed": "Gemini Flash",
+  "modelRecommendation": "Gemini Flash",
+  "toolsUsed": [
+    "Gemini web in Chrome",
+    "single-file HTML",
+    "local browser verification"
+  ],
+  "tags": [
+    "birthday party",
+    "rsvp",
+    "table planner",
+    "dietary notes",
+    "handoff",
+    "productivity",
+    "source-run"
+  ],
+  "artifactPath": "/artifacts/tiny-birthday-rsvp-table-planner-gemini.html",
+  "sourceUrl": "https://gemini.google.com/app/3447010ea415493b",
+  "authorDisplayName": "Mateo Reed",
+  "authorUsername": "MateoReed",
+  "createdAt": "2026-06-06T11:28:13.914Z",
+  "updatedAt": "2026-06-06T11:35:55Z",
+  "prompts": [
+    "I'm planning a small kid birthday party and need a one-page browser tool to track RSVPs, table groups, dietary notes, and a copy/print handoff for the day-of helper.",
+    "The preview is useful, but I need the actual complete standalone HTML source so I can save and run it as one file. Please return the full HTML/CSS/JS in one code block, keeping the RSVP table, table grouping, dietary notes, and copy/print handoff."
+  ]
+})
+
+export const TINY_AIRPORT_GATE_SHOWCASE_PROJECT = buildPendingSourceRunProject({
+  "projectId": TINY_AIRPORT_GATE_PROJECT_ID,
+  "sourceRunId": "ec366f9d-ae1d-4463-8108-109012788b56",
+  "href": "/tiny-airport-gate-boarding-sorter-demo",
+  "title": "Tiny Airport Gate Boarding Sorter",
+  "description": "Tiny Airport Gate Boarding Sorter is a verified ChatGPT source run prepared as an artifact-first public page with 2 preserved prompts.",
+  "content": "Liana Fox used ChatGPT to build Tiny Airport Gate Boarding Sorter through a 2-prompt source run. The public page keeps the final artifact first, then preserves each exact prompt and response package in order with selectable artifact versions when the run produced them.",
+  "resultContent": "A mounted single-file HTML artifact with the captured response packages, provider source link, PathForge source-run record, and verification notes preserved.",
+  "categorySlug": "personal",
+  "mockCategoryId": "cat-10",
+  "difficulty": 'beginner',
+  "modelUsed": "ChatGPT Instant visible composer setting (exact model not exposed)",
+  "modelRecommendation": "ChatGPT Instant visible composer setting (exact model not exposed)",
+  "toolsUsed": [
+    "ChatGPT web in Chrome",
+    "single-file HTML",
+    "local browser verification"
+  ],
+  "tags": [
+    "browser-game",
+    "airport",
+    "sorting",
+    "time-management",
+    "standalone-html",
+    "source-run"
+  ],
+  "artifactPath": "/artifacts/tiny-airport-gate-boarding-sorter-chatgpt.html",
+  "sourceUrl": "https://chatgpt.com/c/6a240453-18c4-83ea-a7f7-94595ea649ca",
+  "authorDisplayName": "Liana Fox",
+  "authorUsername": "LianaFox",
+  "createdAt": "2026-06-06T11:24:00Z",
+  "updatedAt": "2026-06-06T11:38:00Z",
+  "prompts": [
+    "I want a tiny browser game where you're a gate agent sorting passengers into boarding groups before boarding closes; make it a self-contained HTML file with clear controls and quick feedback.",
+    "That got cut off in the middle of the JavaScript. Please resend the complete standalone HTML file in one code block, with no external dependencies, so I can save and run it."
+  ]
+})
+
+export const TINY_FERRY_LOADING_SHOWCASE_PROJECT = buildPendingSourceRunProject({
+  "projectId": TINY_FERRY_LOADING_PROJECT_ID,
+  "sourceRunId": "4a3b6898-0d17-4691-b793-b7d191835035",
+  "href": "/tiny-ferry-loading-puzzle-demo",
+  "title": "Tiny Ferry Loading Puzzle",
+  "description": "Tiny Ferry Loading Puzzle is a verified ChatGPT source run prepared as an artifact-first public page with 1 preserved prompt.",
+  "content": "Brielle Hart used ChatGPT to build Tiny Ferry Loading Puzzle through a 1-prompt source run. The public page keeps the final artifact first, then preserves each exact prompt and response package in order with selectable artifact versions when the run produced them.",
+  "resultContent": "A mounted single-file HTML artifact with the captured response packages, provider source link, PathForge source-run record, and verification notes preserved.",
+  "categorySlug": "personal",
+  "mockCategoryId": "cat-10",
+  "difficulty": 'beginner',
+  "modelUsed": "ChatGPT Instant visible composer setting (exact model not exposed)",
+  "modelRecommendation": "ChatGPT Instant visible composer setting (exact model not exposed)",
+  "toolsUsed": [
+    "ChatGPT web in Chrome",
+    "single-file HTML",
+    "local browser verification"
+  ],
+  "tags": [
+    "game",
+    "puzzle",
+    "ferry",
+    "balance",
+    "single-file HTML",
+    "ChatGPT Instant",
+    "source-run"
+  ],
+  "artifactPath": "/artifacts/tiny-ferry-loading-puzzle-chatgpt.html",
+  "sourceUrl": "https://chatgpt.com/c/6a23f64c-23c0-83ea-98b5-bfc1d18c39d2",
+  "authorDisplayName": "Brielle Hart",
+  "authorUsername": "BrielleHart",
+  "createdAt": "2026-06-06T06:20:00-04:00",
+  "updatedAt": "2026-06-06T06:32:28-04:00",
+  "prompts": [
+    "I want a tiny browser puzzle where I load cars and crates onto a little ferry without tipping it; please give me one complete HTML file with click/tap controls and a clear win screen."
+  ]
+})
+
+export const AFTER_SCHOOL_PICKUP_SHOWCASE_PROJECT = buildPendingSourceRunProject({
+  "projectId": AFTER_SCHOOL_PICKUP_PROJECT_ID,
+  "sourceRunId": "325a14dd-9e7b-42f3-be64-bbaa53462d94",
+  "href": "/after-school-pickup-roster-demo",
+  "title": "After-School Pickup Roster",
+  "description": "After-School Pickup Roster is a verified Gemini source run prepared as an artifact-first public page with 2 preserved prompts.",
+  "content": "Noelle Parker used Gemini to build After-School Pickup Roster through a 2-prompt source run. The public page keeps the final artifact first, then preserves each exact prompt and response package in order with selectable artifact versions when the run produced them.",
+  "resultContent": "A mounted single-file HTML artifact with the captured response packages, provider source link, PathForge source-run record, and verification notes preserved.",
+  "categorySlug": "productivity",
+  "mockCategoryId": "cat-7",
+  "difficulty": 'beginner',
+  "modelUsed": "Gemini Flash",
+  "modelRecommendation": "Gemini Flash",
+  "toolsUsed": [
+    "Gemini web in Chrome",
+    "single-file HTML",
+    "local browser verification"
+  ],
+  "tags": [
+    "after-school pickup",
+    "roster",
+    "handoff",
+    "local storage",
+    "productivity",
+    "source-run"
+  ],
+  "artifactPath": "/artifacts/after-school-pickup-roster-gemini.html",
+  "sourceUrl": "https://gemini.google.com/app/72222fda3531082c",
+  "authorDisplayName": "Noelle Parker",
+  "authorUsername": "NoelleParker",
+  "createdAt": "2026-06-06T10:33:36.453Z",
+  "updatedAt": "2026-06-06T10:33:36.453Z",
+  "prompts": [
+    "Can you make a single-page HTML after-school pickup roster where staff can add kids, edit or remove roster entries, mark pickup status, and copy a clear handoff list for whoever takes over?",
+    "This has the workflow I need, but please remove the Lucide CDN and any external dependency so the file is completely standalone. Keep add, edit, remove, pickup status toggles, local saving, and the copyable handoff list."
+  ]
+})
+
+export const FRIDGE_LEFTOVER_LABEL_SHOWCASE_PROJECT = buildPendingSourceRunProject({
+  "projectId": FRIDGE_LEFTOVER_LABEL_PROJECT_ID,
+  "sourceRunId": "cad6c310-5c91-4865-bd27-86aa473c218e",
+  "href": "/fridge-leftover-label-printer-demo",
+  "title": "Fridge Leftover Label Printer from Gemini Flash",
+  "description": "Fridge Leftover Label Printer from Gemini Flash is a verified Gemini source run prepared as an artifact-first public page with 2 preserved prompts.",
+  "content": "Sienna Vale used Gemini to build Fridge Leftover Label Printer from Gemini Flash through a 2-prompt source run. The public page keeps the final artifact first, then preserves each exact prompt and response package in order with selectable artifact versions when the run produced them.",
+  "resultContent": "A mounted single-file HTML artifact with the captured response packages, provider source link, PathForge source-run record, and verification notes preserved.",
+  "categorySlug": "productivity",
+  "mockCategoryId": "cat-7",
+  "difficulty": 'beginner',
+  "modelUsed": "Gemini Flash",
+  "modelRecommendation": "Gemini Flash",
+  "toolsUsed": [
+    "Gemini web in Chrome",
+    "single-file HTML",
+    "local browser verification"
+  ],
+  "tags": [
+    "leftovers",
+    "fridge labels",
+    "label printer",
+    "meal planning",
+    "printable labels",
+    "use-first list",
+    "single-file HTML",
+    "Gemini Flash",
+    "source-run"
+  ],
+  "artifactPath": "/artifacts/fridge-leftover-label-printer-gemini-v2.html",
+  "sourceUrl": "https://gemini.google.com/app/43758893a7617819",
+  "authorDisplayName": "Sienna Vale",
+  "authorUsername": "SiennaVale",
+  "createdAt": "2026-06-06T00:00:00-04:00",
+  "updatedAt": "2026-06-06T09:33:51.206Z",
+  "prompts": [
+    "I need a little fridge-leftover label printer page I can run in a browser before cleaning up after dinner: let me enter the food, owner, date made, fridge/freezer spot, and how many days it should last, then generate tidy printable labels plus a quick \"use first\" list.",
+    "This works, but the label/list rendering uses innerHTML with the food and owner I type. Please revise the single HTML file so user-entered values are escaped or rendered as plain text, while keeping the same leftover label printer workflow and print button."
+  ]
+})
+
+export const TINY_PARKING_LOT_SHOWCASE_PROJECT = buildPendingSourceRunProject({
+  "projectId": TINY_PARKING_LOT_PROJECT_ID,
+  "sourceRunId": "54e3e755-c9cb-46fb-918c-ef11b4780e91",
+  "href": "/tiny-parking-lot-cone-course-demo",
+  "title": "Tiny Parking Lot Cone Course",
+  "description": "Tiny Parking Lot Cone Course is a verified ChatGPT source run prepared as an artifact-first public page with 1 preserved prompt.",
+  "content": "Quinn Harper used ChatGPT to build Tiny Parking Lot Cone Course through a 1-prompt source run. The public page keeps the final artifact first, then preserves each exact prompt and response package in order with selectable artifact versions when the run produced them.",
+  "resultContent": "A mounted single-file HTML artifact with the captured response packages, provider source link, PathForge source-run record, and verification notes preserved.",
+  "categorySlug": "personal",
+  "mockCategoryId": "cat-10",
+  "difficulty": 'beginner',
+  "modelUsed": "ChatGPT Instant visible composer setting (exact model not exposed)",
+  "modelRecommendation": "ChatGPT Instant visible composer setting (exact model not exposed)",
+  "toolsUsed": [
+    "ChatGPT web in Chrome",
+    "single-file HTML",
+    "local browser verification"
+  ],
+  "tags": [
+    "game",
+    "driving",
+    "parking",
+    "cone course",
+    "single-file HTML",
+    "ChatGPT Instant",
+    "source-run"
+  ],
+  "artifactPath": "/artifacts/tiny-parking-lot-cone-course-chatgpt.html",
+  "sourceUrl": "https://chatgpt.com/c/6a23e7bf-92d4-83ea-bf2b-6f5cedb1f0e1",
+  "authorDisplayName": "Quinn Harper",
+  "authorUsername": "QuinnHarper",
+  "createdAt": "2026-06-06T05:17:00-04:00",
+  "updatedAt": "2026-06-06T05:31:16-04:00",
+  "prompts": [
+    "I want a tiny parking-lot cone course game I can run as one HTML file, where you steer a little car around cones and try to park cleanly before the timer runs out."
+  ]
+})
+
+export const TINY_WINDOW_HERB_SHOWCASE_PROJECT = buildPendingSourceRunProject({
+  "projectId": TINY_WINDOW_HERB_PROJECT_ID,
+  "sourceRunId": "334a75d7-3821-47b4-a9ce-dceed677c087",
+  "href": "/tiny-window-herb-light-planner-demo",
+  "title": "Tiny Window Herb Light Planner",
+  "description": "Tiny Window Herb Light Planner is a verified Claude source run prepared as an artifact-first public page with 2 preserved prompts.",
+  "content": "Elena Vale used Claude to build Tiny Window Herb Light Planner through a 2-prompt source run. The public page keeps the final artifact first, then preserves each exact prompt and response package in order with selectable artifact versions when the run produced them.",
+  "resultContent": "A mounted single-file HTML artifact with the captured response packages, provider source link, PathForge source-run record, and verification notes preserved.",
+  "categorySlug": "productivity",
+  "mockCategoryId": "cat-7",
+  "difficulty": 'beginner',
+  "modelUsed": "Claude Sonnet 4.6",
+  "modelRecommendation": "Claude Sonnet 4.6",
+  "toolsUsed": [
+    "Claude web in Chrome",
+    "single-file HTML",
+    "local browser verification"
+  ],
+  "tags": [
+    "herb planner",
+    "window light",
+    "apartment kitchen",
+    "visual planning",
+    "self-contained HTML",
+    "source-run"
+  ],
+  "artifactPath": "/artifacts/tiny-window-herb-light-planner-claude.html",
+  "sourceUrl": "https://claude.ai/chat/3f4f0174-f7b6-4a44-9e06-4aefa2e7305d",
+  "authorDisplayName": "Elena Vale",
+  "authorUsername": "ElenaVale",
+  "createdAt": "2026-06-05T04:26:00-04:00",
+  "updatedAt": "2026-06-05T04:35:00-04:00",
+  "prompts": [
+    "Can you make a tiny window herb light planner as a single self-contained HTML file where I can enter a window direction, hours of direct sun, sill size, and a few herb choices, then it gives a visual layout and practical light/watering recommendations for a small apartment kitchen?",
+    "The preview looks useful, but I need the complete standalone HTML code to save locally; please paste the full self-contained HTML/CSS/JS in one code block with no external dependencies."
+  ]
+})
+
+export const POPUP_DINNER_SEATING_SHOWCASE_PROJECT = buildPendingSourceRunProject({
+  "projectId": POPUP_DINNER_SEATING_PROJECT_ID,
+  "sourceRunId": "436baba8-95b0-4aab-b7aa-e5d666a02825",
+  "href": "/pop-up-dinner-seating-mixer-demo",
+  "title": "Pop-Up Dinner Seating Mixer from Gemini Flash",
+  "description": "Pop-Up Dinner Seating Mixer from Gemini Flash is a verified Gemini source run prepared as an artifact-first public page with 2 preserved prompts.",
+  "content": "Mira Santos used Gemini to build Pop-Up Dinner Seating Mixer from Gemini Flash through a 2-prompt source run. The public page keeps the final artifact first, then preserves each exact prompt and response package in order with selectable artifact versions when the run produced them.",
+  "resultContent": "A mounted single-file HTML artifact with the captured response packages, provider source link, PathForge source-run record, and verification notes preserved.",
+  "categorySlug": "productivity",
+  "mockCategoryId": "cat-7",
+  "difficulty": 'beginner',
+  "modelUsed": "Gemini Flash",
+  "modelRecommendation": "Gemini Flash",
+  "toolsUsed": [
+    "Gemini web in Chrome",
+    "single-file HTML",
+    "local browser verification"
+  ],
+  "tags": [
+    "pop-up dinner",
+    "seating chart",
+    "event planning",
+    "dietary notes",
+    "acquaintance tags",
+    "print layout",
+    "localStorage",
+    "single-file HTML",
+    "Gemini Flash",
+    "source-run"
+  ],
+  "artifactPath": "/artifacts/popup-dinner-seating-mixer-gemini.html",
+  "sourceUrl": "https://gemini.google.com/app/002a80a5e3af3c87",
+  "authorDisplayName": "Mira Santos",
+  "authorUsername": "MiraSantos",
+  "createdAt": "2026-06-05T23:40:00-04:00",
+  "updatedAt": "2026-06-06T08:34:04.960Z",
+  "prompts": [
+    "Can you make a self-contained HTML seating mixer for a pop-up dinner that lets me add guests with dietary notes and acquaintance tags, then shuffle them into balanced tables with a print-friendly seating plan?",
+    "The layout works, but clicking Mix Seating again gives the same arrangement. Make the mixer actually reshuffle while still trying to spread acquaintance tags, and keep it as one self-contained HTML file."
+  ]
+})
+
+export const TINY_CROSSWALK_TIMING_SHOWCASE_PROJECT = buildPendingSourceRunProject({
+  "projectId": TINY_CROSSWALK_TIMING_PROJECT_ID,
+  "sourceRunId": "c698d506-dfcb-496d-95c7-445d75e65ccb",
+  "href": "/tiny-crosswalk-timing-trainer-demo",
+  "title": "Tiny Crosswalk Timing Trainer",
+  "description": "Tiny Crosswalk Timing Trainer is a verified ChatGPT source run prepared as an artifact-first public page with 1 preserved prompt.",
+  "content": "Rowan Pace used ChatGPT to build Tiny Crosswalk Timing Trainer through a 1-prompt source run. The public page keeps the final artifact first, then preserves each exact prompt and response package in order with selectable artifact versions when the run produced them.",
+  "resultContent": "A mounted single-file HTML artifact with the captured response packages, provider source link, PathForge source-run record, and verification notes preserved.",
+  "categorySlug": "personal",
+  "mockCategoryId": "cat-10",
+  "difficulty": 'beginner',
+  "modelUsed": "ChatGPT Instant visible composer setting (exact model not exposed)",
+  "modelRecommendation": "ChatGPT Instant visible composer setting (exact model not exposed)",
+  "toolsUsed": [
+    "ChatGPT web in Chrome",
+    "single-file HTML",
+    "local browser verification"
+  ],
+  "tags": [
+    "game",
+    "reaction-time",
+    "crosswalk",
+    "timing",
+    "single-file HTML",
+    "ChatGPT Instant",
+    "source-run"
+  ],
+  "artifactPath": "/artifacts/tiny-crosswalk-timing-trainer-chatgpt.html",
+  "sourceUrl": "https://chatgpt.com/c/6a23d987-407c-83ea-883b-d1dc8afd1033",
+  "authorDisplayName": "Rowan Pace",
+  "authorUsername": "RowanPace",
+  "createdAt": "2026-06-05T23:58:00-04:00",
+  "updatedAt": "2026-06-06T04:29:33-04:00",
+  "prompts": [
+    "Make a tiny crosswalk timing trainer as one self-contained HTML file: a quick reflex game where you tap only when the walk signal is safe, with short rounds and a clear score."
+  ]
+})
+
+export const TINY_INVOICE_NUDGE_SHOWCASE_PROJECT = buildPendingSourceRunProject({
+  "projectId": TINY_INVOICE_NUDGE_PROJECT_ID,
+  "sourceRunId": "d2251fce-c4f0-42b0-849f-1d1dd2bfbc17",
+  "href": "/tiny-invoice-nudge-board-demo",
+  "title": "Tiny Invoice Nudge Board from Gemini Flash",
+  "description": "Tiny Invoice Nudge Board from Gemini Flash is a verified Gemini source run prepared as an artifact-first public page with 1 preserved prompt.",
+  "content": "Talia Brooks used Gemini to build Tiny Invoice Nudge Board from Gemini Flash through a 1-prompt source run. The public page keeps the final artifact first, then preserves each exact prompt and response package in order with selectable artifact versions when the run produced them.",
+  "resultContent": "A mounted single-file HTML artifact with the captured response packages, provider source link, PathForge source-run record, and verification notes preserved.",
+  "categorySlug": "productivity",
+  "mockCategoryId": "cat-7",
+  "difficulty": 'beginner',
+  "modelUsed": "Gemini Flash",
+  "modelRecommendation": "Gemini Flash",
+  "toolsUsed": [
+    "Gemini web in Chrome",
+    "single-file HTML",
+    "local browser verification"
+  ],
+  "tags": [
+    "freelancer",
+    "invoice tracking",
+    "due dates",
+    "payment reminders",
+    "copy reminder",
+    "localStorage",
+    "single-file HTML",
+    "Gemini Flash",
+    "source-run"
+  ],
+  "artifactPath": "/artifacts/tiny-invoice-nudge-board-gemini.html",
+  "sourceUrl": "https://gemini.google.com/app/02d07069b070cb31",
+  "authorDisplayName": "Talia Brooks",
+  "authorUsername": "TaliaBrooks",
+  "createdAt": "2026-06-06T00:00:00-04:00",
+  "updatedAt": "2026-06-06T07:28:58.116Z",
+  "prompts": [
+    "Make me a polished single-file HTML Tiny Invoice Nudge Board for freelancers: track a few unpaid invoices, due dates, gentle reminder status, next action, and include a quick copy reminder if it fits."
+  ]
+})
+
+export const MAILROOM_CART_ROUTE_SHOWCASE_PROJECT = buildPendingSourceRunProject({
+  "projectId": MAILROOM_CART_ROUTE_PROJECT_ID,
+  "sourceRunId": "752c7d52-3c0e-4663-bf88-d834ccd44a1a",
+  "href": "/mailroom-cart-route-puzzle-demo",
+  "title": "Mailroom Cart Route Puzzle",
+  "description": "Mailroom Cart Route Puzzle is a verified ChatGPT source run prepared as an artifact-first public page with 2 preserved prompts.",
+  "content": "Morgan Lane used ChatGPT to build Mailroom Cart Route Puzzle through a 2-prompt source run. The public page keeps the final artifact first, then preserves each exact prompt and response package in order with selectable artifact versions when the run produced them.",
+  "resultContent": "A mounted single-file HTML artifact with the captured response packages, provider source link, PathForge source-run record, and verification notes preserved.",
+  "categorySlug": "productivity",
+  "mockCategoryId": "cat-7",
+  "difficulty": 'beginner',
+  "modelUsed": "ChatGPT Instant visible composer setting (exact model not exposed)",
+  "modelRecommendation": "ChatGPT Instant visible composer setting (exact model not exposed)",
+  "toolsUsed": [
+    "ChatGPT web in Chrome",
+    "single-file HTML",
+    "local browser verification"
+  ],
+  "tags": [
+    "mailroom",
+    "route puzzle",
+    "office grid",
+    "keyboard",
+    "touch",
+    "html",
+    "game",
+    "source-run"
+  ],
+  "artifactPath": "/artifacts/mailroom-cart-route-puzzle-chatgpt.html",
+  "sourceUrl": "https://chatgpt.com/c/6a23cb42-cb38-83ea-bab0-4ba3e8948643",
+  "authorDisplayName": "Morgan Lane",
+  "authorUsername": "MorganLane",
+  "createdAt": "2026-06-06T07:38:19.580Z",
+  "updatedAt": "2026-06-06T07:38:19.580Z",
+  "prompts": [
+    "Can you make a small self-contained HTML game where I route a mailroom cart through an office grid to deliver parcels efficiently, with keyboard controls and mouse/touch moves?",
+    "The keyboard movement works, but tapping a parcel or target square only moves the cart one step because the queued route gets cleared during auto-step. Fix the click/touch pathing so a tap follows the full reachable route, while keeping keyboard controls and the game as one HTML file."
+  ]
+})
+
+export const NEIGHBORHOOD_POTLUCK_BALANCER_SHOWCASE_PROJECT = buildPendingSourceRunProject({
+  "projectId": NEIGHBORHOOD_POTLUCK_BALANCER_PROJECT_ID,
+  "sourceRunId": "27173956-7341-4a2a-808e-cfdec12288d2",
+  "href": "/neighborhood-potluck-balancer-demo",
+  "title": "Neighborhood Potluck Balancer",
+  "description": "Neighborhood Potluck Balancer is a verified Gemini source run prepared as an artifact-first public page with 2 preserved prompts.",
+  "content": "Reese Howard used Gemini to build Neighborhood Potluck Balancer through a 2-prompt source run. The public page keeps the final artifact first, then preserves each exact prompt and response package in order with selectable artifact versions when the run produced them.",
+  "resultContent": "A mounted single-file HTML artifact with the captured response packages, provider source link, PathForge source-run record, and verification notes preserved.",
+  "categorySlug": "productivity",
+  "mockCategoryId": "cat-7",
+  "difficulty": 'beginner',
+  "modelUsed": "Gemini Flash",
+  "modelRecommendation": "Gemini Flash",
+  "toolsUsed": [
+    "Gemini web in Chrome",
+    "single-file HTML",
+    "local browser verification"
+  ],
+  "tags": [
+    "potluck",
+    "neighborhood planning",
+    "bring-list",
+    "dessert balance",
+    "printable planner",
+    "single-file html",
+    "Gemini Flash",
+    "source-run"
+  ],
+  "artifactPath": "/artifacts/neighborhood-potluck-balancer-gemini.html",
+  "sourceUrl": "https://gemini.google.com/app/2e84a39e58cd9299",
+  "authorDisplayName": "Reese Howard",
+  "authorUsername": "ReeseHoward",
+  "createdAt": "2026-06-06T06:32:30.532Z",
+  "updatedAt": "2026-06-06T06:32:30.532Z",
+  "prompts": [
+    "I need a little neighborhood potluck sign-up page I can run as one HTML file: add neighbors and dishes, see when desserts are crowding out mains, and print or copy a clean bring-list for the host.",
+    "This is close, but I need to be able to edit an existing signup too, not just remove it. Add an edit/update flow for the neighbor, dish, and category, and keep the whole thing as one HTML file."
+  ]
+})
+
+export const LAUNDROMAT_SOCK_SORTER_SHOWCASE_PROJECT = buildPendingSourceRunProject({
+  "projectId": LAUNDROMAT_SOCK_SORTER_PROJECT_ID,
+  "sourceRunId": "7acf7e4e-382c-466e-a2cc-f23bdbbd3d94",
+  "href": "/laundromat-sock-sorter-demo",
+  "title": "Laundromat Sock Sorter",
+  "description": "Laundromat Sock Sorter is a verified ChatGPT source run prepared as an artifact-first public page with 2 preserved prompts.",
+  "content": "Camden Rivers used ChatGPT to build Laundromat Sock Sorter through a 2-prompt source run. The public page keeps the final artifact first, then preserves each exact prompt and response package in order with selectable artifact versions when the run produced them.",
+  "resultContent": "A mounted single-file HTML artifact with the captured response packages, provider source link, PathForge source-run record, and verification notes preserved.",
+  "categorySlug": "productivity",
+  "mockCategoryId": "cat-7",
+  "difficulty": 'beginner',
+  "modelUsed": "ChatGPT Instant visible composer setting (exact model not exposed)",
+  "modelRecommendation": "ChatGPT Instant visible composer setting (exact model not exposed)",
+  "toolsUsed": [
+    "ChatGPT web in Chrome",
+    "single-file HTML",
+    "local browser verification"
+  ],
+  "tags": [
+    "laundromat",
+    "sock matching",
+    "pattern matching",
+    "keyboard controls",
+    "touch controls",
+    "browser game",
+    "source-run"
+  ],
+  "artifactPath": "/artifacts/laundromat-sock-sorter-chatgpt.html",
+  "sourceUrl": "https://chatgpt.com/c/6a23bcd5-ceac-83ea-9212-f08516608c24",
+  "authorDisplayName": "Camden Rivers",
+  "authorUsername": "CamdenRivers",
+  "createdAt": "2026-06-06T06:27:08.975Z",
+  "updatedAt": "2026-06-06T06:27:08.975Z",
+  "prompts": [
+    "Can you make a small laundromat sock-sorting game in one HTML file, where I match patterned sock pairs into the right machines, lose points for wrong-machine drops, and finish a little customer basket?",
+    "This is close, but I need a real keyboard control path too. Add keyboard play so I can move between socks and washers, choose a sock, send it to a washer, and keep the click/touch controls working in the same one-file HTML."
+  ]
+})
+
+export const CORNER_STORE_CHANGE_SHOWCASE_PROJECT = buildPendingSourceRunProject({
+  "projectId": CORNER_STORE_CHANGE_PROJECT_ID,
+  "sourceRunId": "2dfa5104-d97e-4824-b413-862ea0f7d2f6",
+  "href": "/corner-store-change-rush-demo",
+  "title": "Corner Store Change Rush",
+  "description": "Corner Store Change Rush is a verified ChatGPT source run prepared as an artifact-first public page with 1 preserved prompt.",
+  "content": "Jamie Cole used ChatGPT to build Corner Store Change Rush through a 1-prompt source run. The public page keeps the final artifact first, then preserves each exact prompt and response package in order with selectable artifact versions when the run produced them.",
+  "resultContent": "A mounted single-file HTML artifact with the captured response packages, provider source link, PathForge source-run record, and verification notes preserved.",
+  "categorySlug": "personal",
+  "mockCategoryId": "cat-10",
+  "difficulty": 'beginner',
+  "modelUsed": "ChatGPT Instant visible composer setting (exact model not exposed)",
+  "modelRecommendation": "ChatGPT Instant visible composer setting (exact model not exposed)",
+  "toolsUsed": [
+    "ChatGPT web in Chrome",
+    "single-file HTML",
+    "local browser verification"
+  ],
+  "tags": [
+    "game",
+    "cashier",
+    "change-making",
+    "speed-drill",
+    "single-file-html",
+    "source-run"
+  ],
+  "artifactPath": "/artifacts/corner-store-change-rush-chatgpt.html",
+  "sourceUrl": "https://chatgpt.com/c/6a23ae9e-89a0-83ea-81ca-dfc0c435e0e4",
+  "authorDisplayName": "Jamie Cole",
+  "authorUsername": "JamieCole",
+  "createdAt": "2026-06-06T05:10:00Z",
+  "updatedAt": "2026-06-06T05:32:33Z",
+  "prompts": [
+    "Make me a one-file HTML speed game called Corner Store Change Rush where I tap bills and coins to make exact change before the checkout line loses patience."
+  ]
+})
+
+export const WEEKEND_YARD_SALE_SHOWCASE_PROJECT = buildPendingSourceRunProject({
+  "projectId": WEEKEND_YARD_SALE_PROJECT_ID,
+  "sourceRunId": "87c0b478-7cfe-49d7-8bc1-33cf5dd09071",
+  "href": "/weekend-yard-sale-table-mapper-demo",
+  "title": "Weekend Yard Sale Table Mapper",
+  "description": "Weekend Yard Sale Table Mapper is a verified Gemini source run prepared as an artifact-first public page with 2 preserved prompts.",
+  "content": "Claire Nolan used Gemini to build Weekend Yard Sale Table Mapper through a 2-prompt source run. The public page keeps the final artifact first, then preserves each exact prompt and response package in order with selectable artifact versions when the run produced them.",
+  "resultContent": "A mounted single-file HTML artifact with the captured response packages, provider source link, PathForge source-run record, and verification notes preserved.",
+  "categorySlug": "productivity",
+  "mockCategoryId": "cat-7",
+  "difficulty": 'beginner',
+  "modelUsed": "Gemini Flash",
+  "modelRecommendation": "Gemini Flash",
+  "toolsUsed": [
+    "Gemini web in Chrome",
+    "single-file HTML",
+    "local browser verification"
+  ],
+  "tags": [
+    "yard sale",
+    "table map",
+    "pricing",
+    "printable planner",
+    "single-file html",
+    "Gemini Flash",
+    "source-run"
+  ],
+  "artifactPath": "/artifacts/weekend-yard-sale-table-mapper-gemini.html",
+  "sourceUrl": "https://gemini.google.com/app/263ddbc71c7188d0",
+  "authorDisplayName": "Claire Nolan",
+  "authorUsername": "ClaireNolan",
+  "createdAt": "2026-06-06T05:26:48.532Z",
+  "updatedAt": "2026-06-06T05:26:48.532Z",
+  "prompts": [
+    "Could you make a single-file HTML tool for mapping a weekend yard-sale table: add items with prices and box numbers, assign them to table zones, then print a simple table map with an estimated total?",
+    "This is close, but I need to edit an item after it is on the map instead of deleting and re-adding it; add an edit flow for item name, price, box, and zone while keeping it a single HTML file."
+  ]
+})
+
+export const MINI_METRO_SIGNAL_SHOWCASE_PROJECT = buildPendingSourceRunProject({
+  "projectId": MINI_METRO_SIGNAL_PROJECT_ID,
+  "sourceRunId": "027b17c4-aa5a-4403-a435-501ad802d015",
+  "href": "/mini-metro-signal-desk-demo",
+  "title": "Mini Metro Signal Desk",
+  "description": "Mini Metro Signal Desk is a verified Claude source run prepared as an artifact-first public page with 2 preserved prompts.",
+  "content": "Logan Pierce used Claude to build Mini Metro Signal Desk through a 2-prompt source run. The public page keeps the final artifact first, then preserves each exact prompt and response package in order with selectable artifact versions when the run produced them.",
+  "resultContent": "A mounted single-file HTML artifact with the captured response packages, provider source link, PathForge source-run record, and verification notes preserved.",
+  "categorySlug": "personal",
+  "mockCategoryId": "cat-10",
+  "difficulty": 'beginner',
+  "modelUsed": "Claude Sonnet 4.6",
+  "modelRecommendation": "Claude Sonnet 4.6",
+  "toolsUsed": [
+    "Claude web in Chrome",
+    "single-file HTML",
+    "local browser verification"
+  ],
+  "tags": [
+    "browser game",
+    "signals",
+    "trains",
+    "routing",
+    "arcade puzzle",
+    "canvas",
+    "single-file html",
+    "Claude Sonnet",
+    "source-run"
+  ],
+  "artifactPath": "/artifacts/mini-metro-signal-desk-claude-v2.html",
+  "sourceUrl": "https://claude.ai/chat/b2bd8de1-5f5b-467b-8358-64f37d930375",
+  "authorDisplayName": "Logan Pierce",
+  "authorUsername": "LoganPierce",
+  "createdAt": "2026-06-06T04:22:00Z",
+  "updatedAt": "2026-06-06T04:35:38Z",
+  "prompts": [
+    "Make a compact single-file HTML browser game called Mini Metro Signal Desk where I toggle colored track signals to route trains to matching stations without jams, with score, reset, and a phone-friendly layout.",
+    "The game works, but the score and combo are showing long decimals while trains are moving; make those displays whole numbers and make the jam/life penalty clearer when a stopped train waits too long, keeping it a single HTML file."
+  ]
+})
+
+export const MOVING_DAY_BOX_LABELER_SHOWCASE_PROJECT = buildPendingSourceRunProject({
+  "projectId": MOVING_DAY_BOX_LABELER_PROJECT_ID,
+  "sourceRunId": "c678cb0f-5629-4452-ad4e-65595c53220b",
+  "href": "/moving-day-box-labeler-demo",
+  "title": "Moving Day Box Labeler",
+  "description": "Moving Day Box Labeler is a verified Gemini source run prepared as an artifact-first public page with 2 preserved prompts.",
+  "content": "Paige Miller used Gemini to build Moving Day Box Labeler through a 2-prompt source run. The public page keeps the final artifact first, then preserves each exact prompt and response package in order with selectable artifact versions when the run produced them.",
+  "resultContent": "A mounted single-file HTML artifact with the captured response packages, provider source link, PathForge source-run record, and verification notes preserved.",
+  "categorySlug": "productivity",
+  "mockCategoryId": "cat-7",
+  "difficulty": 'beginner',
+  "modelUsed": "Gemini Flash",
+  "modelRecommendation": "Gemini Flash",
+  "toolsUsed": [
+    "Gemini web in Chrome",
+    "single-file HTML",
+    "local browser verification"
+  ],
+  "tags": [
+    "moving day",
+    "box labels",
+    "packing summary",
+    "printable labels",
+    "single-file html",
+    "Gemini Flash",
+    "source-run"
+  ],
+  "artifactPath": "/artifacts/moving-day-box-labeler-gemini.html",
+  "sourceUrl": "https://gemini.google.com/app/3b6ceadea59c0738",
+  "authorDisplayName": "Paige Miller",
+  "authorUsername": "PaigeMiller",
+  "createdAt": "2026-06-06T04:21:00Z",
+  "updatedAt": "2026-06-06T04:35:30Z",
+  "prompts": [
+    "Can you make me a single-file HTML moving day box labeler that turns a messy list of boxes into printable room/priority/fragility labels plus a packing summary I can use the morning of the move?",
+    "The tool works, but comma-heavy contents like \"router, chargers, work laptop\" get chopped to just \"router\" because the parser treats every comma as a field separator. Fix the parsing so contents keep comma lists unless the comma is clearly separating fields, and keep it as one HTML file."
+  ]
+})
+
+export const ROOFTOP_COURIER_SWITCHBACKS_SHOWCASE_PROJECT = buildPendingSourceRunProject({
+  "projectId": ROOFTOP_COURIER_SWITCHBACKS_PROJECT_ID,
+  "sourceRunId": "ad13b3bd-0a26-4b57-b124-134cef27a5f1",
+  "href": "/rooftop-courier-switchbacks-demo",
+  "title": "Rooftop Courier Switchbacks",
+  "description": "Rooftop Courier Switchbacks is a verified ChatGPT source run prepared as an artifact-first public page with 2 preserved prompts.",
+  "content": "Evan Brooks used ChatGPT to build Rooftop Courier Switchbacks through a 2-prompt source run. The public page keeps the final artifact first, then preserves each exact prompt and response package in order with selectable artifact versions when the run produced them.",
+  "resultContent": "A mounted single-file HTML artifact with the captured response packages, provider source link, PathForge source-run record, and verification notes preserved.",
+  "categorySlug": "personal",
+  "mockCategoryId": "cat-10",
+  "difficulty": 'beginner',
+  "modelUsed": "ChatGPT Instant visible composer setting (exact model not exposed)",
+  "modelRecommendation": "ChatGPT Instant visible composer setting (exact model not exposed)",
+  "toolsUsed": [
+    "ChatGPT web in Chrome",
+    "single-file HTML",
+    "local browser verification"
+  ],
+  "tags": [
+    "game",
+    "rooftop courier",
+    "switch puzzle",
+    "one-screen",
+    "single-file html",
+    "ChatGPT Instant",
+    "source-run"
+  ],
+  "artifactPath": "/artifacts/rooftop-courier-switchbacks-chatgpt.html",
+  "sourceUrl": "https://chatgpt.com/c/6a23a085-1520-83ea-85b4-fbf46909c4bd",
+  "authorDisplayName": "Evan Brooks",
+  "authorUsername": "EvanBrooks",
+  "createdAt": "2026-06-06T04:12:00Z",
+  "updatedAt": "2026-06-06T04:30:51Z",
+  "prompts": [
+    "Make a tiny one-screen browser game called Rooftop Courier Switchbacks where I route delivery runners across rooftop walkways by toggling switch tiles before the timer runs out, and give me one self-contained HTML file that feels polished enough to play right away.",
+    "The game runs, but the hint says keyboard 1 to 6 even though there are only four switch tiles, which makes the controls feel less polished. Fix that mismatch and keep it as one self-contained HTML file without changing the basic game."
+  ]
+})
+
+export const NEIGHBORHOOD_SNOW_ROUTE_SHOWCASE_PROJECT = buildPendingSourceRunProject({
+  "projectId": NEIGHBORHOOD_SNOW_ROUTE_PROJECT_ID,
+  "sourceRunId": "bf8a8bf7-1749-4be4-9d34-73e504c66a4f",
+  "href": "/neighborhood-snow-route-plow-puzzle-demo",
+  "title": "Neighborhood Snow Route Plow Puzzle",
+  "description": "Neighborhood Snow Route Plow Puzzle is a verified ChatGPT source run prepared as an artifact-first public page with 1 preserved prompt.",
+  "content": "Rowan Fields used ChatGPT to build Neighborhood Snow Route Plow Puzzle through a 1-prompt source run. The public page keeps the final artifact first, then preserves each exact prompt and response package in order with selectable artifact versions when the run produced them.",
+  "resultContent": "A mounted single-file HTML artifact with the captured response packages, provider source link, PathForge source-run record, and verification notes preserved.",
+  "categorySlug": "personal",
+  "mockCategoryId": "cat-10",
+  "difficulty": 'beginner',
+  "modelUsed": "ChatGPT Instant visible composer setting (exact model not exposed)",
+  "modelRecommendation": "ChatGPT Instant visible composer setting (exact model not exposed)",
+  "toolsUsed": [
+    "ChatGPT web in Chrome",
+    "single-file HTML",
+    "local browser verification"
+  ],
+  "tags": [
+    "game",
+    "snow-plow",
+    "route-puzzle",
+    "one-screen",
+    "html-canvas",
+    "source-run"
+  ],
+  "artifactPath": "/artifacts/neighborhood-snow-route-plow-puzzle-chatgpt.html",
+  "sourceUrl": "https://chatgpt.com/c/6a23924f-0e68-83ea-a885-1b5984aa98fc",
+  "authorDisplayName": "Rowan Fields",
+  "authorUsername": "RowanFields",
+  "createdAt": "2026-06-06T03:18:00Z",
+  "updatedAt": "2026-06-06T03:27:47.694Z",
+  "prompts": [
+    "I want a tiny one-screen browser game where you drive a neighborhood snow plow, clear every street segment efficiently, and beat the clock before the storm wins. Please make it as a single runnable HTML file."
+  ]
+})
+
+export const ROOMMATE_FREEZER_BOARD_SHOWCASE_PROJECT = buildPendingSourceRunProject({
+  "projectId": ROOMMATE_FREEZER_BOARD_PROJECT_ID,
+  "sourceRunId": "9781f7a6-c533-41e7-ae9d-ecc8e9ac9efe",
+  "href": "/roommate-freezer-board-demo",
+  "title": "Roommate Freezer Board",
+  "description": "Roommate Freezer Board is a verified Gemini source run prepared as an artifact-first public page with 1 preserved prompt.",
+  "content": "Nina Collins used Gemini to build Roommate Freezer Board through a 1-prompt source run. The public page keeps the final artifact first, then preserves each exact prompt and response package in order with selectable artifact versions when the run produced them.",
+  "resultContent": "A mounted single-file HTML artifact with the captured response packages, provider source link, PathForge source-run record, and verification notes preserved.",
+  "categorySlug": "productivity",
+  "mockCategoryId": "cat-7",
+  "difficulty": 'beginner',
+  "modelUsed": "Gemini Flash",
+  "modelRecommendation": "Gemini Flash",
+  "toolsUsed": [
+    "Gemini web in Chrome",
+    "single-file HTML",
+    "local browser verification"
+  ],
+  "tags": [
+    "roommates",
+    "freezer inventory",
+    "meal portions",
+    "expiration urgency",
+    "claims",
+    "localStorage",
+    "single-file html",
+    "Gemini Flash",
+    "source-run"
+  ],
+  "artifactPath": "/artifacts/roommate-freezer-board-gemini.html",
+  "sourceUrl": "https://gemini.google.com/app/b4bc9dcd99a6e19d",
+  "authorDisplayName": "Nina Collins",
+  "authorUsername": "NinaCollins",
+  "createdAt": "2026-06-06T03:23:00Z",
+  "updatedAt": "2026-06-06T03:30:27Z",
+  "prompts": [
+    "Can you make me a tiny roommate freezer board I can save as one HTML file, for tracking shared frozen meals, remaining portions, expiration urgency, and who has claimed what?"
+  ]
+})
+
+export const UTILITY_BILL_BALANCE_SHOWCASE_PROJECT = buildPendingSourceRunProject({
+  "projectId": UTILITY_BILL_BALANCE_PROJECT_ID,
+  "sourceRunId": "7c3e5aaf-5d69-467b-90fe-43cbee495c3c",
+  "href": "/utility-bill-balance-board-demo",
+  "title": "Utility Bill Balance Board",
+  "description": "Utility Bill Balance Board is a verified Gemini source run prepared as an artifact-first public page with 7 preserved prompts.",
+  "content": "Dylan Foster used Gemini to build Utility Bill Balance Board through a 7-prompt source run. The public page keeps the final artifact first, then preserves each exact prompt and response package in order with selectable artifact versions when the run produced them.",
+  "resultContent": "A mounted single-file HTML artifact with the captured response packages, provider source link, PathForge source-run record, and verification notes preserved.",
+  "categorySlug": "productivity",
+  "mockCategoryId": "cat-7",
+  "difficulty": 'beginner',
+  "modelUsed": "Gemini Flash",
+  "modelRecommendation": "Gemini Flash",
+  "toolsUsed": [
+    "Gemini web in Chrome",
+    "single-file HTML",
+    "local browser verification"
+  ],
+  "tags": [
+    "utility bills",
+    "roommates",
+    "bill splitting",
+    "partial payments",
+    "due dates",
+    "localStorage",
+    "single-file html",
+    "Gemini Flash",
+    "source-run"
+  ],
+  "artifactPath": "/artifacts/utility-bill-balance-board-gemini.html",
+  "sourceUrl": "https://gemini.google.com/app/0db96dafcfdb08df",
+  "authorDisplayName": "Dylan Foster",
+  "authorUsername": "DylanFoster",
+  "createdAt": "2026-06-06T02:23:00Z",
+  "updatedAt": "2026-06-06T02:46:09.051Z",
+  "prompts": [
+    "My roommates and I keep getting weird utility bills with different due dates and partial Venmo payments; can you make a simple browser tool that turns those bills into a clear who-owes-what board?",
+    "That visual preview is the right idea, but I need the actual code so I can save and run it myself. Please output the complete self-contained HTML/CSS/JS file for this utility-bill board.",
+    "The code runs, but it still feels like a rough calculator: I can't edit an existing bill, the payer is free text instead of a roommate choice, and nothing saves after refresh. Add edit controls, localStorage persistence, and clear due-status labels like overdue/due soon/paid without turning it into a big app.",
+    "This is much closer. One thing roommates will ask for is a shareable handoff: add a copyable summary that includes each active bill, due status, who already paid partially, and the final pay-this-person settlement list. Also show a tiny payment-history note per bill so partial payments don't feel like mystery numbers.",
+    "The share summary is useful, but the copy failure alert mentions framework/terminal text, which would confuse normal roommates. Replace that with a normal fallback: show the generated summary in a small preview box that can be manually selected, keep the copy button, and make sure the board has no horizontal overflow around 390px wide.",
+    "One tiny cleanup: remove any leftover internal wording about framework errors or terminals from the source entirely, including comments, while keeping the manual summary preview, copy button, localStorage, edit controls, due statuses, and mobile no-overflow behavior intact. Output the complete final HTML again.",
+    "Acceptance check found two issues: the file imports Google Fonts, so it is not fully dependency-free, and partial-payment edits should update/save immediately so the copied summary clearly includes the edited payment. Remove every external dependency, use system fonts only, make partial payment inputs update on input and blur, and output the complete final HTML."
+  ]
+})
+
+export const BLOCK_BIKE_COURIER_SHOWCASE_PROJECT = buildPendingSourceRunProject({
+  "projectId": BLOCK_BIKE_COURIER_PROJECT_ID,
+  "sourceRunId": "639eb34e-2f47-4405-95d5-5abdd804e8b1",
+  "href": "/block-bike-courier-light-run-demo",
+  "title": "Block Bike Courier Light Run",
+  "description": "Block Bike Courier Light Run is a verified ChatGPT source run prepared as an artifact-first public page with 5 preserved prompts.",
+  "content": "Morgan Hale used ChatGPT to build Block Bike Courier Light Run through a 5-prompt source run. The public page keeps the final artifact first, then preserves each exact prompt and response package in order with selectable artifact versions when the run produced them.",
+  "resultContent": "A mounted single-file HTML artifact with the captured response packages, provider source link, PathForge source-run record, and verification notes preserved.",
+  "categorySlug": "personal",
+  "mockCategoryId": "cat-10",
+  "difficulty": 'beginner',
+  "modelUsed": "ChatGPT GPT-5.5 Thinking",
+  "modelRecommendation": "ChatGPT GPT-5.5 Thinking",
+  "toolsUsed": [
+    "ChatGPT web in Chrome",
+    "single-file HTML",
+    "local browser verification"
+  ],
+  "tags": [
+    "game",
+    "bicycle",
+    "delivery",
+    "traffic-lights",
+    "one-screen",
+    "html-canvas",
+    "source-run"
+  ],
+  "artifactPath": "/artifacts/bike-courier-light-run-chatgpt.html",
+  "sourceUrl": "https://chatgpt.com/c/6a2383f4-6b2c-83ea-abb4-d9bc69ff7b41",
+  "authorDisplayName": "Morgan Hale",
+  "authorUsername": "MorganHale",
+  "createdAt": "2026-06-05T22:18:00-04:00",
+  "updatedAt": "2026-06-05T22:38:50-04:00",
+  "prompts": [
+    "Can you make a small one-screen HTML game where I bike-deliver packages across a city block, timing my route through traffic lights and intersections?",
+    "The first version has lights and deliveries, but the streets feel empty. Add moving car traffic that obeys the light phases, make bike-car collisions cost time or end the run, and return the full updated single-file HTML.",
+    "Before changing the file again, what would you adjust to make this game work better on a phone? Please answer with a short practical checklist, no code yet.",
+    "Good. For this specific delivery-route game, which two mechanics would most improve replay value without making the single-screen game bloated? No code yet; just pick the two and explain briefly.",
+    "Now apply those choices to the game: improve the phone layout, add a clear next-delivery arrow, add crash feedback, save a local best score/time medal, and shuffle the delivery order each run. Return the full updated single-file HTML only."
+  ]
+})
+
 export const PENDING_SOURCE_RUN_SHOWCASE_PROJECTS = [
   TINY_TRAIN_DISPATCHER_SHOWCASE_PROJECT,
   BREAKROOM_SNACK_RESTOCK_SHOWCASE_PROJECT,
@@ -717,4 +1726,29 @@ export const PENDING_SOURCE_RUN_SHOWCASE_PROJECTS = [
   MICRO_DUNGEON_ROUTE_SHOWCASE_PROJECT,
   BAKE_SALE_MARGIN_SHOWCASE_PROJECT,
   STAR_MAP_SCAVENGER_SHOWCASE_PROJECT,
+  NEIGHBORHOOD_LOST_AND_FOUND_SHOWCASE_PROJECT,
+  TINY_DINER_TICKET_SHOWCASE_PROJECT,
+  SMALL_CLINIC_CALLBACK_SHOWCASE_PROJECT,
+  TINY_BIRTHDAY_RSVP_SHOWCASE_PROJECT,
+  TINY_AIRPORT_GATE_SHOWCASE_PROJECT,
+  TINY_FERRY_LOADING_SHOWCASE_PROJECT,
+  AFTER_SCHOOL_PICKUP_SHOWCASE_PROJECT,
+  FRIDGE_LEFTOVER_LABEL_SHOWCASE_PROJECT,
+  TINY_PARKING_LOT_SHOWCASE_PROJECT,
+  TINY_WINDOW_HERB_SHOWCASE_PROJECT,
+  POPUP_DINNER_SEATING_SHOWCASE_PROJECT,
+  TINY_CROSSWALK_TIMING_SHOWCASE_PROJECT,
+  TINY_INVOICE_NUDGE_SHOWCASE_PROJECT,
+  MAILROOM_CART_ROUTE_SHOWCASE_PROJECT,
+  NEIGHBORHOOD_POTLUCK_BALANCER_SHOWCASE_PROJECT,
+  LAUNDROMAT_SOCK_SORTER_SHOWCASE_PROJECT,
+  CORNER_STORE_CHANGE_SHOWCASE_PROJECT,
+  WEEKEND_YARD_SALE_SHOWCASE_PROJECT,
+  MINI_METRO_SIGNAL_SHOWCASE_PROJECT,
+  MOVING_DAY_BOX_LABELER_SHOWCASE_PROJECT,
+  ROOFTOP_COURIER_SWITCHBACKS_SHOWCASE_PROJECT,
+  NEIGHBORHOOD_SNOW_ROUTE_SHOWCASE_PROJECT,
+  ROOMMATE_FREEZER_BOARD_SHOWCASE_PROJECT,
+  UTILITY_BILL_BALANCE_SHOWCASE_PROJECT,
+  BLOCK_BIKE_COURIER_SHOWCASE_PROJECT,
 ]

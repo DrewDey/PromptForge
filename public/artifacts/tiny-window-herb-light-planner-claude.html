@@ -1,0 +1,487 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Window Herb Light Planner</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #ffffff;
+    --bg-secondary: #f5f5f2;
+    --bg-tertiary: #eeecea;
+    --text: #1a1a18;
+    --text-secondary: #6b6b68;
+    --border: rgba(0,0,0,0.12);
+    --border-hover: rgba(0,0,0,0.25);
+    --green-50: #E1F5EE;
+    --green-100: #9FE1CB;
+    --green-600: #0F6E56;
+    --green-700: #085041;
+    --amber-50: #FAEEDA;
+    --amber-700: #633806;
+    --amber-800: #854F0B;
+    --red-50: #FCEBEB;
+    --red-600: #A32D2D;
+    --radius-md: 8px;
+    --radius-lg: 12px;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #1e1e1c;
+      --bg-secondary: #2a2a28;
+      --bg-tertiary: #333330;
+      --text: #f0ede8;
+      --text-secondary: #a0a09a;
+      --border: rgba(255,255,255,0.12);
+      --border-hover: rgba(255,255,255,0.28);
+      --green-50: #04342C;
+      --green-100: #085041;
+      --green-600: #5DCAA5;
+      --green-700: #9FE1CB;
+      --amber-50: #412402;
+      --amber-700: #FAC775;
+      --amber-800: #EF9F27;
+      --red-50: #501313;
+      --red-600: #F09595;
+    }
+  }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: var(--bg-tertiary);
+    color: var(--text);
+    min-height: 100vh;
+    padding: 2rem 1rem;
+  }
+
+  .container {
+    max-width: 680px;
+    margin: 0 auto;
+    background: var(--bg);
+    border-radius: var(--radius-lg);
+    border: 0.5px solid var(--border);
+    padding: 2rem;
+  }
+
+  h1 { font-size: 22px; font-weight: 500; margin-bottom: 4px; }
+  .subtitle { font-size: 14px; color: var(--text-secondary); margin-bottom: 1.75rem; }
+
+  .form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+    margin-bottom: 1.5rem;
+  }
+
+  .field { display: flex; flex-direction: column; gap: 6px; }
+  .field.full { grid-column: 1 / -1; }
+
+  label { font-size: 13px; color: var(--text-secondary); font-weight: 500; }
+
+  select, input[type="number"] {
+    appearance: none;
+    background: var(--bg);
+    border: 0.5px solid var(--border);
+    border-radius: var(--radius-md);
+    color: var(--text);
+    font-size: 14px;
+    font-family: inherit;
+    height: 36px;
+    padding: 0 10px;
+    width: 100%;
+    outline: none;
+    transition: border-color 0.15s;
+  }
+  select { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23888' d='M6 8L1 3h10z'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 10px center; padding-right: 28px; cursor: pointer; }
+  select:hover, input[type="number"]:hover { border-color: var(--border-hover); }
+  select:focus, input[type="number"]:focus { border-color: #1D9E75; box-shadow: 0 0 0 2px rgba(29,158,117,0.15); }
+
+  .herb-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(118px, 1fr));
+    gap: 8px;
+  }
+
+  .herb-check {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    padding: 8px 10px;
+    border: 0.5px solid var(--border);
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    background: var(--bg);
+    user-select: none;
+    transition: background 0.12s, border-color 0.12s;
+  }
+  .herb-check:hover { background: var(--bg-secondary); border-color: var(--border-hover); }
+  .herb-check.selected { border-color: #1D9E75; background: var(--green-50); }
+  .herb-check.selected .herb-name { color: var(--green-600); }
+  .herb-icon { font-size: 17px; line-height: 1; }
+  .herb-name { font-size: 13px; font-weight: 500; color: var(--text); }
+
+  .plan-btn {
+    width: 100%;
+    padding: 10px;
+    font-size: 15px;
+    font-weight: 500;
+    font-family: inherit;
+    cursor: pointer;
+    background: var(--bg);
+    color: var(--text);
+    border: 0.5px solid var(--border-hover);
+    border-radius: var(--radius-md);
+    transition: background 0.12s, transform 0.1s;
+    margin-top: 0.25rem;
+  }
+  .plan-btn:hover { background: var(--bg-secondary); }
+  .plan-btn:active { transform: scale(0.99); }
+
+  .results { display: none; margin-top: 1.75rem; }
+  hr.divider { border: none; border-top: 0.5px solid var(--border); margin-bottom: 1.75rem; }
+
+  .sill-viz {
+    background: var(--bg-secondary);
+    border: 0.5px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 1rem;
+    margin-bottom: 1.5rem;
+  }
+  .sill-label { font-size: 13px; color: var(--text-secondary); margin-bottom: 10px; }
+
+  .sill-scene {
+    position: relative;
+    border-radius: var(--radius-md);
+    overflow: hidden;
+    border: 0.5px solid var(--border);
+    min-height: 110px;
+  }
+  .window-pane {
+    position: absolute;
+    inset: 0;
+    background: #ddeef9;
+  }
+  @media (prefers-color-scheme: dark) {
+    .window-pane { background: #1a2d3d; }
+  }
+  .sill-wood {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 14px;
+    background: #c8b48a;
+  }
+  @media (prefers-color-scheme: dark) {
+    .sill-wood { background: #7a6040; }
+  }
+  .pots-row {
+    position: relative;
+    z-index: 2;
+    display: flex;
+    align-items: flex-end;
+    gap: 8px;
+    padding: 16px 12px 18px;
+    flex-wrap: wrap;
+  }
+  .pot-wrap { display: flex; flex-direction: column; align-items: center; gap: 3px; }
+  .pot-emoji { font-size: 22px; line-height: 1; }
+  .pot-body { border-radius: 3px 3px 6px 6px; }
+  .pot-rim { border-radius: 0 0 4px 4px; }
+  .pot-label { font-size: 10px; font-weight: 500; text-align: center; color: var(--text); line-height: 1.3; max-width: 54px; }
+
+  .overflow-note {
+    font-size: 12px;
+    color: var(--amber-800);
+    background: var(--amber-50);
+    padding: 5px 10px;
+    border-radius: var(--radius-md);
+    margin-top: 8px;
+    display: none;
+  }
+
+  .no-fit-msg {
+    background: var(--red-50);
+    border-radius: var(--radius-md);
+    padding: 10px 14px;
+    font-size: 13px;
+    color: var(--red-600);
+    margin-bottom: 1.25rem;
+    display: none;
+    line-height: 1.6;
+  }
+
+  .section-title { font-size: 15px; font-weight: 500; margin-bottom: 10px; margin-top: 1.5rem; }
+
+  .herb-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 10px;
+    margin-bottom: 1.5rem;
+  }
+  .herb-card {
+    background: var(--bg);
+    border: 0.5px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 12px 14px;
+  }
+  .herb-card-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 8px;
+    margin-bottom: 9px;
+  }
+  .herb-card-name { font-size: 14px; font-weight: 500; display: flex; align-items: center; gap: 5px; }
+  .badge {
+    display: inline-block;
+    padding: 2px 7px;
+    border-radius: var(--radius-md);
+    font-size: 11px;
+    font-weight: 500;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+  .badge-great { background: var(--green-50); color: var(--green-600); }
+  .badge-ok    { background: var(--amber-50); color: var(--amber-700); }
+  .badge-poor  { background: var(--red-50);   color: var(--red-600); }
+
+  .herb-stat {
+    font-size: 12px;
+    color: var(--text-secondary);
+    margin-bottom: 4px;
+    display: flex;
+    align-items: flex-start;
+    gap: 5px;
+    line-height: 1.5;
+  }
+  .herb-stat svg { flex-shrink: 0; margin-top: 1px; }
+  .herb-tip { font-size: 12px; color: var(--text); margin-top: 6px; line-height: 1.55; }
+
+  .tip-box {
+    background: var(--bg-secondary);
+    border-left: 3px solid #1D9E75;
+    padding: 10px 14px;
+    border-radius: 0 var(--radius-md) var(--radius-md) 0;
+    margin-bottom: 1rem;
+  }
+  .tip-box p { font-size: 13px; line-height: 1.65; }
+  .tip-box.alt { border-left-color: #BA7517; }
+
+  @media (max-width: 480px) {
+    .form-grid { grid-template-columns: 1fr; }
+    .field.full { grid-column: 1; }
+    .container { padding: 1.25rem; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>Window herb light planner</h1>
+  <p class="subtitle">Match your kitchen herbs to your actual windowsill conditions.</p>
+
+  <div class="form-grid">
+    <div class="field">
+      <label for="direction">Window direction</label>
+      <select id="direction">
+        <option value="south">South-facing</option>
+        <option value="east">East-facing</option>
+        <option value="west">West-facing</option>
+        <option value="north">North-facing</option>
+      </select>
+    </div>
+    <div class="field">
+      <label for="hours">Direct sun (hours/day)</label>
+      <input type="number" id="hours" min="0" max="12" value="4" step="0.5">
+    </div>
+    <div class="field">
+      <label for="sillW">Sill width (inches)</label>
+      <input type="number" id="sillW" min="4" max="48" value="12">
+    </div>
+    <div class="field">
+      <label for="sillD">Sill depth (inches)</label>
+      <input type="number" id="sillD" min="3" max="18" value="6">
+    </div>
+    <div class="field full">
+      <label>Herbs you want to grow</label>
+      <div class="herb-grid" id="herbGrid"></div>
+    </div>
+  </div>
+
+  <button class="plan-btn" id="planBtn">Plan my windowsill ↗</button>
+
+  <div class="results" id="results">
+    <hr class="divider">
+
+    <div class="sill-viz">
+      <div class="sill-label" id="sillLabel">Your windowsill layout</div>
+      <div class="sill-scene">
+        <div class="window-pane"></div>
+        <div class="pots-row" id="potsRow"></div>
+        <div class="sill-wood"></div>
+      </div>
+      <div class="overflow-note" id="overflowNote"></div>
+    </div>
+
+    <div class="no-fit-msg" id="noFitMsg"></div>
+
+    <p class="section-title">Herb care guide</p>
+    <div class="herb-cards" id="herbCards"></div>
+
+    <p class="section-title">Light summary</p>
+    <div class="tip-box" id="lightTip"><p></p></div>
+
+    <p class="section-title" id="altTitle" style="display:none">Consider this too</p>
+    <div class="tip-box alt" id="altTip" style="display:none"><p></p></div>
+  </div>
+</div>
+
+<script>
+const HERBS = [
+  { id:'basil',      name:'Basil',      icon:'🌿', minSun:6,  water:'Every 2–3 days',  potColor:'#2d7a45', rimColor:'#1f5a32', potW:46, potH:36, light:'Full sun (6h+)',      tip:'Pinch flowers immediately to extend the harvest season. Loves warmth — keep away from cold drafts near the glass in winter.' },
+  { id:'mint',       name:'Mint',       icon:'🍃', minSun:3,  water:'Every 2 days',    potColor:'#3a7d44', rimColor:'#285a30', potW:44, potH:34, light:'Part sun (3h+)',      tip:'Keep in its own pot — it will take over neighbors. Very forgiving of lower light. Cut back hard to keep bushy.' },
+  { id:'cilantro',   name:'Cilantro',   icon:'🌱', minSun:4,  water:'Every 2–3 days',  potColor:'#5a8e5a', rimColor:'#3d6b3d', potW:44, potH:34, light:'Part–full sun (4h+)', tip:'Bolts quickly in heat or strong afternoon sun. East-facing windows are ideal. Succession-sow every 3 weeks for continuous harvest.' },
+  { id:'parsley',    name:'Parsley',    icon:'🥬', minSun:4,  water:'Every 3 days',    potColor:'#4a8040', rimColor:'#345c2c', potW:44, potH:34, light:'Part–full sun (4h+)', tip:'Slow to establish — be patient the first few weeks. Keep consistently moist but ensure good drainage. Tolerates partial light well.' },
+  { id:'thyme',      name:'Thyme',      icon:'🌾', minSun:6,  water:'Every 4–5 days',  potColor:'#8c7a4a', rimColor:'#6b5c34', potW:40, potH:30, light:'Full sun (6h+)',      tip:'Drought-tolerant — let soil dry out between waterings. A Mediterranean native that handles neglect better than overwatering.' },
+  { id:'rosemary',   name:'Rosemary',   icon:'🪴', minSun:6,  water:'Every 5–7 days',  potColor:'#6b8a6b', rimColor:'#4a6a4a', potW:50, potH:40, light:'Full sun (6h+)',      tip:'Needs excellent drainage above all else. Occasional misting helps in dry apartments. South-facing only — will decline in anything less.' },
+  { id:'chives',     name:'Chives',     icon:'🧅', minSun:4,  water:'Every 3–4 days',  potColor:'#5a8040', rimColor:'#3d5c2c', potW:40, potH:32, light:'Part–full sun (4h+)', tip:'One of the most beginner-friendly herbs. Cut to 2 inches above soil and it regrows quickly. Good for east or west windows.' },
+  { id:'oregano',    name:'Oregano',    icon:'🌿', minSun:6,  water:'Every 4–5 days',  potColor:'#8c6a3a', rimColor:'#6b4e28', potW:44, potH:34, light:'Full sun (6h+)',      tip:'Flavor intensifies when slightly dry-stressed. Allow soil to dry between waterings. Excellent companion to basil on a south sill.' },
+  { id:'dill',       name:'Dill',       icon:'🌿', minSun:6,  water:'Every 2–3 days',  potColor:'#6aaa5a', rimColor:'#4a8040', potW:44, potH:42, light:'Full sun (6h+)',      tip:'Grows tall — place at the back of the sill so it does not shade shorter herbs. Avoid relocating once established; it hates being moved.' },
+  { id:'lemonbalm',  name:'Lemon balm', icon:'🍋', minSun:3,  water:'Every 2–3 days',  potColor:'#9aaa3a', rimColor:'#728030', potW:44, potH:34, light:'Part sun (3h+)',      tip:'One of the best herbs for low-light kitchens. Aromatic and excellent for tea. Spreads aggressively outdoors — the pot keeps it civil.' },
+];
+
+const selected = new Set();
+const herbGrid = document.getElementById('herbGrid');
+
+HERBS.forEach(h => {
+  const el = document.createElement('div');
+  el.className = 'herb-check';
+  el.dataset.id = h.id;
+  el.innerHTML = `<span class="herb-icon">${h.icon}</span><span class="herb-name">${h.name}</span>`;
+  el.addEventListener('click', () => {
+    if (selected.has(h.id)) { selected.delete(h.id); el.classList.remove('selected'); }
+    else { selected.add(h.id); el.classList.add('selected'); }
+  });
+  herbGrid.appendChild(el);
+});
+
+function sunIcon() {
+  return `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><line x1="12" y1="2" x2="12" y2="5"/><line x1="12" y1="19" x2="12" y2="22"/><line x1="4.22" y1="4.22" x2="6.34" y2="6.34"/><line x1="17.66" y1="17.66" x2="19.78" y2="19.78"/><line x1="2" y1="12" x2="5" y2="12"/><line x1="19" y1="12" x2="22" y2="12"/><line x1="4.22" y1="19.78" x2="6.34" y2="17.66"/><line x1="17.66" y1="6.34" x2="19.78" y2="4.22"/></svg>`;
+}
+function dropIcon() {
+  return `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/></svg>`;
+}
+
+document.getElementById('planBtn').addEventListener('click', () => {
+  const dir   = document.getElementById('direction').value;
+  const hours = parseFloat(document.getElementById('hours').value) || 0;
+  const sillW = parseInt(document.getElementById('sillW').value) || 12;
+  const sillD = parseInt(document.getElementById('sillD').value) || 6;
+
+  if (selected.size === 0) { alert('Select at least one herb to continue.'); return; }
+
+  const chosen = HERBS.filter(h => selected.has(h.id));
+  const fits   = chosen.filter(h => hours >= h.minSun);
+  const noFit  = chosen.filter(h => hours < h.minSun);
+
+  const potSpacing = 10;
+  const avgPotW = 46;
+  const maxPots = Math.max(1, Math.floor(sillW / ((avgPotW / 4) + 1)));
+
+  const potsRow = document.getElementById('potsRow');
+  potsRow.innerHTML = '';
+
+  const toShow = fits.slice(0, maxPots);
+  const scale = sillD >= 8 ? 1.15 : sillD >= 5 ? 1.0 : 0.82;
+
+  if (toShow.length === 0) {
+    const msg = document.createElement('div');
+    msg.style.cssText = 'padding: 1rem; font-size: 13px; color: var(--text-secondary); z-index:2; position:relative;';
+    msg.textContent = 'No herbs fit these light conditions — see recommendations below.';
+    potsRow.appendChild(msg);
+  } else {
+    toShow.forEach(h => {
+      const w = Math.round(h.potW * scale);
+      const bodyH = Math.round(h.potH * scale);
+      const rimH = Math.round(6 * scale);
+      const wrap = document.createElement('div');
+      wrap.className = 'pot-wrap';
+      wrap.innerHTML = `
+        <span class="pot-emoji" style="font-size:${Math.round(20*scale)}px">${h.icon}</span>
+        <div class="pot-body" style="width:${w}px;height:${bodyH}px;background:${h.potColor};"></div>
+        <div class="pot-rim"  style="width:${w+6}px;height:${rimH}px;background:${h.rimColor};"></div>
+        <div class="pot-label">${h.name}</div>`;
+      potsRow.appendChild(wrap);
+    });
+  }
+
+  const overflowNote = document.getElementById('overflowNote');
+  const extra = fits.slice(maxPots);
+  if (extra.length > 0) {
+    overflowNote.style.display = 'block';
+    overflowNote.textContent = `Your ${sillW}" sill fits about ${maxPots} pots. ${extra.map(h=>h.name).join(', ')} won't fit — try a tiered shelf or a second window.`;
+  } else {
+    overflowNote.style.display = 'none';
+  }
+
+  document.getElementById('sillLabel').textContent =
+    `${dir.charAt(0).toUpperCase()+dir.slice(1)}-facing · ${hours}h direct sun · ${sillW}" wide × ${sillD}" deep`;
+
+  const noFitMsg = document.getElementById('noFitMsg');
+  if (noFit.length > 0) {
+    noFitMsg.style.display = 'block';
+    noFitMsg.innerHTML = `<strong>Not enough light for:</strong> ${noFit.map(h=>`${h.icon} ${h.name} (needs ${h.minSun}h)`).join(', ')}. These will struggle or fail here without a grow light.`;
+  } else {
+    noFitMsg.style.display = 'none';
+  }
+
+  const herbCards = document.getElementById('herbCards');
+  herbCards.innerHTML = '';
+  const allToCard = [...fits, ...noFit];
+  allToCard.forEach(h => {
+    const surplus = hours - h.minSun;
+    const ratingClass = surplus >= 2 ? 'great' : surplus >= 0 ? 'ok' : 'poor';
+    const ratingText  = surplus >= 2 ? 'Thrives here' : surplus >= 0 ? 'Manageable' : 'Too little light';
+    const card = document.createElement('div');
+    card.className = 'herb-card';
+    card.innerHTML = `
+      <div class="herb-card-header">
+        <span class="herb-card-name">${h.icon} ${h.name}</span>
+        <span class="badge badge-${ratingClass}">${ratingText}</span>
+      </div>
+      <div class="herb-stat">${sunIcon()} ${h.light}</div>
+      <div class="herb-stat">${dropIcon()} Water ${h.water.toLowerCase()}</div>
+      <div class="herb-tip">${h.tip}</div>`;
+    herbCards.appendChild(card);
+  });
+
+  const dirTips = {
+    south: 'South-facing windows receive 6–8 hours of strong, consistent direct sun year-round. This is the gold standard for full-sun herbs like basil, rosemary, thyme, and oregano. In summer you may need to pull very sensitive herbs back slightly to prevent leaf scorch.',
+    east:  'East-facing windows deliver gentle morning sun for roughly 4–6 hours before shifting to indirect light in the afternoon. Great for cilantro, parsley, chives, and mint. Basil and rosemary will survive but may be leggy — supplement with a grow light if you want strong production.',
+    west:  'West-facing windows get hot, direct afternoon sun for 4–6 hours. Most herbs handle this well, but thin-leaved herbs like cilantro and mint can scorch in peak summer. A sheer curtain for the hottest weeks helps.',
+    north: 'North-facing windows receive little to no direct sun. Only low-light tolerant herbs like mint and lemon balm can survive here, and even they will grow slowly. A clip-on LED grow light used 12–14 hours per day is strongly recommended and will open up nearly all herbs on this list.',
+  };
+
+  document.getElementById('lightTip').querySelector('p').textContent = dirTips[dir];
+
+  const altTitle = document.getElementById('altTitle');
+  const altTip   = document.getElementById('altTip');
+  if (dir === 'north' || hours < 3) {
+    altTitle.style.display = 'block';
+    altTip.style.display   = 'block';
+    altTip.querySelector('p').textContent = 'With under 3 hours of direct sun, mint and lemon balm are your safest bets without assistance. A budget LED grow light ($20–35 on Amazon) placed 6–12 inches above pots and run 12–14 hours per day effectively substitutes for 5–6 hours of direct sun and makes nearly any culinary herb viable in a north window.';
+  } else {
+    altTitle.style.display = 'none';
+    altTip.style.display   = 'none';
+  }
+
+  const resultsEl = document.getElementById('results');
+  resultsEl.style.display = 'block';
+  resultsEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+});
+</script>
+</body>
+</html>

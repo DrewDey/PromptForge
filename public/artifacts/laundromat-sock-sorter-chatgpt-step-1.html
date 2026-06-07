@@ -1,0 +1,314 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Laundromat Sock Sort</title>
+<style>
+  *{box-sizing:border-box}
+  body{
+    margin:0;
+    font-family:system-ui,-apple-system,Segoe UI,Arial,sans-serif;
+    background:#eaf6ff;
+    color:#173247;
+    min-height:100vh;
+    display:flex;
+    justify-content:center;
+    padding:14px;
+    overflow-x:hidden;
+  }
+  .game{
+    width:min(980px,100%);
+    background:#fffdf7;
+    border:4px solid #173247;
+    border-radius:22px;
+    box-shadow:0 14px 0 #b8d8ea;
+    padding:14px;
+  }
+  header{
+    display:flex;
+    justify-content:space-between;
+    gap:10px;
+    align-items:center;
+    flex-wrap:wrap;
+  }
+  h1{margin:0;font-size:clamp(24px,5vw,42px)}
+  .hud{display:flex;gap:8px;flex-wrap:wrap}
+  .pill{
+    background:#173247;
+    color:white;
+    padding:8px 12px;
+    border-radius:999px;
+    font-weight:800;
+  }
+  .note{margin:8px 0 12px;color:#456}
+  .machines{
+    display:grid;
+    grid-template-columns:repeat(4,1fr);
+    gap:10px;
+    margin-bottom:14px;
+  }
+  .machine{
+    min-height:150px;
+    border:4px solid #173247;
+    border-radius:18px;
+    background:#dff3ff;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    gap:8px;
+    position:relative;
+    transition:.15s transform,.15s background;
+  }
+  .machine.over{transform:translateY(-4px);background:#c9f7dc}
+  .label{font-weight:900;font-size:18px}
+  .door{
+    width:74px;
+    height:74px;
+    border:6px solid #173247;
+    border-radius:50%;
+    background:#f7fbff;
+    display:grid;
+    place-items:center;
+    font-size:30px;
+  }
+  .bin{
+    border:4px dashed #173247;
+    border-radius:18px;
+    min-height:250px;
+    background:#f6fbff;
+    padding:12px;
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(92px,1fr));
+    gap:12px;
+    align-items:center;
+  }
+  .sock{
+    height:92px;
+    border:4px solid #173247;
+    border-radius:34px 34px 22px 22px;
+    cursor:grab;
+    user-select:none;
+    display:grid;
+    place-items:center;
+    font-size:34px;
+    font-weight:900;
+    touch-action:none;
+    box-shadow:0 5px 0 rgba(23,50,71,.25);
+  }
+  .sock:active{cursor:grabbing;transform:scale(.97)}
+  .dots{background:radial-gradient(#173247 16%,transparent 17%) 0 0/18px 18px,#ffd66b}
+  .stripes{background:repeating-linear-gradient(45deg,#ff7a7a 0 12px,#fff0f0 12px 24px)}
+  .stars{background:#b8f0d2}
+  .stars::before{content:"★ ★"}
+  .zigzag{background:linear-gradient(135deg,#b7c7ff 25%,transparent 25%) 0 0/22px 22px,linear-gradient(225deg,#b7c7ff 25%,transparent 25%) 0 0/22px 22px,#ffffff}
+  .done{opacity:.18;pointer-events:none}
+  .controls{
+    display:flex;
+    gap:10px;
+    justify-content:space-between;
+    align-items:center;
+    margin-top:12px;
+    flex-wrap:wrap;
+  }
+  button{
+    border:0;
+    background:#173247;
+    color:white;
+    font-weight:900;
+    border-radius:14px;
+    padding:12px 16px;
+    cursor:pointer;
+    font-size:16px;
+  }
+  button:hover{filter:brightness(1.1)}
+  .message{font-weight:900;min-height:24px}
+  .bad{animation:shake .25s}
+  @keyframes shake{
+    25%{transform:translateX(-5px)}
+    50%{transform:translateX(5px)}
+    75%{transform:translateX(-3px)}
+  }
+  .overlay{
+    position:fixed;
+    inset:0;
+    background:rgba(10,25,35,.55);
+    display:none;
+    place-items:center;
+    padding:18px;
+  }
+  .card{
+    background:#fffdf7;
+    border:4px solid #173247;
+    border-radius:22px;
+    max-width:460px;
+    width:100%;
+    padding:20px;
+    text-align:center;
+    box-shadow:0 10px 0 #b8d8ea;
+  }
+  .card h2{margin-top:0;font-size:32px}
+  @media(max-width:650px){
+    .machines{grid-template-columns:repeat(2,1fr)}
+    .machine{min-height:128px}
+    .door{width:58px;height:58px;font-size:24px}
+    .bin{grid-template-columns:repeat(3,1fr);gap:8px;padding:8px}
+    .sock{height:82px;font-size:28px}
+  }
+</style>
+</head>
+<body>
+<div class="game">
+  <header>
+    <h1>Laundromat Sock Sort 🧺</h1>
+    <div class="hud">
+      <div class="pill">Score: <span id="score">0</span></div>
+      <div class="pill">Pairs: <span id="pairs">0</span>/6</div>
+      <div class="pill">Basket: <span id="basket">12</span></div>
+    </div>
+  </header>
+
+  <p class="note">Match each sock to the washer with the same pattern. Two correct socks complete one customer pair. Wrong washer drops cost points.</p>
+
+  <section class="machines" id="machines"></section>
+  <section class="bin" id="bin" aria-label="Sock basket"></section>
+
+  <div class="controls">
+    <div class="message" id="message">Drag or tap a sock, then tap the right washer.</div>
+    <button id="restart">New Basket</button>
+  </div>
+</div>
+
+<div class="overlay" id="overlay">
+  <div class="card">
+    <h2>Basket Finished!</h2>
+    <p id="final"></p>
+    <button id="again">Sort Another Basket</button>
+  </div>
+</div>
+
+<script>
+const patterns = [
+  {id:"dots", name:"Dots", icon:"●"},
+  {id:"stripes", name:"Stripes", icon:"▨"},
+  {id:"stars", name:"Stars", icon:"★"},
+  {id:"zigzag", name:"Zigzag", icon:"〰"}
+];
+
+const bin = document.getElementById("bin");
+const machines = document.getElementById("machines");
+const scoreEl = document.getElementById("score");
+const pairsEl = document.getElementById("pairs");
+const basketEl = document.getElementById("basket");
+const msg = document.getElementById("message");
+const overlay = document.getElementById("overlay");
+const final = document.getElementById("final");
+
+let score, sorted, pairCounts, selectedSock;
+
+function shuffle(arr){
+  return arr.map(v=>[Math.random(),v]).sort((a,b)=>a[0]-b[0]).map(v=>v[1]);
+}
+
+function start(){
+  score = 0;
+  sorted = 0;
+  selectedSock = null;
+  pairCounts = {};
+  patterns.forEach(p => pairCounts[p.id] = 0);
+  scoreEl.textContent = score;
+  pairsEl.textContent = 0;
+  basketEl.textContent = 12;
+  msg.textContent = "Drag or tap a sock, then tap the right washer.";
+  overlay.style.display = "none";
+  renderMachines();
+  renderSocks();
+}
+
+function renderMachines(){
+  machines.innerHTML = "";
+  patterns.forEach(p=>{
+    const m = document.createElement("div");
+    m.className = "machine";
+    m.dataset.pattern = p.id;
+    m.innerHTML = `<div class="label">${p.name}</div><div class="door">${p.icon}</div><small>Drop ${p.name} socks here</small>`;
+    m.addEventListener("dragover", e=>{e.preventDefault();m.classList.add("over")});
+    m.addEventListener("dragleave", ()=>m.classList.remove("over"));
+    m.addEventListener("drop", e=>{
+      e.preventDefault();
+      m.classList.remove("over");
+      const id = e.dataTransfer.getData("text/plain");
+      const sock = document.getElementById(id);
+      if(sock) dropSock(sock,m);
+    });
+    m.addEventListener("click", ()=> {
+      if(selectedSock) dropSock(selectedSock,m);
+    });
+    machines.appendChild(m);
+  });
+}
+
+function renderSocks(){
+  bin.innerHTML = "";
+  let socks = [];
+  let n = 0;
+  for(let i=0;i<6;i++){
+    const p = patterns[i % patterns.length];
+    socks.push({pattern:p.id, id:"sock"+(++n)});
+    socks.push({pattern:p.id, id:"sock"+(++n)});
+  }
+  shuffle(socks).forEach(s=>{
+    const sock = document.createElement("div");
+    sock.id = s.id;
+    sock.className = `sock ${s.pattern}`;
+    sock.dataset.pattern = s.pattern;
+    sock.draggable = true;
+    sock.setAttribute("role","button");
+    sock.setAttribute("aria-label",`${s.pattern} sock`);
+    sock.textContent = "🧦";
+    sock.addEventListener("dragstart", e=>e.dataTransfer.setData("text/plain",sock.id));
+    sock.addEventListener("click", ()=>{
+      document.querySelectorAll(".sock").forEach(x=>x.style.outline="0");
+      selectedSock = sock;
+      sock.style.outline = "5px solid #ffcf33";
+      msg.textContent = "Sock selected. Tap the matching washer.";
+    });
+    bin.appendChild(sock);
+  });
+}
+
+function dropSock(sock,machine){
+  const correct = sock.dataset.pattern === machine.dataset.pattern;
+  if(correct){
+    score += 10;
+    sorted++;
+    pairCounts[sock.dataset.pattern]++;
+    sock.classList.add("done");
+    sock.style.outline = "0";
+    selectedSock = null;
+    msg.textContent = pairCounts[sock.dataset.pattern] % 2 === 0 ? "Pair matched! Fresh laundry win." : "Good drop. Find its twin.";
+  } else {
+    score = Math.max(0, score - 5);
+    machine.classList.add("bad");
+    setTimeout(()=>machine.classList.remove("bad"),260);
+    msg.textContent = "Wrong machine. Minus 5.";
+  }
+  scoreEl.textContent = score;
+  pairsEl.textContent = Math.floor(sorted/2);
+  basketEl.textContent = 12 - sorted;
+  if(sorted === 12) finish();
+}
+
+function finish(){
+  const penaltyFree = score === 120;
+  final.innerHTML = `Final score: <b>${score}</b><br>Pairs finished: <b>6</b><br>${penaltyFree ? "Perfect basket. Every sock found its washer." : "Basket done. Cleaner sorting means a higher score."}`;
+  overlay.style.display = "grid";
+}
+
+document.getElementById("restart").onclick = start;
+document.getElementById("again").onclick = start;
+start();
+</script>
+</body>
+</html>

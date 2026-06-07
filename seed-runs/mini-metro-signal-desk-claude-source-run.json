@@ -1,0 +1,112 @@
+{
+  "title": "Mini Metro Signal Desk",
+  "slug": "mini-metro-signal-desk-claude",
+  "description": "A two-prompt Claude Sonnet source run producing a compact single-file browser game where players toggle colored rail signals to route trains into matching stations before jams cost lives.",
+  "provider": "Claude",
+  "service_provider": "Claude",
+  "model": "Sonnet 4.6",
+  "model_settings": "Claude web UI normal lane. Visible model button after selection: Model: Sonnet 4.6 Low. Model picker showed Sonnet 4.6 checked as \"Most efficient for everyday tasks\"; effort menu showed Low Default selected. No files, connectors, uploads, or OpenRouter routing used. Claude displayed tool/status chips: Reading frontend design skill; Created a file, read a file.",
+  "source_url": "https://claude.ai/chat/b2bd8de1-5f5b-467b-8358-64f37d930375",
+  "source_url_note": "Real Claude conversation URL captured from authorized logged-in Chrome session; not a public share URL.",
+  "run_started_at": "2026-06-06T04:22:00Z",
+  "run_finished_at": "2026-06-06T04:35:38Z",
+  "chain_type": "one-shot",
+  "category": "games",
+  "domain": "game",
+  "difficulty": "beginner",
+  "tags": [
+    "browser game",
+    "signals",
+    "trains",
+    "routing",
+    "arcade puzzle",
+    "canvas",
+    "single-file html",
+    "Claude Sonnet"
+  ],
+  "tools_used": [
+    "Claude",
+    "Chrome capture",
+    "Claude artifact code view",
+    "local artifact verification",
+    "HTML"
+  ],
+  "status": "verified",
+  "artifact_type": "html",
+  "final_artifact_path": "public/artifacts/mini-metro-signal-desk-claude-v2.html",
+  "final_artifact_clue": "Self-contained canvas arcade puzzle with colored signal toggles, matching triangular stations, moving trains, integer score/combo display, lives, visible jam countdown/timeout penalties, start/reset controls, and responsive controls.",
+  "artifact_versions": [
+    {
+      "step": 1,
+      "path": "public/artifacts/mini-metro-signal-desk-claude.html",
+      "is_final": false,
+      "notes": "Initial real generated artifact version. Browser verification found a real polish defect: score and combo text could show long floating-point decimals during play, so prompt 2 was justified."
+    },
+    {
+      "step": 2,
+      "path": "public/artifacts/mini-metro-signal-desk-claude-v2.html",
+      "is_final": true,
+      "notes": "Final real generated artifact version. Captured exactly from Claude artifact code view Copy control after prompt 2; fixes whole-number score/combo display and adds clearer stopped-train jam urgency feedback."
+    }
+  ],
+  "screenshots": [],
+  "verification_notes": "Verified final artifact over local HTTP at http://127.0.0.1:8139/public/artifacts/mini-metro-signal-desk-claude-v2.html in Chrome. Initial render was nonblank with start overlay, app constrained to 480px in the desktop viewport, and no horizontal overflow. START hid the overlay and spawned visible train counts; score advanced from 0 to 20 and combo displayed as ×2 COMBO with no decimal leakage. Toggled an active green signal off and observed its signal button/dot switch to the off color/border state, then toggled it back on; score advanced to 60 and combo to ×4 COMBO, still whole-numbered. RESET zeroed the score and cleared combo while starting a fresh run. A local deterministic harness against the final HTML script confirmed stopped-train jam/life logic: after holding a train color off past the 300-frame jam limit, lives dropped from 5 to 3; a fresh reset restored lives to 5, score to 0, and two starting trains. Narrow/mobile-ish check: the artifact uses a viewport meta tag, max-width 480px app shell, compact five-button signal row, and the Chrome render reported no horizontal overflow.",
+  "result_content": "Compact signal-dispatch game where players toggle colored train lines on and off to sequence arrivals and avoid losing lives.",
+  "agent_notes": "Provider: Claude\nModel used: Sonnet 4.6\nModel settings: Visible model button: Model: Sonnet 4.6 Low. Sonnet 4.6 checked; effort Low Default selected; no uploads/connectors; no OpenRouter.\nPrompt count: 2\nFinal artifact: public/artifacts/mini-metro-signal-desk-claude-v2.html\nArtifact versions: public/artifacts/mini-metro-signal-desk-claude.html and public/artifacts/mini-metro-signal-desk-claude-v2.html.\nVerification: local HTTP Chrome check passed; nonblank render, start, visible signal toggles, train count/score advance, whole-number score/combo, reset, no horizontal overflow, and deterministic jam/life harness passed.\nSource URL: https://claude.ai/chat/b2bd8de1-5f5b-467b-8358-64f37d930375\nSeed profile recommendation: pathforge-seed-046 / LoganPierce / Logan Pierce.\nSource-run intake only: package candidate prepared locally for pending source-run review. No upload, public page, approval/publish, votes/comments/bookmarks, manual entry, prompts rows, or prompt_steps rows created.",
+  "recommended_seed_profile": {
+    "registry_id": "pathforge-seed-046",
+    "username": "LoganPierce",
+    "display_name": "Logan Pierce",
+    "profile_url": "/user/LoganPierce",
+    "status": "recommended_not_provisioned",
+    "rationale": "User-suggested new non-admin profile for this local source-run package candidate."
+  },
+  "steps": [
+    {
+      "step_number": 1,
+      "prompt_exact": "Make a compact single-file HTML browser game called Mini Metro Signal Desk where I toggle colored track signals to route trains to matching stations without jams, with score, reset, and a phone-friendly layout.",
+      "response_exact": "Now I'll build this — going for a dark industrial transit-ops aesthetic, compact enough for mobile, with satisfying toggle mechanics.\n\nMini Metro Signal Desk — here's how it plays:\n\nObjective — colored arrow trains spawn from the edges and home in on their matching triangular station. Route them safely by controlling signals.\n\nControls — tap/click the 5 colored signal buttons at the bottom to toggle each line on/off. Turning a signal OFF halts all trains of that color mid-track (they flash !). Turn it back ON and they resume. Use this to sequence arrivals and prevent two trains hitting a congested station at once.\n\nScoring — each delivery = 10 pts, multiplied by your combo streak (shown next to the score). Combos build fast when you're juggling multiple lines smartly.\n\nLives — the 5 red dots in the top-right. You lose one when a stopped train waits too long OR a train escapes off-screen. Game ends at zero.\n\nDifficulty — train speed and spawn rate ramp up with every delivery, so it gets tense fast.",
+      "response_summary": "Claude generated a single HTML artifact for a dark transit-ops signal game, then explained objective, signal controls, scoring, lives, and difficulty ramp.",
+      "code_blocks": [
+        {
+          "language": "html",
+          "content_note": "The complete copied Claude artifact HTML is preserved exactly as public/artifacts/mini-metro-signal-desk-claude.html."
+        }
+      ],
+      "generated_files": [
+        "public/artifacts/mini-metro-signal-desk-claude.html"
+      ],
+      "artifact_version_path": "public/artifacts/mini-metro-signal-desk-claude.html",
+      "notes": "Prompt 1 produced a playable artifact, but browser verification found score/combo decimal leakage during play. This was a real observed defect, so prompt 2 was used under the 2026-06-05 Eastern 1-2 prompt override. DOM extraction also showed Claude tool/status labels around the response; response_exact preserves the visible assistant prose, while this step records the actual artifact file separately."
+    },
+    {
+      "step_number": 2,
+      "prompt_exact": "The game works, but the score and combo are showing long decimals while trains are moving; make those displays whole numbers and make the jam/life penalty clearer when a stopped train waits too long, keeping it a single HTML file.",
+      "response_exact": "Three fixes needed: floor the score and combo before display, and add a visible countdown urgency indicator on stopped trains. Let me patch all three spots.\n\nNow add the jam urgency indicator — a shrinking arc timer ring and red flash on the stopped train:\n\nThree things fixed:\n\nScore/combo decimals — score uses Math.floor() before writing to the DOM, combo display is always Math.floor(combo), and the decay logic no longer lets a fractional combo leak into the streak label.\n\nJam urgency indicator — stopped trains now show a countdown arc ring that drains clockwise around the train as the timer runs:\n\n0–50% elapsed — dim !, ring in the train's own color\n50–80% — amber ring, train fades/pulses more visibly\n80–100% — train turns red, ring goes red, flashes !! rapidly, so you have a clear window to re-enable the signal before the life penalty hits",
+      "response_summary": "Claude repaired the observed decimal score/combo display issue and added visual stopped-train jam urgency feedback with a countdown ring and critical warning state.",
+      "code_blocks": [
+        {
+          "language": "html",
+          "content_note": "The complete copied Claude artifact HTML is preserved exactly as public/artifacts/mini-metro-signal-desk-claude-v2.html."
+        }
+      ],
+      "generated_files": [
+        "public/artifacts/mini-metro-signal-desk-claude-v2.html"
+      ],
+      "artifact_version_path": "public/artifacts/mini-metro-signal-desk-claude-v2.html",
+      "notes": "Final artifact version. Prompt 2 was justified by the observed v1 decimal-display defect and a clear jam-feedback polish pass; no further prompt was needed after final verification passed."
+    }
+  ],
+  "pathforge_submission_url": "/admin/source-runs/027b17c4-aa5a-4403-a435-501ad802d015",
+  "pathforge_pending_id": "027b17c4-aa5a-4403-a435-501ad802d015",
+  "source_run_submission_id": "027b17c4-aa5a-4403-a435-501ad802d015",
+  "submitted_by_account": "LoganPierce",
+  "submitted_by_profile_registry_id": "pathforge-seed-046",
+  "admin_review_status": "queued_pending_source_run_review",
+  "public_status": "no public page created",
+  "upload_boundary": "Do not upload automatically; manager should upload only if this package passes review.",
+  "pass_recommendation": {
+    "recommendation": "pass",
+    "reason": "The candidate preserves two exact prompts and visible Claude responses, includes both real artifact versions under public/artifacts, and final v2 passed local render, signal toggle, train/score advance, reset, jam/life, and no-overflow verification without upload."
+  }
+}

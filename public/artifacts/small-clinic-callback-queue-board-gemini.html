@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Clinic Callback Queue</title>
+    <style>
+        :root {
+            --bg-main: #f8fafc;
+            --bg-card: #ffffff;
+            --text-main: #1e293b;
+            --text-muted: #64748b;
+            --border-color: #e2e8f0;
+            --primary: #2563eb;
+            --primary-hover: #1d4ed8;
+            --danger: #ef4444;
+            --danger-hover: #dc2626;
+            
+            --lane-new: #f1f5f9;
+            --lane-pending: #fef3c7;
+            --lane-complete: #dcfce7;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: system-ui, -apple-system, sans-serif; }
+        body { background: var(--bg-main); color: var(--text-main); padding: 1.5rem; }
+        
+        header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; gap: 1rem; flex-wrap: wrap; }
+        h1 { font-size: 1.5rem; font-weight: 700; color: #0f172a; }
+        .actions { display: flex; gap: 0.5rem; }
+
+        button { padding: 0.5rem 1rem; border-radius: 0.375rem; border: 1px solid var(--border-color); background: #fff; cursor: pointer; font-weight: 500; font-size: 0.875rem; display: inline-flex; align-items: center; gap: 0.25rem; transition: all 0.15s ease; }
+        button:hover { background: #f1f5f9; }
+        button.btn-primary { background: var(--primary); color: #fff; border: none; }
+        button.btn-primary:hover { background: var(--primary-hover); }
+
+        .board { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1rem; align-items: start; }
+        .lane { background: #fff; border-radius: 0.5rem; border: 1px solid var(--border-color); padding: 1rem; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+        .lane-header { font-weight: 600; font-size: 1rem; margin-bottom: 1rem; padding-bottom: 0.5rem; border-bottom: 2px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; }
+        .lane-count { font-size: 0.75rem; background: var(--border-color); padding: 0.125rem 0.5rem; border-radius: 1rem; color: var(--text-muted); }
+        
+        .lane-new { border-top: 4px solid #94a3b8; }
+        .lane-pending { border-top: 4px solid #f59e0b; }
+        .lane-complete { border-top: 4px solid #10b981; }
+
+        .queue-list { min-height: 200px; display: flex; flex-direction: column; gap: 0.75rem; }
+        
+        .card { background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 0.375rem; padding: 0.875rem; box-shadow: 0 1px 2px rgba(0,0,0,0.05); cursor: pointer; position: relative; }
+        .card:hover { border-color: #cbd5e1; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+        .card-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.5rem; gap: 0.5rem; }
+        .patient-name { font-weight: 600; font-size: 0.95rem; color: #0f172a; }
+        .meta-time { font-size: 0.75rem; color: var(--text-muted); white-space: nowrap; }
+        .card-body { font-size: 0.875rem; color: #334155; margin-bottom: 0.75rem; line-height: 1.4; word-break: break-word; }
+        .card-footer { display: flex; justify-content: space-between; align-items: center; font-size: 0.75rem; color: var(--text-muted); border-top: 1px dashed var(--border-color); padding-top: 0.5rem; }
+        
+        .card-controls { display: flex; gap: 0.25rem; }
+        .card-controls button { padding: 0.25rem 0.5rem; font-size: 0.75rem; }
+
+        .modal-backdrop { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.4); display: none; justify-content: center; align-items: center; z-index: 100; }
+        .modal { background: #fff; border-radius: 0.5rem; width: 100%; max-width: 500px; padding: 1.5rem; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1); }
+        .modal-title { font-size: 1.25rem; font-weight: 600; margin-bottom: 1rem; }
+        .form-group { margin-bottom: 1rem; }
+        .form-group label { display: block; font-size: 0.875rem; font-weight: 500; margin-bottom: 0.25rem; color: #475569; }
+        .form-group input, .form-group textarea, .form-group select { width: 100%; padding: 0.5rem; border: 1px solid var(--border-color); border-radius: 0.375rem; font-size: 0.9rem; }
+        .form-group textarea { resize: vertical; height: 80px; }
+        .modal-actions { display: flex; justify-content: space-between; margin-top: 1.5rem; }
+        
+        .toast { position: fixed; bottom: 1.5rem; right: 1.5rem; background: #0f172a; color: #fff; padding: 0.75rem 1.25rem; border-radius: 0.375rem; font-size: 0.875rem; display: none; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); z-index: 200; }
+
+        @media print {
+            body { background: #fff; padding: 0; }
+            header, .board, .modal-backdrop, .toast { display: none !important; }
+            #print-section { display: block !important; }
+            .print-table { width: 100%; border-collapse: collapse; margin-top: 1rem; font-size: 0.85rem; }
+            .print-table th, .print-table td { border: 1px solid #000; padding: 0.5rem; text-align: left; vertical-align: top; }
+            .print-table th { background: #f2f2f2; }
+        }
+        #print-section { display: none; }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div>
+            <h1>Clinic Callback Queue</h1>
+        </div>
+        <div class="actions">
+            <button class="btn-primary" onclick="openModal()">+ Add Request</button>
+            <button onclick="copyHandoff()">Copy Handoff Text</button>
+            <button onclick="window.print()">Print Handoff Sheet</button>
+        </div>
+    </header>
+
+    <main class="board">
+        <!-- New Requests Lane -->
+        <div class="lane lane-new">
+            <div class="lane-header">
+                <span>Needs Review / New</span>
+                <span class="lane-count" id="count-new">0</span>
+            </div>
+            <div class="queue-list" id="lane-new" ondragover="allowDrop(event)" ondrop="drop(event, 'new')"></div>
+        </div>
+
+        <!-- Pending Lane -->
+        <div class="lane lane-pending">
+            <div class="lane-header">
+                <span>In Progress / Pending</span>
+                <span class="lane-count" id="count-pending">0</span>
+            </div>
+            <div class="queue-list" id="lane-pending" ondragover="allowDrop(event)" ondrop="drop(event, 'pending')"></div>
+        </div>
+
+        <!-- Complete Lane -->
+        <div class="lane lane-complete">
+            <div class="lane-header">
+                <span>Completed</span>
+                <span class="lane-count" id="count-complete">0</span>
+            </div>
+            <div class="queue-list" id="lane-complete" ondragover="allowDrop(event)" ondrop="drop(event, 'complete')"></div>
+        </div>
+    </main>
+
+    <!-- Entry / Edit Modal -->
+    <div class="modal-backdrop" id="modalBackdrop" onclick="closeModal(event)">
+        <div class="modal" onclick="event.stopPropagation()">
+            <div class="modal-title" id="modalTitle">Add Callback Request</div>
+            <form id="requestForm" onsubmit="saveRequest(event)">
+                <input type="hidden" id="requestId">
+                <div class="form-group">
+                    <label for="patientName">Patient Name *</label>
+                    <input type="text" id="patientName" required autocomplete="off">
+                </div>
+                <div class="form-group">
+                    <label for="patientPhone">Callback Phone Number *</label>
+                    <input type="text" id="patientPhone" required autocomplete="off">
+                </div>
+                <div class="form-group">
+                    <label for="reason">Reason for Call / Request Details *</label>
+                    <textarea id="reason" required></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="provider">Assign Provider / Staff</label>
+                    <input type="text" id="provider" placeholder="e.g., Dr. Smith, Triage Nurse" autocomplete="off">
+                </div>
+                <div class="form-group">
+                    <label for="status">Status</label>
+                    <select id="status">
+                        <option value="new">Needs Review / New</option>
+                        <option value="pending">In Progress / Pending</option>
+                        <option value="complete">Completed</option>
+                    </select>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" id="deleteBtn" style="color:var(--danger); border-color:var(--danger);" onclick="deleteRequest()">Delete</button>
+                    <div style="display:flex; gap:0.5rem;">
+                        <button type="button" onclick="closeModal()">Cancel</button>
+                        <button type="submit" class="btn-primary">Save Request</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Hidden Printable Area -->
+    <div id="print-section">
+        <h2>Clinic Callback Handoff Sheet</h2>
+        <p id="print-date" style="margin-bottom: 1rem; font-size: 0.9rem; color: #555;"></p>
+        <table class="print-table">
+            <thead>
+                <tr>
+                    <th style="width: 15%;">Patient</th>
+                    <th style="width: 15%;">Phone</th>
+                    <th style="width: 40%;">Reason/Details</th>
+                    <th style="width: 15%;">Assigned</th>
+                    <th style="width: 15%;">Status</th>
+                </tr>
+            </thead>
+            <tbody id="print-table-body"></tbody>
+        </table>
+    </div>
+
+    <div class="toast" id="toast">Handoff copied to clipboard!</div>
+
+    <script>
+        let requests = JSON.parse(localStorage.getItem('clinic_callbacks')) || [];
+
+        function renderBoard() {
+            const lanes = { new: [], pending: [], complete: [] };
+            requests.forEach(req => { if (lanes[req.status]) lanes[req.status].push(req); });
+
+            ['new', 'pending', 'complete'].forEach(status => {
+                const container = document.getElementById(`lane-${status}`);
+                const countBadge = document.getElementById(`count-${status}`);
+                container.innerHTML = '';
+                countBadge.textContent = lanes[status].length;
+
+                // Sort newest entry first within the column
+                lanes[status].sort((a, b) => b.timestamp - a.timestamp);
+
+                lanes[status].forEach(req => {
+                    const card = document.createElement('div');
+                    card.className = 'card';
+                    card.draggable = true;
+                    card.ondragstart = (e) => drag(e, req.id);
+                    card.onclick = () => openModal(req.id);
+                    
+                    const timeStr = new Date(req.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+                    
+                    card.innerHTML = `
+                        <div class="card-header">
+                            <span class="patient-name">${escapeHTML(req.name)}</span>
+                            <span class="meta-time">${timeStr}</span>
+                        </div>
+                        <div class="card-body">${escapeHTML(req.reason)}</div>
+                        <div class="card-footer">
+                            <span>📞 ${escapeHTML(req.phone)}</span>
+                            <span style="font-weight:500; color:#475569;">${req.provider ? escapeHTML(req.provider) : 'Unassigned'}</span>
+                        </div>
+                    `;
+                    container.appendChild(card);
+                });
+            });
+            saveToStorage();
+            updatePrintView();
+        }
+
+        function openModal(id = null) {
+            const modal = document.getElementById('modalBackdrop');
+            const form = document.getElementById('requestForm');
+            const deleteBtn = document.getElementById('deleteBtn');
+            form.reset();
+            
+            if (id) {
+                const req = requests.find(r => r.id === id);
+                if (!req) return;
+                document.getElementById('modalTitle').textContent = 'Edit Callback Request';
+                document.getElementById('requestId').value = req.id;
+                document.getElementById('patientName').value = req.name;
+                document.getElementById('patientPhone').value = req.phone;
+                document.getElementById('reason').value = req.reason;
+                document.getElementById('provider').value = req.provider || '';
+                document.getElementById('status').value = req.status;
+                deleteBtn.style.display = 'block';
+            } else {
+                document.getElementById('modalTitle').textContent = 'Add Callback Request';
+                document.getElementById('requestId').value = '';
+                document.getElementById('status').value = 'new';
+                deleteBtn.style.display = 'none';
+            }
+            modal.style.display = 'flex';
+            document.getElementById('patientName').focus();
+        }
+
+        function closeModal(e = null) {
+            document.getElementById('modalBackdrop').style.display = 'none';
+        }
+
+        function saveRequest(e) {
+            e.preventDefault();
+            const id = document.getElementById('requestId').value;
+            const name = document.getElementById('patientName').value.trim();
+            const phone = document.getElementById('patientPhone').value.trim();
+            const reason = document.getElementById('reason').value.trim();
+            const provider = document.getElementById('provider').value.trim();
+            const status = document.getElementById('status').value;
+
+            if (id) {
+                const req = requests.find(r => r.id === id);
+                if (req) {
+                    req.name = name;
+                    req.phone = phone;
+                    req.reason = reason;
+                    req.provider = provider;
+                    req.status = status;
+                }
+            } else {
+                requests.push({
+                    id: crypto.randomUUID ? crypto.randomUUID() : '_' + Math.random().toString(36).substr(2, 9),
+                    name, phone, reason, provider, status,
+                    timestamp: Date.now()
+                });
+            }
+            closeModal();
+            renderBoard();
+        }
+
+        function deleteRequest() {
+            const id = document.getElementById('requestId').value;
+            if (id && confirm('Delete this callback request permanently?')) {
+                requests = requests.filter(r => r.id !== id);
+                closeModal();
+                renderBoard();
+            }
+        }
+
+        // Drag and Drop Logic
+        function drag(e, id) { e.dataTransfer.setData("text/plain", id); }
+        function allowDrop(e) { e.preventDefault(); }
+        function drop(e, targetStatus) {
+            e.preventDefault();
+            const id = e.dataTransfer.getData("text/plain");
+            const req = requests.find(r => r.id === id);
+            if (req && req.status !== targetStatus) {
+                req.status = targetStatus;
+                renderBoard();
+            }
+        }
+
+        // Handoff Utilities
+        function generateHandoffText() {
+            if (requests.length === 0) return "No active callback requests.";
+            
+            const statusLabels = { new: "🚨 NEW/REVIEW", pending: "⏳ IN PROGRESS", complete: "✅ COMPLETED" };
+            let output = `CLINIC CALLBACK HANDOFF SUMMARY - ${new Date().toLocaleDateString()} ${new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}\n`;
+            output += `==================================================\n\n`;
+
+            ['new', 'pending', 'complete'].forEach(status => {
+                const list = requests.filter(r => r.status === status);
+                if (list.length > 0) {
+                    output += `${statusLabels[status]} (${list.length})\n`;
+                    output += `--------------------------------------------------\n`;
+                    list.forEach(r => {
+                        const time = new Date(r.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+                        output += `• Pt: ${r.name} (${r.phone}) [Rec'd: ${time}]\n`;
+                        output += `  Details: ${r.reason}\n`;
+                        output += `  Assigned: ${r.provider || 'Unassigned'}\n\n`;
+                    });
+                }
+            });
+            return output;
+        }
+
+        function copyHandoff() {
+            const text = generateHandoffText();
+            navigator.clipboard.writeText(text).then(() => {
+                const toast = document.getElementById('toast');
+                toast.style.display = 'block';
+                setTimeout(() => toast.style.display = 'none', 2500);
+            });
+        }
+
+        function updatePrintView() {
+            document.getElementById('print-date').textContent = `Generated on: ${new Date().toLocaleString()}`;
+            const tbody = document.getElementById('print-table-body');
+            tbody.innerHTML = '';
+
+            if (requests.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;">No entries found.</td></tr>`;
+                return;
+            }
+
+            // Group by status for organized physical sheet layout
+            const sortedForPrint = [...requests].sort((a, b) => {
+                const order = { new: 1, pending: 2, complete: 3 };
+                return order[a.status] - order[b.status];
+            });
+
+            sortedForPrint.forEach(r => {
+                const row = document.createElement('tr');
+                const statusLabels = { new: "New", pending: "In Progress", complete: "Complete" };
+                row.innerHTML = `
+                    <td><strong>${escapeHTML(r.name)}</strong></td>
+                    <td>${escapeHTML(r.phone)}</td>
+                    <td>${escapeHTML(r.reason)}</td>
+                    <td>${r.provider ? escapeHTML(r.provider) : '—'}</td>
+                    <td>${statusLabels[r.status]}</td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+
+        function saveToStorage() { localStorage.setItem('clinic_callbacks', JSON.stringify(requests)); }
+        function escapeHTML(str) { return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;"); }
+
+        // Initial Layout Render
+        renderBoard();
+    </script>
+</body>
+</html>

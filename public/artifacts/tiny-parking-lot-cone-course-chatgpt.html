@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Cone Course Parking</title>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    min-height: 100vh;
+    display: grid;
+    place-items: center;
+    background: #1f2933;
+    font-family: system-ui, Arial, sans-serif;
+    color: white;
+    overflow: hidden;
+  }
+  .wrap {
+    width: min(94vw, 760px);
+    text-align: center;
+  }
+  h1 { margin: 10px 0 6px; font-size: 24px; }
+  .hud {
+    display: flex;
+    justify-content: space-between;
+    gap: 8px;
+    margin: 8px 0;
+    font-weight: 700;
+    flex-wrap: wrap;
+  }
+  .hud span {
+    background: #111827;
+    padding: 8px 10px;
+    border-radius: 10px;
+    min-width: 100px;
+  }
+  canvas {
+    width: 100%;
+    max-height: 70vh;
+    aspect-ratio: 16 / 10;
+    background: #374151;
+    border: 4px solid #111827;
+    border-radius: 18px;
+    display: block;
+    touch-action: none;
+  }
+  .controls {
+    margin-top: 10px;
+    display: grid;
+    grid-template-columns: repeat(3, 64px);
+    gap: 8px;
+    justify-content: center;
+  }
+  button {
+    border: 0;
+    border-radius: 12px;
+    padding: 13px;
+    font-weight: 800;
+    background: #facc15;
+    color: #111827;
+    cursor: pointer;
+  }
+  button:active { transform: scale(.96); }
+  .wide { grid-column: span 3; }
+  .note {
+    opacity: .85;
+    font-size: 13px;
+    margin-top: 8px;
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>🚗 Cone Course Parking</h1>
+  <div class="hud">
+    <span id="time">Time: 45</span>
+    <span id="hits">Cone Hits: 0</span>
+    <span id="score">Score: 1000</span>
+  </div>
+  <canvas id="game" width="800" height="500"></canvas>
+  <div class="controls">
+    <button id="left">⟲</button>
+    <button id="gas">▲</button>
+    <button id="right">⟳</button>
+    <button id="brake" class="wide">Brake / Reverse</button>
+    <button id="restart" class="wide">Restart</button>
+  </div>
+  <div class="note">Keyboard: ↑ drive, ↓ brake/reverse, ← → steer. Park inside the green box without touching cones.</div>
+</div>
+
+<script>
+const canvas = document.getElementById("game");
+const ctx = canvas.getContext("2d");
+
+const keys = {};
+let buttons = { gas:false, brake:false, left:false, right:false };
+
+let car, cones, timeLeft, hits, score, gameOver, won, lastTime;
+
+function reset() {
+  car = {
+    x: 95,
+    y: 405,
+    angle: -Math.PI / 2,
+    speed: 0,
+    w: 34,
+    h: 54
+  };
+
+  cones = [
+    [160,380],[215,345],[260,300],[310,255],
+    [360,215],[420,190],[485,195],[545,225],
+    [590,270],[620,330],[585,390],[515,420],
+    [440,400],[375,355],[330,305],
+    [230,170],[300,140],[370,120],[450,125],
+    [520,155],[575,195]
+  ].map(([x,y]) => ({x,y,r:13,hit:false}));
+
+  timeLeft = 45;
+  hits = 0;
+  score = 1000;
+  gameOver = false;
+  won = false;
+  lastTime = performance.now();
+  updateHud();
+}
+
+function updateHud() {
+  document.getElementById("time").textContent = "Time: " + Math.ceil(timeLeft);
+  document.getElementById("hits").textContent = "Cone Hits: " + hits;
+  document.getElementById("score").textContent = "Score: " + Math.max(0, Math.floor(score));
+}
+
+function carCorners() {
+  const c = Math.cos(car.angle), s = Math.sin(car.angle);
+  const hw = car.w/2, hh = car.h/2;
+  return [
+    [-hw,-hh],[hw,-hh],[hw,hh],[-hw,hh]
+  ].map(([x,y]) => ({
+    x: car.x + x*c - y*s,
+    y: car.y + x*s + y*c
+  }));
+}
+
+function circleCarCollision(cone) {
+  const c = Math.cos(-car.angle), s = Math.sin(-car.angle);
+  const dx = cone.x - car.x;
+  const dy = cone.y - car.y;
+  const lx = dx*c - dy*s;
+  const ly = dx*s + dy*c;
+  const nearestX = Math.max(-car.w/2, Math.min(car.w/2, lx));
+  const nearestY = Math.max(-car.h/2, Math.min(car.h/2, ly));
+  const distX = lx - nearestX;
+  const distY = ly - nearestY;
+  return distX*distX + distY*distY < cone.r*cone.r;
+}
+
+function inParkingSpot() {
+  return car.x > 675 && car.x < 755 &&
+         car.y > 55 && car.y < 150 &&
+         Math.abs(car.speed) < .45 &&
+         Math.abs(Math.sin(car.angle)) < .35;
+}
+
+function update(dt) {
+  if (gameOver) return;
+
+  const gas = keys.ArrowUp || keys.w || buttons.gas;
+  const brake = keys.ArrowDown || keys.s || buttons.brake;
+  const left = keys.ArrowLeft || keys.a || buttons.left;
+  const right = keys.ArrowRight || keys.d || buttons.right;
+
+  if (gas) car.speed += 150 * dt;
+  if (brake) car.speed -= 190 * dt;
+
+  car.speed *= 0.985;
+  car.speed = Math.max(-95, Math.min(160, car.speed));
+
+  const turnPower = car.speed >= 0 ? 2.4 : -2.0;
+  if (left) car.angle -= turnPower * dt * (Math.abs(car.speed)/90);
+  if (right) car.angle += turnPower * dt * (Math.abs(car.speed)/90);
+
+  car.x += Math.cos(car.angle) * car.speed * dt;
+  car.y += Math.sin(car.angle) * car.speed * dt;
+
+  if (car.x < 25 || car.x > canvas.width - 25 || car.y < 25 || car.y > canvas.height - 25) {
+    car.x = Math.max(25, Math.min(canvas.width - 25, car.x));
+    car.y = Math.max(25, Math.min(canvas.height - 25, car.y));
+    car.speed *= -0.35;
+    score -= 8;
+  }
+
+  for (const cone of cones) {
+    if (!cone.hit && circleCarCollision(cone)) {
+      cone.hit = true;
+      hits++;
+      score -= 90;
+      car.speed *= -0.45;
+    }
+  }
+
+  timeLeft -= dt;
+  score -= dt * 3;
+
+  if (inParkingSpot()) {
+    won = true;
+    gameOver = true;
+    score += timeLeft * 18;
+  }
+
+  if (timeLeft <= 0) {
+    timeLeft = 0;
+    gameOver = true;
+  }
+
+  updateHud();
+}
+
+function drawParkingLot() {
+  ctx.fillStyle = "#374151";
+  ctx.fillRect(0,0,canvas.width,canvas.height);
+
+  ctx.strokeStyle = "rgba(255,255,255,.22)";
+  ctx.lineWidth = 2;
+  for (let x=70; x<760; x+=75) {
+    ctx.beginPath();
+    ctx.moveTo(x, 40);
+    ctx.lineTo(x, 170);
+    ctx.stroke();
+  }
+
+  ctx.fillStyle = "rgba(34,197,94,.22)";
+  ctx.strokeStyle = "#22c55e";
+  ctx.lineWidth = 4;
+  ctx.fillRect(670,45,100,115);
+  ctx.strokeRect(670,45,100,115);
+
+  ctx.fillStyle = "#bbf7d0";
+  ctx.font = "bold 18px system-ui";
+  ctx.fillText("PARK", 696, 110);
+
+  ctx.strokeStyle = "rgba(250,204,21,.45)";
+  ctx.setLineDash([14, 12]);
+  ctx.lineWidth = 5;
+  ctx.beginPath();
+  ctx.moveTo(95,405);
+  ctx.bezierCurveTo(250,360,310,195,455,195);
+  ctx.bezierCurveTo(600,195,640,330,530,390);
+  ctx.bezierCurveTo(430,445,310,330,330,245);
+  ctx.bezierCurveTo(355,145,560,110,710,90);
+  ctx.stroke();
+  ctx.setLineDash([]);
+}
+
+function drawCone(cone) {
+  ctx.save();
+  ctx.translate(cone.x, cone.y);
+  ctx.fillStyle = cone.hit ? "#7f1d1d" : "#f97316";
+  ctx.beginPath();
+  ctx.moveTo(0,-15);
+  ctx.lineTo(13,13);
+  ctx.lineTo(-13,13);
+  ctx.closePath();
+  ctx.fill();
+  ctx.fillStyle = "white";
+  ctx.fillRect(-8, 3, 16, 4);
+  ctx.restore();
+}
+
+function drawCar() {
+  ctx.save();
+  ctx.translate(car.x, car.y);
+  ctx.rotate(car.angle + Math.PI/2);
+
+  ctx.fillStyle = "#2563eb";
+  ctx.fillRect(-car.w/2, -car.h/2, car.w, car.h);
+
+  ctx.fillStyle = "#93c5fd";
+  ctx.fillRect(-10, -18, 20, 16);
+
+  ctx.fillStyle = "#111827";
+  ctx.fillRect(-17, -21, 5, 13);
+  ctx.fillRect(12, -21, 5, 13);
+  ctx.fillRect(-17, 10, 5, 13);
+  ctx.fillRect(12, 10, 5, 13);
+
+  ctx.fillStyle = "#fef3c7";
+  ctx.fillRect(-12, -28, 8, 5);
+  ctx.fillRect(4, -28, 8, 5);
+
+  ctx.restore();
+}
+
+function drawOverlay() {
+  if (!gameOver) return;
+
+  ctx.fillStyle = "rgba(17,24,39,.82)";
+  ctx.fillRect(0,0,canvas.width,canvas.height);
+
+  ctx.fillStyle = "white";
+  ctx.textAlign = "center";
+  ctx.font = "bold 40px system-ui";
+  ctx.fillText(won ? "Clean Parked! ✅" : "Time's Up ⏱️", canvas.width/2, 205);
+
+  ctx.font = "22px system-ui";
+  ctx.fillText("Final Score: " + Math.max(0, Math.floor(score)), canvas.width/2, 250);
+  ctx.fillText("Cone Hits: " + hits, canvas.width/2, 285);
+
+  ctx.font = "16px system-ui";
+  ctx.fillText("Press R or tap Restart to try again", canvas.width/2, 325);
+  ctx.textAlign = "start";
+}
+
+function draw() {
+  drawParkingLot();
+  cones.forEach(drawCone);
+  drawCar();
+  drawOverlay();
+}
+
+function loop(now) {
+  const dt = Math.min(.033, (now - lastTime) / 1000);
+  lastTime = now;
+  update(dt);
+  draw();
+  requestAnimationFrame(loop);
+}
+
+document.addEventListener("keydown", e => {
+  keys[e.key] = true;
+  if (e.key.toLowerCase() === "r") reset();
+});
+document.addEventListener("keyup", e => keys[e.key] = false);
+
+function hold(id, name) {
+  const el = document.getElementById(id);
+  const on = e => { e.preventDefault(); buttons[name] = true; };
+  const off = e => { e.preventDefault(); buttons[name] = false; };
+  el.addEventListener("pointerdown", on);
+  el.addEventListener("pointerup", off);
+  el.addEventListener("pointerleave", off);
+  el.addEventListener("pointercancel", off);
+}
+
+hold("gas","gas");
+hold("brake","brake");
+hold("left","left");
+hold("right","right");
+document.getElementById("restart").onclick = reset;
+
+reset();
+requestAnimationFrame(loop);
+</script>
+</body>
+</html>

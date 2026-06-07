@@ -1,0 +1,823 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Roommate Bill Board</title>
+    <style>
+        :root {
+            --bg-color: #f4f6f9;
+            --card-bg: #ffffff;
+            --text-main: #2d3748;
+            --text-muted: #718096;
+            --accent: #4c51bf;
+            --accent-hover: #434190;
+            --border-color: #e2e8f0;
+            --danger: #e53e3e;
+            --danger-bg: #fed7d7;
+            --success: #38a169;
+            --success-bg: #c6f6d5;
+            --warning: #dd6b20;
+            --warning-bg: #feebc8;
+            --info: #3182ce;
+            --info-bg: #ebf8ff;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            padding: 1rem;
+            line-height: 1.5;
+        }
+
+        .container {
+            max-width: 1100px;
+            margin: 0 auto;
+            width: 100%;
+        }
+
+        header {
+            margin-bottom: 1.5rem;
+        }
+
+        h1 {
+            font-size: 1.6rem;
+            color: var(--accent);
+            margin-bottom: 0.25rem;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 1.25rem;
+            width: 100%;
+        }
+
+        @media (min-width: 850px) {
+            .grid {
+                grid-template-columns: 1fr 1fr;
+                gap: 2rem;
+            }
+            body {
+                padding: 2rem;
+            }
+        }
+
+        .card {
+            background: var(--card-bg);
+            border-radius: 12px;
+            padding: 1.25rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+            border: 1px solid var(--border-color);
+            width: 100%;
+            overflow: hidden;
+        }
+
+        .card-title {
+            font-size: 1.15rem;
+            margin-bottom: 1rem;
+            font-weight: 600;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+        }
+
+        .form-group {
+            margin-bottom: 1rem;
+        }
+
+        label {
+            display: block;
+            font-size: 0.85rem;
+            font-weight: 600;
+            margin-bottom: 0.4rem;
+            color: var(--text-muted);
+        }
+
+        input[type="text"], input[type="number"], input[type="date"], select {
+            width: 100%;
+            padding: 0.6rem;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            font-size: 0.95rem;
+            color: var(--text-main);
+            background-color: #fff;
+            appearance: none;
+            -webkit-appearance: none;
+        }
+
+        select {
+            background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23718096' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+            background-repeat: no-repeat;
+            background-position: right 0.6rem center;
+            background-size: 1em;
+            padding-right: 2rem;
+        }
+
+        input:focus, select:focus {
+            outline: none;
+            border-color: var(--accent);
+        }
+
+        button {
+            background-color: var(--accent);
+            color: white;
+            border: none;
+            padding: 0.6rem 1.2rem;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 0.95rem;
+            width: 100%;
+            transition: background 0.2s;
+        }
+
+        button:hover {
+            background-color: var(--accent-hover);
+        }
+
+        .btn-secondary {
+            background-color: #e2e8f0;
+            color: var(--text-main);
+        }
+        .btn-secondary:hover {
+            background-color: #cbd5e0;
+        }
+
+        .btn-small {
+            padding: 0.3rem 0.6rem;
+            font-size: 0.8rem;
+            width: auto;
+        }
+
+        .roommate-tag-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .roommate-tag {
+            background: #edf2f7;
+            padding: 0.3rem 0.6rem;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+
+        .roommate-tag button {
+            background: none;
+            color: var(--danger);
+            padding: 0;
+            width: auto;
+            font-size: 1rem;
+        }
+
+        .bill-item {
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 1rem;
+            margin-bottom: 1rem;
+            width: 100%;
+        }
+
+        .bill-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 0.4rem;
+            gap: 0.5rem;
+        }
+
+        .bill-name {
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+            flex-wrap: wrap;
+        }
+
+        .bill-meta {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            margin-bottom: 0.8rem;
+        }
+
+        .status-badge {
+            font-size: 0.7rem;
+            padding: 0.15rem 0.4rem;
+            border-radius: 4px;
+            font-weight: 700;
+            text-transform: uppercase;
+            display: inline-block;
+        }
+
+        .status-overdue { background: var(--danger-bg); color: var(--danger); }
+        .status-soon { background: var(--warning-bg); color: var(--warning); }
+        .status-pending { background: var(--info-bg); color: var(--info); }
+        .status-paid { background: var(--success-bg); color: var(--success); }
+
+        .venmo-tracking {
+            background: #f7fafc;
+            padding: 0.6rem;
+            border-radius: 6px;
+            font-size: 0.85rem;
+        }
+
+        .venmo-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.5rem;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+
+        .venmo-row:last-child {
+            margin-bottom: 0;
+        }
+
+        .venmo-input-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 0.25rem;
+        }
+
+        .venmo-input {
+            width: 65px;
+            padding: 0.2rem 0.4rem;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            text-align: right;
+            font-size: 0.85rem;
+        }
+
+        .history-log {
+            margin-top: 0.5rem;
+            padding-top: 0.4rem;
+            border-top: 1px dashed var(--border-color);
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            max-height: 60px;
+            overflow-y: auto;
+        }
+
+        .history-entry {
+            margin-bottom: 0.2rem;
+        }
+
+        .bill-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 1rem;
+            margin-top: 0.8rem;
+        }
+
+        .action-btn {
+            background: none;
+            color: var(--accent);
+            width: auto;
+            padding: 0;
+            font-size: 0.85rem;
+        }
+        .action-btn:hover {
+            text-decoration: underline;
+            background: none;
+        }
+        .action-btn.delete {
+            color: var(--danger);
+        }
+
+        .summary-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 0.6rem 0;
+            border-bottom: 1px solid var(--border-color);
+            gap: 0.5rem;
+        }
+
+        .summary-row:last-child {
+            border-bottom: none;
+        }
+
+        .owes-amount {
+            font-weight: 600;
+            color: var(--danger);
+        }
+
+        .preview-box-container {
+            margin-top: 1rem;
+            display: none;
+        }
+
+        .preview-box {
+            width: 100%;
+            height: 120px;
+            padding: 0.5rem;
+            font-family: monospace;
+            font-size: 0.75rem;
+            color: var(--text-main);
+            background: #fff;
+            border: 1px solid #bee3f8;
+            border-radius: 6px;
+            resize: none;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <h1>Roommate Bill Board</h1>
+        <p style="color: var(--text-muted); font-size: 0.9rem;">Track utility dates, uneven payments, and clear final balances.</p>
+    </header>
+
+    <div class="grid">
+        <div>
+            <div class="card">
+                <div class="card-title">Roommates</div>
+                <div class="roommate-tag-container" id="roommatesList"></div>
+                <div style="display: flex; gap: 0.5rem;">
+                    <input type="text" id="newRoommateInput" placeholder="Add name...">
+                    <button style="width: auto;" onclick="addRoommate()">Add</button>
+                </div>
+            </div>
+
+            <div class="card" id="formCard">
+                <div class="card-title" id="formTitle">Add New Bill</div>
+                <input type="hidden" id="editBillId" value="">
+                
+                <div class="form-group">
+                    <label for="billName">Bill Name</label>
+                    <input type="text" id="billName" placeholder="e.g., Gas, Trash, Water">
+                </div>
+                <div class="form-group">
+                    <label for="billTotal">Total Amount ($)</label>
+                    <input type="number" id="billTotal" step="0.01" placeholder="0.00">
+                </div>
+                <div class="form-group">
+                    <label for="billDue">Due Date</label>
+                    <input type="date" id="billDue">
+                </div>
+                <div class="form-group">
+                    <label for="billPayer">Who paid upfront?</label>
+                    <select id="billPayer"></select>
+                </div>
+                <div style="display: flex; gap: 0.5rem;">
+                    <button id="submitBillBtn" onclick="handleFormSubmit()">Add to Board</button>
+                    <button id="cancelEditBtn" class="btn-secondary" style="display:none;" onclick="cancelEditing()">Cancel</button>
+                </div>
+            </div>
+        </div>
+
+        <div>
+            <div class="card" style="background: #ebf4ff; border-color: #bee3f8;">
+                <div class="card-title" style="color: #2b6cb0; margin-bottom: 0.25rem;">
+                    <span>Net Settlement Board</span>
+                    <button id="copySummaryBtn" class="btn-small" onclick="copyShareableSummary()">📋 Copy Summary</button>
+                </div>
+                <p style="font-size: 0.8rem; color: #4a5568; margin-bottom: 0.75rem;">Fewest payment transfers needed to square up.</p>
+                
+                <div id="balancesDisplay"></div>
+
+                <div class="preview-box-container" id="previewContainer">
+                    <label style="color: #2b6cb0; font-size: 0.75rem; margin-bottom: 0.2rem;">Copy box below if button fails:</label>
+                    <textarea class="preview-box" id="summaryPreviewText" readonly onclick="this.select()"></textarea>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-title">Active Bills & Progress</div>
+                <div id="billsContainer"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    let roommates = JSON.parse(localStorage.getItem('bb_roommates')) || ['Alex', 'Taylor', 'Jordan'];
+    let bills = JSON.parse(localStorage.getItem('bb_bills')) || [
+        {
+            id: 1,
+            name: 'Electric Bill',
+            total: 150.00,
+            dueDate: new Date().toISOString().split('T')[0],
+            payer: 'Alex',
+            partialPayments: { 'Taylor': 20.00, 'Jordan': 0 },
+            history: ["Bill initialized. Base share: $50.00"]
+        }
+    ];
+
+    let finalSettlementText = ""; 
+
+    function init() {
+        renderRoommates();
+        updatePayerDropdown();
+        renderBills();
+        calculateBalances();
+    }
+
+    function saveState() {
+        localStorage.setItem('bb_roommates', JSON.stringify(roommates));
+        localStorage.setItem('bb_bills', JSON.stringify(bills));
+    }
+
+    function renderRoommates() {
+        const container = document.getElementById('roommatesList');
+        container.innerHTML = '';
+        roommates.forEach(name => {
+            const tag = document.createElement('div');
+            tag.className = 'roommate-tag';
+            tag.innerHTML = `${name} <button onclick="removeRoommate('${name}')">&times;</button>`;
+            container.appendChild(tag);
+        });
+        updatePayerDropdown();
+    }
+
+    function updatePayerDropdown() {
+        const select = document.getElementById('billPayer');
+        const currentSelection = select.value;
+        select.innerHTML = '';
+        roommates.forEach(name => {
+            const opt = document.createElement('option');
+            opt.value = name;
+            opt.textContent = name;
+            select.appendChild(opt);
+        });
+        if (roommates.includes(currentSelection)) select.value = currentSelection;
+    }
+
+    function addRoommate() {
+        const input = document.getElementById('newRoommateInput');
+        const name = input.value.trim();
+        if (name && !roommates.includes(name)) {
+            roommates.push(name);
+            input.value = '';
+            bills.forEach(bill => {
+                if (!(name in bill.partialPayments)) bill.partialPayments[name] = 0;
+                bill.history.push(`Added ${name} to tracking loop.`);
+            });
+            saveState();
+            renderRoommates();
+            renderBills();
+            calculateBalances();
+        }
+    }
+
+    function removeRoommate(name) {
+        roommates = roommates.filter(r => r !== name);
+        bills.forEach(bill => {
+            delete bill.partialPayments[name];
+            if (bill.payer === name) bill.payer = roommates[0] || '';
+            bill.history.push(`Removed ${name} from metrics.`);
+        });
+        saveState();
+        renderRoommates();
+        renderBills();
+        calculateBalances();
+    }
+
+    function getStatusLabelAndClass(bill) {
+        const splitCount = roommates.length;
+        if (splitCount <= 1) return { label: 'Settled', class: 'status-paid' };
+
+        const share = bill.total / splitCount;
+        let totalCollectedFromOthers = 0;
+        let expectedFromOthers = share * (splitCount - 1);
+
+        roommates.forEach(rm => {
+            if (rm !== bill.payer) totalCollectedFromOthers += (bill.partialPayments[rm] || 0);
+        });
+
+        if (totalCollectedFromOthers >= expectedFromOthers - 0.02) {
+            return { label: 'Fully Paid', class: 'status-paid' };
+        }
+        if (!bill.dueDate) return { label: 'Pending', class: 'status-pending' };
+
+        const today = new Date();
+        today.setHours(0,0,0,0);
+        const dueDate = new Date(bill.dueDate + 'T00:00:00');
+        const diffDays = Math.ceil((dueDate - today) / (1000 * 60 * 60 * 24));
+
+        if (diffDays < 0) return { label: 'Overdue', class: 'status-overdue' };
+        if (diffDays <= 3) return { label: 'Due Soon', class: 'status-soon' };
+        return { label: 'Pending', class: 'status-pending' };
+    }
+
+    function renderBills() {
+        const container = document.getElementById('billsContainer');
+        container.innerHTML = '';
+
+        if (bills.length === 0) {
+            container.innerHTML = '<p style="color: var(--text-muted); font-size: 0.9rem;">No active bills on the board.</p>';
+            return;
+        }
+
+        bills.forEach(bill => {
+            const splitCount = roommates.length;
+            const targetPerPerson = splitCount > 0 ? (bill.total / splitCount) : 0;
+            const statusObj = getStatusLabelAndClass(bill);
+
+            const billEl = document.createElement('div');
+            billEl.className = 'bill-item';
+
+            let venmoRowsHtml = '';
+            roommates.forEach(rm => {
+                if (rm !== bill.payer) {
+                    const dynamicPaid = bill.partialPayments[rm] || 0;
+                    const remaining = Math.max(0, targetPerPerson - dynamicPaid);
+                    
+                    venmoRowsHtml += `
+                        <div class="venmo-row">
+                            <span>${rm} (Owes $${targetPerPerson.toFixed(2)})</span>
+                            <div class="venmo-input-wrapper">
+                                <label style="display:inline;">Paid:</label>
+                                <input type="number" class="venmo-input" step="0.01" value="${dynamicPaid}" 
+                                    onchange="updatePartialPayment(${bill.id}, '${rm}', this.value)">
+                                <span style="font-size: 0.75rem; margin-left: 2px; color: ${remaining <= 0.01 ? 'var(--success)' : 'var(--text-muted)'}; font-weight:${remaining <= 0.01 ? '600':'400'}">
+                                    ${remaining <= 0.01 ? '✓ Done' : '$' + remaining.toFixed(2) + ' left'}
+                                </span>
+                            </div>
+                        </div>
+                    `;
+                }
+            });
+
+            let historyEntries = (bill.history || []).map(h => `<div class="history-entry">• ${h}</div>`).join('');
+
+            billEl.innerHTML = `
+                <div class="bill-header">
+                    <span class="bill-name">${bill.name} <span class="status-badge ${statusObj.class}">${statusObj.label}</span></span>
+                    <span style="font-weight: 600;">$${bill.total.toFixed(2)}</span>
+                </div>
+                <div class="bill-meta">
+                    Paid upfront by <strong>${bill.payer}</strong> | Due: ${bill.dueDate || 'Unscheduled'}
+                </div>
+                <div class="venmo-tracking">
+                    ${venmoRowsHtml || '<div style="font-size:0.8rem; color:var(--text-muted);">Add roommates to calculate.</div>'}
+                </div>
+                <div class="history-log">
+                    ${historyEntries || 'No logs recorded.'}
+                </div>
+                <div class="bill-actions">
+                    <button class="action-btn" onclick="startEditing(${bill.id})">Edit</button>
+                    <button class="action-btn delete" onclick="deleteBill(${bill.id})">Remove</button>
+                </div>
+            `;
+            container.appendChild(billEl);
+        });
+    }
+
+    function handleFormSubmit() {
+        const idField = document.getElementById('editBillId').value;
+        const name = document.getElementById('billName').value.trim();
+        const total = parseFloat(document.getElementById('billTotal').value);
+        const dueDate = document.getElementById('billDue').value;
+        const payer = document.getElementById('billPayer').value;
+
+        if (!name || isNaN(total) || !payer) {
+            alert('Please complete all configuration inputs.');
+            return;
+        }
+
+        if (idField) {
+            const bill = bills.find(b => b.id == idField);
+            if (bill) {
+                bill.name = name;
+                bill.total = total;
+                bill.dueDate = dueDate;
+                if (!bill.history) bill.history = [];
+                bill.history.push(`Modified details on ${new Date().toLocaleDateString()}: $${total} total.`);
+                
+                if (bill.payer !== payer) {
+                    bill.payer = payer;
+                    delete bill.partialPayments[payer];
+                    bill.history.push(`Payer shifted to ${payer}.`);
+                }
+                roommates.forEach(rm => {
+                    if (rm !== bill.payer && !(rm in bill.partialPayments)) bill.partialPayments[rm] = 0;
+                });
+            }
+        } else {
+            const partialPayments = {};
+            roommates.forEach(rm => { if (rm !== payer) partialPayments[rm] = 0; });
+
+            bills.push({
+                id: Date.now(),
+                name,
+                total,
+                dueDate,
+                payer,
+                partialPayments,
+                history: [`Bill registered by ${payer} on ${new Date().toLocaleDateString()}`]
+            });
+        }
+
+        cancelEditing();
+        saveState();
+        renderBills();
+        calculateBalances();
+    }
+
+    function startEditing(billId) {
+        const bill = bills.find(b => b.id === billId);
+        if (!bill) return;
+
+        document.getElementById('editBillId').value = bill.id;
+        document.getElementById('billName').value = bill.name;
+        document.getElementById('billTotal').value = bill.total;
+        document.getElementById('billDue').value = bill.dueDate;
+        document.getElementById('billPayer').value = bill.payer;
+
+        document.getElementById('formTitle').textContent = "Edit Bill Metrics";
+        document.getElementById('submitBillBtn').textContent = "Save Changes";
+        document.getElementById('cancelEditBtn').style.display = "inline-block";
+        document.getElementById('formCard').style.borderColor = "var(--accent)";
+        
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function cancelEditing() {
+        document.getElementById('editBillId').value = "";
+        document.getElementById('billName').value = "";
+        document.getElementById('billTotal').value = "";
+        document.getElementById('billDue').value = "";
+        document.getElementById('formTitle').textContent = "Add New Bill";
+        document.getElementById('submitBillBtn').textContent = "Add to Board";
+        document.getElementById('cancelEditBtn').style.display = "none";
+        document.getElementById('formCard').style.borderColor = "var(--border-color)";
+    }
+
+    function updatePartialPayment(billId, roommate, amount) {
+        const bill = bills.find(b => b.id === billId);
+        if (bill) {
+            const parsedAmount = parseFloat(amount) || 0;
+            const timeString = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            
+            if (!bill.history) bill.history = [];
+            bill.history.push(`${roommate} updated Venmo: $${parsedAmount.toFixed(2)} (${timeString})`);
+            
+            bill.partialPayments[roommate] = parsedAmount;
+            saveState();
+            renderBills();
+            calculateBalances();
+        }
+    }
+
+    function deleteBill(billId) {
+        bills = bills.filter(b => b.id !== billId);
+        if (document.getElementById('editBillId').value == billId) cancelEditing();
+        saveState();
+        renderBills();
+        calculateBalances();
+    }
+
+    function calculateBalances() {
+        const balancesDisplay = document.getElementById('balancesDisplay');
+        balancesDisplay.innerHTML = '';
+
+        if (roommates.length === 0) {
+            balancesDisplay.innerHTML = '<p>Define roommates to process balances.</p>';
+            return;
+        }
+
+        let debts = {};
+        roommates.forEach(r1 => {
+            debts[r1] = {};
+            roommates.forEach(r2 => { debts[r1][r2] = 0; });
+        });
+
+        bills.forEach(bill => {
+            const splitCount = roommates.length;
+            if (splitCount <= 1) return;
+            const share = bill.total / splitCount;
+            const payer = bill.payer;
+
+            roommates.forEach(rm => {
+                if (rm !== payer) {
+                    const partial = bill.partialPayments[rm] || 0;
+                    const netOwed = share - partial;
+                    if (netOwed > 0) debts[rm][payer] += netOwed;
+                    else if (netOwed < 0) debts[payer][rm] += Math.abs(netOwed);
+                }
+            });
+        });
+
+        let netPositions = {};
+        roommates.forEach(rm => {
+            let incoming = 0;
+            let outgoing = 0;
+            roommates.forEach(other => {
+                incoming += debts[other][rm];
+                outgoing += debts[rm][other];
+            });
+            netPositions[rm] = incoming - outgoing;
+        });
+
+        let summaryHtml = '';
+        let textSettlementLines = [];
+        let localOwer = [...roommates].filter(r => netPositions[r] < -0.01);
+        let localReceiver = [...roommates].filter(r => netPositions[r] > 0.01);
+
+        localOwer.sort((a,b) => netPositions[a] - netPositions[b]);
+        localReceiver.sort((a,b) => netPositions[b] - netPositions[a]);
+
+        let i = 0, j = 0;
+        while (i < localOwer.length && j < localReceiver.length) {
+            let ower = localOwer[i];
+            let receiver = localReceiver[j];
+            let settlementAmount = Math.min(Math.abs(netPositions[ower]), netPositions[receiver]);
+            
+            if (settlementAmount > 0.01) {
+                summaryHtml += `
+                    <div class="summary-row">
+                        <span><strong>${ower}</strong> pays <strong>${receiver}</strong></span>
+                        <span class="owes-amount">$${settlementAmount.toFixed(2)}</span>
+                    </div>
+                `;
+                textSettlementLines.push(`- ${ower} pays ${receiver}: $${settlementAmount.toFixed(2)}`);
+            }
+
+            netPositions[ower] += settlementAmount;
+            netPositions[receiver] -= settlementAmount;
+            if (Math.abs(netPositions[ower]) < 0.01) i++;
+            if (Math.abs(netPositions[receiver]) < 0.01) j++;
+        }
+
+        if (!summaryHtml) {
+            summaryHtml = '<div class="summary-row" style="color:var(--success); font-weight:600;">✓ Every account is completely squared!</div>';
+            textSettlementLines.push("Everything is completely squared away!");
+        }
+
+        balancesDisplay.innerHTML = summaryHtml;
+        buildTextSummary(textSettlementLines);
+    }
+
+    function buildTextSummary(settlementLines) {
+        let text = `📋 ROOMMATE UTILITY SUMMARY\nGenerated: ${new Date().toLocaleDateString()}\n\n`;
+        text += `--- BILLS STATUS ---\n`;
+        
+        if (bills.length === 0) {
+            text += "No active bills.\n";
+        } else {
+            bills.forEach(b => {
+                const status = getStatusLabelAndClass(b).label;
+                text += `• ${b.name}: $${b.total.toFixed(2)} (${b.payer}) | [${status}] | Due: ${b.dueDate || 'N/A'}\n`;
+                
+                let partials = [];
+                roommates.forEach(rm => {
+                    if (rm !== b.payer && b.partialPayments[rm] > 0) {
+                        partials.push(`${rm}: $${b.partialPayments[rm].toFixed(2)}`);
+                    }
+                });
+                if (partials.length > 0) {
+                    text += `  (Paid: ${partials.join(', ')})\n`;
+                }
+            });
+        }
+
+        text += `\n--- SETTLEMENT DIRECTIVES ---\n`;
+        text += settlementLines.join('\n');
+        
+        finalSettlementText = text;
+        document.getElementById('summaryPreviewText').value = text;
+    }
+
+    function copyShareableSummary() {
+        const previewContainer = document.getElementById('previewContainer');
+        
+        navigator.clipboard.writeText(finalSettlementText).then(() => {
+            const btn = document.getElementById('copySummaryBtn');
+            const originalText = btn.textContent;
+            btn.textContent = "✓ Copied!";
+            btn.style.backgroundColor = "var(--success)";
+            btn.style.color = "white";
+            
+            setTimeout(() => {
+                btn.textContent = originalText;
+                btn.style.backgroundColor = "";
+                btn.style.color = "";
+            }, 2000);
+        }).catch(err => {
+            // Safe fallback layout expansion instead of alert framework errors
+            previewContainer.style.display = "block";
+            document.getElementById('summaryPreviewText').select();
+        });
+    }
+
+    init();
+</script>
+
+</body>
+</html>

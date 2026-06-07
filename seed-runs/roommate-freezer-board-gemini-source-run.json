@@ -1,0 +1,86 @@
+{
+  "title": "Roommate Freezer Board",
+  "slug": "roommate-freezer-board-gemini",
+  "description": "A one-prompt Gemini Flash source run producing a self-contained freezer-inventory board for shared frozen meals, remaining portions, urgency status, claims, search, and browser persistence.",
+  "provider": "Gemini",
+  "model": "Flash",
+  "model_settings": "Gemini web UI mode picker visible as Flash before sending the prompt; default normal Gemini settings, no uploads or extra tools selected.",
+  "source_url": "https://gemini.google.com/app/b4bc9dcd99a6e19d",
+  "source_url_note": "Real Gemini conversation URL captured from authorized logged-in Chrome session; not a public share URL.",
+  "run_started_at": "2026-06-06T03:23:00Z",
+  "run_finished_at": "2026-06-06T03:30:27Z",
+  "chain_type": "one-shot",
+  "category": "productivity",
+  "domain": "productivity/home utility",
+  "difficulty": "beginner",
+  "tags": [
+    "roommates",
+    "freezer inventory",
+    "meal portions",
+    "expiration urgency",
+    "claims",
+    "localStorage",
+    "single-file html",
+    "Gemini Flash"
+  ],
+  "tools_used": [
+    "Gemini",
+    "Chrome capture",
+    "local HTTP artifact verification",
+    "HTML"
+  ],
+  "status": "verified",
+  "artifact_type": "html",
+  "final_artifact_path": "public/artifacts/roommate-freezer-board-gemini.html",
+  "final_artifact_clue": "Self-contained Roommate Freezer Board HTML with seeded meals, urgency badges, search, add/delete meal modal, portion counters, claim/remove-claim controls, and localStorage persistence.",
+  "artifact_versions": [
+    {
+      "step": 1,
+      "path": "public/artifacts/roommate-freezer-board-gemini.html",
+      "is_final": true,
+      "notes": "Only real generated artifact version. Gemini exposed freezer_board.html in the response card and a Show code panel with a Python wrapper that writes the HTML; the embedded HTML was extracted exactly into this artifact file."
+    }
+  ],
+  "screenshots": [],
+  "verification_notes": "Verified the saved artifact over local HTTP at http://127.0.0.1:8127/public/artifacts/roommate-freezer-board-gemini.html. Chrome rendered nonblank with title, stats, and three seeded meal cards. Added a new high-urgency meal named Pierogi tray by Drew with 6 portions, claimed it as Maya, decremented portions to 5, and confirmed rendered stats showed Meals: 4 and Portions: 14 with no horizontal overflow at the current 1420px viewport. Direct 390px viewport resizing was not available through the exposed Chrome API; mobile-ish verification was limited to source inspection: viewport meta exists, card grid uses minmax(300px, 1fr), controls are compact, and no desktop overflow was observed.",
+  "result_content": "Tiny roommate freezer board for tracking shared frozen meals, portion counts, eat-by urgency, and roommate claims in a single browser file.",
+  "agent_notes": "Provider: Gemini\nModel used: Flash\nModel settings: default Gemini web UI Flash mode; no uploads/tools.\nPrompt count: 1\nFinal artifact: public/artifacts/roommate-freezer-board-gemini.html\nArtifact versions: public/artifacts/roommate-freezer-board-gemini.html only.\nVerification: local HTTP render passed; add meal, claim, and portion decrement worked; no desktop horizontal overflow observed. Narrow viewport was not directly available in the exposed Chrome API.\nSource URL: https://gemini.google.com/app/b4bc9dcd99a6e19d\nSeed profile: pathforge-seed-043 / NinaCollins / Nina Collins.\nSource-run intake only: queued as pending review 9781f7a6-c533-41e7-ae9d-ecc8e9ac9efe. No public page, approval/publish, votes/comments/bookmarks, manual submission, prompts rows, or prompt_steps rows were created.",
+  "recommended_seed_profile": {
+    "registry_id": "pathforge-seed-043",
+    "username": "NinaCollins",
+    "display_name": "Nina Collins",
+    "profile_url": "/user/NinaCollins",
+    "status": "recommended_not_provisioned",
+    "rationale": "Repo-local profile registry uses through pathforge-seed-041, and automation memory shows another package-only candidate already recommended pathforge-seed-042, so this package proposes the next non-admin seed profile for a future importer upload."
+  },
+  "steps": [
+    {
+      "step_number": 1,
+      "prompt_exact": "Can you make me a tiny roommate freezer board I can save as one HTML file, for tracking shared frozen meals, remaining portions, expiration urgency, and who has claimed what?",
+      "response_exact": "Your HTML file is ready\n\nfreezer_board\nHTML\n\nIt is a completely standalone dashboard that uses browser storage to persist the dashboard data locally across page refreshes.\n\nFeatures Included:\n\nReal-time Metrics: Tracks total active meal containers and remaining individual portions.\n\nUrgency Coding: Items automatically sort by high, medium, or low expiration urgency.\n\nClaim System: Roommates can type their names to claim individual portions or items dynamically.\n\nInstant Filtering: A live search bar handles queries for meal names, creators, or who has claimed what.\n\nData Persistence: Everything automatically saves to the browser's localStorage instantly.",
+      "response_summary": "Gemini generated one standalone freezer_board.html artifact and described its localStorage persistence, urgency sorting, claim system, filtering, meal count, and portion metrics.",
+      "code_blocks": [
+        {
+          "language": "python",
+          "content_note": "Gemini Show code panel exposed a Python wrapper assigning html_content to the generated freezer_board.html contents, then writing freezer_board.html. The embedded generated HTML is preserved as public/artifacts/roommate-freezer-board-gemini.html; the visible response card named the generated file freezer_board / HTML."
+        }
+      ],
+      "generated_files": [
+        "public/artifacts/roommate-freezer-board-gemini.html"
+      ],
+      "artifact_version_path": "public/artifacts/roommate-freezer-board-gemini.html",
+      "notes": "One-shot response. Stopped after prompt 1 because the artifact rendered and supported the required add, claim, portion, urgency, search, and persistence-oriented workflows. No second prompt was justified by observed artifact behavior."
+    }
+  ],
+  "pathforge_submission_url": "https://prompt-forge-sandy.vercel.app/admin/source-runs/9781f7a6-c533-41e7-ae9d-ecc8e9ac9efe",
+  "pathforge_pending_id": "9781f7a6-c533-41e7-ae9d-ecc8e9ac9efe",
+  "source_run_submission_id": "9781f7a6-c533-41e7-ae9d-ecc8e9ac9efe",
+  "submitted_by_account": "NinaCollins",
+  "submitted_by_profile_registry_id": "pathforge-seed-043",
+  "admin_review_status": "pending_source_run_review",
+  "public_status": "no public page created",
+  "pass_recommendation": {
+    "recommendation": "pass",
+    "reason": "The candidate meets the tonight 1-prompt override, preserves exact prompt and visible response, includes a real single-file HTML artifact under public/artifacts, and passed local usability verification without needing a second prompt."
+  }
+}

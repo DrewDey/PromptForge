@@ -1,0 +1,552 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Neighborhood Potluck Sign-Up</title>
+    <style>
+        :root {
+            --bg-color: #f8fafc;
+            --card-bg: #ffffff;
+            --text-main: #1e293b;
+            --text-muted: #64748b;
+            --border: #e2e8f0;
+            --primary: #3b82f6;
+            --primary-hover: #2563eb;
+            --edit-mode: #f1f5f9;
+            --edit-border: #cbd5e1;
+            
+            --cat-main: #fee2e2;
+            --cat-main-text: #991b1b;
+            --cat-side: #fef3c7;
+            --cat-side-text: #92400e;
+            --cat-dessert: #f3e8ff;
+            --cat-dessert-text: #6b21a8;
+            --cat-drink: #e0f2fe;
+            --cat-drink-text: #075985;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            line-height: 1.5;
+            margin: 0;
+            padding: 2rem 1rem;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        header {
+            margin-bottom: 2rem;
+        }
+
+        h1 {
+            margin: 0 0 0.5rem 0;
+            font-size: 2rem;
+            color: #0f172a;
+        }
+
+        /* Balance Tracker Dashboard */
+        .dashboard {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 1rem;
+            text-align: center;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        }
+
+        .stat-card.warning {
+            border-color: #f59e0b;
+            background-color: #fffbeb;
+        }
+
+        .stat-count {
+            font-size: 1.75rem;
+            font-weight: 700;
+            margin-bottom: 0.25rem;
+        }
+
+        .stat-label {
+            font-size: 0.875rem;
+            color: var(--text-muted);
+            font-weight: 500;
+        }
+
+        .warning-text {
+            display: none;
+            font-size: 0.75rem;
+            color: #b45309;
+            margin-top: 0.5rem;
+            font-weight: 600;
+        }
+
+        /* Form Layout */
+        .form-card {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+            transition: all 0.2s ease;
+        }
+
+        .form-card.editing {
+            background-color: var(--edit-mode);
+            border-color: var(--edit-border);
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        label {
+            font-size: 0.875rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            color: var(--text-main);
+        }
+
+        input, select {
+            padding: 0.625rem;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            font-size: 1rem;
+            background-color: #fff;
+        }
+
+        input:focus, select:focus {
+            outline: 2px solid var(--primary);
+            border-color: transparent;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        button {
+            background-color: var(--primary);
+            color: white;
+            padding: 0.625rem 1.25rem;
+            border: none;
+            border-radius: 6px;
+            font-size: 1rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background-color 0.1s ease;
+        }
+
+        button:hover {
+            background-color: var(--primary-hover);
+        }
+
+        .btn-secondary {
+            background-color: #edf2f7;
+            color: #4a5568;
+        }
+        
+        .btn-secondary:hover {
+            background-color: #e2e8f0;
+        }
+
+        .btn-cancel {
+            background-color: #e2e8f0;
+            color: #475569;
+        }
+
+        .btn-cancel:hover {
+            background-color: #cbd5e1;
+        }
+
+        /* Action Bar */
+        .action-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        /* List Layout */
+        .list-container {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        }
+
+        .item-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem 1.5rem;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .item-row:last-child {
+            border-bottom: none;
+        }
+
+        .item-row.is-editing {
+            background-color: #f8fafc;
+            opacity: 0.6;
+        }
+
+        .item-details {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .neighbor-name {
+            font-weight: 600;
+        }
+
+        .dish-name {
+            color: var(--text-main);
+        }
+
+        .badge {
+            font-size: 0.75rem;
+            font-weight: 600;
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .badge-main { background-color: var(--cat-main); color: var(--cat-main-text); }
+        .badge-side { background-color: var(--cat-side); color: var(--cat-side-text); }
+        .badge-dessert { background-color: var(--cat-dessert); color: var(--cat-dessert-text); }
+        .badge-drink { background-color: var(--cat-drink); color: var(--cat-drink-text); }
+
+        .action-buttons {
+            display: flex;
+            gap: 0.25rem;
+        }
+
+        .btn-action {
+            background: transparent;
+            color: var(--text-muted);
+            padding: 0.25rem 0.5rem;
+            font-size: 0.875rem;
+        }
+
+        .btn-edit-item:hover {
+            background-color: #e0f2fe;
+            color: #0369a1;
+        }
+
+        .btn-delete-item:hover {
+            background-color: #fee2e2;
+            color: #ef4444;
+        }
+
+        .empty-state {
+            padding: 3rem;
+            text-align: center;
+            color: var(--text-muted);
+        }
+
+        /* Print and Copy Utilities */
+        #copyFeedback {
+            font-size: 0.875rem;
+            color: #16a34a;
+            font-weight: 500;
+            margin-right: 1rem;
+            opacity: 0;
+            transition: opacity 0.2s ease;
+        }
+
+        @media print {
+            body {
+                background: white;
+                padding: 0;
+            }
+            .form-card, .action-bar, .action-buttons, .dashboard {
+                display: none !important;
+            }
+            .list-container {
+                border: none;
+                box-shadow: none;
+            }
+            .item-row {
+                padding: 0.5rem 0;
+                border-bottom: 1px solid #000;
+            }
+            .badge {
+                border: 1px solid #000;
+                background: none !important;
+                color: #000 !important;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <h1>Potluck Sign-Up Tracker</h1>
+    </header>
+
+    <div class="dashboard" id="dashboard">
+        <div class="stat-card" id="card-main">
+            <div class="stat-count" id="count-main">0</div>
+            <div class="stat-label">Mains</div>
+        </div>
+        <div class="stat-card" id="card-side">
+            <div class="stat-count" id="count-side">0</div>
+            <div class="stat-label">Sides</div>
+        </div>
+        <div class="stat-card" id="card-dessert">
+            <div class="stat-count" id="count-dessert">0</div>
+            <div class="stat-label">Desserts</div>
+            <div class="warning-text" id="warn-dessert">Crowding out mains!</div>
+        </div>
+        <div class="stat-card" id="card-drink">
+            <div class="stat-count" id="count-drink">0</div>
+            <div class="stat-label">Drinks</div>
+        </div>
+    </div>
+
+    <div class="form-card" id="formCard">
+        <form id="signupForm">
+            <div class="form-grid">
+                <div class="form-group">
+                    <label for="neighbor">Name</label>
+                    <input type="text" id="neighbor" required placeholder="e.g., Sarah Jenkins">
+                </div>
+                <div class="form-group">
+                    <label for="category">Category</label>
+                    <select id="category" required>
+                        <option value="main">Main Dish</option>
+                        <option value="side">Side Dish</option>
+                        <option value="dessert">Dessert</option>
+                        <option value="drink">Drink / Ice</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="dish">What they're bringing</label>
+                    <input type="text" id="dish" required placeholder="e.g., Potato Salad">
+                </div>
+            </div>
+            <div class="button-group">
+                <button type="submit" id="submitBtn">Add to List</button>
+                <button type="button" class="btn-cancel" id="cancelBtn" style="display: none;" onclick="resetFormState()">Cancel Edit</button>
+            </div>
+        </form>
+    </div>
+
+    <div class="action-bar">
+        <h3>Current Lineup</h3>
+        <div>
+            <span id="copyFeedback">Copied clean list!</span>
+            <button class="btn-secondary" onclick="copyCleanList()">Copy Clean List</button>
+            <button class="btn-secondary" onclick="window.print()">Print List</button>
+        </div>
+    </div>
+
+    <div class="list-container" id="listContainer">
+        </div>
+</div>
+
+<script>
+    // In-memory data storage setup
+    let potluckItems = JSON.parse(localStorage.getItem('potluckItems')) || [];
+    let editTargetId = null;
+
+    const form = document.getElementById('signupForm');
+    const formCard = document.getElementById('formCard');
+    const submitBtn = document.getElementById('submitBtn');
+    const cancelBtn = document.getElementById('cancelBtn');
+    const listContainer = document.getElementById('listContainer');
+
+    form.addEventListener('submit', (e) => {
+        e.preventDefault();
+        
+        const neighborVal = document.getElementById('neighbor').value.trim();
+        const categoryVal = document.getElementById('category').value;
+        const dishVal = document.getElementById('dish').value.trim();
+
+        if (editTargetId !== null) {
+            // Update mode processing
+            potluckItems = potluckItems.map(item => {
+                if (item.id === editTargetId) {
+                    return { ...item, neighbor: neighborVal, category: categoryVal, dish: dishVal };
+                }
+                return item;
+            });
+            resetFormState();
+        } else {
+            // Standard insert mode processing
+            const newItem = {
+                id: Date.now(),
+                neighbor: neighborVal,
+                category: categoryVal,
+                dish: dishVal
+            };
+            potluckItems.push(newItem);
+        }
+
+        saveAndRender();
+        form.reset();
+        document.getElementById('neighbor').focus();
+    });
+
+    function startEdit(id) {
+        const itemToEdit = potluckItems.find(item => item.id === id);
+        if (!itemToEdit) return;
+
+        editTargetId = id;
+        
+        // Load target details directly back into form inputs
+        document.getElementById('neighbor').value = itemToEdit.neighbor;
+        document.getElementById('category').value = itemToEdit.category;
+        document.getElementById('dish').value = itemToEdit.dish;
+
+        // Alter form wrapper UI appearance contextually
+        formCard.classList.add('editing');
+        submitBtn.innerText = 'Update Entry';
+        cancelBtn.style.display = 'inline-block';
+        
+        renderList();
+        document.getElementById('neighbor').focus();
+    }
+
+    function resetFormState() {
+        editTargetId = null;
+        form.reset();
+        formCard.classList.remove('editing');
+        submitBtn.innerText = 'Add to List';
+        cancelBtn.style.display = 'none';
+        renderList();
+    }
+
+    function deleteItem(id) {
+        if (editTargetId === id) {
+            resetFormState();
+        }
+        potluckItems = potluckItems.filter(item => item.id !== id);
+        saveAndRender();
+    }
+
+    function saveAndRender() {
+        localStorage.setItem('potluckItems', JSON.stringify(potluckItems));
+        renderList();
+        updateDashboard();
+    }
+
+    function updateDashboard() {
+        const counts = { main: 0, side: 0, dessert: 0, drink: 0 };
+        
+        potluckItems.forEach(item => {
+            if (counts.hasOwnProperty(item.category)) {
+                counts[item.category]++;
+            }
+        });
+
+        // Update DOM display metrics
+        for (const cat in counts) {
+            document.getElementById(`count-${cat}`).innerText = counts[cat];
+        }
+
+        // Trigger Dessert Warning: logic handles scenarios where desserts strictly outnumber main dishes
+        const dessertCard = document.getElementById('card-dessert');
+        const dessertWarnText = document.getElementById('warn-dessert');
+        
+        if (counts.dessert > counts.main && counts.dessert > 0) {
+            dessertCard.classList.add('warning');
+            dessertWarnText.style.display = 'block';
+        } else {
+            dessertCard.classList.remove('warning');
+            dessertWarnText.style.display = 'none';
+        }
+    }
+
+    function renderList() {
+        if (potluckItems.length === 0) {
+            listContainer.innerHTML = '<div class="empty-state">No sign-ups yet. Add the first neighbor above!</div>';
+            return;
+        }
+
+        // Sort order helper object
+        const order = { main: 1, side: 2, dessert: 3, drink: 4 };
+        const sortedItems = [...potluckItems].sort((a, b) => order[a.category] - order[b.category]);
+
+        listContainer.innerHTML = sortedItems.map(item => {
+            const isTarget = item.id === editTargetId;
+            return `
+                <div class="item-row ${isTarget ? 'is-editing' : ''}">
+                    <div class="item-details">
+                        <span class="badge badge-${item.category}">${item.category}</span>
+                        <span class="neighbor-name">${escapeHTML(item.neighbor)}:</span>
+                        <span class="dish-name">${escapeHTML(item.dish)}</span>
+                    </div>
+                    <div class="action-buttons">
+                        <button type="button" class="btn-action btn-edit-item" onclick="startEdit(${item.id})">Edit</button>
+                        <button type="button" class="btn-action btn-delete-item" onclick="deleteItem(${item.id})">Remove</button>
+                    </div>
+                </div>
+            `;
+        }).join('');
+    }
+
+    function copyCleanList() {
+        if (potluckItems.length === 0) return;
+
+        const order = { main: 'MAINS', side: 'SIDES', dessert: 'DESSERTS', drink: 'DRINKS' };
+        let textOutput = "POTLUCK BRING-LIST\n==================\n";
+
+        for (const [key, label] of Object.entries(order)) {
+            const catItems = potluckItems.filter(item => item.category === key);
+            if (catItems.length > 0) {
+                textOutput += `\n${label}:\n`;
+                catItems.forEach(item => {
+                    textOutput += `- ${item.dish} (${item.neighbor})\n`;
+                });
+            }
+        }
+
+        navigator.clipboard.writeText(textOutput.trim()).then(() => {
+            const feedback = document.getElementById('copyFeedback');
+            feedback.style.opacity = '1';
+            setTimeout(() => { feedback.style.opacity = '0'; }, 2000);
+        });
+    }
+
+    function escapeHTML(str) {
+        return str.replace(/[&<>'"]/g, 
+            tag => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[tag] || tag)
+        );
+    }
+
+    // App Initialization
+    renderList();
+    updateDashboard();
+</script>
+
+</body>
+</html>

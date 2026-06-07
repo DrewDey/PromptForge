@@ -1,0 +1,592 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Block Bike Courier</title>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    min-height: 100vh;
+    display: grid;
+    place-items: center;
+    background: #15191f;
+    font-family: system-ui, Arial, sans-serif;
+    color: white;
+    overflow: hidden;
+  }
+  .wrap {
+    width: min(96vw, 720px);
+    text-align: center;
+  }
+  h1 {
+    margin: 10px 0 6px;
+    font-size: clamp(24px, 5vw, 38px);
+  }
+  .hud {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+    margin-bottom: 8px;
+  }
+  .box {
+    background: #222936;
+    border: 1px solid #3b4659;
+    border-radius: 12px;
+    padding: 8px;
+    font-size: 14px;
+  }
+  canvas {
+    width: 100%;
+    aspect-ratio: 1 / 0.72;
+    background: #26313f;
+    border: 3px solid #55657c;
+    border-radius: 18px;
+    display: block;
+    touch-action: none;
+  }
+  .controls {
+    display: grid;
+    grid-template-columns: repeat(3, 64px);
+    justify-content: center;
+    gap: 8px;
+    margin-top: 10px;
+  }
+  button {
+    border: 0;
+    border-radius: 14px;
+    padding: 12px;
+    background: #e8edf5;
+    color: #111;
+    font-weight: 800;
+    font-size: 18px;
+  }
+  .wide {
+    grid-column: span 3;
+    font-size: 15px;
+  }
+  .hint {
+    margin-top: 8px;
+    color: #cbd5e1;
+    font-size: 13px;
+  }
+  @media (max-width: 430px) {
+    .hud { grid-template-columns: repeat(2, 1fr); }
+    .box { padding: 6px; font-size: 12px; }
+    .controls { grid-template-columns: repeat(3, 58px); }
+    button { padding: 11px; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Block Bike Courier</h1>
+
+  <div class="hud">
+    <div class="box">Packages: <span id="pkg">0</span>/5</div>
+    <div class="box">Time: <span id="time">60</span></div>
+    <div class="box">Score: <span id="score">0</span></div>
+    <div class="box">Status: <span id="status">Ready</span></div>
+  </div>
+
+  <canvas id="game" width="720" height="520"></canvas>
+
+  <div class="controls">
+    <span></span><button data-dir="up" aria-label="Move up">↑</button><span></span>
+    <button data-dir="left" aria-label="Move left">←</button><button id="start">Start</button><button data-dir="right" aria-label="Move right">→</button>
+    <span></span><button data-dir="down" aria-label="Move down">↓</button><span></span>
+    <button class="wide" id="restart">Restart</button>
+  </div>
+
+  <div class="hint">Arrow keys, WASD, or buttons. Cars stop at reds. Hitting cars costs 8 seconds.</div>
+</div>
+
+<script>
+const canvas = document.getElementById("game");
+const ctx = canvas.getContext("2d");
+
+const pkgEl = document.getElementById("pkg");
+const timeEl = document.getElementById("time");
+const scoreEl = document.getElementById("score");
+const statusEl = document.getElementById("status");
+
+const roads = [
+  { x: 0, y: 115, w: 720, h: 70, type: "h", lane: 150 },
+  { x: 0, y: 335, w: 720, h: 70, type: "h", lane: 370 },
+  { x: 145, y: 0, w: 70, h: 520, type: "v", lane: 180 },
+  { x: 505, y: 0, w: 70, h: 520, type: "v", lane: 540 }
+];
+
+const intersections = [
+  { x: 145, y: 115, w: 70, h: 70, phase: 0 },
+  { x: 505, y: 115, w: 70, h: 70, phase: 1 },
+  { x: 145, y: 335, w: 70, h: 70, phase: 1 },
+  { x: 505, y: 335, w: 70, h: 70, phase: 0 }
+];
+
+const deliveries = [
+  { x: 70, y: 75 },
+  { x: 635, y: 75 },
+  { x: 70, y: 445 },
+  { x: 635, y: 445 },
+  { x: 350, y: 260 }
+];
+
+let bike, keys, started, over, packages, score, timeLeft, lastTime, lightTimer, currentTarget;
+let cars, crashCooldown, messageTimer, messageText;
+
+function reset() {
+  bike = { x: 180, y: 370, r: 12, speed: 190 };
+  keys = {};
+  started = false;
+  over = false;
+  packages = 0;
+  score = 0;
+  timeLeft = 60;
+  lastTime = 0;
+  lightTimer = 0;
+  currentTarget = 0;
+  crashCooldown = 0;
+  messageTimer = 0;
+  messageText = "Ready";
+
+  cars = [
+    { x: -80, y: 130, w: 42, h: 22, dir: 1, speed: 105, road: "hTop", color: "#f97316" },
+    { x: 790, y: 170, w: 42, h: 22, dir: -1, speed: 90, road: "hTop", color: "#a78bfa" },
+    { x: -180, y: 350, w: 42, h: 22, dir: 1, speed: 115, road: "hBottom", color: "#22c55e" },
+    { x: 850, y: 390, w: 42, h: 22, dir: -1, speed: 100, road: "hBottom", color: "#38bdf8" },
+    { x: 155, y: -90, w: 22, h: 42, dir: 1, speed: 95, road: "vLeft", color: "#facc15" },
+    { x: 195, y: 610, w: 22, h: 42, dir: -1, speed: 85, road: "vLeft", color: "#fb7185" },
+    { x: 515, y: -160, w: 22, h: 42, dir: 1, speed: 110, road: "vRight", color: "#60a5fa" },
+    { x: 555, y: 650, w: 22, h: 42, dir: -1, speed: 92, road: "vRight", color: "#34d399" }
+  ];
+
+  updateHUD("Ready");
+  draw();
+}
+
+function updateHUD(status) {
+  pkgEl.textContent = packages;
+  timeEl.textContent = Math.ceil(timeLeft);
+  scoreEl.textContent = score;
+  statusEl.textContent = status;
+}
+
+function setStatus(text, duration = 0.9) {
+  messageText = text;
+  messageTimer = duration;
+  updateHUD(text);
+}
+
+function isRoad(x, y) {
+  return roads.some(r => x >= r.x && x <= r.x + r.w && y >= r.y && y <= r.y + r.h);
+}
+
+function horizontalGreenForRect(rect) {
+  const cx = rect.x + rect.w / 2;
+  const cy = rect.y + rect.h / 2;
+  const i = intersections.find(ix =>
+    cx >= ix.x && cx <= ix.x + ix.w &&
+    cy >= ix.y && cy <= ix.y + ix.h
+  );
+  if (!i) return null;
+  return i.phase === 0;
+}
+
+function carShouldStop(car) {
+  const ahead = 26;
+  const probe = {
+    x: car.x + (car.dir > 0 ? car.w + ahead : -ahead),
+    y: car.y,
+    w: car.w,
+    h: car.h
+  };
+
+  if (car.road === "hTop" || car.road === "hBottom") {
+    for (const i of intersections) {
+      const near = probe.x + probe.w > i.x && probe.x < i.x + i.w && probe.y + probe.h > i.y && probe.y < i.y + i.h;
+      if (near && i.phase !== 0) return true;
+    }
+  } else {
+    for (const i of intersections) {
+      const near = probe.x + probe.w > i.x && probe.x < i.x + i.w && probe.y + probe.h > i.y && probe.y < i.y + i.h;
+      if (near && i.phase !== 1) return true;
+    }
+  }
+  return false;
+}
+
+function updateCars(dt) {
+  for (const car of cars) {
+    if (!carShouldStop(car)) {
+      if (car.road === "hTop" || car.road === "hBottom") {
+        car.x += car.dir * car.speed * dt;
+        if (car.dir > 0 && car.x > 760) car.x = -120 - Math.random() * 160;
+        if (car.dir < 0 && car.x < -80) car.x = 760 + Math.random() * 160;
+      } else {
+        car.y += car.dir * car.speed * dt;
+        if (car.dir > 0 && car.y > 560) car.y = -130 - Math.random() * 160;
+        if (car.dir < 0 && car.y < -80) car.y = 560 + Math.random() * 160;
+      }
+    }
+  }
+}
+
+function circleRectHit(cx, cy, cr, r) {
+  const nearestX = Math.max(r.x, Math.min(cx, r.x + r.w));
+  const nearestY = Math.max(r.y, Math.min(cy, r.y + r.h));
+  return Math.hypot(cx - nearestX, cy - nearestY) < cr;
+}
+
+function checkBikeCarCollision() {
+  if (crashCooldown > 0) return;
+
+  for (const car of cars) {
+    if (circleRectHit(bike.x, bike.y, bike.r + 2, car)) {
+      crashCooldown = 1.25;
+      timeLeft = Math.max(0, timeLeft - 8);
+      score = Math.max(0, score - 40);
+      bike.x -= Math.sign(car.dir || 1) * 22;
+      bike.y -= 10;
+      setStatus("Crash! -8 sec", 1.2);
+
+      if (timeLeft <= 0) {
+        over = true;
+        updateHUD("Crashed out");
+      }
+      return;
+    }
+  }
+}
+
+function redLightPenalty(x, y) {
+  for (const i of intersections) {
+    const inside = x >= i.x && x <= i.x + i.w && y >= i.y && y <= i.y + i.h;
+    if (!inside) continue;
+
+    const horizontalGreen = i.phase === 0;
+    const movingHorizontal = Math.abs((keys.right ? 1 : 0) - (keys.left ? 1 : 0)) > 0;
+    const movingVertical = Math.abs((keys.down ? 1 : 0) - (keys.up ? 1 : 0)) > 0;
+
+    if ((movingHorizontal && !horizontalGreen) || (movingVertical && horizontalGreen)) return true;
+  }
+  return false;
+}
+
+function tick(ts) {
+  if (!started || over) return;
+
+  if (!lastTime) lastTime = ts;
+  const dt = Math.min(0.033, (ts - lastTime) / 1000);
+  lastTime = ts;
+
+  timeLeft -= dt;
+  lightTimer += dt;
+  crashCooldown = Math.max(0, crashCooldown - dt);
+  messageTimer = Math.max(0, messageTimer - dt);
+
+  if (lightTimer > 2.4) {
+    intersections.forEach(i => i.phase = i.phase ? 0 : 1);
+    lightTimer = 0;
+  }
+
+  updateCars(dt);
+
+  let dx = 0, dy = 0;
+  if (keys.left) dx -= 1;
+  if (keys.right) dx += 1;
+  if (keys.up) dy -= 1;
+  if (keys.down) dy += 1;
+
+  if (dx || dy) {
+    const mag = Math.hypot(dx, dy);
+    dx /= mag;
+    dy /= mag;
+
+    const nx = bike.x + dx * bike.speed * dt;
+    const ny = bike.y + dy * bike.speed * dt;
+
+    if (isRoad(nx, ny)) {
+      bike.x = nx;
+      bike.y = ny;
+
+      if (redLightPenalty(nx, ny)) {
+        score = Math.max(0, score - 1);
+        if (messageTimer <= 0) updateHUD("Red light!");
+      } else if (messageTimer <= 0) {
+        updateHUD("Riding");
+      }
+    } else if (messageTimer <= 0) {
+      updateHUD("Stay on road");
+    }
+  }
+
+  checkBikeCarCollision();
+
+  const target = deliveries[currentTarget];
+  if (target && Math.hypot(bike.x - target.x, bike.y - target.y) < 28) {
+    packages++;
+    score += 100 + Math.ceil(timeLeft);
+    currentTarget++;
+    setStatus("Delivered!", 1);
+  }
+
+  if (packages >= deliveries.length) {
+    over = true;
+    score += Math.ceil(timeLeft) * 5;
+    updateHUD("All delivered");
+  }
+
+  if (timeLeft <= 0) {
+    timeLeft = 0;
+    over = true;
+    updateHUD("Shift over");
+  }
+
+  draw();
+  if (!over) requestAnimationFrame(tick);
+}
+
+function drawBlocks() {
+  ctx.fillStyle = "#334155";
+  const blocks = [
+    [20, 20, 100, 70], [245, 25, 220, 70], [600, 20, 90, 70],
+    [245, 215, 220, 90], [20, 215, 100, 90], [600, 215, 90, 90],
+    [20, 430, 100, 60], [245, 430, 220, 60], [600, 430, 90, 60]
+  ];
+
+  blocks.forEach(b => {
+    ctx.fillStyle = "#334155";
+    ctx.fillRect(...b);
+    ctx.fillStyle = "#475569";
+    ctx.fillRect(b[0] + 12, b[1] + 12, b[2] - 24, 14);
+    ctx.fillRect(b[0] + 12, b[1] + 36, b[2] - 24, 10);
+  });
+}
+
+function drawRoads() {
+  ctx.fillStyle = "#1d2430";
+  roads.forEach(r => ctx.fillRect(r.x, r.y, r.w, r.h));
+
+  ctx.strokeStyle = "#e7d86b";
+  ctx.setLineDash([18, 18]);
+  ctx.lineWidth = 3;
+
+  ctx.beginPath();
+  ctx.moveTo(0, 150);
+  ctx.lineTo(720, 150);
+  ctx.moveTo(0, 370);
+  ctx.lineTo(720, 370);
+  ctx.moveTo(180, 0);
+  ctx.lineTo(180, 520);
+  ctx.moveTo(540, 0);
+  ctx.lineTo(540, 520);
+  ctx.stroke();
+
+  ctx.setLineDash([]);
+}
+
+function drawCrosswalks() {
+  ctx.strokeStyle = "rgba(255,255,255,.28)";
+  ctx.lineWidth = 2;
+
+  for (const i of intersections) {
+    for (let k = 0; k < 5; k++) {
+      ctx.beginPath();
+      ctx.moveTo(i.x + 6 + k * 13, i.y - 8);
+      ctx.lineTo(i.x + 6 + k * 13, i.y + 2);
+      ctx.moveTo(i.x + 6 + k * 13, i.y + i.h - 2);
+      ctx.lineTo(i.x + 6 + k * 13, i.y + i.h + 8);
+      ctx.stroke();
+
+      ctx.beginPath();
+      ctx.moveTo(i.x - 8, i.y + 6 + k * 13);
+      ctx.lineTo(i.x + 2, i.y + 6 + k * 13);
+      ctx.moveTo(i.x + i.w - 2, i.y + 6 + k * 13);
+      ctx.lineTo(i.x + i.w + 8, i.y + 6 + k * 13);
+      ctx.stroke();
+    }
+  }
+}
+
+function drawLights() {
+  intersections.forEach(i => {
+    const horizontalGreen = i.phase === 0;
+
+    ctx.fillStyle = "rgba(255,255,255,.08)";
+    ctx.fillRect(i.x, i.y, i.w, i.h);
+
+    ctx.fillStyle = horizontalGreen ? "#22c55e" : "#ef4444";
+    ctx.beginPath();
+    ctx.arc(i.x + 20, i.y + 15, 8, 0, Math.PI * 2);
+    ctx.arc(i.x + 50, i.y + 55, 8, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.fillStyle = horizontalGreen ? "#ef4444" : "#22c55e";
+    ctx.beginPath();
+    ctx.arc(i.x + 55, i.y + 20, 8, 0, Math.PI * 2);
+    ctx.arc(i.x + 15, i.y + 50, 8, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.fillStyle = "rgba(255,255,255,.75)";
+    ctx.font = "bold 11px system-ui";
+    ctx.textAlign = "center";
+    ctx.fillText(horizontalGreen ? "← →" : "↑ ↓", i.x + 35, i.y + 39);
+  });
+}
+
+function drawCars() {
+  for (const car of cars) {
+    ctx.fillStyle = car.color;
+    ctx.fillRect(car.x, car.y, car.w, car.h);
+
+    ctx.fillStyle = "rgba(255,255,255,.8)";
+    if (car.w > car.h) {
+      ctx.fillRect(car.x + 8, car.y + 4, 10, 5);
+      ctx.fillRect(car.x + 24, car.y + 4, 10, 5);
+      ctx.fillStyle = "#111827";
+      ctx.fillRect(car.x + 6, car.y + car.h - 2, 7, 3);
+      ctx.fillRect(car.x + car.w - 13, car.y + car.h - 2, 7, 3);
+    } else {
+      ctx.fillRect(car.x + 4, car.y + 8, 5, 10);
+      ctx.fillRect(car.x + 4, car.y + 24, 5, 10);
+      ctx.fillStyle = "#111827";
+      ctx.fillRect(car.x + car.w - 2, car.y + 6, 3, 7);
+      ctx.fillRect(car.x + car.w - 2, car.y + car.h - 13, 3, 7);
+    }
+  }
+}
+
+function drawDeliveries() {
+  deliveries.forEach((d, idx) => {
+    ctx.fillStyle = idx < currentTarget ? "#64748b" : idx === currentTarget ? "#facc15" : "#94a3b8";
+    ctx.beginPath();
+    ctx.arc(d.x, d.y, idx === currentTarget ? 18 : 11, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.fillStyle = "#111827";
+    ctx.font = "bold 14px system-ui";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText(idx + 1, d.x, d.y);
+  });
+}
+
+function drawBike() {
+  ctx.save();
+  ctx.translate(bike.x, bike.y);
+
+  if (crashCooldown > 0) {
+    ctx.globalAlpha = Math.sin(Date.now() / 70) > 0 ? 0.45 : 1;
+  }
+
+  ctx.fillStyle = "#38bdf8";
+  ctx.beginPath();
+  ctx.arc(0, 0, bike.r, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.strokeStyle = "#e0f2fe";
+  ctx.lineWidth = 3;
+  ctx.beginPath();
+  ctx.moveTo(-14, 10);
+  ctx.lineTo(14, 10);
+  ctx.moveTo(-8, -8);
+  ctx.lineTo(8, 8);
+  ctx.stroke();
+
+  ctx.restore();
+}
+
+function drawOverlay(text, sub) {
+  ctx.fillStyle = "rgba(15,23,42,.84)";
+  ctx.fillRect(85, 110, 550, 285);
+
+  ctx.fillStyle = "white";
+  ctx.textAlign = "center";
+  ctx.font = "bold 34px system-ui";
+  ctx.fillText(text, 360, 180);
+
+  ctx.font = "18px system-ui";
+  ctx.fillText(sub, 360, 224);
+  ctx.fillText("Deliver packages in order.", 360, 258);
+  ctx.fillText("Cars obey the lights. You should too.", 360, 288);
+  ctx.fillText("Car hit: -8 seconds and -40 score.", 360, 318);
+}
+
+function draw() {
+  ctx.clearRect(0, 0, 720, 520);
+  drawBlocks();
+  drawRoads();
+  drawCrosswalks();
+  drawLights();
+  drawDeliveries();
+  drawCars();
+  drawBike();
+
+  if (!started) drawOverlay("Ready to ride?", "Press Start, Enter, or Space");
+  if (over) drawOverlay(packages >= 5 ? "Route complete!" : "Shift over", "Final score: " + score);
+}
+
+function startGame() {
+  if (over) reset();
+  if (started) return;
+  started = true;
+  lastTime = 0;
+  setStatus("Go!", 0.7);
+  requestAnimationFrame(tick);
+}
+
+document.getElementById("start").onclick = startGame;
+document.getElementById("restart").onclick = () => {
+  reset();
+  startGame();
+};
+
+document.querySelectorAll("[data-dir]").forEach(btn => {
+  const dir = btn.dataset.dir;
+
+  btn.addEventListener("pointerdown", e => {
+    e.preventDefault();
+    keys[dir] = true;
+  });
+
+  btn.addEventListener("pointerup", () => keys[dir] = false);
+  btn.addEventListener("pointerleave", () => keys[dir] = false);
+  btn.addEventListener("pointercancel", () => keys[dir] = false);
+});
+
+window.addEventListener("keydown", e => {
+  const map = {
+    ArrowLeft: "left", a: "left", A: "left",
+    ArrowRight: "right", d: "right", D: "right",
+    ArrowUp: "up", w: "up", W: "up",
+    ArrowDown: "down", s: "down", S: "down"
+  };
+
+  if (map[e.key]) {
+    e.preventDefault();
+    keys[map[e.key]] = true;
+  }
+
+  if (e.key === "Enter" || e.key === " ") {
+    e.preventDefault();
+    startGame();
+  }
+});
+
+window.addEventListener("keyup", e => {
+  const map = {
+    ArrowLeft: "left", a: "left", A: "left",
+    ArrowRight: "right", d: "right", D: "right",
+    ArrowUp: "up", w: "up", W: "up",
+    ArrowDown: "down", s: "down", S: "down"
+  };
+
+  if (map[e.key]) keys[map[e.key]] = false;
+});
+
+reset();
+</script>
+</body>
+</html>

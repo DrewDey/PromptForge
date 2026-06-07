@@ -1,0 +1,606 @@
+<!-- Save as corner-store-change-rush.html and open in a browser -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Corner Store Change Rush</title>
+<style>
+  :root {
+    --bg: #15110f;
+    --panel: #241c18;
+    --panel2: #322720;
+    --text: #fff7e8;
+    --muted: #c9ad8d;
+    --accent: #ffcc4d;
+    --good: #79e28b;
+    --bad: #ff6868;
+    --blue: #72c7ff;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    min-height: 100vh;
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    background:
+      radial-gradient(circle at top, #47331f 0, transparent 38%),
+      linear-gradient(180deg, #1d1410, #0f0b09);
+    color: var(--text);
+    display: grid;
+    place-items: center;
+    overflow-x: hidden;
+  }
+
+  .game {
+    width: min(960px, 100%);
+    padding: 16px;
+  }
+
+  header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 12px;
+  }
+
+  h1 {
+    margin: 0;
+    font-size: clamp(1.5rem, 5vw, 2.6rem);
+    letter-spacing: -0.04em;
+  }
+
+  .tag {
+    color: var(--muted);
+    font-size: 0.95rem;
+  }
+
+  .board {
+    display: grid;
+    grid-template-columns: 1fr 320px;
+    gap: 14px;
+  }
+
+  .scene, .side, .tray, .modal {
+    background: linear-gradient(180deg, var(--panel), var(--panel2));
+    border: 2px solid #4f3c30;
+    border-radius: 22px;
+    box-shadow: 0 18px 50px rgba(0,0,0,.35);
+  }
+
+  .scene {
+    padding: 16px;
+    min-height: 420px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .store-top {
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+    margin-bottom: 14px;
+  }
+
+  .stat {
+    flex: 1;
+    background: rgba(0,0,0,.25);
+    border: 1px solid rgba(255,255,255,.1);
+    border-radius: 14px;
+    padding: 10px;
+    text-align: center;
+  }
+
+  .stat b {
+    display: block;
+    font-size: 1.35rem;
+    color: var(--accent);
+  }
+
+  .customer {
+    background: #19120f;
+    border: 2px dashed #6b5140;
+    border-radius: 20px;
+    padding: 18px;
+    text-align: center;
+  }
+
+  .face {
+    font-size: 4rem;
+    line-height: 1;
+    margin-bottom: 6px;
+  }
+
+  .receipt {
+    font-size: clamp(1.1rem, 4vw, 1.55rem);
+    line-height: 1.45;
+  }
+
+  .target {
+    color: var(--good);
+    font-size: 2.1rem;
+    font-weight: 900;
+  }
+
+  .patience-wrap {
+    margin-top: 16px;
+    background: #130f0d;
+    border-radius: 999px;
+    overflow: hidden;
+    height: 26px;
+    border: 1px solid #5a4335;
+  }
+
+  .patience {
+    height: 100%;
+    width: 100%;
+    background: linear-gradient(90deg, var(--bad), var(--accent), var(--good));
+    transition: width .08s linear;
+  }
+
+  .register {
+    margin-top: 16px;
+    padding: 14px;
+    border-radius: 18px;
+    background: rgba(0,0,0,.22);
+  }
+
+  .selected {
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+    font-size: 1.1rem;
+    align-items: center;
+  }
+
+  .selected strong {
+    font-size: 1.65rem;
+    color: var(--blue);
+  }
+
+  .feedback {
+    min-height: 32px;
+    margin-top: 8px;
+    font-weight: 800;
+    color: var(--accent);
+  }
+
+  .side {
+    padding: 14px;
+  }
+
+  .tray-title {
+    margin: 0 0 10px;
+    color: var(--muted);
+    font-weight: 800;
+  }
+
+  .money-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 9px;
+  }
+
+  button {
+    font: inherit;
+    cursor: pointer;
+    border: 0;
+    border-radius: 14px;
+    color: var(--text);
+    touch-action: manipulation;
+  }
+
+  .money {
+    min-height: 58px;
+    background: linear-gradient(180deg, #37572f, #203a22);
+    border: 2px solid #77b46c;
+    font-weight: 900;
+    font-size: 1.15rem;
+    box-shadow: inset 0 -4px 0 rgba(0,0,0,.25);
+  }
+
+  .coin {
+    background: linear-gradient(180deg, #c4b27b, #826f39);
+    border-color: #f6df8a;
+    color: #17120b;
+  }
+
+  .actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 9px;
+    margin-top: 12px;
+  }
+
+  .action {
+    min-height: 52px;
+    background: #4b3a30;
+    border: 1px solid #765b49;
+    font-weight: 850;
+  }
+
+  .give {
+    grid-column: span 2;
+    background: linear-gradient(180deg, #2e8a49, #1d5f31);
+    border: 2px solid #79e28b;
+  }
+
+  .line {
+    display: flex;
+    gap: 5px;
+    margin-top: 16px;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+
+  .person {
+    width: 34px;
+    height: 34px;
+    display: grid;
+    place-items: center;
+    border-radius: 50%;
+    background: rgba(255,255,255,.08);
+    border: 1px solid rgba(255,255,255,.12);
+  }
+
+  .modal-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,.68);
+    display: grid;
+    place-items: center;
+    padding: 16px;
+    z-index: 10;
+  }
+
+  .modal {
+    width: min(520px, 100%);
+    padding: 22px;
+    text-align: center;
+  }
+
+  .modal h2 {
+    margin: 0 0 8px;
+    font-size: 2rem;
+  }
+
+  .modal p {
+    color: var(--muted);
+    line-height: 1.5;
+  }
+
+  .start {
+    background: linear-gradient(180deg, #f7c948, #dc8f18);
+    color: #211407;
+    padding: 14px 22px;
+    font-weight: 950;
+    font-size: 1.1rem;
+    margin-top: 8px;
+  }
+
+  .hidden { display: none; }
+
+  .shake { animation: shake .25s linear; }
+  .pop { animation: pop .25s ease; }
+
+  @keyframes shake {
+    0%,100% { transform: translateX(0); }
+    25% { transform: translateX(-7px); }
+    75% { transform: translateX(7px); }
+  }
+
+  @keyframes pop {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.08); }
+    100% { transform: scale(1); }
+  }
+
+  @media (max-width: 760px) {
+    .game { padding: 10px; }
+    header { align-items: flex-start; flex-direction: column; }
+    .board { grid-template-columns: 1fr; }
+    .scene { min-height: 0; padding: 12px; }
+    .store-top { display: grid; grid-template-columns: repeat(3, 1fr); }
+    .stat { padding: 8px 4px; font-size: .8rem; }
+    .stat b { font-size: 1.05rem; }
+    .money-grid { grid-template-columns: repeat(3, 1fr); }
+    .money { min-height: 52px; font-size: 1rem; }
+    .face { font-size: 3rem; }
+  }
+</style>
+</head>
+<body>
+  <main class="game">
+    <header>
+      <div>
+        <h1>Corner Store Change Rush</h1>
+        <div class="tag">Tap bills and coins. Make exact change before the line snaps.</div>
+      </div>
+    </header>
+
+    <section class="board">
+      <div class="scene" id="scene">
+        <div class="store-top">
+          <div class="stat">Score <b id="score">0</b></div>
+          <div class="stat">Streak <b id="streak">0</b></div>
+          <div class="stat">Best <b id="best">0</b></div>
+        </div>
+
+        <div class="customer">
+          <div class="face" id="face">🙂</div>
+          <div class="receipt">
+            Total: <b id="price">$0.00</b><br>
+            Paid: <b id="paid">$0.00</b><br>
+            Change due:<br>
+            <span class="target" id="target">$0.00</span>
+          </div>
+          <div class="patience-wrap">
+            <div class="patience" id="patience"></div>
+          </div>
+        </div>
+
+        <div class="register">
+          <div class="selected">
+            <span>Change in hand</span>
+            <strong id="current">$0.00</strong>
+          </div>
+          <div class="feedback" id="feedback">Serve the first customer.</div>
+        </div>
+
+        <div class="line" id="line"></div>
+      </div>
+
+      <aside class="side">
+        <p class="tray-title">Cash drawer</p>
+        <div class="money-grid" id="moneyGrid"></div>
+
+        <div class="actions">
+          <button class="action" id="undoBtn">Undo</button>
+          <button class="action" id="clearBtn">Clear</button>
+          <button class="action give" id="giveBtn">Give Change</button>
+        </div>
+      </aside>
+    </section>
+  </main>
+
+  <div class="modal-backdrop" id="modal">
+    <div class="modal">
+      <h2>Corner Store Change Rush</h2>
+      <p>
+        Customers hand you cash. Tap bills and coins to match the exact change due.
+        Correct change builds your streak. Wrong change costs patience.
+      </p>
+      <button class="start" id="startBtn">Start Shift</button>
+    </div>
+  </div>
+
+<script>
+(() => {
+  const money = [
+    { label: "$10", value: 1000, coin: false },
+    { label: "$5", value: 500, coin: false },
+    { label: "$1", value: 100, coin: false },
+    { label: "25¢", value: 25, coin: true },
+    { label: "10¢", value: 10, coin: true },
+    { label: "5¢", value: 5, coin: true },
+    { label: "1¢", value: 1, coin: true }
+  ];
+
+  const els = {
+    score: document.getElementById("score"),
+    streak: document.getElementById("streak"),
+    best: document.getElementById("best"),
+    price: document.getElementById("price"),
+    paid: document.getElementById("paid"),
+    target: document.getElementById("target"),
+    current: document.getElementById("current"),
+    patience: document.getElementById("patience"),
+    feedback: document.getElementById("feedback"),
+    face: document.getElementById("face"),
+    grid: document.getElementById("moneyGrid"),
+    line: document.getElementById("line"),
+    modal: document.getElementById("modal"),
+    start: document.getElementById("startBtn"),
+    undo: document.getElementById("undoBtn"),
+    clear: document.getElementById("clearBtn"),
+    give: document.getElementById("giveBtn"),
+    scene: document.getElementById("scene")
+  };
+
+  let score = 0;
+  let streak = 0;
+  let best = Number(localStorage.getItem("changeRushBest") || 0);
+  let target = 0;
+  let price = 0;
+  let paid = 0;
+  let current = 0;
+  let stack = [];
+  let patience = 100;
+  let running = false;
+  let lastTime = 0;
+  let customerCount = 0;
+
+  els.best.textContent = best;
+
+  function dollars(cents) {
+    return "$" + (cents / 100).toFixed(2);
+  }
+
+  function renderMoney() {
+    els.grid.innerHTML = "";
+    money.forEach((m, i) => {
+      const btn = document.createElement("button");
+      btn.className = "money" + (m.coin ? " coin" : "");
+      btn.textContent = m.label;
+      btn.setAttribute("aria-label", "Add " + m.label);
+      btn.addEventListener("click", () => addMoney(m.value));
+      els.grid.appendChild(btn);
+    });
+  }
+
+  function makeCustomer() {
+    const totals = [127, 249, 318, 435, 562, 689, 774, 836, 948, 1137, 1288, 1462, 1599, 1743, 1866];
+    const tender = [500, 1000, 2000];
+
+    price = totals[Math.floor(Math.random() * totals.length)];
+    paid = tender.find(t => t > price + 15 + Math.random() * 250) || 2000;
+    target = paid - price;
+
+    current = 0;
+    stack = [];
+    patience = Math.max(42, 100 - customerCount * 4);
+    customerCount++;
+
+    els.price.textContent = dollars(price);
+    els.paid.textContent = dollars(paid);
+    els.target.textContent = dollars(target);
+    els.current.textContent = dollars(current);
+    els.feedback.textContent = "Next customer is waiting...";
+    els.face.textContent = "🙂";
+    renderLine();
+  }
+
+  function renderLine() {
+    const waiting = Math.min(8, 3 + Math.floor(customerCount / 2));
+    els.line.innerHTML = "";
+    for (let i = 0; i < waiting; i++) {
+      const p = document.createElement("div");
+      p.className = "person";
+      p.textContent = i === 0 ? "🧍" : "😐";
+      els.line.appendChild(p);
+    }
+  }
+
+  function addMoney(value) {
+    if (!running) return;
+    current += value;
+    stack.push(value);
+    els.current.textContent = dollars(current);
+    els.current.classList.remove("pop");
+    void els.current.offsetWidth;
+    els.current.classList.add("pop");
+
+    if (current > target) {
+      els.feedback.textContent = "Too much change. Undo or clear fast.";
+      els.feedback.style.color = "var(--bad)";
+      els.face.textContent = "😠";
+    } else {
+      els.feedback.textContent = "Keep counting...";
+      els.feedback.style.color = "var(--accent)";
+    }
+  }
+
+  function undo() {
+    if (!running || !stack.length) return;
+    current -= stack.pop();
+    els.current.textContent = dollars(current);
+    els.feedback.textContent = "Last tap removed.";
+    els.feedback.style.color = "var(--blue)";
+  }
+
+  function clearHand() {
+    if (!running) return;
+    current = 0;
+    stack = [];
+    els.current.textContent = dollars(current);
+    els.feedback.textContent = "Register cleared.";
+    els.feedback.style.color = "var(--blue)";
+  }
+
+  function giveChange() {
+    if (!running) return;
+
+    if (current === target) {
+      const bonus = Math.round(patience + streak * 12);
+      score += 100 + bonus;
+      streak++;
+      els.feedback.textContent = "Exact change! +" + (100 + bonus);
+      els.feedback.style.color = "var(--good)";
+      els.face.textContent = "😄";
+      updateStats();
+      setTimeout(makeCustomer, 520);
+    } else {
+      streak = 0;
+      patience -= current > target ? 24 : 18;
+      els.feedback.textContent = current > target ? "Overpaid. Customer is annoyed." : "Short change. Try again.";
+      els.feedback.style.color = "var(--bad)";
+      els.face.textContent = "😡";
+      els.scene.classList.remove("shake");
+      void els.scene.offsetWidth;
+      els.scene.classList.add("shake");
+      updateStats();
+      if (patience <= 0) endGame();
+    }
+  }
+
+  function updateStats() {
+    els.score.textContent = score;
+    els.streak.textContent = streak;
+    if (score > best) {
+      best = score;
+      localStorage.setItem("changeRushBest", best);
+      els.best.textContent = best;
+    }
+  }
+
+  function tick(time) {
+    if (!running) return;
+    const delta = Math.min(40, time - lastTime);
+    lastTime = time;
+
+    patience -= delta * (0.010 + customerCount * 0.0009);
+    els.patience.style.width = Math.max(0, patience) + "%";
+
+    if (patience < 30) {
+      els.face.textContent = "😤";
+    }
+
+    if (patience <= 0) {
+      endGame();
+      return;
+    }
+
+    requestAnimationFrame(tick);
+  }
+
+  function startGame() {
+    score = 0;
+    streak = 0;
+    customerCount = 0;
+    running = true;
+    updateStats();
+    els.modal.classList.add("hidden");
+    makeCustomer();
+    lastTime = performance.now();
+    requestAnimationFrame(tick);
+  }
+
+  function endGame() {
+    running = false;
+    els.modal.classList.remove("hidden");
+    els.modal.querySelector("h2").textContent = "Shift Over";
+    els.modal.querySelector("p").innerHTML =
+      "Final score: <b>" + score + "</b><br>Best score: <b>" + best + "</b><br>The checkout line lost patience.";
+    els.start.textContent = "Play Again";
+  }
+
+  document.addEventListener("keydown", e => {
+    if (e.key === "Enter") giveChange();
+    if (e.key === "Backspace") undo();
+    if (e.key === "Escape") clearHand();
+    const n = Number(e.key);
+    if (n >= 1 && n <= money.length) addMoney(money[n - 1].value);
+  });
+
+  els.start.addEventListener("click", startGame);
+  els.undo.addEventListener("click", undo);
+  els.clear.addEventListener("click", clearHand);
+  els.give.addEventListener("click", giveChange);
+
+  renderMoney();
+})();
+</script>
+</body>
+</html>

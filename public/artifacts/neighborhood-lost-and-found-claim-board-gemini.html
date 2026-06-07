@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Neighborhood Lost & Found Board</title>
+    <style>
+        :root {
+            --bg-color: #f4f6f9;
+            --card-bg: #ffffff;
+            --text-color: #333333;
+            --border-color: #dddddd;
+            --primary-color: #4a90e2;
+            --unclaimed-color: #f39c12;
+            --claimed-color: #3498db;
+            --returned-color: #2ecc71;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            line-height: 1.6;
+            margin: 0;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        header {
+            margin-bottom: 30px;
+            border-bottom: 2px solid var(--border-color);
+            padding-bottom: 10px;
+        }
+
+        .form-section {
+            background: var(--card-bg);
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            margin-bottom: 30px;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        label {
+            display: block;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        input[type="text"], textarea, select {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            box-sizing: border-box;
+            font-family: inherit;
+        }
+
+        button {
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        button:hover {
+            opacity: 0.9;
+        }
+
+        .board {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+        }
+
+        .column {
+            background: #ebedf0;
+            padding: 15px;
+            border-radius: 8px;
+            min-height: 400px;
+        }
+
+        .column-header {
+            font-size: 1.2rem;
+            font-weight: bold;
+            margin-bottom: 15px;
+            padding-bottom: 5px;
+            border-bottom: 3px solid;
+        }
+
+        .col-unclaimed { border-color: var(--unclaimed-color); }
+        .col-claimed { border-color: var(--claimed-color); }
+        .col-returned { border-color: var(--returned-color); }
+
+        .item-card {
+            background: var(--card-bg);
+            border-radius: 6px;
+            padding: 15px;
+            margin-bottom: 15px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+
+        .item-title {
+            font-size: 1.1rem;
+            font-weight: bold;
+            margin: 0 0 10px 0;
+            white-space: pre-wrap;
+        }
+
+        .item-detail {
+            margin: 5px 0;
+            font-size: 0.9rem;
+            white-space: pre-wrap;
+        }
+
+        .item-label {
+            font-weight: bold;
+            color: #666;
+        }
+
+        .card-actions {
+            margin-top: 15px;
+            display: flex;
+            gap: 5px;
+            flex-wrap: wrap;
+        }
+
+        .btn-small {
+            padding: 5px 10px;
+            font-size: 0.8rem;
+        }
+
+        .btn-secondary { background-color: #7f8c8d; }
+        .btn-danger { background-color: #e74c3c; }
+
+        @media print {
+            body * {
+                visibility: hidden;
+            }
+            #print-section, #print-section * {
+                visibility: visible;
+            }
+            #print-section {
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: 100%;
+            }
+        }
+
+        #print-section {
+            display: none;
+            background: white;
+            padding: 40px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container" id="main-content">
+        <header>
+            <h1>📦 Neighborhood Lost & Found</h1>
+        </header>
+
+        <!-- Add/Edit Form Section -->
+        <section class="form-section">
+            <h2 id="form-title">Log Found Item</h2>
+            <form id="item-form">
+                <input type="hidden" id="item-id">
+                <div class="form-group">
+                    <label for="item-name">Item Name/Description</label>
+                    <input type="text" id="item-name" required placeholder="e.g., Set of keys with a red carabiner">
+                </div>
+                <div class="form-group">
+                    <label for="item-location">Found Location & Date</label>
+                    <input type="text" id="item-location" required placeholder="e.g., Near the park benches, Oct 24">
+                </div>
+                <div class="form-group">
+                    <label for="item-notes">Additional Notes / Claim Progress</label>
+                    <textarea id="item-notes" rows="3" placeholder="e.g., Kept safe at House #14. Claimed by John Doe, verifying matching key decoration."></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="item-status">Status</label>
+                    <select id="item-status">
+                        <option value="unclaimed">Unclaimed</option>
+                        <option value="claimed">Claimed (Pending Return)</option>
+                        <option value="returned">Returned to Owner</option>
+                    </select>
+                </div>
+                <button type="submit" id="submit-btn">Save Item</button>
+                <button type="button" id="cancel-btn" class="btn-secondary" style="display:none;" onclick="resetForm()">Cancel Edit</button>
+            </form>
+        </section>
+
+        <!-- Dashboard Columns -->
+        <main class="board">
+            <div class="column">
+                <div class="column-header col-unclaimed">Unclaimed</div>
+                <div id="unclaimed-list"></div>
+            </div>
+            <div class="column">
+                <div class="column-header col-claimed">Claimed (Pending)</div>
+                <div id="claimed-list"></div>
+            </div>
+            <div class="column">
+                <div class="column-header col-returned">Returned</div>
+                <div id="returned-list"></div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Hidden Printable Area -->
+    <div id="print-section"></div>
+
+    <script>
+        let items = JSON.parse(localStorage.getItem('lostFoundItems')) || [];
+
+        const form = document.getElementById('item-form');
+        const idInput = document.getElementById('item-id');
+        const nameInput = document.getElementById('item-name');
+        const locationInput = document.getElementById('item-location');
+        const notesInput = document.getElementById('item-notes');
+        const statusInput = document.getElementById('item-status');
+        const formTitle = document.getElementById('form-title');
+        const submitBtn = document.getElementById('submit-btn');
+        const cancelBtn = document.getElementById('cancel-btn');
+
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const itemData = {
+                id: idInput.value || Date.now().toString(),
+                name: nameInput.value,
+                location: locationInput.value,
+                notes: notesInput.value,
+                status: statusInput.value
+            };
+
+            if (idInput.value) {
+                const index = items.findIndex(i => i.id === idInput.value);
+                items[index] = itemData;
+            } else {
+                items.push(itemData);
+            }
+
+            saveAndRender();
+            resetForm();
+        });
+
+        function saveAndRender() {
+            localStorage.setItem('lostFoundItems', JSON.stringify(items));
+            renderBoard();
+        }
+
+        function renderBoard() {
+            const columns = {
+                unclaimed: document.getElementById('unclaimed-list'),
+                claimed: document.getElementById('claimed-list'),
+                returned: document.getElementById('returned-list')
+            };
+
+            columns.unclaimed.innerHTML = '';
+            columns.claimed.innerHTML = '';
+            columns.returned.innerHTML = '';
+
+            items.forEach(item => {
+                const card = document.createElement('div');
+                card.className = 'item-card';
+
+                // Safety: Using textContent to prevent HTML injection/rendering
+                const titleEl = document.createElement('h3');
+                titleEl.className = 'item-title';
+                titleEl.textContent = item.name;
+                card.appendChild(titleEl);
+
+                const locEl = document.createElement('p');
+                locEl.className = 'item-detail';
+                locEl.innerHTML = `<span class="item-label">Found:</span> `;
+                const locText = document.createTextNode(item.location);
+                locEl.appendChild(locText);
+                card.appendChild(locEl);
+
+                if (item.notes.trim()) {
+                    const notesEl = document.createElement('p');
+                    notesEl.className = 'item-detail';
+                    notesEl.innerHTML = `<span class="item-label">Notes:</span> `;
+                    const notesText = document.createTextNode(item.notes);
+                    notesEl.appendChild(notesText);
+                    card.appendChild(notesEl);
+                }
+
+                // Action panel
+                const actions = document.createElement('div');
+                actions.className = 'card-actions';
+
+                // Edit Button
+                const editBtn = document.createElement('button');
+                editBtn.className = 'btn-small btn-secondary';
+                editBtn.textContent = 'Edit';
+                editBtn.onclick = () => editItem(item.id);
+                actions.appendChild(editBtn);
+
+                // Quick Status Updates
+                if (item.status !== 'unclaimed') {
+                    const mUnclaimed = document.createElement('button');
+                    mUnclaimed.className = 'btn-small';
+                    mUnclaimed.style.backgroundColor = 'var(--unclaimed-color)';
+                    mUnclaimed.textContent = '↩ Unclaimed';
+                    mUnclaimed.onclick = () => updateStatus(item.id, 'unclaimed');
+                    actions.appendChild(mUnclaimed);
+                }
+                if (item.status !== 'claimed') {
+                    const mClaimed = document.createElement('button');
+                    mClaimed.className = 'btn-small';
+                    mClaimed.style.backgroundColor = 'var(--claimed-color)';
+                    mClaimed.textContent = '⏳ Claimed';
+                    mClaimed.onclick = () => updateStatus(item.id, 'claimed');
+                    actions.appendChild(mClaimed);
+                }
+                if (item.status !== 'returned') {
+                    const mReturned = document.createElement('button');
+                    mReturned.className = 'btn-small';
+                    mReturned.style.backgroundColor = 'var(--returned-color)';
+                    mReturned.textContent = '✅ Returned';
+                    mReturned.onclick = () => updateStatus(item.id, 'returned');
+                    actions.appendChild(mReturned);
+                }
+
+                // Copy Handoff Summary
+                const copyBtn = document.createElement('button');
+                copyBtn.className = 'btn-small btn-secondary';
+                copyBtn.textContent = '📋 Copy';
+                copyBtn.onclick = () => copySummary(item);
+                actions.appendChild(copyBtn);
+
+                // Print Handoff Summary
+                const printBtn = document.createElement('button');
+                printBtn.className = 'btn-small btn-secondary';
+                printBtn.textContent = '🖨️ Print';
+                printBtn.onclick = () => printSummary(item);
+                actions.appendChild(printBtn);
+
+                // Delete Button
+                const delBtn = document.createElement('button');
+                delBtn.className = 'btn-small btn-danger';
+                delBtn.textContent = '🗑️';
+                delBtn.onclick = () => deleteItem(item.id);
+                actions.appendChild(delBtn);
+
+                card.appendChild(actions);
+                
+                if (columns[item.status]) {
+                    columns[item.status].appendChild(card);
+                }
+            });
+        }
+
+        function updateStatus(id, newStatus) {
+            const index = items.findIndex(i => i.id === id);
+            if (index !== -1) {
+                items[index].status = newStatus;
+                saveAndRender();
+            }
+        }
+
+        function editItem(id) {
+            const item = items.find(i => i.id === id);
+            if (item) {
+                idInput.value = item.id;
+                nameInput.value = item.name;
+                locationInput.value = item.location;
+                notesInput.value = item.notes;
+                statusInput.value = item.status;
+
+                formTitle.textContent = "Edit Item Details";
+                submitBtn.textContent = "Update Item";
+                cancelBtn.style.display = "inline-block";
+                document.getElementById('item-form').scrollIntoView({ behavior: 'smooth' });
+            }
+        }
+
+        function resetForm() {
+            idInput.value = '';
+            form.reset();
+            formTitle.textContent = "Log Found Item";
+            submitBtn.textContent = "Save Item";
+            cancelBtn.style.display = "none";
+        }
+
+        function deleteItem(id) {
+            if (confirm("Are you sure you want to delete this item?")) {
+                items = items.filter(i => i.id !== id);
+                saveAndRender();
+            }
+        }
+
+        function generateSummaryText(item) {
+            return `NEIGHBORHOOD LOST & FOUND HANDOFF SUMMARY\n` +
+                   `----------------------------------------\n` +
+                   `Item: ${item.name}\n` +
+                   `Found Location/Date: ${item.location}\n` +
+                   `Current Status: ${item.status.toUpperCase()}\n` +
+                   `Notes: ${item.notes || 'None'}\n` +
+                   `----------------------------------------\n` +
+                   `Handoff Date: _____________________\n` +
+                   `Owner Signature: __________________`;
+        }
+
+        function copySummary(item) {
+            const text = generateSummaryText(item);
+            navigator.clipboard.writeText(text).then(() => {
+                alert('Handoff summary copied to clipboard.');
+            }).catch(err => {
+                alert('Failed to copy text: ' + err);
+            });
+        }
+
+        function printSummary(item) {
+            const printSection = document.getElementById('print-section');
+            
+            // Build safe plain-text print layout
+            printSection.innerHTML = '';
+            const pre = document.createElement('pre');
+            pre.style.whiteSpace = 'pre-wrap';
+            pre.style.fontFamily = 'monospace';
+            pre.style.fontSize = '14pt';
+            pre.textContent = generateSummaryText(item);
+            
+            printSection.appendChild(pre);
+            window.print();
+        }
+
+        // Initial load
+        renderBoard();
+    </script>
+</body>
+</html>

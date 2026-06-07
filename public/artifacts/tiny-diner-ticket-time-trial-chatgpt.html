@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Tiny Diner Ticket Time Trial</title>
+<style>
+  :root {
+    --bg: #22160f;
+    --card: #fff3d7;
+    --ink: #2a1710;
+    --accent: #e85d2a;
+    --good: #247a3b;
+    --bad: #a92722;
+    --gold: #f8c04d;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    min-height: 100vh;
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    background:
+      radial-gradient(circle at top, #59341f, var(--bg) 62%);
+    color: #fff7e8;
+    display: flex;
+    justify-content: center;
+    padding: 14px;
+    overflow-x: hidden;
+  }
+
+  .game {
+    width: min(960px, 100%);
+    display: grid;
+    gap: 12px;
+  }
+
+  header {
+    background: rgba(0,0,0,.28);
+    border: 2px solid rgba(255,255,255,.12);
+    border-radius: 18px;
+    padding: 14px;
+    text-align: center;
+  }
+
+  h1 {
+    margin: 0 0 6px;
+    font-size: clamp(1.4rem, 5vw, 2.4rem);
+    letter-spacing: .02em;
+  }
+
+  .hud {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+  }
+
+  .stat {
+    background: #120b08;
+    border: 1px solid rgba(255,255,255,.15);
+    border-radius: 14px;
+    padding: 8px;
+    text-align: center;
+  }
+
+  .stat b {
+    display: block;
+    font-size: 1.25rem;
+    color: var(--gold);
+  }
+
+  .board {
+    display: grid;
+    grid-template-columns: 1fr 1.4fr;
+    gap: 12px;
+  }
+
+  .panel {
+    background: rgba(0,0,0,.26);
+    border: 2px solid rgba(255,255,255,.12);
+    border-radius: 18px;
+    padding: 12px;
+  }
+
+  .tickets, .plates {
+    display: grid;
+    gap: 10px;
+  }
+
+  .ticket {
+    background: var(--card);
+    color: var(--ink);
+    border: 3px solid #d7ae72;
+    border-radius: 14px;
+    padding: 10px;
+    cursor: pointer;
+    user-select: none;
+    box-shadow: 0 5px 0 #9b6a38;
+  }
+
+  .ticket.selected {
+    outline: 4px solid var(--gold);
+    transform: translateY(2px);
+    box-shadow: 0 3px 0 #9b6a38;
+  }
+
+  .ticket small {
+    display: block;
+    opacity: .72;
+  }
+
+  .plates {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .plate {
+    min-height: 122px;
+    background: #f8f3e8;
+    color: var(--ink);
+    border: 5px solid #c9d4da;
+    border-radius: 999px;
+    display: grid;
+    place-items: center;
+    text-align: center;
+    padding: 14px;
+    cursor: pointer;
+    position: relative;
+    user-select: none;
+  }
+
+  .plate:hover, .ticket:hover {
+    filter: brightness(1.04);
+  }
+
+  .plate .emoji {
+    font-size: 2rem;
+    display: block;
+  }
+
+  .feedback {
+    min-height: 34px;
+    text-align: center;
+    font-weight: 800;
+    font-size: 1.05rem;
+  }
+
+  .good { color: #8df0a5; }
+  .bad { color: #ff9a93; }
+
+  .controls {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  button {
+    border: 0;
+    border-radius: 999px;
+    padding: 11px 16px;
+    font-weight: 800;
+    cursor: pointer;
+    color: #24140e;
+    background: var(--gold);
+  }
+
+  button.secondary {
+    background: #fff3d7;
+  }
+
+  .overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(10,6,4,.78);
+    display: grid;
+    place-items: center;
+    padding: 18px;
+    z-index: 5;
+  }
+
+  .modal {
+    width: min(520px, 100%);
+    background: #fff3d7;
+    color: var(--ink);
+    border-radius: 22px;
+    padding: 20px;
+    text-align: center;
+    border: 4px solid var(--gold);
+  }
+
+  .hidden { display: none; }
+
+  @media (max-width: 720px) {
+    .hud { grid-template-columns: repeat(2, 1fr); }
+    .board { grid-template-columns: 1fr; }
+    .plates { grid-template-columns: 1fr; }
+    .plate { min-height: 96px; border-radius: 28px; }
+  }
+</style>
+</head>
+<body>
+  <main class="game">
+    <header>
+      <h1>🍳 Tiny Diner Ticket Time Trial</h1>
+      <p>Pick a ticket, then slap it onto the matching plate before the rush timer runs out.</p>
+      <div class="hud">
+        <div class="stat">Time <b id="time">60</b></div>
+        <div class="stat">Score <b id="score">0</b></div>
+        <div class="stat">Served <b id="served">0</b></div>
+        <div class="stat">Streak <b id="streak">0</b></div>
+      </div>
+    </header>
+
+    <div class="feedback" id="feedback">Press Start Rush.</div>
+
+    <section class="board">
+      <div class="panel">
+        <h2>Order Rail</h2>
+        <div class="tickets" id="tickets"></div>
+      </div>
+
+      <div class="panel">
+        <h2>Plate Window</h2>
+        <div class="plates" id="plates"></div>
+      </div>
+    </section>
+
+    <div class="controls">
+      <button id="startBtn">Start Rush</button>
+      <button class="secondary" id="resetBtn">Reset</button>
+    </div>
+  </main>
+
+  <div class="overlay" id="overlay">
+    <div class="modal">
+      <h2>🍽️ Rush Prep</h2>
+      <p>Match diner tickets to plates. Correct matches score points and build streaks. Wrong plates cost time.</p>
+      <p><b>Controls:</b> click or tap a ticket, then click or tap the matching plate. Keyboard: 1-4 select ticket, Q/W/E/R pick plates.</p>
+      <button id="playBtn">Start Rush</button>
+    </div>
+  </div>
+
+<script>
+(() => {
+  const menu = [
+    { name: "Burger + Fries", emoji: "🍔🍟", clues: ["burger", "fries", "pickle"] },
+    { name: "Pancake Stack", emoji: "🥞", clues: ["pancakes", "syrup", "butter"] },
+    { name: "Eggs + Bacon", emoji: "🍳🥓", clues: ["eggs", "bacon", "toast"] },
+    { name: "Soup + Salad", emoji: "🥣🥗", clues: ["soup", "salad", "crackers"] },
+    { name: "Hot Dog Combo", emoji: "🌭", clues: ["hot dog", "mustard", "chips"] },
+    { name: "Pie Slice", emoji: "🥧", clues: ["pie", "cream", "fork"] },
+    { name: "Taco Plate", emoji: "🌮", clues: ["tacos", "lime", "salsa"] },
+    { name: "Waffle Special", emoji: "🧇", clues: ["waffle", "berries", "syrup"] }
+  ];
+
+  const ticketsEl = document.getElementById("tickets");
+  const platesEl = document.getElementById("plates");
+  const feedbackEl = document.getElementById("feedback");
+  const timeEl = document.getElementById("time");
+  const scoreEl = document.getElementById("score");
+  const servedEl = document.getElementById("served");
+  const streakEl = document.getElementById("streak");
+  const startBtn = document.getElementById("startBtn");
+  const resetBtn = document.getElementById("resetBtn");
+  const playBtn = document.getElementById("playBtn");
+  const overlay = document.getElementById("overlay");
+
+  let tickets = [];
+  let plates = [];
+  let selected = null;
+  let score = 0;
+  let served = 0;
+  let streak = 0;
+  let time = 60;
+  let timer = null;
+  let running = false;
+
+  function shuffle(arr) {
+    return [...arr].sort(() => Math.random() - 0.5);
+  }
+
+  function makeTicket() {
+    const item = menu[Math.floor(Math.random() * menu.length)];
+    const clue = shuffle(item.clues).slice(0, 2).join(" + ");
+    return { id: crypto.randomUUID(), item, clue };
+  }
+
+  function buildRound() {
+    tickets = Array.from({ length: 4 }, makeTicket);
+    const needed = tickets.map(t => t.item);
+    const extras = shuffle(menu.filter(m => !needed.includes(m))).slice(0, Math.max(0, 4 - needed.length));
+    plates = shuffle([...needed, ...extras]).slice(0, 4);
+    while (plates.length < 4) plates.push(menu[Math.floor(Math.random() * menu.length)]);
+    selected = null;
+    render();
+  }
+
+  function render() {
+    ticketsEl.innerHTML = "";
+    tickets.forEach((ticket, i) => {
+      const div = document.createElement("div");
+      div.className = "ticket" + (selected === ticket.id ? " selected" : "");
+      div.innerHTML = `<small>Ticket ${i + 1}</small><strong>${ticket.clue}</strong>`;
+      div.onclick = () => {
+        if (!running) return;
+        selected = ticket.id;
+        feedback(`Ticket ${i + 1} selected. Find the plate.`, "");
+        render();
+      };
+      ticketsEl.appendChild(div);
+    });
+
+    platesEl.innerHTML = "";
+    plates.forEach((plate, i) => {
+      const div = document.createElement("div");
+      div.className = "plate";
+      div.innerHTML = `<span><span class="emoji">${plate.emoji}</span>${plate.name}<br><small>${["Q","W","E","R"][i]}</small></span>`;
+      div.onclick = () => choosePlate(i);
+      platesEl.appendChild(div);
+    });
+
+    scoreEl.textContent = score;
+    servedEl.textContent = served;
+    streakEl.textContent = streak;
+    timeEl.textContent = time;
+  }
+
+  function feedback(text, type) {
+    feedbackEl.textContent = text;
+    feedbackEl.className = "feedback " + type;
+  }
+
+  function choosePlate(index) {
+    if (!running || !selected) return;
+    const ticket = tickets.find(t => t.id === selected);
+    const plate = plates[index];
+
+    if (ticket.item.name === plate.name) {
+      streak++;
+      served++;
+      score += 100 + streak * 15;
+      feedback(`Correct! ${plate.name} out the window.`, "good");
+      tickets = tickets.filter(t => t.id !== selected);
+      selected = null;
+      if (tickets.length === 0) buildRound();
+      else render();
+    } else {
+      streak = 0;
+      time = Math.max(0, time - 4);
+      feedback(`Wrong plate! That ticket wanted ${ticket.item.name}. -4 seconds.`, "bad");
+      selected = null;
+      render();
+      if (time <= 0) endGame();
+    }
+  }
+
+  function startGame() {
+    score = 0;
+    served = 0;
+    streak = 0;
+    time = 60;
+    running = true;
+    overlay.classList.add("hidden");
+    feedback("Rush started. Match fast.", "");
+    buildRound();
+
+    clearInterval(timer);
+    timer = setInterval(() => {
+      time--;
+      timeEl.textContent = time;
+      if (time <= 0) endGame();
+    }, 1000);
+  }
+
+  function endGame() {
+    running = false;
+    clearInterval(timer);
+    const best = Math.max(Number(localStorage.getItem("tinyDinerBest") || 0), score);
+    localStorage.setItem("tinyDinerBest", best);
+    overlay.classList.remove("hidden");
+    overlay.querySelector(".modal").innerHTML = `
+      <h2>⏱️ Rush Over</h2>
+      <p><b>Final Score:</b> ${score}</p>
+      <p><b>Tickets Served:</b> ${served}</p>
+      <p><b>Best Score:</b> ${best}</p>
+      <button id="againBtn">Play Again</button>
+    `;
+    document.getElementById("againBtn").onclick = startGame;
+  }
+
+  function resetGame() {
+    clearInterval(timer);
+    running = false;
+    score = served = streak = 0;
+    time = 60;
+    tickets = [];
+    plates = [];
+    selected = null;
+    render();
+    feedback("Reset. Press Start Rush.", "");
+  }
+
+  startBtn.onclick = startGame;
+  playBtn.onclick = startGame;
+  resetBtn.onclick = resetGame;
+
+  window.addEventListener("keydown", e => {
+    if (!running) {
+      if (e.key === "Enter" || e.key === " ") startGame();
+      return;
+    }
+
+    const ticketKeys = ["1", "2", "3", "4"];
+    const plateKeys = ["q", "w", "e", "r"];
+
+    if (ticketKeys.includes(e.key) && tickets[Number(e.key) - 1]) {
+      selected = tickets[Number(e.key) - 1].id;
+      feedback(`Ticket ${e.key} selected.`, "");
+      render();
+    }
+
+    const plateIndex = plateKeys.indexOf(e.key.toLowerCase());
+    if (plateIndex >= 0) choosePlate(plateIndex);
+  });
+
+  buildRound();
+  resetGame();
+})();
+</script>
+</body>
+</html>

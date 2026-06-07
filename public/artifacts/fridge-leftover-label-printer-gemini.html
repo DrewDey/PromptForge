@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Leftover Label Generator</title>
+    <style>
+        :root {
+            --bg-color: #f4f4f7;
+            --card-bg: #ffffff;
+            --text-color: #333333;
+            --border-color: #dddddd;
+            --accent-color: #2563eb;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .card {
+            background: var(--card-bg);
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            margin-bottom: 20px;
+        }
+
+        h2 {
+            margin-top: 0;
+            border-bottom: 2px solid var(--bg-color);
+            padding-bottom: 10px;
+        }
+
+        .grid-form {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+
+        label {
+            display: block;
+            font-size: 0.85rem;
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+
+        input, select {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+
+        button {
+            background-color: var(--accent-color);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: #1d4ed8;
+        }
+
+        .btn-print {
+            background-color: #059669;
+            margin-top: 10px;
+        }
+
+        .btn-print:hover {
+            background-color: #047857;
+        }
+
+        ul {
+            padding-left: 20px;
+            margin: 0;
+        }
+
+        li {
+            margin-bottom: 5px;
+        }
+
+        .labels-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+
+        .label-card {
+            border: 2px dashed #666;
+            padding: 12px;
+            border-radius: 4px;
+            background: #fff;
+            position: relative;
+        }
+
+        .label-title {
+            font-size: 1.1rem;
+            font-weight: bold;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 4px;
+            margin-bottom: 6px;
+        }
+
+        .label-detail {
+            font-size: 0.85rem;
+            margin: 3px 0;
+        }
+
+        .delete-btn {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            background: #ef4444;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            font-size: 12px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0;
+        }
+
+        /* Print Optimization */
+        @media print {
+            body {
+                background: white;
+                color: black;
+                padding: 0;
+            }
+            .no-print {
+                display: none !important;
+            }
+            .card {
+                box-shadow: none;
+                padding: 0;
+                margin: 0;
+            }
+            .labels-grid {
+                grid-template-columns: repeat(3, 1fr);
+                gap: 10px;
+            }
+            .label-card {
+                page-break-inside: avoid;
+                border: 1px solid #000;
+            }
+            .delete-btn {
+                display: none !important;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <!-- Input Section -->
+    <div class="card no-print">
+        <h2>Add Leftover</h2>
+        <form id="leftoverForm" onsubmit="addLeftover(event)">
+            <div class="grid-form">
+                <div>
+                    <label for="food">Food Item</label>
+                    <input type="text" id="food" required placeholder="e.g., Lasagna">
+                </div>
+                <div>
+                    <label for="owner">Owner</label>
+                    <input type="text" id="owner" placeholder="Name/Everyone">
+                </div>
+                <div>
+                    <label for="dateMade">Date Made</label>
+                    <input type="date" id="dateMade" required>
+                </div>
+                <div>
+                    <label for="location">Location</label>
+                    <select id="location">
+                        <option value="Fridge - Top Shelf">Fridge - Top Shelf</option>
+                        <option value="Fridge - Middle Shelf">Fridge - Middle Shelf</option>
+                        <option value="Fridge - Bottom Shelf">Fridge - Bottom Shelf</option>
+                        <option value="Fridge - Crisper">Fridge - Crisper</option>
+                        <option value="Freezer">Freezer</option>
+                    </select>
+                </div>
+                <div>
+                    <label for="daysLast">Days It Lasts</label>
+                    <input type="number" id="daysLast" value="4" min="1" required>
+                </div>
+            </div>
+            <button type="submit">Add Item</button>
+            <button type="button" class="btn-print" onclick="window.print()">Print Labels</button>
+        </form>
+    </div>
+
+    <!-- Use First Section -->
+    <div class="card">
+        <h2>⏳ Use First List</h2>
+        <ul id="useFirstList">
+            <!-- Dynamic high-priority items go here -->
+        </ul>
+    </div>
+
+    <!-- Printable Labels Section -->
+    <div class="card">
+        <h2 class="no-print">🖨️ Printable Labels</h2>
+        <div class="labels-grid" id="labelsContainer">
+            <!-- Dynamic labels go here -->
+        </div>
+    </div>
+</div>
+
+<script>
+    // Set default date to today
+    document.getElementById('dateMade').valueAsDate = new Date();
+
+    let items = [];
+
+    function addLeftover(event) {
+        event.preventDefault();
+
+        const food = document.getElementById('food').value;
+        const owner = document.getElementById('owner').value || 'Everyone';
+        const dateMadeStr = document.getElementById('dateMade').value;
+        const location = document.getElementById('location').value;
+        const daysLast = parseInt(document.getElementById('daysLast').value);
+
+        const dateMade = new Date(dateMadeStr + 'T00:00:00');
+        const expirationDate = new Date(dateMade);
+        expirationDate.setDate(dateMade.getDate() + daysLast);
+
+        const item = {
+            id: Date.now(),
+            food,
+            owner,
+            dateMade: dateMade.toLocaleDateString(),
+            expirationDate: expirationDate,
+            expirationDateStr: expirationDate.toLocaleDateString(),
+            location,
+            daysRemaining: Math.ceil((expirationDate - new Date().setHours(0,0,0,0)) / (1000 * 60 * 60 * 24))
+        };
+
+        items.push(item);
+        updateUI();
+        document.getElementById('leftoverForm').reset();
+        document.getElementById('dateMade').valueAsDate = new Date();
+    }
+
+    function deleteItem(id) {
+        items = items.filter(item => item.id !== id);
+        updateUI();
+    }
+
+    function updateUI() {
+        const listContainer = document.getElementById('useFirstList');
+        const labelsContainer = document.getElementById('labelsContainer');
+        
+        listContainer.innerHTML = '';
+        labelsContainer.innerHTML = '';
+
+        // Sort items by expiration date (soonest first)
+        items.sort((a, b) => a.expirationDate - b.expirationDate);
+
+        if (items.length === 0) {
+            listContainer.innerHTML = '<li>No items tracked yet.</li>';
+            return;
+        }
+
+        items.forEach(item => {
+            // Append to Use First List
+            const li = document.createElement('li');
+            const statusText = item.daysRemaining < 0 
+                ? `EXPIRED` 
+                : item.daysRemaining === 0 
+                    ? `Use TODAY` 
+                    : `Expires in ${item.daysRemaining} days`;
+            
+            li.innerHTML = `<strong>${item.food}</strong> (${item.owner}) — Use by: ${item.expirationDateStr} | <em>${item.location}</em> [${statusText}]`;
+            listContainer.appendChild(li);
+
+            // Append to Labels Grid
+            const labelCard = document.createElement('div');
+            labelCard.className = 'label-card';
+            labelCard.innerHTML = `
+                <button class="delete-btn no-print" onclick="deleteItem(${item.id})">×</button>
+                <div class="label-title">${item.food}</div>
+                <div class="label-detail"><strong>By:</strong> ${item.owner}</div>
+                <div class="label-detail"><strong>Made:</strong> ${item.dateMade}</div>
+                <div class="label-detail"><strong>USE BY:</strong> ${item.expirationDateStr}</div>
+                <div class="label-detail"><strong>Loc:</strong> ${item.location}</div>
+            `;
+            labelsContainer.appendChild(labelCard);
+        });
+    }
+</script>
+
+</body>
+</html>

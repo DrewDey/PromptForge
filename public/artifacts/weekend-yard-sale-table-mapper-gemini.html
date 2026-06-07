@@ -1,0 +1,427 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Yard Sale Table Mapper</title>
+    <style>
+        :root {
+            --primary: #2563eb;
+            --primary-hover: #1d4ed8;
+            --edit-color: #d97706;
+            --edit-hover: #b45309;
+            --bg: #f8fafc;
+            --card-bg: #ffffff;
+            --text: #1e293b;
+            --border: #e2e8f0;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg);
+            color: var(--text);
+            padding: 20px;
+            line-height: 1.5;
+        }
+
+        .container {
+            max-width: 1100px;
+            margin: 0 auto;
+        }
+
+        header {
+            margin-bottom: 24px;
+            border-bottom: 2px solid var(--border);
+            padding-bottom: 12px;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 24px;
+        }
+
+        @media (min-width: 768px) {
+            .grid {
+                grid-template-columns: 350px 1fr;
+            }
+        }
+
+        .card {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        }
+
+        h2 {
+            font-size: 1.25rem;
+            margin-bottom: 16px;
+            color: #0f172a;
+        }
+
+        .form-group {
+            margin-bottom: 12px;
+        }
+
+        label {
+            display: block;
+            font-size: 0.875rem;
+            font-weight: 500;
+            margin-bottom: 4px;
+        }
+
+        input, select {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            font-size: 0.95rem;
+        }
+
+        input:focus, select:focus {
+            outline: 2px solid var(--primary);
+            outline-offset: -1px;
+        }
+
+        .btn-container {
+            display: flex;
+            gap: 8px;
+            margin-top: 12px;
+        }
+
+        button {
+            width: 100%;
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            padding: 10px;
+            border-radius: 6px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        button:hover {
+            background-color: var(--primary-hover);
+        }
+
+        .cancel-btn {
+            background-color: #64748b;
+            display: none;
+        }
+        .cancel-btn:hover {
+            background-color: #475569;
+        }
+
+        .print-btn {
+            background-color: #0f172a;
+            margin-top: 12px;
+        }
+        .print-btn:hover {
+            background-color: #1e293b;
+        }
+
+        /* Table Visualizer Layout */
+        .table-visualizer {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+            background: #e2e8f0;
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 24px;
+            min-height: 200px;
+        }
+
+        .zone {
+            background: white;
+            border: 2px dashed #cbd5e1;
+            border-radius: 6px;
+            padding: 12px;
+            min-height: 150px;
+        }
+
+        .zone-title {
+            font-weight: bold;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: #64748b;
+            border-bottom: 1px solid #f1f5f9;
+            padding-bottom: 4px;
+            margin-bottom: 8px;
+        }
+
+        .item-tag {
+            background: #f1f5f9;
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            padding: 8px;
+            margin-bottom: 8px;
+            font-size: 0.85rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+        }
+
+        .item-actions {
+            display: flex;
+            gap: 6px;
+        }
+
+        .action-btn {
+            background: none;
+            color: #94a3b8;
+            border: none;
+            padding: 2px 4px;
+            width: auto;
+            cursor: pointer;
+            font-size: 0.85rem;
+            font-weight: normal;
+        }
+        .action-btn:hover {
+            background: none;
+        }
+        .edit-action:hover {
+            color: var(--edit-color);
+        }
+        .delete-action:hover {
+            color: #ef4444;
+        }
+
+        .stats {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 1.1rem;
+            font-weight: bold;
+            margin-top: 16px;
+            padding-top: 12px;
+            border-top: 2px solid var(--border);
+        }
+
+        /* Editing State Style for Form */
+        form.editing button[type="submit"] {
+            background-color: var(--edit-color);
+        }
+        form.editing button[type="submit"]:hover {
+            background-color: var(--edit-hover);
+        }
+
+        /* Print Specific Styles */
+        @media print {
+            body {
+                background: white;
+                color: black;
+                padding: 0;
+            }
+            .no-print {
+                display: none !important;
+            }
+            .container {
+                max-width: 100%;
+            }
+            .grid {
+                display: block;
+            }
+            .table-visualizer {
+                background: none;
+                padding: 0;
+                gap: 20px;
+                grid-template-columns: repeat(3, 1fr);
+            }
+            .zone {
+                border: 2px solid #000;
+                page-break-inside: avoid;
+            }
+            .item-tag {
+                border: 1px solid #000;
+                background: none;
+            }
+            .item-actions {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <h1>Yard Sale Table Mapper</h1>
+    </header>
+
+    <div class="grid">
+        <div class="card no-print">
+            <h2 id="formHeader">Add New Item</h2>
+            <form id="itemForm">
+                <input type="hidden" id="itemId">
+                <div class="form-group">
+                    <label for="itemName">Item Description</label>
+                    <input type="text" id="itemName" required placeholder="e.g., Vintage Coffee Mug">
+                </div>
+                <div class="form-group">
+                    <label for="itemPrice">Price ($)</label>
+                    <input type="number" id="itemPrice" step="0.01" min="0" required placeholder="0.00">
+                </div>
+                <div class="form-group">
+                    <label for="boxNum">Box Number (Optional)</label>
+                    <input type="text" id="boxNum" placeholder="e.g., Box 3">
+                </div>
+                <div class="form-group">
+                    <label for="tableZone">Table Placement Zone</label>
+                    <select id="tableZone">
+                        <option value="left">Left Side</option>
+                        <option value="center">Center</option>
+                        <option value="right">Right Side</option>
+                    </select>
+                </div>
+                <div class="btn-container">
+                    <button type="submit" id="submitBtn">Add to Table Map</button>
+                    <button type="button" id="cancelBtn" class="cancel-btn" onclick="resetFormState()">Cancel</button>
+                </div>
+            </form>
+            <button class="print-btn" onclick="window.print()">Print Table Map</button>
+        </div>
+
+        <div class="card">
+            <h2>Table Layout Map</h2>
+            
+            <div class="table-visualizer">
+                <div class="zone" id="zone-left">
+                    <div class="zone-title">Left Side</div>
+                    <div class="zone-items"></div>
+                </div>
+                <div class="zone" id="zone-center">
+                    <div class="zone-title">Center</div>
+                    <div class="zone-items"></div>
+                </div>
+                <div class="zone" id="zone-right">
+                    <div class="zone-title">Right Side</div>
+                    <div class="zone-items"></div>
+                </div>
+            </div>
+
+            <div class="stats">
+                <span>Total Items: <span id="totalItems">0</span></span>
+                <span>Estimated Value: $<span id="totalValue">0.00</span></span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const items = [];
+    const form = document.getElementById('itemForm');
+    const formHeader = document.getElementById('formHeader');
+    const submitBtn = document.getElementById('submitBtn');
+    const cancelBtn = document.getElementById('cancelBtn');
+    const itemIdInput = document.getElementById('itemId');
+
+    form.addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const id = itemIdInput.value;
+        const name = document.getElementById('itemName').value;
+        const price = parseFloat(document.getElementById('itemPrice').value);
+        const box = document.getElementById('boxNum').value.trim();
+        const zone = document.getElementById('tableZone').value;
+
+        if (id) {
+            // Update existing item
+            const index = items.findIndex(item => item.id === parseInt(id));
+            if (index !== -1) {
+                items[index] = { id: parseInt(id), name, price, box, zone };
+            }
+        } else {
+            // Create new item
+            items.push({ id: Date.now(), name, price, box, zone });
+        }
+        
+        resetFormState();
+        renderMap();
+    });
+
+    function startEdit(id) {
+        const item = items.find(item => item.id === id);
+        if (!item) return;
+
+        // Populate fields
+        itemIdInput.value = item.id;
+        document.getElementById('itemName').value = item.name;
+        document.getElementById('itemPrice').value = item.price;
+        document.getElementById('boxNum').value = item.box;
+        document.getElementById('tableZone').value = item.zone;
+
+        // Toggle form styles
+        form.classList.add('editing');
+        formHeader.textContent = "Edit Item";
+        submitBtn.textContent = "Update Item";
+        cancelBtn.style.display = "block";
+        
+        document.getElementById('itemName').focus();
+    }
+
+    function resetFormState() {
+        form.reset();
+        itemIdInput.value = '';
+        form.classList.remove('editing');
+        formHeader.textContent = "Add New Item";
+        submitBtn.textContent = "Add to Table Map";
+        cancelBtn.style.display = "none";
+        document.getElementById('itemName').focus();
+    }
+
+    function deleteItem(id) {
+        const index = items.findIndex(item => item.id === id);
+        if (index !== -1) {
+            items.splice(index, 1);
+            if (itemIdInput.value === id.toString()) {
+                resetFormState();
+            }
+            renderMap();
+        }
+    }
+
+    function renderMap() {
+        document.querySelectorAll('.zone-items').forEach(el => el.innerHTML = '');
+        let totalVal = 0;
+
+        items.forEach(item => {
+            totalVal += item.price;
+            const zoneContainer = document.querySelector(`#zone-${item.zone} .zone-items`);
+            
+            const itemEl = document.createElement('div');
+            itemEl.className = 'item-tag';
+            
+            const boxDisplay = item.box ? ` <small style="color:#64748b;">[${item.box}]</small>` : '';
+            
+            itemEl.innerHTML = `
+                <div>
+                    <strong>${item.name}</strong>${boxDisplay}
+                    <div>$${item.price.toFixed(2)}</div>
+                </div>
+                <div class="item-actions no-print">
+                    <button type="button" class="action-btn edit-action" onclick="startEdit(${item.id})">Edit</button>
+                    <button type="button" class="action-btn delete-action" onclick="deleteItem(${item.id})">&times;</button>
+                </div>
+            `;
+            
+            zoneContainer.appendChild(itemEl);
+        });
+
+        document.getElementById('totalItems').textContent = items.length;
+        document.getElementById('totalValue').textContent = totalVal.toFixed(2);
+    }
+</script>
+
+</body>
+</html>

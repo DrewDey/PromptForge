@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>After-School Pickup Roster</title>
+    <style>
+        :root {
+            --bg-main: #f8fafc;
+            --bg-card: #ffffff;
+            --text-main: #1e293b;
+            --text-muted: #64748b;
+            --border: #e2e8f0;
+            --primary: #3b82f6;
+            --primary-hover: #2563eb;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --danger-hover: #dc2626;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-main);
+            color: var(--text-main);
+            padding: 1.5rem;
+            line-height: 1.5;
+        }
+
+        .container {
+            max-width: 1100px;
+            margin: 0 auto;
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+            padding-bottom: 1rem;
+            border-bottom: 2px solid var(--border);
+        }
+
+        h1 {
+            font-size: 1.75rem;
+            font-weight: 700;
+            color: #0f172a;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.625rem 1.25rem;
+            border-radius: 0.5rem;
+            font-size: 0.875rem;
+            font-weight: 600;
+            cursor: pointer;
+            border: none;
+            transition: all 0.2s;
+        }
+
+        .btn-primary { background: var(--primary); color: white; }
+        .btn-primary:hover { background: var(--primary-hover); }
+        .btn-secondary { background: #e2e8f0; color: #334155; }
+        .btn-secondary:hover { background: #cbd5e1; }
+
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 1.5rem;
+        }
+
+        @media (min-width: 768px) {
+            .grid { grid-template-columns: 320px 1fr; }
+        }
+
+        .card {
+            background: var(--bg-card);
+            border-radius: 0.75rem;
+            border: 1px solid var(--border);
+            padding: 1.5rem;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        }
+
+        .card-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: 1.25rem;
+            color: #334155;
+        }
+
+        .form-group {
+            margin-bottom: 1rem;
+        }
+
+        label {
+            display: block;
+            font-size: 0.825rem;
+            font-weight: 600;
+            margin-bottom: 0.375rem;
+            color: var(--text-muted);
+        }
+
+        input, select, textarea {
+            width: 100%;
+            padding: 0.625rem;
+            border: 1px solid var(--border);
+            border-radius: 0.375rem;
+            font-size: 0.9rem;
+            color: var(--text-main);
+            background: #fff;
+        }
+
+        input:focus, select:focus, textarea:focus {
+            outline: 2px solid var(--primary);
+            border-color: transparent;
+        }
+
+        .table-container {
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+            font-size: 0.9rem;
+        }
+
+        th {
+            background: #f1f5f9;
+            padding: 0.75rem 1rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            border-bottom: 1px solid var(--border);
+        }
+
+        td {
+            padding: 0.875rem 1rem;
+            border-bottom: 1px solid var(--border);
+            vertical-align: middle;
+        }
+
+        tr:hover { background-color: #f8fafc; }
+
+        .badge {
+            display: inline-flex;
+            padding: 0.25rem 0.5rem;
+            border-radius: 0.25rem;
+            font-size: 0.75rem;
+            font-weight: 600;
+            user-select: none;
+        }
+
+        .status-waiting { background: #fef3c7; color: #d97706; }
+        .status-pickedup { background: #d1fae5; color: #059669; }
+
+        .actions-cell {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .btn-icon {
+            border: none;
+            background: transparent;
+            cursor: pointer;
+            padding: 0.35rem;
+            border-radius: 0.25rem;
+            color: var(--text-muted);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .btn-icon:hover {
+            background: #f1f5f9;
+            color: var(--text-main);
+        }
+
+        .btn-icon.delete:hover {
+            color: var(--danger);
+            background: #fee2e2;
+        }
+
+        .toast {
+            position: fixed;
+            bottom: 1.5rem;
+            right: 1.5rem;
+            background: #1e293b;
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.5rem;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            display: none;
+            animation: fadeIn 0.2s ease-out;
+            font-size: 0.875rem;
+            z-index: 100;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <div>
+            <h1>After-School Pickup Roster</h1>
+        </div>
+        <button class="btn btn-secondary" onclick="copyHandoffList()">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+            Copy Handoff List
+        </button>
+    </header>
+
+    <div class="grid">
+        <div class="card">
+            <h2 class="card-title" id="formHeader">Add New Student</h2>
+            <form id="rosterForm" onsubmit="saveStudent(event)">
+                <input type="hidden" id="studentId">
+
+                <div class="form-group">
+                    <label for="studentName">Student Name</label>
+                    <input type="text" id="studentName" required placeholder="e.g., Alex Smith">
+                </div>
+
+                <div class="form-group">
+                    <label for="grade">Grade/Room</label>
+                    <input type="text" id="grade" required placeholder="e.g., 2nd Grade / Rm 104">
+                </div>
+
+                <div class="form-group">
+                    <label for="contacts">Authorized Pickup Contacts</label>
+                    <textarea id="contacts" rows="2" required placeholder="e.g., Jane Smith (Mother) - 555-0192"></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label for="notes">Important Notes</label>
+                    <textarea id="notes" rows="2" placeholder="e.g., Asthma inhaler in bag, bus rider Fridays"></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label for="status">Status</label>
+                    <select id="status">
+                        <option value="Waiting">Waiting</option>
+                        <option value="Picked Up">Picked Up</option>
+                    </select>
+                </div>
+
+                <div style="display: flex; gap: 0.5rem; margin-top: 1.5rem;">
+                    <button type="submit" class="btn btn-primary" style="flex: 1;">Save Student</button>
+                    <button type="button" id="cancelEditBtn" class="btn btn-secondary" style="display: none;" onclick="resetForm()">Cancel</button>
+                </div>
+            </form>
+        </div>
+
+        <div class="card" style="padding: 0; overflow: hidden;">
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Status</th>
+                            <th>Student</th>
+                            <th>Grade/Room</th>
+                            <th>Authorized Pickups</th>
+                            <th>Notes</th>
+                            <th style="width: 100px;">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="rosterTableBody">
+                        </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="toast" class="toast">Handoff list copied to clipboard!</div>
+
+<script>
+    let roster = JSON.parse(localStorage.getItem('pickupRoster')) || [
+        { id: 1, name: "Emily Davis", grade: "Kindergarten", contacts: "Mark Davis (Dad) 555-0143", notes: "No peanut products", status: "Waiting" },
+        { id: 2, name: "Liam Johnson", grade: "3rd Grade", contacts: "Sarah J. (Mom) 555-0188", notes: "Goes to YMCA bus", status: "Picked Up" }
+    ];
+
+    function saveToLocalStorage() {
+        localStorage.setItem('pickupRoster', JSON.stringify(roster));
+    }
+
+    function renderRoster() {
+        const tbody = document.getElementById('rosterTableBody');
+        tbody.innerHTML = '';
+
+        if (roster.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; color: var(--text-muted); padding: 2rem;">No students on the roster.</td></tr>`;
+            return;
+        }
+
+        roster.forEach(student => {
+            const tr = document.createElement('tr');
+            const statusClass = student.status === 'Picked Up' ? 'status-pickedup' : 'status-waiting';
+
+            tr.innerHTML = `
+                <td>
+                    <span class="badge ${statusClass}" style="cursor: pointer;" onclick="toggleStatus(${student.id})">
+                        ${student.status}
+                    </span>
+                </td>
+                <td style="font-weight: 600;">${escapeHtml(student.name)}</td>
+                <td>${escapeHtml(student.grade)}</td>
+                <td style="font-size: 0.85rem; color: #334155;">${escapeHtml(student.contacts)}</td>
+                <td style="font-size: 0.85rem; color: var(--text-muted);">${escapeHtml(student.notes || '-')}</td>
+                <td>
+                    <div class="actions-cell">
+                        <button class="btn-icon" onclick="editStudent(${student.id})" title="Edit">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 1 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+                        </button>
+                        <button class="btn-icon delete" onclick="deleteStudent(${student.id})" title="Remove">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
+                        </button>
+                    </div>
+                </td>
+            `;
+            tbody.appendChild(tr);
+        });
+    }
+
+    function saveStudent(e) {
+        e.preventDefault();
+        const id = document.getElementById('studentId').value;
+        const name = document.getElementById('studentName').value;
+        const grade = document.getElementById('grade').value;
+        const contacts = document.getElementById('contacts').value;
+        const notes = document.getElementById('notes').value;
+        const status = document.getElementById('status').value;
+
+        if (id) {
+            const index = roster.findIndex(s => s.id == id);
+            if (index !== -1) roster[index] = { id: Number(id), name, grade, contacts, notes, status };
+        } else {
+            const newStudent = { id: Date.now(), name, grade, contacts, notes, status };
+            roster.push(newStudent);
+        }
+
+        saveToLocalStorage();
+        renderRoster();
+        resetForm();
+    }
+
+    function editStudent(id) {
+        const student = roster.find(s => s.id === id);
+        if (!student) return;
+
+        document.getElementById('studentId').value = student.id;
+        document.getElementById('studentName').value = student.name;
+        document.getElementById('grade').value = student.grade;
+        document.getElementById('contacts').value = student.contacts;
+        document.getElementById('notes').value = student.notes;
+        document.getElementById('status').value = student.status;
+
+        document.getElementById('formHeader').innerText = "Edit Student Profile";
+        document.getElementById('cancelEditBtn').style.display = "inline-flex";
+    }
+
+    function deleteStudent(id) {
+        if (confirm("Are you sure you want to remove this student from the active roster?")) {
+            roster = roster.filter(s => s.id !== id);
+            saveToLocalStorage();
+            renderRoster();
+            if (document.getElementById('studentId').value == id) resetForm();
+        }
+    }
+
+    function toggleStatus(id) {
+        const student = roster.find(s => s.id === id);
+        if (student) {
+            student.status = student.status === 'Waiting' ? 'Picked Up' : 'Waiting';
+            saveToLocalStorage();
+            renderRoster();
+        }
+    }
+
+    function resetForm() {
+        document.getElementById('rosterForm').reset();
+        document.getElementById('studentId').value = '';
+        document.getElementById('formHeader').innerText = "Add New Student";
+        document.getElementById('cancelEditBtn').style.display = "none";
+    }
+
+    function copyHandoffList() {
+        const waiting = roster.filter(s => s.status === 'Waiting');
+        const pickedUp = roster.filter(s => s.status === 'Picked Up');
+
+        let text = `AFTER-SCHOOL PICKUP HANDOFF LIST\n`;
+        text += `Generated: ${new Date().toLocaleString()}\n`;
+        text += `=========================================\n\n`;
+
+        text += `STILL WAITING (${waiting.length}):\n`;
+        if (waiting.length === 0) text += `- No students remaining -\n`;
+        waiting.forEach(s => {
+            text += `- ${s.name} (${s.grade})\n`;
+            text += `  Pickups: ${s.contacts}\n`;
+            if (s.notes) text += `  Notes: ${s.notes}\n`;
+            text += '\n';
+        });
+
+        text += `ALREADY PICKED UP (${pickedUp.length}):\n`;
+        if (pickedUp.length === 0) text += `- None -\n`;
+        pickedUp.forEach(s => {
+            text += `- ${s.name} (${s.grade})\n`;
+        });
+
+        navigator.clipboard.writeText(text).then(() => {
+            const toast = document.getElementById('toast');
+            toast.style.display = 'block';
+            setTimeout(() => toast.style.display = 'none', 3000);
+        });
+    }
+
+    function escapeHtml(str) {
+        if (!str) return '';
+        return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+    }
+
+    window.addEventListener("DOMContentLoaded", renderRoster);
+</script>
+</body>
+</html>

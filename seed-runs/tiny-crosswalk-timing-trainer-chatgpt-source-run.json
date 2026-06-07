@@ -1,0 +1,136 @@
+{
+  "title": "Tiny Crosswalk Timing Trainer",
+  "slug": "tiny-crosswalk-timing-trainer-chatgpt",
+  "description": "A one-prompt ChatGPT Instant source run that produced a self-contained quick reflex crosswalk game where the player taps only on WALK signals across ten rounds.",
+  "provider": "ChatGPT",
+  "model": "Not sure",
+  "model_settings": "Visible composer mode/model-control text: Instant. The ChatGPT UI did not expose an exact underlying model name in the source session, and no custom settings/tools/uploads were selected.",
+  "source_url": "https://chatgpt.com/c/6a23d987-407c-83ea-883b-d1dc8afd1033",
+  "source_url_note": "Real ChatGPT conversation URL captured from the logged-in Chrome session; not a public share URL. The visible composer mode was Instant, but no exact underlying model name was exposed.",
+  "run_started_at": "2026-06-05T23:58:00-04:00",
+  "run_finished_at": "2026-06-06T04:29:33-04:00",
+  "run_date_override_note": "Manager requested the 2026-06-05 Eastern override for prompt-count handling; package uses one prompt entry and stops under the 1-2 prompt override.",
+  "chain_type": "one-shot",
+  "prompt_count": 1,
+  "category": "games",
+  "domain": "game / quick reflex trainer",
+  "difficulty": "beginner-friendly",
+  "tags": [
+    "game",
+    "reaction-time",
+    "crosswalk",
+    "timing",
+    "single-file HTML",
+    "ChatGPT Instant"
+  ],
+  "tools_used": [
+    "ChatGPT web in Chrome",
+    "local HTTP browser verification"
+  ],
+  "status": "submitted_pending",
+  "public_status": "not_public_not_published",
+  "artifact_type": "html",
+  "final_artifact_path": "public/artifacts/tiny-crosswalk-timing-trainer-chatgpt.html",
+  "final_artifact_clue": "Open the artifact, click Start Round, wait for WALK or STOP, then use TAP TO CROSS or Space/Enter to score safe taps and penalties.",
+  "artifact_versions": [
+    {
+      "step_number": 1,
+      "path": "public/artifacts/tiny-crosswalk-timing-trainer-chatgpt.html",
+      "is_default": true,
+      "notes": "Only real generated artifact version. Copied from ChatGPT prompt 1 code block and saved under public/artifacts/."
+    }
+  ],
+  "screenshots": [],
+  "verification_notes": "Verified over local HTTP at http://localhost:8765/public/artifacts/tiny-crosswalk-timing-trainer-chatgpt.html in Chrome. Artifact rendered nonblank with title, street/signal visual, score/round/streak HUD, Start Round and TAP TO CROSS controls. Start advanced the game to round 1, timed signal states changed, click/tap action was accepted, keyboard Space action produced Safe cross +4 and updated score/streak. Console warning/error logs were empty during verification. Dependency scan found no external scripts, links, fonts, imports, or URL references. Narrow/mobile fit was reviewed from source and live layout constraints: viewport meta present, card width min(440px, 94vw), body overflow-x hidden, and the moving pedestrian is clipped inside the street; direct 390px viewport resizing was not exposed by the Chrome browser API.",
+  "result_content": "A self-contained Crosswalk Timing Trainer HTML game with ten quick signals, WALK/STOP state changes, click/touch and keyboard controls, scoring, streaks, and end-of-round rating.",
+  "recommended_seed_profile": {
+    "registry_id": "pathforge-seed-053",
+    "username": "RowanPace",
+    "display_name": "Rowan Pace",
+    "profile_url": "/user/RowanPace",
+    "status": "submitted_pending",
+    "rationale": "Manager-assigned lane 1 metadata for this ChatGPT game run. Package was prepared locally only because the user explicitly said not to upload/import."
+  },
+  "submitted_by_account": "RowanPace",
+  "submitted_by_profile_registry_id": "pathforge-seed-053",
+  "submitted_display_name_intended": "Rowan Pace",
+  "pathforge_submission_url": "https://prompt-forge-sandy.vercel.app/admin/source-runs/c698d506-dfcb-496d-95c7-445d75e65ccb",
+  "pathforge_pending_id": "c698d506-dfcb-496d-95c7-445d75e65ccb",
+  "source_run_submission_id": null,
+  "admin_review_status": "queued_pending_review",
+  "rejected_package_path": null,
+  "pass_reject_recommendation": {
+    "recommendation": "pass",
+    "reason": "Prompt 1 produced a clear, usable, dependency-free, self-contained reflex game matching the Tiny Crosswalk Timing Trainer brief. Local browser verification confirmed rendering, timed signal changes, click/tap input, keyboard input, score/streak updates, clean console, and no external dependencies, so prompt 2 was not justified under the 1-2 prompt override."
+  },
+  "source_run_notes": [
+    "Provider: ChatGPT",
+    "Model used: Not sure",
+    "Model settings: Visible composer mode/model-control text: Instant. Exact underlying model name was not exposed by the source session; no tools/uploads/custom settings selected.",
+    "Prompt count: 1.",
+    "Final artifact: public/artifacts/tiny-crosswalk-timing-trainer-chatgpt.html.",
+    "Recommended profile metadata only: pathforge-seed-053 / RowanPace / Rowan Pace.",
+    "Prepared local source-run package candidate only. Not uploaded, not imported, not approved, not published, no public page, no manual entry, no votes/comments/bookmarks, no prompts, and no prompt_steps were created."
+  ],
+  "agent_notes": "Lane 1 prepared a one-prompt ChatGPT Instant package candidate for Tiny Crosswalk Timing Trainer. Preserve the exact prompt and response_exact content, including the copied code block. Stop at prompt 1 because the artifact passed local verification and no real defect justified prompt 2. This package has not been uploaded or submitted; it is ready for pending-review import only if the manager explicitly allows upload later.",
+  "steps": [
+    {
+      "step_number": 1,
+      "prompt_exact": "Make a tiny crosswalk timing trainer as one self-contained HTML file: a quick reflex game where you tap only when the walk signal is safe, with short rounds and a clear score.",
+      "response_exact": "Thought for a couple of seconds\nHTML\n<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n<meta charset=\"UTF-8\" />\n<meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\" />\n<title>Crosswalk Timing Trainer</title>\n<style>\n  * { box-sizing: border-box; }\n  body {\n    margin: 0;\n    min-height: 100vh;\n    display: grid;\n    place-items: center;\n    background: #111827;\n    font-family: system-ui, Arial, sans-serif;\n    color: white;\n    overflow-x: hidden;\n  }\n  .game {\n    width: min(440px, 94vw);\n    background: #1f2937;\n    border: 2px solid #374151;\n    border-radius: 24px;\n    padding: 18px;\n    text-align: center;\n    box-shadow: 0 18px 50px rgba(0,0,0,.35);\n  }\n  h1 {\n    margin: 0 0 8px;\n    font-size: 1.55rem;\n  }\n  .sub {\n    color: #cbd5e1;\n    font-size: .95rem;\n    margin-bottom: 14px;\n  }\n  .street {\n    position: relative;\n    height: 210px;\n    border-radius: 18px;\n    background:\n      repeating-linear-gradient(\n        90deg,\n        transparent 0 34px,\n        rgba(255,255,255,.9) 34px 54px,\n        transparent 54px 88px\n      ),\n      linear-gradient(#374151, #111827);\n    border: 4px solid #0f172a;\n    overflow: hidden;\n    margin-bottom: 14px;\n  }\n  .signal {\n    width: 96px;\n    height: 132px;\n    margin: 18px auto;\n    background: #020617;\n    border-radius: 18px;\n    padding: 12px;\n    border: 3px solid #475569;\n  }\n  .light {\n    height: 48px;\n    border-radius: 14px;\n    margin-bottom: 12px;\n    display: grid;\n    place-items: center;\n    font-weight: 900;\n    letter-spacing: .08em;\n    opacity: .25;\n  }\n  .light.walk { background: #22c55e; color: #052e16; }\n  .light.stop { background: #ef4444; color: #450a0a; }\n  .active { opacity: 1; box-shadow: 0 0 28px currentColor; }\n  .person {\n    position: absolute;\n    bottom: 14px;\n    left: 24px;\n    font-size: 2.4rem;\n    transition: transform .18s ease;\n  }\n  .person.step { transform: translateX(320px); }\n  .hud {\n    display: grid;\n    grid-template-columns: repeat(3, 1fr);\n    gap: 8px;\n    margin-bottom: 12px;\n  }\n  .box {\n    background: #0f172a;\n    border: 1px solid #334155;\n    border-radius: 14px;\n    padding: 10px 6px;\n  }\n  .label {\n    color: #94a3b8;\n    font-size: .72rem;\n    text-transform: uppercase;\n  }\n  .value {\n    font-size: 1.25rem;\n    font-weight: 900;\n  }\n  .message {\n    min-height: 42px;\n    display: grid;\n    place-items: center;\n    color: #e5e7eb;\n    font-weight: 700;\n  }\n  button {\n    width: 100%;\n    border: 0;\n    border-radius: 16px;\n    padding: 16px;\n    font-size: 1.05rem;\n    font-weight: 900;\n    cursor: pointer;\n    color: #07111f;\n    background: #facc15;\n  }\n  button:active { transform: scale(.98); }\n  .tap {\n    background: #38bdf8;\n    margin-top: 8px;\n  }\n  .danger { color: #fca5a5; }\n  .good { color: #86efac; }\n</style>\n</head>\n<body>\n  <main class=\"game\">\n    <h1>🚦 Crosswalk Timing Trainer</h1>\n    <div class=\"sub\">Tap only when WALK is lit. Ten quick signals.</div>\n\n    <section class=\"street\" id=\"street\">\n      <div class=\"signal\">\n        <div class=\"light walk\" id=\"walkLight\">WALK</div>\n        <div class=\"light stop active\" id=\"stopLight\">STOP</div>\n      </div>\n      <div class=\"person\" id=\"person\">🚶</div>\n    </section>\n\n    <div class=\"hud\">\n      <div class=\"box\">\n        <div class=\"label\">Score</div>\n        <div class=\"value\" id=\"score\">0</div>\n      </div>\n      <div class=\"box\">\n        <div class=\"label\">Round</div>\n        <div class=\"value\" id=\"round\">0/10</div>\n      </div>\n      <div class=\"box\">\n        <div class=\"label\">Streak</div>\n        <div class=\"value\" id=\"streak\">0</div>\n      </div>\n    </div>\n\n    <div class=\"message\" id=\"message\">Press Start, then react fast.</div>\n    <button id=\"startBtn\">Start Round</button>\n    <button class=\"tap\" id=\"tapBtn\">TAP TO CROSS</button>\n  </main>\n\n<script>\n(() => {\n  const walkLight = document.getElementById(\"walkLight\");\n  const stopLight = document.getElementById(\"stopLight\");\n  const scoreEl = document.getElementById(\"score\");\n  const roundEl = document.getElementById(\"round\");\n  const streakEl = document.getElementById(\"streak\");\n  const msg = document.getElementById(\"message\");\n  const startBtn = document.getElementById(\"startBtn\");\n  const tapBtn = document.getElementById(\"tapBtn\");\n  const person = document.getElementById(\"person\");\n\n  let score = 0, round = 0, streak = 0;\n  let safe = false, playing = false, canTap = false;\n  let signalTimer = null, phaseTimer = null;\n  const maxRounds = 10;\n\n  function setSignal(isSafe) {\n    safe = isSafe;\n    walkLight.classList.toggle(\"active\", safe);\n    stopLight.classList.toggle(\"active\", !safe);\n  }\n\n  function updateHUD() {\n    scoreEl.textContent = score;\n    roundEl.textContent = `${round}/${maxRounds}`;\n    streakEl.textContent = streak;\n  }\n\n  function startGame() {\n    clearTimeout(signalTimer);\n    clearTimeout(phaseTimer);\n    score = 0;\n    round = 0;\n    streak = 0;\n    playing = true;\n    canTap = false;\n    person.classList.remove(\"step\");\n    setSignal(false);\n    updateHUD();\n    startBtn.textContent = \"Restart\";\n    msg.textContent = \"Watch the signal...\";\n    nextSignal();\n  }\n\n  function nextSignal() {\n    if (round >= maxRounds) return endGame();\n\n    canTap = false;\n    setSignal(false);\n    msg.textContent = \"Wait...\";\n    msg.className = \"message\";\n\n    const delay = 650 + Math.random() * 1100;\n\n    signalTimer = setTimeout(() => {\n      round++;\n      canTap = true;\n\n      const isWalk = Math.random() > 0.38;\n      setSignal(isWalk);\n      updateHUD();\n\n      msg.textContent = isWalk ? \"WALK! Tap now!\" : \"STOP! Do not tap!\";\n      msg.className = \"message\";\n\n      phaseTimer = setTimeout(() => {\n        if (canTap && safe) {\n          score -= 1;\n          streak = 0;\n          msg.textContent = \"Too slow.\";\n          msg.className = \"message danger\";\n        } else if (canTap && !safe) {\n          score += 1;\n          msg.textContent = \"Good patience.\";\n          msg.className = \"message good\";\n        }\n        canTap = false;\n        updateHUD();\n        setTimeout(nextSignal, 500);\n      }, 900);\n    }, delay);\n  }\n\n  function tapCross() {\n    if (!playing || !canTap) return;\n\n    canTap = false;\n\n    if (safe) {\n      streak++;\n      score += 3 + Math.min(streak, 5);\n      msg.textContent = `Safe cross! +${3 + Math.min(streak, 5)}`;\n      msg.className = \"message good\";\n      person.classList.add(\"step\");\n      setTimeout(() => person.classList.remove(\"step\"), 260);\n    } else {\n      streak = 0;\n      score -= 4;\n      msg.textContent = \"Unsafe tap! -4\";\n      msg.className = \"message danger\";\n    }\n\n    updateHUD();\n    setTimeout(nextSignal, 500);\n  }\n\n  function endGame() {\n    playing = false;\n    canTap = false;\n    setSignal(false);\n    const rating =\n      score >= 45 ? \"Crosswalk pro 🟢\" :\n      score >= 28 ? \"Sharp timing 🟡\" :\n      score >= 12 ? \"Needs practice 🟠\" :\n      \"Too risky 🔴\";\n    msg.textContent = `Final score: ${score}. ${rating}`;\n    startBtn.textContent = \"Play Again\";\n  }\n\n  startBtn.addEventListener(\"click\", startGame);\n  tapBtn.addEventListener(\"click\", tapCross);\n  document.addEventListener(\"keydown\", e => {\n    if (e.code === \"Space\" || e.code === \"Enter\") {\n      e.preventDefault();\n      playing ? tapCross() : startGame();\n    }\n  });\n\n  updateHUD();\n})();\n</script>\n</body>\n</html>",
+      "response_summary": "ChatGPT produced a complete single-file HTML crosswalk timing trainer with WALK/STOP lights, a small street scene, score/round/streak HUD, short randomized signal rounds, tap and keyboard controls, penalties, bonuses, and a final rating.",
+      "code_blocks": [
+        {
+          "language": "html",
+          "code": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n<meta charset=\"UTF-8\" />\n<meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\" />\n<title>Crosswalk Timing Trainer</title>\n<style>\n  * { box-sizing: border-box; }\n  body {\n    margin: 0;\n    min-height: 100vh;\n    display: grid;\n    place-items: center;\n    background: #111827;\n    font-family: system-ui, Arial, sans-serif;\n    color: white;\n    overflow-x: hidden;\n  }\n  .game {\n    width: min(440px, 94vw);\n    background: #1f2937;\n    border: 2px solid #374151;\n    border-radius: 24px;\n    padding: 18px;\n    text-align: center;\n    box-shadow: 0 18px 50px rgba(0,0,0,.35);\n  }\n  h1 {\n    margin: 0 0 8px;\n    font-size: 1.55rem;\n  }\n  .sub {\n    color: #cbd5e1;\n    font-size: .95rem;\n    margin-bottom: 14px;\n  }\n  .street {\n    position: relative;\n    height: 210px;\n    border-radius: 18px;\n    background:\n      repeating-linear-gradient(\n        90deg,\n        transparent 0 34px,\n        rgba(255,255,255,.9) 34px 54px,\n        transparent 54px 88px\n      ),\n      linear-gradient(#374151, #111827);\n    border: 4px solid #0f172a;\n    overflow: hidden;\n    margin-bottom: 14px;\n  }\n  .signal {\n    width: 96px;\n    height: 132px;\n    margin: 18px auto;\n    background: #020617;\n    border-radius: 18px;\n    padding: 12px;\n    border: 3px solid #475569;\n  }\n  .light {\n    height: 48px;\n    border-radius: 14px;\n    margin-bottom: 12px;\n    display: grid;\n    place-items: center;\n    font-weight: 900;\n    letter-spacing: .08em;\n    opacity: .25;\n  }\n  .light.walk { background: #22c55e; color: #052e16; }\n  .light.stop { background: #ef4444; color: #450a0a; }\n  .active { opacity: 1; box-shadow: 0 0 28px currentColor; }\n  .person {\n    position: absolute;\n    bottom: 14px;\n    left: 24px;\n    font-size: 2.4rem;\n    transition: transform .18s ease;\n  }\n  .person.step { transform: translateX(320px); }\n  .hud {\n    display: grid;\n    grid-template-columns: repeat(3, 1fr);\n    gap: 8px;\n    margin-bottom: 12px;\n  }\n  .box {\n    background: #0f172a;\n    border: 1px solid #334155;\n    border-radius: 14px;\n    padding: 10px 6px;\n  }\n  .label {\n    color: #94a3b8;\n    font-size: .72rem;\n    text-transform: uppercase;\n  }\n  .value {\n    font-size: 1.25rem;\n    font-weight: 900;\n  }\n  .message {\n    min-height: 42px;\n    display: grid;\n    place-items: center;\n    color: #e5e7eb;\n    font-weight: 700;\n  }\n  button {\n    width: 100%;\n    border: 0;\n    border-radius: 16px;\n    padding: 16px;\n    font-size: 1.05rem;\n    font-weight: 900;\n    cursor: pointer;\n    color: #07111f;\n    background: #facc15;\n  }\n  button:active { transform: scale(.98); }\n  .tap {\n    background: #38bdf8;\n    margin-top: 8px;\n  }\n  .danger { color: #fca5a5; }\n  .good { color: #86efac; }\n</style>\n</head>\n<body>\n  <main class=\"game\">\n    <h1>🚦 Crosswalk Timing Trainer</h1>\n    <div class=\"sub\">Tap only when WALK is lit. Ten quick signals.</div>\n\n    <section class=\"street\" id=\"street\">\n      <div class=\"signal\">\n        <div class=\"light walk\" id=\"walkLight\">WALK</div>\n        <div class=\"light stop active\" id=\"stopLight\">STOP</div>\n      </div>\n      <div class=\"person\" id=\"person\">🚶</div>\n    </section>\n\n    <div class=\"hud\">\n      <div class=\"box\">\n        <div class=\"label\">Score</div>\n        <div class=\"value\" id=\"score\">0</div>\n      </div>\n      <div class=\"box\">\n        <div class=\"label\">Round</div>\n        <div class=\"value\" id=\"round\">0/10</div>\n      </div>\n      <div class=\"box\">\n        <div class=\"label\">Streak</div>\n        <div class=\"value\" id=\"streak\">0</div>\n      </div>\n    </div>\n\n    <div class=\"message\" id=\"message\">Press Start, then react fast.</div>\n    <button id=\"startBtn\">Start Round</button>\n    <button class=\"tap\" id=\"tapBtn\">TAP TO CROSS</button>\n  </main>\n\n<script>\n(() => {\n  const walkLight = document.getElementById(\"walkLight\");\n  const stopLight = document.getElementById(\"stopLight\");\n  const scoreEl = document.getElementById(\"score\");\n  const roundEl = document.getElementById(\"round\");\n  const streakEl = document.getElementById(\"streak\");\n  const msg = document.getElementById(\"message\");\n  const startBtn = document.getElementById(\"startBtn\");\n  const tapBtn = document.getElementById(\"tapBtn\");\n  const person = document.getElementById(\"person\");\n\n  let score = 0, round = 0, streak = 0;\n  let safe = false, playing = false, canTap = false;\n  let signalTimer = null, phaseTimer = null;\n  const maxRounds = 10;\n\n  function setSignal(isSafe) {\n    safe = isSafe;\n    walkLight.classList.toggle(\"active\", safe);\n    stopLight.classList.toggle(\"active\", !safe);\n  }\n\n  function updateHUD() {\n    scoreEl.textContent = score;\n    roundEl.textContent = `${round}/${maxRounds}`;\n    streakEl.textContent = streak;\n  }\n\n  function startGame() {\n    clearTimeout(signalTimer);\n    clearTimeout(phaseTimer);\n    score = 0;\n    round = 0;\n    streak = 0;\n    playing = true;\n    canTap = false;\n    person.classList.remove(\"step\");\n    setSignal(false);\n    updateHUD();\n    startBtn.textContent = \"Restart\";\n    msg.textContent = \"Watch the signal...\";\n    nextSignal();\n  }\n\n  function nextSignal() {\n    if (round >= maxRounds) return endGame();\n\n    canTap = false;\n    setSignal(false);\n    msg.textContent = \"Wait...\";\n    msg.className = \"message\";\n\n    const delay = 650 + Math.random() * 1100;\n\n    signalTimer = setTimeout(() => {\n      round++;\n      canTap = true;\n\n      const isWalk = Math.random() > 0.38;\n      setSignal(isWalk);\n      updateHUD();\n\n      msg.textContent = isWalk ? \"WALK! Tap now!\" : \"STOP! Do not tap!\";\n      msg.className = \"message\";\n\n      phaseTimer = setTimeout(() => {\n        if (canTap && safe) {\n          score -= 1;\n          streak = 0;\n          msg.textContent = \"Too slow.\";\n          msg.className = \"message danger\";\n        } else if (canTap && !safe) {\n          score += 1;\n          msg.textContent = \"Good patience.\";\n          msg.className = \"message good\";\n        }\n        canTap = false;\n        updateHUD();\n        setTimeout(nextSignal, 500);\n      }, 900);\n    }, delay);\n  }\n\n  function tapCross() {\n    if (!playing || !canTap) return;\n\n    canTap = false;\n\n    if (safe) {\n      streak++;\n      score += 3 + Math.min(streak, 5);\n      msg.textContent = `Safe cross! +${3 + Math.min(streak, 5)}`;\n      msg.className = \"message good\";\n      person.classList.add(\"step\");\n      setTimeout(() => person.classList.remove(\"step\"), 260);\n    } else {\n      streak = 0;\n      score -= 4;\n      msg.textContent = \"Unsafe tap! -4\";\n      msg.className = \"message danger\";\n    }\n\n    updateHUD();\n    setTimeout(nextSignal, 500);\n  }\n\n  function endGame() {\n    playing = false;\n    canTap = false;\n    setSignal(false);\n    const rating =\n      score >= 45 ? \"Crosswalk pro 🟢\" :\n      score >= 28 ? \"Sharp timing 🟡\" :\n      score >= 12 ? \"Needs practice 🟠\" :\n      \"Too risky 🔴\";\n    msg.textContent = `Final score: ${score}. ${rating}`;\n    startBtn.textContent = \"Play Again\";\n  }\n\n  startBtn.addEventListener(\"click\", startGame);\n  tapBtn.addEventListener(\"click\", tapCross);\n  document.addEventListener(\"keydown\", e => {\n    if (e.code === \"Space\" || e.code === \"Enter\") {\n      e.preventDefault();\n      playing ? tapCross() : startGame();\n    }\n  });\n\n  updateHUD();\n})();\n</script>\n</body>\n</html>"
+        }
+      ],
+      "generated_files": [
+        "public/artifacts/tiny-crosswalk-timing-trainer-chatgpt.html"
+      ],
+      "artifact_version_path": "public/artifacts/tiny-crosswalk-timing-trainer-chatgpt.html",
+      "notes": "Real generated HTML copied from ChatGPT code block and saved under public/artifacts/. No prompt 2 was used because the one-shot artifact passed verification."
+    }
+  ],
+  "pass_recommendation": "pass",
+  "verification": {
+    "status": "passed",
+    "checks": [
+      {
+        "name": "render",
+        "result": "passed",
+        "detail": "Local HTTP artifact rendered with title, signal/street scene, HUD, message, and controls."
+      },
+      {
+        "name": "start_round",
+        "result": "passed",
+        "detail": "Start Round changed game state, advanced round count, and began randomized signal phases."
+      },
+      {
+        "name": "click_tap_control",
+        "result": "passed",
+        "detail": "TAP TO CROSS accepted input during a signal phase and updated message/HUD state."
+      },
+      {
+        "name": "keyboard_control",
+        "result": "passed",
+        "detail": "Space key triggered a safe-cross action and updated score/streak."
+      },
+      {
+        "name": "console",
+        "result": "passed",
+        "detail": "Chrome console warning/error logs were empty during local verification."
+      },
+      {
+        "name": "dependency_scan",
+        "result": "passed",
+        "detail": "No external script/link/font/import/url references detected."
+      },
+      {
+        "name": "mobile_fit",
+        "result": "passed_with_note",
+        "detail": "Viewport meta plus width min(440px, 94vw) and overflow guards indicate 390px fit; direct Chrome viewport resize was unavailable through exposed API."
+      }
+    ]
+  }
+}

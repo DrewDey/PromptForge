@@ -1,0 +1,408 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Tiny Snow Plow</title>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    min-height: 100vh;
+    display: grid;
+    place-items: center;
+    background: #0f172a;
+    color: #e5eefc;
+    font-family: system-ui, Arial, sans-serif;
+    overflow-x: hidden;
+  }
+  .wrap {
+    width: min(96vw, 760px);
+    padding: 12px;
+  }
+  .top {
+    display: flex;
+    justify-content: space-between;
+    gap: 8px;
+    align-items: center;
+    flex-wrap: wrap;
+    margin-bottom: 8px;
+  }
+  h1 {
+    font-size: 20px;
+    margin: 0;
+    letter-spacing: .3px;
+  }
+  .hud {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    font-weight: 800;
+  }
+  .pill {
+    background: #1e293b;
+    border: 1px solid #334155;
+    border-radius: 999px;
+    padding: 7px 10px;
+    font-size: 13px;
+  }
+  canvas {
+    width: 100%;
+    max-width: 740px;
+    aspect-ratio: 16 / 10;
+    display: block;
+    background: #dbeafe;
+    border: 4px solid #1e293b;
+    border-radius: 18px;
+    touch-action: none;
+  }
+  .controls {
+    display: grid;
+    grid-template-columns: 70px 70px 70px;
+    grid-template-rows: 54px 54px;
+    justify-content: center;
+    gap: 8px;
+    margin-top: 10px;
+  }
+  button {
+    border: 0;
+    border-radius: 14px;
+    font-weight: 900;
+    background: #f8fafc;
+    color: #0f172a;
+    box-shadow: 0 4px 0 #94a3b8;
+    cursor: pointer;
+  }
+  button:active { transform: translateY(3px); box-shadow: 0 1px 0 #94a3b8; }
+  #up { grid-column: 2; }
+  #left { grid-column: 1; grid-row: 2; }
+  #down { grid-column: 2; grid-row: 2; }
+  #right { grid-column: 3; grid-row: 2; }
+  .note {
+    margin-top: 8px;
+    color: #bfdbfe;
+    font-size: 13px;
+    text-align: center;
+  }
+  .overlay {
+    position: fixed;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    background: rgba(15, 23, 42, .72);
+    padding: 14px;
+  }
+  .card {
+    width: min(92vw, 430px);
+    background: #f8fafc;
+    color: #0f172a;
+    border-radius: 20px;
+    padding: 20px;
+    text-align: center;
+    box-shadow: 0 20px 60px rgba(0,0,0,.35);
+  }
+  .card h2 { margin: 0 0 8px; }
+  .card p { line-height: 1.35; }
+  .card button {
+    background: #2563eb;
+    color: white;
+    box-shadow: 0 4px 0 #1d4ed8;
+    padding: 12px 18px;
+    font-size: 16px;
+  }
+  @media (max-width: 430px) {
+    .wrap { padding: 8px; }
+    h1 { font-size: 17px; }
+    .pill { font-size: 12px; padding: 6px 8px; }
+    canvas { border-radius: 14px; border-width: 3px; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="top">
+    <h1>❄️ Tiny Snow Plow</h1>
+    <div class="hud">
+      <div class="pill">Cleared: <span id="cleared">0</span>%</div>
+      <div class="pill">Time: <span id="time">75</span>s</div>
+      <div class="pill">Best: <span id="best">—</span></div>
+    </div>
+  </div>
+
+  <canvas id="game" width="740" height="462"></canvas>
+
+  <div class="controls">
+    <button id="up">▲</button>
+    <button id="left">◀</button>
+    <button id="down">▼</button>
+    <button id="right">▶</button>
+  </div>
+  <div class="note">Arrow keys/WASD or touch buttons. Clear every snowy street before the storm wins.</div>
+</div>
+
+<div class="overlay" id="overlay">
+  <div class="card">
+    <h2>Neighborhood Plow Run</h2>
+    <p>Drive over every white street segment. Re-cleared roads are faster, snowy roads slow you down. Beat the clock.</p>
+    <button onclick="startGame()">Start plowing</button>
+  </div>
+</div>
+
+<script>
+const canvas = document.getElementById("game");
+const ctx = canvas.getContext("2d");
+const clearedEl = document.getElementById("cleared");
+const timeEl = document.getElementById("time");
+const bestEl = document.getElementById("best");
+const overlay = document.getElementById("overlay");
+
+const W = canvas.width, H = canvas.height;
+const intersections = [
+  [90,80],[250,80],[410,80],[590,80],
+  [90,210],[250,210],[410,210],[590,210],
+  [90,350],[250,350],[410,350],[590,350]
+];
+
+const streetPairs = [
+  [0,1],[1,2],[2,3],
+  [4,5],[5,6],[6,7],
+  [8,9],[9,10],[10,11],
+  [0,4],[4,8],
+  [1,5],[5,9],
+  [2,6],[6,10],
+  [3,7],[7,11],
+  [0,5],[6,11]
+];
+
+let streets, plow, keys, running, last, timeLeft, total, clearedCount, flakes;
+
+function resetState() {
+  streets = streetPairs.map(([a,b]) => ({
+    a: intersections[a],
+    b: intersections[b],
+    clear: 0
+  }));
+  plow = { x: 90, y: 80, angle: 0, speed: 0 };
+  keys = {};
+  running = false;
+  last = 0;
+  timeLeft = 75;
+  total = streets.length;
+  clearedCount = 0;
+  flakes = Array.from({length: 90}, () => ({
+    x: Math.random()*W, y: Math.random()*H, s: 1 + Math.random()*2.5
+  }));
+  bestEl.textContent = localStorage.tinyPlowBest ? localStorage.tinyPlowBest + "s" : "—";
+}
+
+function startGame() {
+  resetState();
+  overlay.style.display = "none";
+  running = true;
+  requestAnimationFrame(loop);
+}
+
+function nearestStreet(x,y) {
+  let best = null, bestD = Infinity, bestT = 0;
+  for (const st of streets) {
+    const [x1,y1] = st.a, [x2,y2] = st.b;
+    const dx = x2-x1, dy = y2-y1;
+    const len2 = dx*dx + dy*dy;
+    let t = ((x-x1)*dx + (y-y1)*dy) / len2;
+    t = Math.max(0, Math.min(1, t));
+    const px = x1 + dx*t, py = y1 + dy*t;
+    const d = Math.hypot(x-px, y-py);
+    if (d < bestD) { bestD = d; best = st; bestT = t; }
+  }
+  return { street: best, dist: bestD, t: bestT };
+}
+
+function update(dt) {
+  timeLeft -= dt;
+  if (timeLeft <= 0) return end(false);
+
+  let turn = 0;
+  if (keys.ArrowLeft || keys.a) turn -= 1;
+  if (keys.ArrowRight || keys.d) turn += 1;
+  plow.angle += turn * dt * 3.4;
+
+  let accel = 0;
+  if (keys.ArrowUp || keys.w) accel += 1;
+  if (keys.ArrowDown || keys.s) accel -= 1;
+
+  const near = nearestStreet(plow.x, plow.y);
+  const onRoad = near.dist < 28;
+  const snowy = onRoad && near.street.clear < .98;
+  const maxSpeed = snowy ? 82 : 122;
+
+  plow.speed += accel * dt * 115;
+  plow.speed *= Math.pow(.88, dt * 8);
+  plow.speed = Math.max(-55, Math.min(maxSpeed, plow.speed));
+
+  plow.x += Math.cos(plow.angle) * plow.speed * dt;
+  plow.y += Math.sin(plow.angle) * plow.speed * dt;
+
+  if (!onRoad) plow.speed *= .85;
+  plow.x = Math.max(32, Math.min(W-32, plow.x));
+  plow.y = Math.max(32, Math.min(H-32, plow.y));
+
+  if (onRoad && Math.abs(plow.speed) > 8 && near.street.clear < 1) {
+    near.street.clear = Math.min(1, near.street.clear + dt * .85);
+  }
+
+  clearedCount = streets.filter(s => s.clear >= .98).length;
+  if (clearedCount === total) end(true);
+
+  for (const f of flakes) {
+    f.y += f.s * dt * 38;
+    f.x += Math.sin(f.y * .02) * dt * 10;
+    if (f.y > H) { f.y = -5; f.x = Math.random()*W; }
+  }
+}
+
+function draw() {
+  ctx.clearRect(0,0,W,H);
+
+  const g = ctx.createLinearGradient(0,0,0,H);
+  g.addColorStop(0, "#e0f2fe");
+  g.addColorStop(1, "#bfdbfe");
+  ctx.fillStyle = g;
+  ctx.fillRect(0,0,W,H);
+
+  drawHouses();
+
+  ctx.lineCap = "round";
+  for (const st of streets) {
+    const [x1,y1] = st.a, [x2,y2] = st.b;
+    ctx.lineWidth = 34;
+    ctx.strokeStyle = "#f8fafc";
+    ctx.beginPath(); ctx.moveTo(x1,y1); ctx.lineTo(x2,y2); ctx.stroke();
+
+    ctx.lineWidth = 22;
+    ctx.strokeStyle = "#94a3b8";
+    ctx.beginPath(); ctx.moveTo(x1,y1); ctx.lineTo(x2,y2); ctx.stroke();
+
+    ctx.lineWidth = 22;
+    ctx.strokeStyle = "#334155";
+    ctx.beginPath(); ctx.moveTo(x1,y1); ctx.lineTo(x2,y2); ctx.stroke();
+
+    if (st.clear < 1) {
+      ctx.lineWidth = 24;
+      ctx.strokeStyle = `rgba(255,255,255,${.94 - st.clear*.75})`;
+      ctx.beginPath(); ctx.moveTo(x1,y1); ctx.lineTo(x2,y2); ctx.stroke();
+    }
+  }
+
+  for (const [x,y] of intersections) {
+    ctx.fillStyle = "#1e293b";
+    ctx.beginPath(); ctx.arc(x,y,18,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle = "#f8fafc";
+    ctx.beginPath(); ctx.arc(x,y,10,0,Math.PI*2); ctx.fill();
+  }
+
+  drawPlow();
+
+  ctx.fillStyle = "rgba(255,255,255,.82)";
+  for (const f of flakes) {
+    ctx.beginPath(); ctx.arc(f.x,f.y,f.s,0,Math.PI*2); ctx.fill();
+  }
+
+  const pct = Math.floor((clearedCount / total) * 100);
+  clearedEl.textContent = pct;
+  timeEl.textContent = Math.max(0, Math.ceil(timeLeft));
+}
+
+function drawHouses() {
+  const houses = [
+    [155,145,"#f97316"],[330,145,"#22c55e"],[510,145,"#eab308"],
+    [165,285,"#ec4899"],[335,285,"#8b5cf6"],[510,285,"#14b8a6"],
+    [680,210,"#ef4444"],[35,285,"#38bdf8"]
+  ];
+  for (const [x,y,c] of houses) {
+    ctx.fillStyle = c;
+    ctx.fillRect(x-24,y-18,48,36);
+    ctx.fillStyle = "#7f1d1d";
+    ctx.beginPath();
+    ctx.moveTo(x-30,y-18); ctx.lineTo(x,y-45); ctx.lineTo(x+30,y-18);
+    ctx.closePath(); ctx.fill();
+    ctx.fillStyle = "#e0f2fe";
+    ctx.fillRect(x-8,y+2,16,16);
+  }
+}
+
+function drawPlow() {
+  ctx.save();
+  ctx.translate(plow.x, plow.y);
+  ctx.rotate(plow.angle);
+
+  ctx.fillStyle = "#facc15";
+  ctx.fillRect(-20,-13,36,26);
+  ctx.fillStyle = "#0f172a";
+  ctx.fillRect(-4,-10,14,20);
+  ctx.fillStyle = "#64748b";
+  ctx.fillRect(15,-18,11,36);
+
+  ctx.fillStyle = "#dc2626";
+  ctx.beginPath();
+  ctx.moveTo(28,-22);
+  ctx.lineTo(48,0);
+  ctx.lineTo(28,22);
+  ctx.closePath();
+  ctx.fill();
+
+  ctx.fillStyle = "#111827";
+  ctx.fillRect(-16,-18,9,7);
+  ctx.fillRect(-16,11,9,7);
+  ctx.fillRect(8,-18,9,7);
+  ctx.fillRect(8,11,9,7);
+
+  ctx.restore();
+}
+
+function end(win) {
+  running = false;
+  const scoreTime = Math.ceil(timeLeft);
+  if (win) {
+    const best = Number(localStorage.tinyPlowBest || 0);
+    if (scoreTime > best) localStorage.tinyPlowBest = scoreTime;
+  }
+  overlay.style.display = "grid";
+  overlay.innerHTML = `
+    <div class="card">
+      <h2>${win ? "✅ Streets Cleared" : "🌨️ Storm Won"}</h2>
+      <p>${win
+        ? `You beat the storm with <b>${scoreTime}s</b> left. Best: <b>${localStorage.tinyPlowBest || scoreTime}s</b>.`
+        : `You cleared <b>${Math.floor((clearedCount/total)*100)}%</b> before visibility collapsed.`}
+      </p>
+      <button onclick="startGame()">Play again</button>
+    </div>`;
+}
+
+function loop(t) {
+  if (!running) return;
+  const dt = Math.min(.04, (t - last) / 1000 || .016);
+  last = t;
+  update(dt);
+  draw();
+  requestAnimationFrame(loop);
+}
+
+window.addEventListener("keydown", e => {
+  keys[e.key] = true;
+  if ((e.key === "Enter" || e.key === " ") && !running) startGame();
+});
+window.addEventListener("keyup", e => keys[e.key] = false);
+
+for (const id of ["up","down","left","right"]) {
+  const btn = document.getElementById(id);
+  const key = {up:"ArrowUp",down:"ArrowDown",left:"ArrowLeft",right:"ArrowRight"}[id];
+  btn.addEventListener("pointerdown", e => { e.preventDefault(); keys[key] = true; });
+  btn.addEventListener("pointerup", e => { e.preventDefault(); keys[key] = false; });
+  btn.addEventListener("pointerleave", () => keys[key] = false);
+}
+
+resetState();
+draw();
+</script>
+</body>
+</html>

@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Birthday Party Guest Tracker</title>
+    <style>
+        :root {
+            --primary: #4f46e5;
+            --primary-hover: #4338ca;
+            --success: #16a34a;
+            --warning: #ca8a04;
+            --danger: #dc2626;
+            --bg-main: #f8fafc;
+            --bg-card: #ffffff;
+            --text-main: #1e293b;
+            --text-muted: #64748b;
+            --border: #e2e8f0;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-main);
+            color: var(--text-main);
+            padding: 2rem 1rem;
+            line-height: 1.5;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        header {
+            margin-bottom: 2rem;
+            border-bottom: 2px dashed var(--border);
+            padding-bottom: 1rem;
+        }
+
+        h1 { color: var(--primary); font-size: 2rem; }
+        h2 { font-size: 1.25rem; margin-bottom: 1rem; color: var(--text-main); }
+
+        /* Stats Grid */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: var(--bg-card);
+            padding: 1rem;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            text-align: center;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        }
+
+        .stat-val { font-size: 1.75rem; font-weight: bold; color: var(--primary); }
+        .stat-label { font-size: 0.875rem; color: var(--text-muted); }
+
+        /* Main Workspace Layout */
+        .workspace {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 2rem;
+        }
+
+        @media (min-width: 900px) {
+            .workspace { grid-template-columns: 1.2fr 0.8fr; }
+        }
+
+        .card {
+            background: var(--bg-card);
+            padding: 1.5rem;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
+        }
+
+        /* Form Styling */
+        .guest-form {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+            background: #f1f5f9;
+            padding: 1rem;
+            border-radius: 8px;
+            align-items: flex-end;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
+        }
+
+        .form-group label { font-size: 0.85rem; font-weight: 600; color: var(--text-main); }
+        
+        input, select {
+            padding: 0.5rem;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            font-size: 0.9rem;
+            width: 100%;
+        }
+
+        button {
+            padding: 0.5rem 1rem;
+            border: none;
+            border-radius: 6px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .btn-primary { background: var(--primary); color: white; }
+        .btn-primary:hover { background: var(--primary-hover); }
+        .btn-action { padding: 0.25rem 0.5rem; font-size: 0.8rem; }
+        .btn-danger { background: #fee2e2; color: var(--danger); }
+        .btn-danger:hover { background: #fca5a5; }
+
+        /* Table Styling */
+        .table-container { overflow-x: auto; }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+            font-size: 0.95rem;
+        }
+
+        th, td { padding: 0.75rem; border-bottom: 1px solid var(--border); }
+        th { background: #f8fafc; font-weight: 600; color: var(--text-muted); }
+
+        .badge {
+            display: inline-block;
+            padding: 0.25rem 0.5rem;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+        .badge-attending { background: #dcfce7; color: var(--success); }
+        .badge-pending { background: #fef9c3; color: var(--warning); }
+        .badge-declined { background: #fee2e2; color: var(--danger); }
+
+        /* Handoff View & Print Formatting */
+        .handoff-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        .handoff-preview {
+            background: #fafafa;
+            border: 1px solid #cbd5e1;
+            padding: 1.5rem;
+            border-radius: 8px;
+            font-family: Courier, monospace;
+            white-space: pre-wrap;
+            font-size: 0.9rem;
+            max-height: 500px;
+            overflow-y: auto;
+        }
+
+        .dietary-alert {
+            color: var(--danger);
+            font-weight: bold;
+        }
+
+        /* Print-only Overrides */
+        @media print {
+            body * { visibility: hidden; }
+            #handoffPrintArea, #handoffPrintArea * { visibility: visible; }
+            #handoffPrintArea {
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: 100%;
+                background: white;
+                border: none;
+                padding: 0;
+                font-size: 11pt;
+            }
+            .btn-action, .guest-form, .stats-grid, .card:first-child, .handoff-header button {
+                display: none !important;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <h1>Party Planner Dashboard</h1>
+        <p style="color: var(--text-muted);">Track RSVPs, organize tables, log dietary restrictions, and generate helper summaries.</p>
+    </header>
+
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-val" id="count-attending">0</div>
+            <div class="stat-label">Attending</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-val" id="count-pending">0</div>
+            <div class="stat-label">Pending</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-val" id="count-dietary">0</div>
+            <div class="stat-label">Dietary Restrictions</div>
+        </div>
+    </div>
+
+    <div class="workspace">
+        
+        <div class="card">
+            <h2>Guest Directory</h2>
+            
+            <form class="guest-form" id="guestForm" onsubmit="handleGuestSubmit(event)">
+                <input type="hidden" id="editIndex" value="-1">
+                <div class="form-group">
+                    <label for="name">Kid's Name</label>
+                    <input type="text" id="name" required placeholder="e.g., Leo">
+                </div>
+                <div class="form-group">
+                    <label for="rsvp">RSVP Status</label>
+                    <select id="rsvp">
+                        <option value="Attending">Attending</option>
+                        <option value="Pending">Pending</option>
+                        <option value="Declined">Declined</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="tableGroup">Table / Group</label>
+                    <select id="tableGroup">
+                        <option value="Unassigned">Unassigned</option>
+                        <option value="Table 1">Table 1</option>
+                        <option value="Table 2">Table 2</option>
+                        <option value="Table 3">Table 3</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="dietary">Dietary Restrictions</label>
+                    <input type="text" id="dietary" placeholder="e.g., Peanut allergy, None">
+                </div>
+                <button type="submit" class="btn-primary" id="submitBtn">Add</button>
+            </form>
+
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>RSVP</th>
+                            <th>Table</th>
+                            <th>Dietary Notes</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="guestTableBody">
+                        </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="handoff-header">
+                <h2>Day-of Helper Handoff</h2>
+                <div style="display: flex; gap: 0.5rem;">
+                    <button class="btn-primary btn-action" onclick="copyHandoffText()">Copy Text</button>
+                    <button class="btn-primary btn-action" onclick="window.print()">Print Report</button>
+                </div>
+            </div>
+            <div class="handoff-preview" id="handoffPrintArea">
+                </div>
+        </div>
+
+    </div>
+</div>
+
+<script>
+    // In-memory data store seeded with sample entries
+    let guests = [
+        { name: "Leo", rsvp: "Attending", tableGroup: "Table 1", dietary: "Peanut Allergy" },
+        { name: "Maya", rsvp: "Pending", tableGroup: "Unassigned", dietary: "" },
+        { name: "Zack", rsvp: "Attending", tableGroup: "Table 2", dietary: "Dairy Free" },
+        { name: "Emily", rsvp: "Declined", tableGroup: "Unassigned", dietary: "" }
+    ];
+
+    function renderDashboard() {
+        const tbody = document.getElementById('guestTableBody');
+        tbody.innerHTML = '';
+        
+        let attending = 0, pending = 0, dietaryCount = 0;
+
+        guests.forEach((guest, index) => {
+            // Update metrics metrics
+            if (guest.rsvp === "Attending") attending++;
+            if (guest.rsvp === "Pending") pending++;
+            if (guest.dietary && guest.dietary.trim().toLowerCase() !== 'none') dietaryCount++;
+
+            // Create row entry
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td style="font-weight: 500;">${escapeHtml(guest.name)}</td>
+                <td><span class="badge badge-${guest.rsvp.toLowerCase()}">${guest.rsvp}</span></td>
+                <td>${escapeHtml(guest.tableGroup)}</td>
+                <td style="color: ${guest.dietary ? 'var(--danger)' : 'inherit'}">${escapeHtml(guest.dietary || '—')}</td>
+                <td>
+                    <button class="btn-primary btn-action" onclick="editGuest(${index})">Edit</button>
+                    <button class="btn-danger btn-action" onclick="deleteGuest(${index})">Delete</button>
+                </td>
+            `;
+            tbody.appendChild(tr);
+        });
+
+        // Push calculated metrics to the UI counters
+        document.getElementById('count-attending').innerText = attending;
+        document.getElementById('count-pending').innerText = pending;
+        document.getElementById('count-dietary').innerText = dietaryCount;
+
+        generateHandoffReport();
+    }
+
+    function handleGuestSubmit(e) {
+        e.preventDefault();
+        const index = parseInt(document.getElementById('editIndex').value);
+        
+        const guestData = {
+            name: document.getElementById('name').value,
+            rsvp: document.getElementById('rsvp').value,
+            tableGroup: document.getElementById('tableGroup').value,
+            dietary: document.getElementById('dietary').value
+        };
+
+        if (index === -1) {
+            guests.push(guestData);
+        } else {
+            guests[index] = guestData;
+            document.getElementById('editIndex').value = "-1";
+            document.getElementById('submitBtn').innerText = "Add";
+        }
+
+        document.getElementById('guestForm').reset();
+        renderDashboard();
+    }
+
+    function editGuest(index) {
+        const guest = guests[index];
+        document.getElementById('name').value = guest.name;
+        document.getElementById('rsvp').value = guest.rsvp;
+        document.getElementById('tableGroup').value = guest.tableGroup;
+        document.getElementById('dietary').value = guest.dietary;
+        
+        document.getElementById('editIndex').value = index;
+        document.getElementById('submitBtn').innerText = "Update";
+    }
+
+    function deleteGuest(index) {
+        guests.splice(index, 1);
+        renderDashboard();
+    }
+
+    function generateHandoffReport() {
+        const reportArea = document.getElementById('handoffPrintArea');
+        const attendingGuests = guests.filter(g => g.rsvp === "Attending");
+        const dietaryAlerts = guests.filter(g => g.rsvp === "Attending" && g.dietary && g.dietary.trim().toLowerCase() !== 'none');
+        
+        // Structure table assignments
+        const tables = {};
+        attendingGuests.forEach(g => {
+            if (!tables[g.tableGroup]) tables[g.tableGroup] = [];
+            tables[g.tableGroup].push(g.name);
+        });
+
+        let output = `=========================================\n`;
+        output += `      BIRTHDAY PARTY DAY-OF HANDOFF      \n`;
+        output += `=========================================\n\n`;
+        
+        output += `TOTAL ATTENDING KIDS: ${attendingGuests.length}\n\n`;
+        
+        output += `-----------------------------------------\n`;
+        output += `🚨 CRITICAL DIETARY/MEDICAL ALERTS 🚨\n`;
+        output += `-----------------------------------------\n`;
+        if (dietaryAlerts.length === 0) {
+            output += `None reported.\n`;
+        } else {
+            dietaryAlerts.forEach(g => {
+                output += `• ${g.name.toUpperCase()}: ${g.dietary}\n`;
+            });
+        }
+        output += `\n`;
+
+        output += `-----------------------------------------\n`;
+        output += `TABLE & GROUP ASSIGNMENTS\n`;
+        output += `-----------------------------------------\n`;
+        
+        if (Object.keys(tables).length === 0) {
+            output += `No attending guests assigned to tables yet.\n`;
+        } else {
+            for (const [tableName, roster] of Object.entries(tables)) {
+                output += `[${tableName}]\n`;
+                roster.forEach(name => {
+                    output += `  - ${name}\n`;
+                });
+                output += `\n`;
+            }
+        }
+        
+        output += `=========================================\n`;
+        output += `Generated on: ${new Date().toLocaleDateString()}\n`;
+        
+        reportArea.textContent = output;
+    }
+
+    function copyHandoffText() {
+        const text = document.getElementById('handoffPrintArea').textContent;
+        navigator.clipboard.writeText(text).then(() => {
+            alert('Handoff summary copied to clipboard!');
+        });
+    }
+
+    function escapeHtml(str) {
+        if (!str) return '';
+        return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+    }
+
+    // Run initial data render on load
+    renderDashboard();
+</script>
+
+</body>
+</html>

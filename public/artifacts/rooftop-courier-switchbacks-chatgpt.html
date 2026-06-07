@@ -1,0 +1,597 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+<title>Rooftop Courier Switchbacks</title>
+<style>
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0;
+    min-height: 100%;
+    overflow-x: hidden;
+    background: #10131d;
+    color: #f5f1df;
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    touch-action: manipulation;
+  }
+  body {
+    display: grid;
+    place-items: center;
+    padding: 14px;
+  }
+  .game {
+    width: min(960px, 100%);
+    border: 1px solid rgba(255,255,255,.14);
+    border-radius: 24px;
+    background:
+      radial-gradient(circle at 20% 10%, rgba(255,207,112,.16), transparent 34%),
+      radial-gradient(circle at 80% 20%, rgba(94,181,255,.14), transparent 32%),
+      linear-gradient(160deg, #171b2a, #0d1018);
+    box-shadow: 0 28px 80px rgba(0,0,0,.45);
+    padding: 16px;
+  }
+  header {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    align-items: center;
+    margin-bottom: 12px;
+  }
+  h1 {
+    margin: 0;
+    font-size: clamp(1.25rem, 5vw, 2rem);
+    letter-spacing: -.04em;
+    line-height: 1;
+  }
+  .sub {
+    opacity: .75;
+    font-size: .88rem;
+    margin-top: 4px;
+  }
+  .stats {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+  }
+  .pill {
+    min-width: 78px;
+    border: 1px solid rgba(255,255,255,.13);
+    border-radius: 14px;
+    background: rgba(255,255,255,.07);
+    padding: 8px 10px;
+    text-align: center;
+  }
+  .pill span {
+    display: block;
+    font-size: .7rem;
+    opacity: .72;
+    text-transform: uppercase;
+    letter-spacing: .08em;
+  }
+  .pill strong {
+    font-size: 1.08rem;
+  }
+  .wrap {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 250px;
+    gap: 14px;
+  }
+  .boardShell {
+    position: relative;
+    border-radius: 20px;
+    padding: 10px;
+    background:
+      linear-gradient(90deg, rgba(255,255,255,.05) 1px, transparent 1px),
+      linear-gradient(rgba(255,255,255,.05) 1px, transparent 1px),
+      #24273a;
+    background-size: 32px 32px;
+    overflow: hidden;
+  }
+  .board {
+    width: 100%;
+    aspect-ratio: 1 / 1;
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 7px;
+  }
+  .tile {
+    position: relative;
+    border: 0;
+    border-radius: 13px;
+    background: #191d2c;
+    min-width: 0;
+    min-height: 0;
+    color: inherit;
+    box-shadow: inset 0 0 0 1px rgba(255,255,255,.08);
+    touch-action: manipulation;
+  }
+  .roof {
+    background:
+      linear-gradient(135deg, rgba(255,255,255,.08), transparent),
+      #2f344c;
+  }
+  .empty {
+    opacity: .24;
+    background: #11131d;
+  }
+  .path::before, .path::after, .switch::before, .switch::after {
+    content: "";
+    position: absolute;
+    background: #d8c692;
+    border-radius: 999px;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+  }
+  .ns::before { width: 20%; height: 88%; }
+  .ew::before { width: 88%; height: 20%; }
+  .ne::before, .se::before, .sw::before, .nw::before { width: 20%; height: 54%; }
+  .ne::after, .se::after, .sw::after, .nw::after { width: 54%; height: 20%; }
+  .ne::before { top: 27%; } .ne::after { left: 73%; }
+  .se::before { top: 73%; } .se::after { left: 73%; }
+  .sw::before { top: 73%; } .sw::after { left: 27%; }
+  .nw::before { top: 27%; } .nw::after { left: 27%; }
+  .switch {
+    cursor: pointer;
+    background: linear-gradient(135deg, #40495f, #252a3c);
+  }
+  .switch:hover { filter: brightness(1.1); }
+  .switch .badge {
+    position: absolute;
+    inset: 6px auto auto 6px;
+    width: 22px;
+    height: 22px;
+    display: grid;
+    place-items: center;
+    border-radius: 50%;
+    background: #ffd166;
+    color: #1a1720;
+    font-weight: 900;
+    font-size: .76rem;
+    z-index: 2;
+  }
+  .depot, .goal {
+    display: grid;
+    place-items: center;
+    font-size: clamp(1.1rem, 4vw, 2rem);
+    background: linear-gradient(135deg, #3d4d69, #202638);
+  }
+  .goal { background: linear-gradient(135deg, #315948, #1d2f2a); }
+  .runner {
+    position: absolute;
+    width: 4.8%;
+    aspect-ratio: 1;
+    border-radius: 50% 50% 45% 45%;
+    background: #ff6b6b;
+    border: 3px solid #fff2c7;
+    box-shadow: 0 6px 18px rgba(0,0,0,.45);
+    transform: translate(-50%, -50%);
+    transition: left .16s linear, top .16s linear;
+    z-index: 10;
+  }
+  .runner::after {
+    content: "📦";
+    position: absolute;
+    font-size: .78rem;
+    top: -13px;
+    right: -12px;
+  }
+  .pulse {
+    animation: pulse .22s ease;
+  }
+  @keyframes pulse {
+    50% { transform: scale(.92); filter: brightness(1.45); }
+  }
+  aside {
+    border: 1px solid rgba(255,255,255,.12);
+    border-radius: 20px;
+    background: rgba(255,255,255,.06);
+    padding: 14px;
+  }
+  .panelTitle {
+    font-weight: 850;
+    margin-bottom: 8px;
+  }
+  .routeBox {
+    display: grid;
+    gap: 8px;
+    margin: 10px 0 12px;
+  }
+  .job {
+    border-radius: 14px;
+    background: rgba(0,0,0,.2);
+    padding: 10px;
+    border: 1px solid rgba(255,255,255,.09);
+  }
+  .job.done { opacity: .55; }
+  .controls {
+    display: grid;
+    gap: 8px;
+  }
+  button.action {
+    border: 0;
+    border-radius: 14px;
+    padding: 12px 14px;
+    background: #ffd166;
+    color: #181622;
+    font-weight: 900;
+    cursor: pointer;
+  }
+  button.secondary {
+    background: rgba(255,255,255,.1);
+    color: #f5f1df;
+    border: 1px solid rgba(255,255,255,.13);
+  }
+  .hint {
+    font-size: .86rem;
+    opacity: .76;
+    line-height: 1.35;
+    margin-top: 10px;
+  }
+  .overlay {
+    position: absolute;
+    inset: 10px;
+    display: grid;
+    place-items: center;
+    background: rgba(10,12,20,.78);
+    backdrop-filter: blur(6px);
+    border-radius: 18px;
+    z-index: 20;
+    padding: 16px;
+    text-align: center;
+  }
+  .card {
+    max-width: 430px;
+    border-radius: 22px;
+    padding: 18px;
+    background: #202538;
+    border: 1px solid rgba(255,255,255,.14);
+    box-shadow: 0 18px 50px rgba(0,0,0,.45);
+  }
+  .card h2 {
+    margin: 0 0 8px;
+    font-size: 1.55rem;
+  }
+  .card p {
+    margin: 8px 0 14px;
+    opacity: .82;
+  }
+  .hidden { display: none; }
+  @media (max-width: 760px) {
+    body { padding: 8px; }
+    .game { padding: 12px; border-radius: 18px; }
+    header { align-items: flex-start; }
+    .wrap { grid-template-columns: 1fr; }
+    aside { padding: 12px; }
+    .stats { gap: 6px; }
+    .pill { min-width: 68px; padding: 7px 8px; }
+    .boardShell { padding: 7px; }
+    .board { gap: 5px; }
+    .tile { border-radius: 10px; }
+    .switch .badge {
+      width: 19px;
+      height: 19px;
+      font-size: .68rem;
+      inset: 4px auto auto 4px;
+    }
+  }
+</style>
+</head>
+<body>
+<main class="game">
+  <header>
+    <div>
+      <h1>Rooftop Courier Switchbacks</h1>
+      <div class="sub">Toggle switch tiles before the runner reaches them.</div>
+    </div>
+    <div class="stats">
+      <div class="pill"><span>Time</span><strong id="time">60</strong></div>
+      <div class="pill"><span>Score</span><strong id="score">0</strong></div>
+      <div class="pill"><span>Best</span><strong id="best">0</strong></div>
+    </div>
+  </header>
+
+  <section class="wrap">
+    <div class="boardShell" id="shell">
+      <div class="board" id="board"></div>
+      <div class="runner hidden" id="runner"></div>
+      <div class="overlay" id="overlay">
+        <div class="card">
+          <h2 id="overlayTitle">Route the rooftop rush</h2>
+          <p id="overlayText">Switches decide which walkway the courier takes. Deliver 5 packages before the storm timer hits zero.</p>
+          <button class="action" id="startBtn">Start Run</button>
+        </div>
+      </div>
+    </div>
+
+    <aside>
+      <div class="panelTitle">Delivery board</div>
+      <div class="routeBox" id="jobs"></div>
+      <div class="controls">
+        <button class="action" id="startSide">Start / Restart</button>
+        <button class="action secondary" id="pauseBtn">Pause</button>
+      </div>
+      <div class="hint">
+        Tap yellow-numbered switch tiles. Keyboard: 1 to 4 toggles switches, Space pauses, Enter starts.
+      </div>
+    </aside>
+  </section>
+</main>
+
+<script>
+(() => {
+  const boardEl = document.getElementById("board");
+  const shell = document.getElementById("shell");
+  const runnerEl = document.getElementById("runner");
+  const timeEl = document.getElementById("time");
+  const scoreEl = document.getElementById("score");
+  const bestEl = document.getElementById("best");
+  const jobsEl = document.getElementById("jobs");
+  const overlay = document.getElementById("overlay");
+  const overlayTitle = document.getElementById("overlayTitle");
+  const overlayText = document.getElementById("overlayText");
+  const startBtn = document.getElementById("startBtn");
+  const startSide = document.getElementById("startSide");
+  const pauseBtn = document.getElementById("pauseBtn");
+
+  const W = 7;
+  const bestKey = "rooftopCourierSwitchbacksBest";
+  let best = Number(localStorage.getItem(bestKey) || 0);
+  bestEl.textContent = best;
+
+  const tiles = [
+    "empty","empty","depot","empty","empty","empty","empty",
+    "empty","empty","ns","empty","goal","ew","goal",
+    "goal","ew","sw","ew","switch","ew","goal",
+    "empty","empty","ns","empty","ns","empty","empty",
+    "empty","empty","switch","ew","switch","ew","goal",
+    "empty","empty","ns","empty","ns","empty","empty",
+    "empty","goal","nw","ew","switch","ew","goal"
+  ];
+
+  const switchIds = [18,30,32,46];
+  const switchStates = {
+    18: ["sw", "se"],
+    30: ["ns", "ne"],
+    32: ["ns", "se"],
+    46: ["nw", "ne"]
+  };
+  let state = {18:0,30:0,32:0,46:0};
+
+  const jobsBase = [
+    { name: "Water tower drop", goal: 14 },
+    { name: "Greenhouse meds", goal: 20 },
+    { name: "Radio mast tools", goal: 34 },
+    { name: "Night market parcel", goal: 43 },
+    { name: "Lantern roof finale", goal: 48 }
+  ];
+
+  let jobs = [];
+  let currentJob = 0;
+  let runner = null;
+  let timer = 60;
+  let score = 0;
+  let running = false;
+  let paused = false;
+  let lastTick = 0;
+  let moveAcc = 0;
+  let stormAcc = 0;
+
+  function drawBoard() {
+    boardEl.innerHTML = "";
+    tiles.forEach((type, i) => {
+      const b = document.createElement("button");
+      b.className = "tile";
+      b.disabled = true;
+      b.dataset.i = i;
+
+      if (type === "empty") b.classList.add("empty");
+      else if (type === "depot") {
+        b.classList.add("depot");
+        b.textContent = "🏠";
+      } else if (type === "goal") {
+        b.classList.add("goal");
+        b.textContent = "📍";
+      } else if (type === "switch") {
+        b.disabled = false;
+        b.classList.add("switch", switchStates[i][state[i]]);
+        const badge = document.createElement("span");
+        badge.className = "badge";
+        badge.textContent = switchIds.indexOf(i) + 1;
+        b.appendChild(badge);
+        b.addEventListener("click", () => toggleSwitch(i));
+      } else {
+        b.classList.add("roof", "path", type);
+      }
+      boardEl.appendChild(b);
+    });
+  }
+
+  function shuffle(arr) {
+    return arr.map(v => [Math.random(), v]).sort((a,b) => a[0]-b[0]).map(x => x[1]);
+  }
+
+  function startGame() {
+    jobs = shuffle([...jobsBase]);
+    currentJob = 0;
+    timer = 60;
+    score = 0;
+    running = true;
+    paused = false;
+    state = {18:0,30:0,32:0,46:0};
+    runner = { pos: 2, from: null };
+    lastTick = performance.now();
+    moveAcc = 0;
+    stormAcc = 0;
+    runnerEl.classList.remove("hidden");
+    overlay.classList.add("hidden");
+    pauseBtn.textContent = "Pause";
+    updateUI();
+    drawBoard();
+    placeRunner();
+    requestAnimationFrame(loop);
+  }
+
+  function endGame(win) {
+    running = false;
+    runnerEl.classList.add("hidden");
+    const bonus = Math.max(0, Math.ceil(timer)) * 4;
+    if (win) score += bonus;
+    if (score > best) {
+      best = score;
+      localStorage.setItem(bestKey, best);
+    }
+    bestEl.textContent = best;
+    overlay.classList.remove("hidden");
+    overlayTitle.textContent = win ? "Deliveries complete 🏙️" : "Storm won the roof";
+    overlayText.textContent = win
+      ? `Final score ${score}. Time bonus ${bonus}. Best score ${best}.`
+      : `You delivered ${currentJob} of 5 packages. Final score ${score}. Best score ${best}.`;
+    startBtn.textContent = "Play Again";
+    updateUI();
+  }
+
+  function toggleSwitch(i) {
+    if (!running || paused) return;
+    state[i] = state[i] ? 0 : 1;
+    drawBoard();
+    const tile = boardEl.querySelector(`[data-i="${i}"]`);
+    tile.classList.add("pulse");
+    setTimeout(() => tile.classList.remove("pulse"), 240);
+  }
+
+  function exitsFor(i) {
+    const type = switchIds.includes(i) ? switchStates[i][state[i]] : tiles[i];
+    return {
+      ns: ["N","S"], ew: ["E","W"],
+      ne: ["N","E"], se: ["S","E"], sw: ["S","W"], nw: ["N","W"],
+      depot: ["S"], goal: ["N","E","S","W"]
+    }[type] || [];
+  }
+
+  function neighbor(i, dir) {
+    const r = Math.floor(i / W), c = i % W;
+    if (dir === "N" && r > 0) return i - W;
+    if (dir === "S" && r < W - 1) return i + W;
+    if (dir === "E" && c < W - 1) return i + 1;
+    if (dir === "W" && c > 0) return i - 1;
+    return null;
+  }
+
+  function opposite(d) {
+    return {N:"S", S:"N", E:"W", W:"E"}[d];
+  }
+
+  function stepRunner() {
+    if (!runner) return;
+    if (runner.pos === jobs[currentJob].goal) {
+      score += 100 + Math.ceil(timer);
+      currentJob++;
+      if (currentJob >= jobs.length) return endGame(true);
+      runner.pos = 2;
+      runner.from = null;
+      updateUI();
+      placeRunner();
+      return;
+    }
+
+    const exits = exitsFor(runner.pos);
+    let options = exits
+      .map(d => ({ dir: d, to: neighbor(runner.pos, d) }))
+      .filter(x => x.to !== null && x.to !== runner.from)
+      .filter(x => exitsFor(x.to).includes(opposite(x.dir)));
+
+    if (!options.length && runner.from !== null) {
+      options = [{ to: runner.from }];
+    }
+
+    if (!options.length) {
+      score = Math.max(0, score - 20);
+      runner.pos = 2;
+      runner.from = null;
+    } else {
+      const next = options[0].to;
+      runner.from = runner.pos;
+      runner.pos = next;
+    }
+    placeRunner();
+    updateUI();
+  }
+
+  function placeRunner() {
+    const rect = shell.getBoundingClientRect();
+    const bRect = boardEl.getBoundingClientRect();
+    const size = bRect.width / W;
+    const r = Math.floor(runner.pos / W);
+    const c = runner.pos % W;
+    runnerEl.style.left = ((bRect.left - rect.left) + c * size + size / 2) + "px";
+    runnerEl.style.top = ((bRect.top - rect.top) + r * size + size / 2) + "px";
+  }
+
+  function updateUI() {
+    timeEl.textContent = Math.max(0, Math.ceil(timer));
+    scoreEl.textContent = score;
+    jobsEl.innerHTML = jobs.map((j, idx) => `
+      <div class="job ${idx < currentJob ? "done" : ""}">
+        ${idx === currentJob ? "➡️ " : idx < currentJob ? "✅ " : "⬜ "}
+        ${j.name}
+      </div>
+    `).join("");
+  }
+
+  function loop(now) {
+    if (!running) return;
+    const dt = Math.min(.05, (now - lastTick) / 1000);
+    lastTick = now;
+
+    if (!paused) {
+      timer -= dt;
+      moveAcc += dt;
+      stormAcc += dt;
+
+      const moveSpeed = Math.max(.33, .72 - currentJob * .055);
+      if (moveAcc >= moveSpeed) {
+        moveAcc = 0;
+        stepRunner();
+      }
+      if (stormAcc >= .25) {
+        stormAcc = 0;
+        updateUI();
+      }
+      if (timer <= 0) endGame(false);
+    }
+    requestAnimationFrame(loop);
+  }
+
+  function togglePause() {
+    if (!running) return;
+    paused = !paused;
+    pauseBtn.textContent = paused ? "Resume" : "Pause";
+    if (!paused) lastTick = performance.now();
+  }
+
+  startBtn.addEventListener("click", startGame);
+  startSide.addEventListener("click", startGame);
+  pauseBtn.addEventListener("click", togglePause);
+
+  window.addEventListener("resize", () => runner && placeRunner());
+
+  window.addEventListener("keydown", e => {
+    if (e.key === "Enter") startGame();
+    if (e.code === "Space") {
+      e.preventDefault();
+      togglePause();
+    }
+    const n = Number(e.key);
+    if (n >= 1 && n <= switchIds.length) toggleSwitch(switchIds[n - 1]);
+  });
+
+  jobs = [...jobsBase];
+  drawBoard();
+  updateUI();
+})();
+</script>
+</body>
+</html>

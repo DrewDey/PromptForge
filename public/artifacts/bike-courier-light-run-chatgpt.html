@@ -1,0 +1,915 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+<title>Block Bike Courier</title>
+<style>
+  * { box-sizing: border-box; }
+
+  html, body {
+    margin: 0;
+    min-height: 100%;
+    background: #15191f;
+    font-family: system-ui, Arial, sans-serif;
+    color: white;
+    overflow-x: hidden;
+    overscroll-behavior: none;
+  }
+
+  body {
+    min-height: 100vh;
+    min-height: 100dvh;
+    display: grid;
+    place-items: center;
+    padding: 8px;
+    touch-action: manipulation;
+  }
+
+  .wrap {
+    width: min(96vw, 720px);
+    text-align: center;
+  }
+
+  h1 {
+    margin: 4px 0 6px;
+    font-size: clamp(22px, 5vw, 36px);
+    line-height: 1.05;
+  }
+
+  .hud {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+    margin-bottom: 8px;
+  }
+
+  .box {
+    background: #222936;
+    border: 1px solid #3b4659;
+    border-radius: 12px;
+    padding: 7px;
+    font-size: 13px;
+    line-height: 1.2;
+    min-width: 0;
+  }
+
+  .box span {
+    font-weight: 900;
+  }
+
+  canvas {
+    width: 100%;
+    aspect-ratio: 720 / 500;
+    max-height: 58vh;
+    background: #26313f;
+    border: 3px solid #55657c;
+    border-radius: 18px;
+    display: block;
+    touch-action: none;
+  }
+
+  .controls {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(58px, 74px));
+    justify-content: center;
+    gap: 8px;
+    margin-top: 8px;
+    touch-action: none;
+  }
+
+  button {
+    border: 0;
+    border-radius: 14px;
+    min-height: 46px;
+    padding: 10px 12px;
+    background: #e8edf5;
+    color: #111;
+    font-weight: 900;
+    font-size: 18px;
+    touch-action: none;
+    user-select: none;
+    -webkit-user-select: none;
+  }
+
+  button:active {
+    transform: translateY(1px);
+    filter: brightness(.92);
+  }
+
+  .wide {
+    grid-column: span 3;
+    font-size: 15px;
+  }
+
+  .hint {
+    margin-top: 7px;
+    color: #cbd5e1;
+    font-size: 12px;
+    line-height: 1.3;
+  }
+
+  @media (max-width: 430px) {
+    body {
+      padding: 6px;
+      align-items: start;
+    }
+
+    .wrap {
+      width: 100%;
+      max-width: 390px;
+    }
+
+    h1 {
+      font-size: 23px;
+      margin-top: 2px;
+    }
+
+    .hud {
+      grid-template-columns: repeat(2, 1fr);
+      gap: 6px;
+      margin-bottom: 6px;
+    }
+
+    .box {
+      padding: 6px 5px;
+      font-size: 12px;
+      border-radius: 10px;
+    }
+
+    canvas {
+      border-width: 2px;
+      border-radius: 14px;
+      max-height: 50vh;
+    }
+
+    .controls {
+      grid-template-columns: repeat(3, 64px);
+      gap: 7px;
+      margin-top: 7px;
+    }
+
+    button {
+      min-height: 48px;
+      padding: 9px;
+      font-size: 19px;
+      border-radius: 13px;
+    }
+
+    .wide {
+      font-size: 14px;
+    }
+
+    .hint {
+      font-size: 11px;
+      margin-top: 5px;
+    }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Block Bike Courier</h1>
+
+  <div class="hud">
+    <div class="box">Packages: <span id="pkg">0</span>/5</div>
+    <div class="box">Time: <span id="time">60</span></div>
+    <div class="box">Score: <span id="score">0</span></div>
+    <div class="box">Best: <span id="best">—</span></div>
+  </div>
+
+  <canvas id="game" width="720" height="500"></canvas>
+
+  <div class="controls">
+    <span></span><button data-dir="up" aria-label="Move up">↑</button><span></span>
+    <button data-dir="left" aria-label="Move left">←</button><button id="start">Start</button><button data-dir="right" aria-label="Move right">→</button>
+    <span></span><button data-dir="down" aria-label="Move down">↓</button><span></span>
+    <button class="wide" id="restart">Restart / New Route</button>
+  </div>
+
+  <div class="hint">Arrow keys, WASD, or buttons. Cars obey lights. Crashes cost 8 seconds.</div>
+</div>
+
+<script>
+const canvas = document.getElementById("game");
+const ctx = canvas.getContext("2d");
+
+const pkgEl = document.getElementById("pkg");
+const timeEl = document.getElementById("time");
+const scoreEl = document.getElementById("score");
+const bestEl = document.getElementById("best");
+
+const BEST_KEY = "blockBikeCourierBestV2";
+
+const roads = [
+  { x: 0, y: 110, w: 720, h: 70, type: "h", lane: 145 },
+  { x: 0, y: 320, w: 720, h: 70, type: "h", lane: 355 },
+  { x: 145, y: 0, w: 70, h: 500, type: "v", lane: 180 },
+  { x: 505, y: 0, w: 70, h: 500, type: "v", lane: 540 }
+];
+
+const intersections = [
+  { x: 145, y: 110, w: 70, h: 70, phase: 0 },
+  { x: 505, y: 110, w: 70, h: 70, phase: 1 },
+  { x: 145, y: 320, w: 70, h: 70, phase: 1 },
+  { x: 505, y: 320, w: 70, h: 70, phase: 0 }
+];
+
+const baseDeliveries = [
+  { x: 70, y: 72 },
+  { x: 635, y: 72 },
+  { x: 70, y: 430 },
+  { x: 635, y: 430 },
+  { x: 350, y: 250 }
+];
+
+let deliveries;
+let bike, keys, started, over, packages, score, timeLeft, elapsed, lastTime, lightTimer, currentTarget;
+let cars, crashCooldown, flashTimer, shakeTimer, floatingTexts, statusText, statusTimer;
+let bestRun;
+
+function loadBest() {
+  try {
+    bestRun = JSON.parse(localStorage.getItem(BEST_KEY)) || null;
+  } catch {
+    bestRun = null;
+  }
+  updateBestHUD();
+}
+
+function saveBestIfNeeded() {
+  if (packages < deliveries.length) return;
+
+  const medal = getMedal(score, elapsed);
+  const next = {
+    score,
+    time: Number(elapsed.toFixed(2)),
+    medal
+  };
+
+  if (!bestRun || score > bestRun.score || (score === bestRun.score && elapsed < bestRun.time)) {
+    bestRun = next;
+    localStorage.setItem(BEST_KEY, JSON.stringify(bestRun));
+  }
+
+  updateBestHUD();
+}
+
+function updateBestHUD() {
+  if (!bestRun) {
+    bestEl.textContent = "—";
+  } else {
+    bestEl.textContent = `${bestRun.medal} ${bestRun.score}`;
+  }
+}
+
+function getMedal(finalScore, runTime) {
+  if (finalScore >= 900 && runTime <= 42) return "Gold";
+  if (finalScore >= 750 && runTime <= 50) return "Silver";
+  if (finalScore >= 600) return "Bronze";
+  return "Finish";
+}
+
+function shuffleDeliveries() {
+  deliveries = baseDeliveries.map(d => ({ ...d }));
+
+  for (let i = deliveries.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [deliveries[i], deliveries[j]] = [deliveries[j], deliveries[i]];
+  }
+}
+
+function reset() {
+  shuffleDeliveries();
+
+  bike = { x: 180, y: 355, r: 13, speed: 195 };
+  keys = {};
+  started = false;
+  over = false;
+  packages = 0;
+  score = 0;
+  timeLeft = 60;
+  elapsed = 0;
+  lastTime = 0;
+  lightTimer = 0;
+  currentTarget = 0;
+  crashCooldown = 0;
+  flashTimer = 0;
+  shakeTimer = 0;
+  floatingTexts = [];
+  statusText = "Ready";
+  statusTimer = 0;
+
+  cars = [
+    { x: -80, y: 124, w: 46, h: 24, dir: 1, speed: 105, road: "hTop", color: "#f97316" },
+    { x: 790, y: 164, w: 46, h: 24, dir: -1, speed: 90, road: "hTop", color: "#a78bfa" },
+    { x: -180, y: 334, w: 46, h: 24, dir: 1, speed: 115, road: "hBottom", color: "#22c55e" },
+    { x: 850, y: 374, w: 46, h: 24, dir: -1, speed: 100, road: "hBottom", color: "#38bdf8" },
+    { x: 154, y: -90, w: 24, h: 46, dir: 1, speed: 95, road: "vLeft", color: "#facc15" },
+    { x: 194, y: 610, w: 24, h: 46, dir: -1, speed: 85, road: "vLeft", color: "#fb7185" },
+    { x: 514, y: -160, w: 24, h: 46, dir: 1, speed: 110, road: "vRight", color: "#60a5fa" },
+    { x: 554, y: 650, w: 24, h: 46, dir: -1, speed: 92, road: "vRight", color: "#34d399" }
+  ];
+
+  updateHUD();
+  draw();
+}
+
+function updateHUD() {
+  pkgEl.textContent = packages;
+  timeEl.textContent = Math.ceil(timeLeft);
+  scoreEl.textContent = score;
+  updateBestHUD();
+}
+
+function setStatus(text, duration = 1) {
+  statusText = text;
+  statusTimer = duration;
+}
+
+function isRoad(x, y) {
+  return roads.some(r => x >= r.x && x <= r.x + r.w && y >= r.y && y <= r.y + r.h);
+}
+
+function carShouldStop(car) {
+  const ahead = 28;
+  const probe = {
+    x: car.x + (car.dir > 0 ? car.w + ahead : -ahead),
+    y: car.y,
+    w: car.w,
+    h: car.h
+  };
+
+  const horizontal = car.road === "hTop" || car.road === "hBottom";
+
+  for (const i of intersections) {
+    const near = probe.x + probe.w > i.x &&
+      probe.x < i.x + i.w &&
+      probe.y + probe.h > i.y &&
+      probe.y < i.y + i.h;
+
+    if (!near) continue;
+
+    if (horizontal && i.phase !== 0) return true;
+    if (!horizontal && i.phase !== 1) return true;
+  }
+
+  return false;
+}
+
+function updateCars(dt) {
+  for (const car of cars) {
+    if (!carShouldStop(car)) {
+      if (car.road === "hTop" || car.road === "hBottom") {
+        car.x += car.dir * car.speed * dt;
+        if (car.dir > 0 && car.x > 760) car.x = -120 - Math.random() * 160;
+        if (car.dir < 0 && car.x < -80) car.x = 760 + Math.random() * 160;
+      } else {
+        car.y += car.dir * car.speed * dt;
+        if (car.dir > 0 && car.y > 540) car.y = -130 - Math.random() * 160;
+        if (car.dir < 0 && car.y < -80) car.y = 540 + Math.random() * 160;
+      }
+    }
+  }
+}
+
+function circleRectHit(cx, cy, cr, r) {
+  const nearestX = Math.max(r.x, Math.min(cx, r.x + r.w));
+  const nearestY = Math.max(r.y, Math.min(cy, r.y + r.h));
+  return Math.hypot(cx - nearestX, cy - nearestY) < cr;
+}
+
+function checkBikeCarCollision() {
+  if (crashCooldown > 0) return;
+
+  for (const car of cars) {
+    if (circleRectHit(bike.x, bike.y, bike.r + 3, car)) {
+      crashCooldown = 1.25;
+      flashTimer = 0.32;
+      shakeTimer = 0.38;
+
+      timeLeft = Math.max(0, timeLeft - 8);
+      score = Math.max(0, score - 40);
+
+      const pushX = car.road === "hTop" || car.road === "hBottom" ? -car.dir * 24 : 0;
+      const pushY = car.road === "vLeft" || car.road === "vRight" ? -car.dir * 24 : -10;
+
+      bike.x = Math.max(8, Math.min(712, bike.x + pushX));
+      bike.y = Math.max(8, Math.min(492, bike.y + pushY));
+
+      floatingTexts.push({
+        x: bike.x,
+        y: bike.y - 28,
+        text: "-8 sec",
+        life: 1.05
+      });
+
+      setStatus("Crash! -8 sec", 1.2);
+
+      if (timeLeft <= 0) {
+        over = true;
+        setStatus("Crashed out", 2);
+      }
+
+      return;
+    }
+  }
+}
+
+function redLightPenalty(x, y) {
+  for (const i of intersections) {
+    const inside = x >= i.x && x <= i.x + i.w && y >= i.y && y <= i.y + i.h;
+    if (!inside) continue;
+
+    const horizontalGreen = i.phase === 0;
+    const movingHorizontal = Math.abs((keys.right ? 1 : 0) - (keys.left ? 1 : 0)) > 0;
+    const movingVertical = Math.abs((keys.down ? 1 : 0) - (keys.up ? 1 : 0)) > 0;
+
+    if ((movingHorizontal && !horizontalGreen) || (movingVertical && horizontalGreen)) return true;
+  }
+
+  return false;
+}
+
+function updateFloatingTexts(dt) {
+  for (const item of floatingTexts) {
+    item.life -= dt;
+    item.y -= 38 * dt;
+  }
+  floatingTexts = floatingTexts.filter(item => item.life > 0);
+}
+
+function tick(ts) {
+  if (!started || over) return;
+
+  if (!lastTime) lastTime = ts;
+  const dt = Math.min(0.033, (ts - lastTime) / 1000);
+  lastTime = ts;
+
+  timeLeft -= dt;
+  elapsed += dt;
+  lightTimer += dt;
+  crashCooldown = Math.max(0, crashCooldown - dt);
+  flashTimer = Math.max(0, flashTimer - dt);
+  shakeTimer = Math.max(0, shakeTimer - dt);
+  statusTimer = Math.max(0, statusTimer - dt);
+
+  if (lightTimer > 2.4) {
+    intersections.forEach(i => i.phase = i.phase ? 0 : 1);
+    lightTimer = 0;
+  }
+
+  updateCars(dt);
+  updateFloatingTexts(dt);
+
+  let dx = 0, dy = 0;
+  if (keys.left) dx -= 1;
+  if (keys.right) dx += 1;
+  if (keys.up) dy -= 1;
+  if (keys.down) dy += 1;
+
+  if (dx || dy) {
+    const mag = Math.hypot(dx, dy);
+    dx /= mag;
+    dy /= mag;
+
+    const nx = bike.x + dx * bike.speed * dt;
+    const ny = bike.y + dy * bike.speed * dt;
+
+    if (isRoad(nx, ny)) {
+      bike.x = nx;
+      bike.y = ny;
+
+      if (redLightPenalty(nx, ny)) {
+        score = Math.max(0, score - 1);
+        if (statusTimer <= 0) setStatus("Red light!", 0.4);
+      } else if (statusTimer <= 0) {
+        setStatus("Riding", 0.3);
+      }
+    } else if (statusTimer <= 0) {
+      setStatus("Stay on road", 0.4);
+    }
+  }
+
+  checkBikeCarCollision();
+
+  const target = deliveries[currentTarget];
+  if (target && Math.hypot(bike.x - target.x, bike.y - target.y) < 30) {
+    packages++;
+    score += 100 + Math.ceil(timeLeft);
+    currentTarget++;
+    floatingTexts.push({
+      x: target.x,
+      y: target.y - 26,
+      text: "+delivery",
+      life: 0.9
+    });
+    setStatus("Delivered!", 1);
+  }
+
+  if (packages >= deliveries.length) {
+    over = true;
+    score += Math.ceil(timeLeft) * 5;
+    saveBestIfNeeded();
+    setStatus("All delivered", 2);
+  }
+
+  if (timeLeft <= 0) {
+    timeLeft = 0;
+    over = true;
+    setStatus("Shift over", 2);
+  }
+
+  updateHUD();
+  draw();
+
+  if (!over) requestAnimationFrame(tick);
+}
+
+function drawBlocks() {
+  const blocks = [
+    [20, 18, 100, 66], [245, 22, 220, 66], [600, 18, 90, 66],
+    [245, 205, 220, 88], [20, 205, 100, 88], [600, 205, 90, 88],
+    [20, 420, 100, 58], [245, 420, 220, 58], [600, 420, 90, 58]
+  ];
+
+  blocks.forEach(b => {
+    ctx.fillStyle = "#334155";
+    ctx.fillRect(...b);
+    ctx.fillStyle = "#475569";
+    ctx.fillRect(b[0] + 12, b[1] + 12, b[2] - 24, 13);
+    ctx.fillRect(b[0] + 12, b[1] + 35, b[2] - 24, 10);
+  });
+}
+
+function drawRoads() {
+  ctx.fillStyle = "#1d2430";
+  roads.forEach(r => ctx.fillRect(r.x, r.y, r.w, r.h));
+
+  ctx.strokeStyle = "#e7d86b";
+  ctx.setLineDash([18, 18]);
+  ctx.lineWidth = 3;
+
+  ctx.beginPath();
+  ctx.moveTo(0, 145);
+  ctx.lineTo(720, 145);
+  ctx.moveTo(0, 355);
+  ctx.lineTo(720, 355);
+  ctx.moveTo(180, 0);
+  ctx.lineTo(180, 500);
+  ctx.moveTo(540, 0);
+  ctx.lineTo(540, 500);
+  ctx.stroke();
+
+  ctx.setLineDash([]);
+}
+
+function drawCrosswalks() {
+  ctx.strokeStyle = "rgba(255,255,255,.28)";
+  ctx.lineWidth = 2;
+
+  for (const i of intersections) {
+    for (let k = 0; k < 5; k++) {
+      ctx.beginPath();
+      ctx.moveTo(i.x + 6 + k * 13, i.y - 8);
+      ctx.lineTo(i.x + 6 + k * 13, i.y + 2);
+      ctx.moveTo(i.x + 6 + k * 13, i.y + i.h - 2);
+      ctx.lineTo(i.x + 6 + k * 13, i.y + i.h + 8);
+      ctx.stroke();
+
+      ctx.beginPath();
+      ctx.moveTo(i.x - 8, i.y + 6 + k * 13);
+      ctx.lineTo(i.x + 2, i.y + 6 + k * 13);
+      ctx.moveTo(i.x + i.w - 2, i.y + 6 + k * 13);
+      ctx.lineTo(i.x + i.w + 8, i.y + 6 + k * 13);
+      ctx.stroke();
+    }
+  }
+}
+
+function drawLights() {
+  intersections.forEach(i => {
+    const horizontalGreen = i.phase === 0;
+
+    ctx.fillStyle = "rgba(255,255,255,.08)";
+    ctx.fillRect(i.x, i.y, i.w, i.h);
+
+    ctx.fillStyle = horizontalGreen ? "#22c55e" : "#ef4444";
+    ctx.beginPath();
+    ctx.arc(i.x + 20, i.y + 15, 8, 0, Math.PI * 2);
+    ctx.arc(i.x + 50, i.y + 55, 8, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.fillStyle = horizontalGreen ? "#ef4444" : "#22c55e";
+    ctx.beginPath();
+    ctx.arc(i.x + 55, i.y + 20, 8, 0, Math.PI * 2);
+    ctx.arc(i.x + 15, i.y + 50, 8, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.fillStyle = "rgba(255,255,255,.75)";
+    ctx.font = "bold 11px system-ui";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText(horizontalGreen ? "← →" : "↑ ↓", i.x + 35, i.y + 36);
+  });
+}
+
+function drawCars() {
+  for (const car of cars) {
+    ctx.fillStyle = carShouldStop(car) ? "#94a3b8" : car.color;
+    roundRect(car.x, car.y, car.w, car.h, 5);
+    ctx.fill();
+
+    ctx.fillStyle = "rgba(255,255,255,.85)";
+    if (car.w > car.h) {
+      ctx.fillRect(car.x + 8, car.y + 4, 11, 5);
+      ctx.fillRect(car.x + 27, car.y + 4, 10, 5);
+      ctx.fillStyle = "#111827";
+      ctx.fillRect(car.x + 6, car.y + car.h - 2, 8, 3);
+      ctx.fillRect(car.x + car.w - 14, car.y + car.h - 2, 8, 3);
+    } else {
+      ctx.fillRect(car.x + 4, car.y + 8, 5, 11);
+      ctx.fillRect(car.x + 4, car.y + 27, 5, 10);
+      ctx.fillStyle = "#111827";
+      ctx.fillRect(car.x + car.w - 2, car.y + 6, 3, 8);
+      ctx.fillRect(car.x + car.w - 2, car.y + car.h - 14, 3, 8);
+    }
+  }
+}
+
+function drawDeliveries() {
+  deliveries.forEach((d, idx) => {
+    const active = idx === currentTarget;
+    const done = idx < currentTarget;
+
+    ctx.fillStyle = done ? "#64748b" : active ? "#facc15" : "#94a3b8";
+    ctx.beginPath();
+    ctx.arc(d.x, d.y, active ? 19 : 12, 0, Math.PI * 2);
+    ctx.fill();
+
+    if (active) {
+      ctx.strokeStyle = "rgba(250,204,21,.45)";
+      ctx.lineWidth = 6;
+      ctx.beginPath();
+      ctx.arc(d.x, d.y, 27 + Math.sin(Date.now() / 140) * 3, 0, Math.PI * 2);
+      ctx.stroke();
+    }
+
+    ctx.fillStyle = "#111827";
+    ctx.font = "bold 14px system-ui";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText(idx + 1, d.x, d.y);
+  });
+}
+
+function drawNextDeliveryArrow() {
+  const target = deliveries[currentTarget];
+  if (!target) return;
+
+  const angle = Math.atan2(target.y - bike.y, target.x - bike.x);
+  const x = bike.x + Math.cos(angle) * 38;
+  const y = bike.y + Math.sin(angle) * 38;
+
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.rotate(angle);
+
+  ctx.fillStyle = "#facc15";
+  ctx.strokeStyle = "#111827";
+  ctx.lineWidth = 3;
+
+  ctx.beginPath();
+  ctx.moveTo(18, 0);
+  ctx.lineTo(-10, -11);
+  ctx.lineTo(-4, 0);
+  ctx.lineTo(-10, 11);
+  ctx.closePath();
+  ctx.fill();
+  ctx.stroke();
+
+  ctx.restore();
+
+  ctx.fillStyle = "#facc15";
+  ctx.font = "bold 13px system-ui";
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  ctx.fillText("NEXT", Math.max(28, Math.min(692, x)), Math.max(18, y - 24));
+}
+
+function drawBike() {
+  ctx.save();
+  ctx.translate(bike.x, bike.y);
+
+  if (crashCooldown > 0) {
+    ctx.globalAlpha = Math.sin(Date.now() / 65) > 0 ? 0.45 : 1;
+  }
+
+  ctx.fillStyle = "#38bdf8";
+  ctx.beginPath();
+  ctx.arc(0, 0, bike.r, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.strokeStyle = "#e0f2fe";
+  ctx.lineWidth = 3;
+  ctx.beginPath();
+  ctx.moveTo(-15, 11);
+  ctx.lineTo(15, 11);
+  ctx.moveTo(-9, -8);
+  ctx.lineTo(9, 9);
+  ctx.stroke();
+
+  ctx.restore();
+}
+
+function drawFloatingTexts() {
+  for (const item of floatingTexts) {
+    ctx.globalAlpha = Math.max(0, Math.min(1, item.life));
+    ctx.fillStyle = item.text.includes("-") ? "#fecaca" : "#bbf7d0";
+    ctx.strokeStyle = "#111827";
+    ctx.lineWidth = 4;
+    ctx.font = "bold 24px system-ui";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.strokeText(item.text, item.x, item.y);
+    ctx.fillText(item.text, item.x, item.y);
+    ctx.globalAlpha = 1;
+  }
+}
+
+function drawStatusBar() {
+  ctx.fillStyle = "rgba(15,23,42,.76)";
+  roundRect(18, 12, 235, 34, 12);
+  ctx.fill();
+
+  ctx.fillStyle = "white";
+  ctx.font = "bold 14px system-ui";
+  ctx.textAlign = "left";
+  ctx.textBaseline = "middle";
+  ctx.fillText(statusText || "Ready", 34, 29);
+
+  const medalNow = getMedal(score, elapsed);
+  ctx.fillStyle = "#cbd5e1";
+  ctx.font = "bold 12px system-ui";
+  ctx.textAlign = "right";
+  ctx.fillText(`Medal pace: ${medalNow}`, 702, 29);
+}
+
+function drawOverlay(text, sub) {
+  ctx.fillStyle = "rgba(15,23,42,.86)";
+  roundRect(75, 86, 570, 320, 22);
+  ctx.fill();
+
+  ctx.fillStyle = "white";
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  ctx.font = "bold 34px system-ui";
+  ctx.fillText(text, 360, 145);
+
+  ctx.font = "18px system-ui";
+  ctx.fillText(sub, 360, 190);
+
+  ctx.fillStyle = "#cbd5e1";
+  ctx.font = "15px system-ui";
+
+  if (!started) {
+    ctx.fillText("Route order shuffles every run.", 360, 235);
+    ctx.fillText("Follow NEXT, time the lights, avoid cars.", 360, 264);
+    ctx.fillText("Gold: 900+ score under 42 seconds.", 360, 293);
+    ctx.fillText("Press Start, Enter, or Space.", 360, 328);
+  } else {
+    const medal = packages >= deliveries.length ? getMedal(score, elapsed) : "No finish";
+    ctx.fillText(`Medal: ${medal}`, 360, 235);
+    ctx.fillText(`Delivered: ${packages}/${deliveries.length} in ${elapsed.toFixed(1)}s`, 360, 264);
+    ctx.fillText(bestRun ? `Best: ${bestRun.medal} ${bestRun.score} in ${bestRun.time.toFixed(1)}s` : "Best: none yet", 360, 293);
+    ctx.fillText("Press Restart for a new shuffled route.", 360, 328);
+  }
+}
+
+function drawCrashFlash() {
+  if (flashTimer <= 0) return;
+
+  ctx.globalAlpha = Math.min(0.42, flashTimer * 1.8);
+  ctx.fillStyle = "#ef4444";
+  ctx.fillRect(0, 0, 720, 500);
+  ctx.globalAlpha = 1;
+}
+
+function draw() {
+  ctx.save();
+
+  if (shakeTimer > 0) {
+    const mag = 5 * (shakeTimer / 0.38);
+    ctx.translate((Math.random() - 0.5) * mag, (Math.random() - 0.5) * mag);
+  }
+
+  ctx.clearRect(0, 0, 720, 500);
+  drawBlocks();
+  drawRoads();
+  drawCrosswalks();
+  drawLights();
+  drawDeliveries();
+  drawCars();
+  drawNextDeliveryArrow();
+  drawBike();
+  drawFloatingTexts();
+  drawStatusBar();
+
+  ctx.restore();
+
+  drawCrashFlash();
+
+  if (!started) drawOverlay("Ready to ride?", "Deliver all 5 packages");
+  if (over) drawOverlay(packages >= 5 ? "Route complete!" : "Shift over", "Final score: " + score);
+}
+
+function roundRect(x, y, w, h, r) {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.arcTo(x + w, y, x + w, y + h, r);
+  ctx.arcTo(x + w, y + h, x, y + h, r);
+  ctx.arcTo(x, y + h, x, y, r);
+  ctx.arcTo(x, y, x + w, y, r);
+  ctx.closePath();
+}
+
+function startGame() {
+  if (over) reset();
+  if (started) return;
+  started = true;
+  lastTime = 0;
+  setStatus("Go!", 0.8);
+  requestAnimationFrame(tick);
+}
+
+document.getElementById("start").onclick = startGame;
+
+document.getElementById("restart").onclick = () => {
+  reset();
+  startGame();
+};
+
+document.querySelectorAll("[data-dir]").forEach(btn => {
+  const dir = btn.dataset.dir;
+
+  btn.addEventListener("pointerdown", e => {
+    e.preventDefault();
+    keys[dir] = true;
+  }, { passive: false });
+
+  btn.addEventListener("pointerup", e => {
+    e.preventDefault();
+    keys[dir] = false;
+  }, { passive: false });
+
+  btn.addEventListener("pointerleave", () => keys[dir] = false);
+  btn.addEventListener("pointercancel", () => keys[dir] = false);
+});
+
+canvas.addEventListener("pointerdown", e => {
+  e.preventDefault();
+}, { passive: false });
+
+canvas.addEventListener("touchmove", e => {
+  e.preventDefault();
+}, { passive: false });
+
+window.addEventListener("keydown", e => {
+  const map = {
+    ArrowLeft: "left", a: "left", A: "left",
+    ArrowRight: "right", d: "right", D: "right",
+    ArrowUp: "up", w: "up", W: "up",
+    ArrowDown: "down", s: "down", S: "down"
+  };
+
+  if (map[e.key]) {
+    e.preventDefault();
+    keys[map[e.key]] = true;
+  }
+
+  if (e.key === "Enter" || e.key === " ") {
+    e.preventDefault();
+    startGame();
+  }
+});
+
+window.addEventListener("keyup", e => {
+  const map = {
+    ArrowLeft: "left", a: "left", A: "left",
+    ArrowRight: "right", d: "right", D: "right",
+    ArrowUp: "up", w: "up", W: "up",
+    ArrowDown: "down", s: "down", S: "down"
+  };
+
+  if (map[e.key]) keys[map[e.key]] = false;
+});
+
+window.addEventListener("blur", () => {
+  keys = {};
+});
+
+loadBest();
+reset();
+</script>
+</body>
+</html>

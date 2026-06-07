@@ -400,6 +400,94 @@ function ForkSourcePanel({ forkSource }: { forkSource: ProjectForkSource }) {
   )
 }
 
+function BuildLoggedOutLanding({
+  forkSource,
+  loginHref,
+  signupHref,
+  isCheckingAccount = false,
+}: {
+  forkSource: ProjectForkSource | null
+  loginHref: string
+  signupHref: string
+  isCheckingAccount?: boolean
+}) {
+  return (
+    <div className="bg-surface-50">
+      <section className="border-b border-surface-800 bg-surface-900 text-white">
+        <div className="mx-auto grid max-w-7xl gap-10 px-4 py-14 sm:px-6 lg:grid-cols-[1fr_420px] lg:px-8 lg:py-16">
+          <div>
+            <Link href="/paths" className="mb-7 inline-flex items-center gap-2 text-sm text-surface-400 transition-colors hover:text-white">
+              <ArrowLeft className="h-4 w-4" aria-hidden="true" />
+              Back to Build Paths
+            </Link>
+            <div className="mb-4 inline-flex items-center gap-2 border border-brand-orange/35 bg-brand-orange/10 px-3 py-1.5 font-mono text-[11px] font-bold uppercase tracking-[0.14em] text-brand-orange">
+              <Link2 className="h-3.5 w-3.5" aria-hidden="true" />
+              Build intake
+            </div>
+            <h1 className="max-w-3xl text-4xl font-black leading-[1.04] tracking-[-0.03em] sm:text-5xl">
+              Turn a real AI session into a review-ready Build Path.
+            </h1>
+            <p className="mt-5 max-w-2xl text-base leading-relaxed text-surface-300">
+              Build is where PathForge collects the original ChatGPT, Claude, Gemini, or OpenRouter run behind a project. Signed-in builders paste the source link, add model details, and send it to review before anything becomes public.
+            </p>
+            {isCheckingAccount && (
+              <div className="mt-5 inline-flex items-center gap-2 border border-surface-700 bg-surface-800 px-3 py-2 font-mono text-[11px] uppercase tracking-[0.14em] text-surface-300">
+                <span className="h-2 w-2 animate-pulse bg-brand-orange" aria-hidden="true" />
+                Checking account
+              </div>
+            )}
+            <div className="mt-8 flex flex-wrap gap-3">
+              <Link href="/paths" className="inline-flex items-center gap-2 border border-surface-700 px-5 py-3 text-sm font-bold text-white transition hover:border-white">
+                Browse paths
+              </Link>
+              <Link href={loginHref} className="inline-flex items-center gap-2 bg-brand-orange px-5 py-3 text-sm font-bold text-white transition hover:bg-brand-orange-dark">
+                <LogIn className="h-4 w-4" aria-hidden="true" />
+                Sign in to build
+              </Link>
+              <Link href={signupHref} className="inline-flex items-center gap-2 border border-surface-700 px-5 py-3 text-sm font-bold text-white transition hover:border-white">
+                Create account
+              </Link>
+            </div>
+          </div>
+
+          <div className="border border-surface-700 bg-surface-800/70 p-5">
+            <div className="font-mono text-[11px] font-bold uppercase tracking-[0.14em] text-brand-orange">
+              What Build does
+            </div>
+            <div className="mt-5 space-y-3">
+              {[
+                ['01', 'Start with the source run', 'Paste the original AI session link instead of rebuilding the project by hand.'],
+                ['02', 'Keep model details attached', 'Provider, exact model, settings, and review notes stay with the submission.'],
+                ['03', 'Queue it for review', 'The entry waits for admin review and never publishes itself automatically.'],
+              ].map(([number, title, body]) => (
+                <div key={number} className="grid grid-cols-[42px_1fr] gap-3 border border-surface-700 bg-surface-900 px-3 py-3">
+                  <span className="flex h-9 w-9 items-center justify-center bg-brand-orange font-mono text-xs font-black text-white">
+                    {number}
+                  </span>
+                  <span>
+                    <span className="block text-sm font-semibold text-surface-100">{title}</span>
+                    <span className="mt-0.5 block text-xs leading-5 text-surface-400">{body}</span>
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
+        {forkSource && <ForkSourcePanel forkSource={forkSource} />}
+        <div className="max-w-2xl border border-surface-200 bg-white p-5">
+          <h2 className="text-xl font-black text-surface-900">Sign in when you are ready to build</h2>
+          <p className="mt-2 text-sm leading-6 text-surface-600">
+            Browse existing paths without an account. To submit a run, PathForge needs a profile so review can keep source links, notes, and publish decisions attached to the right builder.
+          </p>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 export default function SubmitProjectPage() {
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -691,81 +779,12 @@ export default function SubmitProjectPage() {
 
   // Not logged in
   if (isLoggedIn === false) {
-    return (
-      <div className="bg-surface-50">
-        <section className="border-b border-surface-800 bg-surface-900 text-white">
-          <div className="mx-auto grid max-w-7xl gap-10 px-4 py-14 sm:px-6 lg:grid-cols-[1fr_420px] lg:px-8 lg:py-16">
-            <div>
-              <Link href="/paths" className="mb-7 inline-flex items-center gap-2 text-sm text-surface-400 transition-colors hover:text-white">
-                <ArrowLeft className="h-4 w-4" aria-hidden="true" />
-                Back to Build Paths
-              </Link>
-              <div className="mb-4 inline-flex items-center gap-2 border border-brand-orange/35 bg-brand-orange/10 px-3 py-1.5 font-mono text-[11px] font-bold uppercase tracking-[0.14em] text-brand-orange">
-                <Link2 className="h-3.5 w-3.5" aria-hidden="true" />
-                Build intake
-              </div>
-              <h1 className="max-w-3xl text-4xl font-black leading-[1.04] tracking-[-0.03em] sm:text-5xl">
-                Submit the AI run, not a reconstructed project.
-              </h1>
-              <p className="mt-5 max-w-2xl text-base leading-relaxed text-surface-300">
-                PathForge starts from the real ChatGPT, Claude, Gemini, or OpenRouter session link. The entry goes to review first and becomes public only after an explicit publish step.
-              </p>
-              <div className="mt-8 flex flex-wrap gap-3">
-                <Link href={loginHref} className="inline-flex items-center gap-2 bg-brand-orange px-5 py-3 text-sm font-bold text-white transition hover:bg-brand-orange-dark">
-                  <LogIn className="h-4 w-4" aria-hidden="true" />
-                  Log in to submit
-                </Link>
-                <Link href={signupHref} className="inline-flex items-center gap-2 border border-surface-700 px-5 py-3 text-sm font-bold text-white transition hover:border-white">
-                  Sign up
-                </Link>
-              </div>
-            </div>
-
-            <div className="border border-surface-700 bg-surface-800/70 p-5">
-              <div className="font-mono text-[11px] font-bold uppercase tracking-[0.14em] text-brand-orange">
-                What happens here
-              </div>
-              <div className="mt-5 space-y-3">
-                {['Paste session link', 'Attach model info', 'Add review notes', 'Queue for admin review'].map((label, index) => (
-                  <div key={label} className="grid grid-cols-[34px_1fr] items-center gap-3 border border-surface-700 bg-surface-900 px-3 py-3">
-                    <span className="flex h-8 w-8 items-center justify-center bg-brand-orange font-mono text-xs font-black text-white">
-                      {index + 1}
-                    </span>
-                    <span className="text-sm font-semibold text-surface-100">{label}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        </section>
-        <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
-          {forkSource && <ForkSourcePanel forkSource={forkSource} />}
-          <div className="max-w-xl border border-surface-200 bg-white p-5">
-            <h2 className="text-xl font-black text-surface-900">Account required</h2>
-            <p className="mt-2 text-sm leading-6 text-surface-600">
-              Build submissions are tied to your profile so review can keep source links, notes, and publish decisions attached to the right person.
-            </p>
-          </div>
-        </div>
-      </div>
-    )
+    return <BuildLoggedOutLanding forkSource={forkSource} loginHref={loginHref} signupHref={signupHref} />
   }
 
   // Loading auth state
   if (isLoggedIn === null) {
-    return (
-      <div className="bg-surface-50">
-        <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
-          {forkSource && <ForkSourcePanel forkSource={forkSource} />}
-          <div className="max-w-2xl border border-surface-200 bg-white px-5 py-8 text-center text-surface-500">
-            <span className="inline-flex items-center gap-2 font-mono text-[11px] uppercase tracking-[0.14em]">
-              <span className="h-2 w-2 animate-pulse bg-brand-orange" aria-hidden="true" />
-              Checking account
-            </span>
-          </div>
-        </div>
-      </div>
-    )
+    return <BuildLoggedOutLanding forkSource={forkSource} loginHref={loginHref} signupHref={signupHref} isCheckingAccount />
   }
 
   // Success

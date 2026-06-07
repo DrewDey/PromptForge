@@ -12,11 +12,13 @@ import {
   SWISH_CITY_PROJECT_ID,
   TIC_TAC_TOE_PROJECT_ID,
   TRIP_PACKING_PROJECT_ID,
+  WEEKEND_CHECKLIST_FORK_PROJECT_ID,
   WEEKEND_CHECKLIST_PROJECT_ID,
   WORD_LADDER_SPRINT_PROJECT_ID,
 } from './featured-projects'
 import { PENDING_SOURCE_RUN_SHOWCASE_PROJECTS } from './pending-source-run-showcases'
 export * from './pending-source-run-showcases'
+import type { ProjectForkSource } from './project-forks'
 import type { Prompt } from './types'
 
 export type PreparedShowcaseStep = {
@@ -48,6 +50,7 @@ export type PreparedShowcaseProject = {
   sourceUrl: string
   authorDisplayName: string
   authorUsername: string
+  forkSource?: ProjectForkSource | null
   createdAt: string
   updatedAt: string
   steps: PreparedShowcaseStep[]
@@ -301,6 +304,58 @@ export const WEEKEND_CHECKLIST_SHOWCASE_PROJECT: PreparedShowcaseProject = {
         'Final bug-fix prompt restored nextFiveItems and produced the verified public artifact.',
     },
   ],
+}
+
+export const WEEKEND_CHECKLIST_FORK_SHOWCASE_PROJECT: PreparedShowcaseProject = {
+  id: WEEKEND_CHECKLIST_FORK_PROJECT_ID,
+  sourceRunId: '7e5c1a06-f6ed-4c8c-b5e9-3a7c1bf830a6',
+  href: '/weekend-road-trip-readiness-fork-demo',
+  title: 'Weekend Road-Trip Readiness Board',
+  description:
+    'A simulated Codex Lane fork from Weekend Plan Checklist response 03 turns the filtered next-five checklist into a family road-trip board with lanes for people, pets, car prep, and timing.',
+  content:
+    "Codex Lane forked Nora Brooks' Weekend Plan Checklist at response package 03, keeping the shared checklist/filter idea but branching before the later timing-group direction. The fork asks the model to focus on family road-trip readiness: people lanes, pet prep, car checks, timing buckets, and a next-action strip.",
+  resultContent:
+    'A self-contained road-trip readiness board embedded on the page. The fork page shows the inherited source path, preserves the fork prompt/response sequence, and links back to the exact source response where the branch began.',
+  categorySlug: 'productivity',
+  mockCategoryId: 'cat-7',
+  difficulty: 'beginner',
+  modelUsed: 'Codex simulated ChatGPT lane',
+  modelRecommendation: 'ChatGPT',
+  promptFamilyId: `${WEEKEND_CHECKLIST_PROJECT_ID}:${WEEKEND_CHECKLIST_PROJECT_ID}-step-3`,
+  toolsUsed: ['ChatGPT', 'Codex', 'HTML', 'Browser'],
+  tags: ['fork', 'weekend planning', 'road trip', 'checklist', 'family', 'productivity'],
+  artifactPath: '/artifacts/weekend-road-trip-readiness-codex-fork.html',
+  sourceUrl: 'https://prompt-forge-sandy.vercel.app/admin/source-runs/7e5c1a06-f6ed-4c8c-b5e9-3a7c1bf830a6',
+  authorDisplayName: 'Codex Lane',
+  authorUsername: 'CodexLane',
+  forkSource: {
+    sourceProjectId: WEEKEND_CHECKLIST_PROJECT_ID,
+    sourceProjectTitle: 'Weekend Plan Checklist',
+    sourceStepId: `${WEEKEND_CHECKLIST_PROJECT_ID}-step-3`,
+    sourceStepNumber: 3,
+    depth: 0,
+    branchIndex: 0,
+    promptFamilyId: `${WEEKEND_CHECKLIST_PROJECT_ID}:${WEEKEND_CHECKLIST_PROJECT_ID}-step-3`,
+  },
+  createdAt: '2026-06-07T19:35:00.000Z',
+  updatedAt: '2026-06-07T19:35:00.000Z',
+  steps: buildPreparedSteps(WEEKEND_CHECKLIST_FORK_PROJECT_ID, [
+    {
+      title: 'Branch into a road-trip board',
+      content:
+        'Forking from the checklist version that has Essentials/Nice-to-have filters and a next-5 summary: turn this into a one-file family road-trip readiness board with lanes for each traveler, pets, car prep, and timing buckets. Keep it editable and make the next-action strip obvious.',
+      description:
+        'The fork keeps the shared filter/next-five idea from response package 03, then branches into a road-trip readiness workflow instead of the original timing-group continuation.',
+    },
+    {
+      title: 'Tighten the fork for handoff',
+      content:
+        'Make the board feel ready for someone to use before leaving: add default sample items, a clear print/export summary, and a compact mobile layout while keeping it one self-contained HTML file.',
+      description:
+        'The simulated follow-up makes the fork artifact feel complete enough to publish as a visible child path.',
+    },
+  ]),
 }
 
 export const NEON_BLOCK_PATROL_SHOWCASE_PROJECT: PreparedShowcaseProject = {
@@ -874,6 +929,7 @@ export const PREPARED_SHOWCASE_PROJECTS = [
   TIC_TAC_TOE_SHOWCASE_PROJECT,
   POMODORO_TIMER_SHOWCASE_PROJECT,
   WEEKEND_CHECKLIST_SHOWCASE_PROJECT,
+  WEEKEND_CHECKLIST_FORK_SHOWCASE_PROJECT,
   NEON_BLOCK_PATROL_SHOWCASE_PROJECT,
   SWISH_CITY_SHOWCASE_PROJECT,
   MEETING_COST_SHOWCASE_PROJECT,

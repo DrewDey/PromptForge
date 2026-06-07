@@ -8,6 +8,7 @@ import {
   SuggestionWithRelations,
 } from './types'
 import { SNAKE_PROJECT_ID } from './featured-projects'
+import { projectForkSourceToSubmissionFields } from './project-forks'
 import {
   FLASHCARD_CRAM_SHOWCASE_PROJECT,
   FOLLOW_UP_CRM_SHOWCASE_PROJECT,
@@ -22,6 +23,7 @@ import {
   SWISH_CITY_SHOWCASE_PROJECT,
   TIC_TAC_TOE_SHOWCASE_PROJECT,
   TRIP_PACKING_SHOWCASE_PROJECT,
+  WEEKEND_CHECKLIST_FORK_SHOWCASE_PROJECT,
   WEEKEND_CHECKLIST_SHOWCASE_PROJECT,
   WORD_LADDER_SPRINT_SHOWCASE_PROJECT,
   PENDING_SOURCE_RUN_SHOWCASE_PROJECTS,
@@ -84,6 +86,16 @@ export const mockProfiles: Profile[] = [
     role: 'user',
     created_at: '2026-06-03T23:46:00Z',
     updated_at: WEEKEND_CHECKLIST_SHOWCASE_PROJECT.updatedAt,
+  },
+  {
+    id: '22222222-2222-2222-2222-222222222299',
+    username: WEEKEND_CHECKLIST_FORK_SHOWCASE_PROJECT.authorUsername,
+    display_name: WEEKEND_CHECKLIST_FORK_SHOWCASE_PROJECT.authorDisplayName,
+    avatar_url: null,
+    bio: 'Simulated Codex fork profile for testing approved PathForge branch paths.',
+    role: 'user',
+    created_at: WEEKEND_CHECKLIST_FORK_SHOWCASE_PROJECT.createdAt,
+    updated_at: WEEKEND_CHECKLIST_FORK_SHOWCASE_PROJECT.updatedAt,
   },
   {
     id: '22222222-2222-2222-2222-222222222216',
@@ -284,6 +296,7 @@ export const mockSteps: PromptStep[] = [
     description: step.description,
     created_at: WEEKEND_CHECKLIST_SHOWCASE_PROJECT.createdAt,
   })),
+  ...stepsForShowcase(WEEKEND_CHECKLIST_FORK_SHOWCASE_PROJECT),
   ...NEON_BLOCK_PATROL_SHOWCASE_PROJECT.steps.map((step) => ({
     id: step.id,
     prompt_id: NEON_BLOCK_PATROL_SHOWCASE_PROJECT.id,
@@ -326,6 +339,8 @@ export const mockSteps: PromptStep[] = [
 ]
 
 function promptForShowcase(project: PreparedShowcaseProject, authorId: string): Prompt {
+  const forkSubmissionFields = projectForkSourceToSubmissionFields(project.forkSource)
+
   return {
     id: project.id,
     title: project.title,
@@ -342,7 +357,8 @@ function promptForShowcase(project: PreparedShowcaseProject, authorId: string): 
     author_id: authorId,
     vote_count: 0,
     bookmark_count: 0,
-    prompt_family_id: project.promptFamilyId ?? null,
+    ...forkSubmissionFields,
+    prompt_family_id: project.promptFamilyId ?? forkSubmissionFields.prompt_family_id ?? null,
     created_at: project.createdAt,
     updated_at: project.updatedAt,
   }
@@ -502,6 +518,7 @@ export const mockPrompts: Prompt[] = [
     updated_at: MEETING_COST_SHOWCASE_PROJECT.updatedAt,
   },
   promptForShowcase(WORD_LADDER_SPRINT_SHOWCASE_PROJECT, '22222222-2222-2222-2222-222222222219'),
+  promptForShowcase(WEEKEND_CHECKLIST_FORK_SHOWCASE_PROJECT, '22222222-2222-2222-2222-222222222299'),
   promptForShowcase(PUZZLE_BOX_ESCAPE_SHOWCASE_PROJECT, '22222222-2222-2222-2222-222222222220'),
   promptForShowcase(POCKET_RALLY_SHOWCASE_PROJECT, '22222222-2222-2222-2222-222222222221'),
   promptForShowcase(TRIP_PACKING_SHOWCASE_PROJECT, '22222222-2222-2222-2222-222222222222'),

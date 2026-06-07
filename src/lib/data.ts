@@ -55,6 +55,7 @@ import {
   TINY_LOOP_SEQUENCER_PROJECT_ID,
   TINY_TRAIN_DISPATCHER_PROJECT_ID,
   TRIP_PACKING_PROJECT_ID,
+  WEEKEND_CHECKLIST_FORK_PROJECT_ID,
   WEEKEND_CHECKLIST_PROJECT_ID,
   WORD_LADDER_SPRINT_PROJECT_ID,
   NEIGHBORHOOD_LOST_AND_FOUND_PROJECT_ID,
@@ -120,6 +121,7 @@ const APPROVED_PROJECT_IDS = new Set([
   TIC_TAC_TOE_PROJECT_ID,
   POMODORO_TIMER_PROJECT_ID,
   WEEKEND_CHECKLIST_PROJECT_ID,
+  WEEKEND_CHECKLIST_FORK_PROJECT_ID,
   NEON_BLOCK_PATROL_PROJECT_ID,
   SWISH_CITY_PROJECT_ID,
   MEETING_COST_PROJECT_ID,
@@ -448,10 +450,41 @@ export async function getProfileByUsername(username: string): Promise<Profile | 
   })
 }
 
+function getPublicMockProjectForks(projectId: string): ProjectForkNetworkItem[] {
+  return publicMockPrompts
+    .filter((prompt) => prompt.status === 'approved')
+    .filter((prompt) => (
+      prompt.fork_source_project_id === projectId ||
+      prompt.fork_parent_submission_id === projectId
+    ))
+    .filter(isPublicLibraryPrompt)
+    .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+    .slice(0, PROJECT_FORK_MAX_WIDTH)
+    .reduce<ProjectForkNetworkItem[]>((forks, prompt) => {
+      const forkSource = projectForkSourceFromSubmissionFields(prompt)
+      if (!forkSource) return forks
+      const author = mockProfiles.find((profile) => profile.id === prompt.author_id)
+
+      forks.push({
+        id: prompt.id,
+        title: prompt.title,
+        description: prompt.description,
+        authorUsername: author?.username ?? null,
+        authorDisplayName: author?.display_name ?? null,
+        modelUsed: prompt.model_used,
+        createdAt: prompt.created_at,
+        forkSource,
+      })
+
+      return forks
+    }, [])
+}
+
 export async function getApprovedProjectForks(projectId: string): Promise<ProjectForkNetworkItem[]> {
   if (!projectId) return []
+  const fallbackForks = getPublicMockProjectForks(projectId)
 
-  return readWithFallback([], async () => {
+  return readWithFallback(fallbackForks, async () => {
     const { createClient } = await import('./supabase/server')
     const supabase = await createClient()
     const { data, error } = await supabase
@@ -462,10 +495,10 @@ export async function getApprovedProjectForks(projectId: string): Promise<Projec
       .order('created_at', { ascending: false })
       .limit(PROJECT_FORK_MAX_WIDTH)
 
-    if (forkColumnsMissing(error)) return []
+    if (forkColumnsMissing(error)) return fallbackForks
     if (error) throw error
 
-    return (data ?? [])
+    const dbForks = (data ?? [])
       .filter(isPublicLibraryPrompt)
       .reduce<ProjectForkNetworkItem[]>((forks, prompt) => {
         const forkSource = projectForkSourceFromSubmissionFields(prompt)
@@ -484,6 +517,12 @@ export async function getApprovedProjectForks(projectId: string): Promise<Projec
         })
         return forks
       }, [])
+
+    const seen = new Set(dbForks.map((fork) => fork.id))
+    return [
+      ...dbForks,
+      ...fallbackForks.filter((fork) => !seen.has(fork.id)),
+    ].slice(0, PROJECT_FORK_MAX_WIDTH)
   })
 }
 

@@ -243,13 +243,28 @@ function ResponseForkHoverRail({
 
       <div
         data-response-fork-hover-rail
-        className="pointer-events-none absolute right-[-8px] top-[47px] z-20 hidden translate-x-3 items-center opacity-0 transition duration-300 group-hover/source-fork-node:pointer-events-auto group-hover/source-fork-node:translate-x-0 group-hover/source-fork-node:opacity-100 group-focus-within/source-fork-node:pointer-events-auto group-focus-within/source-fork-node:translate-x-0 group-focus-within/source-fork-node:opacity-100 xl:flex"
+        className={[
+          'pointer-events-none absolute right-[-8px] top-[47px] z-20 hidden translate-x-3 items-center opacity-0 transition duration-300 xl:flex',
+          hasForks
+            ? 'pointer-events-auto translate-x-0 opacity-100'
+            : 'group-hover/source-fork-node:pointer-events-auto group-hover/source-fork-node:translate-x-0 group-hover/source-fork-node:opacity-100 group-focus-within/source-fork-node:pointer-events-auto group-focus-within/source-fork-node:translate-x-0 group-focus-within/source-fork-node:opacity-100',
+        ].join(' ')}
       >
         <div className="relative h-12 w-36 shrink-0" aria-hidden="true">
-          <span className="absolute left-0 top-1/2 h-5 w-full origin-left -translate-y-1/2 scale-x-0 border-y-4 border-[#07551f] bg-[#2bd15f] shadow-[inset_0_5px_0_rgba(255,255,255,0.2),inset_0_-5px_0_rgba(0,0,0,0.16)] transition-transform duration-300 group-hover/source-fork-node:scale-x-100 group-focus-within/source-fork-node:scale-x-100" />
+          <span
+            className={[
+              'absolute left-0 top-1/2 h-5 w-full origin-left -translate-y-1/2 scale-x-0 border-y-4 border-[#07551f] bg-[#2bd15f] shadow-[inset_0_5px_0_rgba(255,255,255,0.2),inset_0_-5px_0_rgba(0,0,0,0.16)] transition-transform duration-300 group-hover/source-fork-node:scale-x-100 group-focus-within/source-fork-node:scale-x-100',
+              hasForks ? 'scale-x-100' : '',
+            ].join(' ')}
+          />
           <span className="absolute right-[-2px] top-1/2 h-9 w-9 -translate-y-1/2 border-4 border-[#07551f] bg-[#effdf3] shadow-[0_0_0_6px_rgba(43,209,95,0.16)]" />
         </div>
-        <div className="translate-x-[-10px] transition duration-300 group-hover/source-fork-node:translate-x-0 group-focus-within/source-fork-node:translate-x-0">
+        <div
+          className={[
+            'translate-x-[-10px] transition duration-300 group-hover/source-fork-node:translate-x-0 group-focus-within/source-fork-node:translate-x-0',
+            hasForks ? 'translate-x-0' : '',
+          ].join(' ')}
+        >
           <ResponseForkBranchPanel forks={forks} forkHref={forkHref} forkLabel={forkLabel} />
         </div>
       </div>

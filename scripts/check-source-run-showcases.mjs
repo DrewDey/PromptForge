@@ -422,6 +422,17 @@ const sourceRunProjects = [
     packagePath: 'seed-runs/weekend-plan-checklist-chatgpt-6prompt-fixed.json',
   },
   {
+    name: 'Weekend Road-Trip Readiness Board',
+    route: 'src/app/weekend-road-trip-readiness-fork-demo/page.tsx',
+    projectId: 'WEEKEND_CHECKLIST_FORK_PROJECT_ID',
+    showcaseExport: 'WEEKEND_CHECKLIST_FORK_SHOWCASE_PROJECT',
+    href: '/weekend-road-trip-readiness-fork-demo',
+    packagePath: 'seed-runs/weekend-road-trip-readiness-codex-fork-source-run.json',
+    artifactPaths: [
+      'public/artifacts/weekend-road-trip-readiness-codex-fork.html',
+    ],
+  },
+  {
     name: 'Neon Block Patrol',
     route: 'src/app/neon-block-patrol-demo/page.tsx',
     projectId: 'NEON_BLOCK_PATROL_PROJECT_ID',

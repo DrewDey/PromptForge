@@ -87,7 +87,9 @@ mustInclude('src/app/prompt/new/page.tsx', buildPage, 'serializeProjectForkSourc
 mustInclude('src/app/prompt/new/page.tsx', buildPage, 'fork_source: forkSource', 'forked source-run submissions must send structured fork metadata')
 mustInclude('src/app/prompt/new/page.tsx', buildPage, 'setSourceRunTitle', 'fork handoff should prefill a useful source-run title')
 mustInclude('src/app/prompt/new/page.tsx', buildPage, 'authReturnPath', 'logged-out fork handoffs must preserve the fork URL through login/signup')
-mustIncludeAtLeast('src/app/prompt/new/page.tsx', buildPage, '{forkSource && <ForkSourcePanel forkSource={forkSource} />}', 3, 'fork source panel must render for loading, logged-out, and logged-in fork handoffs')
+mustInclude('src/app/prompt/new/page.tsx', buildPage, 'BuildLoggedOutLanding', 'loading and logged-out fork handoffs must keep a shared landing that receives fork source')
+mustIncludeAtLeast('src/app/prompt/new/page.tsx', buildPage, 'return <BuildLoggedOutLanding forkSource={forkSource}', 2, 'loading and logged-out fork handoffs must pass fork source into the shared landing')
+mustIncludeAtLeast('src/app/prompt/new/page.tsx', buildPage, '{forkSource && <ForkSourcePanel forkSource={forkSource} />}', 2, 'fork source panel must render in the shared landing and logged-in form handoff')
 
 const promptDetailPage = read('src/app/prompt/[id]/page.tsx')
 mustInclude('src/app/prompt/[id]/page.tsx', promptDetailPage, 'projectForkSourceFromSubmissionFields(prompt)', 'generic project fork CTA must detect when the current project is already a fork')
@@ -118,13 +120,19 @@ mustInclude('src/app/browse.css', browseStyles, '.compare-group.is-prompt-family
 
 const preparedShowcases = read('src/lib/prepared-showcase-projects.ts')
 mustInclude('src/lib/prepared-showcase-projects.ts', preparedShowcases, 'promptFamilyId?: string', 'prepared source-run projects must be able to carry prompt family ids into model comparisons')
+mustInclude('src/lib/prepared-showcase-projects.ts', preparedShowcases, 'forkSource?: ProjectForkSource | null', 'prepared source-run projects must be able to carry static fork lineage')
+mustInclude('src/lib/prepared-showcase-projects.ts', preparedShowcases, 'WEEKEND_CHECKLIST_FORK_SHOWCASE_PROJECT', 'the Weekend static child fork must remain registered as a prepared showcase project')
+mustInclude('src/lib/prepared-showcase-projects.ts', preparedShowcases, 'sourceStepNumber: 3', 'the Weekend static child fork must stay attached to response package 03')
 
 const pendingShowcases = read('src/lib/pending-source-run-showcases.ts')
 mustInclude('src/lib/pending-source-run-showcases.ts', pendingShowcases, 'promptFamilyId?: string', 'pending source-run showcase descriptors must preserve prompt family ids when supplied')
 mustInclude('src/lib/pending-source-run-showcases.ts', pendingShowcases, 'promptFamilyId: input.promptFamilyId', 'pending source-run showcase builder must copy prompt family ids')
 
 const mockData = read('src/lib/mock-data.ts')
-mustInclude('src/lib/mock-data.ts', mockData, 'prompt_family_id: project.promptFamilyId ?? null', 'mock/prepared public prompts must preserve prompt family ids for comparison grouping')
+mustInclude('src/lib/mock-data.ts', mockData, 'prompt_family_id: project.promptFamilyId ?? forkSubmissionFields.prompt_family_id ?? null', 'mock/prepared public prompts must preserve prompt family ids for comparison grouping')
+mustInclude('src/lib/mock-data.ts', mockData, 'projectForkSourceToSubmissionFields(project.forkSource)', 'mock/prepared public prompts must persist static fork lineage fields')
+mustInclude('src/lib/mock-data.ts', mockData, 'WEEKEND_CHECKLIST_FORK_SHOWCASE_PROJECT', 'the Weekend static child fork must have an approved mock prompt and profile')
+mustInclude('src/lib/mock-data.ts', mockData, 'stepsForShowcase(WEEKEND_CHECKLIST_FORK_SHOWCASE_PROJECT)', 'the Weekend static child fork must expose prompt steps for public lineage')
 
 const communityPanel = read('src/components/ProjectCommunityPanel.tsx')
 mustNotInclude('src/components/ProjectCommunityPanel.tsx', communityPanel, '>Forks<', 'community surface must not show a fake forks count before real counts exist')
@@ -171,6 +179,8 @@ mustInclude('src/lib/data.ts', dataLayer, 'getApprovedProjectForks', 'public pag
 mustInclude('src/lib/data.ts', dataLayer, 'PROJECT_FORK_MAX_WIDTH', 'approved-fork reader must stay bounded to the fork width limit')
 mustInclude('src/lib/data.ts', dataLayer, 'author:profiles(username,display_name)', 'approved fork reader must return author labels for response-chain branch destinations')
 mustInclude('src/lib/data.ts', dataLayer, 'authorUsername', 'approved fork destinations must expose usernames for branch labels')
+mustInclude('src/lib/data.ts', dataLayer, 'getPublicMockProjectForks', 'approved-fork reader must include static prepared forks when no live DB child row exists')
+mustInclude('src/lib/data.ts', dataLayer, 'fallbackForks', 'approved-fork reader must merge static fork destinations with database forks')
 
 const types = read('src/lib/types.ts')
 mustInclude('src/lib/types.ts', types, 'fork_source_project_id?: string | null', 'approved project type must carry fork source project id')

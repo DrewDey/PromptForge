@@ -1,10 +1,16 @@
 import Link from 'next/link'
+import type { Metadata } from 'next'
 import { ArrowRight, ArrowUp, CheckCircle2, ExternalLink, GitFork, MessageSquare, RadioTower } from 'lucide-react'
 import BuildRequestResponseForm from '@/components/BuildRequestResponseForm'
 import BuildRequestSubmitForm from '@/components/BuildRequestSubmitForm'
 import { voteOnBuildRequest } from '@/lib/actions'
 import { getPublicBuildRequests, getUserBuildRequestVotes } from '@/lib/data'
 import type { BuildRequestWithRelations } from '@/lib/types'
+
+export const metadata: Metadata = {
+  title: 'Request an AI Build Path | PathForge',
+  description: 'Ask the PathForge community for a real AI build path, fork, or finished artifact for the project you want to see built.',
+}
 
 const SUPABASE_CONFIGURED = !!(
   process.env.NEXT_PUBLIC_SUPABASE_URL &&

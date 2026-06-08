@@ -1,9 +1,15 @@
 import Link from 'next/link'
+import type { Metadata } from 'next'
 import { ArrowUp, Clock, Inbox, LockKeyhole, MessageSquare, ShieldCheck } from 'lucide-react'
 import SuggestionSubmitForm from '@/components/SuggestionSubmitForm'
 import { getPublicSuggestions, getUserSuggestionVotes, SUGGESTION_PUBLIC_DELAY_HOURS } from '@/lib/data'
 import { voteOnSuggestion } from '@/lib/actions'
 import type { SuggestionWithRelations } from '@/lib/types'
+
+export const metadata: Metadata = {
+  title: 'PathForge Suggestion Box',
+  description: 'Send PathForge product feedback, vote on approved suggestions, and help improve the way real AI builds are captured and shared.',
+}
 
 const SUPABASE_CONFIGURED = !!(
   process.env.NEXT_PUBLIC_SUPABASE_URL &&

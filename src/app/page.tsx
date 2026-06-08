@@ -1,7 +1,13 @@
 import Link from 'next/link'
+import type { Metadata } from 'next'
 import { BROAD_DOMAINS, formatPathCount, getBroadDomainPromptCounts } from '@/lib/broad-domains'
 import { getCategories, getPrompts } from '@/lib/data'
 import './home.css'
+
+export const metadata: Metadata = {
+  title: 'PathForge — Real AI Build Paths, Prompts, and Artifacts',
+  description: 'Explore real AI build paths with the exact prompts, outputs, artifacts, and branches behind finished projects you can fork and ship.',
+}
 
 /* ─────────────────────────────────────────────────────────
    Homepage — implemented from design handoff 2026-04-19

@@ -64,6 +64,32 @@ function getPromptStepCount(prompt: PromptWithRelations) {
   return getPreparedShowcaseProjectById(prompt.id)?.steps.length ?? prompt.steps?.length ?? 0
 }
 
+function formatCount(count: number, singular: string) {
+  return `${count} ${count === 1 ? singular : `${singular}s`}`
+}
+
+function getEngagementSignal(prompt: PromptWithRelations) {
+  const parts: string[] = []
+
+  if (prompt.vote_count > 0) {
+    parts.push(formatCount(prompt.vote_count, 'upvote'))
+  }
+
+  if (prompt.bookmark_count > 0) {
+    parts.push(formatCount(prompt.bookmark_count, 'save'))
+  }
+
+  return parts.length > 0 ? parts.join(' · ') : null
+}
+
+function getPathCardSignal(prompt: PromptWithRelations) {
+  const engagement = getEngagementSignal(prompt)
+  if (engagement) return engagement
+
+  const preparedProject = getPreparedShowcaseProjectById(prompt.id)
+  return preparedProject?.sourceRunId ? 'Verified seed' : null
+}
+
 type SearchParams = {
   q?: string
   category?: string
@@ -539,6 +565,8 @@ export default async function BrowsePage({
                       const domain = promptDomain(p)
                       const modelLabel = getPromptModelLabel(p)
                       const stepCount = getPromptStepCount(p)
+                      const cardSignal = getPathCardSignal(p)
+                      const hasEngagement = Boolean(getEngagementSignal(p))
                       return (
                         <article
                           key={p.id}
@@ -573,19 +601,29 @@ export default async function BrowsePage({
                           </Link>
                           <div className="result-stats result-actions">
                             {isPersistableProjectId(p.id) ? (
-                              <VoteBookmarkButtons
-                                promptId={p.id}
-                                initialVoteCount={p.vote_count}
-                                initialBookmarkCount={p.bookmark_count}
-                                initialVoted={votedPromptIds.has(p.id)}
-                                initialBookmarked={bookmarkedPromptIds.has(p.id)}
-                                isLoggedIn={isLoggedIn}
-                                loginNextPath={currentBrowseHref}
-                              />
+                              <>
+                                <VoteBookmarkButtons
+                                  promptId={p.id}
+                                  initialVoteCount={p.vote_count}
+                                  initialBookmarkCount={p.bookmark_count}
+                                  initialVoted={votedPromptIds.has(p.id)}
+                                  initialBookmarked={bookmarkedPromptIds.has(p.id)}
+                                  isLoggedIn={isLoggedIn}
+                                  loginNextPath={currentBrowseHref}
+                                  hideZeroCounts
+                                />
+                                {!hasEngagement && cardSignal && (
+                                  <span className="result-stat-text">
+                                    {cardSignal}
+                                  </span>
+                                )}
+                              </>
                             ) : (
-                              <span className="result-stat-text">
-                                {p.vote_count} upvotes · {p.bookmark_count} saves
-                              </span>
+                              cardSignal && (
+                                <span className="result-stat-text">
+                                  {cardSignal}
+                                </span>
+                              )
                             )}
                           </div>
                         </article>
@@ -710,6 +748,7 @@ export default async function BrowsePage({
                   {shelf.map(p => {
                     const cat = categories.find(c => c.id === p.category_id)
                     const modelLabel = getPromptModelLabel(p)
+                    const cardSignal = getPathCardSignal(p)
                     return (
                       <Link key={p.id} href={getProjectHref(p)} className="shelf-card">
                         <div className="shelf-cat">{cat?.name ?? '—'}</div>
@@ -724,7 +763,7 @@ export default async function BrowsePage({
                         </div>
                         <div className="shelf-foot-row">
                           <span>{getPromptStepCount(p)} steps{modelLabel !== 'Unknown model' ? ` · ${modelLabel}` : ''}</span>
-                          <span>{p.vote_count} upvotes · {p.bookmark_count} saves</span>
+                          {cardSignal && <span>{cardSignal}</span>}
                         </div>
                       </Link>
                     )
@@ -950,6 +989,7 @@ function ComparisonResults({
               const era = getPromptModelEra(prompt)
               const stepCount = getPromptStepCount(prompt)
               const domainLabel = getDomainLabel(prompt)
+              const cardSignal = getPathCardSignal(prompt)
 
               return (
                 <Link key={prompt.id} href={getProjectHref(prompt)} className="compare-run">
@@ -971,7 +1011,7 @@ function ComparisonResults({
                   <div className="compare-run-foot">
                     <span>{domainLabel ?? 'Uncategorized'}</span>
                     <span>{stepCount} {stepCount === 1 ? 'step' : 'steps'}</span>
-                    <span>{prompt.vote_count} upvotes</span>
+                    {cardSignal && <span>{cardSignal}</span>}
                   </div>
                 </Link>
               )

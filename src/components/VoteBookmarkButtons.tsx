@@ -13,6 +13,7 @@ export default function VoteBookmarkButtons({
   isLoggedIn,
   size = 'default',
   loginNextPath,
+  hideZeroCounts = false,
 }: {
   promptId: string
   initialVoteCount: number
@@ -22,6 +23,7 @@ export default function VoteBookmarkButtons({
   isLoggedIn: boolean
   size?: 'default' | 'large'
   loginNextPath?: string
+  hideZeroCounts?: boolean
 }) {
   const [voteCount, setVoteCount] = useState(initialVoteCount)
   const [bookmarkCount, setBookmarkCount] = useState(initialBookmarkCount)
@@ -89,6 +91,9 @@ export default function VoteBookmarkButtons({
     setBookmarkPending(false)
   }
 
+  const showVoteCount = !hideZeroCounts || voteCount > 0
+  const showBookmarkCount = !hideZeroCounts || bookmarkCount > 0
+
   if (size === 'large') {
     return (
       <div className="flex flex-col items-end gap-1">
@@ -108,7 +113,7 @@ export default function VoteBookmarkButtons({
               aria-pressed={voted}
             >
               <ArrowUp className={`w-4 h-4 ${voted ? 'text-primary-600' : ''}`} />
-              {voteCount}
+              {showVoteCount && voteCount}
             </button>
           ) : (
             <a
@@ -119,7 +124,7 @@ export default function VoteBookmarkButtons({
               aria-label="Log in to upvote"
             >
               <ArrowUp className="w-4 h-4" />
-              {voteCount}
+              {showVoteCount && voteCount}
             </a>
           )}
           {isLoggedIn ? (
@@ -137,7 +142,7 @@ export default function VoteBookmarkButtons({
               aria-pressed={bookmarked}
             >
               <Bookmark className={`w-4 h-4 ${bookmarked ? 'fill-amber-500' : ''}`} />
-              {bookmarkCount}
+              {showBookmarkCount && bookmarkCount}
             </button>
           ) : (
             <a
@@ -148,7 +153,7 @@ export default function VoteBookmarkButtons({
               aria-label="Log in to bookmark"
             >
               <Bookmark className="w-4 h-4" />
-              {bookmarkCount}
+              {showBookmarkCount && bookmarkCount}
             </a>
           )}
         </div>
@@ -177,7 +182,7 @@ export default function VoteBookmarkButtons({
             aria-pressed={voted}
           >
             <ArrowUp className={`w-3.5 h-3.5 ${voted ? 'text-primary-600' : ''}`} />
-            {voteCount}
+            {showVoteCount && voteCount}
           </button>
         ) : (
           <a
@@ -188,7 +193,7 @@ export default function VoteBookmarkButtons({
             aria-label="Log in to upvote"
           >
             <ArrowUp className="w-3.5 h-3.5" />
-            {voteCount}
+            {showVoteCount && voteCount}
           </a>
         )}
         {isLoggedIn ? (
@@ -204,7 +209,7 @@ export default function VoteBookmarkButtons({
             aria-pressed={bookmarked}
           >
             <Bookmark className={`w-3.5 h-3.5 ${bookmarked ? 'fill-amber-500' : ''}`} />
-            {bookmarkCount}
+            {showBookmarkCount && bookmarkCount}
           </button>
         ) : (
           <a
@@ -215,7 +220,7 @@ export default function VoteBookmarkButtons({
             aria-label="Log in to bookmark"
           >
             <Bookmark className="w-3.5 h-3.5" />
-            {bookmarkCount}
+            {showBookmarkCount && bookmarkCount}
           </a>
         )}
       </div>

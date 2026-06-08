@@ -1,6 +1,9 @@
 import PreparedSourceRunPage from '@/components/PreparedSourceRunPage'
+import { buildPathDetailMetadata } from '@/lib/build-path-metadata'
 import { POPUP_DINNER_SEATING_SHOWCASE_PROJECT } from '@/lib/prepared-showcase-projects'
 import { loadSourceRunPackage } from '@/lib/source-run-package'
+
+export const metadata = buildPathDetailMetadata(POPUP_DINNER_SEATING_SHOWCASE_PROJECT)
 
 export default function PopUpDinnerSeatingMixerDemoPage() {
   return (

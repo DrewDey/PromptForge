@@ -6,16 +6,25 @@ import { ExternalLink, FileCode2, GitBranch } from 'lucide-react'
 import CopyButton from '@/app/prompt/[id]/CopyButton'
 import ProjectEngagementBar from '@/components/ProjectEngagementBar'
 import ProjectCommunityPanel from '@/components/ProjectCommunityPanel'
+import { buildPathDetailMetadata } from '@/lib/build-path-metadata'
 import { SNAKE_PROJECT_ID } from '@/lib/featured-projects'
 import SnakeForkWorkspace from './SnakeForkWorkspace'
 
 const projectId = SNAKE_PROJECT_ID
+const pageTitle = 'Playable Snake game from one prompt.'
+const pageDescription =
+  'A single ChatGPT prompt produced a self-contained Snake game, with the original prompt, result, and build path preserved.'
 const prompt = 'Make me a playable Snake game as a single self-contained HTML file.'
 const artifactPath = '/artifacts/snake-gpt55-pro-oneshot.html'
 const chatUrl = 'https://chatgpt.com/c/6a122064-6094-832a-9228-e239ce31e79b'
 const capturedAt = 'May 23, 2026, 6:00 PM ET'
 const chatResponseIntro =
   'I’ll build a standalone HTML Snake game with embedded CSS/JavaScript, playable directly in a browser, including scoring, keyboard controls, pause/restart, and mobile-friendly touch support.'
+
+export const metadata = buildPathDetailMetadata({
+  title: pageTitle,
+  description: pageDescription,
+})
 
 function getModelResponse() {
   try {
@@ -250,11 +259,10 @@ export default function SnakeDemoPage() {
           <div className="mb-5 grid gap-5 lg:grid-cols-[minmax(0,1fr)_430px] lg:items-end">
             <div>
               <h1 className="max-w-4xl text-3xl font-black leading-[0.96] tracking-normal sm:text-5xl">
-                Playable Snake game from one prompt.
+                {pageTitle}
               </h1>
               <p className="mt-4 max-w-2xl text-sm leading-6 text-surface-600">
-                A single ChatGPT prompt produced a self-contained HTML game with scoring, keyboard controls, and
-                touch support.
+                {pageDescription}
               </p>
             </div>
             <RunSummary />

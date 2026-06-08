@@ -6,8 +6,12 @@ import { ExternalLink, FileCode2, GitBranch } from 'lucide-react'
 import CopyButton from '@/app/prompt/[id]/CopyButton'
 import ProjectEngagementBar from '@/components/ProjectEngagementBar'
 import ProjectCommunityPanel from '@/components/ProjectCommunityPanel'
+import { buildPathDetailMetadata } from '@/lib/build-path-metadata'
 
 const projectId = '069d354a-ec99-4ee4-aed4-aa1baaec8b29'
+const pageTitle = 'Interactive decision matrix from one prompt.'
+const pageDescription =
+  'Gemini Flash produced a self-contained decision matrix for scoring options, with the original prompt, result, and build path preserved.'
 const artifactPath = '/artifacts/decision-matrix-gemini-flash-oneshot.html'
 const sourceRunUrl = 'https://gemini.google.com/app/f6b37685972b6868'
 const prompt =
@@ -15,6 +19,11 @@ const prompt =
 const capturedAt = 'May 28, 2026'
 const responseIntro =
   'Your decision matrix tool is ready. This is a clean, dark-themed, single-file HTML app designed for clear visual hierarchy and quick input.'
+
+export const metadata = buildPathDetailMetadata({
+  title: pageTitle,
+  description: pageDescription,
+})
 
 function getModelResponse() {
   try {
@@ -250,11 +259,10 @@ export default function DecisionMatrixDemoPage() {
           <div className="mb-5 grid gap-5 lg:grid-cols-[minmax(0,1fr)_430px] lg:items-end">
             <div>
               <h1 className="max-w-4xl text-3xl font-black leading-[0.96] tracking-normal sm:text-5xl">
-                Interactive decision matrix from one prompt.
+                {pageTitle}
               </h1>
               <p className="mt-4 max-w-2xl text-sm leading-6 text-surface-600">
-                Gemini Flash produced a self-contained browser tool for scoring options, weighting criteria, seeing the
-                leading choice, and exporting the matrix as CSV.
+                {pageDescription}
               </p>
             </div>
             <RunSummary />

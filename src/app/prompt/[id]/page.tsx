@@ -739,15 +739,15 @@ export default async function PromptDetailPage({
       <aside className="hidden lg:block" aria-label="Project actions">
         <div className="sticky top-16">
           <div className="border border-surface-200 bg-white shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
-            <div className="bg-surface-900 text-white px-5 py-4">
+            <div className="border-b border-primary-200 bg-primary-50 px-5 py-4 text-surface-900">
               <div className="flex items-center gap-2 mb-1">
                 <span className="inline-block w-1.5 h-1.5 bg-brand-orange" aria-hidden="true" />
-                <span className="text-[10px] font-mono uppercase tracking-[0.18em] text-surface-400 font-semibold">
+                <span className="text-[10px] font-mono uppercase tracking-[0.18em] text-brand-orange font-semibold">
                   Your turn
                 </span>
               </div>
               <p className="text-sm font-semibold leading-snug">Inspired? Build your own version.</p>
-              <p className="text-xs text-surface-400 mt-1 leading-snug">
+              <p className="text-xs text-surface-600 mt-1 leading-snug">
                 Opens build intake with this path attached.
               </p>
             </div>

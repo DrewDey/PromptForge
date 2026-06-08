@@ -182,25 +182,25 @@ function RunSummary({
 
   return (
     <div className="grid gap-3 text-sm sm:grid-cols-3">
-      <div className="border border-surface-800 bg-surface-900 px-4 py-3">
+      <div className="border border-surface-200 bg-white px-4 py-3">
         <div className="font-mono text-[10px] uppercase tracking-[0.16em] text-surface-500">
           Model
         </div>
-        <div className="mt-1 font-semibold text-surface-100">{sourceRun.model ?? project.modelUsed}</div>
+        <div className="mt-1 font-semibold text-surface-900">{sourceRun.model ?? project.modelUsed}</div>
       </div>
-      <div className="border border-surface-800 bg-surface-900 px-4 py-3">
+      <div className="border border-surface-200 bg-white px-4 py-3">
         <div className="font-mono text-[10px] uppercase tracking-[0.16em] text-surface-500">
           Run type
         </div>
-        <div className="mt-1 font-semibold text-surface-100">
+        <div className="mt-1 font-semibold text-surface-900">
           {sourceRun.steps.length} prompts · {artifactCount} artifact packages
         </div>
       </div>
-      <div className="border border-surface-800 bg-surface-900 px-4 py-3">
+      <div className="border border-surface-200 bg-white px-4 py-3">
         <div className="font-mono text-[10px] uppercase tracking-[0.16em] text-surface-500">
           Captured
         </div>
-        <div className="mt-1 font-semibold text-surface-100">{capturedAt}</div>
+        <div className="mt-1 font-semibold text-surface-900">{capturedAt}</div>
       </div>
     </div>
   )
@@ -226,12 +226,12 @@ export default async function PreparedSourceRunPage({
 
   return (
     <main className="min-h-screen bg-surface-50 text-surface-900">
-      <section className="border-b border-surface-800 bg-surface-900 text-white">
+      <section className="border-b border-surface-200 bg-white text-surface-900">
         <div className="mx-auto max-w-7xl px-4 py-5 sm:px-6 lg:px-8">
           <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
             <Link
               href="/"
-              className="font-mono text-xs uppercase tracking-[0.18em] text-surface-400 hover:text-brand-orange"
+              className="font-mono text-xs uppercase tracking-[0.18em] text-surface-500 hover:text-brand-orange"
             >
               PathForge
             </Link>
@@ -242,15 +242,15 @@ export default async function PreparedSourceRunPage({
               <h1 className="max-w-4xl text-3xl font-black leading-[0.96] tracking-normal sm:text-5xl">
                 {project.title}
               </h1>
-              <p className="mt-4 max-w-2xl text-sm leading-6 text-surface-300">
+              <p className="mt-4 max-w-2xl text-sm leading-6 text-surface-600">
                 {project.description}
               </p>
-              <div className="mt-4 flex flex-wrap gap-2 text-xs font-semibold text-surface-400">
-                <span className="border border-surface-800 bg-surface-950 px-3 py-1.5">
+              <div className="mt-4 flex flex-wrap gap-2 text-xs font-semibold text-surface-600">
+                <span className="border border-surface-200 bg-surface-50 px-3 py-1.5">
                   Source run {sourceRunId(sourceRun, project)}
                 </span>
                 {settingsText && (
-                  <span className="max-w-3xl border border-surface-800 bg-surface-950 px-3 py-1.5">
+                  <span className="max-w-3xl border border-surface-200 bg-surface-50 px-3 py-1.5">
                     {settingsText}
                   </span>
                 )}

@@ -101,23 +101,23 @@ function toStep(step: WeekendPlanChecklistSeedStep): SourceRunShowcaseStep {
 function RunSummary({ sourceRun }: { sourceRun: WeekendPlanChecklistSeedRun }) {
   return (
     <div className="grid gap-3 text-sm sm:grid-cols-3">
-      <div className="border border-surface-800 bg-surface-900 px-4 py-3">
+      <div className="border border-surface-200 bg-white px-4 py-3">
         <div className="font-mono text-[10px] uppercase tracking-[0.16em] text-surface-500">
           Model
         </div>
-        <div className="mt-1 font-semibold text-surface-100">{sourceRun.model}</div>
+        <div className="mt-1 font-semibold text-surface-900">{sourceRun.model}</div>
       </div>
-      <div className="border border-surface-800 bg-surface-900 px-4 py-3">
+      <div className="border border-surface-200 bg-white px-4 py-3">
         <div className="font-mono text-[10px] uppercase tracking-[0.16em] text-surface-500">
           Run type
         </div>
-        <div className="mt-1 font-semibold text-surface-100">6 prompts · step 6 fixed step 5</div>
+        <div className="mt-1 font-semibold text-surface-900">6 prompts · step 6 fixed step 5</div>
       </div>
-      <div className="border border-surface-800 bg-surface-900 px-4 py-3">
+      <div className="border border-surface-200 bg-white px-4 py-3">
         <div className="font-mono text-[10px] uppercase tracking-[0.16em] text-surface-500">
           Captured
         </div>
-        <div className="mt-1 font-semibold text-surface-100">{capturedAt}</div>
+        <div className="mt-1 font-semibold text-surface-900">{capturedAt}</div>
       </div>
     </div>
   )
@@ -131,12 +131,12 @@ export default async function WeekendPlanChecklistDemoPage() {
 
   return (
     <main className="min-h-screen bg-surface-50 text-surface-900">
-      <section className="border-b border-surface-800 bg-surface-900 text-white">
+      <section className="border-b border-surface-200 bg-white text-surface-900">
         <div className="mx-auto max-w-7xl px-4 py-5 sm:px-6 lg:px-8">
           <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
             <Link
               href="/"
-              className="font-mono text-xs uppercase tracking-[0.18em] text-surface-400 hover:text-brand-orange"
+              className="font-mono text-xs uppercase tracking-[0.18em] text-surface-500 hover:text-brand-orange"
             >
               PathForge
             </Link>
@@ -147,16 +147,16 @@ export default async function WeekendPlanChecklistDemoPage() {
               <h1 className="max-w-4xl text-3xl font-black leading-[0.96] tracking-normal sm:text-5xl">
                 {sourceRun.title}
               </h1>
-              <p className="mt-4 max-w-2xl text-sm leading-6 text-surface-300">
+              <p className="mt-4 max-w-2xl text-sm leading-6 text-surface-600">
                 A ChatGPT source run turned a messy weekend plan into a local-storage checklist, then iterated through
                 deduping, essentials, filters, timing groups, cleaner row controls, and a sixth prompt that fixed the
-                step 5 <code className="text-surface-100">nextFiveItems</code> error.
+                step 5 <code className="text-surface-900">nextFiveItems</code> error.
               </p>
-              <div className="mt-4 flex flex-wrap gap-2 text-xs font-semibold text-surface-400">
-                <span className="border border-surface-800 bg-surface-950 px-3 py-1.5">
+              <div className="mt-4 flex flex-wrap gap-2 text-xs font-semibold text-surface-600">
+                <span className="border border-surface-200 bg-surface-50 px-3 py-1.5">
                   Source run {sourceRun.source_run_submission_id}
                 </span>
-                <span className="border border-surface-800 bg-surface-950 px-3 py-1.5">
+                <span className="border border-surface-200 bg-surface-50 px-3 py-1.5">
                   {sourceRun.model_settings}
                 </span>
               </div>

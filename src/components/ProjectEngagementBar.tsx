@@ -35,7 +35,7 @@ export default async function ProjectEngagementBar({
   }
 
   return (
-    <div className="mt-5 flex flex-wrap items-center justify-between gap-3 border-t border-surface-800 pt-4">
+    <div className="mt-5 flex flex-wrap items-center justify-between gap-3 border-t border-surface-200 pt-4">
       <div>
         <div className="font-mono text-[10px] uppercase tracking-[0.16em] text-surface-500">
           Community signal

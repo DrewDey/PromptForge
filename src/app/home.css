@@ -27,8 +27,8 @@
 .pf-home .hero .lead { font-size: 19px; line-height: 1.55; color: var(--color-surface-600); margin-bottom: 32px; max-width: 520px; }
 .pf-home .hero-ctas { display: flex; align-items: center; gap: 12px; margin-bottom: 36px; }
 
-.pf-home .btn-primary { background: var(--color-surface-900); color: #fff; padding: 13px 22px; font-size: 14px; font-weight: 600; display: inline-flex; align-items: center; gap: 8px; transition: transform .15s, background .15s; white-space: nowrap; }
-.pf-home .btn-primary:hover { background: var(--color-brand-orange); transform: translateY(-1px); }
+.pf-home .btn-primary { background: var(--color-brand-orange); color: #fff; padding: 13px 22px; font-size: 14px; font-weight: 600; display: inline-flex; align-items: center; gap: 8px; transition: transform .15s, background .15s; white-space: nowrap; }
+.pf-home .btn-primary:hover { background: var(--color-brand-orange-dark); transform: translateY(-1px); }
 .pf-home .btn-primary .arrow { transition: transform .15s; }
 .pf-home .btn-primary:hover .arrow { transform: translateX(3px); }
 .pf-home .btn-secondary { background: #fff; color: var(--color-surface-900); border: 1px solid var(--color-surface-300); padding: 12px 20px; font-size: 14px; font-weight: 600; display: inline-flex; align-items: center; gap: 8px; transition: all .15s; white-space: nowrap; }
@@ -92,13 +92,13 @@
 .pf-home .section-sub { font-size: 17px; line-height: 1.55; color: var(--color-surface-500); max-width: 620px; }
 
 /* ─── Problem ─── */
-.pf-home .problem { background: var(--color-surface-900); color: #fff; }
+.pf-home .problem { background: var(--color-surface-100); color: var(--color-surface-900); }
 .pf-home .problem .sect-wrap { display: grid; grid-template-columns: 1fr 1.1fr; gap: 64px; align-items: center; padding: 100px 24px; }
 .pf-home .problem .eyebrow { color: var(--color-brand-orange); }
-.pf-home .problem h2 { font-size: 52px; line-height: 1.05; letter-spacing: -0.03em; font-weight: 900; color: #fff; margin-bottom: 20px; }
+.pf-home .problem h2 { font-size: 52px; line-height: 1.05; letter-spacing: -0.03em; font-weight: 900; color: var(--color-surface-900); margin-bottom: 20px; }
 .pf-home .problem h2 .serif { font-family: var(--font-display); font-style: italic; font-weight: 400; color: var(--color-brand-orange); }
-.pf-home .problem p { font-size: 17px; color: var(--color-surface-400); line-height: 1.6; max-width: 480px; }
-.pf-home .problem-visual { position: relative; font-family: var(--font-mono); font-size: 12px; background: var(--color-surface-800); border: 1px solid var(--color-surface-700); padding: 24px; }
+.pf-home .problem p { font-size: 17px; color: var(--color-surface-600); line-height: 1.6; max-width: 480px; }
+.pf-home .problem-visual { position: relative; font-family: var(--font-mono); font-size: 12px; background: var(--color-surface-900); border: 1px solid var(--color-surface-800); padding: 24px; box-shadow: 10px 10px 0 rgba(232,122,44,.14); }
 .pf-home .problem-visual .caret { color: var(--color-surface-500); }
 .pf-home .problem-visual .pv-line { color: var(--color-surface-500); margin-bottom: 8px; }
 .pf-home .problem-visual .pv-line.you { color: #fff; }
@@ -138,17 +138,17 @@
 .pf-home .cats-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; max-width: 920px; }
 .pf-home .domain-tile { min-height: 270px; background: #fff; border: 1px solid var(--color-surface-200); position: relative; transition: border-color .15s, transform .18s, box-shadow .18s; overflow: hidden; display: flex; flex-direction: column; }
 .pf-home .domain-tile:hover { transform: translateY(-2px); border-color: var(--color-surface-900); box-shadow: 6px 6px 0 rgba(20,20,23,.1); }
-.pf-home .domain-tile-art { position: relative; height: 136px; overflow: hidden; background: var(--color-surface-900); }
-.pf-home .domain-tile.productivity .domain-tile-art { background: #15312d; }
-.pf-home .domain-tile.games .domain-tile-art { background: #111827; }
-.pf-home .domain-tile-art::after { content: ""; position: absolute; inset: 0; background-image: linear-gradient(rgba(255,255,255,.06) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.06) 1px, transparent 1px); background-size: 22px 22px; pointer-events: none; }
-.pf-home .domain-main-thumb { position: absolute; left: 18px; top: 18px; width: 178px; height: 100px; overflow: hidden; border: 1px solid rgba(255,255,255,.18); background: rgba(255,255,255,.1); box-shadow: 0 10px 24px rgba(0,0,0,.22); }
+.pf-home .domain-tile-art { position: relative; height: 136px; overflow: hidden; background: var(--color-surface-100); }
+.pf-home .domain-tile.productivity .domain-tile-art { background: #e8f4ef; }
+.pf-home .domain-tile.games .domain-tile-art { background: #eaf2ff; }
+.pf-home .domain-tile-art::after { content: ""; position: absolute; inset: 0; background-image: linear-gradient(rgba(24,24,27,.055) 1px, transparent 1px), linear-gradient(90deg, rgba(24,24,27,.055) 1px, transparent 1px); background-size: 22px 22px; pointer-events: none; }
+.pf-home .domain-main-thumb { position: absolute; left: 18px; top: 18px; width: 178px; height: 100px; overflow: hidden; border: 1px solid rgba(24,24,27,.14); background: rgba(255,255,255,.72); box-shadow: 0 10px 24px rgba(24,24,27,.12); }
 .pf-home .domain-tile.games .domain-main-thumb { background-image: linear-gradient(rgba(17,24,39,.05), rgba(17,24,39,.4)), url('/screenshots/snake-demo-game-running.png'); background-size: cover; background-position: center; }
 .pf-home .workflow-thumb { height: 100%; padding: 14px; display: grid; gap: 8px; }
-.pf-home .workflow-thumb span { display: block; height: 12px; background: rgba(255,255,255,.65); }
-.pf-home .workflow-thumb span:nth-child(2) { width: 72%; background: rgba(255,255,255,.42); }
+.pf-home .workflow-thumb span { display: block; height: 12px; background: rgba(24,24,27,.24); }
+.pf-home .workflow-thumb span:nth-child(2) { width: 72%; background: rgba(24,24,27,.14); }
 .pf-home .workflow-thumb span:nth-child(3) { width: 48%; background: rgba(232,122,44,.85); }
-.pf-home .domain-mini-thumb { position: absolute; display: grid; place-items: center; height: 32px; padding: 0 8px; border: 1px solid rgba(255,255,255,.18); background: rgba(255,255,255,.1); color: #fff; box-shadow: 0 10px 24px rgba(0,0,0,.22); font-family: var(--font-mono); font-size: 9px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; white-space: nowrap; }
+.pf-home .domain-mini-thumb { position: absolute; display: grid; place-items: center; height: 32px; padding: 0 8px; border: 1px solid rgba(24,24,27,.14); background: rgba(255,255,255,.72); color: var(--color-surface-800); box-shadow: 0 10px 24px rgba(24,24,27,.12); font-family: var(--font-mono); font-size: 9px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; white-space: nowrap; }
 .pf-home .domain-mini-thumb.mini-1 { right: 20px; top: 16px; width: 112px; transform: rotate(2deg); }
 .pf-home .domain-mini-thumb.mini-2 { right: 76px; bottom: 42px; width: 118px; transform: rotate(-3deg); }
 .pf-home .domain-mini-thumb.mini-3 { right: 24px; bottom: 14px; width: 96px; transform: rotate(1deg); }
@@ -176,19 +176,19 @@
 .pf-home .quote-shipped b { color: var(--color-brand-orange); }
 
 /* ─── Final CTA ─── */
-.pf-home .finalcta { background: var(--color-surface-900); color: #fff; position: relative; overflow: hidden; }
-.pf-home .finalcta::before { content: ""; position: absolute; inset: 0; background-image: linear-gradient(rgba(255,255,255,.04) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.04) 1px, transparent 1px); background-size: 56px 56px; mask-image: radial-gradient(ellipse 60% 80% at 50% 50%, black 30%, transparent 100%); -webkit-mask-image: radial-gradient(ellipse 60% 80% at 50% 50%, black 30%, transparent 100%); }
-.pf-home .finalcta::after { content: ""; position: absolute; bottom: -200px; left: 50%; transform: translateX(-50%); width: 800px; height: 400px; background: radial-gradient(ellipse, rgba(232,122,44,.25), transparent 70%); }
+.pf-home .finalcta { background: #fff; color: var(--color-surface-900); position: relative; overflow: hidden; }
+.pf-home .finalcta::before { content: ""; position: absolute; inset: 0; background-image: linear-gradient(var(--color-surface-100) 1px, transparent 1px), linear-gradient(90deg, var(--color-surface-100) 1px, transparent 1px); background-size: 56px 56px; mask-image: radial-gradient(ellipse 60% 80% at 50% 50%, black 30%, transparent 100%); -webkit-mask-image: radial-gradient(ellipse 60% 80% at 50% 50%, black 30%, transparent 100%); }
+.pf-home .finalcta::after { content: ""; position: absolute; inset: 0 auto auto 0; width: 100%; height: 4px; background: var(--color-brand-orange); }
 .pf-home .finalcta .sect-wrap { position: relative; padding: 120px 24px; text-align: center; max-width: 720px; }
 .pf-home .finalcta .eyebrow { color: var(--color-brand-orange); margin: 0 auto 20px; justify-content: center; }
 .pf-home .finalcta h2 { font-size: 68px; line-height: 1.02; letter-spacing: -0.035em; font-weight: 900; margin-bottom: 24px; }
 .pf-home .finalcta h2 .serif { font-family: var(--font-display); font-style: italic; font-weight: 400; color: var(--color-brand-orange); }
-.pf-home .finalcta p { font-size: 18px; color: var(--color-surface-400); line-height: 1.55; margin: 0 auto 36px; max-width: 520px; }
+.pf-home .finalcta p { font-size: 18px; color: var(--color-surface-600); line-height: 1.55; margin: 0 auto 36px; max-width: 520px; }
 .pf-home .finalcta-btns { display: flex; gap: 12px; justify-content: center; align-items: center; }
 .pf-home .finalcta .btn-primary { background: var(--color-brand-orange); }
 .pf-home .finalcta .btn-primary:hover { background: var(--color-brand-orange-dark); transform: translateY(-1px); }
-.pf-home .finalcta .btn-secondary { background: transparent; color: #fff; border-color: var(--color-surface-700); }
-.pf-home .finalcta .btn-secondary:hover { border-color: #fff; background: var(--color-surface-800); }
+.pf-home .finalcta .btn-secondary { background: #fff; color: var(--color-surface-900); border-color: var(--color-surface-300); }
+.pf-home .finalcta .btn-secondary:hover { border-color: var(--color-brand-orange); background: var(--color-primary-50); }
 
 /* ─── Responsive ─── */
 @media (max-width: 1024px) {

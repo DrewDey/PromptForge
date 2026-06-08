@@ -61,7 +61,7 @@ function BuildRequestCard({
   return (
     <article className="border border-surface-200 bg-white p-5 sm:p-6">
       <div className="mb-4 flex flex-wrap items-center gap-2">
-        <span className="bg-surface-900 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.14em] text-white">
+        <span className="bg-primary-50 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.14em] text-brand-orange ring-1 ring-primary-200">
           {statusLabel(request.status)}
         </span>
         <span className="border border-surface-200 bg-surface-50 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.14em] text-surface-500">
@@ -169,7 +169,7 @@ export default async function BuildRequestsPage({
               This is separate from the Suggestion Box. Use Build Requests when you want someone to create, fork, or find a PathForge project for a specific outcome.
             </p>
             <div className="mt-8 flex flex-wrap gap-3">
-              <Link href="/paths" className="inline-flex items-center gap-2 bg-surface-900 px-4 py-3 text-sm font-bold text-white hover:bg-brand-orange">
+              <Link href="/paths" className="inline-flex items-center gap-2 bg-brand-orange px-4 py-3 text-sm font-bold text-white hover:bg-brand-orange-dark">
                 Search build paths
                 <ArrowRight className="h-4 w-4" />
               </Link>
@@ -179,7 +179,7 @@ export default async function BuildRequestsPage({
             </div>
           </div>
 
-          <div className="border border-surface-200 bg-surface-900 p-5 text-white sm:p-6">
+          <div className="border border-surface-200 bg-white p-5 text-surface-900 shadow-[10px_10px_0_rgba(232,122,44,0.10)] sm:p-6">
             <div className="mb-5 font-mono text-[11px] font-semibold uppercase tracking-[0.14em] text-brand-orange">
               What belongs here
             </div>
@@ -193,7 +193,7 @@ export default async function BuildRequestsPage({
                   <GitFork className="mt-0.5 h-5 w-5 shrink-0 text-brand-orange" />
                   <div>
                     <h2 className="text-sm font-bold">{title}</h2>
-                    <p className="mt-1 text-sm leading-relaxed text-surface-400">{body}</p>
+                    <p className="mt-1 text-sm leading-relaxed text-surface-600">{body}</p>
                   </div>
                 </div>
               ))}

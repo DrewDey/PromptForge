@@ -661,7 +661,7 @@ export default function SourceRunShowcase({
   return (
     <>
       {selectedPackage && (
-        <section className="border-b border-surface-800 bg-surface-900 px-4 pb-9 sm:px-6 lg:px-8">
+        <section className="border-b border-surface-200 bg-surface-50 px-4 pb-9 sm:px-6 lg:px-8">
           <div className="mx-auto max-w-7xl">
             <ArtifactFrame selectedPackage={selectedPackage} providerName={providerName} />
           </div>

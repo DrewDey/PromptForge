@@ -85,7 +85,7 @@ export default function ProjectForkCallout({
           )}
         </div>
 
-        <div className="border-t border-surface-200 bg-surface-900 p-5 text-white lg:border-l lg:border-t-0">
+        <div className="border-t border-surface-200 bg-primary-50 p-5 text-surface-900 lg:border-l lg:border-t-0">
           {forkHref ? (
             <>
               <Link
@@ -96,7 +96,7 @@ export default function ProjectForkCallout({
                 Fork this path
                 <ArrowRight className="h-4 w-4" aria-hidden="true" />
               </Link>
-              <p className="mt-3 text-xs leading-5 text-surface-400">
+              <p className="mt-3 text-xs leading-5 text-surface-600">
                 Opens the build flow with this project attached as the fork source.
               </p>
             </>
@@ -105,12 +105,12 @@ export default function ProjectForkCallout({
               <button
                 type="button"
                 disabled
-                className="inline-flex w-full cursor-not-allowed items-center justify-center gap-2 border border-surface-700 bg-surface-800 px-4 py-3 text-sm font-semibold text-surface-400"
+                className="inline-flex w-full cursor-not-allowed items-center justify-center gap-2 border border-surface-300 bg-white px-4 py-3 text-sm font-semibold text-surface-500"
               >
                 <GitFork className="h-4 w-4" aria-hidden="true" />
                 {terminalLabel}
               </button>
-              <p className="mt-3 text-xs leading-5 text-surface-400">
+              <p className="mt-3 text-xs leading-5 text-surface-600">
                 {terminalBody}
               </p>
             </>

@@ -59,16 +59,16 @@ export default function HeaderClient({ viewer, isAdmin }: HeaderClientProps) {
   const navLinkClass = (href: string) => (
     `text-[13px] font-medium px-3 py-1.5 transition-colors duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange ${
       isActivePath(pathname, href)
-        ? 'text-brand-orange bg-surface-800'
-        : 'text-surface-300 hover:text-white'
+        ? 'text-brand-orange bg-primary-50'
+        : 'text-surface-700 hover:text-brand-orange'
     }`
   )
 
   const mobileNavLinkClass = (href: string) => (
     `text-sm font-medium px-3 py-3 transition-colors duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange ${
       isActivePath(pathname, href)
-        ? 'text-brand-orange bg-surface-800'
-        : 'text-surface-300 hover:text-white active:bg-surface-800'
+        ? 'text-brand-orange bg-primary-50'
+        : 'text-surface-700 hover:text-brand-orange active:bg-surface-100'
     }`
   )
 
@@ -76,12 +76,12 @@ export default function HeaderClient({ viewer, isAdmin }: HeaderClientProps) {
     `text-[13px] font-medium transition-colors duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange ${
       isActivePath(pathname, href)
         ? 'text-brand-orange'
-        : 'text-surface-300 hover:text-white'
+        : 'text-surface-600 hover:text-brand-orange'
     }`
   )
 
   return (
-    <header className="bg-surface-900 shadow-[0_1px_3px_0_rgba(0,0,0,0.3),0_4px_12px_0_rgba(0,0,0,0.15)] sticky top-0 z-50">
+    <header className="sticky top-0 z-50 border-b border-surface-200 bg-white shadow-[0_1px_0_rgba(24,24,27,0.04)]">
       <nav className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-12">
           <div className="flex items-center gap-6">
@@ -104,14 +104,14 @@ export default function HeaderClient({ viewer, isAdmin }: HeaderClientProps) {
                       <ChevronDown className={`h-3 w-3 transition-transform ${pathsMenuOpen ? 'rotate-180' : ''}`} />
                     </button>
                     {pathsMenuOpen && (
-                      <div className="absolute left-0 top-full mt-2 w-64 border border-surface-700 bg-surface-900 p-1 shadow-xl" role="menu">
+                      <div className="absolute left-0 top-full mt-2 w-64 border border-surface-200 bg-white p-1 shadow-xl" role="menu">
                         {pathsMenuItems.map((menuItem) => {
                           const Icon = menuItem.icon
                           return (
                             <Link
                               key={menuItem.href}
                               href={menuItem.href}
-                              className="flex items-start gap-3 px-3 py-3 text-surface-300 transition-colors hover:bg-surface-800 hover:text-white focus-visible:outline-2 focus-visible:outline-brand-orange"
+                              className="flex items-start gap-3 px-3 py-3 text-surface-700 transition-colors hover:bg-primary-50 hover:text-brand-orange focus-visible:outline-2 focus-visible:outline-brand-orange"
                               onClick={() => setPathsMenuOpen(false)}
                               role="menuitem"
                             >
@@ -138,7 +138,7 @@ export default function HeaderClient({ viewer, isAdmin }: HeaderClientProps) {
                 className={`text-[13px] font-semibold px-3 py-1.5 transition-all duration-200 flex items-center gap-1.5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange ${
                   isActivePath(pathname, '/build')
                     ? 'text-surface-900 bg-brand-orange'
-                    : 'text-brand-orange border border-brand-orange/40 hover:bg-brand-orange hover:text-surface-900'
+                    : 'text-brand-orange border border-brand-orange/40 hover:bg-brand-orange hover:text-white'
                 }`}
               >
                 <Plus className="w-3.5 h-3.5" />
@@ -154,28 +154,28 @@ export default function HeaderClient({ viewer, isAdmin }: HeaderClientProps) {
             {viewer ? (
               <>
                 {isAdmin && (
-                  <Link href="/admin" className="text-[13px] text-surface-300 hover:text-white transition-colors duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange">
+                  <Link href="/admin" className="text-[13px] text-surface-600 hover:text-brand-orange transition-colors duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange">
                     Admin
                   </Link>
                 )}
                 <Link
                   href={profileHref}
-                  className="flex items-center gap-1.5 text-[13px] font-medium text-surface-300 hover:text-white transition-colors duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange"
+                  className="flex items-center gap-1.5 text-[13px] font-medium text-surface-600 hover:text-brand-orange transition-colors duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange"
                 >
-                  <div className="w-5 h-5 bg-surface-700 border border-surface-600 flex items-center justify-center">
-                    <User className="w-3 h-3 text-surface-400" />
+                  <div className="w-5 h-5 bg-surface-100 border border-surface-200 flex items-center justify-center">
+                    <User className="w-3 h-3 text-surface-500" />
                   </div>
                   {displayName}
                 </Link>
                 <form action={logout}>
-                  <button type="submit" className="text-surface-400 hover:text-white transition-colors duration-200 p-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange" aria-label="Log out">
+                  <button type="submit" className="text-surface-500 hover:text-brand-orange transition-colors duration-200 p-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange" aria-label="Log out">
                     <LogOut className="w-3.5 h-3.5" />
                   </button>
                 </form>
               </>
             ) : (
               <>
-                <Link href="/auth/login" className="text-[13px] font-medium text-surface-300 hover:text-white transition-colors duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange">
+                <Link href="/auth/login" className="text-[13px] font-medium text-surface-600 hover:text-brand-orange transition-colors duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange">
                   Log in
                 </Link>
                 <Link href="/auth/signup" className="bg-brand-orange text-white px-3.5 py-1.5 text-[13px] font-semibold hover:bg-brand-orange-dark transition-colors duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white">
@@ -188,7 +188,7 @@ export default function HeaderClient({ viewer, isAdmin }: HeaderClientProps) {
           <div className="md:hidden">
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="text-surface-300 hover:text-white p-2.5 transition-colors duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange"
+              className="text-surface-600 hover:text-brand-orange p-2.5 transition-colors duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange"
               aria-label={mobileMenuOpen ? 'Close menu' : 'Open menu'}
               aria-expanded={mobileMenuOpen}
             >
@@ -198,10 +198,10 @@ export default function HeaderClient({ viewer, isAdmin }: HeaderClientProps) {
         </div>
 
         {mobileMenuOpen && (
-          <div className="md:hidden pb-4 border-t border-surface-800 mt-1 pt-3 flex flex-col gap-0.5">
+          <div className="md:hidden pb-4 border-t border-surface-200 mt-1 pt-3 flex flex-col gap-0.5">
             {navItems.map((item) => (
               item.href === '/paths' ? (
-                <div key={item.href} className="border-y border-surface-800 py-1">
+                <div key={item.href} className="border-y border-surface-200 py-1">
                   <Link
                     href="/paths?panel=open"
                     className={mobileNavLinkClass(item.href)}
@@ -216,7 +216,7 @@ export default function HeaderClient({ viewer, isAdmin }: HeaderClientProps) {
                         <Link
                           key={menuItem.href}
                           href={menuItem.href}
-                          className="flex items-center gap-2 px-3 py-2 text-sm text-surface-400 transition-colors hover:bg-surface-800 hover:text-white"
+                          className="flex items-center gap-2 px-3 py-2 text-sm text-surface-600 transition-colors hover:bg-primary-50 hover:text-brand-orange"
                           onClick={() => setMobileMenuOpen(false)}
                         >
                           <Icon className="h-3.5 w-3.5 text-brand-orange" />
@@ -241,8 +241,8 @@ export default function HeaderClient({ viewer, isAdmin }: HeaderClientProps) {
               href="/build"
               className={`text-sm font-semibold px-3 py-3 transition-colors duration-200 flex items-center gap-1.5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange ${
                 isActivePath(pathname, '/build')
-                  ? 'text-brand-orange bg-surface-800'
-                  : 'text-surface-300 hover:text-white active:bg-surface-800'
+                  ? 'text-brand-orange bg-primary-50'
+                  : 'text-surface-700 hover:text-brand-orange active:bg-surface-100'
               }`}
               onClick={() => setMobileMenuOpen(false)}
             >
@@ -258,25 +258,25 @@ export default function HeaderClient({ viewer, isAdmin }: HeaderClientProps) {
               Suggestion Box
             </Link>
 
-            <div className="border-t border-surface-700 my-2" />
+            <div className="border-t border-surface-200 my-2" />
 
             {viewer ? (
               <>
                 {isAdmin && (
-                  <Link href="/admin" className="text-sm text-surface-300 hover:text-white active:bg-surface-800 px-3 py-3 transition-colors duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange" onClick={() => setMobileMenuOpen(false)}>
+                  <Link href="/admin" className="text-sm text-surface-700 hover:text-brand-orange active:bg-surface-100 px-3 py-3 transition-colors duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange" onClick={() => setMobileMenuOpen(false)}>
                     Admin
                   </Link>
                 )}
                 <Link
                   href={profileHref}
-                  className="text-sm font-medium text-surface-300 hover:text-white active:bg-surface-800 flex items-center gap-1.5 px-3 py-3 transition-colors duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange"
+                  className="text-sm font-medium text-surface-700 hover:text-brand-orange active:bg-surface-100 flex items-center gap-1.5 px-3 py-3 transition-colors duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange"
                   onClick={() => setMobileMenuOpen(false)}
                 >
                   <User className="w-3.5 h-3.5" />
                   {displayName}
                 </Link>
                 <form action={logout}>
-                  <button type="submit" className="text-sm text-surface-400 hover:text-white active:bg-surface-800 flex items-center gap-1.5 px-3 py-3 w-full text-left transition-colors duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange">
+                  <button type="submit" className="text-sm text-surface-600 hover:text-brand-orange active:bg-surface-100 flex items-center gap-1.5 px-3 py-3 w-full text-left transition-colors duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange">
                     <LogOut className="w-3.5 h-3.5" />
                     Log out
                   </button>
@@ -284,7 +284,7 @@ export default function HeaderClient({ viewer, isAdmin }: HeaderClientProps) {
               </>
             ) : (
               <>
-                <Link href="/auth/login" className="text-sm font-medium text-surface-300 hover:text-white active:bg-surface-800 px-3 py-3 transition-colors duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange" onClick={() => setMobileMenuOpen(false)}>
+                <Link href="/auth/login" className="text-sm font-medium text-surface-700 hover:text-brand-orange active:bg-surface-100 px-3 py-3 transition-colors duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange" onClick={() => setMobileMenuOpen(false)}>
                   Log in
                 </Link>
                 <Link href="/auth/signup" className="bg-brand-orange text-white px-3 py-3 text-sm font-semibold text-center mx-3 mt-1 hover:bg-brand-orange-dark transition-colors duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white" onClick={() => setMobileMenuOpen(false)}>

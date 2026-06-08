@@ -69,7 +69,7 @@ export default async function WhatToBuildPage() {
               This is the anti-paralysis page: simple directions for turning an empty AI screen into a finished artifact, a forkable path, or a build request the community can answer.
             </p>
             <div className="mt-8 flex flex-wrap gap-3">
-              <Link href="/paths" className="inline-flex items-center gap-2 bg-surface-900 px-4 py-3 text-sm font-bold text-white hover:bg-brand-orange">
+              <Link href="/paths" className="inline-flex items-center gap-2 bg-brand-orange px-4 py-3 text-sm font-bold text-white hover:bg-brand-orange-dark">
                 See real build paths
                 <ArrowRight className="h-4 w-4" />
               </Link>
@@ -79,22 +79,22 @@ export default async function WhatToBuildPage() {
             </div>
           </div>
 
-          <div className="bg-surface-900 p-5 text-white sm:p-6">
+          <div className="border border-surface-200 bg-white p-5 text-surface-900 shadow-[10px_10px_0_rgba(232,122,44,0.10)] sm:p-6">
             <div className="mb-4 font-mono text-[11px] font-semibold uppercase tracking-[0.14em] text-brand-orange">Tonight&apos;s simplest path</div>
             {featured ? (
-              <Link href={getProjectHref(featured)} className="block border border-surface-700 bg-surface-800 p-5 transition-colors hover:border-brand-orange">
+              <Link href={getProjectHref(featured)} className="block border border-surface-200 bg-primary-50 p-5 transition-colors hover:border-brand-orange">
                 <div className="mb-3 inline-flex bg-brand-orange px-2 py-1 text-[10px] font-bold uppercase tracking-[0.14em] text-white">
                   Approved seed
                 </div>
                 <h2 className="text-2xl font-black tracking-[-0.025em]">{featured.title}</h2>
-                <p className="mt-3 text-sm leading-relaxed text-surface-400">{featured.description}</p>
+                <p className="mt-3 text-sm leading-relaxed text-surface-600">{featured.description}</p>
                 <div className="mt-5 flex items-center gap-2 font-mono text-[11px] uppercase tracking-[0.12em] text-brand-orange">
                   Open the path
                   <ArrowRight className="h-3.5 w-3.5" />
                 </div>
               </Link>
             ) : (
-              <div className="border border-dashed border-surface-700 bg-surface-800 p-5 text-sm leading-relaxed text-surface-400">
+              <div className="border border-dashed border-surface-300 bg-surface-50 p-5 text-sm leading-relaxed text-surface-600">
                 No approved paths yet. Once a project clears approval, this slot should point to the most useful starter.
               </div>
             )}
@@ -118,7 +118,7 @@ export default async function WhatToBuildPage() {
             const Icon = lane.icon
             return (
               <article key={lane.title} className="border border-surface-200 bg-white p-5">
-                <div className="mb-4 flex h-9 w-9 items-center justify-center bg-surface-900 text-brand-orange">
+                <div className="mb-4 flex h-9 w-9 items-center justify-center bg-primary-50 text-brand-orange ring-1 ring-primary-200">
                   <Icon className="h-4 w-4" />
                 </div>
                 <h3 className="text-lg font-black tracking-[-0.015em] text-surface-900">{lane.title}</h3>
@@ -149,12 +149,12 @@ export default async function WhatToBuildPage() {
         </div>
       </section>
 
-      <section className="bg-surface-900 text-white">
+      <section className="border-t border-surface-200 bg-white">
         <div className="mx-auto flex max-w-7xl flex-col gap-5 px-4 py-12 sm:px-6 lg:flex-row lg:items-center lg:justify-between lg:px-8">
           <div>
             <div className="mb-2 font-mono text-[11px] font-bold uppercase tracking-[0.14em] text-brand-orange">Missing the thing?</div>
-            <h2 className="text-3xl font-black tracking-[-0.025em]">Ask the community to build it.</h2>
-            <p className="mt-2 max-w-2xl text-sm leading-relaxed text-surface-400">
+            <h2 className="text-3xl font-black tracking-[-0.025em] text-surface-900">Ask the community to build it.</h2>
+            <p className="mt-2 max-w-2xl text-sm leading-relaxed text-surface-600">
               If this page does not give you the right starter, post a focused Build Request so someone can answer with an actual path, fork, or finished artifact.
             </p>
           </div>

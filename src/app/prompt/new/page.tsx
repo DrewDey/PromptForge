@@ -413,10 +413,10 @@ function BuildLoggedOutLanding({
 }) {
   return (
     <div className="bg-surface-50">
-      <section className="border-b border-surface-800 bg-surface-900 text-white">
+      <section className="border-b border-surface-200 bg-white text-surface-900">
         <div className="mx-auto grid max-w-7xl gap-10 px-4 py-14 sm:px-6 lg:grid-cols-[1fr_420px] lg:px-8 lg:py-16">
           <div>
-            <Link href="/paths" className="mb-7 inline-flex items-center gap-2 text-sm text-surface-400 transition-colors hover:text-white">
+            <Link href="/paths" className="mb-7 inline-flex items-center gap-2 text-sm text-surface-500 transition-colors hover:text-brand-orange">
               <ArrowLeft className="h-4 w-4" aria-hidden="true" />
               Back to Build Paths
             </Link>
@@ -427,30 +427,30 @@ function BuildLoggedOutLanding({
             <h1 className="max-w-3xl text-4xl font-black leading-[1.04] tracking-[-0.03em] sm:text-5xl">
               Turn a real AI session into a review-ready Build Path.
             </h1>
-            <p className="mt-5 max-w-2xl text-base leading-relaxed text-surface-300">
+            <p className="mt-5 max-w-2xl text-base leading-relaxed text-surface-600">
               Build is where PathForge collects the original ChatGPT, Claude, Gemini, or OpenRouter run behind a project. Signed-in builders paste the source link, add model details, and send it to review before anything becomes public.
             </p>
             {isCheckingAccount && (
-              <div className="mt-5 inline-flex items-center gap-2 border border-surface-700 bg-surface-800 px-3 py-2 font-mono text-[11px] uppercase tracking-[0.14em] text-surface-300">
+              <div className="mt-5 inline-flex items-center gap-2 border border-primary-200 bg-primary-50 px-3 py-2 font-mono text-[11px] uppercase tracking-[0.14em] text-brand-orange">
                 <span className="h-2 w-2 animate-pulse bg-brand-orange" aria-hidden="true" />
                 Checking account
               </div>
             )}
             <div className="mt-8 flex flex-wrap gap-3">
-              <Link href="/paths" className="inline-flex items-center gap-2 border border-surface-700 px-5 py-3 text-sm font-bold text-white transition hover:border-white">
+              <Link href="/paths" className="inline-flex items-center gap-2 border border-surface-300 bg-white px-5 py-3 text-sm font-bold text-surface-900 transition hover:border-brand-orange">
                 Browse paths
               </Link>
               <Link href={loginHref} className="inline-flex items-center gap-2 bg-brand-orange px-5 py-3 text-sm font-bold text-white transition hover:bg-brand-orange-dark">
                 <LogIn className="h-4 w-4" aria-hidden="true" />
                 Sign in to build
               </Link>
-              <Link href={signupHref} className="inline-flex items-center gap-2 border border-surface-700 px-5 py-3 text-sm font-bold text-white transition hover:border-white">
+              <Link href={signupHref} className="inline-flex items-center gap-2 border border-surface-300 bg-white px-5 py-3 text-sm font-bold text-surface-900 transition hover:border-brand-orange">
                 Create account
               </Link>
             </div>
           </div>
 
-          <div className="border border-surface-700 bg-surface-800/70 p-5">
+          <div className="border border-surface-200 bg-primary-50 p-5 shadow-[10px_10px_0_rgba(232,122,44,0.10)]">
             <div className="font-mono text-[11px] font-bold uppercase tracking-[0.14em] text-brand-orange">
               What Build does
             </div>
@@ -460,13 +460,13 @@ function BuildLoggedOutLanding({
                 ['02', 'Keep model details attached', 'Provider, exact model, settings, and review notes stay with the submission.'],
                 ['03', 'Queue it for review', 'The entry waits for admin review and never publishes itself automatically.'],
               ].map(([number, title, body]) => (
-                <div key={number} className="grid grid-cols-[42px_1fr] gap-3 border border-surface-700 bg-surface-900 px-3 py-3">
+                <div key={number} className="grid grid-cols-[42px_1fr] gap-3 border border-primary-200 bg-white px-3 py-3">
                   <span className="flex h-9 w-9 items-center justify-center bg-brand-orange font-mono text-xs font-black text-white">
                     {number}
                   </span>
                   <span>
-                    <span className="block text-sm font-semibold text-surface-100">{title}</span>
-                    <span className="mt-0.5 block text-xs leading-5 text-surface-400">{body}</span>
+                    <span className="block text-sm font-semibold text-surface-900">{title}</span>
+                    <span className="mt-0.5 block text-xs leading-5 text-surface-600">{body}</span>
                   </span>
                 </div>
               ))}
@@ -893,11 +893,11 @@ export default function SubmitProjectPage() {
 
   return (
     <div className="bg-surface-50">
-      <section className="relative overflow-hidden border-b border-surface-800 bg-surface-900 text-white">
-        <div className="absolute inset-0 opacity-25 [background-image:linear-gradient(rgba(255,255,255,.08)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,.08)_1px,transparent_1px)] [background-size:54px_54px]" aria-hidden="true" />
+      <section className="relative overflow-hidden border-b border-surface-200 bg-white text-surface-900">
+        <div className="absolute inset-0 opacity-70 [background-image:linear-gradient(var(--color-surface-100)_1px,transparent_1px),linear-gradient(90deg,var(--color-surface-100)_1px,transparent_1px)] [background-size:54px_54px]" aria-hidden="true" />
         <div className="relative mx-auto grid max-w-7xl gap-10 px-4 py-14 sm:px-6 lg:grid-cols-[minmax(0,1fr)_440px] lg:px-8 lg:py-16">
           <div>
-            <Link href="/paths" className="mb-7 inline-flex items-center gap-2 text-sm text-surface-400 transition-colors hover:text-white">
+            <Link href="/paths" className="mb-7 inline-flex items-center gap-2 text-sm text-surface-500 transition-colors hover:text-brand-orange">
               <ArrowLeft className="h-4 w-4" aria-hidden="true" />
               Back to Build Paths
             </Link>
@@ -908,27 +908,27 @@ export default function SubmitProjectPage() {
             <h1 className="max-w-3xl text-4xl font-black leading-[1.04] tracking-[-0.03em] sm:text-5xl lg:text-6xl">
               Submit the run. Let PathForge structure the project.
             </h1>
-            <p className="mt-5 max-w-2xl text-base leading-relaxed text-surface-300">
+            <p className="mt-5 max-w-2xl text-base leading-relaxed text-surface-600">
               This page is for real AI sessions: a source link, exact model details, and notes for review. It is not the suggestion box, and it does not publish anything by itself.
             </p>
             <div className="mt-8 grid max-w-2xl gap-3 sm:grid-cols-3">
-              <div className="border border-surface-700 bg-surface-800/70 p-3">
+              <div className="border border-surface-200 bg-white p-3">
                 <div className="font-mono text-[10px] uppercase tracking-[0.14em] text-brand-orange">Input</div>
                 <div className="mt-1 text-sm font-bold">AI session link</div>
               </div>
-              <div className="border border-surface-700 bg-surface-800/70 p-3">
+              <div className="border border-surface-200 bg-white p-3">
                 <div className="font-mono text-[10px] uppercase tracking-[0.14em] text-brand-orange">Queue</div>
                 <div className="mt-1 text-sm font-bold">Normal review</div>
               </div>
-              <div className="border border-surface-700 bg-surface-800/70 p-3">
+              <div className="border border-surface-200 bg-white p-3">
                 <div className="font-mono text-[10px] uppercase tracking-[0.14em] text-brand-orange">Publish</div>
                 <div className="mt-1 text-sm font-bold">Admin decision</div>
               </div>
             </div>
           </div>
 
-          <aside className="border border-surface-700 bg-black/20 p-5 shadow-[16px_16px_0_rgba(232,122,44,0.18)]">
-            <div className="flex items-center justify-between border-b border-surface-700 pb-4">
+          <aside className="border border-surface-200 bg-primary-50 p-5 shadow-[16px_16px_0_rgba(232,122,44,0.12)]">
+            <div className="flex items-center justify-between border-b border-primary-200 pb-4">
               <div>
                 <div className="font-mono text-[10px] uppercase tracking-[0.14em] text-surface-500">Source package</div>
                 <div className="mt-1 text-lg font-black">Review-ready intake</div>
@@ -945,12 +945,12 @@ export default function SubmitProjectPage() {
                 ['04', 'No auto-publish', 'The entry waits for an explicit admin step.'],
               ].map(([number, title, body]) => (
                 <div key={number} className="grid grid-cols-[42px_1fr] gap-3">
-                  <div className="flex h-10 w-10 items-center justify-center border border-surface-700 bg-surface-900 font-mono text-xs font-black text-brand-orange">
+                  <div className="flex h-10 w-10 items-center justify-center border border-primary-200 bg-white font-mono text-xs font-black text-brand-orange">
                     {number}
                   </div>
-                  <div className="border-l border-surface-700 pl-3">
-                    <div className="text-sm font-bold text-white">{title}</div>
-                    <p className="mt-0.5 text-xs leading-5 text-surface-400">{body}</p>
+                  <div className="border-l border-primary-200 pl-3">
+                    <div className="text-sm font-bold text-surface-900">{title}</div>
+                    <p className="mt-0.5 text-xs leading-5 text-surface-600">{body}</p>
                   </div>
                 </div>
               ))}
@@ -1269,26 +1269,26 @@ export default function SubmitProjectPage() {
         )}
           </div>
 
-          <aside className="border-t border-surface-200 bg-surface-900 p-5 text-white lg:border-l lg:border-t-0">
+          <aside className="border-t border-surface-200 bg-primary-50 p-5 text-surface-900 lg:border-l lg:border-t-0">
             <div className="font-mono text-[10px] font-bold uppercase tracking-[0.16em] text-brand-orange">
               This page is for
             </div>
             <div className="mt-4 space-y-4">
-              <div className="border border-surface-700 bg-surface-800/70 p-4">
+              <div className="border border-primary-200 bg-white p-4">
                 <div className="flex items-center gap-2 text-sm font-bold">
                   <Link2 className="h-4 w-4 text-brand-orange" aria-hidden="true" />
                   Captured AI runs
                 </div>
-                <p className="mt-2 text-xs leading-5 text-surface-400">
+                <p className="mt-2 text-xs leading-5 text-surface-600">
                   Submit the actual session so review can preserve the prompt and response chain.
                 </p>
               </div>
-              <div className="border border-surface-700 bg-surface-800/70 p-4">
+              <div className="border border-primary-200 bg-white p-4">
                 <div className="flex items-center gap-2 text-sm font-bold">
                   <FileText className="h-4 w-4 text-brand-orange" aria-hidden="true" />
                   Evidence for review
                 </div>
-                <p className="mt-2 text-xs leading-5 text-surface-400">
+                <p className="mt-2 text-xs leading-5 text-surface-600">
                   Model, settings, source link, and notes stay attached before anything is public.
                 </p>
               </div>
@@ -1296,7 +1296,7 @@ export default function SubmitProjectPage() {
                 <div className="font-mono text-[10px] font-bold uppercase tracking-[0.14em] text-brand-blue-light">
                   Not the suggestion box
                 </div>
-                <p className="mt-2 text-xs leading-5 text-surface-300">
+                <p className="mt-2 text-xs leading-5 text-surface-600">
                   Website feedback, feature ideas, and moderation concerns belong in Suggestion Box.
                 </p>
               </div>

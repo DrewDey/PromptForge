@@ -109,23 +109,23 @@ function toShowcaseStep(
 function RunSummary() {
   return (
     <div className="grid gap-3 text-sm sm:grid-cols-3">
-      <div className="border border-surface-800 bg-surface-900 px-4 py-3">
+      <div className="border border-surface-200 bg-white px-4 py-3">
         <div className="font-mono text-[10px] uppercase tracking-[0.16em] text-surface-500">
           Model
         </div>
-        <div className="mt-1 font-semibold text-surface-100">{project.modelUsed}</div>
+        <div className="mt-1 font-semibold text-surface-900">{project.modelUsed}</div>
       </div>
-      <div className="border border-surface-800 bg-surface-900 px-4 py-3">
+      <div className="border border-surface-200 bg-white px-4 py-3">
         <div className="font-mono text-[10px] uppercase tracking-[0.16em] text-surface-500">
           Run type
         </div>
-        <div className="mt-1 font-semibold text-surface-100">2 prompts · 2 response packages</div>
+        <div className="mt-1 font-semibold text-surface-900">2 prompts · 2 response packages</div>
       </div>
-      <div className="border border-surface-800 bg-surface-900 px-4 py-3">
+      <div className="border border-surface-200 bg-white px-4 py-3">
         <div className="font-mono text-[10px] uppercase tracking-[0.16em] text-surface-500">
           Captured
         </div>
-        <div className="mt-1 font-semibold text-surface-100">{capturedAt}</div>
+        <div className="mt-1 font-semibold text-surface-900">{capturedAt}</div>
       </div>
     </div>
   )
@@ -140,12 +140,12 @@ export default async function Hp10BiiCalculatorDemoPage() {
 
   return (
     <main className="min-h-screen bg-surface-50 text-surface-900">
-      <section className="border-b border-surface-800 bg-surface-900 text-white">
+      <section className="border-b border-surface-200 bg-white text-surface-900">
         <div className="mx-auto max-w-7xl px-4 py-5 sm:px-6 lg:px-8">
           <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
             <Link
               href="/"
-              className="text-xs font-mono uppercase tracking-[0.18em] text-surface-400 hover:text-brand-orange"
+              className="text-xs font-mono uppercase tracking-[0.18em] text-surface-500 hover:text-brand-orange"
             >
               PathForge
             </Link>
@@ -156,7 +156,7 @@ export default async function Hp10BiiCalculatorDemoPage() {
               <h1 className="max-w-4xl text-3xl font-black leading-[0.96] tracking-normal sm:text-5xl">
                 HP 10Bii+ calculator from a Claude run.
               </h1>
-              <p className="mt-4 max-w-2xl text-sm leading-6 text-surface-300">
+              <p className="mt-4 max-w-2xl text-sm leading-6 text-surface-600">
                 A Claude source run produced a working financial calculator artifact, then a quick follow-up removed
                 the unwanted red hue and finalized the black, silver, and green-LCD version.
               </p>

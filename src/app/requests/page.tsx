@@ -44,6 +44,13 @@ function signupHref(next: string) {
   return `/auth/signup?next=${encodeURIComponent(next)}`
 }
 
+const EMPTY_REQUEST_EXAMPLES = [
+  ['One-file tool', 'A calculator, timer, tracker, or planner someone can open and use right away.'],
+  ['Messy workflow', 'Turn a rough process into a checklist, prompt chain, or repeatable build path.'],
+  ['Teaching game', 'A simple game or quiz that explains a concept while the user plays.'],
+  ['Find or fork a path', 'Point to an existing PathForge project and ask how to adapt it for your case.'],
+]
+
 function voteButtonClass(hasVoted: boolean) {
   return [
     'inline-flex items-center gap-1.5 border px-3 py-1.5 text-xs font-bold',
@@ -208,7 +215,7 @@ export default async function BuildRequestsPage({
         </div>
       </section>
 
-      <section className="mx-auto grid max-w-7xl gap-8 px-4 py-12 sm:px-6 lg:grid-cols-[0.9fr_1.1fr] lg:px-8 lg:py-16">
+      <section id="post-request" className="mx-auto grid max-w-7xl gap-8 px-4 py-12 sm:px-6 lg:grid-cols-[0.9fr_1.1fr] lg:px-8 lg:py-16">
         <div>
           {params.submitted && (
             <div className="mb-6 inline-flex items-center gap-2 border border-green-200 bg-green-50 px-3 py-2 text-sm font-semibold text-green-700">
@@ -253,11 +260,45 @@ export default async function BuildRequestsPage({
           </div>
 
           {requests.length === 0 ? (
-            <div className="border border-dashed border-surface-300 bg-surface-50 p-10 text-center">
+            <div className="border border-dashed border-surface-300 bg-surface-50 p-6 sm:p-8 lg:p-10">
               <p className="text-lg font-bold text-surface-900">No build requests yet.</p>
-              <p className="mx-auto mt-2 max-w-lg text-sm leading-relaxed text-surface-500">
-                The first request should be specific enough that someone can answer it with an actual project page.
+              <p className="mt-2 max-w-2xl text-sm leading-relaxed text-surface-500">
+                That is intentional. This board only fills with real asks from real users, but a good first request can be simple.
               </p>
+              <div className="mt-6 grid gap-3 sm:grid-cols-2">
+                {EMPTY_REQUEST_EXAMPLES.map(([title, body]) => (
+                  <div key={title} className="border border-surface-200 bg-white p-4 text-left">
+                    <h3 className="text-sm font-bold text-surface-900">{title}</h3>
+                    <p className="mt-1 text-sm leading-relaxed text-surface-600">{body}</p>
+                  </div>
+                ))}
+              </div>
+              <div className="mt-6 flex flex-wrap gap-3">
+                {viewer ? (
+                  <Link href="#post-request" className="inline-flex items-center gap-2 bg-brand-orange px-4 py-3 text-sm font-bold text-white hover:bg-brand-orange-dark">
+                    Request a build
+                    <ArrowRight className="h-4 w-4" />
+                  </Link>
+                ) : (
+                  <Link href={loginHref('/requests')} className="inline-flex items-center gap-2 bg-brand-orange px-4 py-3 text-sm font-bold text-white hover:bg-brand-orange-dark">
+                    Log in to request
+                    <ArrowRight className="h-4 w-4" />
+                  </Link>
+                )}
+                {!viewer && (
+                  <Link href={signupHref('/requests')} className="inline-flex items-center gap-2 border border-surface-300 bg-white px-4 py-3 text-sm font-bold text-surface-900 hover:border-surface-900">
+                    Sign up
+                  </Link>
+                )}
+                <Link href="/paths" className="inline-flex items-center gap-2 border border-surface-300 bg-white px-4 py-3 text-sm font-bold text-surface-900 hover:border-surface-900">
+                  Browse paths
+                </Link>
+              </div>
+              {!viewer && (
+                <p className="mt-4 text-xs leading-relaxed text-surface-500">
+                  Posting and voting require login so requests stay tied to real PathForge accounts.
+                </p>
+              )}
             </div>
           ) : (
             <div className="grid gap-4 lg:grid-cols-2">

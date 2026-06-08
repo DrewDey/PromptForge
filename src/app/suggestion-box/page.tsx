@@ -41,6 +41,13 @@ function signupHref(next: string) {
   return `/auth/signup?next=${encodeURIComponent(next)}`
 }
 
+const EMPTY_SUGGESTION_EXAMPLES = [
+  ['Confusing page or copy', 'Tell PathForge where the wording, layout, or next step is hard to understand.'],
+  ['Missing control', 'Ask for a filter, toggle, sort, status, or small workflow control the site needs.'],
+  ['Bug report', 'Share what broke, where it happened, and what you expected instead.'],
+  ['Pricing or account idea', 'Suggest a plan, permission, privacy, or account setting that would make PathForge easier to use.'],
+]
+
 function voteButtonClass(hasVoted: boolean) {
   return [
     'inline-flex items-center gap-1.5 border px-3 py-1.5 text-xs font-bold',
@@ -182,7 +189,7 @@ export default async function SuggestionBoxPage() {
         </div>
       </section>
 
-      <section className="border-b border-accent-100 bg-[#f8fbff]">
+      <section id="send-feedback" className="border-b border-accent-100 bg-[#f8fbff]">
         <div className="mx-auto grid max-w-7xl gap-8 px-4 py-12 sm:px-6 lg:grid-cols-[380px_1fr] lg:px-8 lg:py-16">
         <div>
           <div className="mb-3 font-mono text-[11px] font-bold uppercase tracking-[0.14em] text-brand-blue-dark">Send feedback</div>
@@ -223,10 +230,43 @@ export default async function SuggestionBoxPage() {
           </div>
 
           {suggestions.length === 0 ? (
-            <div className="border border-dashed border-accent-200 bg-accent-50 p-10 text-center">
+            <div className="border border-dashed border-accent-200 bg-accent-50 p-6 sm:p-8 lg:p-10">
               <p className="text-lg font-bold text-surface-900">No public suggestions yet.</p>
-              <p className="mx-auto mt-2 max-w-lg text-sm leading-relaxed text-surface-500">
+              <p className="mt-2 max-w-2xl text-sm leading-relaxed text-surface-500">
                 That is intentional. The board only fills with approved, user-confirmed suggestions instead of fake launch content.
+              </p>
+              <div className="mt-6 grid gap-3 sm:grid-cols-2">
+                {EMPTY_SUGGESTION_EXAMPLES.map(([title, body]) => (
+                  <div key={title} className="border border-accent-200 bg-white p-4 text-left">
+                    <h3 className="text-sm font-bold text-surface-900">{title}</h3>
+                    <p className="mt-1 text-sm leading-relaxed text-surface-600">{body}</p>
+                  </div>
+                ))}
+              </div>
+              <div className="mt-6 flex flex-wrap gap-3">
+                {viewer ? (
+                  <Link href="#send-feedback" className="inline-flex items-center gap-2 bg-brand-blue px-4 py-3 text-sm font-bold text-white transition hover:bg-brand-blue-dark">
+                    Send feedback
+                  </Link>
+                ) : (
+                  <Link href={loginHref('/suggestion-box')} className="inline-flex items-center gap-2 bg-brand-blue px-4 py-3 text-sm font-bold text-white transition hover:bg-brand-blue-dark">
+                    Log in to suggest
+                  </Link>
+                )}
+                {!viewer && (
+                  <Link href={signupHref('/suggestion-box')} className="inline-flex items-center gap-2 border border-accent-200 bg-white px-4 py-3 text-sm font-bold text-brand-blue-dark transition hover:border-brand-blue">
+                    Sign up
+                  </Link>
+                )}
+                <Link href="/requests" className="inline-flex items-center gap-2 border border-surface-300 bg-white px-4 py-3 text-sm font-bold text-surface-900 transition hover:border-surface-900">
+                  Request a build
+                </Link>
+                <Link href="/paths" className="inline-flex items-center gap-2 border border-surface-300 bg-white px-4 py-3 text-sm font-bold text-surface-900 transition hover:border-surface-900">
+                  Browse paths
+                </Link>
+              </div>
+              <p className="mt-4 text-xs leading-relaxed text-surface-500">
+                Use Build Requests for artifacts or forks. Use this box for feedback about PathForge itself.
               </p>
             </div>
           ) : (

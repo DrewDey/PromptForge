@@ -425,16 +425,45 @@ export default async function BrowsePage({
                     )}
                   </div>
                   <div className="facet-list">
-                    <Link
-                      href={buildUrl({ domain: undefined })}
-                      className={`facet-item ${!activeDomain ? 'active' : ''}`}
-                    >
-                      <span>All matches</span>
-                      <span className="facet-count">{queryMatched.filter(p => matchesFilters(p, { cat: false })).length}</span>
-                    </Link>
+                    {(() => {
+                      const count = queryMatched.filter(p => matchesFilters(p, { cat: false })).length
+                      if (count === 0) {
+                        return (
+                          <span
+                            className={`facet-item ${!activeDomain ? 'active ' : ''}unavailable`}
+                            aria-disabled="true"
+                          >
+                            <span>All matches</span>
+                            <span className="facet-count">{count}</span>
+                          </span>
+                        )
+                      }
+                      return (
+                        <Link
+                          href={buildUrl({ domain: undefined })}
+                          className={`facet-item ${!activeDomain ? 'active' : ''}`}
+                        >
+                          <span>All matches</span>
+                          <span className="facet-count">{count}</span>
+                        </Link>
+                      )
+                    })()}
                     {BROAD_DOMAINS.map(domain => {
                       const count = countsByDomain[domain.slug] ?? 0
                       const isActive = activeDomain === domain.slug
+                      if (count === 0 && !isActive) return null
+                      if (count === 0) {
+                        return (
+                          <span
+                            key={domain.slug}
+                            className="facet-item active unavailable"
+                            aria-disabled="true"
+                          >
+                            <span>{domain.label}</span>
+                            <span className="facet-count">{count}</span>
+                          </span>
+                        )
+                      }
                       return (
                         <Link
                           key={domain.slug}
@@ -459,6 +488,20 @@ export default async function BrowsePage({
                   {DIFFICULTIES.map(d => {
                     const isActive = activeDifficulty === d.value
                     const count = countsByDifficulty[d.value] ?? 0
+                    if (count === 0 && !isActive) return null
+                    if (count === 0) {
+                      return (
+                        <span
+                          key={d.value}
+                          className="facet-check active unavailable"
+                          aria-disabled="true"
+                        >
+                          <span className="facet-check-box" aria-hidden="true">✓</span>
+                          <span className={`potw-diff ${d.value}`}>{d.label}</span>
+                          <span className="facet-count" style={{ marginLeft: 'auto' }}>{count}</span>
+                        </span>
+                      )
+                    }
                     return (
                       <Link
                         key={d.value}
@@ -486,6 +529,19 @@ export default async function BrowsePage({
                     const count = countsByModel[modelId] ?? 0
                     const isActive = activeModel === modelId
                     if (count === 0 && !isActive) return null
+                    if (count === 0) {
+                      return (
+                        <span
+                          key={modelId}
+                          className="facet-check active unavailable"
+                          aria-disabled="true"
+                        >
+                          <span className="facet-check-box" aria-hidden="true">✓</span>
+                          <span>{meta.name}</span>
+                          <span className="facet-count" style={{ marginLeft: 'auto' }}>{count}</span>
+                        </span>
+                      )
+                    }
                     return (
                       <Link
                         key={modelId}
@@ -508,20 +564,40 @@ export default async function BrowsePage({
                     )}
                   </div>
                   <div className="facet-list">
-                    <Link
-                      href={buildUrl({ compare: undefined })}
-                      className={`facet-item ${!activeCompare ? 'active' : ''}`}
-                    >
-                      <span>All paths</span>
-                      <span className="facet-count">{regularFiltered.length}</span>
-                    </Link>
-                    <Link
-                      href={buildUrl({ compare: activeCompare ? undefined : 'models', panel: 'open' })}
-                      className={`facet-item ${activeCompare ? 'active' : ''}`}
-                    >
-                      <span>Model matchups</span>
-                      <span className="facet-count">{comparableGroupCount}</span>
-                    </Link>
+                    {regularFiltered.length === 0 ? (
+                      <span
+                        className={`facet-item ${!activeCompare ? 'active ' : ''}unavailable`}
+                        aria-disabled="true"
+                      >
+                        <span>All paths</span>
+                        <span className="facet-count">{regularFiltered.length}</span>
+                      </span>
+                    ) : (
+                      <Link
+                        href={buildUrl({ compare: undefined })}
+                        className={`facet-item ${!activeCompare ? 'active' : ''}`}
+                      >
+                        <span>All paths</span>
+                        <span className="facet-count">{regularFiltered.length}</span>
+                      </Link>
+                    )}
+                    {comparableGroupCount > 0 ? (
+                      <Link
+                        href={buildUrl({ compare: activeCompare ? undefined : 'models', panel: 'open' })}
+                        className={`facet-item ${activeCompare ? 'active' : ''}`}
+                      >
+                        <span>Model matchups</span>
+                        <span className="facet-count">{comparableGroupCount}</span>
+                      </Link>
+                    ) : activeCompare && (
+                      <span
+                        className="facet-item active unavailable"
+                        aria-disabled="true"
+                      >
+                        <span>Model matchups</span>
+                        <span className="facet-count">{comparableGroupCount}</span>
+                      </span>
+                    )}
                   </div>
                 </div>
 

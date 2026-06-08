@@ -154,6 +154,11 @@
 .pf-browse .facet-check { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--color-surface-700); padding: 4px 0; }
 .pf-browse .facet-check-box { width: 14px; height: 14px; border: 1.5px solid var(--color-surface-400); background: #fff; display: grid; place-items: center; flex-shrink: 0; }
 .pf-browse .facet-check.active .facet-check-box { background: var(--color-surface-900); border-color: var(--color-surface-900); color: #fff; font-size: 9px; font-weight: 700; }
+.pf-browse .facet-item.unavailable { background: var(--color-surface-50); color: var(--color-surface-400); box-shadow: inset 0 0 0 1px var(--color-surface-200); cursor: not-allowed; }
+.pf-browse .facet-item.unavailable .facet-count { color: var(--color-surface-400); opacity: 1; }
+.pf-browse .facet-check.unavailable { color: var(--color-surface-400); cursor: not-allowed; }
+.pf-browse .facet-check.unavailable .facet-check-box { background: var(--color-surface-100); border-color: var(--color-surface-300); color: var(--color-surface-500); }
+.pf-browse .facet-check.unavailable .potw-diff { opacity: .55; filter: grayscale(1); }
 
 .pf-browse .facet-reset { width: 100%; background: var(--color-surface-50); color: var(--color-surface-700); border: 1px solid var(--color-surface-300); padding: 8px 12px; font-size: 12px; font-weight: 600; transition: border-color .15s, background .15s; }
 .pf-browse .facet-reset:hover { border-color: var(--color-surface-900); background: #fff; }

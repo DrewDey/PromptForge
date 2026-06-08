@@ -12,6 +12,13 @@
 import Link from 'next/link'
 import Image from 'next/image'
 import { redirect } from 'next/navigation'
+import {
+  BROAD_DOMAINS,
+  formatPathCount,
+  getBroadDomainCategoryIds,
+  getBroadDomainPromptCounts,
+  getPromptBroadDomain,
+} from '@/lib/broad-domains'
 import { getCategories, getPrompts, getUserVotesAndBookmarks } from '@/lib/data'
 import type { PromptWithRelations } from '@/lib/types'
 import { AI_MODELS } from '@/lib/models'
@@ -56,25 +63,6 @@ const SUGGESTION_QUERIES = [
 function getPromptStepCount(prompt: PromptWithRelations) {
   return getPreparedShowcaseProjectById(prompt.id)?.steps.length ?? prompt.steps?.length ?? 0
 }
-
-const BROAD_DOMAINS = [
-  {
-    slug: 'productivity',
-    label: 'Productivity',
-    eyebrow: 'Work tools',
-    description: 'Automations, dashboards, planners, writing systems, analysis tools, and practical work artifacts.',
-    categorySlugs: ['finance', 'marketing', 'writing', 'coding', 'design', 'education', 'productivity', 'data', 'strategy'],
-    previewLabels: ['Agent brief', 'Task board', 'Report draft', 'Automation'],
-  },
-  {
-    slug: 'games',
-    label: 'Games',
-    eyebrow: 'Playable builds',
-    description: 'Games, experiments, interactive toys, and fun artifacts that are easy to fork and change.',
-    categorySlugs: ['personal'],
-    previewLabels: ['Snake', 'Arcade loop', 'Touch controls', 'HTML file'],
-  },
-] as const
 
 type SearchParams = {
   q?: string
@@ -128,19 +116,11 @@ export default async function BrowsePage({
     getPrompts({ sort: dataSort, limit: 300 }),
   ])
 
-  const categorySlugById = new Map(categories.map(category => [category.id, category.slug]))
   const domainCategoryIds = (domainSlug: string) => {
-    const domain = BROAD_DOMAINS.find(item => item.slug === domainSlug)
-    if (!domain) return new Set<string>()
-    return new Set(
-      categories
-        .filter(category => domain.categorySlugs.includes(category.slug as never))
-        .map(category => category.id)
-    )
+    return getBroadDomainCategoryIds(categories, domainSlug)
   }
   const promptDomain = (prompt: PromptWithRelations) => {
-    const categorySlug = categorySlugById.get(prompt.category_id)
-    return BROAD_DOMAINS.find(domain => domain.categorySlugs.includes(categorySlug as never))
+    return getPromptBroadDomain(prompt, categories)
   }
 
   // Apply filters in memory so we can show counts for every facet without
@@ -189,13 +169,10 @@ export default async function BrowsePage({
 
   // Facet counts — keep each facet's "what would this look like if I toggled it"
   // meaningful by excluding itself from the running filter set.
-  const countsByDomain: Record<string, number> = {}
-  for (const domain of BROAD_DOMAINS) {
-    const categoryIds = domainCategoryIds(domain.slug)
-    countsByDomain[domain.slug] = queryMatched
-      .filter(p => matchesFilters(p, { cat: false }))
-      .filter(p => categoryIds.has(p.category_id)).length
-  }
+  const countsByDomain = getBroadDomainPromptCounts(
+    queryMatched.filter(p => matchesFilters(p, { cat: false })),
+    categories,
+  )
   const countsByDifficulty: Record<string, number> = {}
   for (const d of DIFFICULTIES) {
     countsByDifficulty[d.value] = queryMatched
@@ -791,7 +768,6 @@ export default async function BrowsePage({
               <div className="domains-grid">
                 {domainCards.map(({ domain, prompts, href }) => {
                   const count = prompts.length
-                  const countLabel = count === 0 ? 'New lane' : `${count} ${count === 1 ? 'path' : 'paths'}`
                   return (
                     <Link key={domain.slug} href={href} className={`domain-card ${domain.slug}`}>
                       <div className="domain-collage" aria-hidden="true">
@@ -823,7 +799,7 @@ export default async function BrowsePage({
                         <h4>{domain.label}</h4>
                         <p>{domain.description}</p>
                         <div className="domain-meta">
-                          <span>{countLabel}</span>
+                          <span>{formatPathCount(count)}</span>
                           <span>Open paths →</span>
                         </div>
                       </div>

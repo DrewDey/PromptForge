@@ -1,4 +1,6 @@
 import Link from 'next/link'
+import { BROAD_DOMAINS, formatPathCount, getBroadDomainPromptCounts } from '@/lib/broad-domains'
+import { getCategories, getPrompts } from '@/lib/data'
 import './home.css'
 
 /* ─────────────────────────────────────────────────────────
@@ -13,26 +15,13 @@ import './home.css'
      illustrative copy — they read as example stories, not engagement metrics.
    ───────────────────────────────────────────────────────── */
 
-const HOME_DOMAINS = [
-  {
-    slug: 'productivity',
-    eyebrow: 'Work tools',
-    title: 'Productivity',
-    description: 'Automations, dashboards, planners, writing systems, analysis tools, and practical work artifacts.',
-    count: 'New lane',
-    labels: ['Agent brief', 'Task board', 'Report draft', 'Automation'],
-  },
-  {
-    slug: 'games',
-    eyebrow: 'Playable builds',
-    title: 'Games',
-    description: 'Games, experiments, interactive toys, and fun artifacts that are easy to fork and change.',
-    count: '1 path',
-    labels: ['Snake', 'Arcade loop', 'Touch controls', 'HTML file'],
-  },
-] as const
+export default async function HomePage() {
+  const [categories, allPrompts] = await Promise.all([
+    getCategories(),
+    getPrompts({ sort: 'popular', limit: 300 }),
+  ])
+  const countsByDomain = getBroadDomainPromptCounts(allPrompts, categories)
 
-export default function HomePage() {
   return (
     <div className="pf-home">
       {/* ═══════════ HERO ═══════════ */}
@@ -244,7 +233,7 @@ export default function HomePage() {
             </Link>
           </div>
           <div className="cats-grid">
-            {HOME_DOMAINS.map((domain) => (
+            {BROAD_DOMAINS.map((domain) => (
               <Link
                 key={domain.slug}
                 href={`/paths?domain=${domain.slug}&panel=open`}
@@ -260,7 +249,7 @@ export default function HomePage() {
                       </div>
                     ) : null}
                   </div>
-                  {domain.labels.slice(0, 3).map((label, index) => (
+                  {domain.previewLabels.slice(0, 3).map((label, index) => (
                     <div key={label} className={`domain-mini-thumb mini-${index + 1}`}>
                       {label}
                     </div>
@@ -268,10 +257,10 @@ export default function HomePage() {
                 </div>
                 <div className="domain-tile-body">
                   <div className="domain-eyebrow">{domain.eyebrow}</div>
-                  <h3>{domain.title}</h3>
+                  <h3>{domain.label}</h3>
                   <p>{domain.description}</p>
                   <div className="domain-foot">
-                    <span>{domain.count}</span>
+                    <span>{formatPathCount(countsByDomain[domain.slug] ?? 0)}</span>
                     <span>Open paths →</span>
                   </div>
                 </div>

@@ -124,46 +124,47 @@ function forkAuthorLabel(fork: ProjectForkNetworkItem) {
   return fork.authorDisplayName ?? compactForkText(fork.title, 'Forked path', 44)
 }
 
-function ResponseForkBranchCard({ fork }: { fork: ProjectForkNetworkItem }) {
+function ResponseForkBranchCard({
+  fork,
+  isActive = false,
+  onSelect,
+}: {
+  fork: ProjectForkNetworkItem
+  isActive?: boolean
+  onSelect: (fork: ProjectForkNetworkItem) => void
+}) {
   const tooltip = [
     fork.title,
     fork.description,
     fork.modelUsed ? `Model: ${fork.modelUsed}` : null,
   ].filter(Boolean).join('\n')
+  const authorLabel = forkAuthorLabel(fork)
 
   return (
-    <Link
-      href={forkProjectHref(fork)}
-      className="group/fork-branch-card relative block border border-[#07551f]/25 bg-white px-3 py-2 text-left transition hover:border-[#07551f] hover:bg-[#effdf3] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#2bd15f]"
-      aria-label={`Open fork by ${forkAuthorLabel(fork)}`}
+    <button
+      type="button"
+      onClick={() => onSelect(fork)}
+      className={[
+        'group/fork-branch-card relative block min-w-0 w-full border bg-white px-3 py-2 text-left transition hover:border-[#07551f] hover:bg-[#effdf3] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#2bd15f]',
+        isActive ? 'border-[#07551f] bg-[#effdf3] ring-2 ring-[#2bd15f]/30' : 'border-[#07551f]/25',
+      ].join(' ')}
+      aria-label={`Show fork options for ${authorLabel}`}
+      aria-pressed={isActive}
       title={tooltip}
     >
       <span className="flex items-center justify-between gap-2">
         <span className="truncate text-sm font-black text-surface-900 group-hover/fork-branch-card:text-[#07551f]">
-          {forkAuthorLabel(fork)}
+          {authorLabel}
         </span>
         <ArrowRight className="h-3.5 w-3.5 shrink-0 text-[#07551f] transition group-hover/fork-branch-card:translate-x-0.5" aria-hidden="true" />
       </span>
       <span className="mt-1 block truncate text-xs leading-5 text-surface-600">
         {compactForkText(fork.description, fork.title, 76)}
       </span>
-      <span className="pointer-events-none absolute left-0 top-[calc(100%+8px)] z-30 hidden w-[min(320px,calc(100vw-48px))] border border-surface-900 bg-surface-950 p-3 text-white shadow-[0_24px_60px_rgba(0,0,0,0.28)] group-hover/fork-branch-card:block group-focus-visible/fork-branch-card:block">
-        <span className="block font-mono text-[10px] uppercase tracking-[0.14em] text-[#2bd15f]">
-          {forkAuthorLabel(fork)}
-        </span>
-        <span className="mt-1 block text-sm font-black">{fork.title}</span>
-        {fork.description && (
-          <span className="mt-2 block text-xs leading-5 text-surface-200">
-            {compactForkText(fork.description, fork.title, 220)}
-          </span>
-        )}
-        {fork.modelUsed && (
-          <span className="mt-2 block font-mono text-[10px] uppercase tracking-[0.12em] text-surface-400">
-            {fork.modelUsed}
-          </span>
-        )}
+      <span className="mt-2 block font-mono text-[10px] font-black uppercase tracking-[0.12em] text-[#07551f]">
+        View branch options
       </span>
-    </Link>
+    </button>
   )
 }
 
@@ -171,11 +172,15 @@ function ResponseForkBranchPanel({
   forks,
   forkHref,
   forkLabel,
+  activeForkId,
+  onSelectFork,
   compact = false,
 }: {
   forks: ProjectForkNetworkItem[]
   forkHref: string
   forkLabel?: string
+  activeForkId?: string | null
+  onSelectFork: (fork: ProjectForkNetworkItem) => void
   compact?: boolean
 }) {
   const hasForks = forks.length > 0
@@ -184,34 +189,48 @@ function ResponseForkBranchPanel({
     <div
       data-response-fork-branch-panel
       className={compact
-        ? 'mt-4 border border-[#07551f]/25 bg-[#f8fff9] p-3'
-        : 'w-72 shrink-0 border-2 border-[#07551f] bg-[#f8fff9] p-3 shadow-[0_18px_44px_rgba(7,85,31,0.16)]'}
+        ? 'mt-4 grid gap-3'
+        : 'grid min-w-0 w-72 shrink-0 gap-3'}
     >
       {hasForks && (
-        <div className="mb-3">
+        <div
+          data-response-fork-destination-panel
+          className={compact
+            ? 'min-w-0 border border-[#07551f]/25 bg-[#f8fff9] p-3'
+            : 'min-w-0 border-2 border-[#07551f] bg-[#f8fff9] p-3 shadow-[0_18px_44px_rgba(7,85,31,0.16)]'}
+        >
           <div className="font-mono text-[10px] font-black uppercase tracking-[0.14em] text-[#07551f]">
             Forks from this response
           </div>
           <div className="mt-2 grid gap-2">
             {forks.map((fork) => (
-              <ResponseForkBranchCard key={fork.id} fork={fork} />
+              <ResponseForkBranchCard
+                key={fork.id}
+                fork={fork}
+                isActive={activeForkId === fork.id}
+                onSelect={onSelectFork}
+              />
             ))}
           </div>
         </div>
       )}
 
-      <Link
-        href={forkHref}
-        className={[
-          'inline-flex min-h-10 w-full items-center justify-center gap-2 border-2 border-[#07551f] bg-white px-3 py-2 text-xs font-black uppercase tracking-[0.12em] text-[#07551f] transition hover:bg-[#effdf3] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#2bd15f]',
-          hasForks ? 'mt-1' : '',
-        ].join(' ')}
-        aria-label={forkLabel}
+      <div
+        data-response-fork-new-action
+        className={compact
+          ? 'min-w-0 border border-[#07551f]/25 bg-white p-3'
+          : 'min-w-0 border-2 border-[#07551f] bg-white p-3 shadow-[0_12px_34px_rgba(7,85,31,0.12)]'}
       >
-        <GitFork className="h-3.5 w-3.5" aria-hidden="true" />
-        {hasForks ? 'Start a new fork' : 'Fork here'}
-        <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
-      </Link>
+        <Link
+          href={forkHref}
+          className="inline-flex min-h-10 w-full items-center justify-center gap-2 border-2 border-[#07551f] bg-white px-3 py-2 text-xs font-black uppercase tracking-[0.12em] text-[#07551f] transition hover:bg-[#effdf3] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#2bd15f]"
+          aria-label={forkLabel}
+        >
+          <GitFork className="h-3.5 w-3.5" aria-hidden="true" />
+          {hasForks ? 'Start a new fork' : 'Fork here'}
+          <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
+        </Link>
+      </div>
     </div>
   )
 }
@@ -220,12 +239,19 @@ function ResponseForkHoverRail({
   forkHref,
   forkLabel,
   forks,
+  activeForkId,
+  onSelectFork,
 }: {
   forkHref: string
   forkLabel?: string
   forks: ProjectForkNetworkItem[]
+  activeForkId?: string | null
+  onSelectFork: (fork: ProjectForkNetworkItem) => void
 }) {
   const hasForks = forks.length > 0
+  const socketPositionClass = hasForks ? 'right-[336px]' : 'right-[-18px]'
+  const railPositionClass = hasForks ? 'left-[calc(100%-360px)]' : 'right-[-8px]'
+  const pipeWidthClass = hasForks ? 'w-24' : 'w-64'
 
   return (
     <>
@@ -233,7 +259,8 @@ function ResponseForkHoverRail({
         data-response-fork-socket
         data-response-fork-existing-branch={hasForks ? 'true' : undefined}
         className={[
-          'absolute right-[-18px] top-[46px] z-10 hidden h-12 w-12 border-4 border-[#07551f] bg-[#effdf3] shadow-[0_0_0_0_rgba(43,209,95,0)] transition duration-300 group-hover/source-fork-node:shadow-[0_0_0_8px_rgba(43,209,95,0.18)] group-focus-within/source-fork-node:shadow-[0_0_0_8px_rgba(43,209,95,0.18)] xl:block',
+          'absolute top-1/2 z-10 hidden h-12 w-12 -translate-y-1/2 border-4 border-[#07551f] bg-[#effdf3] shadow-[0_0_0_0_rgba(43,209,95,0)] transition duration-300 group-hover/source-fork-node:shadow-[0_0_0_8px_rgba(43,209,95,0.18)] group-focus-within/source-fork-node:shadow-[0_0_0_8px_rgba(43,209,95,0.18)] xl:block',
+          socketPositionClass,
           hasForks ? 'shadow-[0_0_0_7px_rgba(43,209,95,0.16)] motion-safe:animate-pulse' : 'motion-safe:group-hover/source-fork-node:animate-pulse',
         ].join(' ')}
         aria-hidden="true"
@@ -244,13 +271,14 @@ function ResponseForkHoverRail({
       <div
         data-response-fork-hover-rail
         className={[
-          'pointer-events-none absolute right-[-8px] top-[47px] z-20 hidden translate-x-3 items-center opacity-0 transition duration-300 xl:flex',
+          'absolute top-1/2 z-20 hidden -translate-y-1/2 items-center transition duration-300 xl:flex',
+          railPositionClass,
           hasForks
             ? 'pointer-events-auto translate-x-0 opacity-100'
-            : 'group-hover/source-fork-node:pointer-events-auto group-hover/source-fork-node:translate-x-0 group-hover/source-fork-node:opacity-100 group-focus-within/source-fork-node:pointer-events-auto group-focus-within/source-fork-node:translate-x-0 group-focus-within/source-fork-node:opacity-100',
+            : 'pointer-events-none translate-x-3 opacity-0 group-hover/source-fork-node:pointer-events-auto group-hover/source-fork-node:translate-x-0 group-hover/source-fork-node:opacity-100 group-focus-within/source-fork-node:pointer-events-auto group-focus-within/source-fork-node:translate-x-0 group-focus-within/source-fork-node:opacity-100',
         ].join(' ')}
       >
-        <div className="relative h-12 w-36 shrink-0" aria-hidden="true">
+        <div className={['relative h-12 shrink-0', pipeWidthClass].join(' ')} data-response-fork-middle-pipe aria-hidden="true">
           <span
             className={[
               'absolute left-0 top-1/2 h-5 w-full origin-left -translate-y-1/2 scale-x-0 border-y-4 border-[#07551f] bg-[#2bd15f] shadow-[inset_0_5px_0_rgba(255,255,255,0.2),inset_0_-5px_0_rgba(0,0,0,0.16)] transition-transform duration-300 group-hover/source-fork-node:scale-x-100 group-focus-within/source-fork-node:scale-x-100',
@@ -265,7 +293,13 @@ function ResponseForkHoverRail({
             hasForks ? 'translate-x-0' : '',
           ].join(' ')}
         >
-          <ResponseForkBranchPanel forks={forks} forkHref={forkHref} forkLabel={forkLabel} />
+          <ResponseForkBranchPanel
+            forks={forks}
+            forkHref={forkHref}
+            forkLabel={forkLabel}
+            activeForkId={activeForkId}
+            onSelectFork={onSelectFork}
+          />
         </div>
       </div>
     </>
@@ -282,6 +316,8 @@ function PipeNode({
   forkHref,
   forkLabel,
   forks = [],
+  activeForkId,
+  onSelectFork,
 }: {
   eyebrow: string
   title: string
@@ -292,6 +328,8 @@ function PipeNode({
   forkHref?: string
   forkLabel?: string
   forks?: ProjectForkNetworkItem[]
+  activeForkId?: string | null
+  onSelectFork?: (fork: ProjectForkNetworkItem) => void
 }) {
   const cardClassName = [
     'relative border bg-white p-5 shadow-[0_18px_44px_rgba(24,24,27,0.07)]',
@@ -300,16 +338,27 @@ function PipeNode({
       : 'border-surface-200',
   ].join(' ')
   const canFork = variant === 'response' && Boolean(forkHref)
+  const hasExistingForks = forks.length > 0
+  const articleClassName = [
+    'group/source-fork-node relative pl-[88px]',
+    variant === 'response' && hasExistingForks ? 'xl:pr-[360px]' : '',
+  ].join(' ')
 
   return (
-    <article className="group/source-fork-node relative pl-[88px]" data-source-run-node={variant}>
+    <article className={articleClassName} data-source-run-node={variant}>
       {!terminal && (
         <div className="absolute left-[22px] top-[80px] h-[calc(100%+30px)] w-8 border-x-4 border-[#07551f] bg-[#2bd15f] shadow-[inset_5px_0_0_rgba(255,255,255,0.24),inset_-5px_0_0_rgba(0,0,0,0.2)]" />
       )}
       <div className="absolute left-0 top-8 h-16 w-12 border-4 border-[#07551f] bg-[#2bd15f] shadow-[inset_6px_0_0_rgba(255,255,255,0.28),inset_-6px_0_0_rgba(0,0,0,0.18)]" />
       <div className="absolute left-11 top-[54px] h-7 w-12 border-y-4 border-[#07551f] bg-[#2bd15f] shadow-[inset_0_5px_0_rgba(255,255,255,0.18),inset_0_-5px_0_rgba(0,0,0,0.16)]" />
-      {canFork && forkHref && (
-        <ResponseForkHoverRail forkHref={forkHref} forkLabel={forkLabel} forks={forks} />
+      {canFork && forkHref && onSelectFork && (
+        <ResponseForkHoverRail
+          forkHref={forkHref}
+          forkLabel={forkLabel}
+          forks={forks}
+          activeForkId={activeForkId}
+          onSelectFork={onSelectFork}
+        />
       )}
       <div className={cardClassName}>
         <div className="font-mono text-[10px] uppercase tracking-[0.18em] text-surface-500">
@@ -322,12 +371,125 @@ function PipeNode({
             <span className="absolute left-0 top-8 h-2 w-8 -translate-y-1/2 border-y border-[#07551f] bg-[#2bd15f]" aria-hidden="true" />
             <span className="absolute left-6 top-8 h-4 w-4 -translate-y-1/2 border-2 border-[#07551f] bg-white" aria-hidden="true" />
             <div className="pl-9">
-              <ResponseForkBranchPanel forks={forks} forkHref={forkHref} forkLabel={forkLabel} compact />
+              <ResponseForkBranchPanel
+                forks={forks}
+                forkHref={forkHref}
+                forkLabel={forkLabel}
+                activeForkId={activeForkId}
+                onSelectFork={onSelectFork ?? (() => undefined)}
+                compact
+              />
             </div>
           </div>
         )}
       </div>
     </article>
+  )
+}
+
+function ResponseForkFocusStage({
+  fork,
+  forkHref,
+  sourceStep,
+  steps,
+  onClose,
+}: {
+  fork: ProjectForkNetworkItem
+  forkHref: string
+  sourceStep: SourceRunShowcaseStep
+  steps: SourceRunShowcaseStep[]
+  onClose: () => void
+}) {
+  const forkHrefTarget = forkProjectHref(fork)
+  const sharedSteps = steps.filter((step) => step.stepNumber <= sourceStep.stepNumber)
+  const laterSteps = steps.filter((step) => step.stepNumber > sourceStep.stepNumber)
+
+  return (
+    <div data-response-fork-focus-stage className="relative pl-[88px]">
+      <div className="relative overflow-visible border-2 border-[#07551f] bg-[#f8fff9] p-4 shadow-[0_22px_70px_rgba(7,85,31,0.18)]">
+        <div className="grid gap-4 xl:grid-cols-[230px_190px_minmax(320px,1fr)]">
+          <div className="border border-[#07551f]/25 bg-white p-3">
+            <div className="font-mono text-[10px] font-black uppercase tracking-[0.14em] text-[#07551f]">
+              Original path collapsed
+            </div>
+            <div className="mt-3 grid gap-2">
+              {sharedSteps.map((step) => (
+                <div key={step.id} className="border border-[#07551f]/20 bg-[#f8fff9] px-2.5 py-2">
+                  <div className="font-mono text-[9px] uppercase tracking-[0.12em] text-[#07551f]">
+                    Prompt {String(step.stepNumber).padStart(2, '0')}
+                  </div>
+                  <div className="mt-1 truncate text-xs font-black text-surface-900">
+                    {step.title}
+                  </div>
+                </div>
+              ))}
+            </div>
+            {laterSteps.length > 0 && (
+              <div className="mt-3 border border-dashed border-surface-300 bg-surface-50 px-2.5 py-2 text-xs leading-5 text-surface-500">
+                {laterSteps.length} later original response{laterSteps.length === 1 ? '' : 's'} muted while this branch is in focus.
+              </div>
+            )}
+          </div>
+
+          <div className="relative flex min-h-[190px] items-center justify-center overflow-hidden">
+            <div
+              className="absolute left-0 right-0 top-1/2 h-5 -translate-y-1/2 border-y-4 border-[#07551f] bg-[#2bd15f] shadow-[inset_0_5px_0_rgba(255,255,255,0.2),inset_0_-5px_0_rgba(0,0,0,0.16)]"
+              aria-hidden="true"
+            />
+            <div className="relative z-10 border-4 border-[#07551f] bg-white px-4 py-3 text-center shadow-[0_0_0_8px_rgba(43,209,95,0.18)]">
+              <div className="font-mono text-[10px] uppercase tracking-[0.14em] text-[#07551f]">
+                Response {String(sourceStep.stepNumber).padStart(2, '0')}
+              </div>
+              <div className="mt-1 text-sm font-black text-surface-900">
+                Fork point
+              </div>
+            </div>
+          </div>
+
+          <div className="border-2 border-[#07551f] bg-white p-4">
+            <div className="font-mono text-[10px] font-black uppercase tracking-[0.14em] text-[#07551f]">
+              Active branch options
+            </div>
+            <h4 className="mt-2 text-xl font-black text-surface-900">{fork.title}</h4>
+            {fork.description && (
+              <p className="mt-2 text-sm leading-6 text-surface-600">
+                {fork.description}
+              </p>
+            )}
+            <div className="mt-4 grid gap-2 sm:grid-cols-3">
+              <Link
+                href={forkHrefTarget}
+                className="inline-flex min-h-11 items-center justify-center gap-2 border-2 border-[#07551f] bg-[#07551f] px-3 py-2 text-xs font-black uppercase tracking-[0.12em] text-white transition hover:bg-[#0b6b29] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#2bd15f]"
+              >
+                Open fork
+                <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
+              </Link>
+              <Link
+                href={`${forkHrefTarget}#source-run-path`}
+                className="inline-flex min-h-11 items-center justify-center gap-2 border-2 border-[#07551f] bg-white px-3 py-2 text-xs font-black uppercase tracking-[0.12em] text-[#07551f] transition hover:bg-[#effdf3] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#2bd15f]"
+              >
+                <FileCode2 className="h-3.5 w-3.5" aria-hidden="true" />
+                Code explain
+              </Link>
+              <Link
+                href={forkHref}
+                className="inline-flex min-h-11 items-center justify-center gap-2 border-2 border-[#07551f] bg-white px-3 py-2 text-xs font-black uppercase tracking-[0.12em] text-[#07551f] transition hover:bg-[#effdf3] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#2bd15f]"
+              >
+                <GitFork className="h-3.5 w-3.5" aria-hidden="true" />
+                New fork
+              </Link>
+            </div>
+            <button
+              type="button"
+              onClick={onClose}
+              className="mt-3 border border-surface-300 px-3 py-2 text-xs font-bold text-surface-600 transition hover:border-[#07551f] hover:text-[#07551f] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#2bd15f]"
+            >
+              Close branch view
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
   )
 }
 
@@ -640,6 +802,7 @@ export default function SourceRunShowcase({
     defaultStepPackages[defaultStepPackages.length - 1] ??
     packages[packages.length - 1]
   const [selectedPackageId, setSelectedPackageId] = useState(defaultPackage?.id ?? '')
+  const [activeForkId, setActiveForkId] = useState<string | null>(null)
   const selectedPackage =
     packages.find((pkg) => pkg.id === selectedPackageId) ?? defaultPackage ?? packages[0]
   const forkBranchesByStepId = useMemo(() => {
@@ -668,7 +831,7 @@ export default function SourceRunShowcase({
         </section>
       )}
 
-      <section className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
+      <section id="source-run-path" className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
         <div className="mb-7 border-l-4 border-[#2bd15f] pl-4">
           <div className="flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.18em] text-surface-500">
             <GitBranch className="h-3.5 w-3.5 text-[#07551f]" />
@@ -748,6 +911,7 @@ export default function SourceRunShowcase({
               })
               : null
             const stepForks = forkBranchesByStepId.get(step.id) ?? []
+            const focusedFork = stepForks.find((fork) => fork.id === activeForkId)
 
             return (
               <Fragment key={step.id}>
@@ -769,6 +933,8 @@ export default function SourceRunShowcase({
                   forkHref={forkHref ?? undefined}
                   forkLabel={`Fork ${projectTitle ?? 'this path'} from response package ${String(step.stepNumber).padStart(2, '0')}`}
                   forks={stepForks}
+                  activeForkId={activeForkId}
+                  onSelectFork={(fork) => setActiveForkId(fork.id)}
                 >
                   <ResponsePackageCard
                     step={step}
@@ -779,6 +945,16 @@ export default function SourceRunShowcase({
                     providerName={providerName}
                   />
                 </PipeNode>
+
+                {focusedFork && forkHref && (
+                  <ResponseForkFocusStage
+                    fork={focusedFork}
+                    forkHref={forkHref}
+                    sourceStep={step}
+                    steps={steps}
+                    onClose={() => setActiveForkId(null)}
+                  />
+                )}
               </Fragment>
             )
           })}

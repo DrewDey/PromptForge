@@ -201,17 +201,27 @@ function normalizeProjectPresentation<T extends PromptWithRelations>(prompt: T):
     }
   }
 
+  if (prompt.id === SNAKE_PROJECT_ID) {
+    return {
+      ...prompt,
+      description:
+        'A first-taste browser Snake path with arrow-key movement, growing score pressure, collision rules, and a playable one-file arcade loop.',
+      result_content:
+        'A playable Snake game with grid movement, food pickups, score tracking, wall/self collision, quick restart, and a clean browser arcade feel.',
+    }
+  }
+
   if (prompt.id !== DECISION_MATRIX_PROJECT_ID) return prompt
 
   return {
     ...prompt,
     title: 'Interactive Decision Matrix - Gemini Flash One-Shot',
     description:
-      'One plain Gemini prompt produced a working browser decision matrix, with the final artifact mounted first and the exact response package collapsed below it.',
+      'A working browser decision matrix for scoring options against weighted criteria, comparing totals, and exporting the result.',
     content:
       'This source run tests the same shape as the Snake seed: one normal prompt, one captured model response, and one working browser artifact. The finished tool lets a user edit options and criteria, weight each criterion, score every option, see the leading choice, and export the result as CSV.',
     result_content:
-      'A working decision matrix embedded directly on the page. The response package includes the exact prompt, the generated HTML artifact, CSV export behavior, and verification notes.',
+      'An editable decision matrix with option and criteria controls, weighted scoring, automatic winner highlighting, and CSV export.',
     model_used: 'Gemini Flash',
     model_recommendation: 'Gemini Flash',
     tools_used: ['Gemini', 'Chrome', 'HTML', 'Browser'],

@@ -316,7 +316,7 @@ export const WEEKEND_CHECKLIST_FORK_SHOWCASE_PROJECT: PreparedShowcaseProject = 
   content:
     "Codex Lane forked Nora Brooks' Weekend Plan Checklist at response package 03, keeping the shared checklist/filter idea but branching before the later timing-group direction. The fork asks the model to focus on family road-trip readiness: people lanes, pet prep, car checks, timing buckets, and a next-action strip.",
   resultContent:
-    'A self-contained road-trip readiness board embedded on the page. The fork page shows the inherited source path, preserves the fork prompt/response sequence, and links back to the exact source response where the branch began.',
+    'A self-contained road-trip readiness board with traveler lanes, pet prep, car checks, timing buckets, print/export handoff, and a clear next-action strip.',
   categorySlug: 'productivity',
   mockCategoryId: 'cat-7',
   difficulty: 'beginner',
@@ -364,11 +364,11 @@ export const NEON_BLOCK_PATROL_SHOWCASE_PROJECT: PreparedShowcaseProject = {
   href: '/neon-block-patrol-demo',
   title: 'Neon Block Patrol v3',
   description:
-    'Five ChatGPT Heavy prompts produced a safe arcade FPS prototype, then recovered from a duplicate download and a stalled file-generation path by capturing the final v3 HTML inline.',
+    'A safe neon-city foam-tag patrol game with pointer-lock movement, brighter target cues, checkpoint goals, and a compact mission loop.',
   content:
     'Avery Stone used ChatGPT Latest 5.5 Heavy to build a stylized open-city foam-tag patrol game. The run started with a playable first-person canvas prototype, then tried to improve target readability and hit feedback. When the downloaded update turned out to be identical, the follow-up prompts called that out, recovered from a stalled download path, and captured a final inline v3 artifact with clearer target and checkpoint cues.',
   resultContent:
-    'A safe arcade-only first-person browser game embedded directly on the page. The public page preserves the duplicate step 2 artifact, the failed/stalled recovery turns, and the final v3 HTML response.',
+    'A playable first-person browser prototype with safe arcade combat, visible mission HUD, target feedback, checkpoint guidance, and a final v3 badge.',
   categorySlug: 'personal',
   mockCategoryId: 'cat-10',
   difficulty: 'intermediate',
@@ -442,11 +442,11 @@ export const SWISH_CITY_SHOWCASE_PROJECT: PreparedShowcaseProject = {
   href: '/swish-city-timing-hoops-demo',
   title: 'Swish City Timing Hoops',
   description:
-    'A Claude Opus 4.8 Max run identified the remembered arcade reference as Megatouch Hoop Jones, then recovered from two failed generation attempts to produce a playable timing basketball game.',
+    'A family-safe arcade basketball timing game where players pass across four shooters, back up through rounds, chase SWISH streaks, and trigger a lightning bonus.',
   content:
     'Eli Harper used Claude Opus 4.8 Max to build a family-safe browser arcade basketball game inspired by the remembered Hoop Jones mechanics: four shooters, timing the ball across hands, distance progression, BRICK/AIRBALL/SWISH callouts, and a lightning backboard bonus. The first Max-thinking attempt over-planned and failed before code, the second recovery prompt returned no useful response, and the third prompt produced the final playable HTML.',
   resultContent:
-    'A self-contained canvas basketball timing game embedded directly on the page. The source path preserves the failed first two turns and the final complete HTML artifact from Claude.',
+    'A self-contained canvas hoops game with timing shots, BRICK/AIRBALL/SWISH feedback, distance progression, score pressure, and keyboard or tap play.',
   categorySlug: 'personal',
   mockCategoryId: 'cat-10',
   difficulty: 'intermediate',
@@ -500,11 +500,11 @@ export const MEETING_COST_SHOWCASE_PROJECT: PreparedShowcaseProject = {
   href: '/meeting-cost-calculator-demo',
   title: 'Meeting Cost Calculator',
   description:
-    'A one-prompt ChatGPT run produced a polished browser calculator that makes the cost of meetings and wasted time visible.',
+    'A polished browser calculator that makes meeting cost and wasted time visible with live inputs, visual totals, and an exportable summary.',
   content:
     'Drew submitted a ChatGPT source run that asked for a polished one-file meeting cost calculator. The result is a self-contained browser artifact with live cost math, wasted-time visuals, and a simple summary export flow.',
   resultContent:
-    'A working meeting cost calculator embedded directly on the page. The source path preserves the exact prompt, visible ChatGPT response text, generated HTML artifact, source-run link, and verification notes.',
+    'A live meeting cost calculator with attendee/rate inputs, wasted-time visualization, running totals, and a simple exportable summary.',
   categorySlug: 'productivity',
   mockCategoryId: 'cat-7',
   difficulty: 'beginner',
@@ -538,11 +538,11 @@ export const WORD_LADDER_SPRINT_SHOWCASE_PROJECT: PreparedShowcaseProject = {
   href: '/word-ladder-sprint-demo',
   title: 'Word Ladder Sprint',
   description:
-    'Seven ChatGPT prompts grew a browser word-ladder game from a timed valid-move sprint into a mobile-friendly replay loop with hints, streaks, and thumb-sized keypad controls.',
+    'A browser word-ladder sprint game with timed valid moves, fair hints, streak scoring, and mobile-friendly keypad controls.',
   content:
     'Jordan Lee used ChatGPT to build a word-ladder sprint game one response package at a time. The run starts with a working timed ladder, adds fair hints and streak scoring, then iterates on mobile input until the final complete HTML file fixes the phone keypad tap targets.',
   resultContent:
-    'A playable Word Ladder Sprint artifact embedded directly on the page. The source path preserves all seven prompts, the transcript-only sixth response, every mountable artifact version, and the final mobile-keypad fix.',
+    'A mobile-friendly word-ladder sprint game with timers, valid-move checks, fair hints, streak scoring, per-puzzle best times, and thumb-sized keypad controls.',
   categorySlug: 'personal',
   mockCategoryId: 'cat-10',
   difficulty: 'beginner',
@@ -608,11 +608,11 @@ export const PUZZLE_BOX_ESCAPE_SHOWCASE_PROJECT: PreparedShowcaseProject = {
   href: '/puzzle-box-escape-demo',
   title: 'Puzzle Box Escape',
   description:
-    'Five Claude Sonnet 4.6 Max prompts built a tiny puzzle-box escape game, then tightened hint/reset behavior and the final lock message until the clue path felt fair.',
+    'A tiny puzzle-box escape game with three compact rooms, clue-driven inventory, fair hints, reset behavior, and honest final-lock messaging.',
   content:
     'Mira Vale used Claude to build a compact three-room puzzle-box escape game as a single HTML artifact. The run preserves each refinement: visible hints, reset behavior, spoiler-free clue progress, overlay cleanup, and a final honest lock-state message.',
   resultContent:
-    'A playable puzzle-box escape artifact embedded directly on the page. The source path preserves every prompt, every response package, every artifact version, and the final verified lock/win flow.',
+    'A compact puzzle-box escape game with clickable rooms, inventory clues, hint/reset support, clear lock messaging, and a fair final win path.',
   categorySlug: 'personal',
   mockCategoryId: 'cat-10',
   difficulty: 'beginner',
@@ -666,11 +666,11 @@ export const POCKET_RALLY_SHOWCASE_PROJECT: PreparedShowcaseProject = {
   href: '/pocket-rally-time-trial-demo',
   title: 'Pocket Rally Time Trial',
   description:
-    'Five ChatGPT prompts turned a simple top-down checkpoint racer into a named two-lap rally time trial with mobile controls, minimap, stored best run, and ghost-trail replay hooks.',
+    'A top-down rally time trial with two-lap driving, mobile controls, checkpoint guidance, medals, a minimap, and stored best-run ghost hooks.',
   content:
     'Marco Vega used ChatGPT to iterate a single-file rally game from a basic checkpoint sprint into Pocket Rally Time Trial. Each response package shows the game becoming more replayable: clearer track shape, splits, lap structure, ghost trail, and intentional phone controls.',
   resultContent:
-    'A playable Pocket Rally Time Trial artifact embedded directly on the page. The source path preserves all five prompt/response packages and every mountable artifact version, with the final mobile-focused version loaded first.',
+    'A playable top-down rally time trial with two-lap runs, checkpoint guidance, medals, split feedback, a minimap, stored best run, and phone-focused controls.',
   categorySlug: 'personal',
   mockCategoryId: 'cat-10',
   difficulty: 'intermediate',
@@ -724,11 +724,11 @@ export const TRIP_PACKING_SHOWCASE_PROJECT: PreparedShowcaseProject = {
   href: '/trip-packing-planner-demo',
   title: 'Trip Packing Planner',
   description:
-    'Five Gemini Pro prompts built a practical trip packing checklist generator with saved state, print/export output, style tags, packed filters, and custom-item preservation.',
+    'A practical trip packing checklist generator with saved state, print/export output, style tags, packed filters, and custom-item preservation.',
   content:
     'Miles Turner used Gemini Pro to grow a travel checklist generator from a plain trip form into a usable saved packing planner. The run captures how small follow-up prompts added local storage, export/print, style and destination awareness, and long-list cleanup controls.',
   resultContent:
-    'A working Trip Packing Planner embedded directly on the page. The source path preserves every prompt, every verbatim response package, and the final cleanup pass as the default artifact.',
+    'A saved trip packing planner with destination/style-aware checklist generation, packed filters, custom items, long-list cleanup, and print/export output.',
   categorySlug: 'productivity',
   mockCategoryId: 'cat-7',
   difficulty: 'beginner',
@@ -782,11 +782,11 @@ export const FLASHCARD_CRAM_SHOWCASE_PROJECT: PreparedShowcaseProject = {
   href: '/flashcard-cram-drill-demo',
   title: 'Flashcard Cram Drill',
   description:
-    'Two Gemini Pro prompts produced a student flashcard cram tool, then fixed the missing edit controls so created cards can be updated instead of only deleted.',
+    'A student flashcard cram tool for turning notes into editable cards, quizzing marked decks, saving locally, and importing or exporting JSON.',
   content:
     'Sofia Patel used Gemini Pro to build a single-file flashcard cram drill with notes-to-cards, quiz marking, local deck storage, and JSON import/export. The second prompt is preserved because it fixed a real verification defect: existing cards needed visible Edit, Save, and Cancel controls.',
   resultContent:
-    'A working Flashcard Cram Drill embedded directly on the page. The source path preserves both prompt/response packages, the observed V1 defect, and the fixed default artifact.',
+    'A student flashcard drill with notes-to-cards creation, editable decks, quiz marking, local storage, and JSON import/export.',
   categorySlug: 'education',
   mockCategoryId: 'cat-6',
   difficulty: 'beginner',
@@ -822,11 +822,11 @@ export const FOLLOW_UP_CRM_SHOWCASE_PROJECT: PreparedShowcaseProject = {
   href: '/follow-up-crm-tracker-demo',
   title: 'Follow-Up CRM Tracker',
   description:
-    'Two ChatGPT prompts produced a freelancer CRM tracker, then added quick follow-up actions so daily use does not require reopening the full edit form.',
+    'A freelancer follow-up CRM for contacts, opportunities, overdue buckets, notes, CSV export, and quick reschedule actions.',
   content:
     'Caleb Price used ChatGPT to build a self-contained follow-up CRM for solo operators. The run keeps the inspected workflow improvement visible: after the base CRM worked, the follow-up prompt added today/+1/+7 quick actions and last-contacted timestamps.',
   resultContent:
-    'A working Follow-Up CRM Tracker embedded directly on the page. The source path preserves both exact prompts, both response packages, the initial workflow issue, and the improved final artifact.',
+    'A freelancer CRM tracker with overdue/today/upcoming buckets, notes, CSV export, quick follow-up actions, rescheduling shortcuts, and last-contact timestamps.',
   categorySlug: 'marketing',
   mockCategoryId: 'cat-2',
   difficulty: 'beginner',
@@ -862,11 +862,11 @@ export const REACTION_TRAINER_SHOWCASE_PROJECT: PreparedShowcaseProject = {
   href: '/reaction-time-trainer-demo',
   title: 'Reaction-Time Trainer',
   description:
-    'One Gemini Pro prompt produced a polished reaction-time trainer with randomized rounds, false-start handling, missed-start penalties, saved best times, history, and touch controls.',
+    'A polished reaction-time trainer with randomized rounds, false-start handling, missed-start penalties, saved best times, history, and touch controls.',
   content:
     'Tessa Morgan used Gemini Pro for a one-shot browser reaction trainer. The run stopped after one response because the artifact passed verification and did not need a follow-up prompt to fix an observed defect.',
   resultContent:
-    'A working Reaction-Time Trainer embedded directly on the page. The source path preserves the exact prompt, the verbatim response package, the generated artifact, and verification notes.',
+    'A quick reaction-time trainer with randomized rounds, false-start handling, missed-start penalties, saved best times, history, touch controls, and instant replay.',
   categorySlug: 'personal',
   mockCategoryId: 'cat-10',
   difficulty: 'beginner',
@@ -896,11 +896,11 @@ export const LANE_DEFENSE_SHOWCASE_PROJECT: PreparedShowcaseProject = {
   href: '/tiny-lane-defense-demo',
   title: 'Tiny Lane Defense',
   description:
-    'One ChatGPT Thinking Heavy prompt produced a tiny lane tower-defense browser game with two turret types, quick waves, and a short learn curve.',
+    'A compact tower-defense game with two turret types, quick waves, readable lane pressure, and controls meant to be learned in about 15 seconds.',
   content:
     'Lena Ortiz used ChatGPT to generate a compact tower-defense game as one self-contained HTML artifact. The source run preserves the one prompt, the captured response package, and the playable lane-defense file.',
   resultContent:
-    'A playable Tiny Lane Defense artifact embedded directly on the page. The source path preserves the exact prompt, the verbatim response package, generated HTML, source-run link, and verification notes.',
+    'A compact lane-defense game with two turret types, fast waves, lane pressure, clear build controls, and a short learn curve.',
   categorySlug: 'personal',
   mockCategoryId: 'cat-10',
   difficulty: 'beginner',

@@ -368,9 +368,9 @@ export const mockPrompts: Prompt[] = [
   {
     id: SNAKE_PROJECT_ID,
     title: 'Playable Snake Game - GPT 5.5 Pro One-Shot',
-    description: 'A first-taste demo path: one plain sentence produced a playable Snake game, with the final artifact embedded at the top and the captured response package below it.',
+    description: 'A first-taste browser Snake path with arrow-key movement, growing score pressure, collision rules, and a playable one-file arcade loop.',
     content: 'This is the simplest approved PathForge seed: one normal user prompt, one captured model response, one playable result. It exists to show how a finished artifact, exact prompt, exact response package, attachments, and verification can live together on a project page.',
-    result_content: 'A playable Snake game embedded directly on the page. The response package includes the one-sentence prompt, the generated HTML artifact, verification screenshots, and a collapsed exact-response drawer.',
+    result_content: 'A playable Snake game with grid movement, food pickups, score tracking, wall/self collision, quick restart, and a clean browser arcade feel.',
     category_id: 'cat-10',
     difficulty: 'beginner',
     model_used: null,

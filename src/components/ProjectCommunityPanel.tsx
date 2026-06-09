@@ -24,6 +24,40 @@ function compactForkText(value: string | null | undefined, fallback: string, max
   return trimmed.length > max ? `${trimmed.slice(0, max - 3)}...` : trimmed
 }
 
+function OriginalTextPreview({
+  promptText,
+  responseText,
+}: {
+  promptText: string | null | undefined
+  responseText?: string | null
+}) {
+  const responsePreview = responseText?.trim()
+
+  return (
+    <div className="pointer-events-none absolute left-0 top-[calc(100%+8px)] z-50 hidden w-[min(440px,calc(100vw-48px))] border border-surface-800 bg-surface-950 p-3 text-left text-white shadow-[0_24px_60px_rgba(0,0,0,0.28)] group-hover/fork-preview:block group-focus-within/fork-preview:block">
+      <div className="font-mono text-[10px] font-bold uppercase tracking-[0.14em] text-[#2bd15f]">
+        Original text preview
+      </div>
+      <div className="mt-2 grid gap-2 text-xs leading-5">
+        <div>
+          <div className="font-mono text-[10px] uppercase tracking-[0.12em] text-surface-400">Prompt</div>
+          <p className="mt-1 text-surface-100">
+            {compactForkText(promptText, 'No prompt text captured for this response.', 260)}
+          </p>
+        </div>
+        <div className="border-t border-surface-800 pt-2">
+          <div className="font-mono text-[10px] uppercase tracking-[0.12em] text-surface-400">Response</div>
+          <p className="mt-1 text-surface-100">
+            {responsePreview
+              ? compactForkText(responsePreview, 'Response package captured', 260)
+              : 'Open the source path for the full verbatim response package.'}
+          </p>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 function projectHref(projectId: string) {
   return getProjectRouteOverride(projectId) ?? `/prompt/${projectId}`
 }
@@ -102,7 +136,7 @@ function ForkLineageSegmentCard({
   return (
     <div
       className={[
-        'group/inherited-step relative min-h-[82px] border px-3 py-2 text-left transition',
+        'group/fork-preview relative min-h-[82px] border px-3 py-2 text-left transition',
         segment.muted
           ? 'border-surface-200 bg-surface-100 text-surface-400 opacity-70 hover:opacity-100'
           : isForkPoint
@@ -125,21 +159,7 @@ function ForkLineageSegmentCard({
       <div className="mt-1 text-xs leading-5">
         {compactForkText(segment.responseText, 'Response package captured', 92)}
       </div>
-      <div className="pointer-events-none absolute left-0 top-[calc(100%+8px)] z-20 hidden w-[min(420px,calc(100vw-48px))] border border-surface-800 bg-surface-950 p-3 text-left text-white shadow-[0_24px_60px_rgba(0,0,0,0.28)] group-hover/inherited-step:block group-focus-within/inherited-step:block">
-        <div className="font-mono text-[10px] uppercase tracking-[0.14em] text-[#2bd15f]">
-          Original text preview
-        </div>
-        <div className="mt-2 grid gap-2 text-xs leading-5">
-          <div>
-            <div className="font-mono text-[10px] uppercase tracking-[0.12em] text-surface-400">Prompt</div>
-            <p className="mt-1 text-surface-100">{compactForkText(segment.promptText, 'Prompt text captured', 260)}</p>
-          </div>
-          <div className="border-t border-surface-800 pt-2">
-            <div className="font-mono text-[10px] uppercase tracking-[0.12em] text-surface-400">Response</div>
-            <p className="mt-1 text-surface-100">{compactForkText(segment.responseText, 'Response text captured', 260)}</p>
-          </div>
-        </div>
-      </div>
+      <OriginalTextPreview promptText={segment.promptText} responseText={segment.responseText} />
     </div>
   )
 }
@@ -322,15 +342,13 @@ function ProjectForkInheritedPathBand({
     ? contract.lineageSegments.findIndex((segment) => segment.id === forkPointSegment.id) + 2
     : 2
   const sourceHref = projectHref(forkSource.sourceProjectId)
-  const depthValue = Math.min(forkSource.depth + 1, PROJECT_FORK_MAX_DEPTH)
-  const branchValue = Math.min(forkSource.branchIndex + 1, PROJECT_FORK_MAX_WIDTH)
   const firstContinuationStep = visibleContinuationSteps[0]
   const continuationLabel = firstContinuationStep
     ? `Prompt ${String(firstContinuationStep.stepNumber).padStart(2, '0')} / Response ${String(firstContinuationStep.stepNumber).padStart(2, '0')}`
     : 'the next prompt'
 
   return (
-    <div className="mb-10 overflow-hidden border border-[#07551f] bg-white shadow-[0_18px_44px_rgba(7,85,31,0.08)]">
+    <div className="mb-10 overflow-visible border border-[#07551f] bg-white shadow-[0_18px_44px_rgba(7,85,31,0.08)]">
       <div className="border-b border-[#07551f] bg-[#f8fff9] p-5">
         <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end">
           <div>
@@ -345,13 +363,7 @@ function ProjectForkInheritedPathBand({
               It branches from {forkPointLabel}. The original path is retained as source context on the left, and the active fork continuation starts on the right at the branch row.
             </p>
           </div>
-          <div className="flex flex-wrap gap-2 font-mono text-[10px] uppercase tracking-[0.12em] text-surface-600">
-            <span className="border border-[#07551f]/30 bg-white px-2.5 py-2 text-[#07551f]">
-              Depth {depthValue} / {PROJECT_FORK_MAX_DEPTH}
-            </span>
-            <span className="border border-[#07551f]/30 bg-white px-2.5 py-2 text-[#07551f]">
-              Branch {branchValue} / {PROJECT_FORK_MAX_WIDTH}
-            </span>
+          <div className="flex flex-wrap gap-2 font-mono text-[10px] uppercase tracking-[0.12em] text-surface-600 lg:justify-end">
             <Link
               href={sourceHref}
               className="inline-flex items-center gap-2 border border-[#07551f] bg-white px-2.5 py-2 font-black text-[#07551f] transition hover:bg-[#effdf3]"
@@ -493,7 +505,7 @@ function ProjectForkNetworkBand({
   const { rows: sourceRows, unmatchedForks } = groupProjectForkNetworkBySourceStep(sourceSteps, forks)
 
   return (
-    <div className="mb-10 overflow-hidden border border-[#07551f] bg-[#f8fff9]">
+    <div className="mb-10 overflow-visible border border-[#07551f] bg-[#f8fff9]">
       <div className="border-b border-[#07551f] bg-white p-5">
         <div className="grid gap-4 md:grid-cols-[minmax(0,1fr)_220px] md:items-end">
           <div>
@@ -587,7 +599,7 @@ function MobileForkNetworkRow({
 
   return (
     <section className="border border-surface-200 bg-white p-3">
-      <div className="group/mobile-fork-source relative border border-surface-200 bg-surface-50 px-3 py-2" tabIndex={0}>
+      <div className="group/fork-preview relative border border-surface-200 bg-surface-50 px-3 py-2" tabIndex={0}>
         <div className="flex items-center justify-between gap-2">
           <span className="font-mono text-[10px] font-bold uppercase tracking-[0.14em] text-[#07551f]">
             Response {String(step.stepNumber).padStart(2, '0')}
@@ -602,21 +614,7 @@ function MobileForkNetworkRow({
         <div className="mt-1 text-xs leading-5 text-surface-600">
           {compactForkText(step.responseText, 'Response package captured', 92)}
         </div>
-        <div className="pointer-events-none absolute left-0 top-[calc(100%+8px)] z-20 hidden w-[min(420px,calc(100vw-48px))] border border-surface-800 bg-surface-950 p-3 text-left text-white shadow-[0_24px_60px_rgba(0,0,0,0.28)] group-hover/mobile-fork-source:block group-focus-within/mobile-fork-source:block">
-          <div className="font-mono text-[10px] uppercase tracking-[0.14em] text-[#2bd15f]">
-            Original text preview
-          </div>
-          <div className="mt-2 grid gap-2 text-xs leading-5">
-            <div>
-              <div className="font-mono text-[10px] uppercase tracking-[0.12em] text-surface-400">Prompt</div>
-              <p className="mt-1 text-surface-100">{compactForkText(step.promptText, 'Prompt text captured', 260)}</p>
-            </div>
-            <div className="border-t border-surface-800 pt-2">
-              <div className="font-mono text-[10px] uppercase tracking-[0.12em] text-surface-400">Response</div>
-              <p className="mt-1 text-surface-100">{compactForkText(step.responseText, 'Response text captured', 260)}</p>
-            </div>
-          </div>
-        </div>
+        <OriginalTextPreview promptText={step.promptText} responseText={step.responseText} />
       </div>
 
       {hasForks ? (
@@ -650,7 +648,7 @@ function ForkNetworkRow({
     <div className="grid grid-cols-[260px_72px_minmax(0,1fr)] items-stretch">
       <div
         className={[
-          'group/fork-source relative border px-3 py-3 transition',
+          'group/fork-preview relative border px-3 py-3 transition',
           hasForks
             ? 'border-[#07551f] bg-white shadow-[0_12px_28px_rgba(7,85,31,0.08)]'
             : 'border-surface-200 bg-surface-100 text-surface-500',
@@ -671,21 +669,7 @@ function ForkNetworkRow({
         <div className="mt-1 text-xs leading-5">
           {compactForkText(step.responseText, 'Response package captured', 82)}
         </div>
-        <div className="pointer-events-none absolute left-0 top-[calc(100%+8px)] z-20 hidden w-[min(420px,calc(100vw-48px))] border border-surface-800 bg-surface-950 p-3 text-left text-white shadow-[0_24px_60px_rgba(0,0,0,0.28)] group-hover/fork-source:block group-focus-within/fork-source:block">
-          <div className="font-mono text-[10px] uppercase tracking-[0.14em] text-[#2bd15f]">
-            Original text preview
-          </div>
-          <div className="mt-2 grid gap-2 text-xs leading-5">
-            <div>
-              <div className="font-mono text-[10px] uppercase tracking-[0.12em] text-surface-400">Prompt</div>
-              <p className="mt-1 text-surface-100">{compactForkText(step.promptText, 'Prompt text captured', 260)}</p>
-            </div>
-            <div className="border-t border-surface-800 pt-2">
-              <div className="font-mono text-[10px] uppercase tracking-[0.12em] text-surface-400">Response</div>
-              <p className="mt-1 text-surface-100">{compactForkText(step.responseText, 'Response text captured', 260)}</p>
-            </div>
-          </div>
-        </div>
+        <OriginalTextPreview promptText={step.promptText} responseText={step.responseText} />
       </div>
 
       <div className="relative" aria-hidden="true">

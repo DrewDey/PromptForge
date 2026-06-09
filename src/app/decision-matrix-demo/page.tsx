@@ -51,7 +51,8 @@ function ArtifactFrame() {
         title="Interactive decision matrix generated from one Gemini prompt"
         src={artifactPath}
         sandbox="allow-scripts allow-downloads allow-same-origin"
-        className="h-[900px] w-full bg-[#121214] sm:h-[820px] lg:h-[760px]"
+        className="w-full bg-[#121214]"
+        style={{ height: 'clamp(520px, calc(100svh - 160px), 760px)' }}
       />
     </div>
   )

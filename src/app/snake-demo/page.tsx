@@ -52,8 +52,8 @@ function ArtifactFrame() {
         title="Playable Snake game generated from one ChatGPT prompt"
         src={artifactPath}
         sandbox="allow-scripts allow-same-origin"
-        scrolling="no"
-        className="h-[1120px] w-full bg-black sm:h-[980px] lg:h-[900px]"
+        className="w-full bg-black"
+        style={{ height: 'clamp(520px, calc(100svh - 160px), 760px)' }}
       />
     </div>
   )

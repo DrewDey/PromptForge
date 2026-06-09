@@ -84,7 +84,8 @@ function ArtifactFrame({
         title={`${selectedPackage.artifactTitle} generated from a ${providerName} source run`}
         src={selectedPackage.artifactPath}
         sandbox="allow-scripts allow-same-origin"
-        className="h-[940px] w-full bg-[#111827] sm:h-[820px] lg:h-[820px]"
+        className="w-full bg-[#111827]"
+        style={{ height: 'clamp(520px, calc(100svh - 160px), 760px)' }}
       />
     </div>
   )

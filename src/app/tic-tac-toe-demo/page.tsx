@@ -47,8 +47,8 @@ function ArtifactFrame() {
         title="Playable Tic-Tac-Toe generated from one Gemini prompt"
         src={artifactPath}
         sandbox="allow-scripts allow-same-origin"
-        scrolling="no"
-        className="h-[620px] w-full bg-[#f0f2f5] sm:h-[660px]"
+        className="w-full bg-[#f0f2f5]"
+        style={{ height: 'clamp(520px, calc(100svh - 160px), 760px)' }}
       />
     </div>
   )

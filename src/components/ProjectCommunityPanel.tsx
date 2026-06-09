@@ -24,36 +24,26 @@ function compactForkText(value: string | null | undefined, fallback: string, max
   return trimmed.length > max ? `${trimmed.slice(0, max - 3)}...` : trimmed
 }
 
-function OriginalTextPreview({
+function ResponsePromptTooltip({
+  stepNumber,
   promptText,
-  responseText,
 }: {
+  stepNumber: number
   promptText: string | null | undefined
-  responseText?: string | null
 }) {
-  const responsePreview = responseText?.trim()
+  const promptPreview = promptText?.trim()
 
   return (
-    <div className="pointer-events-none absolute left-0 top-[calc(100%+8px)] z-50 hidden w-[min(440px,calc(100vw-48px))] border border-surface-800 bg-surface-950 p-3 text-left text-white shadow-[0_24px_60px_rgba(0,0,0,0.28)] group-hover/fork-preview:block group-focus-within/fork-preview:block">
-      <div className="font-mono text-[10px] font-bold uppercase tracking-[0.14em] text-[#2bd15f]">
-        Original text preview
+    <div
+      aria-label="Original text preview"
+      className="pointer-events-auto absolute bottom-[calc(100%+10px)] left-3 z-[100] hidden max-h-60 w-[min(540px,calc(100vw-56px))] overflow-y-auto border border-[#07551f] bg-white p-3 text-left text-surface-900 shadow-[0_18px_44px_rgba(7,85,31,0.22)] group-hover/fork-preview:block group-focus-within/fork-preview:block"
+    >
+      <div className="font-mono text-[10px] font-bold uppercase tracking-[0.14em] text-[#07551f]">
+        Prompt for Response {String(stepNumber).padStart(2, '0')}
       </div>
-      <div className="mt-2 grid gap-2 text-xs leading-5">
-        <div>
-          <div className="font-mono text-[10px] uppercase tracking-[0.12em] text-surface-400">Prompt</div>
-          <p className="mt-1 text-surface-100">
-            {compactForkText(promptText, 'No prompt text captured for this response.', 260)}
-          </p>
-        </div>
-        <div className="border-t border-surface-800 pt-2">
-          <div className="font-mono text-[10px] uppercase tracking-[0.12em] text-surface-400">Response</div>
-          <p className="mt-1 text-surface-100">
-            {responsePreview
-              ? compactForkText(responsePreview, 'Response package captured', 260)
-              : 'Open the source path for the full verbatim response package.'}
-          </p>
-        </div>
-      </div>
+      <p className="mt-2 whitespace-pre-wrap text-xs font-semibold leading-5 text-surface-700">
+        {promptPreview || 'No prompt text captured for this response.'}
+      </p>
     </div>
   )
 }
@@ -159,7 +149,7 @@ function ForkLineageSegmentCard({
       <div className="mt-1 text-xs leading-5">
         {compactForkText(segment.responseText, 'Response package captured', 92)}
       </div>
-      <OriginalTextPreview promptText={segment.promptText} responseText={segment.responseText} />
+      <ResponsePromptTooltip stepNumber={segment.stepNumber} promptText={segment.promptText} />
     </div>
   )
 }
@@ -396,7 +386,7 @@ function ProjectForkInheritedPathBand({
             )}
           </div>
           {originalContinuationSegments.length > 0 && (
-            <div className="mt-4 border-t border-surface-200 pt-3">
+            <div className="mt-4 border-t border-surface-200 pt-3" aria-label="Source continuation after fork point">
               <div className="font-mono text-[10px] uppercase tracking-[0.14em] text-surface-400">
                 Muted source continuation
               </div>
@@ -477,14 +467,6 @@ function ProjectForkInheritedPathBand({
             </div>
           ))}
 
-          {originalContinuationSegments.length > 0 && (
-            <div
-              className="border border-dashed border-surface-200 bg-surface-50 px-3 py-2 text-xs leading-5 text-surface-500"
-              style={{ gridColumn: 3, gridRow: forkPointGridRow + visibleContinuationSteps.length }}
-            >
-              Source continuation after fork point stays muted: original responses after {forkPointLabel} remain on the source side and do not continue this fork.
-            </div>
-          )}
         </div>
       </div>
     </div>
@@ -614,7 +596,7 @@ function MobileForkNetworkRow({
         <div className="mt-1 text-xs leading-5 text-surface-600">
           {compactForkText(step.responseText, 'Response package captured', 92)}
         </div>
-        <OriginalTextPreview promptText={step.promptText} responseText={step.responseText} />
+        <ResponsePromptTooltip stepNumber={step.stepNumber} promptText={step.promptText} />
       </div>
 
       {hasForks ? (
@@ -669,7 +651,7 @@ function ForkNetworkRow({
         <div className="mt-1 text-xs leading-5">
           {compactForkText(step.responseText, 'Response package captured', 82)}
         </div>
-        <OriginalTextPreview promptText={step.promptText} responseText={step.responseText} />
+        <ResponsePromptTooltip stepNumber={step.stepNumber} promptText={step.promptText} />
       </div>
 
       <div className="relative" aria-hidden="true">

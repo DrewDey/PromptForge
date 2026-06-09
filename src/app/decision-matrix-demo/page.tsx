@@ -1,8 +1,6 @@
-import fs from 'node:fs'
-import path from 'node:path'
 import type { ReactNode } from 'react'
 import Link from 'next/link'
-import { ExternalLink, FileCode2, GitBranch } from 'lucide-react'
+import { ExternalLink } from 'lucide-react'
 import CopyButton from '@/app/prompt/[id]/CopyButton'
 import ProjectEngagementBar from '@/components/ProjectEngagementBar'
 import ProjectCommunityPanel from '@/components/ProjectCommunityPanel'
@@ -26,17 +24,6 @@ export const metadata = buildPathDetailMetadata({
   description: pageDescription,
 })
 
-function getModelResponse() {
-  try {
-    return fs.readFileSync(
-      path.join(process.cwd(), 'public/artifacts/decision-matrix-gemini-flash-oneshot.html'),
-      'utf8',
-    )
-  } catch {
-    return 'Artifact capture pending. The decision matrix HTML response has not been saved yet.'
-  }
-}
-
 function ArtifactFrame() {
   return (
     <div
@@ -46,7 +33,7 @@ function ArtifactFrame() {
       <div className="flex flex-wrap items-center justify-between gap-3 border-b border-surface-800 bg-surface-900 px-4 py-3 text-white">
         <div className="min-w-0">
           <div className="text-[10px] font-mono uppercase tracking-[0.16em] text-brand-orange">
-            Mounted response artifact
+            Current artifact
           </div>
           <div className="truncate text-sm font-semibold">Interactive decision matrix</div>
         </div>
@@ -72,18 +59,12 @@ function ArtifactFrame() {
 
 function RunSummary() {
   return (
-    <div className="grid gap-3 text-sm sm:grid-cols-3">
+    <div className="grid gap-3 text-sm sm:grid-cols-2">
       <div className="border border-surface-200 bg-white px-4 py-3">
         <div className="font-mono text-[10px] uppercase tracking-[0.16em] text-surface-500">
           Model
         </div>
         <div className="mt-1 font-semibold text-surface-900">Gemini Flash</div>
-      </div>
-      <div className="border border-surface-200 bg-white px-4 py-3">
-        <div className="font-mono text-[10px] uppercase tracking-[0.16em] text-surface-500">
-          Run type
-        </div>
-        <div className="mt-1 font-semibold text-surface-900">One-shot HTML artifact</div>
       </div>
       <div className="border border-surface-200 bg-white px-4 py-3">
         <div className="font-mono text-[10px] uppercase tracking-[0.16em] text-surface-500">
@@ -95,19 +76,16 @@ function RunSummary() {
   )
 }
 
-function ResponsePackage({ modelResponse }: { modelResponse: string }) {
+function ResponsePackage() {
   return (
     <details className="group border border-surface-200 bg-white">
       <summary className="flex cursor-pointer list-none items-center justify-between gap-4 p-4">
         <span className="min-w-0">
           <span className="block font-mono text-[10px] uppercase tracking-[0.16em] text-surface-500">
-            Exact response collapsed
+            Model response
           </span>
           <span className="mt-1 block text-base font-black text-surface-900">
-            Verbatim Gemini response package
-          </span>
-          <span className="mt-1 block text-sm leading-6 text-surface-600">
-            The generated HTML is mounted above and kept collapsed here for inspection.
+            Decision matrix result
           </span>
         </span>
         <span className="shrink-0 border border-surface-300 bg-white px-3 py-2 font-mono text-[10px] uppercase tracking-[0.12em] text-surface-700">
@@ -119,8 +97,8 @@ function ResponsePackage({ modelResponse }: { modelResponse: string }) {
         <div className="space-y-4 text-sm leading-7 text-surface-900">
           <p>{responseIntro}</p>
           <p>
-            Open the generated HTML file in any browser to score options, adjust criteria, see weighted totals, identify
-            the leading option, and export the matrix as CSV.
+            Open the artifact to score options, adjust criteria, see weighted totals, identify the leading option, and
+            export the matrix as CSV.
           </p>
           <a
             href={artifactPath}
@@ -132,52 +110,6 @@ function ResponsePackage({ modelResponse }: { modelResponse: string }) {
             <ExternalLink className="h-3.5 w-3.5" />
           </a>
         </div>
-
-        <div className="border border-surface-200 bg-surface-50 px-4 py-3">
-          <div className="flex items-center gap-2 font-mono text-[11px] font-bold text-surface-700">
-            <FileCode2 className="h-4 w-4 text-brand-blue" />
-            decision_matrix.html
-          </div>
-        </div>
-
-        <details className="group/code border border-surface-200 bg-white">
-          <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-4 py-3">
-            <span className="min-w-0">
-              <span className="flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.16em] text-surface-500">
-                <FileCode2 className="h-3.5 w-3.5 text-brand-blue" />
-                Code block
-              </span>
-              <span className="mt-1 block text-sm font-bold text-surface-900">
-                Full HTML response
-              </span>
-              <span className="mt-1 block text-xs leading-5 text-surface-500">
-                Collapsed because the generated file is long.
-              </span>
-            </span>
-            <span className="shrink-0 border border-surface-300 px-2 py-1 font-mono text-[10px] uppercase tracking-[0.12em] text-surface-600">
-              Open
-            </span>
-          </summary>
-          <div className="flex items-center justify-between gap-3 border-t border-surface-800 bg-surface-900 px-4 py-3">
-            <span className="min-w-0 truncate font-mono text-[10px] uppercase tracking-[0.16em] text-surface-400">
-              Full self-contained HTML
-            </span>
-            <CopyButton text={modelResponse} variant="dark" label="Copy code" visibleLabel="Copy" />
-          </div>
-          <pre className="max-h-[460px] overflow-auto bg-surface-900 p-4 text-xs leading-5 text-surface-100">
-            <code>{modelResponse}</code>
-          </pre>
-        </details>
-
-        <a
-          href={sourceRunUrl}
-          target="_blank"
-          rel="noreferrer"
-          className="flex items-center justify-between gap-3 border border-surface-200 bg-white px-4 py-3 text-sm font-semibold text-brand-blue hover:text-brand-blue-dark"
-        >
-          Gemini source run
-          <ExternalLink className="h-3.5 w-3.5" />
-        </a>
       </div>
     </details>
   )
@@ -210,15 +142,11 @@ function PipeNode({
   )
 }
 
-function BuildPath({ modelResponse }: { modelResponse: string }) {
+function BuildPath() {
   return (
     <section className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
       <div className="mb-7 border-l-4 border-[#2bd15f] pl-4">
-        <div className="flex items-center gap-2 text-[11px] font-mono uppercase tracking-[0.16em] text-surface-500">
-          <GitBranch className="h-3.5 w-3.5 text-[#128135]" />
-          Prompt path
-        </div>
-        <h2 className="mt-1 text-2xl font-black text-surface-900">The one-shot run, locked together.</h2>
+        <h2 className="text-2xl font-black text-surface-900">Build path</h2>
       </div>
 
       <div className="max-w-5xl">
@@ -232,9 +160,20 @@ function BuildPath({ modelResponse }: { modelResponse: string }) {
             </div>
           </PipeNode>
 
-          <PipeNode eyebrow="02 · Response" title="Response package" terminal>
-            <ResponsePackage modelResponse={modelResponse} />
+          <PipeNode eyebrow="02 · Response" title="Response" terminal>
+            <ResponsePackage />
           </PipeNode>
+        </div>
+        <div className="mt-8 border border-surface-200 bg-white p-4">
+          <a
+            href={sourceRunUrl}
+            target="_blank"
+            rel="noreferrer"
+            className="flex items-center justify-between gap-3 text-sm font-semibold text-brand-blue hover:text-brand-blue-dark"
+          >
+            Source run
+            <ExternalLink className="h-4 w-4" />
+          </a>
         </div>
       </div>
     </section>
@@ -242,8 +181,6 @@ function BuildPath({ modelResponse }: { modelResponse: string }) {
 }
 
 export default function DecisionMatrixDemoPage() {
-  const modelResponse = getModelResponse()
-
   return (
     <main className="min-h-screen bg-surface-50 text-surface-900">
       <section className="border-b border-surface-200 bg-white text-surface-900">
@@ -274,7 +211,7 @@ export default function DecisionMatrixDemoPage() {
         </div>
       </section>
 
-      <BuildPath modelResponse={modelResponse} />
+      <BuildPath />
       <ProjectCommunityPanel projectId={projectId} />
     </main>
   )

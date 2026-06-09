@@ -12,8 +12,6 @@ import sourceRunPackage from '../../../seed-runs/swish-city-claude-opus-4-8-sour
 const project = SWISH_CITY_SHOWCASE_PROJECT
 const projectId = SWISH_CITY_PROJECT_ID
 const sourceRunUrl = sourceRunPackage.source_url || project.sourceUrl
-const pathforgeSourceRunUrl = sourceRunPackage.pathforge_submission_url
-const sourceRunId = sourceRunPackage.pathforge_pending_id
 const capturedAt = 'June 3, 2026'
 
 type SwishCitySeedStep = {
@@ -77,18 +75,12 @@ function toStep(step: SwishCitySeedStep): SourceRunShowcaseStep {
 
 function RunSummary() {
   return (
-    <div className="grid gap-3 text-sm sm:grid-cols-3">
+    <div className="grid gap-3 text-sm sm:grid-cols-2">
       <div className="border border-surface-200 bg-white px-4 py-3">
         <div className="font-mono text-[10px] uppercase tracking-[0.16em] text-surface-500">
           Model
         </div>
         <div className="mt-1 font-semibold text-surface-900">{project.modelUsed}</div>
-      </div>
-      <div className="border border-surface-200 bg-white px-4 py-3">
-        <div className="font-mono text-[10px] uppercase tracking-[0.16em] text-surface-500">
-          Run type
-        </div>
-        <div className="mt-1 font-semibold text-surface-900">3 prompts · final artifact</div>
       </div>
       <div className="border border-surface-200 bg-white px-4 py-3">
         <div className="font-mono text-[10px] uppercase tracking-[0.16em] text-surface-500">
@@ -141,15 +133,12 @@ export default async function SwishCityTimingHoopsDemoPage() {
 
       <SourceRunShowcase
         sourceRunUrl={sourceRunUrl}
-        pathforgeSourceRunUrl={pathforgeSourceRunUrl}
-        sourceRunId={sourceRunId}
         projectId={projectId}
         projectTitle={project.title}
         providerName="Claude"
         steps={steps}
         forkNetwork={forkNetwork}
         defaultStepNumber={3}
-        verificationNotes={sourceRunPackage.verification_notes}
       />
 
       <ProjectCommunityPanel projectId={projectId} />

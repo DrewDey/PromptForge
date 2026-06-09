@@ -57,23 +57,6 @@ function getProviderName(sourceRun: SourceRunPackage, project: PreparedShowcaseP
   return 'AI'
 }
 
-function modelSettingsText(settings: SourceRunPackage['model_settings']) {
-  if (!settings) return null
-  if (typeof settings === 'string') return settings
-  return Object.entries(settings)
-    .map(([key, value]) => `${key}: ${value}`)
-    .join('; ')
-}
-
-function verificationNotesText(notes: SourceRunPackage['verification_notes']) {
-  if (Array.isArray(notes)) return notes.join('\n')
-  return notes
-}
-
-function sourceRunId(sourceRun: SourceRunPackage, project: PreparedShowcaseProject) {
-  return sourceRun.source_run_submission_id ?? sourceRun.pathforge_pending_id ?? project.sourceRunId
-}
-
 function defaultStepNumber(sourceRun: SourceRunPackage) {
   const finalPath = sourceRun.final_artifact_path
   const defaultStep = sourceRun.steps.find((step) => (
@@ -178,23 +161,13 @@ function RunSummary({
   project: PreparedShowcaseProject
   capturedAt: string
 }) {
-  const artifactCount = sourceRun.steps.filter((step) => step.artifact_version_path).length
-
   return (
-    <div className="grid gap-3 text-sm sm:grid-cols-3">
+    <div className="grid gap-3 text-sm sm:grid-cols-2">
       <div className="border border-surface-200 bg-white px-4 py-3">
         <div className="font-mono text-[10px] uppercase tracking-[0.16em] text-surface-500">
           Model
         </div>
         <div className="mt-1 font-semibold text-surface-900">{sourceRun.model ?? project.modelUsed}</div>
-      </div>
-      <div className="border border-surface-200 bg-white px-4 py-3">
-        <div className="font-mono text-[10px] uppercase tracking-[0.16em] text-surface-500">
-          Run type
-        </div>
-        <div className="mt-1 font-semibold text-surface-900">
-          {sourceRun.steps.length} prompts · {artifactCount} artifact packages
-        </div>
       </div>
       <div className="border border-surface-200 bg-white px-4 py-3">
         <div className="font-mono text-[10px] uppercase tracking-[0.16em] text-surface-500">
@@ -220,7 +193,6 @@ export default async function PreparedSourceRunPage({
   const sourceRun = sourceRunPackage
   const providerName = getProviderName(sourceRun, project)
   const sourceUrl = sourceRun.source_url || project.sourceUrl
-  const settingsText = modelSettingsText(sourceRun.model_settings)
   const steps = sourceRun.steps.map((step) => toShowcaseStep(step, sourceRun, project))
   const forkNetwork = await getApprovedProjectForks(project.id)
 
@@ -245,16 +217,6 @@ export default async function PreparedSourceRunPage({
               <p className="mt-4 max-w-2xl text-sm leading-6 text-surface-600">
                 {project.description}
               </p>
-              <div className="mt-4 flex flex-wrap gap-2 text-xs font-semibold text-surface-600">
-                <span className="border border-surface-200 bg-surface-50 px-3 py-1.5">
-                  Source run {sourceRunId(sourceRun, project)}
-                </span>
-                {settingsText && (
-                  <span className="max-w-3xl border border-surface-200 bg-surface-50 px-3 py-1.5">
-                    {settingsText}
-                  </span>
-                )}
-              </div>
             </div>
             <RunSummary sourceRun={sourceRun} project={project} capturedAt={capturedAt} />
           </div>
@@ -265,12 +227,9 @@ export default async function PreparedSourceRunPage({
 
       <SourceRunShowcase
         sourceRunUrl={sourceUrl}
-        pathforgeSourceRunUrl={sourceRun.pathforge_submission_url}
-        sourceRunId={sourceRunId(sourceRun, project)}
         projectId={project.id}
         projectTitle={project.title}
         providerName={providerName}
-        verificationNotes={verificationNotesText(sourceRun.verification_notes)}
         steps={steps}
         forkNetwork={forkNetwork}
         defaultStepNumber={defaultStepNumber(sourceRun)}

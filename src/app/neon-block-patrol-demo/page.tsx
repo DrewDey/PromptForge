@@ -62,18 +62,12 @@ function visibleResponseText(step: RawSourceRunStep) {
 
 function RunSummary() {
   return (
-    <div className="grid gap-3 text-sm sm:grid-cols-3">
+    <div className="grid gap-3 text-sm sm:grid-cols-2">
       <div className="border border-surface-200 bg-white px-4 py-3">
         <div className="font-mono text-[10px] uppercase tracking-[0.16em] text-surface-500">
           Model
         </div>
         <div className="mt-1 font-semibold text-surface-900">{project.modelUsed || sourceRunPackage.model}</div>
-      </div>
-      <div className="border border-surface-200 bg-white px-4 py-3">
-        <div className="font-mono text-[10px] uppercase tracking-[0.16em] text-surface-500">
-          Run type
-        </div>
-        <div className="mt-1 font-semibold text-surface-900">5 prompts · 3 artifact packages</div>
       </div>
       <div className="border border-surface-200 bg-white px-4 py-3">
         <div className="font-mono text-[10px] uppercase tracking-[0.16em] text-surface-500">
@@ -150,15 +144,12 @@ export default async function NeonBlockPatrolDemoPage() {
 
       <SourceRunShowcase
         sourceRunUrl={sourceRunUrl}
-        pathforgeSourceRunUrl={sourceRunPackage.pathforge_submission_url}
-        sourceRunId={sourceRunPackage.source_run_submission_id}
         projectId={projectId}
         projectTitle={project.title}
         providerName="ChatGPT"
         steps={steps}
         defaultStepNumber={5}
         forkNetwork={forkNetwork}
-        verificationNotes={sourceRunPackage.verification_notes}
       />
 
       <ProjectCommunityPanel projectId={projectId} />

@@ -613,21 +613,26 @@ function sharedShowcaseRoutes() {
 
 const sharedComponent = 'src/components/SourceRunShowcase.tsx'
 const sharedComponentContent = read(sharedComponent)
-mustInclude(sharedComponent, sharedComponentContent, 'packages.length > 0', 'shared showcase must render an artifact selector when artifacts exist')
+mustInclude(sharedComponent, sharedComponentContent, 'aria-pressed={selected}', 'shared showcase must render a selected state on response artifact controls')
+mustInclude(sharedComponent, sharedComponentContent, 'onClick={() => onSelect?.(detailPackage.id)}', 'shared showcase must let each response mount its artifact above')
 mustInclude(sharedComponent, sharedComponentContent, 'setSelectedPackageId', 'shared showcase must keep artifact package selection state')
 mustInclude(sharedComponent, sharedComponentContent, 'defaultStepNumber', 'shared showcase must support final-artifact default selection')
 mustInclude(sharedComponent, sharedComponentContent, 'artifactVersions?: SourceRunShowcaseArtifactVersion[]', 'shared showcase must allow multiple artifact versions per response package')
 mustInclude(sharedComponent, sharedComponentContent, 'isDefaultArtifact', 'shared showcase must support an explicit default artifact version')
 mustInclude(sharedComponent, sharedComponentContent, '<ExactResponseBlock', 'shared showcase must render verbatim response text for each response package')
-mustInclude(sharedComponent, sharedComponentContent, '<ArtifactCodeBlock', 'shared showcase must render long generated artifacts as collapsible code')
-mustInclude(sharedComponent, sharedComponentContent, '<SourceLink', 'shared showcase must expose the full provider source-run link in each response package')
-mustInclude(sharedComponent, sharedComponentContent, 'pathforgeSourceRunUrl', 'shared showcase must allow a PathForge source-run record link')
-mustInclude(sharedComponent, sharedComponentContent, 'Verbatim artifact', 'shared showcase must preserve long generated code as collapsible artifact text')
+mustInclude(sharedComponent, sharedComponentContent, 'setSelectedPackageId', 'shared showcase must let response cards mount their artifact above')
+mustInclude(sharedComponent, sharedComponentContent, 'Source run', 'shared showcase must expose one provider source-run link at the bottom')
+mustNotInclude(sharedComponent, sharedComponentContent, '<ArtifactCodeBlock', 'shared showcase must not dump generated HTML into the public response path')
+mustNotInclude(sharedComponent, sharedComponentContent, '<SourceLink', 'shared showcase must not repeat provider links inside every response package')
+mustNotInclude(sharedComponent, sharedComponentContent, 'pathforgeSourceRunUrl', 'shared showcase must not expose admin source-run record links publicly')
+mustNotInclude(sharedComponent, sharedComponentContent, 'sourceRunId', 'shared showcase must not expose internal source-run ids publicly')
+mustNotInclude(sharedComponent, sharedComponentContent, 'verificationNotes', 'shared showcase must not expose internal verification notes publicly')
+mustNotInclude(sharedComponent, sharedComponentContent, 'Verbatim artifact', 'shared showcase must not label generated code as public page content')
 mustInclude(sharedComponent, sharedComponentContent, 'data-source-run-node={variant}', 'shared showcase must label prompt and response nodes for layout verification')
 mustInclude(sharedComponent, sharedComponentContent, 'variant="prompt"', 'shared showcase must render prompts as their own pipe nodes')
 mustInclude(sharedComponent, sharedComponentContent, 'variant="response"', 'shared showcase must render response packages as their own pipe nodes')
 mustNotInclude(sharedComponent, sharedComponentContent, 'ProjectEngagementBar', 'shared showcase should not own page-shell engagement controls')
-mustComeBefore(sharedComponent, sharedComponentContent, '<ArtifactFrame', 'Source-run path', 'shared showcase must mount the artifact before the prompt/response path')
+mustComeBefore(sharedComponent, sharedComponentContent, '<ArtifactFrame', 'Build path', 'shared showcase must mount the artifact before the prompt/response path')
 mustComeBefore(sharedComponent, sharedComponentContent, '<PromptText text={step.prompt}', '<ResponsePackageCard', 'shared showcase must render each prompt before its response package')
 mustComeBefore(sharedComponent, sharedComponentContent, 'variant="prompt"', 'variant="response"', 'shared showcase must connect prompt and response as separate sequential pipe nodes')
 
@@ -726,10 +731,9 @@ for (const project of sourceRunProjects) {
     failures.push(`${project.route}: defaultStepNumber must point to final artifact response step ${finalStepNumber}`)
   }
 
-  if (pkg.pathforge_submission_url || pkg.pathforge_pending_id || pkg.source_run_submission_id) {
-    mustInclude(project.route, routeShellContent, 'pathforgeSourceRunUrl=', `${project.name} must expose the PathForge source-run record link`)
-    mustInclude(project.route, routeShellContent, 'sourceRunId=', `${project.name} must expose the PathForge source-run id`)
-  }
+  mustNotInclude(project.route, routeShellContent, 'pathforgeSourceRunUrl=', `${project.name} must not expose the PathForge admin source-run record link publicly`)
+  mustNotInclude(project.route, routeShellContent, 'sourceRunId=', `${project.name} must not expose internal source-run ids publicly`)
+  mustNotInclude(project.route, routeShellContent, 'verificationNotes=', `${project.name} must not expose internal verification notes publicly`)
 
   for (const step of pkg.steps) {
     const stepLabel = `${project.packagePath} step ${step.step_number ?? '?'}`

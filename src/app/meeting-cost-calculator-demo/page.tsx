@@ -77,18 +77,12 @@ function toStep(step: MeetingCostSeedStep): SourceRunShowcaseStep {
 
 function RunSummary({ sourceRun }: { sourceRun: MeetingCostSeedRun }) {
   return (
-    <div className="grid gap-3 text-sm sm:grid-cols-3">
+    <div className="grid gap-3 text-sm sm:grid-cols-2">
       <div className="border border-surface-200 bg-white px-4 py-3">
         <div className="font-mono text-[10px] uppercase tracking-[0.16em] text-surface-500">
           Model
         </div>
         <div className="mt-1 font-semibold text-surface-900">{sourceRun.model}</div>
-      </div>
-      <div className="border border-surface-200 bg-white px-4 py-3">
-        <div className="font-mono text-[10px] uppercase tracking-[0.16em] text-surface-500">
-          Run type
-        </div>
-        <div className="mt-1 font-semibold text-surface-900">1 prompt · final artifact</div>
       </div>
       <div className="border border-surface-200 bg-white px-4 py-3">
         <div className="font-mono text-[10px] uppercase tracking-[0.16em] text-surface-500">
@@ -127,14 +121,6 @@ export default async function MeetingCostCalculatorDemoPage() {
                 A one-prompt ChatGPT source run produced a polished browser calculator that makes meeting cost and
                 wasted time obvious, then exports a simple summary.
               </p>
-              <div className="mt-4 flex flex-wrap gap-2 text-xs font-semibold text-surface-600">
-                <span className="border border-surface-200 bg-surface-50 px-3 py-1.5">
-                  Source run {sourceRun.source_run_submission_id}
-                </span>
-                <span className="border border-surface-200 bg-surface-50 px-3 py-1.5">
-                  {sourceRun.model_settings}
-                </span>
-              </div>
             </div>
             <RunSummary sourceRun={sourceRun} />
           </div>
@@ -145,12 +131,9 @@ export default async function MeetingCostCalculatorDemoPage() {
 
       <SourceRunShowcase
         sourceRunUrl={sourceRun.source_url}
-        pathforgeSourceRunUrl={sourceRun.pathforge_submission_url}
-        sourceRunId={sourceRun.source_run_submission_id}
         projectId={projectId}
         projectTitle={project.title}
         providerName="ChatGPT"
-        verificationNotes={sourceRun.verification_notes}
         steps={steps}
         forkNetwork={forkNetwork}
         defaultStepNumber={1}

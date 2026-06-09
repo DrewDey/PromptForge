@@ -82,18 +82,12 @@ function toStep({
 
 function RunSummary() {
   return (
-    <div className="grid gap-3 text-sm sm:grid-cols-3">
+    <div className="grid gap-3 text-sm sm:grid-cols-2">
       <div className="border border-surface-200 bg-white px-4 py-3">
         <div className="font-mono text-[10px] uppercase tracking-[0.16em] text-surface-500">
           Model
         </div>
         <div className="mt-1 font-semibold text-surface-900">{project.modelUsed}</div>
-      </div>
-      <div className="border border-surface-200 bg-white px-4 py-3">
-        <div className="font-mono text-[10px] uppercase tracking-[0.16em] text-surface-500">
-          Run type
-        </div>
-        <div className="mt-1 font-semibold text-surface-900">4 prompts · iterative build</div>
       </div>
       <div className="border border-surface-200 bg-white px-4 py-3">
         <div className="font-mono text-[10px] uppercase tracking-[0.16em] text-surface-500">
@@ -162,7 +156,6 @@ export default async function PomodoroTimerDemoPage() {
         steps={steps}
         forkNetwork={forkNetwork}
         defaultStepNumber={4}
-        verificationNotes="Captured from a real ChatGPT GPT 5.5 Instant run. The final public artifact path is selectable separately because it differs from the captured step 4 file."
       />
 
       <ProjectCommunityPanel projectId={projectId} />

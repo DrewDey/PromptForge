@@ -4,6 +4,7 @@ import Link from 'next/link'
 import ProjectEngagementBar from '@/components/ProjectEngagementBar'
 import ProjectCommunityPanel from '@/components/ProjectCommunityPanel'
 import SourceRunShowcase, { type SourceRunShowcaseStep } from '@/components/SourceRunShowcase'
+import { buildPreparedSourceRunDetailMetadata } from '@/lib/build-path-metadata'
 import { getApprovedProjectForks } from '@/lib/data'
 import { POMODORO_TIMER_SHOWCASE_PROJECT } from '@/lib/prepared-showcase-projects'
 
@@ -11,6 +12,8 @@ const project = POMODORO_TIMER_SHOWCASE_PROJECT
 const projectId = project.id
 const sourceRunUrl = project.sourceUrl
 const capturedAt = 'June 2, 2026'
+
+export const metadata = buildPreparedSourceRunDetailMetadata(project)
 
 function readArtifact(fileName: string, fallback: string) {
   try {

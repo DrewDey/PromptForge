@@ -7,6 +7,7 @@ import SourceRunShowcase, {
   type SourceRunShowcaseArtifactVersion,
   type SourceRunShowcaseStep,
 } from '@/components/SourceRunShowcase'
+import { buildPreparedSourceRunDetailMetadata } from '@/lib/build-path-metadata'
 import { getApprovedProjectForks } from '@/lib/data'
 import { HP_10BII_SHOWCASE_PROJECT } from '@/lib/prepared-showcase-projects'
 import sourceRunPackage from '../../../seed-runs/hp-10bii-financial-calculator-claude-opus-48.json'
@@ -15,6 +16,8 @@ const project = HP_10BII_SHOWCASE_PROJECT
 const projectId = project.id
 const sourceRunUrl = project.sourceUrl
 const capturedAt = 'June 1, 2026'
+
+export const metadata = buildPreparedSourceRunDetailMetadata(project)
 
 type Hp10BiiSeedStep = {
   step_number: number

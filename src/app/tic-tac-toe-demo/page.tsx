@@ -6,7 +6,9 @@ import { ExternalLink, FileCode2, GitBranch } from 'lucide-react'
 import CopyButton from '@/app/prompt/[id]/CopyButton'
 import ProjectCommunityPanel from '@/components/ProjectCommunityPanel'
 import ProjectEngagementBar from '@/components/ProjectEngagementBar'
+import { buildPreparedSourceRunDetailMetadata } from '@/lib/build-path-metadata'
 import { TIC_TAC_TOE_PROJECT_ID } from '@/lib/featured-projects'
+import { TIC_TAC_TOE_SHOWCASE_PROJECT } from '@/lib/prepared-showcase-projects'
 
 const projectId = TIC_TAC_TOE_PROJECT_ID
 const prompt = 'Make me a playable Tic-Tac-Toe game as a single self-contained HTML file.'
@@ -17,6 +19,8 @@ const responseIntro =
   'Here is a complete, self-contained Tic-Tac-Toe game. It includes the HTML structure, CSS styling for a clean look, and the JavaScript logic to handle turns, win conditions, and resets.'
 const responseInstruction =
   'Save the code below as an .html file (e.g., tictactoe.html) and open it in any web browser to play.'
+
+export const metadata = buildPreparedSourceRunDetailMetadata(TIC_TAC_TOE_SHOWCASE_PROJECT)
 
 function getModelResponse() {
   try {

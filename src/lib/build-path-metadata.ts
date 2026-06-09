@@ -6,6 +6,8 @@ type BuildPathMetadataSource = {
 }
 
 const titleSuffix = 'PathForge Build Path'
+const promptResultContextSentence =
+  'The build path preserves the original prompt and result context.'
 
 function cleanTitle(title: string) {
   return title.trim().replace(/[.!?]+$/, '')
@@ -23,4 +25,11 @@ export function buildPathDetailMetadata(source: BuildPathMetadataSource): Metada
     title,
     description,
   }
+}
+
+export function buildPreparedSourceRunDetailMetadata(source: BuildPathMetadataSource): Metadata {
+  return buildPathDetailMetadata({
+    title: source.title,
+    description: `${source.description} ${promptResultContextSentence}`,
+  })
 }

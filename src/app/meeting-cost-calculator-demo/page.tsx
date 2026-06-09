@@ -4,6 +4,7 @@ import Link from 'next/link'
 import ProjectEngagementBar from '@/components/ProjectEngagementBar'
 import ProjectCommunityPanel from '@/components/ProjectCommunityPanel'
 import SourceRunShowcase, { type SourceRunShowcaseStep } from '@/components/SourceRunShowcase'
+import { buildPreparedSourceRunDetailMetadata } from '@/lib/build-path-metadata'
 import { getApprovedProjectForks } from '@/lib/data'
 import { MEETING_COST_PROJECT_ID } from '@/lib/featured-projects'
 import { MEETING_COST_SHOWCASE_PROJECT } from '@/lib/prepared-showcase-projects'
@@ -31,6 +32,8 @@ type MeetingCostSeedRun = {
 const project = MEETING_COST_SHOWCASE_PROJECT
 const projectId = MEETING_COST_PROJECT_ID
 const capturedAt = 'June 3, 2026'
+
+export const metadata = buildPreparedSourceRunDetailMetadata(project)
 
 function readArtifact(fileName: string, fallback: string) {
   try {

@@ -4,6 +4,7 @@ import Link from 'next/link'
 import ProjectEngagementBar from '@/components/ProjectEngagementBar'
 import ProjectCommunityPanel from '@/components/ProjectCommunityPanel'
 import SourceRunShowcase, { type SourceRunShowcaseStep } from '@/components/SourceRunShowcase'
+import { buildPreparedSourceRunDetailMetadata } from '@/lib/build-path-metadata'
 import { getApprovedProjectForks } from '@/lib/data'
 import { WEEKEND_CHECKLIST_PROJECT_ID } from '@/lib/featured-projects'
 import { WEEKEND_CHECKLIST_SHOWCASE_PROJECT } from '@/lib/prepared-showcase-projects'
@@ -32,6 +33,8 @@ type WeekendPlanChecklistSeedRun = {
 const project = WEEKEND_CHECKLIST_SHOWCASE_PROJECT
 const projectId = WEEKEND_CHECKLIST_PROJECT_ID
 const capturedAt = 'June 3, 2026'
+
+export const metadata = buildPreparedSourceRunDetailMetadata(project)
 
 function readArtifactFile(fileName: string, fallback: string) {
   try {

@@ -137,6 +137,10 @@ export function getProjectRouteOverride(projectId: string) {
   return PROJECT_ROUTE_OVERRIDES[projectId] ?? null
 }
 
+export function getProjectRouteOverrideEntries() {
+  return Object.entries(PROJECT_ROUTE_OVERRIDES)
+}
+
 export function getProjectHref(project: Pick<Prompt | PromptWithRelations, 'id'>) {
   return PROJECT_ROUTE_OVERRIDES[project.id] ?? `/prompt/${project.id}`
 }

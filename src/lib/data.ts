@@ -116,6 +116,7 @@ const APPROVED_PROJECT_IDS = new Set([
   MICRO_DUNGEON_ROUTE_PROJECT_ID,
   BAKE_SALE_MARGIN_PROJECT_ID,
   STAR_MAP_SCAVENGER_PROJECT_ID,
+  DECISION_MATRIX_PROJECT_ID,
   SNAKE_PROJECT_ID,
   HP_10BII_PROJECT_ID,
   TIC_TAC_TOE_PROJECT_ID,
@@ -201,32 +202,7 @@ function normalizeProjectPresentation<T extends PromptWithRelations>(prompt: T):
     }
   }
 
-  if (prompt.id === SNAKE_PROJECT_ID) {
-    return {
-      ...prompt,
-      description:
-        'A first-taste browser Snake path with arrow-key movement, growing score pressure, collision rules, and a playable one-file arcade loop.',
-      result_content:
-        'A playable Snake game with grid movement, food pickups, score tracking, wall/self collision, quick restart, and a clean browser arcade feel.',
-    }
-  }
-
-  if (prompt.id !== DECISION_MATRIX_PROJECT_ID) return prompt
-
-  return {
-    ...prompt,
-    title: 'Interactive Decision Matrix - Gemini Flash One-Shot',
-    description:
-      'A working browser decision matrix for scoring options against weighted criteria, comparing totals, and exporting the result.',
-    content:
-      'This source run tests the same shape as the Snake seed: one normal prompt, one captured model response, and one working browser artifact. The finished tool lets a user edit options and criteria, weight each criterion, score every option, see the leading choice, and export the result as CSV.',
-    result_content:
-      'An editable decision matrix with option and criteria controls, weighted scoring, automatic winner highlighting, and CSV export.',
-    model_used: 'Gemini Flash',
-    model_recommendation: 'Gemini Flash',
-    tools_used: ['Gemini', 'Chrome', 'HTML', 'Browser'],
-    tags: ['decision matrix', 'productivity', 'html', 'csv export', 'one-shot', 'playable artifact'],
-  }
+  return prompt
 }
 
 function preparedStepToPromptStep(step: PreparedShowcaseStep, project: PreparedShowcaseProject) {

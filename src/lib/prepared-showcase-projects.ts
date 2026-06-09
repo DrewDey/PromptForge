@@ -1,4 +1,5 @@
 import {
+  DECISION_MATRIX_PROJECT_ID,
   FLASHCARD_CRAM_PROJECT_ID,
   FOLLOW_UP_CRM_PROJECT_ID,
   HP_10BII_PROJECT_ID,
@@ -9,6 +10,7 @@ import {
   POMODORO_TIMER_PROJECT_ID,
   PUZZLE_BOX_ESCAPE_PROJECT_ID,
   REACTION_TRAINER_PROJECT_ID,
+  SNAKE_PROJECT_ID,
   SWISH_CITY_PROJECT_ID,
   TIC_TAC_TOE_PROJECT_ID,
   TRIP_PACKING_PROJECT_ID,
@@ -71,6 +73,79 @@ function buildPreparedSteps(projectId: string, steps: PreparedStepInput[]): Prep
     resultContent: '',
     description: step.description,
   }))
+}
+
+export const SNAKE_SHOWCASE_PROJECT: PreparedShowcaseProject = {
+  id: SNAKE_PROJECT_ID,
+  sourceRunId: '6a122064-6094-832a-9228-e239ce31e79b',
+  href: '/snake-demo',
+  title: 'Playable Snake Game',
+  description:
+    'Play a one-file browser Snake game with keyboard controls, scoring, restart, and a clean arcade loop generated from one ChatGPT prompt.',
+  content:
+    'PathForge Projects used ChatGPT for the simplest approved seed path: one normal user prompt asking for a playable Snake game as a single self-contained HTML file. The run produced a browser-playable artifact with the prompt, response package, source link, and artifact kept together on the public page.',
+  resultContent:
+    'Visitors get a playable Snake game mounted first, then the original one-sentence prompt and captured response package below it.',
+  categorySlug: 'personal',
+  mockCategoryId: 'cat-10',
+  difficulty: 'beginner',
+  modelUsed: 'Latest 5.5 / Extended Pro',
+  modelRecommendation: 'Latest 5.5 / Extended Pro',
+  toolsUsed: ['ChatGPT', 'GPT 5.5 Pro', 'HTML', 'Browser'],
+  tags: ['snake', 'game', 'arcade', 'html', 'one-shot', 'playable artifact', 'source-run'],
+  artifactPath: '/artifacts/snake-gpt55-pro-oneshot.html',
+  sourceUrl: 'https://chatgpt.com/c/6a122064-6094-832a-9228-e239ce31e79b',
+  authorDisplayName: 'PathForge Projects',
+  authorUsername: 'pathforge_projects',
+  createdAt: '2026-05-23T18:00:00.000Z',
+  updatedAt: '2026-05-24T16:15:00.000Z',
+  steps: [
+    {
+      id: `${SNAKE_PROJECT_ID}-step-1`,
+      stepNumber: 1,
+      title: 'One-sentence Snake game build',
+      content: 'Make me a playable Snake game as a single self-contained HTML file.',
+      resultContent: '',
+      description: 'One plain ChatGPT prompt that generated the playable browser game.',
+    },
+  ],
+}
+
+export const DECISION_MATRIX_SHOWCASE_PROJECT: PreparedShowcaseProject = {
+  id: DECISION_MATRIX_PROJECT_ID,
+  sourceRunId: 'ee3641c3-6137-4fa6-8fc3-4561af7cfcde',
+  href: '/decision-matrix-demo',
+  title: 'Interactive Decision Matrix',
+  description:
+    'Use a one-file browser decision matrix for scoring options, weighting criteria, ranking the best choice, and exporting results as CSV.',
+  content:
+    'Riley Park used Gemini Flash to test a practical one-shot browser utility. The source run produced an editable decision matrix with weighted criteria, scored options, automatic totals, a winner indicator, and CSV export.',
+  resultContent:
+    'Visitors can edit options and criteria, weight each criterion, score every option, see the leading choice, and export the result as CSV.',
+  categorySlug: 'productivity',
+  mockCategoryId: 'cat-7',
+  difficulty: 'beginner',
+  modelUsed: 'Gemini Flash',
+  modelRecommendation: 'Gemini Flash',
+  toolsUsed: ['Gemini', 'Chrome', 'HTML', 'Browser'],
+  tags: ['decision matrix', 'productivity', 'html', 'csv export', 'one-shot', 'source-run'],
+  artifactPath: '/artifacts/decision-matrix-gemini-flash-oneshot.html',
+  sourceUrl: 'https://gemini.google.com/app/f6b37685972b6868',
+  authorDisplayName: 'Riley Park',
+  authorUsername: 'RileyPark',
+  createdAt: '2026-05-28T00:00:00.000Z',
+  updatedAt: '2026-05-29T15:02:54.000Z',
+  steps: [
+    {
+      id: `${DECISION_MATRIX_PROJECT_ID}-step-1`,
+      stepNumber: 1,
+      title: 'Generate the decision matrix',
+      content:
+        'Make me a polished one-file browser decision matrix where I can score options, weight criteria, and export the result as CSV.',
+      resultContent: '',
+      description: 'One Gemini Flash prompt that generated the editable decision matrix artifact.',
+    },
+  ],
 }
 
 export const HP_10BII_SHOWCASE_PROJECT: PreparedShowcaseProject = {
@@ -955,6 +1030,8 @@ export const LANE_DEFENSE_SHOWCASE_PROJECT: PreparedShowcaseProject = {
 }
 
 export const PREPARED_SHOWCASE_PROJECTS = [
+  SNAKE_SHOWCASE_PROJECT,
+  DECISION_MATRIX_SHOWCASE_PROJECT,
   HP_10BII_SHOWCASE_PROJECT,
   TIC_TAC_TOE_SHOWCASE_PROJECT,
   POMODORO_TIMER_SHOWCASE_PROJECT,

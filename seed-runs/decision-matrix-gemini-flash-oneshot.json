@@ -3,7 +3,7 @@
   "slug": "decision-matrix-gemini-flash-oneshot",
   "description": "A polished one-file browser tool for weighing criteria, scoring options, ranking the best choice, and exporting results as CSV.",
   "story": "This source run tested whether a fast model could produce a useful, inspection-ready browser utility from a single practical prompt. Gemini Flash generated a self-contained HTML decision matrix with editable options, weighted criteria, automatic totals, a winner indicator, and CSV export.",
-  "provider": "gemini",
+  "provider": "Gemini",
   "model": "Gemini Flash",
   "model_settings": "Default Gemini Flash web UI settings visible during the run.",
   "source_url": "https://gemini.google.com/app/f6b37685972b6868",

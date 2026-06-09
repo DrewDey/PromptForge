@@ -392,6 +392,34 @@ const sourceRunProjects = [
     expectPersistableAfterPublish: true,
   },
   {
+    name: 'Playable Snake Game',
+    route: 'src/app/snake-demo/page.tsx',
+    projectId: 'SNAKE_PROJECT_ID',
+    showcaseExport: 'SNAKE_SHOWCASE_PROJECT',
+    href: '/snake-demo',
+    packagePath: 'seed-runs/snake-gpt55-pro-oneshot-source-run.json',
+    artifactPaths: ['public/artifacts/snake-gpt55-pro-oneshot.html'],
+    expectPersistableAfterPublish: true,
+  },
+  {
+    name: 'Interactive Decision Matrix',
+    route: 'src/app/decision-matrix-demo/page.tsx',
+    projectId: 'DECISION_MATRIX_PROJECT_ID',
+    showcaseExport: 'DECISION_MATRIX_SHOWCASE_PROJECT',
+    href: '/decision-matrix-demo',
+    packagePath: 'seed-runs/decision-matrix-gemini-flash-oneshot.json',
+    artifactPaths: ['public/artifacts/decision-matrix-gemini-flash-oneshot.html'],
+  },
+  {
+    name: 'Playable Tic-Tac-Toe',
+    route: 'src/app/tic-tac-toe-demo/page.tsx',
+    projectId: 'TIC_TAC_TOE_PROJECT_ID',
+    showcaseExport: 'TIC_TAC_TOE_SHOWCASE_PROJECT',
+    href: '/tic-tac-toe-demo',
+    packagePath: 'seed-runs/tic-tac-toe-gemini-flash-basic.json',
+    artifactPaths: ['public/artifacts/tic-tac-toe-gemini-flash-basic.html'],
+  },
+  {
     name: 'HP 10Bii+',
     route: 'src/app/hp-10bii-calculator-demo/page.tsx',
     projectId: 'HP_10BII_PROJECT_ID',
@@ -611,6 +639,20 @@ function sharedShowcaseRoutes() {
     })
 }
 
+function demoRoutes() {
+  return readdirSync('src/app', { withFileTypes: true })
+    .filter((entry) => entry.isDirectory() && entry.name.endsWith('-demo'))
+    .map((entry) => `src/app/${entry.name}/page.tsx`)
+    .filter((routePath) => existsSync(routePath))
+}
+
+function usesSharedSourceRunRenderer(routeContent) {
+  return (
+    routeContent.includes("from '@/components/SourceRunShowcase'") ||
+    routeContent.includes("from '@/components/PreparedSourceRunPage'")
+  )
+}
+
 const sharedComponent = 'src/components/SourceRunShowcase.tsx'
 const sharedComponentContent = read(sharedComponent)
 mustInclude(sharedComponent, sharedComponentContent, 'aria-pressed={selected}', 'shared showcase must render a selected state on response artifact controls')
@@ -645,6 +687,7 @@ for (const deletedExplorer of [
   'src/app/neon-block-patrol-demo/NeonBlockPatrolSourceRunExplorer.tsx',
   'src/app/swish-city-timing-hoops-demo/SwishCitySourceRunExplorer.tsx',
   'src/app/pomodoro-timer-demo/PomodoroSourceRunExplorer.tsx',
+  'src/app/snake-demo/SnakeForkWorkspace.tsx',
 ]) {
   if (existsSync(deletedExplorer)) failures.push(`${deletedExplorer}: old one-off source-run explorer must not come back`)
 }
@@ -663,6 +706,13 @@ const guardedRouteSet = new Set(sourceRunProjects.map((project) => project.route
 
 mustNotInclude('src/components/PreparedSourceRunPage.tsx', preparedSourceRunPage, 'readArtifact', 'prepared source-run wrapper must not serialize artifact HTML into public page payloads')
 mustNotInclude('src/components/PreparedSourceRunPage.tsx', preparedSourceRunPage, 'notes: step.notes', 'prepared source-run wrapper must not serialize internal step notes into public page payloads')
+
+for (const routePath of demoRoutes()) {
+  const routeContent = read(routePath)
+  if (!usesSharedSourceRunRenderer(routeContent)) {
+    failures.push(`${routePath}: demo pages must use SourceRunShowcase or PreparedSourceRunPage so project pages stay standardized`)
+  }
+}
 
 for (const routePath of sharedShowcaseRoutes()) {
   if (!guardedRouteSet.has(routePath)) {

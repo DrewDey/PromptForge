@@ -7,9 +7,9 @@ import {
   SuggestionResponse,
   SuggestionWithRelations,
 } from './types'
-import { SNAKE_PROJECT_ID } from './featured-projects'
 import { projectForkSourceToSubmissionFields } from './project-forks'
 import {
+  DECISION_MATRIX_SHOWCASE_PROJECT,
   FLASHCARD_CRAM_SHOWCASE_PROJECT,
   FOLLOW_UP_CRM_SHOWCASE_PROJECT,
   HP_10BII_SHOWCASE_PROJECT,
@@ -20,6 +20,7 @@ import {
   POMODORO_TIMER_SHOWCASE_PROJECT,
   PUZZLE_BOX_ESCAPE_SHOWCASE_PROJECT,
   REACTION_TRAINER_SHOWCASE_PROJECT,
+  SNAKE_SHOWCASE_PROJECT,
   SWISH_CITY_SHOWCASE_PROJECT,
   TIC_TAC_TOE_SHOWCASE_PROJECT,
   TRIP_PACKING_SHOWCASE_PROJECT,
@@ -46,6 +47,16 @@ export const mockProfiles: Profile[] = [
     role: 'user',
     created_at: '2026-04-01T00:00:00Z',
     updated_at: '2026-05-24T16:15:00Z',
+  },
+  {
+    id: '22222222-2222-2222-2222-222222222210',
+    username: DECISION_MATRIX_SHOWCASE_PROJECT.authorUsername,
+    display_name: DECISION_MATRIX_SHOWCASE_PROJECT.authorDisplayName,
+    avatar_url: null,
+    bio: 'Productivity browser tools submitted through PathForge source runs.',
+    role: 'user',
+    created_at: '2026-05-28T00:00:00Z',
+    updated_at: DECISION_MATRIX_SHOWCASE_PROJECT.updatedAt,
   },
   {
     id: '22222222-2222-2222-2222-222222222212',
@@ -236,16 +247,8 @@ function stepsForShowcase(project: PreparedShowcaseProject): PromptStep[] {
 }
 
 export const mockSteps: PromptStep[] = [
-  {
-    id: 'step-snake-gpt55-pro-oneshot-1',
-    prompt_id: SNAKE_PROJECT_ID,
-    step_number: 1,
-    title: 'One-sentence Snake game build',
-    content: 'Make me a playable Snake game as a single self-contained HTML file.',
-    result_content: 'ChatGPT returned a self-contained HTML file for a playable Snake game. The response artifact is mounted directly at the top of the demo page, with the exact response package collapsed below it for verification.',
-    description: 'One plain prompt that generated the playable browser game',
-    created_at: '2026-05-23T18:00:00Z',
-  },
+  ...stepsForShowcase(SNAKE_SHOWCASE_PROJECT),
+  ...stepsForShowcase(DECISION_MATRIX_SHOWCASE_PROJECT),
   ...HP_10BII_SHOWCASE_PROJECT.steps.map((step) => ({
     id: step.id,
     prompt_id: HP_10BII_SHOWCASE_PROJECT.id,
@@ -355,25 +358,8 @@ function promptForShowcase(project: PreparedShowcaseProject, authorId: string): 
 }
 
 export const mockPrompts: Prompt[] = [
-  {
-    id: SNAKE_PROJECT_ID,
-    title: 'Playable Snake Game - GPT 5.5 Pro One-Shot',
-    description: 'A first-taste browser Snake path with arrow-key movement, growing score pressure, collision rules, and a playable one-file arcade loop.',
-    content: 'This is the simplest approved PathForge seed: one normal user prompt, one captured model response, one playable result. It exists to show how a finished artifact, exact prompt, exact response package, attachments, and verification can live together on a project page.',
-    result_content: 'A playable Snake game with grid movement, food pickups, score tracking, wall/self collision, quick restart, and a clean browser arcade feel.',
-    category_id: 'cat-10',
-    difficulty: 'beginner',
-    model_used: null,
-    model_recommendation: 'Latest 5.5 / Extended Pro',
-    tools_used: ['ChatGPT', 'GPT 5.5 Pro', 'HTML', 'Browser'],
-    tags: ['snake', 'game', 'arcade', 'html', 'one-shot', 'playable artifact', 'personal fun', 'token maxing', 'AI paralysis'],
-    status: 'approved',
-    author_id: '22222222-2222-2222-2222-222222222211',
-    vote_count: 0,
-    bookmark_count: 0,
-    created_at: '2026-05-23T18:00:00Z',
-    updated_at: '2026-05-24T16:15:00Z',
-  },
+  promptForShowcase(SNAKE_SHOWCASE_PROJECT, '22222222-2222-2222-2222-222222222211'),
+  promptForShowcase(DECISION_MATRIX_SHOWCASE_PROJECT, '22222222-2222-2222-2222-222222222210'),
   {
     id: HP_10BII_SHOWCASE_PROJECT.id,
     title: HP_10BII_SHOWCASE_PROJECT.title,

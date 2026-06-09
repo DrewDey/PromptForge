@@ -79,11 +79,11 @@ export const HP_10BII_SHOWCASE_PROJECT: PreparedShowcaseProject = {
   href: '/hp-10bii-calculator-demo',
   title: 'HP 10Bii+ Financial Calculator',
   description:
-    'A Claude Opus run produced a self-contained HP 10Bii+ calculator, then a follow-up prompt corrected the visual palette to black, silver, and a green LCD.',
+    'Use a one-page HP 10Bii+ style financial calculator for TVM, cash flows, amortization, statistics, memory registers, and keyboard input in a black-and-silver hardware layout.',
   content:
     'Taylor Grant used Claude to build a one-page HTML mock of an HP 10Bii+ financial calculator. The run produced a working financial calculator with TVM, cash flows, interest conversion, statistics, amortization, memory registers, keyboard input, and a visible readout panel. A short follow-up removed the original warm hue and finalized the calculator in a neutral black and silver hardware style.',
   resultContent:
-    'A working HP 10Bii+ calculator embedded directly on the page. The public page preserves both prompts, both response packages, selectable artifact versions, collapsed HTML code, the source-run link, and verification notes.',
+    'Visitors get the working calculator mounted first: a green LCD readout, black/silver key deck, TVM and cash-flow tools, amortization, stats, memory, and keyboard support.',
   categorySlug: 'finance',
   mockCategoryId: 'cat-1',
   difficulty: 'beginner',
@@ -124,11 +124,11 @@ export const TIC_TAC_TOE_SHOWCASE_PROJECT: PreparedShowcaseProject = {
   href: '/tic-tac-toe-demo',
   title: 'Playable Tic-Tac-Toe',
   description:
-    'A basic Gemini Flash source run produced a self-contained browser Tic-Tac-Toe game with turn handling, win detection, draw detection, and a reset control.',
+    'Play a one-file browser Tic-Tac-Toe game with alternating turns, win and draw detection, and a reset button.',
   content:
     'Alex Rivera used Gemini Flash for the simplest possible workflow proof: one plain prompt asking for a playable Tic-Tac-Toe game as a single HTML file. The run produced a working browser artifact without a follow-up prompt.',
   resultContent:
-    'A playable Tic-Tac-Toe game embedded directly on the page. The response package includes the exact prompt, Gemini response intro, generated HTML artifact, source-run link, and verification notes.',
+    'Visitors can start a quick match, see whose turn it is, get clear win/draw feedback, and reset the board without leaving the page.',
   categorySlug: 'personal',
   mockCategoryId: 'cat-10',
   difficulty: 'beginner',
@@ -160,11 +160,11 @@ export const POMODORO_TIMER_SHOWCASE_PROJECT: PreparedShowcaseProject = {
   href: '/pomodoro-timer-demo',
   title: 'Pomodoro Focus Timer',
   description:
-    'Four GPT 5.5 Instant prompts grew a single self-contained HTML file from a plain 25/5 countdown into a polished dark-theme focus timer with a progress ring, a Web Audio chime, custom session lengths, and a completed-sessions counter.',
+    'Run a mobile-ready dark-theme Pomodoro timer with custom work and break lengths, a progress ring, chime, start/pause/reset controls, and completed-session tracking.',
   content:
     'A single ChatGPT conversation on GPT 5.5 Instant built a Pomodoro focus timer one prompt at a time, keeping everything in one self-contained HTML file the whole way. The first prompt produced a working 25-minute work / 5-minute break countdown with Start, Pause, and Reset. Each follow-up layered on a feature without breaking the file: custom work/break lengths plus a completed-sessions counter, then an SVG progress ring and a self-generated Web Audio chime, and finally a polished modern dark theme tuned to look and work great on mobile.',
   resultContent:
-    'A polished dark-theme Pomodoro timer embedded directly on the page. The build path preserves all four exact prompts, each step’s verbatim HTML response, a per-step artifact selector that mounts the selected step above, the source-run link, and capture notes.',
+    'Visitors can tune work and break sessions, watch the ring count down, hear the Web Audio chime, and keep a completed-sessions tally on the page.',
   categorySlug: 'productivity',
   mockCategoryId: 'cat-7',
   difficulty: 'beginner',
@@ -224,11 +224,11 @@ export const WEEKEND_CHECKLIST_SHOWCASE_PROJECT: PreparedShowcaseProject = {
   href: '/weekend-plan-checklist-demo',
   title: 'Weekend Plan Checklist',
   description:
-    'Six ChatGPT prompts turned a messy weekend plan into a self-contained packing and errand checklist, including filters, timing groups, export/print support, and a final bug fix.',
+    'Turn a messy weekend plan into a cleaner packing and errand checklist that removes duplicates, separates essentials, filters focus items, groups tasks by timing, and supports export or print.',
   content:
     'Nora Brooks used ChatGPT to grow a practical weekend planning tool one prompt at a time. The run started with a one-file checklist generator, then tightened duplicate handling, split essentials from nice-to-haves, added focus filters, grouped tasks by timing, cleaned up row controls, and finished with a sixth prompt that fixed a real next-five summary bug.',
   resultContent:
-    'A working weekend checklist generator embedded directly on the page. The source path preserves all six prompts, every captured artifact version, the broken step 5 state, and the final step 6 fix.',
+    'Visitors get a practical checklist builder with essentials/nice-to-haves, timing groups, focus filters, export/print controls, and a fixed next-five summary for what to do next.',
   categorySlug: 'productivity',
   mockCategoryId: 'cat-7',
   difficulty: 'beginner',

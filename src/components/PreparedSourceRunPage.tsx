@@ -1,5 +1,3 @@
-import fs from 'node:fs'
-import path from 'node:path'
 import Link from 'next/link'
 import ProjectCommunityPanel from '@/components/ProjectCommunityPanel'
 import ProjectEngagementBar from '@/components/ProjectEngagementBar'
@@ -16,7 +14,6 @@ type SourceRunPackageStep = {
   response_exact: string
   artifact_version_path?: string | null
   generated_files?: string[]
-  notes?: string
 }
 
 type SourceRunPackage = {
@@ -31,16 +28,6 @@ type SourceRunPackage = {
   pathforge_pending_id?: string
   source_run_submission_id?: string
   steps: SourceRunPackageStep[]
-}
-
-function readArtifact(artifactPath?: string | null) {
-  if (!artifactPath?.startsWith('public/artifacts/')) return null
-
-  try {
-    return fs.readFileSync(path.join(process.cwd(), 'public', 'artifacts', path.basename(artifactPath)), 'utf8')
-  } catch {
-    return `Artifact capture is unavailable at ${artifactPath}.`
-  }
 }
 
 function getPublicArtifactPath(artifactPath?: string | null) {
@@ -97,11 +84,6 @@ function artifactVersionsForStep(
         id: `${project.id}-step-${step.step_number}-artifact-${index + 1}`,
         artifactPath: publicArtifactPath,
         artifactTitle: isDefault ? `${project.title} final` : `${project.title} step ${step.step_number}`,
-        sourceFilePath: filePath,
-        code: readArtifact(filePath) ?? `Artifact capture is unavailable at ${filePath}.`,
-        notes: isDefault
-          ? 'Final public artifact path; mounted by default.'
-          : undefined,
         isDefault,
       })
 
@@ -136,11 +118,8 @@ function toShowcaseStep(
     prompt: step.prompt_exact,
     response: step.response_exact,
     responseCopyText: step.response_exact,
-    notes: step.notes ?? projectStep?.description,
     artifactPath: primaryArtifact?.artifactPath,
     artifactTitle: primaryArtifact?.artifactTitle ?? artifactTitle(project, step, sourceRun.final_artifact_path),
-    sourceFilePath: primaryArtifact?.sourceFilePath,
-    code: primaryArtifact?.code,
     artifactVersions,
     callout: primaryArtifact && isDefault
       ? {

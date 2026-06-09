@@ -21,11 +21,8 @@ export type SourceRunShowcaseStep = {
   prompt: string
   response: string
   responseCopyText?: string
-  notes?: string
   artifactPath?: string | null
   artifactTitle?: string
-  sourceFilePath?: string | null
-  code?: string | null
   artifactVersions?: SourceRunShowcaseArtifactVersion[]
   callout?: SourceRunShowcaseCallout
 }
@@ -34,19 +31,16 @@ export type SourceRunShowcaseArtifactVersion = {
   id?: string
   artifactPath: string
   artifactTitle: string
-  sourceFilePath: string
-  code: string
-  notes?: string
   isDefault?: boolean
 }
 
-type ArtifactPackage = SourceRunShowcaseStep & {
+type ArtifactPackage = Pick<
+  SourceRunShowcaseStep,
+  'id' | 'stepNumber' | 'title' | 'prompt' | 'response' | 'responseCopyText' | 'callout'
+> & {
   stepId: string
   artifactPath: string
   artifactTitle: string
-  sourceFilePath: string
-  code: string
-  artifactVersionNotes?: string
   artifactOrdinal: number
   artifactCount: number
   isDefaultArtifact: boolean
@@ -644,38 +638,42 @@ export default function SourceRunShowcase({
       steps.flatMap((step) => {
         const explicitVersions = (step.artifactVersions ?? []).filter((version) => (
           !!version.artifactPath &&
-          !!version.sourceFilePath &&
-          !!version.code &&
           !!version.artifactTitle
         ))
 
         if (explicitVersions.length > 0) {
           return explicitVersions.map((version, index) => ({
-            ...step,
             id: version.id ?? `${step.id}-artifact-${index + 1}`,
             stepId: step.id,
+            stepNumber: step.stepNumber,
+            title: step.title,
+            prompt: step.prompt,
+            response: step.response,
+            responseCopyText: step.responseCopyText,
+            callout: step.callout,
             artifactPath: version.artifactPath,
             artifactTitle: version.artifactTitle,
-            sourceFilePath: version.sourceFilePath,
-            code: version.code,
-            artifactVersionNotes: version.notes,
             artifactOrdinal: index + 1,
             artifactCount: explicitVersions.length,
             isDefaultArtifact: Boolean(version.isDefault),
           }))
         }
 
-        if (!step.artifactPath || !step.sourceFilePath || !step.code || !step.artifactTitle) {
+        if (!step.artifactPath || !step.artifactTitle) {
           return []
         }
 
         return [{
-          ...step,
+          id: step.id,
           stepId: step.id,
+          stepNumber: step.stepNumber,
+          title: step.title,
+          prompt: step.prompt,
+          response: step.response,
+          responseCopyText: step.responseCopyText,
+          callout: step.callout,
           artifactPath: step.artifactPath,
           artifactTitle: step.artifactTitle,
-          sourceFilePath: step.sourceFilePath,
-          code: step.code,
           artifactOrdinal: 1,
           artifactCount: 1,
           isDefaultArtifact: false,

@@ -1,5 +1,3 @@
-import fs from 'node:fs'
-import path from 'node:path'
 import Link from 'next/link'
 import ProjectEngagementBar from '@/components/ProjectEngagementBar'
 import ProjectCommunityPanel from '@/components/ProjectCommunityPanel'
@@ -19,25 +17,11 @@ type SwishCitySeedStep = {
   prompt_exact: string
   response_exact: string
   artifact_version_path?: string | null
-  notes?: string
-}
-
-function readArtifact(fileName: string, fallback: string) {
-  try {
-    return fs.readFileSync(path.join(process.cwd(), 'public/artifacts', fileName), 'utf8')
-  } catch {
-    return fallback
-  }
 }
 
 function getPublicArtifactPath(artifactPath?: string | null) {
   if (!artifactPath?.startsWith('public/artifacts/')) return null
   return `/${artifactPath.replace(/^public\//, '')}`
-}
-
-function readArtifactFromPath(artifactPath?: string | null) {
-  if (!artifactPath?.startsWith('public/artifacts/')) return null
-  return readArtifact(path.basename(artifactPath), `Swish City artifact capture is unavailable at ${artifactPath}.`)
 }
 
 function toStep(step: SwishCitySeedStep): SourceRunShowcaseStep {
@@ -48,11 +32,8 @@ function toStep(step: SwishCitySeedStep): SourceRunShowcaseStep {
     title: projectStep?.title ?? `Prompt ${step.step_number}`,
     prompt: step.prompt_exact,
     response: step.response_exact,
-    notes: step.notes ?? '',
     artifactPath: getPublicArtifactPath(step.artifact_version_path),
     artifactTitle: step.step_number === 3 ? 'Swish City arcade hoops final' : undefined,
-    sourceFilePath: step.artifact_version_path,
-    code: readArtifactFromPath(step.artifact_version_path),
     callout: step.step_number === 1
       ? {
           tone: 'warning',

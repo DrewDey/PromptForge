@@ -1,5 +1,3 @@
-import fs from 'node:fs'
-import path from 'node:path'
 import Link from 'next/link'
 import ProjectEngagementBar from '@/components/ProjectEngagementBar'
 import ProjectCommunityPanel from '@/components/ProjectCommunityPanel'
@@ -15,7 +13,6 @@ type WeekendPlanChecklistSeedStep = {
   prompt_exact: string
   response_exact: string
   artifact_version_path?: string
-  notes?: string
 }
 
 type WeekendPlanChecklistSeedRun = {
@@ -36,14 +33,6 @@ const capturedAt = 'June 3, 2026'
 
 export const metadata = buildPreparedSourceRunDetailMetadata(project)
 
-function readArtifactFile(fileName: string, fallback: string) {
-  try {
-    return fs.readFileSync(path.join(process.cwd(), 'public', 'artifacts', fileName), 'utf8')
-  } catch {
-    return fallback
-  }
-}
-
 function getPublicArtifactPath(artifactPath?: string) {
   if (!artifactPath?.startsWith('public/artifacts/')) {
     return null
@@ -52,24 +41,8 @@ function getPublicArtifactPath(artifactPath?: string) {
   return `/${artifactPath.replace(/^public\//, '')}`
 }
 
-function getPublicArtifactFileName(artifactPath?: string) {
-  if (!artifactPath?.startsWith('public/artifacts/')) {
-    return null
-  }
-
-  return path.basename(artifactPath)
-}
-
 function toStep(step: WeekendPlanChecklistSeedStep): SourceRunShowcaseStep {
   const artifactPath = getPublicArtifactPath(step.artifact_version_path)
-  const artifactFileName = getPublicArtifactFileName(step.artifact_version_path)
-  const sourceFilePath = step.artifact_version_path ?? 'No local artifact file captured'
-  const code = artifactFileName
-    ? readArtifactFile(
-        artifactFileName,
-        `Step ${step.step_number} Weekend Plan Checklist artifact capture is unavailable.`,
-      )
-    : null
 
   return {
     id: `${projectId}-step-${step.step_number}`,
@@ -77,13 +50,10 @@ function toStep(step: WeekendPlanChecklistSeedStep): SourceRunShowcaseStep {
     title: `Prompt ${step.step_number}`,
     prompt: step.prompt_exact,
     response: step.response_exact,
-    notes: step.notes ?? '',
     artifactPath,
     artifactTitle: step.step_number === 6
       ? 'Final fixed weekend checklist'
       : `Weekend checklist step ${step.step_number}`,
-    sourceFilePath,
-    code,
     callout: step.step_number === 5
       ? {
           tone: 'warning',

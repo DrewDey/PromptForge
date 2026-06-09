@@ -1,5 +1,3 @@
-import fs from 'node:fs'
-import path from 'node:path'
 import Link from 'next/link'
 import ProjectEngagementBar from '@/components/ProjectEngagementBar'
 import ProjectCommunityPanel from '@/components/ProjectCommunityPanel'
@@ -24,18 +22,10 @@ type Hp10BiiSeedStep = {
   prompt_exact: string
   response_exact: string
   generated_files?: string[]
-  notes?: string
-}
-
-type Hp10BiiArtifactVersion = {
-  path: string
-  source?: string
-  notes?: string
 }
 
 type Hp10BiiSourceRunPackage = {
   steps: Hp10BiiSeedStep[]
-  artifact_versions?: Hp10BiiArtifactVersion[]
   final_artifact_path?: string
   pathforge_submission_url?: string
   pathforge_pending_id?: string
@@ -46,14 +36,6 @@ function getPublicArtifactPath(filePath?: string) {
   return `/${filePath.replace(/^public\//, '')}`
 }
 
-function readArtifact(fileName: string, fallback: string) {
-  try {
-    return fs.readFileSync(path.join(process.cwd(), 'public/artifacts', fileName), 'utf8')
-  } catch {
-    return fallback
-  }
-}
-
 function artifactTitleForVersion(filePath: string) {
   if (filePath.includes('-initial')) return 'Initial warm/plum HP 10Bii+'
   if (filePath.includes('-claude-final')) return 'Claude final graphite HP 10Bii+'
@@ -62,23 +44,17 @@ function artifactTitleForVersion(filePath: string) {
 
 function artifactVersionsForStep(
   step: Hp10BiiSeedStep,
-  packageArtifactVersions: Hp10BiiArtifactVersion[],
   finalArtifactPath?: string,
 ): SourceRunShowcaseArtifactVersion[] {
   return (step.generated_files ?? [])
     .filter((filePath) => filePath.startsWith('public/artifacts/'))
     .map((filePath, index) => {
       const artifactPath = getPublicArtifactPath(filePath)
-      const fileName = path.basename(filePath)
-      const packageVersion = packageArtifactVersions.find((version) => version.path === filePath)
 
       return {
         id: `${projectId}-step-${step.step_number}-artifact-${index + 1}`,
         artifactPath: artifactPath ?? '',
         artifactTitle: artifactTitleForVersion(filePath),
-        sourceFilePath: filePath,
-        code: readArtifact(fileName, `Step ${step.step_number} HP 10Bii+ artifact capture is unavailable.`),
-        notes: packageVersion?.notes,
         isDefault: filePath === finalArtifactPath,
       }
     })
@@ -87,11 +63,10 @@ function artifactVersionsForStep(
 
 function toShowcaseStep(
   step: Hp10BiiSeedStep,
-  packageArtifactVersions: Hp10BiiArtifactVersion[],
   finalArtifactPath?: string,
 ): SourceRunShowcaseStep {
   const projectStep = project.steps.find((item) => item.stepNumber === step.step_number)
-  const artifactVersions = artifactVersionsForStep(step, packageArtifactVersions, finalArtifactPath)
+  const artifactVersions = artifactVersionsForStep(step, finalArtifactPath)
   const primaryArtifact = artifactVersions[artifactVersions.length - 1]
 
   return {
@@ -100,11 +75,8 @@ function toShowcaseStep(
     title: projectStep?.title ?? `Prompt ${step.step_number}`,
     prompt: step.prompt_exact,
     response: step.response_exact,
-    notes: step.notes,
     artifactPath: primaryArtifact?.artifactPath,
     artifactTitle: primaryArtifact?.artifactTitle,
-    sourceFilePath: primaryArtifact?.sourceFilePath,
-    code: primaryArtifact?.code,
     artifactVersions,
   }
 }
@@ -131,7 +103,7 @@ function RunSummary() {
 export default async function Hp10BiiCalculatorDemoPage() {
   const sourceRun = sourceRunPackage as Hp10BiiSourceRunPackage
   const steps = sourceRun.steps.map((step) => (
-    toShowcaseStep(step, sourceRun.artifact_versions ?? [], sourceRun.final_artifact_path)
+    toShowcaseStep(step, sourceRun.final_artifact_path)
   ))
   const forkNetwork = await getApprovedProjectForks(projectId)
 

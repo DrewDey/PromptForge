@@ -27,21 +27,14 @@ function getPublicArtifactPath(fileName: string) {
   return `/artifacts/${fileName}`
 }
 
-function getSourceFilePath(fileName: string) {
-  return `public/artifacts/${fileName}`
-}
-
 function toStep({
   step,
   code,
-  finalArtifactCode,
 }: {
   step: (typeof project.steps)[number]
   code: string
-  finalArtifactCode: string
 }): SourceRunShowcaseStep {
   const fileName = `pomodoro-step-${step.stepNumber}.html`
-  const sourceFilePath = getSourceFilePath(fileName)
   const artifactTitle = `Pomodoro Focus Timer · step ${step.stepNumber} artifact`
 
   return {
@@ -51,28 +44,19 @@ function toStep({
     prompt: step.content,
     response: code,
     responseCopyText: code,
-    notes: step.description,
     artifactPath: getPublicArtifactPath(fileName),
     artifactTitle,
-    sourceFilePath,
-    code,
     artifactVersions: step.stepNumber === 4
       ? [
           {
             id: `${step.id}-captured-step-4`,
             artifactPath: getPublicArtifactPath(fileName),
             artifactTitle,
-            sourceFilePath,
-            code,
-            notes: 'Captured step 4 HTML response from the ChatGPT run.',
           },
           {
             id: `${step.id}-public-final`,
             artifactPath: getPublicArtifactPath('pomodoro-focus-timer-gpt55-instant.html'),
             artifactTitle: 'Pomodoro Focus Timer · verified public final',
-            sourceFilePath: getSourceFilePath('pomodoro-focus-timer-gpt55-instant.html'),
-            code: finalArtifactCode,
-            notes: 'Current public final artifact path preserved as a selectable mount.',
             isDefault: true,
           },
         ]
@@ -106,14 +90,9 @@ export default async function PomodoroTimerDemoPage() {
     readArtifact('pomodoro-step-3.html', 'Step 3 Pomodoro artifact capture is unavailable.'),
     readArtifact('pomodoro-step-4.html', 'Step 4 Pomodoro artifact capture is unavailable.'),
   ]
-  const finalArtifactCode = readArtifact(
-    'pomodoro-focus-timer-gpt55-instant.html',
-    'Final Pomodoro artifact capture is unavailable.',
-  )
   const steps = project.steps.map((step, index) => toStep({
     step,
     code: stepCodes[index] ?? 'Step Pomodoro artifact capture is unavailable.',
-    finalArtifactCode,
   }))
   const forkNetwork = await getApprovedProjectForks(projectId)
 

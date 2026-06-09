@@ -1,5 +1,3 @@
-import fs from 'node:fs'
-import path from 'node:path'
 import Link from 'next/link'
 import ProjectEngagementBar from '@/components/ProjectEngagementBar'
 import ProjectCommunityPanel from '@/components/ProjectCommunityPanel'
@@ -14,7 +12,6 @@ type RawSourceRunStep = {
   prompt_exact: string
   response_exact: string
   response_summary?: string
-  notes?: string
   artifact_version_path?: string | null
 }
 
@@ -34,21 +31,6 @@ const stepTitles: Record<number, string> = {
 function toPublicArtifactPath(artifactVersionPath?: string | null) {
   if (!artifactVersionPath?.startsWith('public/artifacts/')) return null
   return artifactVersionPath.replace(/^public/, '')
-}
-
-function readArtifact(artifactVersionPath?: string | null) {
-  if (!artifactVersionPath?.startsWith('public/artifacts/')) return null
-
-  try {
-    return fs.readFileSync(path.join(process.cwd(), 'public', 'artifacts', path.basename(artifactVersionPath)), 'utf8')
-  } catch {
-    return `Artifact capture is unavailable for ${artifactVersionPath}.`
-  }
-}
-
-function sourceFileName(artifactVersionPath?: string | null) {
-  if (!artifactVersionPath) return null
-  return artifactVersionPath
 }
 
 function visibleResponseText(step: RawSourceRunStep) {
@@ -87,13 +69,10 @@ export default async function NeonBlockPatrolDemoPage() {
     prompt: step.prompt_exact,
     response: visibleResponseText(step),
     responseCopyText: step.response_exact,
-    notes: step.notes ?? '',
     artifactPath: toPublicArtifactPath(step.artifact_version_path),
     artifactTitle: step.step_number === 5
       ? 'Neon Block Patrol v3 final'
       : `Neon Block Patrol step ${step.step_number}`,
-    sourceFilePath: sourceFileName(step.artifact_version_path),
-    code: readArtifact(step.artifact_version_path),
     callout: step.step_number === 2
       ? {
           tone: 'neutral' as const,

@@ -628,6 +628,9 @@ mustNotInclude(sharedComponent, sharedComponentContent, 'pathforgeSourceRunUrl',
 mustNotInclude(sharedComponent, sharedComponentContent, 'sourceRunId', 'shared showcase must not expose internal source-run ids publicly')
 mustNotInclude(sharedComponent, sharedComponentContent, 'verificationNotes', 'shared showcase must not expose internal verification notes publicly')
 mustNotInclude(sharedComponent, sharedComponentContent, 'Verbatim artifact', 'shared showcase must not label generated code as public page content')
+mustNotInclude(sharedComponent, sharedComponentContent, 'sourceFilePath', 'shared showcase must not serialize local artifact file paths into public page payloads')
+mustNotInclude(sharedComponent, sharedComponentContent, 'artifactVersionNotes', 'shared showcase must not serialize internal artifact notes into public page payloads')
+mustNotInclude(sharedComponent, sharedComponentContent, 'version.code', 'shared showcase must not serialize generated artifact HTML into public page payloads')
 mustInclude(sharedComponent, sharedComponentContent, 'data-source-run-node={variant}', 'shared showcase must label prompt and response nodes for layout verification')
 mustInclude(sharedComponent, sharedComponentContent, 'variant="prompt"', 'shared showcase must render prompts as their own pipe nodes')
 mustInclude(sharedComponent, sharedComponentContent, 'variant="response"', 'shared showcase must render response packages as their own pipe nodes')
@@ -657,6 +660,9 @@ const adminSourceRunDetail = read('src/app/admin/source-runs/[id]/page.tsx')
 const preparedSourceRunPage = read('src/components/PreparedSourceRunPage.tsx')
 const pendingSourceRunShowcases = read('src/lib/pending-source-run-showcases.ts')
 const guardedRouteSet = new Set(sourceRunProjects.map((project) => project.route))
+
+mustNotInclude('src/components/PreparedSourceRunPage.tsx', preparedSourceRunPage, 'readArtifact', 'prepared source-run wrapper must not serialize artifact HTML into public page payloads')
+mustNotInclude('src/components/PreparedSourceRunPage.tsx', preparedSourceRunPage, 'notes: step.notes', 'prepared source-run wrapper must not serialize internal step notes into public page payloads')
 
 for (const routePath of sharedShowcaseRoutes()) {
   if (!guardedRouteSet.has(routePath)) {
@@ -734,6 +740,9 @@ for (const project of sourceRunProjects) {
   mustNotInclude(project.route, routeShellContent, 'pathforgeSourceRunUrl=', `${project.name} must not expose the PathForge admin source-run record link publicly`)
   mustNotInclude(project.route, routeShellContent, 'sourceRunId=', `${project.name} must not expose internal source-run ids publicly`)
   mustNotInclude(project.route, routeShellContent, 'verificationNotes=', `${project.name} must not expose internal verification notes publicly`)
+  mustNotInclude(project.route, routeShellContent, 'sourceFilePath', `${project.name} must not serialize local artifact file paths into public page payloads`)
+  mustNotInclude(project.route, routeShellContent, 'notes: step.notes', `${project.name} must not serialize internal step notes into public page payloads`)
+  mustNotInclude(project.route, routeShellContent, 'notes: step.description', `${project.name} must not serialize prepared step descriptions as artifact notes`)
 
   for (const step of pkg.steps) {
     const stepLabel = `${project.packagePath} step ${step.step_number ?? '?'}`

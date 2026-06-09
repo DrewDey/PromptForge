@@ -118,6 +118,13 @@ function forkAuthorLabel(fork: ProjectForkNetworkItem) {
   return fork.authorDisplayName ?? compactForkText(fork.title, 'Forked path', 44)
 }
 
+function externalSourceRunHref(value: string) {
+  const trimmed = value.trim()
+  if (!trimmed) return '#'
+  if (/^https?:\/\//i.test(trimmed)) return trimmed
+  return `https://${trimmed}`
+}
+
 function ResponseForkBranchCard({
   fork,
   isActive = false,
@@ -633,6 +640,7 @@ export default function SourceRunShowcase({
   forkNetwork?: ProjectForkNetworkItem[]
   defaultStepNumber?: number
 }) {
+  const sourceRunHref = externalSourceRunHref(sourceRunUrl)
   const packages = useMemo(
     () =>
       steps.flatMap((step) => {
@@ -834,7 +842,7 @@ export default function SourceRunShowcase({
 
         <div className="mt-8 border border-surface-200 bg-white p-4">
           <a
-            href={sourceRunUrl}
+            href={sourceRunHref}
             target="_blank"
             rel="noreferrer"
             className="flex items-center justify-between gap-3 text-sm font-semibold text-brand-blue hover:text-brand-blue-dark"

@@ -12,7 +12,7 @@ import {
   SWISH_CITY_PROJECT_ID,
   TIC_TAC_TOE_PROJECT_ID,
   TRIP_PACKING_PROJECT_ID,
-  WEEKEND_CHECKLIST_FORK_PROJECT_ID,
+  WEEKEND_CHECKLIST_REAL_FORK_PROJECT_ID,
   WEEKEND_CHECKLIST_PROJECT_ID,
   WORD_LADDER_SPRINT_PROJECT_ID,
 } from './featured-projects'
@@ -306,29 +306,29 @@ export const WEEKEND_CHECKLIST_SHOWCASE_PROJECT: PreparedShowcaseProject = {
   ],
 }
 
-export const WEEKEND_CHECKLIST_FORK_SHOWCASE_PROJECT: PreparedShowcaseProject = {
-  id: WEEKEND_CHECKLIST_FORK_PROJECT_ID,
-  sourceRunId: '7e5c1a06-f6ed-4c8c-b5e9-3a7c1bf830a6',
-  href: '/weekend-road-trip-readiness-fork-demo',
-  title: 'Weekend Road-Trip Readiness Board',
+export const WEEKEND_CHECKLIST_REAL_FORK_SHOWCASE_PROJECT: PreparedShowcaseProject = {
+  id: WEEKEND_CHECKLIST_REAL_FORK_PROJECT_ID,
+  sourceRunId: '80b083bb-4f94-4411-b071-a5da731d3e2d',
+  href: '/weekend-family-road-trip-readiness-fork-demo',
+  title: 'Family Road-Trip Readiness Board',
   description:
-    'A simulated Codex Lane fork from Weekend Plan Checklist response 03 turns the filtered next-five checklist into a family road-trip board with lanes for people, pets, car prep, and timing.',
+    'A real ChatGPT branch from Weekend Plan Checklist response 03 turns the filtered next-five checklist into a lane-based family road-trip readiness board.',
   content:
-    "Codex Lane forked Nora Brooks' Weekend Plan Checklist at response package 03, keeping the shared checklist/filter idea but branching before the later timing-group direction. The fork asks the model to focus on family road-trip readiness: people lanes, pet prep, car checks, timing buckets, and a next-action strip.",
+    "Nora Brooks branched the original Weekend Plan Checklist source run at response package 03. Instead of continuing into the original timing-group path, the edited prompt 04 asked ChatGPT to turn the filtered checklist into a family road-trip board with traveler, pet, car, document, food, and shared-extra lanes.",
   resultContent:
-    'A self-contained road-trip readiness board with traveler lanes, pet prep, car checks, timing buckets, print/export handoff, and a clear next-action strip.',
+    'A self-contained family road-trip readiness board with editable lanes, local storage, priority filters, sample trip generation, and a next-five action strip.',
   categorySlug: 'productivity',
   mockCategoryId: 'cat-7',
   difficulty: 'beginner',
-  modelUsed: 'Codex simulated ChatGPT lane',
+  modelUsed: 'ChatGPT web, Instant mode visible',
   modelRecommendation: 'ChatGPT',
   promptFamilyId: `${WEEKEND_CHECKLIST_PROJECT_ID}:${WEEKEND_CHECKLIST_PROJECT_ID}-step-3`,
-  toolsUsed: ['ChatGPT', 'Codex', 'HTML', 'Browser'],
-  tags: ['fork', 'weekend planning', 'road trip', 'checklist', 'family', 'productivity'],
-  artifactPath: '/artifacts/weekend-road-trip-readiness-codex-fork.html',
-  sourceUrl: 'https://prompt-forge-sandy.vercel.app/admin/source-runs/7e5c1a06-f6ed-4c8c-b5e9-3a7c1bf830a6',
-  authorDisplayName: 'Codex Lane',
-  authorUsername: 'CodexLane',
+  toolsUsed: ['ChatGPT', 'HTML', 'Browser'],
+  tags: ['fork', 'weekend planning', 'road trip', 'checklist', 'family', 'productivity', 'html'],
+  artifactPath: '/artifacts/weekend-plan-checklist-chatgpt-family-road-trip-fork-step-4.html',
+  sourceUrl: 'https://chatgpt.com/c/6a208694-1e78-8327-8ec7-3b231b18169d',
+  authorDisplayName: WEEKEND_CHECKLIST_SHOWCASE_PROJECT.authorDisplayName,
+  authorUsername: WEEKEND_CHECKLIST_SHOWCASE_PROJECT.authorUsername,
   forkSource: {
     sourceProjectId: WEEKEND_CHECKLIST_PROJECT_ID,
     sourceProjectTitle: 'Weekend Plan Checklist',
@@ -338,24 +338,54 @@ export const WEEKEND_CHECKLIST_FORK_SHOWCASE_PROJECT: PreparedShowcaseProject = 
     branchIndex: 0,
     promptFamilyId: `${WEEKEND_CHECKLIST_PROJECT_ID}:${WEEKEND_CHECKLIST_PROJECT_ID}-step-3`,
   },
-  createdAt: '2026-06-07T19:35:00.000Z',
-  updatedAt: '2026-06-07T19:35:00.000Z',
-  steps: buildPreparedSteps(WEEKEND_CHECKLIST_FORK_PROJECT_ID, [
+  createdAt: '2026-06-09T14:23:00.000Z',
+  updatedAt: '2026-06-09T14:29:00.000Z',
+  steps: [
     {
-      title: 'Branch into a road-trip board',
+      id: `${WEEKEND_CHECKLIST_REAL_FORK_PROJECT_ID}-step-1`,
+      stepNumber: 1,
+      title: 'Build the base checklist',
       content:
-        'Forking from the checklist version that has Essentials/Nice-to-have filters and a next-5 summary: turn this into a one-file family road-trip readiness board with lanes for each traveler, pets, car prep, and timing buckets. Keep it editable and make the next-action strip obvious.',
+        'Make me a polished one-file browser tool that turns a messy weekend plan into a clean packing and errand checklist.',
+      resultContent:
+        'I’ll build it as a single self-contained HTML file with the planner, checklist generator, editable checklist items, and export/print options baked in.',
       description:
-        'The fork keeps the shared filter/next-five idea from response package 03, then branches into a road-trip readiness workflow instead of the original timing-group continuation.',
+        'Shared original source-run prompt 01.',
     },
     {
-      title: 'Tighten the fork for handoff',
+      id: `${WEEKEND_CHECKLIST_REAL_FORK_PROJECT_ID}-step-2`,
+      stepNumber: 2,
+      title: 'Deduplicate and split priorities',
       content:
-        'Make the board feel ready for someone to use before leaving: add default sample items, a clear print/export summary, and a compact mobile layout while keeping it one self-contained HTML file.',
+        'The generated checklist works, but it repeats things like gift/card and formal outfit and can balloon into 50+ items. Add smarter deduping and split the output into Essentials first and Nice-to-have, while keeping it one self-contained HTML file.',
+      resultContent:
+        'I’ll update the existing HTML directly, tighten the item matching so overlapping triggers collapse into one item, and add two clear sections for must-pack versus optional extras.',
       description:
-        'The simulated follow-up makes the fork artifact feel complete enough to publish as a visible child path.',
+        'Shared original source-run prompt 02.',
     },
-  ]),
+    {
+      id: `${WEEKEND_CHECKLIST_REAL_FORK_PROJECT_ID}-step-3`,
+      stepNumber: 3,
+      title: 'Add focus filters and next five',
+      content:
+        'This is cleaner, but the generated list is still long and there is no quick way to focus. Add simple filters for All, Essentials, Nice-to-have, and Done, plus a small “next 5 things to do” summary at the top of the checklist.',
+      resultContent:
+        'I’ll keep the same file and add lightweight checklist controls without changing the single-file setup. The summary will pull the first five unchecked items from the visible priority flow.',
+      description:
+        'Shared original source-run response package 03. This is the fork point.',
+    },
+    {
+      id: `${WEEKEND_CHECKLIST_REAL_FORK_PROJECT_ID}-step-4`,
+      stepNumber: 4,
+      title: 'Branch into road-trip lanes',
+      content:
+        'Forking from the version that has Essentials/Nice-to-have filters and a next-5 summary: instead of adding timing groups to the original checklist, turn it into a one-file family road-trip readiness board with lanes for each traveler, pets, car prep, documents, food/snacks, and a clear next-action strip. Keep the checklist editable, keep local storage, and return the full self-contained HTML file.',
+      resultContent:
+        'I’ll turn the checklist into a lane-based board rather than bolt more timing onto it. I’ll preserve the editable items, local save behavior, filters where they still make sense, and put the next-action strip above the lanes.',
+      description:
+        'Actual ChatGPT branch prompt 04 from the original source run.',
+    },
+  ],
 }
 
 export const NEON_BLOCK_PATROL_SHOWCASE_PROJECT: PreparedShowcaseProject = {
@@ -929,7 +959,7 @@ export const PREPARED_SHOWCASE_PROJECTS = [
   TIC_TAC_TOE_SHOWCASE_PROJECT,
   POMODORO_TIMER_SHOWCASE_PROJECT,
   WEEKEND_CHECKLIST_SHOWCASE_PROJECT,
-  WEEKEND_CHECKLIST_FORK_SHOWCASE_PROJECT,
+  WEEKEND_CHECKLIST_REAL_FORK_SHOWCASE_PROJECT,
   NEON_BLOCK_PATROL_SHOWCASE_PROJECT,
   SWISH_CITY_SHOWCASE_PROJECT,
   MEETING_COST_SHOWCASE_PROJECT,

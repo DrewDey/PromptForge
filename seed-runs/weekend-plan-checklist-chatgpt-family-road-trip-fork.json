@@ -1,0 +1,79 @@
+{
+  "title": "Family Road-Trip Readiness Board from ChatGPT",
+  "slug": "weekend-plan-checklist-chatgpt-family-road-trip-fork",
+  "provider": "chatgpt",
+  "model": "ChatGPT web, Instant mode visible",
+  "model_settings": "Default ChatGPT web chat; Instant mode button visible in the composer. Exact backend model name was not exposed in the UI.",
+  "source_url": "https://chatgpt.com/c/6a208694-1e78-8327-8ec7-3b231b18169d",
+  "run_started_at": "2026-06-09T10:23:00-04:00",
+  "run_finished_at": "2026-06-09T10:29:00-04:00",
+  "chain_type": "fork",
+  "tags": ["productivity", "checklist", "travel", "fork", "local-storage"],
+  "status": "captured",
+  "final_artifact_path": "public/artifacts/weekend-plan-checklist-chatgpt-family-road-trip-fork-step-4.html",
+  "artifact_type": "html",
+  "artifact_versions": [
+    {
+      "step": 4,
+      "path": "public/artifacts/weekend-plan-checklist-chatgpt-family-road-trip-fork-step-4.html",
+      "notes": "Actual ChatGPT branch generated from edited prompt 04 in the original source run. The branch starts after response package 03."
+    }
+  ],
+  "verification_notes": "Captured from the exact original ChatGPT conversation after editing prompt 04 to branch from response package 03. Artifact source was extracted from ChatGPT Code view and saved unchanged as the public artifact file.",
+  "fork_source": {
+    "source_project_id": "81f2b617-2de5-404f-aa88-c94443f213bd",
+    "source_project_title": "Weekend Plan Checklist",
+    "source_step_id": "81f2b617-2de5-404f-aa88-c94443f213bd-step-3",
+    "source_step_number": 3,
+    "prompt_family_id": "81f2b617-2de5-404f-aa88-c94443f213bd:81f2b617-2de5-404f-aa88-c94443f213bd-step-3",
+    "fork_depth": 0,
+    "fork_branch_index": 0
+  },
+  "steps": [
+    {
+      "step_number": 1,
+      "prompt_exact": "Make me a polished one-file browser tool that turns a messy weekend plan into a clean packing and errand checklist.",
+      "response_exact": "I’ll build it as a single self-contained HTML file with the planner, checklist generator, editable checklist items, and export/print options baked in.\n\nDone.\nDownload the one-file weekend checklist tool\n\nweekend_plan_checklist.html",
+      "response_summary": "Initial polished weekend checklist generator with local storage, export, print, trip type/weather/travel selectors, chips, and editable generated checklist.",
+      "code_blocks": ["public/artifacts/weekend-plan-checklist-chatgpt-step-1.html"],
+      "generated_files": ["public/artifacts/weekend-plan-checklist-chatgpt-step-1.html"],
+      "artifact_version_path": "public/artifacts/weekend-plan-checklist-chatgpt-step-1.html",
+      "notes": "Shared original source-run prompt 01."
+    },
+    {
+      "step_number": 2,
+      "prompt_exact": "The generated checklist works, but it repeats things like gift/card and formal outfit and can balloon into 50+ items. Add smarter deduping and split the output into Essentials first and Nice-to-have, while keeping it one self-contained HTML file.",
+      "response_exact": "I’ll update the existing HTML directly, tighten the item matching so overlapping triggers collapse into one item, and add two clear sections for must-pack versus optional extras.\n\nUpdated.\nDownload the improved one-file checklist tool\n\nweekend_plan_checklist.html",
+      "response_summary": "Added deduping and split generated items into Essentials and Nice-to-have.",
+      "code_blocks": ["public/artifacts/weekend-plan-checklist-chatgpt-step-2.html"],
+      "generated_files": ["public/artifacts/weekend-plan-checklist-chatgpt-step-2.html"],
+      "artifact_version_path": "public/artifacts/weekend-plan-checklist-chatgpt-step-2.html",
+      "notes": "Shared original source-run prompt 02."
+    },
+    {
+      "step_number": 3,
+      "prompt_exact": "This is cleaner, but the generated list is still long and there is no quick way to focus. Add simple filters for All, Essentials, Nice-to-have, and Done, plus a small “next 5 things to do” summary at the top of the checklist.",
+      "response_exact": "I’ll keep the same file and add lightweight checklist controls without changing the single-file setup. The summary will pull the first five unchecked items from the visible priority flow.\n\nUpdated.\nDownload the filtered checklist tool\n\nweekend_plan_checklist.html",
+      "response_summary": "Added All/Essentials/Nice-to-have/Done filters and a next-five summary.",
+      "code_blocks": ["public/artifacts/weekend-plan-checklist-chatgpt-step-3.html"],
+      "generated_files": ["public/artifacts/weekend-plan-checklist-chatgpt-step-3.html"],
+      "artifact_version_path": "public/artifacts/weekend-plan-checklist-chatgpt-step-3.html",
+      "notes": "Fork point. The real branch starts after this response package."
+    },
+    {
+      "step_number": 4,
+      "prompt_exact": "Forking from the version that has Essentials/Nice-to-have filters and a next-5 summary: instead of adding timing groups to the original checklist, turn it into a one-file family road-trip readiness board with lanes for each traveler, pets, car prep, documents, food/snacks, and a clear next-action strip. Keep the checklist editable, keep local storage, and return the full self-contained HTML file.",
+      "response_exact": "I’ll turn the checklist into a lane-based board rather than bolt more timing onto it. I’ll preserve the editable items, local save behavior, filters where they still make sense, and put the next-action strip above the lanes.\n\nBuilt.\nDownload the family road-trip board\n\nfamily_road_trip_readiness_board.html",
+      "response_summary": "Actual ChatGPT branch turned the filtered weekend checklist into a lane-based family road-trip readiness board.",
+      "code_blocks": ["public/artifacts/weekend-plan-checklist-chatgpt-family-road-trip-fork-step-4.html"],
+      "generated_files": ["public/artifacts/weekend-plan-checklist-chatgpt-family-road-trip-fork-step-4.html"],
+      "artifact_version_path": "public/artifacts/weekend-plan-checklist-chatgpt-family-road-trip-fork-step-4.html",
+      "notes": "Actual fork continuation prompt 04 from the original ChatGPT conversation."
+    }
+  ],
+  "agent_notes": "Actual fork from the original ChatGPT source run https://chatgpt.com/c/6a208694-1e78-8327-8ec7-3b231b18169d. Prompt 04 was edited in the real chat to branch from response package 03. The resulting ChatGPT response and generated HTML were captured from the live chat and stored as the step 04 fork artifact.",
+  "source_run_submission_id": "80b083bb-4f94-4411-b071-a5da731d3e2d",
+  "submitted_by_account": "NoraBrooks",
+  "submitted_by_profile_registry_id": "pathforge-seed-006",
+  "admin_review_status": "captured local prepared source-run fork"
+}

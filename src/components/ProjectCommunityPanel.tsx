@@ -306,6 +306,10 @@ function ProjectForkInheritedPathBand({
   const sourceSteps = toProjectForkSourceSteps(sourceProject)
   const currentSteps = toProjectForkSourceSteps(currentProject)
   if (sourceSteps.length === 0 || currentSteps.length === 0) return null
+  const continuationSteps = forkSource.sourceStepNumber
+    ? currentSteps.filter((step) => step.stepNumber > (forkSource.sourceStepNumber ?? 0))
+    : currentSteps
+  const visibleContinuationSteps = continuationSteps.length > 0 ? continuationSteps : currentSteps
 
   const contract = createProjectForkDraftContract({ source: forkSource, sourceSteps })
   const sharedSegments = contract.lineageSegments.filter((segment) => segment.state === 'shared-history')
@@ -374,7 +378,7 @@ function ProjectForkInheritedPathBand({
             {currentProject.title}
           </div>
           <div className="mt-3 grid gap-2">
-            {currentSteps.map((step) => (
+            {visibleContinuationSteps.map((step) => (
               <ForkContinuationCard key={step.id} step={step} />
             ))}
           </div>
@@ -432,7 +436,7 @@ function ProjectForkInheritedPathBand({
                 {currentProject.title}
               </div>
               <div className="mt-3 grid gap-2">
-                {currentSteps.map((step) => (
+                {visibleContinuationSteps.map((step) => (
                   <ForkContinuationCard key={step.id} step={step} />
                 ))}
               </div>

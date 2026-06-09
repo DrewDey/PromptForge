@@ -1,6 +1,9 @@
 import { existsSync, readFileSync, readdirSync } from 'node:fs'
 
 const failures = []
+const forbiddenNonRealModelLabel = ['Codex', 'sim', 'ulated'].join(' ')
+const forbiddenFormerForkHandle = ['Codex', 'Lane'].join('')
+const forbiddenNonRealProfileBio = ['Sim', 'ulated', 'Codex fork profile'].join(' ')
 
 function read(path) {
   return readFileSync(path, 'utf8')
@@ -126,8 +129,8 @@ mustInclude('src/app/browse.css', browseStyles, '.compare-group.is-prompt-family
 const preparedShowcases = read('src/lib/prepared-showcase-projects.ts')
 mustInclude('src/lib/prepared-showcase-projects.ts', preparedShowcases, 'promptFamilyId?: string', 'prepared source-run projects must be able to carry prompt family ids into model comparisons')
 mustInclude('src/lib/prepared-showcase-projects.ts', preparedShowcases, 'forkSource?: ProjectForkSource | null', 'prepared source-run projects must be able to carry static fork lineage')
-mustInclude('src/lib/prepared-showcase-projects.ts', preparedShowcases, 'WEEKEND_CHECKLIST_FORK_SHOWCASE_PROJECT', 'the Weekend static child fork must remain registered as a prepared showcase project')
-mustInclude('src/lib/prepared-showcase-projects.ts', preparedShowcases, 'sourceStepNumber: 3', 'the Weekend static child fork must stay attached to response package 03')
+mustNotInclude('src/lib/prepared-showcase-projects.ts', preparedShowcases, forbiddenNonRealModelLabel, 'prepared source-run projects must not include non-real fork data')
+mustNotInclude('src/lib/prepared-showcase-projects.ts', preparedShowcases, forbiddenFormerForkHandle, 'prepared source-run projects must not include fake fork profiles')
 
 const pendingShowcases = read('src/lib/pending-source-run-showcases.ts')
 mustInclude('src/lib/pending-source-run-showcases.ts', pendingShowcases, 'promptFamilyId?: string', 'pending source-run showcase descriptors must preserve prompt family ids when supplied')
@@ -136,8 +139,8 @@ mustInclude('src/lib/pending-source-run-showcases.ts', pendingShowcases, 'prompt
 const mockData = read('src/lib/mock-data.ts')
 mustInclude('src/lib/mock-data.ts', mockData, 'prompt_family_id: project.promptFamilyId ?? forkSubmissionFields.prompt_family_id ?? null', 'mock/prepared public prompts must preserve prompt family ids for comparison grouping')
 mustInclude('src/lib/mock-data.ts', mockData, 'projectForkSourceToSubmissionFields(project.forkSource)', 'mock/prepared public prompts must persist static fork lineage fields')
-mustInclude('src/lib/mock-data.ts', mockData, 'WEEKEND_CHECKLIST_FORK_SHOWCASE_PROJECT', 'the Weekend static child fork must have an approved mock prompt and profile')
-mustInclude('src/lib/mock-data.ts', mockData, 'stepsForShowcase(WEEKEND_CHECKLIST_FORK_SHOWCASE_PROJECT)', 'the Weekend static child fork must expose prompt steps for public lineage')
+mustNotInclude('src/lib/mock-data.ts', mockData, forbiddenFormerForkHandle, 'mock public data must not include fake fork profiles')
+mustNotInclude('src/lib/mock-data.ts', mockData, forbiddenNonRealProfileBio, 'mock public data must not include non-real fork profiles')
 
 const communityPanel = read('src/components/ProjectCommunityPanel.tsx')
 mustNotInclude('src/components/ProjectCommunityPanel.tsx', communityPanel, '>Forks<', 'community surface must not show a fake forks count before real counts exist')

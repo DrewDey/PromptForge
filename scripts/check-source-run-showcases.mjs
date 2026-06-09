@@ -422,14 +422,14 @@ const sourceRunProjects = [
     packagePath: 'seed-runs/weekend-plan-checklist-chatgpt-6prompt-fixed.json',
   },
   {
-    name: 'Weekend Road-Trip Readiness Board',
-    route: 'src/app/weekend-road-trip-readiness-fork-demo/page.tsx',
-    projectId: 'WEEKEND_CHECKLIST_FORK_PROJECT_ID',
-    showcaseExport: 'WEEKEND_CHECKLIST_FORK_SHOWCASE_PROJECT',
-    href: '/weekend-road-trip-readiness-fork-demo',
-    packagePath: 'seed-runs/weekend-road-trip-readiness-codex-fork-source-run.json',
+    name: 'Family Road-Trip Readiness Board',
+    route: 'src/app/weekend-family-road-trip-readiness-fork-demo/page.tsx',
+    projectId: 'WEEKEND_CHECKLIST_REAL_FORK_PROJECT_ID',
+    showcaseExport: 'WEEKEND_CHECKLIST_REAL_FORK_SHOWCASE_PROJECT',
+    href: '/weekend-family-road-trip-readiness-fork-demo',
+    packagePath: 'seed-runs/weekend-plan-checklist-chatgpt-family-road-trip-fork.json',
     artifactPaths: [
-      'public/artifacts/weekend-road-trip-readiness-codex-fork.html',
+      'public/artifacts/weekend-plan-checklist-chatgpt-family-road-trip-fork-step-4.html',
     ],
   },
   {

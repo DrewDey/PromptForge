@@ -177,6 +177,9 @@ mustInclude('src/components/PreparedSourceRunPage.tsx', preparedWrapper, 'projec
 mustInclude('src/components/PreparedSourceRunPage.tsx', preparedWrapper, 'projectTitle={project.title}', 'prepared source-run pages must pass project title to fork links')
 mustInclude('src/components/PreparedSourceRunPage.tsx', preparedWrapper, 'getApprovedProjectForks(project.id)', 'prepared source-run pages must load approved fork destinations')
 mustInclude('src/components/PreparedSourceRunPage.tsx', preparedWrapper, 'forkNetwork={forkNetwork}', 'prepared source-run pages must pass approved fork destinations into the chain')
+mustInclude('src/components/PreparedSourceRunPage.tsx', preparedWrapper, 'mainPathSourceSteps', 'prepared fork pages must choose their visible main path separately from inherited transcript context')
+mustInclude('src/components/PreparedSourceRunPage.tsx', preparedWrapper, 'project.forkSource?.sourceStepNumber', 'prepared fork pages must find the original response number that created the fork')
+mustInclude('src/components/PreparedSourceRunPage.tsx', preparedWrapper, 'step.step_number > forkPointStepNumber', 'prepared fork pages must start the visible build path after the fork point')
 
 const dataLayer = read('src/lib/data.ts')
 mustInclude('src/lib/data.ts', dataLayer, 'projectForkSourceToSubmissionFields', 'source-run creation must store structured fork metadata when available')

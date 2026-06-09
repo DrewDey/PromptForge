@@ -102,7 +102,7 @@ function ForkLineageSegmentCard({
   return (
     <div
       className={[
-        'group/inherited-step relative border px-3 py-2 text-left transition',
+        'group/inherited-step relative min-h-[82px] border px-3 py-2 text-left transition',
         segment.muted
           ? 'border-surface-200 bg-surface-100 text-surface-400 opacity-70 hover:opacity-100'
           : isForkPoint
@@ -318,20 +318,49 @@ function ProjectForkInheritedPathBand({
   const forkPointLabel = forkPointSegment
     ? `Response ${String(forkPointSegment.stepNumber).padStart(2, '0')}`
     : 'the selected response'
+  const forkPointGridRow = forkPointSegment
+    ? contract.lineageSegments.findIndex((segment) => segment.id === forkPointSegment.id) + 2
+    : 2
+  const sourceHref = projectHref(forkSource.sourceProjectId)
+  const depthValue = Math.min(forkSource.depth + 1, PROJECT_FORK_MAX_DEPTH)
+  const branchValue = Math.min(forkSource.branchIndex + 1, PROJECT_FORK_MAX_WIDTH)
+  const firstContinuationStep = visibleContinuationSteps[0]
+  const continuationLabel = firstContinuationStep
+    ? `Prompt ${String(firstContinuationStep.stepNumber).padStart(2, '0')} / Response ${String(firstContinuationStep.stepNumber).padStart(2, '0')}`
+    : 'the next prompt'
 
   return (
-    <div className="mb-8 overflow-hidden border border-[#07551f] bg-[#f8fff9] shadow-[0_18px_44px_rgba(7,85,31,0.08)]">
-      <div className="border-b border-[#07551f] bg-white p-5">
-        <div className="flex items-center gap-2 font-mono text-[10px] font-bold uppercase tracking-[0.16em] text-[#07551f]">
-          <GitBranch className="h-4 w-4" aria-hidden="true" />
-          Inherited fork path
+    <div className="mb-10 overflow-hidden border border-[#07551f] bg-white shadow-[0_18px_44px_rgba(7,85,31,0.08)]">
+      <div className="border-b border-[#07551f] bg-[#f8fff9] p-5">
+        <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end">
+          <div>
+            <div className="flex items-center gap-2 font-mono text-[10px] font-bold uppercase tracking-[0.16em] text-[#07551f]">
+              <GitBranch className="h-4 w-4" aria-hidden="true" />
+              Fork path
+            </div>
+            <h2 className="mt-2 text-xl font-black text-surface-900">
+              {currentProject.title} starts at {continuationLabel}.
+            </h2>
+            <p className="mt-2 max-w-3xl text-sm leading-6 text-surface-600">
+              It branches from {forkPointLabel}. The original path is retained as source context on the left, and the active fork continuation starts on the right at the branch row.
+            </p>
+          </div>
+          <div className="flex flex-wrap gap-2 font-mono text-[10px] uppercase tracking-[0.12em] text-surface-600">
+            <span className="border border-[#07551f]/30 bg-white px-2.5 py-2 text-[#07551f]">
+              Depth {depthValue} / {PROJECT_FORK_MAX_DEPTH}
+            </span>
+            <span className="border border-[#07551f]/30 bg-white px-2.5 py-2 text-[#07551f]">
+              Branch {branchValue} / {PROJECT_FORK_MAX_WIDTH}
+            </span>
+            <Link
+              href={sourceHref}
+              className="inline-flex items-center gap-2 border border-[#07551f] bg-white px-2.5 py-2 font-black text-[#07551f] transition hover:bg-[#effdf3]"
+            >
+              Open source path
+              <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
+            </Link>
+          </div>
         </div>
-        <h2 className="mt-2 text-xl font-black text-surface-900">
-          This fork branches from {forkPointLabel}.
-        </h2>
-        <p className="mt-2 max-w-3xl text-sm leading-6 text-surface-600">
-          The shared source path collapses left. The source path after the fork point is muted, and this project&apos;s continuation runs right.
-        </p>
       </div>
 
       <div className="grid gap-4 p-4 lg:hidden">
@@ -386,62 +415,64 @@ function ProjectForkInheritedPathBand({
       </div>
 
       <div className="hidden overflow-x-auto lg:block">
-        <div className="min-w-[940px] p-5">
-          <div className="grid grid-cols-[minmax(0,1fr)_86px_minmax(0,1fr)] items-start">
-            <section className="border border-surface-200 bg-white p-4">
-              <div className="font-mono text-[10px] font-bold uppercase tracking-[0.16em] text-surface-500">
-                Source path collapses left
-              </div>
-              <div className="mt-2 text-sm font-black text-surface-900">
-                {sourceProject.title}
-              </div>
-              <div className="mt-3 grid gap-2">
-                {sharedSegments.length > 0 ? sharedSegments.map((segment) => (
-                  <ForkLineageSegmentCard key={segment.id} segment={segment} />
-                )) : (
-                  <div className="border border-dashed border-surface-300 bg-surface-50 px-3 py-2 text-xs leading-5 text-surface-500">
-                    Fork starts from the first response.
-                  </div>
-                )}
-                {forkPointSegment && (
-                  <ForkLineageSegmentCard segment={forkPointSegment} />
-                )}
-              </div>
-
-              {originalContinuationSegments.length > 0 && (
-                <div className="mt-4 border-t border-surface-200 pt-3">
-                  <div className="font-mono text-[10px] uppercase tracking-[0.14em] text-surface-400">
-                    Source continuation after fork point
-                  </div>
-                  <div className="mt-2 grid gap-2">
-                    {originalContinuationSegments.map((segment) => (
-                      <ForkLineageSegmentCard key={segment.id} segment={segment} />
-                    ))}
-                  </div>
-                </div>
-              )}
-            </section>
-
-            <div className="relative h-full min-h-[280px]" aria-hidden="true">
-              <div className="absolute left-1/2 top-0 h-full w-8 -translate-x-1/2 border-x-4 border-[#07551f] bg-[#2bd15f] shadow-[inset_5px_0_0_rgba(255,255,255,0.24),inset_-5px_0_0_rgba(0,0,0,0.2)]" />
-              <div className="absolute left-0 top-[116px] h-8 w-full border-y-4 border-[#07551f] bg-[#2bd15f] shadow-[inset_0_5px_0_rgba(255,255,255,0.2),inset_0_-5px_0_rgba(0,0,0,0.16)]" />
-              <div className="absolute left-1/2 top-[102px] h-16 w-16 -translate-x-1/2 border-4 border-[#07551f] bg-[#effdf3] shadow-[0_0_0_9px_rgba(43,209,95,0.16)] motion-safe:animate-pulse" />
+        <div
+          className="grid min-w-[980px] grid-cols-[minmax(0,1fr)_88px_minmax(0,1fr)] gap-x-0 gap-y-3 p-5"
+          style={{ alignItems: 'stretch' }}
+        >
+          <div className="border border-surface-200 bg-surface-50 p-3">
+            <div className="font-mono text-[10px] font-bold uppercase tracking-[0.16em] text-surface-500">
+              Source path
             </div>
-
-            <section className="border-2 border-[#07551f] bg-white p-4 shadow-[0_18px_44px_rgba(7,85,31,0.08)]">
-              <div className="font-mono text-[10px] font-bold uppercase tracking-[0.16em] text-[#07551f]">
-                Current fork continues right
-              </div>
-              <div className="mt-2 text-sm font-black text-surface-900">
-                {currentProject.title}
-              </div>
-              <div className="mt-3 grid gap-2">
-                {visibleContinuationSteps.map((step) => (
-                  <ForkContinuationCard key={step.id} step={step} />
-                ))}
-              </div>
-            </section>
+            <div className="mt-1 text-sm font-black text-surface-900">
+              {sourceProject.title}
+            </div>
           </div>
+          <div aria-hidden="true" />
+          <div className="border-2 border-[#07551f] bg-[#f8fff9] p-3">
+            <div className="font-mono text-[10px] font-bold uppercase tracking-[0.16em] text-[#07551f]">
+              Current fork continues right
+            </div>
+            <div className="mt-1 text-sm font-black text-surface-900">
+              {currentProject.title}
+            </div>
+          </div>
+
+          {contract.lineageSegments.map((segment, index) => (
+            <div key={segment.id} style={{ gridColumn: 1, gridRow: index + 2 }}>
+              <ForkLineageSegmentCard segment={segment} />
+            </div>
+          ))}
+
+          {forkPointSegment && (
+            <div
+              className="relative min-h-[82px]"
+              style={{ gridColumn: 2, gridRow: forkPointGridRow }}
+              aria-hidden="true"
+            >
+              <div className="absolute left-0 right-0 top-1/2 h-4 -translate-y-1/2 border-y-2 border-[#07551f] bg-[#2bd15f] shadow-[inset_0_3px_0_rgba(255,255,255,0.24),inset_0_-3px_0_rgba(0,0,0,0.16)]" />
+              <div className="absolute left-1/2 top-1/2 h-10 w-10 -translate-x-1/2 -translate-y-1/2 border-2 border-[#07551f] bg-[#effdf3] shadow-[0_0_0_6px_rgba(43,209,95,0.16)]">
+                <div className="m-auto mt-[11px] h-3 w-3 border border-[#07551f] bg-[#2bd15f]" />
+              </div>
+            </div>
+          )}
+
+          {visibleContinuationSteps.map((step, index) => (
+            <div
+              key={step.id}
+              style={{ gridColumn: 3, gridRow: forkPointGridRow + index }}
+            >
+              <ForkContinuationCard step={step} />
+            </div>
+          ))}
+
+          {originalContinuationSegments.length > 0 && (
+            <div
+              className="border border-dashed border-surface-200 bg-surface-50 px-3 py-2 text-xs leading-5 text-surface-500"
+              style={{ gridColumn: 3, gridRow: forkPointGridRow + visibleContinuationSteps.length }}
+            >
+              Source continuation after fork point stays muted: original responses after {forkPointLabel} remain on the source side and do not continue this fork.
+            </div>
+          )}
         </div>
       </div>
     </div>
@@ -745,8 +776,6 @@ export default async function ProjectCommunityPanel({
       className="mx-auto max-w-7xl px-4 pb-28 sm:px-6 lg:px-8 lg:pb-14"
       data-project-id={projectId}
     >
-      {forkSource && <ProjectForkOriginBand forkSource={forkSource} />}
-      {forkSource && <ProjectForkAncestryTrail nodes={forkTrail.nodes} />}
       {forkSource && project && (
         <ProjectForkInheritedPathBand
           forkSource={forkSource}

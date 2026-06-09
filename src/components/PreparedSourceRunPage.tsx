@@ -131,6 +131,17 @@ function toShowcaseStep(
   }
 }
 
+function mainPathSourceSteps(
+  sourceRun: SourceRunPackage,
+  project: PreparedShowcaseProject,
+) {
+  const forkPointStepNumber = project.forkSource?.sourceStepNumber
+  if (!forkPointStepNumber) return sourceRun.steps
+
+  const continuationSteps = sourceRun.steps.filter((step) => step.step_number > forkPointStepNumber)
+  return continuationSteps.length > 0 ? continuationSteps : sourceRun.steps
+}
+
 function RunSummary({
   sourceRun,
   project,
@@ -172,7 +183,7 @@ export default async function PreparedSourceRunPage({
   const sourceRun = sourceRunPackage
   const providerName = getProviderName(sourceRun, project)
   const sourceUrl = sourceRun.source_url || project.sourceUrl
-  const steps = sourceRun.steps.map((step) => toShowcaseStep(step, sourceRun, project))
+  const steps = mainPathSourceSteps(sourceRun, project).map((step) => toShowcaseStep(step, sourceRun, project))
   const forkNetwork = await getApprovedProjectForks(project.id)
 
   return (

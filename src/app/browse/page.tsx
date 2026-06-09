@@ -23,6 +23,7 @@ import { getCategories, getPrompts, getUserVotesAndBookmarks } from '@/lib/data'
 import type { PromptWithRelations } from '@/lib/types'
 import { AI_MODELS } from '@/lib/models'
 import { getPreparedShowcaseProjectById } from '@/lib/prepared-showcase-projects'
+import { getPublicModelLabel } from '@/lib/public-model-labels'
 import { isPersistableProjectId } from '@/lib/project-engagement'
 import { getProjectHref } from '@/lib/project-links'
 import VoteBookmarkButtons from '@/components/VoteBookmarkButtons'
@@ -526,6 +527,7 @@ export default async function BrowsePage({
                   {FACET_MODELS.map(modelId => {
                     const meta = AI_MODELS.find(m => m.id === modelId)
                     if (!meta) return null
+                    const modelLabel = getPublicModelLabel(meta.id)
                     const count = countsByModel[modelId] ?? 0
                     const isActive = activeModel === modelId
                     if (count === 0 && !isActive) return null
@@ -537,7 +539,7 @@ export default async function BrowsePage({
                           aria-disabled="true"
                         >
                           <span className="facet-check-box" aria-hidden="true">✓</span>
-                          <span>{meta.name}</span>
+                          <span>{modelLabel}</span>
                           <span className="facet-count" style={{ marginLeft: 'auto' }}>{count}</span>
                         </span>
                       )
@@ -549,7 +551,7 @@ export default async function BrowsePage({
                         className={`facet-check ${isActive ? 'active' : ''}`}
                       >
                         <span className="facet-check-box" aria-hidden="true">{isActive ? '✓' : ''}</span>
-                        <span>{meta.name}</span>
+                        <span>{modelLabel}</span>
                         <span className="facet-count" style={{ marginLeft: 'auto' }}>{count}</span>
                       </Link>
                     )

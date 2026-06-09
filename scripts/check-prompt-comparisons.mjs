@@ -2,32 +2,68 @@ import { readFileSync } from 'node:fs'
 import { Script } from 'node:vm'
 import ts from 'typescript'
 
-const source = readFileSync('src/lib/prompt-comparisons.ts', 'utf8')
-const { outputText, diagnostics } = ts.transpileModule(source, {
-  compilerOptions: {
-    module: ts.ModuleKind.CommonJS,
-    target: ts.ScriptTarget.ES2022,
-    esModuleInterop: true,
-  },
-  reportDiagnostics: true,
-})
+function transpileFile(path) {
+  const source = readFileSync(path, 'utf8')
+  const { outputText, diagnostics } = ts.transpileModule(source, {
+    compilerOptions: {
+      module: ts.ModuleKind.CommonJS,
+      target: ts.ScriptTarget.ES2022,
+      esModuleInterop: true,
+    },
+    reportDiagnostics: true,
+  })
 
-if (diagnostics?.length) {
-  const messages = diagnostics.map((diagnostic) => diagnostic.messageText).join('\n')
-  throw new Error(`Unable to transpile prompt-comparisons.ts:\n${messages}`)
+  if (diagnostics?.length) {
+    const messages = diagnostics.map((diagnostic) => diagnostic.messageText).join('\n')
+    throw new Error(`Unable to transpile ${path}:\n${messages}`)
+  }
+
+  return outputText
 }
 
 const modelNames = new Map([
   ['claude-opus-4-8-max', 'Claude Opus 4.8 Max'],
+  ['claude-sonnet-4-6', 'Claude 4.6 Sonnet'],
   ['chatgpt-5-4', 'ChatGPT 5.4'],
+  ['gpt-5-5-instant', 'GPT 5.5 Instant'],
+  ['gemini-2-5-flash', 'Gemini 2.5 Flash'],
   ['gemini-2-5-pro', 'Gemini 2.5 Pro'],
 ])
-const module = { exports: {} }
-const sandbox = {
-  exports: module.exports,
-  module,
+
+function createSandbox(module) {
+  return {
+    exports: module.exports,
+    module,
+    require(specifier) {
+      if (specifier === './types') return {}
+      if (specifier === './models') {
+        return {
+          AI_MODELS: [...modelNames.entries()].map(([id, name]) => ({
+            id,
+            name,
+            provider: name.split(' ')[0],
+          })),
+          getModelName: (id) => modelNames.get(id) ?? id,
+        }
+      }
+      if (specifier === './public-model-labels') return publicModelLabelsModule.exports
+      throw new Error(`Unexpected require from prompt-comparisons.ts: ${specifier}`)
+    },
+    Date,
+    Map,
+    Math,
+    RegExp,
+    Set,
+    String,
+    console,
+  }
+}
+
+const publicModelLabelsModule = { exports: {} }
+const publicModelLabelsSandbox = {
+  exports: publicModelLabelsModule.exports,
+  module: publicModelLabelsModule,
   require(specifier) {
-    if (specifier === './types') return {}
     if (specifier === './models') {
       return {
         AI_MODELS: [...modelNames.entries()].map(([id, name]) => ({
@@ -38,19 +74,18 @@ const sandbox = {
         getModelName: (id) => modelNames.get(id) ?? id,
       }
     }
-    throw new Error(`Unexpected require from prompt-comparisons.ts: ${specifier}`)
+    throw new Error(`Unexpected require from public-model-labels.ts: ${specifier}`)
   },
-  Date,
-  Map,
-  Math,
-  Set,
+  RegExp,
   String,
   console,
 }
+new Script(transpileFile('src/lib/public-model-labels.ts'), { filename: 'public-model-labels.transpiled.cjs' }).runInNewContext(publicModelLabelsSandbox)
 
-new Script(outputText, { filename: 'prompt-comparisons.transpiled.cjs' }).runInNewContext(sandbox)
+const module = { exports: {} }
+new Script(transpileFile('src/lib/prompt-comparisons.ts'), { filename: 'prompt-comparisons.transpiled.cjs' }).runInNewContext(createSandbox(module))
 
-const { buildPromptComparisonGroups } = module.exports
+const { buildPromptComparisonGroups, getPromptModelLabel } = module.exports
 
 const failures = []
 
@@ -123,6 +158,39 @@ const heuristicGroup = heuristicGroups.find((group) => group.key.startsWith('heu
 assert(heuristicGroup, 'similar prompts without a prompt family should still produce a heuristic comparison group')
 assert(heuristicGroup?.matchBasis === 'heuristic', 'heuristic comparison group should report heuristic match basis')
 assert(!heuristicGroup?.promptFamilyId, 'heuristic comparison group should not invent a prompt family id')
+
+const publicLabelCases = [
+  [
+    'ChatGPT Instant visible composer setting (exact model not exposed)',
+    'ChatGPT Instant',
+  ],
+  [
+    'Latest 5.5 / gpt-5-5-thinking as exposed by ChatGPT message nodes',
+    'ChatGPT 5.5 Thinking',
+  ],
+  [
+    'Flash (visible Gemini mode picker; exact backend version not exposed)',
+    'Gemini Flash',
+  ],
+  [
+    'Sonnet 4.6 Max (visible Claude composer model label)',
+    'Claude Sonnet 4.6 Max',
+  ],
+  [
+    'gemini-2-5-pro',
+    'Gemini Pro',
+  ],
+]
+for (const [rawModel, expectedLabel] of publicLabelCases) {
+  assert(
+    getPromptModelLabel(prompt({
+      id: `label-${expectedLabel}`,
+      title: `Label case ${expectedLabel}`,
+      model_used: rawModel,
+    })) === expectedLabel,
+    `public model label should render "${rawModel}" as "${expectedLabel}"`,
+  )
+}
 
 const sameModelFamilyGroups = buildPromptComparisonGroups([
   prompt({

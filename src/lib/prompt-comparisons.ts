@@ -1,5 +1,6 @@
 import type { PromptWithRelations } from './types'
 import { AI_MODELS, getModelName } from './models'
+import { getPublicModelLabel } from './public-model-labels'
 
 export type PromptModelEra = 'newer' | 'older' | 'reference'
 export type PromptComparisonMatchBasis = 'prompt-family' | 'heuristic'
@@ -187,13 +188,13 @@ function modelSearchBlob(prompt: PromptWithRelations) {
 }
 
 export function getPromptModelLabel(prompt: PromptWithRelations) {
-  if (prompt.model_used) return getModelName(prompt.model_used)
-  if (prompt.model_recommendation) return prompt.model_recommendation
+  if (prompt.model_used) return getPublicModelLabel(prompt.model_used)
+  if (prompt.model_recommendation) return getPublicModelLabel(prompt.model_recommendation)
 
   const toolModel = prompt.tools_used.find((tool) => (
     /chatgpt|claude|gemini|gpt|llama|mistral|grok|deepseek|o\d/i.test(tool)
   ))
-  return toolModel ?? 'Unknown model'
+  return toolModel ? getPublicModelLabel(toolModel) : 'Unknown model'
 }
 
 export function promptMatchesModel(prompt: PromptWithRelations, modelId: string) {
@@ -217,13 +218,13 @@ export function promptMatchesModel(prompt: PromptWithRelations, modelId: string)
 }
 
 export function getPromptModelEra(prompt: PromptWithRelations): PromptModelEra {
-  const label = getPromptModelLabel(prompt).toLowerCase()
+  const label = `${getPromptModelLabel(prompt)} ${modelSearchBlob(prompt)}`.toLowerCase()
 
-  if (/(gpt[-\s]*4o|gpt\s*4|claude\s*3|gemini\s*2\.?0|\bo3\b|\bo4\b)/i.test(label)) {
+  if (/(gpt[-\s]*4o|gpt\s*4|claude(?:\s+\w+)*\s*3|(?:sonnet|opus|haiku)\s*3|gemini\s*2\.?0|\bo3\b|\bo4\b)/i.test(label)) {
     return 'older'
   }
 
-  if (/(5\.?5|chatgpt\s*5|claude\s*4\.?[678]|gemini\s*2\.?5|llama\s*4|grok\s*3|latest)/i.test(label)) {
+  if (/(5\.?5|chatgpt\s*5|claude(?:\s+\w+)*\s*4\.?[678]|(?:sonnet|opus|haiku)\s*4\.?[678]|gemini\s*2\.?5|llama\s*4|grok\s*3|latest)/i.test(label)) {
     return 'newer'
   }
 

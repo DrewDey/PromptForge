@@ -1,9 +1,12 @@
 import Link from 'next/link'
+import type { Metadata } from 'next'
+import { canonicalMetadata } from '@/lib/site-url'
 import '../home.css'
 
-export const metadata = {
+export const metadata: Metadata = {
   title: 'About — PathForge',
   description: 'Why PathForge exists, what a build path actually is, and the long game behind the platform.',
+  ...canonicalMetadata('/about'),
 }
 
 /* ─────────────────────────────────────────────────────────

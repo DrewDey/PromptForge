@@ -1,3 +1,5 @@
+import type { Metadata } from 'next'
+
 const FALLBACK_SITE_URL = 'https://prompt-forge-sandy.vercel.app'
 
 function withProtocol(url: string) {
@@ -16,4 +18,24 @@ export function getSiteUrl() {
 
 export function getAbsoluteSiteUrl(path: string) {
   return new URL(path, `${getSiteUrl()}/`).toString()
+}
+
+export function getCanonicalSiteUrl(path: string) {
+  const url = new URL(path, `${getSiteUrl()}/`)
+  url.search = ''
+  url.hash = ''
+
+  if (url.pathname !== '/') {
+    url.pathname = url.pathname.replace(/\/+$/, '')
+  }
+
+  return url.toString()
+}
+
+export function canonicalMetadata(path: string): Pick<Metadata, 'alternates'> {
+  return {
+    alternates: {
+      canonical: getCanonicalSiteUrl(path),
+    },
+  }
 }

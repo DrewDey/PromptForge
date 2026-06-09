@@ -3,10 +3,12 @@ import type { Metadata } from 'next'
 import { ArrowRight, Flame, GitFork, Moon, Sparkles, TimerReset } from 'lucide-react'
 import { getPrompts } from '@/lib/data'
 import { getProjectHref } from '@/lib/project-links'
+import { canonicalMetadata } from '@/lib/site-url'
 
 export const metadata: Metadata = {
   title: 'What to Build with AI Tonight | PathForge',
   description: 'Find focused AI project ideas for tonight, then jump into real PathForge build paths, prompts, artifacts, or community requests.',
+  ...canonicalMetadata('/what-to-build'),
 }
 
 const starterLanes = [

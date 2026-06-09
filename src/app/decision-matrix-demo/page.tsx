@@ -21,6 +21,7 @@ const responseIntro =
   'Your decision matrix tool is ready. This is a clean, dark-themed, single-file HTML app designed for clear visual hierarchy and quick input.'
 
 export const metadata = buildPathDetailMetadata({
+  id: projectId,
   title: pageTitle,
   description: pageDescription,
 })

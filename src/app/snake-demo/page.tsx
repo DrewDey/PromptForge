@@ -22,6 +22,7 @@ const chatResponseIntro =
   'I’ll build a standalone HTML Snake game with embedded CSS/JavaScript, playable directly in a browser, including scoring, keyboard controls, pause/restart, and mobile-friendly touch support.'
 
 export const metadata = buildPathDetailMetadata({
+  id: projectId,
   title: pageTitle,
   description: pageDescription,
 })

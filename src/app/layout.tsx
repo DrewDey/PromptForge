@@ -3,6 +3,7 @@ import { Inter, Instrument_Serif, JetBrains_Mono } from 'next/font/google'
 import './globals.css'
 import Header from '@/components/Header'
 import Footer from '@/components/Footer'
+import { getSiteUrl } from '@/lib/site-url'
 
 const inter = Inter({
   subsets: ['latin'],
@@ -27,6 +28,7 @@ const jetbrainsMono = JetBrains_Mono({
 })
 
 export const metadata: Metadata = {
+  metadataBase: new URL(getSiteUrl()),
   title: 'PathForge — Proven AI Build Paths You Can Actually Use',
   description: 'Stop staring at the blank chat. See exactly how real projects were built — every prompt, every result, every branch. Fork a path and ship tonight.',
 }

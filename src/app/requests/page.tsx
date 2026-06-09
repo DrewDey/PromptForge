@@ -5,11 +5,13 @@ import BuildRequestResponseForm from '@/components/BuildRequestResponseForm'
 import BuildRequestSubmitForm from '@/components/BuildRequestSubmitForm'
 import { voteOnBuildRequest } from '@/lib/actions'
 import { getPublicBuildRequests, getUserBuildRequestVotes } from '@/lib/data'
+import { canonicalMetadata } from '@/lib/site-url'
 import type { BuildRequestWithRelations } from '@/lib/types'
 
 export const metadata: Metadata = {
   title: 'Request an AI Build Path | PathForge',
   description: 'Ask the PathForge community for a real AI build path, fork, or finished artifact for the project you want to see built.',
+  ...canonicalMetadata('/requests'),
 }
 
 const SUPABASE_CONFIGURED = !!(

@@ -1,6 +1,6 @@
 'use client'
 
-import { Fragment, type ReactNode } from 'react'
+import { Fragment, type CSSProperties, type ReactNode } from 'react'
 import Link from 'next/link'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { ArrowRight, CheckCircle2, ExternalLink, FileCode2, GitFork } from 'lucide-react'
@@ -46,6 +46,67 @@ type ArtifactPackage = Pick<
   isDefaultArtifact: boolean
 }
 
+type ArtifactSize = {
+  width: number
+  height: number
+}
+
+const ARTIFACT_FRAME_HEIGHT = 'clamp(520px, calc(100svh - 160px), 760px)'
+const MAX_AUTO_FIT_ARTIFACT_HEIGHT = 6000
+const MAX_AUTO_FIT_ARTIFACT_WIDTH = 14000
+const MAX_AUTO_FIT_HTML_BYTES = 2_000_000
+
+function artifactFitProbeScript() {
+  return `
+<script>
+(() => {
+  const sendSize = () => {
+    const doc = document.documentElement;
+    const body = document.body;
+    const width = Math.max(doc ? doc.scrollWidth : 0, body ? body.scrollWidth : 0, window.innerWidth);
+    const height = Math.max(doc ? doc.scrollHeight : 0, body ? body.scrollHeight : 0, window.innerHeight);
+    window.parent.postMessage({ type: 'pathforge-artifact-size', width, height }, '*');
+  };
+
+  let scheduled = false;
+  const schedule = () => {
+    if (scheduled) return;
+    scheduled = true;
+    window.requestAnimationFrame(() => {
+      scheduled = false;
+      sendSize();
+    });
+  };
+
+  window.addEventListener('load', schedule);
+  window.addEventListener('resize', schedule);
+  if ('ResizeObserver' in window) {
+    const observer = new ResizeObserver(schedule);
+    observer.observe(document.documentElement);
+    if (document.body) observer.observe(document.body);
+  }
+  setTimeout(schedule, 60);
+  setTimeout(schedule, 300);
+  setTimeout(schedule, 1000);
+})();
+</script>`
+}
+
+function injectArtifactFitProbe(html: string, artifactHref: string) {
+  const baseTag = `<base href="${artifactHref}">`
+  const hasBaseTag = /<base\s/i.test(html)
+  const htmlWithBase = hasBaseTag
+    ? html
+    : html.replace(/<head([^>]*)>/i, `<head$1>${baseTag}`)
+  const probe = artifactFitProbeScript()
+
+  if (/<\/body>/i.test(htmlWithBase)) {
+    return htmlWithBase.replace(/<\/body>/i, `${probe}</body>`)
+  }
+
+  return `${htmlWithBase}${probe}`
+}
+
 function ArtifactFrame({
   selectedPackage,
   providerName,
@@ -53,6 +114,144 @@ function ArtifactFrame({
   selectedPackage: ArtifactPackage
   providerName: string
 }) {
+  const frameRef = useRef<HTMLDivElement | null>(null)
+  const iframeRef = useRef<HTMLIFrameElement | null>(null)
+  const [frameSize, setFrameSize] = useState<ArtifactSize | null>(null)
+  const [artifactSize, setArtifactSize] = useState<ArtifactSize | null>(null)
+  const [srcDoc, setSrcDoc] = useState<string | null>(null)
+  const [usesDirectSource, setUsesDirectSource] = useState(false)
+
+  useEffect(() => {
+    const frame = frameRef.current
+    if (!frame) return undefined
+
+    const updateFrameSize = () => {
+      const rect = frame.getBoundingClientRect()
+      const nextSize = {
+        width: Math.max(1, Math.round(rect.width)),
+        height: Math.max(1, Math.round(rect.height)),
+      }
+
+      setFrameSize((current) => {
+        if (
+          current &&
+          Math.abs(current.width - nextSize.width) < 2 &&
+          Math.abs(current.height - nextSize.height) < 2
+        ) {
+          return current
+        }
+
+        return nextSize
+      })
+    }
+
+    updateFrameSize()
+    const observer = new ResizeObserver(updateFrameSize)
+    observer.observe(frame)
+
+    return () => observer.disconnect()
+  }, [])
+
+  useEffect(() => {
+    let cancelled = false
+    setArtifactSize(null)
+    setSrcDoc(null)
+    setUsesDirectSource(false)
+
+    async function loadArtifact() {
+      try {
+        const artifactHref = new URL(selectedPackage.artifactPath, window.location.origin).href
+        const response = await fetch(selectedPackage.artifactPath)
+        const html = await response.text()
+
+        if (!response.ok || html.length > MAX_AUTO_FIT_HTML_BYTES) {
+          if (!cancelled) setUsesDirectSource(true)
+          return
+        }
+
+        if (!cancelled) {
+          setSrcDoc(injectArtifactFitProbe(html, artifactHref))
+        }
+      } catch {
+        if (!cancelled) setUsesDirectSource(true)
+      }
+    }
+
+    loadArtifact()
+
+    return () => {
+      cancelled = true
+    }
+  }, [selectedPackage.artifactPath, selectedPackage.id])
+
+  useEffect(() => {
+    function handleMessage(event: MessageEvent) {
+      if (event.source !== iframeRef.current?.contentWindow) return
+      const data = event.data
+      if (!data || data.type !== 'pathforge-artifact-size') return
+      const width = Number(data.width)
+      const height = Number(data.height)
+      if (!Number.isFinite(width) || !Number.isFinite(height)) return
+
+      const nextSize = {
+        width: Math.max(1, Math.ceil(width)),
+        height: Math.max(1, Math.ceil(height)),
+      }
+
+      setArtifactSize((current) => {
+        if (
+          current &&
+          Math.abs(current.width - nextSize.width) < 4 &&
+          Math.abs(current.height - nextSize.height) < 4
+        ) {
+          return current
+        }
+
+        return nextSize
+      })
+    }
+
+    window.addEventListener('message', handleMessage)
+    return () => window.removeEventListener('message', handleMessage)
+  }, [])
+
+  const canAutoFit =
+    Boolean(srcDoc && frameSize && artifactSize) &&
+    (artifactSize?.height ?? 0) <= MAX_AUTO_FIT_ARTIFACT_HEIGHT &&
+    (artifactSize?.width ?? 0) <= MAX_AUTO_FIT_ARTIFACT_WIDTH
+  const fitScale = canAutoFit && frameSize && artifactSize
+    ? Math.min(
+        1,
+        frameSize.height / Math.max(artifactSize.height, 1),
+        frameSize.width / Math.max(artifactSize.width, 1),
+      )
+    : 1
+  const shouldScale = canAutoFit && fitScale < 0.995
+  const virtualWidth = shouldScale && frameSize
+    ? Math.ceil(frameSize.width / fitScale)
+    : undefined
+  const virtualHeight = shouldScale && artifactSize
+    ? Math.ceil(artifactSize.height)
+    : undefined
+  const iframeStyle: CSSProperties = shouldScale
+    ? {
+        width: `${virtualWidth}px`,
+        height: `${virtualHeight}px`,
+        transform: `scale(${fitScale})`,
+        transformOrigin: 'left top',
+        border: 0,
+      }
+    : {
+        width: '100%',
+        height: '100%',
+        border: 0,
+      }
+  const fitMode = usesDirectSource
+    ? 'direct'
+    : canAutoFit
+      ? shouldScale ? 'scaled' : 'native'
+      : srcDoc ? 'guarded-scroll' : 'loading'
+
   return (
     <div
       key={selectedPackage.id}
@@ -79,14 +278,29 @@ function ArtifactFrame({
           Open
         </a>
       </div>
-      <iframe
-        key={selectedPackage.id}
-        title={`${selectedPackage.artifactTitle} generated from a ${providerName} source run`}
-        src={selectedPackage.artifactPath}
-        sandbox="allow-scripts allow-same-origin"
-        className="w-full bg-[#111827]"
-        style={{ height: 'clamp(520px, calc(100svh - 160px), 760px)' }}
-      />
+      <div
+        ref={frameRef}
+        data-artifact-fit-mode={fitMode}
+        data-artifact-scale={shouldScale ? fitScale.toFixed(3) : '1'}
+        data-artifact-measured-height={artifactSize?.height ?? ''}
+        data-artifact-measured-width={artifactSize?.width ?? ''}
+        data-artifact-virtual-height={virtualHeight ?? ''}
+        data-artifact-virtual-width={virtualWidth ?? ''}
+        className="relative w-full overflow-hidden bg-[#111827]"
+        style={{ height: ARTIFACT_FRAME_HEIGHT }}
+      >
+        <iframe
+          ref={iframeRef}
+          key={selectedPackage.id}
+          title={`${selectedPackage.artifactTitle} generated from a ${providerName} source run`}
+          src={usesDirectSource || !srcDoc ? selectedPackage.artifactPath : undefined}
+          srcDoc={srcDoc ?? undefined}
+          sandbox="allow-scripts allow-same-origin"
+          scrolling={canAutoFit ? 'no' : 'auto'}
+          className="absolute left-0 top-0 max-w-none bg-[#111827]"
+          style={iframeStyle}
+        />
+      </div>
     </div>
   )
 }
@@ -119,9 +333,9 @@ function forkAuthorLabel(fork: ProjectForkNetworkItem) {
   return fork.authorDisplayName ?? compactForkText(fork.title, 'Forked path', 44)
 }
 
-function externalSourceRunHref(value: string) {
-  const trimmed = value.trim()
-  if (!trimmed) return '#'
+function externalSourceRunHref(value?: string | null) {
+  const trimmed = value?.trim()
+  if (!trimmed) return null
   if (/^https?:\/\//i.test(trimmed)) return trimmed
   return `https://${trimmed}`
 }
@@ -633,7 +847,7 @@ export default function SourceRunShowcase({
   forkNetwork = [],
   defaultStepNumber,
 }: {
-  sourceRunUrl: string
+  sourceRunUrl?: string | null
   projectId?: string
   projectTitle?: string
   providerName: string
@@ -842,15 +1056,22 @@ export default function SourceRunShowcase({
         )}
 
         <div className="mt-8 border border-surface-200 bg-white p-4">
-          <a
-            href={sourceRunHref}
-            target="_blank"
-            rel="noreferrer"
-            className="flex items-center justify-between gap-3 text-sm font-semibold text-brand-blue hover:text-brand-blue-dark"
-          >
-            Source run
-            <ExternalLink className="h-4 w-4" />
-          </a>
+          {sourceRunHref ? (
+            <a
+              href={sourceRunHref}
+              target="_blank"
+              rel="noreferrer"
+              className="flex items-center justify-between gap-3 text-sm font-semibold text-brand-blue hover:text-brand-blue-dark"
+            >
+              Source run
+              <ExternalLink className="h-4 w-4" />
+            </a>
+          ) : (
+            <div className="flex flex-wrap items-center justify-between gap-3 text-sm text-surface-700">
+              <span className="font-semibold text-surface-900">Source run</span>
+              <span>Local approval draft; provider link has not been captured yet.</span>
+            </div>
+          )}
         </div>
       </section>
     </>

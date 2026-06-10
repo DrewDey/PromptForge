@@ -3,6 +3,7 @@ export const SNAKE_PROJECT_LEGACY_ID = 'snake-gpt55-pro-oneshot'
 
 export const DECISION_MATRIX_PROJECT_ID = '069d354a-ec99-4ee4-aed4-aa1baaec8b29'
 export const HP_10BII_PROJECT_ID = '77da18f4-bf8d-4fef-bdac-c14ff4ea3920'
+export const SCHOOL_DESK_HP_CALCULATOR_FORK_PROJECT_ID = 'f25f83df-29c5-4d07-97b8-e7f6d2a902b8'
 export const TIC_TAC_TOE_PROJECT_ID = '86f12905-67b4-4f54-8de3-4f40105e42f0'
 export const POMODORO_TIMER_PROJECT_ID = '3b9c61d8-4e27-4f0a-9c5d-2a8f1e6b7c40'
 export const WEEKEND_CHECKLIST_PROJECT_ID = '81f2b617-2de5-404f-aa88-c94443f213bd'

@@ -428,6 +428,18 @@ const sourceRunProjects = [
     packagePath: 'seed-runs/hp-10bii-financial-calculator-claude-opus-48.json',
   },
   {
+    name: 'School Desk HP 10Bii+ Calculator Fork',
+    route: 'src/app/school-desk-hp-calculator-fork-demo/page.tsx',
+    projectId: 'SCHOOL_DESK_HP_CALCULATOR_FORK_PROJECT_ID',
+    showcaseExport: 'SCHOOL_DESK_HP_CALCULATOR_FORK_SHOWCASE_PROJECT',
+    href: '/school-desk-hp-calculator-fork-demo',
+    packagePath: 'seed-runs/school-desk-hp-10bii-calculator-claude-5-fable-max-fork.json',
+    artifactPaths: [
+      'public/artifacts/school-desk-hp-10bii-calculator-fable-5-max-claude-capture.html',
+      'public/artifacts/school-desk-hp-10bii-calculator-claude-5-fable-max-fork.html',
+    ],
+  },
+  {
     name: 'Pomodoro Focus Timer',
     route: 'src/app/pomodoro-timer-demo/page.tsx',
     projectId: 'POMODORO_TIMER_PROJECT_ID',

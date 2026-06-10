@@ -10,6 +10,7 @@ import {
   POMODORO_TIMER_PROJECT_ID,
   PUZZLE_BOX_ESCAPE_PROJECT_ID,
   REACTION_TRAINER_PROJECT_ID,
+  SCHOOL_DESK_HP_CALCULATOR_FORK_PROJECT_ID,
   SNAKE_PROJECT_ID,
   SWISH_CITY_PROJECT_ID,
   TIC_TAC_TOE_PROJECT_ID,
@@ -189,6 +190,74 @@ export const HP_10BII_SHOWCASE_PROJECT: PreparedShowcaseProject = {
         'There is a red hue to it that is unwanted. It should be a standard black and white/silver color, with green-ish backround on the screen, with black writing.',
       resultContent: '',
       description: 'Visual refinement prompt that produced the approved public artifact.',
+    },
+  ],
+}
+
+export const SCHOOL_DESK_HP_CALCULATOR_FORK_SHOWCASE_PROJECT: PreparedShowcaseProject = {
+  id: SCHOOL_DESK_HP_CALCULATOR_FORK_PROJECT_ID,
+  sourceRunId: 'd9fa40e7-7725-4387-ad5b-14f25cf744ce',
+  href: '/school-desk-hp-calculator-fork-demo',
+  title: 'School Desk HP 10Bii+ Calculator',
+  description:
+    'A Claude Fable 5 Max fork from the final HP 10Bii+ response places the calculator on a school desk and lets visitors pick it up, tilt it, drag it, and press the working keys.',
+  content:
+    'Rowan Pierce branched the HP 10Bii+ source run from response package 02, after the calculator had already been corrected into the graphite, silver, and green-LCD hardware palette. This one-off fork keeps that final response as the fork point without re-showing the original first calculator prompt, then turns the artifact into a school-desk scene with notebook paper, a pencil, a desk shadow, and a pick-up interaction.',
+  resultContent:
+    'A self-contained browser calculator scene with desk mode, pick-up mode, pointer tilt, drag repositioning, live key input, arithmetic, and core TVM payment solving.',
+  categorySlug: 'finance',
+  mockCategoryId: 'cat-1',
+  difficulty: 'beginner',
+  modelUsed: 'Fable 5 Max (Claude)',
+  modelRecommendation: 'Fable 5 Max (Claude)',
+  promptFamilyId: `${HP_10BII_PROJECT_ID}:${HP_10BII_PROJECT_ID}-step-2`,
+  toolsUsed: ['Claude', 'HTML', 'Browser'],
+  tags: ['fork', 'finance', 'calculator', 'hp-10bii', 'school desk', 'html', 'interaction'],
+  artifactPath: '/artifacts/school-desk-hp-10bii-calculator-claude-5-fable-max-fork.html',
+  sourceUrl: 'https://claude.ai/chat/0fc59b26-a38d-4a09-8e36-e1655a616b2e',
+  authorDisplayName: 'Rowan Pierce',
+  authorUsername: 'RowanPierce',
+  forkSource: {
+    sourceProjectId: HP_10BII_PROJECT_ID,
+    sourceProjectTitle: 'HP 10Bii+ Financial Calculator',
+    sourceStepId: `${HP_10BII_PROJECT_ID}-step-2`,
+    sourceStepNumber: 2,
+    depth: 0,
+    branchIndex: 0,
+    promptFamilyId: `${HP_10BII_PROJECT_ID}:${HP_10BII_PROJECT_ID}-step-2`,
+  },
+  createdAt: '2026-06-09T16:00:00.000Z',
+  updatedAt: '2026-06-09T16:00:00.000Z',
+  steps: [
+    {
+      id: `${SCHOOL_DESK_HP_CALCULATOR_FORK_PROJECT_ID}-step-2`,
+      stepNumber: 2,
+      title: 'Correct the hardware palette',
+      content:
+        'There is a red hue to it that is unwanted. It should be a standard black and white/silver color, with green-ish backround on the screen, with black writing.',
+      resultContent:
+        'Claude finalized the calculator in the graphite, silver, and green-LCD palette. This final response package is the fork point.',
+      description: 'Shared original source-run response package 02. This is the fork point.',
+    },
+    {
+      id: `${SCHOOL_DESK_HP_CALCULATOR_FORK_PROJECT_ID}-step-3`,
+      stepNumber: 3,
+      title: 'Branch into a school desk pickup scene',
+      content:
+        'Forking from the final graphite HP 10Bii+ response: keep the calculator functional, but place it on a school desk with notebooks and pencils and add a polished pick-up interaction so I can lift, drag, tilt, and still press the keys. Use Claude 5 Fable Max and return one self-contained HTML file.',
+      resultContent:
+        'Claude began the Fable 5 Max fork in the real chat but stayed in an extended reasoning/building state and did not surface a complete artifact before the response was stopped.',
+      description: 'Actual fork request from response package 02; no complete artifact was captured from this stalled response.',
+    },
+    {
+      id: `${SCHOOL_DESK_HP_CALCULATOR_FORK_PROJECT_ID}-step-4`,
+      stepNumber: 4,
+      title: 'Recover the complete HTML artifact',
+      content:
+        'Please continue from the same fork request and output the actual artifact now. Skip all further planning and thinking text. Return exactly one complete self-contained HTML file in one html code block. It must be the school-desk HP 10Bii+ calculator fork from the pasted final parent artifact, with pick-up, drag, tilt, desk/rest mode, responsive layout, working keys, keyboard input, and core TVM N/IYR/PV/PMT/FV payment solving.',
+      resultContent:
+        'Claude returned a complete self-contained HTML code block. The raw capture is preserved separately, and the mounted local artifact adds only the PathForge banner script.',
+      description: 'Actual Fable 5 Max continuation response that produced the local approval artifact.',
     },
   ],
 }
@@ -1033,6 +1102,7 @@ export const PREPARED_SHOWCASE_PROJECTS = [
   SNAKE_SHOWCASE_PROJECT,
   DECISION_MATRIX_SHOWCASE_PROJECT,
   HP_10BII_SHOWCASE_PROJECT,
+  SCHOOL_DESK_HP_CALCULATOR_FORK_SHOWCASE_PROJECT,
   TIC_TAC_TOE_SHOWCASE_PROJECT,
   POMODORO_TIMER_SHOWCASE_PROJECT,
   WEEKEND_CHECKLIST_SHOWCASE_PROJECT,

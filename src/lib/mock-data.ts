@@ -20,6 +20,7 @@ import {
   POMODORO_TIMER_SHOWCASE_PROJECT,
   PUZZLE_BOX_ESCAPE_SHOWCASE_PROJECT,
   REACTION_TRAINER_SHOWCASE_PROJECT,
+  SCHOOL_DESK_HP_CALCULATOR_FORK_SHOWCASE_PROJECT,
   SNAKE_SHOWCASE_PROJECT,
   SWISH_CITY_SHOWCASE_PROJECT,
   TIC_TAC_TOE_SHOWCASE_PROJECT,
@@ -67,6 +68,16 @@ export const mockProfiles: Profile[] = [
     role: 'user',
     created_at: '2026-06-01T01:07:00Z',
     updated_at: HP_10BII_SHOWCASE_PROJECT.updatedAt,
+  },
+  {
+    id: '22222222-2222-2222-2222-222222222299',
+    username: SCHOOL_DESK_HP_CALCULATOR_FORK_SHOWCASE_PROJECT.authorUsername,
+    display_name: SCHOOL_DESK_HP_CALCULATOR_FORK_SHOWCASE_PROJECT.authorDisplayName,
+    avatar_url: null,
+    bio: 'Claude-captured finance calculator forks and interaction experiments.',
+    role: 'user',
+    created_at: SCHOOL_DESK_HP_CALCULATOR_FORK_SHOWCASE_PROJECT.createdAt,
+    updated_at: SCHOOL_DESK_HP_CALCULATOR_FORK_SHOWCASE_PROJECT.updatedAt,
   },
   {
     id: '22222222-2222-2222-2222-222222222213',
@@ -259,6 +270,7 @@ export const mockSteps: PromptStep[] = [
     description: step.description,
     created_at: HP_10BII_SHOWCASE_PROJECT.createdAt,
   })),
+  ...stepsForShowcase(SCHOOL_DESK_HP_CALCULATOR_FORK_SHOWCASE_PROJECT),
   ...TIC_TAC_TOE_SHOWCASE_PROJECT.steps.map((step) => ({
     id: step.id,
     prompt_id: TIC_TAC_TOE_SHOWCASE_PROJECT.id,
@@ -379,6 +391,7 @@ export const mockPrompts: Prompt[] = [
     created_at: HP_10BII_SHOWCASE_PROJECT.createdAt,
     updated_at: HP_10BII_SHOWCASE_PROJECT.updatedAt,
   },
+  promptForShowcase(SCHOOL_DESK_HP_CALCULATOR_FORK_SHOWCASE_PROJECT, '22222222-2222-2222-2222-222222222299'),
   {
     id: TIC_TAC_TOE_SHOWCASE_PROJECT.id,
     title: TIC_TAC_TOE_SHOWCASE_PROJECT.title,

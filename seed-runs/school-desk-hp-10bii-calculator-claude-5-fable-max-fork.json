@@ -1,0 +1,89 @@
+{
+  "title": "School Desk HP 10Bii+ Calculator Fork",
+  "slug": "school-desk-hp-10bii-calculator-claude-5-fable-max-fork",
+  "provider": "Claude",
+  "model": "Fable 5 Max (Claude)",
+  "model_settings": "Claude web chat with the visible model picker set to Fable 5 Max. The final HP 10Bii+ response artifact source was pasted into the chat as parent context after file upload attempts timed out. The first fork request stalled while Claude was reasoning/building, so a recovery prompt in the same chat requested exactly one complete self-contained HTML file.",
+  "source_url": "https://claude.ai/chat/0fc59b26-a38d-4a09-8e36-e1655a616b2e",
+  "source_url_note": "Private logged-in Claude chat URL captured for local approval evidence; no public Claude share URL has been created yet.",
+  "run_started_at": "2026-06-09T12:20:00-04:00",
+  "run_finished_at": "2026-06-09T13:10:00-04:00",
+  "chain_type": "fork",
+  "category": "finance",
+  "difficulty": "beginner",
+  "tags": ["fork", "finance", "calculator", "hp-10bii", "school-desk", "html", "interaction"],
+  "tools_used": ["Claude", "HTML", "Browser"],
+  "status": "captured",
+  "description": "A captured Claude Fable 5 Max fork from the final HP 10Bii+ calculator response that places the calculator on a school desk and adds pick-up, drag, tilt, and key interaction.",
+  "agent_notes": "Prepared source-run fork approved for the public showcase path. Fork source is the final HP 10Bii+ response package, step 2, not the initial generation; this fork intentionally omits the original first HP prompt from its public package because the fork starts from the corrected final response. The raw Claude HTML capture is preserved separately from the mounted PathForge artifact.",
+  "artifact_type": "html",
+  "final_artifact_path": "public/artifacts/school-desk-hp-10bii-calculator-claude-5-fable-max-fork.html",
+  "artifact_versions": [
+    {
+      "step": 4,
+      "path": "public/artifacts/school-desk-hp-10bii-calculator-fable-5-max-claude-capture.html",
+      "notes": "Raw HTML code block captured from Claude Fable 5 Max after the recovery prompt. No PathForge banner injection."
+    },
+    {
+      "step": 4,
+      "path": "public/artifacts/school-desk-hp-10bii-calculator-claude-5-fable-max-fork.html",
+      "notes": "Mounted local approval artifact generated from the raw Claude capture with the PathForge artifact banner script added."
+    }
+  ],
+  "verification_notes": "Verified before public push: calculator renders on the school desk, the frame can be picked up, drag/tilt works while picked up, numeric keys work, keyboard input works, and TVM PMT solving works after storing N, I/YR, PV, and FV.",
+  "fork_source": {
+    "source_project_id": "77da18f4-bf8d-4fef-bdac-c14ff4ea3920",
+    "source_project_title": "HP 10Bii+ Financial Calculator",
+    "source_step_id": "77da18f4-bf8d-4fef-bdac-c14ff4ea3920-step-2",
+    "source_step_number": 2,
+    "prompt_family_id": "77da18f4-bf8d-4fef-bdac-c14ff4ea3920:77da18f4-bf8d-4fef-bdac-c14ff4ea3920-step-2",
+    "fork_depth": 0,
+    "fork_branch_index": 0
+  },
+  "steps": [
+    {
+      "step_number": 2,
+      "prompt_exact": "There is a red hue to it that is unwanted. It should be a standard black and white/silver color, with green-ish backround on the screen, with black writing.",
+      "response_exact": "Claude responded: Got it — I'll strip out the plum body and all the warm/orange tones and rebuild it in a neutral black/silver palette, keeping the green LCD with dark ink.\n\nDeliberated color palette neutralization from warm to cool tones\n\nGot it — I'll strip out the plum body and all the warm/orange tones and rebuild it in a neutral black/silver palette, keeping the green LCD with dark ink. Let me view the full stylesheet first so I edit precisely.\n\nAll warm tones are gone and the file is intact. Let me surface the updated version.\n\nPresented file\n\nDone. The plum body and every orange/warm element are gone, replaced with a neutral graphite-and-silver palette. Functionally nothing changed; this was purely a recolor. If the silver reads too light or too dark against the keys on your screen, tell me which way to push it.",
+      "response_summary": "Claude finalized the artifact in the neutral graphite-and-silver palette with a green LCD and near-black screen text.",
+      "code_blocks": ["public/artifacts/hp-10bii-financial-calculator-claude-opus-48-claude-final.html"],
+      "generated_files": [
+        "public/artifacts/hp-10bii-financial-calculator-claude-opus-48-claude-final.html",
+        "public/artifacts/hp-10bii-financial-calculator-claude-opus-48.html"
+      ],
+      "artifact_version_path": "public/artifacts/hp-10bii-financial-calculator-claude-opus-48.html",
+      "notes": "Shared original source-run prompt 02. This final response package is the fork point."
+    },
+    {
+      "step_number": 3,
+      "prompt_exact": "Forking from the final graphite HP 10Bii+ response: keep the calculator functional, but place it on a school desk with notebooks and pencils and add a polished pick-up interaction so I can lift, drag, tilt, and still press the keys. Use Claude 5 Fable Max and return one self-contained HTML file.",
+      "response_exact": "Claude began the fork response in the same Fable 5 Max chat but stayed in an extended reasoning/building state and did not surface a complete artifact before the response was stopped.",
+      "response_summary": "Initial Fable 5 Max fork request established the response-02 fork point, but did not yield the final HTML artifact.",
+      "code_blocks": [],
+      "generated_files": [],
+      "artifact_version_path": null,
+      "notes": "Actual fork request in Claude after pasting the final parent artifact source. This stalled before a usable artifact was captured."
+    },
+    {
+      "step_number": 4,
+      "prompt_exact": "Please continue from the same fork request and output the actual artifact now. Skip all further planning and thinking text. Return exactly one complete self-contained HTML file in one html code block. It must be the school-desk HP 10Bii+ calculator fork from the pasted final parent artifact, with pick-up, drag, tilt, desk/rest mode, responsive layout, working keys, keyboard input, and core TVM N/IYR/PV/PMT/FV payment solving.",
+      "response_exact": "Claude responded with one complete self-contained HTML code block for the school-desk HP 10Bii+ calculator fork. The artifact includes a wood school desk scene, notebook paper, pencil/sticky-note desk props, a graphite calculator, pickup and put-back controls, drag and pointer tilt, keyboard input, arithmetic, and core TVM N/IYR/PV/PMT/FV payment solving.",
+      "response_summary": "Actual Fable 5 Max branch produced the complete local school-desk pickup calculator artifact.",
+      "code_blocks": [
+        "public/artifacts/school-desk-hp-10bii-calculator-fable-5-max-claude-capture.html",
+        "public/artifacts/school-desk-hp-10bii-calculator-claude-5-fable-max-fork.html"
+      ],
+      "generated_files": [
+        "public/artifacts/school-desk-hp-10bii-calculator-fable-5-max-claude-capture.html",
+        "public/artifacts/school-desk-hp-10bii-calculator-claude-5-fable-max-fork.html"
+      ],
+      "artifact_version_path": "public/artifacts/school-desk-hp-10bii-calculator-claude-5-fable-max-fork.html",
+      "notes": "Actual fork continuation from original response package 02. Raw Claude capture is preserved separately; mounted artifact adds the PathForge banner script."
+    }
+  ],
+  "submitted_by_account": "Rowan Pierce / /user/RowanPierce",
+  "submitted_by_profile_registry_id": "prepared-showcase-mock-profile-rowan-pierce",
+  "source_run_submission_id": "d9fa40e7-7725-4387-ad5b-14f25cf744ce",
+  "admin_review_status": "prepared_public_showcase_page_ready",
+  "public_status": "prepared_public_showcase"
+}

@@ -242,21 +242,11 @@ export const SCHOOL_DESK_HP_CALCULATOR_FORK_SHOWCASE_PROJECT: PreparedShowcasePr
     {
       id: `${SCHOOL_DESK_HP_CALCULATOR_FORK_PROJECT_ID}-step-3`,
       stepNumber: 3,
-      title: 'Branch into a school desk pickup scene',
-      content:
-        'Forking from the final graphite HP 10Bii+ response: keep the calculator functional, but place it on a school desk with notebooks and pencils and add a polished pick-up interaction so I can lift, drag, tilt, and still press the keys. Use Claude 5 Fable Max and return one self-contained HTML file.',
-      resultContent:
-        'Claude began the Fable 5 Max fork in the real chat but stayed in an extended reasoning/building state and did not surface a complete artifact before the response was stopped.',
-      description: 'Actual fork request from response package 02; no complete artifact was captured from this stalled response.',
-    },
-    {
-      id: `${SCHOOL_DESK_HP_CALCULATOR_FORK_PROJECT_ID}-step-4`,
-      stepNumber: 4,
       title: 'Recover the complete HTML artifact',
       content:
         'Please continue from the same fork request and output the actual artifact now. Skip all further planning and thinking text. Return exactly one complete self-contained HTML file in one html code block. It must be the school-desk HP 10Bii+ calculator fork from the pasted final parent artifact, with pick-up, drag, tilt, desk/rest mode, responsive layout, working keys, keyboard input, and core TVM N/IYR/PV/PMT/FV payment solving.',
       resultContent:
-        'Claude returned a complete self-contained HTML code block. The raw capture is preserved separately, and the mounted local artifact adds only the PathForge banner script.',
+        'Claude returned the complete mounted school-desk calculator artifact as the single public version for this fork.',
       description: 'Actual Fable 5 Max continuation response that produced the local approval artifact.',
     },
   ],

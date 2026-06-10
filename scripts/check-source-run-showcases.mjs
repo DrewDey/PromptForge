@@ -435,7 +435,6 @@ const sourceRunProjects = [
     href: '/school-desk-hp-calculator-fork-demo',
     packagePath: 'seed-runs/school-desk-hp-10bii-calculator-claude-5-fable-max-fork.json',
     artifactPaths: [
-      'public/artifacts/school-desk-hp-10bii-calculator-fable-5-max-claude-capture.html',
       'public/artifacts/school-desk-hp-10bii-calculator-claude-5-fable-max-fork.html',
     ],
   },

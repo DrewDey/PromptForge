@@ -3,7 +3,7 @@
   "slug": "school-desk-hp-10bii-calculator-claude-5-fable-max-fork",
   "provider": "Claude",
   "model": "Fable 5 Max (Claude)",
-  "model_settings": "Claude web chat with the visible model picker set to Fable 5 Max. The final HP 10Bii+ response artifact source was pasted into the chat as parent context after file upload attempts timed out. The first fork request stalled while Claude was reasoning/building, so a recovery prompt in the same chat requested exactly one complete self-contained HTML file.",
+  "model_settings": "Claude web chat with the visible model picker set to Fable 5 Max. The final HP 10Bii+ response artifact source was pasted into the chat as parent context after file upload attempts timed out. The published fork step is the continuation prompt that returned exactly one complete self-contained HTML file.",
   "source_url": "https://claude.ai/chat/0fc59b26-a38d-4a09-8e36-e1655a616b2e",
   "source_url_note": "Private logged-in Claude chat URL captured for local approval evidence; no public Claude share URL has been created yet.",
   "run_started_at": "2026-06-09T12:20:00-04:00",
@@ -15,19 +15,14 @@
   "tools_used": ["Claude", "HTML", "Browser"],
   "status": "captured",
   "description": "A captured Claude Fable 5 Max fork from the final HP 10Bii+ calculator response that places the calculator on a school desk and adds pick-up, drag, tilt, and key interaction.",
-  "agent_notes": "Prepared source-run fork approved for the public showcase path. Fork source is the final HP 10Bii+ response package, step 2, not the initial generation; this fork intentionally omits the original first HP prompt from its public package because the fork starts from the corrected final response. The raw Claude HTML capture is preserved separately from the mounted PathForge artifact.",
+  "agent_notes": "Prepared source-run fork approved for the public showcase path. Fork source is the final HP 10Bii+ response package, step 2, not the initial generation; this fork intentionally omits the original first HP prompt from its public package because the fork starts from the corrected final response. A stalled Claude attempt is retained only as audit context, not as a public prompt/response step. The mounted PathForge artifact is the only exposed public artifact version.",
   "artifact_type": "html",
   "final_artifact_path": "public/artifacts/school-desk-hp-10bii-calculator-claude-5-fable-max-fork.html",
   "artifact_versions": [
     {
-      "step": 4,
-      "path": "public/artifacts/school-desk-hp-10bii-calculator-fable-5-max-claude-capture.html",
-      "notes": "Raw HTML code block captured from Claude Fable 5 Max after the recovery prompt. No PathForge banner injection."
-    },
-    {
-      "step": 4,
+      "step": 3,
       "path": "public/artifacts/school-desk-hp-10bii-calculator-claude-5-fable-max-fork.html",
-      "notes": "Mounted local approval artifact generated from the raw Claude capture with the PathForge artifact banner script added."
+      "notes": "Mounted local approval artifact generated from the Claude Fable 5 Max continuation response with the PathForge artifact banner script added."
     }
   ],
   "verification_notes": "Verified before public push: calculator renders on the school desk, the frame can be picked up, drag/tilt works while picked up, numeric keys work, keyboard input works, and TVM PMT solving works after storing N, I/YR, PV, and FV.",
@@ -56,29 +51,17 @@
     },
     {
       "step_number": 3,
-      "prompt_exact": "Forking from the final graphite HP 10Bii+ response: keep the calculator functional, but place it on a school desk with notebooks and pencils and add a polished pick-up interaction so I can lift, drag, tilt, and still press the keys. Use Claude 5 Fable Max and return one self-contained HTML file.",
-      "response_exact": "Claude began the fork response in the same Fable 5 Max chat but stayed in an extended reasoning/building state and did not surface a complete artifact before the response was stopped.",
-      "response_summary": "Initial Fable 5 Max fork request established the response-02 fork point, but did not yield the final HTML artifact.",
-      "code_blocks": [],
-      "generated_files": [],
-      "artifact_version_path": null,
-      "notes": "Actual fork request in Claude after pasting the final parent artifact source. This stalled before a usable artifact was captured."
-    },
-    {
-      "step_number": 4,
       "prompt_exact": "Please continue from the same fork request and output the actual artifact now. Skip all further planning and thinking text. Return exactly one complete self-contained HTML file in one html code block. It must be the school-desk HP 10Bii+ calculator fork from the pasted final parent artifact, with pick-up, drag, tilt, desk/rest mode, responsive layout, working keys, keyboard input, and core TVM N/IYR/PV/PMT/FV payment solving.",
       "response_exact": "Claude responded with one complete self-contained HTML code block for the school-desk HP 10Bii+ calculator fork. The artifact includes a wood school desk scene, notebook paper, pencil/sticky-note desk props, a graphite calculator, pickup and put-back controls, drag and pointer tilt, keyboard input, arithmetic, and core TVM N/IYR/PV/PMT/FV payment solving.",
       "response_summary": "Actual Fable 5 Max branch produced the complete local school-desk pickup calculator artifact.",
       "code_blocks": [
-        "public/artifacts/school-desk-hp-10bii-calculator-fable-5-max-claude-capture.html",
         "public/artifacts/school-desk-hp-10bii-calculator-claude-5-fable-max-fork.html"
       ],
       "generated_files": [
-        "public/artifacts/school-desk-hp-10bii-calculator-fable-5-max-claude-capture.html",
         "public/artifacts/school-desk-hp-10bii-calculator-claude-5-fable-max-fork.html"
       ],
       "artifact_version_path": "public/artifacts/school-desk-hp-10bii-calculator-claude-5-fable-max-fork.html",
-      "notes": "Actual fork continuation from original response package 02. Raw Claude capture is preserved separately; mounted artifact adds the PathForge banner script."
+      "notes": "Actual fork continuation from original response package 02. Mounted artifact adds the PathForge banner script and is the only public artifact version."
     }
   ],
   "submitted_by_account": "Rowan Pierce / /user/RowanPierce",

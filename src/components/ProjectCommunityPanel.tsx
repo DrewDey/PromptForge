@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { ArrowRight, GitBranch, MessageSquare } from 'lucide-react'
 import { getPromptById } from '@/lib/data'
+import { SCHOOL_DESK_HP_CALCULATOR_FORK_PROJECT_ID } from '@/lib/featured-projects'
 import { getProjectRouteOverride } from '@/lib/project-links'
 import {
   PROJECT_FORK_MAX_DEPTH,
@@ -322,14 +323,18 @@ function ProjectForkInheritedPathBand({
   const visibleContinuationSteps = continuationSteps.length > 0 ? continuationSteps : currentSteps
 
   const contract = createProjectForkDraftContract({ source: forkSource, sourceSteps })
-  const sharedSegments = contract.lineageSegments.filter((segment) => segment.state === 'shared-history')
-  const forkPointSegment = contract.lineageSegments.find((segment) => segment.state === 'fork-point')
-  const originalContinuationSegments = contract.lineageSegments.filter((segment) => segment.state === 'original-continuation')
+  const hidePreForkSourceHistory = currentProject.id === SCHOOL_DESK_HP_CALCULATOR_FORK_PROJECT_ID
+  const lineageSegments = hidePreForkSourceHistory
+    ? contract.lineageSegments.filter((segment) => segment.state !== 'shared-history')
+    : contract.lineageSegments
+  const sharedSegments = lineageSegments.filter((segment) => segment.state === 'shared-history')
+  const forkPointSegment = lineageSegments.find((segment) => segment.state === 'fork-point')
+  const originalContinuationSegments = lineageSegments.filter((segment) => segment.state === 'original-continuation')
   const forkPointLabel = forkPointSegment
     ? `Response ${String(forkPointSegment.stepNumber).padStart(2, '0')}`
     : 'the selected response'
   const forkPointGridRow = forkPointSegment
-    ? contract.lineageSegments.findIndex((segment) => segment.id === forkPointSegment.id) + 2
+    ? lineageSegments.findIndex((segment) => segment.id === forkPointSegment.id) + 2
     : 2
   const sourceHref = projectHref(forkSource.sourceProjectId)
   const firstContinuationStep = visibleContinuationSteps[0]
@@ -376,7 +381,7 @@ function ProjectForkInheritedPathBand({
           <div className="mt-3 grid gap-2">
             {sharedSegments.length > 0 ? sharedSegments.map((segment) => (
               <ForkLineageSegmentCard key={segment.id} segment={segment} />
-            )) : (
+            )) : !forkPointSegment && (
               <div className="border border-dashed border-surface-300 bg-surface-50 px-3 py-2 text-xs leading-5 text-surface-500">
                 Fork starts from the first response.
               </div>
@@ -439,7 +444,7 @@ function ProjectForkInheritedPathBand({
             </div>
           </div>
 
-          {contract.lineageSegments.map((segment, index) => (
+          {lineageSegments.map((segment, index) => (
             <div key={segment.id} style={{ gridColumn: 1, gridRow: index + 2 }}>
               <ForkLineageSegmentCard segment={segment} />
             </div>

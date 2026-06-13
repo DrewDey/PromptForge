@@ -447,6 +447,10 @@ function BuildLoggedOutLanding({
               <Link href={signupHref} className="inline-flex items-center gap-2 border border-surface-300 bg-white px-5 py-3 text-sm font-bold text-surface-900 transition hover:border-brand-orange">
                 Create account
               </Link>
+              <Link href="/guide" className="inline-flex items-center gap-2 border border-surface-300 bg-white px-5 py-3 text-sm font-bold text-surface-900 transition hover:border-brand-orange">
+                <FileText className="h-4 w-4 text-brand-orange" aria-hidden="true" />
+                See the walkthrough
+              </Link>
             </div>
           </div>
 
@@ -925,6 +929,10 @@ export default function SubmitProjectPage() {
                 <div className="mt-1 text-sm font-bold">Admin decision</div>
               </div>
             </div>
+            <Link href="/guide" className="mt-5 inline-flex items-center gap-2 border border-surface-300 bg-white px-4 py-2.5 text-sm font-bold text-surface-900 transition hover:border-brand-orange">
+              <FileText className="h-4 w-4 text-brand-orange" aria-hidden="true" />
+              See exactly what to click
+            </Link>
           </div>
 
           <aside className="border border-surface-200 bg-primary-50 p-5 shadow-[16px_16px_0_rgba(232,122,44,0.12)]">

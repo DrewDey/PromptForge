@@ -11,6 +11,7 @@ const STATIC_PUBLIC_ROUTES = [
   '/suggestion-box',
   '/about',
   '/build',
+  '/guide',
 ]
 
 function sitemapEntry(

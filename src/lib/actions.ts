@@ -122,6 +122,7 @@ export async function submitProject(data: {
 export async function submitSourceRun(data: {
   title?: string
   source_url?: string
+  file_name?: string
   provider?: string
   model_used?: string
   model_settings?: string

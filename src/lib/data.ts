@@ -766,6 +766,7 @@ function omitForkFields<T extends Record<string, unknown>>(payload: T) {
 export async function createSourceRunSubmission(input: {
   title?: string
   source_url?: string
+  file_name?: string
   provider?: string
   model_used?: string
   model_settings?: string
@@ -781,6 +782,7 @@ export async function createSourceRunSubmission(input: {
 
   const title = input.title?.trim() ?? ''
   const sourceUrl = input.source_url?.trim() ?? ''
+  const fileName = input.file_name?.trim() ?? ''
   const provider = input.provider?.trim() || detectSourceRunProvider(sourceUrl)
   const modelUsed = input.model_used?.trim() ?? ''
   const modelSettings = input.model_settings?.trim() ?? ''
@@ -791,6 +793,14 @@ export async function createSourceRunSubmission(input: {
 
   if (!sourceUrl) {
     throw new Error('Paste a source run link.')
+  }
+
+  if (fileName && !/^[0-9a-f-]+\/[A-Za-z0-9][A-Za-z0-9._/-]*$/.test(fileName)) {
+    throw new Error('Attachment path is invalid.')
+  }
+
+  if (fileName && !fileName.startsWith(`${user.id}/`)) {
+    throw new Error('Attachment path does not belong to this user.')
   }
 
   if (sourceUrl && !/^https?:\/\/\S+$/i.test(sourceUrl)) {
@@ -817,7 +827,7 @@ export async function createSourceRunSubmission(input: {
   const payload = {
     title,
     source_url: sourceUrl || null,
-    file_name: null,
+    file_name: fileName || null,
     notes,
     ...forkFields,
     author_id: user.id,
@@ -837,7 +847,7 @@ export async function createSourceRunSubmission(input: {
     const fallbackPayload = titleColumnMissing(error)
       ? {
         source_url: sourceUrl || null,
-        file_name: null,
+        file_name: fileName || null,
         notes: fallbackNotes,
         author_id: user.id,
         status: 'queued',
@@ -845,7 +855,7 @@ export async function createSourceRunSubmission(input: {
       : {
         title,
         source_url: sourceUrl || null,
-        file_name: null,
+        file_name: fileName || null,
         notes: fallbackNotes,
         author_id: user.id,
         status: 'queued',

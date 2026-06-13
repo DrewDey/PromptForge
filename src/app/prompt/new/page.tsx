@@ -3,7 +3,7 @@
 import { useState, useEffect, useMemo } from 'react'
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { ArrowLeft, Plus, Trash2, ChevronDown, ChevronUp, LogIn, FileText, GitBranch, Check, AlertCircle, ArrowUp, ArrowDown, ChevronRight, Layers, Cpu, Eye, Keyboard, CheckCircle2, Link2 } from 'lucide-react'
+import { ArrowLeft, Plus, Trash2, ChevronDown, ChevronUp, LogIn, FileText, GitBranch, Check, AlertCircle, ArrowUp, ArrowDown, ChevronRight, Layers, Cpu, Eye, Keyboard, CheckCircle2, Link2, Paperclip } from 'lucide-react'
 import { getModelsByProvider, getModelName } from '@/lib/models'
 import { submitProject, submitSourceRun } from '@/lib/actions'
 import { detectSourceRunProvider } from '@/lib/source-run-review'
@@ -37,6 +37,8 @@ type SourceRunImport = {
   id: string
   label: string
   source: string
+  attachmentPath?: string
+  attachmentName?: string
   forkSource?: ProjectForkSource
   provider?: string
   modelUsed?: string
@@ -57,6 +59,68 @@ const sourceRunModelSuggestions: Record<string, string[]> = {
     'openai/gpt-5.5',
     'google/gemini-3.1-pro',
   ],
+}
+
+const sourceRunAttachmentBucket = 'source-run-attachments'
+const sourceRunAttachmentMaxBytes = 10 * 1024 * 1024
+const sourceRunAttachmentAccept = [
+  'image/*',
+  '.html',
+  '.htm',
+  '.txt',
+  '.md',
+  '.json',
+  '.pdf',
+  '.zip',
+].join(',')
+const sourceRunAttachmentTypes = new Set([
+  'text/html',
+  'text/plain',
+  'text/markdown',
+  'application/json',
+  'application/pdf',
+  'application/zip',
+  'application/x-zip-compressed',
+])
+const sourceRunAttachmentExtensions = new Set([
+  'html',
+  'htm',
+  'txt',
+  'md',
+  'json',
+  'pdf',
+  'zip',
+  'jpg',
+  'jpeg',
+  'png',
+  'gif',
+  'webp',
+  'svg',
+])
+
+function sourceRunAttachmentErrorFor(file: File) {
+  const extension = file.name.split('.').pop()?.toLowerCase() ?? ''
+  const isAllowedType = file.type.startsWith('image/')
+    || sourceRunAttachmentTypes.has(file.type)
+    || sourceRunAttachmentExtensions.has(extension)
+
+  if (!isAllowedType) {
+    return 'Use an image, HTML, text, PDF, JSON, Markdown, or zip file.'
+  }
+
+  if (file.size > sourceRunAttachmentMaxBytes) {
+    return 'Attachment must be 10MB or smaller.'
+  }
+
+  return ''
+}
+
+function safeSourceRunAttachmentName(file: File) {
+  const cleaned = file.name
+    .trim()
+    .replace(/[^A-Za-z0-9._-]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+  return cleaned || 'source-run-attachment'
 }
 
 // Mirrors PromptCard's difficulty chip palette so the preview card reads the same
@@ -509,6 +573,8 @@ export default function SubmitProjectPage() {
   const [sourceRunModel, setSourceRunModel] = useState('')
   const [sourceRunModelSettings, setSourceRunModelSettings] = useState('')
   const [sourceRunNotes, setSourceRunNotes] = useState('')
+  const [sourceRunAttachment, setSourceRunAttachment] = useState<File | null>(null)
+  const [sourceRunAttachmentError, setSourceRunAttachmentError] = useState('')
   const [sourceRunImports, setSourceRunImports] = useState<SourceRunImport[]>([])
   const [sourceRunSubmitting, setSourceRunSubmitting] = useState(false)
   const [sourceRunError, setSourceRunError] = useState('')
@@ -651,6 +717,51 @@ export default function SubmitProjectPage() {
     setExpandedStep(newIndex)
   }
 
+  function handleSourceRunAttachmentChange(event: React.ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0] ?? null
+    setSourceRunAttachmentError('')
+
+    if (!file) {
+      setSourceRunAttachment(null)
+      return
+    }
+
+    const fileError = sourceRunAttachmentErrorFor(file)
+    if (fileError) {
+      setSourceRunAttachment(null)
+      setSourceRunAttachmentError(fileError)
+      event.target.value = ''
+      return
+    }
+
+    setSourceRunAttachment(file)
+  }
+
+  async function uploadSourceRunAttachment(file: File) {
+    const { createClient } = await import('@/lib/supabase/client')
+    const supabase = createClient()
+    const { data: { user }, error: userError } = await supabase.auth.getUser()
+
+    if (userError || !user) {
+      throw new Error('Log in again before uploading an attachment.')
+    }
+
+    const path = `${user.id}/${crypto.randomUUID()}-${safeSourceRunAttachmentName(file)}`
+    const { error: uploadError } = await supabase.storage
+      .from(sourceRunAttachmentBucket)
+      .upload(path, file, {
+        cacheControl: '3600',
+        contentType: file.type || undefined,
+        upsert: false,
+      })
+
+    if (uploadError) {
+      throw new Error(uploadError.message || 'Attachment upload failed.')
+    }
+
+    return path
+  }
+
   async function prepareSourceRun(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
     const title = sourceRunTitle.trim()
@@ -673,12 +784,34 @@ export default function SubmitProjectPage() {
       return
     }
 
+    if (sourceRunAttachment) {
+      const fileError = sourceRunAttachmentErrorFor(sourceRunAttachment)
+      if (fileError) {
+        setSourceRunAttachmentError(fileError)
+        return
+      }
+    }
+
     setSourceRunSubmitting(true)
     setSourceRunError('')
+    setSourceRunAttachmentError('')
+
+    let attachmentPath: string | undefined
+
+    try {
+      if (sourceRunAttachment) {
+        attachmentPath = await uploadSourceRunAttachment(sourceRunAttachment)
+      }
+    } catch (err) {
+      setSourceRunSubmitting(false)
+      setSourceRunAttachmentError(err instanceof Error ? err.message : 'Attachment upload failed.')
+      return
+    }
 
     const result = await submitSourceRun({
       title,
       source_url: url,
+      file_name: attachmentPath,
       provider,
       model_used: modelUsed,
       model_settings: modelSettings,
@@ -689,6 +822,11 @@ export default function SubmitProjectPage() {
     setSourceRunSubmitting(false)
 
     if (!result.success) {
+      if (attachmentPath) {
+        const { createClient } = await import('@/lib/supabase/client')
+        const supabase = createClient()
+        await supabase.storage.from(sourceRunAttachmentBucket).remove([attachmentPath])
+      }
       setSourceRunError(result.error ?? 'Failed to submit entry')
       return
     }
@@ -697,6 +835,8 @@ export default function SubmitProjectPage() {
       id: result.id ?? makeSourceRunImportId(),
       label: title,
       source: url,
+      attachmentPath,
+      attachmentName: sourceRunAttachment?.name,
       forkSource: forkSource ?? undefined,
       provider: provider || undefined,
       modelUsed: modelUsed || undefined,
@@ -712,6 +852,7 @@ export default function SubmitProjectPage() {
     setSourceRunProviderTouched(false)
     setSourceRunModel('')
     setSourceRunModelSettings('')
+    setSourceRunAttachment(null)
     setSourceRunNotes(forkSource ? serializeProjectForkSourceForNotes(forkSource) : '')
   }
 
@@ -1012,7 +1153,7 @@ export default function SubmitProjectPage() {
               <div className="mt-1 text-base font-black text-surface-900">Let the agent structure it</div>
               <p className="mt-2 text-xs leading-5 text-surface-600">
                 Paste the ChatGPT, Gemini, Claude, or OpenRouter run. It enters the normal review queue with the
-                source link, model info, and notes only.
+                source link, model info, notes, and optional attachment.
               </p>
             </button>
 
@@ -1203,9 +1344,54 @@ export default function SubmitProjectPage() {
                 />
               </div>
 
+              <div>
+                <label htmlFor="project-source-run-attachment" className="font-mono text-[10px] uppercase tracking-[0.16em] text-surface-500">
+                  Evidence attachment <span className="font-sans normal-case tracking-normal text-surface-400">(optional)</span>
+                </label>
+                <div className="mt-2 border border-dashed border-surface-300 bg-surface-50 p-3">
+                  {sourceRunAttachment ? (
+                    <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                      <div className="flex min-w-0 items-center gap-2 text-sm text-surface-700">
+                        <Paperclip className="h-4 w-4 shrink-0 text-brand-orange" aria-hidden="true" />
+                        <span className="truncate font-semibold">{sourceRunAttachment.name}</span>
+                        <span className="shrink-0 text-xs text-surface-400">
+                          {(sourceRunAttachment.size / 1024 / 1024).toFixed(2)}MB
+                        </span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setSourceRunAttachment(null)
+                          setSourceRunAttachmentError('')
+                        }}
+                        className="inline-flex items-center justify-center gap-1 border border-surface-200 bg-white px-2 py-1 text-xs font-semibold text-surface-600 transition hover:border-red-300 hover:text-red-600"
+                      >
+                        <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
+                        Remove
+                      </button>
+                    </div>
+                  ) : (
+                    <input
+                      key="source-run-attachment-empty"
+                      id="project-source-run-attachment"
+                      type="file"
+                      accept={sourceRunAttachmentAccept}
+                      onChange={handleSourceRunAttachmentChange}
+                      className="block w-full text-sm text-surface-600 file:mr-3 file:border-0 file:bg-brand-orange file:px-3 file:py-2 file:text-xs file:font-semibold file:uppercase file:tracking-wider file:text-white hover:file:bg-brand-orange-dark"
+                    />
+                  )}
+                  <p className="mt-2 text-xs leading-5 text-surface-500">
+                    Upload one screenshot or artifact file for review. Images, HTML, text, PDF, JSON, Markdown, and zip files are allowed up to 10MB.
+                  </p>
+                </div>
+                {sourceRunAttachmentError && (
+                  <p className="mt-2 text-sm text-red-700">{sourceRunAttachmentError}</p>
+                )}
+              </div>
+
               <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <p className="text-xs leading-5 text-surface-500">
-                  This enters the normal review queue as source link, model info, and notes. It does not create a public project page.
+                  This enters the normal review queue as source link, model info, notes, and optional attachment. It does not create a public project page.
                 </p>
                 <button
                   type="submit"
@@ -1250,6 +1436,11 @@ export default function SubmitProjectPage() {
                             <span className="border border-white/80 bg-white px-2 py-1">
                               Model: {item.modelUsed || 'Not specified'}
                             </span>
+                            {item.attachmentPath && (
+                              <span className="border border-white/80 bg-white px-2 py-1">
+                                Attachment: {item.attachmentName || item.attachmentPath}
+                              </span>
+                            )}
                             {item.modelSettings && (
                               <span className="border border-white/80 bg-white px-2 py-1">
                                 Settings: {item.modelSettings}

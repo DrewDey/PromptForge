@@ -1,6 +1,6 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
-import { ArrowLeft, CheckCircle, ExternalLink, GitBranch } from 'lucide-react'
+import { ArrowLeft, CheckCircle, ExternalLink, GitBranch, Paperclip } from 'lucide-react'
 import { dismissSourceRun, publishPreparedShowcaseSourceRun } from '@/lib/actions'
 import { getSourceRunSubmissionForAdmin } from '@/lib/data'
 import { getPreparedShowcaseProjectBySourceRunId } from '@/lib/prepared-showcase-projects'
@@ -8,6 +8,30 @@ import { projectForkSourceFromSubmissionFields } from '@/lib/project-forks'
 import { agentNotesForSourceRunReview, modelMetadataForSourceRunReview, titleForSourceRunReview } from '@/lib/source-run-review'
 
 export const dynamic = 'force-dynamic'
+
+const sourceRunAttachmentBucket = 'source-run-attachments'
+
+function sourceRunAttachmentLabel(fileName: string) {
+  return fileName.split('/').pop() || fileName
+}
+
+function isImageAttachment(fileName: string) {
+  return /\.(avif|gif|jpe?g|png|svg|webp)$/i.test(fileName)
+}
+
+async function getSourceRunAttachmentSignedUrl(fileName: string | null) {
+  if (!fileName) return null
+
+  const { createClient } = await import('@/lib/supabase/server')
+  const supabase = await createClient()
+  const { data, error } = await supabase.storage
+    .from(sourceRunAttachmentBucket)
+    .createSignedUrl(fileName, 60 * 60)
+
+  if (error) return null
+
+  return data.signedUrl
+}
 
 export default async function AdminSourceRunDetailPage({
   params,
@@ -31,6 +55,7 @@ export default async function AdminSourceRunDetailPage({
   const agentNotes = agentNotesForSourceRunReview(sourceRun.notes, { hideForkMetadata: Boolean(forkSource) })
   const author = sourceRun.author?.display_name ?? sourceRun.author?.username ?? 'Anonymous'
   const sourceLabel = sourceRun.source_url ?? sourceRun.file_name ?? 'No source attached'
+  const attachmentUrl = await getSourceRunAttachmentSignedUrl(sourceRun.file_name)
   const preparedProject = getPreparedShowcaseProjectBySourceRunId(sourceRun.id)
   const linkedPromptStatus = sourceRun.extracted_prompt?.status ?? null
   const isPublished = sourceRun.extracted_prompt?.status === 'approved'
@@ -133,6 +158,40 @@ export default async function AdminSourceRunDetailPage({
               <p className="text-sm text-gray-600">{sourceLabel}</p>
             )}
           </section>
+
+          {sourceRun.file_name && (
+            <section>
+              <h2 className="mb-2 text-xs font-bold uppercase tracking-wider text-gray-500">Review attachment</h2>
+              <div className="border border-gray-200 bg-gray-50 p-4">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                  <div className="flex min-w-0 items-center gap-2 text-sm font-semibold text-gray-900">
+                    <Paperclip className="h-4 w-4 shrink-0 text-brand-orange" aria-hidden="true" />
+                    <span className="truncate">{sourceRunAttachmentLabel(sourceRun.file_name)}</span>
+                  </div>
+                  {attachmentUrl ? (
+                    <a
+                      href={attachmentUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="inline-flex items-center justify-center gap-2 border border-gray-200 bg-white px-3 py-2 text-sm font-semibold text-gray-900 hover:border-brand-orange hover:text-brand-orange"
+                    >
+                      Open attachment
+                      <ExternalLink className="h-4 w-4" aria-hidden="true" />
+                    </a>
+                  ) : (
+                    <span className="text-sm text-red-700">Signed link unavailable</span>
+                  )}
+                </div>
+                {attachmentUrl && isImageAttachment(sourceRun.file_name) && (
+                  <img
+                    src={attachmentUrl}
+                    alt={sourceRunAttachmentLabel(sourceRun.file_name)}
+                    className="mt-4 max-h-80 w-full border border-gray-200 bg-white object-contain"
+                  />
+                )}
+              </div>
+            </section>
+          )}
 
           {forkSource && (
             <section className="border border-green-200 bg-green-50 p-4">

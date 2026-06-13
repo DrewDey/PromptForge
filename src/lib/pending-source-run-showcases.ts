@@ -60,6 +60,7 @@ import {
   RECIPE_POP_UP_MENU_PROFIT_CARDS_GEMINI_PROJECT_ID,
   DRAFT_VOICE_CONSISTENCY_METER_CHATGPT_PROJECT_ID,
   RECIPE_POP_UP_MENU_PROFIT_CARDS_GEMINI_A4FD2166_PROJECT_ID,
+  VISUAL_PROMPT_INGREDIENT_BALANCE_STUDIO_CHATGPT_PROJECT_ID,
   SEARCH_RESULT_PROMISE_PROOF_BOARD_CHATGPT_PROJECT_ID,
   VISUAL_BRIEF_CONSISTENCY_BOARD_CLAUDE_PROJECT_ID,
   PRODUCT_CLAIM_SHELF_AUDIT_CARDS_GEMINI_PROJECT_ID,
@@ -2193,6 +2194,33 @@ export const RECIPE_POP_UP_MENU_PROFIT_CARDS_GEMINI_A4FD2166_SHOWCASE_PROJECT = 
   ],
 })
 
+export const VISUAL_PROMPT_INGREDIENT_BALANCE_STUDIO_CHATGPT_SHOWCASE_PROJECT = buildPendingSourceRunProject({
+  projectId: VISUAL_PROMPT_INGREDIENT_BALANCE_STUDIO_CHATGPT_PROJECT_ID,
+  sourceRunId: "566b6e9b-d521-42c8-8df7-272f20d1030a",
+  href: "/visual-prompt-ingredient-balance-studio-chatgpt-demo",
+  title: "Visual Prompt Ingredient Balance Studio",
+  description: "Offline prompt-ingredient studio for balancing subject, lighting, style, and composition before using an image model.",
+  content: "Noa Keel used ChatGPT to build Visual Prompt Ingredient Balance Studio through a 2-prompt source run. The public page keeps the final repaired artifact first, then preserves each exact prompt and response package in order with selectable artifact versions.",
+  resultContent: "A local visual-prompt planning studio with sliders, style chips, balance scoring, a readable ingredient card preview, and copy/export controls for image prompts.",
+  categorySlug: "design",
+  mockCategoryId: "cat-5",
+  difficulty: 'beginner',
+  modelUsed: "Medium",
+  modelRecommendation: "Medium",
+  toolsUsed: ["ChatGPT source session","single-file HTML","local browser verification"],
+  tags: ["visual prompting","image prompts","creative planning","design helper","prompt card","offline tool","source-run","single-file-html"],
+  artifactPath: "/artifacts/visual-prompt-ingredient-balance-studio-chatgpt.html",
+  sourceUrl: "https://chatgpt.com/c/6a2d8aed-7304-83ea-a0fa-89aa1d437043",
+  authorDisplayName: "Noa Keel",
+  authorUsername: "NoaKeel",
+  createdAt: "2026-06-13T16:58:00Z",
+  updatedAt: "2026-06-13T17:07:55.420Z",
+  prompts: [
+    "I need a small self-contained visual prompt ingredient studio I can save as an HTML file, where I can balance subject, lighting, style, and composition with sliders, preview an image-prompt ingredient card, and copy or export it before pasting into an image model.",
+    "This is close, but my local checks flag scanner-visible innerHTML and negative letter-spacing, so it would fail the static artifact review. Please return a revised single self-contained HTML file that keeps the same prompt studio workflow, uses safe DOM node updates instead of innerHTML, avoids negative letter-spacing, keeps all assets local, and still fits cleanly on a 390px-wide screen."
+  ],
+})
+
 export const SEARCH_RESULT_PROMISE_PROOF_BOARD_CHATGPT_SHOWCASE_PROJECT = buildPendingSourceRunProject({
   projectId: SEARCH_RESULT_PROMISE_PROOF_BOARD_CHATGPT_PROJECT_ID,
   sourceRunId: "8baf4494-4238-4a3f-9b92-4b1dd6ed4a4f",
@@ -3917,6 +3945,7 @@ export const PENDING_SOURCE_RUN_SHOWCASE_PROJECTS = [
   RECIPE_POP_UP_MENU_PROFIT_CARDS_GEMINI_SHOWCASE_PROJECT,
   DRAFT_VOICE_CONSISTENCY_METER_CHATGPT_SHOWCASE_PROJECT,
   RECIPE_POP_UP_MENU_PROFIT_CARDS_GEMINI_A4FD2166_SHOWCASE_PROJECT,
+  VISUAL_PROMPT_INGREDIENT_BALANCE_STUDIO_CHATGPT_SHOWCASE_PROJECT,
   SEARCH_RESULT_PROMISE_PROOF_BOARD_CHATGPT_SHOWCASE_PROJECT,
   VISUAL_BRIEF_CONSISTENCY_BOARD_CLAUDE_SHOWCASE_PROJECT,
   PRODUCT_CLAIM_SHELF_AUDIT_CARDS_GEMINI_SHOWCASE_PROJECT,

@@ -128,6 +128,14 @@ const sourceRunProjects = [
     packagePath: "seed-runs/recipe-pop-up-menu-profit-cards-gemini-a4fd2166-source-run.json",
   },
   {
+    name: "Visual Prompt Ingredient Balance Studio",
+    route: "src/app/visual-prompt-ingredient-balance-studio-chatgpt-demo/page.tsx",
+    projectId: "VISUAL_PROMPT_INGREDIENT_BALANCE_STUDIO_CHATGPT_PROJECT_ID",
+    showcaseExport: 'PENDING_SOURCE_RUN_SHOWCASE_PROJECTS',
+    href: "/visual-prompt-ingredient-balance-studio-chatgpt-demo",
+    packagePath: "seed-runs/visual-prompt-ingredient-balance-studio-chatgpt-source-run.json",
+  },
+  {
     name: "Search Result Promise Proof Board",
     route: "src/app/search-result-promise-proof-board-chatgpt-demo/page.tsx",
     projectId: "SEARCH_RESULT_PROMISE_PROOF_BOARD_CHATGPT_PROJECT_ID",

@@ -4,7 +4,7 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { useState } from 'react'
 import { usePathname } from 'next/navigation'
-import { BriefcaseBusiness, ChevronDown, Gamepad2, LogOut, Menu, Plus, RadioTower, Search, User, X } from 'lucide-react'
+import { BriefcaseBusiness, ChevronDown, Gamepad2, LogOut, Menu, Plus, Search, User, X } from 'lucide-react'
 import { logout } from '@/lib/actions'
 
 export type HeaderViewer = {
@@ -22,6 +22,7 @@ const navItems = [
   { href: '/what-to-build', label: 'What to Build' },
   { href: '/paths', label: 'Build Paths' },
   { href: '/requests', label: 'Build Requests' },
+  { href: '/guide', label: 'Walkthrough' },
 ]
 
 const pathsMenuItems = [
@@ -45,6 +46,7 @@ function isActivePath(pathname: string, href: string) {
   }
   if (href === '/suggestion-box') return pathname.startsWith('/suggestion-box')
   if (href === '/requests') return pathname.startsWith('/requests')
+  if (href === '/guide') return pathname === '/guide'
   if (href === '/build') return pathname === '/build' || pathname === '/prompt/new'
   return false
 }
@@ -57,7 +59,7 @@ export default function HeaderClient({ viewer, isAdmin }: HeaderClientProps) {
   const profileHref = viewer?.username ? `/user/${viewer.username}` : '/'
 
   const navLinkClass = (href: string) => (
-    `text-[13px] font-medium px-3 py-1.5 transition-colors duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange ${
+    `inline-flex h-8 shrink-0 items-center whitespace-nowrap px-3 text-[13px] font-medium transition-colors duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange ${
       isActivePath(pathname, href)
         ? 'text-brand-orange bg-primary-50'
         : 'text-surface-700 hover:text-brand-orange'
@@ -73,7 +75,7 @@ export default function HeaderClient({ viewer, isAdmin }: HeaderClientProps) {
   )
 
   const rightNavLinkClass = (href: string) => (
-    `text-[13px] font-medium transition-colors duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange ${
+    `inline-flex h-8 shrink-0 items-center whitespace-nowrap text-[13px] font-medium transition-colors duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange ${
       isActivePath(pathname, href)
         ? 'text-brand-orange'
         : 'text-surface-600 hover:text-brand-orange'
@@ -92,11 +94,11 @@ export default function HeaderClient({ viewer, isAdmin }: HeaderClientProps) {
             <div className="hidden md:flex items-center gap-1">
               {navItems.map((item) => (
                 item.href === '/paths' ? (
-                  <div key={item.href} className="relative">
+                  <div key={item.href} className="relative flex h-8 items-center">
                     <button
                       type="button"
                       onClick={() => setPathsMenuOpen((open) => !open)}
-                      className={`${navLinkClass(item.href)} flex items-center gap-1`}
+                      className={`${navLinkClass(item.href)} gap-1`}
                       aria-haspopup="menu"
                       aria-expanded={pathsMenuOpen}
                     >
@@ -128,14 +130,13 @@ export default function HeaderClient({ viewer, isAdmin }: HeaderClientProps) {
                   </div>
                 ) : (
                   <Link key={item.href} href={item.href} className={navLinkClass(item.href)}>
-                    {item.href === '/requests' && <RadioTower className="mr-1 inline h-3 w-3 text-brand-orange" />}
                     {item.label}
                   </Link>
                 )
               ))}
               <Link
                 href="/build"
-                className={`text-[13px] font-semibold px-3 py-1.5 transition-all duration-200 flex items-center gap-1.5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange ${
+                className={`flex h-8 shrink-0 items-center gap-1.5 whitespace-nowrap px-3 text-[13px] font-semibold transition-all duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange ${
                   isActivePath(pathname, '/build')
                     ? 'text-surface-900 bg-brand-orange'
                     : 'text-brand-orange border border-brand-orange/40 hover:bg-brand-orange hover:text-white'
@@ -148,9 +149,11 @@ export default function HeaderClient({ viewer, isAdmin }: HeaderClientProps) {
           </div>
 
           <div className="hidden md:flex items-center gap-3">
-            <Link href="/suggestion-box" className={rightNavLinkClass('/suggestion-box')}>
-              Suggestion Box
-            </Link>
+            <div className="hidden xl:block">
+              <Link href="/suggestion-box" className={rightNavLinkClass('/suggestion-box')}>
+                Suggestion Box
+              </Link>
+            </div>
             {viewer ? (
               <>
                 {isAdmin && (
@@ -175,10 +178,10 @@ export default function HeaderClient({ viewer, isAdmin }: HeaderClientProps) {
               </>
             ) : (
               <>
-                <Link href="/auth/login" className="text-[13px] font-medium text-surface-600 hover:text-brand-orange transition-colors duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange">
+                <Link href="/auth/login" className="inline-flex h-8 shrink-0 items-center whitespace-nowrap text-[13px] font-medium text-surface-600 hover:text-brand-orange transition-colors duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange">
                   Log in
                 </Link>
-                <Link href="/auth/signup" className="bg-brand-orange text-white px-3.5 py-1.5 text-[13px] font-semibold hover:bg-brand-orange-dark transition-colors duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white">
+                <Link href="/auth/signup" className="inline-flex h-8 shrink-0 items-center whitespace-nowrap bg-brand-orange px-3.5 text-[13px] font-semibold text-white hover:bg-brand-orange-dark transition-colors duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white">
                   Sign up
                 </Link>
               </>

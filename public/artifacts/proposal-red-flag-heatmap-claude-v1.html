@@ -1,0 +1,1066 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Brief Analyzer — Proposal Fit Tool</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #14161c;
+    --surface: #1e2130;
+    --surface2: #262b3d;
+    --border: #2e3450;
+    --text: #e8e4da;
+    --muted: #7a8099;
+    --amber: #e8c84a;
+    --green: #3fb06a;
+    --red: #d94f35;
+    --yellow: #e09c2e;
+    --blue: #4a7fc1;
+    --tag-bg: #252a3c;
+    --tag-border: #3a4060;
+    --mono: 'Courier New', 'Consolas', monospace;
+    --sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    font-size: 15px;
+    line-height: 1.55;
+    min-height: 100vh;
+  }
+
+  /* ── Header ── */
+  header {
+    padding: 18px 20px 14px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: baseline;
+    gap: 12px;
+    position: sticky;
+    top: 0;
+    background: var(--bg);
+    z-index: 100;
+  }
+  .wordmark {
+    font-family: var(--mono);
+    font-size: 13px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--amber);
+  }
+  .tagline {
+    font-size: 12px;
+    color: var(--muted);
+    letter-spacing: 0.04em;
+  }
+  .reset-btn {
+    margin-left: auto;
+    background: none;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    font-family: var(--mono);
+    font-size: 11px;
+    padding: 5px 11px;
+    border-radius: 3px;
+    cursor: pointer;
+    letter-spacing: 0.08em;
+    transition: border-color 0.15s, color 0.15s;
+  }
+  .reset-btn:hover { border-color: var(--muted); color: var(--text); }
+
+  /* ── Main layout ── */
+  main { padding: 20px; max-width: 1100px; margin: 0 auto; }
+
+  .step-label {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--amber);
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .step-label::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  /* ── Brief paste zone ── */
+  #brief-section { margin-bottom: 24px; }
+  #brief {
+    width: 100%;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--text);
+    font-family: var(--sans);
+    font-size: 14px;
+    line-height: 1.65;
+    padding: 16px;
+    resize: vertical;
+    min-height: 180px;
+    outline: none;
+    transition: border-color 0.15s;
+    caret-color: var(--amber);
+  }
+  #brief::placeholder { color: var(--muted); }
+  #brief:focus { border-color: #3a4068; }
+
+  .brief-footer {
+    margin-top: 10px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .char-count {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--muted);
+  }
+  #analyze-btn {
+    margin-left: auto;
+    background: var(--amber);
+    border: none;
+    color: #111;
+    font-family: var(--mono);
+    font-size: 12px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    padding: 10px 22px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: 700;
+    transition: opacity 0.15s, transform 0.1s;
+    white-space: nowrap;
+  }
+  #analyze-btn:hover { opacity: 0.88; }
+  #analyze-btn:active { transform: scale(0.97); }
+  #analyze-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+
+  /* ── Tag builder ── */
+  #tag-section { margin-bottom: 24px; }
+  .tag-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 7px;
+    margin-bottom: 12px;
+  }
+  .risk-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: var(--tag-bg);
+    border: 1px solid var(--tag-border);
+    border-radius: 3px;
+    padding: 6px 10px;
+    font-size: 12px;
+    cursor: pointer;
+    user-select: none;
+    transition: border-color 0.12s, background 0.12s;
+    position: relative;
+  }
+  .risk-tag .dot {
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    background: var(--muted);
+    transition: background 0.12s;
+    flex-shrink: 0;
+  }
+  .risk-tag.active-red   { border-color: var(--red);    background: rgba(217,79,53,0.13); }
+  .risk-tag.active-red .dot { background: var(--red); }
+  .risk-tag.active-yellow { border-color: var(--yellow); background: rgba(224,156,46,0.13); }
+  .risk-tag.active-yellow .dot { background: var(--yellow); }
+  .risk-tag:hover { border-color: #4a5070; }
+
+  .tag-count {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--muted);
+    background: var(--surface2);
+    border-radius: 2px;
+    padding: 1px 5px;
+  }
+
+  /* Custom tag input */
+  .custom-tag-row {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+  .custom-tag-row input {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--text);
+    font-family: var(--sans);
+    font-size: 13px;
+    padding: 7px 12px;
+    border-radius: 4px;
+    outline: none;
+    width: 200px;
+    caret-color: var(--amber);
+    transition: border-color 0.15s;
+  }
+  .custom-tag-row input:focus { border-color: #3a4068; }
+  .custom-tag-row input::placeholder { color: var(--muted); }
+  .sev-toggle {
+    display: flex;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    overflow: hidden;
+  }
+  .sev-toggle button {
+    background: none;
+    border: none;
+    padding: 7px 12px;
+    font-size: 11px;
+    font-family: var(--mono);
+    letter-spacing: 0.08em;
+    cursor: pointer;
+    color: var(--muted);
+    transition: background 0.12s, color 0.12s;
+  }
+  .sev-toggle button.sel-red    { background: rgba(217,79,53,0.2);  color: var(--red); }
+  .sev-toggle button.sel-yellow { background: rgba(224,156,46,0.2); color: var(--yellow); }
+  .add-tag-btn {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--text);
+    font-family: var(--mono);
+    font-size: 11px;
+    padding: 7px 14px;
+    border-radius: 4px;
+    cursor: pointer;
+    letter-spacing: 0.08em;
+    transition: border-color 0.15s;
+  }
+  .add-tag-btn:hover { border-color: var(--muted); }
+
+  /* active tags list */
+  #active-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 12px; min-height: 24px; }
+  .active-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    border-radius: 3px;
+    padding: 4px 9px;
+    font-size: 12px;
+    font-family: var(--mono);
+  }
+  .active-chip.red    { background: rgba(217,79,53,0.18);  border: 1px solid rgba(217,79,53,0.4);  color: #f08070; }
+  .active-chip.yellow { background: rgba(224,156,46,0.18); border: 1px solid rgba(224,156,46,0.4); color: #e8b84a; }
+  .active-chip .remove { cursor: pointer; opacity: 0.6; font-size: 13px; line-height: 1; }
+  .active-chip .remove:hover { opacity: 1; }
+
+  /* ── Heatmap ── */
+  #results-section { display: none; }
+  .heatmap-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    gap: 8px;
+    margin-bottom: 28px;
+  }
+  .hm-cell {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 5px;
+    padding: 14px 12px;
+    text-align: center;
+    transition: border-color 0.3s, background 0.3s;
+    opacity: 0;
+    transform: translateY(8px);
+    animation: cellIn 0.35s ease forwards;
+  }
+  @keyframes cellIn {
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .hm-cell.green  { border-color: rgba(63,176,106,0.5); background: rgba(63,176,106,0.1);  }
+  .hm-cell.yellow { border-color: rgba(224,156,46,0.5); background: rgba(224,156,46,0.1);  }
+  .hm-cell.red    { border-color: rgba(217,79,53,0.5);  background: rgba(217,79,53,0.1);   }
+  .hm-category {
+    font-size: 10px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 8px;
+  }
+  .hm-score {
+    font-family: var(--mono);
+    font-size: 28px;
+    font-weight: 700;
+    line-height: 1;
+    margin-bottom: 4px;
+  }
+  .hm-cell.green  .hm-score { color: var(--green); }
+  .hm-cell.yellow .hm-score { color: var(--yellow); }
+  .hm-cell.red    .hm-score { color: var(--red); }
+  .hm-label { font-size: 11px; color: var(--muted); }
+
+  /* ── Panels ── */
+  .panels {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-bottom: 20px;
+  }
+  @media (max-width: 640px) { .panels { grid-template-columns: 1fr; } }
+
+  .panel {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    overflow: hidden;
+  }
+  .panel-header {
+    padding: 10px 14px;
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .panel-header .ph-dot {
+    width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0;
+  }
+  .panel-body { padding: 14px; }
+
+  .question-list { list-style: none; }
+  .question-list li {
+    padding: 7px 0;
+    border-bottom: 1px solid var(--border);
+    font-size: 13px;
+    color: #c8c4ba;
+    display: flex;
+    gap: 8px;
+    align-items: baseline;
+  }
+  .question-list li:last-child { border-bottom: none; }
+  .q-num {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--amber);
+    flex-shrink: 0;
+    padding-top: 2px;
+  }
+
+  .warning-list { list-style: none; }
+  .warning-list li {
+    padding: 7px 0;
+    border-bottom: 1px solid var(--border);
+    font-size: 13px;
+    color: #d8a060;
+    display: flex;
+    gap: 8px;
+    align-items: baseline;
+  }
+  .warning-list li:last-child { border-bottom: none; }
+  .w-icon { flex-shrink: 0; font-size: 12px; }
+
+  /* ── Go/No-Go summary ── */
+  .gonogo-wrap {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    overflow: hidden;
+    margin-bottom: 28px;
+  }
+  .gonogo-header {
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+  .gonogo-title {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  .verdict-badge {
+    font-family: var(--mono);
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    padding: 5px 16px;
+    border-radius: 3px;
+  }
+  .verdict-badge.GO   { background: rgba(63,176,106,0.2); color: var(--green); border: 1px solid rgba(63,176,106,0.4); }
+  .verdict-badge.CAUTION { background: rgba(224,156,46,0.2); color: var(--yellow); border: 1px solid rgba(224,156,46,0.4); }
+  .verdict-badge.NO-GO { background: rgba(217,79,53,0.2); color: var(--red); border: 1px solid rgba(217,79,53,0.4); }
+
+  .copy-btn {
+    background: none;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    padding: 5px 12px;
+    border-radius: 3px;
+    cursor: pointer;
+    transition: border-color 0.15s, color 0.15s;
+  }
+  .copy-btn:hover { border-color: var(--muted); color: var(--text); }
+  .copy-btn.copied { border-color: var(--green); color: var(--green); }
+
+  .gonogo-body {
+    padding: 16px;
+    font-family: var(--mono);
+    font-size: 12px;
+    line-height: 1.8;
+    color: #b8b4aa;
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+
+  /* ── Overall score bar ── */
+  .score-bar-wrap { margin-bottom: 24px; }
+  .score-bar-meta {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 6px;
+  }
+  .score-bar-label { font-family: var(--mono); font-size: 11px; color: var(--muted); letter-spacing: 0.1em; }
+  .score-bar-value { font-family: var(--mono); font-size: 22px; font-weight: 700; }
+  .score-bar-track {
+    height: 8px;
+    background: var(--surface2);
+    border-radius: 4px;
+    overflow: hidden;
+  }
+  .score-bar-fill {
+    height: 100%;
+    border-radius: 4px;
+    transition: width 0.8s cubic-bezier(.22,.68,0,1.2);
+  }
+
+  /* ── Empty/loading states ── */
+  .empty-hint {
+    font-size: 13px;
+    color: var(--muted);
+    text-align: center;
+    padding: 32px 0;
+    font-family: var(--mono);
+    letter-spacing: 0.06em;
+  }
+
+  .spinner {
+    display: inline-block;
+    width: 12px; height: 12px;
+    border: 2px solid var(--border);
+    border-top-color: var(--amber);
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+    vertical-align: middle;
+    margin-right: 6px;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* Divider */
+  .divider { height: 1px; background: var(--border); margin: 24px 0; }
+
+  /* Responsive */
+  @media (max-width: 540px) {
+    header { flex-wrap: wrap; }
+    .heatmap-grid { grid-template-columns: repeat(2, 1fr); }
+    .brief-footer { flex-wrap: wrap; }
+    #analyze-btn { width: 100%; text-align: center; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <span class="wordmark">BriefCheck</span>
+  <span class="tagline">Proposal fit analyzer for freelancers</span>
+  <button class="reset-btn" onclick="resetAll()">↺ Reset</button>
+</header>
+
+<main>
+
+  <!-- STEP 1: Paste brief -->
+  <section id="brief-section">
+    <div class="step-label">01 — Paste the client brief</div>
+    <textarea id="brief" placeholder="Paste the full project brief, email, or RFP here. The more text the better — include their words, not yours.&#10;&#10;Look for: vague scope, budget mentions, timeline pressure, stakeholder complexity, comparison to competitors, revision expectations…"></textarea>
+    <div class="brief-footer">
+      <span class="char-count" id="char-count">0 words</span>
+      <button id="analyze-btn" onclick="analyze()" disabled>Analyze Brief →</button>
+    </div>
+  </section>
+
+  <div class="divider"></div>
+
+  <!-- STEP 2: Tag risk clues -->
+  <section id="tag-section">
+    <div class="step-label">02 — Tag the risk clues you spotted</div>
+
+    <div class="tag-grid" id="preset-tags">
+      <!-- populated by JS -->
+    </div>
+
+    <div class="custom-tag-row">
+      <input type="text" id="custom-tag-input" placeholder="Add your own clue…" maxlength="60"
+        onkeydown="if(event.key==='Enter') addCustomTag()">
+      <div class="sev-toggle">
+        <button id="sev-red"    onclick="selectSev('red')"   >⬤ RED</button>
+        <button id="sev-yellow" onclick="selectSev('yellow')" class="sel-yellow">⬤ YLW</button>
+      </div>
+      <button class="add-tag-btn" onclick="addCustomTag()">+ Add</button>
+    </div>
+
+    <div id="active-tags"></div>
+  </section>
+
+  <div class="divider"></div>
+
+  <!-- STEP 3: Results -->
+  <section id="results-section">
+    <div class="step-label">03 — Proposal fit heatmap</div>
+
+    <div class="score-bar-wrap" id="score-bar-wrap"></div>
+
+    <div class="heatmap-grid" id="heatmap"></div>
+
+    <div class="panels">
+      <div class="panel">
+        <div class="panel-header">
+          <span class="ph-dot" style="background:#4a7fc1"></span>
+          Follow-up questions to ask before quoting
+        </div>
+        <div class="panel-body">
+          <ul class="question-list" id="questions-list"></ul>
+        </div>
+      </div>
+      <div class="panel">
+        <div class="panel-header">
+          <span class="ph-dot" style="background:#e8c84a"></span>
+          Price-pressure &amp; scope-creep warnings
+        </div>
+        <div class="panel-body">
+          <ul class="warning-list" id="warnings-list"></ul>
+        </div>
+      </div>
+    </div>
+
+    <div class="gonogo-wrap">
+      <div class="gonogo-header">
+        <span class="gonogo-title">Go / No-Go Summary</span>
+        <span class="verdict-badge" id="verdict-badge">—</span>
+        <button class="copy-btn" id="copy-btn" onclick="copySummary()">Copy ↗</button>
+      </div>
+      <div class="gonogo-body" id="gonogo-body"></div>
+    </div>
+  </section>
+
+  <!-- Loading -->
+  <div id="loading-state" style="display:none" class="empty-hint">
+    <span class="spinner"></span> Analyzing brief…
+  </div>
+
+</main>
+
+<script>
+// ────────────────────────────────────────────────
+// DATA: preset risk tags
+// ────────────────────────────────────────────────
+const PRESET_TAGS = [
+  { id:'vague-scope',        label:'Vague / no scope',          sev:'red'    },
+  { id:'asap',               label:'"ASAP" timeline',           sev:'red'    },
+  { id:'low-budget',         label:'Budget feels low',          sev:'red'    },
+  { id:'no-budget',          label:'No budget stated',          sev:'yellow' },
+  { id:'many-stakeholders',  label:'Many stakeholders',         sev:'yellow' },
+  { id:'revisions-unlimited',label:'"Unlimited" revisions',     sev:'red'    },
+  { id:'competitor-compare', label:'Compared to cheaper alt',   sev:'red'    },
+  { id:'rushed-decision',    label:'Rushed decision to hire',   sev:'yellow' },
+  { id:'past-freelancer',    label:'Fired previous freelancer', sev:'red'    },
+  { id:'nda-heavy',          label:'Heavy NDA / IP grab',       sev:'yellow' },
+  { id:'payment-delay',      label:'Vague payment terms',       sev:'red'    },
+  { id:'scope-creep-hint',   label:'Scope creep language',      sev:'yellow' },
+  { id:'micromanage',        label:'Micromanage signals',       sev:'yellow' },
+  { id:'dream-client',       label:'Dream client / referral',   sev:'green'  },
+  { id:'clear-brief',        label:'Clear brief + examples',    sev:'green'  },
+  { id:'budget-confirmed',   label:'Budget confirmed upfront',  sev:'green'  },
+  { id:'reasonable-timeline',label:'Reasonable timeline',       sev:'green'  },
+];
+
+// ────────────────────────────────────────────────
+// STATE
+// ────────────────────────────────────────────────
+let activeTags = []; // [{id, label, sev}]
+let customSev = 'yellow';
+
+// ────────────────────────────────────────────────
+// CATEGORIES for heatmap
+// ────────────────────────────────────────────────
+const CATEGORIES = [
+  { key:'scope',    label:'Scope Clarity' },
+  { key:'budget',   label:'Budget Health' },
+  { key:'timeline', label:'Timeline Risk' },
+  { key:'client',   label:'Client Quality' },
+  { key:'payment',  label:'Payment Safety' },
+  { key:'legal',    label:'Legal / IP Risk' },
+];
+
+// Maps tags → categories + polarity (neg = bad)
+const TAG_MAP = {
+  'vague-scope':         { cats:['scope'],           weight:-40 },
+  'asap':                { cats:['timeline'],         weight:-35 },
+  'low-budget':          { cats:['budget','payment'], weight:-40 },
+  'no-budget':           { cats:['budget'],           weight:-20 },
+  'many-stakeholders':   { cats:['scope','client'],   weight:-20 },
+  'revisions-unlimited': { cats:['scope','budget'],   weight:-35 },
+  'competitor-compare':  { cats:['budget','client'],  weight:-30 },
+  'rushed-decision':     { cats:['client','timeline'],weight:-20 },
+  'past-freelancer':     { cats:['client'],           weight:-45 },
+  'nda-heavy':           { cats:['legal'],            weight:-30 },
+  'payment-delay':       { cats:['payment'],          weight:-40 },
+  'scope-creep-hint':    { cats:['scope'],            weight:-25 },
+  'micromanage':         { cats:['client'],           weight:-30 },
+  'dream-client':        { cats:['client'],           weight: 40 },
+  'clear-brief':         { cats:['scope'],            weight: 40 },
+  'budget-confirmed':    { cats:['budget','payment'], weight: 45 },
+  'reasonable-timeline': { cats:['timeline'],         weight: 35 },
+};
+
+// ────────────────────────────────────────────────
+// INIT
+// ────────────────────────────────────────────────
+(function init() {
+  renderPresetTags();
+  document.getElementById('brief').addEventListener('input', onBriefInput);
+  selectSev('yellow');
+})();
+
+function renderPresetTags() {
+  const grid = document.getElementById('preset-tags');
+  grid.innerHTML = '';
+  PRESET_TAGS.forEach(tag => {
+    const el = document.createElement('button');
+    el.className = 'risk-tag';
+    el.id = 'ptag-' + tag.id;
+    el.onclick = () => togglePreset(tag);
+    el.innerHTML = `<span class="dot"></span>${tag.label}<span class="tag-count" id="cnt-${tag.id}" style="display:none">✓</span>`;
+    grid.appendChild(el);
+  });
+}
+
+function onBriefInput() {
+  const text = document.getElementById('brief').value.trim();
+  const words = text ? text.split(/\s+/).length : 0;
+  document.getElementById('char-count').textContent = words + ' word' + (words !== 1 ? 's' : '');
+  document.getElementById('analyze-btn').disabled = words < 10;
+}
+
+// ────────────────────────────────────────────────
+// TAG MANAGEMENT
+// ────────────────────────────────────────────────
+function togglePreset(tag) {
+  const idx = activeTags.findIndex(t => t.id === tag.id);
+  if (idx >= 0) {
+    activeTags.splice(idx, 1);
+  } else {
+    activeTags.push({ ...tag });
+  }
+  syncTagUI();
+}
+
+function selectSev(s) {
+  customSev = s;
+  document.getElementById('sev-red').className    = s === 'red'    ? 'sel-red'    : '';
+  document.getElementById('sev-yellow').className = s === 'yellow' ? 'sel-yellow' : '';
+}
+
+function addCustomTag() {
+  const input = document.getElementById('custom-tag-input');
+  const label = input.value.trim();
+  if (!label) return;
+  const id = 'custom-' + Date.now();
+  activeTags.push({ id, label, sev: customSev });
+  input.value = '';
+  syncTagUI();
+}
+
+function removeTag(id) {
+  activeTags = activeTags.filter(t => t.id !== id);
+  syncTagUI();
+}
+
+function syncTagUI() {
+  // preset button states
+  PRESET_TAGS.forEach(pt => {
+    const btn = document.getElementById('ptag-' + pt.id);
+    const cnt = document.getElementById('cnt-' + pt.id);
+    const isActive = activeTags.some(t => t.id === pt.id);
+    btn.className = 'risk-tag' + (isActive ? (' active-' + pt.sev) : '');
+    if (cnt) cnt.style.display = isActive ? 'inline' : 'none';
+  });
+
+  // active chips
+  const wrap = document.getElementById('active-tags');
+  wrap.innerHTML = '';
+  activeTags.forEach(tag => {
+    const chip = document.createElement('span');
+    chip.className = 'active-chip ' + (tag.sev === 'red' ? 'red' : tag.sev === 'green' ? 'green' : 'yellow');
+    chip.innerHTML = `${tag.label} <span class="remove" onclick="removeTag('${tag.id}')">×</span>`;
+    wrap.appendChild(chip);
+  });
+}
+
+// ────────────────────────────────────────────────
+// ANALYSIS ENGINE (local, no API)
+// ────────────────────────────────────────────────
+function analyze() {
+  const briefText = document.getElementById('brief').value.trim();
+  if (briefText.split(/\s+/).length < 10) return;
+
+  document.getElementById('loading-state').style.display = 'block';
+  document.getElementById('results-section').style.display = 'none';
+  document.getElementById('analyze-btn').disabled = true;
+
+  // Brief auto-detection: scan for risk signals in text
+  const autoTags = autoParseBrief(briefText);
+
+  // Merge auto-detected with manually added tags (dedupe)
+  const merged = [...activeTags];
+  autoTags.forEach(at => {
+    if (!merged.find(t => t.id === at.id)) merged.push(at);
+  });
+
+  // Update active tags display
+  if (autoTags.length > 0) {
+    autoTags.forEach(at => {
+      if (!activeTags.find(t => t.id === at.id)) activeTags.push(at);
+    });
+    syncTagUI();
+  }
+
+  setTimeout(() => {
+    const scores  = computeScores(merged, briefText);
+    const overall = computeOverall(scores);
+    const questions = generateQuestions(merged, briefText);
+    const warnings  = generateWarnings(merged, briefText);
+    const summary   = generateSummary(scores, overall, merged, briefText);
+
+    renderHeatmap(scores);
+    renderScoreBar(overall);
+    renderQuestions(questions);
+    renderWarnings(warnings);
+    renderSummary(summary, overall);
+
+    document.getElementById('loading-state').style.display = 'none';
+    document.getElementById('results-section').style.display = 'block';
+    document.getElementById('analyze-btn').disabled = false;
+
+    document.getElementById('results-section').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }, 600);
+}
+
+// ── Auto-parse brief for risk signals ──
+function autoParseBrief(text) {
+  const t = text.toLowerCase();
+  const found = [];
+  const rules = [
+    { pattern: /\basap\b|as soon as possible|urgent|immediately|right away/,        id:'asap' },
+    { pattern: /unlimited revision|as many revision|however many|revise until/,    id:'revisions-unlimited' },
+    { pattern: /no budget|haven't set a budget|not sure on budget|flexible budget|tight budget/, id:'no-budget' },
+    { pattern: /\$\d+|\b\d+k?\b.*budget.*low|can't afford|minimal budget|small budget/, id:'low-budget' },
+    { pattern: /fired|let.*go|previous (?:freelancer|designer|developer)|last person|other (?:freelancer|designer)/, id:'past-freelancer' },
+    { pattern: /nda|intellectual property|ip rights|work for hire|all rights reserved|ownership of all/, id:'nda-heavy' },
+    { pattern: /net[\s-]?60|net[\s-]?90|upon completion|when project is done|after launch/,      id:'payment-delay' },
+    { pattern: /cheaper|lower price|quoted less|other (?:quotes?|bids?)|competitor|another (?:designer|developer)/, id:'competitor-compare' },
+    { pattern: /many (?:team|stakeholder|decision|approver)|board|committee|multiple (?:approver|decision)/,        id:'many-stakeholders' },
+    { pattern: /unclear|not sure what|open to ideas|figure it out|you decide|anything works/,    id:'vague-scope' },
+    { pattern: /check in daily|daily update|stay in touch constantly|available at all times|need to be.*on call/, id:'micromanage' },
+    { pattern: /scope creep|as we go|evolve|expand later|start small and grow|phase 2.*undefined/, id:'scope-creep-hint' },
+  ];
+  rules.forEach(rule => {
+    if (rule.pattern.test(t)) {
+      const preset = PRESET_TAGS.find(p => p.id === rule.id);
+      if (preset) found.push({ ...preset, auto: true });
+    }
+  });
+  return found;
+}
+
+// ── Score each category 0-100 ──
+function computeScores(tags, briefText) {
+  const scores = {};
+  CATEGORIES.forEach(c => { scores[c.key] = 50; }); // neutral start
+
+  tags.forEach(tag => {
+    const mapping = TAG_MAP[tag.id];
+    if (mapping) {
+      mapping.cats.forEach(cat => {
+        scores[cat] = Math.max(0, Math.min(100, scores[cat] + mapping.weight));
+      });
+    } else {
+      // custom tag: treat by sev
+      const w = tag.sev === 'red' ? -25 : tag.sev === 'yellow' ? -12 : 18;
+      CATEGORIES.forEach(c => {
+        scores[c.key] = Math.max(0, Math.min(100, scores[c.key] + w * 0.3));
+      });
+    }
+  });
+
+  // Brief-length bonus: longer briefs signal more serious clients
+  const words = briefText.split(/\s+/).length;
+  if (words > 400) {
+    scores['client']  = Math.min(100, scores['client'] + 8);
+    scores['scope']   = Math.min(100, scores['scope']  + 8);
+  } else if (words < 80) {
+    scores['scope']   = Math.max(0, scores['scope'] - 10);
+    scores['client']  = Math.max(0, scores['client'] - 8);
+  }
+
+  return scores;
+}
+
+function computeOverall(scores) {
+  const vals = Object.values(scores);
+  return Math.round(vals.reduce((a, b) => a + b, 0) / vals.length);
+}
+
+function colorForScore(n) {
+  if (n >= 65) return 'green';
+  if (n >= 40) return 'yellow';
+  return 'red';
+}
+
+// ── Questions ──
+function generateQuestions(tags, briefText) {
+  const tagIds = tags.map(t => t.id);
+  const qs = [];
+
+  if (tagIds.includes('vague-scope') || tagIds.includes('scope-creep-hint'))
+    qs.push('Can you share a detailed list of every deliverable expected at launch?');
+  if (tagIds.includes('revisions-unlimited'))
+    qs.push('How many rounds of revisions do you typically go through before approval?');
+  if (tagIds.includes('no-budget') || tagIds.includes('low-budget'))
+    qs.push('What's the approved budget range for this project?');
+  if (tagIds.includes('asap'))
+    qs.push('What's the hard deadline and what happens if it slips by a week?');
+  if (tagIds.includes('many-stakeholders'))
+    qs.push('Who has final approval authority, and how are disagreements between stakeholders resolved?');
+  if (tagIds.includes('past-freelancer'))
+    qs.push('What went wrong with the previous freelancer, and what would success look like differently?');
+  if (tagIds.includes('competitor-compare'))
+    qs.push('How are you evaluating proposals — is price the primary factor?');
+  if (tagIds.includes('micromanage'))
+    qs.push('What does your preferred communication cadence look like during a project?');
+  if (tagIds.includes('payment-delay'))
+    qs.push('Are you open to a milestone-based payment schedule rather than payment on completion?');
+  if (tagIds.includes('nda-heavy'))
+    qs.push('Which specific deliverables need to remain confidential, and for how long?');
+
+  // Generic catch-alls if few tags
+  if (qs.length < 3)
+    qs.push('What does success look like 6 months after we launch?');
+  if (qs.length < 3)
+    qs.push('Have you worked with freelancers before, and do you have a preferred contract template?');
+  if (qs.length < 4)
+    qs.push('Is there an existing brand guide, or will that be part of scope?');
+
+  // Brief-length check
+  const words = briefText.split(/\s+/).length;
+  if (words < 100)
+    qs.unshift('The brief is quite short — can you share more context or examples of what you're envisioning?');
+
+  return qs.slice(0, 7);
+}
+
+// ── Warnings ──
+function generateWarnings(tags, briefText) {
+  const tagIds = tags.map(t => t.id);
+  const ws = [];
+
+  if (tagIds.includes('revisions-unlimited'))
+    ws.push('Unlimited revisions = unlimited liability. Cap rounds explicitly in your contract.');
+  if (tagIds.includes('past-freelancer'))
+    ws.push('Fired a previous freelancer: understand the reason before quoting — this pattern repeats.');
+  if (tagIds.includes('low-budget') || tagIds.includes('competitor-compare'))
+    ws.push('Price shopping in progress. Anchor value early or risk a race to the bottom.');
+  if (tagIds.includes('asap'))
+    ws.push('"ASAP" projects often expand scope after start. Get a written scope freeze clause.');
+  if (tagIds.includes('payment-delay'))
+    ws.push('Deferred payment = free credit to the client. Require at least 30–50% upfront.');
+  if (tagIds.includes('vague-scope'))
+    ws.push('No scope = no limit. You will be asked for things not originally discussed.');
+  if (tagIds.includes('many-stakeholders'))
+    ws.push('Multiple approvers multiply revision cycles. Charge for rounds, not hours.');
+  if (tagIds.includes('micromanage'))
+    ws.push('Micromanagement signals trust deficit. Set communication boundaries in the proposal.');
+  if (tagIds.includes('nda-heavy'))
+    ws.push('Broad IP clauses can void your right to show this work in your portfolio. Negotiate carve-outs.');
+
+  if (ws.length < 2)
+    ws.push('No major red flags detected — but always require a signed agreement before starting.');
+  if (ws.length < 3)
+    ws.push('Document all scope decisions in writing, even verbal agreements via follow-up email.');
+
+  return ws.slice(0, 6);
+}
+
+// ── Go/No-Go summary text ──
+function generateSummary(scores, overall, tags, briefText) {
+  const verdict = overall >= 65 ? 'GO' : overall >= 40 ? 'CAUTION' : 'NO-GO';
+  const tagIds  = tags.map(t => t.id);
+  const words   = briefText.split(/\s+/).length;
+
+  const redFlags   = tags.filter(t => t.sev === 'red').map(t => t.label);
+  const yellowFlags = tags.filter(t => t.sev === 'yellow').map(t => t.label);
+  const greenFlags  = tags.filter(t => t.sev === 'green').map(t => t.label);
+
+  const weakCats  = CATEGORIES.filter(c => scores[c.key] < 40).map(c => c.label);
+  const strongCats = CATEGORIES.filter(c => scores[c.key] >= 65).map(c => c.label);
+
+  let lines = [];
+  lines.push(`VERDICT: ${verdict}  |  Overall Fit Score: ${overall}/100`);
+  lines.push(`Brief length: ${words} words`);
+  lines.push('');
+  lines.push('━━━ RISK FLAGS ━━━');
+  if (redFlags.length)    lines.push(`🔴 Critical  : ${redFlags.join(', ')}`);
+  if (yellowFlags.length) lines.push(`🟡 Watch     : ${yellowFlags.join(', ')}`);
+  if (greenFlags.length)  lines.push(`🟢 Positive  : ${greenFlags.join(', ')}`);
+  if (!redFlags.length && !yellowFlags.length) lines.push('No material risk tags applied.');
+  lines.push('');
+  lines.push('━━━ CATEGORY SCORES ━━━');
+  CATEGORIES.forEach(c => {
+    const s = scores[c.key];
+    const bar = colorForScore(s);
+    const symbol = bar === 'green' ? '●' : bar === 'yellow' ? '◑' : '○';
+    lines.push(`${symbol} ${c.label.padEnd(14)} ${s}/100`);
+  });
+
+  if (weakCats.length) {
+    lines.push('');
+    lines.push('━━━ AREAS NEEDING CLARITY BEFORE QUOTING ━━━');
+    weakCats.forEach(cat => lines.push(`  · ${cat}`));
+  }
+
+  lines.push('');
+  lines.push('━━━ RECOMMENDATION ━━━');
+  if (verdict === 'GO') {
+    lines.push('Proceed to proposal. Conditions look favorable.');
+    if (yellowFlags.length) lines.push(`Address ${yellowFlags[0]} in your contract terms to protect yourself.`);
+  } else if (verdict === 'CAUTION') {
+    lines.push('Proceed with conditions. Get written answers to your follow-up questions before quoting.');
+    if (redFlags.length) lines.push(`Most critical issue: ${redFlags[0]}. Resolve this first.`);
+  } else {
+    lines.push('Do not proceed without major revisions to the engagement terms.');
+    if (redFlags.length) lines.push(`Dealbreaker: ${redFlags[0]}. This alone justifies walking away.`);
+    lines.push('If you want the work, require a fixed scope document, 50% upfront, and a strict revision policy before sending a proposal.');
+  }
+
+  lines.push('');
+  lines.push(`— Analyzed by BriefCheck on ${new Date().toLocaleDateString()}`);
+
+  return { text: lines.join('\n'), verdict };
+}
+
+// ────────────────────────────────────────────────
+// RENDER FUNCTIONS
+// ────────────────────────────────────────────────
+function renderHeatmap(scores) {
+  const grid = document.getElementById('heatmap');
+  grid.innerHTML = '';
+  CATEGORIES.forEach((cat, i) => {
+    const s = scores[cat.key];
+    const cls = colorForScore(s);
+    const label = cls === 'green' ? 'Low risk' : cls === 'yellow' ? 'Watch this' : 'High risk';
+    const cell = document.createElement('div');
+    cell.className = `hm-cell ${cls}`;
+    cell.style.animationDelay = (i * 0.07) + 's';
+    cell.innerHTML = `
+      <div class="hm-category">${cat.label}</div>
+      <div class="hm-score">${s}</div>
+      <div class="hm-label">${label}</div>
+    `;
+    grid.appendChild(cell);
+  });
+}
+
+function renderScoreBar(overall) {
+  const cls = colorForScore(overall);
+  const color = cls === 'green' ? 'var(--green)' : cls === 'yellow' ? 'var(--yellow)' : 'var(--red)';
+  const label = cls === 'green' ? 'Strong fit' : cls === 'yellow' ? 'Proceed with caution' : 'High risk — review carefully';
+  const wrap = document.getElementById('score-bar-wrap');
+  wrap.innerHTML = `
+    <div class="score-bar-meta">
+      <span class="score-bar-label">OVERALL FIT SCORE — ${label.toUpperCase()}</span>
+      <span class="score-bar-value" style="color:${color}">${overall}/100</span>
+    </div>
+    <div class="score-bar-track">
+      <div class="score-bar-fill" style="width:0%; background:${color}" id="fill-bar"></div>
+    </div>
+  `;
+  setTimeout(() => {
+    const fill = document.getElementById('fill-bar');
+    if (fill) fill.style.width = overall + '%';
+  }, 50);
+}
+
+function renderQuestions(qs) {
+  const list = document.getElementById('questions-list');
+  list.innerHTML = qs.map((q, i) =>
+    `<li><span class="q-num">${String(i+1).padStart(2,'0')}</span>${q}</li>`
+  ).join('');
+}
+
+function renderWarnings(ws) {
+  const list = document.getElementById('warnings-list');
+  list.innerHTML = ws.map(w =>
+    `<li><span class="w-icon">⚠</span>${w}</li>`
+  ).join('');
+}
+
+function renderSummary({ text, verdict }, overall) {
+  document.getElementById('gonogo-body').textContent = text;
+  const badge = document.getElementById('verdict-badge');
+  badge.textContent = verdict;
+  badge.className = 'verdict-badge ' + verdict;
+  window._summaryText = text;
+}
+
+function copySummary() {
+  if (!window._summaryText) return;
+  navigator.clipboard.writeText(window._summaryText).then(() => {
+    const btn = document.getElementById('copy-btn');
+    btn.textContent = 'Copied ✓';
+    btn.classList.add('copied');
+    setTimeout(() => {
+      btn.textContent = 'Copy ↗';
+      btn.classList.remove('copied');
+    }, 2000);
+  });
+}
+
+function resetAll() {
+  document.getElementById('brief').value = '';
+  activeTags = [];
+  syncTagUI();
+  onBriefInput();
+  document.getElementById('results-section').style.display = 'none';
+  document.getElementById('loading-state').style.display = 'none';
+  window._summaryText = '';
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+</script>
+</body>
+</html>

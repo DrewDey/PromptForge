@@ -1,0 +1,1563 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>FAQ Gap Sprint Board</title>
+  <style>
+    :root {
+      --bg: #f6f3ee;
+      --panel: #fffaf2;
+      --panel-2: #ffffff;
+      --ink: #241f1a;
+      --muted: #6f665d;
+      --line: #ded4c8;
+      --soft: #ece3d7;
+      --accent: #315c55;
+      --accent-2: #d9773f;
+      --good: #dbe9df;
+      --proof: #efe0c6;
+      --skip: #ead9d8;
+      --shadow: 0 10px 28px rgba(43, 34, 24, 0.10);
+      --radius: 18px;
+      --radius-sm: 12px;
+      --tap: 44px;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html {
+      min-height: 100%;
+      background: var(--bg);
+    }
+
+    body {
+      margin: 0;
+      min-height: 100%;
+      color: var(--ink);
+      font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      line-height: 1.35;
+      overflow-x: hidden;
+    }
+
+    button,
+    input,
+    textarea,
+    select {
+      font: inherit;
+    }
+
+    button {
+      min-height: var(--tap);
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      background: var(--panel-2);
+      color: var(--ink);
+      padding: 10px 14px;
+      cursor: pointer;
+      touch-action: manipulation;
+      box-shadow: 0 1px 0 rgba(0,0,0,0.04);
+    }
+
+    button:active {
+      transform: translateY(1px);
+    }
+
+    button.primary {
+      border-color: var(--accent);
+      background: var(--accent);
+      color: #fff;
+    }
+
+    button.warn {
+      border-color: #b9563a;
+      background: #fff4ee;
+      color: #7a2d1b;
+    }
+
+    button.ghost {
+      background: transparent;
+      box-shadow: none;
+    }
+
+    button.small {
+      min-height: 36px;
+      padding: 7px 10px;
+      font-size: 13px;
+    }
+
+    .app {
+      width: 100%;
+      max-width: 760px;
+      margin: 0 auto;
+      padding: 14px;
+      padding-bottom: 88px;
+    }
+
+    .hero {
+      background: linear-gradient(145deg, #fffaf2, #efe6d9);
+      border: 1px solid var(--line);
+      border-radius: 24px;
+      padding: 18px;
+      box-shadow: var(--shadow);
+    }
+
+    .kicker {
+      margin: 0 0 7px;
+      color: var(--accent);
+      font-size: 13px;
+      font-weight: 800;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(26px, 8vw, 42px);
+      letter-spacing: -0.05em;
+      line-height: 0.95;
+    }
+
+    .sub {
+      margin: 12px 0 0;
+      color: var(--muted);
+      max-width: 56ch;
+      font-size: 15px;
+    }
+
+    .setup {
+      display: grid;
+      gap: 12px;
+      margin-top: 14px;
+    }
+
+    .field {
+      display: grid;
+      gap: 7px;
+    }
+
+    label {
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 800;
+    }
+
+    input,
+    textarea,
+    select {
+      width: 100%;
+      border: 1px solid var(--line);
+      border-radius: var(--radius-sm);
+      background: rgba(255,255,255,0.86);
+      color: var(--ink);
+      padding: 12px;
+      outline: none;
+    }
+
+    input:focus,
+    textarea:focus,
+    select:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(49, 92, 85, 0.13);
+    }
+
+    textarea {
+      resize: vertical;
+      min-height: 78px;
+    }
+
+    .toolbar {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-top: 14px;
+    }
+
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      margin: 14px 0;
+    }
+
+    .stat {
+      border: 1px solid var(--line);
+      border-radius: var(--radius-sm);
+      background: var(--panel);
+      padding: 10px;
+      min-width: 0;
+    }
+
+    .stat strong {
+      display: block;
+      font-size: 21px;
+      line-height: 1;
+      letter-spacing: -0.04em;
+    }
+
+    .stat span {
+      display: block;
+      margin-top: 4px;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 750;
+    }
+
+    .section-title {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      margin: 18px 0 9px;
+    }
+
+    .section-title h2 {
+      margin: 0;
+      font-size: 18px;
+      letter-spacing: -0.025em;
+    }
+
+    .filter-row {
+      display: flex;
+      gap: 8px;
+      overflow-x: auto;
+      padding: 2px 0 8px;
+      scrollbar-width: none;
+    }
+
+    .filter-row::-webkit-scrollbar {
+      display: none;
+    }
+
+    .filter-row button {
+      flex: 0 0 auto;
+      background: var(--panel);
+    }
+
+    .filter-row button.active {
+      background: var(--ink);
+      color: #fff;
+      border-color: var(--ink);
+    }
+
+    .lane {
+      border: 1px solid var(--line);
+      border-radius: 22px;
+      background: rgba(255,250,242,0.72);
+      margin-bottom: 14px;
+      overflow: hidden;
+    }
+
+    .lane-head {
+      position: sticky;
+      top: 0;
+      z-index: 3;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      padding: 12px;
+      border-bottom: 1px solid var(--line);
+      backdrop-filter: blur(10px);
+    }
+
+    .lane-head.answer {
+      background: rgba(219, 233, 223, 0.92);
+    }
+
+    .lane-head.proof {
+      background: rgba(239, 224, 198, 0.94);
+    }
+
+    .lane-head.skip {
+      background: rgba(234, 217, 216, 0.94);
+    }
+
+    .lane-name {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      min-width: 0;
+    }
+
+    .lane-name h3 {
+      margin: 0;
+      font-size: 16px;
+      letter-spacing: -0.02em;
+    }
+
+    .lane-name p {
+      margin: 2px 0 0;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .count {
+      display: inline-grid;
+      place-items: center;
+      min-width: 30px;
+      height: 30px;
+      padding: 0 8px;
+      border-radius: 999px;
+      background: rgba(255,255,255,0.7);
+      border: 1px solid rgba(0,0,0,0.08);
+      font-weight: 850;
+      font-size: 13px;
+    }
+
+    .lane-body {
+      display: grid;
+      gap: 10px;
+      padding: 10px;
+    }
+
+    .empty {
+      padding: 14px;
+      border: 1px dashed var(--line);
+      border-radius: var(--radius);
+      color: var(--muted);
+      background: rgba(255,255,255,0.48);
+      font-size: 14px;
+    }
+
+    .faq-card {
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: var(--panel-2);
+      padding: 12px;
+      box-shadow: 0 6px 18px rgba(43, 34, 24, 0.07);
+    }
+
+    .card-top {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 8px;
+      margin-bottom: 10px;
+    }
+
+    .badge-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      min-height: 27px;
+      padding: 4px 9px;
+      border-radius: 999px;
+      background: var(--soft);
+      color: #443b33;
+      font-size: 12px;
+      font-weight: 800;
+    }
+
+    .score {
+      flex: 0 0 auto;
+      display: grid;
+      place-items: center;
+      min-width: 38px;
+      height: 38px;
+      border-radius: 12px;
+      background: #f2eee8;
+      border: 1px solid var(--line);
+      font-weight: 900;
+      letter-spacing: -0.04em;
+    }
+
+    .card-grid {
+      display: grid;
+      gap: 9px;
+    }
+
+    .card-grid textarea {
+      min-height: 66px;
+      padding: 10px;
+      font-size: 14px;
+    }
+
+    .mini-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 9px;
+    }
+
+    .evidence-input {
+      min-height: var(--tap);
+      font-size: 14px;
+    }
+
+    .why {
+      margin: 2px 0 0;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .move-row {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 8px;
+      margin-top: 10px;
+    }
+
+    .lane-buttons {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 7px;
+    }
+
+    .lane-buttons button {
+      min-height: 38px;
+      padding: 7px 6px;
+      border-radius: 12px;
+      font-size: 12px;
+      font-weight: 850;
+    }
+
+    .lane-buttons button.active-answer {
+      background: var(--good);
+      border-color: #8bb29a;
+    }
+
+    .lane-buttons button.active-proof {
+      background: var(--proof);
+      border-color: #c5a66c;
+    }
+
+    .lane-buttons button.active-skip {
+      background: var(--skip);
+      border-color: #c38b87;
+    }
+
+    .card-actions {
+      display: flex;
+      justify-content: space-between;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .brief-box {
+      border: 1px solid var(--line);
+      border-radius: 22px;
+      background: var(--panel);
+      padding: 12px;
+      box-shadow: var(--shadow);
+    }
+
+    .brief-preview {
+      min-height: 260px;
+      white-space: pre-wrap;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 12.5px;
+      line-height: 1.45;
+      background: #fff;
+    }
+
+    .toast {
+      position: fixed;
+      left: 14px;
+      right: 14px;
+      bottom: 16px;
+      z-index: 20;
+      display: none;
+      max-width: 730px;
+      margin: 0 auto;
+      border: 1px solid rgba(49, 92, 85, 0.25);
+      border-radius: 999px;
+      background: #203b37;
+      color: #fff;
+      padding: 12px 14px;
+      box-shadow: 0 16px 40px rgba(0,0,0,0.24);
+      text-align: center;
+      font-size: 14px;
+      font-weight: 800;
+    }
+
+    .toast.show {
+      display: block;
+      animation: pop 1.8s ease both;
+    }
+
+    @keyframes pop {
+      0% { opacity: 0; transform: translateY(12px); }
+      12% { opacity: 1; transform: translateY(0); }
+      82% { opacity: 1; transform: translateY(0); }
+      100% { opacity: 0; transform: translateY(10px); }
+    }
+
+    .sticky-actions {
+      position: fixed;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      z-index: 10;
+      background: rgba(246, 243, 238, 0.88);
+      border-top: 1px solid var(--line);
+      backdrop-filter: blur(12px);
+    }
+
+    .sticky-inner {
+      max-width: 760px;
+      margin: 0 auto;
+      padding: 9px 14px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+
+    .fine {
+      margin: 10px 0 0;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    @media (min-width: 650px) {
+      .setup {
+        grid-template-columns: 1fr 1fr;
+      }
+
+      .setup .field.full {
+        grid-column: 1 / -1;
+      }
+
+      .mini-grid {
+        grid-template-columns: 1fr 1fr;
+      }
+
+      .move-row {
+        grid-template-columns: 1fr auto;
+        align-items: center;
+      }
+    }
+
+    @media (max-width: 390px) {
+      .app {
+        padding-left: 10px;
+        padding-right: 10px;
+      }
+
+      .hero,
+      .brief-box {
+        padding: 14px;
+      }
+
+      .stats {
+        gap: 6px;
+      }
+
+      .stat {
+        padding: 8px;
+      }
+
+      .stat strong {
+        font-size: 18px;
+      }
+
+      .lane-body {
+        padding: 8px;
+      }
+
+      .faq-card {
+        padding: 10px;
+      }
+
+      .sticky-inner {
+        padding-left: 10px;
+        padding-right: 10px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="app">
+    <section class="hero" aria-labelledby="title">
+      <p class="kicker">FAQ Gap Sprint Board</p>
+      <h1 id="title">Find answerable FAQs before the page gets bloated.</h1>
+      <p class="sub">Type a service or topic, add the audience, generate likely FAQ opportunities, then sort each card into Answer Now, Needs Proof, or Skip. Everything runs offline in this one file.</p>
+
+      <div class="setup">
+        <div class="field">
+          <label for="topic">Service or topic</label>
+          <input id="topic" autocomplete="off" placeholder="Example: retirement tax planning">
+        </div>
+        <div class="field">
+          <label for="audience">Audience</label>
+          <input id="audience" autocomplete="off" placeholder="Example: families within 5 years of retirement">
+        </div>
+        <div class="field full">
+          <label for="notes">Page notes, offers, exclusions, proof you already have</label>
+          <textarea id="notes" placeholder="Example: flat fee available, no tax prep, fiduciary planning, case studies pending"></textarea>
+        </div>
+      </div>
+
+      <div class="toolbar" aria-label="Board controls">
+        <button class="primary" id="generateBtn" type="button">Generate FAQ gaps</button>
+        <button id="addBtn" type="button">Add FAQ</button>
+        <button class="ghost" id="clearBtn" type="button">Clear board</button>
+      </div>
+
+      <p class="fine">Tip: edit the questions directly. Use the lane buttons on each card to clean up the brief fast.</p>
+    </section>
+
+    <section class="stats" aria-label="Sprint counts">
+      <div class="stat">
+        <strong id="answerCount">0</strong>
+        <span>Answer Now</span>
+      </div>
+      <div class="stat">
+        <strong id="proofCount">0</strong>
+        <span>Needs Proof</span>
+      </div>
+      <div class="stat">
+        <strong id="skipCount">0</strong>
+        <span>Skip</span>
+      </div>
+    </section>
+
+    <section class="section-title">
+      <h2>FAQ cards</h2>
+    </section>
+
+    <div class="filter-row" aria-label="Lane filter">
+      <button id="filterAll" type="button" class="active">All</button>
+      <button id="filterAnswer" type="button">Answer Now</button>
+      <button id="filterProof" type="button">Needs Proof</button>
+      <button id="filterSkip" type="button">Skip</button>
+    </div>
+
+    <section id="lanes" aria-live="polite"></section>
+
+    <section class="section-title">
+      <h2>Clean brief</h2>
+      <button id="refreshBriefBtn" type="button" class="small">Refresh</button>
+    </section>
+
+    <section class="brief-box">
+      <label for="brief">Copy-ready FAQ content brief</label>
+      <textarea id="brief" class="brief-preview" spellcheck="false"></textarea>
+      <div class="toolbar">
+        <button class="primary" id="copyBtn" type="button">Copy brief</button>
+        <button id="downloadBtn" type="button">Download .txt</button>
+        <button id="copyJsonBtn" type="button">Copy JSON</button>
+      </div>
+    </section>
+  </main>
+
+  <div class="sticky-actions" aria-label="Quick actions">
+    <div class="sticky-inner">
+      <button class="primary" id="stickyCopyBtn" type="button">Copy brief</button>
+      <button id="stickyDownloadBtn" type="button">Export .txt</button>
+    </div>
+  </div>
+
+  <div class="toast" id="toast" role="status"></div>
+
+  <script>
+    (function () {
+      "use strict";
+
+      var storageKey = "faq-gap-sprint-board-v1";
+
+      var lanes = [
+        {
+          key: "answer",
+          label: "Answer Now",
+          emoji: "✅",
+          className: "answer",
+          hint: "Low-risk, useful, and answerable from normal page knowledge."
+        },
+        {
+          key: "proof",
+          label: "Needs Proof",
+          emoji: "🧾",
+          className: "proof",
+          hint: "Useful, but needs pricing, data, policy, examples, quotes, or expert support."
+        },
+        {
+          key: "skip",
+          label: "Skip",
+          emoji: "🚫",
+          className: "skip",
+          hint: "Too broad, risky, weak-intent, or likely to create thin/unprovable content."
+        }
+      ];
+
+      var state = {
+        topic: "",
+        audience: "",
+        notes: "",
+        filter: "all",
+        cards: []
+      };
+
+      var els = {
+        topic: document.getElementById("topic"),
+        audience: document.getElementById("audience"),
+        notes: document.getElementById("notes"),
+        generateBtn: document.getElementById("generateBtn"),
+        addBtn: document.getElementById("addBtn"),
+        clearBtn: document.getElementById("clearBtn"),
+        lanes: document.getElementById("lanes"),
+        answerCount: document.getElementById("answerCount"),
+        proofCount: document.getElementById("proofCount"),
+        skipCount: document.getElementById("skipCount"),
+        brief: document.getElementById("brief"),
+        copyBtn: document.getElementById("copyBtn"),
+        downloadBtn: document.getElementById("downloadBtn"),
+        copyJsonBtn: document.getElementById("copyJsonBtn"),
+        refreshBriefBtn: document.getElementById("refreshBriefBtn"),
+        stickyCopyBtn: document.getElementById("stickyCopyBtn"),
+        stickyDownloadBtn: document.getElementById("stickyDownloadBtn"),
+        toast: document.getElementById("toast"),
+        filterAll: document.getElementById("filterAll"),
+        filterAnswer: document.getElementById("filterAnswer"),
+        filterProof: document.getElementById("filterProof"),
+        filterSkip: document.getElementById("filterSkip")
+      };
+
+      var templates = [
+        {
+          type: "Definition",
+          question: "What is {topic}?",
+          angle: "Give a crisp definition, then explain the practical situation where {audience} usually needs it.",
+          proofNeed: "Internal subject-matter review",
+          intent: 5,
+          proof: 1,
+          risk: 1
+        },
+        {
+          type: "Fit",
+          question: "Who is {topic} best suited for?",
+          angle: "Describe the best-fit reader, common triggers, and when the service/topic is probably not a fit.",
+          proofNeed: "Offer criteria or intake rules",
+          intent: 5,
+          proof: 2,
+          risk: 2
+        },
+        {
+          type: "Process",
+          question: "How does {topic} work step by step?",
+          angle: "Show the normal path from first contact to next action. Keep it concrete and scannable.",
+          proofNeed: "Real workflow",
+          intent: 5,
+          proof: 1,
+          risk: 1
+        },
+        {
+          type: "Pricing",
+          question: "How much does {topic} cost?",
+          angle: "Use ranges, fee factors, or a pricing explanation. Avoid fake precision.",
+          proofNeed: "Pricing page, fee schedule, or approved language",
+          intent: 5,
+          proof: 5,
+          risk: 3
+        },
+        {
+          type: "Timeline",
+          question: "How long does {topic} take?",
+          angle: "Give a typical timeline and the factors that make it faster or slower.",
+          proofNeed: "Average timeline, workflow examples, or service standard",
+          intent: 4,
+          proof: 3,
+          risk: 2
+        },
+        {
+          type: "Comparison",
+          question: "How is {topic} different from other options?",
+          angle: "Compare decision factors without attacking competitors. Use neutral tradeoffs.",
+          proofNeed: "Competitor review, positioning notes, or comparison table",
+          intent: 4,
+          proof: 4,
+          risk: 3
+        },
+        {
+          type: "Alternatives",
+          question: "Can {audience} handle {topic} themselves?",
+          angle: "Explain what can be DIY, when DIY breaks down, and when help is worth considering.",
+          proofNeed: "Internal expertise or examples",
+          intent: 4,
+          proof: 2,
+          risk: 2
+        },
+        {
+          type: "Preparation",
+          question: "What should {audience} prepare before starting {topic}?",
+          angle: "List documents, decisions, constraints, and useful background details.",
+          proofNeed: "Intake checklist",
+          intent: 4,
+          proof: 1,
+          risk: 1
+        },
+        {
+          type: "Scope",
+          question: "What is included with {topic}?",
+          angle: "State inclusions plainly. Add boundaries so the answer does not overpromise.",
+          proofNeed: "Offer scope",
+          intent: 5,
+          proof: 2,
+          risk: 2
+        },
+        {
+          type: "Exclusions",
+          question: "What is not included with {topic}?",
+          angle: "Use this to reduce bad-fit leads and prevent expectation gaps.",
+          proofNeed: "Service exclusions or policy language",
+          intent: 3,
+          proof: 2,
+          risk: 2
+        },
+        {
+          type: "Mistakes",
+          question: "What mistakes should {audience} avoid with {topic}?",
+          angle: "Turn common errors into practical warnings and decision checkpoints.",
+          proofNeed: "Expert review or observed examples",
+          intent: 4,
+          proof: 2,
+          risk: 2
+        },
+        {
+          type: "Outcome",
+          question: "What results can {audience} expect from {topic}?",
+          angle: "Frame likely outcomes carefully. Separate goals, process outputs, and results that cannot be guaranteed.",
+          proofNeed: "Case examples, disclaimers, or approved claim language",
+          intent: 5,
+          proof: 5,
+          risk: 4
+        },
+        {
+          type: "Risk",
+          question: "What are the risks or downsides of {topic}?",
+          angle: "Answer honestly. Cover limitations, tradeoffs, costs, timing, and cases where it may not help.",
+          proofNeed: "Expert review and approved risk language",
+          intent: 4,
+          proof: 4,
+          risk: 4
+        },
+        {
+          type: "Trust",
+          question: "How do I choose a {topic} provider?",
+          angle: "Give selection criteria, red flags, questions to ask, and proof points to request.",
+          proofNeed: "Provider standards or credential notes",
+          intent: 4,
+          proof: 2,
+          risk: 2
+        },
+        {
+          type: "Urgency",
+          question: "When should {audience} start {topic}?",
+          angle: "Name the trigger events, deadlines, warning signs, and reasons not to wait too long.",
+          proofNeed: "Timeline logic, deadline source, or expert review",
+          intent: 4,
+          proof: 3,
+          risk: 3
+        },
+        {
+          type: "Aftercare",
+          question: "What happens after {topic} is complete?",
+          angle: "Explain follow-up, maintenance, next decisions, and when to revisit the plan.",
+          proofNeed: "Workflow or client handoff notes",
+          intent: 3,
+          proof: 1,
+          risk: 1
+        },
+        {
+          type: "Local",
+          question: "Is {topic} available near me?",
+          angle: "Only answer if location matters. Otherwise redirect to service area, virtual availability, or eligibility.",
+          proofNeed: "Service area or location policy",
+          intent: 3,
+          proof: 3,
+          risk: 2
+        },
+        {
+          type: "Reviews",
+          question: "Where can {audience} find reviews or examples for {topic}?",
+          angle: "Point to legitimate testimonials, case studies, examples, or third-party proof. Do not invent social proof.",
+          proofNeed: "Testimonials, case studies, portfolio, or reviews",
+          intent: 3,
+          proof: 5,
+          risk: 3
+        },
+        {
+          type: "Guarantee",
+          question: "Does {topic} guarantee results?",
+          angle: "Usually skip as a target unless you can answer with a clear no, limitation, or policy. Avoid guarantee language.",
+          proofNeed: "Legal/compliance-approved policy",
+          intent: 3,
+          proof: 5,
+          risk: 5,
+          forceLane: "skip"
+        },
+        {
+          type: "Best",
+          question: "What is the best {topic}?",
+          angle: "Too broad as written. Rewrite into criteria, fit, tradeoffs, or provider selection instead.",
+          proofNeed: "Objective criteria and comparison basis",
+          intent: 2,
+          proof: 5,
+          risk: 4,
+          forceLane: "skip"
+        },
+        {
+          type: "Cheap",
+          question: "What is the cheapest way to get {topic}?",
+          angle: "Weak-fit unless price-sensitive search is strategic. Consider rewriting around cost factors or value.",
+          proofNeed: "Pricing proof and positioning decision",
+          intent: 2,
+          proof: 4,
+          risk: 3,
+          forceLane: "skip"
+        },
+        {
+          type: "Eligibility",
+          question: "Who should not use {topic}?",
+          angle: "Set boundaries clearly. This is strong if it prevents bad-fit traffic and supports trust.",
+          proofNeed: "Disqualification criteria or expert review",
+          intent: 4,
+          proof: 3,
+          risk: 3
+        },
+        {
+          type: "Objection",
+          question: "Is {topic} worth it for {audience}?",
+          angle: "Answer with decision criteria, costs, risk of inaction, and scenarios where it is not worth it.",
+          proofNeed: "Pricing, outcome examples, or decision framework",
+          intent: 5,
+          proof: 4,
+          risk: 3
+        },
+        {
+          type: "Documentation",
+          question: "What documents or information are needed for {topic}?",
+          angle: "Convert this into a practical checklist. Good for featured snippets and lead quality.",
+          proofNeed: "Intake checklist",
+          intent: 4,
+          proof: 1,
+          risk: 1
+        },
+        {
+          type: "Red Flags",
+          question: "What are red flags when choosing {topic}?",
+          angle: "Use neutral, defensible red flags. Avoid naming competitors or making unsupported accusations.",
+          proofNeed: "Expert review",
+          intent: 4,
+          proof: 3,
+          risk: 3
+        },
+        {
+          type: "First Step",
+          question: "What is the first step for {audience} interested in {topic}?",
+          angle: "Give one low-friction next action and what happens immediately after.",
+          proofNeed: "CTA and intake workflow",
+          intent: 5,
+          proof: 1,
+          risk: 1
+        }
+      ];
+
+      function load() {
+        try {
+          var raw = localStorage.getItem(storageKey);
+          if (!raw) return;
+          var parsed = JSON.parse(raw);
+          if (!parsed || typeof parsed !== "object") return;
+          state.topic = parsed.topic || "";
+          state.audience = parsed.audience || "";
+          state.notes = parsed.notes || "";
+          state.filter = parsed.filter || "all";
+          state.cards = Array.isArray(parsed.cards) ? parsed.cards : [];
+        } catch (err) {
+          state.cards = [];
+        }
+      }
+
+      function save() {
+        state.topic = els.topic.value.trim();
+        state.audience = els.audience.value.trim();
+        state.notes = els.notes.value.trim();
+        try {
+          localStorage.setItem(storageKey, JSON.stringify(state));
+        } catch (err) {}
+      }
+
+      function uid() {
+        return "c" + Math.random().toString(36).slice(2, 9) + Date.now().toString(36).slice(-4);
+      }
+
+      function cleanText(value, fallback) {
+        var text = String(value || "").replace(/\s+/g, " ").trim();
+        return text || fallback;
+      }
+
+      function fill(template, data) {
+        return template
+          .replace(/\{topic\}/g, data.topic)
+          .replace(/\{audience\}/g, data.audience);
+      }
+
+      function laneFor(template) {
+        if (template.forceLane) return template.forceLane;
+        if (template.risk >= 5) return "skip";
+        if (template.proof >= 4 || template.risk >= 4) return "proof";
+        if (template.proof >= 3 && template.risk >= 3) return "proof";
+        return "answer";
+      }
+
+      function scoreFor(template) {
+        var score = (template.intent * 18) - (template.proof * 8) - (template.risk * 7) + 42;
+        if (template.forceLane === "skip") score -= 18;
+        return Math.max(5, Math.min(99, Math.round(score)));
+      }
+
+      function whyFor(card) {
+        if (card.lane === "answer") {
+          return "Good candidate because it matches common search intent and can be answered without heavy proof.";
+        }
+        if (card.lane === "proof") {
+          return "Worth targeting, but needs support before publishing so the answer does not feel thin or risky.";
+        }
+        return "Skip or rewrite because the query is broad, risky, low-fit, or likely to invite unsupported claims.";
+      }
+
+      function generateCards() {
+        var topic = cleanText(els.topic.value, "this service");
+        var audience = cleanText(els.audience.value, "your audience");
+        var data = { topic: topic, audience: audience };
+
+        var cards = templates.map(function (template) {
+          var lane = laneFor(template);
+          return {
+            id: uid(),
+            type: template.type,
+            question: fill(template.question, data),
+            angle: fill(template.angle, data),
+            evidence: template.proofNeed,
+            lane: lane,
+            intent: template.intent,
+            proof: template.proof,
+            risk: template.risk,
+            score: scoreFor(template),
+            why: "",
+            created: Date.now()
+          };
+        });
+
+        state.cards = cards;
+        save();
+        render();
+        toast("Generated " + cards.length + " FAQ opportunities.");
+      }
+
+      function addBlankCard() {
+        var topic = cleanText(els.topic.value, "this service");
+        var card = {
+          id: uid(),
+          type: "Custom",
+          question: "What should people know about " + topic + "?",
+          angle: "Draft the answer angle here.",
+          evidence: "Proof, policy, example, source, or owner",
+          lane: "answer",
+          intent: 3,
+          proof: 1,
+          risk: 1,
+          score: 60,
+          why: "Custom card.",
+          created: Date.now()
+        };
+        state.cards.unshift(card);
+        save();
+        render();
+        toast("Added a custom FAQ card.");
+      }
+
+      function clearBoard() {
+        var confirmed = window.confirm("Clear all FAQ cards and saved board data?");
+        if (!confirmed) return;
+        state.cards = [];
+        state.topic = "";
+        state.audience = "";
+        state.notes = "";
+        state.filter = "all";
+        els.topic.value = "";
+        els.audience.value = "";
+        els.notes.value = "";
+        try {
+          localStorage.removeItem(storageKey);
+        } catch (err) {}
+        render();
+        toast("Board cleared.");
+      }
+
+      function getCounts() {
+        var counts = { answer: 0, proof: 0, skip: 0 };
+        state.cards.forEach(function (card) {
+          if (counts[card.lane] !== undefined) counts[card.lane] += 1;
+        });
+        return counts;
+      }
+
+      function updateCounts() {
+        var counts = getCounts();
+        els.answerCount.textContent = String(counts.answer);
+        els.proofCount.textContent = String(counts.proof);
+        els.skipCount.textContent = String(counts.skip);
+      }
+
+      function setFilter(next) {
+        state.filter = next;
+        save();
+        render();
+      }
+
+      function updateFilterButtons() {
+        var map = {
+          all: els.filterAll,
+          answer: els.filterAnswer,
+          proof: els.filterProof,
+          skip: els.filterSkip
+        };
+
+        Object.keys(map).forEach(function (key) {
+          if (state.filter === key) {
+            map[key].classList.add("active");
+          } else {
+            map[key].classList.remove("active");
+          }
+        });
+      }
+
+      function cardLabel(card) {
+        var lane = lanes.filter(function (item) {
+          return item.key === card.lane;
+        })[0];
+        return lane ? lane.label : "Answer Now";
+      }
+
+      function sortedCardsForLane(key) {
+        return state.cards
+          .filter(function (card) {
+            if (state.filter !== "all" && state.filter !== key) return false;
+            return card.lane === key;
+          })
+          .slice()
+          .sort(function (a, b) {
+            if (b.score !== a.score) return b.score - a.score;
+            return a.created - b.created;
+          });
+      }
+
+      function setCardLane(id, lane) {
+        var card = findCard(id);
+        if (!card) return;
+        card.lane = lane;
+        card.why = whyFor(card);
+        save();
+        render();
+      }
+
+      function findCard(id) {
+        for (var i = 0; i < state.cards.length; i += 1) {
+          if (state.cards[i].id === id) return state.cards[i];
+        }
+        return null;
+      }
+
+      function deleteCard(id) {
+        state.cards = state.cards.filter(function (card) {
+          return card.id !== id;
+        });
+        save();
+        render();
+      }
+
+      function duplicateCard(id) {
+        var card = findCard(id);
+        if (!card) return;
+        var copy = JSON.parse(JSON.stringify(card));
+        copy.id = uid();
+        copy.created = Date.now();
+        copy.question = copy.question + " — variation";
+        state.cards.unshift(copy);
+        save();
+        render();
+      }
+
+      function makeEl(tag, className, text) {
+        var el = document.createElement(tag);
+        if (className) el.className = className;
+        if (text !== undefined && text !== null) el.textContent = text;
+        return el;
+      }
+
+      function makeTextarea(value, label, onInput) {
+        var wrap = makeEl("div", "field");
+        var lab = makeEl("label", "", label);
+        var area = document.createElement("textarea");
+        area.value = value || "";
+        area.addEventListener("input", function () {
+          onInput(area.value);
+          save();
+          updateBrief();
+        });
+        wrap.appendChild(lab);
+        wrap.appendChild(area);
+        return wrap;
+      }
+
+      function makeInput(value, label, onInput) {
+        var wrap = makeEl("div", "field");
+        var lab = makeEl("label", "", label);
+        var input = document.createElement("input");
+        input.className = "evidence-input";
+        input.value = value || "";
+        input.addEventListener("input", function () {
+          onInput(input.value);
+          save();
+          updateBrief();
+        });
+        wrap.appendChild(lab);
+        wrap.appendChild(input);
+        return wrap;
+      }
+
+      function renderCard(card) {
+        var node = makeEl("article", "faq-card");
+        node.setAttribute("aria-label", card.question);
+
+        var top = makeEl("div", "card-top");
+
+        var badges = makeEl("div", "badge-row");
+        badges.appendChild(makeEl("span", "badge", card.type || "FAQ"));
+        badges.appendChild(makeEl("span", "badge", cardLabel(card)));
+        badges.appendChild(makeEl("span", "badge", "Intent " + card.intent + "/5"));
+        badges.appendChild(makeEl("span", "badge", "Proof " + card.proof + "/5"));
+        badges.appendChild(makeEl("span", "badge", "Risk " + card.risk + "/5"));
+
+        var score = makeEl("div", "score", String(card.score || 50));
+        score.setAttribute("title", "Opportunity score");
+
+        top.appendChild(badges);
+        top.appendChild(score);
+
+        var grid = makeEl("div", "card-grid");
+        grid.appendChild(makeTextarea(card.question, "FAQ question", function (value) {
+          card.question = value;
+        }));
+        grid.appendChild(makeTextarea(card.angle, "Answer angle", function (value) {
+          card.angle = value;
+        }));
+
+        var mini = makeEl("div", "mini-grid");
+        mini.appendChild(makeInput(card.evidence, "Evidence or proof needed", function (value) {
+          card.evidence = value;
+        }));
+
+        var whyWrap = makeEl("div", "field");
+        whyWrap.appendChild(makeEl("label", "", "Why it landed here"));
+        var why = makeEl("p", "why", card.why || whyFor(card));
+        whyWrap.appendChild(why);
+        mini.appendChild(whyWrap);
+
+        grid.appendChild(mini);
+
+        var moveRow = makeEl("div", "move-row");
+        var laneButtons = makeEl("div", "lane-buttons");
+
+        lanes.forEach(function (lane) {
+          var btn = document.createElement("button");
+          btn.type = "button";
+          btn.textContent = lane.label;
+          if (card.lane === lane.key) {
+            btn.className = "active-" + lane.key;
+          }
+          btn.addEventListener("click", function () {
+            setCardLane(card.id, lane.key);
+          });
+          laneButtons.appendChild(btn);
+        });
+
+        var actions = makeEl("div", "card-actions");
+
+        var dupe = makeEl("button", "small", "Duplicate");
+        dupe.type = "button";
+        dupe.addEventListener("click", function () {
+          duplicateCard(card.id);
+        });
+
+        var del = makeEl("button", "small warn", "Delete");
+        del.type = "button";
+        del.addEventListener("click", function () {
+          deleteCard(card.id);
+        });
+
+        actions.appendChild(dupe);
+        actions.appendChild(del);
+
+        moveRow.appendChild(laneButtons);
+        moveRow.appendChild(actions);
+
+        node.appendChild(top);
+        node.appendChild(grid);
+        node.appendChild(moveRow);
+
+        return node;
+      }
+
+      function renderLane(lane, counts) {
+        var section = makeEl("section", "lane");
+        section.setAttribute("aria-labelledby", "lane-" + lane.key);
+
+        var head = makeEl("div", "lane-head " + lane.className);
+
+        var name = makeEl("div", "lane-name");
+        var textWrap = makeEl("div", "");
+        var title = makeEl("h3", "", lane.emoji + " " + lane.label);
+        title.id = "lane-" + lane.key;
+        var hint = makeEl("p", "", lane.hint);
+        textWrap.appendChild(title);
+        textWrap.appendChild(hint);
+        name.appendChild(textWrap);
+
+        var count = makeEl("span", "count", String(counts[lane.key] || 0));
+
+        head.appendChild(name);
+        head.appendChild(count);
+
+        var body = makeEl("div", "lane-body");
+        var cards = sortedCardsForLane(lane.key);
+
+        if (!cards.length) {
+          var empty = makeEl("div", "empty", state.filter === "all" ? "No cards in this lane yet." : "No cards match this filter.");
+          body.appendChild(empty);
+        } else {
+          cards.forEach(function (card) {
+            body.appendChild(renderCard(card));
+          });
+        }
+
+        section.appendChild(head);
+        section.appendChild(body);
+
+        return section;
+      }
+
+      function render() {
+        els.topic.value = state.topic || els.topic.value || "";
+        els.audience.value = state.audience || els.audience.value || "";
+        els.notes.value = state.notes || els.notes.value || "";
+
+        updateCounts();
+        updateFilterButtons();
+
+        var counts = getCounts();
+        els.lanes.textContent = "";
+
+        lanes.forEach(function (lane) {
+          if (state.filter !== "all" && state.filter !== lane.key) return;
+          els.lanes.appendChild(renderLane(lane, counts));
+        });
+
+        updateBrief();
+      }
+
+      function briefLine(label, value) {
+        return label + ": " + (cleanText(value, "Not specified"));
+      }
+
+      function buildBrief() {
+        var topic = cleanText(els.topic.value, "Not specified");
+        var audience = cleanText(els.audience.value, "Not specified");
+        var notes = cleanText(els.notes.value, "None");
+        var counts = getCounts();
+
+        var lines = [];
+        lines.push("FAQ GAP SPRINT BRIEF");
+        lines.push("");
+        lines.push(briefLine("Service/topic", topic));
+        lines.push(briefLine("Audience", audience));
+        lines.push(briefLine("Notes", notes));
+        lines.push("");
+        lines.push("Lane counts");
+        lines.push("- Answer Now: " + counts.answer);
+        lines.push("- Needs Proof: " + counts.proof);
+        lines.push("- Skip: " + counts.skip);
+        lines.push("");
+
+        addLaneToBrief(lines, "ANSWER NOW", "answer");
+        addLaneToBrief(lines, "NEEDS PROOF", "proof");
+        addLaneToBrief(lines, "SKIP OR REWRITE", "skip");
+
+        lines.push("Brief generated locally in the FAQ Gap Sprint Board.");
+        return lines.join("\n");
+      }
+
+      function addLaneToBrief(lines, title, laneKey) {
+        var cards = state.cards
+          .filter(function (card) {
+            return card.lane === laneKey;
+          })
+          .slice()
+          .sort(function (a, b) {
+            return b.score - a.score;
+          });
+
+        lines.push(title);
+        if (!cards.length) {
+          lines.push("- None");
+          lines.push("");
+          return;
+        }
+
+        cards.forEach(function (card, index) {
+          lines.push(String(index + 1) + ". " + cleanText(card.question, "Untitled FAQ"));
+          lines.push("   Angle: " + cleanText(card.angle, "No angle written."));
+          if (laneKey === "answer") {
+            lines.push("   Use now: Answer directly, keep it concise, and add a CTA only if natural.");
+          }
+          if (laneKey === "proof") {
+            lines.push("   Proof needed: " + cleanText(card.evidence, "Add proof before publishing."));
+          }
+          if (laneKey === "skip") {
+            lines.push("   Reason: " + cleanText(card.why || whyFor(card), "Skip or rewrite before using."));
+            lines.push("   Rewrite path: Turn it into criteria, fit, process, or proof-backed comparison.");
+          }
+        });
+        lines.push("");
+      }
+
+      function updateBrief() {
+        els.brief.value = buildBrief();
+      }
+
+      function copyText(text) {
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          return navigator.clipboard.writeText(text);
+        }
+
+        return new Promise(function (resolve, reject) {
+          var temp = document.createElement("textarea");
+          temp.value = text;
+          temp.setAttribute("readonly", "");
+          temp.style.position = "fixed";
+          temp.style.left = "-9999px";
+          document.body.appendChild(temp);
+          temp.select();
+
+          try {
+            var ok = document.execCommand("copy");
+            document.body.removeChild(temp);
+            ok ? resolve() : reject(new Error("Copy failed"));
+          } catch (err) {
+            document.body.removeChild(temp);
+            reject(err);
+          }
+        });
+      }
+
+      function copyBrief() {
+        updateBrief();
+        copyText(els.brief.value).then(function () {
+          toast("Brief copied.");
+        }).catch(function () {
+          toast("Copy blocked. Select the brief text and copy manually.");
+        });
+      }
+
+      function copyJson() {
+        save();
+        var json = JSON.stringify(state, null, 2);
+        copyText(json).then(function () {
+          toast("JSON copied.");
+        }).catch(function () {
+          toast("Copy blocked. Select and copy manually.");
+        });
+      }
+
+      function slug(value) {
+        return cleanText(value, "faq-brief")
+          .toLowerCase()
+          .replace(/[^a-z0-9]+/g, "-")
+          .replace(/^-+|-+$/g, "")
+          .slice(0, 48) || "faq-brief";
+      }
+
+      function downloadBrief() {
+        updateBrief();
+        var filename = slug(els.topic.value) + "-faq-gap-brief.txt";
+        var blob = new Blob([els.brief.value], { type: "text/plain;charset=utf-8" });
+        var url = URL.createObjectURL(blob);
+        var a = document.createElement("a");
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        setTimeout(function () {
+          URL.revokeObjectURL(url);
+        }, 500);
+        toast("Brief exported.");
+      }
+
+      function toast(message) {
+        els.toast.textContent = message;
+        els.toast.classList.remove("show");
+        window.setTimeout(function () {
+          els.toast.classList.add("show");
+        }, 10);
+      }
+
+      function bind() {
+        els.generateBtn.addEventListener("click", generateCards);
+        els.addBtn.addEventListener("click", addBlankCard);
+        els.clearBtn.addEventListener("click", clearBoard);
+        els.copyBtn.addEventListener("click", copyBrief);
+        els.stickyCopyBtn.addEventListener("click", copyBrief);
+        els.downloadBtn.addEventListener("click", downloadBrief);
+        els.stickyDownloadBtn.addEventListener("click", downloadBrief);
+        els.copyJsonBtn.addEventListener("click", copyJson);
+        els.refreshBriefBtn.addEventListener("click", function () {
+          updateBrief();
+          toast("Brief refreshed.");
+        });
+
+        els.filterAll.addEventListener("click", function () {
+          setFilter("all");
+        });
+        els.filterAnswer.addEventListener("click", function () {
+          setFilter("answer");
+        });
+        els.filterProof.addEventListener("click", function () {
+          setFilter("proof");
+        });
+        els.filterSkip.addEventListener("click", function () {
+          setFilter("skip");
+        });
+
+        [els.topic, els.audience, els.notes].forEach(function (input) {
+          input.addEventListener("input", function () {
+            save();
+            updateBrief();
+          });
+        });
+
+        els.brief.addEventListener("input", function () {
+          /* Manual brief edits are allowed but not saved over the card model. */
+        });
+      }
+
+      load();
+      bind();
+      render();
+
+      if (!state.cards.length) {
+        updateBrief();
+      }
+    }());
+  </script>
+</body>
+</html>

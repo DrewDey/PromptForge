@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Scope Change Evaluator</title>
+    <style>
+        /* Modern Dark Theme Variables & Base Styles */
+        :root {
+            --bg-main: #0f172a;
+            --bg-card: #1e293b;
+            --bg-input: #020617;
+            --border-color: #334155;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --accent: #14b8a6;
+            --accent-hover: #2dd4bf;
+            --accent-dim: #0f766e;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: var(--bg-main);
+            color: var(--text-main);
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            min-height: screen;
+            padding: 1rem;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 28rem;
+            background-color: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 0.75rem;
+            padding: 1.25rem;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+        }
+
+        /* Typography & Layout */
+        h1 {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: var(--accent);
+        }
+
+        .subtitle {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            margin-top: 0.25rem;
+        }
+
+        hr {
+            border: 0;
+            border-top: 1px solid var(--border-color);
+            margin: 1.25rem 0;
+        }
+
+        .space-y {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .grid-2 {
+            display: grid;
+            grid-template-cols: repeat(2, minmax(0, 1fr));
+            gap: 0.75rem;
+        }
+
+        /* Form Controls */
+        label {
+            display: block;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: #cbd5e1;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 0.25rem;
+        }
+
+        input, textarea, select {
+            width: 100%;
+            background-color: var(--bg-input);
+            border: 1px solid var(--border-color);
+            border-radius: 0.25rem;
+            padding: 0.5rem;
+            font-size: 0.875rem;
+            color: var(--text-main);
+            font-family: inherit;
+        }
+
+        input:focus, textarea:focus, select:focus {
+            outline: none;
+            border-color: var(--accent);
+        }
+
+        textarea {
+            resize: vertical;
+        }
+
+        /* Buttons */
+        .btn {
+            width: 100%;
+            background-color: var(--accent);
+            color: var(--bg-input);
+            font-weight: 700;
+            font-size: 0.875rem;
+            padding: 0.625rem 1rem;
+            border: none;
+            border-radius: 0.25rem;
+            cursor: pointer;
+            transition: background-color 0.15s ease;
+        }
+
+        .btn:hover {
+            background-color: var(--accent-hover);
+        }
+
+        .btn-secondary {
+            background-color: transparent;
+            color: var(--accent);
+            border: 1px solid var(--accent);
+            font-weight: 500;
+            padding: 0.25rem 0.5rem;
+            font-size: 0.75rem;
+            border-radius: 0.25rem;
+            cursor: pointer;
+            width: auto;
+        }
+
+        .btn-secondary:hover {
+            background-color: rgba(20, 184, 166, 0.1);
+        }
+
+        /* Output Area */
+        .hidden {
+            display: none !important;
+        }
+
+        .metrics-panel {
+            background-color: var(--bg-input);
+            padding: 1rem;
+            border-radius: 0.25rem;
+            border: 1px solid #1e293b;
+        }
+
+        .metrics-title {
+            font-size: 0.75rem;
+            font-weight: 700;
+            color: var(--accent);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 0.5rem;
+        }
+
+        .metrics-grid {
+            display: grid;
+            grid-template-cols: repeat(2, minmax(0, 1fr));
+            gap: 0.5rem;
+            font-size: 0.875rem;
+        }
+
+        .val {
+            font-weight: 700;
+            color: #ffffff;
+        }
+
+        .output-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.25rem;
+        }
+
+        .action-group {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        #toast {
+            text-align: center;
+            font-size: 0.75rem;
+            color: var(--accent);
+            font-weight: 500;
+            margin-top: 0.5rem;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <div>
+            <h1>Scope Change Evaluator</h1>
+            <p class="subtitle">Assess new requests and generate change orders instantly.</p>
+        </div>
+
+        <hr>
+
+        <div class="space-y">
+            <div>
+                <label for="clientName">Project / Client Name</label>
+                <input id="clientName" type="text" placeholder="Acme Corp Website">
+            </div>
+
+            <div>
+                <label for="originalScope">Original Agreed Scope</label>
+                <textarea id="originalScope" rows="2" placeholder="3 landing pages with standard contact form"></textarea>
+            </div>
+
+            <div>
+                <label for="newRequest">New Client Request</label>
+                <textarea id="newRequest" rows="2" placeholder="Add custom user dashboard with auth and database"></textarea>
+            </div>
+
+            <div class="grid-2">
+                <div>
+                    <label for="baseHours">Base Added Hours</label>
+                    <input id="baseHours" type="number" value="5" min="0">
+                </div>
+                <div>
+                    <label for="hourlyRate">Hourly Rate ($)</label>
+                    <input id="hourlyRate" type="number" value="100" min="0">
+                </div>
+            </div>
+
+            <div>
+                <label for="riskLevel">Risk Level (Scope Creep / Complexity)</label>
+                <select id="riskLevel">
+                    <option value="1">Low (+0% buffer)</option>
+                    <option value="1.25" selected>Medium (+25% buffer)</option>
+                    <option value="1.5">High (+50% buffer)</option>
+                </select>
+            </div>
+
+            <button id="calcBtn" class="btn">Generate Change Order</button>
+        </div>
+
+        <div id="outputSection" class="hidden">
+            <hr>
+            <div class="space-y">
+                <div class="metrics-panel">
+                    <div class="metrics-title">Internal Metrics</div>
+                    <div class="metrics-grid">
+                        <div>Total Billable Hours: <span id="outHours" class="val">0 hrs</span></div>
+                        <div>Total Added Cost: <span id="outCost" class="val">$0</span></div>
+                    </div>
+                </div>
+
+                <div>
+                    <div class="output-header">
+                        <label for="clientNote">Client-Ready Note</label>
+                        <div class="action-group">
+                            <button id="copyBtn" class="btn-secondary">Copy Note</button>
+                            <button id="exportBtn" class="btn-secondary">Export TXT</button>
+                        </div>
+                    </div>
+                    <textarea id="clientNote" rows="8" readonly></textarea>
+                </div>
+                
+                <div id="toast" class="hidden"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        (function () {
+            // Elements
+            const calcBtn = document.getElementById('calcBtn');
+            const copyBtn = document.getElementById('copyBtn');
+            const exportBtn = document.getElementById('exportBtn');
+            const outputSection = document.getElementById('outputSection');
+            const toast = document.getElementById('toast');
+
+            const clientNameInput = document.getElementById('clientName');
+            const originalScopeInput = document.getElementById('originalScope');
+            const newRequestInput = document.getElementById('newRequest');
+            const baseHoursInput = document.getElementById('baseHours');
+            const hourlyRateInput = document.getElementById('hourlyRate');
+            const riskLevelSelect = document.getElementById('riskLevel');
+
+            const outHours = document.getElementById('outHours');
+            const outCost = document.getElementById('outCost');
+            const clientNote = document.getElementById('clientNote');
+
+            let toastTimeout;
+
+            // Form Logic
+            function calculateChangeOrder() {
+                const clientName = clientNameInput.value.trim() || 'Project';
+                const originalScope = originalScopeInput.value.trim() || 'As previously outlined';
+                const newRequest = newRequestInput.value.trim() || 'Additional features';
+                const baseHours = parseFloat(baseHoursInput.value) || 0;
+                const hourlyRate = parseFloat(hourlyRateInput.value) || 0;
+                const riskMultiplier = parseFloat(riskLevelSelect.value) || 1;
+
+                const finalHours = Math.round((baseHours * riskMultiplier) * 10) / 10;
+                const finalCost = Math.round(finalHours * hourlyRate);
+
+                outHours.textContent = finalHours + ' hrs';
+                outCost.textContent = '$' + finalCost.toLocaleString();
+
+                const noteText = `Hi Team,\n\nThanks for reaching out about adding these features to ${clientName}.\n\nTo ensure we maintain the timeline and quality of the original agreement (${originalScope}), we will treat this new request (${newRequest}) as a formal change order.\n\nHere is the estimate for the additional work:\n• Estimated Added Effort: ${finalHours} hours\n• Total Additional Cost: $${finalCost.toLocaleString()}\n\nIf you would like to proceed with adding this to the scope, let me know and I will send over an updated invoice/addendum so we can kick off this portion of the build.\n\nBest regards,`;
+
+                clientNote.value = noteText;
+                outputSection.classList.remove('hidden');
+            }
+
+            // Clipboard Action
+            function copyToClipboard() {
+                clientNote.select();
+                clientNote.setSelectionRange(0, 99999);
+                
+                try {
+                    navigator.clipboard.writeText(clientNote.value);
+                    showToast('Note copied to clipboard!');
+                } catch (err) {
+                    showToast('Failed to copy text.');
+                }
+            }
+
+            // File Export Action
+            function exportAsFile() {
+                const text = clientNote.value;
+                const blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
+                const url = URL.createObjectURL(blob);
+                
+                const cleanName = (clientNameInput.value.trim() || 'Project')
+                    .replace(/[^a-z0-9]/gi, '_')
+                    .toLowerCase();
+                
+                const link = document.createElement('a');
+                link.href = url;
+                link.download = `change_order_${cleanName}.txt`;
+                document.body.appendChild(link);
+                link.click();
+                
+                document.body.removeChild(link);
+                URL.revokeObjectURL(url);
+                showToast('TXT file downloaded successfully.');
+            }
+
+            // Feedback Display
+            function showToast(message) {
+                clearTimeout(toastTimeout);
+                toast.textContent = message;
+                toast.classList.remove('hidden');
+                toastTimeout = setTimeout(() => {
+                    toast.classList.add('hidden');
+                }, 2500);
+            }
+
+            // Event Listeners (No inline attribute bindings)
+            calcBtn.addEventListener('click', calculateChangeOrder);
+            copyBtn.addEventListener('click', copyToClipboard);
+            exportBtn.addEventListener('click', exportAsFile);
+        })();
+    </script>
+</body>
+</html>

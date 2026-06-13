@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lunchbox Builder</title>
+    <style>
+        :root {
+            --bg: #f8fafc;
+            --card-bg: #ffffff;
+            --text: #0f172a;
+            --border: #e2e8f0;
+            --primary: #2563eb;
+            --accent: #f1f5f9;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            margin: 0;
+            padding: 8px;
+            font-size: 14px;
+            line-height: 1.4;
+        }
+        .container {
+            max-width: 374px; /* Leaves safety margin for 390px screens */
+            margin: 0 auto;
+            box-sizing: border-box;
+        }
+        h2 {
+            font-size: 1.05rem;
+            margin: 12px 0 6px 0;
+            color: #1e293b;
+        }
+        .input-box {
+            width: 100%;
+            box-sizing: border-box;
+            padding: 8px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            font-family: inherit;
+            font-size: 14px;
+            background: var(--card-bg);
+            margin-bottom: 4px;
+        }
+        .chip-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 4px;
+            margin-bottom: 8px;
+            min-height: 24px;
+            padding: 4px;
+            background: var(--accent);
+            border-radius: 6px;
+        }
+        .chip {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 2px 8px;
+            font-size: 12px;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            max-width: 100%;
+            box-sizing: border-box;
+        }
+        .chip span {
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        .chip .remove {
+            color: #ef4444;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 14px;
+            padding-left: 2px;
+        }
+        .grid-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 6px;
+        }
+        .checkbox-group {
+            display: flex;
+            gap: 6px;
+            align-items: center;
+            justify-content: space-around;
+        }
+        .checkbox-label {
+            display: flex;
+            align-items: center;
+            gap: 3px;
+            user-select: none;
+            font-size: 12px;
+        }
+        select {
+            width: 100%;
+            box-sizing: border-box;
+            padding: 6px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            background: var(--card-bg);
+            font-size: 13px;
+        }
+        .action-btn {
+            width: 100%;
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 10px;
+            border-radius: 6px;
+            font-weight: bold;
+            font-size: 14px;
+            cursor: pointer;
+            margin-top: 8px;
+        }
+        .card {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 10px;
+            margin-bottom: 6px;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+            box-sizing: border-box;
+        }
+        .card-title {
+            font-weight: bold;
+            color: var(--primary);
+            margin-bottom: 4px;
+            border-bottom: 1px solid var(--accent);
+            padding-bottom: 2px;
+        }
+        .note-area {
+            background: #fef08a;
+            color: #854d0e;
+            border: 1px solid #fef08a;
+        }
+        .note-area .card-title {
+            color: #854d0e;
+            border-bottom: 1px solid #fde047;
+        }
+        .btn-row {
+            display: flex;
+            gap: 4px;
+            margin-top: 8px;
+            flex-wrap: wrap;
+        }
+        .sub-btn {
+            background: var(--card-bg);
+            color: var(--text);
+            border: 1px solid var(--border);
+            padding: 4px 8px;
+            font-size: 11px;
+            border-radius: 4px;
+            cursor: pointer;
+            flex: 1;
+            text-align: center;
+            white-space: nowrap;
+        }
+        .note-area .sub-btn {
+            background: #fffbeb;
+            color: #854d0e;
+            border: 1px solid #fde047;
+        }
+        @media print {
+            body { background: white; }
+            .inputs, .btn-row { display: none !none; }
+            .card { page-break-inside: avoid; border: 1px solid #000; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="inputs">
+        <h2>Leftovers / Mains</h2>
+        <input type="text" id="leftoverInput" class="input-box" placeholder="Type item & press Enter or comma">
+        <div id="leftoverChips" class="chip-container"></div>
+
+        <h2>Staples / Sides</h2>
+        <input type="text" id="stapleInput" class="input-box" placeholder="Type item & press Enter or comma">
+        <div id="stapleChips" class="chip-container"></div>
+
+        <h2>Constraints & Days</h2>
+        <div class="grid-2">
+            <div>
+                <select id="daysCount">
+                    <option value="3">3 Days</option>
+                    <option value="5" selected>5 Days</option>
+                </select>
+            </div>
+            <div class="checkbox-group">
+                <label class="checkbox-label"><input type="checkbox" id="vegetarian"> Veg</label>
+                <label class="checkbox-label"><input type="checkbox" id="noReheat"> Cold</label>
+            </div>
+        </div>
+
+        <button class="action-btn" onclick="generatePlan()">Generate Lunchboxes</button>
+    </div>
+
+    <div id="output" style="margin-top: 12px;"></div>
+</div>
+
+<script>
+    let leftovers = ['Chicken breast', 'Chili', 'Roasted tofu', 'Tuna salad', 'Turkey slices'];
+    let staples = ['Rice', 'Spinach', 'Carrots', 'Almonds', 'Apples', 'Boiled eggs', 'Berries', 'Cucumber'];
+
+    const nonVegKeywords = ['chicken', 'beef', 'pork', 'turkey', 'fish', 'tuna', 'salmon', 'steak', 'meat'];
+    const hotKeywords = ['chili', 'soup', 'stew', 'lasagna', 'rice', 'pasta'];
+
+    function setupInput(inputId, storageArray, renderFn) {
+        const input = document.getElementById(inputId);
+        const handleValue = () => {
+            let val = input.value.trim();
+            if (!val) return;
+            
+            // Handle comma-separated pasting safely
+            const items = val.split(',').map(s => s.trim()).filter(s => s.length > 0);
+            items.forEach(item => {
+                if (!storageArray.includes(item)) {
+                    storageArray.push(item);
+                }
+            });
+            input.value = '';
+            renderFn();
+        };
+
+        input.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' || e.key === ',') {
+                e.preventDefault();
+                handleValue();
+            }
+        });
+        input.addEventListener('blur', handleValue);
+    }
+
+    function renderChips(containerId, storageArray) {
+        const container = document.getElementById(containerId);
+        container.innerHTML = '';
+        storageArray.forEach((item, index) => {
+            const chip = document.createElement('div');
+            chip.className = 'chip';
+            
+            const textSpan = document.createElement('span');
+            textSpan.textContent = item;
+            
+            const removeBtn = document.createElement('span');
+            removeBtn.className = 'remove';
+            removeBtn.textContent = '×';
+            removeBtn.onclick = () => {
+                storageArray.splice(index, 1);
+                renderChips(containerId, storageArray);
+            };
+
+            chip.appendChild(textSpan);
+            chip.appendChild(removeBtn);
+            container.appendChild(chip);
+        });
+    }
+
+    setupInput('leftoverInput', leftovers, () => renderChips('leftoverChips', leftovers));
+    setupInput('stapleInput', staples, () => renderChips('stapleChips', staples));
+
+    function isVeg(item) {
+        return !nonVegKeywords.some(kw => item.toLowerCase().includes(kw));
+    }
+
+    function isColdFriendly(item) {
+        return !hotKeywords.some(kw => item.toLowerCase().includes(kw));
+    }
+
+    function generatePlan() {
+        const daysCount = parseInt(document.getElementById('daysCount').value);
+        const vegFilter = document.getElementById('vegetarian').checked;
+        const coldFilter = document.getElementById('noReheat').checked;
+
+        let filteredMains = [...leftovers];
+        let filteredSides = [...staples];
+
+        if (vegFilter) {
+            filteredMains = filteredMains.filter(isVeg);
+            filteredSides = filteredSides.filter(isVeg);
+        }
+        if (coldFilter) {
+            filteredMains = filteredMains.filter(isColdFriendly);
+            filteredSides = filteredSides.filter(isColdFriendly);
+        }
+
+        const output = document.getElementById('output');
+        output.innerHTML = '';
+
+        if (filteredMains.length === 0) {
+            const errorCard = document.createElement('div');
+            errorCard.className = 'card';
+            errorCard.textContent = 'No items match your selected filters.';
+            output.appendChild(errorCard);
+            return;
+        }
+
+        const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
+        let noteItems = new Set();
+        let planText = '';
+
+        const dayCardsContainer = document.createDocumentFragment();
+
+        for (let i = 0; i < daysCount; i++) {
+            const dayName = days[i];
+            const mainItem = filteredMains[i % filteredMains.length] || 'Assorted Staples';
+            
+            let selectedSides = [];
+            let sidePool = [...filteredSides];
+            let sideCount = Math.min(3, sidePool.length);
+            
+            for (let j = 0; j < sideCount; j++) {
+                const index = (i + j) % sidePool.length;
+                selectedSides.push(sidePool[index]);
+                noteItems.add(sidePool[index]);
+            }
+            if (mainItem !== 'Assorted Staples') {
+                noteItems.add(mainItem);
+            }
+
+            const sidesString = selectedSides.join(', ');
+            planText += `${dayName}:\n- Main: ${mainItem}\n- Sides: ${sidesString}\n\n`;
+
+            const card = document.createElement('div');
+            card.className = 'card';
+
+            const cardTitle = document.createElement('div');
+            cardTitle.className = 'card-title';
+            cardTitle.textContent = `${dayName} Lunchbox`;
+
+            const mainDiv = document.createElement('div');
+            const mainLabel = document.createElement('strong');
+            mainLabel.textContent = 'Main: ';
+            mainDiv.appendChild(mainLabel);
+            mainDiv.appendChild(document.createTextNode(mainItem));
+
+            const sidesDiv = document.createElement('div');
+            const sidesLabel = document.createElement('strong');
+            sidesLabel.textContent = 'Sides: ';
+            sidesDiv.appendChild(sidesLabel);
+            sidesDiv.appendChild(document.createTextNode(sidesString));
+
+            card.appendChild(cardTitle);
+            card.appendChild(mainDiv);
+            card.appendChild(sidesDiv);
+            dayCardsContainer.appendChild(card);
+        }
+
+        const prepList = Array.from(noteItems).join(', ');
+        planText += `Prep / Shopping Summary:\n${prepList}`;
+
+        const summaryCard = document.createElement('div');
+        summaryCard.className = 'card note-area';
+
+        const summaryTitle = document.createElement('div');
+        summaryTitle.className = 'card-title';
+        summaryTitle.textContent = 'Prep & Shopping Notes';
+
+        const summaryContent = document.createElement('div');
+        summaryContent.textContent = prepList;
+
+        const btnRow = document.createElement('div');
+        btnRow.className = 'btn-row';
+
+        const copyBtn = document.createElement('button');
+        copyBtn.className = 'sub-btn';
+        copyBtn.textContent = 'Copy';
+        copyBtn.onclick = () => {
+            navigator.clipboard.writeText(planText).then(() => alert('Copied!'));
+        };
+
+        const downloadBtn = document.createElement('button');
+        downloadBtn.className = 'sub-btn';
+        downloadBtn.textContent = 'Download';
+        downloadBtn.onclick = () => {
+            const blob = new Blob([planText], { type: 'text/plain' });
+            const anchor = document.createElement('a');
+            anchor.download = 'lunchbox-prep.txt';
+            anchor.href = URL.createObjectURL(blob);
+            anchor.click();
+            URL.revokeObjectURL(anchor.href);
+        };
+
+        const printBtn = document.createElement('button');
+        printBtn.className = 'sub-btn';
+        printBtn.textContent = 'Print';
+        printBtn.onclick = () => window.print();
+
+        btnRow.appendChild(copyBtn);
+        btnRow.appendChild(downloadBtn);
+        btnRow.appendChild(printBtn);
+
+        summaryCard.appendChild(summaryTitle);
+        summaryCard.appendChild(summaryContent);
+        summaryCard.appendChild(btnRow);
+
+        output.appendChild(summaryCard);
+        output.appendChild(dayCardsContainer);
+    }
+
+    // Init display
+    renderChips('leftoverChips', leftovers);
+    renderChips('stapleChips', staples);
+    generatePlan();
+</script>
+
+</body>
+</html>

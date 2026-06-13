@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Recipe Caption Pack Generator</title>
+    <style>
+        :root {
+            --bg: #121212;
+            --card-bg: #1e1e1e;
+            --text: #e0e0e0;
+            --text-muted: #a0a0a0;
+            --accent: #ff6b6b;
+            --accent-dim: #ff6b6b33;
+            --warning: #ffd166;
+            --border: #333333;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: var(--bg); color: var(--text); padding: 15px; line-height: 1.4; }
+
+        h2, h3 { margin-bottom: 10px; color: #fff; }
+        .section { background: var(--card-bg); border: 1px solid var(--border); padding: 15px; border-radius: 8px; margin-bottom: 15px; }
+
+        textarea, input { width: 100%; background: #2d2d2d; border: 1px solid var(--border); color: #fff; padding: 10px; border-radius: 6px; font-size: 14px; margin-bottom: 10px; resize: none; }
+        
+        .grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+        
+        .angle-card { background: #252525; border: 2px solid var(--border); padding: 12px; border-radius: 6px; cursor: pointer; position: relative; user-select: none; }
+        .angle-card.selected { border-color: var(--accent); background: var(--accent-dim); }
+        .angle-card .order { position: absolute; top: 5px; right: 8px; font-weight: bold; color: var(--accent); }
+
+        .chip-container { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 10px; }
+        .chip { background: #2d2d2d; border: 1px solid var(--border); padding: 6px 12px; border-radius: 20px; font-size: 13px; cursor: pointer; }
+        .chip.active { background: var(--accent); color: #000; font-weight: bold; border-color: var(--accent); }
+
+        .warning-box { background: #2c2519; border: 1px solid var(--warning); color: var(--warning); padding: 10px; border-radius: 6px; font-size: 13px; margin-bottom: 15px; display: none; }
+        .warning-box ul { padding-left: 20px; }
+
+        .output-box { background: #0a0a0a; border: 1px solid var(--border); padding: 15px; border-radius: 6px; white-space: pre-wrap; font-family: monospace; font-size: 13px; max-height: 250px; overflow-y: auto; margin-bottom: 15px; }
+
+        button { width: 100%; background: var(--accent); color: #000; border: none; padding: 12px; font-size: 15px; font-weight: bold; border-radius: 6px; cursor: pointer; margin-bottom: 10px; }
+        button.secondary { background: #2d2d2d; color: #fff; border: 1px solid var(--border); }
+    </style>
+</head>
+<body>
+
+    <div class="section">
+        <h2>1. Leftover Concept</h2>
+        <input type="text" id="recipeName" placeholder="e.g., Leftover Pulled Pork Taco Bowls">
+        <textarea id="recipeDetails" rows="3" placeholder="e.g., Quick lunch execution. Reheat pork in skillet with cumin, layer over rice, crunch up leftover tortilla chips."></textarea>
+    </div>
+
+    <div class="section">
+        <h2>2. Caption Angle Order</h2>
+        <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 10px;">Tap to select and sequence your narrative structures:</p>
+        <div class="grid" id="anglesContainer">
+            <div class="angle-card" data-angle="hook">
+                <div class="order"></div>
+                <strong>The Hook</strong>
+                <p style="font-size: 11px; color: var(--text-muted); margin-top: 4px;">Stop the scroll with the core transformation.</p>
+            </div>
+            <div class="angle-card" data-angle="problem">
+                <div class="order"></div>
+                <strong>The Problem</strong>
+                <p style="font-size: 11px; color: var(--text-muted); margin-top: 4px;">Addressing fridge fatigue and food waste.</p>
+            </div>
+            <div class="angle-card" data-angle="process">
+                <div class="order"></div>
+                <strong>The Process</strong>
+                <p style="font-size: 11px; color: var(--text-muted); margin-top: 4px;">Step-by-step assembly mechanics.</p>
+            </div>
+            <div class="angle-card" data-angle="cta">
+                <div class="order"></div>
+                <strong>The CTA</strong>
+                <p style="font-size: 11px; color: var(--text-muted); margin-top: 4px;">Prompt to save, share, or comment.</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>3. Callouts & Sign-offs</h2>
+        <div class="chip-container" id="calloutsContainer">
+            <div class="chip" data-text="⏱️ Ready in under 10 minutes.">⏱️ Sub-10 Mins</div>
+            <div class="chip" data-text="💡 Pro-tip: Revive dried meats with a splash of broth during the reheat.">💡 Reheat Pro-Tip</div>
+            <div class="chip" data-text="♻️ Zero-waste kitchen win.">♻️ Zero Waste</div>
+            <div class="chip" data-text="📌 Drop your current leftover dilemma below and let's fix it.">💬 Drop Dilemma CTA</div>
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>4. Hashtag Groups</h2>
+        <div class="chip-container" id="hashtagsContainer">
+            <div class="chip" data-tags="#LeftoverMakeover #ZeroWasteKitchen #ScrappyCooking">♻️ Leftover Core</div>
+            <div class="chip" data-tags="#QuickMeals #WeeknightDinner #EasyRecipes">⏱️ Fast Cooking</div>
+            <div class="chip" data-tags="#BudgetCooking #MealPrepIdeas #EatYourLeftovers">💰 Budget/Prep</div>
+        </div>
+    </div>
+
+    <div class="warning-box" id="warningBox">
+        <strong>⚠️ Promo-Readiness Warnings:</strong>
+        <ul id="warningList"></ul>
+    </div>
+
+    <div class="section">
+        <h2>Generated Caption Pack</h2>
+        <div class="output-box" id="outputContent"></div>
+        <button id="copyBtn">Copy Pack Content</button>
+        <button id="downloadBtn" class="secondary">Download Pack (.txt)</button>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            let selectedAngles = [];
+
+            const angleTemplates = {
+                hook: (name) => `🚨 DON'T THROW IT OUT: Turning yesterday's components into this ${name || '[Recipe Name]'}.`,
+                problem: () => `Staring at containers wondering how to skip the exact same meal three days straight? We've all been there. Fridge fatigue is real, but waste is optional.`,
+                process: (details) => `The play strategy here:\n${details || '[Enter recipe execution steps above]'}\nNothing complex, just smart rebuilding.`,
+                cta: () => `Check your crisper drawer right now. What are you saving?`
+            };
+
+            const recipeNameInput = document.getElementById('recipeName');
+            const recipeDetailsInput = document.getElementById('recipeDetails');
+            const anglesContainer = document.getElementById('anglesContainer');
+            const calloutsContainer = document.getElementById('calloutsContainer');
+            const hashtagsContainer = document.getElementById('hashtagsContainer');
+            const warningBox = document.getElementById('warningBox');
+            const warningList = document.getElementById('warningList');
+            const outputContent = document.getElementById('outputContent');
+            const copyBtn = document.getElementById('copyBtn');
+            const downloadBtn = document.getElementById('downloadBtn');
+
+            function generatePack() {
+                const name = recipeNameInput.value.trim();
+                const details = recipeDetailsInput.value.trim();
+                let captionParts = [];
+
+                selectedAngles.forEach(angle => {
+                    if (angleTemplates[angle]) {
+                        captionParts.push(angleTemplates[angle](name, details));
+                    }
+                });
+
+                let activeCallouts = [];
+                calloutsContainer.querySelectorAll('.chip.active').forEach(chip => {
+                    activeCallouts.push(chip.getAttribute('data-text'));
+                });
+                if (activeCallouts.length > 0) {
+                    captionParts.push(activeCallouts.join('\n'));
+                }
+
+                let activeHashtags = [];
+                hashtagsContainer.querySelectorAll('.chip.active').forEach(chip => {
+                    activeHashtags.push(chip.getAttribute('data-tags'));
+                });
+                if (activeHashtags.length > 0) {
+                    captionParts.push(activeHashtags.join(' '));
+                }
+
+                const finalEncoding = captionParts.join('\n\n');
+
+                return {
+                    text: finalEncoding,
+                    name: name,
+                    details: details,
+                    angleCount: selectedAngles.length,
+                    hashtagCount: activeHashtags.length
+                };
+            }
+
+            function updateOutput() {
+                const pack = generatePack();
+                outputContent.textContent = pack.text || "Your built pack will compile here automatically...";
+                checkWarnings(pack);
+            }
+
+            function checkWarnings(pack) {
+                const currentWarnings = [];
+
+                if (!pack.name) currentWarnings.push("Missing core leftover concept title.");
+                if (!pack.details) currentWarnings.push("Recipe processing narrative/steps are empty.");
+                if (pack.angleCount === 0) currentWarnings.push("No narrative structure angle selected. Tap the cards above to order your caption flow.");
+                if (pack.hashtagCount === 0) currentWarnings.push("No hashtag grouping active. Discovery reach will be low.");
+                if (pack.text.length > 2200) currentWarnings.push("Character ceiling risk: Pack content exceeds standard Instagram limit thresholds.");
+
+                if (currentWarnings.length > 0) {
+                    const fragment = document.createDocumentFragment();
+                    currentWarnings.forEach(warningText => {
+                        const li = document.createElement('li');
+                        li.textContent = warningText;
+                        fragment.appendChild(li);
+                    });
+                    warningList.replaceChildren(fragment);
+                    warningBox.style.display = 'block';
+                } else {
+                    warningList.replaceChildren();
+                    warningBox.style.display = 'none';
+                }
+            }
+
+            function updateAngleNumbers() {
+                anglesContainer.querySelectorAll('.angle-card').forEach(card => {
+                    const angle = card.getAttribute('data-angle');
+                    const index = selectedAngles.indexOf(angle);
+                    const orderDiv = card.querySelector('.order');
+                    orderDiv.textContent = index > -1 ? index + 1 : '';
+                });
+            }
+
+            // Input Observers
+            recipeNameInput.addEventListener('input', updateOutput);
+            recipeDetailsInput.addEventListener('input', updateOutput);
+
+            // Angle Card Selection Engine
+            anglesContainer.addEventListener('click', (e) => {
+                const card = e.target.closest('.angle-card');
+                if (!card) return;
+
+                const angle = card.getAttribute('data-angle');
+                const index = selectedAngles.indexOf(angle);
+
+                if (index > -1) {
+                    selectedAngles.splice(index, 1);
+                    card.classList.remove('selected');
+                } else {
+                    selectedAngles.push(angle);
+                    card.classList.add('selected');
+                }
+
+                updateAngleNumbers();
+                updateOutput();
+            });
+
+            // Unified Chip Selection Observers
+            [calloutsContainer, hashtagsContainer].forEach(container => {
+                container.addEventListener('click', (e) => {
+                    const chip = e.target.closest('.chip');
+                    if (!chip) return;
+                    chip.classList.toggle('active');
+                    updateOutput();
+                });
+            });
+
+            // Action Workflows
+            copyBtn.addEventListener('click', () => {
+                const text = outputContent.textContent;
+                navigator.clipboard.writeText(text);
+            });
+
+            downloadBtn.addEventListener('click', () => {
+                const pack = generatePack();
+                const text = pack.text;
+                if (!text) return;
+                
+                const filename = (pack.name ? pack.name.toLowerCase().replace(/[^a-z0-9]+/g, '-') : 'recipe') + '-caption-pack.txt';
+                const blob = new Blob([text], { type: 'text/plain' });
+                const anchor = document.createElement('a');
+                
+                anchor.download = filename;
+                anchor.href = window.URL.createObjectURL(blob);
+                anchor.target = '_blank';
+                anchor.style.display = 'none';
+                document.body.appendChild(anchor);
+                anchor.click();
+                document.body.removeChild(anchor);
+            });
+
+            // Run initial compilation
+            updateOutput();
+        });
+    </script>
+</body>
+</html>

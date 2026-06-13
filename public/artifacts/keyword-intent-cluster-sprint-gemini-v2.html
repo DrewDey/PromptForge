@@ -1,0 +1,474 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SEO Intent Cluster &amp; Brief Tool</title>
+    <style>
+        :root {
+            --bg: #0f172a;
+            --panel: #1e293b;
+            --border: #334155;
+            --text: #f8fafc;
+            --muted: #94a3b8;
+            --accent: #38bdf8;
+            --accent-hover: #0ea5e9;
+            --warn: #f59e0b;
+            --info: #3b82f6;
+            --success: #10b981;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg);
+            color: var(--text);
+            padding: 12px;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+
+        header {
+            margin-bottom: 16px;
+        }
+
+        h1 {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: var(--text);
+        }
+
+        p.subtitle {
+            color: var(--muted);
+            font-size: 0.85rem;
+        }
+
+        .container {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .card {
+            background: var(--panel);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 16px;
+        }
+
+        label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: var(--muted);
+            text-transform: uppercase;
+            font-size: 0.75rem;
+            letter-spacing: 0.05em;
+        }
+
+        textarea {
+            width: 100%;
+            height: 180px;
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            color: var(--text);
+            padding: 12px;
+            font-family: monospace;
+            font-size: 0.85rem;
+            resize: vertical;
+        }
+
+        textarea:focus {
+            outline: none;
+            border-color: var(--accent);
+        }
+
+        .actions {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            margin-top: 12px;
+        }
+
+        button {
+            background: var(--accent);
+            color: var(--bg);
+            border: none;
+            padding: 12px;
+            border-radius: 6px;
+            font-weight: 600;
+            cursor: pointer;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+        }
+
+        button:hover {
+            background: var(--accent-hover);
+        }
+
+        button.secondary {
+            background: transparent;
+            color: var(--text);
+            border: 1px solid var(--border);
+        }
+
+        button.secondary:hover {
+            background: var(--border);
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        .section-title {
+            font-size: 1rem;
+            font-weight: 600;
+            margin-bottom: 12px;
+            padding-bottom: 4px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .alert {
+            background: rgba(245, 158, 11, 0.1);
+            border-left: 4px solid var(--warn);
+            padding: 12px;
+            border-radius: 4px;
+            margin-bottom: 12px;
+        }
+
+        .alert-title {
+            font-weight: 600;
+            color: var(--warn);
+            margin-bottom: 2px;
+        }
+
+        .cluster-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .cluster-card {
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 12px;
+        }
+
+        .cluster-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 8px;
+        }
+
+        .cluster-name {
+            font-weight: 600;
+            font-size: 0.95rem;
+        }
+
+        .badge {
+            font-size: 0.7rem;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .badge-info { background: rgba(59, 130, 246, 0.2); color: #93c5fd; }
+        .badge-trans { background: rgba(16, 185, 129, 0.2); color: #6ee7b7; }
+        .badge-invest { background: rgba(168, 85, 247, 0.2); color: #d8b4fe; }
+        .badge-mixed { background: rgba(245, 158, 11, 0.2); color: #fde047; }
+
+        .kw-list {
+            list-style: none;
+            font-family: monospace;
+            font-size: 0.8rem;
+            color: var(--muted);
+        }
+
+        .kw-item {
+            padding: 2px 0;
+            border-bottom: 1px dashed rgba(51, 65, 85, 0.4);
+            white-space: pre-wrap;
+        }
+
+        .kw-item:last-child {
+            border-bottom: none;
+        }
+
+        .brief-output {
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 12px;
+            font-family: monospace;
+            font-size: 0.8rem;
+            white-space: pre-wrap;
+            overflow-x: auto;
+            max-height: 400px;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>SEO Intent Cluster &amp; Sprint Tool</h1>
+        <p class="subtitle">Client-side generation for mobile workflows</p>
+    </header>
+
+    <div class="container">
+        <div class="card">
+            <label for="kwInput">Keywords (One Per Line)</label>
+            <textarea id="kwInput" placeholder="how to build a chicken coop&#10;chicken coop plans diy&#10;buy pre-built chicken coop&#10;best wood for chicken coop&#10;chicken coop nesting boxes setup"></textarea>
+            <div class="actions">
+                <button id="btnRun">Analyze</button>
+                <button id="btnClear" class="secondary">Clear</button>
+            </div>
+        </div>
+
+        <div id="outputContainer" class="card hidden">
+            <div class="section-title">Gaps &amp; Warnings</div>
+            <div id="gapAlerts"></div>
+
+            <div class="section-title" style="margin-top: 16px;">Intent Clusters</div>
+            <div id="clusterContainer" class="cluster-grid"></div>
+
+            <div class="section-title" style="margin-top: 20px;">Sprint Content Brief</div>
+            <div class="actions" style="margin-bottom: 12px; grid-template-columns: 1fr 1fr;">
+                <button id="btnCopy" class="secondary">Copy Brief</button>
+                <button id="btnDownload" class="secondary">Download</button>
+            </div>
+            <pre id="briefBlock" class="brief-output"></pre>
+        </div>
+    </div>
+
+    <script>
+        const stopWords = new Set(['for', 'the', 'and', 'with', 'best', 'buy', 'how', 'to', 'what', 'is', 'a', 'in', 'on', 'of', 'near', 'me', 'online', 'top', 'vs', 'cheap', 'guide', 'review', 'reviews']);
+
+        const intentRules = {
+            informational: ['how', 'what', 'why', 'guide', 'tips', 'tutorial', 'ideas', 'diy', 'example', 'learn'],
+            transactional: ['buy', 'price', 'cheap', 'cost', 'shop', 'sale', 'purchase', 'order', 'store'],
+            investigational: ['best', 'vs', 'review', 'top', 'compare', 'alternative', 'rated']
+        };
+
+        let generatedBriefText = "";
+
+        const btnRun = document.getElementById('btnRun');
+        const btnClear = document.getElementById('btnClear');
+        const btnCopy = document.getElementById('btnCopy');
+        const btnDownload = document.getElementById('btnDownload');
+        const kwInput = document.getElementById('kwInput');
+        const outputContainer = document.getElementById('outputContainer');
+        const gapAlerts = document.getElementById('gapAlerts');
+        const clusterContainer = document.getElementById('clusterContainer');
+        const briefBlock = document.getElementById('briefBlock');
+
+        btnRun.addEventListener('click', processKeywords);
+        btnClear.addEventListener('click', clearInput);
+        btnCopy.addEventListener('click', copyBrief);
+        btnDownload.addEventListener('click', downloadBrief);
+
+        function clearInput() {
+            kwInput.value = '';
+            outputContainer.classList.add('hidden');
+            gapAlerts.textContent = '';
+            clusterContainer.textContent = '';
+            briefBlock.textContent = '';
+            generatedBriefText = "";
+        }
+
+        function determineIntent(keywords) {
+            let counts = { info: 0, trans: 0, invest: 0 };
+            keywords.forEach(kw => {
+                const lower = kw.toLowerCase();
+                intentRules.informational.forEach(w => { if(lower.includes(w)) counts.info++; });
+                intentRules.transactional.forEach(w => { if(lower.includes(w)) counts.trans++; });
+                intentRules.investigational.forEach(w => { if(lower.includes(w)) counts.invest++; });
+            });
+
+            if (counts.info > 0 && counts.trans === 0 && counts.invest === 0) return 'Informational';
+            if (counts.trans > 0 && counts.info === 0 && counts.invest === 0) return 'Transactional';
+            if (counts.invest > 0 && counts.info === 0 && counts.trans === 0) return 'Investigational';
+            if (counts.info === 0 && counts.trans === 0 && counts.invest === 0) return 'Informational';
+            return 'Mixed';
+        }
+
+        function processKeywords() {
+            const rawInput = kwInput.value;
+            const lines = rawInput.split('\n')
+                .map(line => line.trim())
+                .filter(line => line.length > 0);
+
+            if (lines.length === 0) return;
+
+            let clusters = {};
+            
+            lines.forEach(line => {
+                const words = line.toLowerCase()
+                    .replace(/[^a-zA-Z0-9\s]/g, '')
+                    .split(/\s+/)
+                    .filter(w => w.length > 2 && !stopWords.has(w));
+                
+                let anchor = "";
+                if (words.length > 0) {
+                    anchor = words[0]; 
+                    for (let key in clusters) {
+                        if (words.includes(key) || key.includes(words[0])) {
+                            anchor = key;
+                            break;
+                        }
+                    }
+                } else {
+                    anchor = "general";
+                }
+
+                if (!clusters[anchor]) clusters[anchor] = [];
+                clusters[anchor].push(line);
+            });
+
+            renderOutputs(clusters);
+        }
+
+        function renderOutputs(clusters) {
+            gapAlerts.textContent = '';
+            clusterContainer.textContent = '';
+            
+            outputContainer.classList.remove('hidden');
+
+            let missingTrans = [];
+            let missingInfo = [];
+            let briefMarkdown = `=== SEO SPRINT BRIEF ===\nGenerated: ${new Date().toLocaleDateString()}\n\n`;
+
+            for (let key in clusters) {
+                const list = clusters[key];
+                const intent = determineIntent(list);
+                
+                if (intent === 'Informational') missingTrans.push(key);
+                if (intent === 'Transactional') missingInfo.push(key);
+
+                const clusterCard = document.createElement('div');
+                clusterCard.className = 'cluster-card';
+
+                const clusterHeader = document.createElement('div');
+                clusterHeader.className = 'cluster-header';
+
+                const clusterName = document.createElement('span');
+                clusterName.className = 'cluster-name';
+                clusterName.textContent = `Core Pillar: ${key.toUpperCase()}`;
+
+                const badge = document.createElement('span');
+                badge.className = 'badge';
+                if (intent === 'Transactional') badge.classList.add('badge-trans');
+                else if (intent === 'Investigational') badge.classList.add('badge-invest');
+                else if (intent === 'Mixed') badge.classList.add('badge-mixed');
+                else badge.classList.add('badge-info');
+                badge.textContent = intent;
+
+                clusterHeader.appendChild(clusterName);
+                clusterHeader.appendChild(badge);
+                clusterCard.appendChild(clusterHeader);
+
+                const kwList = document.createElement('ul');
+                kwList.className = 'kw-list';
+
+                list.forEach(k => {
+                    const kwItem = document.createElement('li');
+                    kwItem.className = 'kw-item';
+                    kwItem.textContent = k;
+                    kwList.appendChild(kwItem);
+                });
+
+                clusterCard.appendChild(kwList);
+                clusterContainer.appendChild(clusterCard);
+
+                briefMarkdown += `## Content Sprint Node: [${key.toUpperCase()}]\n`;
+                briefMarkdown += `Primary Target Intent: ${intent}\n`;
+                briefMarkdown += `Target Keywords:\n${list.map(k => `  - ${k}`).join('\n')}\n\n`;
+                briefMarkdown += `Proposed Editorial Architecture:\n`;
+                if (intent === 'Informational' || intent === 'Mixed') {
+                    briefMarkdown += `  - H1: Complete Guide to ${key.charAt(0).toUpperCase() + key.slice(1)}\n`;
+                    briefMarkdown += `  - H2: Critical considerations for deployment\n`;
+                    briefMarkdown += `  - H2: Common mistakes and troubleshooting\n`;
+                } else {
+                    briefMarkdown += `  - H1: Best Commercial Solutions for ${key.toUpperCase()}\n`;
+                    briefMarkdown += `  - H2: Cost Analysis & Feature Comparison Matrix\n`;
+                }
+                briefMarkdown += `\n--------------------------------------------------\n\n`;
+            }
+
+            if (missingTrans.length > 0) {
+                const alertDiv = document.createElement('div');
+                alertDiv.className = 'alert';
+                const title = document.createElement('div');
+                title.className = 'alert-title';
+                title.textContent = '⚠️ Conversion Gap Warning';
+                const desc = document.createElement('p');
+                desc.style.color = 'var(--muted)';
+                desc.style.fontSize = '0.8rem';
+                desc.textContent = `The clusters "${missingTrans.slice(0,3).join(', ')}" are missing downstream conversion or action variants. Build transaction-ready assets to match this intent.`;
+                alertDiv.appendChild(title);
+                alertDiv.appendChild(desc);
+                gapAlerts.appendChild(alertDiv);
+            }
+            
+            if (missingInfo.length > 0) {
+                const alertDiv = document.createElement('div');
+                alertDiv.className = 'alert';
+                alertDiv.style.background = 'rgba(59, 130, 246, 0.1)';
+                alertDiv.style.borderLeftColor = 'var(--info)';
+                const title = document.createElement('div');
+                title.className = 'alert-title';
+                title.style.color = 'var(--info)';
+                title.textContent = '💡 Informational Coverage Gap';
+                const desc = document.createElement('p');
+                desc.style.color = 'var(--muted)';
+                desc.style.fontSize = '0.8rem';
+                desc.textContent = `The groups "${missingInfo.slice(0,3).join(', ')}" focus primarily on bottom-of-funnel variants. Add informational guides to secure upper-funnel authority.`;
+                alertDiv.appendChild(title);
+                alertDiv.appendChild(desc);
+                gapAlerts.appendChild(alertDiv);
+            }
+
+            if (missingTrans.length === 0 && missingInfo.length === 0) {
+                const cleanMsg = document.createElement('p');
+                cleanMsg.style.color = 'var(--success)';
+                cleanMsg.style.fontSize = '0.85rem';
+                cleanMsg.textContent = '✓ Keyword profile demonstrates balanced pipeline intent mapping.';
+                gapAlerts.appendChild(cleanMsg);
+            }
+
+            generatedBriefText = briefMarkdown.trim();
+            briefBlock.textContent = generatedBriefText;
+        }
+
+        function copyBrief() {
+            if (!generatedBriefText) return;
+            navigator.clipboard.writeText(generatedBriefText);
+            alert("Brief copied to clipboard.");
+        }
+
+        function downloadBrief() {
+            if (!generatedBriefText) return;
+            const blob = new Blob([generatedBriefText], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'seo-sprint-brief.txt';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+    </script>
+</body>
+</html>

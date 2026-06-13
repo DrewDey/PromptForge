@@ -1,0 +1,1141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Chapter Scope Planner</title>
+<style>
+  /* ── Tokens ─────────────────────────────────────────────── */
+  :root {
+    --ink:        #1a1714;
+    --ink-mid:    #4a4540;
+    --ink-faint:  #8a8480;
+    --paper:      #faf8f4;
+    --paper-warm: #f2ede4;
+    --rule:       #d8d0c4;
+    --rule-light: #ece8e0;
+    --accent:     #c84b2f;
+    --warn:       #d97a10;
+    --warn-bg:    #fdf3e3;
+    --ok:         #2f7a4b;
+    --ok-bg:      #e8f5ee;
+    --promise:    #3b6bb0;
+    --evidence:   #2f7a4b;
+    --exercise:   #7a4bb0;
+    --card-bg:    #ffffff;
+    --shadow:     0 1px 4px rgba(0,0,0,0.08), 0 0 0 1px rgba(0,0,0,0.05);
+    --shadow-lg:  0 4px 16px rgba(0,0,0,0.10), 0 0 0 1px rgba(0,0,0,0.06);
+    --r: 4px;
+    --font-head: 'Georgia', 'Times New Roman', serif;
+    --font-body: 'Charter', 'Georgia', serif;
+    --font-ui:   -apple-system, 'Helvetica Neue', sans-serif;
+    --font-mono: 'Courier New', monospace;
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: var(--font-ui);
+    background: var(--paper);
+    color: var(--ink);
+    min-height: 100vh;
+    font-size: 14px;
+    line-height: 1.5;
+  }
+
+  /* ── App shell ──────────────────────────────────────────── */
+  .app { display: flex; flex-direction: column; min-height: 100vh; }
+
+  header {
+    background: var(--ink);
+    color: var(--paper);
+    padding: 18px 28px 16px;
+    display: flex;
+    align-items: baseline;
+    gap: 20px;
+    border-bottom: 3px solid var(--accent);
+    flex-wrap: wrap;
+  }
+  header h1 {
+    font-family: var(--font-head);
+    font-size: 20px;
+    font-weight: normal;
+    letter-spacing: -0.01em;
+  }
+  .tagline { font-size: 12px; color: #aaa9a6; font-style: italic; }
+  #saveIndicator {
+    margin-left: auto;
+    font-size: 11px;
+    color: #6a8a6a;
+    opacity: 0;
+    transition: opacity 0.4s;
+    white-space: nowrap;
+  }
+  #saveIndicator.show { opacity: 1; }
+
+  .main { display: flex; flex: 1; overflow: hidden; }
+
+  /* ── Sidebar ────────────────────────────────────────────── */
+  .sidebar {
+    width: 280px;
+    min-width: 280px;
+    background: var(--paper-warm);
+    border-right: 1px solid var(--rule);
+    padding: 24px 20px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+  }
+  .field-group { display: flex; flex-direction: column; gap: 6px; }
+  .field-group label {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--ink-mid);
+  }
+  .field-group input,
+  .field-group textarea,
+  .field-group select {
+    font-family: var(--font-ui);
+    font-size: 13px;
+    color: var(--ink);
+    background: var(--card-bg);
+    border: 1px solid var(--rule);
+    border-radius: var(--r);
+    padding: 7px 10px;
+    width: 100%;
+    outline: none;
+    transition: border-color 0.15s;
+  }
+  .field-group input:focus,
+  .field-group textarea:focus,
+  .field-group select:focus { border-color: var(--ink-mid); }
+  .field-group textarea { resize: vertical; min-height: 68px; line-height: 1.5; }
+  .sidebar-divider { border: none; border-top: 1px solid var(--rule); }
+  .range-row { display: flex; align-items: center; gap: 8px; }
+  .range-row input[type=range] { flex: 1; padding: 0; border: none; accent-color: var(--accent); }
+  .range-val {
+    font-size: 13px; font-weight: 600; color: var(--accent);
+    min-width: 36px; text-align: right;
+  }
+  .sidebar-footer {
+    margin-top: auto;
+    padding-top: 16px;
+    font-size: 11px;
+    color: var(--ink-faint);
+    line-height: 1.6;
+  }
+
+  /* ── Buttons ────────────────────────────────────────────── */
+  .btn {
+    font-family: var(--font-ui);
+    font-size: 13px;
+    font-weight: 600;
+    border: none;
+    border-radius: var(--r);
+    padding: 9px 14px;
+    cursor: pointer;
+    transition: opacity 0.15s, transform 0.1s;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+  }
+  .btn:active { transform: scale(0.98); }
+  .btn-primary { background: var(--accent); color: #fff; width: 100%; }
+  .btn-primary:hover { opacity: 0.88; }
+  .btn-ghost { background: transparent; color: var(--ink-mid); border: 1px solid var(--rule); }
+  .btn-ghost:hover { background: var(--rule-light); }
+  .btn-sm { font-size: 11px; padding: 5px 10px; }
+
+  /* ── Canvas ─────────────────────────────────────────────── */
+  .canvas {
+    flex: 1;
+    overflow-y: auto;
+    padding: 24px 28px 48px;
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+  }
+
+  /* ── Book header ────────────────────────────────────────── */
+  #bookHeader {
+    background: var(--card-bg);
+    border-radius: var(--r);
+    box-shadow: var(--shadow);
+    padding: 20px 24px;
+    border-left: 4px solid var(--accent);
+    display: none;
+  }
+  #bookHeader.visible { display: block; }
+  #bookHeaderTitle {
+    font-family: var(--font-head);
+    font-size: 22px;
+    font-weight: normal;
+    color: var(--ink);
+    line-height: 1.3;
+  }
+  #bookHeaderMeta {
+    display: flex;
+    gap: 12px;
+    margin-top: 8px;
+    flex-wrap: wrap;
+  }
+  .meta-pill {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--ink-faint);
+    background: var(--paper-warm);
+    border-radius: 2px;
+    padding: 3px 8px;
+  }
+  #bookHeaderPromise {
+    margin-top: 12px;
+    font-family: var(--font-body);
+    font-size: 14px;
+    color: var(--ink-mid);
+    font-style: italic;
+    line-height: 1.6;
+    padding-left: 14px;
+    border-left: 2px solid var(--rule);
+    display: none;
+  }
+
+  /* ── Balance bar ────────────────────────────────────────── */
+  #balanceRow {
+    background: var(--card-bg);
+    border-radius: var(--r);
+    box-shadow: var(--shadow);
+    padding: 16px 24px;
+    display: none;
+    gap: 20px;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+  #balanceRow.visible { display: flex; }
+  .balance-label {
+    font-size: 11px; font-weight: 700;
+    text-transform: uppercase; letter-spacing: 0.06em;
+    color: var(--ink-faint); min-width: 80px;
+  }
+  #balanceBars { display: flex; gap: 10px; flex: 1; min-width: 220px; }
+  .balance-item { flex: 1; }
+  .bi-label {
+    font-size: 10px; font-weight: 600;
+    text-transform: uppercase; letter-spacing: 0.04em;
+    margin-bottom: 3px;
+    display: flex; justify-content: space-between;
+  }
+  .balance-track {
+    height: 6px; background: var(--rule-light);
+    border-radius: 3px; overflow: hidden;
+  }
+  .balance-fill {
+    height: 100%; border-radius: 3px;
+    transition: width 0.4s ease;
+    width: 0%;
+  }
+  .fill-promise  { background: var(--promise); }
+  .fill-evidence { background: var(--evidence); }
+  .fill-exercise { background: var(--exercise); }
+  .balance-status {
+    font-size: 12px; padding: 4px 10px;
+    border-radius: 20px; font-weight: 600; white-space: nowrap;
+  }
+  .status-ok   { background: var(--ok-bg);   color: var(--ok); }
+  .status-warn { background: var(--warn-bg);  color: var(--warn); }
+
+  /* ── Warnings ───────────────────────────────────────────── */
+  #warnings { display: flex; flex-direction: column; gap: 8px; }
+  .warn-card {
+    background: var(--warn-bg);
+    border: 1px solid #f0c678;
+    border-left: 3px solid var(--warn);
+    border-radius: var(--r);
+    padding: 10px 14px;
+    font-size: 12.5px;
+    color: #7a4a00;
+    display: flex; gap: 8px; align-items: flex-start;
+  }
+  .warn-icon { font-size: 14px; margin-top: 1px; flex-shrink: 0; }
+
+  /* ── Scope section ──────────────────────────────────────── */
+  #scopeSection { display: none; }
+  #scopeSection.visible { display: block; }
+  .scope-section-head {
+    display: flex; align-items: center;
+    justify-content: space-between; margin-bottom: 14px;
+  }
+  .scope-section-head h3 {
+    font-family: var(--font-head);
+    font-size: 15px; font-weight: normal;
+    color: var(--ink-mid); letter-spacing: 0.01em;
+  }
+  #chaptersGrid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 16px;
+  }
+
+  /* ── Chapter card ───────────────────────────────────────── */
+  .ch-card {
+    background: var(--card-bg);
+    border-radius: var(--r);
+    box-shadow: var(--shadow);
+    overflow: hidden;
+    position: relative;
+    transition: box-shadow 0.15s;
+  }
+  .ch-card:hover { box-shadow: var(--shadow-lg); }
+  .ch-card.warn-scope { outline: 2px solid var(--warn); }
+  .ch-scope-tag {
+    display: none;
+    position: absolute;
+    top: 8px; right: 8px;
+    font-size: 10px; font-weight: 700;
+    text-transform: uppercase; letter-spacing: 0.04em;
+    color: var(--warn); background: var(--warn-bg);
+    border-radius: 2px; padding: 2px 5px;
+  }
+  .ch-card.warn-scope .ch-scope-tag { display: block; }
+  .ch-num {
+    font-size: 10px; font-weight: 700;
+    text-transform: uppercase; letter-spacing: 0.08em;
+    color: var(--paper); background: var(--ink-mid);
+    padding: 5px 14px;
+  }
+  .ch-body { padding: 14px 16px 16px; }
+  .ch-title-input {
+    font-family: var(--font-head);
+    font-size: 15px; font-weight: normal;
+    color: var(--ink); background: transparent;
+    border: none; outline: none; width: 100%;
+    border-bottom: 1px dashed var(--rule);
+    padding-bottom: 6px; margin-bottom: 10px; line-height: 1.3;
+  }
+  .ch-title-input::placeholder { color: var(--ink-faint); font-style: italic; }
+  .badge-row { display: flex; gap: 5px; margin-bottom: 10px; flex-wrap: wrap; }
+  .badge {
+    font-size: 10px; font-weight: 700;
+    text-transform: uppercase; letter-spacing: 0.04em;
+    border-radius: 2px; padding: 2px 7px;
+    cursor: pointer; transition: opacity 0.15s;
+    user-select: none; border: 1.5px solid transparent;
+    background: none;
+    font-family: var(--font-ui);
+  }
+  .badge.off { opacity: 0.3; filter: grayscale(0.6); }
+  .badge-promise  { color: var(--promise);  border-color: var(--promise);  background: #e8eef8; }
+  .badge-evidence { color: var(--evidence); border-color: var(--evidence); background: var(--ok-bg); }
+  .badge-exercise { color: var(--exercise); border-color: var(--exercise); background: #f0eaf8; }
+  .ch-note {
+    font-family: var(--font-ui);
+    font-size: 12px; color: var(--ink-mid);
+    background: var(--paper-warm);
+    border: 1px solid var(--rule-light);
+    border-radius: 2px; padding: 6px 8px;
+    width: 100%; resize: vertical; min-height: 52px;
+    outline: none; line-height: 1.5; margin-bottom: 10px;
+  }
+  .ch-note::placeholder { color: var(--ink-faint); }
+  .word-row {
+    display: flex; align-items: center; gap: 6px;
+    font-size: 11px; color: var(--ink-faint);
+  }
+  .word-row label {
+    font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em;
+  }
+  .word-input {
+    font-family: var(--font-mono);
+    font-size: 12px; color: var(--ink);
+    background: var(--paper-warm);
+    border: 1px solid var(--rule);
+    border-radius: 2px; padding: 3px 6px;
+    width: 72px; outline: none; text-align: right;
+  }
+  .word-input:focus { border-color: var(--ink-mid); }
+  .word-pct {
+    margin-left: auto; font-size: 11px;
+    font-weight: 700; padding: 2px 6px; border-radius: 2px;
+  }
+  .ch-delete {
+    display: block; width: 100%;
+    font-family: var(--font-ui); font-size: 11px;
+    color: #c0bab4; text-align: right;
+    background: none; border: none; cursor: pointer;
+    margin-top: 8px; padding: 2px 0;
+  }
+  .ch-delete:hover { color: var(--accent); }
+
+  /* ── Add chapter row ────────────────────────────────────── */
+  #addChRow { display: none; gap: 10px; align-items: center; margin-top: 4px; }
+  #addChRow.visible { display: flex; }
+  #newChTitle {
+    font-family: var(--font-head);
+    font-size: 14px; color: var(--ink);
+    background: var(--card-bg);
+    border: 1px dashed var(--rule);
+    border-radius: var(--r);
+    padding: 9px 14px; flex: 1; outline: none; font-style: italic;
+  }
+  #newChTitle:focus { border-style: solid; border-color: var(--ink-mid); font-style: normal; }
+
+  /* ── Output ─────────────────────────────────────────────── */
+  #outputSection { display: none; }
+  #outputSection.visible { display: block; }
+  .output-head {
+    display: flex; align-items: center;
+    justify-content: space-between; margin-bottom: 12px;
+  }
+  .output-head h3 {
+    font-family: var(--font-head); font-size: 15px;
+    font-weight: normal; color: var(--ink-mid);
+  }
+  .output-actions { display: flex; gap: 8px; }
+  #outputBox {
+    font-family: var(--font-mono); font-size: 12px;
+    line-height: 1.7; color: var(--ink);
+    background: var(--card-bg);
+    border: 1px solid var(--rule);
+    border-radius: var(--r); padding: 20px 22px;
+    white-space: pre-wrap; word-break: break-word;
+    box-shadow: var(--shadow);
+  }
+
+  /* ── Empty state ────────────────────────────────────────── */
+  #emptyState {
+    text-align: center; padding: 60px 20px;
+    color: var(--ink-faint);
+  }
+  .es-mark {
+    font-family: var(--font-head); font-size: 48px;
+    color: var(--rule); display: block; margin-bottom: 12px;
+  }
+  #emptyState p {
+    font-size: 14px; line-height: 1.6;
+    max-width: 320px; margin: 0 auto;
+  }
+
+  /* ── Scrollbar ──────────────────────────────────────────── */
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--rule); border-radius: 3px; }
+
+  /* ── Mobile ─────────────────────────────────────────────── */
+  @media (max-width: 600px) {
+    .main { flex-direction: column; overflow: visible; }
+    body { overflow-y: auto; }
+    .sidebar {
+      width: 100%; min-width: 0;
+      border-right: none; border-bottom: 1px solid var(--rule);
+    }
+    .canvas { padding: 16px 14px 48px; }
+    header { padding: 14px 16px 12px; gap: 10px; }
+    #chaptersGrid { grid-template-columns: 1fr; }
+    #balanceBars { min-width: 0; }
+  }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <header>
+    <h1>Chapter Scope Planner</h1>
+    <span class="tagline">practical book · chapter map · scope check</span>
+    <span id="saveIndicator"></span>
+  </header>
+
+  <div class="main">
+
+    <!-- Sidebar: all static markup, no user content rendered here -->
+    <aside class="sidebar">
+      <div class="field-group">
+        <label for="bookTitle">Book Title</label>
+        <input type="text" id="bookTitle" placeholder="Working title…" autocomplete="off">
+      </div>
+      <div class="field-group">
+        <label for="bookPromise">Core Promise</label>
+        <textarea id="bookPromise" placeholder="By the end, the reader will be able to…"></textarea>
+      </div>
+      <div class="field-group">
+        <label for="bookAudience">Audience</label>
+        <input type="text" id="bookAudience" placeholder="Who is this for?" autocomplete="off">
+      </div>
+      <hr class="sidebar-divider">
+      <div class="field-group">
+        <label for="bookFormat">Format</label>
+        <select id="bookFormat">
+          <option>Short practical (20–40k words)</option>
+          <option>Standard non-fiction (50–80k words)</option>
+          <option>Long-form (80k+)</option>
+          <option>Mini guide / essay (&lt;15k words)</option>
+        </select>
+      </div>
+      <div class="field-group">
+        <label for="targetChapters">Target chapters</label>
+        <div class="range-row">
+          <input type="range" id="targetChapters" min="3" max="20" value="8">
+          <span class="range-val" id="targetChaptersVal">8</span>
+        </div>
+      </div>
+      <div class="field-group">
+        <label for="targetWords">Target words / chapter</label>
+        <div class="range-row">
+          <input type="range" id="targetWords" min="500" max="6000" step="250" value="2500">
+          <span class="range-val" id="targetWordsVal">2,500</span>
+        </div>
+      </div>
+      <hr class="sidebar-divider">
+      <button class="btn btn-primary" id="btnGenerate">&#9998; Generate scope map</button>
+      <button class="btn btn-ghost btn-sm" id="btnClear">Clear everything</button>
+      <div class="sidebar-footer">
+        100% offline · nothing leaves this file<br>
+        Data saved automatically in this browser
+      </div>
+    </aside>
+
+    <!-- Canvas: all dynamic content rendered by JS below -->
+    <div class="canvas" id="canvas">
+
+      <div id="bookHeader">
+        <div id="bookHeaderTitle"></div>
+        <div id="bookHeaderMeta"></div>
+        <div id="bookHeaderPromise"></div>
+      </div>
+
+      <div id="balanceRow">
+        <span class="balance-label">Balance check</span>
+        <div id="balanceBars"></div>
+        <span id="balanceStatus" class="balance-status"></span>
+      </div>
+
+      <div id="warnings"></div>
+
+      <div id="scopeSection">
+        <div class="scope-section-head">
+          <h3>Chapter scope map</h3>
+          <button class="btn btn-ghost btn-sm" id="btnAddChapter">+ Add chapter</button>
+        </div>
+        <div id="chaptersGrid"></div>
+        <div id="addChRow">
+          <input type="text" id="newChTitle" placeholder="New chapter title…" autocomplete="off">
+          <button class="btn btn-ghost btn-sm" id="btnConfirmAdd">Add</button>
+          <button class="btn btn-ghost btn-sm" id="btnCancelAdd">Cancel</button>
+        </div>
+      </div>
+
+      <div id="outputSection">
+        <div class="output-head">
+          <h3>One-page writing plan</h3>
+          <div class="output-actions">
+            <button class="btn btn-ghost btn-sm" id="btnCopy">&#128203; Copy</button>
+            <button class="btn btn-ghost btn-sm" id="btnDownload">&#8659; Download .txt</button>
+          </div>
+        </div>
+        <pre id="outputBox"></pre>
+      </div>
+
+      <div id="emptyState">
+        <span class="es-mark">&#182;</span>
+        <p>Fill in your book title and promise, set your chapter count, then hit <strong>Generate scope map</strong> to build your chapter cards.</p>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script>
+'use strict';
+
+/* ── State ─────────────────────────────────────────────────── */
+let chapters  = [];   // [{id, title, note, words, promise, evidence, exercise}]
+let generated = false;
+const STORAGE_KEY = 'chapterScopePlanner_v2';
+
+/* ── Element refs (static HTML only) ──────────────────────── */
+const elBookTitle      = document.getElementById('bookTitle');
+const elBookPromise    = document.getElementById('bookPromise');
+const elBookAudience   = document.getElementById('bookAudience');
+const elBookFormat     = document.getElementById('bookFormat');
+const elTargetChapters = document.getElementById('targetChapters');
+const elTargetWords    = document.getElementById('targetWords');
+const elChaptersVal    = document.getElementById('targetChaptersVal');
+const elWordsVal       = document.getElementById('targetWordsVal');
+const elSaveInd        = document.getElementById('saveIndicator');
+const elBookHeader     = document.getElementById('bookHeader');
+const elBookHdrTitle   = document.getElementById('bookHeaderTitle');
+const elBookHdrMeta    = document.getElementById('bookHeaderMeta');
+const elBookHdrPromise = document.getElementById('bookHeaderPromise');
+const elBalanceRow     = document.getElementById('balanceRow');
+const elBalanceBars    = document.getElementById('balanceBars');
+const elBalanceStatus  = document.getElementById('balanceStatus');
+const elWarnings       = document.getElementById('warnings');
+const elScopeSection   = document.getElementById('scopeSection');
+const elChaptersGrid   = document.getElementById('chaptersGrid');
+const elAddChRow       = document.getElementById('addChRow');
+const elNewChTitle     = document.getElementById('newChTitle');
+const elOutputSection  = document.getElementById('outputSection');
+const elOutputBox      = document.getElementById('outputBox');
+const elEmptyState     = document.getElementById('emptyState');
+
+/* ── Helpers ───────────────────────────────────────────────── */
+function el(tag, classes, text) {
+  const e = document.createElement(tag);
+  if (classes) classes.split(' ').filter(Boolean).forEach(c => e.classList.add(c));
+  if (text !== undefined) e.textContent = text;
+  return e;
+}
+
+function setVisible(elem, show) {
+  if (show) elem.classList.add('visible');
+  else      elem.classList.remove('visible');
+}
+
+/* ── Range display sync ────────────────────────────────────── */
+function syncTarget() {
+  elChaptersVal.textContent = elTargetChapters.value;
+}
+function syncWords() {
+  elWordsVal.textContent = parseInt(elTargetWords.value).toLocaleString();
+}
+
+/* ── Save / load ───────────────────────────────────────────── */
+let _saveTimer = null;
+function saveState() {
+  try {
+    const state = {
+      bookTitle:      elBookTitle.value,
+      bookPromise:    elBookPromise.value,
+      bookAudience:   elBookAudience.value,
+      bookFormat:     elBookFormat.value,
+      targetChapters: elTargetChapters.value,
+      targetWords:    elTargetWords.value,
+      generated,
+      chapters
+    };
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    elSaveInd.textContent = '✓ saved';
+    elSaveInd.classList.add('show');
+    clearTimeout(_saveTimer);
+    _saveTimer = setTimeout(() => elSaveInd.classList.remove('show'), 1600);
+  } catch (_) { /* storage unavailable */ }
+}
+
+function loadState() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return false;
+    const s = JSON.parse(raw);
+    if (typeof s.bookTitle      === 'string') elBookTitle.value      = s.bookTitle;
+    if (typeof s.bookPromise    === 'string') elBookPromise.value    = s.bookPromise;
+    if (typeof s.bookAudience   === 'string') elBookAudience.value   = s.bookAudience;
+    if (typeof s.bookFormat     === 'string') elBookFormat.value     = s.bookFormat;
+    if (s.targetChapters != null) { elTargetChapters.value = s.targetChapters; syncTarget(); }
+    if (s.targetWords    != null) { elTargetWords.value    = s.targetWords;    syncWords(); }
+    if (Array.isArray(s.chapters)) chapters = s.chapters;
+    if (s.generated) {
+      generated = true;
+      elEmptyState.style.display = 'none';
+      renderAll();
+    }
+    return true;
+  } catch (_) { return false; }
+}
+
+/* ── Master render ─────────────────────────────────────────── */
+function renderAll() {
+  renderBookHeader();
+  renderBalance();
+  renderWarnings();
+  renderChapters();
+  renderOutput();
+}
+
+function refreshAfterEdit() {
+  renderBookHeader();
+  renderBalance();
+  renderWarnings();
+  renderOutput();
+  saveState();
+}
+
+/* ── Book header ───────────────────────────────────────────── */
+function renderBookHeader() {
+  const title    = elBookTitle.value.trim() || '(Untitled)';
+  const promise  = elBookPromise.value.trim();
+  const audience = elBookAudience.value.trim();
+  const format   = elBookFormat.value;
+  const total    = chapters.reduce((s, c) => s + (parseInt(c.words) || 0), 0);
+
+  elBookHdrTitle.textContent = title;
+
+  /* rebuild meta pills safely */
+  while (elBookHdrMeta.firstChild) elBookHdrMeta.removeChild(elBookHdrMeta.firstChild);
+  [format,
+   audience ? 'For: ' + audience : null,
+   chapters.length + ' chapters',
+   '~' + total.toLocaleString() + ' words total'
+  ].forEach(txt => {
+    if (!txt) return;
+    const p = el('span', 'meta-pill', txt);
+    elBookHdrMeta.appendChild(p);
+  });
+
+  if (promise) {
+    elBookHdrPromise.textContent = '\u201c' + promise + '\u201d';
+    elBookHdrPromise.style.display = '';
+  } else {
+    elBookHdrPromise.style.display = 'none';
+  }
+
+  setVisible(elBookHeader, true);
+}
+
+/* ── Balance bar ───────────────────────────────────────────── */
+function renderBalance() {
+  if (!chapters.length) return;
+
+  const total  = chapters.length;
+  const nP = chapters.filter(c => c.promise).length;
+  const nE = chapters.filter(c => c.evidence).length;
+  const nX = chapters.filter(c => c.exercise).length;
+  const pP = Math.round(nP / total * 100);
+  const pE = Math.round(nE / total * 100);
+  const pX = Math.round(nX / total * 100);
+
+  while (elBalanceBars.firstChild) elBalanceBars.removeChild(elBalanceBars.firstChild);
+
+  [
+    { label: 'Promise',  pct: pP, fillClass: 'fill-promise',  color: 'var(--promise)'  },
+    { label: 'Evidence', pct: pE, fillClass: 'fill-evidence', color: 'var(--evidence)' },
+    { label: 'Exercise', pct: pX, fillClass: 'fill-exercise', color: 'var(--exercise)' }
+  ].forEach(({ label, pct, fillClass, color }) => {
+    const item = el('div', 'balance-item');
+
+    const lbl  = el('div', 'bi-label');
+    const name = el('span');
+    name.textContent = label;
+    name.style.color = color;
+    const num  = el('span', '', pct + '%');
+    lbl.appendChild(name);
+    lbl.appendChild(num);
+
+    const track = el('div', 'balance-track');
+    const fill  = el('div', 'balance-fill ' + fillClass);
+    fill.style.width = pct + '%';
+    track.appendChild(fill);
+
+    item.appendChild(lbl);
+    item.appendChild(track);
+    elBalanceBars.appendChild(item);
+  });
+
+  const ok = nE >= Math.ceil(total * 0.3) && nP >= 1;
+  elBalanceStatus.textContent = ok ? '✓ Balanced' : '⚠ Needs work';
+  elBalanceStatus.className   = 'balance-status ' + (ok ? 'status-ok' : 'status-warn');
+  setVisible(elBalanceRow, true);
+}
+
+/* ── Warnings ──────────────────────────────────────────────── */
+function renderWarnings() {
+  while (elWarnings.firstChild) elWarnings.removeChild(elWarnings.firstChild);
+
+  const wpp  = parseInt(elTargetWords.value);
+  const msgs = [];
+
+  chapters.forEach((c, i) => {
+    const w = parseInt(c.words) || 0;
+    if (w > wpp * 1.5) {
+      const over = Math.round(w / wpp * 100 - 100);
+      msgs.push(
+        'Chapter ' + (i + 1) + ' \u201c' + (c.title || 'Untitled') + '\u201d is ' +
+        w.toLocaleString() + ' words \u2014 ' + over + '% over target. Consider splitting or trimming.'
+      );
+    }
+  });
+
+  const noTag = chapters.filter(c => !c.evidence && !c.promise && !c.exercise);
+  if (noTag.length > 2)
+    msgs.push(noTag.length + ' chapters have no Promise, Evidence, or Exercise tag. Every chapter should carry the reader forward.');
+
+  if (!chapters.some(c => c.evidence) && chapters.length > 2)
+    msgs.push('No chapters tagged as Evidence. Practical books need data, examples, or case studies to back the promise.');
+
+  if (!chapters.some(c => c.exercise) && chapters.length > 4)
+    msgs.push('No chapters include exercises. Readers retain more when given something to do.');
+
+  const total  = chapters.reduce((s, c) => s + (parseInt(c.words) || 0), 0);
+  const format = elBookFormat.value;
+  if (format.includes('20\u201340k') && total > 42000)
+    msgs.push('Total word count (' + total.toLocaleString() + ') exceeds your \u201cshort practical\u201d format target. Cut scope or reassign chapters.');
+  if (format.includes('50\u201380k') && total > 85000)
+    msgs.push('Total word count (' + total.toLocaleString() + ') is running long for a standard non-fiction book.');
+
+  msgs.forEach(msg => {
+    const card = el('div', 'warn-card');
+    const icon = el('span', 'warn-icon', '⚠');
+    const text = el('span', '', msg);
+    card.appendChild(icon);
+    card.appendChild(text);
+    elWarnings.appendChild(card);
+  });
+}
+
+/* ── Chapter cards ─────────────────────────────────────────── */
+function renderChapters() {
+  /* Preserve focused element id so we can restore focus after re-render */
+  const focusedId = document.activeElement ? document.activeElement.id : null;
+
+  while (elChaptersGrid.firstChild) elChaptersGrid.removeChild(elChaptersGrid.firstChild);
+
+  const wpp        = parseInt(elTargetWords.value);
+  const totalWords = chapters.reduce((s, c) => s + (parseInt(c.words) || 0), 0) || 1;
+
+  chapters.forEach((c, i) => {
+    const w         = parseInt(c.words) || 0;
+    const scopeWarn = w > wpp * 1.5;
+    const pct       = Math.round(w / totalWords * 100);
+    const pctColor  = scopeWarn ? 'var(--warn)' : w < wpp * 0.4 ? 'var(--ink-faint)' : 'var(--ok)';
+
+    /* Card wrapper */
+    const card = el('div', 'ch-card' + (scopeWarn ? ' warn-scope' : ''));
+    card.id = 'card-' + c.id;
+
+    /* Scope tag (shown via CSS when warn-scope) */
+    const scopeTag = el('span', 'ch-scope-tag', '⚠ scope');
+    card.appendChild(scopeTag);
+
+    /* Chapter number bar */
+    const numBar = el('div', 'ch-num', 'Chapter ' + (i + 1));
+    card.appendChild(numBar);
+
+    /* Card body */
+    const body = el('div', 'ch-body');
+
+    /* Title input */
+    const titleIn = el('input', 'ch-title-input');
+    titleIn.type        = 'text';
+    titleIn.placeholder = 'Chapter title\u2026';
+    titleIn.value       = c.title;
+    titleIn.id          = 'ch-title-' + c.id;
+    titleIn.setAttribute('aria-label', 'Chapter ' + (i + 1) + ' title');
+    titleIn.addEventListener('input', () => {
+      chapters.find(x => x.id === c.id).title = titleIn.value;
+      refreshAfterEdit();
+    });
+    body.appendChild(titleIn);
+
+    /* Badge row */
+    const badgeRow = el('div', 'badge-row');
+    [
+      { key: 'promise',  label: 'Promise',  cls: 'badge-promise',  tip: 'Makes a promise to the reader' },
+      { key: 'evidence', label: 'Evidence', cls: 'badge-evidence', tip: 'Provides data, examples, or cases' },
+      { key: 'exercise', label: 'Exercise', cls: 'badge-exercise', tip: 'Gives the reader something to do' }
+    ].forEach(({ key, label, cls, tip }) => {
+      const badge = el('button', 'badge ' + cls + (c[key] ? '' : ' off'), label);
+      badge.type  = 'button';
+      badge.title = tip;
+      badge.setAttribute('aria-pressed', String(!!c[key]));
+      badge.addEventListener('click', () => {
+        const ch = chapters.find(x => x.id === c.id);
+        ch[key] = !ch[key];
+        renderAll();
+        saveState();
+      });
+      badgeRow.appendChild(badge);
+    });
+    body.appendChild(badgeRow);
+
+    /* Scope note */
+    const note = el('textarea', 'ch-note');
+    note.placeholder = 'Scope note: what this chapter covers, key points, what it excludes\u2026';
+    note.value       = c.note;
+    note.id          = 'ch-note-' + c.id;
+    note.setAttribute('aria-label', 'Chapter ' + (i + 1) + ' scope note');
+    note.addEventListener('input', () => {
+      chapters.find(x => x.id === c.id).note = note.value;
+      refreshAfterEdit();
+    });
+    body.appendChild(note);
+
+    /* Word count row */
+    const wordRow   = el('div', 'word-row');
+    const wordLabel = el('label', '', 'Est. words');
+    wordLabel.setAttribute('for', 'ch-words-' + c.id);
+
+    const wordIn    = el('input', 'word-input');
+    wordIn.type     = 'number';
+    wordIn.min      = '100';
+    wordIn.step     = '250';
+    wordIn.value    = String(w);
+    wordIn.id       = 'ch-words-' + c.id;
+    wordIn.setAttribute('aria-label', 'Chapter ' + (i + 1) + ' estimated word count');
+    wordIn.addEventListener('input', () => {
+      chapters.find(x => x.id === c.id).words = parseInt(wordIn.value) || 0;
+      refreshAfterEdit();
+      refreshWordPct(c.id);
+    });
+
+    const pctSpan = el('span', 'word-pct', pct + '% of book');
+    pctSpan.id          = 'word-pct-' + c.id;
+    pctSpan.style.color = pctColor;
+    pctSpan.style.background = pctColor.replace('var(--', 'var(--').replace(')', '-bg)');
+    /* fallback inline tint */
+    pctSpan.style.background = scopeWarn ? '#fdf3e3' : w < wpp * 0.4 ? '#f0efee' : '#e8f5ee';
+
+    wordRow.appendChild(wordLabel);
+    wordRow.appendChild(wordIn);
+    wordRow.appendChild(pctSpan);
+    body.appendChild(wordRow);
+
+    /* Delete */
+    const delBtn  = el('button', 'ch-delete', 'remove chapter \u00d7');
+    delBtn.type   = 'button';
+    delBtn.setAttribute('aria-label', 'Remove chapter ' + (i + 1));
+    delBtn.addEventListener('click', () => {
+      chapters = chapters.filter(x => x.id !== c.id);
+      renderAll();
+      saveState();
+    });
+    body.appendChild(delBtn);
+
+    card.appendChild(body);
+    elChaptersGrid.appendChild(card);
+  });
+
+  setVisible(elScopeSection, true);
+
+  /* Restore focus if it was inside a card input */
+  if (focusedId) {
+    const restore = document.getElementById(focusedId);
+    if (restore) restore.focus();
+  }
+}
+
+/* lightweight per-card word-pct refresh without full re-render */
+function refreshWordPct(id) {
+  const c         = chapters.find(x => x.id === id);
+  if (!c) return;
+  const wpp       = parseInt(elTargetWords.value);
+  const totalWords = chapters.reduce((s, ch) => s + (parseInt(ch.words) || 0), 0) || 1;
+  const w         = parseInt(c.words) || 0;
+  const pct       = Math.round(w / totalWords * 100);
+  const scopeWarn = w > wpp * 1.5;
+  const pctColor  = scopeWarn ? 'var(--warn)' : w < wpp * 0.4 ? 'var(--ink-faint)' : 'var(--ok)';
+  const card      = document.getElementById('card-' + id);
+  if (!card) return;
+  const span = document.getElementById('word-pct-' + id);
+  if (span) {
+    span.textContent       = pct + '% of book';
+    span.style.color       = pctColor;
+    span.style.background  = scopeWarn ? '#fdf3e3' : w < wpp * 0.4 ? '#f0efee' : '#e8f5ee';
+  }
+  if (scopeWarn) card.classList.add('warn-scope');
+  else           card.classList.remove('warn-scope');
+}
+
+/* ── Output (plain text — textContent only) ────────────────── */
+function renderOutput() {
+  const title    = elBookTitle.value.trim()    || '(Untitled)';
+  const promise  = elBookPromise.value.trim();
+  const audience = elBookAudience.value.trim();
+  const format   = elBookFormat.value;
+  const total    = chapters.reduce((s, c) => s + (parseInt(c.words) || 0), 0);
+  const today    = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+  const D = '\u2500'.repeat(60);
+  const T = '\u00b7'.repeat(60);
+
+  const lines = [
+    'ONE-PAGE WRITING PLAN',
+    'Generated ' + today,
+    D, '',
+    'TITLE:    ' + title
+  ];
+  if (audience) lines.push('AUDIENCE: ' + audience);
+  lines.push('FORMAT:   ' + format);
+  lines.push('TOTAL:    ~' + total.toLocaleString() + ' words across ' + chapters.length + ' chapters');
+  if (promise) { lines.push(''); lines.push('PROMISE:  ' + promise); }
+  lines.push('', D, 'CHAPTER SCOPE MAP', D, '');
+
+  chapters.forEach((c, i) => {
+    const w    = parseInt(c.words) || 0;
+    const tags = [
+      c.promise  ? '[Promise]'  : '',
+      c.evidence ? '[Evidence]' : '',
+      c.exercise ? '[Exercise]' : ''
+    ].filter(Boolean).join(' ');
+    lines.push('Chapter ' + String(i + 1).padStart(2, '0') + '  ' + (c.title || '(Untitled)') + '  ' + tags);
+    lines.push('          ~' + w.toLocaleString() + ' words');
+    if (c.note.trim()) c.note.trim().split('\n').forEach(l => lines.push('          ' + l));
+    lines.push('');
+  });
+
+  const wpp   = parseInt(elTargetWords.value);
+  const nP    = chapters.filter(c => c.promise).length;
+  const nE    = chapters.filter(c => c.evidence).length;
+  const nX    = chapters.filter(c => c.exercise).length;
+  lines.push(T, 'BALANCE CHECK', T);
+  lines.push('Promise chapters:  ' + nP + '/' + chapters.length);
+  lines.push('Evidence chapters: ' + nE + '/' + chapters.length);
+  lines.push('Exercise chapters: ' + nX + '/' + chapters.length);
+  lines.push('');
+
+  const scopeWarns = chapters.filter(c => (parseInt(c.words) || 0) > wpp * 1.5);
+  if (scopeWarns.length) {
+    lines.push(T, 'SCOPE WARNINGS', T);
+    scopeWarns.forEach(c => {
+      const w   = parseInt(c.words) || 0;
+      const ovr = Math.round(w / wpp * 100 - 100);
+      lines.push('\u26a0 "' + (c.title || 'Untitled') + '" \u2014 ' + w.toLocaleString() + ' words (' + ovr + '% over target)');
+    });
+    lines.push('');
+  }
+
+  elOutputBox.textContent = lines.join('\n');
+  setVisible(elOutputSection, true);
+}
+
+/* ── Generate ──────────────────────────────────────────────── */
+function generatePlan() {
+  const title = elBookTitle.value.trim();
+  if (!title) {
+    elBookTitle.focus();
+    elBookTitle.style.borderColor = 'var(--accent)';
+    setTimeout(() => { elBookTitle.style.borderColor = ''; }, 1500);
+    return;
+  }
+  if (!chapters.length) {
+    const n   = parseInt(elTargetChapters.value);
+    const wpp = parseInt(elTargetWords.value);
+    const starters = [
+      'Introduction','The Problem','Core Concept','Method Overview',
+      'Step One','Step Two','Step Three','Common Mistakes',
+      'Advanced Techniques','Real-World Application','Troubleshooting',
+      'Putting It Together','What Comes Next','Reference','Conclusion'
+    ];
+    for (let i = 0; i < n; i++) {
+      chapters.push({
+        id:       Date.now() + i,
+        title:    starters[i] || 'Chapter ' + (i + 1),
+        note:     '',
+        words:    wpp,
+        promise:  i === 0 || i === n - 1,
+        evidence: i > 0 && i < n - 1,
+        exercise: false
+      });
+    }
+  }
+  generated = true;
+  elEmptyState.style.display = 'none';
+  renderAll();
+  saveState();
+}
+
+/* ── Add chapter ───────────────────────────────────────────── */
+function showAddRow() {
+  elNewChTitle.value = '';
+  elAddChRow.classList.add('visible');
+  elNewChTitle.focus();
+}
+function hideAddRow() {
+  elAddChRow.classList.remove('visible');
+}
+function confirmAdd() {
+  const wpp = parseInt(elTargetWords.value);
+  chapters.push({
+    id:       Date.now(),
+    title:    elNewChTitle.value.trim() || 'Chapter ' + (chapters.length + 1),
+    note:     '',
+    words:    wpp,
+    promise:  false,
+    evidence: true,
+    exercise: false
+  });
+  hideAddRow();
+  renderAll();
+  saveState();
+}
+
+/* ── Copy / download ───────────────────────────────────────── */
+function copyPlan() {
+  const text = elOutputBox.textContent;
+  navigator.clipboard.writeText(text).then(() => {
+    const btn = document.getElementById('btnCopy');
+    btn.textContent = '✓ Copied';
+    setTimeout(() => { btn.textContent = '\u{1F4CB} Copy'; }, 1800);
+  }).catch(() => {
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+  });
+}
+
+function downloadPlan() {
+  const text  = elOutputBox.textContent;
+  const slug  = elBookTitle.value.trim()
+                  .replace(/\s+/g, '-').replace(/[^a-z0-9\-]/gi, '').toLowerCase() || 'book-plan';
+  const blob  = new Blob([text], { type: 'text/plain' });
+  const url   = URL.createObjectURL(blob);
+  const a     = document.createElement('a');
+  a.href      = url;
+  a.download  = slug + '-writing-plan.txt';
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+/* ── Clear ─────────────────────────────────────────────────── */
+function clearAll() {
+  if (!confirm('Clear everything and start over?')) return;
+  chapters   = [];
+  generated  = false;
+  elBookTitle.value        = '';
+  elBookPromise.value      = '';
+  elBookAudience.value     = '';
+  elBookFormat.selectedIndex = 0;
+  elTargetChapters.value   = '8';  syncTarget();
+  elTargetWords.value      = '2500'; syncWords();
+  setVisible(elBookHeader,    false);
+  setVisible(elBalanceRow,    false);
+  setVisible(elScopeSection,  false);
+  setVisible(elOutputSection, false);
+  while (elWarnings.firstChild)     elWarnings.removeChild(elWarnings.firstChild);
+  while (elChaptersGrid.firstChild) elChaptersGrid.removeChild(elChaptersGrid.firstChild);
+  hideAddRow();
+  elEmptyState.style.display = '';
+  try { localStorage.removeItem(STORAGE_KEY); } catch (_) {}
+}
+
+/* ── Wire up static controls ───────────────────────────────── */
+document.getElementById('btnGenerate').addEventListener('click', generatePlan);
+document.getElementById('btnClear').addEventListener('click', clearAll);
+document.getElementById('btnAddChapter').addEventListener('click', showAddRow);
+document.getElementById('btnConfirmAdd').addEventListener('click', confirmAdd);
+document.getElementById('btnCancelAdd').addEventListener('click', hideAddRow);
+document.getElementById('btnCopy').addEventListener('click', copyPlan);
+document.getElementById('btnDownload').addEventListener('click', downloadPlan);
+
+elTargetChapters.addEventListener('input', () => { syncTarget(); if (generated) { refreshAfterEdit(); } });
+elTargetWords.addEventListener('input',    () => { syncWords();  if (generated) { renderAll(); saveState(); } });
+
+/* Sidebar fields that update the canvas header live */
+[elBookTitle, elBookPromise, elBookAudience, elBookFormat].forEach(input => {
+  input.addEventListener('input', () => { if (generated) refreshAfterEdit(); });
+});
+
+elNewChTitle.addEventListener('keydown', e => {
+  if (e.key === 'Enter')  confirmAdd();
+  if (e.key === 'Escape') hideAddRow();
+});
+
+/* ── Init ──────────────────────────────────────────────────── */
+syncTarget();
+syncWords();
+loadState();
+</script>
+</body>
+</html>

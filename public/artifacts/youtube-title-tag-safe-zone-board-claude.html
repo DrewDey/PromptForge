@@ -1,0 +1,1090 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>YT Upload Board</title>
+<style>
+:root {
+  --bg:      #111118;
+  --surface: #1C1C28;
+  --surf2:   #252535;
+  --border:  #2E2E42;
+  --accent:  #FF0033;
+  --amber:   #FFBE00;
+  --green:   #00C27C;
+  --blue:    #4A9EFF;
+  --text:    #E8ECF0;
+  --text2:   #9499AA;
+  --text3:   #5A5F6E;
+  --mono:    'SF Mono','Fira Code','Consolas',monospace;
+  --r:       10px;
+  --rsm:     6px;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-size: 15px;
+  line-height: 1.5;
+  letter-spacing: 0;
+  max-width: 480px;
+  margin: 0 auto;
+  padding-bottom: 80px;
+}
+
+/* ── Header ── */
+.header {
+  position: sticky; top: 0; z-index: 100;
+  background: var(--bg);
+  border-bottom: 1px solid var(--border);
+  padding: 12px 16px 10px;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.header-logo {
+  display: flex; align-items: center; gap: 8px;
+  font-weight: 700; font-size: 16px; letter-spacing: 0;
+}
+.logo-icon {
+  width: 28px; height: 20px;
+  background: var(--accent); border-radius: 5px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 11px; color: #fff; font-weight: 900;
+}
+.header-status { font-size: 12px; color: var(--text3); font-family: var(--mono); }
+.score-val { color: var(--amber); font-weight: 600; }
+
+/* ── Tabs ── */
+.tabs {
+  display: flex;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg);
+  overflow-x: auto; scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+}
+.tabs::-webkit-scrollbar { display: none; }
+.tab {
+  flex: none; padding: 10px 16px;
+  font-size: 13px; font-weight: 600; letter-spacing: 0;
+  color: var(--text3); cursor: pointer;
+  border-bottom: 2px solid transparent;
+  white-space: nowrap;
+  transition: color .15s, border-color .15s;
+  user-select: none; -webkit-tap-highlight-color: transparent;
+}
+.tab.active { color: var(--text); border-bottom-color: var(--accent); }
+
+/* ── Panels ── */
+.panel { display: none; padding: 16px; }
+.panel.active { display: block; }
+
+/* ── Cards ── */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  padding: 14px; margin-bottom: 12px;
+}
+.card-label {
+  font-size: 11px; font-weight: 700; letter-spacing: 0;
+  text-transform: uppercase; color: var(--text3); margin-bottom: 10px;
+}
+
+/* ── Inputs ── */
+textarea, input[type="text"] {
+  width: 100%;
+  background: var(--surf2);
+  border: 1px solid var(--border);
+  border-radius: var(--rsm);
+  color: var(--text);
+  font-family: inherit; font-size: 15px; letter-spacing: 0;
+  padding: 10px 12px; resize: none; outline: none;
+  transition: border-color .15s; -webkit-appearance: none;
+}
+textarea:focus, input[type="text"]:focus { border-color: var(--blue); }
+textarea::placeholder, input::placeholder { color: var(--text3); }
+
+/* ── Meter ── */
+.meter-wrap { margin-top: 8px; }
+.meter-bar {
+  height: 4px; background: var(--border);
+  border-radius: 2px; overflow: hidden; margin-bottom: 5px;
+}
+.meter-fill {
+  height: 100%; border-radius: 2px;
+  transition: width .2s, background .2s;
+  background: var(--green); width: 0%;
+}
+.meter-labels {
+  display: flex; justify-content: space-between;
+  font-family: var(--mono); font-size: 11px; color: var(--text3);
+}
+.meter-count { color: var(--text2); font-weight: 600; }
+.hint { font-size: 11px; color: var(--text3); margin-top: 5px; }
+
+/* ── Safe-zone ── */
+.safezone-wrap {
+  margin-top: 12px;
+  background: var(--surf2);
+  border-radius: var(--rsm);
+  border: 1px solid var(--border);
+  overflow: hidden;
+}
+.sz-label-row {
+  display: flex; justify-content: space-between;
+  padding: 6px 10px; font-size: 11px;
+  color: var(--text3); font-family: var(--mono);
+  border-bottom: 1px solid var(--border);
+}
+.sz-label-row + .sz-label-row { border-top: 1px solid var(--border); }
+.sz-preview { padding: 10px; }
+.sz-title {
+  font-size: 13px; font-weight: 600; line-height: 1.35;
+  white-space: pre-wrap; word-break: break-word; letter-spacing: 0;
+}
+.sz-safe { color: var(--text); }
+.sz-warn { color: var(--amber); }
+.sz-cut  { color: var(--accent); text-decoration: line-through; opacity: .6; }
+.cut-badge {
+  display: inline-block; margin-top: 6px;
+  font-size: 10px; font-family: var(--mono); font-weight: 700;
+  padding: 2px 6px; border-radius: 3px;
+  background: color-mix(in srgb, var(--accent) 15%, transparent);
+  color: var(--accent);
+  border: 1px solid color-mix(in srgb, var(--accent) 30%, transparent);
+}
+
+/* ── Variants ── */
+.variants { display: flex; flex-direction: column; gap: 8px; margin-top: 10px; }
+.variant-row { display: flex; align-items: stretch; gap: 8px; }
+.variant-input { flex: 1; font-size: 14px; padding: 8px 10px; }
+.variant-btn {
+  background: none; border: 1px solid var(--border);
+  border-radius: var(--rsm); color: var(--text3);
+  padding: 0 10px; cursor: pointer; font-size: 14px;
+  transition: background .1s, color .1s;
+  -webkit-tap-highlight-color: transparent; letter-spacing: 0;
+}
+.variant-btn:active { background: var(--surf2); }
+.variant-btn.use-btn {
+  font-size: 11px; font-weight: 700; color: var(--blue);
+  border-color: color-mix(in srgb, var(--blue) 30%, transparent);
+}
+.variant-btn.use-btn.active {
+  background: color-mix(in srgb, var(--blue) 15%, transparent);
+}
+.add-variant-btn {
+  width: 100%; margin-top: 6px;
+  background: none; border: 1px dashed var(--border);
+  border-radius: var(--rsm); color: var(--text3);
+  font-size: 13px; letter-spacing: 0; padding: 8px; cursor: pointer;
+  transition: border-color .15s, color .15s;
+  -webkit-tap-highlight-color: transparent;
+}
+.add-variant-btn:active { border-color: var(--blue); color: var(--blue); }
+
+/* ── Tags ── */
+.tag-input-row { display: flex; gap: 8px; }
+.tag-input-row input { flex: 1; font-size: 14px; }
+.add-tag-btn {
+  background: var(--accent); border: none;
+  border-radius: var(--rsm); color: #fff;
+  font-weight: 700; font-size: 15px; letter-spacing: 0;
+  padding: 0 16px; cursor: pointer; flex-shrink: 0;
+  -webkit-tap-highlight-color: transparent;
+}
+.tag-cloud {
+  display: flex; flex-wrap: wrap; gap: 6px;
+  margin-top: 10px; min-height: 32px;
+}
+.tag-chip {
+  display: inline-flex; align-items: center; gap: 5px;
+  background: var(--surf2); border: 1px solid var(--border);
+  border-radius: 20px; padding: 4px 10px;
+  font-size: 12px; letter-spacing: 0; color: var(--text2);
+}
+.tag-chip.cl0 { border-color: color-mix(in srgb,#4A9EFF 50%,transparent); }
+.tag-chip.cl1 { border-color: color-mix(in srgb,#00C27C 50%,transparent); }
+.tag-chip.cl2 { border-color: color-mix(in srgb,#A855F7 50%,transparent); }
+.tag-chip.cl3 { border-color: color-mix(in srgb,#FFBE00 50%,transparent); }
+.tag-chip.cl4 { border-color: color-mix(in srgb,#FF6B35 50%,transparent); }
+.tag-chip.tw  { border-color:var(--amber); background:color-mix(in srgb,var(--amber) 8%,transparent); }
+.tag-chip.te  { border-color:var(--accent); background:color-mix(in srgb,var(--accent) 8%,transparent); }
+.tag-remove {
+  background: none; border: none; color: var(--text3);
+  cursor: pointer; font-size: 13px; padding: 0; line-height: 1;
+  -webkit-tap-highlight-color: transparent;
+}
+.tag-remove:active { color: var(--accent); }
+.tag-stats { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
+.stat-pill {
+  font-family: var(--mono); font-size: 11px;
+  padding: 3px 8px; border-radius: 20px;
+  background: var(--surf2); border: 1px solid var(--border); color: var(--text3);
+}
+.stat-pill.ok   { color:var(--green); border-color:color-mix(in srgb,var(--green) 30%,transparent); }
+.stat-pill.warn { color:var(--amber); border-color:color-mix(in srgb,var(--amber) 30%,transparent); }
+.stat-pill.err  { color:var(--accent); border-color:color-mix(in srgb,var(--accent) 30%,transparent); }
+.cluster-legend { margin-top: 12px; display: flex; flex-direction: column; gap: 4px; }
+.cluster-row { display: flex; align-items: flex-start; gap: 6px; font-size: 12px; color: var(--text2); }
+.cluster-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; margin-top: 4px; }
+.cluster-tags { color: var(--text3); font-family: var(--mono); font-size: 11px; }
+.issues { display: flex; flex-direction: column; gap: 6px; margin-top: 8px; }
+.issue {
+  display: flex; align-items: flex-start; gap: 8px;
+  font-size: 12px; color: var(--text2);
+  background: var(--surf2); border-radius: var(--rsm);
+  padding: 8px 10px; border-left: 3px solid var(--border);
+}
+.issue.warn { border-left-color: var(--amber); }
+.issue.err  { border-left-color: var(--accent); }
+.issue-icon { flex-shrink: 0; font-size: 14px; }
+.empty-state { text-align: center; padding: 20px 0; color: var(--text3); font-size: 13px; }
+
+/* ── Description ── */
+.desc-ta { min-height: 120px; font-size: 14px; line-height: 1.6; }
+.hook-preview {
+  margin-top: 8px;
+  background: var(--surf2); border-radius: var(--rsm);
+  border: 1px solid var(--border); padding: 10px 12px;
+  font-size: 13px; color: var(--text2); line-height: 1.5;
+}
+.hook-label {
+  font-size: 10px; font-weight: 700; letter-spacing: 0;
+  text-transform: uppercase; color: var(--text3); margin-bottom: 4px;
+  font-family: var(--mono);
+}
+.hook-visible { color: var(--text); white-space: pre-wrap; word-break: break-word; }
+.hook-more { color: var(--text3); }
+
+/* ── Handoff ── */
+.readiness-bar {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--r); padding: 12px 14px; margin-bottom: 12px;
+  display: flex; align-items: center; gap: 14px;
+}
+.score-circle {
+  width: 52px; height: 52px; border-radius: 50%; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  background: conic-gradient(var(--accent) 0%, var(--border) 0%);
+  position: relative;
+}
+.score-inner {
+  width: 38px; height: 38px; border-radius: 50%;
+  background: var(--surface);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 13px; font-weight: 800; color: var(--text); font-family: var(--mono);
+}
+.readiness-info { flex: 1; }
+.readiness-title { font-weight: 700; font-size: 14px; margin-bottom: 2px; }
+.readiness-sub   { font-size: 12px; color: var(--text3); }
+.check-list { display: flex; flex-direction: column; gap: 4px; margin-bottom: 14px; padding: 0 2px; }
+.check-item { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--text3); }
+.check-item.ok { color: var(--green); }
+.check-dot { font-size: 12px; }
+.handoff-section { margin-bottom: 12px; }
+.handoff-title {
+  font-size: 11px; font-weight: 700; letter-spacing: 0;
+  text-transform: uppercase; color: var(--text3); margin-bottom: 4px;
+  font-family: var(--mono);
+}
+.handoff-box {
+  background: var(--surf2); border: 1px solid var(--border);
+  border-radius: var(--rsm); padding: 12px; font-size: 13px;
+  line-height: 1.6; color: var(--text);
+  white-space: pre-wrap; word-break: break-word;
+  font-family: var(--mono); min-height: 40px; letter-spacing: 0;
+}
+.copy-btn {
+  width: 100%; margin-top: 6px;
+  background: var(--surf2); border: 1px solid var(--border);
+  border-radius: var(--rsm); color: var(--text2);
+  font-size: 13px; font-weight: 600; letter-spacing: 0; padding: 8px;
+  cursor: pointer; transition: background .1s, color .1s, border-color .1s;
+  -webkit-tap-highlight-color: transparent;
+}
+.copy-btn:active { background: var(--green); color: #fff; border-color: var(--green); }
+.copy-btn.copied {
+  background: color-mix(in srgb,var(--green) 15%,transparent);
+  color: var(--green); border-color: color-mix(in srgb,var(--green) 40%,transparent);
+}
+.copy-all-btn {
+  width: 100%; background: var(--accent); border: none;
+  border-radius: var(--r); color: #fff;
+  font-size: 15px; font-weight: 700; letter-spacing: 0; padding: 14px;
+  cursor: pointer; margin-top: 6px;
+  -webkit-tap-highlight-color: transparent; transition: opacity .1s;
+}
+.copy-all-btn:active { opacity: .8; }
+</style>
+</head>
+<body>
+
+<!-- Header -->
+<div class="header">
+  <div class="header-logo">
+    <div class="logo-icon">&#9654;</div>
+    Upload Board
+  </div>
+  <div class="header-status">Score: <span class="score-val" id="header-score">0%</span></div>
+</div>
+
+<!-- Tabs -->
+<div class="tabs" id="tabs">
+  <div class="tab active" data-tab="title">Title</div>
+  <div class="tab" data-tab="tags">Tags</div>
+  <div class="tab" data-tab="desc">Description</div>
+  <div class="tab" data-tab="handoff">Handoff</div>
+</div>
+
+<!-- ══ TITLE PANEL ══ -->
+<div class="panel active" id="panel-title">
+  <div class="card">
+    <div class="card-label">Active Title</div>
+    <textarea id="active-title" rows="2" placeholder="Type your main title here…"></textarea>
+    <div class="meter-wrap">
+      <div class="meter-bar"><div class="meter-fill" id="title-fill"></div></div>
+      <div class="meter-labels">
+        <span>0</span>
+        <span id="title-count" class="meter-count">0 / 100</span>
+        <span>100</span>
+      </div>
+    </div>
+    <div class="hint">Max 100 chars &middot; Safe (no clip): &le;60 &middot; Search snippet: &le;70</div>
+  </div>
+
+  <div class="card">
+    <div class="card-label">Safe-Zone Preview</div>
+    <div class="safezone-wrap">
+      <div class="sz-label-row">
+        <span>Desktop title</span>
+        <span id="sz-desk-info">&#8212; chars</span>
+      </div>
+      <div class="sz-preview">
+        <div class="sz-title" id="sz-desk"></div>
+        <div id="sz-desk-badge"></div>
+      </div>
+      <div class="sz-label-row">
+        <span>Mobile / Search</span>
+        <span id="sz-mob-info">&#8212; chars</span>
+      </div>
+      <div class="sz-preview">
+        <div class="sz-title" id="sz-mob"></div>
+        <div id="sz-mob-badge"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-label">Draft Variants</div>
+    <div class="variants" id="title-variants"></div>
+    <button class="add-variant-btn" id="add-title-variant">+ Add title variant</button>
+  </div>
+</div>
+
+<!-- ══ TAGS PANEL ══ -->
+<div class="panel" id="panel-tags">
+  <div class="card">
+    <div class="card-label">Add Tags</div>
+    <div class="tag-input-row">
+      <input type="text" id="tag-input" placeholder="Type a tag, press Add or Enter…">
+      <button class="add-tag-btn" id="add-tag-btn">Add</button>
+    </div>
+    <div class="hint">Up to 500 chars total. Comma-separated bulk paste supported.</div>
+  </div>
+  <div class="card">
+    <div class="card-label">Tag Cloud</div>
+    <div class="tag-cloud" id="tag-cloud"></div>
+    <div class="tag-stats" id="tag-stats"></div>
+  </div>
+  <div class="card" id="cluster-card" style="display:none">
+    <div class="card-label">Cluster Balance</div>
+    <div class="cluster-legend" id="cluster-legend"></div>
+    <div class="hint" style="margin-top:8px">Each color group = related words. Aim for 3&#8211;5 clusters, not all one topic.</div>
+  </div>
+  <div class="card" id="issues-card" style="display:none">
+    <div class="card-label">Issues</div>
+    <div class="issues" id="issues-list"></div>
+  </div>
+</div>
+
+<!-- ══ DESCRIPTION PANEL ══ -->
+<div class="panel" id="panel-desc">
+  <div class="card">
+    <div class="card-label">Description</div>
+    <textarea class="desc-ta" id="desc-main" placeholder="Write your video description&#10;&#10;Keywords, links, timestamps, and CTAs go here."></textarea>
+    <div class="meter-wrap">
+      <div class="meter-bar"><div class="meter-fill" id="desc-fill"></div></div>
+      <div class="meter-labels">
+        <span>0</span>
+        <span id="desc-count" class="meter-count">0 / 5000</span>
+        <span>5000</span>
+      </div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-label">Above-The-Fold Hook (first ~157 chars)</div>
+    <div class="hook-preview">
+      <div class="hook-label">What viewers see before &ldquo;Show more&rdquo;</div>
+      <div id="hook-text"></div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-label">Description Variants</div>
+    <div class="variants" id="desc-variants"></div>
+    <button class="add-variant-btn" id="add-desc-variant">+ Add description variant</button>
+  </div>
+</div>
+
+<!-- ══ HANDOFF PANEL ══ -->
+<div class="panel" id="panel-handoff">
+  <div class="readiness-bar">
+    <div class="score-circle" id="score-ring">
+      <div class="score-inner" id="score-num">0%</div>
+    </div>
+    <div class="readiness-info">
+      <div class="readiness-title" id="readiness-title">Not started</div>
+      <div class="readiness-sub"   id="readiness-sub">Fill in Title, Tags &amp; Description</div>
+    </div>
+  </div>
+  <div class="check-list" id="check-list"></div>
+
+  <div class="handoff-section">
+    <div class="handoff-title">Title</div>
+    <div class="handoff-box" id="ho-title">&#8212;</div>
+    <button class="copy-btn" id="copy-title-btn">Copy title</button>
+  </div>
+  <div class="handoff-section">
+    <div class="handoff-title">Tags (comma-separated)</div>
+    <div class="handoff-box" id="ho-tags">&#8212;</div>
+    <button class="copy-btn" id="copy-tags-btn">Copy tags</button>
+  </div>
+  <div class="handoff-section">
+    <div class="handoff-title">Description</div>
+    <div class="handoff-box" id="ho-desc">&#8212;</div>
+    <button class="copy-btn" id="copy-desc-btn">Copy description</button>
+  </div>
+  <button class="copy-all-btn" id="copy-all-btn">&#8679; Copy Full Upload Package</button>
+</div>
+
+<script>
+'use strict';
+
+// ─────────────────────────────────────────────
+//  CONSTANTS
+// ─────────────────────────────────────────────
+const TITLE_MAX     = 100;
+const DESK_LIMIT    = 60;
+const MOB_LIMIT     = 47;
+const DESC_HOOK     = 157;
+const TAG_CHAR_MAX  = 500;
+
+const CLUSTER_COLORS = ['#4A9EFF','#00C27C','#A855F7','#FFBE00','#FF6B35'];
+const CLUSTER_NAMES  = [
+  'Topic core','Audience terms','Format / style',
+  'Discovery long-tail','Related niche'
+];
+
+// ─────────────────────────────────────────────
+//  STATE
+// ─────────────────────────────────────────────
+let tags          = [];   // string[]
+let titleVariants = [];   // { text, active }[]
+let descVariants  = [];   // { text, active }[]
+
+// ─────────────────────────────────────────────
+//  HELPERS — safe DOM
+// ─────────────────────────────────────────────
+function el(id)  { return document.getElementById(id); }
+function mk(tag) { return document.createElement(tag); }
+
+function clearNode(node) {
+  while (node.firstChild) node.removeChild(node.firstChild);
+}
+
+function txt(str) { return document.createTextNode(String(str)); }
+
+// ─────────────────────────────────────────────
+//  TABS
+// ─────────────────────────────────────────────
+el('tabs').addEventListener('click', function(e) {
+  const tab = e.target.closest('.tab');
+  if (!tab) return;
+  document.querySelectorAll('.tab').forEach(function(t) { t.classList.remove('active'); });
+  document.querySelectorAll('.panel').forEach(function(p) { p.classList.remove('active'); });
+  tab.classList.add('active');
+  el('panel-' + tab.dataset.tab).classList.add('active');
+  if (tab.dataset.tab === 'handoff') updateHandoff();
+});
+
+// ─────────────────────────────────────────────
+//  TITLE
+// ─────────────────────────────────────────────
+el('active-title').addEventListener('input', updateTitle);
+
+function updateTitle() {
+  const val = el('active-title').value;
+  const len = val.length;
+  const pct = Math.min(len / TITLE_MAX * 100, 100);
+
+  let color = 'var(--green)';
+  if (len > TITLE_MAX)      color = 'var(--accent)';
+  else if (len > 70)        color = 'var(--amber)';
+  else if (len < 20)        color = 'var(--text3)';
+
+  el('title-fill').style.width      = pct + '%';
+  el('title-fill').style.background = color;
+
+  const countEl = el('title-count');
+  countEl.textContent = len + ' / ' + TITLE_MAX;
+  countEl.style.color = len > TITLE_MAX ? 'var(--accent)' : len > 70 ? 'var(--amber)' : 'var(--text2)';
+
+  renderSafezone(val, 'sz-desk', 'sz-desk-info', 'sz-desk-badge', DESK_LIMIT);
+  renderSafezone(val, 'sz-mob',  'sz-mob-info',  'sz-mob-badge',  MOB_LIMIT);
+  updateScore();
+}
+
+function renderSafezone(val, titleId, infoId, badgeId, limit) {
+  const titleEl = el(titleId);
+  const infoEl  = el(infoId);
+  const badgeEl = el(badgeId);
+
+  clearNode(titleEl);
+  clearNode(badgeEl);
+
+  if (!val) {
+    infoEl.textContent = '\u2014 chars';
+    const ph = mk('span');
+    ph.style.color = 'var(--text3)';
+    ph.appendChild(txt('Title preview will appear here\u2026'));
+    titleEl.appendChild(ph);
+    return;
+  }
+
+  const shown = Math.min(val.length, limit);
+  infoEl.textContent = shown + ' / ' + limit + ' chars shown';
+
+  if (val.length <= limit) {
+    const s = mk('span');
+    s.className = 'sz-safe';
+    s.appendChild(txt(val));
+    titleEl.appendChild(s);
+  } else {
+    const warnStart = Math.floor(limit * 0.85);
+    const safePart  = val.slice(0, warnStart);
+    const warnPart  = val.slice(warnStart, limit);
+    const cutPart   = val.slice(limit);
+
+    const sp = mk('span'); sp.className = 'sz-safe'; sp.appendChild(txt(safePart));
+    const wp = mk('span'); wp.className = 'sz-warn'; wp.appendChild(txt(warnPart));
+    const cp = mk('span'); cp.className = 'sz-cut';  cp.appendChild(txt(cutPart));
+    titleEl.appendChild(sp);
+    titleEl.appendChild(wp);
+    titleEl.appendChild(cp);
+
+    const badge = mk('div');
+    badge.className = 'cut-badge';
+    badge.appendChild(txt('\u2702 ' + cutPart.length + ' char' + (cutPart.length !== 1 ? 's' : '') + ' clipped'));
+    badgeEl.appendChild(badge);
+  }
+}
+
+// ── Title Variants ──
+el('add-title-variant').addEventListener('click', function() {
+  titleVariants.push({ text: '', active: false });
+  renderTitleVariants();
+});
+
+function renderTitleVariants() {
+  const wrap = el('title-variants');
+  clearNode(wrap);
+  titleVariants.forEach(function(v, i) {
+    const row = mk('div'); row.className = 'variant-row';
+
+    const inp = mk('input');
+    inp.type        = 'text';
+    inp.className   = 'variant-input';
+    inp.placeholder = 'Title option ' + (i + 1) + '\u2026';
+    inp.value       = v.text;
+    inp.addEventListener('input', function() { titleVariants[i].text = inp.value; });
+
+    const useBtn = mk('button');
+    useBtn.className = 'variant-btn use-btn' + (v.active ? ' active' : '');
+    useBtn.appendChild(txt('USE'));
+    useBtn.addEventListener('click', function() { useTitleVariant(i); });
+
+    const delBtn = mk('button');
+    delBtn.className = 'variant-btn';
+    delBtn.appendChild(txt('\u2715'));
+    delBtn.addEventListener('click', function() {
+      titleVariants.splice(i, 1);
+      renderTitleVariants();
+    });
+
+    row.appendChild(inp);
+    row.appendChild(useBtn);
+    row.appendChild(delBtn);
+    wrap.appendChild(row);
+  });
+}
+
+function useTitleVariant(i) {
+  titleVariants.forEach(function(v, j) { v.active = j === i; });
+  el('active-title').value = titleVariants[i].text;
+  updateTitle();
+  renderTitleVariants();
+}
+
+// ─────────────────────────────────────────────
+//  TAGS
+// ─────────────────────────────────────────────
+el('tag-input').addEventListener('keydown', function(e) {
+  if (e.key === 'Enter') { e.preventDefault(); doAddTag(); }
+});
+el('add-tag-btn').addEventListener('click', doAddTag);
+
+function doAddTag() {
+  const input = el('tag-input');
+  const raw   = input.value.trim();
+  if (!raw) return;
+  raw.split(',').forEach(function(t) {
+    const tag = t.trim().toLowerCase().replace(/\s+/g, ' ');
+    if (tag && !tags.includes(tag) && tag.length <= 100) tags.push(tag);
+  });
+  input.value = '';
+  renderTags();
+}
+
+function removeTag(i) {
+  tags.splice(i, 1);
+  renderTags();
+}
+
+function renderTags() {
+  const cloud      = el('tag-cloud');
+  const statsEl    = el('tag-stats');
+  const issuesCard = el('issues-card');
+  const clusterCard= el('cluster-card');
+
+  clearNode(cloud);
+  clearNode(statsEl);
+
+  if (!tags.length) {
+    const emp = mk('div'); emp.className = 'empty-state';
+    emp.appendChild(txt('No tags yet \u2014 add some above'));
+    cloud.appendChild(emp);
+    issuesCard.style.display  = 'none';
+    clusterCard.style.display = 'none';
+    updateScore();
+    return;
+  }
+
+  const issues    = analyzeTagIssues();
+  const clusters  = clusterTags();
+
+  // map tag -> issue level
+  const tagIssueMap = {};
+  issues.forEach(function(iss) { if (iss.tag) tagIssueMap[iss.tag] = iss.level; });
+
+  // map tag -> cluster index
+  const tagCluster = {};
+  clusters.forEach(function(cl, ci) { cl.forEach(function(t) { tagCluster[t] = ci; }); });
+
+  // build chips
+  tags.forEach(function(t, i) {
+    const chip = mk('div');
+    chip.className = 'tag-chip';
+    const issLvl = tagIssueMap[t];
+    if (issLvl === 'error') chip.classList.add('te');
+    else if (issLvl === 'warn') chip.classList.add('tw');
+    else chip.classList.add('cl' + ((tagCluster[t] ?? i) % 5));
+
+    chip.appendChild(txt(t));
+
+    const rem = mk('button');
+    rem.className = 'tag-remove';
+    rem.setAttribute('aria-label', 'Remove tag ' + t);
+    rem.appendChild(txt('\u2715'));
+    rem.addEventListener('click', (function(idx) {
+      return function() { removeTag(idx); };
+    }(i)));
+
+    chip.appendChild(rem);
+    cloud.appendChild(chip);
+  });
+
+  // stats pills
+  const totalChars = tags.join('').length + Math.max(0, tags.length - 1);
+  const errCount  = issues.filter(function(x) { return x.level === 'error'; }).length;
+  const warnCount = issues.filter(function(x) { return x.level === 'warn';  }).length;
+  const charClass = totalChars > TAG_CHAR_MAX ? 'err' : totalChars > 400 ? 'warn' : 'ok';
+
+  function pill(label, cls) {
+    const p = mk('div'); p.className = 'stat-pill ' + cls; p.appendChild(txt(label)); return p;
+  }
+  statsEl.appendChild(pill(totalChars + '/' + TAG_CHAR_MAX + ' chars', charClass));
+  statsEl.appendChild(pill(tags.length + ' tags', ''));
+  if (errCount)  statsEl.appendChild(pill(errCount  + ' error'   + (errCount  !== 1 ? 's' : ''), 'err'));
+  if (warnCount) statsEl.appendChild(pill(warnCount + ' warning' + (warnCount !== 1 ? 's' : ''), 'warn'));
+  if (!issues.length) statsEl.appendChild(pill('\u2713 All clear', 'ok'));
+
+  // clusters
+  if (clusters.length > 1) {
+    clusterCard.style.display = '';
+    const legend = el('cluster-legend');
+    clearNode(legend);
+    clusters.forEach(function(cl, ci) {
+      const row = mk('div'); row.className = 'cluster-row';
+
+      const dot = mk('div'); dot.className = 'cluster-dot';
+      dot.style.background = CLUSTER_COLORS[ci % CLUSTER_COLORS.length];
+
+      const info = mk('div');
+      const nameEl = mk('div');
+      nameEl.style.cssText = 'font-weight:600;font-size:12px;color:var(--text2)';
+      nameEl.appendChild(txt(CLUSTER_NAMES[ci % CLUSTER_NAMES.length]));
+      const tagsEl = mk('div'); tagsEl.className = 'cluster-tags';
+      tagsEl.appendChild(txt(cl.join(', ')));
+
+      info.appendChild(nameEl);
+      info.appendChild(tagsEl);
+      row.appendChild(dot);
+      row.appendChild(info);
+      legend.appendChild(row);
+    });
+  } else {
+    clusterCard.style.display = 'none';
+  }
+
+  // issues
+  if (issues.length) {
+    issuesCard.style.display = '';
+    const listEl = el('issues-list');
+    clearNode(listEl);
+    issues.forEach(function(iss) {
+      const div = mk('div');
+      div.className = 'issue ' + (iss.level === 'error' ? 'err' : 'warn');
+
+      const icon = mk('div'); icon.className = 'issue-icon';
+      icon.appendChild(txt(iss.level === 'error' ? '\uD83D\uDEAB' : '\u26A0\uFE0F'));
+
+      const msg = mk('div'); msg.appendChild(txt(iss.msg));
+      div.appendChild(icon); div.appendChild(msg);
+      listEl.appendChild(div);
+    });
+  } else {
+    issuesCard.style.display = 'none';
+  }
+
+  updateScore();
+}
+
+function analyzeTagIssues() {
+  const issues = [];
+  const seen   = new Set();
+  const totalChars = tags.join('').length + Math.max(0, tags.length - 1);
+
+  if (totalChars > TAG_CHAR_MAX) {
+    issues.push({ level: 'error', msg: 'Tag character limit exceeded (' + totalChars + '/' + TAG_CHAR_MAX + '). Remove some tags.' });
+  }
+
+  tags.forEach(function(tag, i) {
+    if (seen.has(tag)) {
+      issues.push({ level: 'error', tag: tag, msg: 'Duplicate tag: "' + tag + '"' });
+    }
+    seen.add(tag);
+
+    const words = tag.split(' ').filter(function(w) { return w.length > 2; });
+    if (words.length > 5) {
+      issues.push({ level: 'warn', tag: tag, msg: 'Tag "' + tag + '" looks keyword-stuffed (' + words.length + ' words). YouTube may discount it.' });
+    }
+
+    if (tag.length > 60) {
+      issues.push({ level: 'warn', tag: tag, msg: 'Tag "' + tag + '" is unusually long (' + tag.length + ' chars).' });
+    }
+
+    tags.forEach(function(other, j) {
+      if (i >= j) return;
+      if (tag !== other && (tag.startsWith(other + ' ') || other.startsWith(tag + ' '))) {
+        issues.push({ level: 'warn', msg: 'Near-duplicate tags: "' + tag + '" and "' + other + '" \u2014 the shorter one may be redundant.' });
+      }
+    });
+  });
+
+  if (tags.length < 5)  issues.push({ level: 'warn', msg: 'Only ' + tags.length + ' tags. Aim for at least 8\u201315 for better discovery.' });
+  if (tags.length > 30) issues.push({ level: 'warn', msg: tags.length + ' tags is high \u2014 YouTube recommends 5\u201315 well-chosen tags.' });
+
+  return issues;
+}
+
+function clusterTags() {
+  if (!tags.length) return [];
+  const groups = {};
+  tags.forEach(function(tag) {
+    const lead = tag.split(' ')[0];
+    if (!groups[lead]) groups[lead] = [];
+    groups[lead].push(tag);
+  });
+  const clusters = [];
+  const misc = [];
+  Object.values(groups).forEach(function(grp) {
+    if (grp.length >= 2) clusters.push(grp);
+    else misc.push.apply(misc, grp);
+  });
+  if (misc.length) clusters.push(misc);
+  return clusters.slice(0, 5);
+}
+
+// ─────────────────────────────────────────────
+//  DESCRIPTION
+// ─────────────────────────────────────────────
+el('desc-main').addEventListener('input', updateDesc);
+
+function updateDesc() {
+  const val = el('desc-main').value;
+  const len = val.length;
+  const pct = Math.min(len / 5000 * 100, 100);
+
+  let color = 'var(--green)';
+  if (len > 5000)      color = 'var(--accent)';
+  else if (len > 4500) color = 'var(--amber)';
+
+  el('desc-fill').style.width      = pct + '%';
+  el('desc-fill').style.background = color;
+
+  const countEl = el('desc-count');
+  countEl.textContent = len + ' / 5000';
+  countEl.style.color = len > 5000 ? 'var(--accent)' : len > 4500 ? 'var(--amber)' : 'var(--text2)';
+
+  // hook preview
+  const hookEl = el('hook-text');
+  clearNode(hookEl);
+  if (!val) {
+    const ph = mk('span'); ph.style.color = 'var(--text3)';
+    ph.appendChild(txt('Description preview will appear here\u2026'));
+    hookEl.appendChild(ph);
+  } else {
+    const visible = mk('span'); visible.className = 'hook-visible';
+    visible.appendChild(txt(val.slice(0, DESC_HOOK)));
+    hookEl.appendChild(visible);
+    if (val.length > DESC_HOOK) {
+      const more = mk('span'); more.className = 'hook-more';
+      const strong = mk('strong'); strong.appendChild(txt('SHOW MORE'));
+      more.appendChild(txt('\u2026 ')); more.appendChild(strong);
+      hookEl.appendChild(more);
+    }
+  }
+
+  updateScore();
+}
+
+// ── Desc Variants ──
+el('add-desc-variant').addEventListener('click', function() {
+  descVariants.push({ text: '', active: false });
+  renderDescVariants();
+});
+
+function renderDescVariants() {
+  const wrap = el('desc-variants');
+  clearNode(wrap);
+  descVariants.forEach(function(v, i) {
+    const row = mk('div'); row.className = 'variant-row';
+
+    const ta = mk('textarea');
+    ta.className   = 'variant-input';
+    ta.rows        = 2;
+    ta.placeholder = 'Description option ' + (i + 1) + '\u2026';
+    ta.value       = v.text;
+    ta.addEventListener('input', function() { descVariants[i].text = ta.value; });
+
+    const useBtn = mk('button');
+    useBtn.className = 'variant-btn use-btn' + (v.active ? ' active' : '');
+    useBtn.appendChild(txt('USE'));
+    useBtn.addEventListener('click', function() { useDescVariant(i); });
+
+    const delBtn = mk('button');
+    delBtn.className = 'variant-btn';
+    delBtn.appendChild(txt('\u2715'));
+    delBtn.addEventListener('click', function() {
+      descVariants.splice(i, 1);
+      renderDescVariants();
+    });
+
+    row.appendChild(ta);
+    row.appendChild(useBtn);
+    row.appendChild(delBtn);
+    wrap.appendChild(row);
+  });
+}
+
+function useDescVariant(i) {
+  descVariants.forEach(function(v, j) { v.active = j === i; });
+  el('desc-main').value = descVariants[i].text;
+  updateDesc();
+  renderDescVariants();
+}
+
+// ─────────────────────────────────────────────
+//  SCORE
+// ─────────────────────────────────────────────
+function calcScore() {
+  let pts = 0, total = 0;
+  const title = el('active-title').value;
+  const desc  = el('desc-main').value;
+
+  total += 30;
+  if (title.length >= 20 && title.length <= 70) pts += 30;
+  else if (title.length > 0) pts += 15;
+
+  total += 35;
+  const issues = tags.length ? analyzeTagIssues() : [];
+  const errors  = issues.filter(function(x) { return x.level === 'error'; }).length;
+  if (tags.length >= 8 && !errors) pts += 35;
+  else if (tags.length >= 5 && errors < 2) pts += 20;
+  else if (tags.length > 0) pts += 8;
+
+  total += 35;
+  if (desc.length >= 100 && desc.length <= 5000) pts += 35;
+  else if (desc.length > 0) pts += 15;
+
+  return Math.round(pts / total * 100);
+}
+
+function updateScore() {
+  const score = calcScore();
+  el('header-score').textContent = score + '%';
+  updateScoreRing(score);
+}
+
+function updateScoreRing(score) {
+  const ring = el('score-ring');
+  const num  = el('score-num');
+  const rTitle = el('readiness-title');
+  const rSub   = el('readiness-sub');
+  if (!ring) return;
+
+  num.textContent = score + '%';
+
+  let color = 'var(--accent)';
+  let label = 'Needs work';
+  let sub   = 'Add title, tags, and description to improve.';
+  if (score >= 90)      { color = 'var(--green)'; label = 'Upload ready';  sub = 'All sections look good. Copy and go!'; }
+  else if (score >= 70) { color = 'var(--blue)';  label = 'Almost there';  sub = 'A few things left to tighten up.'; }
+  else if (score >= 40) { color = 'var(--amber)'; label = 'In progress';   sub = 'Keep going \u2014 you\u2019re building something.'; }
+
+  ring.style.background = 'conic-gradient(' + color + ' ' + score + '%, var(--border) 0%)';
+  rTitle.textContent = label;
+  rSub.textContent   = sub;
+}
+
+// ─────────────────────────────────────────────
+//  HANDOFF
+// ─────────────────────────────────────────────
+function updateHandoff() {
+  const title  = el('active-title').value;
+  const desc   = el('desc-main').value;
+  const score  = calcScore();
+
+  el('ho-title').textContent = title || '\u2014';
+  el('ho-tags').textContent  = tags.length ? tags.join(', ') : '\u2014';
+  el('ho-desc').textContent  = desc  || '\u2014';
+
+  updateScoreRing(score);
+  renderChecklist();
+}
+
+function renderChecklist() {
+  const title  = el('active-title').value;
+  const desc   = el('desc-main').value;
+  const issues = tags.length ? analyzeTagIssues() : [];
+  const errors  = issues.filter(function(x) { return x.level === 'error'; }).length;
+  const totalTagChars = tags.join('').length + Math.max(0, tags.length - 1);
+
+  const checks = [
+    { label: 'Title under 60 chars (no clipping)',  ok: title.length > 0 && title.length <= 60 },
+    { label: 'Title 20\u2013100 chars',             ok: title.length >= 20 && title.length <= 100 },
+    { label: '8+ tags added',                        ok: tags.length >= 8 },
+    { label: 'No duplicate or stuffed tags',         ok: tags.length > 0 && errors === 0 },
+    { label: 'Tags under 500 char limit',            ok: totalTagChars <= TAG_CHAR_MAX },
+    { label: 'Description has 100+ chars',           ok: desc.length >= 100 },
+    { label: 'Description under 5000 chars',         ok: desc.length <= 5000 },
+    { label: 'Hook visible in first 157 chars',      ok: desc.length > 0 },
+  ];
+
+  const listEl = el('check-list');
+  clearNode(listEl);
+  checks.forEach(function(c) {
+    const item = mk('div');
+    item.className = 'check-item ' + (c.ok ? 'ok' : 'fail');
+
+    const dot = mk('span'); dot.className = 'check-dot';
+    dot.appendChild(txt(c.ok ? '\u2713' : '\u25CB'));
+
+    const label = mk('span'); label.appendChild(txt(c.label));
+
+    item.appendChild(dot);
+    item.appendChild(label);
+    listEl.appendChild(item);
+  });
+}
+
+// ─────────────────────────────────────────────
+//  COPY
+// ─────────────────────────────────────────────
+function copySection(srcId, btn, label) {
+  const text = el(srcId).textContent;
+  if (text === '\u2014') return;
+  navigator.clipboard.writeText(text).then(function() {
+    btn.textContent = '\u2713 Copied!';
+    btn.classList.add('copied');
+    setTimeout(function() {
+      btn.classList.remove('copied');
+      btn.textContent = label;
+    }, 2000);
+  });
+}
+
+el('copy-title-btn').addEventListener('click', function() {
+  copySection('ho-title', this, 'Copy title');
+});
+el('copy-tags-btn').addEventListener('click', function() {
+  copySection('ho-tags', this, 'Copy tags');
+});
+el('copy-desc-btn').addEventListener('click', function() {
+  copySection('ho-desc', this, 'Copy description');
+});
+
+el('copy-all-btn').addEventListener('click', function() {
+  const title  = el('active-title').value;
+  const desc   = el('desc-main').value;
+  const tagStr = tags.join(', ');
+  const out    = [
+    '\u2500\u2500 TITLE \u2500\u2500',
+    title   || '(empty)',
+    '',
+    '\u2500\u2500 TAGS \u2500\u2500',
+    tagStr  || '(empty)',
+    '',
+    '\u2500\u2500 DESCRIPTION \u2500\u2500',
+    desc    || '(empty)',
+  ].join('\n');
+  const btn = this;
+  navigator.clipboard.writeText(out).then(function() {
+    btn.textContent = '\u2713 Full Package Copied!';
+    setTimeout(function() { btn.textContent = '\u21E7 Copy Full Upload Package'; }, 2500);
+  });
+});
+
+// ─────────────────────────────────────────────
+//  INIT
+// ─────────────────────────────────────────────
+updateTitle();
+updateDesc();
+renderTags();
+updateScore();
+</script>
+</body>
+</html>

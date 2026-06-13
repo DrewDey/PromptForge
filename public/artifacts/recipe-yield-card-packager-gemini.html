@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Recipe Handoff & Scaling</title>
+    <style>
+        :root {
+            --bg-color: #f8f9fa;
+            --card-bg: #ffffff;
+            --text-color: #212529;
+            --border-color: #dee2e6;
+            --accent-color: #0d6efd;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            line-height: 1.5;
+            padding: 16px;
+            margin: 0;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        h1, h2, h3 {
+            margin-top: 0;
+        }
+        .card {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 16px;
+            margin-bottom: 16px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        }
+        .no-print {
+            display: block;
+        }
+        label {
+            display: block;
+            font-weight: 600;
+            margin-top: 12px;
+            margin-bottom: 4px;
+        }
+        input[type="text"], input[type="number"], textarea {
+            width: 100%;
+            box-sizing: border-box;
+            padding: 8px;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            font-size: 16px;
+        }
+        textarea {
+            resize: vertical;
+            height: 100px;
+        }
+        .row {
+            display: flex;
+            gap: 12px;
+        }
+        .row .col {
+            flex: 1;
+        }
+        button {
+            background-color: var(--accent-color);
+            color: white;
+            border: none;
+            padding: 10px 16px;
+            font-size: 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-top: 12px;
+            font-weight: 600;
+        }
+        button.secondary {
+            background-color: #6c757d;
+        }
+        .output-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 2px solid var(--text-color);
+            padding-bottom: 8px;
+            margin-bottom: 12px;
+        }
+        .flags {
+            font-style: italic;
+            color: #6c757d;
+            margin-bottom: 12px;
+        }
+        ul {
+            padding-left: 20px;
+            margin: 8px 0;
+        }
+        .grocery-section {
+            margin-top: 16px;
+            border-top: 1px dashed var(--border-color);
+            padding-top: 12px;
+        }
+        .grocery-group {
+            margin-bottom: 8px;
+        }
+        .grocery-title {
+            font-weight: 600;
+            font-size: 14px;
+            text-transform: uppercase;
+            color: #495057;
+        }
+        @media print {
+            .no-print {
+                display: none !important;
+            }
+            body {
+                background: white;
+                padding: 0;
+            }
+            .card {
+                border: none;
+                box-shadow: none;
+                padding: 0;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <!-- Input Form -->
+    <div class="card no-print">
+        <h2>Recipe Creator</h2>
+        
+        <label for="recipeName">Recipe Name</label>
+        <input type="text" id="recipeName" placeholder="e.g., Spicy Peanut Noodles">
+        
+        <div class="row">
+            <div class="col">
+                <label for="baseServings">Base Servings</label>
+                <input type="number" id="baseServings" value="4" min="1">
+            </div>
+            <div class="col">
+                <label for="targetServings">Target Servings (Scale)</label>
+                <input type="number" id="targetServings" value="4" min="1">
+            </div>
+        </div>
+
+        <label for="dietaryFlags">Dietary Flags</label>
+        <input type="text" id="dietaryFlags" placeholder="e.g., Vegan, Gluten-Free, Contains Nuts">
+
+        <label for="ingredientsInput">Ingredients (Format: Amount Unit | Ingredient | Category)</label>
+        <textarea id="ingredientsInput" placeholder="200 g | Soba Noodles | Pantry&#10;2 tbsp | Soy Sauce | Pantry&#10;1 bunch | Scallions | Produce&#10;150 g | Tofu | Protein"></textarea>
+        <small style="color: #6c757d; display:block; margin-top:4px;">Use the pipe character (|) to separate details for the grocery grouper.</small>
+
+        <label for="prepNotes">Prep Notes</label>
+        <textarea id="prepNotes" placeholder="Boil noodles for 4 mins. Whisk sauce components. Toss while warm."></textarea>
+
+        <button onclick="generateOutput()">Generate & Scale</button>
+    </div>
+
+    <!-- Output Handoff Card -->
+    <div id="handoffOutput" class="card" style="display: none;">
+        <div class="output-header">
+            <h2 id="outName" style="margin:0;"></h2>
+            <span id="outServings" style="font-weight: bold;"></span>
+        </div>
+        
+        <div id="outFlags" class="flags"></div>
+        
+        <h3>Ingredients</h3>
+        <ul id="outIngredients"></ul>
+        
+        <h3>Prep Notes</h3>
+        <p id="outPrep" style="white-space: pre-line;"></p>
+
+        <div class="grocery-section">
+            <h3>Grocery Grouping</h3>
+            <div id="outGrocery"></div>
+        </div>
+
+        <div class="no-print" style="margin-top: 20px; display: flex; gap: 8px;">
+            <button onclick="window.print()">Print Card</button>
+            <button class="secondary" onclick="copyToClipboard()">Copy Clean Text</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    function parseIngredients() {
+        const text = document.getElementById('ingredientsInput').value;
+        const lines = text.split('\n');
+        const ingredients = [];
+
+        lines.forEach(line => {
+            if (!line.trim()) return;
+            const parts = line.split('|').map(p => p.trim());
+            
+            let amountStr = '';
+            let unit = '';
+            let name = parts[1] || parts[0] || '';
+            let category = parts[2] || 'Other';
+
+            if (parts[1]) {
+                const match = parts[0].match(/^([0-9.,\/]+)?\s*(.*)$/);
+                if (match) {
+                    amountStr = match[1] || '';
+                    unit = match[2] || '';
+                }
+            } else {
+                const match = parts[0].match(/^([0-9.,\/]+)?\s*(.*)$/);
+                if (match) {
+                    amountStr = match[1] || '';
+                    name = match[2] || '';
+                }
+            }
+
+            let amount = parseFloat(amountStr.replace(',', '.'));
+            if (isNaN(amount)) {
+                amount = null;
+                unit = parts[0] || '';
+            }
+
+            ingredients.push({ amount, unit, name, category, originalStr: line });
+        });
+
+        return ingredients;
+    }
+
+    function generateOutput() {
+        const name = document.getElementById('recipeName').value || 'Untitled Recipe';
+        const base = parseFloat(document.getElementById('baseServings').value) || 1;
+        const target = parseFloat(document.getElementById('targetServings').value) || 1;
+        const flags = document.getElementById('dietaryFlags').value;
+        const notes = document.getElementById('prepNotes').value;
+        
+        const factor = target / base;
+        const ingredients = parseIngredients();
+
+        document.getElementById('outName').innerText = name;
+        document.getElementById('outServings').innerText = `${target} Servings`;
+        document.getElementById('outFlags').innerText = flags ? `Flags: ${flags}` : '';
+        document.getElementById('outPrep').innerText = notes || 'No prep notes provided.';
+
+        const ingList = document.getElementById('outIngredients');
+        ingList.innerHTML = '';
+        
+        const groceryMap = {};
+
+        ingredients.forEach(ing => {
+            let displayAmount = '';
+            if (ing.amount !== null) {
+                displayAmount = (ing.amount * factor).toFixed(2).replace(/\.?0+$/, '');
+            }
+            
+            const itemText = `${displayAmount} ${ing.unit} ${ing.name}`.trim();
+            
+            const li = document.createElement('li');
+            li.innerText = itemText;
+            ingList.appendChild(li);
+
+            if (!groceryMap[ing.category]) {
+                groceryMap[ing.category] = [];
+            }
+            groceryMap[ing.category].push(itemText);
+        });
+
+        const groceryDiv = document.getElementById('outGrocery');
+        groceryDiv.innerHTML = '';
+        
+        for (const [category, items] of Object.entries(groceryMap)) {
+            const group = document.createElement('div');
+            group.className = 'grocery-group';
+            
+            const title = document.createElement('div');
+            title.className = 'grocery-title';
+            title.innerText = category;
+            
+            const itemsText = document.createElement('div');
+            itemsText.innerText = items.join(', ');
+            
+            group.appendChild(title);
+            group.appendChild(itemsText);
+            groceryDiv.appendChild(group);
+        }
+
+        document.getElementById('handoffOutput').style.display = 'block';
+    }
+
+    function copyToClipboard() {
+        const name = document.getElementById('outName').innerText;
+        const servings = document.getElementById('outServings').innerText;
+        const flags = document.getElementById('outFlags').innerText;
+        const prep = document.getElementById('outPrep').innerText;
+        
+        let ingText = '';
+        document.querySelectorAll('#outIngredients li').forEach(li => {
+            ingText += `- ${li.innerText}\n`;
+        });
+
+        let groceryText = '';
+        document.querySelectorAll('.grocery-group').forEach(group => {
+            const title = group.querySelector('.grocery-title').innerText;
+            const items = group.querySelector('div:not(.grocery-title)').innerText;
+            groceryText += `[${title}] ${items}\n`;
+        });
+
+        const fullText = `${name} (${servings})\n${flags ? flags + '\n' : ''}\nINGREDIENTS:\n${ingText}\nPREP NOTES:\n${prep}\n\nGROCERY GROUPS:\n${groceryText}`;
+        
+        navigator.clipboard.writeText(fullText.trim()).then(() => {
+            alert('Clean text copied to clipboard!');
+        });
+    }
+</script>
+
+</body>
+</html>

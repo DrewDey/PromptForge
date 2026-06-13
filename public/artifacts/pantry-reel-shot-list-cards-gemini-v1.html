@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reel Blueprint Engine</title>
+    <style>
+        :root {
+            --bg: #0f172a;
+            --card-bg: #1e293b;
+            --accent: #38bdf8;
+            --text: #f8fafc;
+            --text-muted: #94a3b8;
+            --border: #334155;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+        body { background: var(--bg); color: var(--text); padding: 16px; max-width: 600px; margin: 0 auto; padding-bottom: 60px; }
+        h1, h2, h3 { color: var(--text); font-weight: 700; margin-bottom: 12px; }
+        h1 { font-size: 1.5rem; text-align: center; margin-bottom: 24px; color: var(--accent); }
+        h2 { font-size: 1.2rem; border-bottom: 1px solid var(--border); padding-bottom: 6px; margin-top: 24px; }
+        .section { background: var(--card-bg); padding: 16px; border-radius: 12px; border: 1px solid var(--border); margin-bottom: 16px; }
+        label { display: block; font-size: 0.85rem; color: var(--text-muted); margin-bottom: 6px; font-weight: 600; text-transform: uppercase; }
+        input, textarea, select { width: 100%; background: var(--bg); border: 1px solid var(--border); color: var(--text); padding: 10px; border-radius: 8px; margin-bottom: 16px; font-size: 1rem; }
+        input:focus, textarea:focus, select:focus { outline: none; border-color: var(--accent); }
+        button { width: 100%; background: var(--accent); color: var(--bg); border: none; padding: 14px; font-size: 1rem; font-weight: 700; border-radius: 8px; cursor: pointer; transition: opacity 0.2s; }
+        button:opacity { opacity: 0.9; }
+        .shot-card { background: var(--bg); border: 1px solid var(--border); border-left: 4px solid var(--accent); padding: 12px; border-radius: 6px; margin-bottom: 12px; }
+        .shot-header { display: flex; justify-content: space-between; font-size: 0.85rem; color: var(--accent); font-weight: bold; margin-bottom: 6px; }
+        .shot-text { font-size: 0.95rem; background: transparent; border: none; color: var(--text); resize: none; width: 100%; padding: 0; margin: 0; }
+        .checklist-item { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; font-size: 0.95rem; }
+        .checklist-item input[type="checkbox"] { width: auto; margin-bottom: 0; }
+        .caption-box { background: var(--bg); border: 1px solid var(--border); padding: 12px; border-radius: 6px; font-size: 0.9rem; white-space: pre-wrap; position: relative; margin-bottom: 12px; }
+        .copy-btn { width: auto; padding: 4px 8px; font-size: 0.75rem; position: absolute; right: 8px; top: 8px; background: var(--border); color: var(--text); }
+        .action-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 16px; }
+        .btn-secondary { background: var(--border); color: var(--text); }
+        .hidden { display: none; }
+    </style>
+</head>
+<body>
+
+    <h1>Reel Blueprint Engine</h1>
+
+    <!-- INPUT INPUTS -->
+    <div class="section">
+        <label>Dish Idea</label>
+        <input type="text" id="dish" placeholder="e.g., Crispy Chili Oil Fried Rice">
+
+        <label>Key Pantry Ingredients</label>
+        <input type="text" id="ingredients" placeholder="e.g., Day-old rice, crunchy garlic chili crisp, scallions">
+
+        <label>Vibe / Aesthetic</label>
+        <select id="vibe">
+            <option value="ASMR / Moody / Dark Kitchen">ASMR / Moody / Dark Kitchen</option>
+            <option value="Chaos Cooking / High Energy / Fast Cuts">Chaos Cooking / High Energy / Fast Cuts</option>
+            <option value="Clean / Minimalist / Bright Aesthetics">Clean / Minimalist / Bright Aesthetics</option>
+            <option value="Cozy / Warm / Late Night Comfort">Cozy / Warm / Late Night Comfort</option>
+        </select>
+
+        <label>Serving Context</label>
+        <input type="text" id="context" placeholder="e.g., Solo midnight snack, 15-minute lazy dinner">
+
+        <button onclick="generateBlueprint()">Generate Blueprint</button>
+    </div>
+
+    <!-- OUTPUT ENGINE -->
+    <div id="outputContainer" class="hidden">
+        
+        <h2>Shot-List Cards</h2>
+        <div id="shotList"></div>
+
+        <h2>Prop Checklist</h2>
+        <div class="section" id="propChecklist"></div>
+
+        <h2>Caption Options</h2>
+        <div id="captionContainer"></div>
+
+        <h2>Export & Execution</h2>
+        <div class="section">
+            <div class="action-grid">
+                <button class="btn-secondary" onclick="copyFullPlan()">Copy Full Plan</button>
+                <button class="btn-secondary" onclick="exportJSON()">Export JSON</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Autosave configuration
+        const fields = ['dish', 'ingredients', 'vibe', 'context'];
+        fields.forEach(field => {
+            const el = document.getElementById(field);
+            el.value = localStorage.getItem(`blueprint_${field}`) || '';
+            el.addEventListener('input', () => localStorage.setItem(`blueprint_${field}`, el.value));
+        });
+
+        function generateBlueprint() {
+            const dish = document.getElementById('dish').value || 'Your Dish';
+            const ingredients = document.getElementById('ingredients').value || 'Pantry Staples';
+            const vibe = document.getElementById('vibe').value;
+            const context = document.getElementById('context').value || 'Quick meal';
+
+            // 1. Generate Shot List Templates based on Vibe
+            let shots = [];
+            if(vibe.includes("ASMR")) {
+                shots = [
+                    { type: "01. HOOK", text: `Extreme close up: Sizzling hot oil hitting ${ingredients.split(',')[0] || 'ingredients'}. Heavy audio.` },
+                    { type: "02. BUILD", text: `Medium shot: Rhythmic chopping of elements. Smooth, deliberate movements.` },
+                    { type: "03. CLIMAX", text: `Close up: Tossing the ${dish} in the pan, steam rising into dark lighting.` },
+                    { type: "04. PAYOFF", text: `Slow motion: First bite or fork pull. Clean audio of crunch/chew.` }
+                ];
+            } else if(vibe.includes("Chaos")) {
+                shots = [
+                    { type: "01. HOOK", text: `Aggressive whip-pan to the final ${dish}. Immediate text on screen: "Stop scrolling."` },
+                    { type: "02. BUILD", text: `Rapid 0.5s cuts: Throwing ingredients into the pan. High energy.` },
+                    { type: "03. CLIMAX", text: `Wide shot: Pan fry execution with dramatic facial reaction or movement.` },
+                    { type: "04. PAYOFF", text: `Shaky cam close-up: Shoving a massive bite toward the lens.` }
+                ];
+            } else { // Minimalist & Cozy Default Balance
+                shots = [
+                    { type: "01. HOOK", text: `Beautifully lit static shot of the completed ${dish} with steam rising.` },
+                    { type: "02. BUILD", text: `Top-down layout: Neatly arranged ${ingredients}. Aesthetic assembly.` },
+                    { type: "03. CLIMAX", text: `Side profile: The cooking process, focusing on color change and texture.` },
+                    { type: "04. PAYOFF", text: `Macro shot: Placing the finished plate down into its serving context (${context}).` }
+                ];
+            }
+
+            const shotListDiv = document.getElementById('shotList');
+            shotListDiv.innerHTML = '';
+            shots.forEach((shot, i) => {
+                shotListDiv.innerHTML += `
+                    <div class="shot-card">
+                        <div class="shot-header"><span>${shot.type}</span><span>Editable</span></div>
+                        <textarea class="shot-text" rows="2" id="shot_${i}">${shot.text}</textarea>
+                    </div>`;
+            });
+
+            // 2. Generate Props Checklist
+            const props = ["Smartphone/Camera", "Tripod / Overhead Mount", "Primary Skillet/Pan", "Serving Plate/Bowl", "Aesthetic Utensil", "Damp cloth (for instant spill wipes)"];
+            const propDiv = document.getElementById('propChecklist');
+            propDiv.innerHTML = '';
+            props.forEach((prop, i) => {
+                propDiv.innerHTML += `
+                    <div class="checklist-item">
+                        <input type="checkbox" id="prop_${i}">
+                        <label for="prop_${i}" style="margin:0; text-transform:none; color:var(--text); font-weight:normal;">${prop}</label>
+                    </div>`;
+            });
+
+            // 3. Generate Captions
+            const captions = [
+`【 Hook 】The 15-minute fix you needed.
+【 Context 】When it's late, you're lazy, but you want restaurant-quality ${dish}.
+【 Blueprint 】Using just ${ingredients}. 
+#cooking #recipe #foodtok #easyrecipes`,
+
+`POV: You realized you have ${ingredients} in your kitchen right now. 
+Stop ordering takeout. Make this ${dish} instead. Perfect for a ${context}.
+Recipe details in the comments.`,
+
+`Current status: Tuning out the world with some ${vibe.split(' / ')[0]} cooking. 
+Dish: ${dish}
+Vibe: ${context}
+Rate this setup 1-10.`
+            ];
+
+            const captionContainer = document.getElementById('captionContainer');
+            captionContainer.innerHTML = '';
+            captions.forEach((cap, i) => {
+                captionContainer.innerHTML += `
+                    <div class="caption-box">
+                        <button class="copy-btn" onclick="copyText('cap_${i}')">Copy</button>
+                        <span id="cap_${i}">${cap}</span>
+                    </div>`;
+            });
+
+            document.getElementById('outputContainer').classList.remove('hidden');
+            document.getElementById('outputContainer').scrollIntoView({ behavior: 'smooth' });
+        }
+
+        function copyText(id) {
+            const text = document.getElementById(id).innerText;
+            navigator.clipboard.writeText(text);
+            alert('Copied to clipboard');
+        }
+
+        function gatherFullPlanText() {
+            let plan = `REEL BLUEPRINT PLAN\n===================\n`;
+            plan += `Dish: ${document.getElementById('dish').value}\n`;
+            plan += `Vibe: ${document.getElementById('vibe').value}\n\n`;
+            plan += `SHOT LIST:\n`;
+            
+            const shotTexts = document.querySelectorAll('.shot-text');
+            shotTexts.forEach((textarea, i) => {
+                plan += `- Shot ${i+1}: ${textarea.value}\n`;
+            });
+
+            plan += `\nCAPTIONS:\n`;
+            const caps = [0,1,2];
+            caps.forEach(i => {
+                const el = document.getElementById(`cap_${i}`);
+                if(el) plan += `\nOption ${i+1}:\n${el.innerText}\n`;
+            });
+            return plan;
+        }
+
+        function copyFullPlan() {
+            navigator.clipboard.writeText(gatherFullPlanText());
+            alert('Full structural plan copied!');
+        }
+
+        function exportJSON() {
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify({
+                dish: document.getElementById('dish').value,
+                vibe: document.getElementById('vibe').value,
+                shots: Array.from(document.querySelectorAll('.shot-text')).map(t => t.value)
+            }, null, 2));
+            const downloadAnchor = document.createElement('a');
+            downloadAnchor.setAttribute("href", dataStr);
+            downloadAnchor.setAttribute("download", "reel_blueprint.json");
+            document.body.appendChild(downloadAnchor);
+            downloadAnchor.click();
+            downloadAnchor.remove();
+        }
+    </script>
+</body>
+</html>

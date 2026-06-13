@@ -1,0 +1,1354 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Visual Consistency Board</title>
+<style>
+/* ── TOKENS ─────────────────────────────────────────────────────── */
+:root {
+  --bg:       #1A1433;
+  --surface:  #241D45;
+  --card:     #2D2555;
+  --amber:    #F5A623;
+  --coral:    #E8715A;
+  --mint:     #5EC689;
+  --slate:    #7B8FA1;
+  --white:    #F7F5F0;
+  --muted:    #9B8FC4;
+  --border:   rgba(255,255,255,0.08);
+  --font:     system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --serif:    Georgia, 'Times New Roman', serif;
+  --r:        12px;
+  --rs:       8px;
+}
+ 
+/* ── RESET ───────────────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+ 
+body {
+  background: var(--bg);
+  color: var(--white);
+  font-family: var(--font);
+  font-size: 14px;
+  line-height: 1.5;
+  min-height: 100vh;
+  padding-bottom: 80px;
+}
+ 
+/* ── TOP BAR ─────────────────────────────────────────────────────── */
+.topbar {
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  padding: 14px 16px 12px;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.topbar-title {
+  font-family: var(--serif);
+  font-size: 17px;
+  color: var(--white);
+  white-space: nowrap;
+}
+.topbar-sub {
+  font-size: 10px;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  display: block;
+  margin-top: 2px;
+}
+.save-pill {
+  background: var(--amber);
+  color: #1A1433;
+  border: none;
+  border-radius: 20px;
+  padding: 7px 14px;
+  font-size: 12px;
+  font-weight: 700;
+  font-family: var(--font);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: opacity 0.15s;
+}
+.save-pill:hover { opacity: 0.85; }
+.save-pill.saved { background: var(--mint); }
+ 
+/* ── SECTIONS ────────────────────────────────────────────────────── */
+.section { padding: 0 16px; margin-top: 22px; }
+ 
+.section-label {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: var(--muted);
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.section-label::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+}
+ 
+/* ── BRIEF ───────────────────────────────────────────────────────── */
+.brief-wrap {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  overflow: hidden;
+}
+.brief-meta {
+  display: flex;
+  gap: 8px;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--border);
+}
+.brief-field { flex: 1; }
+.brief-field label {
+  font-size: 9px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--muted);
+  display: block;
+  margin-bottom: 3px;
+}
+.brief-field input {
+  background: transparent;
+  border: none;
+  outline: none;
+  color: var(--white);
+  font-family: var(--font);
+  font-size: 13px;
+  font-weight: 500;
+  width: 100%;
+}
+.brief-field input::placeholder { color: var(--slate); }
+.brief-body { padding: 10px 12px; }
+.brief-body label {
+  font-size: 9px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--muted);
+  display: block;
+  margin-bottom: 5px;
+}
+.brief-body textarea {
+  background: transparent;
+  border: none;
+  outline: none;
+  color: var(--white);
+  font-family: var(--font);
+  font-size: 13px;
+  line-height: 1.6;
+  width: 100%;
+  resize: none;
+  min-height: 70px;
+}
+.brief-body textarea::placeholder { color: var(--slate); }
+ 
+/* ── CONSTRAINT RAIL ─────────────────────────────────────────────── */
+.constraint-rail {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  overflow: hidden;
+}
+.constraint-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--border);
+}
+.constraint-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--amber);
+}
+.add-btn {
+  background: rgba(245,166,35,0.12);
+  border: 1px solid rgba(245,166,35,0.3);
+  color: var(--amber);
+  border-radius: 6px;
+  padding: 4px 10px;
+  font-size: 11px;
+  font-weight: 600;
+  font-family: var(--font);
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.add-btn:hover { background: rgba(245,166,35,0.2); }
+.constraint-list { padding: 8px 12px; }
+.constraint-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 0;
+  border-bottom: 1px solid var(--border);
+}
+.constraint-item:last-child { border-bottom: none; }
+.constraint-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--amber);
+  flex-shrink: 0;
+}
+.constraint-item input {
+  background: transparent;
+  border: none;
+  outline: none;
+  color: var(--white);
+  font-family: var(--font);
+  font-size: 13px;
+  flex: 1;
+  min-width: 0;
+}
+.constraint-item input::placeholder { color: var(--slate); }
+.del-btn {
+  background: none;
+  border: none;
+  color: var(--slate);
+  cursor: pointer;
+  font-size: 18px;
+  line-height: 1;
+  padding: 0 2px;
+  transition: color 0.15s;
+  flex-shrink: 0;
+}
+.del-btn:hover { color: var(--coral); }
+ 
+/* ── WARNING BANNER ──────────────────────────────────────────────── */
+.warning-banner {
+  background: rgba(232,113,90,0.12);
+  border: 1px solid rgba(232,113,90,0.3);
+  border-radius: var(--rs);
+  padding: 10px 12px;
+  font-size: 12px;
+  color: var(--coral);
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+.warning-banner.hidden { display: none; }
+.warning-icon { flex-shrink: 0; font-size: 14px; margin-top: 1px; }
+.warning-list { line-height: 1.6; }
+ 
+/* ── STYLE CARDS ─────────────────────────────────────────────────── */
+.style-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.style-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  overflow: hidden;
+  transition: border-color 0.2s;
+}
+.style-card.has-conflict { border-color: rgba(232,113,90,0.5); }
+.style-card.all-clear    { border-color: rgba(94,198,137,0.35); }
+ 
+.card-header {
+  display: flex;
+  align-items: stretch;
+  cursor: pointer;
+  user-select: none;
+}
+.card-swatch { width: 6px; flex-shrink: 0; }
+.card-header-inner {
+  flex: 1;
+  padding: 12px 12px 12px 10px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.card-name-wrap { flex: 1; min-width: 0; }
+.card-dir-label {
+  font-size: 9px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: var(--muted);
+  display: block;
+  margin-bottom: 2px;
+  pointer-events: none;
+}
+.card-name {
+  background: transparent;
+  border: none;
+  outline: none;
+  color: var(--white);
+  font-family: var(--serif);
+  font-size: 15px;
+  width: 100%;
+  cursor: text;
+}
+.card-name::placeholder { color: var(--slate); }
+ 
+.card-dots {
+  display: flex;
+  gap: 4px;
+  flex-shrink: 0;
+  align-items: center;
+}
+.status-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.status-dot.pass    { background: var(--mint); }
+.status-dot.fail    { background: var(--coral); }
+.status-dot.unknown { background: var(--slate); opacity: 0.45; }
+ 
+.card-arrow {
+  color: var(--muted);
+  font-size: 11px;
+  flex-shrink: 0;
+  transition: transform 0.2s;
+  pointer-events: none;
+}
+.card-arrow.open { transform: rotate(180deg); }
+ 
+.card-body { padding: 0 12px 14px 16px; }
+.card-body.collapsed { display: none; }
+ 
+.card-row {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+}
+.card-field { flex: 1; }
+.card-field label {
+  font-size: 9px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--muted);
+  display: block;
+  margin-bottom: 3px;
+}
+.card-field input,
+.card-field textarea,
+.card-field select {
+  background: rgba(255,255,255,0.05);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--white);
+  font-family: var(--font);
+  font-size: 12px;
+  padding: 6px 8px;
+  width: 100%;
+  outline: none;
+  transition: border-color 0.15s;
+}
+.card-field input:focus,
+.card-field textarea:focus { border-color: rgba(245,166,35,0.4); }
+.card-field textarea { resize: none; min-height: 52px; line-height: 1.5; }
+.card-field select { cursor: pointer; }
+.card-field select option { background: var(--surface); color: var(--white); }
+.card-field input::placeholder,
+.card-field textarea::placeholder { color: var(--slate); }
+ 
+/* constraint check rows inside card */
+.constraint-checks { margin-top: 12px; }
+.cc-label {
+  font-size: 9px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--muted);
+  display: block;
+  margin-bottom: 6px;
+}
+.cc-empty {
+  font-size: 12px;
+  color: var(--slate);
+  padding: 2px 0;
+}
+.check-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 5px;
+}
+.check-toggle {
+  display: flex;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+.check-toggle button {
+  background: transparent;
+  border: none;
+  color: var(--slate);
+  font-size: 10px;
+  font-weight: 700;
+  font-family: var(--font);
+  padding: 3px 8px;
+  cursor: pointer;
+  transition: background 0.12s, color 0.12s;
+}
+.check-toggle button.active-pass { background: rgba(94,198,137,0.2);  color: var(--mint); }
+.check-toggle button.active-fail { background: rgba(232,113,90,0.2);  color: var(--coral); }
+.check-text { font-size: 12px; color: var(--white); flex: 1; opacity: 0.85; }
+.check-text.fail-label { color: var(--coral); opacity: 1; text-decoration: line-through; }
+ 
+/* ── SHOT CHECKLIST ──────────────────────────────────────────────── */
+.checklist-wrap {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  overflow: hidden;
+}
+.checklist-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--border);
+  gap: 8px;
+}
+.checklist-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--white);
+}
+.checklist-actions { display: flex; gap: 6px; }
+.icon-btn {
+  background: rgba(255,255,255,0.06);
+  border: 1px solid var(--border);
+  color: var(--white);
+  border-radius: 6px;
+  padding: 5px 10px;
+  font-size: 11px;
+  font-weight: 600;
+  font-family: var(--font);
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.icon-btn:hover { background: rgba(255,255,255,0.12); }
+ 
+.progress-wrap {
+  height: 3px;
+  background: rgba(255,255,255,0.08);
+  margin: 0 12px 10px;
+  border-radius: 2px;
+}
+.progress-fill {
+  height: 100%;
+  background: var(--mint);
+  border-radius: 2px;
+  transition: width 0.3s;
+  width: 0%;
+}
+ 
+.checklist-body { padding: 2px 12px 12px; }
+.shot-group { margin-bottom: 14px; }
+.shot-group-title {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--amber);
+  margin-bottom: 6px;
+}
+.shot-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+.shot-cb {
+  width: 15px;
+  height: 15px;
+  border: 1.5px solid var(--muted);
+  border-radius: 3px;
+  flex-shrink: 0;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 1px;
+  transition: background 0.12s, border-color 0.12s;
+  font-size: 9px;
+  color: transparent;
+  font-weight: 900;
+}
+.shot-cb.checked {
+  background: var(--mint);
+  border-color: var(--mint);
+  color: #1A1433;
+}
+.shot-label {
+  font-size: 12px;
+  line-height: 1.45;
+  flex: 1;
+  cursor: pointer;
+  transition: color 0.12s;
+}
+.shot-label.done { text-decoration: line-through; color: var(--slate); }
+ 
+.add-shot-row {
+  display: flex;
+  gap: 6px;
+  padding-top: 10px;
+  border-top: 1px solid var(--border);
+  margin-top: 4px;
+}
+.add-shot-input {
+  flex: 1;
+  background: rgba(255,255,255,0.05);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--white);
+  font-family: var(--font);
+  font-size: 12px;
+  padding: 7px 10px;
+  outline: none;
+  transition: border-color 0.15s;
+}
+.add-shot-input::placeholder { color: var(--slate); }
+.add-shot-input:focus { border-color: rgba(245,166,35,0.4); }
+.add-shot-btn {
+  background: rgba(245,166,35,0.15);
+  border: 1px solid rgba(245,166,35,0.3);
+  color: var(--amber);
+  border-radius: 6px;
+  padding: 7px 12px;
+  font-size: 12px;
+  font-weight: 700;
+  font-family: var(--font);
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.add-shot-btn:hover { background: rgba(245,166,35,0.25); }
+ 
+/* ── TOAST ───────────────────────────────────────────────────────── */
+.toast {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%) translateY(10px);
+  background: var(--mint);
+  color: #1A1433;
+  font-weight: 700;
+  font-size: 12px;
+  padding: 9px 18px;
+  border-radius: 20px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.25s, transform 0.25s;
+  z-index: 200;
+  white-space: nowrap;
+}
+.toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+ 
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { transition: none !important; }
+}
+</style>
+</head>
+<body>
+ 
+<!-- ── TOP BAR ──────────────────────────────────────────────────── -->
+<div class="topbar">
+  <div>
+    <span class="topbar-title">&#9632; Visual Board</span>
+    <span class="topbar-sub">Campaign Consistency</span>
+  </div>
+  <button class="save-pill" id="saveBtn">&#8595; Save</button>
+</div>
+ 
+<!-- ── BRIEF ────────────────────────────────────────────────────── -->
+<div class="section">
+  <div class="section-label">&#9474; Campaign Brief</div>
+  <div class="brief-wrap">
+    <div class="brief-meta">
+      <div class="brief-field">
+        <label for="briefProduct">Product / Campaign</label>
+        <input type="text" id="briefProduct" placeholder="e.g. Nova Skincare — Launch '25" autocomplete="off">
+      </div>
+      <div class="brief-field">
+        <label for="briefAudience">Target Audience</label>
+        <input type="text" id="briefAudience" placeholder="e.g. Women 25–40" autocomplete="off">
+      </div>
+    </div>
+    <div class="brief-body">
+      <label for="briefText">Brief</label>
+      <textarea id="briefText" placeholder="Describe the campaign goal, mood, messaging priorities, and any non-negotiables for the overall visual direction…"></textarea>
+    </div>
+  </div>
+</div>
+ 
+<!-- ── CONSTRAINTS ───────────────────────────────────────────────── -->
+<div class="section">
+  <div class="section-label">&#9632; Must-Keep Constraints</div>
+  <div class="constraint-rail">
+    <div class="constraint-header">
+      <span class="constraint-title">&#9888; Locked rules</span>
+      <button class="add-btn" id="addConstraintBtn">+ Add</button>
+    </div>
+    <div class="constraint-list" id="constraintList"></div>
+  </div>
+</div>
+ 
+<!-- ── WARNINGS ─────────────────────────────────────────────────── -->
+<div class="section">
+  <div class="warning-banner hidden" id="warningBanner">
+    <span class="warning-icon">&#9888;</span>
+    <div class="warning-list" id="warningList"></div>
+  </div>
+</div>
+ 
+<!-- ── STYLE DIRECTIONS ──────────────────────────────────────────── -->
+<div class="section">
+  <div class="section-label">&#9632; Style Directions</div>
+  <div class="style-grid" id="styleGrid"></div>
+</div>
+ 
+<!-- ── SHOT CHECKLIST ────────────────────────────────────────────── -->
+<div class="section">
+  <div class="section-label">&#9632; Shot Checklist</div>
+  <div class="checklist-wrap">
+    <div class="checklist-toolbar">
+      <span class="checklist-title">&#9776; Shots</span>
+      <div class="checklist-actions">
+        <button class="icon-btn" id="copyChecklistBtn">Copy</button>
+        <button class="icon-btn" id="downloadChecklistBtn">&#8595; CSV</button>
+      </div>
+    </div>
+    <div class="progress-wrap">
+      <div class="progress-fill" id="progressFill"></div>
+    </div>
+    <div class="checklist-body">
+      <div id="shotGroups"></div>
+      <div class="add-shot-row">
+        <input class="add-shot-input" id="newShotInput" type="text"
+               placeholder="Add a shot — or prefix with Group: label">
+        <button class="add-shot-btn" id="addShotBtn">Add</button>
+      </div>
+    </div>
+  </div>
+</div>
+ 
+<div class="toast" id="toast"></div>
+ 
+<script>
+/* ================================================================
+   VISUAL CONSISTENCY BOARD
+   No external URLs. No inline event attributes.
+   All dynamic DOM: createElement + addEventListener + textContent.
+================================================================ */
+ 
+const STORAGE_KEY = 'vcb_v2';
+ 
+/* ── DEFAULT STATE ──────────────────────────────────────────────── */
+function defaultState() {
+  return {
+    brief: { product: '', audience: '', text: '' },
+    constraints: [
+      { id: 'c1', text: 'Brand color palette only (no off-brand grays)' },
+      { id: 'c2', text: 'No lifestyle models — product-only imagery' },
+      { id: 'c3', text: 'Minimum 50% white space per frame' },
+      { id: 'c4', text: 'Logo always top-left, never rotated' },
+    ],
+    styles: [
+      { id: 's1', name: 'Clean Geometry', mood: 'minimal',
+        palette: '#FFFFFF, #1A1A2E, #E8715A',
+        tone: 'Cool, precise, editorial',
+        notes: 'Hard shadows, flat lay, geometric props', checks: {} },
+      { id: 's2', name: 'Warm Organic', mood: 'lifestyle',
+        palette: '#F5E6D3, #8B4513, #E8C49A',
+        tone: 'Tactile, earthy, intimate',
+        notes: 'Natural light, linen textures, macro detail', checks: {} },
+      { id: 's3', name: 'High Contrast', mood: 'bold',
+        palette: '#000000, #F5A623, #FFFFFF',
+        tone: 'Punchy, graphic, modern',
+        notes: 'Studio black backdrop, dramatic rim light', checks: {} },
+      { id: 's4', name: 'Pastel Studio', mood: 'soft',
+        palette: '#FAD4E0, #D4E8FA, #FAF0D4',
+        tone: 'Gentle, playful, approachable',
+        notes: 'Seamless paper, pastel props, diffused fill', checks: {} },
+    ],
+    shots: [
+      { id: 'sh1', group: 'Hero',   label: 'Full product on white — hero frame', done: false },
+      { id: 'sh2', group: 'Hero',   label: 'Overhead flat lay — styled scene', done: false },
+      { id: 'sh3', group: 'Detail', label: 'Texture close-up (cap / lid / label)', done: false },
+      { id: 'sh4', group: 'Detail', label: 'In-use application shot', done: false },
+      { id: 'sh5', group: 'Social', label: '1:1 crop — Instagram feed', done: false },
+      { id: 'sh6', group: 'Social', label: '9:16 crop — Stories / Reels', done: false },
+      { id: 'sh7', group: 'Print',  label: 'Full-bleed horizontal — OOH / banner', done: false },
+    ],
+    openCards: { s1: true, s2: false, s3: false, s4: false },
+  };
+}
+ 
+/* ── STATE ──────────────────────────────────────────────────────── */
+let state = defaultState();
+ 
+const SWATCHES = ['#E8715A', '#F5A623', '#5EC689', '#9B8FC4'];
+const MOODS    = ['minimal','lifestyle','bold','soft','dramatic','playful','editorial','luxury'];
+ 
+let _uidc = 0;
+function uid() { return 'x' + Date.now() + (++_uidc); }
+ 
+/* ── PERSISTENCE ────────────────────────────────────────────────── */
+function loadState() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return;
+    const saved = JSON.parse(raw);
+    if (saved.brief)       Object.assign(state.brief, saved.brief);
+    if (Array.isArray(saved.constraints) && saved.constraints.length)
+      state.constraints = saved.constraints;
+    if (Array.isArray(saved.styles) && saved.styles.length)
+      state.styles = saved.styles;
+    if (Array.isArray(saved.shots) && saved.shots.length)
+      state.shots = saved.shots;
+    if (saved.openCards)
+      Object.assign(state.openCards, saved.openCards);
+  } catch (_) {}
+}
+ 
+function saveAll() {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    const btn = document.getElementById('saveBtn');
+    btn.textContent = '\u2713 Saved';
+    btn.classList.add('saved');
+    showToast('Board saved to this browser \u2713');
+    setTimeout(() => {
+      btn.textContent = '\u2193 Save';
+      btn.classList.remove('saved');
+    }, 2200);
+  } catch (_) {
+    showToast('Save failed — storage may be full');
+  }
+}
+ 
+/* ── BRIEF ──────────────────────────────────────────────────────── */
+function renderBrief() {
+  document.getElementById('briefProduct').value = state.brief.product;
+  document.getElementById('briefAudience').value = state.brief.audience;
+  document.getElementById('briefText').value = state.brief.text;
+}
+ 
+function bindBrief() {
+  document.getElementById('briefProduct').addEventListener('input', function () {
+    state.brief.product = this.value;
+  });
+  document.getElementById('briefAudience').addEventListener('input', function () {
+    state.brief.audience = this.value;
+  });
+  document.getElementById('briefText').addEventListener('input', function () {
+    state.brief.text = this.value;
+  });
+}
+ 
+/* ── CONSTRAINTS ────────────────────────────────────────────────── */
+function renderConstraints() {
+  const list = document.getElementById('constraintList');
+  /* Remove all existing children cleanly */
+  while (list.firstChild) list.removeChild(list.firstChild);
+ 
+  state.constraints.forEach(function (c) {
+    list.appendChild(makeConstraintRow(c));
+  });
+ 
+  refreshStyleCards();
+  updateWarnings();
+}
+ 
+function makeConstraintRow(c) {
+  const row = document.createElement('div');
+  row.className = 'constraint-item';
+ 
+  const dot = document.createElement('div');
+  dot.className = 'constraint-dot';
+ 
+  const inp = document.createElement('input');
+  inp.type = 'text';
+  inp.value = c.text;
+  inp.placeholder = 'Describe a constraint\u2026';
+  inp.addEventListener('input', function () {
+    c.text = this.value;
+    refreshStyleCards();
+    updateWarnings();
+  });
+ 
+  const del = document.createElement('button');
+  del.className = 'del-btn';
+  del.setAttribute('aria-label', 'Remove constraint');
+  del.textContent = '\u00D7';
+  del.addEventListener('click', function () {
+    deleteConstraint(c.id);
+  });
+ 
+  row.appendChild(dot);
+  row.appendChild(inp);
+  row.appendChild(del);
+  return row;
+}
+ 
+function addConstraint() {
+  const c = { id: uid(), text: '' };
+  state.constraints.push(c);
+  const list = document.getElementById('constraintList');
+  const row  = makeConstraintRow(c);
+  list.appendChild(row);
+  row.querySelector('input').focus();
+  refreshStyleCards();
+  updateWarnings();
+}
+ 
+function deleteConstraint(id) {
+  state.constraints = state.constraints.filter(function (c) { return c.id !== id; });
+  state.styles.forEach(function (s) { delete s.checks[id]; });
+  renderConstraints();
+  refreshStyleCards();
+}
+ 
+/* ── STYLE CARDS ────────────────────────────────────────────────── */
+function renderStyleCards() {
+  const grid = document.getElementById('styleGrid');
+  while (grid.firstChild) grid.removeChild(grid.firstChild);
+ 
+  state.styles.forEach(function (s, idx) {
+    grid.appendChild(makeStyleCard(s, idx));
+  });
+  refreshStyleCards();
+}
+ 
+function makeStyleCard(s, idx) {
+  const card = document.createElement('div');
+  card.className = 'style-card';
+  card.id = 'card_' + s.id;
+ 
+  /* ── header ── */
+  const header = document.createElement('div');
+  header.className = 'card-header';
+  header.setAttribute('role', 'button');
+  header.setAttribute('tabindex', '0');
+  header.setAttribute('aria-expanded', state.openCards[s.id] ? 'true' : 'false');
+ 
+  const swatch = document.createElement('div');
+  swatch.className = 'card-swatch';
+  swatch.style.background = SWATCHES[idx % SWATCHES.length];
+ 
+  const inner = document.createElement('div');
+  inner.className = 'card-header-inner';
+ 
+  const nameWrap = document.createElement('div');
+  nameWrap.className = 'card-name-wrap';
+ 
+  const dirLabel = document.createElement('span');
+  dirLabel.className = 'card-dir-label';
+  dirLabel.textContent = 'Direction ' + (idx + 1);
+ 
+  const nameInput = document.createElement('input');
+  nameInput.className = 'card-name';
+  nameInput.type = 'text';
+  nameInput.value = s.name;
+  nameInput.placeholder = 'Name this direction';
+  nameInput.addEventListener('input', function (e) {
+    e.stopPropagation();
+    s.name = this.value;
+    updateWarnings();
+  });
+  nameInput.addEventListener('click', function (e) {
+    e.stopPropagation();
+  });
+  nameInput.addEventListener('keydown', function (e) {
+    e.stopPropagation();
+  });
+ 
+  const dots = document.createElement('div');
+  dots.className = 'card-dots';
+  dots.id = 'dots_' + s.id;
+ 
+  const arrow = document.createElement('span');
+  arrow.className = 'card-arrow' + (state.openCards[s.id] ? ' open' : '');
+  arrow.id = 'arrow_' + s.id;
+  arrow.textContent = '\u25BC';
+ 
+  nameWrap.appendChild(dirLabel);
+  nameWrap.appendChild(nameInput);
+  inner.appendChild(nameWrap);
+  inner.appendChild(dots);
+  inner.appendChild(arrow);
+  header.appendChild(swatch);
+  header.appendChild(inner);
+ 
+  function toggleThisCard(e) {
+    if (e.target === nameInput) return;
+    toggleCard(s.id, header, arrow);
+  }
+  header.addEventListener('click', toggleThisCard);
+  header.addEventListener('keydown', function (e) {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      toggleThisCard(e);
+    }
+  });
+ 
+  /* ── body ── */
+  const body = document.createElement('div');
+  body.className = 'card-body' + (state.openCards[s.id] ? '' : ' collapsed');
+  body.id = 'body_' + s.id;
+ 
+  /* row 1: mood + palette */
+  const row1 = document.createElement('div');
+  row1.className = 'card-row';
+  row1.appendChild(makeSelectField('Mood / Vibe', MOODS, s.mood, function (val) {
+    s.mood = val;
+  }));
+  row1.appendChild(makeInputField('Key Palette', '#HEX, #HEX\u2026', s.palette, function (val) {
+    s.palette = val;
+  }));
+ 
+  /* row 2: tone */
+  const row2 = document.createElement('div');
+  row2.className = 'card-row';
+  row2.appendChild(makeInputField('Tone / Feel', 'e.g. Cool, editorial, precise', s.tone, function (val) {
+    s.tone = val;
+  }));
+ 
+  /* row 3: notes */
+  const row3 = document.createElement('div');
+  row3.className = 'card-row';
+  row3.appendChild(makeTextareaField('Shot Notes', 'Props, lighting, framing notes\u2026', s.notes, function (val) {
+    s.notes = val;
+  }));
+ 
+  /* constraint checks */
+  const checksSection = document.createElement('div');
+  checksSection.className = 'constraint-checks';
+ 
+  const ccLabel = document.createElement('span');
+  ccLabel.className = 'cc-label';
+  ccLabel.textContent = '\u25A0 Constraint Check';
+  checksSection.appendChild(ccLabel);
+ 
+  const checksContainer = document.createElement('div');
+  checksContainer.id = 'checks_' + s.id;
+  checksSection.appendChild(checksContainer);
+ 
+  body.appendChild(row1);
+  body.appendChild(row2);
+  body.appendChild(row3);
+  body.appendChild(checksSection);
+ 
+  card.appendChild(header);
+  card.appendChild(body);
+  return card;
+}
+ 
+/* helpers to build labelled form fields */
+function makeInputField(labelText, placeholder, value, onChange) {
+  const wrap = document.createElement('div');
+  wrap.className = 'card-field';
+  const lbl = document.createElement('label');
+  lbl.textContent = labelText;
+  const inp = document.createElement('input');
+  inp.type = 'text';
+  inp.placeholder = placeholder;
+  inp.value = value;
+  inp.addEventListener('input', function () { onChange(this.value); });
+  wrap.appendChild(lbl);
+  wrap.appendChild(inp);
+  return wrap;
+}
+ 
+function makeTextareaField(labelText, placeholder, value, onChange) {
+  const wrap = document.createElement('div');
+  wrap.className = 'card-field';
+  const lbl = document.createElement('label');
+  lbl.textContent = labelText;
+  const ta = document.createElement('textarea');
+  ta.placeholder = placeholder;
+  ta.textContent = value;
+  ta.addEventListener('input', function () { onChange(this.value); });
+  wrap.appendChild(lbl);
+  wrap.appendChild(ta);
+  return wrap;
+}
+ 
+function makeSelectField(labelText, options, selected, onChange) {
+  const wrap = document.createElement('div');
+  wrap.className = 'card-field';
+  const lbl = document.createElement('label');
+  lbl.textContent = labelText;
+  const sel = document.createElement('select');
+  options.forEach(function (opt) {
+    const o = document.createElement('option');
+    o.value = opt;
+    o.textContent = opt;
+    if (opt === selected) o.selected = true;
+    sel.appendChild(o);
+  });
+  sel.addEventListener('change', function () { onChange(this.value); });
+  wrap.appendChild(lbl);
+  wrap.appendChild(sel);
+  return wrap;
+}
+ 
+function toggleCard(id, header, arrow) {
+  state.openCards[id] = !state.openCards[id];
+  const body = document.getElementById('body_' + id);
+  const open = state.openCards[id];
+  if (open) {
+    body.classList.remove('collapsed');
+    arrow.classList.add('open');
+  } else {
+    body.classList.add('collapsed');
+    arrow.classList.remove('open');
+  }
+  header.setAttribute('aria-expanded', open ? 'true' : 'false');
+}
+ 
+/* ── REFRESH: DOTS + CHECKS + BORDER ────────────────────────────── */
+function refreshStyleCards() {
+  state.styles.forEach(function (s) {
+    renderDots(s);
+    renderChecks(s);
+    updateCardBorder(s);
+  });
+  updateWarnings();
+}
+ 
+function renderDots(s) {
+  const dotsEl = document.getElementById('dots_' + s.id);
+  if (!dotsEl) return;
+  while (dotsEl.firstChild) dotsEl.removeChild(dotsEl.firstChild);
+ 
+  state.constraints.forEach(function (c) {
+    const status = s.checks[c.id] || 'unknown';
+    const d = document.createElement('div');
+    d.className = 'status-dot ' + status;
+    d.title = (c.text || 'constraint') + ': ' + status;
+    dotsEl.appendChild(d);
+  });
+}
+ 
+function renderChecks(s) {
+  const container = document.getElementById('checks_' + s.id);
+  if (!container) return;
+  while (container.firstChild) container.removeChild(container.firstChild);
+ 
+  if (!state.constraints.length) {
+    const empty = document.createElement('p');
+    empty.className = 'cc-empty';
+    empty.textContent = 'No constraints defined yet.';
+    container.appendChild(empty);
+    return;
+  }
+ 
+  state.constraints.forEach(function (c) {
+    const status = s.checks[c.id] || 'unknown';
+ 
+    const row = document.createElement('div');
+    row.className = 'check-row';
+ 
+    /* pass / fail toggle buttons */
+    const toggle = document.createElement('div');
+    toggle.className = 'check-toggle';
+ 
+    const passBtn = document.createElement('button');
+    passBtn.type = 'button';
+    passBtn.textContent = '\u2713';
+    if (status === 'pass') passBtn.classList.add('active-pass');
+ 
+    const failBtn = document.createElement('button');
+    failBtn.type = 'button';
+    failBtn.textContent = '\u00D7';
+    if (status === 'fail') failBtn.classList.add('active-fail');
+ 
+    function handleCheck(newVal) {
+      const current = s.checks[c.id];
+      if (current === newVal) {
+        delete s.checks[c.id];
+      } else {
+        s.checks[c.id] = newVal;
+      }
+      refreshStyleCards();
+    }
+ 
+    passBtn.addEventListener('click', function (e) {
+      e.stopPropagation();
+      handleCheck('pass');
+    });
+    failBtn.addEventListener('click', function (e) {
+      e.stopPropagation();
+      handleCheck('fail');
+    });
+ 
+    toggle.appendChild(passBtn);
+    toggle.appendChild(failBtn);
+ 
+    /* constraint label text — textContent keeps it inert */
+    const label = document.createElement('span');
+    label.className = 'check-text' + (status === 'fail' ? ' fail-label' : '');
+    label.textContent = c.text || '(unnamed constraint)';
+ 
+    row.appendChild(toggle);
+    row.appendChild(label);
+    container.appendChild(row);
+  });
+}
+ 
+function updateCardBorder(s) {
+  const card = document.getElementById('card_' + s.id);
+  if (!card) return;
+  const vals = Object.values(s.checks);
+  const hasFail  = vals.includes('fail');
+  const allPass  = state.constraints.length > 0 &&
+                   state.constraints.every(function (c) { return s.checks[c.id] === 'pass'; });
+  card.classList.toggle('has-conflict', hasFail);
+  card.classList.toggle('all-clear',    allPass && !hasFail);
+}
+ 
+/* ── WARNINGS ───────────────────────────────────────────────────── */
+function updateWarnings() {
+  const banner = document.getElementById('warningBanner');
+  const wlist  = document.getElementById('warningList');
+  const msgs   = [];
+ 
+  state.styles.forEach(function (s) {
+    state.constraints.filter(function (c) { return s.checks[c.id] === 'fail'; })
+      .forEach(function (c) {
+        msgs.push('\u201C' + (s.name || 'Unnamed direction') + '\u201D conflicts with: ' +
+                  (c.text || 'unnamed constraint'));
+      });
+  });
+ 
+  const unchecked = state.styles.reduce(function (acc, s) {
+    return acc + state.constraints.filter(function (c) { return !s.checks[c.id]; }).length;
+  }, 0);
+  if (unchecked > 0 && state.constraints.length > 0) {
+    msgs.push(unchecked + ' constraint check' + (unchecked > 1 ? 's' : '') +
+              ' still unreviewed across directions.');
+  }
+ 
+  /* rebuild warning list from text nodes only */
+  while (wlist.firstChild) wlist.removeChild(wlist.firstChild);
+  msgs.forEach(function (msg, i) {
+    if (i > 0) {
+      wlist.appendChild(document.createElement('br'));
+    }
+    wlist.appendChild(document.createTextNode(msg));
+  });
+ 
+  banner.classList.toggle('hidden', msgs.length === 0);
+}
+ 
+/* ── SHOT CHECKLIST ─────────────────────────────────────────────── */
+function renderShots() {
+  const container = document.getElementById('shotGroups');
+  while (container.firstChild) container.removeChild(container.firstChild);
+ 
+  const groups = {};
+  const order  = [];
+  state.shots.forEach(function (sh) {
+    if (!groups[sh.group]) { groups[sh.group] = []; order.push(sh.group); }
+    groups[sh.group].push(sh);
+  });
+ 
+  order.filter(function (g, i) { return order.indexOf(g) === i; })
+       .forEach(function (grp) {
+    const groupDiv = document.createElement('div');
+    groupDiv.className = 'shot-group';
+ 
+    const title = document.createElement('div');
+    title.className = 'shot-group-title';
+    title.textContent = grp;
+    groupDiv.appendChild(title);
+ 
+    groups[grp].forEach(function (sh) {
+      groupDiv.appendChild(makeShotItem(sh));
+    });
+ 
+    container.appendChild(groupDiv);
+  });
+ 
+  updateProgress();
+}
+ 
+function makeShotItem(sh) {
+  const item = document.createElement('div');
+  item.className = 'shot-item';
+  item.id = 'item_' + sh.id;
+ 
+  const cb = document.createElement('div');
+  cb.className = 'shot-cb' + (sh.done ? ' checked' : '');
+  cb.id = 'cb_' + sh.id;
+  cb.setAttribute('role', 'checkbox');
+  cb.setAttribute('aria-checked', sh.done ? 'true' : 'false');
+  cb.setAttribute('tabindex', '0');
+  cb.textContent = '\u2713';
+ 
+  const lbl = document.createElement('span');
+  lbl.className = 'shot-label' + (sh.done ? ' done' : '');
+  lbl.id = 'lbl_' + sh.id;
+  lbl.textContent = sh.label;    /* textContent — never innerHTML */
+ 
+  const del = document.createElement('button');
+  del.className = 'del-btn';
+  del.setAttribute('aria-label', 'Remove shot');
+  del.style.marginTop = '1px';
+  del.textContent = '\u00D7';
+ 
+  function toggleThisShot() {
+    sh.done = !sh.done;
+    cb.className  = 'shot-cb' + (sh.done ? ' checked' : '');
+    lbl.className = 'shot-label' + (sh.done ? ' done' : '');
+    cb.setAttribute('aria-checked', sh.done ? 'true' : 'false');
+    updateProgress();
+  }
+ 
+  cb.addEventListener('click', toggleThisShot);
+  cb.addEventListener('keydown', function (e) {
+    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggleThisShot(); }
+  });
+  lbl.addEventListener('click', toggleThisShot);
+ 
+  del.addEventListener('click', function () {
+    state.shots = state.shots.filter(function (x) { return x.id !== sh.id; });
+    renderShots();
+  });
+ 
+  item.appendChild(cb);
+  item.appendChild(lbl);
+  item.appendChild(del);
+  return item;
+}
+ 
+function addShot() {
+  const input = document.getElementById('newShotInput');
+  const val   = input.value.trim();
+  if (!val) return;
+ 
+  let group = 'Custom';
+  let label = val;
+  const colon = val.indexOf(':');
+  if (colon > 0 && colon < 20) {
+    group = val.slice(0, colon).trim();
+    label = val.slice(colon + 1).trim() || val;
+  }
+  const sh = { id: uid(), group: group, label: label, done: false };
+  state.shots.push(sh);
+  input.value = '';
+ 
+  /* append to existing group if present, else full re-render */
+  const container = document.getElementById('shotGroups');
+  const existing  = Array.from(container.querySelectorAll('.shot-group-title'))
+                         .find(function (el) { return el.textContent === group; });
+  if (existing) {
+    existing.closest('.shot-group').appendChild(makeShotItem(sh));
+  } else {
+    renderShots();
+    return;
+  }
+  updateProgress();
+}
+ 
+function updateProgress() {
+  const total = state.shots.length;
+  const done  = state.shots.filter(function (s) { return s.done; }).length;
+  const pct   = total ? Math.round((done / total) * 100) : 0;
+  document.getElementById('progressFill').style.width = pct + '%';
+}
+ 
+/* ── COPY / DOWNLOAD ────────────────────────────────────────────── */
+function copyChecklist() {
+  const lines = [];
+  lines.push('Shot Checklist \u2014 ' + (state.brief.product || 'Campaign'));
+  lines.push('');
+  const groups = {};
+  const order  = [];
+  state.shots.forEach(function (sh) {
+    if (!groups[sh.group]) { groups[sh.group] = []; order.push(sh.group); }
+    groups[sh.group].push(sh);
+  });
+  order.filter(function (g, i) { return order.indexOf(g) === i; })
+       .forEach(function (grp) {
+    lines.push('[ ' + grp + ' ]');
+    groups[grp].forEach(function (sh) {
+      lines.push('  ' + (sh.done ? '[x]' : '[ ]') + ' ' + sh.label);
+    });
+    lines.push('');
+  });
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(lines.join('\n'))
+      .then(function ()  { showToast('Checklist copied \u2713'); })
+      .catch(function () { showToast('Copy failed \u2014 try Download'); });
+  } else {
+    showToast('Clipboard not available \u2014 try Download');
+  }
+}
+ 
+function downloadChecklist() {
+  const rows = ['Group,Shot,Done'];
+  state.shots.forEach(function (sh) {
+    rows.push(
+      '"' + sh.group.replace(/"/g, '""') + '",' +
+      '"' + sh.label.replace(/"/g, '""') + '",' +
+      '"' + (sh.done ? 'Yes' : 'No') + '"'
+    );
+  });
+  const blob = new Blob([rows.join('\n')], { type: 'text/csv' });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href     = url;
+  a.download = 'shot-checklist.csv';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  showToast('CSV downloaded \u2713');
+}
+ 
+/* ── TOAST ──────────────────────────────────────────────────────── */
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(function () { t.classList.remove('show'); }, 2200);
+}
+ 
+/* ── WIRE STATIC BUTTONS ─────────────────────────────────────────── */
+document.getElementById('saveBtn').addEventListener('click', saveAll);
+document.getElementById('addConstraintBtn').addEventListener('click', addConstraint);
+document.getElementById('addShotBtn').addEventListener('click', addShot);
+document.getElementById('copyChecklistBtn').addEventListener('click', copyChecklist);
+document.getElementById('downloadChecklistBtn').addEventListener('click', downloadChecklist);
+document.getElementById('newShotInput').addEventListener('keydown', function (e) {
+  if (e.key === 'Enter') addShot();
+});
+ 
+/* ── INIT ───────────────────────────────────────────────────────── */
+loadState();
+renderBrief();
+bindBrief();
+renderConstraints();
+renderStyleCards();
+renderShots();
+updateWarnings();
+</script>
+</body>
+</html>

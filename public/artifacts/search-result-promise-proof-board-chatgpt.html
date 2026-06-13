@@ -1,0 +1,1278 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Search Snippet Proof Board</title>
+  <style>
+    :root {
+      --bg: #f6f1e8;
+      --panel: #fffaf1;
+      --panel-2: #fff4df;
+      --ink: #211b15;
+      --muted: #6c5f50;
+      --line: #d9cbb8;
+      --line-strong: #bca98f;
+      --accent: #8a5a2b;
+      --accent-2: #5f7f56;
+      --danger: #9b3f35;
+      --warn: #a66c17;
+      --good: #3f7045;
+      --soft: #66533d;
+      --shadow: 0 10px 24px rgba(48, 35, 20, 0.10);
+      --radius: 18px;
+      --tap: 44px;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html {
+      min-width: 0;
+    }
+
+    body {
+      margin: 0;
+      min-width: 0;
+      background:
+        radial-gradient(circle at top left, rgba(138, 90, 43, 0.14), transparent 32rem),
+        linear-gradient(180deg, #fbf6ed 0%, var(--bg) 100%);
+      color: var(--ink);
+      font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      line-height: 1.45;
+    }
+
+    .page {
+      width: 100%;
+      min-width: 0;
+      max-width: 1120px;
+      margin: 0 auto;
+      padding: 14px;
+    }
+
+    header {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 12px;
+      margin: 10px 0 16px;
+    }
+
+    .kicker {
+      width: fit-content;
+      max-width: 100%;
+      padding: 7px 10px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      background: rgba(255, 250, 241, 0.8);
+      color: var(--muted);
+      font-size: 0.78rem;
+      font-weight: 750;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      overflow-wrap: anywhere;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(2rem, 13vw, 3.1rem);
+      line-height: 0.94;
+      letter-spacing: -0.08em;
+      text-wrap: balance;
+    }
+
+    h1 span {
+      display: block;
+      overflow-wrap: anywhere;
+    }
+
+    .lede {
+      margin: 0;
+      max-width: 68ch;
+      color: var(--muted);
+      font-size: 1rem;
+      overflow-wrap: anywhere;
+    }
+
+    .app {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 14px;
+      min-width: 0;
+    }
+
+    .card {
+      min-width: 0;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: rgba(255, 250, 241, 0.88);
+      box-shadow: var(--shadow);
+      padding: 14px;
+    }
+
+    .card h2,
+    .card h3 {
+      margin: 0 0 10px;
+      font-size: 1.05rem;
+      letter-spacing: -0.02em;
+      overflow-wrap: anywhere;
+    }
+
+    .field {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 7px;
+      margin: 0 0 12px;
+      min-width: 0;
+    }
+
+    label {
+      font-size: 0.88rem;
+      font-weight: 800;
+      color: var(--soft);
+      overflow-wrap: anywhere;
+    }
+
+    textarea,
+    input,
+    select,
+    button {
+      width: 100%;
+      max-width: 100%;
+      min-width: 0;
+      font: inherit;
+    }
+
+    textarea,
+    input,
+    select {
+      border: 1px solid var(--line-strong);
+      border-radius: 14px;
+      background: #fffdf8;
+      color: var(--ink);
+      padding: 11px 12px;
+      outline: none;
+      overflow-wrap: anywhere;
+    }
+
+    textarea {
+      min-height: 88px;
+      resize: vertical;
+    }
+
+    textarea:focus,
+    input:focus,
+    select:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(138, 90, 43, 0.14);
+    }
+
+    .hint {
+      margin: 0;
+      color: var(--muted);
+      font-size: 0.84rem;
+      overflow-wrap: anywhere;
+    }
+
+    .button-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 9px;
+      min-width: 0;
+    }
+
+    button {
+      min-height: var(--tap);
+      border: 1px solid var(--line-strong);
+      border-radius: 14px;
+      background: #fffaf1;
+      color: var(--ink);
+      font-weight: 850;
+      padding: 10px 12px;
+      cursor: pointer;
+      text-align: center;
+      overflow-wrap: anywhere;
+      white-space: normal;
+    }
+
+    button.primary {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: #fffdf8;
+    }
+
+    button.good {
+      background: var(--accent-2);
+      border-color: var(--accent-2);
+      color: #fffdf8;
+    }
+
+    button.danger {
+      background: #fff1ec;
+      border-color: #c99b8d;
+      color: var(--danger);
+    }
+
+    button:active {
+      transform: translateY(1px);
+    }
+
+    .score-panel {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 12px;
+      min-width: 0;
+    }
+
+    .score-ring {
+      display: grid;
+      place-items: center;
+      width: 128px;
+      height: 128px;
+      margin: 0 auto;
+      border-radius: 999px;
+      background:
+        conic-gradient(var(--accent-2) calc(var(--score, 0) * 1%), #eadfce 0);
+      position: relative;
+      border: 1px solid var(--line);
+    }
+
+    .score-ring::after {
+      content: "";
+      position: absolute;
+      inset: 12px;
+      border-radius: 999px;
+      background: var(--panel);
+      border: 1px solid var(--line);
+    }
+
+    .score-value {
+      position: relative;
+      z-index: 1;
+      display: grid;
+      place-items: center;
+      text-align: center;
+    }
+
+    .score-value strong {
+      display: block;
+      font-size: 2rem;
+      letter-spacing: -0.06em;
+    }
+
+    .score-value small {
+      display: block;
+      color: var(--muted);
+      font-weight: 800;
+      font-size: 0.72rem;
+    }
+
+    .metrics {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 8px;
+      min-width: 0;
+    }
+
+    .metric {
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      background: var(--panel-2);
+      padding: 10px;
+      min-width: 0;
+    }
+
+    .metric b {
+      display: block;
+      font-size: 1.15rem;
+      letter-spacing: -0.03em;
+    }
+
+    .metric span {
+      display: block;
+      color: var(--muted);
+      font-size: 0.8rem;
+      overflow-wrap: anywhere;
+    }
+
+    .status-list {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 8px;
+      min-width: 0;
+      margin-top: 10px;
+    }
+
+    .status-pill {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 3px;
+      min-width: 0;
+      padding: 9px 10px;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      background: #fffdf8;
+      overflow-wrap: anywhere;
+    }
+
+    .status-pill strong {
+      font-size: 0.88rem;
+    }
+
+    .status-pill span {
+      color: var(--muted);
+      font-size: 0.78rem;
+    }
+
+    .board {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 12px;
+      min-width: 0;
+    }
+
+    .claim-card {
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: #fffdf8;
+      padding: 12px;
+      min-width: 0;
+    }
+
+    .claim-top {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 8px;
+      min-width: 0;
+      margin-bottom: 10px;
+    }
+
+    .source-tag {
+      width: fit-content;
+      max-width: 100%;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      background: var(--panel-2);
+      color: var(--soft);
+      padding: 5px 9px;
+      font-size: 0.75rem;
+      font-weight: 850;
+      overflow-wrap: anywhere;
+    }
+
+    .claim-text {
+      min-height: 70px;
+      font-weight: 700;
+    }
+
+    .chip-row {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 7px;
+      min-width: 0;
+      margin: 10px 0;
+    }
+
+    .chip {
+      min-width: 0;
+      border: 1px solid var(--line);
+      border-radius: 13px;
+      padding: 8px 9px;
+      background: var(--panel);
+      color: var(--soft);
+      font-size: 0.82rem;
+      overflow-wrap: anywhere;
+    }
+
+    .chip.good {
+      border-color: rgba(63, 112, 69, 0.45);
+      background: rgba(63, 112, 69, 0.10);
+      color: var(--good);
+    }
+
+    .chip.warn {
+      border-color: rgba(166, 108, 23, 0.45);
+      background: rgba(166, 108, 23, 0.10);
+      color: var(--warn);
+    }
+
+    .chip.danger {
+      border-color: rgba(155, 63, 53, 0.45);
+      background: rgba(155, 63, 53, 0.10);
+      color: var(--danger);
+    }
+
+    .claim-controls {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 8px;
+      min-width: 0;
+    }
+
+    .brief-box {
+      min-height: 220px;
+      white-space: pre-wrap;
+    }
+
+    .empty {
+      border: 1px dashed var(--line-strong);
+      border-radius: var(--radius);
+      padding: 14px;
+      color: var(--muted);
+      background: rgba(255, 250, 241, 0.65);
+      overflow-wrap: anywhere;
+    }
+
+    .notice {
+      margin: 10px 0 0;
+      color: var(--muted);
+      font-size: 0.85rem;
+      overflow-wrap: anywhere;
+    }
+
+    .footer-note {
+      margin: 14px 0 0;
+      color: var(--muted);
+      font-size: 0.78rem;
+      text-align: center;
+      overflow-wrap: anywhere;
+    }
+
+    @media (min-width: 740px) {
+      .page {
+        padding: 24px;
+      }
+
+      h1 {
+        font-size: clamp(3.2rem, 8vw, 5.8rem);
+      }
+
+      h1 span {
+        display: inline;
+      }
+
+      .app {
+        grid-template-columns: minmax(0, 1.05fr) minmax(300px, 0.95fr);
+        align-items: start;
+      }
+
+      .button-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .score-panel {
+        grid-template-columns: 150px minmax(0, 1fr);
+        align-items: center;
+      }
+
+      .score-ring {
+        width: 140px;
+        height: 140px;
+      }
+
+      .metrics {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .claim-top {
+        grid-template-columns: minmax(0, 1fr) auto;
+        align-items: start;
+      }
+
+      .chip-row {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+      }
+
+      .claim-controls {
+        grid-template-columns: minmax(0, 1fr) minmax(160px, 0.4fr);
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <header>
+      <div class="kicker">Offline content QA board</div>
+      <h1>
+        <span>Search</span>
+        <span>Snippet</span>
+        <span>Proof</span>
+        <span>Board</span>
+      </h1>
+      <p class="lede">
+        Paste a title tag, meta description, search-result promise, and supporting notes. The board splits the snippet into claims, checks each against the notes, flags risky wording, and exports a rewrite brief.
+      </p>
+    </header>
+
+    <section class="app" aria-label="Proof board app">
+      <div class="card">
+        <h2>Snippet inputs</h2>
+
+        <div class="field">
+          <label for="titleTag">Title tag</label>
+          <textarea id="titleTag" spellcheck="true">Best Small Business Tax Planning Checklist for 2026</textarea>
+          <p class="hint">Use the actual title tag, not the working headline.</p>
+        </div>
+
+        <div class="field">
+          <label for="metaDesc">Meta description</label>
+          <textarea id="metaDesc" spellcheck="true">Use this complete checklist to reduce tax surprises, find overlooked deductions, and prepare your records before year-end.</textarea>
+        </div>
+
+        <div class="field">
+          <label for="promise">Search-result promise</label>
+          <textarea id="promise" spellcheck="true">A practical year-end tax checklist for small business owners with recordkeeping steps, deduction review prompts, and planning reminders.</textarea>
+        </div>
+
+        <div class="field">
+          <label for="notes">Supporting notes or evidence</label>
+          <textarea id="notes" spellcheck="true">The article includes recordkeeping steps, deduction review prompts, estimated tax reminders, retirement contribution reminders, and year-end planning reminders. It does not include IRS 2026 limits yet. It does not prove a specific tax reduction amount.</textarea>
+          <p class="hint">Paste article notes, source excerpts, evidence bullets, or what the page truly contains.</p>
+        </div>
+
+        <div class="button-grid">
+          <button class="primary" id="runBtn" type="button">Run proof audit</button>
+          <button class="good" id="copyBtn" type="button">Copy rewrite brief</button>
+          <button id="downloadBtn" type="button">Download brief</button>
+          <button id="saveBtn" type="button">Save locally</button>
+          <button class="danger" id="clearBtn" type="button">Clear board</button>
+        </div>
+
+        <p class="notice" id="notice" role="status" aria-live="polite"></p>
+      </div>
+
+      <aside class="card">
+        <h2>Evidence score</h2>
+        <div class="score-panel">
+          <div class="score-ring" id="scoreRing" style="--score: 0">
+            <div class="score-value">
+              <strong id="scoreNumber">0</strong>
+              <small>backed score</small>
+            </div>
+          </div>
+
+          <div class="metrics">
+            <div class="metric">
+              <b id="claimCount">0</b>
+              <span>claims audited</span>
+            </div>
+            <div class="metric">
+              <b id="unsupportedCount">0</b>
+              <span>unsupported or risky</span>
+            </div>
+            <div class="metric">
+              <b id="avgMatch">0%</b>
+              <span>average evidence match</span>
+            </div>
+            <div class="metric">
+              <b id="riskCount">0</b>
+              <span>risk flags</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="status-list" id="statusList"></div>
+      </aside>
+    </section>
+
+    <section class="card" style="margin-top:14px;">
+      <h2>Claim cards</h2>
+      <div class="board" id="board"></div>
+    </section>
+
+    <section class="card" style="margin-top:14px;">
+      <h2>Rewrite brief</h2>
+      <textarea class="brief-box" id="brief" readonly></textarea>
+      <p class="hint">The brief updates whenever claim statuses or notes change.</p>
+    </section>
+
+    <p class="footer-note">Runs locally in one HTML file. No external libraries, assets, APIs, tracking, or network calls.</p>
+  </main>
+
+  <script>
+    (function () {
+      "use strict";
+
+      var storageKey = "snippet-proof-board-v1";
+
+      var els = {
+        titleTag: document.getElementById("titleTag"),
+        metaDesc: document.getElementById("metaDesc"),
+        promise: document.getElementById("promise"),
+        notes: document.getElementById("notes"),
+        runBtn: document.getElementById("runBtn"),
+        copyBtn: document.getElementById("copyBtn"),
+        downloadBtn: document.getElementById("downloadBtn"),
+        saveBtn: document.getElementById("saveBtn"),
+        clearBtn: document.getElementById("clearBtn"),
+        notice: document.getElementById("notice"),
+        board: document.getElementById("board"),
+        brief: document.getElementById("brief"),
+        scoreRing: document.getElementById("scoreRing"),
+        scoreNumber: document.getElementById("scoreNumber"),
+        claimCount: document.getElementById("claimCount"),
+        unsupportedCount: document.getElementById("unsupportedCount"),
+        avgMatch: document.getElementById("avgMatch"),
+        riskCount: document.getElementById("riskCount"),
+        statusList: document.getElementById("statusList")
+      };
+
+      var state = {
+        titleTag: "",
+        metaDesc: "",
+        promise: "",
+        notes: "",
+        claims: []
+      };
+
+      var stopWords = {
+        a: true, an: true, and: true, are: true, as: true, at: true, be: true,
+        before: true, by: true, can: true, for: true, from: true, get: true,
+        has: true, have: true, how: true, in: true, into: true, is: true,
+        it: true, its: true, of: true, on: true, or: true, our: true,
+        that: true, the: true, their: true, this: true, to: true, use: true,
+        with: true, without: true, your: true, you: true, we: true, will: true,
+        what: true, when: true, why: true, guide: true, checklist: true
+      };
+
+      var riskRules = [
+        { label: "superlative", words: ["best", "top", "#1", "number one", "fastest", "easiest", "ultimate", "leading", "only"] },
+        { label: "absolute", words: ["always", "never", "guaranteed", "guarantee", "complete", "all", "every", "none", "no one", "must"] },
+        { label: "result promise", words: ["increase", "boost", "double", "save", "reduce", "cut", "eliminate", "rank", "convert", "win", "grow"] },
+        { label: "freshness", words: ["latest", "new", "updated", "current", "2026", "2027"] },
+        { label: "authority", words: ["proven", "research-backed", "data-backed", "expert", "experts", "study", "studies"] }
+      ];
+
+      function setNotice(message) {
+        els.notice.textContent = message;
+      }
+
+      function normalizeText(text) {
+        return String(text || "")
+          .toLowerCase()
+          .replace(/[’']/g, "")
+          .replace(/&/g, " and ")
+          .replace(/[^a-z0-9#%$.\s-]/g, " ")
+          .replace(/\s+/g, " ")
+          .trim();
+      }
+
+      function tokens(text) {
+        var raw = normalizeText(text).split(/\s+/);
+        var out = [];
+        raw.forEach(function (word) {
+          var cleaned = word.replace(/^[.-]+|[.-]+$/g, "");
+          if (!cleaned) return;
+          if (cleaned.length < 3 && !/[0-9]/.test(cleaned)) return;
+          if (stopWords[cleaned]) return;
+          out.push(cleaned);
+        });
+        return out;
+      }
+
+      function unique(list) {
+        var seen = {};
+        var out = [];
+        list.forEach(function (item) {
+          var key = String(item || "").toLowerCase();
+          if (!key || seen[key]) return;
+          seen[key] = true;
+          out.push(item);
+        });
+        return out;
+      }
+
+      function splitClaims(text, source) {
+        var raw = String(text || "").trim();
+        if (!raw) return [];
+
+        var pieces = raw
+          .replace(/\s+[|•]\s+/g, ". ")
+          .replace(/\s+-\s+/g, ". ")
+          .split(/[\n.!?;]+/);
+
+        var claims = [];
+        pieces.forEach(function (piece) {
+          var cleaned = piece.replace(/\s+/g, " ").trim();
+          if (cleaned.length < 4) return;
+          claims.push({ text: cleaned, source: source });
+        });
+
+        if (!claims.length && raw.length > 0) {
+          claims.push({ text: raw, source: source });
+        }
+
+        return claims;
+      }
+
+      function extractClaims() {
+        var combined = []
+          .concat(splitClaims(els.titleTag.value, "Title tag"))
+          .concat(splitClaims(els.metaDesc.value, "Meta description"))
+          .concat(splitClaims(els.promise.value, "Search-result promise"));
+
+        var seen = {};
+        var out = [];
+
+        combined.forEach(function (claim) {
+          var key = normalizeText(claim.text);
+          if (!key || seen[key]) return;
+          seen[key] = true;
+          out.push(claim);
+        });
+
+        return out;
+      }
+
+      function getRiskFlags(text) {
+        var lower = normalizeText(text);
+        var flags = [];
+
+        riskRules.forEach(function (rule) {
+          var hit = rule.words.some(function (word) {
+            return lower.indexOf(word) !== -1;
+          });
+          if (hit) flags.push(rule.label);
+        });
+
+        if (/\b\d+(\.\d+)?\s?%/.test(lower)) flags.push("specific percentage");
+        if (/\$\s?\d|\b\d+\s?(dollars|usd)\b/.test(lower)) flags.push("specific dollar amount");
+        if (/\b\d{4}\b/.test(lower)) flags.push("date-sensitive");
+
+        return unique(flags);
+      }
+
+      function analyzeClaim(text) {
+        var noteText = els.notes.value || "";
+        var claimTokens = unique(tokens(text));
+        var noteTokens = unique(tokens(noteText));
+        var noteMap = {};
+
+        noteTokens.forEach(function (token) {
+          noteMap[token] = true;
+        });
+
+        var matched = [];
+        var missing = [];
+
+        claimTokens.forEach(function (token) {
+          if (noteMap[token]) {
+            matched.push(token);
+          } else {
+            missing.push(token);
+          }
+        });
+
+        var match = claimTokens.length ? matched.length / claimTokens.length : 0;
+        var risks = getRiskFlags(text);
+
+        return {
+          match: match,
+          matched: matched,
+          missing: missing.slice(0, 9),
+          risks: risks
+        };
+      }
+
+      function defaultStatus(analysis) {
+        if (analysis.match >= 0.62 && analysis.risks.length <= 1) return "backed";
+        if (analysis.match >= 0.45 && analysis.risks.length <= 2) return "needs-proof";
+        if (analysis.match >= 0.25 || analysis.risks.length > 0) return "soften";
+        return "remove";
+      }
+
+      function statusLabel(status) {
+        var labels = {
+          "backed": "Backed",
+          "needs-proof": "Needs proof",
+          "soften": "Soften",
+          "remove": "Remove"
+        };
+        return labels[status] || "Needs proof";
+      }
+
+      function statusValue(status) {
+        var values = {
+          "backed": 100,
+          "needs-proof": 58,
+          "soften": 34,
+          "remove": 8
+        };
+        return values[status] || 50;
+      }
+
+      function statusReason(claim) {
+        if (claim.status === "backed") return "Keep the claim if the evidence stays visible on the page.";
+        if (claim.status === "needs-proof") return "Add a citation, example, source, screenshot, data point, or page section that directly supports it.";
+        if (claim.status === "soften") return "Replace strong promise language with a narrower, provable version.";
+        return "Cut it from the snippet unless new evidence is added.";
+      }
+
+      function syncInputsToState() {
+        state.titleTag = els.titleTag.value;
+        state.metaDesc = els.metaDesc.value;
+        state.promise = els.promise.value;
+        state.notes = els.notes.value;
+      }
+
+      function saveLocal(showMessage) {
+        syncInputsToState();
+        try {
+          localStorage.setItem(storageKey, JSON.stringify(state));
+          if (showMessage) setNotice("Saved locally in this browser.");
+        } catch (err) {
+          if (showMessage) setNotice("Local save failed. Browser storage may be blocked.");
+        }
+      }
+
+      function loadLocal() {
+        try {
+          var saved = localStorage.getItem(storageKey);
+          if (!saved) return false;
+
+          var parsed = JSON.parse(saved);
+          state = {
+            titleTag: parsed.titleTag || "",
+            metaDesc: parsed.metaDesc || "",
+            promise: parsed.promise || "",
+            notes: parsed.notes || "",
+            claims: Array.isArray(parsed.claims) ? parsed.claims : []
+          };
+
+          els.titleTag.value = state.titleTag;
+          els.metaDesc.value = state.metaDesc;
+          els.promise.value = state.promise;
+          els.notes.value = state.notes;
+          return true;
+        } catch (err) {
+          return false;
+        }
+      }
+
+      function runAudit() {
+        syncInputsToState();
+
+        var found = extractClaims();
+        state.claims = found.map(function (item) {
+          var analysis = analyzeClaim(item.text);
+          return {
+            id: "claim-" + Math.random().toString(16).slice(2),
+            text: item.text,
+            source: item.source,
+            evidenceNote: "",
+            status: defaultStatus(analysis)
+          };
+        });
+
+        render();
+        saveLocal(false);
+        setNotice(state.claims.length ? "Audit built. Review each claim card before exporting." : "No claims found yet. Add snippet text and run the audit again.");
+      }
+
+      function recalcClaim(claim) {
+        var analysis = analyzeClaim(claim.text);
+        claim.match = analysis.match;
+        claim.matched = analysis.matched;
+        claim.missing = analysis.missing;
+        claim.risks = analysis.risks;
+        return claim;
+      }
+
+      function render() {
+        state.claims.forEach(recalcClaim);
+        renderBoard();
+        renderScore();
+        els.brief.value = buildBrief();
+      }
+
+      function removeChildren(node) {
+        while (node.firstChild) node.removeChild(node.firstChild);
+      }
+
+      function makeChip(text, tone) {
+        var chip = document.createElement("div");
+        chip.className = "chip" + (tone ? " " + tone : "");
+        chip.textContent = text;
+        return chip;
+      }
+
+      function renderBoard() {
+        removeChildren(els.board);
+
+        if (!state.claims.length) {
+          var empty = document.createElement("div");
+          empty.className = "empty";
+          empty.textContent = "Run a proof audit to create editable claim cards from the title tag, meta description, and search-result promise.";
+          els.board.appendChild(empty);
+          return;
+        }
+
+        state.claims.forEach(function (claim, index) {
+          var card = document.createElement("article");
+          card.className = "claim-card";
+
+          var top = document.createElement("div");
+          top.className = "claim-top";
+
+          var title = document.createElement("h3");
+          title.textContent = "Claim " + (index + 1);
+
+          var source = document.createElement("div");
+          source.className = "source-tag";
+          source.textContent = claim.source;
+
+          top.appendChild(title);
+          top.appendChild(source);
+
+          var claimField = document.createElement("div");
+          claimField.className = "field";
+
+          var claimLabel = document.createElement("label");
+          claimLabel.textContent = "Claim text";
+
+          var claimInput = document.createElement("textarea");
+          claimInput.className = "claim-text";
+          claimInput.value = claim.text;
+          claimInput.addEventListener("input", function () {
+            claim.text = claimInput.value;
+            recalcClaim(claim);
+            renderScore();
+            els.brief.value = buildBrief();
+            saveLocal(false);
+            refreshCardAnalysis(card, claim);
+          });
+
+          claimField.appendChild(claimLabel);
+          claimField.appendChild(claimInput);
+
+          var chips = document.createElement("div");
+          chips.className = "chip-row";
+          chips.setAttribute("data-chip-row", "true");
+
+          card.appendChild(top);
+          card.appendChild(claimField);
+          card.appendChild(chips);
+
+          var controls = document.createElement("div");
+          controls.className = "claim-controls";
+
+          var evidenceField = document.createElement("div");
+          evidenceField.className = "field";
+
+          var evidenceLabel = document.createElement("label");
+          evidenceLabel.textContent = "Evidence note or rewrite instruction";
+
+          var evidenceInput = document.createElement("textarea");
+          evidenceInput.value = claim.evidenceNote || "";
+          evidenceInput.placeholder = "Example: add source link, cite page section, soften wording, or remove the claim.";
+          evidenceInput.addEventListener("input", function () {
+            claim.evidenceNote = evidenceInput.value;
+            els.brief.value = buildBrief();
+            saveLocal(false);
+          });
+
+          evidenceField.appendChild(evidenceLabel);
+          evidenceField.appendChild(evidenceInput);
+
+          var statusField = document.createElement("div");
+          statusField.className = "field";
+
+          var statusLabelEl = document.createElement("label");
+          statusLabelEl.textContent = "Decision";
+
+          var select = document.createElement("select");
+          [
+            ["backed", "Backed"],
+            ["needs-proof", "Needs proof"],
+            ["soften", "Soften"],
+            ["remove", "Remove"]
+          ].forEach(function (pair) {
+            var option = document.createElement("option");
+            option.value = pair[0];
+            option.textContent = pair[1];
+            select.appendChild(option);
+          });
+
+          select.value = claim.status;
+          select.addEventListener("change", function () {
+            claim.status = select.value;
+            renderScore();
+            els.brief.value = buildBrief();
+            saveLocal(false);
+            refreshCardAnalysis(card, claim);
+          });
+
+          statusField.appendChild(statusLabelEl);
+          statusField.appendChild(select);
+
+          controls.appendChild(evidenceField);
+          controls.appendChild(statusField);
+
+          card.appendChild(controls);
+          els.board.appendChild(card);
+
+          refreshCardAnalysis(card, claim);
+        });
+      }
+
+      function refreshCardAnalysis(card, claim) {
+        var chipRow = card.querySelector("[data-chip-row]");
+        if (!chipRow) return;
+
+        removeChildren(chipRow);
+
+        var matchPercent = Math.round((claim.match || 0) * 100);
+        var matchTone = matchPercent >= 60 ? "good" : matchPercent >= 35 ? "warn" : "danger";
+        chipRow.appendChild(makeChip("Evidence match: " + matchPercent + "%", matchTone));
+
+        if (claim.risks && claim.risks.length) {
+          chipRow.appendChild(makeChip("Risk flags: " + claim.risks.join(", "), "warn"));
+        } else {
+          chipRow.appendChild(makeChip("Risk flags: none detected", "good"));
+        }
+
+        if (claim.missing && claim.missing.length) {
+          chipRow.appendChild(makeChip("Missing support terms: " + claim.missing.join(", "), "danger"));
+        } else {
+          chipRow.appendChild(makeChip("Missing support terms: none", "good"));
+        }
+      }
+
+      function renderScore() {
+        var total = state.claims.length;
+        var unsupported = 0;
+        var riskTotal = 0;
+        var matchTotal = 0;
+        var statusTotal = 0;
+
+        state.claims.forEach(function (claim) {
+          matchTotal += claim.match || 0;
+          riskTotal += claim.risks ? claim.risks.length : 0;
+          statusTotal += statusValue(claim.status);
+          if (claim.status !== "backed") unsupported += 1;
+        });
+
+        var avgMatchValue = total ? matchTotal / total : 0;
+        var statusAvg = total ? statusTotal / total : 0;
+        var riskPenalty = total ? Math.min(28, (riskTotal / total) * 8) : 0;
+        var score = total ? Math.max(0, Math.min(100, Math.round((avgMatchValue * 46) + (statusAvg * 0.54) - riskPenalty))) : 0;
+
+        els.scoreRing.style.setProperty("--score", String(score));
+        els.scoreNumber.textContent = String(score);
+        els.claimCount.textContent = String(total);
+        els.unsupportedCount.textContent = String(unsupported);
+        els.avgMatch.textContent = String(Math.round(avgMatchValue * 100)) + "%";
+        els.riskCount.textContent = String(riskTotal);
+
+        renderStatusList(total, unsupported, riskTotal, score);
+      }
+
+      function renderStatusList(total, unsupported, riskTotal, score) {
+        removeChildren(els.statusList);
+
+        var lines = [];
+
+        if (!total) {
+          lines.push(["No audit yet", "Paste snippet text and run the proof audit."]);
+        } else if (score >= 80) {
+          lines.push(["Snippet is mostly backed", "Check any remaining proof notes before publishing."]);
+        } else if (score >= 55) {
+          lines.push(["Snippet needs tightening", "Some claims need proof, softer wording, or narrower promises."]);
+        } else {
+          lines.push(["High rewrite risk", "The snippet is making promises the notes do not clearly support."]);
+        }
+
+        if (unsupported) {
+          lines.push([unsupported + " claim decisions open", "Anything not marked backed should be fixed before final QA."]);
+        }
+
+        if (riskTotal) {
+          lines.push([riskTotal + " wording risk flags", "Superlatives, absolutes, freshness claims, and result promises need direct support."]);
+        }
+
+        lines.forEach(function (line) {
+          var item = document.createElement("div");
+          item.className = "status-pill";
+
+          var strong = document.createElement("strong");
+          strong.textContent = line[0];
+
+          var span = document.createElement("span");
+          span.textContent = line[1];
+
+          item.appendChild(strong);
+          item.appendChild(span);
+          els.statusList.appendChild(item);
+        });
+      }
+
+      function buildBrief() {
+        var lines = [];
+        var unsupported = state.claims.filter(function (claim) {
+          return claim.status !== "backed";
+        });
+        var backed = state.claims.filter(function (claim) {
+          return claim.status === "backed";
+        });
+
+        var scoreText = els.scoreNumber ? els.scoreNumber.textContent : "0";
+
+        lines.push("SEARCH SNIPPET REWRITE BRIEF");
+        lines.push("");
+        lines.push("Evidence score: " + scoreText + "/100");
+        lines.push("Claims audited: " + state.claims.length);
+        lines.push("Claims needing proof, softening, or removal: " + unsupported.length);
+        lines.push("");
+
+        lines.push("Current snippet:");
+        lines.push("Title tag: " + (els.titleTag.value.trim() || "[missing]"));
+        lines.push("Meta description: " + (els.metaDesc.value.trim() || "[missing]"));
+        lines.push("Search-result promise: " + (els.promise.value.trim() || "[missing]"));
+        lines.push("");
+
+        if (!state.claims.length) {
+          lines.push("No claim cards yet. Run the proof audit first.");
+          return lines.join("\n");
+        }
+
+        if (unsupported.length) {
+          lines.push("Fix first:");
+          unsupported.forEach(function (claim, index) {
+            var riskText = claim.risks && claim.risks.length ? claim.risks.join(", ") : "none detected";
+            var missingText = claim.missing && claim.missing.length ? claim.missing.join(", ") : "none";
+            lines.push((index + 1) + ". " + statusLabel(claim.status) + " — " + claim.text);
+            lines.push("   Source: " + claim.source);
+            lines.push("   Evidence match: " + Math.round((claim.match || 0) * 100) + "%");
+            lines.push("   Risk flags: " + riskText);
+            lines.push("   Missing support terms: " + missingText);
+            lines.push("   Action: " + statusReason(claim));
+            if (claim.evidenceNote && claim.evidenceNote.trim()) {
+              lines.push("   Note: " + claim.evidenceNote.trim());
+            }
+          });
+          lines.push("");
+        }
+
+        if (backed.length) {
+          lines.push("Safe to keep if page evidence remains visible:");
+          backed.forEach(function (claim, index) {
+            lines.push((index + 1) + ". " + claim.text + " [" + claim.source + "]");
+          });
+          lines.push("");
+        }
+
+        lines.push("Rewrite direction:");
+        if (unsupported.length) {
+          lines.push("Use only the backed claims in the snippet. Replace broad promises with specific page contents. Add direct evidence before using any superlative, absolute, freshness, authority, numeric, or result claim.");
+        } else {
+          lines.push("Current snippet is broadly aligned with the supporting notes. Keep the wording specific and make sure the page visibly supports each claim.");
+        }
+
+        return lines.join("\n");
+      }
+
+      function copyBrief() {
+        els.brief.value = buildBrief();
+
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(els.brief.value).then(function () {
+            setNotice("Rewrite brief copied.");
+          }).catch(function () {
+            fallbackCopy();
+          });
+        } else {
+          fallbackCopy();
+        }
+      }
+
+      function fallbackCopy() {
+        els.brief.focus();
+        els.brief.select();
+        try {
+          document.execCommand("copy");
+          setNotice("Rewrite brief copied.");
+        } catch (err) {
+          setNotice("Copy failed. Select the brief text and copy it manually.");
+        }
+      }
+
+      function downloadBrief() {
+        els.brief.value = buildBrief();
+
+        var blob = new Blob([els.brief.value], { type: "text/plain;charset=utf-8" });
+        var url = URL.createObjectURL(blob);
+        var a = document.createElement("a");
+        var stamp = new Date().toISOString().slice(0, 10);
+
+        a.href = url;
+        a.download = "snippet-proof-brief-" + stamp + ".txt";
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+
+        setTimeout(function () {
+          URL.revokeObjectURL(url);
+        }, 200);
+
+        setNotice("Brief downloaded.");
+      }
+
+      function clearBoard() {
+        state = {
+          titleTag: "",
+          metaDesc: "",
+          promise: "",
+          notes: "",
+          claims: []
+        };
+
+        els.titleTag.value = "";
+        els.metaDesc.value = "";
+        els.promise.value = "";
+        els.notes.value = "";
+
+        try {
+          localStorage.removeItem(storageKey);
+        } catch (err) {}
+
+        render();
+        setNotice("Board cleared.");
+      }
+
+      function bindAutosave() {
+        [els.titleTag, els.metaDesc, els.promise, els.notes].forEach(function (input) {
+          input.addEventListener("input", function () {
+            syncInputsToState();
+            if (state.claims.length) {
+              state.claims.forEach(recalcClaim);
+              renderScore();
+              els.brief.value = buildBrief();
+              state.claims.forEach(recalcClaim);
+            }
+            saveLocal(false);
+          });
+        });
+      }
+
+      els.runBtn.addEventListener("click", runAudit);
+      els.copyBtn.addEventListener("click", copyBrief);
+      els.downloadBtn.addEventListener("click", downloadBrief);
+      els.saveBtn.addEventListener("click", function () {
+        saveLocal(true);
+      });
+      els.clearBtn.addEventListener("click", clearBoard);
+
+      bindAutosave();
+
+      var hadSaved = loadLocal();
+      if (hadSaved && state.claims.length) {
+        render();
+        setNotice("Loaded your saved board.");
+      } else {
+        syncInputsToState();
+        render();
+      }
+    })();
+  </script>
+</body>
+</html>

@@ -6,6 +6,608 @@ import { basename, join } from 'node:path'
 const failures = []
 
 const sourceRunProjects = [
+  // Generated current pending source-run check entries.
+  {
+    name: "Sticker Sheet Style Drift Mixer",
+    route: "src/app/sticker-sheet-style-drift-mixer-claude-demo/page.tsx",
+    projectId: "STICKER_SHEET_STYLE_DRIFT_MIXER_CLAUDE_PROJECT_ID",
+    showcaseExport: 'PENDING_SOURCE_RUN_SHOWCASE_PROJECTS',
+    href: "/sticker-sheet-style-drift-mixer-claude-demo",
+    packagePath: "seed-runs/sticker-sheet-style-drift-mixer-claude-source-run.json",
+  },
+  {
+    name: "YouTube Scene Budget Beat Sorter",
+    route: "src/app/youtube-scene-budget-beat-sorter-gemini-demo/page.tsx",
+    projectId: "YOUTUBE_SCENE_BUDGET_BEAT_SORTER_GEMINI_PROJECT_ID",
+    showcaseExport: 'PENDING_SOURCE_RUN_SHOWCASE_PROJECTS',
+    href: "/youtube-scene-budget-beat-sorter-gemini-demo",
+    packagePath: "seed-runs/youtube-scene-budget-beat-sorter-gemini-source-run.json",
+  },
+  {
+    name: "Reader Promise Evidence Ladder",
+    route: "src/app/reader-promise-evidence-ladder-chatgpt-demo/page.tsx",
+    projectId: "READER_PROMISE_EVIDENCE_LADDER_CHATGPT_PROJECT_ID",
+    showcaseExport: 'PENDING_SOURCE_RUN_SHOWCASE_PROJECTS',
+    href: "/reader-promise-evidence-ladder-chatgpt-demo",
+    packagePath: "seed-runs/reader-promise-evidence-ladder-chatgpt-source-run.json",
+  },
+  {
+    name: "Four-Week Content Gap Heatmap",
+    route: "src/app/four-week-content-gap-heatmap-gemini-demo/page.tsx",
+    projectId: "FOUR_WEEK_CONTENT_GAP_HEATMAP_GEMINI_PROJECT_ID",
+    showcaseExport: 'PENDING_SOURCE_RUN_SHOWCASE_PROJECTS',
+    href: "/four-week-content-gap-heatmap-gemini-demo",
+    packagePath: "seed-runs/four-week-content-gap-heatmap-gemini-source-run.json",
+  },
+  {
+    name: "YouTube Title Tag Safe-Zone Board",
+    route: "src/app/youtube-title-tag-safe-zone-board-claude-demo/page.tsx",
+    projectId: "YOUTUBE_TITLE_TAG_SAFE_ZONE_BOARD_CLAUDE_PROJECT_ID",
+    showcaseExport: 'PENDING_SOURCE_RUN_SHOWCASE_PROJECTS',
+    href: "/youtube-title-tag-safe-zone-board-claude-demo",
+    packagePath: "seed-runs/youtube-title-tag-safe-zone-board-claude-source-run.json",
+  },
+  {
+    name: "Meta Tag CTR Card Duel",
+    route: "src/app/meta-tag-ctr-card-duel-chatgpt-demo/page.tsx",
+    projectId: "META_TAG_CTR_CARD_DUEL_CHATGPT_PROJECT_ID",
+    showcaseExport: 'PENDING_SOURCE_RUN_SHOWCASE_PROJECTS',
+    href: "/meta-tag-ctr-card-duel-chatgpt-demo",
+    packagePath: "seed-runs/meta-tag-ctr-card-duel-chatgpt-source-run.json",
+  },
+  {
+    name: "Campaign Caption Ingredient Mixer",
+    route: "src/app/campaign-caption-ingredient-mixer-gemini-demo/page.tsx",
+    projectId: "CAMPAIGN_CAPTION_INGREDIENT_MIXER_GEMINI_PROJECT_ID",
+    showcaseExport: 'PENDING_SOURCE_RUN_SHOWCASE_PROJECTS',
+    href: "/campaign-caption-ingredient-mixer-gemini-demo",
+    packagePath: "seed-runs/campaign-caption-ingredient-mixer-gemini-source-run.json",
+  },
+  {
+    name: "Icon Set Style Consistency Tiles",
+    route: "src/app/icon-set-style-consistency-tiles-claude-demo/page.tsx",
+    projectId: "ICON_SET_STYLE_CONSISTENCY_TILES_CLAUDE_PROJECT_ID",
+    showcaseExport: 'PENDING_SOURCE_RUN_SHOWCASE_PROJECTS',
+    href: "/icon-set-style-consistency-tiles-claude-demo",
+    packagePath: "seed-runs/icon-set-style-consistency-tiles-claude-source-run.json",
+  },
+  {
+    name: "Forum Reply Helpfulness Dial",
+    route: "src/app/forum-reply-helpfulness-dial-chatgpt-demo/page.tsx",
+    projectId: "FORUM_REPLY_HELPFULNESS_DIAL_CHATGPT_PROJECT_ID",
+    showcaseExport: 'PENDING_SOURCE_RUN_SHOWCASE_PROJECTS',
+    href: "/forum-reply-helpfulness-dial-chatgpt-demo",
+    packagePath: "seed-runs/forum-reply-helpfulness-dial-chatgpt-source-run.json",
+  },
+  {
+    name: "YouTube B-roll Coverage Card Dealer",
+    route: "src/app/youtube-broll-coverage-card-dealer-chatgpt-demo/page.tsx",
+    projectId: "YOUTUBE_BROLL_COVERAGE_CARD_DEALER_CHATGPT_PROJECT_ID",
+    showcaseExport: 'PENDING_SOURCE_RUN_SHOWCASE_PROJECTS',
+    href: "/youtube-broll-coverage-card-dealer-chatgpt-demo",
+    packagePath: "seed-runs/youtube-broll-coverage-card-dealer-chatgpt-source-run.json",
+  },
+  {
+    name: "Content Calendar Collision Resolver",
+    route: "src/app/content-calendar-collision-resolver-gemini-demo/page.tsx",
+    projectId: "CONTENT_CALENDAR_COLLISION_RESOLVER_GEMINI_PROJECT_ID",
+    showcaseExport: 'PENDING_SOURCE_RUN_SHOWCASE_PROJECTS',
+    href: "/content-calendar-collision-resolver-gemini-demo",
+    packagePath: "seed-runs/content-calendar-collision-resolver-gemini-source-run.json",
+  },
+  {
+    name: "Thumbnail Safe-Zone Storyboard",
+    route: "src/app/thumbnail-safe-zone-storyboard-claude-demo/page.tsx",
+    projectId: "THUMBNAIL_SAFE_ZONE_STORYBOARD_CLAUDE_PROJECT_ID",
+    showcaseExport: 'PENDING_SOURCE_RUN_SHOWCASE_PROJECTS',
+    href: "/thumbnail-safe-zone-storyboard-claude-demo",
+    packagePath: "seed-runs/thumbnail-safe-zone-storyboard-claude-source-run.json",
+  },
+  {
+    name: "Recipe Pop-Up Menu Profit Cards",
+    route: "src/app/recipe-pop-up-menu-profit-cards-gemini-demo/page.tsx",
+    projectId: "RECIPE_POP_UP_MENU_PROFIT_CARDS_GEMINI_PROJECT_ID",
+    showcaseExport: 'PENDING_SOURCE_RUN_SHOWCASE_PROJECTS',
+    href: "/recipe-pop-up-menu-profit-cards-gemini-demo",
+    packagePath: "seed-runs/recipe-pop-up-menu-profit-cards-gemini-source-run.json",
+  },
+  {
+    name: "Search Result Promise Proof Board",
+    route: "src/app/search-result-promise-proof-board-chatgpt-demo/page.tsx",
+    projectId: "SEARCH_RESULT_PROMISE_PROOF_BOARD_CHATGPT_PROJECT_ID",
+    showcaseExport: 'PENDING_SOURCE_RUN_SHOWCASE_PROJECTS',
+    href: "/search-result-promise-proof-board-chatgpt-demo",
+    packagePath: "seed-runs/search-result-promise-proof-board-chatgpt-source-run.json",
+  },
+  {
+    name: "Visual Brief Consistency Board",
+    route: "src/app/visual-brief-consistency-board-claude-demo/page.tsx",
+    projectId: "VISUAL_BRIEF_CONSISTENCY_BOARD_CLAUDE_PROJECT_ID",
+    showcaseExport: 'PENDING_SOURCE_RUN_SHOWCASE_PROJECTS',
+    href: "/visual-brief-consistency-board-claude-demo",
+    packagePath: "seed-runs/visual-brief-consistency-board-claude-source-run.json",
+  },
+  {
+    name: "Product Claim Shelf Audit Cards",
+    route: "src/app/product-claim-shelf-audit-cards-gemini-demo/page.tsx",
+    projectId: "PRODUCT_CLAIM_SHELF_AUDIT_CARDS_GEMINI_PROJECT_ID",
+    showcaseExport: 'PENDING_SOURCE_RUN_SHOWCASE_PROJECTS',
+    href: "/product-claim-shelf-audit-cards-gemini-demo",
+    packagePath: "seed-runs/product-claim-shelf-audit-cards-gemini-source-run.json",
+  },
+  {
+    name: "Headline Promise Bracket",
+    route: "src/app/headline-promise-bracket-chatgpt-demo/page.tsx",
+    projectId: "HEADLINE_PROMISE_BRACKET_CHATGPT_PROJECT_ID",
+    showcaseExport: 'PENDING_SOURCE_RUN_SHOWCASE_PROJECTS',
+    href: "/headline-promise-bracket-chatgpt-demo",
+    packagePath: "seed-runs/headline-promise-bracket-chatgpt-source-run.json",
+  },
+  {
+    name: "Pantry Substitution Confidence Stack",
+    route: "src/app/pantry-substitution-confidence-stack-gemini-demo/page.tsx",
+    projectId: "PANTRY_SUBSTITUTION_CONFIDENCE_STACK_GEMINI_PROJECT_ID",
+    showcaseExport: 'PENDING_SOURCE_RUN_SHOWCASE_PROJECTS',
+    href: "/pantry-substitution-confidence-stack-gemini-demo",
+    packagePath: "seed-runs/pantry-substitution-confidence-stack-gemini-source-run.json",
+  },
+  {
+    name: "FAQ Answer Freshness Flashcards",
+    route: "src/app/faq-answer-freshness-flashcards-chatgpt-demo/page.tsx",
+    projectId: "FAQ_ANSWER_FRESHNESS_FLASHCARDS_CHATGPT_PROJECT_ID",
+    showcaseExport: 'PENDING_SOURCE_RUN_SHOWCASE_PROJECTS',
+    href: "/faq-answer-freshness-flashcards-chatgpt-demo",
+    packagePath: "seed-runs/faq-answer-freshness-flashcards-chatgpt-source-run.json",
+  },
+  {
+    name: "Recipe Leftover Caption Pack Sorter",
+    route: "src/app/recipe-leftover-caption-pack-sorter-gemini-demo/page.tsx",
+    projectId: "RECIPE_LEFTOVER_CAPTION_PACK_SORTER_GEMINI_PROJECT_ID",
+    showcaseExport: 'PENDING_SOURCE_RUN_SHOWCASE_PROJECTS',
+    href: "/recipe-leftover-caption-pack-sorter-gemini-demo",
+    packagePath: "seed-runs/recipe-leftover-caption-pack-sorter-gemini-source-run.json",
+  },
+  {
+    name: "Article Freshness Rewrite Triage Wheel",
+    route: "src/app/article-freshness-rewrite-triage-wheel-chatgpt-demo/page.tsx",
+    projectId: "ARTICLE_FRESHNESS_REWRITE_TRIAGE_WHEEL_CHATGPT_PROJECT_ID",
+    showcaseExport: 'PENDING_SOURCE_RUN_SHOWCASE_PROJECTS',
+    href: "/article-freshness-rewrite-triage-wheel-chatgpt-demo",
+    packagePath: "seed-runs/article-freshness-rewrite-triage-wheel-chatgpt-source-run.json",
+  },
+  {
+    name: "Instagram Caption CTA Mix Board",
+    route: "src/app/instagram-caption-cta-mix-board-gemini-demo/page.tsx",
+    projectId: "INSTAGRAM_CAPTION_CTA_MIX_BOARD_GEMINI_PROJECT_ID",
+    showcaseExport: 'PENDING_SOURCE_RUN_SHOWCASE_PROJECTS',
+    href: "/instagram-caption-cta-mix-board-gemini-demo",
+    packagePath: "seed-runs/instagram-caption-cta-mix-board-gemini-source-run.json",
+  },
+  {
+    name: "Back-Cover Blurb Beat Mapper",
+    route: "src/app/back-cover-blurb-beat-mapper-claude-demo/page.tsx",
+    projectId: "BACK_COVER_BLURB_BEAT_MAPPER_CLAUDE_PROJECT_ID",
+    showcaseExport: 'PENDING_SOURCE_RUN_SHOWCASE_PROJECTS',
+    href: "/back-cover-blurb-beat-mapper-claude-demo",
+    packagePath: "seed-runs/back-cover-blurb-beat-mapper-claude-source-run.json",
+  },
+  {
+    name: "Product Objection Q&A Shelf",
+    route: "src/app/product-objection-qa-shelf-chatgpt-demo/page.tsx",
+    projectId: "PRODUCT_OBJECTION_QA_SHELF_CHATGPT_PROJECT_ID",
+    showcaseExport: 'PENDING_SOURCE_RUN_SHOWCASE_PROJECTS',
+    href: "/product-objection-qa-shelf-chatgpt-demo",
+    packagePath: "seed-runs/product-objection-qa-shelf-chatgpt-source-run.json",
+  },
+  {
+    name: "Long Thread TLDR Fact Deck",
+    route: "src/app/long-thread-tldr-fact-deck-openrouter-nex-demo/page.tsx",
+    projectId: "LONG_THREAD_TLDR_FACT_DECK_OPENROUTER_NEX_PROJECT_ID",
+    showcaseExport: 'PENDING_SOURCE_RUN_SHOWCASE_PROJECTS',
+    href: "/long-thread-tldr-fact-deck-openrouter-nex-demo",
+    packagePath: "seed-runs/long-thread-tldr-fact-deck-openrouter-nex-source-run.json",
+  },
+  {
+    name: "Community Answer Evidence Balance Board",
+    route: "src/app/community-answer-evidence-balance-openrouter-nemotron-demo/page.tsx",
+    projectId: "COMMUNITY_ANSWER_EVIDENCE_BALANCE_OPENROUTER_NEMOTRON_PROJECT_ID",
+    showcaseExport: 'PENDING_SOURCE_RUN_SHOWCASE_PROJECTS',
+    href: "/community-answer-evidence-balance-openrouter-nemotron-demo",
+    packagePath: "seed-runs/community-answer-evidence-balance-openrouter-nemotron-source-run.json",
+  },
+  {
+    name: "Product Photo Prompt Card Studio",
+    route: "src/app/product-photo-prompt-card-studio-gemini-demo/page.tsx",
+    projectId: "PRODUCT_PHOTO_PROMPT_CARD_STUDIO_GEMINI_PROJECT_ID",
+    showcaseExport: 'PENDING_SOURCE_RUN_SHOWCASE_PROJECTS',
+    href: "/product-photo-prompt-card-studio-gemini-demo",
+    packagePath: "seed-runs/product-photo-prompt-card-studio-gemini-source-run.json",
+  },
+  {
+    name: "Proposal Red Flag Heatmap",
+    route: "src/app/proposal-red-flag-heatmap-claude-demo/page.tsx",
+    projectId: "PROPOSAL_RED_FLAG_HEATMAP_CLAUDE_PROJECT_ID",
+    showcaseExport: 'PENDING_SOURCE_RUN_SHOWCASE_PROJECTS',
+    href: "/proposal-red-flag-heatmap-claude-demo",
+    packagePath: "seed-runs/proposal-red-flag-heatmap-claude-source-run.json",
+  },
+  {
+    name: "YouTube Cold Open Beat Board",
+    route: "src/app/youtube-cold-open-beat-board-chatgpt-demo/page.tsx",
+    projectId: "YOUTUBE_COLD_OPEN_BEAT_BOARD_CHATGPT_PROJECT_ID",
+    showcaseExport: 'PENDING_SOURCE_RUN_SHOWCASE_PROJECTS',
+    href: "/youtube-cold-open-beat-board-chatgpt-demo",
+    packagePath: "seed-runs/youtube-cold-open-beat-board-chatgpt-source-run.json",
+  },
+  {
+    name: "Carousel Hook Continuity Checker",
+    route: "src/app/carousel-hook-continuity-checker-claude-demo/page.tsx",
+    projectId: "CAROUSEL_HOOK_CONTINUITY_CHECKER_CLAUDE_PROJECT_ID",
+    showcaseExport: 'PENDING_SOURCE_RUN_SHOWCASE_PROJECTS',
+    href: "/carousel-hook-continuity-checker-claude-demo",
+    packagePath: "seed-runs/carousel-hook-continuity-checker-claude-source-run.json",
+  },
+  {
+    name: "Four-Week Content Calendar Capacity Grid",
+    route: "src/app/four-week-content-calendar-capacity-grid-gemini-demo/page.tsx",
+    projectId: "FOUR_WEEK_CONTENT_CALENDAR_CAPACITY_GRID_GEMINI_PROJECT_ID",
+    showcaseExport: 'PENDING_SOURCE_RUN_SHOWCASE_PROJECTS',
+    href: "/four-week-content-calendar-capacity-grid-gemini-demo",
+    packagePath: "seed-runs/four-week-content-calendar-capacity-grid-gemini-source-run.json",
+  },
+  {
+    name: "Client Email Reply Risk Meter",
+    route: "src/app/client-email-reply-risk-meter-chatgpt-demo/page.tsx",
+    projectId: "CLIENT_EMAIL_REPLY_RISK_METER_CHATGPT_PROJECT_ID",
+    showcaseExport: 'PENDING_SOURCE_RUN_SHOWCASE_PROJECTS',
+    href: "/client-email-reply-risk-meter-chatgpt-demo",
+    packagePath: "seed-runs/client-email-reply-risk-meter-chatgpt-source-run.json",
+  },
+  {
+    name: "Logo Brief Constraint Mixer",
+    route: "src/app/logo-brief-constraint-mixer-claude-demo/page.tsx",
+    projectId: "LOGO_BRIEF_CONSTRAINT_MIXER_CLAUDE_PROJECT_ID",
+    showcaseExport: 'PENDING_SOURCE_RUN_SHOWCASE_PROJECTS',
+    href: "/logo-brief-constraint-mixer-claude-demo",
+    packagePath: "seed-runs/logo-brief-constraint-mixer-claude-source-run.json",
+  },
+  {
+    name: "Keyword Intent Cluster Sprint",
+    route: "src/app/keyword-intent-cluster-sprint-gemini-demo/page.tsx",
+    projectId: "KEYWORD_INTENT_CLUSTER_SPRINT_GEMINI_PROJECT_ID",
+    showcaseExport: 'PENDING_SOURCE_RUN_SHOWCASE_PROJECTS',
+    href: "/keyword-intent-cluster-sprint-gemini-demo",
+    packagePath: "seed-runs/keyword-intent-cluster-sprint-gemini-source-run.json",
+  },
+  {
+    name: "Article Claim Evidence Ladder",
+    route: "src/app/article-claim-evidence-ladder-chatgpt-demo/page.tsx",
+    projectId: "ARTICLE_CLAIM_EVIDENCE_LADDER_CHATGPT_PROJECT_ID",
+    showcaseExport: 'PENDING_SOURCE_RUN_SHOWCASE_PROJECTS',
+    href: "/article-claim-evidence-ladder-chatgpt-demo",
+    packagePath: "seed-runs/article-claim-evidence-ladder-chatgpt-source-run.json",
+  },
+  {
+    name: "Cookbook Promo Readiness Cards",
+    route: "src/app/cookbook-promo-readiness-cards-gemini-demo/page.tsx",
+    projectId: "COOKBOOK_PROMO_READINESS_CARDS_GEMINI_PROJECT_ID",
+    showcaseExport: 'PENDING_SOURCE_RUN_SHOWCASE_PROJECTS',
+    href: "/cookbook-promo-readiness-cards-gemini-demo",
+    packagePath: "seed-runs/cookbook-promo-readiness-cards-gemini-source-run.json",
+  },
+  {
+    name: "Chapter Scope Map for Tiny Books",
+    route: "src/app/chapter-scope-map-tiny-books-claude-demo/page.tsx",
+    projectId: "CHAPTER_SCOPE_MAP_TINY_BOOKS_CLAUDE_PROJECT_ID",
+    showcaseExport: 'PENDING_SOURCE_RUN_SHOWCASE_PROJECTS',
+    href: "/chapter-scope-map-tiny-books-claude-demo",
+    packagePath: "seed-runs/chapter-scope-map-tiny-books-claude-source-run.json",
+  },
+  {
+    name: "Short Video Hook Beat Sheet Timer",
+    route: "src/app/short-video-hook-beat-sheet-timer-gemini-demo/page.tsx",
+    projectId: "SHORT_VIDEO_HOOK_BEAT_SHEET_TIMER_GEMINI_PROJECT_ID",
+    showcaseExport: 'PENDING_SOURCE_RUN_SHOWCASE_PROJECTS',
+    href: "/short-video-hook-beat-sheet-timer-gemini-demo",
+    packagePath: "seed-runs/short-video-hook-beat-sheet-timer-gemini-source-run.json",
+  },
+  {
+    name: "Product Description Shelf Card Stress Tester",
+    route: "src/app/product-description-shelf-card-stress-tester-chatgpt-demo/page.tsx",
+    projectId: "PRODUCT_DESCRIPTION_SHELF_CARD_STRESS_TESTER_CHATGPT_PROJECT_ID",
+    showcaseExport: 'PENDING_SOURCE_RUN_SHOWCASE_PROJECTS',
+    href: "/product-description-shelf-card-stress-tester-chatgpt-demo",
+    packagePath: "seed-runs/product-description-shelf-card-stress-tester-chatgpt-source-run.json",
+  },
+  {
+    name: "Recipe Promo Batch QA Board",
+    route: "src/app/recipe-promo-batch-qa-board-gemini-demo/page.tsx",
+    projectId: "RECIPE_PROMO_BATCH_QA_BOARD_GEMINI_PROJECT_ID",
+    showcaseExport: 'PENDING_SOURCE_RUN_SHOWCASE_PROJECTS',
+    href: "/recipe-promo-batch-qa-board-gemini-demo",
+    packagePath: "seed-runs/recipe-promo-batch-qa-board-gemini-source-run.json",
+  },
+  {
+    name: "Pocket Zine Collage Layout Studio",
+    route: "src/app/pocket-zine-collage-layout-studio-claude-demo/page.tsx",
+    projectId: "POCKET_ZINE_COLLAGE_LAYOUT_STUDIO_CLAUDE_PROJECT_ID",
+    showcaseExport: 'PENDING_SOURCE_RUN_SHOWCASE_PROJECTS',
+    href: "/pocket-zine-collage-layout-studio-claude-demo",
+    packagePath: "seed-runs/pocket-zine-collage-layout-studio-claude-source-run.json",
+  },
+  {
+    name: "Offer Salvage Triage Desk",
+    route: "src/app/offer-salvage-triage-desk-chatgpt-demo/page.tsx",
+    projectId: "OFFER_SALVAGE_TRIAGE_DESK_CHATGPT_PROJECT_ID",
+    showcaseExport: 'PENDING_SOURCE_RUN_SHOWCASE_PROJECTS',
+    href: "/offer-salvage-triage-desk-chatgpt-demo",
+    packagePath: "seed-runs/offer-salvage-triage-desk-chatgpt-source-run.json",
+  },
+  {
+    name: "Album Cover Composition Planner",
+    route: "src/app/album-cover-composition-planner-claude-demo/page.tsx",
+    projectId: "ALBUM_COVER_COMPOSITION_PLANNER_CLAUDE_PROJECT_ID",
+    showcaseExport: 'PENDING_SOURCE_RUN_SHOWCASE_PROJECTS',
+    href: "/album-cover-composition-planner-claude-demo",
+    packagePath: "seed-runs/album-cover-composition-planner-claude-source-run.json",
+  },
+  {
+    name: "Bug Report Evidence Triage Board",
+    route: "src/app/bug-report-evidence-triage-board-chatgpt-demo/page.tsx",
+    projectId: "BUG_REPORT_EVIDENCE_TRIAGE_BOARD_CHATGPT_PROJECT_ID",
+    showcaseExport: 'PENDING_SOURCE_RUN_SHOWCASE_PROJECTS',
+    href: "/bug-report-evidence-triage-board-chatgpt-demo",
+    packagePath: "seed-runs/bug-report-evidence-triage-board-chatgpt-source-run.json",
+  },
+  {
+    name: "Scope Creep Change Order Calculator",
+    route: "src/app/scope-creep-change-order-calculator-gemini-demo/page.tsx",
+    projectId: "SCOPE_CREEP_CHANGE_ORDER_CALCULATOR_GEMINI_PROJECT_ID",
+    showcaseExport: 'PENDING_SOURCE_RUN_SHOWCASE_PROJECTS',
+    href: "/scope-creep-change-order-calculator-gemini-demo",
+    packagePath: "seed-runs/scope-creep-change-order-calculator-gemini-source-run.json",
+  },
+  {
+    name: "Leftover Ingredient Swap Cards",
+    route: "src/app/leftover-ingredient-swap-cards-gemini-demo/page.tsx",
+    projectId: "LEFTOVER_INGREDIENT_SWAP_CARDS_GEMINI_PROJECT_ID",
+    showcaseExport: 'PENDING_SOURCE_RUN_SHOWCASE_PROJECTS',
+    href: "/leftover-ingredient-swap-cards-gemini-demo",
+    packagePath: "seed-runs/leftover-ingredient-swap-cards-gemini-source-run.json",
+  },
+  {
+    name: "Internal Link Rescue Map",
+    route: "src/app/internal-link-rescue-map-chatgpt-demo/page.tsx",
+    projectId: "INTERNAL_LINK_RESCUE_MAP_CHATGPT_PROJECT_ID",
+    showcaseExport: 'PENDING_SOURCE_RUN_SHOWCASE_PROJECTS',
+    href: "/internal-link-rescue-map-chatgpt-demo",
+    packagePath: "seed-runs/internal-link-rescue-map-chatgpt-source-run.json",
+  },
+  {
+    name: "Voiceover Emotion Tag Timing Board",
+    route: "src/app/voiceover-emotion-tag-timing-board-claude-demo/page.tsx",
+    projectId: "VOICEOVER_EMOTION_TAG_TIMING_BOARD_CLAUDE_PROJECT_ID",
+    showcaseExport: 'PENDING_SOURCE_RUN_SHOWCASE_PROJECTS',
+    href: "/voiceover-emotion-tag-timing-board-claude-demo",
+    packagePath: "seed-runs/voiceover-emotion-tag-timing-board-claude-source-run.json",
+  },
+  {
+    name: "Blog Refresh Brief Sorter",
+    route: "src/app/blog-refresh-brief-sorter-chatgpt-demo/page.tsx",
+    projectId: "BLOG_REFRESH_BRIEF_SORTER_CHATGPT_PROJECT_ID",
+    showcaseExport: 'PENDING_SOURCE_RUN_SHOWCASE_PROJECTS',
+    href: "/blog-refresh-brief-sorter-chatgpt-demo",
+    packagePath: "seed-runs/blog-refresh-brief-sorter-chatgpt-source-run.json",
+  },
+  {
+    name: "Short Video Hook Continuity Board",
+    route: "src/app/short-video-hook-continuity-board-claude-demo/page.tsx",
+    projectId: "SHORT_VIDEO_HOOK_CONTINUITY_BOARD_CLAUDE_PROJECT_ID",
+    showcaseExport: 'PENDING_SOURCE_RUN_SHOWCASE_PROJECTS',
+    href: "/short-video-hook-continuity-board-claude-demo",
+    packagePath: "seed-runs/short-video-hook-continuity-board-claude-source-run.json",
+  },
+  {
+    name: "Moodboard Contact Sheet Planner",
+    route: "src/app/moodboard-contact-sheet-planner-claude-demo/page.tsx",
+    projectId: "MOODBOARD_CONTACT_SHEET_PLANNER_CLAUDE_PROJECT_ID",
+    showcaseExport: 'PENDING_SOURCE_RUN_SHOWCASE_PROJECTS',
+    href: "/moodboard-contact-sheet-planner-claude-demo",
+    packagePath: "seed-runs/moodboard-contact-sheet-planner-claude-source-run.json",
+  },
+  {
+    name: "Recipe Yield Card Packager",
+    route: "src/app/recipe-yield-card-packager-gemini-demo/page.tsx",
+    projectId: "RECIPE_YIELD_CARD_PACKAGER_GEMINI_PROJECT_ID",
+    showcaseExport: 'PENDING_SOURCE_RUN_SHOWCASE_PROJECTS',
+    href: "/recipe-yield-card-packager-gemini-demo",
+    packagePath: "seed-runs/recipe-yield-card-packager-gemini-source-run.json",
+  },
+  {
+    name: "Competitor Content Gap Sprint Board",
+    route: "src/app/competitor-content-gap-sprint-board-chatgpt-demo/page.tsx",
+    projectId: "COMPETITOR_CONTENT_GAP_SPRINT_BOARD_CHATGPT_PROJECT_ID",
+    showcaseExport: 'PENDING_SOURCE_RUN_SHOWCASE_PROJECTS',
+    href: "/competitor-content-gap-sprint-board-chatgpt-demo",
+    packagePath: "seed-runs/competitor-content-gap-sprint-board-chatgpt-source-run.json",
+  },
+  {
+    name: "Thumbnail Safe-Zone Storyboard",
+    route: "src/app/thumbnail-safe-zone-storyboard-claude-d2d6b9d3-demo/page.tsx",
+    projectId: "THUMBNAIL_SAFE_ZONE_STORYBOARD_CLAUDE_D2D6B9D3_PROJECT_ID",
+    showcaseExport: 'PENDING_SOURCE_RUN_SHOWCASE_PROJECTS',
+    href: "/thumbnail-safe-zone-storyboard-claude-d2d6b9d3-demo",
+    packagePath: "seed-runs/thumbnail-safe-zone-storyboard-claude-20260612-source-run.json",
+  },
+  {
+    name: "Potluck Allergen Label Mixer",
+    route: "src/app/potluck-allergen-label-mixer-gemini-demo/page.tsx",
+    projectId: "POTLUCK_ALLERGEN_LABEL_MIXER_GEMINI_PROJECT_ID",
+    showcaseExport: 'PENDING_SOURCE_RUN_SHOWCASE_PROJECTS',
+    href: "/potluck-allergen-label-mixer-gemini-demo",
+    packagePath: "seed-runs/potluck-allergen-label-mixer-gemini-source-run.json",
+  },
+  {
+    name: "FAQ Gap Sprint Board",
+    route: "src/app/faq-gap-sprint-board-chatgpt-demo/page.tsx",
+    projectId: "FAQ_GAP_SPRINT_BOARD_CHATGPT_PROJECT_ID",
+    showcaseExport: 'PENDING_SOURCE_RUN_SHOWCASE_PROJECTS',
+    href: "/faq-gap-sprint-board-chatgpt-demo",
+    packagePath: "seed-runs/faq-gap-sprint-board-chatgpt-source-run.json",
+  },
+  {
+    name: "Collectible Card Shot Planner",
+    route: "src/app/collectible-card-shot-planner-claude-demo/page.tsx",
+    projectId: "COLLECTIBLE_CARD_SHOT_PLANNER_CLAUDE_PROJECT_ID",
+    showcaseExport: 'PENDING_SOURCE_RUN_SHOWCASE_PROJECTS',
+    href: "/collectible-card-shot-planner-claude-demo",
+    packagePath: "seed-runs/collectible-card-shot-planner-claude-source-run.json",
+  },
+  {
+    name: "Homepage Claim Evidence Sorter",
+    route: "src/app/homepage-claim-evidence-sorter-chatgpt-demo/page.tsx",
+    projectId: "HOMEPAGE_CLAIM_EVIDENCE_SORTER_CHATGPT_PROJECT_ID",
+    showcaseExport: 'PENDING_SOURCE_RUN_SHOWCASE_PROJECTS',
+    href: "/homepage-claim-evidence-sorter-chatgpt-demo",
+    packagePath: "seed-runs/homepage-claim-evidence-sorter-chatgpt-source-run.json",
+  },
+  {
+    name: "Cookout Batch Card Sorter",
+    route: "src/app/cookout-batch-card-sorter-gemini-demo/page.tsx",
+    projectId: "COOKOUT_BATCH_CARD_SORTER_GEMINI_PROJECT_ID",
+    showcaseExport: 'PENDING_SOURCE_RUN_SHOWCASE_PROJECTS',
+    href: "/cookout-batch-card-sorter-gemini-demo",
+    packagePath: "seed-runs/cookout-batch-card-sorter-gemini-source-run.json",
+  },
+  {
+    name: "Leftover Lunchbox Rotation Builder",
+    route: "src/app/leftover-lunchbox-rotation-builder-gemini-demo/page.tsx",
+    projectId: "LEFTOVER_LUNCHBOX_ROTATION_BUILDER_GEMINI_PROJECT_ID",
+    showcaseExport: 'PENDING_SOURCE_RUN_SHOWCASE_PROJECTS',
+    href: "/leftover-lunchbox-rotation-builder-gemini-demo",
+    packagePath: "seed-runs/leftover-lunchbox-rotation-builder-gemini-source-run.json",
+  },
+  {
+    name: "Search Result Promise Proof Board",
+    route: "src/app/search-result-promise-proof-board-chatgpt-fd2902be-demo/page.tsx",
+    projectId: "SEARCH_RESULT_PROMISE_PROOF_BOARD_CHATGPT_FD2902BE_PROJECT_ID",
+    showcaseExport: 'PENDING_SOURCE_RUN_SHOWCASE_PROJECTS',
+    href: "/search-result-promise-proof-board-chatgpt-fd2902be-demo",
+    packagePath: "seed-runs/search-result-promise-proof-board-chatgpt-source-run.preexisting-20260613.json",
+  },
+  {
+    name: "Visual Prompt Drift Inspector",
+    route: "src/app/visual-prompt-drift-inspector-claude-demo/page.tsx",
+    projectId: "VISUAL_PROMPT_DRIFT_INSPECTOR_CLAUDE_PROJECT_ID",
+    showcaseExport: 'PENDING_SOURCE_RUN_SHOWCASE_PROJECTS',
+    href: "/visual-prompt-drift-inspector-claude-demo",
+    packagePath: "seed-runs/visual-prompt-drift-inspector-claude-source-run.json",
+  },
+  {
+    name: "Fridge Tetris Meal Prep Planner",
+    route: "src/app/fridge-tetris-meal-prep-planner-gemini-demo/page.tsx",
+    projectId: "FRIDGE_TETRIS_MEAL_PREP_PLANNER_GEMINI_PROJECT_ID",
+    showcaseExport: 'PENDING_SOURCE_RUN_SHOWCASE_PROJECTS',
+    href: "/fridge-tetris-meal-prep-planner-gemini-demo",
+    packagePath: "seed-runs/fridge-tetris-meal-prep-planner-gemini-source-run.json",
+  },
+  {
+    name: "Keyword Garden Sprint",
+    route: "src/app/keyword-garden-sprint-chatgpt-demo/page.tsx",
+    projectId: "KEYWORD_GARDEN_SPRINT_CHATGPT_PROJECT_ID",
+    showcaseExport: 'PENDING_SOURCE_RUN_SHOWCASE_PROJECTS',
+    href: "/keyword-garden-sprint-chatgpt-demo",
+    packagePath: "seed-runs/keyword-garden-sprint-chatgpt-source-run.json",
+  },
+  {
+    name: "Thumbnail Crop Proof Studio",
+    route: "src/app/thumbnail-crop-proof-studio-claude-demo/page.tsx",
+    projectId: "THUMBNAIL_CROP_PROOF_STUDIO_CLAUDE_PROJECT_ID",
+    showcaseExport: 'PENDING_SOURCE_RUN_SHOWCASE_PROJECTS',
+    href: "/thumbnail-crop-proof-studio-claude-demo",
+    packagePath: "seed-runs/thumbnail-crop-proof-studio-claude-source-run.json",
+  },
+  {
+    name: "Pantry Reel Shot List Cards",
+    route: "src/app/pantry-reel-shot-list-cards-gemini-demo/page.tsx",
+    projectId: "PANTRY_REEL_SHOT_LIST_CARDS_GEMINI_PROJECT_ID",
+    showcaseExport: 'PENDING_SOURCE_RUN_SHOWCASE_PROJECTS',
+    href: "/pantry-reel-shot-list-cards-gemini-demo",
+    packagePath: "seed-runs/pantry-reel-shot-list-cards-gemini-source-run.json",
+  },
+  {
+    name: "Article Angle Triage Sprint",
+    route: "src/app/article-angle-triage-sprint-chatgpt-demo/page.tsx",
+    projectId: "ARTICLE_ANGLE_TRIAGE_SPRINT_CHATGPT_PROJECT_ID",
+    showcaseExport: 'PENDING_SOURCE_RUN_SHOWCASE_PROJECTS',
+    href: "/article-angle-triage-sprint-chatgpt-demo",
+    packagePath: "seed-runs/article-angle-triage-sprint-chatgpt-source-run.json",
+  },
+  {
+    name: "Pocket Ad Shot Storyboarder",
+    route: "src/app/pocket-ad-shot-storyboarder-gemini-demo/page.tsx",
+    projectId: "POCKET_AD_SHOT_STORYBOARDER_GEMINI_PROJECT_ID",
+    showcaseExport: 'PENDING_SOURCE_RUN_SHOWCASE_PROJECTS',
+    href: "/pocket-ad-shot-storyboarder-gemini-demo",
+    packagePath: "seed-runs/pocket-ad-shot-storyboarder-gemini-source-run.json",
+  },
+  {
+    name: "SERP Snippet Race Board",
+    route: "src/app/serp-snippet-race-board-chatgpt-demo/page.tsx",
+    projectId: "SERP_SNIPPET_RACE_BOARD_CHATGPT_PROJECT_ID",
+    showcaseExport: 'PENDING_SOURCE_RUN_SHOWCASE_PROJECTS',
+    href: "/serp-snippet-race-board-chatgpt-demo",
+    packagePath: "seed-runs/serp-snippet-race-board-chatgpt-source-run.json",
+  },
+  {
+    name: "Recipe Launch Card Studio",
+    route: "src/app/recipe-launch-card-studio-gemini-demo/page.tsx",
+    projectId: "RECIPE_LAUNCH_CARD_STUDIO_GEMINI_PROJECT_ID",
+    showcaseExport: 'PENDING_SOURCE_RUN_SHOWCASE_PROJECTS',
+    href: "/recipe-launch-card-studio-gemini-demo",
+    packagePath: "seed-runs/recipe-launch-card-studio-gemini-source-run.json",
+  },
+  {
+    name: "Poster Shot Stack Planner",
+    route: "src/app/poster-shot-stack-planner-claude-demo/page.tsx",
+    projectId: "POSTER_SHOT_STACK_PLANNER_CLAUDE_PROJECT_ID",
+    showcaseExport: 'PENDING_SOURCE_RUN_SHOWCASE_PROJECTS',
+    href: "/poster-shot-stack-planner-claude-demo",
+    packagePath: "seed-runs/poster-shot-stack-planner-claude-source-run.json",
+  },
+  {
+    name: "Search Brief Gap Mapper",
+    route: "src/app/search-brief-gap-mapper-chatgpt-demo/page.tsx",
+    projectId: "SEARCH_BRIEF_GAP_MAPPER_CHATGPT_PROJECT_ID",
+    showcaseExport: 'PENDING_SOURCE_RUN_SHOWCASE_PROJECTS',
+    href: "/search-brief-gap-mapper-chatgpt-demo",
+    packagePath: "seed-runs/search-brief-gap-mapper-chatgpt-source-run.json",
+  },
+  {
+    name: "Backwards Week Capacity Planner",
+    route: "src/app/backwards-week-capacity-planner-chatgpt-demo/page.tsx",
+    projectId: "BACKWARDS_WEEK_CAPACITY_PLANNER_CHATGPT_PROJECT_ID",
+    showcaseExport: 'PENDING_SOURCE_RUN_SHOWCASE_PROJECTS',
+    href: "/backwards-week-capacity-planner-chatgpt-demo",
+    packagePath: "seed-runs/backwards-week-capacity-planner-chatgpt-source-run.json",
+  },
+  {
+    name: "Pocket Cover Prompt Board",
+    route: "src/app/pocket-cover-prompt-board-chatgpt-demo/page.tsx",
+    projectId: "POCKET_COVER_PROMPT_BOARD_CHATGPT_PROJECT_ID",
+    showcaseExport: 'PENDING_SOURCE_RUN_SHOWCASE_PROJECTS',
+    href: "/pocket-cover-prompt-board-chatgpt-demo",
+    packagePath: "seed-runs/pocket-cover-prompt-board-chatgpt-source-run.json",
+  },
+  {
+    name: "Tiny Pixel Stamp Card Maker",
+    route: "src/app/tiny-pixel-stamp-card-maker-chatgpt-recovered-demo/page.tsx",
+    projectId: "TINY_PIXEL_STAMP_CARD_MAKER_CHATGPT_RECOVERED_PROJECT_ID",
+    showcaseExport: 'PENDING_SOURCE_RUN_SHOWCASE_PROJECTS',
+    href: "/tiny-pixel-stamp-card-maker-chatgpt-recovered-demo",
+    packagePath: "seed-runs/tiny-pixel-stamp-card-maker-chatgpt-recovered-source-run.json",
+  },
+  // End generated current pending source-run check entries.
   {
     name: "Tiny Train Platform Dispatcher",
     route: 'src/app/tiny-train-platform-dispatcher-demo/page.tsx',
@@ -664,6 +1266,131 @@ function usesSharedSourceRunRenderer(routeContent) {
   )
 }
 
+function sourceRunIdForPackage(pkg) {
+  return (
+    pkg.pathforge_pending_id ??
+    pkg.source_run_submission_id ??
+    pkg.pathforge_import_result?.source_run_submission_id ??
+    null
+  )
+}
+
+function mapRowsBySourceRunId(rows, label) {
+  const map = new Map()
+
+  for (const row of rows) {
+    const id = row.sourceRunId ?? row.id
+    if (!id) {
+      failures.push(`${label}: row is missing sourceRunId/id`)
+      continue
+    }
+    if (map.has(id)) failures.push(`${label}: duplicate source-run id ${id}`)
+    map.set(id, row)
+  }
+
+  return map
+}
+
+function verifyPendingBatchSnapshot() {
+  const queueSnapshotPath = process.env.PATHFORGE_PENDING_QUEUE_SNAPSHOT
+  const batchSummaryPath = process.env.PATHFORGE_PENDING_BATCH_SUMMARY
+  if (!queueSnapshotPath && !batchSummaryPath) return
+
+  if (!queueSnapshotPath || !batchSummaryPath) {
+    failures.push(
+      'pending batch audit requires both PATHFORGE_PENDING_QUEUE_SNAPSHOT and PATHFORGE_PENDING_BATCH_SUMMARY',
+    )
+    return
+  }
+
+  const liveRows = parseJson(queueSnapshotPath)
+  const batchSummary = parseJson(batchSummaryPath)
+  if (!Array.isArray(liveRows) || !batchSummary) {
+    failures.push('pending batch audit inputs must be a live row array and generated batch summary object')
+    return
+  }
+
+  const generatedRows = Array.isArray(batchSummary.generated) ? batchSummary.generated : []
+  const blockedRows = Array.isArray(batchSummary.blocked) ? batchSummary.blocked : []
+  const liveById = mapRowsBySourceRunId(liveRows, queueSnapshotPath)
+  const generatedById = mapRowsBySourceRunId(generatedRows, batchSummaryPath)
+  const blockedById = mapRowsBySourceRunId(blockedRows, batchSummaryPath)
+  const generatedRoutes = new Set()
+  const generatedPackages = new Set()
+
+  if (generatedRows.length + blockedRows.length !== liveRows.length) {
+    failures.push(
+      `${batchSummaryPath}: generated + blocked rows (${generatedRows.length + blockedRows.length}) must equal live pending rows (${liveRows.length})`,
+    )
+  }
+
+  for (const liveRow of liveRows) {
+    const id = liveRow.id ?? liveRow.sourceRunId
+    if (!id) continue
+    if (generatedById.has(id) && blockedById.has(id)) {
+      failures.push(`${id}: pending row appears in both generated and blocked batch lists`)
+    }
+    if (!generatedById.has(id) && !blockedById.has(id)) {
+      failures.push(`${id}: pending row is neither generated nor explicitly blocked`)
+    }
+    if (!liveRow.noPrepared && !liveRow.preparedReady && !liveRow.publishButton) {
+      failures.push(`${id}: pending row status is not recognizable as unprepared or prepared-ready`)
+    }
+  }
+
+  for (const generated of generatedRows) {
+    const id = generated.sourceRunId ?? generated.id
+    const liveRow = liveById.get(id)
+    if (!id || !liveRow) continue
+
+    const routePath = generated.route
+      ? join('src/app', generated.route.replace(/^\//, ''), 'page.tsx')
+      : null
+    if (!routePath || !existsSync(routePath)) {
+      failures.push(`${id}: generated route file is missing at ${routePath ?? '(missing route)'}`)
+    } else {
+      const routeContent = readFileSync(routePath, 'utf8')
+      if (!routeContent.includes("from '@/components/PreparedSourceRunPage'")) {
+        failures.push(`${routePath}: generated pending route must use PreparedSourceRunPage`)
+      }
+      if (!routeContent.includes('buildPreparedSourceRunDetailMetadata')) {
+        failures.push(`${routePath}: generated pending route must use standardized metadata helper`)
+      }
+      if (!routeContent.includes('loadSourceRunPackage')) {
+        failures.push(`${routePath}: generated pending route must load its source-run package`)
+      }
+    }
+
+    if (generated.route) {
+      if (generatedRoutes.has(generated.route)) failures.push(`${generated.route}: duplicate generated route`)
+      generatedRoutes.add(generated.route)
+    }
+
+    if (!generated.package || !existsSync(generated.package)) {
+      failures.push(`${id}: generated batch package is missing at ${generated.package ?? '(missing package)'}`)
+      continue
+    }
+    if (generatedPackages.has(generated.package)) failures.push(`${generated.package}: duplicate generated package`)
+    generatedPackages.add(generated.package)
+
+    const pkg = parseJson(generated.package)
+    if (!pkg) continue
+    const pkgId = sourceRunIdForPackage(pkg)
+    if (pkgId !== id) failures.push(`${generated.package}: package id ${pkgId} must match generated id ${id}`)
+    if (liveRow.sourceUrl && pkg.source_url !== liveRow.sourceUrl) {
+      failures.push(`${generated.package}: package source_url must match the live admin row`)
+    }
+  }
+
+  for (const blocked of blockedRows) {
+    const id = blocked.sourceRunId ?? blocked.id
+    if (!id) continue
+    if (!liveById.has(id)) failures.push(`${id}: blocked row is not present in the live pending queue snapshot`)
+    if (generatedById.has(id)) failures.push(`${id}: blocked row must not also have a generated page`)
+    if (!blocked.reason) failures.push(`${id}: blocked row must include an integrity reason`)
+  }
+}
+
 const sharedComponent = 'src/components/SourceRunShowcase.tsx'
 const sharedComponentContent = read(sharedComponent)
 mustInclude(sharedComponent, sharedComponentContent, 'aria-pressed={selected}', 'shared showcase must render a selected state on response artifact controls')
@@ -869,6 +1596,8 @@ for (const project of sourceRunProjects) {
     }
   }
 }
+
+verifyPendingBatchSnapshot()
 
 if (failures.length > 0) {
   console.error('Source-run showcase guard failed:')

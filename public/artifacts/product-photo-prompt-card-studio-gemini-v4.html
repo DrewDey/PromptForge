@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Product Photo Prompt Studio</title>
+    <style>
+        :root {
+            --bg-main: #0f172a; --bg-card: #1e293b; --text-main: #f8fafc;
+            --accent: #4f46e5; --danger: #e11d48; --success: #16a34a;
+        }
+        body { background: var(--bg-main); color: var(--text-main); font-family: system-ui, sans-serif; padding: 20px; }
+        .container { max-width: 700px; margin: 0 auto; }
+        .controls { background: var(--bg-card); padding: 20px; border-radius: 12px; margin-bottom: 20px; }
+        .field { margin-bottom: 10px; }
+        label { display: block; font-size: 0.8rem; margin-bottom: 4px; }
+        input, select { width: 100%; padding: 8px; border-radius: 4px; border: 1px solid #334155; background: #0f172a; color: white; }
+        button { cursor: pointer; padding: 10px 15px; border: none; border-radius: 6px; font-weight: 600; }
+        #add-card { background: var(--accent); color: white; width: 100%; margin-top: 10px; }
+        .card { background: #f1f5f9; color: #0f172a; padding: 20px; border-radius: 12px; margin-bottom: 20px; }
+        .chip { display: inline-block; background: #cbd5e1; padding: 3px 8px; border-radius: 10px; font-size: 0.7rem; margin-right: 5px; }
+        textarea { width: 100%; height: 60px; margin: 10px 0; border: 1px solid #94a3b8; padding: 8px; border-radius: 4px; }
+        .score { font-weight: bold; font-size: 0.9rem; margin: 5px 0; }
+        .export-row { margin-top: 20px; border-top: 1px solid #334155; padding-top: 10px; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="controls">
+        <div class="field"><label>Product</label><input type="text" id="in-prod" value="Glass Vase"></div>
+        <div class="field"><label>Surface</label><select id="in-surf"><option>Dark Marble</option><option>Light Oak</option><option>White Silk</option></select></div>
+        <div class="field"><label>Lighting</label><select id="in-light"><option>Dramatic Side</option><option>Soft Diffused</option></select></div>
+        <div class="field"><label>Angle</label><select id="in-angle"><option>Macro Close-up</option><option>Flat Lay</option></select></div>
+        <div class="field"><label>Mood</label><select id="in-mood"><option>Luxury</option><option>Minimalist</option></select></div>
+        <button id="add-card">Generate Prompt Card</button>
+    </div>
+    
+    <div id="card-list"></div>
+    
+    <div class="export-row">
+        <button id="export-all">Export All Cards as JSON</button>
+    </div>
+</div>
+
+<script>
+    const cardList = document.getElementById('card-list');
+    const cardsData = [];
+
+    document.getElementById('add-card').addEventListener('click', () => {
+        const prod = document.getElementById('in-prod').value;
+        const surf = document.getElementById('in-surf').value;
+        const light = document.getElementById('in-light').value;
+        const angle = document.getElementById('in-angle').value;
+        const mood = document.getElementById('in-mood').value;
+
+        // Calculate simple contrast/readability score
+        let score = 90;
+        let note = "High contrast, good readability.";
+        if ((surf.includes('Dark') && prod.toLowerCase().includes('dark')) || (surf.includes('White') && prod.toLowerCase().includes('white'))) {
+            score = 65; note = "Warning: Poor contrast. Consider surface change.";
+        }
+
+        const card = document.createElement('div');
+        card.className = 'card';
+        
+        const h3 = document.createElement('h3');
+        h3.textContent = prod;
+        card.appendChild(h3);
+
+        const chipDiv = document.createElement('div');
+        [surf, light, angle, mood].forEach(t => {
+            const span = document.createElement('span');
+            span.className = 'chip';
+            span.textContent = t;
+            chipDiv.appendChild(span);
+        });
+        card.appendChild(chipDiv);
+
+        const scoreEl = document.createElement('div');
+        scoreEl.className = 'score';
+        scoreEl.textContent = `Readability Score: ${score}/100 - ${note}`;
+        card.appendChild(scoreEl);
+
+        const area = document.createElement('textarea');
+        area.value = `${prod}, ${angle}, ${surf}, ${light}, ${mood}`;
+        card.appendChild(area);
+
+        const btnRow = document.createElement('div');
+        const copyBtn = document.createElement('button');
+        copyBtn.textContent = 'Copy Prompt';
+        copyBtn.addEventListener('click', () => navigator.clipboard.writeText(area.value));
+        
+        const remBtn = document.createElement('button');
+        remBtn.textContent = 'Remove';
+        remBtn.style.marginLeft = '10px';
+        remBtn.addEventListener('click', () => {
+            card.remove();
+            cardsData.splice(cardsData.indexOf(cardData), 1);
+        });
+
+        btnRow.appendChild(copyBtn);
+        btnRow.appendChild(remBtn);
+        card.appendChild(btnRow);
+
+        const cardData = { prod, surf, light, angle, mood, score };
+        cardsData.push(cardData);
+        cardList.prepend(card);
+    });
+
+    document.getElementById('export-all').addEventListener('click', () => {
+        const blob = new Blob([JSON.stringify(cardsData, null, 2)], {type: 'application/json'});
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'prompt-studio-set.json';
+        a.click();
+    });
+</script>
+</body>
+</html>
+

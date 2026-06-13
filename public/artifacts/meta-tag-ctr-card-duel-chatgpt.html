@@ -1,0 +1,1151 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Meta Tag CTR Card Duel</title>
+  <style>
+    :root {
+      --bg: #f6f3ee;
+      --panel: #fffaf3;
+      --panel-2: #ffffff;
+      --ink: #1f2933;
+      --muted: #687386;
+      --line: #ded6c9;
+      --soft: #eee6d8;
+      --good: #227a45;
+      --warn: #a76600;
+      --bad: #b42318;
+      --accent: #304ffe;
+      --accent-2: #e8ebff;
+      --shadow: 0 10px 30px rgba(31, 41, 51, .08);
+      --radius: 18px;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html {
+      -webkit-text-size-adjust: 100%;
+    }
+
+    body {
+      margin: 0;
+      min-width: 0;
+      background:
+        radial-gradient(circle at top left, rgba(48, 79, 254, .10), transparent 34rem),
+        linear-gradient(180deg, #fbf8f1 0%, var(--bg) 100%);
+      color: var(--ink);
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      line-height: 1.45;
+    }
+
+    button,
+    input,
+    textarea,
+    select {
+      font: inherit;
+    }
+
+    button {
+      touch-action: manipulation;
+    }
+
+    .app {
+      width: 100%;
+      max-width: 1120px;
+      margin: 0 auto;
+      padding: 14px;
+    }
+
+    .hero {
+      display: grid;
+      gap: 12px;
+      padding: 16px;
+      border: 1px solid var(--line);
+      border-radius: 22px;
+      background: rgba(255, 250, 243, .88);
+      box-shadow: var(--shadow);
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(2rem, 12vw, 4rem);
+      line-height: .94;
+      letter-spacing: -.06em;
+    }
+
+    h1 span {
+      display: block;
+      overflow-wrap: anywhere;
+    }
+
+    .subtitle {
+      margin: 0;
+      color: var(--muted);
+      font-size: 1rem;
+      max-width: 62ch;
+    }
+
+    .top-actions,
+    .button-row,
+    .winner-actions {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 10px;
+      width: 100%;
+    }
+
+    .panel {
+      margin-top: 14px;
+      padding: 14px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: var(--panel);
+      box-shadow: var(--shadow);
+      min-width: 0;
+    }
+
+    .panel h2,
+    .card h2,
+    .winner h2 {
+      margin: 0 0 10px;
+      font-size: 1.05rem;
+      letter-spacing: -.01em;
+    }
+
+    label {
+      display: block;
+      margin: 0 0 6px;
+      font-size: .9rem;
+      color: var(--muted);
+      font-weight: 700;
+    }
+
+    input,
+    textarea {
+      display: block;
+      width: 100%;
+      max-width: 100%;
+      min-width: 0;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      background: var(--panel-2);
+      color: var(--ink);
+      padding: 12px;
+      outline: none;
+    }
+
+    textarea {
+      min-height: 96px;
+      resize: vertical;
+    }
+
+    input::placeholder,
+    textarea::placeholder {
+      color: #8a93a3;
+      white-space: normal;
+      overflow-wrap: anywhere;
+    }
+
+    input:focus,
+    textarea:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 4px rgba(48, 79, 254, .12);
+    }
+
+    .duel-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 14px;
+      margin-top: 14px;
+      min-width: 0;
+    }
+
+    .card {
+      position: relative;
+      display: grid;
+      gap: 12px;
+      min-width: 0;
+      padding: 14px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: var(--panel);
+      box-shadow: var(--shadow);
+    }
+
+    .card.is-winner {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 4px rgba(48, 79, 254, .12), var(--shadow);
+    }
+
+    .card-head {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 8px;
+      align-items: start;
+      min-width: 0;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: fit-content;
+      max-width: 100%;
+      border-radius: 999px;
+      padding: 7px 10px;
+      background: var(--soft);
+      color: var(--ink);
+      font-size: .86rem;
+      font-weight: 800;
+      overflow-wrap: anywhere;
+    }
+
+    .score-badge {
+      background: var(--accent-2);
+      color: #2235b4;
+    }
+
+    .preview {
+      display: grid;
+      gap: 5px;
+      padding: 12px;
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      background: #fff;
+      min-width: 0;
+    }
+
+    .preview-title {
+      color: #1a0dab;
+      font-size: 1rem;
+      line-height: 1.25;
+      overflow-wrap: anywhere;
+    }
+
+    .preview-url {
+      color: #006621;
+      font-size: .82rem;
+      overflow-wrap: anywhere;
+    }
+
+    .preview-desc {
+      color: #4d5156;
+      font-size: .92rem;
+      overflow-wrap: anywhere;
+    }
+
+    .meter-block {
+      display: grid;
+      gap: 8px;
+      min-width: 0;
+    }
+
+    .meter-row {
+      display: grid;
+      gap: 5px;
+      min-width: 0;
+    }
+
+    .meter-label {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      align-items: baseline;
+      justify-content: space-between;
+      color: var(--muted);
+      font-size: .86rem;
+      font-weight: 700;
+    }
+
+    .bar {
+      width: 100%;
+      height: 10px;
+      border-radius: 999px;
+      background: #e3ded5;
+      overflow: hidden;
+    }
+
+    .fill {
+      width: 0%;
+      height: 100%;
+      border-radius: 999px;
+      background: var(--accent);
+      transition: width .15s ease;
+    }
+
+    .fill.good {
+      background: var(--good);
+    }
+
+    .fill.warn {
+      background: var(--warn);
+    }
+
+    .fill.bad {
+      background: var(--bad);
+    }
+
+    .chips {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 8px;
+      min-width: 0;
+    }
+
+    .chip {
+      width: 100%;
+      max-width: 100%;
+      min-width: 0;
+      padding: 9px 10px;
+      border-radius: 14px;
+      border: 1px solid var(--line);
+      background: #fff;
+      color: var(--ink);
+      font-size: .9rem;
+      overflow-wrap: anywhere;
+      white-space: normal;
+    }
+
+    .chip.good {
+      border-color: rgba(34, 122, 69, .28);
+      background: rgba(34, 122, 69, .08);
+      color: #155c32;
+    }
+
+    .chip.warn {
+      border-color: rgba(167, 102, 0, .30);
+      background: rgba(167, 102, 0, .09);
+      color: #754600;
+    }
+
+    .chip.bad {
+      border-color: rgba(180, 35, 24, .28);
+      background: rgba(180, 35, 24, .08);
+      color: #8a1c13;
+    }
+
+    .mini-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 10px;
+      min-width: 0;
+    }
+
+    .mini-stat {
+      padding: 10px;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      background: #fff;
+      min-width: 0;
+    }
+
+    .mini-stat .num {
+      display: block;
+      font-size: 1.25rem;
+      font-weight: 900;
+      letter-spacing: -.03em;
+    }
+
+    .mini-stat .txt {
+      display: block;
+      color: var(--muted);
+      font-size: .82rem;
+      overflow-wrap: anywhere;
+    }
+
+    .btn {
+      width: 100%;
+      max-width: 100%;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      background: #fff;
+      color: var(--ink);
+      padding: 12px 13px;
+      font-weight: 850;
+      cursor: pointer;
+      text-align: center;
+      white-space: normal;
+      overflow-wrap: anywhere;
+    }
+
+    .btn:hover {
+      border-color: #bcb3a4;
+    }
+
+    .btn.primary {
+      border-color: var(--accent);
+      background: var(--accent);
+      color: #fff;
+    }
+
+    .btn.soft {
+      background: var(--accent-2);
+      border-color: rgba(48, 79, 254, .24);
+      color: #2235b4;
+    }
+
+    .btn.danger {
+      color: var(--bad);
+    }
+
+    .winner {
+      margin-top: 14px;
+      padding: 14px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: var(--panel);
+      box-shadow: var(--shadow);
+      min-width: 0;
+    }
+
+    .winner-box {
+      display: grid;
+      gap: 8px;
+      padding: 12px;
+      border-radius: 16px;
+      border: 1px solid var(--line);
+      background: #fff;
+      min-width: 0;
+    }
+
+    .snippet-output {
+      width: 100%;
+      min-height: 140px;
+      white-space: pre-wrap;
+      overflow-wrap: anywhere;
+      border: 1px dashed var(--line);
+      border-radius: 14px;
+      padding: 12px;
+      background: #fffdf8;
+      color: var(--ink);
+    }
+
+    .status {
+      min-height: 1.4em;
+      color: var(--muted);
+      font-size: .9rem;
+      overflow-wrap: anywhere;
+    }
+
+    .footer-note {
+      margin: 14px 0 0;
+      color: var(--muted);
+      font-size: .86rem;
+      overflow-wrap: anywhere;
+    }
+
+    @media (min-width: 560px) {
+      .top-actions,
+      .button-row,
+      .winner-actions,
+      .mini-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .card-head {
+        grid-template-columns: minmax(0, 1fr) auto;
+        align-items: center;
+      }
+    }
+
+    @media (min-width: 860px) {
+      .app {
+        padding: 22px;
+      }
+
+      .duel-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      h1 span {
+        display: inline;
+      }
+
+      h1 span + span::before {
+        content: " ";
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="app">
+    <section class="hero" aria-labelledby="pageTitle">
+      <div>
+        <h1 id="pageTitle">
+          <span>Meta Tag</span>
+          <span>CTR Card</span>
+          <span>Duel</span>
+        </h1>
+        <p class="subtitle">
+          Compare two SEO title and description options. Watch length, clarity, promise risk, and duplicate wording before choosing the snippet worth shipping.
+        </p>
+      </div>
+
+      <div class="top-actions">
+        <button class="btn soft" id="seedBtn" type="button">Load sample duel</button>
+        <button class="btn danger" id="resetBtn" type="button">Clear board</button>
+      </div>
+    </section>
+
+    <section class="panel" aria-label="Page topic">
+      <label for="topic">Page topic or target query</label>
+      <input id="topic" autocomplete="off" placeholder="Example: retirement tax planning for Cincinnati business owners">
+    </section>
+
+    <section class="duel-grid" aria-label="Competing meta tag cards">
+      <article class="card" id="cardA">
+        <div class="card-head">
+          <h2>Card A</h2>
+          <span class="badge score-badge" id="scoreA">Score 0</span>
+        </div>
+
+        <div>
+          <label for="titleA">SEO title</label>
+          <input id="titleA" maxlength="140" placeholder="Write the competing title tag">
+        </div>
+
+        <div>
+          <label for="descA">Meta description</label>
+          <textarea id="descA" maxlength="320" placeholder="Write the competing meta description"></textarea>
+        </div>
+
+        <div class="preview" aria-label="Search preview for Card A">
+          <div class="preview-title" id="previewTitleA">Your title preview appears here</div>
+          <div class="preview-url">example.com/page</div>
+          <div class="preview-desc" id="previewDescA">Your description preview appears here.</div>
+        </div>
+
+        <div class="meter-block">
+          <div class="meter-row">
+            <div class="meter-label">
+              <span>Title length</span>
+              <span id="titleCountA">0 chars</span>
+            </div>
+            <div class="bar"><div class="fill" id="titleFillA"></div></div>
+          </div>
+
+          <div class="meter-row">
+            <div class="meter-label">
+              <span>Description length</span>
+              <span id="descCountA">0 chars</span>
+            </div>
+            <div class="bar"><div class="fill" id="descFillA"></div></div>
+          </div>
+        </div>
+
+        <div class="mini-grid">
+          <div class="mini-stat">
+            <span class="num" id="clarityA">0</span>
+            <span class="txt">Clarity</span>
+          </div>
+          <div class="mini-stat">
+            <span class="num" id="riskA">0</span>
+            <span class="txt">Risk control</span>
+          </div>
+        </div>
+
+        <div class="chips" id="warningsA" aria-live="polite"></div>
+
+        <div class="button-row">
+          <button class="btn primary" type="button" data-pick="A">Pick Card A</button>
+          <button class="btn" type="button" data-copy-card="A">Copy Card A</button>
+        </div>
+      </article>
+
+      <article class="card" id="cardB">
+        <div class="card-head">
+          <h2>Card B</h2>
+          <span class="badge score-badge" id="scoreB">Score 0</span>
+        </div>
+
+        <div>
+          <label for="titleB">SEO title</label>
+          <input id="titleB" maxlength="140" placeholder="Write the competing title tag">
+        </div>
+
+        <div>
+          <label for="descB">Meta description</label>
+          <textarea id="descB" maxlength="320" placeholder="Write the competing meta description"></textarea>
+        </div>
+
+        <div class="preview" aria-label="Search preview for Card B">
+          <div class="preview-title" id="previewTitleB">Your title preview appears here</div>
+          <div class="preview-url">example.com/page</div>
+          <div class="preview-desc" id="previewDescB">Your description preview appears here.</div>
+        </div>
+
+        <div class="meter-block">
+          <div class="meter-row">
+            <div class="meter-label">
+              <span>Title length</span>
+              <span id="titleCountB">0 chars</span>
+            </div>
+            <div class="bar"><div class="fill" id="titleFillB"></div></div>
+          </div>
+
+          <div class="meter-row">
+            <div class="meter-label">
+              <span>Description length</span>
+              <span id="descCountB">0 chars</span>
+            </div>
+            <div class="bar"><div class="fill" id="descFillB"></div></div>
+          </div>
+        </div>
+
+        <div class="mini-grid">
+          <div class="mini-stat">
+            <span class="num" id="clarityB">0</span>
+            <span class="txt">Clarity</span>
+          </div>
+          <div class="mini-stat">
+            <span class="num" id="riskB">0</span>
+            <span class="txt">Risk control</span>
+          </div>
+        </div>
+
+        <div class="chips" id="warningsB" aria-live="polite"></div>
+
+        <div class="button-row">
+          <button class="btn primary" type="button" data-pick="B">Pick Card B</button>
+          <button class="btn" type="button" data-copy-card="B">Copy Card B</button>
+        </div>
+      </article>
+    </section>
+
+    <section class="winner" aria-label="Chosen snippet">
+      <h2>Chosen snippet</h2>
+      <div class="winner-box">
+        <span class="badge" id="winnerBadge">No winner picked yet</span>
+        <div class="snippet-output" id="winnerOutput">Pick Card A or Card B to build the final copyable snippet.</div>
+        <div class="winner-actions">
+          <button class="btn primary" id="copyWinnerBtn" type="button">Copy chosen snippet</button>
+          <button class="btn" id="exportWinnerBtn" type="button">Export chosen snippet</button>
+        </div>
+        <div class="status" id="status" aria-live="polite"></div>
+      </div>
+    </section>
+
+    <p class="footer-note">
+      Targets used here: title sweet spot 50–60 characters, description sweet spot 120–160 characters. Treat the warnings as a fast editorial pass, not a search-engine guarantee.
+    </p>
+  </main>
+
+  <script>
+    (function () {
+      "use strict";
+
+      var storeKey = "metaTagCtrCardDuel.v1";
+
+      var stopWords = {
+        a: true, an: true, and: true, are: true, as: true, at: true, be: true,
+        but: true, by: true, for: true, from: true, has: true, have: true,
+        how: true, in: true, into: true, is: true, it: true, its: true,
+        of: true, on: true, or: true, our: true, the: true, their: true,
+        this: true, to: true, with: true, your: true, you: true, we: true,
+        can: true, that: true, will: true, get: true
+      };
+
+      var vagueWords = [
+        "solution", "solutions", "services", "expert", "experts", "quality",
+        "trusted", "leading", "premier", "best", "great", "better", "help",
+        "easy", "simple", "comprehensive", "innovative"
+      ];
+
+      var riskyPromiseWords = [
+        "guaranteed", "guarantee", "instantly", "instant", "secret", "perfect",
+        "always", "never", "everyone", "nobody", "proven", "ultimate", "best",
+        "number one", "#1", "free", "risk-free", "100%"
+      ];
+
+      function byId(id) {
+        return document.getElementById(id);
+      }
+
+      function cleanText(value) {
+        return String(value || "").replace(/\s+/g, " ").trim();
+      }
+
+      function words(value) {
+        var matches = String(value || "").toLowerCase().match(/[a-z0-9]+(?:'[a-z0-9]+)?/g);
+        return matches || [];
+      }
+
+      function significantWords(value) {
+        return words(value).filter(function (word) {
+          return word.length > 2 && !stopWords[word];
+        });
+      }
+
+      function unique(arr) {
+        var seen = {};
+        var out = [];
+        arr.forEach(function (item) {
+          if (!seen[item]) {
+            seen[item] = true;
+            out.push(item);
+          }
+        });
+        return out;
+      }
+
+      function countMatches(value, list) {
+        var lower = String(value || "").toLowerCase();
+        var found = [];
+        list.forEach(function (term) {
+          var escaped = term.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+          var regex = new RegExp("(^|[^a-z0-9])" + escaped + "([^a-z0-9]|$)", "i");
+          if (regex.test(lower)) {
+            found.push(term);
+          }
+        });
+        return found;
+      }
+
+      function duplicateWords(value) {
+        var counts = {};
+        significantWords(value).forEach(function (word) {
+          counts[word] = (counts[word] || 0) + 1;
+        });
+
+        return Object.keys(counts).filter(function (word) {
+          return counts[word] > 1;
+        }).sort(function (a, b) {
+          return counts[b] - counts[a];
+        });
+      }
+
+      function topicOverlapScore(topic, title, desc) {
+        var topicTerms = unique(significantWords(topic));
+        if (topicTerms.length === 0) return 72;
+
+        var combined = " " + significantWords(title + " " + desc).join(" ") + " ";
+        var hits = 0;
+
+        topicTerms.forEach(function (term) {
+          if (combined.indexOf(" " + term + " ") !== -1) hits += 1;
+        });
+
+        return Math.round((hits / topicTerms.length) * 100);
+      }
+
+      function lengthScore(length, idealLow, idealHigh, hardLow, hardHigh) {
+        if (length === 0) return 0;
+        if (length >= idealLow && length <= idealHigh) return 100;
+        if (length < hardLow || length > hardHigh) return 35;
+
+        if (length < idealLow) {
+          return Math.max(45, Math.round(100 - ((idealLow - length) * 2.3)));
+        }
+
+        return Math.max(45, Math.round(100 - ((length - idealHigh) * 3)));
+      }
+
+      function meterState(length, idealLow, idealHigh, hardHigh) {
+        var percent = Math.min(100, Math.round((length / hardHigh) * 100));
+        var cls = "warn";
+
+        if (length === 0) cls = "bad";
+        else if (length >= idealLow && length <= idealHigh) cls = "good";
+        else if (length > hardHigh || length < Math.round(idealLow * .55)) cls = "bad";
+
+        return { percent: percent, cls: cls };
+      }
+
+      function setFill(id, state) {
+        var el = byId(id);
+        el.style.width = state.percent + "%";
+        el.className = "fill " + state.cls;
+      }
+
+      function chip(text, kind) {
+        var el = document.createElement("div");
+        el.className = "chip " + kind;
+        el.textContent = text;
+        return el;
+      }
+
+      function buildSnippet(cardId) {
+        var title = cleanText(byId("title" + cardId).value);
+        var desc = cleanText(byId("desc" + cardId).value);
+        var topic = cleanText(byId("topic").value);
+
+        var lines = [
+          "Meta Tag CTR Card Duel",
+          "Winner: Card " + cardId
+        ];
+
+        if (topic) {
+          lines.push("Topic: " + topic);
+        }
+
+        lines.push("");
+        lines.push("SEO title:");
+        lines.push(title || "[No title entered]");
+        lines.push("");
+        lines.push("Meta description:");
+        lines.push(desc || "[No description entered]");
+
+        return lines.join("\n");
+      }
+
+      function analyzeCard(cardId) {
+        var topic = cleanText(byId("topic").value);
+        var title = cleanText(byId("title" + cardId).value);
+        var desc = cleanText(byId("desc" + cardId).value);
+        var combined = title + " " + desc;
+
+        var titleLen = title.length;
+        var descLen = desc.length;
+
+        var titleScore = lengthScore(titleLen, 50, 60, 30, 70);
+        var descScore = lengthScore(descLen, 120, 160, 80, 175);
+        var lengthTotal = Math.round((titleScore + descScore) / 2);
+
+        var topicScore = topicOverlapScore(topic, title, desc);
+        var vagueFound = countMatches(combined, vagueWords);
+        var riskyFound = countMatches(combined, riskyPromiseWords);
+        var dupes = duplicateWords(combined);
+
+        var clarity = 100;
+        if (!title) clarity -= 35;
+        if (!desc) clarity -= 35;
+        if (topic && topicScore < 35) clarity -= 18;
+        if (titleLen > 0 && titleLen < 35) clarity -= 12;
+        if (descLen > 0 && descLen < 90) clarity -= 12;
+        if ((combined.match(/[!?]/g) || []).length > 1) clarity -= 8;
+        clarity -= Math.min(22, vagueFound.length * 5);
+        clarity = Math.max(0, Math.min(100, Math.round(clarity)));
+
+        var riskControl = 100;
+        riskControl -= Math.min(45, riskyFound.length * 15);
+        if ((combined.match(/\b(best|ultimate|proven|guaranteed|free)\b/gi) || []).length > 1) riskControl -= 10;
+        riskControl = Math.max(0, Math.min(100, Math.round(riskControl)));
+
+        var duplicateControl = Math.max(0, 100 - Math.min(45, dupes.length * 12));
+
+        var score = Math.round(
+          (lengthTotal * .34) +
+          (clarity * .28) +
+          (riskControl * .22) +
+          (duplicateControl * .16)
+        );
+
+        var warnings = [];
+
+        if (!title && !desc) {
+          warnings.push({ kind: "bad", text: "Empty card. Add a title and description before judging it." });
+        }
+
+        if (title && titleLen < 50) {
+          warnings.push({ kind: "warn", text: "Title is short. It may leave useful CTR context unused." });
+        }
+
+        if (titleLen > 60 && titleLen <= 70) {
+          warnings.push({ kind: "warn", text: "Title is past the 60-character sweet spot. Tighten the least important words." });
+        }
+
+        if (titleLen > 70) {
+          warnings.push({ kind: "bad", text: "Title is long enough to risk truncation in many result layouts." });
+        }
+
+        if (desc && descLen < 120) {
+          warnings.push({ kind: "warn", text: "Description is short. Add one concrete benefit, proof point, or next-step detail." });
+        }
+
+        if (descLen > 160 && descLen <= 175) {
+          warnings.push({ kind: "warn", text: "Description is past the 160-character sweet spot. Remove filler before shipping." });
+        }
+
+        if (descLen > 175) {
+          warnings.push({ kind: "bad", text: "Description is very long and likely to be cut off." });
+        }
+
+        if (topic && topicScore < 35) {
+          warnings.push({ kind: "warn", text: "Low topic match. Work the main query language into the title or description." });
+        }
+
+        if (vagueFound.length > 0) {
+          warnings.push({ kind: "warn", text: "Vague wording found: " + vagueFound.slice(0, 5).join(", ") + "." });
+        }
+
+        if (riskyFound.length > 0) {
+          warnings.push({ kind: "bad", text: "Risky promise wording found: " + riskyFound.slice(0, 5).join(", ") + "." });
+        }
+
+        if (dupes.length > 0) {
+          warnings.push({ kind: "warn", text: "Repeated important words: " + dupes.slice(0, 6).join(", ") + "." });
+        }
+
+        if (warnings.length === 0 && (title || desc)) {
+          warnings.push({ kind: "good", text: "No major length, clarity, promise, or duplicate-word flags." });
+        }
+
+        return {
+          title: title,
+          desc: desc,
+          titleLen: titleLen,
+          descLen: descLen,
+          clarity: clarity,
+          riskControl: riskControl,
+          duplicateControl: duplicateControl,
+          score: score,
+          warnings: warnings
+        };
+      }
+
+      function renderWarnings(cardId, warnings) {
+        var box = byId("warnings" + cardId);
+        while (box.firstChild) {
+          box.removeChild(box.firstChild);
+        }
+
+        warnings.forEach(function (warning) {
+          box.appendChild(chip(warning.text, warning.kind));
+        });
+      }
+
+      function renderCard(cardId, data) {
+        byId("previewTitle" + cardId).textContent = data.title || "Your title preview appears here";
+        byId("previewDesc" + cardId).textContent = data.desc || "Your description preview appears here.";
+
+        byId("score" + cardId).textContent = "Score " + data.score;
+        byId("clarity" + cardId).textContent = data.clarity;
+        byId("risk" + cardId).textContent = data.riskControl;
+
+        byId("titleCount" + cardId).textContent = data.titleLen + " chars";
+        byId("descCount" + cardId).textContent = data.descLen + " chars";
+
+        setFill("titleFill" + cardId, meterState(data.titleLen, 50, 60, 70));
+        setFill("descFill" + cardId, meterState(data.descLen, 120, 160, 175));
+
+        renderWarnings(cardId, data.warnings);
+      }
+
+      function getState() {
+        return {
+          topic: byId("topic").value,
+          titleA: byId("titleA").value,
+          descA: byId("descA").value,
+          titleB: byId("titleB").value,
+          descB: byId("descB").value,
+          winner: document.body.getAttribute("data-winner") || ""
+        };
+      }
+
+      function saveState() {
+        try {
+          localStorage.setItem(storeKey, JSON.stringify(getState()));
+        } catch (err) {
+          return false;
+        }
+        return true;
+      }
+
+      function applyState(state) {
+        byId("topic").value = state.topic || "";
+        byId("titleA").value = state.titleA || "";
+        byId("descA").value = state.descA || "";
+        byId("titleB").value = state.titleB || "";
+        byId("descB").value = state.descB || "";
+        document.body.setAttribute("data-winner", state.winner || "");
+      }
+
+      function loadState() {
+        try {
+          var raw = localStorage.getItem(storeKey);
+          if (!raw) return;
+          applyState(JSON.parse(raw));
+        } catch (err) {
+          return;
+        }
+      }
+
+      function renderWinner(dataA, dataB) {
+        var winner = document.body.getAttribute("data-winner") || "";
+        var output = byId("winnerOutput");
+        var badge = byId("winnerBadge");
+
+        byId("cardA").classList.toggle("is-winner", winner === "A");
+        byId("cardB").classList.toggle("is-winner", winner === "B");
+
+        if (winner !== "A" && winner !== "B") {
+          var suggested = dataA.score >= dataB.score ? "A" : "B";
+          badge.textContent = "No winner picked. Current score leader: Card " + suggested;
+          output.textContent = "Pick Card A or Card B to build the final copyable snippet.";
+          return;
+        }
+
+        var chosen = winner === "A" ? dataA : dataB;
+        badge.textContent = "Winner: Card " + winner + " · Score " + chosen.score;
+        output.textContent = buildSnippet(winner);
+      }
+
+      function render() {
+        var dataA = analyzeCard("A");
+        var dataB = analyzeCard("B");
+
+        renderCard("A", dataA);
+        renderCard("B", dataB);
+        renderWinner(dataA, dataB);
+        saveState();
+      }
+
+      function setStatus(message) {
+        var status = byId("status");
+        status.textContent = message;
+        window.clearTimeout(setStatus.timer);
+        setStatus.timer = window.setTimeout(function () {
+          status.textContent = "";
+        }, 2500);
+      }
+
+      function copyText(text) {
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          return navigator.clipboard.writeText(text);
+        }
+
+        return new Promise(function (resolve, reject) {
+          var area = document.createElement("textarea");
+          area.value = text;
+          area.setAttribute("readonly", "");
+          area.style.position = "fixed";
+          area.style.top = "-1000px";
+          document.body.appendChild(area);
+          area.select();
+
+          try {
+            var ok = document.execCommand("copy");
+            document.body.removeChild(area);
+            ok ? resolve() : reject(new Error("Copy failed"));
+          } catch (err) {
+            document.body.removeChild(area);
+            reject(err);
+          }
+        });
+      }
+
+      function copyCard(cardId) {
+        copyText(buildSnippet(cardId)).then(function () {
+          setStatus("Copied Card " + cardId + ".");
+        }).catch(function () {
+          setStatus("Copy failed. Select the text manually.");
+        });
+      }
+
+      function copyWinner() {
+        var winner = document.body.getAttribute("data-winner") || "";
+        if (winner !== "A" && winner !== "B") {
+          setStatus("Pick a winner first.");
+          return;
+        }
+
+        copyText(buildSnippet(winner)).then(function () {
+          setStatus("Chosen snippet copied.");
+        }).catch(function () {
+          setStatus("Copy failed. Select the text manually.");
+        });
+      }
+
+      function slug(value) {
+        var text = cleanText(value).toLowerCase();
+        text = text.replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
+        return text || "snippet";
+      }
+
+      function exportWinner() {
+        var winner = document.body.getAttribute("data-winner") || "";
+        if (winner !== "A" && winner !== "B") {
+          setStatus("Pick a winner before exporting.");
+          return;
+        }
+
+        var topic = byId("topic").value;
+        var blob = new Blob([buildSnippet(winner)], { type: "text/plain;charset=utf-8" });
+        var link = document.createElement("a");
+        var url = URL.createObjectURL(blob);
+
+        link.href = url;
+        link.download = "meta-tag-ctr-card-duel-" + slug(topic) + "-card-" + winner.toLowerCase() + ".txt";
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+
+        window.setTimeout(function () {
+          URL.revokeObjectURL(url);
+        }, 250);
+
+        setStatus("Exported chosen snippet.");
+      }
+
+      function seed() {
+        applyState({
+          topic: "retirement tax planning for Cincinnati business owners",
+          titleA: "Retirement Tax Planning for Cincinnati Business Owners",
+          descA: "Build a retirement tax plan around income timing, Roth conversions, business exits, and charitable strategies for Cincinnati business owners.",
+          titleB: "Cincinnati Retirement Tax Planning | Business Owner Guide",
+          descB: "Compare tax-smart retirement planning options for Cincinnati business owners, including Roth conversions, exit timing, and income strategy.",
+          winner: ""
+        });
+        render();
+        setStatus("Sample duel loaded.");
+      }
+
+      function resetBoard() {
+        applyState({
+          topic: "",
+          titleA: "",
+          descA: "",
+          titleB: "",
+          descB: "",
+          winner: ""
+        });
+
+        try {
+          localStorage.removeItem(storeKey);
+        } catch (err) {
+          return;
+        }
+
+        render();
+        setStatus("Board cleared.");
+      }
+
+      function pickWinner(cardId) {
+        document.body.setAttribute("data-winner", cardId);
+        render();
+        setStatus("Card " + cardId + " selected.");
+      }
+
+      function wire() {
+        ["topic", "titleA", "descA", "titleB", "descB"].forEach(function (id) {
+          byId(id).addEventListener("input", render);
+        });
+
+        document.querySelectorAll("[data-pick]").forEach(function (button) {
+          button.addEventListener("click", function () {
+            pickWinner(button.getAttribute("data-pick"));
+          });
+        });
+
+        document.querySelectorAll("[data-copy-card]").forEach(function (button) {
+          button.addEventListener("click", function () {
+            copyCard(button.getAttribute("data-copy-card"));
+          });
+        });
+
+        byId("copyWinnerBtn").addEventListener("click", copyWinner);
+        byId("exportWinnerBtn").addEventListener("click", exportWinner);
+        byId("seedBtn").addEventListener("click", seed);
+        byId("resetBtn").addEventListener("click", resetBoard);
+      }
+
+      loadState();
+      wire();
+      render();
+    }());
+  </script>
+</body>
+</html>

@@ -1,0 +1,1199 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Forum Reply Improver</title>
+  <style>
+    :root {
+      --bg: #f6f3ec;
+      --card: #fffaf1;
+      --card-2: #ffffff;
+      --ink: #241f19;
+      --muted: #6f6659;
+      --line: #ded4c3;
+      --soft: #ede3d2;
+      --accent: #7b5d38;
+      --accent-2: #443322;
+      --good: #2f6b45;
+      --warn: #8a5a12;
+      --bad: #8a2f23;
+      --shadow: 0 10px 24px rgba(36, 31, 25, 0.08);
+      --radius: 18px;
+      --tap: 46px;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html {
+      min-width: 0;
+    }
+
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background:
+        radial-gradient(circle at top left, #fff5df 0, transparent 280px),
+        var(--bg);
+      color: var(--ink);
+      line-height: 1.45;
+    }
+
+    .page {
+      width: 100%;
+      max-width: 860px;
+      margin: 0 auto;
+      padding: 14px;
+    }
+
+    header {
+      padding: 12px 0 10px;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(2rem, 12vw, 4.8rem);
+      line-height: 0.92;
+      letter-spacing: -0.07em;
+      max-width: 100%;
+      overflow-wrap: anywhere;
+    }
+
+    h1 span {
+      display: block;
+    }
+
+    .sub {
+      margin: 12px 0 0;
+      max-width: 58ch;
+      color: var(--muted);
+      font-size: 0.98rem;
+    }
+
+    .app {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 14px;
+    }
+
+    .card {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 14px;
+      min-width: 0;
+    }
+
+    .card.white {
+      background: var(--card-2);
+    }
+
+    .card h2 {
+      margin: 0 0 10px;
+      font-size: 1rem;
+      letter-spacing: -0.02em;
+    }
+
+    label {
+      display: block;
+      margin: 12px 0 6px;
+      font-weight: 760;
+      font-size: 0.92rem;
+    }
+
+    textarea,
+    input,
+    select,
+    button {
+      font: inherit;
+      max-width: 100%;
+    }
+
+    textarea,
+    input,
+    select {
+      width: 100%;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      background: #fffdf8;
+      color: var(--ink);
+      padding: 11px 12px;
+      min-width: 0;
+      outline: none;
+    }
+
+    textarea {
+      resize: vertical;
+      min-height: 132px;
+      overflow-wrap: break-word;
+    }
+
+    textarea:focus,
+    input:focus,
+    select:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(123, 93, 56, 0.15);
+    }
+
+    .hint {
+      color: var(--muted);
+      font-size: 0.83rem;
+      margin-top: 5px;
+      overflow-wrap: anywhere;
+    }
+
+    .buttons {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 9px;
+      margin-top: 12px;
+    }
+
+    button {
+      min-height: var(--tap);
+      border: 0;
+      border-radius: 999px;
+      padding: 10px 14px;
+      background: var(--accent);
+      color: #fffaf1;
+      font-weight: 760;
+      cursor: pointer;
+      touch-action: manipulation;
+      white-space: normal;
+      overflow-wrap: anywhere;
+    }
+
+    button.secondary {
+      background: var(--soft);
+      color: var(--accent-2);
+      border: 1px solid var(--line);
+    }
+
+    button.danger {
+      background: #f1d8cf;
+      color: var(--bad);
+      border: 1px solid #ddb6aa;
+    }
+
+    .score-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 10px;
+    }
+
+    .score-card {
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      background: #fffdf8;
+      padding: 12px;
+      min-width: 0;
+    }
+
+    .score-top {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 10px;
+    }
+
+    .score-name {
+      font-weight: 820;
+      overflow-wrap: anywhere;
+    }
+
+    .score-num {
+      font-variant-numeric: tabular-nums;
+      font-weight: 860;
+      white-space: nowrap;
+    }
+
+    .meter {
+      height: 11px;
+      background: #eadfce;
+      border-radius: 999px;
+      margin-top: 9px;
+      border: 1px solid #ddcfbb;
+    }
+
+    .meter > span {
+      display: block;
+      height: 100%;
+      width: 0%;
+      border-radius: 999px;
+      background: var(--good);
+      transition: width 180ms ease;
+    }
+
+    .meter.warn > span {
+      background: var(--warn);
+    }
+
+    .meter.bad > span {
+      background: var(--bad);
+    }
+
+    .score-note {
+      margin-top: 8px;
+      color: var(--muted);
+      font-size: 0.88rem;
+      overflow-wrap: anywhere;
+    }
+
+    .pill-list {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 8px;
+      margin-top: 10px;
+    }
+
+    .pill {
+      border-radius: 14px;
+      padding: 10px 11px;
+      background: #fffdf8;
+      border: 1px solid var(--line);
+      overflow-wrap: anywhere;
+    }
+
+    .pill.good {
+      border-color: #b8d3bf;
+      background: #f1faf3;
+      color: #204d31;
+    }
+
+    .pill.warn {
+      border-color: #e2c58f;
+      background: #fff6df;
+      color: #65400d;
+    }
+
+    .pill.bad {
+      border-color: #e0afa5;
+      background: #fff0ed;
+      color: #70251b;
+    }
+
+    .pill-title {
+      display: block;
+      font-weight: 820;
+      margin-bottom: 2px;
+    }
+
+    .pill small {
+      color: inherit;
+      opacity: 0.86;
+    }
+
+    .checklist {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 8px;
+      padding: 0;
+      margin: 10px 0 0;
+      list-style: none;
+    }
+
+    .checklist li {
+      display: grid;
+      grid-template-columns: auto 1fr;
+      gap: 9px;
+      align-items: start;
+      padding: 10px;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      background: #fffdf8;
+      overflow-wrap: anywhere;
+    }
+
+    .box {
+      width: 20px;
+      height: 20px;
+      border: 2px solid var(--accent);
+      border-radius: 6px;
+      margin-top: 1px;
+      flex: none;
+    }
+
+    .mini {
+      font-size: 0.85rem;
+      color: var(--muted);
+      overflow-wrap: anywhere;
+    }
+
+    .status {
+      min-height: 22px;
+      margin-top: 10px;
+      font-size: 0.88rem;
+      color: var(--muted);
+      overflow-wrap: anywhere;
+    }
+
+    .summary-box {
+      white-space: pre-wrap;
+      word-break: break-word;
+      overflow-wrap: anywhere;
+      border: 1px solid var(--line);
+      background: #fffdf8;
+      border-radius: 14px;
+      padding: 11px;
+      min-height: 80px;
+      color: var(--ink);
+    }
+
+    .tiny-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 8px;
+      margin-top: 10px;
+    }
+
+    .count-row {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 8px;
+      margin-top: 8px;
+    }
+
+    .count {
+      background: #fffdf8;
+      border: 1px solid var(--line);
+      border-radius: 13px;
+      padding: 9px 10px;
+      color: var(--muted);
+      font-size: 0.86rem;
+      overflow-wrap: anywhere;
+    }
+
+    footer {
+      color: var(--muted);
+      font-size: 0.82rem;
+      padding: 16px 4px 26px;
+      overflow-wrap: anywhere;
+    }
+
+    @media (min-width: 720px) {
+      .page {
+        padding: 24px;
+      }
+
+      .app {
+        grid-template-columns: 1fr 1fr;
+        align-items: start;
+      }
+
+      .span-2 {
+        grid-column: 1 / -1;
+      }
+
+      .buttons,
+      .tiny-grid,
+      .count-row {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .score-grid {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <header>
+      <h1>
+        <span>Forum</span>
+        <span>Reply</span>
+        <span>Improver</span>
+      </h1>
+      <p class="sub">
+        Paste the original question and your rough reply. This local-only checker scores usefulness, evidence, and tone, then gives you flags and a copyable improvement checklist.
+      </p>
+    </header>
+
+    <section class="app" aria-label="Forum reply checker">
+      <div class="card">
+        <h2>Inputs</h2>
+
+        <label for="forumType">Forum context</label>
+        <select id="forumType">
+          <option value="general">General discussion</option>
+          <option value="technical">Technical help</option>
+          <option value="finance">Money / investing / taxes</option>
+          <option value="health">Health / medical</option>
+          <option value="legal">Legal / rules / compliance</option>
+          <option value="product">Product recommendation</option>
+        </select>
+
+        <label for="question">Original question</label>
+        <textarea id="question" placeholder="Paste the forum question here. Include the asker’s context, constraints, and what they’re trying to solve."></textarea>
+        <div class="hint">Tip: the better the question context, the better the usefulness score.</div>
+
+        <label for="answer">Your rough answer</label>
+        <textarea id="answer" placeholder="Paste your draft reply here. The tool checks whether it directly answers, supports claims, and avoids wording that can sound risky or unhelpful."></textarea>
+
+        <div class="count-row" aria-label="Text counts">
+          <div class="count" id="qCount">Question: 0 words</div>
+          <div class="count" id="aCount">Answer: 0 words</div>
+        </div>
+
+        <div class="buttons">
+          <button id="analyzeBtn" type="button">Analyze reply</button>
+          <button id="sampleBtn" class="secondary" type="button">Load sample</button>
+          <button id="copyBtn" class="secondary" type="button">Copy checklist</button>
+          <button id="downloadBtn" class="secondary" type="button">Download brief</button>
+          <button id="resetBtn" class="danger" type="button">Reset</button>
+        </div>
+
+        <div class="status" id="status" role="status" aria-live="polite"></div>
+      </div>
+
+      <div class="card white">
+        <h2>Scores</h2>
+        <div class="score-grid">
+          <div class="score-card">
+            <div class="score-top">
+              <span class="score-name">Helpfulness</span>
+              <span class="score-num" id="helpScore">0</span>
+            </div>
+            <div class="meter bad" id="helpMeter"><span></span></div>
+            <div class="score-note" id="helpNote">Waiting for a draft.</div>
+          </div>
+
+          <div class="score-card">
+            <div class="score-top">
+              <span class="score-name">Evidence</span>
+              <span class="score-num" id="evidenceScore">0</span>
+            </div>
+            <div class="meter bad" id="evidenceMeter"><span></span></div>
+            <div class="score-note" id="evidenceNote">Waiting for a draft.</div>
+          </div>
+
+          <div class="score-card">
+            <div class="score-top">
+              <span class="score-name">Tone</span>
+              <span class="score-num" id="toneScore">0</span>
+            </div>
+            <div class="meter bad" id="toneMeter"><span></span></div>
+            <div class="score-note" id="toneNote">Waiting for a draft.</div>
+          </div>
+        </div>
+
+        <div class="tiny-grid">
+          <div>
+            <h2 style="margin-top:14px;">Risky wording flags</h2>
+            <div class="pill-list" id="flags"></div>
+          </div>
+
+          <div>
+            <h2 style="margin-top:14px;">What already works</h2>
+            <div class="pill-list" id="wins"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card span-2">
+        <h2>Copyable improvement checklist</h2>
+        <ul class="checklist" id="checklist"></ul>
+      </div>
+
+      <div class="card span-2 white">
+        <h2>Brief text</h2>
+        <div class="summary-box" id="briefText">Analyze a reply to generate the brief.</div>
+      </div>
+    </section>
+
+    <footer>
+      Runs entirely in your browser. Your text stays on the device unless you copy, download, or share it.
+    </footer>
+  </main>
+
+  <script>
+    (function () {
+      "use strict";
+
+      var els = {
+        forumType: document.getElementById("forumType"),
+        question: document.getElementById("question"),
+        answer: document.getElementById("answer"),
+        qCount: document.getElementById("qCount"),
+        aCount: document.getElementById("aCount"),
+        analyzeBtn: document.getElementById("analyzeBtn"),
+        sampleBtn: document.getElementById("sampleBtn"),
+        copyBtn: document.getElementById("copyBtn"),
+        downloadBtn: document.getElementById("downloadBtn"),
+        resetBtn: document.getElementById("resetBtn"),
+        status: document.getElementById("status"),
+        helpScore: document.getElementById("helpScore"),
+        evidenceScore: document.getElementById("evidenceScore"),
+        toneScore: document.getElementById("toneScore"),
+        helpMeter: document.getElementById("helpMeter"),
+        evidenceMeter: document.getElementById("evidenceMeter"),
+        toneMeter: document.getElementById("toneMeter"),
+        helpNote: document.getElementById("helpNote"),
+        evidenceNote: document.getElementById("evidenceNote"),
+        toneNote: document.getElementById("toneNote"),
+        flags: document.getElementById("flags"),
+        wins: document.getElementById("wins"),
+        checklist: document.getElementById("checklist"),
+        briefText: document.getElementById("briefText")
+      };
+
+      var storageKey = "forumReplyImprover.v1";
+      var lastBrief = "";
+
+      var riskyPatterns = [
+        {
+          name: "Absolute certainty",
+          type: "warn",
+          rx: /\b(always|never|guaranteed|definitely|certainly|undeniably|impossible|everyone knows|no doubt)\b/gi,
+          advice: "Soften certainty unless the point is objectively verifiable."
+        },
+        {
+          name: "Dismissive phrasing",
+          type: "warn",
+          rx: /\b(obviously|just|simply|clearly|easy|basic|trivial|you should have|anyone can)\b/gi,
+          advice: "Make the reply feel less scolding and more useful."
+        },
+        {
+          name: "Insults or hostile wording",
+          type: "bad",
+          rx: /\b(stupid|dumb|idiot|moron|trash|garbage|nonsense|pathetic|lazy|clown)\b/gi,
+          advice: "Remove attacks. Critique the idea, not the person."
+        },
+        {
+          name: "Unsupported proof language",
+          type: "warn",
+          rx: /\b(proven|studies show|research proves|scientifically|objectively better|best|safest|cheapest|only option)\b/gi,
+          advice: "Add a source, example, or narrow the claim."
+        },
+        {
+          name: "High-stakes advice wording",
+          type: "bad",
+          rx: /\b(you must|you need to|you have to|do this now|sell everything|ignore your doctor|skip the lawyer|stop taking|diagnose|cure|tax loophole)\b/gi,
+          advice: "Add limitations and recommend qualified help when stakes are high."
+        },
+        {
+          name: "Privacy or security risk",
+          type: "bad",
+          rx: /\b(password|private key|seed phrase|ssn|social security number|bank login|send me your code|disable security)\b/gi,
+          advice: "Avoid asking for sensitive information. Suggest safe redaction."
+        },
+        {
+          name: "Overheated punctuation",
+          type: "warn",
+          rx: /(!{2,}|\?{2,}|[A-Z]{5,})/g,
+          advice: "Lower the temperature so the reply reads calmer."
+        }
+      ];
+
+      function words(text) {
+        var matches = String(text || "").trim().match(/\b[\w’'-]+\b/g);
+        return matches ? matches : [];
+      }
+
+      function uniqueUsefulWords(text) {
+        var stop = {
+          the: true, and: true, for: true, that: true, this: true, with: true,
+          you: true, your: true, are: true, was: true, have: true, has: true,
+          from: true, not: true, but: true, can: true, into: true, about: true,
+          what: true, when: true, where: true, why: true, how: true, would: true,
+          should: true, could: true, there: true, they: true, them: true, then: true,
+          just: true, like: true, really: true, very: true, will: true, been: true
+        };
+        var list = words(text.toLowerCase());
+        var out = [];
+        var seen = {};
+        list.forEach(function (w) {
+          var clean = w.replace(/^['’-]+|['’-]+$/g, "");
+          if (clean.length > 3 && !stop[clean] && !seen[clean]) {
+            seen[clean] = true;
+            out.push(clean);
+          }
+        });
+        return out;
+      }
+
+      function clamp(n, min, max) {
+        return Math.max(min, Math.min(max, n));
+      }
+
+      function countMatches(text, rx) {
+        var m = String(text || "").match(rx);
+        return m ? m.length : 0;
+      }
+
+      function hasAny(text, rx) {
+        return rx.test(String(text || ""));
+      }
+
+      function sentenceCount(text) {
+        var m = String(text || "").trim().match(/[^.!?]+[.!?]+|[^.!?]+$/g);
+        return m ? m.filter(function (s) { return s.trim().length > 0; }).length : 0;
+      }
+
+      function keywordOverlap(question, answer) {
+        var q = uniqueUsefulWords(question);
+        var aText = " " + String(answer || "").toLowerCase() + " ";
+        if (!q.length) return 0;
+        var hits = 0;
+        q.forEach(function (w) {
+          if (aText.indexOf(w) !== -1) hits += 1;
+        });
+        return hits / q.length;
+      }
+
+      function scoreHelpfulness(question, answer) {
+        var wc = words(answer).length;
+        var qwc = words(question).length;
+        var overlap = keywordOverlap(question, answer);
+        var score = 0;
+        var notes = [];
+
+        if (wc >= 35) score += 18;
+        else if (wc >= 15) score += 10;
+        else notes.push("The reply is probably too thin.");
+
+        if (wc <= 280) score += 10;
+        else notes.push("The reply may be too long for a forum answer.");
+
+        if (qwc > 0 && overlap >= 0.28) score += 22;
+        else if (qwc > 0 && overlap >= 0.14) score += 12;
+        else if (qwc > 0) notes.push("It does not reuse enough of the asker’s actual context.");
+
+        if (/(\bfirst\b|\bsecond\b|\bthird\b|\bstep\b|\btry\b|\bstart\b|\bbecause\b|\bfor example\b|\be\.g\.)/i.test(answer)) score += 14;
+        else notes.push("Add a step, example, or reason.");
+
+        if (/(\n\s*[-*•]|\d+\.\s|\b1\)\s|\b2\)\s)/.test(answer)) score += 12;
+        else notes.push("A short list would make it easier to act on.");
+
+        if (/(\bdepends\b|\bassuming\b|\bif\b|\bunless\b|\bin your case\b|\bcontext\b)/i.test(answer)) score += 10;
+        else notes.push("Add one condition or assumption.");
+
+        if (/(\btry\b|\bcheck\b|\bcompare\b|\bask\b|\btest\b|\bmeasure\b|\blook for\b|\bnext\b)/i.test(answer)) score += 14;
+        else notes.push("Add a concrete next action.");
+
+        return {
+          score: clamp(score, 0, 100),
+          note: notes.length ? notes.slice(0, 2).join(" ") : "Clear enough to help the asker take action."
+        };
+      }
+
+      function scoreEvidence(answer) {
+        var score = 0;
+        var notes = [];
+
+        if (/https?:\/\/|www\.|\.edu\b|\.gov\b|\.org\b|docs?\b|manual\b|source\b|citation\b|link\b/i.test(answer)) score += 28;
+        else notes.push("No obvious source or reference.");
+
+        if (/\b\d+(\.\d+)?%?\b|\$\d+|\b\d{4}\b|\b\d+\s*(days|weeks|months|years|hours|minutes|miles|gb|mb|lbs|kg)\b/i.test(answer)) score += 18;
+        else notes.push("Add one concrete number if relevant.");
+
+        if (/\bfor example\b|\be\.g\.\b|\bin my case\b|\bI tested\b|\bI used\b|\bscreenshot\b|\blog\b|\berror message\b/i.test(answer)) score += 18;
+        else notes.push("Add an example, test result, or observed detail.");
+
+        if (/\bbecause\b|\bsince\b|\bthe reason\b|\bthat means\b|\bwhich means\b|\bas a result\b/i.test(answer)) score += 16;
+        else notes.push("Explain why the advice follows.");
+
+        if (/\bmay\b|\bmight\b|\blikely\b|\busually\b|\boften\b|\bin general\b|\bI think\b|\bI would\b/i.test(answer)) score += 10;
+        else notes.push("Distinguish fact from judgment.");
+
+        var proofy = countMatches(answer, /\b(proven|studies show|research proves|objectively|best|safest|cheapest|guaranteed)\b/gi);
+        if (proofy > 0 && !/https?:\/\/|source|citation|study|data|report|docs/i.test(answer)) {
+          score -= 18;
+          notes.push("Strong proof words need support.");
+        } else {
+          score += 10;
+        }
+
+        return {
+          score: clamp(score, 0, 100),
+          note: notes.length ? notes.slice(0, 2).join(" ") : "The reply gives reasons, examples, or references."
+        };
+      }
+
+      function scoreTone(answer) {
+        var score = 82;
+        var notes = [];
+
+        var hostile = countMatches(answer, /\b(stupid|dumb|idiot|moron|trash|garbage|pathetic|lazy|clown|shut up)\b/gi);
+        if (hostile) {
+          score -= hostile * 18;
+          notes.push("Hostile wording will weaken the reply.");
+        }
+
+        var dismissive = countMatches(answer, /\b(obviously|just|simply|clearly|easy|basic|trivial|you should have)\b/gi);
+        if (dismissive) {
+          score -= Math.min(20, dismissive * 5);
+          notes.push("Some wording may sound dismissive.");
+        }
+
+        var absolutes = countMatches(answer, /\b(always|never|guaranteed|definitely|impossible|everyone knows)\b/gi);
+        if (absolutes) {
+          score -= Math.min(16, absolutes * 4);
+          notes.push("Absolute wording can start arguments.");
+        }
+
+        if (/(!{2,}|\?{2,}|[A-Z]{5,})/.test(answer)) {
+          score -= 12;
+          notes.push("Punctuation or caps feel heated.");
+        }
+
+        if (/\b(I might be missing|I may be missing|from what you wrote|based on your post|I’d|I would|hope this helps|good luck|thanks)\b/i.test(answer)) {
+          score += 8;
+        } else {
+          notes.push("Add a small signal that you read their context.");
+        }
+
+        if (/\bnot legal advice|not medical advice|not financial advice|talk to a professional|qualified professional|doctor|attorney|tax pro|advisor\b/i.test(answer)) {
+          score += 8;
+        }
+
+        return {
+          score: clamp(score, 0, 100),
+          note: notes.length ? notes.slice(0, 2).join(" ") : "Tone is calm, direct, and unlikely to derail the thread."
+        };
+      }
+
+      function contextWarnings(type, answer) {
+        var flags = [];
+        if (type === "finance" && /\b(buy|sell|short|leverage|margin|tax loophole|deduct|ira|roth|capital gains|option|crypto)\b/i.test(answer)) {
+          flags.push({
+            name: "Finance-specific caution",
+            type: "warn",
+            advice: "Separate general information from personalized financial or tax advice."
+          });
+        }
+        if (type === "health" && /\b(diagnose|cure|dose|medication|stop taking|symptom|pain|doctor|infection|therapy)\b/i.test(answer)) {
+          flags.push({
+            name: "Health-specific caution",
+            type: "bad",
+            advice: "Avoid diagnosing. Suggest professional care for serious symptoms."
+          });
+        }
+        if (type === "legal" && /\b(sue|illegal|contract|liability|rights|lawyer|attorney|court|criminal|evict)\b/i.test(answer)) {
+          flags.push({
+            name: "Legal-specific caution",
+            type: "bad",
+            advice: "Avoid definitive legal conclusions. Suggest jurisdiction-specific help."
+          });
+        }
+        if (type === "technical" && !/\b(error|version|log|steps|reproduce|setting|browser|device|command|config|screenshot)\b/i.test(answer)) {
+          flags.push({
+            name: "Missing technical detail",
+            type: "warn",
+            advice: "Ask for or include version, error text, steps tried, and environment."
+          });
+        }
+        if (type === "product" && /\b(best|only|perfect|guaranteed|never fails)\b/i.test(answer)) {
+          flags.push({
+            name: "Recommendation overreach",
+            type: "warn",
+            advice: "State tradeoffs, budget fit, and what would make another option better."
+          });
+        }
+        return flags;
+      }
+
+      function findFlags(type, answer) {
+        var found = [];
+        riskyPatterns.forEach(function (p) {
+          p.rx.lastIndex = 0;
+          if (p.rx.test(answer)) {
+            found.push({
+              name: p.name,
+              type: p.type,
+              advice: p.advice
+            });
+          }
+        });
+        return found.concat(contextWarnings(type, answer));
+      }
+
+      function findWins(question, answer, scores) {
+        var wins = [];
+        if (scores.help.score >= 70) {
+          wins.push({ name: "Useful structure", advice: "The reply gives the asker something actionable." });
+        }
+        if (scores.evidence.score >= 65) {
+          wins.push({ name: "Support is visible", advice: "The draft includes reasons, examples, numbers, or references." });
+        }
+        if (scores.tone.score >= 75) {
+          wins.push({ name: "Tone is stable", advice: "The wording is unlikely to start a side argument." });
+        }
+        if (keywordOverlap(question, answer) >= 0.22) {
+          wins.push({ name: "Question context used", advice: "The answer appears tied to the actual question." });
+        }
+        if (/\n\s*[-*•]|\d+\.\s|\bfirst\b|\bsecond\b|\bstep\b/i.test(answer)) {
+          wins.push({ name: "Skimmable", advice: "The reply has signs of sequence or structure." });
+        }
+        if (!wins.length) {
+          wins.push({ name: "Draft exists", advice: "You have raw material. The next pass should make it more specific and supported." });
+        }
+        return wins.slice(0, 5);
+      }
+
+      function buildChecklist(type, question, answer, scores, flags) {
+        var items = [];
+
+        items.push("Open with a direct answer to the asker’s main question.");
+
+        if (keywordOverlap(question, answer) < 0.2) {
+          items.push("Mirror one or two important details from the original question so the reply feels specific.");
+        }
+
+        if (scores.help.score < 75) {
+          items.push("Add one concrete next step, example, or decision rule.");
+        }
+
+        if (scores.evidence.score < 75) {
+          items.push("Support the strongest claim with a source, number, test result, personal example, or clear reason.");
+        }
+
+        if (flags.some(function (f) { return f.name === "Absolute certainty"; })) {
+          items.push("Replace absolute words like always, never, guaranteed, or impossible with narrower wording.");
+        }
+
+        if (flags.some(function (f) { return f.name === "Dismissive phrasing"; })) {
+          items.push("Remove wording that can sound like scolding, especially obviously, just, simple, or easy.");
+        }
+
+        if (flags.some(function (f) { return f.type === "bad"; })) {
+          items.push("Rewrite high-risk or hostile wording before posting.");
+        }
+
+        if (type === "finance") {
+          items.push("Make clear whether you are giving general information, personal experience, or advice requiring a professional.");
+        }
+
+        if (type === "health") {
+          items.push("Avoid diagnosis language and point the asker to qualified care for serious or persistent symptoms.");
+        }
+
+        if (type === "legal") {
+          items.push("Avoid jurisdiction-specific certainty unless you can cite the relevant rule.");
+        }
+
+        if (type === "technical") {
+          items.push("Include environment details: device, app/browser, version, exact error, and steps tried.");
+        }
+
+        if (!/\b(if|assuming|unless|depends|in your case|based on)\b/i.test(answer)) {
+          items.push("Add one assumption or limitation so the answer does not overclaim.");
+        }
+
+        items.push("End with the next useful thing the asker can do, not a vague encouragement.");
+
+        return dedupe(items).slice(0, 9);
+      }
+
+      function dedupe(list) {
+        var seen = {};
+        return list.filter(function (item) {
+          var key = item.toLowerCase();
+          if (seen[key]) return false;
+          seen[key] = true;
+          return true;
+        });
+      }
+
+      function setMeter(meter, score) {
+        var bar = meter.querySelector("span");
+        bar.style.width = clamp(score, 0, 100) + "%";
+        meter.classList.remove("good", "warn", "bad");
+        if (score >= 75) meter.classList.add("good");
+        else if (score >= 50) meter.classList.add("warn");
+        else meter.classList.add("bad");
+      }
+
+      function setScore(name, result) {
+        var scoreEl = els[name + "Score"];
+        var meterEl = els[name + "Meter"];
+        var noteEl = els[name + "Note"];
+        scoreEl.textContent = String(result.score);
+        setMeter(meterEl, result.score);
+        noteEl.textContent = result.note;
+      }
+
+      function clearNode(node) {
+        while (node.firstChild) node.removeChild(node.firstChild);
+      }
+
+      function addPill(container, item, fallbackType) {
+        var div = document.createElement("div");
+        var type = item.type || fallbackType || "good";
+        div.className = "pill " + type;
+
+        var title = document.createElement("span");
+        title.className = "pill-title";
+        title.textContent = item.name;
+
+        var small = document.createElement("small");
+        small.textContent = item.advice;
+
+        div.appendChild(title);
+        div.appendChild(small);
+        container.appendChild(div);
+      }
+
+      function renderFlags(flags) {
+        clearNode(els.flags);
+        if (!flags.length) {
+          addPill(els.flags, {
+            name: "No obvious wording flags",
+            type: "good",
+            advice: "Still check the facts before posting."
+          });
+          return;
+        }
+        flags.slice(0, 7).forEach(function (flag) {
+          addPill(els.flags, flag);
+        });
+      }
+
+      function renderWins(wins) {
+        clearNode(els.wins);
+        wins.forEach(function (win) {
+          addPill(els.wins, {
+            name: win.name,
+            type: "good",
+            advice: win.advice
+          });
+        });
+      }
+
+      function renderChecklist(items) {
+        clearNode(els.checklist);
+        items.forEach(function (item) {
+          var li = document.createElement("li");
+
+          var box = document.createElement("span");
+          box.className = "box";
+          box.setAttribute("aria-hidden", "true");
+
+          var text = document.createElement("span");
+          text.textContent = item;
+
+          li.appendChild(box);
+          li.appendChild(text);
+          els.checklist.appendChild(li);
+        });
+      }
+
+      function buildBrief(scores, flags, checklist) {
+        var lines = [];
+        lines.push("Forum Reply Improvement Brief");
+        lines.push("");
+        lines.push("Scores");
+        lines.push("- Helpfulness: " + scores.help.score + "/100");
+        lines.push("- Evidence: " + scores.evidence.score + "/100");
+        lines.push("- Tone: " + scores.tone.score + "/100");
+        lines.push("");
+        lines.push("Risky wording flags");
+        if (flags.length) {
+          flags.slice(0, 7).forEach(function (flag) {
+            lines.push("- " + flag.name + ": " + flag.advice);
+          });
+        } else {
+          lines.push("- No obvious wording flags.");
+        }
+        lines.push("");
+        lines.push("Checklist");
+        checklist.forEach(function (item) {
+          lines.push("- [ ] " + item);
+        });
+        return lines.join("\n");
+      }
+
+      function updateCounts() {
+        els.qCount.textContent = "Question: " + words(els.question.value).length + " words";
+        els.aCount.textContent = "Answer: " + words(els.answer.value).length + " words";
+      }
+
+      function analyze(silent) {
+        var type = els.forumType.value;
+        var question = els.question.value.trim();
+        var answer = els.answer.value.trim();
+
+        updateCounts();
+
+        if (!question || !answer) {
+          els.status.textContent = "Paste both the original question and your rough answer.";
+          return;
+        }
+
+        var scores = {
+          help: scoreHelpfulness(question, answer),
+          evidence: scoreEvidence(answer),
+          tone: scoreTone(answer)
+        };
+
+        var flags = findFlags(type, answer);
+        var wins = findWins(question, answer, scores);
+        var checklist = buildChecklist(type, question, answer, scores, flags);
+        lastBrief = buildBrief(scores, flags, checklist);
+
+        setScore("help", scores.help);
+        setScore("evidence", scores.evidence);
+        setScore("tone", scores.tone);
+        renderFlags(flags);
+        renderWins(wins);
+        renderChecklist(checklist);
+        els.briefText.textContent = lastBrief;
+
+        if (!silent) {
+          els.status.textContent = "Reply analyzed. Checklist is ready to copy.";
+        }
+
+        save();
+      }
+
+      function save() {
+        var payload = {
+          forumType: els.forumType.value,
+          question: els.question.value,
+          answer: els.answer.value
+        };
+        try {
+          localStorage.setItem(storageKey, JSON.stringify(payload));
+        } catch (err) {
+          /* localStorage may be unavailable in some private browser modes */
+        }
+      }
+
+      function load() {
+        try {
+          var raw = localStorage.getItem(storageKey);
+          if (!raw) return;
+          var data = JSON.parse(raw);
+          els.forumType.value = data.forumType || "general";
+          els.question.value = data.question || "";
+          els.answer.value = data.answer || "";
+          updateCounts();
+          if (els.question.value.trim() && els.answer.value.trim()) {
+            analyze(true);
+          }
+        } catch (err) {
+          updateCounts();
+        }
+      }
+
+      function copyText(text) {
+        if (!text) {
+          els.status.textContent = "Analyze a reply first.";
+          return;
+        }
+
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(text).then(function () {
+            els.status.textContent = "Copied to clipboard.";
+          }).catch(function () {
+            fallbackCopy(text);
+          });
+        } else {
+          fallbackCopy(text);
+        }
+      }
+
+      function fallbackCopy(text) {
+        var temp = document.createElement("textarea");
+        temp.value = text;
+        temp.setAttribute("readonly", "readonly");
+        temp.style.position = "fixed";
+        temp.style.left = "-9999px";
+        document.body.appendChild(temp);
+        temp.select();
+        try {
+          document.execCommand("copy");
+          els.status.textContent = "Copied to clipboard.";
+        } catch (err) {
+          els.status.textContent = "Copy failed. Select the brief text manually.";
+        }
+        document.body.removeChild(temp);
+      }
+
+      function downloadBrief() {
+        if (!lastBrief) {
+          els.status.textContent = "Analyze a reply first.";
+          return;
+        }
+        var blob = new Blob([lastBrief], { type: "text/plain;charset=utf-8" });
+        var url = URL.createObjectURL(blob);
+        var a = document.createElement("a");
+        var stamp = new Date().toISOString().slice(0, 10);
+        a.href = url;
+        a.download = "forum-reply-brief-" + stamp + ".txt";
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        els.status.textContent = "Brief downloaded.";
+      }
+
+      function loadSample() {
+        els.forumType.value = "technical";
+        els.question.value = "My laptop fan is suddenly loud whenever I open Chrome. I only have about 8 tabs open, and Activity Monitor shows Chrome Helper near the top. Is this normal, and what should I try before replacing the laptop?";
+        els.answer.value = "It is probably not the laptop dying. Chrome can spike CPU because of one bad tab, an extension, or hardware acceleration. First, open Chrome Task Manager and sort by CPU. If one tab or extension is high, close it or disable the extension. Then update Chrome, restart the browser, and check Activity Monitor again. If the fan is still loud when Chrome is closed, that points away from Chrome and toward a system process, dust, or battery/thermal issue. I would not replace the laptop until you have tested those steps.";
+        analyze(false);
+      }
+
+      function resetAll() {
+        els.forumType.value = "general";
+        els.question.value = "";
+        els.answer.value = "";
+        lastBrief = "";
+        updateCounts();
+
+        setScore("help", { score: 0, note: "Waiting for a draft." });
+        setScore("evidence", { score: 0, note: "Waiting for a draft." });
+        setScore("tone", { score: 0, note: "Waiting for a draft." });
+
+        clearNode(els.flags);
+        clearNode(els.wins);
+        clearNode(els.checklist);
+        els.briefText.textContent = "Analyze a reply to generate the brief.";
+        els.status.textContent = "Reset complete.";
+
+        try {
+          localStorage.removeItem(storageKey);
+        } catch (err) {
+          /* ignore */
+        }
+      }
+
+      els.analyzeBtn.addEventListener("click", function () {
+        analyze(false);
+      });
+
+      els.sampleBtn.addEventListener("click", loadSample);
+
+      els.copyBtn.addEventListener("click", function () {
+        if (!lastBrief && els.question.value.trim() && els.answer.value.trim()) {
+          analyze(true);
+        }
+        copyText(lastBrief);
+      });
+
+      els.downloadBtn.addEventListener("click", function () {
+        if (!lastBrief && els.question.value.trim() && els.answer.value.trim()) {
+          analyze(true);
+        }
+        downloadBrief();
+      });
+
+      els.resetBtn.addEventListener("click", resetAll);
+
+      [els.forumType, els.question, els.answer].forEach(function (el) {
+        el.addEventListener("input", function () {
+          updateCounts();
+          save();
+        });
+      });
+
+      load();
+      updateCounts();
+    }());
+  </script>
+</body>
+</html>

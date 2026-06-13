@@ -1,0 +1,795 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Client Email Risk Checker</title>
+<style>
+  :root{
+    --bg:#f6f3ee;
+    --panel:#fffaf2;
+    --ink:#231f1a;
+    --muted:#6c6258;
+    --line:#dfd3c4;
+    --soft:#efe5d6;
+    --chip:#fff2dc;
+    --good:#256b45;
+    --watch:#8a5a00;
+    --bad:#9b2d20;
+    --accent:#6d4c2f;
+    --shadow:0 12px 30px rgba(60,45,30,.10);
+    --radius:18px;
+  }
+
+  *{box-sizing:border-box}
+  html,body{margin:0;min-height:100%;background:var(--bg);color:var(--ink);font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+  body{padding:14px;overflow-x:hidden}
+  .app{width:100%;max-width:860px;margin:0 auto}
+  header{padding:14px 4px 10px}
+  h1{font-size:1.45rem;line-height:1.1;margin:0 0 6px;font-weight:760;letter-spacing:-.03em}
+  .sub{margin:0;color:var(--muted);font-size:.94rem;line-height:1.35}
+  .grid{display:grid;gap:12px}
+  @media (min-width:760px){.grid.two{grid-template-columns:1.1fr .9fr}}
+
+  .card{
+    background:var(--panel);
+    border:1px solid var(--line);
+    border-radius:var(--radius);
+    box-shadow:var(--shadow);
+    padding:14px;
+    min-width:0;
+  }
+
+  label{display:block;font-size:.82rem;font-weight:720;color:#3c332a;margin:0 0 6px}
+  textarea,select,input{
+    width:100%;
+    border:1px solid var(--line);
+    background:#fffdf8;
+    color:var(--ink);
+    border-radius:14px;
+    padding:11px 12px;
+    font:inherit;
+    outline:none;
+    min-width:0;
+  }
+  textarea{min-height:220px;resize:vertical;line-height:1.35}
+  select{appearance:none}
+  textarea:focus,select:focus,input:focus{border-color:#a8845f;box-shadow:0 0 0 3px rgba(168,132,95,.20)}
+  .controls{display:grid;gap:10px;margin-top:12px}
+  @media (min-width:560px){.controls{grid-template-columns:1fr 1fr 1fr}}
+
+  .buttons{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+  button{
+    border:1px solid #cbb89f;
+    background:#fff5e4;
+    color:#2a2118;
+    border-radius:999px;
+    padding:10px 12px;
+    font:inherit;
+    font-weight:720;
+    cursor:pointer;
+    min-width:0;
+  }
+  button.primary{background:#33261c;color:#fff;border-color:#33261c}
+  button:active{transform:translateY(1px)}
+  .tiny{font-size:.8rem;color:var(--muted);line-height:1.35;margin-top:8px}
+
+  .scoreRow{display:flex;align-items:center;gap:12px;min-width:0}
+  .score{
+    width:86px;height:86px;border-radius:50%;
+    display:grid;place-items:center;
+    border:8px solid var(--line);
+    background:#fffdf8;
+    flex:0 0 auto;
+    font-size:1.35rem;
+    font-weight:820;
+  }
+  .score.good{border-color:rgba(37,107,69,.45);color:var(--good)}
+  .score.watch{border-color:rgba(138,90,0,.45);color:var(--watch)}
+  .score.bad{border-color:rgba(155,45,32,.45);color:var(--bad)}
+  .scoreText{min-width:0}
+  .scoreText h2{margin:0 0 4px;font-size:1.08rem}
+  .scoreText p{margin:0;color:var(--muted);font-size:.92rem;line-height:1.32}
+
+  .sectionTitle{font-size:.9rem;font-weight:800;margin:16px 0 8px}
+  .chips{display:flex;gap:7px;flex-wrap:wrap}
+  .chip{
+    display:inline-flex;align-items:center;gap:6px;
+    border:1px solid var(--line);
+    background:var(--chip);
+    padding:7px 9px;
+    border-radius:999px;
+    font-size:.82rem;
+    font-weight:720;
+    max-width:100%;
+  }
+  .chip.good{background:#eaf5ed;border-color:#b9d8c2;color:#184f31}
+  .chip.watch{background:#fff3cf;border-color:#e6c977;color:#654000}
+  .chip.bad{background:#ffe5dd;border-color:#e9aaa0;color:#7d2419}
+  .chip span{white-space:normal}
+
+  .list{display:grid;gap:8px;margin:0;padding:0;list-style:none}
+  .item{
+    border:1px solid var(--line);
+    background:#fffdf8;
+    border-radius:14px;
+    padding:10px;
+    line-height:1.34;
+    font-size:.92rem;
+  }
+  .item strong{display:block;margin-bottom:3px}
+  .empty{color:var(--muted);font-size:.92rem;line-height:1.35;border:1px dashed var(--line);border-radius:14px;padding:12px;background:#fffdf8}
+
+  .checklistBox{
+    width:100%;
+    min-height:190px;
+    white-space:pre-wrap;
+    overflow-wrap:anywhere;
+    border:1px solid var(--line);
+    background:#fffdf8;
+    border-radius:14px;
+    padding:11px;
+    font-size:.9rem;
+    line-height:1.36;
+  }
+
+  .meter{
+    height:11px;background:var(--soft);border-radius:999px;overflow:hidden;border:1px solid var(--line);margin-top:10px
+  }
+  .bar{height:100%;width:0%;background:#8f6a45;transition:width .18s ease}
+  .bar.good{background:#3f8b5f}
+  .bar.watch{background:#b98419}
+  .bar.bad{background:#b24a3e}
+
+  .footerNote{font-size:.78rem;color:var(--muted);line-height:1.35;margin:12px 4px 4px}
+  .toast{
+    position:fixed;left:50%;bottom:14px;transform:translateX(-50%);
+    background:#2d241b;color:white;border-radius:999px;padding:10px 14px;
+    font-size:.88rem;box-shadow:var(--shadow);opacity:0;pointer-events:none;
+    transition:.18s ease;max-width:calc(100vw - 28px);text-align:center;
+  }
+  .toast.show{opacity:1;bottom:22px}
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <h1>Client Email Risk Checker</h1>
+    <p class="sub">Paste a draft, set context, and get risk chips, rewrite priorities, and a send checklist. Runs offline in this file.</p>
+  </header>
+
+  <div class="grid two">
+    <section class="card">
+      <label for="draft">Draft reply</label>
+      <textarea id="draft" placeholder="Paste the client email reply here..."></textarea>
+
+      <div class="controls">
+        <div>
+          <label for="relationship">Relationship</label>
+          <select id="relationship">
+            <option value="existing">Existing client</option>
+            <option value="new">Prospect / new client</option>
+            <option value="tense">Tense or upset client</option>
+            <option value="professional">CPA / attorney / outside professional</option>
+            <option value="internal">Internal team reply</option>
+          </select>
+        </div>
+
+        <div>
+          <label for="tone">Intended tone</label>
+          <select id="tone">
+            <option value="neutral">Neutral and clear</option>
+            <option value="warm">Warm and reassuring</option>
+            <option value="firm">Firm boundary</option>
+            <option value="urgent">Urgent / time-sensitive</option>
+            <option value="apology">Apology / repair</option>
+          </select>
+        </div>
+
+        <div>
+          <label for="stakes">Stakes</label>
+          <select id="stakes">
+            <option value="low">Low: scheduling / admin</option>
+            <option value="medium">Medium: planning / service issue</option>
+            <option value="high">High: money, tax, legal, trading, beneficiary</option>
+            <option value="complaint">Complaint / dissatisfaction</option>
+            <option value="crisis">Crisis / death / divorce / major loss</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="buttons">
+        <button class="primary" id="analyzeBtn">Check draft</button>
+        <button id="clearBtn">Clear</button>
+        <button id="sampleBtn">Load sample</button>
+      </div>
+
+      <p class="tiny">This is a drafting aid, not compliance, legal, tax, or supervisory approval. Use your firm’s review process before sending.</p>
+    </section>
+
+    <section class="card">
+      <div class="scoreRow">
+        <div id="score" class="score watch">—</div>
+        <div class="scoreText">
+          <h2 id="scoreLabel">Not checked yet</h2>
+          <p id="scoreDesc">Run the checker to see send readiness and the biggest risks.</p>
+        </div>
+      </div>
+      <div class="meter"><div id="bar" class="bar"></div></div>
+
+      <div class="sectionTitle">Risk chips</div>
+      <div id="chips" class="chips">
+        <div class="empty">No chips yet.</div>
+      </div>
+
+      <div class="sectionTitle">Rewrite priorities</div>
+      <ul id="priorities" class="list">
+        <li class="empty">No priorities yet.</li>
+      </ul>
+    </section>
+  </div>
+
+  <section class="card" style="margin-top:12px">
+    <div class="sectionTitle" style="margin-top:0">Copyable send checklist</div>
+    <div id="checklist" class="checklistBox">Run the checker to generate a checklist.</div>
+    <div class="buttons">
+      <button class="primary" id="copyBtn">Copy checklist</button>
+      <button id="copyBriefBtn">Copy full brief</button>
+      <button id="downloadBtn">Download brief</button>
+    </div>
+  </section>
+
+  <p class="footerNote">Private by design: no network requests, no external libraries, no APIs, no tracking.</p>
+</div>
+
+<div id="toast" class="toast">Copied</div>
+
+<script>
+(function(){
+  "use strict";
+
+  var draft = document.getElementById("draft");
+  var relationship = document.getElementById("relationship");
+  var tone = document.getElementById("tone");
+  var stakes = document.getElementById("stakes");
+  var score = document.getElementById("score");
+  var scoreLabel = document.getElementById("scoreLabel");
+  var scoreDesc = document.getElementById("scoreDesc");
+  var bar = document.getElementById("bar");
+  var chips = document.getElementById("chips");
+  var priorities = document.getElementById("priorities");
+  var checklist = document.getElementById("checklist");
+  var toast = document.getElementById("toast");
+
+  var lastResult = null;
+
+  var patterns = [
+    {
+      id:"guarantee",
+      label:"Guarantee / promise",
+      level:"bad",
+      weight:16,
+      test:/\b(guarantee|guaranteed|promise|promised|definitely|certainly|will absolutely|no risk|can't lose|cannot lose)\b/i,
+      priority:"Remove certainty language. Use conditional wording tied to known facts, assumptions, and firm-approved guidance."
+    },
+    {
+      id:"performance",
+      label:"Performance risk",
+      level:"bad",
+      weight:14,
+      test:/\b(outperform|beat the market|market timing|hot stock|sure thing|returns?|performance|alpha|upside|downside|risk-free)\b/i,
+      priority:"Add balanced risk language. Avoid implying expected returns, market timing ability, or outcome certainty."
+    },
+    {
+      id:"taxLegal",
+      label:"Tax / legal advice",
+      level:"bad",
+      weight:14,
+      test:/\b(tax advice|legal advice|deductible|irs|lawsuit|estate|trust|attorney|cpa|1099|k-1|roth conversion|capital gains?|basis|probate)\b/i,
+      priority:"Separate planning discussion from tax or legal conclusions. Recommend confirmation with the client’s CPA or attorney when needed."
+    },
+    {
+      id:"tradeMoney",
+      label:"Money movement / trade",
+      level:"bad",
+      weight:15,
+      test:/\b(wire|transfer|ach|trade|buy|sell|liquidate|withdraw|distribution|rollover|beneficiary|account number|routing|journal|rebalance)\b/i,
+      priority:"Confirm instructions, account, timing, and authorization path. Do not make the email itself the only approval trail."
+    },
+    {
+      id:"complaint",
+      label:"Complaint language",
+      level:"bad",
+      weight:15,
+      test:/\b(complaint|unhappy|upset|angry|frustrated|lawsuit|sue|negligent|mistake|error|wrong|bad advice|lost money)\b/i,
+      priority:"Treat as complaint-sensitive. Acknowledge the issue without admitting fault. Route through firm escalation if required."
+    },
+    {
+      id:"blame",
+      label:"Blame / defensiveness",
+      level:"watch",
+      weight:9,
+      test:/\b(as I already said|you should have|you failed|your fault|not our fault|we told you|clearly|obviously|again,|per my last)\b/i,
+      priority:"Remove defensive phrasing. Replace with neutral facts, next steps, and ownership of the process."
+    },
+    {
+      id:"vague",
+      label:"Vague next step",
+      level:"watch",
+      weight:8,
+      test:/\b(soon|later|circle back|touch base|handle it|take care of it|asap|shortly|when possible)\b/i,
+      priority:"Add a concrete owner, date, action, and dependency. Make the next step auditable."
+    },
+    {
+      id:"personalData",
+      label:"Sensitive info",
+      level:"watch",
+      weight:9,
+      test:/\b(ssn|social security|dob|date of birth|account number|routing number|password|login|statement attached|tax return|driver'?s license)\b/i,
+      priority:"Minimize sensitive details. Confirm secure portal or approved delivery method for private documents."
+    },
+    {
+      id:"apology",
+      label:"Possible admission",
+      level:"watch",
+      weight:8,
+      test:/\b(our mistake|my mistake|we messed up|we were wrong|sorry for the error|fault|liability)\b/i,
+      priority:"If apologizing, keep it service-focused. Avoid admitting liability unless approved."
+    },
+    {
+      id:"pressure",
+      label:"Pressure language",
+      level:"watch",
+      weight:7,
+      test:/\b(must|need to|have to|deadline|today only|immediately|urgent|cannot wait|right now)\b/i,
+      priority:"Clarify urgency without pressure. Explain the consequence of delay and the client’s choice."
+    },
+    {
+      id:"informal",
+      label:"Too casual",
+      level:"watch",
+      weight:6,
+      test:/\b(lol|haha|no worries|trust me|honestly|to be honest|stuff|things|kinda|sorta)\b/i,
+      priority:"Tighten casual wording. Use professional, calm language that still sounds human."
+    },
+    {
+      id:"missingReview",
+      label:"No review cue",
+      level:"watch",
+      weight:7,
+      test:function(text){
+        var hasHigh = /\b(tax|legal|trade|wire|transfer|beneficiary|rollover|roth|estate|complaint|unhappy|lawsuit|sell|buy)\b/i.test(text);
+        var hasCue = /\b(review|confirm|approved|approval|secure portal|cpa|attorney|compliance|supervisor)\b/i.test(text);
+        return hasHigh && !hasCue;
+      },
+      priority:"Add a review or confirmation cue before action, especially for trades, transfers, tax, legal, or complaint-sensitive topics."
+    }
+  ];
+
+  function getText(){
+    return draft.value || "";
+  }
+
+  function wordCount(text){
+    var m = text.trim().match(/\b[\w’'-]+\b/g);
+    return m ? m.length : 0;
+  }
+
+  function sentenceCount(text){
+    var m = text.trim().match(/[.!?]+(?:\s|$)/g);
+    return Math.max(1, m ? m.length : 1);
+  }
+
+  function avgSentence(text){
+    return Math.round(wordCount(text) / sentenceCount(text));
+  }
+
+  function hasGreeting(text){
+    return /^\s*(hi|hello|hey|good morning|good afternoon|dear)\b/i.test(text);
+  }
+
+  function hasClose(text){
+    return /\b(thanks|thank you|best|sincerely|regards|talk soon)\b[\s,]*\n?\s*[a-z]/i.test(text);
+  }
+
+  function hasAction(text){
+    return /\b(next step|please confirm|I will|we will|you can|by \w+day|today|tomorrow|attached|secure portal|schedule|call|meeting|reply)\b/i.test(text);
+  }
+
+  function toneFlags(text, selectedTone){
+    var out = [];
+    if(selectedTone === "warm" && !/\b(thank you|thanks|appreciate|happy to|glad to|understand)\b/i.test(text)){
+      out.push({label:"Warmth missing", level:"watch", weight:5, priority:"Add one sincere acknowledgment before the business point."});
+    }
+    if(selectedTone === "firm" && !/\b(policy|unable|cannot|not able|required|need confirmation|before we can)\b/i.test(text)){
+      out.push({label:"Boundary unclear", level:"watch", weight:7, priority:"State the boundary plainly, then give the acceptable next step."});
+    }
+    if(selectedTone === "urgent" && !/\b(by|before|deadline|today|tomorrow|close of business|no later than)\b/i.test(text)){
+      out.push({label:"Urgency unclear", level:"watch", weight:7, priority:"Give a specific deadline and explain what happens if it is missed."});
+    }
+    if(selectedTone === "apology" && !/\b(sorry|apologize|apologies|understand|appreciate your patience)\b/i.test(text)){
+      out.push({label:"Repair cue missing", level:"watch", weight:6, priority:"Include a brief service-focused apology or acknowledgment without over-admitting fault."});
+    }
+    return out;
+  }
+
+  function contextFlags(text){
+    var out = [];
+    var rel = relationship.value;
+    var st = stakes.value;
+
+    if(rel === "tense"){
+      out.push({label:"Tense relationship", level:"watch", weight:8, priority:"Lead with acknowledgment, facts, and a calm next step. Avoid defending the firm in the first paragraph."});
+    }
+    if(rel === "new" && /\b(recommend|should|best|I would|you need)\b/i.test(text)){
+      out.push({label:"Prospect advice risk", level:"watch", weight:8, priority:"Avoid personalized advice before the relationship and scope are clear. Frame as general education or process."});
+    }
+    if(st === "high"){
+      out.push({label:"High-stakes topic", level:"bad", weight:12, priority:"Add confirmation, assumptions, and review path before any action or recommendation."});
+    }
+    if(st === "complaint"){
+      out.push({label:"Complaint-sensitive", level:"bad", weight:16, priority:"Use complaint-safe wording and follow firm escalation procedures before sending."});
+    }
+    if(st === "crisis"){
+      out.push({label:"Client crisis", level:"watch", weight:9, priority:"Use calm, empathetic language and keep instructions simple. Avoid long technical explanations."});
+    }
+    return out;
+  }
+
+  function structuralFlags(text){
+    var out = [];
+    var wc = wordCount(text);
+    var avg = avgSentence(text);
+
+    if(wc < 20){
+      out.push({label:"Too thin", level:"watch", weight:7, priority:"Add enough context that the client knows what is happening, who owns it, and what comes next."});
+    }
+    if(wc > 260){
+      out.push({label:"Too long", level:"watch", weight:7, priority:"Cut to short sections: acknowledgment, answer, action, deadline, caveat."});
+    }
+    if(avg > 28){
+      out.push({label:"Long sentences", level:"watch", weight:6, priority:"Split long sentences. Put client actions in separate lines."});
+    }
+    if(!hasGreeting(text)){
+      out.push({label:"No greeting", level:"good", weight:2, priority:"Add a simple greeting if appropriate for the relationship."});
+    }
+    if(!hasAction(text)){
+      out.push({label:"No clear next step", level:"watch", weight:9, priority:"Add a specific next action, owner, and timing."});
+    }
+    if(!hasClose(text) && wc > 30){
+      out.push({label:"No close", level:"good", weight:2, priority:"Add a clean close with your name or team signature."});
+    }
+    return out;
+  }
+
+  function uniqueByLabel(items){
+    var seen = {};
+    return items.filter(function(item){
+      if(seen[item.label]) return false;
+      seen[item.label] = true;
+      return true;
+    });
+  }
+
+  function analyze(){
+    var text = getText();
+    var trimmed = text.trim();
+
+    saveState();
+
+    if(!trimmed){
+      renderEmpty("Paste a draft first.");
+      return;
+    }
+
+    var found = [];
+
+    patterns.forEach(function(p){
+      var hit = typeof p.test === "function" ? p.test(trimmed) : p.test.test(trimmed);
+      if(hit){
+        found.push({
+          label:p.label,
+          level:p.level,
+          weight:p.weight,
+          priority:p.priority
+        });
+      }
+    });
+
+    found = found.concat(toneFlags(trimmed, tone.value));
+    found = found.concat(contextFlags(trimmed));
+    found = found.concat(structuralFlags(trimmed));
+    found = uniqueByLabel(found);
+
+    var risk = 0;
+    found.forEach(function(f){ risk += f.weight; });
+
+    if(stakes.value === "medium") risk += 5;
+    if(stakes.value === "high") risk += 10;
+    if(stakes.value === "complaint") risk += 14;
+    if(stakes.value === "crisis") risk += 8;
+
+    if(relationship.value === "tense") risk += 8;
+    if(relationship.value === "new") risk += 4;
+
+    risk = Math.max(0, Math.min(100, risk));
+    var readiness = Math.max(0, 100 - risk);
+
+    found.sort(function(a,b){
+      var order = {bad:3, watch:2, good:1};
+      return (order[b.level] - order[a.level]) || (b.weight - a.weight);
+    });
+
+    lastResult = {
+      text: trimmed,
+      chips: found,
+      risk: risk,
+      readiness: readiness,
+      checklist: buildChecklist(trimmed, found, readiness)
+    };
+
+    renderResult(lastResult);
+  }
+
+  function renderEmpty(message){
+    lastResult = null;
+    score.textContent = "—";
+    score.className = "score watch";
+    scoreLabel.textContent = "Not ready";
+    scoreDesc.textContent = message || "Run the checker to see send readiness.";
+    bar.style.width = "0%";
+    bar.className = "bar";
+    replaceChildren(chips, [emptyNode("No chips yet.")]);
+    replaceChildren(priorities, [emptyNode("No priorities yet.", "li")]);
+    checklist.textContent = "Run the checker to generate a checklist.";
+  }
+
+  function renderResult(result){
+    var readiness = result.readiness;
+    score.textContent = String(readiness);
+
+    var statusClass = readiness >= 82 ? "good" : readiness >= 62 ? "watch" : "bad";
+    score.className = "score " + statusClass;
+    bar.className = "bar " + statusClass;
+    bar.style.width = readiness + "%";
+
+    if(readiness >= 82){
+      scoreLabel.textContent = "Likely sendable after review";
+      scoreDesc.textContent = "Main risks look controlled. Still verify facts, attachments, and firm process.";
+    } else if(readiness >= 62){
+      scoreLabel.textContent = "Needs cleanup before sending";
+      scoreDesc.textContent = "Several wording or process risks should be tightened first.";
+    } else {
+      scoreLabel.textContent = "Hold before sending";
+      scoreDesc.textContent = "High-risk language or context detected. Revise and route if needed.";
+    }
+
+    var chipNodes = result.chips.length ? result.chips.map(makeChip) : [makeChip({label:"No major wording flags",level:"good"})];
+    replaceChildren(chips, chipNodes);
+
+    var top = result.chips.filter(function(c){ return c.level !== "good"; }).slice(0,5);
+    if(!top.length){
+      replaceChildren(priorities, [emptyNode("No major rewrite priorities detected. Verify facts, approvals, and attachments.", "li")]);
+    } else {
+      replaceChildren(priorities, top.map(makePriority));
+    }
+
+    checklist.textContent = result.checklist;
+  }
+
+  function makeChip(item){
+    var el = document.createElement("div");
+    el.className = "chip " + item.level;
+    var dot = document.createElement("span");
+    dot.textContent = item.level === "bad" ? "●" : item.level === "watch" ? "◆" : "✓";
+    var txt = document.createElement("span");
+    txt.textContent = item.label;
+    el.appendChild(dot);
+    el.appendChild(txt);
+    return el;
+  }
+
+  function makePriority(item, index){
+    var li = document.createElement("li");
+    li.className = "item";
+    var strong = document.createElement("strong");
+    strong.textContent = (index + 1) + ". " + item.label;
+    var body = document.createElement("span");
+    body.textContent = item.priority;
+    li.appendChild(strong);
+    li.appendChild(body);
+    return li;
+  }
+
+  function emptyNode(text, tag){
+    var el = document.createElement(tag || "div");
+    el.className = "empty";
+    el.textContent = text;
+    return el;
+  }
+
+  function replaceChildren(parent, children){
+    while(parent.firstChild) parent.removeChild(parent.firstChild);
+    children.forEach(function(child){ parent.appendChild(child); });
+  }
+
+  function buildChecklist(text, found, readiness){
+    var red = found.filter(function(f){ return f.level === "bad"; }).map(function(f){ return f.label; });
+    var watch = found.filter(function(f){ return f.level === "watch"; }).map(function(f){ return f.label; });
+
+    var lines = [];
+    lines.push("CLIENT EMAIL SEND CHECKLIST");
+    lines.push("");
+    lines.push("Readiness score: " + readiness + "/100");
+    lines.push("Relationship: " + labelOf(relationship));
+    lines.push("Tone: " + labelOf(tone));
+    lines.push("Stakes: " + labelOf(stakes));
+    lines.push("");
+    lines.push("Before sending:");
+    lines.push("[ ] Facts, dates, dollar amounts, account references, and attachments are correct.");
+    lines.push("[ ] The email has one clear next step, owner, and timing.");
+    lines.push("[ ] No guarantee, promise, performance certainty, or pressure language remains.");
+    lines.push("[ ] Tax, legal, trading, beneficiary, or money-movement items use the approved process.");
+    lines.push("[ ] Sensitive information is minimized or moved to the secure portal.");
+    lines.push("[ ] Tone matches the relationship and situation.");
+    lines.push("[ ] Complaint, error, or upset-client language is escalated if firm policy requires it.");
+
+    if(red.length){
+      lines.push("");
+      lines.push("High-risk chips to resolve:");
+      red.slice(0,6).forEach(function(x){ lines.push("- " + x); });
+    }
+
+    if(watch.length){
+      lines.push("");
+      lines.push("Watch items to clean up:");
+      watch.slice(0,6).forEach(function(x){ lines.push("- " + x); });
+    }
+
+    var top = found.filter(function(f){ return f.level !== "good"; }).slice(0,5);
+    if(top.length){
+      lines.push("");
+      lines.push("Rewrite priorities:");
+      top.forEach(function(x, i){ lines.push((i+1) + ". " + x.priority); });
+    }
+
+    lines.push("");
+    lines.push("Final pass:");
+    lines.push("[ ] Would this read well to a client, a supervisor, and a regulator?");
+    lines.push("[ ] If forwarded without context, would the meaning still be clear?");
+    lines.push("[ ] Send only after required firm review.");
+
+    return lines.join("\n");
+  }
+
+  function labelOf(select){
+    return select.options[select.selectedIndex].text;
+  }
+
+  function fullBrief(){
+    if(!lastResult) return checklist.textContent;
+    var lines = [];
+    lines.push("CLIENT EMAIL RISK BRIEF");
+    lines.push("");
+    lines.push("Readiness score: " + lastResult.readiness + "/100");
+    lines.push("Relationship: " + labelOf(relationship));
+    lines.push("Tone: " + labelOf(tone));
+    lines.push("Stakes: " + labelOf(stakes));
+    lines.push("");
+    lines.push("Risk chips:");
+    if(lastResult.chips.length){
+      lastResult.chips.forEach(function(c){ lines.push("- " + c.label + " [" + c.level + "]"); });
+    } else {
+      lines.push("- No major wording flags detected.");
+    }
+    lines.push("");
+    lines.push("Rewrite priorities:");
+    var top = lastResult.chips.filter(function(c){ return c.level !== "good"; }).slice(0,5);
+    if(top.length){
+      top.forEach(function(c, i){ lines.push((i+1) + ". " + c.priority); });
+    } else {
+      lines.push("1. Verify facts, approvals, and attachments before sending.");
+    }
+    lines.push("");
+    lines.push(lastResult.checklist);
+    return lines.join("\n");
+  }
+
+  function copyText(text){
+    if(navigator.clipboard && navigator.clipboard.writeText){
+      navigator.clipboard.writeText(text).then(function(){ showToast("Copied"); }).catch(fallbackCopy.bind(null, text));
+    } else {
+      fallbackCopy(text);
+    }
+  }
+
+  function fallbackCopy(text){
+    var ta = document.createElement("textarea");
+    ta.value = text;
+    ta.setAttribute("readonly", "");
+    ta.style.position = "fixed";
+    ta.style.left = "-9999px";
+    document.body.appendChild(ta);
+    ta.select();
+    try{ document.execCommand("copy"); showToast("Copied"); }
+    catch(e){ showToast("Copy failed"); }
+    document.body.removeChild(ta);
+  }
+
+  function showToast(text){
+    toast.textContent = text;
+    toast.classList.add("show");
+    window.setTimeout(function(){ toast.classList.remove("show"); }, 1400);
+  }
+
+  function downloadBrief(){
+    var blob = new Blob([fullBrief()], {type:"text/plain;charset=utf-8"});
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement("a");
+    var stamp = new Date().toISOString().slice(0,10);
+    a.href = url;
+    a.download = "client-email-risk-brief-" + stamp + ".txt";
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    showToast("Brief downloaded");
+  }
+
+  function saveState(){
+    var state = {
+      draft:draft.value,
+      relationship:relationship.value,
+      tone:tone.value,
+      stakes:stakes.value
+    };
+    try{ localStorage.setItem("clientEmailRiskChecker", JSON.stringify(state)); }catch(e){}
+  }
+
+  function loadState(){
+    try{
+      var raw = localStorage.getItem("clientEmailRiskChecker");
+      if(!raw) return;
+      var state = JSON.parse(raw);
+      draft.value = state.draft || "";
+      relationship.value = state.relationship || "existing";
+      tone.value = state.tone || "neutral";
+      stakes.value = state.stakes || "low";
+    }catch(e){}
+  }
+
+  function clearAll(){
+    draft.value = "";
+    relationship.value = "existing";
+    tone.value = "neutral";
+    stakes.value = "low";
+    try{ localStorage.removeItem("clientEmailRiskChecker"); }catch(e){}
+    renderEmpty("Paste a draft first.");
+  }
+
+  function loadSample(){
+    draft.value = "Hi Jordan,\n\nI’m sorry for the error. We can definitely get this handled right away. I think you should sell the position today and transfer the cash to your checking account as soon as possible. This should avoid any tax issue, and I promise we’ll make sure this does not happen again.\n\nThanks,\nDrew";
+    relationship.value = "tense";
+    tone.value = "apology";
+    stakes.value = "high";
+    analyze();
+  }
+
+  document.getElementById("analyzeBtn").addEventListener("click", analyze);
+  document.getElementById("clearBtn").addEventListener("click", clearAll);
+  document.getElementById("sampleBtn").addEventListener("click", loadSample);
+  document.getElementById("copyBtn").addEventListener("click", function(){ copyText(checklist.textContent); });
+  document.getElementById("copyBriefBtn").addEventListener("click", function(){ copyText(fullBrief()); });
+  document.getElementById("downloadBtn").addEventListener("click", downloadBrief);
+
+  [draft, relationship, tone, stakes].forEach(function(el){
+    el.addEventListener("input", saveState);
+    el.addEventListener("change", saveState);
+  });
+
+  loadState();
+  if(draft.value.trim()) analyze();
+})();
+</script>
+</body>
+</html>

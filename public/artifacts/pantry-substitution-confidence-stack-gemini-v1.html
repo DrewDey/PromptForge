@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pantry Sub Helper</title>
+    <style>
+        :root {
+            --bg: #0f172a;
+            --card-bg: #1e293b;
+            --text: #f8fafc;
+            --text-muted: #94a3b8;
+            --border: #334155;
+            --accent: #38bdf8;
+            --accent-hover: #0284c7;
+            --success: #4ade80;
+            --warning: #facc15;
+            --danger: #f87171;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg);
+            color: var(--text);
+            padding: 16px;
+            max-width: 500px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            font-size: 1.5rem;
+            margin-bottom: 16px;
+            text-align: center;
+            color: var(--accent);
+        }
+
+        .section {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 16px;
+        }
+
+        label {
+            display: block;
+            font-size: 0.85rem;
+            font-weight: 600;
+            margin-bottom: 6px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        input, textarea, select {
+            width: 100%;
+            background: var(--bg);
+            border: 1px solid var(--border);
+            color: var(--text);
+            border-radius: 8px;
+            padding: 12px;
+            font-size: 1rem;
+            margin-bottom: 12px;
+        }
+
+        input:focus, textarea:focus, select:focus {
+            outline: none;
+            border-color: var(--accent);
+        }
+
+        button {
+            width: 100%;
+            background: var(--accent);
+            color: var(--bg);
+            border: none;
+            border-radius: 8px;
+            padding: 14px;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        button:active {
+            background: var(--accent-hover);
+        }
+
+        .card {
+            background: var(--bg);
+            border-left: 4px solid var(--border);
+            padding: 12px;
+            border-radius: 0 8px 8px 0;
+            margin-bottom: 12px;
+        }
+
+        .card.high { border-left-color: var(--success); }
+        .card.medium { border-left-color: var(--warning); }
+        .card.low { border-left-color: var(--danger); }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            font-weight: bold;
+            margin-bottom: 4px;
+        }
+
+        .badge {
+            font-size: 0.75rem;
+            padding: 2px 6px;
+            border-radius: 4px;
+            text-transform: uppercase;
+        }
+        .high .badge { background: rgba(74, 222, 128, 0.2); color: var(--success); }
+        .medium .badge { background: rgba(250, 204, 21, 0.2); color: var(--warning); }
+        .low .badge { background: rgba(248, 113, 113, 0.2); color: var(--danger); }
+
+        .output-box {
+            background: var(--bg);
+            border: 1px dashed var(--border);
+            padding: 12px;
+            border-radius: 8px;
+            font-family: monospace;
+            white-space: pre-wrap;
+            font-size: 0.9rem;
+            margin-bottom: 8px;
+        }
+
+        .copy-btn {
+            background: transparent;
+            border: 1px solid var(--accent);
+            color: var(--accent);
+            padding: 8px;
+            font-size: 0.85rem;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Pantry Sub Helper</h1>
+
+    <div class="section">
+        <label for="target">Target Ingredient</label>
+        <input type="text" id="target" placeholder="e.g., Buttermilk, Eggs, Soy Sauce">
+
+        <label for="pantry">Your Pantry Options (comma separated)</label>
+        <textarea id="pantry" rows="2" placeholder="e.g., Milk, Lemon juice, Yogurt, Tamari, Mayo"></textarea>
+
+        <label for="cautions">Diet/Allergy Cautions (comma separated)</label>
+        <input type="text" id="cautions" placeholder="e.g., Dairy-free, Gluten-free, Vegan">
+
+        <button onclick="analyzeSubstitutions()">Analyze Options</button>
+    </div>
+
+    <div id="resultsSection" class="section" style="display: none;">
+        <label>Confidence Cards</label>
+        <div id="cardsContainer"></div>
+
+        <label>Generated Lists</label>
+        <div id="outputList" class="output-box"></div>
+        <button class="copy-btn" onclick="copyToClipboard()">Copy Lists to Clipboard</button>
+    </div>
+
+    <script>
+        // Static offline knowledge base for substitutions
+        const subDatabase = {
+            "buttermilk": [
+                { sub: "milk + lemon juice/vinegar", ratio: "1 cup milk + 1 tbsp acid", confidence: "high", tags: ["veg"], flags: ["dairy"] },
+                { sub: "yogurt", ratio: "3/4 cup yogurt + 1/4 cup water", confidence: "high", tags: ["veg"], flags: ["dairy"] }
+            ],
+            "eggs": [
+                { sub: "mayo", ratio: "3 tbsp per egg", confidence: "medium", tags: ["veg"], flags: ["egg"] },
+                { sub: "applesauce", ratio: "1/4 cup per egg", confidence: "medium", tags: ["vegan", "veg", "dairy-free", "gluten-free"], flags: [] },
+                { sub: "flax egg", ratio: "1 tbsp ground flax + 3 tbsp water", confidence: "high", tags: ["vegan", "veg", "dairy-free", "gluten-free"], flags: [] }
+            ],
+            "soy sauce": [
+                { sub: "tamari", ratio: "1:1 replacement", confidence: "high", tags: ["vegan", "veg", "dairy-free"], flags: ["soy"] },
+                { sub: "coconut aminos", ratio: "1:1 replacement (slightly sweeter)", confidence: "high", tags: ["vegan", "veg", "dairy-free", "soy-free", "gluten-free"], flags: [] }
+            ],
+            "heavy cream": [
+                { sub: "milk + butter", ratio: "3/4 cup milk + 1/4 cup melted butter", confidence: "high", tags: ["veg"], flags: ["dairy"] },
+                { sub: "coconut milk (full fat)", ratio: "1:1 replacement", confidence: "high", tags: ["vegan", "veg", "dairy-free", "gluten-free"], flags: [] }
+            ]
+        };
+
+        function normalize(str) {
+            return str.toLowerCase().trim();
+        }
+
+        function analyzeSubstitutions() {
+            const target = normalize(document.getElementById('target').value);
+            const pantry = document.getElementById('pantry').value.split(',').map(normalize);
+            const cautions = document.getElementById('cautions').value.split(',').map(normalize);
+
+            const container = document.getElementById('cardsContainer');
+            const outputList = document.getElementById('outputList');
+            const resultsSection = document.getElementById('resultsSection');
+
+            container.innerHTML = '';
+            
+            let matches = subDatabase[target] || [];
+            
+            // Dynamic generation if target isn't in local DB
+            if (matches.length === 0 && target) {
+                matches = [
+                    { sub: "Check general ratio rules", ratio: "Varies by application", confidence: "low", tags: [], flags: [] }
+                ];
+            }
+
+            let cardsHtml = '';
+            let bestSub = null;
+            let buyList = [];
+
+            matches.forEach(item => {
+                // Check conflicts with allergy cautions
+                let conflict = false;
+                cautions.forEach(caution => {
+                    if (item.flags.includes(caution) || (caution.includes('free') && item.flags.some(f => caution.includes(f)))) {
+                        conflict = true;
+                    }
+                });
+
+                if (conflict) return; // Skip items that violate allergy constraints
+
+                // Determine matching alignment with what is in the pantry
+                const inPantry = pantry.some(p => item.sub.includes(p) || p.includes(item.sub));
+                const confidenceClass = item.confidence;
+                
+                if (inPantry && !bestSub) {
+                    bestSub = item;
+                }
+
+                cardsHtml += `
+                    <div class="card ${confidenceClass}">
+                        <div class="card-header">
+                            <span>${item.sub.toUpperCase()}</span>
+                            <span class="badge">${item.confidence} match</span>
+                        </div>
+                        <div style="font-size: 0.9rem; margin-top: 4px;">Ratio: ${item.ratio}</div>
+                        <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 4px;">
+                            ${inPantry ? '✅ Available in pantry' : '❌ Missing from pantry'}
+                        </div>
+                    </div>
+                `;
+            });
+
+            if (cardsHtml === '') {
+                cardsHtml = '<p style="color: var(--danger);">No safe options found based on diet/allergy restrictions.</p>';
+            }
+
+            container.innerHTML = cardsHtml;
+
+            // Generate copyable text block
+            let textOutput = '';
+            if (bestSub) {
+                textOutput += `RECIPE ADJUSTMENTS:\n- Use ${bestSub.sub} instead of ${target}.\n- Adjustment ratio: ${bestSub.ratio}.\n\n`;
+                textOutput += `GROCERY LIST:\n- No immediate items needed for substitution.`;
+            } else if (matches.length > 0 && target) {
+                textOutput += `RECIPE ADJUSTMENTS:\n- Dynamic adjustment needed for ${target}.\n\n`;
+                textOutput += `GROCERY LIST:\n- Buy ingredients for alternative: ${matches[0].sub} (Ratio: ${matches[0].ratio})`;
+            } else {
+                textOutput += `GROCERY LIST:\n- ${target}`;
+            }
+
+            outputList.textContent = textOutput;
+            resultsSection.style.display = 'block';
+        }
+
+        function copyToClipboard() {
+            const text = document.getElementById('outputList').textContent;
+            navigator.clipboard.writeText(text).then(() => {
+                alert('Lists copied to clipboard!');
+            }).catch(err => {
+                alert('Failed to copy text.');
+            });
+        }
+    </script>
+</body>
+</html>

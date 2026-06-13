@@ -1,0 +1,1012 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Ecommerce Objection Q&A Builder</title>
+  <style>
+    :root{
+      --bg:#f7f3ea;
+      --panel:#fffaf0;
+      --panel2:#ffffff;
+      --ink:#221b14;
+      --muted:#6f6257;
+      --line:#d9cab7;
+      --accent:#5d3f23;
+      --accent2:#8b633b;
+      --good:#25633f;
+      --warn:#8a5b00;
+      --bad:#8a2d25;
+      --soft:#eee3d4;
+      --shadow:0 10px 26px rgba(50,34,18,.10);
+      --radius:18px;
+    }
+
+    *{box-sizing:border-box}
+
+    html{
+      -webkit-text-size-adjust:100%;
+    }
+
+    body{
+      margin:0;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background:
+        radial-gradient(circle at top left, rgba(139,99,59,.14), transparent 34rem),
+        var(--bg);
+      color:var(--ink);
+      line-height:1.35;
+      overflow-x:visible;
+    }
+
+    .wrap{
+      width:100%;
+      max-width:980px;
+      margin:0 auto;
+      padding:14px;
+    }
+
+    header{
+      display:block;
+      padding:14px 2px 10px;
+    }
+
+    h1{
+      margin:0 0 8px;
+      font-size:clamp(2rem, 11vw, 4.1rem);
+      letter-spacing:-.055em;
+      line-height:.88;
+      font-weight:900;
+      overflow-wrap:anywhere;
+    }
+
+    h1 span{
+      display:block;
+    }
+
+    .sub{
+      margin:0;
+      max-width:62ch;
+      color:var(--muted);
+      font-size:.98rem;
+    }
+
+    .grid{
+      display:grid;
+      grid-template-columns:1fr;
+      gap:12px;
+      width:100%;
+    }
+
+    .panel{
+      background:rgba(255,250,240,.92);
+      border:1px solid var(--line);
+      border-radius:var(--radius);
+      box-shadow:var(--shadow);
+      padding:13px;
+      min-width:0;
+      width:100%;
+    }
+
+    .panel h2{
+      font-size:1rem;
+      margin:0 0 10px;
+      letter-spacing:-.01em;
+    }
+
+    label{
+      display:block;
+      margin:10px 0 5px;
+      font-size:.86rem;
+      color:var(--muted);
+      font-weight:750;
+    }
+
+    input,
+    textarea,
+    select,
+    button{
+      font:inherit;
+      max-width:100%;
+    }
+
+    input,
+    textarea,
+    select{
+      width:100%;
+      border:1px solid var(--line);
+      border-radius:13px;
+      padding:11px 12px;
+      background:var(--panel2);
+      color:var(--ink);
+      outline:none;
+      overflow-wrap:anywhere;
+      white-space:normal;
+    }
+
+    textarea{
+      min-height:90px;
+      resize:vertical;
+    }
+
+    input:focus,
+    textarea:focus,
+    select:focus{
+      border-color:var(--accent2);
+      box-shadow:0 0 0 3px rgba(139,99,59,.16);
+    }
+
+    .hint{
+      color:var(--muted);
+      font-size:.82rem;
+      margin:5px 0 0;
+      overflow-wrap:anywhere;
+    }
+
+    .actions{
+      display:grid;
+      grid-template-columns:1fr;
+      gap:8px;
+      margin-top:12px;
+    }
+
+    button{
+      border:1px solid var(--line);
+      border-radius:14px;
+      padding:11px 12px;
+      background:#fff;
+      color:var(--ink);
+      font-weight:800;
+      cursor:pointer;
+      min-height:44px;
+      overflow-wrap:anywhere;
+      white-space:normal;
+      text-align:center;
+    }
+
+    button.primary{
+      background:var(--accent);
+      border-color:var(--accent);
+      color:#fffaf0;
+    }
+
+    button.ghost{
+      background:var(--soft);
+    }
+
+    .meterBox{
+      display:grid;
+      gap:10px;
+    }
+
+    .scoreLine{
+      display:grid;
+      grid-template-columns:1fr;
+      gap:6px;
+    }
+
+    .score{
+      font-size:2.2rem;
+      line-height:1;
+      font-weight:900;
+      letter-spacing:-.05em;
+    }
+
+    .meter{
+      width:100%;
+      min-height:16px;
+      border-radius:999px;
+      background:#eadfce;
+      border:1px solid var(--line);
+      overflow:clip;
+    }
+
+    .meterFill{
+      height:16px;
+      width:0%;
+      background:linear-gradient(90deg, var(--bad), var(--warn), var(--good));
+      border-radius:999px;
+      transition:width .18s ease;
+    }
+
+    .chips{
+      display:grid;
+      grid-template-columns:1fr;
+      gap:7px;
+      width:100%;
+    }
+
+    .chip{
+      border:1px solid var(--line);
+      background:#fff;
+      border-radius:999px;
+      padding:9px 10px;
+      font-size:.84rem;
+      overflow-wrap:anywhere;
+      white-space:normal;
+      min-width:0;
+    }
+
+    .chip.good{border-color:rgba(37,99,63,.45); color:var(--good)}
+    .chip.warn{border-color:rgba(138,91,0,.45); color:var(--warn)}
+    .chip.bad{border-color:rgba(138,45,37,.45); color:var(--bad)}
+
+    .cards{
+      display:grid;
+      grid-template-columns:1fr;
+      gap:11px;
+      width:100%;
+    }
+
+    .card{
+      background:#fff;
+      border:1px solid var(--line);
+      border-radius:16px;
+      padding:12px;
+      display:grid;
+      grid-template-columns:1fr;
+      gap:9px;
+      min-width:0;
+    }
+
+    .cardTop{
+      display:grid;
+      grid-template-columns:1fr;
+      gap:7px;
+      align-items:start;
+    }
+
+    .badge{
+      display:inline-block;
+      width:fit-content;
+      max-width:100%;
+      padding:6px 9px;
+      border-radius:999px;
+      background:var(--soft);
+      color:var(--muted);
+      font-size:.77rem;
+      font-weight:850;
+      overflow-wrap:anywhere;
+      white-space:normal;
+    }
+
+    .card textarea{
+      min-height:74px;
+    }
+
+    .miniGrid{
+      display:grid;
+      grid-template-columns:1fr;
+      gap:8px;
+    }
+
+    .briefBox{
+      white-space:pre-wrap;
+      overflow-wrap:anywhere;
+      background:#fff;
+      border:1px dashed var(--line);
+      border-radius:15px;
+      padding:12px;
+      min-height:150px;
+      font-size:.92rem;
+    }
+
+    .toast{
+      position:fixed;
+      left:14px;
+      right:14px;
+      bottom:14px;
+      background:#221b14;
+      color:#fffaf0;
+      padding:12px 13px;
+      border-radius:14px;
+      box-shadow:var(--shadow);
+      opacity:0;
+      transform:translateY(12px);
+      pointer-events:none;
+      transition:.2s ease;
+      overflow-wrap:anywhere;
+      z-index:10;
+    }
+
+    .toast.show{
+      opacity:1;
+      transform:translateY(0);
+    }
+
+    @media (min-width:760px){
+      .wrap{padding:24px}
+      .grid{
+        grid-template-columns:minmax(0, .85fr) minmax(0, 1.15fr);
+        align-items:start;
+      }
+      .actions{
+        grid-template-columns:repeat(2, minmax(0, 1fr));
+      }
+      .chips{
+        grid-template-columns:repeat(2, minmax(0, 1fr));
+      }
+      .scoreLine{
+        grid-template-columns:auto 1fr;
+        align-items:center;
+      }
+      .miniGrid{
+        grid-template-columns:repeat(2, minmax(0, 1fr));
+      }
+      .cardTop{
+        grid-template-columns:1fr auto;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <h1>
+        <span>Objection</span>
+        <span>Q&amp;A</span>
+        <span>Builder</span>
+      </h1>
+      <p class="sub">Turn product facts, buyer doubts, and proof into launch-ready Q&amp;A cards, proof snippets, and a compact brief you can copy from your phone.</p>
+    </header>
+
+    <main class="grid">
+      <section class="panel" aria-label="Inputs">
+        <h2>Product inputs</h2>
+
+        <label for="productName">Product name</label>
+        <input id="productName" placeholder="Example: TrailDry Packable Rain Shell">
+
+        <label for="audience">Buyer / use case</label>
+        <input id="audience" placeholder="Example: hikers who need a light emergency rain layer">
+
+        <label for="facts">Product facts</label>
+        <textarea id="facts" placeholder="One per line&#10;Waterproof 2.5-layer fabric&#10;Packs into its own pocket&#10;14 oz weight&#10;Pit zips for venting"></textarea>
+        <p class="hint">Use concrete specs, features, inclusions, limits, materials, dimensions, warranty, shipping, and care notes.</p>
+
+        <label for="doubts">Common buyer doubts</label>
+        <textarea id="doubts" placeholder="One per line&#10;Will it actually keep me dry?&#10;Is it too hot to hike in?&#10;Will it fit over layers?&#10;Is the price worth it?"></textarea>
+
+        <label for="proof">Proof assets</label>
+        <textarea id="proof" placeholder="One per line&#10;20,000mm waterproof rating&#10;30-day returns&#10;Field-tested in spring storms&#10;347 reviews averaging 4.7 stars"></textarea>
+        <p class="hint">Best proof: numbers, tests, materials, warranty, reviews, comparison points, certifications, photos, before/after, and return policy.</p>
+
+        <label for="tone">Answer tone</label>
+        <select id="tone">
+          <option value="Direct">Direct</option>
+          <option value="Warm">Warm</option>
+          <option value="Technical">Technical</option>
+          <option value="Premium">Premium</option>
+          <option value="Budget-aware">Budget-aware</option>
+        </select>
+
+        <div class="actions">
+          <button class="primary" id="buildBtn">Build cards</button>
+          <button id="addCardBtn">Add doubt</button>
+          <button class="ghost" id="sampleBtn">Load sample</button>
+          <button class="ghost" id="clearBtn">Clear</button>
+        </div>
+      </section>
+
+      <section class="panel" aria-label="Proof strength">
+        <h2>Proof-strength meter</h2>
+        <div class="meterBox">
+          <div class="scoreLine">
+            <div class="score" id="score">0</div>
+            <div>
+              <div class="meter" aria-label="Proof strength meter">
+                <div class="meterFill" id="meterFill"></div>
+              </div>
+              <p class="hint" id="scoreNote">Add facts, doubts, and proof to score the launch support.</p>
+            </div>
+          </div>
+
+          <div class="chips" id="riskChips"></div>
+
+          <div class="actions">
+            <button class="primary" id="copyBriefBtn">Copy launch brief</button>
+            <button id="downloadBtn">Download .txt</button>
+          </div>
+
+          <div class="briefBox" id="brief" aria-live="polite"></div>
+        </div>
+      </section>
+
+      <section class="panel" style="grid-column:1 / -1" aria-label="Objection cards">
+        <h2>Objection Q&amp;A cards</h2>
+        <div class="cards" id="cards"></div>
+      </section>
+    </main>
+  </div>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <script>
+    const $ = (id) => document.getElementById(id);
+
+    const els = {
+      productName: $("productName"),
+      audience: $("audience"),
+      facts: $("facts"),
+      doubts: $("doubts"),
+      proof: $("proof"),
+      tone: $("tone"),
+      buildBtn: $("buildBtn"),
+      addCardBtn: $("addCardBtn"),
+      sampleBtn: $("sampleBtn"),
+      clearBtn: $("clearBtn"),
+      copyBriefBtn: $("copyBriefBtn"),
+      downloadBtn: $("downloadBtn"),
+      score: $("score"),
+      meterFill: $("meterFill"),
+      scoreNote: $("scoreNote"),
+      riskChips: $("riskChips"),
+      cards: $("cards"),
+      brief: $("brief"),
+      toast: $("toast")
+    };
+
+    const storeKey = "objectionQaBuilder.v1";
+
+    let state = {
+      cards: []
+    };
+
+    function lines(value){
+      return String(value || "")
+        .split(/\n+/)
+        .map(v => v.trim())
+        .filter(Boolean);
+    }
+
+    function firstUseful(items, fallback){
+      return items.find(Boolean) || fallback;
+    }
+
+    function clamp(n, min, max){
+      return Math.max(min, Math.min(max, n));
+    }
+
+    function makeId(){
+      return "c_" + Math.random().toString(36).slice(2) + Date.now().toString(36);
+    }
+
+    function toast(msg){
+      els.toast.textContent = msg;
+      els.toast.classList.add("show");
+      window.setTimeout(() => els.toast.classList.remove("show"), 1800);
+    }
+
+    function classifyDoubt(doubt){
+      const d = doubt.toLowerCase();
+
+      if (/price|cost|expensive|worth|value|cheap|budget/.test(d)) return "Value";
+      if (/work|actually|effective|result|performance|quality/.test(d)) return "Performance";
+      if (/fit|size|large|small|comfort|wear|feel/.test(d)) return "Fit";
+      if (/ship|delivery|return|refund|exchange|warranty/.test(d)) return "Risk reversal";
+      if (/safe|skin|allergy|break|damage|durable|last/.test(d)) return "Trust";
+      if (/setup|install|use|hard|easy|learn/.test(d)) return "Usability";
+
+      return "General";
+    }
+
+    function proofMatch(doubt, proofItems, facts){
+      const all = proofItems.concat(facts);
+      const d = doubt.toLowerCase();
+
+      const patterns = [
+        ["Value", /price|cost|expensive|worth|value|cheap|budget/, /review|rating|warranty|return|guarantee|save|included|bundle|last|durable|compare|cost/],
+        ["Performance", /work|actually|effective|result|performance|quality|dry|fast|strong/, /test|rating|certified|lab|field|review|star|mm|hours|before|after|proven/],
+        ["Fit", /fit|size|large|small|comfort|wear|feel|layer/, /size|fit|adjust|stretch|measure|model|guide|return|exchange|comfort/],
+        ["Risk reversal", /ship|delivery|return|refund|exchange|warranty|late/, /return|refund|exchange|warranty|guarantee|shipping|delivery|30|60|90/],
+        ["Trust", /safe|skin|allergy|break|damage|durable|last|real/, /certified|tested|review|rating|warranty|material|durable|safe|compliance/],
+        ["Usability", /setup|install|use|hard|easy|learn|clean|care/, /guide|minutes|steps|easy|tool|included|care|wash|setup|support/]
+      ];
+
+      for (const row of patterns){
+        const doubtRe = row[1];
+        const proofRe = row[2];
+        if (doubtRe.test(d)){
+          const hit = all.find(item => proofRe.test(item.toLowerCase()));
+          if (hit) return hit;
+        }
+      }
+
+      return firstUseful(all, "Add a measurable proof point before launch.");
+    }
+
+    function answerFor(doubt, proof, facts, tone){
+      const fact = firstUseful(facts, "the product details listed on the page");
+      const lower = doubt.toLowerCase();
+      let base = "";
+
+      if (/price|cost|expensive|worth|value|cheap|budget/.test(lower)){
+        base = "Frame the value around what the buyer avoids, saves, or gets included. Use the strongest proof point instead of making the price feel defensive.";
+      } else if (/work|actually|effective|result|performance|quality/.test(lower)){
+        base = "Answer with the mechanism first, then back it with a spec, test, review, or use-case example.";
+      } else if (/fit|size|large|small|comfort|wear|feel/.test(lower)){
+        base = "Reduce uncertainty with sizing guidance, fit notes, return options, and a concrete detail from the product facts.";
+      } else if (/ship|delivery|return|refund|exchange|warranty/.test(lower)){
+        base = "Put the risk-reversal detail near the answer so the buyer knows what happens if it does not work for them.";
+      } else if (/safe|skin|allergy|break|damage|durable|last/.test(lower)){
+        base = "Use material, testing, warranty, review, or care proof. Avoid vague claims like premium or high quality without support.";
+      } else if (/setup|install|use|hard|easy|learn|clean|care/.test(lower)){
+        base = "Show the buyer the first successful use. Mention steps, time required, included pieces, or care instructions.";
+      } else {
+        base = "Answer the doubt directly, connect it to a product fact, and attach the most relevant proof point.";
+      }
+
+      if (tone === "Warm"){
+        return base + " Keep the wording calm and reassuring without overselling. Proof to use: " + proof + ". Product fact to connect: " + fact + ".";
+      }
+
+      if (tone === "Technical"){
+        return base + " Lead with the measurable detail. Proof to use: " + proof + ". Product fact to connect: " + fact + ".";
+      }
+
+      if (tone === "Premium"){
+        return base + " Position the proof as confidence, durability, or better ownership experience. Proof to use: " + proof + ". Product fact to connect: " + fact + ".";
+      }
+
+      if (tone === "Budget-aware"){
+        return base + " Make the tradeoff explicit and show why the buyer is not wasting money. Proof to use: " + proof + ". Product fact to connect: " + fact + ".";
+      }
+
+      return base + " Proof to use: " + proof + ". Product fact to connect: " + fact + ".";
+    }
+
+    function proofSnippetFor(doubt, proof, product){
+      const cleanProduct = product || "This product";
+      if (!proof || proof.startsWith("Add a measurable")){
+        return "Needs proof: add a number, review, warranty, test result, comparison, or return-policy detail.";
+      }
+      return cleanProduct + " is supported by: " + proof + ".";
+    }
+
+    function buildCards(){
+      const doubts = lines(els.doubts.value);
+      const facts = lines(els.facts.value);
+      const proofItems = lines(els.proof.value);
+      const tone = els.tone.value;
+      const product = els.productName.value.trim();
+
+      state.cards = doubts.map(doubt => {
+        const proof = proofMatch(doubt, proofItems, facts);
+        return {
+          id: makeId(),
+          type: classifyDoubt(doubt),
+          question: doubt,
+          answer: answerFor(doubt, proof, facts, tone),
+          proofSnippet: proofSnippetFor(doubt, proof, product),
+          strength: proof.startsWith("Add a measurable") ? "Weak" : "Good"
+        };
+      });
+
+      if (!state.cards.length){
+        state.cards.push({
+          id: makeId(),
+          type: "General",
+          question: "What might make a buyer hesitate?",
+          answer: "Add one common doubt, then answer it with a product fact and proof point.",
+          proofSnippet: "Needs proof: add a number, review, warranty, test result, comparison, or return-policy detail.",
+          strength: "Weak"
+        });
+      }
+
+      render();
+      save();
+      toast("Cards built");
+    }
+
+    function addCard(){
+      state.cards.push({
+        id: makeId(),
+        type: "General",
+        question: "New buyer doubt",
+        answer: "Answer directly. Connect the doubt to a product fact. Add proof before launch.",
+        proofSnippet: "Needs proof: add a measurable support point.",
+        strength: "Weak"
+      });
+      render();
+      save();
+    }
+
+    function updateCard(id, key, value){
+      const card = state.cards.find(c => c.id === id);
+      if (!card) return;
+      card[key] = value;
+      renderBriefAndScore();
+      save();
+    }
+
+    function removeCard(id){
+      state.cards = state.cards.filter(c => c.id !== id);
+      render();
+      save();
+    }
+
+    function createLabel(text, forId){
+      const label = document.createElement("label");
+      label.textContent = text;
+      if (forId) label.setAttribute("for", forId);
+      return label;
+    }
+
+    function createTextarea(value, onInput){
+      const textarea = document.createElement("textarea");
+      textarea.value = value || "";
+      textarea.addEventListener("input", () => onInput(textarea.value));
+      return textarea;
+    }
+
+    function renderCards(){
+      els.cards.textContent = "";
+
+      if (!state.cards.length){
+        const empty = document.createElement("p");
+        empty.className = "hint";
+        empty.textContent = "Add buyer doubts, then tap Build cards.";
+        els.cards.appendChild(empty);
+        return;
+      }
+
+      state.cards.forEach((card, index) => {
+        const article = document.createElement("article");
+        article.className = "card";
+
+        const top = document.createElement("div");
+        top.className = "cardTop";
+
+        const titleWrap = document.createElement("div");
+
+        const badge = document.createElement("span");
+        badge.className = "badge";
+        badge.textContent = "Card " + (index + 1) + " · " + card.type;
+        titleWrap.appendChild(badge);
+
+        const removeBtn = document.createElement("button");
+        removeBtn.type = "button";
+        removeBtn.textContent = "Remove";
+        removeBtn.addEventListener("click", () => removeCard(card.id));
+
+        top.appendChild(titleWrap);
+        top.appendChild(removeBtn);
+
+        const qId = card.id + "_q";
+        const aId = card.id + "_a";
+        const pId = card.id + "_p";
+        const sId = card.id + "_s";
+
+        const qLabel = createLabel("Buyer question", qId);
+        const qArea = createTextarea(card.question, value => updateCard(card.id, "question", value));
+        qArea.id = qId;
+
+        const aLabel = createLabel("Answer angle", aId);
+        const aArea = createTextarea(card.answer, value => updateCard(card.id, "answer", value));
+        aArea.id = aId;
+
+        const pLabel = createLabel("Proof snippet", pId);
+        const pArea = createTextarea(card.proofSnippet, value => updateCard(card.id, "proofSnippet", value));
+        pArea.id = pId;
+
+        const mini = document.createElement("div");
+        mini.className = "miniGrid";
+
+        const selectWrap = document.createElement("div");
+        const sLabel = createLabel("Proof strength", sId);
+        const select = document.createElement("select");
+        select.id = sId;
+
+        ["Weak", "Okay", "Good", "Strong"].forEach(optValue => {
+          const opt = document.createElement("option");
+          opt.value = optValue;
+          opt.textContent = optValue;
+          if (card.strength === optValue) opt.selected = true;
+          select.appendChild(opt);
+        });
+
+        select.addEventListener("change", () => updateCard(card.id, "strength", select.value));
+        selectWrap.appendChild(sLabel);
+        selectWrap.appendChild(select);
+
+        const typeWrap = document.createElement("div");
+        const typeId = card.id + "_type";
+        const typeLabel = createLabel("Objection type", typeId);
+        const typeInput = document.createElement("input");
+        typeInput.id = typeId;
+        typeInput.value = card.type || "General";
+        typeInput.addEventListener("input", () => updateCard(card.id, "type", typeInput.value));
+        typeWrap.appendChild(typeLabel);
+        typeWrap.appendChild(typeInput);
+
+        mini.appendChild(selectWrap);
+        mini.appendChild(typeWrap);
+
+        article.appendChild(top);
+        article.appendChild(qLabel);
+        article.appendChild(qArea);
+        article.appendChild(aLabel);
+        article.appendChild(aArea);
+        article.appendChild(pLabel);
+        article.appendChild(pArea);
+        article.appendChild(mini);
+
+        els.cards.appendChild(article);
+      });
+    }
+
+    function scoreData(){
+      const facts = lines(els.facts.value);
+      const doubts = lines(els.doubts.value);
+      const proofItems = lines(els.proof.value);
+      const cards = state.cards;
+
+      const proofText = proofItems.join(" ").toLowerCase();
+      const hasNumber = /\d/.test(proofText);
+      const hasReview = /review|rating|star|testimonial|customer/.test(proofText);
+      const hasRiskReversal = /return|refund|exchange|warranty|guarantee/.test(proofText);
+      const hasTest = /test|certified|lab|field|proven|mm|grade|standard/.test(proofText);
+      const hasComparison = /compare|versus|vs|competitor|alternative|cheaper|lighter|faster|stronger/.test(proofText);
+
+      let score = 0;
+      score += clamp(facts.length * 5, 0, 25);
+      score += clamp(proofItems.length * 8, 0, 32);
+      score += clamp(cards.length * 4, 0, 18);
+      score += hasNumber ? 8 : 0;
+      score += hasReview ? 6 : 0;
+      score += hasRiskReversal ? 6 : 0;
+      score += hasTest ? 5 : 0;
+      score += hasComparison ? 4 : 0;
+
+      const weakCards = cards.filter(c => c.strength === "Weak").length;
+      const strongCards = cards.filter(c => c.strength === "Strong").length;
+
+      score += strongCards * 3;
+      score -= weakCards * 5;
+      score -= doubts.length > proofItems.length ? 8 : 0;
+
+      return {
+        score: clamp(score, 0, 100),
+        facts,
+        doubts,
+        proofItems,
+        hasNumber,
+        hasReview,
+        hasRiskReversal,
+        hasTest,
+        hasComparison,
+        weakCards,
+        strongCards
+      };
+    }
+
+    function chip(text, status){
+      const el = document.createElement("div");
+      el.className = "chip " + status;
+      el.textContent = text;
+      return el;
+    }
+
+    function renderScore(){
+      const data = scoreData();
+      els.score.textContent = String(data.score);
+      els.meterFill.style.width = data.score + "%";
+
+      if (data.score >= 80){
+        els.scoreNote.textContent = "Strong launch support. Keep answers specific and put proof close to each objection.";
+      } else if (data.score >= 55){
+        els.scoreNote.textContent = "Usable, but a few doubts need stronger proof before launch.";
+      } else {
+        els.scoreNote.textContent = "Thin support. Add proof before sending traffic to the page.";
+      }
+
+      els.riskChips.textContent = "";
+
+      els.riskChips.appendChild(chip(data.facts.length ? "Facts added: " + data.facts.length : "No product facts yet", data.facts.length ? "good" : "bad"));
+      els.riskChips.appendChild(chip(data.proofItems.length ? "Proof points: " + data.proofItems.length : "No proof assets yet", data.proofItems.length ? "good" : "bad"));
+      els.riskChips.appendChild(chip(data.hasNumber ? "Numeric proof present" : "Needs numeric proof", data.hasNumber ? "good" : "warn"));
+      els.riskChips.appendChild(chip(data.hasRiskReversal ? "Risk reversal covered" : "Returns/warranty unclear", data.hasRiskReversal ? "good" : "warn"));
+      els.riskChips.appendChild(chip(data.weakCards ? "Weak cards: " + data.weakCards : "No weak cards marked", data.weakCards ? "bad" : "good"));
+      els.riskChips.appendChild(chip(data.hasReview || data.hasTest ? "Trust proof present" : "Needs review/test proof", data.hasReview || data.hasTest ? "good" : "warn"));
+    }
+
+    function briefText(){
+      const product = els.productName.value.trim() || "Unnamed product";
+      const audience = els.audience.value.trim() || "Target buyer not specified";
+      const facts = lines(els.facts.value);
+      const proofItems = lines(els.proof.value);
+      const data = scoreData();
+
+      const parts = [];
+
+      parts.push("Launch brief");
+      parts.push("");
+      parts.push("Product: " + product);
+      parts.push("Buyer/use case: " + audience);
+      parts.push("Proof-strength score: " + data.score + "/100");
+      parts.push("");
+
+      parts.push("Core product facts");
+      if (facts.length){
+        facts.forEach(f => parts.push("- " + f));
+      } else {
+        parts.push("- Add concrete product facts.");
+      }
+      parts.push("");
+
+      parts.push("Proof assets to use");
+      if (proofItems.length){
+        proofItems.forEach(p => parts.push("- " + p));
+      } else {
+        parts.push("- Add reviews, specs, tests, guarantees, comparison points, or return-policy details.");
+      }
+      parts.push("");
+
+      parts.push("Objection Q&A cards");
+      if (state.cards.length){
+        state.cards.forEach((card, index) => {
+          parts.push("");
+          parts.push(String(index + 1) + ". " + (card.question || "Buyer doubt"));
+          parts.push("Type: " + (card.type || "General"));
+          parts.push("Answer angle: " + (card.answer || "Add answer angle."));
+          parts.push("Proof snippet: " + (card.proofSnippet || "Add proof snippet."));
+          parts.push("Proof strength: " + (card.strength || "Weak"));
+        });
+      } else {
+        parts.push("- Build cards from buyer doubts.");
+      }
+
+      parts.push("");
+      parts.push("Priority fixes");
+      if (!data.hasNumber) parts.push("- Add at least one measurable proof point.");
+      if (!data.hasRiskReversal) parts.push("- Clarify returns, warranty, refund, exchange, or guarantee.");
+      if (!data.hasReview && !data.hasTest) parts.push("- Add review, field-test, lab-test, or certification proof.");
+      if (data.weakCards) parts.push("- Strengthen or remove weak Q&A cards before launch.");
+      if (data.doubts.length > data.proofItems.length) parts.push("- Add more proof assets than doubts so the page does not feel defensive.");
+      if (data.score >= 80) parts.push("- Page support is strong. Keep proof near the objections and avoid generic claims.");
+
+      return parts.join("\n");
+    }
+
+    function renderBriefAndScore(){
+      renderScore();
+      els.brief.textContent = briefText();
+    }
+
+    function render(){
+      renderCards();
+      renderBriefAndScore();
+    }
+
+    function save(){
+      const payload = {
+        productName: els.productName.value,
+        audience: els.audience.value,
+        facts: els.facts.value,
+        doubts: els.doubts.value,
+        proof: els.proof.value,
+        tone: els.tone.value,
+        cards: state.cards
+      };
+      localStorage.setItem(storeKey, JSON.stringify(payload));
+    }
+
+    function load(){
+      try{
+        const raw = localStorage.getItem(storeKey);
+        if (!raw) return;
+        const payload = JSON.parse(raw);
+
+        els.productName.value = payload.productName || "";
+        els.audience.value = payload.audience || "";
+        els.facts.value = payload.facts || "";
+        els.doubts.value = payload.doubts || "";
+        els.proof.value = payload.proof || "";
+        els.tone.value = payload.tone || "Direct";
+        state.cards = Array.isArray(payload.cards) ? payload.cards : [];
+      } catch(err){
+        state.cards = [];
+      }
+    }
+
+    function loadSample(){
+      els.productName.value = "TrailDry Packable Rain Shell";
+      els.audience.value = "Weekend hikers who want an emergency rain layer that does not take up pack space";
+      els.facts.value = [
+        "2.5-layer waterproof shell",
+        "Packs into its own pocket",
+        "14 oz weight",
+        "Pit zips for ventilation",
+        "Adjustable hood and cuffs",
+        "Available in XS through XXL"
+      ].join("\n");
+
+      els.doubts.value = [
+        "Will it actually keep me dry in heavy rain?",
+        "Will I overheat while hiking?",
+        "Will it fit over a fleece?",
+        "Is it worth the price if I only use it sometimes?",
+        "What if I order the wrong size?"
+      ].join("\n");
+
+      els.proof.value = [
+        "20,000mm waterproof rating",
+        "347 reviews averaging 4.7 stars",
+        "30-day returns and exchanges",
+        "Field-tested during spring storm hikes",
+        "Fit guide includes chest, sleeve, and layering notes"
+      ].join("\n");
+
+      els.tone.value = "Direct";
+      buildCards();
+      toast("Sample loaded");
+    }
+
+    async function copyBrief(){
+      const text = briefText();
+      try{
+        await navigator.clipboard.writeText(text);
+        toast("Launch brief copied");
+      } catch(err){
+        const area = document.createElement("textarea");
+        area.value = text;
+        document.body.appendChild(area);
+        area.select();
+        document.execCommand("copy");
+        document.body.removeChild(area);
+        toast("Launch brief copied");
+      }
+    }
+
+    function downloadBrief(){
+      const text = briefText();
+      const blob = new Blob([text], {type:"text/plain;charset=utf-8"});
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      const name = (els.productName.value.trim() || "launch-brief")
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, "-")
+        .replace(/^-|-$/g, "");
+      a.href = url;
+      a.download = name + "-objection-qa-brief.txt";
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      toast("Brief downloaded");
+    }
+
+    function clearAll(){
+      els.productName.value = "";
+      els.audience.value = "";
+      els.facts.value = "";
+      els.doubts.value = "";
+      els.proof.value = "";
+      els.tone.value = "Direct";
+      state.cards = [];
+      save();
+      render();
+      toast("Cleared");
+    }
+
+    ["input", "change"].forEach(evt => {
+      [els.productName, els.audience, els.facts, els.doubts, els.proof, els.tone].forEach(el => {
+        el.addEventListener(evt, () => {
+          renderBriefAndScore();
+          save();
+        });
+      });
+    });
+
+    els.buildBtn.addEventListener("click", buildCards);
+    els.addCardBtn.addEventListener("click", addCard);
+    els.sampleBtn.addEventListener("click", loadSample);
+    els.clearBtn.addEventListener("click", clearAll);
+    els.copyBriefBtn.addEventListener("click", copyBrief);
+    els.downloadBtn.addEventListener("click", downloadBrief);
+
+    load();
+    render();
+  </script>
+</body>
+</html>

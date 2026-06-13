@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>4-Week Content Heatmap Planner</title>
+    <style>
+        :root {
+            --bg-main: #121214;
+            --bg-card: #1a1a1e;
+            --bg-input: #26262b;
+            --border: #33333a;
+            --text-main: #f1f1f3;
+            --text-muted: #9898a3;
+            --accent: #3b82f6;
+            --danger: #ef4444;
+            --warning: #f59e0b;
+            --success: #10b981;
+            
+            --h-0: #1a1a1e;
+            --h-1: #1e293b;
+            --h-2: #1e3a8a;
+            --h-3: #1d4ed8;
+            --h-max: #2563eb;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+        body { background-color: var(--bg-main); color: var(--text-main); padding: 12px; line-height: 1.4; }
+        h1, h2, h3 { font-weight: 600; margin-bottom: 8px; }
+        h1 { font-size: 1.3rem; }
+        h2 { font-size: 1.1rem; color: var(--text-main); border-bottom: 1px solid var(--border); padding-bottom: 4px; margin-top: 12px; }
+        
+        .container { max-width: 1200px; margin: 0 auto; display: grid; grid-template-columns: 1fr; gap: 16px; }
+        @media (min-width: 768px) { .container { grid-template-columns: 320px 1fr; } }
+
+        .panel { background: var(--bg-card); border: 1px solid var(--border); padding: 12px; rounded: 8px; border-radius: 8px; height: max-content; }
+        .input-group { margin-bottom: 10px; }
+        label { display: block; font-size: 0.8rem; color: var(--text-muted); margin-bottom: 3px; font-weight: 500; }
+        input, select, textarea { width: 100%; background: var(--bg-input); border: 1px solid var(--border); color: var(--text-main); padding: 8px; border-radius: 6px; font-size: 0.9rem; }
+        input:focus, select:focus, textarea:focus { border-color: var(--accent); outline: none; }
+        
+        .pill-container { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px; }
+        .pill { background: var(--bg-input); border: 1px solid var(--border); padding: 4px 8px; border-radius: 12px; font-size: 0.75rem; cursor: pointer; color: var(--text-muted); }
+        .pill.active { background: var(--accent); color: white; border-color: var(--accent); }
+
+        button { width: 100%; background: var(--accent); color: white; border: none; padding: 10px; border-radius: 6px; font-weight: 600; cursor: pointer; font-size: 0.9rem; margin-top: 8px; }
+        button:active { opacity: 0.9; }
+        button.secondary { background: transparent; border: 1px solid var(--border); color: var(--text-main); margin-top: 4px; }
+
+        /* Calendar Matrix */
+        .calendar-header { display: grid; grid-template-columns: repeat(7, 1fr); text-align: center; margin-bottom: 4px; }
+        .day-label { font-size: 0.75rem; color: var(--text-muted); font-weight: 600; text-transform: uppercase; }
+        .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
+        
+        .day-card { background: var(--h-0); border: 1px solid var(--border); border-radius: 6px; min-height: 75px; padding: 4px; display: flex; flex-direction: column; justify-content: space-between; cursor: pointer; position: relative; transition: background 0.2s; }
+        .day-card:active { transform: scale(0.97); }
+        .day-num { font-size: 0.75rem; font-weight: 600; color: var(--text-muted); }
+        .day-count { font-size: 0.7rem; background: rgba(0,0,0,0.3); padding: 1px 4px; border-radius: 4px; float: right; color: var(--text-main); }
+        .day-items { display: flex; flex-direction: column; gap: 2px; margin-top: 4px; overflow: hidden; }
+        .item-dot { font-size: 0.65rem; padding: 1px 3px; border-radius: 3px; background: rgba(255,255,255,0.15); color: #fff; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+        /* Heatmap Intensities */
+        .heat-0 { background-color: var(--h-0); }
+        .heat-1 { background-color: var(--h-1); border-color: #2e405e; }
+        .heat-2 { background-color: var(--h-2); border-color: #2b4cb0; }
+        .heat-3 { background-color: var(--h-3); border-color: #3b66f5; }
+        .heat-max { background-color: var(--h-max); border-color: #60a5fa; }
+
+        /* Audit Panel */
+        .audit-list { display: flex; flex-direction: column; gap: 8px; margin-top: 8px; }
+        .audit-item { display: flex; align-items: flex-start; gap: 8px; padding: 8px; border-radius: 6px; background: rgba(255,255,255,0.02); border-left: 3px solid var(--border); font-size: 0.85rem; }
+        .audit-item.danger { border-left-color: var(--danger); background: rgba(239, 68, 68, 0.05); }
+        .audit-item.warning { border-left-color: var(--warning); background: rgba(245, 158, 11, 0.05); }
+        .audit-item.success { border-left-color: var(--success); background: rgba(16, 185, 129, 0.05); }
+        .audit-title { font-weight: 600; margin-bottom: 2px; display: flex; align-items: center; gap: 4px; }
+        .audit-desc { color: var(--text-muted); font-size: 0.8rem; }
+
+        /* Post Drawer List */
+        .post-drawer { margin-top: 12px; max-height: 250px; overflow-y: auto; display: flex; flex-direction: column; gap: 6px; }
+        .post-drawer-item { background: var(--bg-input); border: 1px solid var(--border); padding: 8px; border-radius: 6px; font-size: 0.8rem; position: relative; }
+        .delete-btn { position: absolute; top: 4px; right: 6px; color: var(--danger); cursor: pointer; font-weight: bold; font-size: 0.9rem; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <!-- Config / Entry Sidebar -->
+    <div class="panel">
+        <h1>Content Matrix Setup</h1>
+        
+        <div class="input-group" style="margin-top: 12px;">
+            <label>Campaign Pillars</label>
+            <input type="text" id="p1" value="Product Launch" style="margin-bottom:4px;">
+            <input type="text" id="p2" value="Authority/Value" style="margin-bottom:4px;">
+            <input type="text" id="p3" value="Case Studies" style="margin-bottom:4px;">
+            <input type="text" id="p4" value="Community/Engagement" style="margin-bottom:4px;">
+        </div>
+
+        <h2>Create / Edit Post</h2>
+        <div class="input-group" style="margin-top:8px;">
+            <label>Target Day (1-28)</label>
+            <input type="number" id="postDay" min="1" max="28" value="1">
+        </div>
+        <div class="input-group">
+            <label>Post Title/Hook</label>
+            <input type="text" id="postTitle" placeholder="E.g., 3 mistakes holding you back...">
+        </div>
+        <div class="input-group">
+            <label>Channel</label>
+            <select id="postChannel">
+                <option value="LinkedIn">LinkedIn</option>
+                <option value="X/Twitter">X/Twitter</option>
+                <option value="Instagram">Instagram</option>
+                <option value="Threads">Threads</option>
+                <option value="Email">Email List</option>
+            </select>
+        </div>
+        <div class="input-group">
+            <label>Pillar Alignment</label>
+            <select id="postPillar">
+                <option value="1">Pillar 1</option>
+                <option value="2">Pillar 2</option>
+                <option value="3">Pillar 3</option>
+                <option value="4">Pillar 4</option>
+            </select>
+        </div>
+        <div class="input-group">
+            <label>Call to Action (CTA)</label>
+            <select id="postCta">
+                <option value="None">None / Pure Value</option>
+                <option value="Lead Magnet">Free Resource / Lead Magnet</option>
+                <option value="Direct Sale">Direct Offer / Book Call</option>
+                <option value="Engagement">Drop a Comment / Share</option>
+            </select>
+        </div>
+        <button id="savePostBtn">Schedule Post</button>
+        <button class="secondary" id="clearBtn">Clear Database</button>
+
+        <h2 id="drawerTitle">Day 1 Scheduled Posts</h2>
+        <div class="post-drawer" id="postDrawer"></div>
+    </div>
+
+    <!-- Main Workspace Matrix -->
+    <div style="display: flex; flex-direction: column; gap: 16px;">
+        <!-- Calendar Matrix Component -->
+        <div class="panel">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+                <h1>4-Week Calendar Grid</h1>
+                <div style="display:flex; gap:8px; font-size:0.7rem; color:var(--text-muted); align-items:center;">
+                    <span>Heatmap Index:</span>
+                    <span style="padding:2px 4px; background:var(--h-0); border-radius:3px;">0</span>
+                    <span style="padding:2px 4px; background:var(--h-1); border-radius:3px;">1</span>
+                    <span style="padding:2px 4px; background:var(--h-2); border-radius:3px;">2</span>
+                    <span style="padding:2px 4px; background:var(--h-3); border-radius:3px;">3</span>
+                    <span style="padding:2px 4px; background:var(--h-max); border-radius:3px;">4+</span>
+                </div>
+            </div>
+            
+            <div class="calendar-header">
+                <div class="day-label">Mon</div><div class="day-label">Tue</div><div class="day-label">Wed</div>
+                <div class="day-label">Thu</div><div class="day-label">Fri</div><div class="day-label">Sat</div>
+                <div class="day-label">Sun</div>
+            </div>
+            <div class="calendar-grid" id="calendarGrid"></div>
+        </div>
+
+        <!-- Real-Time Analytical Engine (Audit Panel) -->
+        <div class="panel">
+            <h1>Automated Strategy Diagnostics</h1>
+            <div class="audit-list" id="auditList"></div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // State initialization
+    let posts = JSON.parse(localStorage.getItem('content_planner_posts')) || [
+        { id: 1, day: 1, title: 'How to scale architecture', channel: 'LinkedIn', pillar: '2', cta: 'Engagement' },
+        { id: 2, day: 1, title: 'System breakdown template', channel: 'LinkedIn', pillar: '2', cta: 'Lead Magnet' },
+        { id: 3, day: 1, title: 'Closing 3 client slots', channel: 'Email', pillar: '1', cta: 'Direct Sale' },
+        { id: 4, day: 2, title: 'Quick optimization short', channel: 'Instagram', pillar: '4', cta: 'None' },
+        { id: 5, day: 5, title: 'Case study: 0 to 100k users', channel: 'LinkedIn', pillar: '3', cta: 'Lead Magnet' }
+    ];
+
+    // DOM Nodes
+    const grid = document.getElementById('calendarGrid');
+    const auditList = document.getElementById('auditList');
+    const postDrawer = document.getElementById('postDrawer');
+    const drawerTitle = document.getElementById('drawerTitle');
+    
+    // Form Inputs
+    const postDayInput = document.getElementById('postDay');
+    const postTitleInput = document.getElementById('postTitle');
+    const postChannelInput = document.getElementById('postChannel');
+    const postPillarInput = document.getElementById('postPillar');
+    const postCtaInput = document.getElementById('postCta');
+
+    function getPillarName(num) {
+        const val = document.getElementById(`p${num}`).value;
+        return val ? val : `Pillar ${num}`;
+    }
+
+    function saveState() {
+        localStorage.setItem('content_planner_posts', JSON.stringify(posts));
+        render();
+    }
+
+    // Engine Core Rendering
+    function render() {
+        renderGrid();
+        renderAudit();
+        renderDrawer(parseInt(postDayInput.value));
+    }
+
+    function renderGrid() {
+        grid.innerHTML = '';
+        const dayCounts = Array(29).fill(0).map(() => []);
+        
+        posts.forEach(p => {
+            if(p.day >= 1 && p.day <= 28) {
+                dayCounts[p.day].push(p);
+            }
+        });
+
+        for (let d = 1; d <= 28; d++) {
+            const dayPosts = dayCounts[d];
+            const count = dayPosts.length;
+            
+            let heatClass = 'heat-0';
+            if (count === 1) heatClass = 'heat-1';
+            else if (count === 2) heatClass = 'heat-2';
+            else if (count === 3) heatClass = 'heat-3';
+            else if (count > 3) heatClass = 'heat-max';
+
+            const card = document.createElement('div');
+            card.className = `day-card ${heatClass}`;
+            card.innerHTML = `
+                <div>
+                    <span class="day-num">${d}</span>
+                    ${count > 0 ? `<span class="day-count">${count}</span>` : ''}
+                </div>
+                <div class="day-items">
+                    ${dayPosts.slice(0, 3).map(p => `
+                        <div class="item-dot" title="${p.title}">[${p.channel[0]}] ${p.title}</div>
+                    `).join('')}
+                    ${count > 3 ? `<div class="item-dot" style="background:transparent; text-align:center;">+${count-3} more</div>` : ''}
+                </div>
+            `;
+            
+            card.addEventListener('click', () => {
+                postDayInput.value = d;
+                renderDrawer(d);
+            });
+            grid.appendChild(card);
+        }
+    }
+
+    function renderDrawer(day) {
+        drawerTitle.innerText = `Day ${day} Scheduled Posts`;
+        postDrawer.innerHTML = '';
+        const dayPosts = posts.filter(p => p.day === day);
+        
+        if(dayPosts.length === 0) {
+            postDrawer.innerHTML = `<div style="font-size:0.8rem; color:var(--text-muted); text-align:center; padding:12px;">No posts scheduled for this day.</div>`;
+            return;
+        }
+
+        dayPosts.forEach(p => {
+            const item = document.createElement('div');
+            item.className = 'post-drawer-item';
+            item.innerHTML = `
+                <span class="delete-btn" onclick="deletePost(${p.id})">&times;</span>
+                <strong style="color:var(--accent); font-size:0.75rem;">${p.channel}</strong> | <span style="color:var(--text-muted); font-size:0.75rem;">${getPillarName(p.pillar)}</span>
+                <div style="margin-top:2px; font-weight:500;">${p.title}</div>
+                <div style="font-size:0.7rem; color:var(--text-muted); margin-top:2px;">CTA: ${p.cta}</div>
+            `;
+            postDrawer.appendChild(item);
+        });
+    }
+
+    window.deletePost = function(id) {
+        posts = posts.filter(p => p.id !== id);
+        saveState();
+    };
+
+    function renderAudit() {
+        auditList.innerHTML = '';
+        
+        const dayMap = Array(29).fill(0).map(() => []);
+        posts.forEach(p => { if(p.day <= 28) dayMap[p.day].push(p); });
+
+        // 1. Structural Fatigue Detection (Consecutive repetitions)
+        let fatigueWarnings = [];
+        let consecutiveChannels = { count: 1, type: '' };
+        let consecutivePillars = { count: 1, type: '' };
+
+        for (let d = 1; d <= 28; d++) {
+            dayMap[d].forEach(p => {
+                // Channel check
+                if (p.channel === consecutiveChannels.type) {
+                    consecutiveChannels.count++;
+                    if (consecutiveChannels.count === 3) {
+                        fatigueWarnings.push(`<strong>Channel Fatigue:</strong> ${p.channel} scheduled consecutively 3+ times around Day ${d}.`);
+                    }
+                } else {
+                    consecutiveChannels = { count: 1, type: p.channel };
+                }
+
+                // Pillar check
+                if (p.pillar === consecutivePillars.type) {
+                    consecutivePillars.count++;
+                    if (consecutivePillars.count === 3) {
+                        fatigueWarnings.push(`<strong>Pillar Fatigue:</strong> ${getPillarName(p.pillar)} repeated consecutively 3+ times around Day ${d}.`);
+                    }
+                } else {
+                    consecutivePillars = { count: 1, type: p.pillar };
+                }
+            });
+        }
+
+        // 2. Empty Stretches
+        let emptyStretches = [];
+        let currentStretchStart = null;
+        
+        for (let d = 1; d <= 28; d++) {
+            if (dayMap[d].length === 0) {
+                if (currentStretchStart === null) currentStretchStart = d;
+            } else {
+                if (currentStretchStart !== null) {
+                    let len = d - currentStretchStart;
+                    if (len >= 3) emptyStretches.push(`Days ${currentStretchStart} to ${d-1} (${len} days)`);
+                    currentStretchStart = null;
+                }
+            }
+        }
+        if (currentStretchStart !== null) {
+            let len = 29 - currentStretchStart;
+            if (len >= 3) emptyStretches.push(`Days ${currentStretchStart} to 28 (${len} days)`);
+        }
+
+        // 3. Overstuffed Content Blocks
+        let overstuffedDays = [];
+        for (let d = 1; d <= 28; d++) {
+            if (dayMap[d].length > 2) overstuffedDays.push(`Day ${d} (${dayMap[d].length} posts)`);
+        }
+
+        // 4. Missing Call to Action
+        let missingCtaCount = posts.filter(p => p.cta === 'None').length;
+
+        // Output Blocks to DOM
+        // Empty Stretches Card
+        createAuditNode(
+            emptyStretches.length > 0 ? 'warning' : 'success',
+            'Distribution Coverage (Empty Stretches)',
+            emptyStretches.length > 0 ? `Unscheduled gaps of 3+ days detected: ${emptyStretches.join(', ')}.` : 'Excellent. No dangerous empty content stretches found across the 4 weeks.'
+        );
+
+        // Overstuffed Card
+        createAuditNode(
+            overstuffedDays.length > 0 ? 'warning' : 'success',
+            'Day Fatigue (Overstuffed Spikes)',
+            overstuffedDays.length > 0 ? `High concentration warning on: ${overstuffedDays.join(', ')}. Risk of audience fatigue.` : 'Safe payload distribution. No single day exceeds 2 posts.'
+        );
+
+        // CTA Card
+        if (posts.length > 0) {
+            const pct = Math.round((missingCtaCount / posts.length) * 100);
+            createAuditNode(
+                pct > 40 ? 'danger' : (pct > 20 ? 'warning' : 'success'),
+                'Conversion Health (Missing CTAs)',
+                `${missingCtaCount} out of ${posts.length} posts (${pct}%) have no clear conversion directive. High concentration of pure-value posts weakens direct ROI.`
+            );
+        }
+
+        // Fatigue Array Cards
+        if (fatigueWarnings.length > 0) {
+            fatigueWarnings.forEach(w => {
+                createAuditNode('danger', 'Format & Pillar Fatigue', w);
+            });
+        } else if (posts.length > 0) {
+            createAuditNode('success', 'Sequence Variety Matrix', 'Perfect structural variety. Channels and marketing pillars alternate correctly to protect conversion cycles.');
+        }
+    }
+
+    function createAuditNode(status, title, desc) {
+        const item = document.createElement('div');
+        item.className = `audit-item ${status}`;
+        item.innerHTML = `
+            <div>
+                <div class="audit-title">${title}</div>
+                <div class="audit-desc">${desc}</div>
+            </div>
+        `;
+        auditList.appendChild(item);
+    }
+
+    // Event Handling
+    document.getElementById('savePostBtn').addEventListener('click', () => {
+        const title = postTitleInput.value.trim();
+        if(!title) return;
+
+        const newPost = {
+            id: Date.now(),
+            day: parseInt(postDayInput.value),
+            title: title,
+            channel: postChannelInput.value,
+            pillar: postPillarInput.value,
+            cta: postCtaInput.value
+        };
+
+        posts.push(newPost);
+        postTitleInput.value = '';
+        saveState();
+    });
+
+    document.getElementById('clearBtn').addEventListener('click', () => {
+        if(confirm('Purge current content plan data?')) {
+            posts = [];
+            saveState();
+        }
+    });
+
+    postDayInput.addEventListener('input', (e) => {
+        let val = parseInt(e.target.value);
+        if(val >= 1 && val <= 28) renderDrawer(val);
+    });
+
+    // Global listener for dynamically bound structural inputs
+    document.getElementById('p1').addEventListener('change', render);
+    document.getElementById('p2').addEventListener('change', render);
+    document.getElementById('p3').addEventListener('change', render);
+    document.getElementById('p4').addEventListener('change', render);
+
+    // Initial load execution
+    render();
+</script>
+</body>
+</html>

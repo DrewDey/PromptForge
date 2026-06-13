@@ -1,0 +1,513 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Recipe Content Readiness Board</title>
+  <style>
+    :root {
+      --bg-primary: #f8fafc;
+      --bg-card: #ffffff;
+      --text-main: #0f172a;
+      --text-muted: #64748b;
+      --border: #e2e8f0;
+      --primary: #2563eb;
+      --primary-hover: #1d4ed8;
+      --success: #16a34a;
+      --warning: #ea580c;
+      --danger: #dc2626;
+      --radius: 12px;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    }
+
+    body {
+      background-color: var(--bg-primary);
+      color: var(--text-main);
+      padding: 16px;
+      line-height: 1.5;
+    }
+
+    .container {
+      max-width: 600px;
+      margin: 0 auto;
+    }
+
+    header {
+      margin-bottom: 20px;
+    }
+
+    h1 {
+      font-size: 1.5rem;
+      font-weight: 700;
+      letter-spacing: -0.025em;
+    }
+
+    p.subtitle {
+      color: var(--text-muted);
+      font-size: 0.875rem;
+    }
+
+    .card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 16px;
+      margin-bottom: 16px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    }
+
+    .card-title {
+      font-size: 1.1rem;
+      font-weight: 600;
+      margin-bottom: 14px;
+    }
+
+    .form-group {
+      margin-bottom: 14px;
+    }
+
+    label {
+      display: block;
+      font-size: 0.875rem;
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+
+    input, select {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      font-size: 0.95rem;
+      background: var(--bg-card);
+      color: var(--text-main);
+    }
+
+    input:focus, select:focus {
+      outline: none;
+      border-color: var(--primary);
+    }
+
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    .channels-group {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+      gap: 8px;
+      margin-top: 6px;
+    }
+
+    .channel-checkbox {
+      display: none;
+    }
+
+    .channel-label {
+      display: block;
+      padding: 8px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      text-align: center;
+      font-size: 0.875rem;
+      font-weight: 500;
+      cursor: pointer;
+      background: var(--bg-card);
+      user-select: none;
+    }
+
+    .channel-checkbox:checked + .channel-label {
+      background: #eff6ff;
+      border-color: var(--primary);
+      color: var(--primary);
+    }
+
+    button.btn-primary {
+      width: 100%;
+      background: var(--primary);
+      color: white;
+      border: none;
+      padding: 12px;
+      border-radius: 8px;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      margin-top: 8px;
+    }
+
+    button.btn-primary:hover {
+      background: var(--primary-hover);
+    }
+
+    .action-bar {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+
+    button.btn-secondary {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      color: var(--text-main);
+      padding: 10px;
+      border-radius: 8px;
+      font-size: 0.875rem;
+      font-weight: 500;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+    }
+
+    button.btn-secondary:hover {
+      background: var(--bg-primary);
+    }
+
+    .checklist-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      padding: 10px 0;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .checklist-item:last-child {
+      border-bottom: none;
+    }
+
+    .checklist-item input[type="checkbox"] {
+      width: 18px;
+      height: 18px;
+      margin-top: 2px;
+      cursor: pointer;
+    }
+
+    .checklist-content {
+      flex: 1;
+    }
+
+    .checklist-title {
+      font-size: 0.95rem;
+      font-weight: 600;
+    }
+
+    .checklist-desc {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      margin-top: 2px;
+    }
+
+    .badge {
+      display: inline-block;
+      font-size: 0.75rem;
+      font-weight: 700;
+      padding: 2px 6px;
+      border-radius: 4px;
+      text-transform: uppercase;
+      margin-left: 6px;
+    }
+
+    .badge-danger { background: #fee2e2; color: var(--danger); }
+    .badge-warning { background: #ffedd5; color: var(--warning); }
+
+    .hidden {
+      display: none !important;
+    }
+
+    .toast {
+      position: fixed;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #1e293b;
+      color: white;
+      padding: 10px 20px;
+      border-radius: 30px;
+      font-size: 0.875rem;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+      opacity: 0;
+      transition: opacity 0.2s ease;
+      pointer-events: none;
+      z-index: 1000;
+    }
+
+    .toast.show {
+      opacity: 1;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <header>
+      <h1>Recipe Content Readiness Board</h1>
+      <p class="subtitle">Secure, offline evaluation and channel brief compiler</p>
+    </header>
+
+    <div class="card">
+      <div class="form-group">
+        <label for="recipeName">Recipe Name</label>
+        <input type="text" id="recipeName" placeholder="e.g., Crispy Chili Crisp Smash Burgers">
+      </div>
+
+      <div class="form-group">
+        <label for="servingNote">Key Serving Note / Hook</label>
+        <input type="text" id="servingNote" placeholder="e.g., Serve sizzling hot with extra dynamic crunch">
+      </div>
+
+      <div class="grid-2">
+        <div class="form-group">
+          <label for="audience">Target Audience</label>
+          <select id="audience">
+            <option value="Busy Weeknight Cooks">Busy Weeknight Cooks</option>
+            <option value="Gourmet Hobbyists">Gourmet Hobbyists</option>
+            <option value="Health-Conscious Foodies">Health-Conscious Foodies</option>
+            <option value="Beginner Home Cooks">Beginner Home Cooks</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="complexity">Complexity</label>
+          <select id="complexity">
+            <option value="Quick & Easy">Quick & Easy</option>
+            <option value="Medium Effort">Medium Effort</option>
+            <option value="Weekend Project">Weekend Project</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>Distribution Channels</label>
+        <div class="channels-group" id="channelsGroup">
+          <input type="checkbox" id="ch-instagram" value="Instagram" class="channel-checkbox" checked>
+          <label for="ch-instagram" class="channel-label">Instagram</label>
+
+          <input type="checkbox" id="ch-tiktok" value="TikTok" class="channel-checkbox" checked>
+          <label for="ch-tiktok" class="channel-label">TikTok</label>
+
+          <input type="checkbox" id="ch-blog" value="Blog/Web" class="channel-checkbox" checked>
+          <label for="ch-blog" class="channel-label">Blog/Web</label>
+
+          <input type="checkbox" id="ch-newsletter" value="Newsletter" class="channel-checkbox">
+          <label for="ch-newsletter" class="channel-label">Newsletter</label>
+        </div>
+      </div>
+
+      <button id="generateBtn" class="btn-primary">Analyze & Refresh Board</button>
+    </div>
+
+    <div id="actionBar" class="action-bar hidden">
+      <button id="copyBtn" class="btn-secondary">
+        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3"></path></svg>
+        Copy Brief
+      </button>
+      <button id="dlBtn" class="btn-secondary">
+        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+        Download .txt
+      </button>
+    </div>
+
+    <div id="boardContainer" class="hidden"></div>
+  </div>
+
+  <div id="toast" class="toast">Brief copied to clipboard!</div>
+
+  <script>
+    // State storage for generation metrics
+    let generatedBriefData = null;
+
+    // Elements
+    const generateBtn = document.getElementById('generateBtn');
+    const copyBtn = document.getElementById('copyBtn');
+    const dlBtn = document.getElementById('dlBtn');
+    const actionBar = document.getElementById('actionBar');
+    const boardContainer = document.getElementById('boardContainer');
+    const toast = document.getElementById('toast');
+
+    // Safe individual checklist row creator
+    function createChecklistRow(titleText, descText, riskLevel = null) {
+      const row = document.createElement('div');
+      row.className = 'checklist-item';
+
+      const checkbox = document.createElement('input');
+      checkbox.type = 'checkbox';
+
+      const content = document.createElement('div');
+      content.className = 'checklist-content';
+
+      const titleNode = document.createElement('div');
+      titleNode.className = 'checklist-title';
+      titleNode.textContent = titleText;
+
+      if (riskLevel) {
+        const badge = document.createElement('span');
+        badge.className = `badge ${riskLevel === 'High' ? 'badge-danger' : 'badge-warning'}`;
+        badge.textContent = `${riskLevel} Risk`;
+        titleNode.appendChild(badge);
+      }
+
+      const descNode = document.createElement('div');
+      descNode.className = 'checklist-desc';
+      descNode.textContent = descText;
+
+      content.appendChild(titleNode);
+      content.appendChild(descNode);
+      row.appendChild(checkbox);
+      row.appendChild(content);
+
+      return row;
+    }
+
+    // Safe card component wrapper factory
+    function createCard(titleText, items, isRiskType = false) {
+      const card = document.createElement('div');
+      card.className = 'card';
+
+      const header = document.createElement('div');
+      header.className = 'card-title';
+      header.textContent = titleText;
+      card.appendChild(header);
+
+      const listContainer = document.createElement('div');
+      items.forEach(item => {
+        const itemRow = createChecklistRow(item.t, item.d, isRiskType ? item.r : null);
+        listContainer.appendChild(itemRow);
+      });
+
+      card.appendChild(listContainer);
+      return card;
+    }
+
+    // Main structural board builder loop
+    function buildBoard() {
+      const recipe = document.getElementById('recipeName').value.trim() || 'Untitled Recipe';
+      const hook = document.getElementById('servingNote').value.trim() || 'Delicious homemade flavor';
+      const aud = document.getElementById('audience').value;
+      const comp = document.getElementById('complexity').value;
+
+      // Channels state collection
+      const selectedChannels = Array.from(document.querySelectorAll('#channelsGroup input:checked')).map(el => el.value);
+
+      if (selectedChannels.length === 0) {
+        alert('Please toggle at least one distribution channel.');
+        return;
+      }
+
+      // Initialize dataset payload
+      generatedBriefData = {
+        recipe, hook, audience: aud, complexity: comp, channels: selectedChannels,
+        titles: [
+          { t: `The Ultimate ${recipe} for ${aud}`, d: `Direct value framing optimized for target web traffic layouts.` },
+          { t: `Better than takeout ${recipe} (${comp})`, d: `High-curiosity programmatic click trigger for digital channels.` }
+        ],
+        ingredients: [
+          { t: "Confirm specialized/niche item alternatives", d: `Provide immediate substitutes to satisfy ${aud}.` },
+          { t: "Metric vs Imperial clean check", d: "Verify measuring logic scaling formats." }
+        ],
+        socialAngles: [],
+        hashtags: [],
+        risks: [
+          { t: "Missing Hero Header Asset", d: "Requires high-resolution landscape asset framework.", r: "High" }
+        ]
+      };
+
+      // Add conditional structural content based on toggled items
+      selectedChannels.forEach(ch => {
+        if (ch === 'Instagram') {
+          generatedBriefData.socialAngles.push({ t: "IG Reel Carousel Anchor Line", d: `Visual asset step breakdown capturing: "${hook}"` });
+          generatedBriefData.hashtags.push({ t: "#Foodstagram #RecipeShare #HomeCooking", d: "Broad organic visibility tags." });
+          generatedBriefData.risks.push({ t: "Missing vertical 9:16 asset asset layouts", d: "Crucial element framework requirements for IG Story linking maps.", r: "Medium" });
+        }
+        if (ch === 'TikTok') {
+          generatedBriefData.socialAngles.push({ t: "ASMR/First Bite Hook Segment", d: `Open video sequencing file frame squarely on: "${hook}" within 3 seconds.` });
+          generatedBriefData.hashtags.push({ t: `#FoodTikTok #EasyRecipes #${recipe.replace(/\s+/g, '')}`, d: "Algorithmic niche discovery targets." });
+          generatedBriefData.risks.push({ t: "Missing highly dynamic trending track options", d: "Lower programmatic delivery yields if asset track choice lags standard pacing rules.", r: "High" });
+        }
+        if (ch === 'Blog/Web') {
+          generatedBriefData.socialAngles.push({ t: "SEO Long-form Snippet Target", d: `Format core intro copy maps to answer: "How do you make ${recipe} quickly?"` });
+          generatedBriefData.hashtags.push({ t: "SEO Meta: Recipe Schema payload structure", d: "Structured schema deployment test parameters." });
+          generatedBriefData.risks.push({ t: "Missing structural Jump-to-Recipe functional logic link", d: "Increases structural entry page abandonment rates exponentially on mobile viewport models.", r: "High" });
+        }
+        if (ch === 'Newsletter') {
+          generatedBriefData.socialAngles.push({ t: "Exclusive Reader Variant Framing", d: `Positioning line strategy: "The exact structural step adjustment I use when crafting this ${recipe} for crowds."` });
+          generatedBriefData.hashtags.push({ t: "Subject Line: Pre-header component test", d: "Value target inline text check verification." });
+        }
+      });
+
+      // Clear structural contents safely
+      boardContainer.textContent = '';
+
+      // Generate nodes safely and build tree hierarchy
+      boardContainer.appendChild(createCard("Title Promise & Hook", generatedBriefData.titles));
+      boardContainer.appendChild(createCard("Ingredient Clarity", generatedBriefData.ingredients));
+      boardContainer.appendChild(createCard("Social Post Angles", generatedBriefData.socialAngles));
+      boardContainer.appendChild(createCard("Hashtag Buckets", generatedBriefData.hashtags));
+      boardContainer.appendChild(createCard("Missing Assets & Risk Flags", generatedBriefData.risks, true));
+
+      // Make actionable blocks active
+      actionBar.classList.remove('hidden');
+      boardContainer.classList.remove('hidden');
+    }
+
+    // Flat text document format string builder logic
+    function generatePlainTextString() {
+      if (!generatedBriefData) return '';
+      let text = `RECIPE CONTENT READINESS BRIEF\n`;
+      text += `====================================\n`;
+      text += `Recipe: ${generatedBriefData.recipe}\n`;
+      text += `Hook/Serving Note: ${generatedBriefData.hook}\n`;
+      text += `Audience: ${generatedBriefData.audience} (${generatedBriefData.complexity})\n`;
+      text += `Channels: ${generatedBriefData.channels.join(', ')}\n\n`;
+
+      text += `1. TITLE PROMISES\n`;
+      generatedBriefData.titles.forEach(t => text += `- [ ] ${t.t} (${t.d})\n`);
+      text += `\n2. INGREDIENT CLARITY\n`;
+      generatedBriefData.ingredients.forEach(i => text += `- [ ] ${i.t} (${i.d})\n`);
+      text += `\n3. SOCIAL POST ANGLES\n`;
+      generatedBriefData.socialAngles.forEach(s => text += `- [ ] ${s.t} (${s.d})\n`);
+      text += `\n4. HASHTAG BUCKETS\n`;
+      generatedBriefData.hashtags.forEach(h => text += `- [ ] ${h.t} (${h.d})\n`);
+      text += `\n5. MISSING ASSETS & RISK FLAGS\n`;
+      generatedBriefData.risks.forEach(r => text += `- [ ] [${r.r} Risk] ${r.t} (${r.d})\n`);
+
+      return text;
+    }
+
+    // Actions implementation
+    function runCopyAction() {
+      const copyPayload = generatePlainTextString();
+      if(!copyPayload) return;
+      navigator.clipboard.writeText(copyPayload).then(() => {
+        toast.classList.add('show');
+        setTimeout(() => toast.classList.remove('show'), 2000);
+      });
+    }
+
+    function runDownloadAction() {
+      const downloadPayload = generatePlainTextString();
+      if(!downloadPayload) return;
+      const fileBlob = new Blob([downloadPayload], { type: 'text/plain' });
+      const triggerElement = document.createElement('a');
+      const filenameBase = generatedBriefData.recipe.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+      triggerElement.download = `${filenameBase || 'recipe'}-readiness-brief.txt`;
+      triggerElement.href = window.URL.createObjectURL(fileBlob);
+      triggerElement.click();
+      window.URL.revokeObjectURL(triggerElement.href);
+    }
+
+    // Runtime Event Additions
+    generateBtn.addEventListener('click', buildBoard);
+    copyBtn.addEventListener('click', runCopyAction);
+    dlBtn.addEventListener('click', runDownloadAction);
+  </script>
+</body>
+</html>

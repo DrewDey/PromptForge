@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>YT Video Planner</title>
+    <style>
+        :root {
+            --bg: #121212;
+            --card-bg: #1e1e1e;
+            --text: #e0e0e0;
+            --accent: #ff4444;
+            --border: #333;
+            --hook: #4a2727;
+            --proof: #273e4a;
+            --demo: #274a37;
+            --broll: #41274a;
+            --cta: #4a4127;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+        body { background: var(--bg); color: var(--text); padding: 10px; font-size: 14px; }
+        .container { max-width: 500px; margin: 0 auto; display: flex; flex-direction: column; gap: 12px; }
+        
+        .section { background: var(--card-bg); padding: 12px; border-radius: 8px; border: 1px solid var(--border); }
+        h3 { font-size: 14px; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px; color: #aaa; }
+        
+        input, textarea, select { width: 100%; background: #2a2a2a; color: #fff; border: 1px solid var(--border); padding: 8px; border-radius: 4px; font-size: 14px; }
+        textarea { resize: vertical; min-height: 50px; }
+        
+        .toolbar { display: flex; gap: 8px; }
+        button { flex: 1; background: #333; color: #fff; border: none; padding: 8px; border-radius: 4px; font-weight: bold; cursor: pointer; }
+        button.action { background: var(--accent); }
+        
+        .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; text-align: center; }
+        .stat-box { background: #252525; padding: 8px; border-radius: 4px; }
+        .stat-val { font-size: 18px; font-weight: bold; color: var(--accent); }
+        .alert { color: #ffcc00; font-size: 12px; margin-top: 4px; display: none; }
+        
+        .beat-list { display: flex; flex-direction: column; gap: 8px; }
+        .beat-card { background: #252525; border-left: 4px solid #888; padding: 8px; border-radius: 4px; position: relative; }
+        .beat-card.dragging { opacity: 0.5; }
+        
+        .beat-row { display: flex; gap: 6px; margin-bottom: 6px; align-items: center; }
+        .beat-type { width: 75px; font-size: 12px; font-weight: bold; }
+        .beat-dur { width: 60px; text-align: center; }
+        .beat-del { background: #442222; max-width: 32px; }
+        
+        .beat-card[data-type="Hook"] { border-left-color: #ff4444; }
+        .beat-card[data-type="Proof"] { border-left-color: #33b5e5; }
+        .beat-card[data-type="Demo"] { border-left-color: #00C851; }
+        .beat-card[data-type="B-Roll"] { border-left-color: #aa66cc; }
+        .beat-card[data-type="CTA"] { border-left-color: #ffbb33; }
+        
+        .nav-btns { display: flex; gap: 4px; margin-top: 4px; }
+        .nav-btns button { padding: 2px 6px; font-size: 11px; background: #444; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="section">
+        <h3>Concept</h3>
+        <input type="text" id="videoIdea" placeholder="Core Video Idea / Hook Title">
+    </div>
+
+    <div class="section">
+        <h3>Budget & Pacing</h3>
+        <div class="stats-grid">
+            <div class="stat-box">
+                <div>Total Duration</div>
+                <div id="totalTime" class="stat-val">0s</div>
+            </div>
+            <div class="stat-box">
+                <div>Beats Count</div>
+                <div id="beatCount" class="stat-val">0</div>
+            </div>
+        </div>
+        <div id="pacingAlert" class="alert">⚠️ Warning: Single beat duration exceeds 90s (Pacing Risk)</div>
+    </div>
+
+    <div class="section">
+        <div class="toolbar">
+            <button onclick="addBeat()">+ Add Beat</button>
+            <button onclick="loadSample()">Load Sample</button>
+            <button class="action" onclick="copyPlan()">Copy Output</button>
+        </div>
+    </div>
+
+    <div class="section">
+        <h3>Scene Beats</h3>
+        <div id="beatList" class="beat-list"></div>
+    </div>
+
+    <div class="section">
+        <h3>Risk & Retention Notes</h3>
+        <textarea id="riskNotes" placeholder="Flag execution hurdles, drop-off risks, or script notes..."></textarea>
+    </div>
+</div>
+
+<script>
+    const types = ["Hook", "Proof", "Demo", "B-Roll", "CTA"];
+    
+    function createBeatElement(type = "Hook", duration = 30, text = "") {
+        const card = document.createElement("div");
+        card.className = "beat-card";
+        card.setAttribute("data-type", type);
+        card.draggable = true;
+
+        let typeOptions = types.map(t => `<option value="${t}" ${t === type ? 'selected' : ''}>${t}</option>`).join('');
+
+        card.innerHTML = `
+            <div class="beat-row">
+                <select class="beat-type" onchange="updateCardType(this)">${typeOptions}</select>
+                <input type="number" class="beat-dur" value="${duration}" placeholder="Sec" oninput="calculateStats()">
+                <button class="beat-del" onclick="this.closest('.beat-card').remove(); calculateStats();">X</button>
+            </div>
+            <textarea class="beat-text" placeholder="What happens in this scene?">${text}</textarea>
+            <div class="nav-btns">
+                <button onclick="moveUp(this)">▲ Up</button>
+                <button onclick="moveDown(this)">▼ Down</button>
+            </div>
+        `;
+
+        setupDragAndDrop(card);
+        return card;
+    }
+
+    function addBeat(type = "Hook", duration = 30, text = "") {
+        const list = document.getElementById("beatList");
+        list.appendChild(createBeatElement(type, duration, text));
+        calculateStats();
+    }
+
+    function updateCardType(select) {
+        const card = select.closest('.beat-card');
+        card.setAttribute("data-type", select.value);
+    }
+
+    function calculateStats() {
+        const cards = document.querySelectorAll(".beat-card");
+        let totalSeconds = 0;
+        let pacingRisk = false;
+
+        cards.forEach(card => {
+            const dur = parseInt(card.querySelector(".beat-dur").value) || 0;
+            totalSeconds += dur;
+            if (dur > 90) pacingRisk = true;
+        });
+
+        const mins = Math.floor(totalSeconds / 60);
+        const secs = totalSeconds % 60;
+        document.getElementById("totalTime").innerText = mins > 0 ? `${mins}m ${secs}s` : `${secs}s`;
+        document.getElementById("beatCount").innerText = cards.length;
+        document.getElementById("pacingAlert").style.display = pacingRisk ? "block" : "none";
+    }
+
+    function moveUp(btn) {
+        const card = btn.closest('.beat-card');
+        const prev = card.previousElementSibling;
+        if (prev) card.parentNode.insertBefore(card, prev);
+    }
+
+    function moveDown(btn) {
+        const card = btn.closest('.beat-card');
+        const next = card.nextElementSibling;
+        if (next) card.parentNode.insertBefore(next, card);
+    }
+
+    function loadSample() {
+        document.getElementById("videoIdea").value = "Building a 1000HP engine in 24 hours";
+        document.getElementById("riskNotes").value = "High risk of mid-video drop-off during the technical teardown phase. Keep demo snappy.";
+        
+        const list = document.getElementById("beatList");
+        list.innerHTML = "";
+        
+        addBeat("Hook", 15, "Show the completed engine roaring, lay out the 24-hour challenge stakes.");
+        addBeat("Proof", 30, "Show the parts boxes piling up and time-lapse clock starting.");
+        addBeat("Demo", 60, "Tearing down the stock block; highlight crucial mechanical pain points.");
+        addBeat("B-Roll", 45, "Cinematic assembly sequence with heavy soundtrack overlay.");
+        addBeat("Demo", 95, "First crank attempt fails. Troubleshooting the starter issue under time pressure.");
+        addBeat("B-Roll", 30, "Success montage as time ticks down to final 10 minutes.");
+        addBeat("CTA", 15, "Dyno test results reveal next week. Sub if you want to see the track run.");
+
+        calculateStats();
+    }
+
+    function copyPlan() {
+        let output = `VIDEO PLAN: ${document.getElementById("videoIdea").value}\n`;
+        output += `Total Estimated Runtime: ${document.getElementById("totalTime").innerText}\n`;
+        output += `====================================\n\n`;
+
+        document.querySelectorAll(".beat-card").forEach((card, index) => {
+            const type = card.querySelector(".beat-type").value;
+            const dur = card.querySelector(".beat-dur").value;
+            const text = card.querySelector(".beat-text").value;
+            output += `Beat #${index + 1} [${type} - ${dur}s]\n${text}\n\n`;
+        });
+
+        output += `====================================\n`;
+        output += `RISK & RETENTION NOTES:\n${document.getElementById("riskNotes").value}`;
+
+        navigator.clipboard.writeText(output).then(() => {
+            alert("Plan copied to clipboard!");
+        });
+    }
+
+    let dragSrcEl = null;
+    function setupDragAndDrop(el) {
+        el.addEventListener('dragstart', function(e) {
+            dragSrcEl = this;
+            this.classList.add('dragging');
+        });
+        el.addEventListener('dragend', function() {
+            this.classList.remove('dragging');
+        });
+        el.addEventListener('dragover', function(e) {
+            e.preventDefault();
+        });
+        el.addEventListener('drop', function(e) {
+            e.preventDefault();
+            if (dragSrcEl !== this) {
+                const list = document.getElementById("beatList");
+                const allNodes = Array.from(list.children);
+                const srcIdx = allNodes.indexOf(dragSrcEl);
+                const targetIdx = allNodes.indexOf(this);
+                if (srcIdx < targetIdx) {
+                    list.insertBefore(dragSrcEl, this.nextSibling);
+                } else {
+                    list.insertBefore(dragSrcEl, this);
+                }
+                calculateStats();
+            }
+        });
+    }
+</script>
+
+</body>
+</html>

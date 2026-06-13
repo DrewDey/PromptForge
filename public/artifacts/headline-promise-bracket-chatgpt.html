@@ -1,0 +1,1391 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Headline Promise Bracket</title>
+<style>
+  :root{
+    --bg:#f6f3ee;
+    --card:#fffdf8;
+    --ink:#201c18;
+    --muted:#6e6258;
+    --line:#d8cfc4;
+    --soft:#eee6dc;
+    --accent:#2f5d50;
+    --accent-ink:#ffffff;
+    --warn:#8a4f00;
+    --bad:#9f2626;
+    --good:#2f6b45;
+    --shadow:0 8px 22px rgba(44,34,24,.08);
+    --radius:18px;
+  }
+
+  *{box-sizing:border-box;min-width:0}
+
+  html{
+    -webkit-text-size-adjust:100%;
+    text-size-adjust:100%;
+  }
+
+  body{
+    margin:0;
+    background:var(--bg);
+    color:var(--ink);
+    font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+    line-height:1.45;
+  }
+
+  .page{
+    width:100%;
+    max-width:760px;
+    margin:0 auto;
+    padding:14px;
+  }
+
+  header{
+    display:block;
+    margin:4px 0 14px;
+  }
+
+  h1{
+    margin:0 0 8px;
+    font-size:clamp(2rem, 9vw, 3.2rem);
+    line-height:.94;
+    letter-spacing:-.055em;
+  }
+
+  h1 span{
+    display:block;
+    overflow-wrap:anywhere;
+  }
+
+  .lede{
+    margin:0;
+    color:var(--muted);
+    font-size:.98rem;
+    overflow-wrap:anywhere;
+  }
+
+  .stack{
+    display:grid;
+    grid-template-columns:1fr;
+    gap:12px;
+  }
+
+  .card{
+    background:var(--card);
+    border:1px solid var(--line);
+    border-radius:var(--radius);
+    box-shadow:var(--shadow);
+    padding:14px;
+    width:100%;
+  }
+
+  h2,h3{
+    margin:0 0 10px;
+    line-height:1.08;
+    letter-spacing:-.025em;
+    overflow-wrap:anywhere;
+  }
+
+  h2{font-size:1.2rem}
+  h3{font-size:1rem}
+
+  p{
+    margin:0 0 10px;
+    overflow-wrap:anywhere;
+  }
+
+  label{
+    display:block;
+    font-weight:750;
+    margin:0 0 7px;
+    overflow-wrap:anywhere;
+  }
+
+  .hint{
+    font-size:.88rem;
+    color:var(--muted);
+    margin-top:6px;
+  }
+
+  textarea,
+  input,
+  select{
+    width:100%;
+    max-width:100%;
+    border:1px solid var(--line);
+    border-radius:14px;
+    background:#fff;
+    color:var(--ink);
+    padding:12px;
+    font:inherit;
+    line-height:1.35;
+    overflow-wrap:anywhere;
+    word-break:break-word;
+  }
+
+  textarea{
+    min-height:168px;
+    resize:vertical;
+    white-space:pre-wrap;
+  }
+
+  input::placeholder,
+  textarea::placeholder{
+    color:#95887b;
+    opacity:1;
+  }
+
+  button{
+    width:100%;
+    max-width:100%;
+    border:1px solid var(--line);
+    border-radius:14px;
+    background:var(--soft);
+    color:var(--ink);
+    padding:12px 13px;
+    min-height:46px;
+    font:inherit;
+    font-weight:750;
+    cursor:pointer;
+    overflow-wrap:anywhere;
+    white-space:normal;
+    text-align:center;
+    touch-action:manipulation;
+  }
+
+  button.primary{
+    background:var(--accent);
+    color:var(--accent-ink);
+    border-color:var(--accent);
+  }
+
+  button.danger{
+    color:#fff;
+    background:var(--bad);
+    border-color:var(--bad);
+  }
+
+  button.ghost{
+    background:#fff;
+  }
+
+  button:disabled{
+    opacity:.5;
+    cursor:not-allowed;
+  }
+
+  .controls,
+  .chips,
+  .mini-grid,
+  .button-row{
+    display:grid;
+    grid-template-columns:1fr;
+    gap:8px;
+    width:100%;
+  }
+
+  .chip{
+    display:block;
+    border:1px solid var(--line);
+    background:#fff;
+    border-radius:999px;
+    padding:9px 11px;
+    font-size:.9rem;
+    overflow-wrap:anywhere;
+  }
+
+  .chip.good{border-color:#b7d2c0;color:var(--good);background:#f1faf4}
+  .chip.warn{border-color:#e5c790;color:var(--warn);background:#fff7e6}
+  .chip.bad{border-color:#e0a7a7;color:var(--bad);background:#fff0f0}
+
+  .candidate{
+    border:1px solid var(--line);
+    border-radius:16px;
+    padding:12px;
+    background:#fff;
+    display:grid;
+    gap:10px;
+  }
+
+  .headline-text{
+    font-weight:800;
+    font-size:1rem;
+    overflow-wrap:anywhere;
+    word-break:break-word;
+  }
+
+  .meta{
+    color:var(--muted);
+    font-size:.88rem;
+    overflow-wrap:anywhere;
+  }
+
+  .meter{
+    width:100%;
+    height:10px;
+    border-radius:999px;
+    border:1px solid var(--line);
+    background:#f0ebe4;
+    position:relative;
+  }
+
+  .meter-fill{
+    height:100%;
+    border-radius:999px;
+    background:var(--accent);
+    width:0%;
+  }
+
+  .flags{
+    display:grid;
+    grid-template-columns:1fr;
+    gap:6px;
+  }
+
+  .flag{
+    display:block;
+    border-radius:12px;
+    padding:8px 10px;
+    font-size:.86rem;
+    overflow-wrap:anywhere;
+    border:1px solid var(--line);
+    background:#faf7f1;
+  }
+
+  .flag.bad{
+    border-color:#e0a7a7;
+    color:var(--bad);
+    background:#fff0f0;
+  }
+
+  .flag.warn{
+    border-color:#e5c790;
+    color:var(--warn);
+    background:#fff7e6;
+  }
+
+  .flag.good{
+    border-color:#b7d2c0;
+    color:var(--good);
+    background:#f1faf4;
+  }
+
+  .match{
+    border:1px solid var(--line);
+    background:#fff;
+    border-radius:16px;
+    padding:12px;
+    display:grid;
+    gap:10px;
+    margin-bottom:10px;
+  }
+
+  .match-title{
+    font-weight:850;
+    overflow-wrap:anywhere;
+  }
+
+  .versus{
+    text-align:center;
+    color:var(--muted);
+    font-weight:800;
+    font-size:.84rem;
+    letter-spacing:.08em;
+  }
+
+  .pick{
+    text-align:left;
+    background:#fff;
+  }
+
+  .pick.selected{
+    border-color:var(--accent);
+    background:#edf6f2;
+  }
+
+  .pick-name{
+    display:block;
+    font-weight:850;
+    margin-bottom:5px;
+    overflow-wrap:anywhere;
+  }
+
+  .pick-score{
+    display:block;
+    color:var(--muted);
+    font-size:.86rem;
+    overflow-wrap:anywhere;
+  }
+
+  .reason-row{
+    display:grid;
+    grid-template-columns:1fr;
+    gap:8px;
+  }
+
+  .reason-row select{
+    min-height:46px;
+  }
+
+  .winner-box{
+    border:1px solid #b7d2c0;
+    background:#f1faf4;
+    color:#173f27;
+    border-radius:16px;
+    padding:12px;
+    display:grid;
+    gap:8px;
+  }
+
+  .brief{
+    min-height:210px;
+    font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+    font-size:.88rem;
+  }
+
+  .small{
+    font-size:.88rem;
+    color:var(--muted);
+  }
+
+  .empty{
+    border:1px dashed var(--line);
+    border-radius:16px;
+    padding:14px;
+    color:var(--muted);
+    background:#fffaf2;
+    overflow-wrap:anywhere;
+  }
+
+  .round-label{
+    display:block;
+    color:var(--muted);
+    font-size:.9rem;
+    margin-bottom:8px;
+    overflow-wrap:anywhere;
+  }
+
+  .path-list{
+    display:grid;
+    grid-template-columns:1fr;
+    gap:8px;
+    margin-top:8px;
+  }
+
+  .path-item{
+    border:1px solid var(--line);
+    background:#fff;
+    border-radius:13px;
+    padding:10px;
+    font-size:.9rem;
+    overflow-wrap:anywhere;
+  }
+
+  @media (min-width:680px){
+    .page{padding:22px}
+    .controls,
+    .button-row{
+      grid-template-columns:1fr 1fr;
+    }
+    .mini-grid{
+      grid-template-columns:1fr 1fr;
+    }
+  }
+</style>
+</head>
+<body>
+  <main class="page">
+    <header>
+      <h1>
+        <span>Headline</span>
+        <span>Promise</span>
+        <span>Bracket</span>
+      </h1>
+      <p class="lede">Paste 6 to 10 draft headlines. Score clarity, flag clickbait or overpromise risk, then choose winners through a pairwise bracket.</p>
+    </header>
+
+    <section class="stack">
+      <div class="card">
+        <h2>Draft headlines</h2>
+        <label for="headlineInput">One headline per line</label>
+        <textarea id="headlineInput" spellcheck="true" placeholder="Example:
+How to Find Hidden Content Gaps Before Your Competitors Do
+The Ultimate Guide to Ranking Overnight
+7 Homepage Claims That Need Better Evidence
+Why Most Service Pages Lose Trust Before the CTA
+A Simple Way to Turn Weak FAQs Into Better Buyer Answers
+Stop Publishing Blog Posts That Cannot Defend Their Claims"></textarea>
+        <p class="hint">Use 6 to 10 lines. The scoring is local only and runs in this file.</p>
+
+        <div class="controls" style="margin-top:10px">
+          <button class="primary" id="buildBtn">Build bracket</button>
+          <button class="ghost" id="sampleBtn">Load sample</button>
+          <button class="ghost" id="copyBtn">Copy winner brief</button>
+          <button class="ghost" id="downloadBtn">Download brief</button>
+          <button class="danger" id="clearBtn">Clear saved data</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>Status</h2>
+        <div class="chips" id="statusChips"></div>
+      </div>
+
+      <div class="card">
+        <h2>Scored headlines</h2>
+        <div class="stack" id="candidateList"></div>
+      </div>
+
+      <div class="card">
+        <h2>Pairwise bracket</h2>
+        <div id="bracketArea"></div>
+        <div class="button-row" style="margin-top:10px">
+          <button class="primary" id="nextRoundBtn" disabled>Advance round</button>
+          <button class="ghost" id="restartBracketBtn" disabled>Restart bracket</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>Winner brief</h2>
+        <div id="winnerPanel" class="empty">Build a bracket, choose winners, and the brief will appear here.</div>
+        <label for="briefOutput" style="margin-top:12px">Copyable brief</label>
+        <textarea id="briefOutput" class="brief" readonly placeholder="Winner brief will appear here."></textarea>
+      </div>
+    </section>
+  </main>
+
+<script>
+(function(){
+  "use strict";
+
+  var storageKey = "headlinePromiseBracket_v2";
+
+  var state = {
+    raw: "",
+    candidates: [],
+    rounds: [],
+    activeRound: 0,
+    complete: false,
+    winnerId: null
+  };
+
+  var sampleText = [
+    "How to Find Hidden Content Gaps Before Your Competitors Do",
+    "The Ultimate Guide to Ranking Overnight",
+    "7 Homepage Claims That Need Better Evidence",
+    "Why Most Service Pages Lose Trust Before the CTA",
+    "A Simple Way to Turn Weak FAQs Into Better Buyer Answers",
+    "Stop Publishing Blog Posts That Cannot Defend Their Claims",
+    "The Secret SEO Trick Nobody Tells You About",
+    "Build a Refresh Brief That Turns Stale Claims Into Safer Copy"
+  ].join("\n");
+
+  var els = {
+    headlineInput: document.getElementById("headlineInput"),
+    buildBtn: document.getElementById("buildBtn"),
+    sampleBtn: document.getElementById("sampleBtn"),
+    clearBtn: document.getElementById("clearBtn"),
+    copyBtn: document.getElementById("copyBtn"),
+    downloadBtn: document.getElementById("downloadBtn"),
+    nextRoundBtn: document.getElementById("nextRoundBtn"),
+    restartBracketBtn: document.getElementById("restartBracketBtn"),
+    statusChips: document.getElementById("statusChips"),
+    candidateList: document.getElementById("candidateList"),
+    bracketArea: document.getElementById("bracketArea"),
+    winnerPanel: document.getElementById("winnerPanel"),
+    briefOutput: document.getElementById("briefOutput")
+  };
+
+  function clamp(num, min, max){
+    return Math.max(min, Math.min(max, num));
+  }
+
+  function normalizeLine(line){
+    return String(line || "").replace(/\\s+/g, " ").trim();
+  }
+
+  function parseHeadlines(raw){
+    var seen = {};
+    return String(raw || "")
+      .split(/\r\n|\r|\n/)
+      .map(normalizeLine)
+      .filter(function(line){ return line.length > 0; })
+      .filter(function(line){
+        var key = line.toLowerCase();
+        if(seen[key]) return false;
+        seen[key] = true;
+        return true;
+      })
+      .slice(0, 10);
+  }
+
+  function wordsOf(text){
+    return normalizeLine(text).split(/\\s+/).filter(Boolean);
+  }
+
+  function hasPattern(text, patterns){
+    return patterns.some(function(rx){ return rx.test(text); });
+  }
+
+  function countMatches(text, patterns){
+    return patterns.reduce(function(total, rx){
+      return total + (rx.test(text) ? 1 : 0);
+    }, 0);
+  }
+
+  function analyzeHeadline(text, index){
+    var lower = text.toLowerCase();
+    var words = wordsOf(text);
+    var wordCount = words.length;
+
+    var clickbaitPatterns = [
+      /you won'?t believe/i,
+      /shocking/i,
+      /secret/i,
+      /one weird/i,
+      /insane/i,
+      /mind[- ]?blowing/i,
+      /nobody tells you/i,
+      /this changes everything/i,
+      /game[- ]?changer/i,
+      /viral/i,
+      /exposed/i,
+      /truth about/i,
+      /hack/i,
+      /trick/i
+    ];
+
+    var overpromisePatterns = [
+      /guarantee/i,
+      /guaranteed/i,
+      /always/i,
+      /never/i,
+      /instantly/i,
+      /overnight/i,
+      /effortless/i,
+      /foolproof/i,
+      /ultimate/i,
+      /perfect/i,
+      /dominate/i,
+      /explode/i,
+      /10x/i,
+      /100%/i,
+      /double/i,
+      /triple/i,
+      /everything you need/i,
+      /complete guide/i,
+      /only .* you need/i,
+      /without .{0,36}(work|effort|risk|evidence|proof)/i
+    ];
+
+    var vaguePatterns = [
+      /^this\\b/i,
+      /^these\\b/i,
+      /^that\\b/i,
+      /things/i,
+      /stuff/i,
+      /better results/i,
+      /get more/i,
+      /do more/i
+    ];
+
+    var actionPatterns = [
+      /how to/i,
+      /build/i,
+      /find/i,
+      /turn/i,
+      /score/i,
+      /fix/i,
+      /avoid/i,
+      /compare/i,
+      /choose/i,
+      /rank/i,
+      /write/i,
+      /create/i,
+      /refresh/i,
+      /defend/i,
+      /prove/i,
+      /reduce/i
+    ];
+
+    var contextPatterns = [
+      /for\\s+[a-z0-9]/i,
+      /when\\s+[a-z0-9]/i,
+      /before\\s+[a-z0-9]/i,
+      /after\\s+[a-z0-9]/i,
+      /without\\s+[a-z0-9]/i,
+      /with\\s+[a-z0-9]/i,
+      /buyer/i,
+      /client/i,
+      /customer/i,
+      /founder/i,
+      /team/i,
+      /service page/i,
+      /homepage/i,
+      /faq/i,
+      /article/i,
+      /blog/i,
+      /headline/i,
+      /content/i,
+      /copy/i
+    ];
+
+    var hasNumber = /\\b\\d+[\\w%]*\\b/.test(text);
+    var hasAction = hasPattern(text, actionPatterns);
+    var hasContext = hasPattern(text, contextPatterns);
+    var clickbaitHits = countMatches(text, clickbaitPatterns);
+    var overpromiseHits = countMatches(text, overpromisePatterns);
+    var vagueHits = countMatches(text, vaguePatterns);
+    var longConcreteWords = words.filter(function(w){
+      return w.replace(/[^a-z0-9]/gi,"").length >= 7;
+    }).length;
+
+    var clarity = 48;
+
+    if(wordCount >= 6 && wordCount <= 12) clarity += 18;
+    if(wordCount >= 13 && wordCount <= 15) clarity += 6;
+    if(wordCount < 5) clarity -= 16;
+    if(wordCount > 15) clarity -= 12;
+
+    if(hasNumber) clarity += 8;
+    if(hasAction) clarity += 11;
+    if(hasContext) clarity += 10;
+    clarity += clamp(longConcreteWords * 2, 0, 8);
+
+    if(vagueHits) clarity -= 7;
+    if(clickbaitHits) clarity -= clickbaitHits * 8;
+    if(overpromiseHits) clarity -= overpromiseHits * 9;
+
+    clarity = clamp(Math.round(clarity), 0, 100);
+
+    var promise = 45;
+    if(hasAction) promise += 14;
+    if(hasContext) promise += 12;
+    if(hasNumber) promise += 8;
+    if(/\\b(claim|evidence|proof|risk|gap|brief|cta|refresh|buyer|faq|competitor|trust|headline|copy|conversion|angle)\\b/i.test(text)) promise += 8;
+    if(wordCount >= 6 && wordCount <= 13) promise += 8;
+    promise -= clickbaitHits * 9;
+    promise -= overpromiseHits * 11;
+    promise -= vagueHits * 6;
+    promise = clamp(Math.round(promise), 0, 100);
+
+    var risk = 0;
+    risk += clickbaitHits * 28;
+    risk += overpromiseHits * 30;
+    risk += vagueHits * 10;
+    if(wordCount > 16) risk += 10;
+    if(wordCount < 5) risk += 8;
+    risk = clamp(risk, 0, 100);
+
+    var overall = clamp(Math.round((clarity * .45) + (promise * .45) + ((100 - risk) * .10)), 0, 100);
+
+    var flags = [];
+
+    if(clickbaitHits){
+      flags.push({
+        type:"bad",
+        label:"Clickbait risk",
+        detail:"Uses curiosity pressure or hype language that may weaken trust."
+      });
+    }
+
+    if(overpromiseHits){
+      flags.push({
+        type:"bad",
+        label:"Overpromise risk",
+        detail:"Contains absolute, inflated, or hard-to-prove promise language."
+      });
+    }
+
+    if(vagueHits){
+      flags.push({
+        type:"warn",
+        label:"Vague promise",
+        detail:"The reader may not know what concrete outcome is being promised."
+      });
+    }
+
+    if(wordCount < 5){
+      flags.push({
+        type:"warn",
+        label:"Too thin",
+        detail:"Short headline may need more context, audience, or outcome."
+      });
+    }
+
+    if(wordCount > 15){
+      flags.push({
+        type:"warn",
+        label:"Too long",
+        detail:"Headline may lose clarity on a phone-sized result card."
+      });
+    }
+
+    if(!hasAction){
+      flags.push({
+        type:"warn",
+        label:"Weak action",
+        detail:"Add a clearer verb or reader job."
+      });
+    }
+
+    if(!hasContext){
+      flags.push({
+        type:"warn",
+        label:"Missing context",
+        detail:"Consider adding audience, situation, or constraint."
+      });
+    }
+
+    if(flags.length === 0){
+      flags.push({
+        type:"good",
+        label:"Low obvious risk",
+        detail:"Promise looks reasonably clear and defensible."
+      });
+    }
+
+    var strengths = [];
+    if(hasAction) strengths.push("clear action");
+    if(hasContext) strengths.push("reader context");
+    if(hasNumber) strengths.push("specific number");
+    if(longConcreteWords >= 2) strengths.push("concrete wording");
+    if(risk < 20) strengths.push("low hype risk");
+    if(strengths.length === 0) strengths.push("usable draft");
+
+    return {
+      id:"h" + index + "_" + Date.now(),
+      text:text,
+      wordCount:wordCount,
+      clarity:clarity,
+      promise:promise,
+      risk:risk,
+      score:overall,
+      flags:flags,
+      strengths:strengths
+    };
+  }
+
+  function save(){
+    var toSave = {
+      raw: els.headlineInput.value,
+      candidates: state.candidates,
+      rounds: state.rounds,
+      activeRound: state.activeRound,
+      complete: state.complete,
+      winnerId: state.winnerId
+    };
+    try{
+      localStorage.setItem(storageKey, JSON.stringify(toSave));
+    }catch(err){}
+  }
+
+  function load(){
+    try{
+      var saved = JSON.parse(localStorage.getItem(storageKey) || "null");
+      if(saved){
+        state.raw = saved.raw || "";
+        state.candidates = Array.isArray(saved.candidates) ? saved.candidates : [];
+        state.rounds = Array.isArray(saved.rounds) ? saved.rounds : [];
+        state.activeRound = saved.activeRound || 0;
+        state.complete = !!saved.complete;
+        state.winnerId = saved.winnerId || null;
+        els.headlineInput.value = state.raw;
+      }
+    }catch(err){}
+  }
+
+  function byId(id){
+    return state.candidates.find(function(c){ return c.id === id; }) || null;
+  }
+
+  function clearNode(node){
+    while(node.firstChild) node.removeChild(node.firstChild);
+  }
+
+  function make(tag, className, text){
+    var el = document.createElement(tag);
+    if(className) el.className = className;
+    if(text !== undefined && text !== null) el.textContent = text;
+    return el;
+  }
+
+  function addChip(label, value, tone){
+    var chip = make("div", "chip " + (tone || ""), "");
+    var strong = make("strong", "", label + ": ");
+    var span = make("span", "", value);
+    chip.appendChild(strong);
+    chip.appendChild(span);
+    els.statusChips.appendChild(chip);
+  }
+
+  function renderStatus(){
+    clearNode(els.statusChips);
+    var count = parseHeadlines(els.headlineInput.value).length;
+    var valid = count >= 6 && count <= 10;
+    addChip("Headlines", String(count) + " / 6-10", valid ? "good" : "warn");
+
+    if(state.candidates.length){
+      var avgClarity = Math.round(state.candidates.reduce(function(sum,c){ return sum + c.clarity; },0) / state.candidates.length);
+      var avgRisk = Math.round(state.candidates.reduce(function(sum,c){ return sum + c.risk; },0) / state.candidates.length);
+      addChip("Avg clarity", String(avgClarity), avgClarity >= 70 ? "good" : "warn");
+      addChip("Avg risk", String(avgRisk), avgRisk >= 45 ? "bad" : avgRisk >= 25 ? "warn" : "good");
+    }else{
+      addChip("Avg clarity", "not scored", "");
+      addChip("Avg risk", "not scored", "");
+    }
+
+    if(state.winnerId){
+      var winner = byId(state.winnerId);
+      addChip("Winner", winner ? winner.text : "selected", "good");
+    }else{
+      addChip("Winner", "not chosen", "");
+    }
+  }
+
+  function renderCandidates(){
+    clearNode(els.candidateList);
+
+    if(!state.candidates.length){
+      els.candidateList.appendChild(make("div", "empty", "No scored headlines yet."));
+      return;
+    }
+
+    var sorted = state.candidates.slice().sort(function(a,b){ return b.score - a.score; });
+
+    sorted.forEach(function(c, idx){
+      var card = make("div", "candidate", "");
+      card.appendChild(make("div", "headline-text", String(idx + 1) + ". " + c.text));
+      card.appendChild(make("div", "meta", "Score " + c.score + " · Clarity " + c.clarity + " · Promise " + c.promise + " · Risk " + c.risk + " · " + c.wordCount + " words"));
+
+      var meter = make("div", "meter", "");
+      var fill = make("div", "meter-fill", "");
+      fill.style.width = c.score + "%";
+      meter.appendChild(fill);
+      card.appendChild(meter);
+
+      var flags = make("div", "flags", "");
+      c.flags.forEach(function(f){
+        flags.appendChild(make("div", "flag " + f.type, f.label + ": " + f.detail));
+      });
+      card.appendChild(flags);
+
+      els.candidateList.appendChild(card);
+    });
+  }
+
+  function pairEntrants(ids){
+    var seeded = ids.slice().sort(function(a,b){
+      var ca = byId(a);
+      var cb = byId(b);
+      return (cb ? cb.score : 0) - (ca ? ca.score : 0);
+    });
+
+    var matchups = [];
+    var left = 0;
+    var right = seeded.length - 1;
+
+    while(left <= right){
+      if(left === right){
+        matchups.push({
+          a: seeded[left],
+          b: null,
+          winnerId: seeded[left],
+          reason: "Bye"
+        });
+      }else{
+        matchups.push({
+          a: seeded[left],
+          b: seeded[right],
+          winnerId: null,
+          reason: "Clearer promise"
+        });
+      }
+      left++;
+      right--;
+    }
+
+    return matchups;
+  }
+
+  function roundName(index, entrantCount){
+    if(entrantCount <= 2) return "Final";
+    if(entrantCount <= 4) return "Semifinal";
+    return "Round " + (index + 1);
+  }
+
+  function buildBracket(){
+    var raw = els.headlineInput.value;
+    var lines = parseHeadlines(raw);
+
+    if(lines.length < 6 || lines.length > 10){
+      state.candidates = [];
+      state.rounds = [];
+      state.activeRound = 0;
+      state.complete = false;
+      state.winnerId = null;
+      renderAll();
+      clearNode(els.bracketArea);
+      els.bracketArea.appendChild(make("div", "empty", "Paste 6 to 10 unique headlines before building the bracket."));
+      return;
+    }
+
+    state.raw = raw;
+    state.candidates = lines.map(analyzeHeadline);
+    var ids = state.candidates.map(function(c){ return c.id; });
+
+    state.rounds = [{
+      name: roundName(0, ids.length),
+      matchups: pairEntrants(ids)
+    }];
+
+    state.activeRound = 0;
+    state.complete = false;
+    state.winnerId = null;
+
+    save();
+    renderAll();
+  }
+
+  function activeRound(){
+    return state.rounds[state.activeRound] || null;
+  }
+
+  function allPicked(round){
+    if(!round) return false;
+    return round.matchups.every(function(m){ return !!m.winnerId; });
+  }
+
+  function getRunnerUp(){
+    if(!state.complete || !state.rounds.length) return null;
+    var finalRound = state.rounds[state.rounds.length - 1];
+    if(!finalRound || !finalRound.matchups.length) return null;
+    var final = finalRound.matchups[0];
+    if(!final.b) return null;
+    var loserId = final.winnerId === final.a ? final.b : final.a;
+    return byId(loserId);
+  }
+
+  function pickWinner(matchIndex, id){
+    var round = activeRound();
+    if(!round) return;
+    var match = round.matchups[matchIndex];
+    if(!match) return;
+    match.winnerId = id;
+
+    var selected = document.getElementById("reason_" + matchIndex);
+    if(selected) match.reason = selected.value;
+
+    save();
+    renderAll();
+  }
+
+  function setReason(matchIndex, reason){
+    var round = activeRound();
+    if(!round) return;
+    var match = round.matchups[matchIndex];
+    if(!match) return;
+    match.reason = reason;
+    save();
+    updateBriefOnly();
+  }
+
+  function advanceRound(){
+    var round = activeRound();
+    if(!round || !allPicked(round)) return;
+
+    var winners = round.matchups.map(function(m){ return m.winnerId; }).filter(Boolean);
+
+    if(winners.length === 1){
+      state.complete = true;
+      state.winnerId = winners[0];
+      save();
+      renderAll();
+      return;
+    }
+
+    state.activeRound += 1;
+    state.rounds.push({
+      name: roundName(state.activeRound, winners.length),
+      matchups: pairEntrants(winners)
+    });
+
+    save();
+    renderAll();
+  }
+
+  function restartBracket(){
+    if(!state.candidates.length) return;
+    var ids = state.candidates.map(function(c){ return c.id; });
+    state.rounds = [{
+      name: roundName(0, ids.length),
+      matchups: pairEntrants(ids)
+    }];
+    state.activeRound = 0;
+    state.complete = false;
+    state.winnerId = null;
+    save();
+    renderAll();
+  }
+
+  function renderPick(matchIndex, candidateId, selectedId){
+    var c = byId(candidateId);
+    var btn = make("button", "pick" + (candidateId === selectedId ? " selected" : ""), "");
+    btn.type = "button";
+
+    if(c){
+      btn.appendChild(make("span", "pick-name", c.text));
+      btn.appendChild(make("span", "pick-score", "Score " + c.score + " · Clarity " + c.clarity + " · Promise " + c.promise + " · Risk " + c.risk));
+    }else{
+      btn.appendChild(make("span", "pick-name", "Missing headline"));
+    }
+
+    btn.addEventListener("click", function(){
+      pickWinner(matchIndex, candidateId);
+    });
+
+    return btn;
+  }
+
+  function renderBracket(){
+    clearNode(els.bracketArea);
+
+    if(!state.rounds.length){
+      els.bracketArea.appendChild(make("div", "empty", "Build a bracket to start pairwise judging."));
+      els.nextRoundBtn.disabled = true;
+      els.restartBracketBtn.disabled = true;
+      return;
+    }
+
+    var round = activeRound();
+    var label = make("div", "round-label", (round ? round.name : "Bracket") + (state.complete ? " · complete" : ""));
+    els.bracketArea.appendChild(label);
+
+    if(state.complete){
+      var winner = byId(state.winnerId);
+      var box = make("div", "winner-box", "");
+      box.appendChild(make("div", "match-title", "Winner"));
+      box.appendChild(make("div", "headline-text", winner ? winner.text : "Winner selected"));
+      els.bracketArea.appendChild(box);
+      els.nextRoundBtn.disabled = true;
+      els.restartBracketBtn.disabled = false;
+      return;
+    }
+
+    if(!round){
+      els.bracketArea.appendChild(make("div", "empty", "No active round."));
+      els.nextRoundBtn.disabled = true;
+      els.restartBracketBtn.disabled = false;
+      return;
+    }
+
+    round.matchups.forEach(function(m, idx){
+      var match = make("div", "match", "");
+      var title = make("div", "match-title", "Match " + (idx + 1));
+      match.appendChild(title);
+
+      if(m.b === null){
+        var byeCandidate = byId(m.a);
+        match.appendChild(make("div", "winner-box", "Bye: " + (byeCandidate ? byeCandidate.text : "Headline advances")));
+      }else{
+        match.appendChild(renderPick(idx, m.a, m.winnerId));
+        match.appendChild(make("div", "versus", "VS"));
+        match.appendChild(renderPick(idx, m.b, m.winnerId));
+
+        var reasonWrap = make("div", "reason-row", "");
+        var reasonLabel = make("label", "", "Why this one should advance");
+        reasonLabel.setAttribute("for", "reason_" + idx);
+        var select = make("select", "", "");
+        select.id = "reason_" + idx;
+
+        [
+          "Clearer promise",
+          "More specific outcome",
+          "Lower clickbait risk",
+          "Lower overpromise risk",
+          "Better reader fit",
+          "Stronger curiosity without hype",
+          "Easier to prove"
+        ].forEach(function(optionText){
+          var option = make("option", "", optionText);
+          option.value = optionText;
+          if(m.reason === optionText) option.selected = true;
+          select.appendChild(option);
+        });
+
+        select.addEventListener("change", function(){
+          setReason(idx, select.value);
+        });
+
+        reasonWrap.appendChild(reasonLabel);
+        reasonWrap.appendChild(select);
+        match.appendChild(reasonWrap);
+      }
+
+      els.bracketArea.appendChild(match);
+    });
+
+    els.nextRoundBtn.disabled = !allPicked(round);
+    els.restartBracketBtn.disabled = false;
+  }
+
+  function flagSummary(c){
+    if(!c) return "No winner selected.";
+    var bad = c.flags.filter(function(f){ return f.type === "bad"; });
+    var warn = c.flags.filter(function(f){ return f.type === "warn"; });
+    if(!bad.length && !warn.length) return "No major clickbait or overpromise flags.";
+    return bad.concat(warn).map(function(f){ return f.label + " — " + f.detail; }).join("\n");
+  }
+
+  function cleanupAdvice(c){
+    if(!c) return [];
+    var advice = [];
+
+    c.flags.forEach(function(f){
+      if(f.label === "Clickbait risk"){
+        advice.push("Replace hype curiosity with a concrete reader problem or outcome.");
+      }
+      if(f.label === "Overpromise risk"){
+        advice.push("Soften absolute words and add evidence, constraint, or time frame.");
+      }
+      if(f.label === "Vague promise"){
+        advice.push("Name the actual task, audience, or payoff.");
+      }
+      if(f.label === "Too long"){
+        advice.push("Cut filler so the main promise survives on a small screen.");
+      }
+      if(f.label === "Too thin"){
+        advice.push("Add a sharper noun, audience, or result.");
+      }
+      if(f.label === "Weak action"){
+        advice.push("Use a verb that tells the reader what they can do or judge.");
+      }
+      if(f.label === "Missing context"){
+        advice.push("Add who it is for, when it matters, or what constraint it solves.");
+      }
+    });
+
+    var unique = [];
+    advice.forEach(function(item){
+      if(unique.indexOf(item) === -1) unique.push(item);
+    });
+
+    if(!unique.length){
+      unique.push("Keep the promise specific and match it with visible proof in the article.");
+    }
+
+    return unique;
+  }
+
+  function bracketPath(winnerId){
+    var lines = [];
+
+    state.rounds.forEach(function(round){
+      round.matchups.forEach(function(m, matchIndex){
+        if(m.winnerId === winnerId){
+          var a = byId(m.a);
+          var b = byId(m.b);
+          if(b){
+            var loser = m.a === winnerId ? b : a;
+            lines.push(round.name + ", match " + (matchIndex + 1) + ": beat “" + (loser ? loser.text : "opponent") + "” because " + (m.reason || "it had the stronger promise") + ".");
+          }else{
+            lines.push(round.name + ", match " + (matchIndex + 1) + ": advanced with a bye.");
+          }
+        }
+      });
+    });
+
+    return lines;
+  }
+
+  function buildBrief(){
+    var winner = byId(state.winnerId);
+    if(!winner){
+      var top = state.candidates.slice().sort(function(a,b){ return b.score - a.score; })[0];
+      if(!top){
+        return "";
+      }
+      return [
+        "HEADLINE PROMISE BRACKET",
+        "",
+        "No bracket winner selected yet.",
+        "",
+        "Current top scored draft:",
+        top.text,
+        "",
+        "Score: " + top.score,
+        "Clarity: " + top.clarity,
+        "Promise: " + top.promise,
+        "Risk: " + top.risk,
+        "",
+        "Flags:",
+        flagSummary(top)
+      ].join("\n");
+    }
+
+    var runner = getRunnerUp();
+    var path = bracketPath(winner.id);
+    var advice = cleanupAdvice(winner);
+
+    return [
+      "HEADLINE PROMISE BRACKET WINNER BRIEF",
+      "",
+      "Winner:",
+      winner.text,
+      "",
+      "Scores:",
+      "Overall: " + winner.score,
+      "Clarity: " + winner.clarity,
+      "Promise: " + winner.promise,
+      "Risk: " + winner.risk,
+      "",
+      "Why it won:",
+      winner.strengths.join(", ") + ".",
+      "",
+      runner ? "Final runner-up:\n" + runner.text : "Final runner-up:\nNot available yet.",
+      "",
+      "Bracket path:",
+      path.length ? path.join("\n") : "No completed path yet.",
+      "",
+      "Risk flags:",
+      flagSummary(winner),
+      "",
+      "Revision checks before publishing:",
+      advice.map(function(item, idx){ return (idx + 1) + ". " + item; }).join("\n"),
+      "",
+      "Proof note:",
+      "Make sure the article, page, or asset visibly delivers the exact promise in the headline."
+    ].join("\n");
+  }
+
+  function updateBriefOnly(){
+    var brief = buildBrief();
+    els.briefOutput.value = brief;
+
+    clearNode(els.winnerPanel);
+
+    if(state.winnerId){
+      var winner = byId(state.winnerId);
+      var panel = make("div", "winner-box", "");
+      panel.appendChild(make("div", "match-title", "Selected winner"));
+      panel.appendChild(make("div", "headline-text", winner ? winner.text : "Winner selected"));
+      panel.appendChild(make("div", "meta", winner ? "Score " + winner.score + " · Clarity " + winner.clarity + " · Promise " + winner.promise + " · Risk " + winner.risk : ""));
+      els.winnerPanel.className = "";
+      els.winnerPanel.appendChild(panel);
+
+      var path = bracketPath(state.winnerId);
+      if(path.length){
+        var pathWrap = make("div", "path-list", "");
+        path.forEach(function(line){
+          pathWrap.appendChild(make("div", "path-item", line));
+        });
+        els.winnerPanel.appendChild(pathWrap);
+      }
+    }else if(state.candidates.length){
+      els.winnerPanel.className = "empty";
+      els.winnerPanel.textContent = "Scored drafts are ready. Finish the bracket to create a winner brief.";
+    }else{
+      els.winnerPanel.className = "empty";
+      els.winnerPanel.textContent = "Build a bracket, choose winners, and the brief will appear here.";
+    }
+  }
+
+  function renderAll(){
+    renderStatus();
+    renderCandidates();
+    renderBracket();
+    updateBriefOnly();
+  }
+
+  function copyBrief(){
+    var text = els.briefOutput.value || buildBrief();
+    if(!text.trim()){
+      alert("No brief to copy yet.");
+      return;
+    }
+
+    if(navigator.clipboard && navigator.clipboard.writeText){
+      navigator.clipboard.writeText(text).then(function(){
+        alert("Winner brief copied.");
+      }).catch(function(){
+        fallbackCopy(text);
+      });
+    }else{
+      fallbackCopy(text);
+    }
+  }
+
+  function fallbackCopy(text){
+    els.briefOutput.value = text;
+    els.briefOutput.focus();
+    els.briefOutput.select();
+    try{
+      document.execCommand("copy");
+      alert("Winner brief copied.");
+    }catch(err){
+      alert("Copy failed. Select the brief text and copy it manually.");
+    }
+  }
+
+  function downloadBrief(){
+    var text = els.briefOutput.value || buildBrief();
+    if(!text.trim()){
+      alert("No brief to download yet.");
+      return;
+    }
+
+    var blob = new Blob([text], {type:"text/plain;charset=utf-8"});
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement("a");
+    var stamp = new Date().toISOString().slice(0,10);
+    a.href = url;
+    a.download = "headline-winner-brief-" + stamp + ".txt";
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+  }
+
+  els.headlineInput.addEventListener("input", function(){
+    state.raw = els.headlineInput.value;
+    save();
+    renderStatus();
+  });
+
+  els.buildBtn.addEventListener("click", buildBracket);
+
+  els.sampleBtn.addEventListener("click", function(){
+    els.headlineInput.value = sampleText;
+    state.raw = sampleText;
+    save();
+    renderStatus();
+  });
+
+  els.clearBtn.addEventListener("click", function(){
+    els.headlineInput.value = "";
+    state = {
+      raw: "",
+      candidates: [],
+      rounds: [],
+      activeRound: 0,
+      complete: false,
+      winnerId: null
+    };
+    try{ localStorage.removeItem(storageKey); }catch(err){}
+    renderAll();
+  });
+
+  els.nextRoundBtn.addEventListener("click", advanceRound);
+  els.restartBracketBtn.addEventListener("click", restartBracket);
+  els.copyBtn.addEventListener("click", copyBrief);
+  els.downloadBtn.addEventListener("click", downloadBrief);
+
+  load();
+  renderAll();
+})();
+</script>
+</body>
+</html>

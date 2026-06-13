@@ -1,0 +1,728 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fridge Tetris Meal Prep Planner</title>
+    <script src="https://cdn.jsdelivr.net/npm/lucide@0.344.0/dist/umd/lucide.min.js"></script>
+    <style>
+        :root {
+            --bg-main: #0f172a;
+            --bg-card: #1e293b;
+            --bg-accent: #334155;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --primary: #38bdf8;
+            --primary-hover: #0ea5e9;
+            --danger: #ef4444;
+            --success: #22c55e;
+            --warning: #f59e0b;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            background-color: var(--bg-main);
+            color: var(--text-main);
+            padding: 12px;
+            max-width: 500px;
+            margin: 0 auto;
+            min-height: 100vh;
+            padding-bottom: 80px;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 16px;
+            padding: 12px;
+            background: var(--bg-card);
+            border-radius: 12px;
+            border: 1px solid var(--bg-accent);
+        }
+
+        header h1 {
+            font-size: 1.4rem;
+            color: var(--primary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        header p {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            margin-top: 4px;
+        }
+
+        .dashboard {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 16px;
+        }
+
+        .stat-card {
+            flex: 1;
+            background: var(--bg-card);
+            padding: 10px;
+            border-radius: 10px;
+            text-align: center;
+            border: 1px solid var(--bg-accent);
+        }
+
+        .stat-card .label {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .stat-card .val {
+            font-size: 1.2rem;
+            font-weight: bold;
+            margin-top: 2px;
+        }
+
+        .section-title {
+            font-size: 1rem;
+            color: var(--text-muted);
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .grid-container {
+            background: var(--bg-card);
+            padding: 12px;
+            border-radius: 12px;
+            border: 1px solid var(--bg-accent);
+            margin-bottom: 16px;
+        }
+
+        .tetris-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 8px;
+        }
+
+        .slot {
+            background: var(--bg-main);
+            border: 2px dashed var(--bg-accent);
+            border-radius: 8px;
+            min-height: 85px;
+            padding: 6px;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            transition: all 0.2s ease;
+        }
+
+        .slot.active-target {
+            border-color: var(--primary);
+            background: rgba(56, 189, 248, 0.05);
+        }
+
+        .slot-header {
+            font-size: 0.75rem;
+            font-weight: bold;
+            color: var(--text-muted);
+            margin-bottom: 4px;
+            text-transform: uppercase;
+        }
+
+        .meal-pool {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            margin-bottom: 16px;
+        }
+
+        .meal-card {
+            background: var(--bg-card);
+            border: 1px solid var(--bg-accent);
+            border-left: 4px solid var(--primary);
+            border-radius: 8px;
+            padding: 10px;
+            position: relative;
+            cursor: pointer;
+            transition: transform 0.1s ease, border-color 0.2s;
+        }
+
+        .meal-card.selected {
+            border-color: var(--primary);
+            transform: scale(0.98);
+            box-shadow: 0 0 0 2px var(--primary);
+        }
+
+        .meal-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 4px;
+        }
+
+        .meal-name {
+            font-weight: bold;
+            font-size: 0.95rem;
+        }
+
+        .meal-meta {
+            display: flex;
+            gap: 8px;
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            margin-top: 4px;
+        }
+
+        .tag {
+            padding: 2px 6px;
+            border-radius: 4px;
+            background: var(--bg-main);
+            display: inline-flex;
+            align-items: center;
+            gap: 3px;
+        }
+
+        .tag.spoiled { color: var(--danger); }
+        .tag.warning { color: var(--warning); }
+        .tag.good { color: var(--success); }
+
+        .card-actions {
+            position: absolute;
+            right: 8px;
+            bottom: 8px;
+            display: flex;
+            gap: 8px;
+        }
+
+        .icon-btn {
+            background: transparent;
+            border: none;
+            color: var(--text-muted);
+            cursor: pointer;
+            padding: 4px;
+            border-radius: 4px;
+        }
+
+        .icon-btn:hover {
+            color: var(--text-main);
+            background: var(--bg-accent);
+        }
+
+        .slot .meal-card {
+            margin: 0;
+            height: 100%;
+            border-left-width: 3px;
+            padding: 6px;
+        }
+
+        .slot .meal-meta {
+            display: none;
+        }
+
+        .slot .card-actions {
+            right: 4px;
+            bottom: 4px;
+        }
+
+        .action-bar {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: var(--bg-card);
+            border-top: 1px solid var(--bg-accent);
+            padding: 12px;
+            display: flex;
+            justify-content: center;
+            gap: 12px;
+            max-width: 500px;
+            margin: 0 auto;
+            z-index: 100;
+        }
+
+        button.btn {
+            background: var(--bg-accent);
+            color: var(--text-main);
+            border: none;
+            padding: 10px 16px;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 0.9rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            flex: 1;
+            justify-content: center;
+        }
+
+        button.btn-primary {
+            background: var(--primary);
+            color: var(--bg-main);
+        }
+
+        button.btn-primary:hover { background: var(--primary-hover); }
+
+        /* Modal / Drawer Setup */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.7);
+            display: none;
+            justify-content: center;
+            align-items: flex-end;
+            z-index: 1000;
+        }
+
+        .modal-overlay.active { display: flex; }
+
+        .modal {
+            background: var(--bg-card);
+            width: 100%;
+            max-width: 500px;
+            border-radius: 16px 16px 0 0;
+            padding: 20px;
+            box-shadow: 0 -4px 24px rgba(0,0,0,0.5);
+            animation: slideUp 0.2s ease-out;
+        }
+
+        @keyframes slideUp {
+            from { transform: translateY(100%); }
+            to { transform: translateY(0); }
+        }
+
+        .modal h2 {
+            font-size: 1.2rem;
+            margin-bottom: 16px;
+            color: var(--primary);
+        }
+
+        .form-group {
+            margin-bottom: 12px;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            margin-bottom: 4px;
+            text-transform: uppercase;
+        }
+
+        .form-group input, .form-group select {
+            width: 100%;
+            background: var(--bg-main);
+            border: 1px solid var(--bg-accent);
+            color: var(--text-main);
+            padding: 10px;
+            border-radius: 6px;
+            font-size: 0.95rem;
+        }
+
+        .form-group input:focus, .form-group select:focus {
+            outline: 1px solid var(--primary);
+        }
+
+        .modal-buttons {
+            display: flex;
+            gap: 8px;
+            margin-top: 16px;
+        }
+
+        /* Toast notification */
+        .toast {
+            position: fixed;
+            bottom: 80px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--success);
+            color: var(--bg-main);
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-weight: 600;
+            font-size: 0.85rem;
+            opacity: 0;
+            transition: opacity 0.2s ease;
+            z-index: 2000;
+            pointer-events: none;
+        }
+
+        .toast.show { opacity: 1; }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1><i data-lucide="refrigerator"></i> Fridge Tetris Planner</h1>
+        <p>Tap a card, then tap a grid slot to place it.</p>
+    </header>
+
+    <div class="dashboard">
+        <div class="stat-card">
+            <div class="label">Total Cook Time</div>
+            <div class="val" id="total-cook">0m</div>
+        </div>
+        <div class="stat-card">
+            <div class="label">Risk Status</div>
+            <div class="val" id="risk-score" style="color: var(--success);">Safe</div>
+        </div>
+    </div>
+
+    <div class="section-title"><i data-lucide="layout-grid"></i> Fridge Layout</div>
+    <div class="grid-container">
+        <div class="tetris-grid" id="tetris-grid">
+            <!-- Dynamic Slots -->
+        </div>
+    </div>
+
+    <div class="section-title"><i data-lucide="sandwich"></i> Available Meals</div>
+    <div class="meal-pool" id="meal-pool">
+        <!-- Dynamic Cards -->
+    </div>
+
+    <div class="action-bar">
+        <button class="btn" id="add-meal-btn"><i data-lucide="plus"></i> Add Meal</button>
+        <button class="btn btn-primary" id="export-btn"><i data-lucide="download"></i> Export List</button>
+    </div>
+
+    <!-- Edit/Add Modal -->
+    <div class="modal-overlay" id="modal-overlay">
+        <div class="modal">
+            <h2 id="modal-title">Edit Meal</h2>
+            <input type="hidden" id="edit-id">
+            <div class="form-group">
+                <label>Meal Name</label>
+                <input type="text" id="edit-name" placeholder="e.g., Garlic Herb Chicken & Rice">
+            </div>
+            <div class="form-group" style="display: flex; gap: 8px;">
+                <div style="flex: 1;">
+                    <label>Cook Time (mins)</label>
+                    <input type="number" id="edit-cook" min="0">
+                </div>
+                <div style="flex: 1;">
+                    <label>Shelf Life (days)</label>
+                    <input type="number" id="edit-life" min="1">
+                </div>
+            </div>
+            <div class="form-group">
+                <label>Ingredients (comma separated)</label>
+                <input type="text" id="edit-ingredients" placeholder="e.g., Chicken breast, rice, broccoli">
+            </div>
+            <div class="modal-buttons">
+                <button class="btn" id="modal-cancel">Cancel</button>
+                <button class="btn btn-primary" id="modal-save">Save</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="toast" id="toast">Copied to clipboard!</div>
+
+    <script>
+        // Internal State
+        let meals = [
+            { id: '1', name: 'Garlic Herb Chicken & Rice', cookTime: 25, shelfLife: 4, ingredients: 'Chicken breast, Jasmine rice, Broccoli, Garlic butter' },
+            { id: '2', name: 'Smoked Salmon Quinoa Bowl', cookTime: 10, shelfLife: 2, ingredients: 'Smoked salmon, Quinoa, Cucumber, Dill, Lemon' },
+            { id: '3', name: 'Lean Beef & Sweet Potato', cookTime: 30, shelfLife: 5, ingredients: '93% Lean ground beef, Sweet potato, Green beans' }
+        ];
+
+        // 6 Slots mapping grid deployment
+        const slots = [
+            { id: 'slot-1', name: 'Mon / Upper Shelf', mealId: null, sequence: 1 },
+            { id: 'slot-2', name: 'Tue / Upper Shelf', mealId: null, sequence: 2 },
+            { id: 'slot-3', name: 'Wed / Mid Shelf', mealId: null, sequence: 3 },
+            { id: 'slot-4', name: 'Thu / Mid Shelf', mealId: null, sequence: 4 },
+            { id: 'slot-5', name: 'Fri / Crisper Drawer', mealId: null, sequence: 5 },
+            { id: 'slot-6', name: 'Sat / Crisper Drawer', mealId: null, sequence: 6 }
+        ];
+
+        let selectedMealId = null;
+
+        // Initialize DOM Elements
+        const gridEl = document.getElementById('tetris-grid');
+        const poolEl = document.getElementById('meal-pool');
+        const totalCookEl = document.getElementById('total-cook');
+        const riskScoreEl = document.getElementById('risk-score');
+        const modalOverlay = document.getElementById('modal-overlay');
+        const toastEl = document.getElementById('toast');
+
+        function init() {
+            renderGrid();
+            renderPool();
+            calculateMetrics();
+            lucide.createIcons();
+            setupEventListeners();
+        }
+
+        function renderGrid() {
+            gridEl.innerHTML = '';
+            slots.forEach(slot => {
+                const matchedMeal = meals.find(m => m.id === slot.mealId);
+                let innerContent = `<div class="slot-header">${slot.name}</div>`;
+                
+                if (matchedMeal) {
+                    const status = getSpoilageStatus(matchedMeal.shelfLife, slot.sequence);
+                    innerContent += `
+                        <div class="meal-card" style="border-left-color: ${status.color}">
+                            <div class="meal-name">${matchedMeal.name}</div>
+                            <div class="card-actions">
+                                <button class="icon-btn remove-placement" data-slot-id="${slot.id}"><i data-lucide="tritium" style="width:14px;height:14px;">×</i></button>
+                            </div>
+                        </div>
+                    `;
+                }
+
+                const slotDiv = document.createElement('div');
+                slotDiv.className = `slot ${selectedMealId ? 'active-target' : ''}`;
+                slotDiv.dataset.slotId = slot.id;
+                slotDiv.innerHTML = innerContent;
+                gridEl.appendChild(slotDiv);
+            });
+            lucide.createIcons();
+        }
+
+        function renderPool() {
+            poolEl.innerHTML = '';
+            meals.forEach(meal => {
+                const isAssigned = slots.some(s => s.mealId === meal.id);
+                if (isAssigned) return;
+
+                const card = document.createElement('div');
+                card.className = `meal-card ${selectedMealId === meal.id ? 'selected' : ''}`;
+                card.dataset.mealId = meal.id;
+                
+                card.innerHTML = `
+                    <div class="meal-card-header">
+                        <div class="meal-name">${meal.name}</div>
+                    </div>
+                    <div class="meal-meta">
+                        <span class="tag"><i data-lucide="clock" style="width:12px;height:12px"></i> ${meal.cookTime}m</span>
+                        <span class="tag"><i data-lucide="calendar" style="width:12px;height:12px"></i> ${meal.shelfLife}d shelf life</span>
+                    </div>
+                    <div class="card-actions">
+                        <button class="icon-btn edit-meal" data-meal-id="${meal.id}"><i data-lucide="edit-2" style="width:14px;height:14px;"></i></button>
+                        <button class="icon-btn delete-meal" data-meal-id="${meal.id}"><i data-lucide="trash-2" style="width:14px;height:14px;"></i></button>
+                    </div>
+                `;
+                poolEl.appendChild(card);
+            });
+            lucide.createIcons();
+        }
+
+        function getSpoilageStatus(shelfLife, daySequence) {
+            if (shelfLife < daySequence) {
+                return { text: 'High Risk', color: 'var(--danger)' };
+            } else if (shelfLife === daySequence) {
+                return { text: 'Eat Soon', color: 'var(--warning)' };
+            }
+            return { text: 'Fresh', color: 'var(--success)' };
+        }
+
+        function calculateMetrics() {
+            let totalTime = 0;
+            let highestRisk = 'Safe';
+            let riskColor = 'var(--success)';
+
+            slots.forEach(slot => {
+                if (slot.mealId) {
+                    const meal = meals.find(m => m.id === slot.mealId);
+                    if (meal) {
+                        totalTime += meal.cookTime;
+                        const status = getSpoilageStatus(meal.shelfLife, slot.sequence);
+                        if (status.text === 'High Risk') {
+                            highestRisk = 'Spoilage Risk';
+                            riskColor = 'var(--danger)';
+                        } else if (status.text === 'Eat Soon' && highestRisk !== 'Spoilage Risk') {
+                            highestRisk = 'Warning';
+                            riskColor = 'var(--warning)';
+                        }
+                    }
+                }
+            });
+
+            totalCookEl.innerText = `${totalTime}m`;
+            riskScoreEl.innerText = highestRisk;
+            riskScoreEl.style.color = riskColor;
+        }
+
+        function setupEventListeners() {
+            // Card selection mapping
+            poolEl.addEventListener('click', (e) => {
+                const card = e.target.closest('.meal-card');
+                const actionBtn = e.target.closest('.icon-btn');
+                
+                if (card && !actionBtn) {
+                    const mId = card.dataset.mealId;
+                    selectedMealId = (selectedMealId === mId) ? null : mId;
+                    renderPool();
+                    renderGrid();
+                }
+            });
+
+            // Handle slot targeted drop/taps
+            gridEl.addEventListener('click', (e) => {
+                const slotDiv = e.target.closest('.slot');
+                const removeBtn = e.target.closest('.remove-placement');
+
+                if (removeBtn) {
+                    const sId = removeBtn.dataset.slotId;
+                    const slot = slots.find(s => s.id === sId);
+                    if (slot) slot.mealId = null;
+                    selectedMealId = null;
+                    renderGrid();
+                    renderPool();
+                    calculateMetrics();
+                    return;
+                }
+
+                if (slotDiv && selectedMealId) {
+                    const sId = slotDiv.dataset.slotId;
+                    const slot = slots.find(s => s.id === sId);
+                    if (slot) {
+                        slot.mealId = selectedMealId;
+                        selectedMealId = null;
+                        renderGrid();
+                        renderPool();
+                        calculateMetrics();
+                    }
+                }
+            });
+
+            // Create/Edit triggers
+            document.getElementById('add-meal-btn').addEventListener('click', () => {
+                openModal();
+            });
+
+            poolEl.addEventListener('click', (e) => {
+                const btn = e.target.closest('.edit-meal');
+                const delBtn = e.target.closest('.delete-meal');
+                
+                if (btn) {
+                    openModal(btn.dataset.mealId);
+                }
+                if (delBtn) {
+                    const id = delBtn.dataset.mealId;
+                    meals = meals.filter(m => m.id !== id);
+                    renderPool();
+                    calculateMetrics();
+                }
+            });
+
+            // Modal Handlers
+            document.getElementById('modal-cancel').addEventListener('click', closeModal);
+            document.getElementById('modal-save').addEventListener('click', saveModal);
+
+            // Export Workflow
+            document.getElementById('export-btn').addEventListener('click', exportPrepList);
+        }
+
+        function openModal(id = null) {
+            modalOverlay.classList.add('active');
+            if (id) {
+                const meal = meals.find(m => m.id === id);
+                document.getElementById('modal-title').innerText = 'Edit Meal';
+                document.getElementById('edit-id').value = meal.id;
+                document.getElementById('edit-name').value = meal.name;
+                document.getElementById('edit-cook').value = meal.cookTime;
+                document.getElementById('edit-life').value = meal.shelfLife;
+                document.getElementById('edit-ingredients').value = meal.ingredients;
+            } else {
+                document.getElementById('modal-title').innerText = 'Add New Meal';
+                document.getElementById('edit-id').value = '';
+                document.getElementById('edit-name').value = '';
+                document.getElementById('edit-cook').value = '20';
+                document.getElementById('edit-life').value = '3';
+                document.getElementById('edit-ingredients').value = '';
+            }
+        }
+
+        function closeModal() {
+            modalOverlay.classList.remove('active');
+        }
+
+        function saveModal() {
+            const id = document.getElementById('edit-id').value;
+            const name = document.getElementById('edit-name').value || 'Unnamed Meal';
+            const cookTime = parseInt(document.getElementById('edit-cook').value) || 0;
+            const shelfLife = parseInt(document.getElementById('edit-life').value) || 1;
+            const ingredients = document.getElementById('edit-ingredients').value || '';
+
+            if (id) {
+                // Update
+                const index = meals.findIndex(m => m.id === id);
+                if (index !== -1) {
+                    meals[index] = { id, name, cookTime, shelfLife, ingredients };
+                }
+            } else {
+                // Create
+                const newId = Date.now().toString();
+                meals.push({ id: newId, name, cookTime, shelfLife, ingredients });
+            }
+
+            closeModal();
+            renderPool();
+            renderGrid();
+            calculateMetrics();
+        }
+
+        function exportPrepList() {
+            let output = "=== FRIDGE TETRIS MEAL PREP LIST ===\n\n";
+            
+            output += "SCHEDULE:\n";
+            slots.forEach(slot => {
+                const meal = meals.find(m => m.id === slot.mealId);
+                output += `- ${slot.name}: ${meal ? meal.name : 'Empty Slot'}\n`;
+            });
+
+            output += "\nGROCERY & INGREDIENT CONSOLIDATION:\n";
+            const uniqueIngredients = new Set();
+            slots.forEach(slot => {
+                if (slot.mealId) {
+                    const meal = meals.find(m => m.id === slot.mealId);
+                    if (meal && meal.ingredients) {
+                        meal.ingredients.split(',').forEach(i => uniqueIngredients.add(i.trim()));
+                    }
+                }
+            });
+
+            if (uniqueIngredients.size > 0) {
+                uniqueIngredients.forEach(ing => {
+                    if (ing) output += `[ ] ${ing}\n`;
+                });
+            } else {
+                output += "No planned ingredients found.\n";
+            }
+
+            // Copy Action
+            navigator.clipboard.writeText(output).then(() => {
+                toastEl.classList.add('show');
+                setTimeout(() => toastEl.classList.remove('show'), 2000);
+            });
+
+            // Trigger file fall-back download
+            const blob = new Blob([output], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'fridge-tetris-prep-list.txt';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
+        // Run App
+        init();
+    </script>
+</body>
+</html>

@@ -1,0 +1,864 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Thumb Studio — YouTube Thumbnail Planner</title>
+<style>
+/* ── RESET ───────────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+ 
+/* Hard viewport clamp — nothing may cause horizontal scroll */
+html { overflow-x: hidden; }
+body { overflow-x: hidden; max-width: 100vw; }
+ 
+/* ── TOKENS ──────────────────────────────────────────────────── */
+:root {
+  --ink:    #0d0d0f;
+  --panel:  #1c1c22;
+  --raise:  #242430;
+  --border: #2e2e3a;
+  --muted:  #55556a;
+  --dim:    #8888a2;
+  --text:   #c4c4d6;
+  --bright: #ededf5;
+  --red:    #ff3f3f;
+  --orange: #ff8c42;
+  --teal:   #3fffd8;
+  --green:  #3fde8a;
+  --bad:    #ff4f4f;
+  --warn:   #f5c842;
+  --r:  8px;
+  --rl: 14px;
+  --ui: 'Inter', system-ui, sans-serif;
+  --mono: 'JetBrains Mono', 'Fira Mono', monospace;
+  --pad: 14px;   /* consistent inner padding for all sections */
+}
+ 
+/* ── SHELL ───────────────────────────────────────────────────── */
+body {
+  background: var(--ink);
+  color: var(--text);
+  font-family: var(--ui);
+  font-size: 14px;
+  line-height: 1.5;
+  min-height: 100vh;
+}
+.app {
+  width: 100%;
+  max-width: 1120px;
+  margin: 0 auto;
+  /* left+right padding is --pad; never more */
+  padding: 20px var(--pad) 80px;
+}
+ 
+/* ── HEADER ──────────────────────────────────────────────────── */
+.header {
+  display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap;
+  margin-bottom: 20px;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 14px;
+}
+.header h1 { font-size: 17px; font-weight: 700; color: var(--bright); letter-spacing: -.3px; }
+.header h1 span { color: var(--red); }
+.header p { font-size: 12px; color: var(--muted); }
+ 
+/* ── SECTION ─────────────────────────────────────────────────── */
+.section {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: var(--rl);
+  padding: var(--pad);
+  margin-bottom: 12px;
+  /* Hard clip — children must not escape */
+  overflow: hidden;
+  /* Prevent intrinsic min-width from grid/flex children */
+  min-width: 0;
+  width: 100%;
+}
+.section-title {
+  font-size: 10px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: .08em; color: var(--muted);
+  margin-bottom: 12px;
+  display: flex; align-items: center; gap: 6px; flex-wrap: wrap;
+}
+.section-title .badge {
+  background: var(--raise); color: var(--dim);
+  border-radius: 20px; padding: 1px 7px; font-size: 9px; white-space: nowrap;
+}
+ 
+/* ── FORM GRIDS ──────────────────────────────────────────────── */
+/*
+  Two-column and three-column grids on wide screens.
+  SINGLE COLUMN on anything ≤ 600px — this threshold is deliberately
+  larger than the 519px used before, which wasn't working reliably
+  because the breakpoint has to fire BEFORE the grid cells can shrink
+  below their min-content width. 600px provides enough headroom.
+*/
+.g2 { display: grid; grid-template-columns: 1fr 1fr;     gap: 10px; }
+.g3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
+ 
+@media (max-width: 600px) {
+  .g2, .g3 { grid-template-columns: 1fr !important; }
+}
+ 
+.fgap { margin-bottom: 12px; }
+ 
+/* ── LABELS & INPUTS ─────────────────────────────────────────── */
+label {
+  display: block; font-size: 10px; font-weight: 600;
+  color: var(--dim); margin-bottom: 5px;
+  text-transform: uppercase; letter-spacing: .05em;
+}
+input[type="text"] {
+  display: block;
+  width: 100%;
+  min-width: 0;           /* shrink inside grid cell */
+  background: var(--raise);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  color: var(--bright);
+  font-family: var(--ui);
+  font-size: 16px;        /* must be ≥16px — prevents iOS Safari zoom */
+  padding: 8px 10px;
+  outline: none;
+  transition: border-color .15s, box-shadow .15s;
+}
+input[type="text"]:focus {
+  border-color: var(--red);
+  box-shadow: 0 0 0 3px rgba(255,63,63,.12);
+}
+ 
+/* ── PILLS ───────────────────────────────────────────────────── */
+.pills { display: flex; flex-wrap: wrap; gap: 6px; }
+.pill {
+  cursor: pointer;
+  background: var(--raise); border: 1px solid var(--border);
+  border-radius: 100px; color: var(--dim);
+  font-size: 11px; font-weight: 600; padding: 4px 11px;
+  transition: all .15s; user-select: none; white-space: nowrap;
+}
+.pill:hover { border-color: var(--red); color: var(--text); }
+.pill.on    { background: var(--red); border-color: var(--red); color: #fff; }
+ 
+/* ── BUTTONS ─────────────────────────────────────────────────── */
+.btn-row { display: flex; gap: 10px; margin-bottom: 18px; }
+ 
+.btn-go {
+  flex: 1 1 0;
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  background: var(--red); border: none; border-radius: var(--r);
+  color: #fff; cursor: pointer;
+  font-family: var(--ui); font-size: 14px; font-weight: 700;
+  padding: 11px 20px; min-width: 0;
+  transition: background .15s, transform .1s;
+}
+.btn-go:hover   { background: #e62e2e; }
+.btn-go:active  { transform: scale(.97); }
+ 
+.btn-sec {
+  display: flex; align-items: center; gap: 6px;
+  background: var(--raise); border: 1px solid var(--border); border-radius: var(--r);
+  color: var(--text); cursor: pointer;
+  font-family: var(--ui); font-size: 12px; font-weight: 600;
+  padding: 7px 13px; white-space: nowrap;
+  transition: border-color .15s;
+}
+.btn-sec:hover { border-color: var(--orange); color: var(--orange); }
+ 
+/* ── LAYOUT CARDS ────────────────────────────────────────────── */
+/*
+  Desktop  (>640px): 3 side-by-side columns
+  Tablet   (≤640px): horizontal swipe strip — cards stay 240px wide,
+                     section clips the overflow
+  Mobile   (≤480px): single column stack
+*/
+.cards-outer {
+  /* This wrapper is what clips the swipe strip on tablet.
+     It must NOT have negative margins — those escape .section's overflow:hidden */
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  padding-bottom: 4px;
+}
+.cards-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  min-width: 0;
+}
+@media (max-width: 640px) {
+  .cards-grid { grid-template-columns: repeat(3, 240px); width: max-content; }
+}
+@media (max-width: 480px) {
+  .cards-outer { overflow-x: visible; }
+  .cards-grid  { grid-template-columns: 1fr; width: 100%; }
+}
+ 
+.card {
+  background: var(--raise); border: 1px solid var(--border);
+  border-radius: var(--rl); overflow: hidden; transition: border-color .2s;
+  min-width: 0;
+}
+.card:hover   { border-color: var(--orange); }
+.card.sel     { border-color: var(--teal); box-shadow: 0 0 0 2px rgba(63,255,216,.15); }
+ 
+.card-thumb { position: relative; background: #000; cursor: pointer; width: 100%; }
+/* The inner div uses padding-top % to enforce aspect ratio */
+.card-thumb-inner { position: relative; width: 100%; }
+.card-thumb-inner canvas {
+  position: absolute; inset: 0; width: 100%; height: 100%; display: block;
+}
+ 
+.card-body  { padding: 10px; }
+.card-lbl   { font-size: 10px; font-weight: 700; color: var(--orange); text-transform: uppercase; letter-spacing: .06em; margin-bottom: 7px; }
+.cfield     { margin-bottom: 7px; }
+.cfield label { margin-bottom: 3px; }
+ 
+/* score bar */
+.sbar { margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--border); }
+.sbar-head { display: flex; justify-content: space-between; font-size: 10px; margin-bottom: 5px; color: var(--dim); }
+.sbar-head strong { font-size: 12px; }
+.sbar-track { height: 5px; background: var(--border); border-radius: 10px; overflow: hidden; }
+.sbar-fill  { height: 100%; border-radius: 10px; transition: width .4s ease; }
+.sbar-pills { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 7px; }
+.spill      { font-size: 9px; padding: 2px 7px; border-radius: 20px; font-weight: 600; }
+.spill.pass { background: rgba(63,222,138,.15); color: var(--green); }
+.spill.fail { background: rgba(255,79,79,.15);  color: var(--bad); }
+.spill.warn { background: rgba(245,200,66,.15); color: var(--warn); }
+ 
+/* ── TINY STRIP ──────────────────────────────────────────────── */
+/*
+  Three canvas previews sit inside a flex row.
+  JS measures the container and scales the canvases so they always fit.
+  CSS adds flex-wrap as a safety net.
+*/
+.tiny-wrap {
+  width: 100%;
+  overflow: hidden;   /* clips any sub-pixel overshoot */
+}
+.tiny-row {
+  display: flex;
+  align-items: flex-end;
+  flex-wrap: wrap;    /* safety net if JS sizing is slightly off */
+  gap: 10px;
+  padding: 12px 0 4px;
+}
+.tiny-item {
+  display: flex; flex-direction: column; align-items: center; gap: 4px;
+  flex-shrink: 0;
+}
+.tiny-item span { font-size: 9px; color: var(--muted); }
+.tiny-cv-wrap {
+  border: 1px solid var(--border); border-radius: 4px; overflow: hidden;
+  /* make the canvas element itself the layout box */
+  line-height: 0;
+}
+ 
+/* ── CHECKLIST ───────────────────────────────────────────────── */
+.checklist {
+  background: var(--raise);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  padding: 14px;
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--text);
+  /*
+    pre-wrap: preserve newlines + wrap at container edge
+    break-all: force-break even unbreakable runs (box-drawing chars, long dashes)
+    overflow-x: hidden: absolute hard stop — no horizontal scroll on this element
+  */
+  white-space: pre-wrap;
+  word-break: break-all;
+  overflow-wrap: anywhere;
+  overflow-x: hidden;
+  overflow-y: auto;
+  max-height: 340px;
+  max-width: 100%;
+  line-height: 1.85;
+}
+ 
+.copy-row { display: flex; justify-content: flex-end; margin-top: 10px; }
+ 
+/* ── MISC ────────────────────────────────────────────────────── */
+.divider { border: none; border-top: 1px solid var(--border); margin: 14px 0 10px; }
+</style>
+</head>
+<body>
+<div class="app">
+ 
+<!-- HEADER -->
+<div class="header">
+  <h1>&#9632; Thumb<span>Studio</span></h1>
+  <p>Plan · Compare · Score · Shoot</p>
+</div>
+ 
+<!-- 01 BRIEF -->
+<div class="section">
+  <div class="section-title">01 — Brief <span class="badge">describe your idea</span></div>
+ 
+  <div class="g2 fgap">
+    <div>
+      <label for="idea">Video idea / title</label>
+      <input type="text" id="idea" placeholder="e.g. I quit my 9-5 after 10 years">
+    </div>
+    <div>
+      <label for="channel">Channel / niche</label>
+      <input type="text" id="channel" placeholder="e.g. personal finance, gaming">
+    </div>
+  </div>
+ 
+  <div class="g3 fgap">
+    <div>
+      <label for="headline">Headline text</label>
+      <input type="text" id="headline" placeholder="e.g. I QUIT" maxlength="40">
+    </div>
+    <div>
+      <label for="subtext">Sub-text (optional)</label>
+      <input type="text" id="subtext" placeholder="e.g. after 10 years" maxlength="60">
+    </div>
+    <div>
+      <label for="subject">Main subject</label>
+      <input type="text" id="subject" placeholder="e.g. person, product">
+    </div>
+  </div>
+ 
+  <div>
+    <label>Tone / vibe</label>
+    <div class="pills" id="tone-pills">
+      <span class="pill on"  data-v="shock">Shock</span>
+      <span class="pill"     data-v="hype">Hype</span>
+      <span class="pill"     data-v="curiosity">Curiosity</span>
+      <span class="pill"     data-v="calm">Calm</span>
+      <span class="pill"     data-v="tutorial">Tutorial</span>
+      <span class="pill"     data-v="emotional">Emotional</span>
+      <span class="pill"     data-v="dramatic">Dramatic</span>
+      <span class="pill"     data-v="comedic">Comedic</span>
+    </div>
+  </div>
+</div>
+ 
+<!-- 02 FORMAT -->
+<div class="section">
+  <div class="section-title">02 — Format <span class="badge">ratio &amp; crop</span></div>
+  <div class="g3">
+    <div class="fgap">
+      <label>Aspect ratio</label>
+      <div class="pills" id="ratio-pills">
+        <span class="pill on" data-v="16:9">16:9</span>
+        <span class="pill"    data-v="9:16">9:16</span>
+        <span class="pill"    data-v="1:1">1:1</span>
+        <span class="pill"    data-v="4:3">4:3</span>
+      </div>
+    </div>
+    <div class="fgap">
+      <label>Crop style</label>
+      <div class="pills" id="crop-pills">
+        <span class="pill on" data-v="tight">Tight</span>
+        <span class="pill"    data-v="mid">Mid-body</span>
+        <span class="pill"    data-v="wide">Wide</span>
+        <span class="pill"    data-v="product">Product</span>
+        <span class="pill"    data-v="text-only">Text only</span>
+      </div>
+    </div>
+    <div>
+      <label>Subject emphasis</label>
+      <div class="pills" id="emphasis-pills">
+        <span class="pill on" data-v="left">Left</span>
+        <span class="pill"    data-v="center">Center</span>
+        <span class="pill"    data-v="right">Right</span>
+        <span class="pill"    data-v="split">Split</span>
+      </div>
+    </div>
+  </div>
+</div>
+ 
+<!-- GENERATE -->
+<div class="btn-row">
+  <button class="btn-go"  onclick="generate()">&#9654;&#xFE0E; Generate 3 layouts</button>
+  <button class="btn-sec" onclick="resetAll()">&#8635; Reset</button>
+</div>
+ 
+<!-- 03 LAYOUTS -->
+<div class="section" id="res" style="display:none">
+  <div class="section-title">03 — Layouts <span class="badge">tap to select · fields editable</span></div>
+  <div class="cards-outer">
+    <div class="cards-grid" id="cards-grid"></div>
+  </div>
+ 
+  <hr class="divider">
+  <div class="section-title" style="margin-bottom:8px">
+    Tiny-size readability <span class="badge">simulates mobile thumbnail sizes</span>
+  </div>
+  <div class="tiny-wrap">
+    <div class="tiny-row" id="tiny-row"></div>
+  </div>
+</div>
+ 
+<!-- 04 CHECKLIST -->
+<div class="section" id="cl-sec" style="display:none">
+  <div class="section-title">04 — Shot &amp; Crop Checklist <span class="badge">copy to phone</span></div>
+  <div class="checklist" id="checklist"></div>
+  <div class="copy-row">
+    <button class="btn-sec" id="copy-btn" onclick="copyList()">&#9113; Copy checklist</button>
+  </div>
+</div>
+ 
+</div><!-- /.app -->
+<script>
+// ─── STATE ───────────────────────────────────────────────────────────────────
+const S = {
+  tone:'shock', ratio:'16:9', crop:'tight', emphasis:'left',
+  idea:'', channel:'', headline:'', subtext:'', subject:'',
+  sel:0,
+};
+ 
+// ─── PILLS ───────────────────────────────────────────────────────────────────
+function pills(id, key) {
+  document.getElementById(id).querySelectorAll('.pill').forEach(p => {
+    p.addEventListener('click', () => {
+      document.getElementById(id).querySelectorAll('.pill').forEach(x => x.classList.remove('on'));
+      p.classList.add('on');
+      S[key] = p.dataset.v;
+    });
+  });
+}
+pills('tone-pills',     'tone');
+pills('ratio-pills',    'ratio');
+pills('crop-pills',     'crop');
+pills('emphasis-pills', 'emphasis');
+ 
+// ─── RATIO ───────────────────────────────────────────────────────────────────
+function rPct(r) { return {'16:9':56.25,'9:16':177.78,'1:1':100,'4:3':75}[r]||56.25; }
+ 
+// ─── PALETTES & ARCHETYPES ───────────────────────────────────────────────────
+const PAL = [
+  ['#0a0a0a','#ff3f3f','#fff','#ffaa00'],
+  ['#fff8e7','#e63000','#1a1a1a','#f5a623'],
+  ['#0d1b2a','#00e5ff','#fff','#fff'],
+  ['#1a0a2e','#bf00ff','#fff','#ff80ff'],
+  ['#0f2518','#00ff88','#fff','#88ff00'],
+  ['#1c1000','#ffd700','#fff','#ff9900'],
+  ['#f0f0f0','#222','#111','#555'],
+];
+ 
+const ARCH = [
+  {id:'A',label:'Bold Focus',    pal:0, tpos:'bot-l',  spos:'right',  ss:.75},
+  {id:'B',label:'Split Canvas',  pal:2, tpos:'center', spos:'left',   ss:.65},
+  {id:'C',label:'Text Dominant', pal:5, tpos:'top-c',  spos:'center', ss:.50},
+];
+ 
+function tone2lay(t) {
+  return ({
+    shock:    {grad:true, big:true,  arrow:true },
+    hype:     {grad:true, big:true,  arrow:false},
+    curiosity:{grad:false,big:false, arrow:false},
+    calm:     {grad:false,big:false, arrow:false},
+    tutorial: {grad:false,big:false, arrow:false},
+    emotional:{grad:true, big:false, arrow:false},
+    dramatic: {grad:true, big:true,  arrow:false},
+    comedic:  {grad:false,big:true,  arrow:true },
+  }[t])||{grad:true,big:true,arrow:true};
+}
+ 
+// ─── DRAW ────────────────────────────────────────────────────────────────────
+function draw(cv, arch, cd) {
+  const W=cv.width, H=cv.height, ctx=cv.getContext('2d');
+  const [bg,acc,,sec]=PAL[arch.pal];
+  const lay=tone2lay(S.tone);
+  const hl=(cd.hl||S.headline||'YOUR TITLE');
+  const sub=(cd.sub||S.subtext||'');
+ 
+  // bg
+  if(lay.grad){const g=ctx.createLinearGradient(0,0,W,H);g.addColorStop(0,bg);g.addColorStop(1,shiftCol(bg,30));ctx.fillStyle=g;}
+  else ctx.fillStyle=bg;
+  ctx.fillRect(0,0,W,H);
+ 
+  // arch accents
+  if(arch.id==='A'){
+    ctx.fillStyle=acc+'22';ctx.fillRect(W*.55,0,W*.45,H);
+    ctx.strokeStyle=acc;ctx.lineWidth=2;
+    ctx.beginPath();ctx.moveTo(W*.55,0);ctx.lineTo(W*.48,H);ctx.stroke();
+  }
+  if(arch.id==='B'){
+    const g2=ctx.createLinearGradient(0,0,W*.5,0);
+    g2.addColorStop(0,acc+'33');g2.addColorStop(1,'transparent');
+    ctx.fillStyle=g2;ctx.fillRect(0,0,W,H);
+  }
+  if(arch.id==='C'){
+    ctx.fillStyle=acc+'18';ctx.fillRect(0,H*.1,W,H*.65);
+    ctx.strokeStyle=acc;ctx.lineWidth=2;ctx.strokeRect(W*.04,H*.1,W*.92,H*.65);
+  }
+ 
+  drawSub(ctx,W,H,arch,acc);
+ 
+  // headline
+  const hs=lay.big?Math.min(H*.28,W*.12):Math.min(H*.2,W*.09);
+  let tx=W/2,ty=H*.55,al='center';
+  if(arch.tpos==='bot-l'){tx=W*.05;ty=H*.88;al='left';}
+  else if(arch.tpos==='top-c'){tx=W/2;ty=H*.28;al='center';}
+  if(S.emphasis==='left') {tx=W*.05;al='left';}
+  if(S.emphasis==='right'){tx=W*.95;al='right';}
+  if(S.emphasis==='center'){tx=W/2;al='center';}
+ 
+  ctx.textAlign=al;ctx.textBaseline='alphabetic';
+  ctx.font=`900 ${hs}px Impact,Arial Black,sans-serif`;
+  ctx.shadowColor='rgba(0,0,0,.9)';ctx.shadowBlur=hs*.4;
+  ctx.fillStyle=acc;ctx.fillText(hl.toUpperCase(),tx,ty);ctx.shadowBlur=0;
+ 
+  if(sub){
+    const ss2=hs*.38;
+    ctx.font=`700 ${ss2}px Inter,Arial,sans-serif`;
+    ctx.fillStyle=sec||'#fff';
+    ctx.shadowColor='rgba(0,0,0,.8)';ctx.shadowBlur=8;
+    ctx.fillText(sub.toUpperCase(),tx,ty+hs*.9);ctx.shadowBlur=0;
+  }
+  if(lay.arrow)drawArrow(ctx,W*.85,H*.85,H*.12,acc);
+ 
+  ctx.textAlign='left';ctx.font=`700 ${H*.065}px Inter,sans-serif`;
+  ctx.fillStyle='rgba(255,255,255,.5)';ctx.fillText(`[${arch.id}]`,W*.03,H*.1);
+}
+ 
+function drawSub(ctx,W,H,arch,acc){
+  if(S.crop==='text-only')return;
+  const br=Math.min(W,H)*.22*arch.ss;
+  let cx=W*.5,cy=H*.5;
+  if(arch.spos==='right')cx=W*.78;
+  if(arch.spos==='left') cx=W*.22;
+  const cr=S.crop;
+  if(cr==='tight'||cr==='mid'){
+    ctx.beginPath();ctx.arc(cx,cy-br*.3,br*.6,0,Math.PI*2);
+    ctx.fillStyle='rgba(255,255,255,.08)';ctx.fill();
+    ctx.strokeStyle=acc+'55';ctx.lineWidth=1.5;ctx.stroke();
+    if(cr==='mid'){
+      ctx.beginPath();
+      ctx.moveTo(cx-br*.5,cy+br*.3);ctx.lineTo(cx-br*.65,cy+br*1.5);
+      ctx.lineTo(cx+br*.65,cy+br*1.5);ctx.lineTo(cx+br*.5,cy+br*.3);
+      ctx.closePath();ctx.fillStyle='rgba(255,255,255,.06)';ctx.fill();
+    }
+  } else if(cr==='wide'){
+    ctx.strokeStyle=acc+'44';ctx.lineWidth=1;
+    ctx.beginPath();ctx.moveTo(0,cy+br);ctx.lineTo(W,cy+br);ctx.stroke();
+    ctx.fillStyle='rgba(255,255,255,.05)';ctx.fillRect(cx-br,cy-br*.4,br*2,br*.8);
+  } else if(cr==='product'){
+    const pw=br*.9,ph=br*1.1;
+    rRect(ctx,cx-pw/2,cy-ph/2,pw,ph,8);
+    ctx.fillStyle='rgba(255,255,255,.08)';ctx.fill();
+    ctx.strokeStyle=acc+'55';ctx.lineWidth=1.5;ctx.stroke();
+    ctx.fillStyle='rgba(255,255,255,.12)';ctx.fillRect(cx-pw/2+4,cy-ph/2+4,pw*.25,ph*.15);
+  }
+}
+ 
+function drawArrow(ctx,x,y,sz,col){
+  ctx.save();ctx.fillStyle=col;
+  ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(x-sz*.5,y-sz*.5);
+  ctx.lineTo(x-sz*.3,y);ctx.lineTo(x-sz*.5,y+sz*.5);
+  ctx.closePath();ctx.fill();ctx.restore();
+}
+function shiftCol(hex,a){
+  const c=parseInt(hex.slice(1),16);
+  return `rgb(${Math.min(255,((c>>16)&255)+a)},${Math.min(255,((c>>8)&255)+a)},${Math.min(255,(c&255)+a)})`;
+}
+function rRect(ctx,x,y,w,h,r){
+  if(ctx.roundRect){ctx.beginPath();ctx.roundRect(x,y,w,h,r);return;}
+  ctx.beginPath();
+  ctx.moveTo(x+r,y);ctx.lineTo(x+w-r,y);ctx.quadraticCurveTo(x+w,y,x+w,y+r);
+  ctx.lineTo(x+w,y+h-r);ctx.quadraticCurveTo(x+w,y+h,x+w-r,y+h);
+  ctx.lineTo(x+r,y+h);ctx.quadraticCurveTo(x,y+h,x,y+h-r);
+  ctx.lineTo(x,y+r);ctx.quadraticCurveTo(x,y,x+r,y);ctx.closePath();
+}
+ 
+// ─── SCORE ───────────────────────────────────────────────────────────────────
+function score(cd){
+  const hl=(cd.hl||S.headline||'').trim();
+  const sub=(cd.sub||S.subtext||'').trim();
+  const ws=hl.split(/\s+/).filter(Boolean);
+  const ch=[
+    {l:`${ws.length<=4?'✓':'✗'} ≤4 words (${ws.length})`,    t:ws.length<=4?'pass':'fail'},
+    {l:`${hl.length<=25?'✓':hl.length<=35?'~':'✗'} ≤25 chars (${hl.length})`,t:hl.length<=25?'pass':hl.length<=35?'warn':'fail'},
+    {l:`${hl===hl.toUpperCase()?'✓':'~'} All caps`,           t:hl===hl.toUpperCase()?'pass':'warn'},
+    {l:`${sub?'✓':'~'} Sub-text present`,                     t:sub?'pass':'warn'},
+  ];
+  if(['shock','hype','dramatic'].includes(S.tone)){
+    const ok=ws.length<=3&&hl===hl.toUpperCase();
+    ch.push({l:`${ok?'✓':'~'} Short+caps (${S.tone})`,t:ok?'pass':'warn'});
+  }
+  return {n:Math.round(ch.filter(c=>c.t==='pass').length/ch.length*100),ch};
+}
+ 
+// ─── CARD DATA ───────────────────────────────────────────────────────────────
+const CD=[{hl:'',sub:'',notes:''},{hl:'',sub:'',notes:''},{hl:'',sub:'',notes:''}];
+ 
+// ─── GENERATE ────────────────────────────────────────────────────────────────
+function generate(){
+  S.idea=document.getElementById('idea').value;
+  S.channel=document.getElementById('channel').value;
+  S.headline=document.getElementById('headline').value||'YOUR TITLE';
+  S.subtext=document.getElementById('subtext').value;
+  S.subject=document.getElementById('subject').value;
+  CD.forEach(c=>{if(!c.hl)c.hl=S.headline;if(!c.sub)c.sub=S.subtext;});
+  buildCards();buildTiny();buildChecklist();
+  document.getElementById('res').style.display='';
+  document.getElementById('cl-sec').style.display='';
+  document.getElementById('res').scrollIntoView({behavior:'smooth',block:'start'});
+}
+ 
+// ─── BUILD CARDS ─────────────────────────────────────────────────────────────
+function buildCards(){
+  const grid=document.getElementById('cards-grid');
+  grid.innerHTML='';
+  const pct=rPct(S.ratio);
+  ARCH.forEach((arch,i)=>{
+    const card=document.createElement('div');
+    card.className='card'+(S.sel===i?' sel':'');
+    card.innerHTML=`
+      <div class="card-thumb" id="ct${i}">
+        <div class="card-thumb-inner" style="padding-top:${pct}%">
+          <canvas id="cv${i}"></canvas>
+        </div>
+      </div>
+      <div class="card-body">
+        <div class="card-lbl">${arch.id} — ${arch.label}</div>
+        <div class="cfield"><label>Headline</label>
+          <input type="text" id="ch${i}" value="${esc(CD[i].hl||S.headline)}" maxlength="40" oninput="edit(${i})"></div>
+        <div class="cfield"><label>Sub-text</label>
+          <input type="text" id="cs${i}" value="${esc(CD[i].sub||S.subtext)}" maxlength="60" oninput="edit(${i})"></div>
+        <div class="cfield"><label>Notes</label>
+          <input type="text" id="cn${i}" value="${esc(CD[i].notes)}" placeholder="angle, wardrobe, prop…" oninput="edit(${i})"></div>
+        <div class="sbar" id="sb${i}"></div>
+      </div>`;
+    grid.appendChild(card);
+    card.querySelector('.card-thumb').addEventListener('click',()=>selCard(i));
+    requestAnimationFrame(()=>{
+      const cv=document.getElementById('cv'+i);
+      const inner=cv.parentElement;
+      cv.width=inner.offsetWidth||240;
+      cv.height=inner.offsetHeight||Math.round((inner.offsetWidth||240)*(pct/100));
+      draw(cv,arch,CD[i]);buildScoreBar(i);
+    });
+  });
+}
+ 
+function edit(i){
+  CD[i].hl=document.getElementById('ch'+i).value;
+  CD[i].sub=document.getElementById('cs'+i).value;
+  CD[i].notes=document.getElementById('cn'+i).value;
+  const cv=document.getElementById('cv'+i);
+  if(cv)draw(cv,ARCH[i],CD[i]);
+  buildScoreBar(i);buildTiny();buildChecklist();
+}
+ 
+function buildScoreBar(i){
+  const bar=document.getElementById('sb'+i);if(!bar)return;
+  const {n,ch}=score(CD[i]);
+  const col=n>=80?'var(--green)':n>=55?'var(--warn)':'var(--bad)';
+  bar.innerHTML=`<div class="sbar-head"><span>Readability</span><strong style="color:${col}">${n}%</strong></div>
+    <div class="sbar-track"><div class="sbar-fill" style="width:${n}%;background:${col}"></div></div>
+    <div class="sbar-pills">${ch.map(c=>`<span class="spill ${c.t}">${c.l}</span>`).join('')}</div>`;
+}
+ 
+function selCard(i){
+  S.sel=i;
+  document.querySelectorAll('.card').forEach((c,j)=>c.classList.toggle('sel',j===i));
+  buildTiny();buildChecklist();
+}
+ 
+// ─── TINY PREVIEWS ───────────────────────────────────────────────────────────
+// Three reference sizes. JS scales them so total width ≤ container width.
+const TINY=[{lbl:'Mobile',rw:120,rh:68},{lbl:'Home',rw:160,rh:90},{lbl:'Search',rw:213,rh:120}];
+ 
+function buildTiny(){
+  const row=document.getElementById('tiny-row');
+  row.innerHTML='';
+  const arch=ARCH[S.sel], cd=CD[S.sel];
+ 
+  // Measure the *wrap* (parent of tiny-row), not the row itself (it's empty)
+  const wrap=row.parentElement;
+  // offsetWidth can be 0 before first layout — use the section width as fallback
+  const avail=wrap.offsetWidth||document.getElementById('res').clientWidth||320;
+  const GAP=10, N=TINY.length;
+  const totalRef=TINY.reduce((s,f)=>s+f.rw,0);
+  // Scale so all canvases + gaps fit in avail; never scale up
+  const scale=Math.min(1,(avail-GAP*(N-1))/totalRef);
+ 
+  TINY.forEach(f=>{
+    const cw=Math.max(4,Math.round(f.rw*scale));
+    const ch=Math.max(4,Math.round(cw*rPct(S.ratio)/100));
+    const item=document.createElement('div');item.className='tiny-item';
+    const wrap2=document.createElement('div');wrap2.className='tiny-cv-wrap';
+    const cv=document.createElement('canvas');
+    cv.width=cw;cv.height=ch;
+    draw(cv,arch,cd);
+    wrap2.appendChild(cv);item.appendChild(wrap2);
+    const lbl=document.createElement('span');lbl.textContent=f.lbl+' '+f.rw+'px';
+    item.appendChild(lbl);row.appendChild(item);
+  });
+}
+ 
+// ─── CHECKLIST ───────────────────────────────────────────────────────────────
+function buildChecklist(){
+  const arch=ARCH[S.sel],cd=CD[S.sel];
+  const hl=cd.hl||S.headline||'YOUR TITLE';
+  const sub=cd.sub||S.subtext||'';
+  const notes=cd.notes||'';
+  const {n,ch}=score(cd);
+ 
+  const CROP={
+    tight:'Close face — chin to forehead, eyes 1/3 from top',
+    mid:'Waist-to-head — leave headroom, no awkward crop',
+    wide:'Show environment — rule-of-thirds horizon',
+    product:'Flat lay or 45deg — clean BG, single highlight',
+    'text-only':'No subject — BG must contrast strongly with text',
+  };
+  const EMP={
+    left:'Subject left — text occupies right 40-50%',
+    right:'Subject right — text occupies left 40-50%',
+    center:'Centered subject — text above or below with scrim',
+    split:'Hard diagonal splits subject from text',
+  };
+  const TONE={
+    shock:'Mouth open, wide eyes, pointing. Warm/red palette.',
+    hype:'Arms raised or pointing at camera. Bold yellow/red.',
+    curiosity:'Thinking pose or obscured subject. Cool tones.',
+    calm:'Neutral expression, open space. Soft shadows.',
+    tutorial:'Hands on tool/screen. Step badge. Clean BG.',
+    emotional:'Candid expression. Soft edges. Muted warmth.',
+    dramatic:'Low key lighting. Strong shadow. High contrast.',
+    comedic:'Exaggerated expression. Prop in frame.',
+  };
+  const RATIO={
+    '16:9':'Standard — 1920x1080 preferred, 1280x720 min, 2MB max',
+    '9:16':'Shorts — 1080x1920, vertical, face centered',
+    '1:1': 'Community — 1080x1080, safe zone 900x900',
+    '4:3': 'Classic — 1440x1080',
+  };
+  const CROP_SAFE={
+    tight:'[ ] Head not cut at top\n[ ] Eyes above mid-frame\n[ ] Ear tips visible',
+    mid:'[ ] Full head + gap at top\n[ ] Arms not awkwardly cut\n[ ] Waist = bottom',
+    wide:'[ ] Horizon level\n[ ] Subject at thirds\n[ ] No objects touching edge',
+    product:'[ ] Product fully inside frame\n[ ] Logo faces camera\n[ ] Single hero angle',
+    'text-only':'[ ] BG 60%+ contrast vs text\n[ ] No busy texture behind text',
+  };
+  const ARCH_NOTES={
+    A:`[ ] Diagonal slash visible\n[ ] Accent stripe on one half\n[ ] Text bottom-corner, Impact font`,
+    B:`[ ] Subject occupies 40% of one side\n[ ] Gradient bleeding from subject\n[ ] Headline readable over both halves`,
+    C:`[ ] Text is dominant element\n[ ] Subject small or as BG\n[ ] Box or border frames headline`,
+  };
+  const emReserve=S.emphasis==='center'?'top/bottom 30%':
+    S.emphasis==='split'?'50% each side':
+    '40-50% '+(S.emphasis==='left'?'right':'left')+' side';
+  const fnSlug=(S.idea||'video').replace(/\s+/g,'-').slice(0,20).toLowerCase();
+ 
+  const txt=
+`== THUMB STUDIO CHECKLIST ==
+Layout ${arch.id}: ${arch.label} | Score: ${n}%
+ 
+VIDEO: ${S.idea||'(your video idea)'}
+CHANNEL: ${S.channel||'(your channel)'}
+ 
+HEADLINE: "${hl}"${sub?'\nSUB: "'+sub+'"':''}${notes?'\nNOTES: '+notes:''}
+ 
+READABILITY
+${ch.map(c=>'  '+c.l).join('\n')}
+ 
+-- FORMAT --
+Ratio: ${S.ratio}
+  ${RATIO[S.ratio]}
+Crop: ${S.crop}
+  ${CROP[S.crop]}
+Emphasis: ${S.emphasis}
+  ${EMP[S.emphasis]}
+Tone: ${S.tone}
+  ${TONE[S.tone]||''}
+ 
+-- ON-SET --
+[ ] Sensor clean before shoot
+[ ] RAW or highest JPEG
+[ ] Manual exposure: face correctly lit
+[ ] Check background for distractions
+[ ] 10% safe zone on all edges
+[ ] Shoot more than you think you need
+[ ] ${S.ratio==='9:16'?'Vertical':'Horizontal'} orientation
+ 
+-- LIGHTING --
+[ ] Key light off-axis (not flat)
+[ ] Catch light in eyes (face crops)
+[ ] No shadow cutting through eye
+[ ] BG separated from subject
+[ ] White balance locked
+ 
+-- EXPRESSION / POSE --
+[ ] Match tone: ${S.tone}
+[ ] 15+ expression variations
+[ ] Discard mid-blink frames
+[ ] Mouth slightly open = dynamic
+ 
+-- CROP SAFETY: ${S.crop} --
+${CROP_SAFE[S.crop]||''}
+ 
+-- TEXT PLACEMENT: ${S.emphasis} --
+[ ] Reserve ${emReserve} for text
+[ ] Contrast ratio 4.5:1 vs BG
+[ ] Squint test: readable from 3 ft?
+[ ] Zoom to 90px wide: still readable?
+ 
+-- EXPORT --
+[ ] ${S.ratio==='9:16'?'1080x1920':'1920x1080'}
+[ ] JPG or PNG, 2MB max
+[ ] Color profile: sRGB
+[ ] File: thumbnail-${fnSlug}.jpg
+ 
+-- LAYOUT ${arch.id} --
+${ARCH_NOTES[arch.id]||''}
+ 
+== END ==`;
+ 
+  document.getElementById('checklist').textContent=txt;
+}
+ 
+// ─── COPY ────────────────────────────────────────────────────────────────────
+function copyList(){
+  const t=document.getElementById('checklist').textContent;
+  const btn=document.getElementById('copy-btn');
+  const ok=()=>{btn.textContent='✓ Copied!';setTimeout(()=>{btn.innerHTML='&#9113; Copy checklist';},1800);};
+  if(navigator.clipboard){navigator.clipboard.writeText(t).then(ok).catch(fb);}else fb();
+  function fb(){
+    const ta=document.createElement('textarea');ta.value=t;
+    ta.style.cssText='position:fixed;opacity:0;top:0;left:0;';
+    document.body.appendChild(ta);ta.select();document.execCommand('copy');
+    document.body.removeChild(ta);ok();
+  }
+}
+ 
+// ─── RESET ───────────────────────────────────────────────────────────────────
+function resetAll(){
+  ['idea','channel','headline','subtext','subject'].forEach(id=>document.getElementById(id).value='');
+  CD.forEach(c=>{c.hl='';c.sub='';c.notes='';});
+  document.getElementById('res').style.display='none';
+  document.getElementById('cl-sec').style.display='none';
+}
+ 
+// ─── UTIL ────────────────────────────────────────────────────────────────────
+function esc(s){return(s||'').replace(/"/g,'&quot;').replace(/</g,'&lt;');}
+ 
+// Redraw on resize
+let rsT;
+window.addEventListener('resize',()=>{
+  clearTimeout(rsT);
+  rsT=setTimeout(()=>{
+    if(document.getElementById('res').style.display==='none')return;
+    const pct=rPct(S.ratio);
+    ARCH.forEach((_,i)=>{
+      const cv=document.getElementById('cv'+i);if(!cv)return;
+      const inner=cv.parentElement;
+      cv.width=inner.offsetWidth||240;
+      cv.height=inner.offsetHeight||Math.round((inner.offsetWidth||240)*(pct/100));
+      draw(cv,ARCH[i],CD[i]);
+    });
+    buildTiny();
+  },120);
+});
+</script>
+</body>
+</html>

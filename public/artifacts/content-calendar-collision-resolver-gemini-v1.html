@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Content Planner Board</title>
+    <style>
+        :root {
+            --bg: #0f172a;
+            --card-bg: #1e293b;
+            --border: #334155;
+            --text: #f8fafc;
+            --text-muted: #94a3b8;
+            --accent: #6366f1;
+            --warning: #ef4444;
+            --success: #10b981;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+        body { background: var(--bg); color: var(--text); padding: 12px; min-height: 100vh; font-size: 14px; }
+        
+        header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; gap: 8px; }
+        h1 { font-size: 1.2rem; }
+        button { background: var(--accent); color: white; border: none; padding: 6px 12px; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 0.85rem; }
+        button:active { opacity: 0.9; }
+
+        .board { display: flex; flex-direction: column; gap: 16px; }
+        .column { background: #151f32; border: 1px solid var(--border); border-radius: 8px; padding: 12px; min-height: 100px; }
+        .column-header { font-weight: bold; margin-bottom: 10px; display: flex; justify-content: space-between; color: var(--text-muted); font-size: 0.9rem; border-bottom: 1px solid var(--border); padding-bottom: 4px; }
+        
+        .card-list { display: flex; flex-direction: column; gap: 8px; min-height: 50px; }
+        .card { background: var(--card-bg); border: 1px solid var(--border); border-radius: 6px; padding: 10px; position: relative; cursor: grab; }
+        .card:active { cursor: grabbing; }
+        
+        .card-title { font-weight: 600; margin-bottom: 6px; background: transparent; color: var(--text); border: none; width: 100%; font-size: 0.9rem; }
+        .card-title:focus { outline: none; border-bottom: 1px solid var(--accent); }
+        
+        .meta-row { display: flex; gap: 6px; margin-bottom: 6px; flex-wrap: wrap; }
+        select, input { background: #0f172a; color: var(--text); border: 1px solid var(--border); border-radius: 4px; padding: 2px 4px; font-size: 0.75rem; max-width: 100%; }
+        
+        .warning-tag { display: none; color: var(--warning); font-size: 0.75rem; font-weight: bold; margin-top: 4px; }
+        .has-conflict { border-color: var(--warning) !important; }
+        .has-conflict .warning-tag { display: block; }
+
+        .btn-row { display: flex; justify-content: space-between; margin-top: 8px; }
+        .delete-btn { background: none; color: var(--text-muted); font-size: 0.75rem; border: none; padding: 0; }
+        .delete-btn:hover { color: var(--warning); }
+
+        .overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8); justify-content: center; align-items: center; padding: 20px; z-index: 100; }
+        .modal { background: var(--card-bg); border: 1px solid var(--border); border-radius: 8px; padding: 16px; width: 100%; max-width: 500px; }
+        textarea { width: 100%; height: 250px; background: var(--bg); color: var(--text); border: 1px solid var(--border); border-radius: 6px; padding: 10px; font-family: monospace; font-size: 0.8rem; resize: none; margin-bottom: 12px; }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>Content Scheduler</h1>
+        <div style="display: flex; gap: 8px;">
+            <button onclick="addCard()">+ Idea</button>
+            <button onclick="openHandoff()" style="background: #3b82f6;">Handoff</button>
+        </div>
+    </header>
+
+    <div class="board">
+        <div class="column" data-week="backlog">
+            <div class="column-header"><span>💡 Messy Ideas Backlog</span> <span class="count">0</span></div>
+            <div class="card-list" ondragover="allowDrop(event)" ondrop="drop(event)"></div>
+        </div>
+        <div class="column" data-week="1">
+            <div class="column-header"><span>📅 Week 1</span> <span class="count">0</span></div>
+            <div class="card-list" ondragover="allowDrop(event)" ondrop="drop(event)"></div>
+        </div>
+        <div class="column" data-week="2">
+            <div class="column-header"><span>📅 Week 2</span> <span class="count">0</span></div>
+            <div class="card-list" ondragover="allowDrop(event)" ondrop="drop(event)"></div>
+        </div>
+        <div class="column" data-week="3">
+            <div class="column-header"><span>📅 Week 3</span> <span class="count">0</span></div>
+            <div class="card-list" ondragover="allowDrop(event)" ondrop="drop(event)"></div>
+        </div>
+        <div class="column" data-week="4">
+            <div class="column-header"><span>📅 Week 4</span> <span class="count">0</span></div>
+            <div class="card-list" ondragover="allowDrop(event)" ondrop="drop(event)"></div>
+        </div>
+    </div>
+
+    <div class="overlay" id="handoffOverlay">
+        <div class="modal">
+            <h3 style="margin-bottom: 10px;">📋 Copyable Handoff Summary</h3>
+            <textarea id="handoffText" readonly></textarea>
+            <div style="display: flex; justify-content: flex-end; gap: 8px;">
+                <button onclick="copyHandoff()" style="background: var(--success);">Copy to Clipboard</button>
+                <button onclick="closeHandoff()" style="background: var(--border);">Close</button>
+            </div>
+        </div>
+    </style>
+
+    <script>
+        let cards = JSON.parse(localStorage.getItem('planner-cards')) || [
+            { id: '1', title: '10 Tips for HTML Layouts', channel: 'X/Twitter', effort: 'Low', deadline: '2026-06-15', week: 'backlog' },
+            { id: '2', title: 'Deep-dive AI Tutorial', channel: 'YouTube', effort: 'High', deadline: '2026-06-22', week: 'backlog' }
+        ];
+
+        function save() {
+            localStorage.setItem('planner-cards', JSON.stringify(cards));
+            render();
+        }
+
+        function render() {
+            document.querySelectorAll('.card-list').forEach(list => list.innerHTML = '');
+            
+            cards.forEach(card => {
+                const cardEl = document.createElement('div');
+                cardEl.className = 'card';
+                cardEl.id = `card-${card.id}`;
+                cardEl.draggable = true;
+                cardEl.ondragstart = drag;
+                
+                cardEl.innerHTML = `
+                    <input class="card-title" value="${card.title}" onchange="updateCard('${card.id}', 'title', this.value)">
+                    <div class="meta-row">
+                        <select onchange="updateCard('${card.id}', 'channel', this.value)">
+                            <option value="">Channel</option>
+                            <option value="YouTube" ${card.channel === 'YouTube' ? 'selected' : ''}>YouTube</option>
+                            <option value="LinkedIn" ${card.channel === 'LinkedIn' ? 'selected' : ''}>LinkedIn</option>
+                            <option value="X/Twitter" ${card.channel === 'X/Twitter' ? 'selected' : ''}>X</option>
+                            <option value="Newsletter" ${card.channel === 'Newsletter' ? 'selected' : ''}>Newsletter</option>
+                        </select>
+                        <select onchange="updateCard('${card.id}', 'effort', this.value)">
+                            <option value="">Effort</option>
+                            <option value="Low" ${card.effort === 'Low' ? 'selected' : ''}>Low</option>
+                            <option value="Medium" ${card.effort === 'Medium' ? 'selected' : ''}>Med</option>
+                            <option value="High" ${card.effort === 'High' ? 'selected' : ''}>High</option>
+                        </select>
+                        <input type="date" value="${card.deadline || ''}" onchange="updateCard('${card.id}', 'deadline', this.value)">
+                    </div>
+                    <div class="warning-tag">⚠️ Overloaded: Channel conflict or heavy effort week</div>
+                    <div class="btn-row">
+                        <select onchange="updateCard('${card.id}', 'week', this.value)" style="padding: 1px 2px;">
+                            <option value="backlog" ${card.week === 'backlog' ? 'selected' : ''}>Backlog</option>
+                            <option value="1" ${card.week === '1' ? 'selected' : ''}>Wk 1</option>
+                            <option value="2" ${card.week === '2' ? 'selected' : ''}>Wk 2</option>
+                            <option value="3" ${card.week === '3' ? 'selected' : ''}>Wk 3</option>
+                            <option value="4" ${card.week === '4' ? 'selected' : ''}>Wk 4</option>
+                        </select>
+                        <button class="delete-btn" onclick="deleteCard('${card.id}')">Delete</button>
+                    </div>
+                `;
+                
+                const targetColumn = document.querySelector(`.column[data-week="${card.week}"] .card-list`);
+                if (targetColumn) targetColumn.appendChild(cardEl);
+            });
+
+            checkConflicts();
+            updateCounts();
+        }
+
+        function addCard() {
+            const newId = Date.now().toString();
+            cards.push({ id: newId, title: 'New Content Idea', channel: '', effort: '', deadline: '', week: 'backlog' });
+            save();
+        }
+
+        function updateCard(id, field, value) {
+            const card = cards.find(c => c.id === id);
+            if (card) {
+                card[field] = value;
+                save();
+            }
+        }
+
+        function deleteCard(id) {
+            cards = cards.filter(c => c.id !== id);
+            save();
+        }
+
+        function allowDrop(ev) { ev.preventDefault(); }
+        function drag(ev) { ev.dataTransfer.setData("text", ev.target.id); }
+        
+        function drop(ev) {
+            ev.preventDefault();
+            const data = ev.dataTransfer.getData("text");
+            const cardId = data.replace('card-', '');
+            const targetList = ev.target.closest('.card-list');
+            if (targetList) {
+                const targetWeek = targetList.closest('.column').dataset.week;
+                updateCard(cardId, 'week', targetWeek);
+            }
+        }
+
+        function checkConflicts() {
+            const targetWeeks = ['1', '2', '3', '4'];
+            
+            cards.forEach(c => {
+                const el = document.getElementById(`card-${c.id}`);
+                if (el) el.classList.remove('has-conflict');
+            });
+
+            targetWeeks.forEach(wk => {
+                const weekCards = cards.filter(c => c.week === wk);
+                
+                // Track counts for channel overload and heavy effort load
+                const channelCounts = {};
+                let highEffortCount = 0;
+
+                weekCards.forEach(c => {
+                    if (c.channel) channelCounts[c.channel] = (channelCounts[c.channel] || 0) + 1;
+                    if (c.effort === 'High') highEffortCount++;
+                });
+
+                weekCards.forEach(c => {
+                    const hasChannelConflict = c.channel && channelCounts[c.channel] > 1;
+                    const hasEffortConflict = highEffortCount > 1 && c.effort === 'High';
+                    
+                    if (hasChannelConflict || hasEffortConflict) {
+                        const el = document.getElementById(`card-${c.id}`);
+                        if (el) el.classList.add('has-conflict');
+                    }
+                });
+            });
+        }
+
+        function updateCounts() {
+            document.querySelectorAll('.column').forEach(col => {
+                const week = col.dataset.week;
+                const count = cards.filter(c => c.week === week).length;
+                col.querySelector('.count').innerText = `(${count})`;
+            });
+        }
+
+        function generateSummary() {
+            let txt = "🚀 CONTENT SCHEDULE HANDOFF SUMMARY\n=================================\n\n";
+            const sections = ['1', '2', '3', '4', 'backlog'];
+            
+            sections.forEach(sec => {
+                const secCards = cards.filter(c => c.week === sec);
+                txt += sec === 'backlog' ? "💡 UNASSIGNED/BACKLOG\n" : `📅 WEEK ${sec}\n`;
+                
+                if (secCards.length === 0) {
+                    txt += "  (No items scheduled)\n";
+                } else {
+                    secCards.forEach(c => {
+                        txt += `  - [${c.channel || 'No Channel'}] ${c.title} (${c.effort || 'No Effort'} effort) | Due: ${c.deadline || 'No Date'}\n`;
+                    });
+                }
+                txt += "\n";
+            });
+            return txt;
+        }
+
+        function openHandoff() {
+            document.getElementById('handoffText').value = generateSummary();
+            document.getElementById('handoffOverlay').style.display = 'flex';
+        }
+
+        function closeHandoff() {
+            document.getElementById('handoffOverlay').style.display = 'none';
+        }
+
+        function copyHandoff() {
+            const textarea = document.getElementById('handoffText');
+            textarea.select();
+            document.execCommand('copy');
+            alert('Summary copied to clipboard!');
+        }
+
+        window.onload = render;
+    </script>
+</body>
+</html>

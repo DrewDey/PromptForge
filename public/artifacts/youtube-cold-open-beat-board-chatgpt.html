@@ -1,0 +1,1020 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>YouTube Cold-Open Beat Board</title>
+<style>
+  :root{
+    --bg:#111318;
+    --panel:#191d25;
+    --panel2:#202634;
+    --text:#f4f7fb;
+    --muted:#aeb7c7;
+    --line:#30384a;
+    --soft:#2a3141;
+    --good:#b7f7ce;
+    --warn:#ffe3a3;
+    --bad:#ffb4b4;
+    --accent:#c7d7ff;
+    --shadow:0 12px 30px rgba(0,0,0,.25);
+    --radius:16px;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;min-height:100%;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif}
+  body{overflow-x:hidden}
+  button,input,textarea,select{font:inherit}
+  .wrap{width:100%;max-width:720px;margin:0 auto;padding:14px}
+  header{
+    padding:16px;
+    border:1px solid var(--line);
+    border-radius:var(--radius);
+    background:linear-gradient(180deg,#202637,#161a22);
+    box-shadow:var(--shadow);
+  }
+  h1{font-size:1.2rem;line-height:1.2;margin:0 0 6px}
+  p{margin:0;color:var(--muted);line-height:1.4}
+  .grid{display:grid;gap:12px;margin-top:12px}
+  .card{
+    border:1px solid var(--line);
+    border-radius:var(--radius);
+    background:var(--panel);
+    padding:12px;
+  }
+  .card h2{
+    margin:0 0 10px;
+    font-size:1rem;
+    line-height:1.2;
+  }
+  label{display:block;font-size:.82rem;color:var(--muted);margin:0 0 6px}
+  textarea,input,select{
+    width:100%;
+    max-width:100%;
+    color:var(--text);
+    background:#0f1218;
+    border:1px solid var(--line);
+    border-radius:12px;
+    padding:10px;
+    outline:none;
+  }
+  textarea{resize:vertical;min-height:72px}
+  input:focus,textarea:focus,select:focus{border-color:var(--accent)}
+  .row{display:grid;grid-template-columns:1fr;gap:10px}
+  .two{grid-template-columns:1fr 1fr}
+  .three{grid-template-columns:1fr 1fr 1fr}
+  .actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+  button{
+    border:1px solid var(--line);
+    background:var(--panel2);
+    color:var(--text);
+    padding:9px 10px;
+    border-radius:999px;
+    cursor:pointer;
+    min-height:40px;
+  }
+  button:active{transform:translateY(1px)}
+  .primary{background:#dbe5ff;color:#10131a;border-color:#dbe5ff}
+  .danger{background:#352025;border-color:#5a2d38}
+  .small{font-size:.86rem;padding:7px 9px;min-height:34px}
+  .beat{
+    background:var(--panel2);
+    border:1px solid var(--line);
+    border-radius:14px;
+    padding:10px;
+    margin-top:10px;
+  }
+  .beatTop{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    gap:8px;
+    margin-bottom:8px;
+  }
+  .beatNum{
+    font-size:.78rem;
+    color:#10131a;
+    background:var(--accent);
+    padding:5px 8px;
+    border-radius:999px;
+    white-space:nowrap;
+  }
+  .beatBtns{
+    display:flex;
+    flex-wrap:wrap;
+    gap:6px;
+    justify-content:flex-end;
+  }
+  .chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+  .chip{
+    display:inline-flex;
+    align-items:center;
+    gap:5px;
+    border:1px solid var(--line);
+    border-radius:999px;
+    padding:5px 8px;
+    font-size:.78rem;
+    color:var(--muted);
+    background:#121620;
+  }
+  .chip.good{color:#102016;background:var(--good);border-color:var(--good)}
+  .chip.warn{color:#2d2200;background:var(--warn);border-color:var(--warn)}
+  .chip.bad{color:#2b0808;background:var(--bad);border-color:var(--bad)}
+  .meter{
+    height:12px;
+    background:#0f1218;
+    border:1px solid var(--line);
+    border-radius:999px;
+    overflow:hidden;
+    margin:10px 0 8px;
+  }
+  .meter span{display:block;height:100%;width:0;background:var(--accent)}
+  .timeline{display:grid;gap:8px;margin-top:10px}
+  .bar{
+    display:grid;
+    grid-template-columns:minmax(64px,84px) 1fr;
+    gap:8px;
+    align-items:center;
+  }
+  .barLabel{font-size:.78rem;color:var(--muted)}
+  .barTrack{
+    position:relative;
+    height:26px;
+    border-radius:999px;
+    background:#0f1218;
+    border:1px solid var(--line);
+    overflow:hidden;
+  }
+  .barFill{
+    height:100%;
+    min-width:4%;
+    border-radius:999px;
+    background:#dbe5ff;
+  }
+  .barText{
+    position:absolute;
+    inset:0;
+    display:flex;
+    align-items:center;
+    padding:0 8px;
+    font-size:.72rem;
+    color:#111318;
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+  }
+  .titleCard{
+    background:#121620;
+    border:1px solid var(--line);
+    border-radius:14px;
+    padding:10px;
+    margin-top:8px;
+  }
+  .scoreLine{
+    display:flex;
+    flex-wrap:wrap;
+    gap:6px;
+    margin-top:8px;
+  }
+  .copybox{
+    min-height:180px;
+    white-space:pre-wrap;
+    font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+    font-size:.82rem;
+    line-height:1.45;
+  }
+  .toast{
+    position:fixed;
+    left:50%;
+    bottom:16px;
+    transform:translateX(-50%);
+    background:#eaf0ff;
+    color:#111318;
+    padding:10px 12px;
+    border-radius:999px;
+    box-shadow:var(--shadow);
+    opacity:0;
+    pointer-events:none;
+    transition:.18s ease;
+    font-size:.9rem;
+    max-width:calc(100vw - 28px);
+    text-align:center;
+  }
+  .toast.show{opacity:1}
+  @media (max-width:430px){
+    .wrap{padding:10px}
+    header,.card{padding:11px}
+    .two,.three{grid-template-columns:1fr}
+    .actions button{flex:1 1 auto}
+    .beatTop{align-items:flex-start}
+    .beatBtns button{font-size:.8rem;padding:6px 8px;min-height:32px}
+    .bar{grid-template-columns:1fr}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>YouTube Cold-Open Beat Board</h1>
+    <p>Plan the first 15–45 seconds: hook beats, timing risk, title angles, CTA placement, and a copyable shot plan. Works offline.</p>
+  </header>
+
+  <main class="grid">
+    <section class="card">
+      <h2>Video idea</h2>
+      <label for="idea">Core idea</label>
+      <textarea id="idea" placeholder="Example: I test whether a cheap desk treadmill actually fixes low-energy workdays."></textarea>
+      <div class="row two" style="margin-top:10px">
+        <div>
+          <label for="audience">Audience</label>
+          <input id="audience" placeholder="Example: remote workers, creators, planners">
+        </div>
+        <div>
+          <label for="promise">Viewer promise</label>
+          <input id="promise" placeholder="Example: know if it is worth buying">
+        </div>
+      </div>
+      <div class="actions">
+        <button class="primary" id="seedBtn">Seed beats</button>
+        <button id="titleBtn">Refresh title angles</button>
+        <button id="clearBtn" class="danger">Clear board</button>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>Timing risk</h2>
+      <div id="riskSummary"></div>
+      <div class="meter"><span id="riskMeter"></span></div>
+      <div class="chips" id="riskChips"></div>
+      <div class="timeline" id="timeline"></div>
+    </section>
+
+    <section class="card">
+      <h2>Hook beats</h2>
+      <div class="actions" style="margin-top:0">
+        <button class="primary" id="addBeatBtn">Add beat</button>
+      </div>
+      <div id="beats"></div>
+    </section>
+
+    <section class="card">
+      <h2>CTA placement</h2>
+      <div class="row two">
+        <div>
+          <label for="ctaSlot">Place CTA</label>
+          <select id="ctaSlot"></select>
+        </div>
+        <div>
+          <label for="ctaStyle">CTA style</label>
+          <select id="ctaStyle">
+            <option value="none">None</option>
+            <option value="soft">Soft mention</option>
+            <option value="comment">Comment prompt</option>
+            <option value="subscribe">Subscribe prompt</option>
+            <option value="link">Link / lead magnet</option>
+          </select>
+        </div>
+      </div>
+      <div style="margin-top:10px">
+        <label for="ctaText">CTA wording</label>
+        <input id="ctaText" placeholder="Example: Comment 'desk' and I’ll share the setup list.">
+      </div>
+      <div class="chips" id="ctaAdvice"></div>
+    </section>
+
+    <section class="card">
+      <h2>Title-angle cards</h2>
+      <div id="titles"></div>
+    </section>
+
+    <section class="card">
+      <h2>Shot plan</h2>
+      <div class="actions" style="margin-top:0">
+        <button class="primary" id="copyBtn">Copy shot plan</button>
+        <button id="downloadBtn">Download .txt</button>
+      </div>
+      <textarea id="plan" class="copybox" readonly></textarea>
+    </section>
+  </main>
+</div>
+
+<div class="toast" id="toast">Copied</div>
+
+<script>
+(function(){
+  "use strict";
+
+  var storeKey = "coldOpenBeatBoard_v1";
+
+  var state = {
+    idea: "",
+    audience: "",
+    promise: "",
+    ctaSlot: "after-1",
+    ctaStyle: "soft",
+    ctaText: "",
+    beats: [],
+    titles: []
+  };
+
+  var els = {
+    idea: document.getElementById("idea"),
+    audience: document.getElementById("audience"),
+    promise: document.getElementById("promise"),
+    seedBtn: document.getElementById("seedBtn"),
+    titleBtn: document.getElementById("titleBtn"),
+    clearBtn: document.getElementById("clearBtn"),
+    addBeatBtn: document.getElementById("addBeatBtn"),
+    beats: document.getElementById("beats"),
+    riskSummary: document.getElementById("riskSummary"),
+    riskMeter: document.getElementById("riskMeter"),
+    riskChips: document.getElementById("riskChips"),
+    timeline: document.getElementById("timeline"),
+    ctaSlot: document.getElementById("ctaSlot"),
+    ctaStyle: document.getElementById("ctaStyle"),
+    ctaText: document.getElementById("ctaText"),
+    ctaAdvice: document.getElementById("ctaAdvice"),
+    titles: document.getElementById("titles"),
+    plan: document.getElementById("plan"),
+    copyBtn: document.getElementById("copyBtn"),
+    downloadBtn: document.getElementById("downloadBtn"),
+    toast: document.getElementById("toast")
+  };
+
+  function uid(){
+    return "b" + Math.random().toString(36).slice(2,9);
+  }
+
+  function clean(s){
+    return String(s || "").replace(/\s+/g, " ").trim();
+  }
+
+  function cap(s){
+    s = clean(s);
+    return s ? s.charAt(0).toUpperCase() + s.slice(1) : "";
+  }
+
+  function topic(){
+    var idea = clean(state.idea);
+    if (!idea) return "this idea";
+    return idea.replace(/[?.!]+$/,"");
+  }
+
+  function shortTopic(){
+    var t = topic();
+    if (t.length <= 58) return t;
+    return t.slice(0,55).trim() + "...";
+  }
+
+  function defaultBeats(){
+    var t = shortTopic();
+    return [
+      { id:uid(), seconds:4, purpose:"pattern", beat:"Open on the most surprising visual or result.", visual:"Fast proof shot, no intro.", note:"Make the viewer ask why.", },
+      { id:uid(), seconds:6, purpose:"problem", beat:"Name the problem or tension in one sentence.", visual:"Show the pain point in action.", note:"Avoid backstory.", },
+      { id:uid(), seconds:7, purpose:"stakes", beat:"Set the stakes: what happens if this works or fails?", visual:"Timer, cost, before/after, or constraint.", note:"Give the viewer a reason to stay.", },
+      { id:uid(), seconds:8, purpose:"proof", beat:"Show the test, evidence, or rule for the video.", visual:"Quick montage of the actual process.", note:"Make it feel real, not theoretical.", },
+      { id:uid(), seconds:5, purpose:"payoff", beat:"Tease the payoff without fully giving it away.", visual:"Blurred reveal, reaction, final frame tease.", note:"Transition into the main video.", }
+    ];
+  }
+
+  function titleSeeds(){
+    var t = shortTopic();
+    var aud = clean(state.audience) || "viewers";
+    var promise = clean(state.promise) || "what is actually worth doing";
+    return [
+      { id:uid(), title:"I Tested " + cap(t) + " So You Don’t Have To", angle:"Experiment / proof-first", note:"Good when the video has a visible test and honest result." },
+      { id:uid(), title:"Before You Try " + cap(t) + ", Watch This", angle:"Risk reversal", note:"Good when the viewer may waste time, money, or effort." },
+      { id:uid(), title:"Can " + cap(t) + " Actually Work?", angle:"Curiosity gap", note:"Good when the answer is not obvious in the first 5 seconds." },
+      { id:uid(), title:"The " + cap(t) + " Mistake Most " + aud + " Miss", angle:"Mistake / correction", note:"Good when the video teaches a sharper way to think." },
+      { id:uid(), title:"I Tried " + cap(t) + " and Found One Thing That Matters", angle:"Single insight", note:"Good when the payoff is a clear lesson, not just a diary." }
+    ];
+  }
+
+  function save(){
+    try{
+      localStorage.setItem(storeKey, JSON.stringify(state));
+    }catch(e){}
+  }
+
+  function load(){
+    try{
+      var raw = localStorage.getItem(storeKey);
+      if (!raw) return;
+      var parsed = JSON.parse(raw);
+      if (parsed && typeof parsed === "object"){
+        state.idea = parsed.idea || "";
+        state.audience = parsed.audience || "";
+        state.promise = parsed.promise || "";
+        state.ctaSlot = parsed.ctaSlot || "after-1";
+        state.ctaStyle = parsed.ctaStyle || "soft";
+        state.ctaText = parsed.ctaText || "";
+        state.beats = Array.isArray(parsed.beats) ? parsed.beats : [];
+        state.titles = Array.isArray(parsed.titles) ? parsed.titles : [];
+      }
+    }catch(e){}
+  }
+
+  function make(tag, className, text){
+    var el = document.createElement(tag);
+    if (className) el.className = className;
+    if (text !== undefined) el.textContent = text;
+    return el;
+  }
+
+  function addChip(parent, text, kind){
+    var chip = make("span", "chip " + (kind || ""), text);
+    parent.appendChild(chip);
+    return chip;
+  }
+
+  function beatRisks(beat, index){
+    var risks = [];
+    var sec = Number(beat.seconds) || 0;
+    var b = clean(beat.beat).toLowerCase();
+    var visual = clean(beat.visual);
+
+    if (sec > 10) risks.push({text:"Long beat", kind:"warn"});
+    if (sec > 14) risks.push({text:"Likely drag", kind:"bad"});
+    if (sec < 2) risks.push({text:"Too fast", kind:"warn"});
+    if (clean(beat.beat).length < 14) risks.push({text:"Vague", kind:"warn"});
+    if (visual.length < 10) risks.push({text:"Needs visual", kind:"warn"});
+    if (index === 0 && /(welcome|today|in this video|hey guys|hello)/i.test(b)) risks.push({text:"Slow opener", kind:"bad"});
+    if (beat.purpose === "payoff" && sec > 8) risks.push({text:"Payoff tease too long", kind:"warn"});
+    if (!risks.length) risks.push({text:"Clean", kind:"good"});
+    return risks;
+  }
+
+  function totalSeconds(){
+    return state.beats.reduce(function(sum,b){
+      return sum + Math.max(0, Number(b.seconds) || 0);
+    },0);
+  }
+
+  function riskScore(){
+    var total = totalSeconds();
+    var score = 0;
+
+    if (total < 8) score += 25;
+    if (total > 30) score += (total - 30) * 3;
+    if (total > 45) score += 25;
+
+    state.beats.forEach(function(b,i){
+      beatRisks(b,i).forEach(function(r){
+        if (r.kind === "warn") score += 8;
+        if (r.kind === "bad") score += 16;
+      });
+    });
+
+    if (!state.beats.some(function(b){ return b.purpose === "payoff"; })) score += 15;
+    if (!state.beats.some(function(b){ return b.purpose === "proof"; })) score += 10;
+    if (state.ctaStyle !== "none" && state.ctaSlot === "after-0") score += 12;
+
+    return Math.max(0, Math.min(100, Math.round(score)));
+  }
+
+  function riskLabel(score){
+    if (score < 25) return "Low risk";
+    if (score < 55) return "Medium risk";
+    return "High risk";
+  }
+
+  function riskKind(score){
+    if (score < 25) return "good";
+    if (score < 55) return "warn";
+    return "bad";
+  }
+
+  function titleScore(card){
+    var title = clean(card.title);
+    var score = 50;
+    if (title.length >= 38 && title.length <= 72) score += 15;
+    if (/[?]/.test(title)) score += 8;
+    if (/\btested|tried|before|mistake|actually|found|watch\b/i.test(title)) score += 12;
+    if (/\bthe|this|one|most|why|how\b/i.test(title)) score += 5;
+    if (title.length > 82) score -= 15;
+    if (title.length < 25) score -= 10;
+    return Math.max(0, Math.min(100, score));
+  }
+
+  function titleKind(score){
+    if (score >= 75) return "good";
+    if (score >= 55) return "warn";
+    return "bad";
+  }
+
+  function syncInputs(){
+    els.idea.value = state.idea;
+    els.audience.value = state.audience;
+    els.promise.value = state.promise;
+    els.ctaStyle.value = state.ctaStyle;
+    els.ctaText.value = state.ctaText;
+  }
+
+  function renderCtaOptions(){
+    var old = state.ctaSlot;
+    els.ctaSlot.replaceChildren();
+
+    var none = document.createElement("option");
+    none.value = "none";
+    none.textContent = "No CTA in cold open";
+    els.ctaSlot.appendChild(none);
+
+    state.beats.forEach(function(beat, i){
+      var opt = document.createElement("option");
+      opt.value = "after-" + i;
+      opt.textContent = "After beat " + (i + 1);
+      els.ctaSlot.appendChild(opt);
+    });
+
+    var final = document.createElement("option");
+    final.value = "after-final";
+    final.textContent = "After cold open";
+    els.ctaSlot.appendChild(final);
+
+    var values = Array.prototype.map.call(els.ctaSlot.options, function(o){ return o.value; });
+    state.ctaSlot = values.indexOf(old) >= 0 ? old : "after-final";
+    els.ctaSlot.value = state.ctaSlot;
+  }
+
+  function renderBeats(){
+    els.beats.replaceChildren();
+
+    if (!state.beats.length){
+      var empty = make("p", "", "No beats yet. Add one or seed a starter cold open.");
+      els.beats.appendChild(empty);
+      return;
+    }
+
+    state.beats.forEach(function(beat, index){
+      var card = make("div", "beat");
+
+      var top = make("div", "beatTop");
+      top.appendChild(make("span", "beatNum", "Beat " + (index + 1)));
+
+      var btns = make("div", "beatBtns");
+      var up = make("button", "small", "↑");
+      var down = make("button", "small", "↓");
+      var del = make("button", "small danger", "Delete");
+
+      up.disabled = index === 0;
+      down.disabled = index === state.beats.length - 1;
+
+      up.addEventListener("click", function(){
+        var temp = state.beats[index-1];
+        state.beats[index-1] = state.beats[index];
+        state.beats[index] = temp;
+        renderAll();
+      });
+
+      down.addEventListener("click", function(){
+        var temp = state.beats[index+1];
+        state.beats[index+1] = state.beats[index];
+        state.beats[index] = temp;
+        renderAll();
+      });
+
+      del.addEventListener("click", function(){
+        state.beats.splice(index,1);
+        renderAll();
+      });
+
+      btns.appendChild(up);
+      btns.appendChild(down);
+      btns.appendChild(del);
+      top.appendChild(btns);
+      card.appendChild(top);
+
+      var row1 = make("div", "row two");
+
+      var secWrap = make("div");
+      var secLabel = make("label", "", "Seconds");
+      var sec = document.createElement("input");
+      sec.type = "number";
+      sec.min = "1";
+      sec.max = "30";
+      sec.value = beat.seconds;
+      sec.addEventListener("input", function(){
+        beat.seconds = Math.max(1, Number(sec.value) || 1);
+        save();
+        renderRiskAndPlan();
+      });
+      secWrap.appendChild(secLabel);
+      secWrap.appendChild(sec);
+
+      var purpWrap = make("div");
+      var purpLabel = make("label", "", "Purpose");
+      var purp = document.createElement("select");
+      ["pattern","problem","stakes","proof","payoff","transition"].forEach(function(v){
+        var opt = document.createElement("option");
+        opt.value = v;
+        opt.textContent = v.charAt(0).toUpperCase() + v.slice(1);
+        purp.appendChild(opt);
+      });
+      purp.value = beat.purpose || "problem";
+      purp.addEventListener("change", function(){
+        beat.purpose = purp.value;
+        save();
+        renderRiskAndPlan();
+      });
+      purpWrap.appendChild(purpLabel);
+      purpWrap.appendChild(purp);
+
+      row1.appendChild(secWrap);
+      row1.appendChild(purpWrap);
+      card.appendChild(row1);
+
+      var beatWrap = make("div");
+      beatWrap.style.marginTop = "10px";
+      beatWrap.appendChild(make("label", "", "Beat"));
+      var beatText = document.createElement("textarea");
+      beatText.value = beat.beat || "";
+      beatText.addEventListener("input", function(){
+        beat.beat = beatText.value;
+        save();
+        renderRiskAndPlan();
+      });
+      beatWrap.appendChild(beatText);
+      card.appendChild(beatWrap);
+
+      var visualWrap = make("div");
+      visualWrap.style.marginTop = "10px";
+      visualWrap.appendChild(make("label", "", "Shot / visual"));
+      var visual = document.createElement("input");
+      visual.value = beat.visual || "";
+      visual.addEventListener("input", function(){
+        beat.visual = visual.value;
+        save();
+        renderRiskAndPlan();
+      });
+      visualWrap.appendChild(visual);
+      card.appendChild(visualWrap);
+
+      var noteWrap = make("div");
+      noteWrap.style.marginTop = "10px";
+      noteWrap.appendChild(make("label", "", "Note"));
+      var note = document.createElement("input");
+      note.value = beat.note || "";
+      note.addEventListener("input", function(){
+        beat.note = note.value;
+        save();
+        renderRiskAndPlan();
+      });
+      noteWrap.appendChild(note);
+      card.appendChild(noteWrap);
+
+      var chips = make("div", "chips");
+      beatRisks(beat,index).forEach(function(r){
+        addChip(chips, r.text, r.kind);
+      });
+      card.appendChild(chips);
+
+      els.beats.appendChild(card);
+    });
+  }
+
+  function renderRiskAndPlan(){
+    var score = riskScore();
+    var total = totalSeconds();
+    els.riskSummary.replaceChildren();
+    var line = make("p", "", riskLabel(score) + " · " + total + "s cold open · target is usually 15–35s.");
+    els.riskSummary.appendChild(line);
+
+    els.riskMeter.style.width = score + "%";
+    if (score < 25) els.riskMeter.style.background = "var(--good)";
+    else if (score < 55) els.riskMeter.style.background = "var(--warn)";
+    else els.riskMeter.style.background = "var(--bad)";
+
+    els.riskChips.replaceChildren();
+    addChip(els.riskChips, riskLabel(score), riskKind(score));
+
+    if (total > 45) addChip(els.riskChips, "Cut hard: over 45s", "bad");
+    else if (total > 35) addChip(els.riskChips, "Trim 5–10s", "warn");
+    else if (total >= 15 && total <= 35) addChip(els.riskChips, "Good cold-open range", "good");
+    else addChip(els.riskChips, "May feel thin", "warn");
+
+    if (!state.beats.some(function(b){ return b.purpose === "proof"; })){
+      addChip(els.riskChips, "Add proof beat", "warn");
+    }
+    if (!state.beats.some(function(b){ return b.purpose === "payoff"; })){
+      addChip(els.riskChips, "Add payoff tease", "warn");
+    }
+
+    renderTimeline();
+    renderCtaAdvice();
+    els.plan.value = buildPlan();
+    save();
+  }
+
+  function renderTimeline(){
+    els.timeline.replaceChildren();
+    var max = Math.max(1, Math.max.apply(null, state.beats.map(function(b){ return Number(b.seconds) || 1; })));
+
+    state.beats.forEach(function(b,i){
+      var row = make("div", "bar");
+      row.appendChild(make("div", "barLabel", "Beat " + (i+1) + " · " + (Number(b.seconds)||0) + "s"));
+      var track = make("div", "barTrack");
+      var fill = make("div", "barFill");
+      fill.style.width = Math.max(8, ((Number(b.seconds)||1) / max) * 100) + "%";
+      var text = make("div", "barText", clean(b.purpose || "beat"));
+      track.appendChild(fill);
+      track.appendChild(text);
+      row.appendChild(track);
+      els.timeline.appendChild(row);
+
+      if (state.ctaSlot === "after-" + i){
+        var cta = make("div", "bar");
+        cta.appendChild(make("div", "barLabel", "CTA"));
+        var ctaTrack = make("div", "barTrack");
+        var ctaFill = make("div", "barFill");
+        ctaFill.style.width = "35%";
+        var ctaText = make("div", "barText", clean(state.ctaStyle) || "CTA");
+        ctaTrack.appendChild(ctaFill);
+        ctaTrack.appendChild(ctaText);
+        cta.appendChild(ctaTrack);
+        els.timeline.appendChild(cta);
+      }
+    });
+
+    if (state.ctaSlot === "after-final"){
+      var after = make("div", "bar");
+      after.appendChild(make("div", "barLabel", "CTA"));
+      var track = make("div", "barTrack");
+      var fill = make("div", "barFill");
+      fill.style.width = "35%";
+      track.appendChild(fill);
+      track.appendChild(make("div", "barText", "after cold open"));
+      after.appendChild(track);
+      els.timeline.appendChild(after);
+    }
+  }
+
+  function renderCtaAdvice(){
+    els.ctaAdvice.replaceChildren();
+
+    if (state.ctaStyle === "none" || state.ctaSlot === "none"){
+      addChip(els.ctaAdvice, "No CTA in cold open", "good");
+      addChip(els.ctaAdvice, "Use retention first", "good");
+      return;
+    }
+
+    var idx = -1;
+    if (state.ctaSlot.indexOf("after-") === 0 && state.ctaSlot !== "after-final"){
+      idx = Number(state.ctaSlot.split("-")[1]);
+    }
+
+    if (idx === 0){
+      addChip(els.ctaAdvice, "Risky: too early", "bad");
+      addChip(els.ctaAdvice, "Move after proof or payoff", "warn");
+    } else if (state.ctaSlot === "after-final"){
+      addChip(els.ctaAdvice, "Safest CTA slot", "good");
+      addChip(els.ctaAdvice, "Cold open stays clean", "good");
+    } else {
+      addChip(els.ctaAdvice, "Acceptable if very short", "warn");
+      addChip(els.ctaAdvice, "Keep under 3 seconds", "warn");
+    }
+
+    if (clean(state.ctaText).length > 95){
+      addChip(els.ctaAdvice, "CTA wording too long", "bad");
+    } else if (clean(state.ctaText).length > 0){
+      addChip(els.ctaAdvice, "CTA wording ready", "good");
+    } else {
+      addChip(els.ctaAdvice, "Add exact CTA wording", "warn");
+    }
+  }
+
+  function renderTitles(){
+    els.titles.replaceChildren();
+
+    if (!state.titles.length){
+      els.titles.appendChild(make("p", "", "No title angles yet. Add a video idea, then refresh title angles."));
+      return;
+    }
+
+    state.titles.forEach(function(card, index){
+      var box = make("div", "titleCard");
+
+      var titleLabel = make("label", "", "Title " + (index + 1));
+      var titleInput = document.createElement("textarea");
+      titleInput.value = card.title || "";
+      titleInput.addEventListener("input", function(){
+        card.title = titleInput.value;
+        save();
+        renderRiskAndPlan();
+        renderTitlesOnlyScores();
+      });
+
+      var angleLabel = make("label", "", "Angle");
+      angleLabel.style.marginTop = "10px";
+      var angleInput = document.createElement("input");
+      angleInput.value = card.angle || "";
+      angleInput.addEventListener("input", function(){
+        card.angle = angleInput.value;
+        save();
+        renderRiskAndPlan();
+      });
+
+      var noteLabel = make("label", "", "Use when");
+      noteLabel.style.marginTop = "10px";
+      var noteInput = document.createElement("input");
+      noteInput.value = card.note || "";
+      noteInput.addEventListener("input", function(){
+        card.note = noteInput.value;
+        save();
+        renderRiskAndPlan();
+      });
+
+      var scoreLine = make("div", "scoreLine");
+      var score = titleScore(card);
+      addChip(scoreLine, "Score " + score, titleKind(score));
+      addChip(scoreLine, (clean(card.title).length || 0) + " chars", score > 0 ? "" : "warn");
+
+      box.appendChild(titleLabel);
+      box.appendChild(titleInput);
+      box.appendChild(angleLabel);
+      box.appendChild(angleInput);
+      box.appendChild(noteLabel);
+      box.appendChild(noteInput);
+      box.appendChild(scoreLine);
+      els.titles.appendChild(box);
+    });
+  }
+
+  function renderTitlesOnlyScores(){
+    renderTitles();
+  }
+
+  function ctaLine(){
+    if (state.ctaStyle === "none" || state.ctaSlot === "none") return "CTA: none in cold open";
+    var slot = state.ctaSlot === "after-final" ? "after cold open" : "after beat " + (Number(state.ctaSlot.split("-")[1]) + 1);
+    var text = clean(state.ctaText) || "[write exact CTA]";
+    return "CTA: " + state.ctaStyle + " · " + slot + " · " + text;
+  }
+
+  function buildPlan(){
+    var lines = [];
+    var score = riskScore();
+    var total = totalSeconds();
+
+    lines.push("YOUTUBE COLD-OPEN SHOT PLAN");
+    lines.push("");
+    lines.push("Idea: " + (clean(state.idea) || "[add video idea]"));
+    lines.push("Audience: " + (clean(state.audience) || "[add audience]"));
+    lines.push("Viewer promise: " + (clean(state.promise) || "[add promise]"));
+    lines.push("Timing: " + total + "s · " + riskLabel(score) + " (" + score + "/100 risk)");
+    lines.push(ctaLine());
+    lines.push("");
+
+    lines.push("Hook beats:");
+    var start = 0;
+    state.beats.forEach(function(b,i){
+      var sec = Number(b.seconds) || 0;
+      var end = start + sec;
+      lines.push((i+1) + ". " + start + "–" + end + "s · " + cap(b.purpose || "beat"));
+      lines.push("   Beat: " + (clean(b.beat) || "[write beat]"));
+      lines.push("   Shot: " + (clean(b.visual) || "[write shot]"));
+      if (clean(b.note)) lines.push("   Note: " + clean(b.note));
+      start = end;
+    });
+
+    lines.push("");
+    lines.push("Title angles:");
+    state.titles
+      .slice()
+      .sort(function(a,b){ return titleScore(b) - titleScore(a); })
+      .slice(0,3)
+      .forEach(function(t,i){
+        lines.push((i+1) + ". " + (clean(t.title) || "[title]") + " · " + (clean(t.angle) || "angle"));
+      });
+
+    lines.push("");
+    lines.push("Fix first:");
+    if (score < 25){
+      lines.push("- Keep the cold open tight. Shoot it exactly as timed.");
+    } else {
+      if (total > 35) lines.push("- Trim total cold open closer to 25–35s.");
+      if (!state.beats.some(function(b){ return b.purpose === "proof"; })) lines.push("- Add one visible proof beat.");
+      if (!state.beats.some(function(b){ return b.purpose === "payoff"; })) lines.push("- Add a payoff tease before the main video starts.");
+      state.beats.forEach(function(b,i){
+        beatRisks(b,i).forEach(function(r){
+          if (r.kind === "bad") lines.push("- Beat " + (i+1) + ": " + r.text + ".");
+        });
+      });
+    }
+
+    return lines.join("\n");
+  }
+
+  function renderAll(){
+    syncInputs();
+    renderCtaOptions();
+    renderBeats();
+    renderTitles();
+    renderRiskAndPlan();
+  }
+
+  function seed(){
+    if (!state.idea) state.idea = "I test whether this idea actually works in real life.";
+    state.beats = defaultBeats();
+    if (!state.titles.length) state.titles = titleSeeds();
+    renderAll();
+  }
+
+  function refreshTitles(){
+    state.titles = titleSeeds();
+    renderAll();
+  }
+
+  function addBeat(){
+    state.beats.push({
+      id:uid(),
+      seconds:5,
+      purpose:"proof",
+      beat:"Add the next beat.",
+      visual:"Show the exact shot.",
+      note:"Keep it specific."
+    });
+    renderAll();
+  }
+
+  function showToast(text){
+    els.toast.textContent = text;
+    els.toast.classList.add("show");
+    window.setTimeout(function(){
+      els.toast.classList.remove("show");
+    }, 1200);
+  }
+
+  function copyPlan(){
+    var text = buildPlan();
+    els.plan.value = text;
+
+    if (navigator.clipboard && navigator.clipboard.writeText){
+      navigator.clipboard.writeText(text).then(function(){
+        showToast("Shot plan copied");
+      }).catch(function(){
+        fallbackCopy(text);
+      });
+    } else {
+      fallbackCopy(text);
+    }
+  }
+
+  function fallbackCopy(text){
+    els.plan.focus();
+    els.plan.select();
+    try{
+      document.execCommand("copy");
+      showToast("Shot plan copied");
+    }catch(e){
+      showToast("Copy failed");
+    }
+    window.getSelection().removeAllRanges();
+  }
+
+  function downloadPlan(){
+    var blob = new Blob([buildPlan()], {type:"text/plain"});
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement("a");
+    a.href = url;
+    a.download = "youtube-cold-open-shot-plan.txt";
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+  }
+
+  els.idea.addEventListener("input", function(){ state.idea = els.idea.value; save(); renderRiskAndPlan(); });
+  els.audience.addEventListener("input", function(){ state.audience = els.audience.value; save(); renderRiskAndPlan(); });
+  els.promise.addEventListener("input", function(){ state.promise = els.promise.value; save(); renderRiskAndPlan(); });
+  els.ctaSlot.addEventListener("change", function(){ state.ctaSlot = els.ctaSlot.value; renderRiskAndPlan(); });
+  els.ctaStyle.addEventListener("change", function(){ state.ctaStyle = els.ctaStyle.value; renderRiskAndPlan(); });
+  els.ctaText.addEventListener("input", function(){ state.ctaText = els.ctaText.value; renderRiskAndPlan(); });
+
+  els.seedBtn.addEventListener("click", seed);
+  els.titleBtn.addEventListener("click", refreshTitles);
+  els.addBeatBtn.addEventListener("click", addBeat);
+  els.copyBtn.addEventListener("click", copyPlan);
+  els.downloadBtn.addEventListener("click", downloadPlan);
+
+  els.clearBtn.addEventListener("click", function(){
+    state = {
+      idea: "",
+      audience: "",
+      promise: "",
+      ctaSlot: "after-1",
+      ctaStyle: "soft",
+      ctaText: "",
+      beats: [],
+      titles: []
+    };
+    try{ localStorage.removeItem(storeKey); }catch(e){}
+    renderAll();
+  });
+
+  load();
+  if (!state.beats.length) state.beats = defaultBeats();
+  if (!state.titles.length) state.titles = titleSeeds();
+  renderAll();
+})();
+</script>
+</body>
+</html>

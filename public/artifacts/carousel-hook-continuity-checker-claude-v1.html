@@ -1,0 +1,762 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Carousel Planner</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Syne:wght@700;800&display=swap');
+ 
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+ 
+  :root {
+    --bg:       #0F0F0F;
+    --surface:  #1A1A1A;
+    --border:   #2A2A2A;
+    --text:     #F0F0F0;
+    --muted:    #888;
+    --accent:   #FF5C5C;
+    --ok:       #A8FF78;
+    --warn:     #FFD166;
+    --tag-bg:   #222;
+  }
+ 
+  html, body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Inter', system-ui, sans-serif;
+    font-size: 15px;
+    line-height: 1.5;
+    min-height: 100dvh;
+  }
+ 
+  /* ── Layout ── */
+  .app { display: flex; flex-direction: column; min-height: 100dvh; padding-bottom: 140px; }
+ 
+  header {
+    padding: 20px 16px 12px;
+    border-bottom: 1px solid var(--border);
+    position: sticky; top: 0; z-index: 10;
+    background: var(--bg);
+  }
+  header h1 {
+    font-family: 'Syne', sans-serif;
+    font-weight: 800;
+    font-size: 1.1rem;
+    letter-spacing: -0.02em;
+    display: flex; align-items: center; gap: 8px;
+  }
+  header h1 span.pill {
+    font-family: 'Inter', sans-serif;
+    font-size: 0.65rem;
+    font-weight: 600;
+    background: var(--accent);
+    color: #000;
+    padding: 2px 7px;
+    border-radius: 99px;
+    letter-spacing: 0.04em;
+  }
+ 
+  .topic-row {
+    padding: 14px 16px 0;
+    display: flex; gap: 8px; align-items: center;
+  }
+  .topic-row label {
+    font-family: 'Syne', sans-serif;
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--muted);
+    white-space: nowrap;
+  }
+  .topic-row input {
+    flex: 1;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text);
+    font-family: 'Inter', sans-serif;
+    font-size: 0.9rem;
+    padding: 9px 12px;
+    outline: none;
+    transition: border-color 0.15s;
+  }
+  .topic-row input:focus { border-color: var(--muted); }
+ 
+  /* ── Slides ── */
+  .slides-header {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 20px 16px 10px;
+  }
+  .slides-header h2 {
+    font-family: 'Syne', sans-serif;
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--muted);
+  }
+  .btn-add {
+    background: var(--accent);
+    color: #000;
+    border: none;
+    border-radius: 8px;
+    font-family: 'Inter', sans-serif;
+    font-weight: 600;
+    font-size: 0.8rem;
+    padding: 7px 14px;
+    cursor: pointer;
+    display: flex; align-items: center; gap: 5px;
+    transition: opacity 0.15s;
+  }
+  .btn-add:active { opacity: 0.75; }
+ 
+  .slides-list { padding: 0 16px; display: flex; flex-direction: column; gap: 10px; }
+ 
+  .slide-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    touch-action: none;
+    cursor: grab;
+  }
+  .slide-card.dragging {
+    opacity: 0.45;
+    border-color: var(--accent);
+  }
+  .slide-card.drag-over {
+    border-color: var(--ok);
+    box-shadow: 0 0 0 2px var(--ok);
+  }
+ 
+  /* Left border = hook strength indicator */
+  .slide-card::before {
+    content: '';
+    display: block;
+    height: 3px;
+    background: var(--hook-color, var(--border));
+    transition: background 0.3s;
+  }
+ 
+  .card-top {
+    display: flex; align-items: flex-start; gap: 10px;
+    padding: 12px 12px 8px;
+  }
+  .slide-num {
+    font-family: 'Syne', sans-serif;
+    font-weight: 800;
+    font-size: 1.1rem;
+    color: var(--muted);
+    min-width: 26px;
+    line-height: 1;
+    padding-top: 2px;
+    transition: color 0.2s;
+  }
+  .slide-card[data-pos="0"] .slide-num { color: var(--accent); }
+ 
+  .card-fields { flex: 1; display: flex; flex-direction: column; gap: 7px; }
+ 
+  .field-group { display: flex; flex-direction: column; gap: 3px; }
+  .field-label {
+    font-size: 0.65rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--muted);
+  }
+  .field-group textarea, .field-group input {
+    background: transparent;
+    border: none;
+    border-bottom: 1px solid var(--border);
+    color: var(--text);
+    font-family: 'Inter', sans-serif;
+    font-size: 0.88rem;
+    line-height: 1.45;
+    width: 100%;
+    outline: none;
+    resize: none;
+    padding: 3px 0 5px;
+    transition: border-color 0.15s;
+  }
+  .field-group textarea:focus,
+  .field-group input:focus { border-color: var(--muted); }
+ 
+  .card-meta {
+    padding: 8px 12px 12px;
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 8px;
+  }
+  .hook-meter {
+    display: flex; align-items: center; gap: 6px;
+    font-size: 0.7rem;
+    color: var(--muted);
+  }
+  .hook-dots { display: flex; gap: 3px; }
+  .hook-dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    background: var(--border);
+    transition: background 0.2s;
+  }
+  .hook-dot.on { background: var(--dot-color, var(--accent)); }
+ 
+  .role-tag {
+    font-size: 0.62rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    padding: 3px 8px;
+    border-radius: 99px;
+    background: var(--tag-bg);
+    color: var(--muted);
+    border: 1px solid var(--border);
+    white-space: nowrap;
+  }
+  .role-tag.hook  { color: var(--accent); border-color: var(--accent); }
+  .role-tag.value { color: var(--ok); border-color: var(--ok); }
+  .role-tag.cta   { color: var(--warn); border-color: var(--warn); }
+  .role-tag.bridge { color: #9b8cff; border-color: #9b8cff; }
+ 
+  .btn-del {
+    background: none; border: none;
+    color: var(--border); font-size: 1.1rem;
+    cursor: pointer; padding: 4px; line-height: 1;
+    transition: color 0.15s;
+  }
+  .btn-del:active { color: var(--accent); }
+ 
+  /* ── Analysis bar ── */
+  .analysis-bar {
+    position: fixed; bottom: 0; left: 0; right: 0;
+    background: #111;
+    border-top: 1px solid var(--border);
+    z-index: 20;
+    padding: 12px 16px 20px;
+    display: flex; flex-direction: column; gap: 10px;
+  }
+ 
+  .bar-scores {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+  }
+  .score-block {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 9px 10px;
+    display: flex; flex-direction: column; gap: 3px;
+    position: relative;
+    overflow: hidden;
+  }
+  .score-block::after {
+    content: '';
+    position: absolute;
+    bottom: 0; left: 0;
+    height: 3px;
+    width: var(--fill, 0%);
+    background: var(--score-color, var(--muted));
+    transition: width 0.4s cubic-bezier(0.34,1.56,0.64,1);
+  }
+  .score-label {
+    font-family: 'Syne', sans-serif;
+    font-size: 0.58rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--muted);
+  }
+  .score-val {
+    font-family: 'Syne', sans-serif;
+    font-weight: 800;
+    font-size: 1.3rem;
+    line-height: 1;
+    color: var(--score-color, var(--text));
+  }
+ 
+  .bar-alerts {
+    display: flex; flex-direction: column; gap: 5px;
+    max-height: 60px;
+    overflow-y: auto;
+  }
+  .alert-item {
+    font-size: 0.72rem;
+    line-height: 1.4;
+    padding: 4px 8px;
+    border-radius: 6px;
+    background: var(--tag-bg);
+    border-left: 3px solid var(--muted);
+    color: var(--text);
+  }
+  .alert-item.warn { border-color: var(--warn); }
+  .alert-item.bad  { border-color: var(--accent); }
+  .alert-item.ok   { border-color: var(--ok); }
+ 
+  .bar-copy {
+    display: flex; gap: 8px; align-items: center;
+  }
+  .btn-copy {
+    flex: 1;
+    background: var(--ok);
+    color: #000;
+    border: none;
+    border-radius: 8px;
+    font-family: 'Inter', sans-serif;
+    font-weight: 600;
+    font-size: 0.82rem;
+    padding: 10px;
+    cursor: pointer;
+    transition: opacity 0.15s;
+    text-align: center;
+  }
+  .btn-copy:active { opacity: 0.75; }
+  .btn-copy.copied { background: var(--muted); }
+ 
+  .slide-count-badge {
+    font-family: 'Syne', sans-serif;
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: var(--muted);
+    white-space: nowrap;
+  }
+ 
+  /* empty state */
+  .empty-state {
+    text-align: center;
+    padding: 48px 32px;
+    color: var(--muted);
+  }
+  .empty-state p { font-size: 0.85rem; line-height: 1.7; }
+  .empty-state .big { font-size: 2.5rem; margin-bottom: 12px; }
+ 
+  @media (prefers-reduced-motion: reduce) {
+    * { transition: none !important; }
+  }
+</style>
+</head>
+<body>
+<div class="app">
+ 
+  <header>
+    <h1>&#9654; Carousel Planner <span class="pill">OFFLINE</span></h1>
+  </header>
+ 
+  <div class="topic-row">
+    <label>Topic</label>
+    <input type="text" id="topicInput" placeholder="e.g. 5 habits that kill your sleep" autocomplete="off" spellcheck="true">
+  </div>
+ 
+  <div class="slides-header">
+    <h2>Slides</h2>
+    <button class="btn-add" id="btnAdd">&#43; Add Slide</button>
+  </div>
+ 
+  <div class="slides-list" id="slidesList"></div>
+ 
+</div>
+ 
+<!-- fixed bottom bar -->
+<div class="analysis-bar" id="analysisBar">
+  <div class="bar-scores">
+    <div class="score-block" id="scoreHook" style="--score-color: var(--accent)">
+      <span class="score-label">Hook</span>
+      <span class="score-val" id="valHook">—</span>
+    </div>
+    <div class="score-block" id="scoreCont" style="--score-color: var(--ok)">
+      <span class="score-label">Flow</span>
+      <span class="score-val" id="valCont">—</span>
+    </div>
+    <div class="score-block" id="scoreCta" style="--score-color: var(--warn)">
+      <span class="score-label">CTA</span>
+      <span class="score-val" id="valCta">—</span>
+    </div>
+  </div>
+  <div class="bar-alerts" id="alertsBox"></div>
+  <div class="bar-copy">
+    <span class="slide-count-badge" id="slideCountBadge">0 slides</span>
+    <button class="btn-copy" id="btnCopy">&#128203; Copy Brief</button>
+  </div>
+</div>
+ 
+<script>
+// ── State ──────────────────────────────────────────────────────────────────
+let slides = [];
+let dragSrcIdx = null;
+ 
+const ROLES = ['hook', 'value', 'bridge', 'cta'];
+const ROLE_LABELS = { hook: 'Hook', value: 'Value', bridge: 'Bridge', cta: 'CTA' };
+ 
+// ── Helpers ─────────────────────────────────────────────────────────────────
+function uid() { return Math.random().toString(36).slice(2, 8); }
+ 
+function makeSlide() {
+  return { id: uid(), headline: '', body: '', cta: '', role: 'value', hookScore: 0 };
+}
+ 
+// ── Hook scoring (simple heuristic, runs client-side) ───────────────────────
+const POWER_WORDS = [
+  'why','how','secret','mistake','truth','stop','never','always','hack',
+  'steal','dead','wrong','real','hidden','cheat','broke','fix','toxic',
+  'nobody','everyone','instant','free','fail','earn','save','lose','win',
+  'brutally','honestly','warning','proof','finally','this','here','look',
+  'you','your','most','best','worst','revealed','shocking','actually'
+];
+const QUESTION_RE = /\?/;
+const NUMBER_RE = /\b\d+\b/;
+const CAPS_RE = /[A-Z]{2,}/;
+const SHORT_RE = text => text.split(/\s+/).length <= 8;
+ 
+function scoreHook(text) {
+  if (!text.trim()) return 0;
+  let s = 0;
+  const lower = text.toLowerCase();
+  POWER_WORDS.forEach(w => { if (lower.includes(w)) s += 0.5; });
+  if (QUESTION_RE.test(text)) s += 1.5;
+  if (NUMBER_RE.test(text)) s += 1;
+  if (CAPS_RE.test(text)) s += 0.5;
+  if (SHORT_RE(text)) s += 1;
+  if (text.length > 5) s += 0.5;
+  return Math.min(5, Math.round(s * 10) / 10);
+}
+ 
+// ── Continuity analysis ──────────────────────────────────────────────────────
+function analyzeFlow(slides) {
+  if (slides.length < 2) return { score: null, gaps: [] };
+  const gaps = [];
+  let gapCount = 0;
+ 
+  for (let i = 1; i < slides.length; i++) {
+    const prev = slides[i - 1];
+    const curr = slides[i];
+    const prevText = (prev.headline + ' ' + prev.body).toLowerCase();
+    const currText = (curr.headline + ' ' + curr.body).toLowerCase();
+ 
+    // rudimentary keyword overlap
+    const prevWords = new Set(prevText.split(/\W+/).filter(w => w.length > 3));
+    const currWords = new Set(currText.split(/\W+/).filter(w => w.length > 3));
+    let shared = 0;
+    prevWords.forEach(w => { if (currWords.has(w)) shared++; });
+    const overlap = shared / Math.max(prevWords.size, currWords.size, 1);
+ 
+    if (overlap < 0.08 && currWords.size > 2 && prevWords.size > 2) {
+      gaps.push(i);
+      gapCount++;
+    }
+  }
+ 
+  const score = Math.max(0, Math.round((1 - gapCount / (slides.length - 1)) * 100));
+  return { score, gaps };
+}
+ 
+// ── CTA analysis ─────────────────────────────────────────────────────────────
+function analyzeCta(slides) {
+  if (!slides.length) return { score: null, issues: [] };
+  const issues = [];
+  const last = slides[slides.length - 1];
+  const ctaText = (last.cta || '').trim();
+  const lastRole = last.role;
+ 
+  if (lastRole !== 'cta') issues.push({ type: 'warn', msg: 'Last slide isn\'t tagged CTA.' });
+  if (!ctaText) {
+    issues.push({ type: 'bad', msg: 'No CTA text on last slide.' });
+  } else {
+    const lower = ctaText.toLowerCase();
+    const hasAction = ['follow','save','share','comment','link','dm','click','tap','buy','join','grab','get','read','watch','subscribe','sign','like'].some(v => lower.includes(v));
+    if (!hasAction) issues.push({ type: 'warn', msg: 'CTA may lack a clear action verb.' });
+  }
+  const ctaCount = slides.filter(s => s.role === 'cta').length;
+  if (ctaCount > 1) issues.push({ type: 'warn', msg: `${ctaCount} slides tagged CTA — usually just one.` });
+ 
+  const score = issues.filter(i => i.type === 'bad').length === 0
+    ? issues.filter(i => i.type === 'warn').length === 0 ? 100 : 55
+    : 20;
+ 
+  return { score, issues };
+}
+ 
+// ── Render ───────────────────────────────────────────────────────────────────
+function hookColor(score) {
+  if (score >= 4) return 'var(--ok)';
+  if (score >= 2.5) return 'var(--warn)';
+  if (score > 0) return 'var(--accent)';
+  return 'var(--border)';
+}
+ 
+function render() {
+  const list = document.getElementById('slidesList');
+ 
+  if (!slides.length) {
+    list.innerHTML = `<div class="empty-state"><div class="big">&#9776;</div><p>Add slides above to start planning your carousel.<br>Drag to reorder. Check scores at the bottom.</p></div>`;
+  } else {
+    list.innerHTML = slides.map((s, i) => {
+      const hs = scoreHook(s.headline);
+      const dotColor = hookColor(hs);
+      const dots = [1,2,3,4,5].map(d =>
+        `<span class="hook-dot ${hs >= d ? 'on' : ''}" style="--dot-color:${dotColor}"></span>`
+      ).join('');
+      const roleClass = s.role;
+      const roleLabel = ROLE_LABELS[s.role] || s.role;
+      const roleOpts = ROLES.map(r =>
+        `<option value="${r}" ${s.role === r ? 'selected' : ''}>${ROLE_LABELS[r]}</option>`
+      ).join('');
+ 
+      return `
+<div class="slide-card" data-id="${s.id}" data-pos="${i}"
+  style="--hook-color:${dotColor}"
+  draggable="true">
+  <div class="card-top">
+    <div class="slide-num">${i + 1}</div>
+    <div class="card-fields">
+      <div class="field-group">
+        <span class="field-label">Headline</span>
+        <textarea rows="2" data-field="headline" data-id="${s.id}" spellcheck="true">${escHtml(s.headline)}</textarea>
+      </div>
+      <div class="field-group">
+        <span class="field-label">Body / Key Points</span>
+        <textarea rows="2" data-field="body" data-id="${s.id}" spellcheck="true">${escHtml(s.body)}</textarea>
+      </div>
+      <div class="field-group">
+        <span class="field-label">CTA / Transition Line</span>
+        <input type="text" data-field="cta" data-id="${s.id}" value="${escHtml(s.cta)}" spellcheck="true">
+      </div>
+    </div>
+    <button class="btn-del" data-del="${s.id}" title="Remove">&#10005;</button>
+  </div>
+  <div class="card-meta">
+    <div class="hook-meter">
+      <div class="hook-dots">${dots}</div>
+      <span>Hook ${hs}</span>
+    </div>
+    <select class="role-tag ${roleClass}" data-role="${s.id}">
+      ${roleOpts}
+    </select>
+  </div>
+</div>`.trim();
+    }).join('');
+  }
+ 
+  updateAnalysis();
+  bindCardEvents();
+}
+ 
+function escHtml(str) {
+  return String(str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+ 
+function updateAnalysis() {
+  const n = slides.length;
+  document.getElementById('slideCountBadge').textContent = `${n} slide${n !== 1 ? 's' : ''}`;
+ 
+  if (!n) {
+    ['valHook','valCont','valCta'].forEach(id => document.getElementById(id).textContent = '—');
+    ['scoreHook','scoreCont','scoreCta'].forEach(id => document.getElementById(id).style.setProperty('--fill','0%'));
+    document.getElementById('alertsBox').innerHTML = '';
+    return;
+  }
+ 
+  // Hook: use slide 1 hook score
+  const slide1 = slides[0];
+  const hookS = scoreHook(slide1 ? slide1.headline : '');
+  const hookPct = (hookS / 5) * 100;
+  document.getElementById('valHook').textContent = slide1 ? hookS.toFixed(1) : '—';
+  document.getElementById('scoreHook').style.setProperty('--fill', hookPct + '%');
+ 
+  // Flow
+  const { score: flowScore, gaps } = analyzeFlow(slides);
+  document.getElementById('valCont').textContent = flowScore !== null ? flowScore + '%' : '—';
+  document.getElementById('scoreCont').style.setProperty('--fill', (flowScore || 0) + '%');
+ 
+  // CTA
+  const { score: ctaScore, issues: ctaIssues } = analyzeCta(slides);
+  document.getElementById('valCta').textContent = ctaScore !== null ? ctaScore + '%' : '—';
+  document.getElementById('scoreCta').style.setProperty('--fill', (ctaScore || 0) + '%');
+ 
+  // Alerts
+  const alerts = [];
+  if (slide1 && hookS < 2 && slide1.headline) alerts.push({ type: 'warn', msg: 'Slide 1 hook is weak — try a question, number, or power word.' });
+  if (slide1 && hookS >= 4) alerts.push({ type: 'ok', msg: 'Strong opening hook ✓' });
+  gaps.forEach(i => alerts.push({ type: 'warn', msg: `Slide ${i}→${i+1}: topic jump may lose readers.` }));
+  ctaIssues.forEach(a => alerts.push(a));
+  if (!alerts.length) alerts.push({ type: 'ok', msg: 'Looking good — no major issues detected.' });
+ 
+  document.getElementById('alertsBox').innerHTML = alerts.map(a =>
+    `<div class="alert-item ${a.type}">${a.msg}</div>`
+  ).join('');
+}
+ 
+// ── Events ────────────────────────────────────────────────────────────────────
+document.getElementById('btnAdd').addEventListener('click', () => {
+  slides.push(makeSlide());
+  render();
+  setTimeout(() => {
+    const cards = document.querySelectorAll('.slide-card');
+    cards[cards.length - 1]?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }, 50);
+});
+ 
+function bindCardEvents() {
+  // Textarea / input changes
+  document.querySelectorAll('[data-field]').forEach(el => {
+    el.addEventListener('input', e => {
+      const id = e.target.dataset.id;
+      const field = e.target.dataset.field;
+      const s = slides.find(s => s.id === id);
+      if (s) {
+        s[field] = e.target.value;
+        // live update hook bar without full re-render
+        if (field === 'headline') {
+          const card = e.target.closest('.slide-card');
+          const hs = scoreHook(e.target.value);
+          const color = hookColor(hs);
+          card.style.setProperty('--hook-color', color);
+          const dots = card.querySelectorAll('.hook-dot');
+          dots.forEach((d, i) => {
+            d.classList.toggle('on', hs >= i + 1);
+            d.style.setProperty('--dot-color', color);
+          });
+          const hookLabel = card.querySelector('.hook-meter span');
+          if (hookLabel) hookLabel.textContent = `Hook ${hs}`;
+          updateAnalysis();
+        } else {
+          updateAnalysis();
+        }
+      }
+    });
+ 
+    // auto-resize textareas
+    if (el.tagName === 'TEXTAREA') {
+      el.addEventListener('input', () => {
+        el.style.height = 'auto';
+        el.style.height = el.scrollHeight + 'px';
+      });
+    }
+  });
+ 
+  // Role selects
+  document.querySelectorAll('[data-role]').forEach(sel => {
+    sel.addEventListener('change', e => {
+      const id = e.target.dataset.role;
+      const s = slides.find(s => s.id === id);
+      if (s) {
+        s.role = e.target.value;
+        e.target.className = `role-tag ${s.role}`;
+        updateAnalysis();
+      }
+    });
+  });
+ 
+  // Delete buttons
+  document.querySelectorAll('[data-del]').forEach(btn => {
+    btn.addEventListener('click', e => {
+      const id = e.currentTarget.dataset.del;
+      slides = slides.filter(s => s.id !== id);
+      render();
+    });
+  });
+ 
+  // Drag-and-drop (touch + mouse)
+  setupDrag();
+}
+ 
+// ── Drag ─────────────────────────────────────────────────────────────────────
+function setupDrag() {
+  const cards = [...document.querySelectorAll('.slide-card')];
+  let touchY = 0, touchIdx = null;
+ 
+  cards.forEach((card, i) => {
+    // Mouse drag
+    card.addEventListener('dragstart', e => {
+      dragSrcIdx = i;
+      setTimeout(() => card.classList.add('dragging'), 0);
+      e.dataTransfer.effectAllowed = 'move';
+    });
+    card.addEventListener('dragend', () => {
+      card.classList.remove('dragging');
+      document.querySelectorAll('.slide-card').forEach(c => c.classList.remove('drag-over'));
+    });
+    card.addEventListener('dragover', e => {
+      e.preventDefault();
+      document.querySelectorAll('.slide-card').forEach(c => c.classList.remove('drag-over'));
+      card.classList.add('drag-over');
+    });
+    card.addEventListener('drop', e => {
+      e.preventDefault();
+      if (dragSrcIdx !== null && dragSrcIdx !== i) {
+        const moved = slides.splice(dragSrcIdx, 1)[0];
+        slides.splice(i, 0, moved);
+        dragSrcIdx = null;
+        render();
+      }
+    });
+ 
+    // Touch drag
+    card.addEventListener('touchstart', e => {
+      touchIdx = i;
+      touchY = e.touches[0].clientY;
+    }, { passive: true });
+ 
+    card.addEventListener('touchmove', e => {
+      if (touchIdx === null) return;
+      const dy = e.touches[0].clientY - touchY;
+      const threshold = 56;
+      if (Math.abs(dy) > threshold) {
+        const dir = dy > 0 ? 1 : -1;
+        const newIdx = touchIdx + dir;
+        if (newIdx >= 0 && newIdx < slides.length) {
+          const moved = slides.splice(touchIdx, 1)[0];
+          slides.splice(newIdx, 0, moved);
+          touchIdx = newIdx;
+          touchY = e.touches[0].clientY;
+          render();
+        }
+      }
+    }, { passive: true });
+ 
+    card.addEventListener('touchend', () => { touchIdx = null; });
+  });
+}
+ 
+// ── Copy Brief ─────────────────────────────────────────────────────────────
+document.getElementById('btnCopy').addEventListener('click', () => {
+  if (!slides.length) return;
+  const topic = document.getElementById('topicInput').value.trim() || '(no topic)';
+  const { score: flowScore } = analyzeFlow(slides);
+  const { score: ctaScore } = analyzeCta(slides);
+  const hookS = scoreHook(slides[0]?.headline || '');
+ 
+  let brief = `CAROUSEL BRIEF\n`;
+  brief += `Topic: ${topic}\n`;
+  brief += `Slides: ${slides.length}  |  Hook: ${hookS}/5  |  Flow: ${flowScore ?? '—'}%  |  CTA: ${ctaScore ?? '—'}%\n`;
+  brief += `${'─'.repeat(42)}\n`;
+  slides.forEach((s, i) => {
+    brief += `\n[${i + 1}] ${ROLE_LABELS[s.role].toUpperCase()}\n`;
+    if (s.headline) brief += `  Headline: ${s.headline}\n`;
+    if (s.body)     brief += `  Body: ${s.body}\n`;
+    if (s.cta)      brief += `  CTA: ${s.cta}\n`;
+  });
+ 
+  navigator.clipboard.writeText(brief).then(() => {
+    const btn = document.getElementById('btnCopy');
+    const orig = btn.textContent;
+    btn.textContent = '✓ Copied!';
+    btn.classList.add('copied');
+    setTimeout(() => { btn.textContent = orig; btn.classList.remove('copied'); }, 1800);
+  }).catch(() => {
+    // fallback
+    const ta = document.createElement('textarea');
+    ta.value = brief;
+    ta.style.position = 'fixed'; ta.style.opacity = '0';
+    document.body.appendChild(ta);
+    ta.select(); document.execCommand('copy');
+    document.body.removeChild(ta);
+  });
+});
+ 
+// ── Init ──────────────────────────────────────────────────────────────────────
+render();
+</script>
+</body>
+</html>
+ 

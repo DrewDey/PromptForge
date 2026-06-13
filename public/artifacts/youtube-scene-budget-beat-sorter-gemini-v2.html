@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Video Planner</title>
+    <style>
+        :root { --bg: #121212; --card-bg: #1e1e1e; --text: #e0e0e0; --accent: #ff4444; }
+        body { background: var(--bg); color: var(--text); padding: 10px; font-family: sans-serif; font-size: 14px; }
+        .container { max-width: 500px; margin: 0 auto; display: flex; flex-direction: column; gap: 10px; }
+        .section { background: var(--card-bg); padding: 10px; border-radius: 8px; }
+        input, textarea, select { width: 100%; background: #2a2a2a; color: #fff; border: 1px solid #333; padding: 8px; margin-top: 5px; }
+        .beat-card { background: #252525; padding: 10px; margin-bottom: 8px; border-left: 4px solid #888; border-radius: 4px; }
+        .toolbar { display: flex; gap: 5px; margin-top: 10px; }
+        button { flex: 1; background: #333; color: white; border: none; padding: 8px; cursor: pointer; }
+        .action { background: var(--accent); }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="section">
+        <label>Video Idea</label>
+        <input type="text" id="videoIdea">
+    </div>
+    <div class="section">
+        <div>Total: <span id="totalTime">0s</span> | Beats: <span id="beatCount">0</span></div>
+        <div id="pacingAlert" style="color: #ffcc00; display: none;">⚠️ Pacing Warning (>90s beat)</div>
+    </div>
+    <div class="toolbar">
+        <button id="addBtn">+ Add Beat</button>
+        <button id="loadBtn">Load Sample</button>
+        <button class="action" id="copyBtn">Copy Plan</button>
+    </div>
+    <div id="beatList"></div>
+    <div class="section">
+        <label>Risk Notes</label>
+        <textarea id="riskNotes"></textarea>
+    </div>
+</div>
+
+<script>
+    const beatList = document.getElementById('beatList');
+    const types = ["Hook", "Proof", "Demo", "B-Roll", "CTA"];
+
+    function createBeat(type = "Hook", duration = 30, text = "") {
+        const div = document.createElement('div');
+        div.className = 'beat-card';
+        div.setAttribute('data-type', type);
+
+        const select = document.createElement('select');
+        types.forEach(t => {
+            const opt = document.createElement('option');
+            opt.value = t;
+            opt.textContent = t;
+            if (t === type) opt.selected = true;
+            select.appendChild(opt);
+        });
+        select.addEventListener('change', (e) => div.setAttribute('data-type', e.target.value));
+
+        const durInput = document.createElement('input');
+        durInput.type = 'number';
+        durInput.value = duration;
+        durInput.addEventListener('input', updateStats);
+
+        const textArea = document.createElement('textarea');
+        textArea.value = text;
+
+        const delBtn = document.createElement('button');
+        delBtn.textContent = 'Remove';
+        delBtn.addEventListener('click', () => { div.remove(); updateStats(); });
+
+        div.appendChild(select);
+        div.appendChild(durInput);
+        div.appendChild(textArea);
+        div.appendChild(delBtn);
+        return div;
+    }
+
+    function updateStats() {
+        const cards = document.querySelectorAll('.beat-card');
+        let total = 0, risk = false;
+        cards.forEach(c => {
+            const d = parseInt(c.querySelector('input').value) || 0;
+            total += d;
+            if (d > 90) risk = true;
+        });
+        document.getElementById('totalTime').textContent = `${total}s`;
+        document.getElementById('beatCount').textContent = cards.length;
+        document.getElementById('pacingAlert').style.display = risk ? 'block' : 'none';
+    }
+
+    document.getElementById('addBtn').addEventListener('click', () => {
+        beatList.appendChild(createBeat());
+        updateStats();
+    });
+
+    document.getElementById('loadBtn').addEventListener('click', () => {
+        beatList.innerHTML = '';
+        const samples = [
+            ["Hook", 15, "Hook intro"], ["Proof", 20, "Credibility"], ["Demo", 40, "Step 1"],
+            ["Demo", 40, "Step 2"], ["B-Roll", 30, "Visuals"], ["Demo", 40, "Step 3"],
+            ["B-Roll", 20, "Transition"], ["CTA", 15, "Subscribe"]
+        ];
+        samples.forEach(s => beatList.appendChild(createBeat(s[0], s[1], s[2])));
+        updateStats();
+    });
+
+    document.getElementById('copyBtn').addEventListener('click', () => {
+        let text = `Idea: ${document.getElementById('videoIdea').value}\n\n`;
+        document.querySelectorAll('.beat-card').forEach((c, i) => {
+            text += `Beat ${i+1} [${c.getAttribute('data-type')}]: ${c.querySelector('input').value}s\n${c.querySelector('textarea').value}\n\n`;
+        });
+        navigator.clipboard.writeText(text).then(() => alert('Copied'));
+    });
+</script>
+</body>
+</html>

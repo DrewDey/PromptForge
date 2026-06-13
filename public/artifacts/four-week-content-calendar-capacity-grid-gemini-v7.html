@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Secure Mobile Content Planner</title>
+    <style>
+        :root {
+            --bg: #f8fafc;
+            --card: #ffffff;
+            --text: #0f172a;
+            --primary: #4f46e5;
+            --primary-hover: #4338ca;
+            --border: #e2e8f0;
+            --warn: #ef4444;
+            --warn-bg: #fee2e2;
+            --success: #10b981;
+            --success-bg: #d1fae5;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+        body { background: var(--bg); color: var(--text); padding: 12px; font-size: 14px; line-height: 1.4; }
+        h1, h2 { font-size: 1.2rem; margin-bottom: 12px; color: var(--primary); }
+        .section { background: var(--card); border-radius: 8px; padding: 16px; margin-bottom: 16px; border: 1px solid var(--border); }
+        label { display: block; font-weight: 600; margin: 8px 0 4px; }
+        input, textarea, select { width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: 6px; font-size: 14px; background: #fff; color: var(--text); }
+        
+        .grid-mobile-stack { display: flex; flex-direction: column; gap: 8px; }
+        
+        /* Week Container */
+        .week-block { border: 1px solid var(--border); border-radius: 8px; padding: 12px; margin-bottom: 16px; background: #ffffff; }
+        .week-header { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; font-weight: bold; margin-bottom: 8px; padding-bottom: 6px; border-bottom: 1px solid var(--border); }
+        .theme-indicator { font-weight: normal; color: #64748b; font-size: 13px; margin-bottom: 8px; font-style: italic; word-break: break-word; }
+        
+        /* Badge */
+        .status-badge { padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: 600; width: 100%; text-align: center; }
+        .status-ok { background: var(--success-bg); color: #065f46; }
+        .status-over { background: var(--warn-bg); color: #991b1b; border: 1px solid var(--warn); }
+        
+        /* Permanent Single-Column Day Layout */
+        .days-grid { display: flex; flex-direction: column; gap: 8px; }
+        .day-card { background: #fafafa; border: 1px solid var(--border); border-radius: 6px; padding: 8px; }
+        .day-name { font-weight: 600; color: #64748b; margin-bottom: 6px; font-size: 12px; text-transform: uppercase; }
+        
+        /* Slots */
+        .slot { background: #eef2ff; border-left: 3px solid var(--primary); padding: 6px; margin-bottom: 6px; border-radius: 0 4px 4px 0; font-size: 12px; cursor: pointer; word-break: break-word; }
+        .slot-title { font-weight: 600; }
+        
+        /* Modal */
+        .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); padding: 16px; align-items: center; justify-content: center; z-index: 100; }
+        .modal-content { background: #fff; padding: 16px; border-radius: 8px; width: 100%; max-width: 400px; max-height: 90vh; overflow-y: auto; }
+        .btn-group { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+        button { flex: 1; padding: 10px; border: none; border-radius: 6px; font-weight: 600; cursor: pointer; font-size: 13px; }
+        .btn-pri { background: var(--primary); color: #fff; width: 100%; }
+        .btn-sec { background: var(--border); color: var(--text); }
+        .btn-danger { background: var(--warn); color: #fff; }
+        
+        .add-btn { background: transparent; border: 1px dashed var(--border); color: #64748b; padding: 4px; font-size: 12px; width: 100%; margin-top: 6px; }
+    </style>
+</head>
+<body>
+
+    <div class="section">
+        <h1>Setup & Strategy</h1>
+        <div class="grid-mobile-stack">
+            <div><label>Channels</label><input type="text" id="channelsInput" value="Instagram, LinkedIn, Newsletter"></div>
+            <div><label>Weekly Max</label><input type="number" id="weeklyLimitInput" value="4"></div>
+        </div>
+        <label>Campaign Themes (One per week)</label>
+        <textarea id="themesInput" rows="4"></textarea>
+        <button id="refreshBtn" class="btn-pri" style="margin-top: 12px;">Apply Settings</button>
+    </div>
+
+    <div class="section">
+        <h2>4-Week Workspace</h2>
+        <div id="calendarContainer"></div>
+    </div>
+
+    <div id="briefModal" class="modal">
+        <div class="modal-content">
+            <h3 id="modalTitle">Edit Plan</h3>
+            <label>Channel</label><select id="modalChannel"></select>
+            <label>Hook / Title</label><input type="text" id="modalPostTitle">
+            <label>Caption Brief</label><textarea id="modalCopy" rows="6"></textarea>
+            <div class="btn-group">
+                <button id="saveBtn" class="btn-pri">Save</button>
+                <button id="deleteBtn" class="btn-danger">Delete</button>
+                <button id="closeBtn" class="btn-sec">Close</button>
+            </div>
+            <div class="btn-group">
+                <button id="copyBtn" class="btn-sec">📋 Copy</button>
+                <button id="downloadBtn" class="btn-sec">💾 Download</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+        let plannerData = JSON.parse(localStorage.getItem('planner_final')) || { limit: 4, themes: [], slots: [] };
+        let currentSlotId = null, targetWeek = null, targetDay = null;
+
+        const container = document.getElementById('calendarContainer'), modal = document.getElementById('briefModal');
+
+        function render() {
+            container.textContent = '';
+            const limit = parseInt(document.getElementById('weeklyLimitInput').value);
+            
+            for (let w = 1; w <= 4; w++) {
+                const slots = plannerData.slots.filter(s => s.week === w);
+                const block = document.createElement('div');
+                block.className = 'week-block';
+                const head = document.createElement('div');
+                head.className = 'week-header';
+                const title = document.createElement('span');
+                title.textContent = `Week ${w}`;
+                const badge = document.createElement('span');
+                badge.className = `status-badge ${slots.length > limit ? 'status-over' : 'status-ok'}`;
+                badge.textContent = `${slots.length}/${limit} Posts ${slots.length > limit ? '(Overload)' : ''}`;
+                head.appendChild(title);
+                head.appendChild(badge);
+                block.appendChild(head);
+                
+                const grid = document.createElement('div');
+                grid.className = 'days-grid';
+                DAYS.forEach(d => {
+                    const card = document.createElement('div');
+                    card.className = 'day-card';
+                    const name = document.createElement('div');
+                    name.className = 'day-name';
+                    name.textContent = d;
+                    card.appendChild(name);
+                    slots.filter(s => s.day === d).forEach(s => {
+                        const slot = document.createElement('div');
+                        slot.className = 'slot';
+                        slot.textContent = `[${s.channel}] ${s.title}`;
+                        slot.addEventListener('click', () => edit(s));
+                        card.appendChild(slot);
+                    });
+                    const add = document.createElement('button');
+                    add.className = 'add-btn';
+                    add.textContent = '+ Add Item';
+                    add.addEventListener('click', () => open(w, d));
+                    card.appendChild(add);
+                    grid.appendChild(card);
+                });
+                block.appendChild(grid);
+                container.appendChild(block);
+            }
+        }
+
+        function open(w, d) {
+            currentSlotId = null; targetWeek = w; targetDay = d;
+            document.getElementById('modalTitle').textContent = `New: W${w} ${d}`;
+            document.getElementById('modalChannel').innerHTML = '';
+            document.getElementById('channelsInput').value.split(',').forEach(c => {
+                const opt = document.createElement('option');
+                opt.textContent = c.trim();
+                document.getElementById('modalChannel').appendChild(opt);
+            });
+            modal.style.display = 'flex';
+        }
+
+        function edit(s) {
+            currentSlotId = s.id;
+            open(s.week, s.day);
+            document.getElementById('modalChannel').value = s.channel;
+            document.getElementById('modalPostTitle').value = s.title;
+            document.getElementById('modalCopy').value = s.copy;
+        }
+
+        document.getElementById('saveBtn').addEventListener('click', () => {
+            if (currentSlotId) {
+                const s = plannerData.slots.find(x => x.id === currentSlotId);
+                s.channel = document.getElementById('modalChannel').value;
+                s.title = document.getElementById('modalPostTitle').value;
+                s.copy = document.getElementById('modalCopy').value;
+            } else {
+                plannerData.slots.push({ id: Date.now(), week: targetWeek, day: targetDay, channel: document.getElementById('modalChannel').value, title: document.getElementById('modalPostTitle').value, copy: document.getElementById('modalCopy').value });
+            }
+            localStorage.setItem('planner_final', JSON.stringify(plannerData));
+            modal.style.display = 'none';
+            render();
+        });
+
+        document.getElementById('refreshBtn').addEventListener('click', render);
+        document.getElementById('closeBtn').addEventListener('click', () => modal.style.display = 'none');
+        document.getElementById('deleteBtn').addEventListener('click', () => {
+            plannerData.slots = plannerData.slots.filter(s => s.id !== currentSlotId);
+            render();
+            modal.style.display = 'none';
+        });
+        render();
+    </script>
+</body>
+</html>

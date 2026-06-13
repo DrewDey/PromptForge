@@ -1,0 +1,1384 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Voice Consistency Checker</title>
+  <style>
+    :root {
+      --bg: #f6f4ef;
+      --panel: #ffffff;
+      --ink: #1f252b;
+      --muted: #68727d;
+      --line: #d9d3c8;
+      --soft: #eee9df;
+      --accent: #2f6f73;
+      --accent-2: #e7f4f3;
+      --warn: #9a5b00;
+      --warn-bg: #fff4dc;
+      --bad: #9d3030;
+      --bad-bg: #fde8e8;
+      --good: #206b3f;
+      --good-bg: #e7f5ec;
+      --shadow: 0 10px 28px rgba(31, 37, 43, 0.08);
+      --radius: 18px;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      width: 100%;
+      max-width: 100%;
+      overflow-x: hidden;
+    }
+
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: var(--bg);
+      color: var(--ink);
+      line-height: 1.45;
+    }
+
+    button,
+    textarea,
+    input {
+      font: inherit;
+    }
+
+    .app {
+      width: min(100%, 860px);
+      margin: 0 auto;
+      padding: 14px;
+    }
+
+    header {
+      background: linear-gradient(135deg, #ffffff, #eaf5f4);
+      border: 1px solid var(--line);
+      border-radius: 24px;
+      box-shadow: var(--shadow);
+      padding: 18px;
+      margin-bottom: 14px;
+    }
+
+    h1 {
+      margin: 0 0 8px;
+      font-size: clamp(1.45rem, 7vw, 2.15rem);
+      letter-spacing: -0.04em;
+      line-height: 1.05;
+    }
+
+    .lede {
+      margin: 0;
+      color: var(--muted);
+      font-size: 0.98rem;
+    }
+
+    .layout {
+      display: grid;
+      gap: 14px;
+    }
+
+    @media (min-width: 760px) {
+      .layout {
+        grid-template-columns: 1.05fr 0.95fr;
+        align-items: start;
+      }
+    }
+
+    .panel {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 14px;
+      min-width: 0;
+    }
+
+    .panel h2 {
+      margin: 0 0 10px;
+      font-size: 1rem;
+      letter-spacing: -0.02em;
+    }
+
+    label {
+      display: block;
+      font-size: 0.9rem;
+      color: var(--muted);
+      margin-bottom: 7px;
+    }
+
+    textarea {
+      width: 100%;
+      min-height: 210px;
+      resize: vertical;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 12px;
+      background: #fffdf9;
+      color: var(--ink);
+      outline: none;
+    }
+
+    textarea:focus,
+    input:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(47, 111, 115, 0.16);
+    }
+
+    .small-input {
+      width: 100%;
+      border: 1px solid var(--line);
+      border-radius: 13px;
+      padding: 10px 11px;
+      background: #fffdf9;
+      color: var(--ink);
+      outline: none;
+    }
+
+    .row {
+      display: flex;
+      gap: 9px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+
+    .toolbar {
+      margin-top: 10px;
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 8px;
+    }
+
+    @media (min-width: 520px) {
+      .toolbar {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+      }
+    }
+
+    button {
+      border: 1px solid var(--line);
+      background: var(--soft);
+      color: var(--ink);
+      border-radius: 999px;
+      padding: 10px 11px;
+      cursor: pointer;
+      min-width: 0;
+      touch-action: manipulation;
+    }
+
+    button.primary {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: white;
+    }
+
+    button.ghost {
+      background: white;
+    }
+
+    button:active {
+      transform: translateY(1px);
+    }
+
+    .trait-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 8px;
+    }
+
+    @media (min-width: 500px) {
+      .trait-grid {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+      }
+    }
+
+    .trait {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      border: 1px solid var(--line);
+      background: #fffdf9;
+      border-radius: 999px;
+      padding: 9px 10px;
+      color: var(--ink);
+      font-size: 0.9rem;
+      min-width: 0;
+    }
+
+    .trait input {
+      width: 18px;
+      height: 18px;
+      flex: 0 0 auto;
+      accent-color: var(--accent);
+    }
+
+    .trait span {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .micro {
+      font-size: 0.82rem;
+      color: var(--muted);
+      margin: 8px 0 0;
+    }
+
+    .score-card {
+      display: grid;
+      grid-template-columns: 104px 1fr;
+      gap: 12px;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+
+    .score-ring {
+      width: 104px;
+      height: 104px;
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      background:
+        radial-gradient(circle at center, white 0 58%, transparent 59%),
+        conic-gradient(var(--accent) calc(var(--score) * 1%), #e5dfd5 0);
+      border: 1px solid var(--line);
+    }
+
+    .score-number {
+      font-size: 1.55rem;
+      font-weight: 800;
+      letter-spacing: -0.04em;
+    }
+
+    .score-copy h2 {
+      margin-bottom: 3px;
+    }
+
+    .score-copy p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 0.9rem;
+    }
+
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 8px;
+      margin: 10px 0;
+    }
+
+    .stat {
+      background: var(--soft);
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 10px;
+      min-width: 0;
+    }
+
+    .stat strong {
+      display: block;
+      font-size: 1.15rem;
+      letter-spacing: -0.03em;
+    }
+
+    .stat span {
+      color: var(--muted);
+      font-size: 0.78rem;
+    }
+
+    .flag-list {
+      display: grid;
+      gap: 8px;
+    }
+
+    .flag {
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 10px;
+      background: #fffdf9;
+    }
+
+    .flag.good {
+      border-color: #bddcc8;
+      background: var(--good-bg);
+    }
+
+    .flag.warn {
+      border-color: #efd08c;
+      background: var(--warn-bg);
+    }
+
+    .flag.bad {
+      border-color: #efb6b6;
+      background: var(--bad-bg);
+    }
+
+    .flag-title {
+      display: flex;
+      justify-content: space-between;
+      gap: 8px;
+      align-items: center;
+      font-size: 0.9rem;
+      margin-bottom: 4px;
+    }
+
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 999px;
+      padding: 3px 8px;
+      background: white;
+      border: 1px solid var(--line);
+      color: var(--muted);
+      font-size: 0.76rem;
+      white-space: nowrap;
+    }
+
+    .flag p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 0.86rem;
+      overflow-wrap: anywhere;
+    }
+
+    .section-title {
+      margin: 14px 0 8px;
+      font-size: 0.95rem;
+      color: var(--ink);
+    }
+
+    .brief-box {
+      white-space: pre-wrap;
+      background: #fffdf9;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 12px;
+      min-height: 150px;
+      color: var(--ink);
+      font-size: 0.9rem;
+      overflow-wrap: anywhere;
+    }
+
+    .empty {
+      color: var(--muted);
+      font-size: 0.9rem;
+      margin: 0;
+    }
+
+    .notice {
+      margin-top: 10px;
+      background: var(--accent-2);
+      border: 1px solid #c9e5e2;
+      color: #254f52;
+      border-radius: 14px;
+      padding: 10px;
+      font-size: 0.86rem;
+    }
+
+    .toast {
+      position: fixed;
+      left: 14px;
+      right: 14px;
+      bottom: 14px;
+      background: #1f252b;
+      color: white;
+      border-radius: 14px;
+      padding: 11px 12px;
+      box-shadow: var(--shadow);
+      opacity: 0;
+      transform: translateY(12px);
+      transition: 160ms ease;
+      pointer-events: none;
+      text-align: center;
+      z-index: 10;
+    }
+
+    .toast.show {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .hidden {
+      display: none !important;
+    }
+  </style>
+</head>
+<body>
+  <main class="app">
+    <header>
+      <h1>Voice Consistency Checker</h1>
+      <p class="lede">Paste a paragraph, choose the voice traits you want, then get diagnostic flags and a revision brief. No rewriting. No internet. No external files.</p>
+    </header>
+
+    <section class="layout">
+      <div class="panel">
+        <h2>Draft paragraph</h2>
+        <label for="draft">Paste or type your paragraph</label>
+        <textarea id="draft" placeholder="Paste your draft paragraph here..."></textarea>
+
+        <div class="toolbar">
+          <button class="primary" id="analyzeBtn" type="button">Analyze</button>
+          <button class="ghost" id="copyBriefBtn" type="button">Copy brief</button>
+          <button class="ghost" id="exportTxtBtn" type="button">Export .txt</button>
+          <button class="ghost" id="clearBtn" type="button">Clear</button>
+        </div>
+
+        <div class="notice">
+          This tool only identifies consistency issues. It will not rewrite, paraphrase, or replace your draft.
+        </div>
+      </div>
+
+      <div class="panel">
+        <h2>Target voice traits</h2>
+        <div class="trait-grid" id="traitGrid"></div>
+
+        <div style="margin-top: 12px;">
+          <label for="customTraits">Custom voice notes</label>
+          <input class="small-input" id="customTraits" type="text" placeholder="Example: less salesy, more precise">
+          <p class="micro">Custom notes are included in the revision brief, but the score uses the selected traits above.</p>
+        </div>
+
+        <div class="toolbar">
+          <button class="ghost" id="selectLeanBtn" type="button">Lean preset</button>
+          <button class="ghost" id="selectWarmBtn" type="button">Warm preset</button>
+          <button class="ghost" id="selectFormalBtn" type="button">Formal preset</button>
+          <button class="ghost" id="exportJsonBtn" type="button">Export .json</button>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel" style="margin-top: 14px;">
+      <div class="score-card">
+        <div class="score-ring" id="scoreRing" style="--score: 0;">
+          <div class="score-number" id="scoreNumber">0</div>
+        </div>
+        <div class="score-copy">
+          <h2 id="scoreLabel">Waiting for text</h2>
+          <p id="scoreSummary">Paste a paragraph and choose voice traits to start.</p>
+        </div>
+      </div>
+
+      <div class="stats">
+        <div class="stat">
+          <strong id="wordCount">0</strong>
+          <span>words</span>
+        </div>
+        <div class="stat">
+          <strong id="sentenceCount">0</strong>
+          <span>sentences</span>
+        </div>
+        <div class="stat">
+          <strong id="avgSentence">0</strong>
+          <span>avg words</span>
+        </div>
+      </div>
+
+      <h3 class="section-title">Flags</h3>
+      <div class="flag-list" id="flags"></div>
+
+      <h3 class="section-title">Revision brief</h3>
+      <div class="brief-box" id="briefBox">Your brief will appear here.</div>
+    </section>
+  </main>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <script>
+    (function () {
+      "use strict";
+
+      var traits = [
+        { id: "clear", label: "Clear" },
+        { id: "concise", label: "Concise" },
+        { id: "direct", label: "Direct" },
+        { id: "warm", label: "Warm" },
+        { id: "formal", label: "Formal" },
+        { id: "calm", label: "Calm" },
+        { id: "expert", label: "Expert" },
+        { id: "plain", label: "Plainspoken" },
+        { id: "energetic", label: "Energetic" },
+        { id: "assertive", label: "Assertive" }
+      ];
+
+      var stockPhrases = [
+        "at the end of the day",
+        "in today's fast-paced world",
+        "now more than ever",
+        "game changer",
+        "cutting edge",
+        "best in class",
+        "seamless experience",
+        "unlock your potential",
+        "take it to the next level",
+        "move the needle",
+        "think outside the box",
+        "empower you to",
+        "tailored solutions",
+        "robust solution",
+        "one stop shop",
+        "pain points",
+        "circle back",
+        "low hanging fruit",
+        "leverage our",
+        "world class",
+        "mission critical"
+      ];
+
+      var fillerWords = [
+        "really", "very", "basically", "actually", "just", "quite", "rather",
+        "pretty", "simply", "literally", "totally", "clearly", "obviously"
+      ];
+
+      var hedgePhrases = [
+        "i think", "i believe", "sort of", "kind of", "maybe", "perhaps",
+        "possibly", "might", "could", "it seems", "it feels", "in my opinion"
+      ];
+
+      var vagueWords = [
+        "stuff", "things", "some", "various", "many", "a lot", "several",
+        "nice", "good", "bad", "better", "great", "interesting"
+      ];
+
+      var jargonWords = [
+        "synergy", "leverage", "utilize", "optimize", "streamline",
+        "innovative", "holistic", "scalable", "robust", "frictionless",
+        "ecosystem", "paradigm"
+      ];
+
+      var slangWords = [
+        "lol", "kinda", "gonna", "wanna", "awesome", "super", "tons",
+        "stuff", "thingy", "yep", "nope"
+      ];
+
+      var harshWords = [
+        "obviously", "clearly", "never", "always", "must", "failure",
+        "wrong", "bad", "weak", "ridiculous"
+      ];
+
+      var stopWords = new Set([
+        "a", "an", "and", "are", "as", "at", "be", "been", "but", "by",
+        "for", "from", "had", "has", "have", "he", "her", "his", "i",
+        "if", "in", "into", "is", "it", "its", "me", "my", "not", "of",
+        "on", "or", "our", "she", "so", "that", "the", "their", "them",
+        "then", "there", "these", "they", "this", "to", "was", "we",
+        "were", "what", "when", "where", "which", "who", "will", "with",
+        "you", "your"
+      ]);
+
+      var draftEl = document.getElementById("draft");
+      var customTraitsEl = document.getElementById("customTraits");
+      var traitGridEl = document.getElementById("traitGrid");
+      var flagsEl = document.getElementById("flags");
+      var briefBoxEl = document.getElementById("briefBox");
+      var scoreRingEl = document.getElementById("scoreRing");
+      var scoreNumberEl = document.getElementById("scoreNumber");
+      var scoreLabelEl = document.getElementById("scoreLabel");
+      var scoreSummaryEl = document.getElementById("scoreSummary");
+      var wordCountEl = document.getElementById("wordCount");
+      var sentenceCountEl = document.getElementById("sentenceCount");
+      var avgSentenceEl = document.getElementById("avgSentence");
+      var toastEl = document.getElementById("toast");
+
+      var lastAnalysis = null;
+      var timer = null;
+
+      function buildTraits() {
+        traits.forEach(function (trait) {
+          var label = document.createElement("label");
+          label.className = "trait";
+
+          var input = document.createElement("input");
+          input.type = "checkbox";
+          input.value = trait.id;
+          input.dataset.trait = trait.id;
+
+          var span = document.createElement("span");
+          span.textContent = trait.label;
+
+          label.appendChild(input);
+          label.appendChild(span);
+          traitGridEl.appendChild(label);
+        });
+      }
+
+      function clamp(value, min, max) {
+        return Math.max(min, Math.min(max, value));
+      }
+
+      function normalizeText(text) {
+        return String(text || "")
+          .replace(/[“”]/g, "\"")
+          .replace(/[‘’]/g, "'")
+          .replace(/\s+/g, " ")
+          .trim();
+      }
+
+      function getWords(text) {
+        var matches = normalizeText(text).toLowerCase().match(/[a-z][a-z'’-]*/g);
+        return matches || [];
+      }
+
+      function getSentences(text) {
+        var normalized = normalizeText(text);
+        if (!normalized) return [];
+        var chunks = normalized.match(/[^.!?]+[.!?]*/g) || [];
+        return chunks.map(function (sentence) {
+          return sentence.trim();
+        }).filter(Boolean);
+      }
+
+      function countPhrase(text, phrase) {
+        var escaped = phrase.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+        var re = new RegExp("\\b" + escaped + "\\b", "gi");
+        var matches = text.match(re);
+        return matches ? matches.length : 0;
+      }
+
+      function findPhraseHits(text, phraseList) {
+        var hits = [];
+        var lower = normalizeText(text).toLowerCase();
+
+        phraseList.forEach(function (phrase) {
+          var count = countPhrase(lower, phrase);
+          if (count > 0) {
+            hits.push({ phrase: phrase, count: count });
+          }
+        });
+
+        return hits.sort(function (a, b) {
+          return b.count - a.count || a.phrase.localeCompare(b.phrase);
+        });
+      }
+
+      function findRepeatWords(words) {
+        var counts = {};
+        words.forEach(function (word) {
+          var clean = word.replace(/^'+|'+$/g, "");
+          if (clean.length < 4) return;
+          if (stopWords.has(clean)) return;
+          counts[clean] = (counts[clean] || 0) + 1;
+        });
+
+        return Object.keys(counts)
+          .filter(function (word) { return counts[word] >= 3; })
+          .map(function (word) {
+            return { word: word, count: counts[word] };
+          })
+          .sort(function (a, b) {
+            return b.count - a.count || a.word.localeCompare(b.word);
+          })
+          .slice(0, 12);
+      }
+
+      function findPassiveCandidates(text) {
+        var normalized = normalizeText(text);
+        var re = /\b(am|are|is|was|were|be|been|being|get|gets|got)\s+(?:\w+ly\s+)?([a-z]+(?:ed|en|wn|lt|pt|nt|ught|aught))\b/gi;
+        var hits = [];
+        var match;
+
+        while ((match = re.exec(normalized)) !== null) {
+          var start = Math.max(0, match.index - 42);
+          var end = Math.min(normalized.length, match.index + match[0].length + 42);
+          var snippet = normalized.slice(start, end).trim();
+          hits.push({
+            phrase: match[0],
+            snippet: snippet
+          });
+        }
+
+        return hits.slice(0, 10);
+      }
+
+      function countHits(text, list) {
+        return findPhraseHits(text, list).reduce(function (sum, item) {
+          return sum + item.count;
+        }, 0);
+      }
+
+      function scoreTrait(traitId, metrics) {
+        var score = 100;
+        var notes = [];
+
+        if (traitId === "clear") {
+          if (metrics.avgSentenceWords > 24) {
+            score -= 22;
+            notes.push("Average sentence length may blur the point.");
+          }
+          if (metrics.longSentences >= 2) {
+            score -= 16;
+            notes.push("Several sentences are long enough to need a manual split check.");
+          }
+          if (metrics.fillerCount >= 3) {
+            score -= 10;
+            notes.push("Filler words may weaken clarity.");
+          }
+        }
+
+        if (traitId === "concise") {
+          if (metrics.wordCount > 150) {
+            score -= 22;
+            notes.push("The paragraph is long for a concise voice.");
+          }
+          if (metrics.avgSentenceWords > 20) {
+            score -= 18;
+            notes.push("Sentence length works against concision.");
+          }
+          if (metrics.fillerCount > 0) {
+            score -= clamp(metrics.fillerCount * 4, 4, 18);
+            notes.push("Filler words are good first-cut candidates.");
+          }
+        }
+
+        if (traitId === "direct") {
+          if (metrics.hedgeCount > 0) {
+            score -= clamp(metrics.hedgeCount * 10, 10, 30);
+            notes.push("Hedges soften the point.");
+          }
+          if (metrics.passiveCount > 0) {
+            score -= clamp(metrics.passiveCount * 6, 6, 24);
+            notes.push("Passive constructions can make the actor less clear.");
+          }
+        }
+
+        if (traitId === "warm") {
+          if (metrics.harshCount >= 2) {
+            score -= 22;
+            notes.push("Hard-edged words may make the voice feel colder.");
+          }
+          if (metrics.youWeCount === 0 && metrics.wordCount > 35) {
+            score -= 10;
+            notes.push("No reader-facing language was detected.");
+          }
+        }
+
+        if (traitId === "formal") {
+          if (metrics.slangCount > 0) {
+            score -= clamp(metrics.slangCount * 12, 12, 34);
+            notes.push("Casual wording conflicts with a formal target.");
+          }
+          if (metrics.contractionCount >= 3) {
+            score -= 12;
+            notes.push("Frequent contractions may read less formal.");
+          }
+        }
+
+        if (traitId === "calm") {
+          if (metrics.exclamationCount > 0) {
+            score -= clamp(metrics.exclamationCount * 8, 8, 28);
+            notes.push("Exclamation marks may raise the temperature.");
+          }
+          if (metrics.allCapsCount > 0) {
+            score -= clamp(metrics.allCapsCount * 10, 10, 30);
+            notes.push("All-caps words can feel urgent or loud.");
+          }
+          if (metrics.harshCount >= 2) {
+            score -= 16;
+            notes.push("Absolute or harsh words may disturb the calm tone.");
+          }
+        }
+
+        if (traitId === "expert") {
+          if (metrics.vagueCount > 1) {
+            score -= clamp(metrics.vagueCount * 6, 8, 28);
+            notes.push("Vague wording reduces precision.");
+          }
+          if (metrics.stockCount > 0) {
+            score -= clamp(metrics.stockCount * 10, 10, 30);
+            notes.push("Stock phrases can make expertise feel generic.");
+          }
+        }
+
+        if (traitId === "plain") {
+          if (metrics.jargonCount > 0) {
+            score -= clamp(metrics.jargonCount * 10, 10, 32);
+            notes.push("Jargon may work against a plainspoken voice.");
+          }
+          if (metrics.avgSentenceWords > 22) {
+            score -= 14;
+            notes.push("Long sentences can make the prose feel less plain.");
+          }
+        }
+
+        if (traitId === "energetic") {
+          if (metrics.passiveCount > 0) {
+            score -= clamp(metrics.passiveCount * 7, 7, 25);
+            notes.push("Passive voice can drain momentum.");
+          }
+          if (metrics.avgSentenceWords > 24) {
+            score -= 16;
+            notes.push("Long sentences may slow the pace.");
+          }
+          if (metrics.wordCount > 140) {
+            score -= 10;
+            notes.push("A shorter paragraph may feel more energetic.");
+          }
+        }
+
+        if (traitId === "assertive") {
+          if (metrics.hedgeCount > 0) {
+            score -= clamp(metrics.hedgeCount * 12, 12, 36);
+            notes.push("Hedging lowers assertiveness.");
+          }
+          if (metrics.passiveCount > 1) {
+            score -= 14;
+            notes.push("Passive wording can make the claim feel less owned.");
+          }
+        }
+
+        return {
+          id: traitId,
+          label: getTraitLabel(traitId),
+          score: clamp(Math.round(score), 0, 100),
+          notes: notes
+        };
+      }
+
+      function getTraitLabel(id) {
+        var found = traits.find(function (trait) {
+          return trait.id === id;
+        });
+        return found ? found.label : id;
+      }
+
+      function getSelectedTraits() {
+        var checked = Array.prototype.slice.call(traitGridEl.querySelectorAll("input[type='checkbox']:checked"));
+        return checked.map(function (input) {
+          return input.value;
+        });
+      }
+
+      function buildMetrics(text, words, sentences, repeatWords, passiveHits, stockHits) {
+        var wordCount = words.length;
+        var sentenceCount = sentences.length;
+        var avgSentenceWords = sentenceCount ? wordCount / sentenceCount : 0;
+        var lower = normalizeText(text).toLowerCase();
+
+        var longSentences = sentences.filter(function (sentence) {
+          return getWords(sentence).length >= 28;
+        }).length;
+
+        var allCapsMatches = normalizeText(text).match(/\b[A-Z]{3,}\b/g) || [];
+        var contractions = normalizeText(text).match(/\b\w+(?:n't|'re|'ve|'ll|'d|'m|'s)\b/gi) || [];
+        var youWeMatches = lower.match(/\b(you|your|we|our|us)\b/g) || [];
+        var exclamationMatches = normalizeText(text).match(/!/g) || [];
+
+        return {
+          wordCount: wordCount,
+          sentenceCount: sentenceCount,
+          avgSentenceWords: avgSentenceWords,
+          longSentences: longSentences,
+          repeatCount: repeatWords.reduce(function (sum, item) {
+            return sum + Math.max(0, item.count - 2);
+          }, 0),
+          passiveCount: passiveHits.length,
+          stockCount: stockHits.reduce(function (sum, item) {
+            return sum + item.count;
+          }, 0),
+          fillerCount: countHits(text, fillerWords),
+          hedgeCount: countHits(text, hedgePhrases),
+          vagueCount: countHits(text, vagueWords),
+          jargonCount: countHits(text, jargonWords),
+          slangCount: countHits(text, slangWords),
+          harshCount: countHits(text, harshWords),
+          allCapsCount: allCapsMatches.length,
+          contractionCount: contractions.length,
+          youWeCount: youWeMatches.length,
+          exclamationCount: exclamationMatches.length
+        };
+      }
+
+      function analyze() {
+        var rawText = draftEl.value;
+        var text = normalizeText(rawText);
+        var selectedTraits = getSelectedTraits();
+        var customTraits = customTraitsEl.value.trim();
+
+        if (!text) {
+          lastAnalysis = {
+            text: "",
+            brief: "Your brief will appear here.",
+            score: 0
+          };
+          renderEmpty();
+          saveState();
+          return;
+        }
+
+        var words = getWords(text);
+        var sentences = getSentences(text);
+        var repeatWords = findRepeatWords(words);
+        var passiveHits = findPassiveCandidates(text);
+        var stockHits = findPhraseHits(text, stockPhrases);
+        var metrics = buildMetrics(text, words, sentences, repeatWords, passiveHits, stockHits);
+
+        var mechanicsPenalty = 0;
+        mechanicsPenalty += clamp(metrics.repeatCount * 4, 0, 24);
+        mechanicsPenalty += clamp(metrics.passiveCount * 6, 0, 24);
+        mechanicsPenalty += clamp(metrics.stockCount * 10, 0, 28);
+        mechanicsPenalty += clamp(Math.max(0, metrics.avgSentenceWords - 22) * 1.8, 0, 18);
+        mechanicsPenalty += clamp(metrics.fillerCount * 2, 0, 12);
+
+        var mechanicsScore = clamp(Math.round(100 - mechanicsPenalty), 0, 100);
+
+        var traitReports = selectedTraits.map(function (traitId) {
+          return scoreTrait(traitId, metrics);
+        });
+
+        var traitScore = traitReports.length
+          ? Math.round(traitReports.reduce(function (sum, report) { return sum + report.score; }, 0) / traitReports.length)
+          : mechanicsScore;
+
+        var finalScore = selectedTraits.length
+          ? Math.round(mechanicsScore * 0.48 + traitScore * 0.52)
+          : mechanicsScore;
+
+        var analysis = {
+          generatedAt: new Date().toLocaleString(),
+          text: text,
+          selectedTraits: selectedTraits,
+          selectedTraitLabels: selectedTraits.map(getTraitLabel),
+          customTraits: customTraits,
+          words: words,
+          sentences: sentences,
+          metrics: metrics,
+          repeatWords: repeatWords,
+          passiveHits: passiveHits,
+          stockHits: stockHits,
+          mechanicsScore: mechanicsScore,
+          traitScore: traitScore,
+          traitReports: traitReports,
+          score: clamp(finalScore, 0, 100)
+        };
+
+        analysis.brief = buildBrief(analysis);
+        lastAnalysis = analysis;
+        renderAnalysis(analysis);
+        saveState();
+      }
+
+      function renderEmpty() {
+        scoreRingEl.style.setProperty("--score", 0);
+        scoreNumberEl.textContent = "0";
+        scoreLabelEl.textContent = "Waiting for text";
+        scoreSummaryEl.textContent = "Paste a paragraph and choose voice traits to start.";
+        wordCountEl.textContent = "0";
+        sentenceCountEl.textContent = "0";
+        avgSentenceEl.textContent = "0";
+        briefBoxEl.textContent = "Your brief will appear here.";
+        clearNode(flagsEl);
+
+        var p = document.createElement("p");
+        p.className = "empty";
+        p.textContent = "No flags yet.";
+        flagsEl.appendChild(p);
+      }
+
+      function getScoreLabel(score) {
+        if (score >= 88) return "Strong consistency";
+        if (score >= 74) return "Mostly consistent";
+        if (score >= 58) return "Needs a pass";
+        return "Needs a focused edit";
+      }
+
+      function renderAnalysis(analysis) {
+        scoreRingEl.style.setProperty("--score", analysis.score);
+        scoreNumberEl.textContent = String(analysis.score);
+        scoreLabelEl.textContent = getScoreLabel(analysis.score);
+        scoreSummaryEl.textContent = buildScoreSummary(analysis);
+
+        wordCountEl.textContent = String(analysis.metrics.wordCount);
+        sentenceCountEl.textContent = String(analysis.metrics.sentenceCount);
+        avgSentenceEl.textContent = String(Math.round(analysis.metrics.avgSentenceWords));
+
+        briefBoxEl.textContent = analysis.brief;
+        renderFlags(analysis);
+      }
+
+      function buildScoreSummary(analysis) {
+        var parts = [];
+        if (analysis.selectedTraitLabels.length) {
+          parts.push("Target voice: " + analysis.selectedTraitLabels.join(", ") + ".");
+        } else {
+          parts.push("No target traits selected, so the score is based on mechanical flags.");
+        }
+
+        var flagCount = analysis.repeatWords.length + analysis.passiveHits.length + analysis.stockHits.length;
+        parts.push(flagCount + " total flag group" + (flagCount === 1 ? "" : "s") + " found.");
+        return parts.join(" ");
+      }
+
+      function renderFlags(analysis) {
+        clearNode(flagsEl);
+
+        var cards = [];
+
+        if (analysis.repeatWords.length) {
+          cards.push({
+            level: "warn",
+            title: "Repeat-word flags",
+            meta: analysis.repeatWords.length + " words",
+            body: analysis.repeatWords.map(function (item) {
+              return item.word + " ×" + item.count;
+            }).join(", ")
+          });
+        } else {
+          cards.push({
+            level: "good",
+            title: "Repeat-word flags",
+            meta: "clear",
+            body: "No content word repeated three or more times."
+          });
+        }
+
+        if (analysis.passiveHits.length) {
+          cards.push({
+            level: "warn",
+            title: "Passive-voice candidates",
+            meta: analysis.passiveHits.length + " hits",
+            body: analysis.passiveHits.map(function (item) {
+              return item.phrase;
+            }).join(", ")
+          });
+        } else {
+          cards.push({
+            level: "good",
+            title: "Passive-voice candidates",
+            meta: "clear",
+            body: "No obvious passive construction was detected."
+          });
+        }
+
+        if (analysis.stockHits.length) {
+          cards.push({
+            level: "bad",
+            title: "Stock-phrase flags",
+            meta: analysis.stockHits.length + " phrases",
+            body: analysis.stockHits.map(function (item) {
+              return item.phrase + " ×" + item.count;
+            }).join(", ")
+          });
+        } else {
+          cards.push({
+            level: "good",
+            title: "Stock-phrase flags",
+            meta: "clear",
+            body: "No common stock phrase from the local list was found."
+          });
+        }
+
+        analysis.traitReports.forEach(function (report) {
+          cards.push({
+            level: report.score >= 80 ? "good" : report.score >= 60 ? "warn" : "bad",
+            title: report.label + " trait fit",
+            meta: report.score + "/100",
+            body: report.notes.length ? report.notes.join(" ") : "No major consistency issue detected for this trait."
+          });
+        });
+
+        cards.forEach(function (card) {
+          flagsEl.appendChild(makeFlag(card));
+        });
+      }
+
+      function makeFlag(card) {
+        var div = document.createElement("div");
+        div.className = "flag " + card.level;
+
+        var top = document.createElement("div");
+        top.className = "flag-title";
+
+        var title = document.createElement("strong");
+        title.textContent = card.title;
+
+        var meta = document.createElement("span");
+        meta.className = "pill";
+        meta.textContent = card.meta;
+
+        var body = document.createElement("p");
+        body.textContent = card.body;
+
+        top.appendChild(title);
+        top.appendChild(meta);
+        div.appendChild(top);
+        div.appendChild(body);
+
+        return div;
+      }
+
+      function buildBrief(analysis) {
+        var lines = [];
+        var metrics = analysis.metrics;
+
+        lines.push("VOICE CONSISTENCY REVISION BRIEF");
+        lines.push("");
+        lines.push("Generated: " + analysis.generatedAt);
+        lines.push("Score: " + analysis.score + "/100, " + getScoreLabel(analysis.score));
+        lines.push("");
+
+        lines.push("Target voice");
+        lines.push("- Selected traits: " + (analysis.selectedTraitLabels.length ? analysis.selectedTraitLabels.join(", ") : "none selected"));
+        lines.push("- Custom notes: " + (analysis.customTraits || "none"));
+        lines.push("");
+
+        lines.push("Draft stats");
+        lines.push("- Words: " + metrics.wordCount);
+        lines.push("- Sentences: " + metrics.sentenceCount);
+        lines.push("- Average sentence length: " + Math.round(metrics.avgSentenceWords) + " words");
+        lines.push("");
+
+        lines.push("Flags to review");
+        if (!analysis.repeatWords.length && !analysis.passiveHits.length && !analysis.stockHits.length) {
+          lines.push("- No repeat-word, passive-voice, or stock-phrase flags found.");
+        } else {
+          if (analysis.repeatWords.length) {
+            lines.push("- Repeat words: " + analysis.repeatWords.map(function (item) {
+              return item.word + " ×" + item.count;
+            }).join(", "));
+          }
+          if (analysis.passiveHits.length) {
+            lines.push("- Passive-voice candidates: " + analysis.passiveHits.map(function (item) {
+              return item.phrase;
+            }).join(", "));
+          }
+          if (analysis.stockHits.length) {
+            lines.push("- Stock phrases: " + analysis.stockHits.map(function (item) {
+              return item.phrase + " ×" + item.count;
+            }).join(", "));
+          }
+        }
+        lines.push("");
+
+        lines.push("Trait fit notes");
+        if (analysis.traitReports.length) {
+          analysis.traitReports.forEach(function (report) {
+            lines.push("- " + report.label + ": " + report.score + "/100" + (report.notes.length ? " — " + report.notes.join(" ") : " — No major issue detected."));
+          });
+        } else {
+          lines.push("- No voice traits selected.");
+        }
+        lines.push("");
+
+        lines.push("Manual revision checklist");
+        lines.push("- Decide whether each repeated word is intentional emphasis or accidental echo.");
+        lines.push("- Check each passive candidate and name the actor only when that improves the sentence.");
+        lines.push("- Replace stock phrases with specific evidence, context, or sharper wording.");
+        lines.push("- Keep the original meaning. Do not rewrite for style alone.");
+        lines.push("- Re-run the checker after your manual edit.");
+        lines.push("");
+
+        if (analysis.passiveHits.length) {
+          lines.push("Passive snippets to inspect");
+          analysis.passiveHits.forEach(function (item) {
+            lines.push("- " + item.snippet);
+          });
+          lines.push("");
+        }
+
+        lines.push("No rewritten paragraph was generated.");
+
+        return lines.join("\n");
+      }
+
+      function clearNode(node) {
+        while (node.firstChild) {
+          node.removeChild(node.firstChild);
+        }
+      }
+
+      function copyText(text) {
+        if (!text) {
+          showToast("Nothing to copy yet.");
+          return;
+        }
+
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(text).then(function () {
+            showToast("Brief copied.");
+          }).catch(function () {
+            fallbackCopy(text);
+          });
+        } else {
+          fallbackCopy(text);
+        }
+      }
+
+      function fallbackCopy(text) {
+        var area = document.createElement("textarea");
+        area.value = text;
+        area.setAttribute("readonly", "");
+        area.style.position = "fixed";
+        area.style.left = "-9999px";
+        document.body.appendChild(area);
+        area.select();
+
+        try {
+          document.execCommand("copy");
+          showToast("Brief copied.");
+        } catch (error) {
+          showToast("Copy failed. Select the brief manually.");
+        }
+
+        document.body.removeChild(area);
+      }
+
+      function downloadFile(filename, content, type) {
+        var blob = new Blob([content], { type: type });
+        var url = URL.createObjectURL(blob);
+        var link = document.createElement("a");
+        link.href = url;
+        link.download = filename;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+
+        window.setTimeout(function () {
+          URL.revokeObjectURL(url);
+        }, 500);
+
+        showToast("Export started.");
+      }
+
+      function showToast(message) {
+        toastEl.textContent = message;
+        toastEl.classList.add("show");
+
+        window.clearTimeout(showToast.timer);
+        showToast.timer = window.setTimeout(function () {
+          toastEl.classList.remove("show");
+        }, 1600);
+      }
+
+      function saveState() {
+        var state = {
+          draft: draftEl.value,
+          customTraits: customTraitsEl.value,
+          selectedTraits: getSelectedTraits()
+        };
+
+        try {
+          localStorage.setItem("voiceCheckerState", JSON.stringify(state));
+        } catch (error) {
+          return;
+        }
+      }
+
+      function loadState() {
+        try {
+          var saved = localStorage.getItem("voiceCheckerState");
+          if (!saved) return;
+
+          var state = JSON.parse(saved);
+          draftEl.value = state.draft || "";
+          customTraitsEl.value = state.customTraits || "";
+
+          if (Array.isArray(state.selectedTraits)) {
+            state.selectedTraits.forEach(function (traitId) {
+              var input = traitGridEl.querySelector("input[value='" + traitId + "']");
+              if (input) input.checked = true;
+            });
+          }
+        } catch (error) {
+          return;
+        }
+      }
+
+      function debounceAnalyze() {
+        window.clearTimeout(timer);
+        timer = window.setTimeout(analyze, 220);
+      }
+
+      function applyPreset(ids) {
+        Array.prototype.slice.call(traitGridEl.querySelectorAll("input[type='checkbox']")).forEach(function (input) {
+          input.checked = ids.indexOf(input.value) !== -1;
+        });
+        analyze();
+      }
+
+      document.getElementById("analyzeBtn").addEventListener("click", analyze);
+
+      document.getElementById("copyBriefBtn").addEventListener("click", function () {
+        analyze();
+        copyText(lastAnalysis && lastAnalysis.brief ? lastAnalysis.brief : "");
+      });
+
+      document.getElementById("exportTxtBtn").addEventListener("click", function () {
+        analyze();
+        if (!lastAnalysis || !lastAnalysis.text) {
+          showToast("Add text before exporting.");
+          return;
+        }
+        downloadFile("voice-consistency-brief.txt", lastAnalysis.brief, "text/plain;charset=utf-8");
+      });
+
+      document.getElementById("exportJsonBtn").addEventListener("click", function () {
+        analyze();
+        if (!lastAnalysis || !lastAnalysis.text) {
+          showToast("Add text before exporting.");
+          return;
+        }
+
+        var payload = {
+          generatedAt: lastAnalysis.generatedAt,
+          score: lastAnalysis.score,
+          selectedTraits: lastAnalysis.selectedTraitLabels,
+          customTraits: lastAnalysis.customTraits,
+          stats: {
+            words: lastAnalysis.metrics.wordCount,
+            sentences: lastAnalysis.metrics.sentenceCount,
+            averageSentenceWords: Math.round(lastAnalysis.metrics.avgSentenceWords)
+          },
+          repeatWords: lastAnalysis.repeatWords,
+          passiveCandidates: lastAnalysis.passiveHits,
+          stockPhrases: lastAnalysis.stockHits,
+          traitReports: lastAnalysis.traitReports,
+          revisionBrief: lastAnalysis.brief
+        };
+
+        downloadFile("voice-consistency-brief.json", JSON.stringify(payload, null, 2), "application/json;charset=utf-8");
+      });
+
+      document.getElementById("clearBtn").addEventListener("click", function () {
+        draftEl.value = "";
+        customTraitsEl.value = "";
+        Array.prototype.slice.call(traitGridEl.querySelectorAll("input[type='checkbox']")).forEach(function (input) {
+          input.checked = false;
+        });
+
+        try {
+          localStorage.removeItem("voiceCheckerState");
+        } catch (error) {
+          return;
+        }
+
+        analyze();
+        showToast("Cleared.");
+      });
+
+      document.getElementById("selectLeanBtn").addEventListener("click", function () {
+        applyPreset(["clear", "concise", "direct", "plain"]);
+      });
+
+      document.getElementById("selectWarmBtn").addEventListener("click", function () {
+        applyPreset(["clear", "warm", "calm", "plain"]);
+      });
+
+      document.getElementById("selectFormalBtn").addEventListener("click", function () {
+        applyPreset(["clear", "formal", "expert", "assertive"]);
+      });
+
+      draftEl.addEventListener("input", debounceAnalyze);
+      customTraitsEl.addEventListener("input", debounceAnalyze);
+      traitGridEl.addEventListener("change", debounceAnalyze);
+
+      buildTraits();
+      loadState();
+      analyze();
+    })();
+  </script>
+</body>
+</html>

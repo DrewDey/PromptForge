@@ -58,6 +58,8 @@ import {
   CONTENT_CALENDAR_COLLISION_RESOLVER_GEMINI_PROJECT_ID,
   THUMBNAIL_SAFE_ZONE_STORYBOARD_CLAUDE_PROJECT_ID,
   RECIPE_POP_UP_MENU_PROFIT_CARDS_GEMINI_PROJECT_ID,
+  DRAFT_VOICE_CONSISTENCY_METER_CHATGPT_PROJECT_ID,
+  RECIPE_POP_UP_MENU_PROFIT_CARDS_GEMINI_A4FD2166_PROJECT_ID,
   SEARCH_RESULT_PROMISE_PROOF_BOARD_CHATGPT_PROJECT_ID,
   VISUAL_BRIEF_CONSISTENCY_BOARD_CLAUDE_PROJECT_ID,
   PRODUCT_CLAIM_SHELF_AUDIT_CARDS_GEMINI_PROJECT_ID,
@@ -2136,6 +2138,61 @@ export const RECIPE_POP_UP_MENU_PROFIT_CARDS_GEMINI_SHOWCASE_PROJECT = buildPend
   ],
 })
 
+export const DRAFT_VOICE_CONSISTENCY_METER_CHATGPT_SHOWCASE_PROJECT = buildPendingSourceRunProject({
+  projectId: DRAFT_VOICE_CONSISTENCY_METER_CHATGPT_PROJECT_ID,
+  sourceRunId: "65d3af3f-e10e-4263-ad6a-b94bc7261a6a",
+  href: "/draft-voice-consistency-meter-chatgpt-demo",
+  title: "Draft Voice Consistency Meter",
+  description: "Offline mobile-first draft QA tool for checking a pasted paragraph against intended voice traits.",
+  content: "Etta Wren used ChatGPT to build Draft Voice Consistency Meter through a 1-prompt source run. The public page keeps the final artifact first, then preserves the exact prompt and response package from the source conversation.",
+  resultContent: "Offline browser tool that scores draft voice consistency, flags repeat words, passive-voice candidates, and stock phrases, then copies or exports a revision brief without rewriting the text.",
+  categorySlug: "productivity",
+  mockCategoryId: "cat-7",
+  difficulty: 'beginner',
+  modelUsed: "High",
+  modelRecommendation: "High",
+  toolsUsed: ["ChatGPT source session","single-file HTML","local browser verification"],
+  tags: ["writing QA","voice consistency","draft editing","checklist","scoring","offline tool","source-run","single-file-html"],
+  artifactPath: "/artifacts/draft-voice-consistency-meter-chatgpt.html",
+  sourceUrl: "https://chatgpt.com/c/6a2cacde-3ddc-83ea-b33b-d809b1da19e4",
+  authorDisplayName: "Etta Wren",
+  authorUsername: "EttaWren",
+  createdAt: "2026-06-13T01:06:00Z",
+  updatedAt: "2026-06-13T01:12:53Z",
+  prompts: [
+    "I need a small phone-friendly HTML page I can save locally to paste a draft paragraph, mark the voice traits I’m aiming for, get a consistency score with repeat-word, passive-voice, and stock-phrase flags, and copy or export a revision brief without having it rewrite the text for me."
+  ],
+})
+
+export const RECIPE_POP_UP_MENU_PROFIT_CARDS_GEMINI_A4FD2166_SHOWCASE_PROJECT = buildPendingSourceRunProject({
+  projectId: RECIPE_POP_UP_MENU_PROFIT_CARDS_GEMINI_A4FD2166_PROJECT_ID,
+  sourceRunId: "a4fd2166-2b88-41fc-8fb4-5d3873018053",
+  href: "/recipe-pop-up-menu-profit-cards-gemini-a4fd2166-demo",
+  title: "Recipe Pop-Up Menu Profit Cards",
+  description: "Offline editable pop-up menu card tool with cost, price, allergen, margin-warning, print, and copy-brief controls.",
+  content: "Jordan Lee used Gemini to build Recipe Pop-Up Menu Profit Cards through a 4-prompt source run. The public page keeps the final fourth artifact first, then preserves each exact prompt and response package in order with selectable artifact versions.",
+  resultContent: "A phone-friendly one-file menu card builder for several dishes, with editable cost/price/serving fields, allergen labels, low-margin warnings, add/remove controls, print cards, and a copyable brief.",
+  categorySlug: "productivity",
+  mockCategoryId: "cat-7",
+  difficulty: 'beginner',
+  modelUsed: "Flash",
+  modelRecommendation: "Flash",
+  toolsUsed: ["Gemini source session","single-file HTML","local browser verification"],
+  tags: ["recipe","pop-up menu","menu cards","profit margins","allergens","micro-business","source-run","single-file-html"],
+  artifactPath: "/artifacts/recipe-pop-up-menu-profit-cards-gemini-a4fd2166.html",
+  sourceUrl: "https://gemini.google.com/app/b93dbada663b30e5",
+  authorDisplayName: "Jordan Lee",
+  authorUsername: "JordanLee",
+  createdAt: "2026-06-12T14:56:00Z",
+  updatedAt: "2026-06-12T14:56:00Z",
+  prompts: [
+    "I’m running a tiny pop-up menu and need a phone-friendly browser file that lets me enter dishes with servings, cost, price, allergens, and a hook, then turns them into printable profit-aware menu cards with a brief I can copy.",
+    "This is close, but it would be rejected for me because it loads Math.js from a CDN and only builds one dish, while I need several editable menu cards; please return one complete self-contained HTML file with no external scripts and local add/edit/remove dish cards.",
+    "The multi-card version is useful, but pasted dish names/hooks could break into the page because the editors/cards are rebuilt with innerHTML; please rewrite the complete single HTML file so user-entered text is rendered with textContent/createElement, keep add/edit/remove/copy/print working, and don’t add external dependencies.",
+    "This still has `container.innerHTML` with dish names inside an input value, and it also lost the allergen field and margin warnings; please return the full HTML again with no `innerHTML` assignments anywhere, build every control/card with createElement plus textContent/value, and keep allergen labels, low-margin warnings, add/remove, print, and copy brief."
+  ],
+})
+
 export const SEARCH_RESULT_PROMISE_PROOF_BOARD_CHATGPT_SHOWCASE_PROJECT = buildPendingSourceRunProject({
   projectId: SEARCH_RESULT_PROMISE_PROOF_BOARD_CHATGPT_PROJECT_ID,
   sourceRunId: "8baf4494-4238-4a3f-9b92-4b1dd6ed4a4f",
@@ -3858,6 +3915,8 @@ export const PENDING_SOURCE_RUN_SHOWCASE_PROJECTS = [
   CONTENT_CALENDAR_COLLISION_RESOLVER_GEMINI_SHOWCASE_PROJECT,
   THUMBNAIL_SAFE_ZONE_STORYBOARD_CLAUDE_SHOWCASE_PROJECT,
   RECIPE_POP_UP_MENU_PROFIT_CARDS_GEMINI_SHOWCASE_PROJECT,
+  DRAFT_VOICE_CONSISTENCY_METER_CHATGPT_SHOWCASE_PROJECT,
+  RECIPE_POP_UP_MENU_PROFIT_CARDS_GEMINI_A4FD2166_SHOWCASE_PROJECT,
   SEARCH_RESULT_PROMISE_PROOF_BOARD_CHATGPT_SHOWCASE_PROJECT,
   VISUAL_BRIEF_CONSISTENCY_BOARD_CLAUDE_SHOWCASE_PROJECT,
   PRODUCT_CLAIM_SHELF_AUDIT_CARDS_GEMINI_SHOWCASE_PROJECT,

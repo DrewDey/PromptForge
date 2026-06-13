@@ -112,6 +112,22 @@ const sourceRunProjects = [
     packagePath: "seed-runs/recipe-pop-up-menu-profit-cards-gemini-source-run.json",
   },
   {
+    name: "Draft Voice Consistency Meter",
+    route: "src/app/draft-voice-consistency-meter-chatgpt-demo/page.tsx",
+    projectId: "DRAFT_VOICE_CONSISTENCY_METER_CHATGPT_PROJECT_ID",
+    showcaseExport: 'PENDING_SOURCE_RUN_SHOWCASE_PROJECTS',
+    href: "/draft-voice-consistency-meter-chatgpt-demo",
+    packagePath: "seed-runs/draft-voice-consistency-meter-chatgpt-source-run.json",
+  },
+  {
+    name: "Recipe Pop-Up Menu Profit Cards",
+    route: "src/app/recipe-pop-up-menu-profit-cards-gemini-a4fd2166-demo/page.tsx",
+    projectId: "RECIPE_POP_UP_MENU_PROFIT_CARDS_GEMINI_A4FD2166_PROJECT_ID",
+    showcaseExport: 'PENDING_SOURCE_RUN_SHOWCASE_PROJECTS',
+    href: "/recipe-pop-up-menu-profit-cards-gemini-a4fd2166-demo",
+    packagePath: "seed-runs/recipe-pop-up-menu-profit-cards-gemini-a4fd2166-source-run.json",
+  },
+  {
     name: "Search Result Promise Proof Board",
     route: "src/app/search-result-promise-proof-board-chatgpt-demo/page.tsx",
     projectId: "SEARCH_RESULT_PROMISE_PROOF_BOARD_CHATGPT_PROJECT_ID",

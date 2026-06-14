@@ -1,6 +1,6 @@
 import type { PromptWithRelations } from './types'
-import { AI_MODELS, getModelName } from './models'
-import { getPublicModelLabel } from './public-model-labels'
+import { AI_MODELS } from './models'
+import { getPublicModelLabel, isPublicModelLabel, publicModelFilterMatchesLabel } from './public-model-labels'
 
 export type PromptModelEra = 'newer' | 'older' | 'reference'
 export type PromptComparisonMatchBasis = 'prompt-family' | 'heuristic'
@@ -168,15 +168,6 @@ function modelCompareKey(label: string) {
   return label.toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim()
 }
 
-function normalizeModelForLooseMatch(value: string) {
-  return value
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, ' ')
-    .split(/\s+/)
-    .filter((token) => token && !/^\d+$/.test(token))
-    .join(' ')
-}
-
 function modelSearchBlob(prompt: PromptWithRelations) {
   return [
     prompt.model_used,
@@ -187,34 +178,33 @@ function modelSearchBlob(prompt: PromptWithRelations) {
     .join(' ')
 }
 
+function getPromptModelLabelCandidate(value: string | null | undefined) {
+  const label = getPublicModelLabel(value)
+  return isPublicModelLabel(label) ? label : ''
+}
+
 export function getPromptModelLabel(prompt: PromptWithRelations) {
-  if (prompt.model_used) return getPublicModelLabel(prompt.model_used)
-  if (prompt.model_recommendation) return getPublicModelLabel(prompt.model_recommendation)
+  const modelUsedLabel = getPromptModelLabelCandidate(prompt.model_used)
+  if (modelUsedLabel) return modelUsedLabel
+
+  const modelRecommendationLabel = getPromptModelLabelCandidate(prompt.model_recommendation)
+  if (modelRecommendationLabel) return modelRecommendationLabel
 
   const toolModel = prompt.tools_used.find((tool) => (
     /chatgpt|claude|gemini|gpt|llama|mistral|grok|deepseek|o\d/i.test(tool)
   ))
-  return toolModel ? getPublicModelLabel(toolModel) : 'Unknown model'
+  return getPromptModelLabelCandidate(toolModel) || 'Unknown model'
 }
 
 export function promptMatchesModel(prompt: PromptWithRelations, modelId: string) {
   if (!modelId) return true
-  if (prompt.model_used === modelId || prompt.model_recommendation === modelId) return true
 
-  const selectedLabel = getModelName(modelId)
-  const exactNeedles = [
-    modelId,
-    selectedLabel,
-  ].map((value) => value.toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim())
-  const exactHaystack = modelSearchBlob(prompt).toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim()
+  const promptLabel = getPromptModelLabel(prompt)
+  if (promptLabel !== 'Unknown model') {
+    return publicModelFilterMatchesLabel(modelId, promptLabel)
+  }
 
-  if (exactNeedles.some((needle) => needle && exactHaystack.includes(needle))) return true
-  if (/\d/.test(`${modelId} ${selectedLabel}`) && /\d/.test(exactHaystack)) return false
-
-  const looseNeedle = normalizeModelForLooseMatch(`${modelId} ${selectedLabel}`)
-  const looseHaystack = normalizeModelForLooseMatch(modelSearchBlob(prompt))
-  const looseTokens = looseNeedle.split(/\s+/).filter(Boolean)
-  return looseTokens.length > 0 && looseTokens.every((token) => looseHaystack.includes(token))
+  return false
 }
 
 export function getPromptModelEra(prompt: PromptWithRelations): PromptModelEra {

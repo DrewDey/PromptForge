@@ -100,13 +100,18 @@ export default function HeaderClient({ viewer, isAdmin }: HeaderClientProps) {
                       type="button"
                       onClick={() => setPathsMenuOpen((open) => !open)}
                       className={navLinkClass(item.href)}
+                      data-testid="build-paths-menu-button"
                       aria-haspopup="menu"
                       aria-expanded={pathsMenuOpen}
                     >
                       {item.label}
                     </button>
                     {pathsMenuOpen && (
-                      <div className="absolute left-0 top-full mt-2 w-64 border border-surface-200 bg-white p-1 shadow-xl" role="menu">
+                      <div
+                        className="absolute left-0 top-full mt-2 w-64 border border-surface-200 bg-white p-1 shadow-xl"
+                        data-testid="build-paths-menu"
+                        role="menu"
+                      >
                         {pathsMenuItems.map((menuItem) => {
                           const Icon = menuItem.icon
                           return (

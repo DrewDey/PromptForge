@@ -21,9 +21,8 @@ import {
 } from '@/lib/broad-domains'
 import { getCategories, getPrompts, getUserVotesAndBookmarks } from '@/lib/data'
 import type { PromptWithRelations } from '@/lib/types'
-import { AI_MODELS } from '@/lib/models'
 import { getPreparedShowcaseProjectById } from '@/lib/prepared-showcase-projects'
-import { getPublicModelLabel } from '@/lib/public-model-labels'
+import { getPublicModelFacetValue, getPublicModelLabel } from '@/lib/public-model-labels'
 import { isPersistableProjectId } from '@/lib/project-engagement'
 import { getProjectHref } from '@/lib/project-links'
 import VoteBookmarkButtons from '@/components/VoteBookmarkButtons'
@@ -42,17 +41,7 @@ const DIFFICULTIES = [
   { value: 'advanced', label: 'Advanced' },
 ] as const
 
-// Most popular models for the facet list (keep it short — 4-6 options)
-const FACET_MODELS = [
-  'claude-opus-4-8-max',
-  'claude-opus-4-6',
-  'claude-sonnet-4-6',
-  'claude-opus-4-7',
-  'chatgpt-5-4',
-  'gpt-4o',
-  'gemini-2-5-flash',
-  'gemini-2-5-pro',
-]
+const MAX_MODEL_FACETS = 6
 
 const SUGGESTION_QUERIES = [
   'Snake game',
@@ -100,6 +89,36 @@ type SearchParams = {
   compare?: 'models'
   sort?: 'hot' | 'newest' | 'popular'
   panel?: 'open'
+}
+
+type ModelFacetOption = {
+  value: string
+  label: string
+  count: number
+}
+
+function buildModelFacetOptions(prompts: PromptWithRelations[]) {
+  const facetMap = new Map<string, ModelFacetOption>()
+
+  for (const prompt of prompts) {
+    const label = getPromptModelLabel(prompt)
+    if (!label || label === 'Unknown model') continue
+
+    const value = getPublicModelFacetValue(label)
+    if (!value) continue
+
+    const current = facetMap.get(value)
+    facetMap.set(value, {
+      value,
+      label: current?.label ?? label,
+      count: (current?.count ?? 0) + 1,
+    })
+  }
+
+  return [...facetMap.values()].sort((a, b) => (
+    b.count - a.count ||
+    a.label.localeCompare(b.label)
+  ))
 }
 
 export default async function BrowsePage({
@@ -206,11 +225,22 @@ export default async function BrowsePage({
       .filter(p => matchesFilters(p, { diff: false }))
       .filter(p => p.difficulty === d.value).length
   }
-  const countsByModel: Record<string, number> = {}
-  for (const m of FACET_MODELS) {
-    countsByModel[m] = queryMatched
-      .filter(p => matchesFilters(p, { mdl: false }))
-      .filter(p => promptMatchesModel(p, m)).length
+  const modelFacetBase = queryMatched.filter(p => matchesFilters(p, { mdl: false }))
+  const modelFacetOptions = buildModelFacetOptions(modelFacetBase)
+  const activeModelFacetValue = activeModel ? getPublicModelFacetValue(activeModel) : ''
+  const activeModelFacet = activeModel
+    ? modelFacetOptions.find(option => option.value === activeModelFacetValue) ?? {
+      value: activeModelFacetValue || activeModel,
+      label: getPublicModelLabel(activeModel) || activeModel,
+      count: modelFacetBase.filter(prompt => promptMatchesModel(prompt, activeModel)).length,
+    }
+    : null
+  const visibleModelFacetOptions = modelFacetOptions.slice(0, MAX_MODEL_FACETS)
+  if (
+    activeModelFacet &&
+    !visibleModelFacetOptions.some(option => option.value === activeModelFacet.value)
+  ) {
+    visibleModelFacetOptions.unshift(activeModelFacet)
   }
   const comparableGroupCount = buildPromptComparisonGroups(queryMatched.filter(p => matchesFilters(p, { mdl: false })))
     .filter(group => !activeModel || group.prompts.some(prompt => promptMatchesModel(prompt, activeModel)))
@@ -524,34 +554,31 @@ export default async function BrowsePage({
                       <Link href={buildUrl({ model: undefined })} className="facet-clear">clear</Link>
                     )}
                   </div>
-                  {FACET_MODELS.map(modelId => {
-                    const meta = AI_MODELS.find(m => m.id === modelId)
-                    if (!meta) return null
-                    const modelLabel = getPublicModelLabel(meta.id)
-                    const count = countsByModel[modelId] ?? 0
-                    const isActive = activeModel === modelId
+                  {visibleModelFacetOptions.map(modelOption => {
+                    const count = modelOption.count
+                    const isActive = activeModelFacetValue === modelOption.value
                     if (count === 0 && !isActive) return null
                     if (count === 0) {
                       return (
                         <span
-                          key={modelId}
+                          key={modelOption.value}
                           className="facet-check active unavailable"
                           aria-disabled="true"
                         >
                           <span className="facet-check-box" aria-hidden="true">✓</span>
-                          <span>{modelLabel}</span>
+                          <span>{modelOption.label}</span>
                           <span className="facet-count" style={{ marginLeft: 'auto' }}>{count}</span>
                         </span>
                       )
                     }
                     return (
                       <Link
-                        key={modelId}
-                        href={buildUrl({ model: isActive ? undefined : modelId })}
+                        key={modelOption.value}
+                        href={buildUrl({ model: isActive ? undefined : modelOption.value })}
                         className={`facet-check ${isActive ? 'active' : ''}`}
                       >
                         <span className="facet-check-box" aria-hidden="true">{isActive ? '✓' : ''}</span>
-                        <span>{modelLabel}</span>
+                        <span>{modelOption.label}</span>
                         <span className="facet-count" style={{ marginLeft: 'auto' }}>{count}</span>
                       </Link>
                     )

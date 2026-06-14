@@ -198,6 +198,10 @@ The Vault is not a general bookmark shelf, request inbox, or activity feed. It s
 - Privacy status
 - Public-delay status
 
+## Public Browse Model Facets
+
+The `/paths` model filter should be generated from the same public model label shown on each path card. Do not maintain a separate stale model list for browse facets, and do not let an old `model_recommendation` bucket a card under a model name that the card itself does not display. Raw model/provider provenance should stay available in source-run review and detail-page provenance where it belongs.
+
 ## Multi-Prompt Artifact Versions
 
 For a multi-prompt build, the top of the page should show the final artifact by default, but the user should still be able to inspect earlier builds.

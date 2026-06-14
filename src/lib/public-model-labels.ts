@@ -41,7 +41,7 @@ function formatChatGptLabel(label: string, normalized: string) {
   }
 
   if (/5\s*5/.test(normalized)) {
-    if (hasToken(normalized, 'instant')) return 'ChatGPT Instant'
+    if (hasToken(normalized, 'instant')) return 'ChatGPT 5.5 Instant'
     if (hasToken(normalized, 'heavy')) return 'ChatGPT 5.5 Heavy'
     if (hasToken(normalized, 'extended') && hasToken(normalized, 'pro')) return 'ChatGPT 5.5 Extended Pro'
     if (hasToken(normalized, 'pro')) return 'ChatGPT 5.5 Pro'
@@ -62,6 +62,17 @@ function formatGeminiLabel(normalized: string) {
   return 'Gemini'
 }
 
+export function isPublicModelLabel(label: string | null | undefined) {
+  const trimmed = label?.trim() ?? ''
+  return (
+    /^Claude\b/.test(trimmed) ||
+    /^ChatGPT\s+(?:Instant|[45](?:\.\d+)?)/.test(trimmed) ||
+    /^GPT-/.test(trimmed) ||
+    /^Gemini\b/.test(trimmed) ||
+    /^(Llama|Grok|DeepSeek|Mistral|Kimi|Nemotron|Nex|Qwen)\b/.test(trimmed)
+  )
+}
+
 export function getPublicModelLabel(value: string | null | undefined) {
   const raw = value?.trim()
   if (!raw) return ''
@@ -77,9 +88,27 @@ export function getPublicModelLabel(value: string | null | undefined) {
     return formatChatGptLabel(label, normalized)
   }
 
-  if (/\b(gemini|google)\b/.test(normalized)) {
+  if (/\b(gemini|google|flash)\b/.test(normalized)) {
     return formatGeminiLabel(normalized)
   }
 
   return label
+}
+
+export function getPublicModelFacetValue(value: string | null | undefined) {
+  const raw = value?.trim()
+  if (!raw) return ''
+
+  const label = getPublicModelLabel(raw) || raw
+  return normalizedText(label).replace(/\s+/g, '-')
+}
+
+export function publicModelFilterMatchesLabel(filterValue: string, label: string) {
+  const labelFacet = getPublicModelFacetValue(label)
+  if (!labelFacet) return false
+
+  const rawFilterFacet = normalizedText(filterValue).replace(/\s+/g, '-')
+  const publicFilterFacet = getPublicModelFacetValue(filterValue)
+
+  return labelFacet === rawFilterFacet || labelFacet === publicFilterFacet
 }

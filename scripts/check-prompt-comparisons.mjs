@@ -85,7 +85,7 @@ new Script(transpileFile('src/lib/public-model-labels.ts'), { filename: 'public-
 const module = { exports: {} }
 new Script(transpileFile('src/lib/prompt-comparisons.ts'), { filename: 'prompt-comparisons.transpiled.cjs' }).runInNewContext(createSandbox(module))
 
-const { buildPromptComparisonGroups, getPromptModelLabel } = module.exports
+const { buildPromptComparisonGroups, getPromptModelLabel, promptMatchesModel } = module.exports
 
 const failures = []
 
@@ -165,11 +165,19 @@ const publicLabelCases = [
     'ChatGPT Instant',
   ],
   [
+    'gpt-5-5-instant',
+    'ChatGPT 5.5 Instant',
+  ],
+  [
     'Latest 5.5 / gpt-5-5-thinking as exposed by ChatGPT message nodes',
     'ChatGPT 5.5 Thinking',
   ],
   [
     'Flash (visible Gemini mode picker; exact backend version not exposed)',
+    'Gemini Flash',
+  ],
+  [
+    '3.5 Flash',
     'Gemini Flash',
   ],
   [
@@ -191,6 +199,66 @@ for (const [rawModel, expectedLabel] of publicLabelCases) {
     `public model label should render "${rawModel}" as "${expectedLabel}"`,
   )
 }
+
+const staleRecommendationPrompt = prompt({
+  id: 'stale-chatgpt-recommendation',
+  title: 'Stale ChatGPT recommendation',
+  model_used: 'ChatGPT Instant visible composer setting (exact model not exposed)',
+  model_recommendation: 'chatgpt-5-4',
+})
+assert(
+  !promptMatchesModel(staleRecommendationPrompt, 'chatgpt-5-4'),
+  'model facet should not route a ChatGPT Instant public label through a stale ChatGPT 5.4 recommendation',
+)
+assert(
+  promptMatchesModel(staleRecommendationPrompt, 'chatgpt-instant'),
+  'model facet should route ChatGPT Instant by the public label shown on the card',
+)
+
+const explicitInstantPrompt = prompt({
+  id: 'explicit-chatgpt-55-instant',
+  title: 'Explicit ChatGPT 5.5 Instant',
+  model_used: 'gpt-5-5-instant',
+})
+assert(
+  promptMatchesModel(explicitInstantPrompt, 'chatgpt-5-5-instant'),
+  'model facet should route explicit ChatGPT 5.5 Instant runs by their public label',
+)
+
+const settingsNoisePrompt = prompt({
+  id: 'settings-noise-model-used',
+  title: 'Settings noise should not become a model',
+  model_used: 'High',
+  model_recommendation: '3.5 Flash',
+})
+assert(
+  getPromptModelLabel(settingsNoisePrompt) === 'Gemini Flash',
+  'model label should ignore settings-like model_used noise and fall back to a valid recommendation',
+)
+assert(
+  !promptMatchesModel(settingsNoisePrompt, 'high'),
+  'model facet should not expose settings-like values as model filters',
+)
+assert(
+  promptMatchesModel(settingsNoisePrompt, 'gemini-flash'),
+  'model facet should route shorthand Flash records as Gemini Flash',
+)
+
+const genericSourceSessionPrompt = prompt({
+  id: 'generic-source-session-tool',
+  title: 'Generic source session tool',
+  model_used: null,
+  model_recommendation: null,
+  tools_used: ['ChatGPT source session', 'single-file HTML'],
+})
+assert(
+  getPromptModelLabel(genericSourceSessionPrompt) === 'Unknown model',
+  'generic ChatGPT source-session tool labels should not become public model labels',
+)
+assert(
+  !promptMatchesModel(genericSourceSessionPrompt, 'chatgpt-source-session'),
+  'generic source-session tools should not become model facets',
+)
 
 const sameModelFamilyGroups = buildPromptComparisonGroups([
   prompt({

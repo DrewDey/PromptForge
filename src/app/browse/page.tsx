@@ -267,8 +267,16 @@ export default async function BrowsePage({
     return `/paths${qs ? `?${qs}` : ''}`
   }
   const currentBrowseHref = buildUrl({})
+  const resultCountLabel = activeCompare
+    ? `${comparisonGroups.length} ${comparisonGroups.length === 1 ? 'matchup' : 'matchups'}`
+    : `${filtered.length} ${filtered.length === 1 ? 'path' : 'paths'}`
+  const resultListTitle = activeCompare
+    ? 'Model matchups'
+    : q || activeDomain || activeDifficulty || activeModel
+      ? 'Best matches'
+      : 'Best starting points'
 
-  // Editorial slices (only relevant when panel is closed)
+  // Editorial slices stay visible below the finder so the page still has a discovery path.
   const potw = allPrompts[0]
   const potwModelLabel = potw ? getPromptModelLabel(potw) : ''
   const shelf = allPrompts.slice(1, 5)
@@ -441,7 +449,7 @@ export default async function BrowsePage({
                 </div>
               </div>
               <Link href="/paths" className="btn-ghost" style={{ fontSize: 12 }}>
-                Close panel ▴
+                Close finder
               </Link>
             </header>
 
@@ -638,14 +646,23 @@ export default async function BrowsePage({
               </aside>
 
               {/* ─── Results list ─── */}
-              <div>
+              <div className="panel-results">
+                <div className="result-list-head">
+                  <div>
+                    <div className="result-list-eyebrow">Path finder</div>
+                    <div className="result-list-title">{resultListTitle}</div>
+                  </div>
+                  <div className="result-list-count">{resultCountLabel}</div>
+                </div>
                 {activeCompare ? (
                   comparisonGroups.length > 0 ? (
                     <>
-                      <ComparisonResults
-                        groups={comparisonGroups}
-                        getDomainLabel={(prompt) => promptDomain(prompt)?.label}
-                      />
+                      <div className="results-scroll" aria-label="Model matchup results">
+                        <ComparisonResults
+                          groups={comparisonGroups}
+                          getDomainLabel={(prompt) => promptDomain(prompt)?.label}
+                        />
+                      </div>
 
                       <div className="result-generate">
                         <div className="result-generate-text">
@@ -665,75 +682,78 @@ export default async function BrowsePage({
                   )
                 ) : filtered.length > 0 ? (
                   <>
-                    {filtered.map((p, i) => {
-                      const isTop = i === 0
-                      const domain = promptDomain(p)
-                      const modelLabel = getPromptModelLabel(p)
-                      const stepCount = getPromptStepCount(p)
-                      const cardSignal = getPathCardSignal(p)
-                      const hasEngagement = Boolean(getEngagementSignal(p))
-                      return (
-                        <article
-                          key={p.id}
-                          className={`result-row${isTop ? ' top' : ''}`}
-                        >
-                          <Link href={getProjectHref(p)} className="result-row-main">
-                            <div className={`result-rank${isTop ? ' top' : ''}`}>
-                              <div className="result-rank-num">{String(i + 1).padStart(2, '0')}</div>
-                              <div className="result-rank-label">rank</div>
-                              {isTop && <div className="result-top-badge">Top</div>}
-                            </div>
-                            <div>
-                              <div className="result-main-title">{p.title}</div>
-                              <div className="result-main-desc">{p.description}</div>
-                              {p.result_content && (
-                                <div className="result-reason">
-                                  <span className="result-reason-icon">✦</span>
-                                  <span>
-                                    {p.result_content.length > 180
-                                      ? p.result_content.slice(0, 180).trim() + '…'
-                                      : p.result_content}
-                                  </span>
+                    <div className="results-scroll" aria-label="Build path results">
+                      {filtered.map((p, i) => {
+                        const isTop = i === 0
+                        const isPriority = i === 0
+                        const domain = promptDomain(p)
+                        const modelLabel = getPromptModelLabel(p)
+                        const stepCount = getPromptStepCount(p)
+                        const cardSignal = getPathCardSignal(p)
+                        const hasEngagement = Boolean(getEngagementSignal(p))
+                        return (
+                          <article
+                            key={p.id}
+                            className={`result-row${isTop ? ' top' : ''}`}
+                          >
+                            <Link href={getProjectHref(p)} className="result-row-main">
+                              <div className={`result-rank${isTop ? ' top' : ''}`}>
+                                <div className="result-rank-num">{String(i + 1).padStart(2, '0')}</div>
+                                {isTop && <div className="result-top-badge">Top</div>}
+                              </div>
+                              <div className="result-copy">
+                                <div className="result-main-title">{p.title}</div>
+                                <div className="result-main-desc">{p.description}</div>
+                                {p.result_content && isPriority && (
+                                  <div className="result-reason">
+                                    <span className="result-reason-label">Outcome</span>
+                                    <span>
+                                      {p.result_content.length > 150
+                                        ? p.result_content.slice(0, 150).trim() + '…'
+                                        : p.result_content}
+                                    </span>
+                                  </div>
+                                )}
+                                <div className="result-chip-row">
+                                  {domain && <span>{domain.label}</span>}
+                                  <span className={`potw-diff ${p.difficulty}`}>{p.difficulty}</span>
+                                  <span>{stepCount} {stepCount === 1 ? 'step' : 'steps'}</span>
+                                  {modelLabel !== 'Unknown model' && <span>{modelLabel}</span>}
+                                  <span>by {p.author?.display_name ?? p.author?.username ?? 'builder'}</span>
                                 </div>
-                              )}
-                            </div>
-                            <div className="result-meta">
-                              {domain && <span className="mono">{domain.label}</span>}
-                              <span className={`potw-diff ${p.difficulty}`}>{p.difficulty}</span>
-                              <span>{stepCount} {stepCount === 1 ? 'step' : 'steps'}{modelLabel !== 'Unknown model' ? ` · ${modelLabel}` : ''}</span>
-                              <span>by {p.author?.display_name ?? p.author?.username ?? 'builder'}</span>
-                            </div>
-                          </Link>
-                          <div className="result-stats result-actions">
-                            {isPersistableProjectId(p.id) ? (
-                              <>
-                                <VoteBookmarkButtons
-                                  promptId={p.id}
-                                  initialVoteCount={p.vote_count}
-                                  initialBookmarkCount={p.bookmark_count}
-                                  initialVoted={votedPromptIds.has(p.id)}
-                                  initialBookmarked={bookmarkedPromptIds.has(p.id)}
-                                  isLoggedIn={isLoggedIn}
-                                  loginNextPath={currentBrowseHref}
-                                  hideZeroCounts
-                                />
-                                {!hasEngagement && cardSignal && (
+                              </div>
+                            </Link>
+                            <div className="result-stats result-actions">
+                              {isPersistableProjectId(p.id) ? (
+                                <>
+                                  <VoteBookmarkButtons
+                                    promptId={p.id}
+                                    initialVoteCount={p.vote_count}
+                                    initialBookmarkCount={p.bookmark_count}
+                                    initialVoted={votedPromptIds.has(p.id)}
+                                    initialBookmarked={bookmarkedPromptIds.has(p.id)}
+                                    isLoggedIn={isLoggedIn}
+                                    loginNextPath={currentBrowseHref}
+                                    hideZeroCounts
+                                  />
+                                  {!hasEngagement && cardSignal && (
+                                    <span className="result-stat-text">
+                                      {cardSignal}
+                                    </span>
+                                  )}
+                                </>
+                              ) : (
+                                cardSignal && (
                                   <span className="result-stat-text">
                                     {cardSignal}
                                   </span>
-                                )}
-                              </>
-                            ) : (
-                              cardSignal && (
-                                <span className="result-stat-text">
-                                  {cardSignal}
-                                </span>
-                              )
-                            )}
-                          </div>
-                        </article>
-                      )
-                    })}
+                                )
+                              )}
+                            </div>
+                          </article>
+                        )
+                      })}
+                    </div>
 
                     <div className="result-generate">
                       <div className="result-generate-text">
@@ -772,8 +792,8 @@ export default async function BrowsePage({
         </section>
       )}
 
-      {/* ═══════════ EDITORIAL (closed state only) ═══════════ */}
-      {!panelOpen && potw && (
+      {/* ═══════════ EDITORIAL ═══════════ */}
+      {potw && (
         <>
           {/* Path of the Week */}
           <section className="potw-section">
@@ -878,26 +898,30 @@ export default async function BrowsePage({
             </section>
           )}
 
-          {/* Browse panel TOGGLE (closed) */}
-          <div className="panel-toggle-wrap">
-            <div className="section-wrap">
-              <Link href="/paths?panel=open" className="panel-toggle" data-open="false">
-                <div className="panel-toggle-left">
-                  <div className="panel-toggle-icon" aria-hidden="true">≡</div>
-                  <div>
-                    <div className="panel-toggle-title">Build Paths</div>
-                    <div className="panel-toggle-sub">
-                      Search everything, or jump into a broad domain.
+          {!panelOpen && (
+            <>
+              {/* Browse panel TOGGLE (closed) */}
+              <div className="panel-toggle-wrap">
+                <div className="section-wrap">
+                  <Link href="/paths?panel=open" className="panel-toggle" data-open="false" aria-label="Open Build Paths finder">
+                    <div className="panel-toggle-left">
+                      <div className="panel-toggle-icon" aria-hidden="true">≡</div>
+                      <div>
+                        <div className="panel-toggle-title">Build Paths</div>
+                        <div className="panel-toggle-sub">
+                          Search everything, or jump into a broad domain.
+                        </div>
+                      </div>
                     </div>
-                  </div>
+                    <div className="panel-toggle-right">
+                      <span className="panel-toggle-count">{totalLibrary} paths</span>
+                      <span className="panel-toggle-action">Open finder</span>
+                    </div>
+                  </Link>
                 </div>
-                <div className="panel-toggle-right">
-                  <span className="panel-toggle-count">{totalLibrary} paths</span>
-                  <span className="panel-toggle-chev" aria-hidden="true">▾</span>
-                </div>
-              </Link>
-            </div>
-          </div>
+              </div>
+            </>
+          )}
 
           {/* Domain grid */}
           <section className="domains-section">

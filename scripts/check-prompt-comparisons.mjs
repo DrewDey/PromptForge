@@ -173,12 +173,24 @@ const publicLabelCases = [
     'ChatGPT 5.5 Thinking',
   ],
   [
+    'GPT-5.5 Medium',
+    'ChatGPT 5.5 Medium',
+  ],
+  [
+    '5.4 Instant',
+    'ChatGPT 5.4 Instant',
+  ],
+  [
     'Flash (visible Gemini mode picker; exact backend version not exposed)',
     'Gemini Flash',
   ],
   [
     '3.5 Flash',
-    'Gemini Flash',
+    'Gemini 3.5 Flash',
+  ],
+  [
+    'Gemini 2.5 Flash Lite',
+    'Gemini 2.5 Flash Lite',
   ],
   [
     'Sonnet 4.6 Max (visible Claude composer model label)',
@@ -186,7 +198,31 @@ const publicLabelCases = [
   ],
   [
     'gemini-2-5-pro',
-    'Gemini Pro',
+    'Gemini 2.5 Pro',
+  ],
+  [
+    'Step 3.7 Flash',
+    'Step 3.7 Flash',
+  ],
+  [
+    'MiniMax M3',
+    'MiniMax M3',
+  ],
+  [
+    'Devstral 2 2512',
+    'Devstral 2 2512',
+  ],
+  [
+    'GLM 5.1',
+    'GLM 5.1',
+  ],
+  [
+    'NVIDIA: Nemotron 3 Ultra',
+    'NVIDIA: Nemotron 3 Ultra',
+  ],
+  [
+    'Nex AGI: Nex-N2-Pro (free)',
+    'Nex AGI: Nex-N2-Pro (free)',
   ],
 ]
 for (const [rawModel, expectedLabel] of publicLabelCases) {
@@ -232,7 +268,7 @@ const settingsNoisePrompt = prompt({
   model_recommendation: '3.5 Flash',
 })
 assert(
-  getPromptModelLabel(settingsNoisePrompt) === 'Gemini Flash',
+  getPromptModelLabel(settingsNoisePrompt) === 'Gemini 3.5 Flash',
   'model label should ignore settings-like model_used noise and fall back to a valid recommendation',
 )
 assert(
@@ -240,9 +276,52 @@ assert(
   'model facet should not expose settings-like values as model filters',
 )
 assert(
-  promptMatchesModel(settingsNoisePrompt, 'gemini-flash'),
-  'model facet should route shorthand Flash records as Gemini Flash',
+  promptMatchesModel(settingsNoisePrompt, 'gemini-3-5-flash'),
+  'model facet should route shorthand versioned Flash records by the exact Gemini version label',
 )
+
+const openRouterFlashPrompt = prompt({
+  id: 'openrouter-step-flash',
+  title: 'OpenRouter Step Flash',
+  model_used: 'Step 3.7 Flash',
+  tools_used: ['OpenRouter source session'],
+})
+assert(
+  getPromptModelLabel(openRouterFlashPrompt) === 'Step 3.7 Flash',
+  'OpenRouter Step Flash should keep the exact routed model instead of collapsing to Gemini Flash',
+)
+assert(
+  promptMatchesModel(openRouterFlashPrompt, 'step-3-7-flash'),
+  'OpenRouter Step Flash should be filterable by its exact routed model',
+)
+assert(
+  !promptMatchesModel(openRouterFlashPrompt, 'gemini-flash'),
+  'OpenRouter Step Flash should not route through the Gemini Flash filter',
+)
+
+const routedModelPrompts = [
+  ['openrouter-minimax', 'MiniMax M3', 'minimax-m3'],
+  ['openrouter-devstral', 'Devstral 2 2512', 'devstral-2-2512'],
+  ['openrouter-glm', 'GLM 5.1', 'glm-5-1'],
+  ['openrouter-nemotron', 'NVIDIA: Nemotron 3 Ultra', 'nvidia-nemotron-3-ultra'],
+  ['openrouter-nex', 'Nex AGI: Nex-N2-Pro (free)', 'nex-agi-nex-n2-pro-free'],
+]
+for (const [id, model, facet] of routedModelPrompts) {
+  const routedPrompt = prompt({
+    id,
+    title: `OpenRouter routed ${model}`,
+    model_used: model,
+    tools_used: ['OpenRouter source session'],
+  })
+  assert(
+    getPromptModelLabel(routedPrompt) === model,
+    `${model} should stay visible as its exact routed model`,
+  )
+  assert(
+    promptMatchesModel(routedPrompt, facet),
+    `${model} should be filterable by its exact routed model`,
+  )
+}
 
 const genericSourceSessionPrompt = prompt({
   id: 'generic-source-session-tool',

@@ -1,5 +1,16 @@
 import { getModelName } from './models'
 
+const SETTINGS_ONLY_LABELS = new Set([
+  'extra high',
+  'high',
+  'medium',
+  'low',
+  'not specified',
+  'not sure',
+  'unknown',
+  'chosen by builder but not returned to manager',
+])
+
 function normalizedText(value: string) {
   return value
     .toLowerCase()
@@ -7,11 +18,53 @@ function normalizedText(value: string) {
     .trim()
 }
 
+function displayText(value: string) {
+  return value.replace(/\s+/g, ' ').trim()
+}
+
 function hasToken(normalized: string, token: string) {
   return new RegExp(`(^|\\s)${token}(\\s|$)`).test(normalized)
 }
 
+function isNonModelLabel(label: string, normalized = normalizedText(label)) {
+  return (
+    SETTINGS_ONLY_LABELS.has(normalized) ||
+    normalized === 'chatgpt' ||
+    normalized === 'chatgpt web' ||
+    normalized === 'chatgpt source session' ||
+    normalized === 'openrouter' ||
+    normalized === 'openrouter source session' ||
+    normalized === 'single file html' ||
+    normalized.includes('chosen by builder but not returned')
+  )
+}
+
+function isSpecificRoutedModelLabel(label: string, normalized = normalizedText(label)) {
+  return (
+    /\b(qwen\d|qwen)\b/.test(normalized) ||
+    /\bkimi\b/.test(normalized) ||
+    /\bminimax\b/.test(normalized) ||
+    /\bdevstral\b/.test(normalized) ||
+    /\bdeepseek\b/.test(normalized) ||
+    /\bglm\b/.test(normalized) ||
+    /\bnemotron\b/.test(normalized) ||
+    /\bnex(?:\s+agi|\s*n\d|\s+n\d|-n\d|\b)/.test(normalized) ||
+    /\bmistral\b/.test(normalized) ||
+    /\bllama\b/.test(normalized) ||
+    /\bgrok\b/.test(normalized) ||
+    /\bstep\s*\d/.test(normalized) ||
+    /^z\.?ai\b/i.test(label) ||
+    /^nvidia\s*:/i.test(label) ||
+    /^moonshotai\s*:/i.test(label)
+  )
+}
+
 function formatClaudeLabel(label: string, normalized: string) {
+  const fableMatch = label.match(/\bfable\s+(\d+(?:\.\d+)?)\s+max\b/i)
+  if (fableMatch) {
+    return `Claude Fable ${fableMatch[1]} Max`
+  }
+
   const familyMatch = normalized.match(/\b(opus|sonnet|haiku)\b/)
   const versionMatch = label.match(/\b(\d+(?:\.\d+)?)\b/)
   const family = familyMatch
@@ -36,40 +89,66 @@ function formatChatGptLabel(label: string, normalized: string) {
     return 'ChatGPT Instant'
   }
 
-  if (/gpt\s*5\s*5\s*thinking/.test(normalized) || /5\s*5.*thinking/.test(normalized)) {
-    return hasToken(normalized, 'heavy') ? 'ChatGPT 5.5 Thinking Heavy' : 'ChatGPT 5.5 Thinking'
-  }
+  const version = /5\s*5/.test(normalized) ? '5.5' : /5\s*4/.test(normalized) ? '5.4' : ''
 
-  if (/5\s*5/.test(normalized)) {
-    if (hasToken(normalized, 'instant')) return 'ChatGPT 5.5 Instant'
-    if (hasToken(normalized, 'heavy')) return 'ChatGPT 5.5 Heavy'
-    if (hasToken(normalized, 'extended') && hasToken(normalized, 'pro')) return 'ChatGPT 5.5 Extended Pro'
-    if (hasToken(normalized, 'pro')) return 'ChatGPT 5.5 Pro'
-    return 'ChatGPT 5.5'
-  }
+  if (version) {
+    const hasThinking = hasToken(normalized, 'thinking')
+    const suffixes = [
+      hasThinking ? 'Thinking' : '',
+      hasToken(normalized, 'heavy') ? 'Heavy' : '',
+      hasToken(normalized, 'extended') ? 'Extended' : '',
+      hasToken(normalized, 'pro') ? 'Pro' : '',
+      hasToken(normalized, 'instant') && !hasThinking ? 'Instant' : '',
+      hasToken(normalized, 'medium') ? 'Medium' : '',
+      hasToken(normalized, 'high') ? 'High' : '',
+      hasToken(normalized, 'low') ? 'Low' : '',
+    ].filter(Boolean)
 
-  if (/5\s*4/.test(normalized)) {
-    return hasToken(normalized, 'thinking') ? 'ChatGPT 5.4 Thinking' : 'ChatGPT 5.4'
+    return ['ChatGPT', version, ...suffixes].join(' ')
   }
 
   if (hasToken(normalized, 'instant')) return 'ChatGPT Instant'
   return label
 }
 
-function formatGeminiLabel(normalized: string) {
-  if (hasToken(normalized, 'flash')) return 'Gemini Flash'
+function formatGeminiLabel(label: string, normalized: string) {
+  const explicitGemini = label.match(/\bgemini\s+(\d+(?:\.\d+)?)\s+(flash(?:[-\s]?lite)?|pro)\b/i)
+  if (explicitGemini) {
+    return `Gemini ${explicitGemini[1]} ${titleCaseModelSuffix(explicitGemini[2])}`
+  }
+
+  const shorthandVersion = label.match(/^\s*(\d+(?:\.\d+)?)\s+(flash(?:[-\s]?lite)?|pro)\b/i)
+  if (shorthandVersion) {
+    return `Gemini ${shorthandVersion[1]} ${titleCaseModelSuffix(shorthandVersion[2])}`
+  }
+
+  if (hasToken(normalized, 'flash') || /flash\s*lite/i.test(label)) {
+    return /flash\s*[- ]?lite/i.test(label) ? 'Gemini Flash Lite' : 'Gemini Flash'
+  }
   if (hasToken(normalized, 'pro')) return 'Gemini Pro'
   return 'Gemini'
 }
 
+function titleCaseModelSuffix(value: string) {
+  return value
+    .replace(/-/g, ' ')
+    .split(/\s+/)
+    .filter(Boolean)
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+    .join(' ')
+}
+
 export function isPublicModelLabel(label: string | null | undefined) {
   const trimmed = label?.trim() ?? ''
+  const normalized = normalizedText(trimmed)
+  if (!trimmed || isNonModelLabel(trimmed, normalized)) return false
+
   return (
     /^Claude\b/.test(trimmed) ||
-    /^ChatGPT\s+(?:Instant|[45](?:\.\d+)?)/.test(trimmed) ||
+    /^ChatGPT\s+(?:Instant|[45](?:\.\d+)?)\b/.test(trimmed) ||
     /^GPT-/.test(trimmed) ||
     /^Gemini\b/.test(trimmed) ||
-    /^(Llama|Grok|DeepSeek|Mistral|Kimi|Nemotron|Nex|Qwen)\b/.test(trimmed)
+    isSpecificRoutedModelLabel(trimmed, normalized)
   )
 }
 
@@ -77,22 +156,27 @@ export function getPublicModelLabel(value: string | null | undefined) {
   const raw = value?.trim()
   if (!raw) return ''
 
-  const label = getModelName(raw)
+  const label = displayText(getModelName(raw))
   const normalized = normalizedText(`${raw} ${label}`)
+  if (isNonModelLabel(label, normalizedText(label))) return ''
 
   if (/\b(claude|opus|sonnet|haiku|anthropic)\b/.test(normalized)) {
     return formatClaudeLabel(label, normalized)
   }
 
-  if (/\b(chatgpt|gpt|openai|latest)\b/.test(normalized)) {
+  if (/\b(chatgpt|gpt|openai|latest)\b/.test(normalized) || hasToken(normalized, 'instant') || /5\s*[45]/.test(normalized)) {
     return formatChatGptLabel(label, normalized)
   }
 
-  if (/\b(gemini|google|flash)\b/.test(normalized)) {
-    return formatGeminiLabel(normalized)
+  if (isSpecificRoutedModelLabel(label, normalizedText(label))) {
+    return label
   }
 
-  return label
+  if (/\b(gemini|google)\b/.test(normalized) || /^(\d+(?:\.\d+)?)\s+(flash(?:[-\s]?lite)?|pro)\b/i.test(label) || /^(flash|flash[-\s]?lite)\b/i.test(label)) {
+    return formatGeminiLabel(label, normalized)
+  }
+
+  return isPublicModelLabel(label) ? label : ''
 }
 
 export function getPublicModelFacetValue(value: string | null | undefined) {

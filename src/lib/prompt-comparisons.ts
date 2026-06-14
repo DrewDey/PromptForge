@@ -76,17 +76,25 @@ const MODEL_STOP_WORDS = new Set(
       'chatgpt',
       'claude',
       'deepseek',
+      'devstral',
       'extended',
       'flash',
       'gemini',
+      'glm',
       'gpt',
       'latest',
       'llama',
+      'kimi',
+      'minimax',
       'mistral',
+      'nemotron',
+      'nex',
       'openai',
       'opus',
       'pro',
+      'qwen',
       'sonnet',
+      'step',
     ]),
 )
 
@@ -191,7 +199,7 @@ export function getPromptModelLabel(prompt: PromptWithRelations) {
   if (modelRecommendationLabel) return modelRecommendationLabel
 
   const toolModel = prompt.tools_used.find((tool) => (
-    /chatgpt|claude|gemini|gpt|llama|mistral|grok|deepseek|o\d/i.test(tool)
+    /chatgpt|claude|gemini|gpt|llama|mistral|grok|deepseek|qwen|kimi|minimax|nemotron|nex|glm|devstral|step\s*\d|o\d/i.test(tool)
   ))
   return getPromptModelLabelCandidate(toolModel) || 'Unknown model'
 }

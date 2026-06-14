@@ -41,7 +41,7 @@ const DIFFICULTIES = [
   { value: 'advanced', label: 'Advanced' },
 ] as const
 
-const MAX_MODEL_FACETS = 6
+const PRIMARY_MODEL_FACET_COUNT = 5
 
 const SUGGESTION_QUERIES = [
   'Snake game',
@@ -235,13 +235,19 @@ export default async function BrowsePage({
       count: modelFacetBase.filter(prompt => promptMatchesModel(prompt, activeModel)).length,
     }
     : null
-  const visibleModelFacetOptions = modelFacetOptions.slice(0, MAX_MODEL_FACETS)
-  if (
-    activeModelFacet &&
-    !visibleModelFacetOptions.some(option => option.value === activeModelFacet.value)
-  ) {
-    visibleModelFacetOptions.unshift(activeModelFacet)
-  }
+  const visibleModelFacetOptions = activeModelFacet &&
+    !modelFacetOptions.some(option => option.value === activeModelFacet.value)
+    ? [activeModelFacet, ...modelFacetOptions]
+    : modelFacetOptions
+  const primaryModelFacetOptions = visibleModelFacetOptions.slice(0, PRIMARY_MODEL_FACET_COUNT)
+  const pinnedActiveModelFacet = activeModelFacet &&
+    !primaryModelFacetOptions.some(option => option.value === activeModelFacet.value)
+    ? activeModelFacet
+    : null
+  const hiddenModelFacetOptions = visibleModelFacetOptions.filter(option => (
+    !primaryModelFacetOptions.some(primary => primary.value === option.value) &&
+    option.value !== pinnedActiveModelFacet?.value
+  ))
   const comparableGroupCount = buildPromptComparisonGroups(queryMatched.filter(p => matchesFilters(p, { mdl: false })))
     .filter(group => !activeModel || group.prompts.some(prompt => promptMatchesModel(prompt, activeModel)))
     .length
@@ -312,21 +318,17 @@ export default async function BrowsePage({
   return (
     <div className="pf-browse">
       {/* ═══════════ 1 · AI SEARCH BAND ═══════════ */}
-      <section className={`ai-band${panelOpen ? ' sticky' : ''}`}>
+      <section className="ai-band">
         <div className="ai-band-wrap">
-          {!panelOpen && (
-            <>
-              <div className="ai-band-eyebrow">
-                Ask PathForge · {totalLibrary} {totalLibrary === 1 ? 'path' : 'paths'} indexed
-              </div>
-              <h1>
-                Describe what you&apos;re trying to <span className="serif">build.</span>
-              </h1>
-              <p className="ai-lede">
-                Plain English works best — we&apos;ll match you to the closest real build, then suggest how to adapt it.
-              </p>
-            </>
-          )}
+          <div className="ai-band-eyebrow">
+            Ask PathForge · {totalLibrary} {totalLibrary === 1 ? 'path' : 'paths'} indexed
+          </div>
+          <h1>
+            Describe what you&apos;re trying to <span className="serif">build.</span>
+          </h1>
+          <p className="ai-lede">
+            Plain English works best — we&apos;ll match you to the closest real build, then suggest how to adapt it.
+          </p>
 
           <form action="/paths" method="get" className="ai-box">
             {panelOpen && <input type="hidden" name="panel" value="open" />}
@@ -562,35 +564,79 @@ export default async function BrowsePage({
                       <Link href={buildUrl({ model: undefined })} className="facet-clear">clear</Link>
                     )}
                   </div>
-                  {visibleModelFacetOptions.map(modelOption => {
-                    const count = modelOption.count
-                    const isActive = activeModelFacetValue === modelOption.value
-                    if (count === 0 && !isActive) return null
-                    if (count === 0) {
+                  <div className="facet-list model-facet-list">
+                    {[
+                      ...primaryModelFacetOptions,
+                      ...(pinnedActiveModelFacet ? [pinnedActiveModelFacet] : []),
+                    ].map(modelOption => {
+                      const count = modelOption.count
+                      const isActive = activeModelFacetValue === modelOption.value
+                      if (count === 0 && !isActive) return null
+                      if (count === 0) {
+                        return (
+                          <span
+                            key={modelOption.value}
+                            className="facet-check active unavailable"
+                            aria-disabled="true"
+                          >
+                            <span className="facet-check-box" aria-hidden="true">✓</span>
+                            <span>{modelOption.label}</span>
+                            <span className="facet-count" style={{ marginLeft: 'auto' }}>{count}</span>
+                          </span>
+                        )
+                      }
                       return (
-                        <span
+                        <Link
                           key={modelOption.value}
-                          className="facet-check active unavailable"
-                          aria-disabled="true"
+                          href={buildUrl({ model: isActive ? undefined : modelOption.value })}
+                          className={`facet-check ${isActive ? 'active' : ''}`}
                         >
-                          <span className="facet-check-box" aria-hidden="true">✓</span>
+                          <span className="facet-check-box" aria-hidden="true">{isActive ? '✓' : ''}</span>
                           <span>{modelOption.label}</span>
                           <span className="facet-count" style={{ marginLeft: 'auto' }}>{count}</span>
-                        </span>
+                        </Link>
                       )
-                    }
-                    return (
-                      <Link
-                        key={modelOption.value}
-                        href={buildUrl({ model: isActive ? undefined : modelOption.value })}
-                        className={`facet-check ${isActive ? 'active' : ''}`}
-                      >
-                        <span className="facet-check-box" aria-hidden="true">{isActive ? '✓' : ''}</span>
-                        <span>{modelOption.label}</span>
-                        <span className="facet-count" style={{ marginLeft: 'auto' }}>{count}</span>
-                      </Link>
-                    )
-                  })}
+                    })}
+                    {hiddenModelFacetOptions.length > 0 && (
+                      <details className="model-facet-more">
+                        <summary>
+                          <span>Show more models</span>
+                          <span className="facet-count">{hiddenModelFacetOptions.length}</span>
+                        </summary>
+                        <div className="facet-list model-facet-more-list">
+                          {hiddenModelFacetOptions.map(modelOption => {
+                            const count = modelOption.count
+                            const isActive = activeModelFacetValue === modelOption.value
+                            if (count === 0 && !isActive) return null
+                            if (count === 0) {
+                              return (
+                                <span
+                                  key={modelOption.value}
+                                  className="facet-check active unavailable"
+                                  aria-disabled="true"
+                                >
+                                  <span className="facet-check-box" aria-hidden="true">✓</span>
+                                  <span>{modelOption.label}</span>
+                                  <span className="facet-count" style={{ marginLeft: 'auto' }}>{count}</span>
+                                </span>
+                              )
+                            }
+                            return (
+                              <Link
+                                key={modelOption.value}
+                                href={buildUrl({ model: isActive ? undefined : modelOption.value })}
+                                className={`facet-check ${isActive ? 'active' : ''}`}
+                              >
+                                <span className="facet-check-box" aria-hidden="true">{isActive ? '✓' : ''}</span>
+                                <span>{modelOption.label}</span>
+                                <span className="facet-count" style={{ marginLeft: 'auto' }}>{count}</span>
+                              </Link>
+                            )
+                          })}
+                        </div>
+                      </details>
+                    )}
+                  </div>
                 </div>
 
                 <div className="facet-group">

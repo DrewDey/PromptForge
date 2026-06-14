@@ -282,7 +282,7 @@ export default async function BrowsePage({
       ? 'Best matches'
       : 'Best starting points'
 
-  // Editorial slices stay visible below the finder so the page still has a discovery path.
+  // Editorial slices stay visible around the finder so opening it does not replace the page.
   const potw = allPrompts[0]
   const potwModelLabel = potw ? getPromptModelLabel(potw) : ''
   const shelf = allPrompts.slice(1, 5)
@@ -428,7 +428,7 @@ export default async function BrowsePage({
 
       {/* ═══════════ PANEL OPEN ═══════════ */}
       {panelOpen && (
-        <section className="panel-open">
+        <section id="build-paths-finder" className="panel-open">
           <div className="panel-open-wrap">
             <header className="panel-open-head">
               <div className="panel-toggle-left">
@@ -949,7 +949,7 @@ export default async function BrowsePage({
               {/* Browse panel TOGGLE (closed) */}
               <div className="panel-toggle-wrap">
                 <div className="section-wrap">
-                  <Link href="/paths?panel=open" className="panel-toggle" data-open="false" aria-label="Open Build Paths finder">
+                  <Link href="/paths?panel=open#build-paths-finder" className="panel-toggle" data-open="false" aria-label="Open Build Paths finder">
                     <div className="panel-toggle-left">
                       <div className="panel-toggle-icon" aria-hidden="true">≡</div>
                       <div>

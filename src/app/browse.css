@@ -6,11 +6,20 @@
    faceted left rail and ranked list.
    ───────────────────────────────────────────────────────── */
 
-.pf-browse { background: #f4f4f5; color: var(--color-surface-900); }
+.pf-browse { background: #f4f4f5; color: var(--color-surface-900); display: flex; flex-direction: column; }
 .pf-browse a { color: inherit; text-decoration: none; }
 .pf-browse button { font: inherit; background: none; border: 0; cursor: pointer; color: inherit; }
 .pf-browse .serif { font-family: var(--font-display); font-style: italic; font-weight: 400; letter-spacing: -0.01em; color: var(--color-brand-orange); }
 .pf-browse .mono { font-family: var(--font-mono); }
+
+.pf-browse .ai-band { order: 1; }
+.pf-browse .potw-section { order: 2; }
+.pf-browse .shelf-section { order: 3; }
+.pf-browse .panel-toggle-wrap,
+.pf-browse .query-meta { order: 4; }
+.pf-browse .panel-open { order: 5; }
+.pf-browse .domains-section { order: 6; }
+.pf-browse .loop-section { order: 7; }
 
 /* ══════════════════════════════════════════════════════
    1 · AI SEARCH BAND (persistent, top of page)

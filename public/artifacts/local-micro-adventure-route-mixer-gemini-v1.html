@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Micro-Adventure Route Mixer</title>
+  <style>
+    :root {
+      --bg-primary: #121214;
+      --bg-surface: #1a1a1e;
+      --bg-card: #222227;
+      --text-main: #e4e4e7;
+      --text-muted: #a1a1aa;
+      --accent: #3b82f6;
+      --accent-hover: #2563eb;
+      --border: #2e2e33;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    }
+
+    body {
+      background-color: var(--bg-primary);
+      color: var(--text-main);
+      padding: 1.5rem;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      min-height: 100vh;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 500px;
+      background: var(--bg-surface);
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      padding: 1.5rem;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+    }
+
+    h1 {
+      font-size: 1.25rem;
+      font-weight: 600;
+      margin-bottom: 1.25rem;
+      letter-spacing: -0.025em;
+    }
+
+    .section {
+      margin-bottom: 1.25rem;
+    }
+
+    label {
+      display: block;
+      font-size: 0.75rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-muted);
+      margin-bottom: 0.5rem;
+    }
+
+    select, input[type="text"] {
+      width: 100%;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      color: var(--text-main);
+      padding: 0.75rem;
+      border-radius: 6px;
+      font-size: 0.9rem;
+      outline: none;
+      transition: border-color 0.15s ease;
+    }
+
+    select:focus, input[type="text"]:focus {
+      border-color: var(--accent);
+    }
+
+    .stop-input-group {
+      display: flex;
+      gap: 0.5rem;
+      margin-bottom: 0.5rem;
+    }
+
+    .stop-list {
+      display: flex;
+      flex-direction: column;
+      gap: 0.35rem;
+      margin-top: 0.5rem;
+    }
+
+    .stop-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: var(--bg-card);
+      padding: 0.5rem 0.75rem;
+      border-radius: 6px;
+      font-size: 0.85rem;
+      border: 1px solid var(--border);
+    }
+
+    .stop-item button {
+      background: transparent;
+      border: none;
+      color: #ef4444;
+      cursor: pointer;
+      font-weight: bold;
+    }
+
+    button.btn-main {
+      width: 100%;
+      background: var(--accent);
+      color: #ffffff;
+      border: none;
+      padding: 0.85rem;
+      border-radius: 6px;
+      font-size: 0.9rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.15s ease;
+      margin-top: 0.5rem;
+    }
+
+    button.btn-main:hover {
+      background: var(--accent-hover);
+    }
+
+    button.btn-sec {
+      background: transparent;
+      color: var(--text-main);
+      border: 1px solid var(--border);
+      padding: 0.5rem 0.75rem;
+      border-radius: 6px;
+      font-size: 0.85rem;
+      cursor: pointer;
+    }
+
+    .route-card {
+      display: none;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 1.25rem;
+      margin-top: 1.5rem;
+    }
+
+    .route-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      margin-bottom: 1rem;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 0.5rem;
+    }
+
+    .route-title {
+      font-size: 1.1rem;
+      font-weight: 600;
+    }
+
+    .meta-tag {
+      font-size: 0.7rem;
+      background: rgba(59, 130, 246, 0.15);
+      color: #60a5fa;
+      padding: 0.2rem 0.5rem;
+      border-radius: 4px;
+      font-weight: 600;
+    }
+
+    .checklist {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 0.6rem;
+    }
+
+    .checklist-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 0.6rem;
+      font-size: 0.9rem;
+      line-height: 1.4;
+    }
+
+    .checklist-item input[type="checkbox"] {
+      margin-top: 0.2rem;
+      accent-color: var(--accent);
+    }
+
+    .actions-row {
+      display: flex;
+      gap: 0.5rem;
+      margin-top: 1.2rem;
+    }
+
+    .actions-row button {
+      flex: 1;
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <h1>Micro-Adventure Mixer</h1>
+
+  <div class="section">
+    <label for="timeBudget">Time Budget</label>
+    <select id="timeBudget">
+      <option value="Quick Detour (30-60 mins)">Quick Detour (30-60 mins)</option>
+      <option value="Half-Day Escape (2-4 hours)">Half-Day Escape (2-4 hours)</option>
+      <option value="Full Horizon (Deep Dive)">Full Horizon (Deep Dive)</option>
+    </select>
+  </div>
+
+  <div class="section">
+    <label for="mood">Weather / Mood</label>
+    <select id="mood">
+      <option value="Sunny & High Energy">Sunny & High Energy</option>
+      <option value="Overcast, Moody & Melancholic">Overcast, Moody & Melancholic</option>
+      <option value="Neon Night Vibes">Neon Night Vibes</option>
+      <option value="Rainy Day Slog">Rainy Day Slog</option>
+    </select>
+  </div>
+
+  <div class="section">
+    <label for="transit">Transit Mode</label>
+    <select id="transit">
+      <option value="Foot Patrol (Walking)">Foot Patrol (Walking)</option>
+      <option value="Two-Wheel Blitz (Bike/Scooter)">Two-Wheel Blitz (Bike/Scooter)</option>
+      <option value="Urban Transit / Cruiser">Urban Transit / Cruiser</option>
+    </select>
+  </div>
+
+  <div class="section">
+    <label>Nearby Waypoints</label>
+    <div class="stop-input-group">
+      <input type="text" id="stopInput" placeholder="e.g., Local park, coffee shop, vinyl store...">
+      <button class="btn-sec" onclick="addStop()">Add</button>
+    </div>
+    <div class="stop-list" id="stopList"></div>
+  </div>
+
+  <button class="btn-main" onclick="dealRoute()">Deal Route Card</button>
+
+  <div class="route-card" id="routeCard">
+    <div class="route-header">
+      <div class="route-title" id="cardTitle">Your Mission</div>
+      <div class="meta-tag" id="cardMeta">Walking</div>
+    </div>
+    <ul class="checklist" id="checklist"></ul>
+
+    <div class="actions-row">
+      <button class="btn-sec" onclick="copyShareLink()">Copy Share Link</button>
+      <button class="btn-sec" onclick="saveToUrl()">Save URL State</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  let stops = [];
+
+  window.addEventListener('DOMContentLoaded', () => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.has('t')) document.getElementById('timeBudget').value = params.get('t');
+    if (params.has('m')) document.getElementById('mood').value = params.get('m');
+    if (params.has('tr')) document.getElementById('transit').value = params.get('tr');
+    if (params.has('s')) {
+      stops = JSON.parse(decodeURIComponent(params.get('s')));
+      updateStopList();
+    }
+    if (params.has('active') && params.get('active') === 'true') {
+      dealRoute();
+    }
+  });
+
+  function addStop() {
+    const input = document.getElementById('stopInput');
+    const val = input.value.trim();
+    if (val) {
+      stops.push(val);
+      input.value = '';
+      updateStopList();
+    }
+  }
+
+  function removeStop(index) {
+    stops.splice(index, 1);
+    updateStopList();
+  }
+
+  function updateStopList() {
+    const list = document.getElementById('stopList');
+    list.innerHTML = '';
+    stops.forEach((stop, i) => {
+      const div = document.createElement('div');
+      div.className = 'stop-item';
+      div.innerHTML = `<span>${stop}</span><button onclick="removeStop(${i})">&times;</button>`;
+      list.appendChild(div);
+    });
+  }
+
+  function generateStateUrl(includeActive = false) {
+    const t = document.getElementById('timeBudget').value;
+    const m = document.getElementById('mood').value;
+    const tr = document.getElementById('transit').value;
+    const s = encodeURIComponent(JSON.stringify(stops));
+
+    let url = `${window.location.origin}${window.location.pathname}?t=${encodeURIComponent(t)}&m=${encodeURIComponent(m)}&tr=${encodeURIComponent(tr)}&s=${s}`;
+    if (includeActive) url += '&active=true';
+    return url;
+  }
+
+  function saveToUrl() {
+    const newUrl = generateStateUrl(false);
+    window.history.pushState({}, '', newUrl);
+  }
+
+  function dealRoute() {
+    const time = document.getElementById('timeBudget').value;
+    const mood = document.getElementById('mood').value;
+    const transit = document.getElementById('transit').value;
+
+    if (stops.length === 0) {
+      alert('Add at least one waypoint to mix your route.');
+      return;
+    }
+
+    document.getElementById('cardMeta').innerText = transit.split(' (')[0];
+
+    const titles = ["Operation: Ghost Protocol", "The Scenic Detour Matrix", "Gridline Shuffle", "The Horizon Blueprint"];
+    document.getElementById('cardTitle').innerText = titles[Math.floor(Math.random() * titles.length)];
+
+    const checklist = document.getElementById('checklist');
+    checklist.innerHTML = '';
+
+    const modifiers = {
+      "Sunny & High Energy": ["Grab a cold drink first", "Take the longest, least shaded path intentionally", "Sprint the final block"],
+      "Overcast, Moody & Melancholic": ["Put on a dark synth or heavy grunge soundtrack", "Find a spot to watch traffic pass", "Take a monochrome photo"],
+      "Neon Night Vibes": ["Look for reflection pools on pavement", "Stick to illuminated alleys", "Keep pace with the streetlights"],
+      "Rainy Day Slog": ["Embrace the wet soles; no stepping around puddles", "Seek immediate canvas awning shelter for 2 minutes", "Spot the lowest hanging cloud line"]
+    };
+
+    const selectedMods = modifiers[mood] || ["Keep eyes on the horizon"];
+
+    // Add first modifier
+    addChecklistItem(checklist, selectedMods[0]);
+
+    // Shuffle and add unique waypoints
+    const uniqueStops = [...new Set(stops)];
+    uniqueStops.forEach((stop, index) => {
+      let action = `Navigate to target: ${stop}`;
+      if (index === 0) action = `Head straight to ${stop} via an alternate path`;
+      if (index === uniqueStops.length - 1 && uniqueStops.length > 1) action = `Conclude operations at ${stop}`;
+      addChecklistItem(checklist, action);
+    });
+
+    // Add second modifier based on time
+    if (time.includes("Quick")) {
+      addChecklistItem(checklist, "Maintain a rapid cadence; no lingering.");
+    } else {
+      addChecklistItem(checklist, selectedMods[1] || "Document one unusual architectural flaw along the route.");
+    }
+
+    document.getElementById('routeCard').style.display = 'block';
+  }
+
+  function addChecklistItem(parent, text) {
+    const li = document.createElement('li');
+    li.className = 'checklist-item';
+    li.innerHTML = `<input type="checkbox"><span>${text}</span>`;
+    parent.appendChild(li);
+  }
+
+  function copyShareLink() {
+    const url = generateStateUrl(true);
+    navigator.clipboard.writeText(url).then(() => {
+      alert('Shareable route configuration copied to clipboard.');
+    });
+  }
+</script>
+
+</body>
+</html>

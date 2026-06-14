@@ -1,0 +1,491 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Interview Answer Proof Drill Cards</title>
+<style>
+  :root{
+    --bg:#eef3f8;
+    --panel:#ffffff;
+    --ink:#172033;
+    --muted:#667085;
+    --line:#d3dce8;
+    --soft:#e7edf5;
+    --dark:#243b63;
+    --accent:#315f9c;
+    --good:#247854;
+    --warn:#b7791f;
+    --bad:#b23b4a;
+    --lav:#f0edff;
+    --sky:#e8f4ff;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0;
+    font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+    background:
+      radial-gradient(circle at top left,rgba(49,95,156,.14),transparent 34rem),
+      radial-gradient(circle at bottom right,rgba(86,68,170,.10),transparent 30rem),
+      var(--bg);
+    color:var(--ink);
+    line-height:1.45;
+  }
+  .wrap{
+    width:min(1120px,100%);
+    margin:auto;
+    padding:18px;
+  }
+  header{
+    background:linear-gradient(135deg,#ffffff,#edf5ff 55%,#f1efff);
+    border:1px solid var(--line);
+    border-radius:24px;
+    padding:20px;
+    box-shadow:0 12px 32px rgba(23,32,51,.08);
+  }
+  h1{
+    margin:0 0 8px;
+    font-size:clamp(1.8rem,6vw,3.2rem);
+    line-height:1.02;
+  }
+  h1 span{display:block}
+  p{margin:0 0 12px}
+  .grid{
+    display:grid;
+    grid-template-columns:1fr;
+    gap:14px;
+    margin-top:14px;
+  }
+  @media(min-width:850px){
+    .grid{grid-template-columns:1fr 1fr}
+    .wide{grid-column:1/-1}
+  }
+  .card{
+    background:var(--panel);
+    border:1px solid var(--line);
+    border-radius:20px;
+    padding:16px;
+    box-shadow:0 8px 22px rgba(23,32,51,.06);
+    min-width:0;
+  }
+  h2,h3{margin:0 0 10px}
+  label{
+    display:block;
+    font-weight:700;
+    margin:12px 0 6px;
+  }
+  textarea,input,select,button{
+    width:100%;
+    max-width:100%;
+    font:inherit;
+    border-radius:14px;
+  }
+  textarea,input,select{
+    border:1px solid var(--line);
+    background:#fbfdff;
+    color:var(--ink);
+    padding:12px;
+  }
+  textarea{min-height:160px;resize:vertical}
+  button{
+    border:0;
+    background:var(--dark);
+    color:white;
+    padding:12px 14px;
+    font-weight:800;
+    cursor:pointer;
+  }
+  button:hover{filter:brightness(.96)}
+  button.secondary{
+    background:var(--soft);
+    color:var(--ink);
+    border:1px solid var(--line);
+  }
+  .row{
+    display:grid;
+    grid-template-columns:1fr;
+    gap:10px;
+  }
+  @media(min-width:620px){
+    .row.two{grid-template-columns:1fr 1fr}
+    .row.three{grid-template-columns:repeat(3,1fr)}
+  }
+  .score{
+    font-size:3.2rem;
+    font-weight:900;
+    line-height:1;
+    color:var(--dark);
+  }
+  .meter{
+    height:14px;
+    background:var(--soft);
+    border-radius:999px;
+    overflow:hidden;
+    border:1px solid var(--line);
+  }
+  .bar{
+    height:100%;
+    width:0%;
+    background:var(--good);
+  }
+  .pillbox{
+    display:grid;
+    grid-template-columns:1fr;
+    gap:8px;
+  }
+  .pill{
+    padding:10px;
+    border:1px solid var(--line);
+    background:var(--sky);
+    border-radius:14px;
+    overflow-wrap:anywhere;
+  }
+  .sentence{
+    border:1px solid var(--line);
+    background:#fbfdff;
+    padding:12px;
+    border-radius:16px;
+    margin:10px 0;
+  }
+  .sentence-text{
+    margin-bottom:10px;
+    overflow-wrap:anywhere;
+  }
+  .tags{
+    display:grid;
+    grid-template-columns:1fr;
+    gap:8px;
+  }
+  @media(min-width:520px){
+    .tags{grid-template-columns:repeat(4,1fr)}
+  }
+  .tag{
+    position:relative;
+    display:flex;
+    gap:8px;
+    align-items:center;
+    border:1px solid var(--line);
+    border-radius:14px;
+    padding:9px;
+    background:var(--lav);
+    font-weight:700;
+    min-width:0;
+  }
+  .tag input{
+    width:auto;
+    max-width:none;
+    flex:0 0 auto;
+  }
+  .mini{
+    color:var(--muted);
+    font-size:.92rem;
+  }
+  .drill-card{
+    border:1px solid var(--line);
+    border-radius:18px;
+    padding:14px;
+    background:#fbfdff;
+    margin:10px 0;
+  }
+  .drill-top{
+    display:flex;
+    gap:8px;
+    flex-wrap:wrap;
+    justify-content:space-between;
+  }
+  .badge{
+    border-radius:999px;
+    padding:5px 9px;
+    background:var(--soft);
+    border:1px solid var(--line);
+    font-size:.84rem;
+    font-weight:800;
+  }
+  .warn{color:var(--warn)}
+  .bad{color:var(--bad)}
+  .good{color:var(--good)}
+  pre{
+    white-space:pre-wrap;
+    overflow-wrap:anywhere;
+    background:#fbfdff;
+    border:1px solid var(--line);
+    border-radius:16px;
+    padding:14px;
+    margin:0;
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1><span>Interview Answer</span><span>Proof Drill Cards</span></h1>
+    <p>Paste a rough answer, tag each sentence, score the proof, edit drill cards, then copy or download a tighter outline.</p>
+  </header>
+
+  <main class="grid">
+    <section class="card">
+      <h2>1. Paste rough answer</h2>
+      <label for="role">Target role or interviewer priority</label>
+      <input id="role" placeholder="Example: client-facing financial planning analyst">
+      <label for="answer">Rough answer</label>
+      <textarea id="answer" placeholder="Paste your interview answer here. Each sentence becomes a drill card."></textarea>
+      <div class="row two">
+        <button id="parseBtn">Build drill cards</button>
+        <button class="secondary" id="sampleBtn">Load sample answer</button>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>2. Proof score</h2>
+      <div class="score" id="score">0</div>
+      <div class="meter"><div class="bar" id="bar"></div></div>
+      <p class="mini" id="scoreNote">Score updates after tagging.</p>
+      <div class="pillbox" id="diagnostics"></div>
+    </section>
+
+    <section class="card wide">
+      <h2>3. Tag sentences</h2>
+      <div id="sentences" class="mini">No cards yet.</div>
+    </section>
+
+    <section class="card">
+      <h2>4. Editable drill cards</h2>
+      <div id="drills"></div>
+      <button class="secondary" id="addDrill">Add blank drill card</button>
+    </section>
+
+    <section class="card">
+      <h2>5. Improved outline</h2>
+      <pre id="outline">Build or edit cards to generate an outline.</pre>
+      <div class="row two" style="margin-top:10px">
+        <button id="copyBtn">Copy outline</button>
+        <button class="secondary" id="downloadBtn">Download .txt</button>
+      </div>
+      <p class="mini" id="copyStatus"></p>
+    </section>
+  </main>
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  const $ = id => document.getElementById(id);
+  const state = { sentences: [], drills: [] };
+
+  const sample = `In my last role, I improved our client review prep process because advisors were spending too much time hunting for scattered notes. I built a repeatable checklist that pulled together account changes, planning follow-ups, and open service items before each meeting. After a few weeks, prep felt faster and reviews were less likely to miss a loose end. My role was not just administrative; I was connecting the planning details to what the advisor needed in the room. That is why I think I fit a role that needs organization, judgment, and client-facing readiness.`;
+
+  function splitSentences(text){
+    return text
+      .replace(/\s+/g," ")
+      .split(/(?<=[.!?])\s+/)
+      .map(s => s.trim())
+      .filter(Boolean);
+  }
+
+  function makeEl(tag, className, text){
+    const el = document.createElement(tag);
+    if(className) el.className = className;
+    if(text !== undefined) el.textContent = text;
+    return el;
+  }
+
+  function guessTag(sentence){
+    const s = sentence.toLowerCase();
+    if(/\b(result|after|increased|decreased|faster|saved|reduced|improved|grew|won|less|more|metric|weeks|months|percent|%)\b/.test(s)) return "result";
+    if(/\b(built|created|used|analyzed|reviewed|documented|tracked|prepared|measured|because|example)\b/.test(s)) return "evidence";
+    if(/\b(role|fit|why|team|client-facing|strength|judgment|ready|needs)\b/.test(s)) return "role fit";
+    return "claim";
+  }
+
+  function build(){
+    state.sentences = splitSentences($("answer").value).map((text, i) => ({
+      id: Date.now() + i,
+      text,
+      tag: guessTag(text)
+    }));
+    state.drills = state.sentences.map(s => ({
+      prompt: "Strengthen this sentence",
+      answer: s.text,
+      proof: s.tag === "evidence" || s.tag === "result" ? "Specific support present" : "Needs sharper support"
+    }));
+    renderAll();
+  }
+
+  function renderSentences(){
+    const box = $("sentences");
+    box.replaceChildren();
+    if(!state.sentences.length){
+      box.textContent = "No cards yet.";
+      return;
+    }
+    state.sentences.forEach((s, idx) => {
+      const card = makeEl("div","sentence");
+      card.appendChild(makeEl("div","sentence-text",(idx+1)+". "+s.text));
+
+      const tags = makeEl("div","tags");
+      ["claim","evidence","result","role fit"].forEach(tag => {
+        const lab = makeEl("label","tag");
+        const input = document.createElement("input");
+        input.type = "radio";
+        input.name = "tag-" + s.id;
+        input.checked = s.tag === tag;
+        input.addEventListener("change", () => {
+          s.tag = tag;
+          if(state.drills[idx]){
+            state.drills[idx].proof = tag === "evidence" || tag === "result" ? "Specific support present" : "Needs sharper support";
+          }
+          renderAll();
+        });
+        lab.appendChild(input);
+        lab.appendChild(document.createTextNode(tag));
+        tags.appendChild(lab);
+      });
+      card.appendChild(tags);
+      box.appendChild(card);
+    });
+  }
+
+  function renderDrills(){
+    const box = $("drills");
+    box.replaceChildren();
+    state.drills.forEach((d, i) => {
+      const card = makeEl("div","drill-card");
+      const top = makeEl("div","drill-top");
+      top.appendChild(makeEl("strong","", "Card " + (i+1)));
+      const del = makeEl("button","secondary","Remove");
+      del.style.width = "auto";
+      del.addEventListener("click", () => {
+        state.drills.splice(i,1);
+        renderAll();
+      });
+      top.appendChild(del);
+      card.appendChild(top);
+
+      [["Prompt","prompt"],["Answer piece","answer"],["Proof note","proof"]].forEach(pair => {
+        const label = makeEl("label","",pair[0]);
+        const area = document.createElement("textarea");
+        area.value = d[pair[1]];
+        area.style.minHeight = pair[1] === "answer" ? "90px" : "56px";
+        area.addEventListener("input", () => {
+          d[pair[1]] = area.value;
+          renderScoreAndOutline();
+        });
+        card.appendChild(label);
+        card.appendChild(area);
+      });
+      box.appendChild(card);
+    });
+  }
+
+  function calcScore(){
+    const total = Math.max(state.sentences.length, 1);
+    const counts = {claim:0,evidence:0,result:0,"role fit":0};
+    state.sentences.forEach(s => counts[s.tag]++);
+    let score = 0;
+    score += Math.min(counts.evidence, counts.claim || 1) * 22;
+    score += counts.result * 20;
+    score += counts["role fit"] * 16;
+    score += state.drills.filter(d => /\d|percent|%|client|advisor|team|reduced|saved|increased|improved|faster|after/i.test(d.answer + " " + d.proof)).length * 6;
+    if(counts.claim > counts.evidence + counts.result) score -= 12;
+    if(total < 3) score -= 10;
+    return Math.max(0, Math.min(100, Math.round(score)));
+  }
+
+  function renderScoreAndOutline(){
+    const score = calcScore();
+    $("score").textContent = String(score);
+    $("bar").style.width = score + "%";
+    $("bar").style.background = score >= 75 ? "var(--good)" : score >= 50 ? "var(--warn)" : "var(--bad)";
+    $("scoreNote").textContent = score >= 75 ? "Strong: answer has claim, proof, result, and role-fit logic." :
+      score >= 50 ? "Usable: add sharper evidence or a clearer result." :
+      "Thin: too much assertion, not enough proof.";
+
+    const counts = {claim:0,evidence:0,result:0,"role fit":0};
+    state.sentences.forEach(s => counts[s.tag]++);
+    const diagnostics = $("diagnostics");
+    diagnostics.replaceChildren();
+
+    const items = [
+      ["Claims", counts.claim],
+      ["Evidence", counts.evidence],
+      ["Results", counts.result],
+      ["Role fit", counts["role fit"]]
+    ];
+    items.forEach(item => diagnostics.appendChild(makeEl("div","pill", item[0] + ": " + item[1])));
+
+    const role = $("role").value.trim() || "the target role";
+    const claims = state.sentences.filter(s => s.tag === "claim").map(s => s.text);
+    const evidence = state.sentences.filter(s => s.tag === "evidence").map(s => s.text);
+    const results = state.sentences.filter(s => s.tag === "result").map(s => s.text);
+    const fit = state.sentences.filter(s => s.tag === "role fit").map(s => s.text);
+
+    const lines = [];
+    lines.push("Improved Interview Answer Outline");
+    lines.push("");
+    lines.push("Target role: " + role);
+    lines.push("Proof-strength score: " + score + "/100");
+    lines.push("");
+    lines.push("1. Lead with the claim");
+    lines.push(claims[0] || "State the main capability or judgment you want the interviewer to remember.");
+    lines.push("");
+    lines.push("2. Add concrete evidence");
+    lines.push(evidence[0] || "Give the specific situation, action, tool, process, client need, or decision you handled.");
+    lines.push("");
+    lines.push("3. Prove the result");
+    lines.push(results[0] || "Name the measurable or observable improvement: time saved, errors reduced, smoother handoff, better client experience.");
+    lines.push("");
+    lines.push("4. Tie it to role fit");
+    lines.push(fit[0] || "Connect the example directly to the role’s needs.");
+    lines.push("");
+    lines.push("5. Final answer shape");
+    lines.push("I noticed/owned [problem]. I did [specific action]. The result was [clear outcome]. What I learned was [judgment]. That fits " + role + " because [role need].");
+    lines.push("");
+    lines.push("Editable drill notes");
+    state.drills.forEach((d,i) => {
+      lines.push("Card " + (i+1) + ": " + d.answer + " | Proof: " + d.proof);
+    });
+
+    $("outline").textContent = lines.join("\n");
+  }
+
+  function renderAll(){
+    renderSentences();
+    renderDrills();
+    renderScoreAndOutline();
+  }
+
+  $("parseBtn").addEventListener("click", build);
+  $("sampleBtn").addEventListener("click", () => {
+    $("role").value = "client-facing financial planning analyst";
+    $("answer").value = sample;
+    build();
+  });
+  $("addDrill").addEventListener("click", () => {
+    state.drills.push({prompt:"New drill prompt",answer:"",proof:""});
+    renderAll();
+  });
+  $("copyBtn").addEventListener("click", async () => {
+    try{
+      await navigator.clipboard.writeText($("outline").textContent);
+      $("copyStatus").textContent = "Copied.";
+    }catch(e){
+      $("copyStatus").textContent = "Copy failed. Select the outline text manually.";
+    }
+  });
+  $("downloadBtn").addEventListener("click", () => {
+    const blob = new Blob([$("outline").textContent], {type:"text/plain"});
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = "interview-answer-proof-outline.txt";
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(a.href);
+  });
+
+  renderAll();
+})();
+</script>
+</body>
+</html>

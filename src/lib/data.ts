@@ -178,6 +178,8 @@ import {
   LANDING_PAGE_PROOF_RECEIPT_CHATGPT_PROJECT_ID,
   PROMPT_PATTERN_SWAP_WORKSHOP_OPENROUTER_CLAUDE_HAIKU_PROJECT_ID,
   MICRO_IMAGE_BRIEF_CONSISTENCY_TILES_CHATGPT_PROJECT_ID,
+  TRAVEL_POSTER_LANDMARK_LAYER_GAME_CLAUDE_PROJECT_ID,
+  SEO_CONTENT_PROMISE_COVERAGE_BOARD_CHATGPT_PROJECT_ID,
 } from './featured-projects'
 import { getPreparedShowcaseProjectById } from './prepared-showcase-projects'
 import type { PreparedShowcaseProject, PreparedShowcaseStep } from './prepared-showcase-projects'

@@ -139,6 +139,8 @@ import {
   LANDING_PAGE_PROOF_RECEIPT_CHATGPT_PROJECT_ID,
   PROMPT_PATTERN_SWAP_WORKSHOP_OPENROUTER_CLAUDE_HAIKU_PROJECT_ID,
   MICRO_IMAGE_BRIEF_CONSISTENCY_TILES_CHATGPT_PROJECT_ID,
+  TRAVEL_POSTER_LANDMARK_LAYER_GAME_CLAUDE_PROJECT_ID,
+  SEO_CONTENT_PROMISE_COVERAGE_BOARD_CHATGPT_PROJECT_ID,
 } from './featured-projects'
 
 type PendingSourceRunDescriptor = {
@@ -4382,10 +4384,67 @@ export const MICRO_IMAGE_BRIEF_CONSISTENCY_TILES_CHATGPT_SHOWCASE_PROJECT = buil
   ],
 })
 
+export const TRAVEL_POSTER_LANDMARK_LAYER_GAME_CLAUDE_SHOWCASE_PROJECT = buildPendingSourceRunProject({
+  projectId: TRAVEL_POSTER_LANDMARK_LAYER_GAME_CLAUDE_PROJECT_ID,
+  sourceRunId: "10e226ee-7783-4045-804e-2b5e837bf8e3",
+  href: "/travel-poster-landmark-layer-game-claude-demo",
+  title: "Travel Poster Landmark Layer Game",
+  description: "A self-contained PathForge source-run artifact for Travel Poster Landmark Layer Game.",
+  content: "Rowan Moss used Claude to build Travel Poster Landmark Layer Game through a 3-prompt source run. The public page keeps the final artifact first, then preserves each exact prompt and response package in order with selectable artifact versions when the run produced them.",
+  resultContent: "Open public/artifacts/travel-poster-landmark-layer-game-claude.html; choose a destination, sky, landmark, badge, and texture, randomize the poster, then copy or export the composition brief.",
+  categorySlug: "personal",
+  mockCategoryId: "cat-10",
+  difficulty: 'beginner',
+  modelUsed: "Haiku 4.5 Extended",
+  modelRecommendation: "Haiku 4.5 Extended",
+  toolsUsed: ["Claude source session","single-file HTML","local browser verification"],
+  tags: ["travel-poster","landmark-layers","composition-game","offline-design-studio","copy-brief","source-run","single-file-html"],
+  artifactPath: "/artifacts/travel-poster-landmark-layer-game-claude.html",
+  sourceUrl: "https://claude.ai/chat/154cb803-8b44-42bb-9ee5-db7a054b2645",
+  authorDisplayName: "Rowan Moss",
+  authorUsername: "RowanMoss",
+  createdAt: "2026-06-14T02:32:00Z",
+  updatedAt: "2026-06-14T02:42:15Z",
+  prompts: [
+    "Can you make me a self-contained single-file HTML game/studio I can save and open offline where I build a retro travel poster by dragging or selecting landmark, sky, title, badge, and texture layers, then it scores balance, readability, landmark coverage, and clutter with sample destinations plus reset, randomize, and copy/export of the poster brief?",
+    "This works, but the saved HTML has inline onclick attributes and uses innerHTML, which will fail my static review. Please revise it as one downloadable self-contained HTML file with the same poster-layer game behavior, using addEventListener plus createElement/textContent or SVG node creation instead of inline handlers or innerHTML.",
+    "The standalone downloaded file now passes the handler/innerHTML scan, but when I open it outside Claude the landmark symbols render as mojibake because the file needs UTF-8 metadata, and the brief has Export only even though I need copy/export. Please revise the same self-contained HTML file by adding proper UTF-8 charset support and a Copy Brief button next to Export Brief, while keeping addEventListener-only wiring and no innerHTML."
+  ],
+})
+
+export const SEO_CONTENT_PROMISE_COVERAGE_BOARD_CHATGPT_SHOWCASE_PROJECT = buildPendingSourceRunProject({
+  projectId: SEO_CONTENT_PROMISE_COVERAGE_BOARD_CHATGPT_PROJECT_ID,
+  sourceRunId: "7f8a34ec-f6ae-49f4-a2f8-7b8f8c762f37",
+  href: "/seo-content-promise-coverage-board-chatgpt-demo",
+  title: "SEO Content Promise Coverage Board",
+  description: "A self-contained PathForge source-run artifact for SEO Content Promise Coverage Board.",
+  content: "Tess Vale used ChatGPT to build SEO Content Promise Coverage Board through a 2-prompt source run. The public page keeps the final artifact first, then preserves each exact prompt and response package in order with selectable artifact versions when the run produced them.",
+  resultContent: "Open public/artifacts/seo-content-promise-coverage-board-chatgpt.html; paste title, meta, H2, FAQ, proof, and CTA notes, review pass/fix coverage, then copy or export the handoff brief.",
+  categorySlug: "productivity",
+  mockCategoryId: "cat-7",
+  difficulty: 'beginner',
+  modelUsed: "GPT-5.5 Medium",
+  modelRecommendation: "GPT-5.5 Medium",
+  toolsUsed: ["ChatGPT source session","single-file HTML","local browser verification"],
+  tags: ["seo","content","outline","coverage","editor","export","source-run","single-file-html"],
+  artifactPath: "/artifacts/seo-content-promise-coverage-board-chatgpt.html",
+  sourceUrl: "https://chatgpt.com/c/6a2e12d0-774c-83ea-848d-b62a8e46f0ee",
+  authorDisplayName: "Tess Vale",
+  authorUsername: "TessVale",
+  createdAt: "2026-06-14T02:41:21.409Z",
+  updatedAt: "2026-06-14T02:50:52.025Z",
+  prompts: [
+    "Build me a polished self-contained HTML board for checking an SEO article outline: I want to paste a title, meta description, H2s, FAQ, proof points, and CTA, then see simple pass/fix coverage scores with editable sample rows plus copy/export controls.",
+    "The board mostly works, but the Copy brief button reports success while the clipboard stays empty in Chrome; fix the copy flow so it only reports copied after a verified write, and otherwise selects the brief text and tells the user to press Cmd+C, keeping it as one offline HTML file."
+  ],
+})
+
 // End generated current pending source-run showcase projects.
 
 export const PENDING_SOURCE_RUN_SHOWCASE_PROJECTS = [
   // Generated current pending source-run showcase entries.
+  TRAVEL_POSTER_LANDMARK_LAYER_GAME_CLAUDE_SHOWCASE_PROJECT,
+  SEO_CONTENT_PROMISE_COVERAGE_BOARD_CHATGPT_SHOWCASE_PROJECT,
   STICKER_SHEET_STYLE_DRIFT_MIXER_CLAUDE_SHOWCASE_PROJECT,
   YOUTUBE_SCENE_BUDGET_BEAT_SORTER_GEMINI_SHOWCASE_PROJECT,
   READER_PROMISE_EVIDENCE_LADDER_CHATGPT_SHOWCASE_PROJECT,

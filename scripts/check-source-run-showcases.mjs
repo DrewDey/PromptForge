@@ -775,6 +775,24 @@ const sourceRunProjects = [
     packagePath: "seed-runs/micro-image-brief-consistency-tiles-chatgpt-source-run.json",
     artifactPaths: ["public/artifacts/micro-image-brief-consistency-tiles-chatgpt.html","public/artifacts/micro-image-brief-consistency-tiles-chatgpt-v1.html"],
   },
+  {
+    name: "Travel Poster Landmark Layer Game",
+    route: "src/app/travel-poster-landmark-layer-game-claude-demo/page.tsx",
+    projectId: "TRAVEL_POSTER_LANDMARK_LAYER_GAME_CLAUDE_PROJECT_ID",
+    showcaseExport: 'PENDING_SOURCE_RUN_SHOWCASE_PROJECTS',
+    href: "/travel-poster-landmark-layer-game-claude-demo",
+    packagePath: "seed-runs/travel-poster-landmark-layer-game-claude-source-run.json",
+    artifactPaths: ["public/artifacts/travel-poster-landmark-layer-game-claude.html","public/artifacts/travel-poster-landmark-layer-game-claude-v1.html","public/artifacts/travel-poster-landmark-layer-game-claude-v2.html"],
+  },
+  {
+    name: "SEO Content Promise Coverage Board",
+    route: "src/app/seo-content-promise-coverage-board-chatgpt-demo/page.tsx",
+    projectId: "SEO_CONTENT_PROMISE_COVERAGE_BOARD_CHATGPT_PROJECT_ID",
+    showcaseExport: 'PENDING_SOURCE_RUN_SHOWCASE_PROJECTS',
+    href: "/seo-content-promise-coverage-board-chatgpt-demo",
+    packagePath: "seed-runs/seo-content-promise-coverage-board-chatgpt-source-run.json",
+    artifactPaths: ["public/artifacts/seo-content-promise-coverage-board-chatgpt.html","public/artifacts/seo-content-promise-coverage-board-chatgpt-v1.html"],
+  },
   // End generated current pending source-run check entries.
   {
     name: "Tiny Train Platform Dispatcher",

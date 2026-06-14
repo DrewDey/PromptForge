@@ -4,7 +4,7 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { useState } from 'react'
 import { usePathname } from 'next/navigation'
-import { LogOut, Menu, Plus, User, X } from 'lucide-react'
+import { BriefcaseBusiness, Gamepad2, LogOut, Menu, Plus, Search, User, X } from 'lucide-react'
 import { logout } from '@/lib/actions'
 
 export type HeaderViewer = {
@@ -20,9 +20,15 @@ type HeaderClientProps = {
 
 const navItems = [
   { href: '/what-to-build', label: 'What to Build' },
-  { href: '/paths?panel=open', label: 'Build Paths' },
+  { href: '/paths', label: 'Build Paths' },
   { href: '/requests', label: 'Build Requests' },
   { href: '/guide', label: 'Walkthrough' },
+]
+
+const pathsMenuItems = [
+  { href: '/paths?panel=open', label: 'Search all', description: 'Open the full path finder', icon: Search },
+  { href: '/paths?domain=games&panel=open', label: 'Games', description: 'Playable builds and experiments', icon: Gamepad2 },
+  { href: '/paths?domain=productivity&panel=open', label: 'Productivity', description: 'Work tools and practical artifacts', icon: BriefcaseBusiness },
 ]
 
 function isActivePath(pathname: string, href: string) {
@@ -49,6 +55,7 @@ function isActivePath(pathname: string, href: string) {
 export default function HeaderClient({ viewer, isAdmin }: HeaderClientProps) {
   const pathname = usePathname()
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const [pathsMenuOpen, setPathsMenuOpen] = useState(false)
   const displayName = viewer?.display_name || viewer?.username || 'Account'
   const profileHref = viewer?.username ? `/user/${viewer.username}` : '/'
 
@@ -87,9 +94,50 @@ export default function HeaderClient({ viewer, isAdmin }: HeaderClientProps) {
 
             <div className="hidden md:flex items-center gap-1">
               {navItems.map((item) => (
-                <Link key={item.href} href={item.href} className={navLinkClass(item.href)}>
-                  {item.label}
-                </Link>
+                item.href === '/paths' ? (
+                  <div key={item.href} className="relative flex h-8 items-center">
+                    <button
+                      type="button"
+                      onClick={() => setPathsMenuOpen((open) => !open)}
+                      className={navLinkClass(item.href)}
+                      data-testid="build-paths-menu-button"
+                      aria-haspopup="menu"
+                      aria-expanded={pathsMenuOpen}
+                    >
+                      {item.label}
+                    </button>
+                    {pathsMenuOpen && (
+                      <div
+                        className="absolute left-0 top-full mt-2 w-64 border border-surface-200 bg-white p-1 shadow-xl"
+                        data-testid="build-paths-menu"
+                        role="menu"
+                      >
+                        {pathsMenuItems.map((menuItem) => {
+                          const Icon = menuItem.icon
+                          return (
+                            <Link
+                              key={menuItem.href}
+                              href={menuItem.href}
+                              className="flex items-start gap-3 px-3 py-3 text-surface-700 transition-colors hover:bg-primary-50 hover:text-brand-orange focus-visible:outline-2 focus-visible:outline-brand-orange"
+                              onClick={() => setPathsMenuOpen(false)}
+                              role="menuitem"
+                            >
+                              <Icon className="mt-0.5 h-4 w-4 text-brand-orange" />
+                              <span>
+                                <span className="block text-[13px] font-semibold">{menuItem.label}</span>
+                                <span className="mt-0.5 block text-[11px] leading-4 text-surface-500">{menuItem.description}</span>
+                              </span>
+                            </Link>
+                          )
+                        })}
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <Link key={item.href} href={item.href} className={navLinkClass(item.href)}>
+                    {item.label}
+                  </Link>
+                )
               ))}
               <Link
                 href="/build"
@@ -160,14 +208,42 @@ export default function HeaderClient({ viewer, isAdmin }: HeaderClientProps) {
         {mobileMenuOpen && (
           <div className="md:hidden pb-4 border-t border-surface-200 mt-1 pt-3 flex flex-col gap-0.5">
             {navItems.map((item) => (
-              <Link
-                key={item.href}
-                href={item.href}
-                className={mobileNavLinkClass(item.href)}
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                {item.label}
-              </Link>
+              item.href === '/paths' ? (
+                <div key={item.href} className="border-y border-surface-200 py-1">
+                  <Link
+                    href="/paths?panel=open"
+                    className={mobileNavLinkClass(item.href)}
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    Build Paths
+                  </Link>
+                  <div className="grid gap-0.5 pl-4">
+                    {pathsMenuItems.slice(1).map((menuItem) => {
+                      const Icon = menuItem.icon
+                      return (
+                        <Link
+                          key={menuItem.href}
+                          href={menuItem.href}
+                          className="flex items-center gap-2 px-3 py-2 text-sm text-surface-600 transition-colors hover:bg-primary-50 hover:text-brand-orange"
+                          onClick={() => setMobileMenuOpen(false)}
+                        >
+                          <Icon className="h-3.5 w-3.5 text-brand-orange" />
+                          {menuItem.label}
+                        </Link>
+                      )
+                    })}
+                  </div>
+                </div>
+              ) : (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className={mobileNavLinkClass(item.href)}
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  {item.label}
+                </Link>
+              )
             ))}
             <Link
               href="/build"

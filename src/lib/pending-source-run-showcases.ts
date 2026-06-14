@@ -141,6 +141,9 @@ import {
   MICRO_IMAGE_BRIEF_CONSISTENCY_TILES_CHATGPT_PROJECT_ID,
   TRAVEL_POSTER_LANDMARK_LAYER_GAME_CLAUDE_PROJECT_ID,
   SEO_CONTENT_PROMISE_COVERAGE_BOARD_CHATGPT_PROJECT_ID,
+  TINY_TRAVEL_STICKER_ROUTE_PUZZLE_OPENROUTER_GLM_PROJECT_ID,
+  REFERENCE_IMAGE_CHANGE_CHECKLIST_DECK_GEMINI_PROJECT_ID,
+  MICRO_LAUNCH_PROMISE_SORTER_CHATGPT_PROJECT_ID,
 } from './featured-projects'
 
 type PendingSourceRunDescriptor = {
@@ -4439,10 +4442,94 @@ export const SEO_CONTENT_PROMISE_COVERAGE_BOARD_CHATGPT_SHOWCASE_PROJECT = build
   ],
 })
 
+export const TINY_TRAVEL_STICKER_ROUTE_PUZZLE_OPENROUTER_GLM_SHOWCASE_PROJECT = buildPendingSourceRunProject({
+  projectId: TINY_TRAVEL_STICKER_ROUTE_PUZZLE_OPENROUTER_GLM_PROJECT_ID,
+  sourceRunId: "26e1d821-6266-4bdf-a005-2b399e90c953",
+  href: "/tiny-travel-sticker-route-puzzle-openrouter-glm-demo",
+  title: "Tiny Travel Sticker Route Puzzle",
+  description: "An offline postcard-map puzzle where players drag travel-sticker landmarks onto route stops, satisfy clue cards, and repair a route without external services.",
+  content: "Nolan Ridge used OpenRouter to build Tiny Travel Sticker Route Puzzle through a 2-prompt source run. The public page keeps the final artifact first, then preserves each exact prompt and response package in order with selectable artifact versions when the run produced them.",
+  resultContent: "Place six travel stickers across a postcard route, satisfy clue cards, reset the board, and advance through additional route puzzles.",
+  categorySlug: "games",
+  mockCategoryId: "cat-1",
+  difficulty: 'beginner',
+  modelUsed: "GLM 5.1",
+  modelRecommendation: "GLM 5.1",
+  toolsUsed: ["OpenRouter source session","single-file HTML","local browser verification"],
+  tags: ["playable game","route puzzle","travel stickers","postcard map","drag and drop","offline html","source-run","single-file-html"],
+  artifactPath: "/artifacts/tiny-travel-sticker-route-puzzle-openrouter-glm.html",
+  sourceUrl: "https://openrouter.ai/chat?room=orc-1781408032-1BiJAFkeHopU6LmJv1L0",
+  authorDisplayName: "Nolan Ridge",
+  authorUsername: "NolanRidge",
+  createdAt: "2026-06-14T03:33:52Z",
+  updatedAt: "2026-06-14T03:52:05Z",
+  prompts: [
+    "I want a tiny playable postcard-map puzzle where I place travel-sticker landmarks onto route stops to satisfy clue cards and avoid overlaps, as one offline HTML file with plain DOM event listeners so I can save and play it with mouse or touch.",
+    "The game is close, but the HTML uses innerHTML in several render paths, including route and sticker/card rendering. Please return a complete replacement single-file HTML that keeps the same game but uses createElement/textContent/setAttribute only for dynamic DOM updates, with no innerHTML, no inline event handlers, and no alert/confirm/prompt calls."
+  ],
+})
+
+export const REFERENCE_IMAGE_CHANGE_CHECKLIST_DECK_GEMINI_SHOWCASE_PROJECT = buildPendingSourceRunProject({
+  projectId: REFERENCE_IMAGE_CHANGE_CHECKLIST_DECK_GEMINI_PROJECT_ID,
+  sourceRunId: "d6348acc-e202-4146-8d28-52710239cd03",
+  href: "/reference-image-change-checklist-deck-gemini-demo",
+  title: "Reference Image Change Checklist Deck",
+  description: "A compact offline checklist deck for turning reference-image edit notes into stay, improve, and drift cards before using any image tool.",
+  content: "Mira Sloane used Gemini to build Reference Image Change Checklist Deck through a 2-prompt source run. The public page keeps the final artifact first, then preserves each exact prompt and response package in order with selectable artifact versions when the run produced them.",
+  resultContent: "Paste reference-image constraints, generate cards, mark stay/improve/drift decisions, and copy a preservation checklist for downstream creative work.",
+  categorySlug: "design",
+  mockCategoryId: "cat-5",
+  difficulty: 'beginner',
+  modelUsed: "3.5 Flash",
+  modelRecommendation: "3.5 Flash",
+  toolsUsed: ["Gemini source session","single-file HTML","static and DOM verification"],
+  tags: ["reference images","image QA","creative workflow","preflight checklist","preservation checklist","offline tool","source-run","single-file-html"],
+  artifactPath: "/artifacts/reference-image-change-checklist-deck-gemini.html",
+  sourceUrl: "https://gemini.google.com/app/52810909ef2ad204",
+  authorDisplayName: "Mira Sloane",
+  authorUsername: "MiraSloane",
+  createdAt: "2026-06-14T03:42:05Z",
+  updatedAt: "2026-06-14T03:42:05Z",
+  prompts: [
+    "Build me a compact standalone HTML checklist-card deck for preflighting reference-image edits: I want to paste a reference brief, mark what must stay unchanged, what can improve, and what counts as drift, then copy/export the final preservation checklist for use in any image tool.",
+    "The HTML works as a deck idea, but my source-run verifier rejects inline onclick handlers, innerHTML dynamic rendering of user text, and alert() modals; return a repaired standalone HTML file that uses addEventListener, createElement/textContent for user content, safe clipboard status text, and the same checklist/export workflow."
+  ],
+})
+
+export const MICRO_LAUNCH_PROMISE_SORTER_CHATGPT_SHOWCASE_PROJECT = buildPendingSourceRunProject({
+  projectId: MICRO_LAUNCH_PROMISE_SORTER_CHATGPT_PROJECT_ID,
+  sourceRunId: "86cc3a7a-e64e-46b8-9e72-13e6177ae288",
+  href: "/micro-launch-promise-sorter-chatgpt-demo",
+  title: "Micro Launch Landing Page Promise Sorter",
+  description: "A small offline launch-copy worksheet for sorting landing-page claims into promise, proof, risk, and rewrite cards, then copying or exporting a launch brief.",
+  content: "Lila Keene used ChatGPT to build Micro Launch Landing Page Promise Sorter through a 2-prompt source run. The public page keeps the final artifact first, then preserves each exact prompt and response package in order with selectable artifact versions when the run produced them.",
+  resultContent: "Paste claims, build cards, classify each claim, watch promise/proof/risk/rewrite counts, then copy or download the final launch brief.",
+  categorySlug: "marketing",
+  mockCategoryId: "cat-2",
+  difficulty: 'beginner',
+  modelUsed: "5.4 Instant",
+  modelRecommendation: "5.4 Instant",
+  toolsUsed: ["ChatGPT source session","single-file HTML","local browser verification"],
+  tags: ["landing page","launch copy","claims","promise proof","copy export","offline worksheet","source-run","single-file-html"],
+  artifactPath: "/artifacts/micro-launch-promise-sorter-chatgpt.html",
+  sourceUrl: "https://chatgpt.com/c/6a2e2102-d0b8-83ea-bd36-6f22ea90d2fa",
+  authorDisplayName: "Lila Keene",
+  authorUsername: "LilaKeene",
+  createdAt: "2026-06-14T03:20:00Z",
+  updatedAt: "2026-06-14T03:39:46Z",
+  prompts: [
+    "Can you make me a small offline browser worksheet for a founder who has too many landing-page claims and needs to sort them into Promise, Proof, Risk, and Rewrite cards, then copy or export the final launch brief as a single HTML file I can save and open?",
+    "This is close, but the HTML still uses inline onclick handlers and clears the card area with innerHTML. Please return a corrected single-file version that wires controls with addEventListener and builds or clears DOM nodes safely with replaceChildren/textContent, keeping the copy/export workflow."
+  ],
+})
+
 // End generated current pending source-run showcase projects.
 
 export const PENDING_SOURCE_RUN_SHOWCASE_PROJECTS = [
   // Generated current pending source-run showcase entries.
+  TINY_TRAVEL_STICKER_ROUTE_PUZZLE_OPENROUTER_GLM_SHOWCASE_PROJECT,
+  REFERENCE_IMAGE_CHANGE_CHECKLIST_DECK_GEMINI_SHOWCASE_PROJECT,
+  MICRO_LAUNCH_PROMISE_SORTER_CHATGPT_SHOWCASE_PROJECT,
   TRAVEL_POSTER_LANDMARK_LAYER_GAME_CLAUDE_SHOWCASE_PROJECT,
   SEO_CONTENT_PROMISE_COVERAGE_BOARD_CHATGPT_SHOWCASE_PROJECT,
   STICKER_SHEET_STYLE_DRIFT_MIXER_CLAUDE_SHOWCASE_PROJECT,

@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Secure Preflight Checklist</title>
+    <style>
+        :root {
+            --bg-main: #0f172a;
+            --bg-card: #1e293b;
+            --border: #334155;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --stay: #10b981;
+            --improve: #3b82f6;
+            --drift: #ef4444;
+        }
+
+        body { font-family: system-ui, sans-serif; background: var(--bg-main); color: var(--text-main); padding: 2rem; line-height: 1.5; }
+        .container { max-width: 1000px; margin: 0 auto; display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; }
+        textarea { width: 100%; height: 200px; background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; color: var(--text-main); padding: 1rem; }
+        .card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; padding: 1rem; margin-bottom: 0.5rem; display: flex; justify-content: space-between; align-items: center; }
+        .type-btn { padding: 0.4rem 0.6rem; font-size: 0.7rem; cursor: pointer; margin-left: 0.2rem; }
+        #statusMsg { margin-top: 1rem; color: var(--text-muted); font-size: 0.9rem; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="panel-input">
+        <h2>1. Brief Input</h2>
+        <textarea id="briefInput"></textarea>
+        <button id="parseBtn" style="margin-top: 1rem;">Generate Cards</button>
+    </div>
+    <div class="panel-deck">
+        <h2>2. Preflight Deck</h2>
+        <button id="copyBtn">Export Checklist</button>
+        <div id="deckContainer" style="margin-top: 1rem;"></div>
+        <div id="statusMsg"></div>
+    </div>
+</div>
+
+<script>
+    const briefInput = document.getElementById('briefInput');
+    const parseBtn = document.getElementById('parseBtn');
+    const deckContainer = document.getElementById('deckContainer');
+    const copyBtn = document.getElementById('copyBtn');
+    const statusMsg = document.getElementById('statusMsg');
+
+    parseBtn.addEventListener('click', () => {
+        deckContainer.textContent = '';
+        const lines = briefInput.value.split('\n').filter(l => l.trim());
+        
+        lines.forEach((line) => {
+            const card = document.createElement('div');
+            card.className = 'card';
+            card.dataset.status = 'none';
+
+            const textSpan = document.createElement('span');
+            textSpan.textContent = line.trim();
+            
+            const controls = document.createElement('div');
+            ['stay', 'improve', 'drift'].forEach(type => {
+                const btn = document.createElement('button');
+                btn.className = 'type-btn';
+                btn.textContent = type.toUpperCase();
+                btn.addEventListener('click', () => {
+                    card.dataset.status = card.dataset.status === type ? 'none' : type;
+                    card.style.borderColor = card.dataset.status === 'none' ? 'var(--border)' : `var(--${type})`;
+                });
+                controls.appendChild(btn);
+            });
+
+            card.appendChild(textSpan);
+            card.appendChild(controls);
+            deckContainer.appendChild(card);
+        });
+    });
+
+    copyBtn.addEventListener('click', async () => {
+        let output = "=== PRESERVATION CHECKLIST ===\n\n";
+        const cards = deckContainer.querySelectorAll('.card');
+        
+        cards.forEach(c => {
+            if (c.dataset.status !== 'none') {
+                output += `[ ] ${c.dataset.status.toUpperCase()}: ${c.querySelector('span').textContent}\n`;
+            }
+        });
+
+        try {
+            await navigator.clipboard.writeText(output);
+            statusMsg.textContent = "Checklist copied to clipboard successfully.";
+        } catch (err) {
+            statusMsg.textContent = "Failed to copy.";
+        }
+    });
+</script>
+
+</body>
+</html>

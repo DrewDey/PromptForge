@@ -793,6 +793,33 @@ const sourceRunProjects = [
     packagePath: "seed-runs/seo-content-promise-coverage-board-chatgpt-source-run.json",
     artifactPaths: ["public/artifacts/seo-content-promise-coverage-board-chatgpt.html","public/artifacts/seo-content-promise-coverage-board-chatgpt-v1.html"],
   },
+  {
+    name: "Tiny Travel Sticker Route Puzzle",
+    route: "src/app/tiny-travel-sticker-route-puzzle-openrouter-glm-demo/page.tsx",
+    projectId: "TINY_TRAVEL_STICKER_ROUTE_PUZZLE_OPENROUTER_GLM_PROJECT_ID",
+    showcaseExport: 'PENDING_SOURCE_RUN_SHOWCASE_PROJECTS',
+    href: "/tiny-travel-sticker-route-puzzle-openrouter-glm-demo",
+    packagePath: "seed-runs/tiny-travel-sticker-route-puzzle-openrouter-glm-source-run.json",
+    artifactPaths: ["public/artifacts/tiny-travel-sticker-route-puzzle-openrouter-glm-v1.html","public/artifacts/tiny-travel-sticker-route-puzzle-openrouter-glm.html"],
+  },
+  {
+    name: "Reference Image Change Checklist Deck",
+    route: "src/app/reference-image-change-checklist-deck-gemini-demo/page.tsx",
+    projectId: "REFERENCE_IMAGE_CHANGE_CHECKLIST_DECK_GEMINI_PROJECT_ID",
+    showcaseExport: 'PENDING_SOURCE_RUN_SHOWCASE_PROJECTS',
+    href: "/reference-image-change-checklist-deck-gemini-demo",
+    packagePath: "seed-runs/reference-image-change-checklist-deck-gemini-source-run.json",
+    artifactPaths: ["public/artifacts/reference-image-change-checklist-deck-gemini-v1.html","public/artifacts/reference-image-change-checklist-deck-gemini.html"],
+  },
+  {
+    name: "Micro Launch Landing Page Promise Sorter",
+    route: "src/app/micro-launch-promise-sorter-chatgpt-demo/page.tsx",
+    projectId: "MICRO_LAUNCH_PROMISE_SORTER_CHATGPT_PROJECT_ID",
+    showcaseExport: 'PENDING_SOURCE_RUN_SHOWCASE_PROJECTS',
+    href: "/micro-launch-promise-sorter-chatgpt-demo",
+    packagePath: "seed-runs/micro-launch-promise-sorter-chatgpt-source-run.json",
+    artifactPaths: ["public/artifacts/micro-launch-promise-sorter-chatgpt-v1.html","public/artifacts/micro-launch-promise-sorter-chatgpt.html"],
+  },
   // End generated current pending source-run check entries.
   {
     name: "Tiny Train Platform Dispatcher",

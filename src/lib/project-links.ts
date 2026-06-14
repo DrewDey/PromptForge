@@ -161,6 +161,9 @@ import {
   MICRO_IMAGE_BRIEF_CONSISTENCY_TILES_CHATGPT_PROJECT_ID,
   TRAVEL_POSTER_LANDMARK_LAYER_GAME_CLAUDE_PROJECT_ID,
   SEO_CONTENT_PROMISE_COVERAGE_BOARD_CHATGPT_PROJECT_ID,
+  TINY_TRAVEL_STICKER_ROUTE_PUZZLE_OPENROUTER_GLM_PROJECT_ID,
+  REFERENCE_IMAGE_CHANGE_CHECKLIST_DECK_GEMINI_PROJECT_ID,
+  MICRO_LAUNCH_PROMISE_SORTER_CHATGPT_PROJECT_ID,
 } from './featured-projects'
 
 const PROJECT_ROUTE_OVERRIDES: Record<string, string> = {
@@ -261,6 +264,9 @@ const PROJECT_ROUTE_OVERRIDES: Record<string, string> = {
   [MICRO_IMAGE_BRIEF_CONSISTENCY_TILES_CHATGPT_PROJECT_ID]: '/micro-image-brief-consistency-tiles-chatgpt-demo',
   [TRAVEL_POSTER_LANDMARK_LAYER_GAME_CLAUDE_PROJECT_ID]: '/travel-poster-landmark-layer-game-claude-demo',
   [SEO_CONTENT_PROMISE_COVERAGE_BOARD_CHATGPT_PROJECT_ID]: '/seo-content-promise-coverage-board-chatgpt-demo',
+  [TINY_TRAVEL_STICKER_ROUTE_PUZZLE_OPENROUTER_GLM_PROJECT_ID]: '/tiny-travel-sticker-route-puzzle-openrouter-glm-demo',
+  [REFERENCE_IMAGE_CHANGE_CHECKLIST_DECK_GEMINI_PROJECT_ID]: '/reference-image-change-checklist-deck-gemini-demo',
+  [MICRO_LAUNCH_PROMISE_SORTER_CHATGPT_PROJECT_ID]: '/micro-launch-promise-sorter-chatgpt-demo',
   // End generated current pending source-run route overrides.
   [TINY_TRAIN_DISPATCHER_PROJECT_ID]: '/tiny-train-platform-dispatcher-demo',
   [BREAKROOM_SNACK_RESTOCK_PROJECT_ID]: '/breakroom-snack-restock-planner-demo',

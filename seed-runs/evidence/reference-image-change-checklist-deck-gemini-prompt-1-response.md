@@ -1,0 +1,170 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Preflight Reference-Image Checklist</title>
+    <style>
+        :root {
+            --bg-main: #0f172a;
+            --bg-card: #1e293b;
+            --border: #334155;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            
+            --stay: #10b981;
+            --improve: #3b82f6;
+            --drift: #ef4444;
+            
+            --stay-bg: rgba(16, 185, 129, 0.1);
+            --improve-bg: rgba(59, 130, 246, 0.1);
+            --drift-bg: rgba(239, 68, 68, 0.1);
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: system-ui, -apple-system, sans-serif; background: var(--bg-main); color: var(--text-main); padding: 2rem; line-height: 1.5; }
+        .container { max-width: 1200px; margin: 0 auto; display: grid; grid-template-columns: 1fr 2fr; gap: 2rem; }
+        
+        /* Left Panel: Input & Controls */
+        .panel-input { display: flex; flex-direction: column; gap: 1.5rem; }
+        h2 { font-size: 1.25rem; font-weight: 600; color: var(--text-main); }
+        textarea { width: 100%; height: 250px; background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; color: var(--text-main); padding: 1rem; font-family: inherit; resize: vertical; }
+        textarea:focus { outline: 1px solid var(--improve); }
+        
+        .btn { background: var(--improve); color: white; border: none; padding: 0.75rem 1.5rem; font-weight: 600; border-radius: 6px; cursor: pointer; transition: opacity 0.2s; }
+        .btn:hover { opacity: 0.9; }
+        .btn-secondary { background: transparent; border: 1px solid var(--border); color: var(--text-main); }
+        .btn-group { display: flex; gap: 0.75rem; }
+
+        /* Right Panel: Deck */
+        .panel-deck { display: flex; flex-direction: column; gap: 1.5rem; }
+        .deck-header { display: flex; justify-content: space-between; align-items: center; }
+        .deck { display: flex; flex-direction: column; gap: 0.75rem; }
+        
+        /* Checklist Cards */
+        .card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; padding: 1rem; display: grid; grid-template-columns: 1fr auto; gap: 1rem; align-items: center; }
+        .card-text { font-weight: 500; }
+        .card-selectors { display: flex; gap: 0.5rem; }
+        
+        /* Custom Radio Buttons mapped to categories */
+        .type-btn { padding: 0.4rem 0.8rem; font-size: 0.75rem; font-weight: 700; border-radius: 4px; border: 1px solid var(--border); background: transparent; color: var(--text-muted); cursor: pointer; text-transform: uppercase; }
+        
+        .card[data-status="stay"] { border-left: 4px solid var(--stay); background: var(--stay-bg); }
+        .card[data-status="stay"] .btn-stay { background: var(--stay); color: var(--bg-main); border-color: var(--stay); }
+        
+        .card[data-status="improve"] { border-left: 4px solid var(--improve); background: var(--improve-bg); }
+        .card[data-status="improve"] .btn-improve { background: var(--improve); color: white; border-color: var(--improve); }
+        
+        .card[data-status="drift"] { border-left: 4px solid var(--drift); background: var(--drift-bg); }
+        .card[data-status="drift"] .btn-drift { background: var(--drift); color: white; border-color: var(--drift); }
+
+        @media (max-width: 768px) { .container { grid-template-columns: 1fr; } }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="panel-input">
+        <div>
+            <h2>1. Paste Reference Brief</h2>
+            <p style="color: var(--text-muted); font-size: 0.875rem; margin-bottom: 0.5rem;">Paste lines, bullet points, or requirements to convert into cards.</p>
+        </div>
+        <textarea id="briefInput" placeholder="Example:&#10;Maintain the exact golden hour lighting direction&#10;Sharpen details on the foreground product packaging&#10;Avoid altering the logo placement or text elements&#10;Reduce background haze without oversaturating colors"></textarea>
+        <button class="btn" onclick="generateDeck()">Parse to Card Deck</button>
+    </div>
+
+    <div class="panel-deck">
+        <div class="deck-header">
+            <h2>2. Preflight Deck</h2>
+            <div class="btn-group">
+                <button class="btn btn-secondary" onclick="copyChecklist()">Copy Checklist</button>
+            </div>
+        </div>
+        <div id="deckContainer" class="deck">
+            <p style="color: var(--text-muted); font-style: italic;">Paste a brief and click parse to generate cards.</p>
+        </div>
+    </div>
+</div>
+
+<script>
+    function generateDeck() {
+        const input = document.getElementById('briefInput').value;
+        const container = document.getElementById('deckContainer');
+        container.innerHTML = '';
+
+        // Split by newlines and remove empty items
+        const lines = input.split('\n').map(line => line.trim()).filter(line => line.length > 0);
+
+        if (lines.length === 0) {
+            container.innerHTML = '<p style="color: var(--text-muted); font-style: italic;">No items found. Paste text above.</p>';
+            return;
+        }
+
+        lines.forEach((line, index) => {
+            const card = document.createElement('div');
+            card.className = 'card';
+            card.setAttribute('data-status', 'none');
+            card.setAttribute('data-text', line);
+
+            card.innerHTML = `
+                <div class="card-text">${line}</div>
+                <div class="card-selectors">
+                    <button class="type-btn btn-stay" onclick="setStatus(${index}, 'stay')">Stay</button>
+                    <button class="type-btn btn-improve" onclick="setStatus(${index}, 'improve')">Improve</button>
+                    <button class="type-btn btn-drift" onclick="setStatus(${index}, 'drift')">Drift</button>
+                </div>
+            `;
+            container.appendChild(card);
+        });
+    }
+
+    function setStatus(index, status) {
+        const cards = document.querySelectorAll('.card');
+        const card = cards[index];
+        
+        if (card.getAttribute('data-status') === status) {
+            card.setAttribute('data-status', 'none'); // Toggle off if clicked again
+        } else {
+            card.setAttribute('data-status', status);
+        }
+    }
+
+    function copyChecklist() {
+        const cards = document.querySelectorAll('.card');
+        let stayList = [];
+        let improveList = [];
+        let driftList = [];
+
+        cards.forEach(card => {
+            const text = card.getAttribute('data-text');
+            const status = card.getAttribute('data-status');
+
+            if (status === 'stay') stayList.push(`[ ] STAYS UNCHANGED: ${text}`);
+            if (status === 'improve') improveList.push(`[ ] CAN IMPROVE: ${text}`);
+            if (status === 'drift') driftList.push(`[ ] COUNTS AS DRIFT: ${text}`);
+        });
+
+        let output = "=== PRESERVATION CHECKLIST ===\n\n";
+        
+        if (stayList.length > 0) output += `MUST STAY UNCHANGED:\n${stayList.join('\n')}\n\n`;
+        if (improveList.length > 0) output += `TARGETED IMPROVEMENTS:\n${improveList.join('\n')}\n\n`;
+        if (driftList.length > 0) output += `DRIFT / ERROR TRIGGERS:\n${driftList.join('\n')}\n`;
+        
+        if (stayList.length === 0 && improveList.length === 0 && driftList.length === 0) {
+            alert('Tag at least one card before copying.');
+            return;
+        }
+
+        navigator.clipboard.writeText(output.trim()).then(() => {
+            alert('Checklist copied to clipboard!');
+        }).catch(err => {
+            console.error('Failed to copy text: ', err);
+        });
+    }
+</script>
+
+</body>
+</html>
+
+```

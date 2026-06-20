@@ -7,7 +7,6 @@ export default function TinyLoopSequencerDemoPage() {
     <PreparedSourceRunPage
       project={TINY_LOOP_SEQUENCER_SHOWCASE_PROJECT}
       sourceRunPackage={loadSourceRunPackage('tiny-loop-sequencer-claude-source-run.json')}
-      route="/tiny-loop-sequencer-demo"
       capturedAt="June 5, 2026"
     />
   )

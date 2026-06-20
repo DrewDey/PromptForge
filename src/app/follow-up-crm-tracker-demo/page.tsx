@@ -10,7 +10,6 @@ export default function FollowUpCrmTrackerDemoPage() {
     <PreparedSourceRunPage
       project={FOLLOW_UP_CRM_SHOWCASE_PROJECT}
       sourceRunPackage={sourceRunPackage}
-      route="/follow-up-crm-tracker-demo"
       capturedAt="June 4, 2026"
     />
   )

@@ -7,7 +7,6 @@ export default function TinyInvoiceNudgeBoardDemoPage() {
     <PreparedSourceRunPage
       project={TINY_INVOICE_NUDGE_SHOWCASE_PROJECT}
       sourceRunPackage={loadSourceRunPackage('tiny-invoice-nudge-board-gemini-source-run.json')}
-      route="/tiny-invoice-nudge-board-demo"
       capturedAt="June 6, 2026"
     />
   )

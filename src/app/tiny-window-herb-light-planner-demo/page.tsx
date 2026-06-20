@@ -7,7 +7,6 @@ export default function TinyWindowHerbLightPlannerDemoPage() {
     <PreparedSourceRunPage
       project={TINY_WINDOW_HERB_SHOWCASE_PROJECT}
       sourceRunPackage={loadSourceRunPackage('tiny-window-herb-light-planner-claude-source-run.json')}
-      route="/tiny-window-herb-light-planner-demo"
       capturedAt="June 6, 2026"
     />
   )

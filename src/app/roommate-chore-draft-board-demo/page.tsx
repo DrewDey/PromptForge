@@ -7,7 +7,6 @@ export default function RoommateChoreDraftDemoPage() {
     <PreparedSourceRunPage
       project={ROOMMATE_CHORE_DRAFT_SHOWCASE_PROJECT}
       sourceRunPackage={loadSourceRunPackage('roommate-chore-draft-board-gemini-source-run.json')}
-      route="/roommate-chore-draft-board-demo"
       capturedAt="June 5, 2026"
     />
   )

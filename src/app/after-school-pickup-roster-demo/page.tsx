@@ -7,7 +7,6 @@ export default function AfterSchoolPickupRosterDemoPage() {
     <PreparedSourceRunPage
       project={AFTER_SCHOOL_PICKUP_SHOWCASE_PROJECT}
       sourceRunPackage={loadSourceRunPackage('after-school-pickup-roster-gemini-source-run.json')}
-      route="/after-school-pickup-roster-demo"
       capturedAt="June 6, 2026"
     />
   )

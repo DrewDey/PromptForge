@@ -7,7 +7,6 @@ export default function PuzzleBoxEscapeDemoPage() {
     <PreparedSourceRunPage
       project={PUZZLE_BOX_ESCAPE_SHOWCASE_PROJECT}
       sourceRunPackage={sourceRunPackage}
-      route="/puzzle-box-escape-demo"
       capturedAt="June 5, 2026"
     />
   )

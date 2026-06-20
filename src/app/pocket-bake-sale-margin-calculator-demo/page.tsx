@@ -7,7 +7,6 @@ export default function BakeSaleMarginDemoPage() {
     <PreparedSourceRunPage
       project={BAKE_SALE_MARGIN_SHOWCASE_PROJECT}
       sourceRunPackage={loadSourceRunPackage('bake-sale-margin-gemini-source-run.json')}
-      route="/pocket-bake-sale-margin-calculator-demo"
       capturedAt="June 5, 2026"
     />
   )

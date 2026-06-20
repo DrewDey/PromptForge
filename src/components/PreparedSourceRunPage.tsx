@@ -405,7 +405,7 @@ export default async function PreparedSourceRunPage({
 }: {
   project: PreparedShowcaseProject
   sourceRunPackage: SourceRunPackage
-  route: string
+  route?: string
   capturedAt: string
   modelVariantSet?: ProjectModelVariantSet | null
   activeModelVariant?: ProjectModelVariant | null
@@ -413,6 +413,7 @@ export default async function PreparedSourceRunPage({
   modelVariantRegistryWarning?: string
 }) {
   const sourceRun = sourceRunPackage
+  const pageRoute = route ?? project.href
   const providerName = getProviderName(sourceRun, project)
   const sourceUrl = sourceRun.source_url || project.sourceUrl
   const usesModelVariants = Boolean(modelVariantSet && activeModelVariant)
@@ -475,7 +476,7 @@ export default async function PreparedSourceRunPage({
             )}
           </div>
 
-          <ProjectEngagementBar projectId={project.id} loginNextPath={route} />
+          <ProjectEngagementBar projectId={project.id} loginNextPath={pageRoute} />
         </div>
       </section>
 

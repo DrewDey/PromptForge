@@ -7,7 +7,6 @@ export default function TinyAirportGateBoardingSorterDemoPage() {
     <PreparedSourceRunPage
       project={TINY_AIRPORT_GATE_SHOWCASE_PROJECT}
       sourceRunPackage={loadSourceRunPackage('tiny-airport-gate-boarding-sorter-chatgpt-source-run.json')}
-      route="/tiny-airport-gate-boarding-sorter-demo"
       capturedAt="June 6, 2026"
     />
   )

@@ -10,7 +10,6 @@ export default function FlashcardCramDrillDemoPage() {
     <PreparedSourceRunPage
       project={FLASHCARD_CRAM_SHOWCASE_PROJECT}
       sourceRunPackage={sourceRunPackage}
-      route="/flashcard-cram-drill-demo"
       capturedAt="June 4, 2026"
     />
   )

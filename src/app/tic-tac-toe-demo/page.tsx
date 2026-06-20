@@ -10,7 +10,6 @@ export default function TicTacToeDemoPage() {
     <PreparedSourceRunPage
       project={TIC_TAC_TOE_SHOWCASE_PROJECT}
       sourceRunPackage={loadSourceRunPackage('tic-tac-toe-gemini-flash-basic.json')}
-      route="/tic-tac-toe-demo"
       capturedAt="May 30, 2026"
     />
   )

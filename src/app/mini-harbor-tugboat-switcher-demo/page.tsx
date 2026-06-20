@@ -7,7 +7,6 @@ export default function MiniHarborTugboatDemoPage() {
     <PreparedSourceRunPage
       project={MINI_HARBOR_TUGBOAT_SHOWCASE_PROJECT}
       sourceRunPackage={loadSourceRunPackage('mini-harbor-tugboat-switcher-chatgpt-source-run.json')}
-      route="/mini-harbor-tugboat-switcher-demo"
       capturedAt="June 5, 2026"
     />
   )

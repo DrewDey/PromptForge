@@ -7,7 +7,6 @@ export default function NeighborhoodPotluckBalancerDemoPage() {
     <PreparedSourceRunPage
       project={NEIGHBORHOOD_POTLUCK_BALANCER_SHOWCASE_PROJECT}
       sourceRunPackage={loadSourceRunPackage('neighborhood-potluck-balancer-gemini-source-run.json')}
-      route="/neighborhood-potluck-balancer-demo"
       capturedAt="June 6, 2026"
     />
   )

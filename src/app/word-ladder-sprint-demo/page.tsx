@@ -7,7 +7,6 @@ export default function WordLadderSprintDemoPage() {
     <PreparedSourceRunPage
       project={WORD_LADDER_SPRINT_SHOWCASE_PROJECT}
       sourceRunPackage={sourceRunPackage}
-      route="/word-ladder-sprint-demo"
       capturedAt="June 5, 2026"
     />
   )

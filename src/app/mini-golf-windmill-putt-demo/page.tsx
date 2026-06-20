@@ -7,7 +7,6 @@ export default function MiniGolfWindmillDemoPage() {
     <PreparedSourceRunPage
       project={MINI_GOLF_WINDMILL_SHOWCASE_PROJECT}
       sourceRunPackage={loadSourceRunPackage('mini-golf-windmill-putt-chatgpt-source-run.json')}
-      route="/mini-golf-windmill-putt-demo"
       capturedAt="June 5, 2026"
     />
   )

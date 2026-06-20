@@ -7,7 +7,6 @@ export default function CornerStoreChangeRushDemoPage() {
     <PreparedSourceRunPage
       project={CORNER_STORE_CHANGE_SHOWCASE_PROJECT}
       sourceRunPackage={loadSourceRunPackage('corner-store-change-rush-chatgpt-source-run.json')}
-      route="/corner-store-change-rush-demo"
       capturedAt="June 6, 2026"
     />
   )

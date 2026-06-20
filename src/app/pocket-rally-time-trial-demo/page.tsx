@@ -10,7 +10,6 @@ export default function PocketRallyTimeTrialDemoPage() {
     <PreparedSourceRunPage
       project={POCKET_RALLY_SHOWCASE_PROJECT}
       sourceRunPackage={sourceRunPackage}
-      route="/pocket-rally-time-trial-demo"
       capturedAt="June 5, 2026"
     />
   )

@@ -7,7 +7,6 @@ export default function TinyLaneDefenseDemoPage() {
     <PreparedSourceRunPage
       project={LANE_DEFENSE_SHOWCASE_PROJECT}
       sourceRunPackage={sourceRunPackage}
-      route="/tiny-lane-defense-demo"
       capturedAt="June 4, 2026"
     />
   )

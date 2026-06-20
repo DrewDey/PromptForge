@@ -7,7 +7,6 @@ export default function TinyFerryLoadingPuzzleDemoPage() {
     <PreparedSourceRunPage
       project={TINY_FERRY_LOADING_SHOWCASE_PROJECT}
       sourceRunPackage={loadSourceRunPackage('tiny-ferry-loading-puzzle-chatgpt-source-run.json')}
-      route="/tiny-ferry-loading-puzzle-demo"
       capturedAt="June 6, 2026"
     />
   )

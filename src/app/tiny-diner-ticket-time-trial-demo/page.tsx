@@ -7,7 +7,6 @@ export default function TinyDinerTicketTimeTrialDemoPage() {
     <PreparedSourceRunPage
       project={TINY_DINER_TICKET_SHOWCASE_PROJECT}
       sourceRunPackage={loadSourceRunPackage('tiny-diner-ticket-time-trial-chatgpt-source-run.json')}
-      route="/tiny-diner-ticket-time-trial-demo"
       capturedAt="June 6, 2026"
     />
   )

@@ -7,7 +7,6 @@ export default function FridgeLeftoverLabelPrinterDemoPage() {
     <PreparedSourceRunPage
       project={FRIDGE_LEFTOVER_LABEL_SHOWCASE_PROJECT}
       sourceRunPackage={loadSourceRunPackage('fridge-leftover-label-printer-gemini-source-run.json')}
-      route="/fridge-leftover-label-printer-demo"
       capturedAt="June 6, 2026"
     />
   )

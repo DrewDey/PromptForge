@@ -7,7 +7,6 @@ export default function UtilityBillBalanceBoardDemoPage() {
     <PreparedSourceRunPage
       project={UTILITY_BILL_BALANCE_SHOWCASE_PROJECT}
       sourceRunPackage={loadSourceRunPackage('utility-bill-balance-board-gemini-source-run.json')}
-      route="/utility-bill-balance-board-demo"
       capturedAt="June 6, 2026"
     />
   )

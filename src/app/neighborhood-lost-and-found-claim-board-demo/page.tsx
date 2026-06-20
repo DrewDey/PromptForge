@@ -7,7 +7,6 @@ export default function NeighborhoodLostAndFoundClaimBoardDemoPage() {
     <PreparedSourceRunPage
       project={NEIGHBORHOOD_LOST_AND_FOUND_SHOWCASE_PROJECT}
       sourceRunPackage={loadSourceRunPackage('neighborhood-lost-and-found-claim-board-gemini-source-run.json')}
-      route="/neighborhood-lost-and-found-claim-board-demo"
       capturedAt="June 6, 2026"
     />
   )

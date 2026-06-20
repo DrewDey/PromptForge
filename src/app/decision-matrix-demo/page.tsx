@@ -10,7 +10,6 @@ export default function DecisionMatrixDemoPage() {
     <PreparedSourceRunPage
       project={DECISION_MATRIX_SHOWCASE_PROJECT}
       sourceRunPackage={loadSourceRunPackage('decision-matrix-gemini-flash-oneshot.json')}
-      route="/decision-matrix-demo"
       capturedAt="May 28, 2026"
     />
   )

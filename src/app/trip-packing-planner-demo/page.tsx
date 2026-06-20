@@ -10,7 +10,6 @@ export default function TripPackingPlannerDemoPage() {
     <PreparedSourceRunPage
       project={TRIP_PACKING_SHOWCASE_PROJECT}
       sourceRunPackage={sourceRunPackage}
-      route="/trip-packing-planner-demo"
       capturedAt="June 5, 2026"
     />
   )

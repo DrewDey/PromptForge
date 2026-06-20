@@ -7,7 +7,6 @@ export default function MiniMetroSignalDeskDemoPage() {
     <PreparedSourceRunPage
       project={MINI_METRO_SIGNAL_SHOWCASE_PROJECT}
       sourceRunPackage={loadSourceRunPackage('mini-metro-signal-desk-claude-source-run.json')}
-      route="/mini-metro-signal-desk-demo"
       capturedAt="June 6, 2026"
     />
   )

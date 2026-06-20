@@ -7,7 +7,6 @@ export default function TinyCrosswalkTimingTrainerDemoPage() {
     <PreparedSourceRunPage
       project={TINY_CROSSWALK_TIMING_SHOWCASE_PROJECT}
       sourceRunPackage={loadSourceRunPackage('tiny-crosswalk-timing-trainer-chatgpt-source-run.json')}
-      route="/tiny-crosswalk-timing-trainer-demo"
       capturedAt="June 6, 2026"
     />
   )

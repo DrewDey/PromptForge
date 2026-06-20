@@ -12,7 +12,6 @@ export default function SchoolDeskHpCalculatorForkDemoPage() {
     <PreparedSourceRunPage
       project={project}
       sourceRunPackage={loadSourceRunPackage('school-desk-hp-10bii-calculator-claude-5-fable-max-fork.json')}
-      route="/school-desk-hp-calculator-fork-demo"
       capturedAt="June 9, 2026"
     />
   )

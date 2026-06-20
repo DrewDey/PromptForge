@@ -53,7 +53,7 @@ export default function AboutPage() {
             </p>
           </div>
           <div className="problem-visual" aria-hidden="true" style={{ maxWidth: 560 }}>
-            <div className="pv-line"><span className="caret">$</span> average evening with AI <span style={{ color: 'var(--color-surface-600)' }}>// n=you</span></div>
+            <div className="pv-line"><span className="caret">$</span> average evening with AI <span style={{ color: 'var(--color-surface-600)' }}>{'// n=you'}</span></div>
             <div className="pv-line you">&gt; I should use my Claude subscription more</div>
             <div className="pv-line ai">Great! What would you like to work on?</div>
             <div className="pv-line you">&gt; I don&apos;t know</div>

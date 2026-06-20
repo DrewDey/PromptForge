@@ -30,10 +30,10 @@ const modelNames = new Map([
   ['gemini-2-5-pro', 'Gemini 2.5 Pro'],
 ])
 
-function createSandbox(module) {
+function createSandbox(transpiledModule) {
   return {
-    exports: module.exports,
-    module,
+    exports: transpiledModule.exports,
+    module: transpiledModule,
     require(specifier) {
       if (specifier === './types') return {}
       if (specifier === './models') {
@@ -82,10 +82,10 @@ const publicModelLabelsSandbox = {
 }
 new Script(transpileFile('src/lib/public-model-labels.ts'), { filename: 'public-model-labels.transpiled.cjs' }).runInNewContext(publicModelLabelsSandbox)
 
-const module = { exports: {} }
-new Script(transpileFile('src/lib/prompt-comparisons.ts'), { filename: 'prompt-comparisons.transpiled.cjs' }).runInNewContext(createSandbox(module))
+const promptComparisonsModule = { exports: {} }
+new Script(transpileFile('src/lib/prompt-comparisons.ts'), { filename: 'prompt-comparisons.transpiled.cjs' }).runInNewContext(createSandbox(promptComparisonsModule))
 
-const { buildPromptComparisonGroups, getPromptModelLabel, promptMatchesModel } = module.exports
+const { buildPromptComparisonGroups, getPromptModelLabel, promptMatchesModel } = promptComparisonsModule.exports
 
 const failures = []
 

@@ -7,28 +7,7 @@ import SourceRunShowcase, {
 } from '@/components/SourceRunShowcase'
 import { getApprovedProjectForks } from '@/lib/data'
 import type { PreparedShowcaseProject } from '@/lib/prepared-showcase-projects'
-
-type SourceRunPackageStep = {
-  step_number: number
-  prompt_exact: string
-  response_exact: string
-  artifact_version_path?: string | null
-  generated_files?: string[]
-}
-
-type SourceRunPackage = {
-  title?: string
-  model?: string
-  model_settings?: string | Record<string, string>
-  provider?: string
-  source_url?: string
-  verification_notes?: string | string[]
-  final_artifact_path?: string
-  pathforge_submission_url?: string
-  pathforge_pending_id?: string
-  source_run_submission_id?: string
-  steps: SourceRunPackageStep[]
-}
+import type { SourceRunPackage, SourceRunPackageStep } from '@/lib/source-run-package'
 
 function getPublicArtifactPath(artifactPath?: string | null) {
   if (!artifactPath?.startsWith('public/artifacts/')) return null

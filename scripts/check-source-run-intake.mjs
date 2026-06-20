@@ -100,10 +100,10 @@ for (const path of repoRunbooks) {
   mustNotInclude(path, 'Turns queued session links into pending PathForge project pages.', `${path} must not define source-run intake as page creation`)
 }
 
-mustInclude('src/lib/data.ts', 'Add the exact model shown for this source run, or type Not sure.', 'server action must enforce model metadata for user source-run uploads')
-mustInclude('src/lib/data.ts', 'Pick the AI service for this source run.', 'server action must enforce provider metadata for user source-run uploads')
-mustInclude('src/lib/data.ts', 'projectForkSourceToSubmissionFields', 'server action must store structured fork metadata for forked source-run uploads')
-mustInclude('src/lib/data.ts', 'sourceRunForkColumnsMissing', 'server action must keep source-run intake working before fork SQL is applied')
+mustInclude('src/lib/data/source-runs.ts', 'Add the exact model shown for this source run, or type Not sure.', 'server action must enforce model metadata for user source-run uploads')
+mustInclude('src/lib/data/source-runs.ts', 'Pick the AI service for this source run.', 'server action must enforce provider metadata for user source-run uploads')
+mustInclude('src/lib/data/source-runs.ts', 'projectForkSourceToSubmissionFields', 'server action must store structured fork metadata for forked source-run uploads')
+mustInclude('src/lib/data/source-runs.ts', 'sourceRunForkColumnsMissing', 'server action must keep source-run intake working before fork SQL is applied')
 mustInclude('src/lib/source-run-review.ts', "labeledValue(notes, 'Provider/model')", 'admin metadata parser must preserve legacy provider/model notes')
 mustInclude('src/lib/source-run-review.ts', "labeledValue(notes, 'Provider/model/settings')", 'admin metadata parser must preserve legacy provider/model/settings notes')
 mustInclude('src/app/admin/page.tsx', 'modelMetadataForSourceRunReview', 'admin pending rows must surface model metadata')

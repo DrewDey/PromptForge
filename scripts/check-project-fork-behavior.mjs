@@ -17,10 +17,10 @@ if (diagnostics?.length) {
   throw new Error(`Unable to transpile project-forks.ts:\n${messages}`)
 }
 
-const module = { exports: {} }
+const transpiledModule = { exports: {} }
 const sandbox = {
-  exports: module.exports,
-  module,
+  exports: transpiledModule.exports,
+  module: transpiledModule,
   require(specifier) {
     if (specifier === './types') return {}
     throw new Error(`Unexpected require from project-forks.ts: ${specifier}`)
@@ -47,7 +47,7 @@ const {
   projectForkSourceFromSubmissionFields,
   projectForkSourceToSubmissionFields,
   resolveProjectForkTrail,
-} = module.exports
+} = transpiledModule.exports
 
 const failures = []
 

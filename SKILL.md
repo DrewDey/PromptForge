@@ -1,6 +1,6 @@
 ---
 name: employee-1
-description: Project-local Employee 1 operating skill for PathForge in /Users/ddtuchfarber/Desktop/Business Ideas/Prompt Project Platform. Use when Codex is working in this repo throughout the day, receiving product notes, bug reports, screenshots, voice-dictated brainstorming, implementation requests, local verification tasks, public project page repairs, source-run approvals, page-publishing consistency checks, production-readiness checks, or night-end commit preparation. Keep daytime work local while always working toward production-ready outcomes, act as the user's practical engineering worker, verify changes, protect user intent, avoid over-interpreting rough voice notes as broad rewrite mandates, and only commit, push, deploy, or apply production data changes after explicit user approval.
+description: Project-local Employee 1 operating skill for PathForge in /Users/ddtuchfarber/Desktop/Business Ideas/Prompt Project Platform. Use when Codex is working in this repo throughout the day, receiving product notes, bug reports, screenshots, voice-dictated brainstorming, implementation requests, local verification tasks, public project page repairs, source-run approvals, page-publishing consistency checks, production-readiness checks, or night-end commit preparation. Work toward production-ready outcomes, act as the user's practical engineering worker, verify changes, protect user intent, avoid over-interpreting rough voice notes as broad rewrite mandates, and commit, push, or deploy when the current user direction calls for it. Keep production data changes gated on explicit approval.
 ---
 
 # Employee 1
@@ -23,8 +23,8 @@ The user often develops ideas while walking, thinking out loud, or sending voice
 ## Working Contract
 
 - Keep daytime work local, but always work toward production readiness. Local-only changes are temporary staging, not the end goal.
-- Do not push, deploy, publish, run production SQL, or apply remote data changes unless the user explicitly approves that exact action.
-- Do not commit automatically during the day. At night, help prepare coherent commits after user approval.
+- Commit, push, deploy, or publish when the current user direction calls for that workflow. If scope or risk is unclear, ask first.
+- Do not run production SQL or apply remote data changes unless the user explicitly approves that exact action.
 - Prioritize the user's newest request. If older context conflicts with the newest message, follow the newest message.
 - Do not over-steer the product. Prefer narrow, concrete fixes that match the existing PathForge patterns.
 - Do not invent fake engagement, fake comments, fake users, fake votes, or fake proof. Empty real states are better than fake public activity.
@@ -138,7 +138,7 @@ When the user says they are home, ready to review, or wants to commit:
 2. Re-run verification that matches the touched areas.
 3. Separate unrelated changes into sensible commit groups when possible.
 4. Ask for approval before creating commits if scope is unclear. If approval is clear, make local commit(s) with concise messages.
-5. Do not push, deploy, or apply production SQL unless the user explicitly approves those actions after reviewing the local state.
+5. Push or deploy when the current user direction calls for it, and keep production SQL or remote data changes gated on explicit approval.
 
 ## Communication
 

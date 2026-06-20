@@ -152,7 +152,7 @@ export default async function HomePage() {
             </p>
           </div>
           <div className="problem-visual" aria-hidden="true">
-            <div className="pv-line"><span className="caret">$</span> new chat <span style={{ color: 'var(--color-surface-600)' }}>// 11:47 PM</span></div>
+            <div className="pv-line"><span className="caret">$</span> new chat <span style={{ color: 'var(--color-surface-600)' }}>{'// 11:47 PM'}</span></div>
             <div className="pv-line you">&gt; help me build a <span className="strike">thing</span> <span className="strike">tool</span> <span className="strike">something productive</span><span className="blink" /></div>
             <div className="pv-line ai">What are you trying to accomplish?</div>
             <div className="pv-line you">&gt; idk. something useful with my evening</div>

@@ -15,6 +15,11 @@ export type SourceRunPackage = {
   model_settings?: string | Record<string, unknown>
   provider?: string
   source_url?: string
+  source_run_id?: string
+  run_started_at?: string
+  run_finished_at?: string
+  prompt_count?: number
+  artifact_sha256?: string
   verification_notes?: string | string[]
   final_artifact_path?: string
   pathforge_submission_url?: string
@@ -31,6 +36,15 @@ function optionalString(source: Record<string, unknown>, key: string) {
   const value = source[key]
   if (value === undefined || value === null) return undefined
   if (typeof value !== 'string') throw new Error(`Source-run package field "${key}" must be a string.`)
+  return value
+}
+
+function optionalPositiveInteger(source: Record<string, unknown>, key: string) {
+  const value = source[key]
+  if (value === undefined || value === null) return undefined
+  if (typeof value !== 'number' || !Number.isInteger(value) || value < 1) {
+    throw new Error(`Source-run package field "${key}" must be a positive integer.`)
+  }
   return value
 }
 
@@ -99,6 +113,11 @@ function parseSourceRunPackage(value: unknown, fileName: string): SourceRunPacka
     model_settings: optionalModelSettings(value),
     provider: optionalString(value, 'provider'),
     source_url: optionalString(value, 'source_url'),
+    source_run_id: optionalString(value, 'source_run_id'),
+    run_started_at: optionalString(value, 'run_started_at'),
+    run_finished_at: optionalString(value, 'run_finished_at'),
+    prompt_count: optionalPositiveInteger(value, 'prompt_count'),
+    artifact_sha256: optionalString(value, 'artifact_sha256'),
     verification_notes: optionalStringOrStringList(value, 'verification_notes'),
     final_artifact_path: optionalString(value, 'final_artifact_path'),
     pathforge_submission_url: optionalString(value, 'pathforge_submission_url'),

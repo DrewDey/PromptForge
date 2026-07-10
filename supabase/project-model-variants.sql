@@ -1,88 +1,8 @@
--- PromptForge Database Schema
--- Run this in your Supabase SQL Editor to set up the database
-
--- Categories
-CREATE TABLE categories (
-  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-  name TEXT NOT NULL,
-  slug TEXT NOT NULL UNIQUE,
-  description TEXT NOT NULL DEFAULT '',
-  icon TEXT NOT NULL DEFAULT '',
-  prompt_count INT DEFAULT 0,
-  created_at TIMESTAMPTZ DEFAULT NOW()
-);
-
--- Profiles (extends Supabase auth.users)
-CREATE TABLE profiles (
-  id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
-  username TEXT UNIQUE,
-  display_name TEXT,
-  avatar_url TEXT,
-  bio TEXT,
-  role TEXT DEFAULT 'user' CHECK (role IN ('user', 'admin')),
-  created_at TIMESTAMPTZ DEFAULT NOW(),
-  updated_at TIMESTAMPTZ DEFAULT NOW()
-);
-
--- Prompts
-CREATE TABLE prompts (
-  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-  title TEXT NOT NULL,
-  description TEXT NOT NULL,
-  content TEXT NOT NULL,
-  category_id UUID REFERENCES categories(id),
-  difficulty TEXT NOT NULL CHECK (difficulty IN ('beginner', 'intermediate', 'advanced')),
-  model_recommendation TEXT,
-  tags TEXT[] DEFAULT '{}',
-  status TEXT DEFAULT 'pending' CHECK (status IN ('pending', 'approved', 'rejected')),
-  author_id UUID REFERENCES profiles(id),
-  vote_count INT DEFAULT 0,
-  bookmark_count INT DEFAULT 0,
-  fork_source_project_id TEXT,
-  fork_source_project_title TEXT,
-  fork_source_step_id TEXT,
-  fork_source_step_number INT CHECK (fork_source_step_number IS NULL OR fork_source_step_number > 0),
-  fork_parent_submission_id TEXT,
-  prompt_family_id TEXT,
-  fork_depth INT NOT NULL DEFAULT 0 CHECK (fork_depth >= 0 AND fork_depth < 10),
-  fork_branch_index INT NOT NULL DEFAULT 0 CHECK (fork_branch_index >= 0 AND fork_branch_index < 10),
-  created_at TIMESTAMPTZ DEFAULT NOW(),
-  updated_at TIMESTAMPTZ DEFAULT NOW()
-);
-
--- Prompt Steps (for multi-step chains)
-CREATE TABLE prompt_steps (
-  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-  prompt_id UUID REFERENCES prompts(id) ON DELETE CASCADE,
-  step_number INT NOT NULL,
-  title TEXT NOT NULL,
-  content TEXT NOT NULL,
-  description TEXT,
-  created_at TIMESTAMPTZ DEFAULT NOW()
-);
-
--- Votes
-CREATE TABLE votes (
-  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-  user_id UUID REFERENCES profiles(id) ON DELETE CASCADE,
-  prompt_id UUID REFERENCES prompts(id) ON DELETE CASCADE,
-  created_at TIMESTAMPTZ DEFAULT NOW(),
-  UNIQUE(user_id, prompt_id)
-);
-
--- Bookmarks
-CREATE TABLE bookmarks (
-  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-  user_id UUID REFERENCES profiles(id) ON DELETE CASCADE,
-  prompt_id UUID REFERENCES prompts(id) ON DELETE CASCADE,
-  created_at TIMESTAMPTZ DEFAULT NOW(),
-  UNIQUE(user_id, prompt_id)
-);
-
--- Canonical-project model variants
+-- PathForge canonical-project model variants
 -- A model variant is an append-only provider rerun of one approved project.
 -- It is not a prompt, an artifact version, or a community fork.
-CREATE TABLE project_model_variants (
+
+CREATE TABLE IF NOT EXISTS project_model_variants (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   project_id UUID NOT NULL REFERENCES prompts(id) ON DELETE RESTRICT,
   source_run_id TEXT NOT NULL UNIQUE CHECK (BTRIM(source_run_id) <> ''),
@@ -149,22 +69,22 @@ CREATE TABLE project_model_variants (
   )
 );
 
-CREATE UNIQUE INDEX idx_project_model_variants_current_provider
+CREATE UNIQUE INDEX IF NOT EXISTS idx_project_model_variants_current_provider
   ON project_model_variants(project_id, provider_key)
   WHERE is_current AND status = 'published';
 
-CREATE UNIQUE INDEX idx_project_model_variants_default
+CREATE UNIQUE INDEX IF NOT EXISTS idx_project_model_variants_default
   ON project_model_variants(project_id)
   WHERE is_default AND is_current AND status = 'published';
 
-CREATE UNIQUE INDEX idx_project_model_variants_automation_run
+CREATE UNIQUE INDEX IF NOT EXISTS idx_project_model_variants_automation_run
   ON project_model_variants(automation_run_id)
   WHERE automation_run_id IS NOT NULL;
 
-CREATE INDEX idx_project_model_variants_project_history
+CREATE INDEX IF NOT EXISTS idx_project_model_variants_project_history
   ON project_model_variants(project_id, run_finished_at DESC, created_at DESC);
 
-CREATE INDEX idx_project_model_variants_supersedes
+CREATE INDEX IF NOT EXISTS idx_project_model_variants_supersedes
   ON project_model_variants(supersedes_variant_id)
   WHERE supersedes_variant_id IS NOT NULL;
 
@@ -203,6 +123,7 @@ $$;
 REVOKE ALL ON FUNCTION validate_project_model_variant_lineage() FROM PUBLIC;
 REVOKE ALL ON FUNCTION validate_project_model_variant_lineage() FROM anon, authenticated;
 
+DROP TRIGGER IF EXISTS validate_project_model_variant_lineage_fields ON project_model_variants;
 CREATE TRIGGER validate_project_model_variant_lineage_fields
   BEFORE INSERT OR UPDATE OF project_id, provider_key, supersedes_variant_id, status
   ON project_model_variants
@@ -261,6 +182,7 @@ $$;
 REVOKE ALL ON FUNCTION prevent_published_model_variant_evidence_update() FROM PUBLIC;
 REVOKE ALL ON FUNCTION prevent_published_model_variant_evidence_update() FROM anon, authenticated;
 
+DROP TRIGGER IF EXISTS preserve_project_model_variant_evidence ON project_model_variants;
 CREATE TRIGGER preserve_project_model_variant_evidence
   BEFORE UPDATE ON project_model_variants
   FOR EACH ROW EXECUTE FUNCTION prevent_published_model_variant_evidence_update();
@@ -282,6 +204,7 @@ $$;
 REVOKE ALL ON FUNCTION prevent_locked_model_variant_delete() FROM PUBLIC;
 REVOKE ALL ON FUNCTION prevent_locked_model_variant_delete() FROM anon, authenticated;
 
+DROP TRIGGER IF EXISTS preserve_project_model_variant_history ON project_model_variants;
 CREATE TRIGGER preserve_project_model_variant_history
   BEFORE DELETE ON project_model_variants
   FOR EACH ROW EXECUTE FUNCTION prevent_locked_model_variant_delete();
@@ -323,6 +246,8 @@ GRANT SELECT (
 GRANT INSERT, UPDATE, DELETE ON TABLE project_model_variants TO authenticated;
 GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE project_model_variants TO service_role;
 
+DROP POLICY IF EXISTS "Published model variants are public" ON project_model_variants;
+DROP POLICY IF EXISTS "Published model variants are public to anon" ON project_model_variants;
 CREATE POLICY "Published model variants are public to anon"
   ON project_model_variants
   FOR SELECT
@@ -336,6 +261,8 @@ CREATE POLICY "Published model variants are public to anon"
     )
   );
 
+DROP POLICY IF EXISTS "Admins can read every model variant" ON project_model_variants;
+DROP POLICY IF EXISTS "Authenticated users read public variants or admins read all" ON project_model_variants;
 CREATE POLICY "Authenticated users read public variants or admins read all"
   ON project_model_variants
   FOR SELECT
@@ -356,6 +283,8 @@ CREATE POLICY "Authenticated users read public variants or admins read all"
     )
   );
 
+DROP POLICY IF EXISTS "Admins can manage model variants" ON project_model_variants;
+DROP POLICY IF EXISTS "Admins can insert model variants" ON project_model_variants;
 CREATE POLICY "Admins can insert model variants"
   ON project_model_variants
   FOR INSERT
@@ -368,6 +297,7 @@ CREATE POLICY "Admins can insert model variants"
     )
   );
 
+DROP POLICY IF EXISTS "Admins can update model variants" ON project_model_variants;
 CREATE POLICY "Admins can update model variants"
   ON project_model_variants
   FOR UPDATE
@@ -387,6 +317,7 @@ CREATE POLICY "Admins can update model variants"
     )
   );
 
+DROP POLICY IF EXISTS "Admins can delete model variants" ON project_model_variants;
 CREATE POLICY "Admins can delete model variants"
   ON project_model_variants
   FOR DELETE
@@ -452,164 +383,3 @@ REVOKE ALL ON FUNCTION set_project_model_variant_default(UUID, UUID) FROM PUBLIC
 REVOKE ALL ON FUNCTION set_project_model_variant_default(UUID, UUID) FROM anon, authenticated;
 GRANT EXECUTE ON FUNCTION set_project_model_variant_default(UUID, UUID)
   TO authenticated, service_role;
-
--- Indexes
-CREATE INDEX idx_prompts_category ON prompts(category_id);
-CREATE INDEX idx_prompts_status ON prompts(status);
-CREATE INDEX idx_prompts_author ON prompts(author_id);
-CREATE INDEX idx_prompts_difficulty ON prompts(difficulty);
-CREATE INDEX idx_prompts_fork_source_project ON prompts(fork_source_project_id);
-CREATE INDEX idx_prompts_prompt_family ON prompts(prompt_family_id);
-CREATE INDEX idx_prompts_parent_fork ON prompts(fork_parent_submission_id);
-CREATE INDEX idx_prompt_steps_prompt ON prompt_steps(prompt_id);
-CREATE INDEX idx_votes_prompt ON votes(prompt_id);
-CREATE INDEX idx_votes_user ON votes(user_id);
-CREATE INDEX idx_bookmarks_user ON bookmarks(user_id);
-CREATE INDEX idx_bookmarks_prompt ON bookmarks(prompt_id);
-
-CREATE OR REPLACE FUNCTION update_prompt_vote_count()
-RETURNS TRIGGER
-LANGUAGE plpgsql
-SECURITY DEFINER
-SET search_path = public
-AS $$
-BEGIN
-  IF TG_OP = 'INSERT' THEN
-    UPDATE prompts
-    SET vote_count = vote_count + 1,
-        updated_at = NOW()
-    WHERE id = NEW.prompt_id;
-    RETURN NEW;
-  END IF;
-
-  IF TG_OP = 'DELETE' THEN
-    UPDATE prompts
-    SET vote_count = GREATEST(vote_count - 1, 0),
-        updated_at = NOW()
-    WHERE id = OLD.prompt_id;
-    RETURN OLD;
-  END IF;
-
-  RETURN NULL;
-END;
-$$;
-
-DROP TRIGGER IF EXISTS prompt_vote_count_trigger ON votes;
-CREATE TRIGGER prompt_vote_count_trigger
-  AFTER INSERT OR DELETE ON votes
-  FOR EACH ROW EXECUTE FUNCTION update_prompt_vote_count();
-
-CREATE OR REPLACE FUNCTION update_prompt_bookmark_count()
-RETURNS TRIGGER
-LANGUAGE plpgsql
-SECURITY DEFINER
-SET search_path = public
-AS $$
-BEGIN
-  IF TG_OP = 'INSERT' THEN
-    UPDATE prompts
-    SET bookmark_count = bookmark_count + 1,
-        updated_at = NOW()
-    WHERE id = NEW.prompt_id;
-    RETURN NEW;
-  END IF;
-
-  IF TG_OP = 'DELETE' THEN
-    UPDATE prompts
-    SET bookmark_count = GREATEST(bookmark_count - 1, 0),
-        updated_at = NOW()
-    WHERE id = OLD.prompt_id;
-    RETURN OLD;
-  END IF;
-
-  RETURN NULL;
-END;
-$$;
-
-DROP TRIGGER IF EXISTS prompt_bookmark_count_trigger ON bookmarks;
-CREATE TRIGGER prompt_bookmark_count_trigger
-  AFTER INSERT OR DELETE ON bookmarks
-  FOR EACH ROW EXECUTE FUNCTION update_prompt_bookmark_count();
-
--- Auto-create profile on signup
-CREATE OR REPLACE FUNCTION public.handle_new_user()
-RETURNS trigger AS $$
-BEGIN
-  INSERT INTO public.profiles (id, username, display_name, role)
-  VALUES (
-    NEW.id,
-    NEW.raw_user_meta_data->>'username',
-    COALESCE(NEW.raw_user_meta_data->>'display_name', NEW.raw_user_meta_data->>'username'),
-    'user'
-  );
-  RETURN NEW;
-END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
-
-CREATE TRIGGER on_auth_user_created
-  AFTER INSERT ON auth.users
-  FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
-
--- Row Level Security
-ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;
-ALTER TABLE prompts ENABLE ROW LEVEL SECURITY;
-ALTER TABLE prompt_steps ENABLE ROW LEVEL SECURITY;
-ALTER TABLE votes ENABLE ROW LEVEL SECURITY;
-ALTER TABLE bookmarks ENABLE ROW LEVEL SECURITY;
-ALTER TABLE categories ENABLE ROW LEVEL SECURITY;
-
--- Everyone can read categories
-CREATE POLICY "Categories are viewable by everyone" ON categories FOR SELECT USING (true);
-
--- Everyone can read approved prompts; authors can see their own
-CREATE POLICY "Approved prompts are viewable by everyone" ON prompts
-  FOR SELECT USING (status = 'approved' OR author_id = auth.uid());
-
--- Authenticated users can create prompts
-CREATE POLICY "Authenticated users can create prompts" ON prompts
-  FOR INSERT WITH CHECK (auth.uid() = author_id);
-
--- Authors can update their own prompts; admins can update any
-CREATE POLICY "Authors and admins can update prompts" ON prompts
-  FOR UPDATE USING (
-    author_id = auth.uid() OR
-    EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role = 'admin')
-  );
-
--- Prompt steps follow their parent prompt's visibility
-CREATE POLICY "Prompt steps are viewable with their prompt" ON prompt_steps
-  FOR SELECT USING (
-    EXISTS (
-      SELECT 1 FROM prompts
-      WHERE prompts.id = prompt_steps.prompt_id
-      AND (prompts.status = 'approved' OR prompts.author_id = auth.uid())
-    )
-  );
-
--- Profiles are public
-CREATE POLICY "Profiles are viewable by everyone" ON profiles FOR SELECT USING (true);
-CREATE POLICY "Users can update own profile" ON profiles FOR UPDATE USING (auth.uid() = id);
-
--- Votes
-CREATE POLICY "Votes are viewable by everyone" ON votes FOR SELECT USING (true);
-CREATE POLICY "Users can vote" ON votes FOR INSERT WITH CHECK (
-  auth.uid() = user_id
-  AND EXISTS (
-    SELECT 1 FROM prompts
-    WHERE prompts.id = votes.prompt_id
-    AND prompts.status = 'approved'
-  )
-);
-CREATE POLICY "Users can remove own votes" ON votes FOR DELETE USING (auth.uid() = user_id);
-
--- Bookmarks
-CREATE POLICY "Users can see own bookmarks" ON bookmarks FOR SELECT USING (auth.uid() = user_id);
-CREATE POLICY "Users can bookmark" ON bookmarks FOR INSERT WITH CHECK (
-  auth.uid() = user_id
-  AND EXISTS (
-    SELECT 1 FROM prompts
-    WHERE prompts.id = bookmarks.prompt_id
-    AND prompts.status = 'approved'
-  )
-);
-CREATE POLICY "Users can remove own bookmarks" ON bookmarks FOR DELETE USING (auth.uid() = user_id);

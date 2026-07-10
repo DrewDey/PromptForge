@@ -1,0 +1,699 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Nightsound</title>
+<style>
+  :root {
+    --bg: #0a0d13;
+    --surface: #11151f;
+    --surface-2: #171c29;
+    --line: #202636;
+    --text: #c7cdd9;
+    --dim: #6e7688;
+    --faint: #464e60;
+    --rain: #7fa7c9;
+    --fan: #9ba48f;
+    --brown: #b58963;
+    --moon: #d9dee9;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  html { background: var(--bg); }
+
+  body {
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    padding: 28px 20px 56px;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .app {
+    width: 100%;
+    max-width: 430px;
+  }
+
+  /* ---------- header + breathing moon ---------- */
+
+  header {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 30px;
+  }
+
+  .moon {
+    width: 52px;
+    height: 52px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 38% 34%, #3d465e 0%, #232a3c 100%);
+    position: relative;
+    flex-shrink: 0;
+    transition: box-shadow 1.2s ease;
+  }
+
+  .moon::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    box-shadow: 0 0 34px 6px rgba(199, 210, 235, 0.16);
+    opacity: 0;
+    transition: opacity 1.2s ease;
+  }
+
+  body.playing .moon::after { opacity: 1; }
+
+  body.playing .moon {
+    animation: breathe 7s ease-in-out infinite;
+  }
+
+  @keyframes breathe {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.06); }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    body.playing .moon { animation: none; }
+  }
+
+  h1 {
+    font-size: 26px;
+    font-weight: 300;
+    color: var(--moon);
+  }
+
+  .tagline {
+    font-size: 13px;
+    color: var(--dim);
+    margin-top: 2px;
+  }
+
+  /* ---------- play button ---------- */
+
+  .play-row {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 34px;
+  }
+
+  #playBtn {
+    width: 96px;
+    height: 96px;
+    border-radius: 50%;
+    border: 1px solid var(--line);
+    background: var(--surface-2);
+    color: var(--moon);
+    font-size: 15px;
+    font-family: inherit;
+    cursor: pointer;
+    transition: background 0.4s ease, box-shadow 0.6s ease;
+  }
+
+  #playBtn:hover { background: #1c2333; }
+
+  body.playing #playBtn {
+    box-shadow: 0 0 44px 4px rgba(160, 178, 214, 0.13);
+  }
+
+  /* ---------- layers ---------- */
+
+  .layers {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    margin-bottom: 32px;
+  }
+
+  .layer {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    padding: 16px 18px 20px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .layer::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 3px;
+    background: var(--accent);
+    opacity: var(--level, 0);
+    transition: opacity 0.25s ease;
+  }
+
+  .layer.rain  { --accent: var(--rain); }
+  .layer.fan   { --accent: var(--fan); }
+  .layer.brown { --accent: var(--brown); }
+
+  .layer-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 12px;
+  }
+
+  .layer-name {
+    font-size: 16px;
+    font-weight: 500;
+  }
+
+  .layer-pct {
+    font-size: 14px;
+    color: var(--dim);
+    font-variant-numeric: tabular-nums;
+  }
+
+  input[type="range"] {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 100%;
+    height: 44px;
+    background: transparent;
+    cursor: pointer;
+  }
+
+  input[type="range"]::-webkit-slider-runnable-track {
+    height: 10px;
+    border-radius: 5px;
+    background: #1d2331;
+  }
+
+  input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    background: var(--accent);
+    border: 4px solid var(--bg);
+    margin-top: -10px;
+    box-shadow: 0 0 12px rgba(0, 0, 0, 0.5);
+  }
+
+  input[type="range"]::-moz-range-track {
+    height: 10px;
+    border-radius: 5px;
+    background: #1d2331;
+  }
+
+  input[type="range"]::-moz-range-thumb {
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: var(--accent);
+    border: 4px solid var(--bg);
+  }
+
+  input[type="range"]:focus-visible {
+    outline: 2px solid var(--moon);
+    outline-offset: 4px;
+    border-radius: 8px;
+  }
+
+  /* ---------- sections ---------- */
+
+  .section-label {
+    font-size: 12px;
+    text-transform: uppercase;
+    color: var(--faint);
+    font-weight: 600;
+    margin-bottom: 12px;
+  }
+
+  .pill-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 32px;
+  }
+
+  .pill {
+    font-family: inherit;
+    font-size: 14px;
+    color: var(--text);
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    padding: 12px 18px;
+    cursor: pointer;
+    min-height: 44px;
+    transition: background 0.25s ease, border-color 0.25s ease;
+  }
+
+  .pill:hover { background: var(--surface-2); }
+
+  .pill.active {
+    border-color: var(--moon);
+    color: var(--moon);
+  }
+
+  .pill:focus-visible {
+    outline: 2px solid var(--moon);
+    outline-offset: 2px;
+  }
+
+  .timer-status {
+    font-size: 14px;
+    color: var(--dim);
+    min-height: 20px;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .footnote {
+    margin-top: 40px;
+    font-size: 12px;
+    color: var(--faint);
+    text-align: center;
+    line-height: 1.6;
+  }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <header>
+    <div class="moon" aria-hidden="true"></div>
+    <div>
+      <h1>Nightsound</h1>
+      <div class="tagline">Steady sound for falling asleep</div>
+    </div>
+  </header>
+
+  <div class="play-row">
+    <button id="playBtn" type="button">Play</button>
+  </div>
+
+  <div class="layers">
+    <div class="layer rain" id="cardRain">
+      <div class="layer-head">
+        <span class="layer-name">Rain</span>
+        <span class="layer-pct" id="pctRain">0%</span>
+      </div>
+      <input type="range" id="volRain" min="0" max="100" value="0" step="1" aria-label="Rain volume">
+    </div>
+
+    <div class="layer fan" id="cardFan">
+      <div class="layer-head">
+        <span class="layer-name">Fan</span>
+        <span class="layer-pct" id="pctFan">0%</span>
+      </div>
+      <input type="range" id="volFan" min="0" max="100" value="0" step="1" aria-label="Fan volume">
+    </div>
+
+    <div class="layer brown" id="cardBrown">
+      <div class="layer-head">
+        <span class="layer-name">Brown noise</span>
+        <span class="layer-pct" id="pctBrown">0%</span>
+      </div>
+      <input type="range" id="volBrown" min="0" max="100" value="0" step="1" aria-label="Brown noise volume">
+    </div>
+  </div>
+
+  <div class="section-label">Presets</div>
+  <div class="pill-row" id="presetRow">
+    <button class="pill" type="button" data-preset="rainy">Rainy night</button>
+    <button class="pill" type="button" data-preset="boxfan">Box fan</button>
+    <button class="pill" type="button" data-preset="deephum">Deep hum</button>
+    <button class="pill" type="button" data-preset="cabin">Storm cabin</button>
+  </div>
+
+  <div class="section-label">Sleep timer</div>
+  <div class="pill-row" id="timerRow">
+    <button class="pill active" type="button" data-min="0">Off</button>
+    <button class="pill" type="button" data-min="15">15 min</button>
+    <button class="pill" type="button" data-min="30">30 min</button>
+    <button class="pill" type="button" data-min="45">45 min</button>
+    <button class="pill" type="button" data-min="60">1 hour</button>
+    <button class="pill" type="button" data-min="90">90 min</button>
+  </div>
+  <div class="timer-status" id="timerStatus"></div>
+
+  <div class="footnote">
+    All sound is generated on this page while it plays.<br>
+    Nothing is downloaded or streamed.
+  </div>
+
+</div>
+
+<script>
+(function () {
+  "use strict";
+
+  var ctx = null;
+  var master = null;
+  var playing = false;
+  var built = false;
+
+  var FADE_SECONDS = 60;
+
+  var layers = {
+    rain:  { gain: null, value: 0 },
+    fan:   { gain: null, value: 0 },
+    brown: { gain: null, value: 0 }
+  };
+
+  var dropletTimer = null;
+  var timerInterval = null;
+  var timerEndsAt = 0;
+  var fading = false;
+
+  var playBtn = document.getElementById("playBtn");
+  var timerStatus = document.getElementById("timerStatus");
+
+  var sliders = {
+    rain:  document.getElementById("volRain"),
+    fan:   document.getElementById("volFan"),
+    brown: document.getElementById("volBrown")
+  };
+  var pcts = {
+    rain:  document.getElementById("pctRain"),
+    fan:   document.getElementById("pctFan"),
+    brown: document.getElementById("pctBrown")
+  };
+  var cards = {
+    rain:  document.getElementById("cardRain"),
+    fan:   document.getElementById("cardFan"),
+    brown: document.getElementById("cardBrown")
+  };
+
+  /* ---------- noise buffers ---------- */
+
+  function makeWhiteBuffer(seconds) {
+    var len = Math.floor(ctx.sampleRate * seconds);
+    var buf = ctx.createBuffer(1, len, ctx.sampleRate);
+    var data = buf.getChannelData(0);
+    for (var i = 0; i < len; i++) {
+      data[i] = Math.random() * 2 - 1;
+    }
+    return buf;
+  }
+
+  function makeBrownBuffer(seconds) {
+    var len = Math.floor(ctx.sampleRate * seconds);
+    var buf = ctx.createBuffer(1, len, ctx.sampleRate);
+    var data = buf.getChannelData(0);
+    var last = 0;
+    for (var i = 0; i < len; i++) {
+      var white = Math.random() * 2 - 1;
+      last = (last + 0.02 * white) / 1.02;
+      data[i] = last * 3.5;
+    }
+    return buf;
+  }
+
+  function loopSource(buffer) {
+    var src = ctx.createBufferSource();
+    src.buffer = buffer;
+    src.loop = true;
+    src.start();
+    return src;
+  }
+
+  /* ---------- audio graph ---------- */
+
+  function buildGraph() {
+    master = ctx.createGain();
+    master.gain.value = 1;
+    master.connect(ctx.destination);
+
+    var white = makeWhiteBuffer(4);
+
+    /* Rain: steady filtered hiss, droplets are scheduled separately */
+    var rainGain = ctx.createGain();
+    rainGain.gain.value = 0;
+    var rainHP = ctx.createBiquadFilter();
+    rainHP.type = "highpass";
+    rainHP.frequency.value = 500;
+    var rainLP = ctx.createBiquadFilter();
+    rainLP.type = "lowpass";
+    rainLP.frequency.value = 7500;
+    loopSource(white).connect(rainHP);
+    rainHP.connect(rainLP);
+    rainLP.connect(rainGain);
+    rainGain.connect(master);
+    layers.rain.gain = rainGain;
+
+    /* Fan: low-passed noise with a slow, shallow wobble and a faint motor hum */
+    var fanGain = ctx.createGain();
+    fanGain.gain.value = 0;
+    var fanLP = ctx.createBiquadFilter();
+    fanLP.type = "lowpass";
+    fanLP.frequency.value = 480;
+    fanLP.Q.value = 0.6;
+    var wobble = ctx.createGain();
+    wobble.gain.value = 1;
+    loopSource(white).connect(fanLP);
+    fanLP.connect(wobble);
+    wobble.connect(fanGain);
+
+    var lfo = ctx.createOscillator();
+    lfo.frequency.value = 5.3;
+    var lfoDepth = ctx.createGain();
+    lfoDepth.gain.value = 0.05;
+    lfo.connect(lfoDepth);
+    lfoDepth.connect(wobble.gain);
+    lfo.start();
+
+    var hum = ctx.createOscillator();
+    hum.type = "sine";
+    hum.frequency.value = 108;
+    var humGain = ctx.createGain();
+    humGain.gain.value = 0.035;
+    hum.connect(humGain);
+    humGain.connect(fanGain);
+    hum.start();
+
+    fanGain.connect(master);
+    layers.fan.gain = fanGain;
+
+    /* Brown noise: pre-shaped buffer with a gentle ceiling */
+    var brownGain = ctx.createGain();
+    brownGain.gain.value = 0;
+    var brownLP = ctx.createBiquadFilter();
+    brownLP.type = "lowpass";
+    brownLP.frequency.value = 900;
+    loopSource(makeBrownBuffer(6)).connect(brownLP);
+    brownLP.connect(brownGain);
+    brownGain.connect(master);
+    layers.brown.gain = brownGain;
+
+    built = true;
+  }
+
+  /* ---------- rain droplets ---------- */
+
+  function scheduleDroplet() {
+    if (!playing) { return; }
+    var level = layers.rain.value;
+    if (level > 0.03) {
+      var now = ctx.currentTime;
+      var src = ctx.createBufferSource();
+      var len = Math.floor(ctx.sampleRate * 0.035);
+      var buf = ctx.createBuffer(1, len, ctx.sampleRate);
+      var data = buf.getChannelData(0);
+      for (var i = 0; i < len; i++) {
+        data[i] = (Math.random() * 2 - 1) * (1 - i / len);
+      }
+      src.buffer = buf;
+      var bp = ctx.createBiquadFilter();
+      bp.type = "bandpass";
+      bp.frequency.value = 900 + Math.random() * 2600;
+      bp.Q.value = 5;
+      var g = ctx.createGain();
+      g.gain.value = level * (0.10 + Math.random() * 0.20);
+      src.connect(bp);
+      bp.connect(g);
+      g.connect(master);
+      src.start(now);
+      src.stop(now + 0.06);
+    }
+    var wait = 45 + Math.random() * (280 - 200 * level);
+    dropletTimer = setTimeout(scheduleDroplet, wait);
+  }
+
+  /* ---------- volume handling ---------- */
+
+  function applyVolume(name) {
+    var v = layers[name].value;
+    cards[name].style.setProperty("--level", String(Math.min(1, 0.15 + v * 0.85)) );
+    if (v === 0) { cards[name].style.setProperty("--level", "0"); }
+    if (built && layers[name].gain) {
+      var target = v * v; /* perceptual-ish curve */
+      var scale = { rain: 0.9, fan: 1.1, brown: 0.8 }[name];
+      layers[name].gain.gain.setTargetAtTime(target * scale, ctx.currentTime, 0.08);
+    }
+  }
+
+  function setSlider(name, val) {
+    sliders[name].value = String(val);
+    layers[name].value = val / 100;
+    pcts[name].textContent = String(val) + "%";
+    applyVolume(name);
+  }
+
+  Object.keys(sliders).forEach(function (name) {
+    sliders[name].addEventListener("input", function () {
+      setSlider(name, Number(sliders[name].value));
+      clearPresetHighlight();
+    });
+  });
+
+  /* ---------- presets ---------- */
+
+  var presets = {
+    rainy:   { rain: 70, fan: 0,  brown: 20 },
+    boxfan:  { rain: 0,  fan: 80, brown: 10 },
+    deephum: { rain: 0,  fan: 0,  brown: 75 },
+    cabin:   { rain: 60, fan: 45, brown: 30 }
+  };
+
+  var presetRow = document.getElementById("presetRow");
+
+  function clearPresetHighlight() {
+    var pills = presetRow.querySelectorAll(".pill");
+    for (var i = 0; i < pills.length; i++) {
+      pills[i].classList.remove("active");
+    }
+  }
+
+  presetRow.addEventListener("click", function (e) {
+    var btn = e.target.closest("[data-preset]");
+    if (!btn) { return; }
+    var p = presets[btn.getAttribute("data-preset")];
+    setSlider("rain", p.rain);
+    setSlider("fan", p.fan);
+    setSlider("brown", p.brown);
+    clearPresetHighlight();
+    btn.classList.add("active");
+    if (!playing) { startPlayback(); }
+  });
+
+  /* ---------- play / pause ---------- */
+
+  function startPlayback() {
+    if (!ctx) {
+      ctx = new (window.AudioContext || window.webkitAudioContext)();
+    }
+    if (!built) { buildGraph(); }
+    if (ctx.state === "suspended") { ctx.resume(); }
+    master.gain.cancelScheduledValues(ctx.currentTime);
+    master.gain.setValueAtTime(0.0001, ctx.currentTime);
+    master.gain.exponentialRampToValueAtTime(1, ctx.currentTime + 1.5);
+    playing = true;
+    fading = false;
+    document.body.classList.add("playing");
+    playBtn.textContent = "Pause";
+    Object.keys(layers).forEach(applyVolume);
+    if (dropletTimer) { clearTimeout(dropletTimer); }
+    scheduleDroplet();
+  }
+
+  function stopPlayback() {
+    playing = false;
+    fading = false;
+    if (dropletTimer) { clearTimeout(dropletTimer); dropletTimer = null; }
+    if (ctx) { ctx.suspend(); }
+    document.body.classList.remove("playing");
+    playBtn.textContent = "Play";
+  }
+
+  playBtn.addEventListener("click", function () {
+    if (playing) {
+      stopPlayback();
+    } else {
+      var silent = layers.rain.value === 0 && layers.fan.value === 0 && layers.brown.value === 0;
+      if (silent) {
+        setSlider("rain", 70);
+        setSlider("brown", 20);
+        var pills = presetRow.querySelectorAll(".pill");
+        clearPresetHighlight();
+        pills[0].classList.add("active");
+      }
+      startPlayback();
+    }
+  });
+
+  /* ---------- sleep timer ---------- */
+
+  var timerRow = document.getElementById("timerRow");
+
+  function clearTimer() {
+    if (timerInterval) { clearInterval(timerInterval); timerInterval = null; }
+    timerEndsAt = 0;
+    timerStatus.textContent = "";
+  }
+
+  function formatRemaining(ms) {
+    var total = Math.max(0, Math.ceil(ms / 1000));
+    var m = Math.floor(total / 60);
+    var s = total % 60;
+    return String(m) + ":" + (s < 10 ? "0" : "") + String(s);
+  }
+
+  function beginFade() {
+    if (fading || !ctx || !playing) { return; }
+    fading = true;
+    var now = ctx.currentTime;
+    master.gain.cancelScheduledValues(now);
+    master.gain.setValueAtTime(master.gain.value, now);
+    master.gain.exponentialRampToValueAtTime(0.0001, now + FADE_SECONDS);
+  }
+
+  function tickTimer() {
+    var remaining = timerEndsAt - Date.now();
+    if (remaining <= 0) {
+      clearTimer();
+      stopPlayback();
+      timerStatus.textContent = "Faded out. Sleep well.";
+      var pills = timerRow.querySelectorAll(".pill");
+      for (var i = 0; i < pills.length; i++) { pills[i].classList.remove("active"); }
+      pills[0].classList.add("active");
+      return;
+    }
+    if (remaining <= FADE_SECONDS * 1000) {
+      beginFade();
+      timerStatus.textContent = "Fading out gently — " + formatRemaining(remaining);
+    } else {
+      timerStatus.textContent = "Sound stops in " + formatRemaining(remaining);
+    }
+  }
+
+  timerRow.addEventListener("click", function (e) {
+    var btn = e.target.closest("[data-min]");
+    if (!btn) { return; }
+    var pills = timerRow.querySelectorAll(".pill");
+    for (var i = 0; i < pills.length; i++) { pills[i].classList.remove("active"); }
+    btn.classList.add("active");
+
+    var minutes = Number(btn.getAttribute("data-min"));
+    clearTimer();
+    if (minutes === 0) { return; }
+
+    timerEndsAt = Date.now() + minutes * 60 * 1000;
+    if (!playing) { startPlayback(); }
+    else if (fading) {
+      /* picked a new timer mid-fade: bring the volume back */
+      fading = false;
+      var now = ctx.currentTime;
+      master.gain.cancelScheduledValues(now);
+      master.gain.setValueAtTime(master.gain.value, now);
+      master.gain.exponentialRampToValueAtTime(1, now + 2);
+    }
+    tickTimer();
+    timerInterval = setInterval(tickTimer, 1000);
+  });
+
+})();
+</script>
+</body>
+</html>

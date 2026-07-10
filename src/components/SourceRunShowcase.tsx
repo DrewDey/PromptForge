@@ -846,6 +846,7 @@ export default function SourceRunShowcase({
   steps,
   forkNetwork = [],
   defaultStepNumber,
+  allowForks = true,
 }: {
   sourceRunUrl?: string | null
   projectId?: string
@@ -854,6 +855,7 @@ export default function SourceRunShowcase({
   steps: SourceRunShowcaseStep[]
   forkNetwork?: ProjectForkNetworkItem[]
   defaultStepNumber?: number
+  allowForks?: boolean
 }) {
   const sourceRunHref = externalSourceRunHref(sourceRunUrl)
   const packages = useMemo(
@@ -930,7 +932,7 @@ export default function SourceRunShowcase({
     return branches
   }, [forkNetwork, steps])
   const activeForkContext = useMemo(() => {
-    if (!activeForkId || !projectId) return null
+    if (!allowForks || !activeForkId || !projectId) return null
 
     for (const step of steps) {
       const fork = (forkBranchesByStepId.get(step.id) ?? []).find((branch) => branch.id === activeForkId)
@@ -953,8 +955,8 @@ export default function SourceRunShowcase({
     }
 
     return null
-  }, [activeForkId, forkBranchesByStepId, projectId, projectTitle, steps])
-  const hasForkLane = forkNetwork.length > 0
+  }, [activeForkId, allowForks, forkBranchesByStepId, projectId, projectTitle, steps])
+  const hasForkLane = allowForks && forkNetwork.length > 0
   const pathRowClassName = hasForkLane
     ? 'grid min-w-0 gap-0 xl:grid-cols-[minmax(0,1fr)_320px]'
     : undefined
@@ -996,7 +998,7 @@ export default function SourceRunShowcase({
             {steps.map((step, index) => {
               const artifactPackages = packages.filter((pkg) => pkg.stepId === step.id)
               const selectedStepPackage = artifactPackages.find((pkg) => selectedPackage?.id === pkg.id)
-              const forkHref = projectId
+              const forkHref = allowForks && projectId
                 ? buildProjectResponseForkHref({
                   sourceProjectId: projectId,
                   sourceProjectTitle: projectTitle,

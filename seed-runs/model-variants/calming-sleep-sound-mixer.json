@@ -1,0 +1,178 @@
+{
+  "schemaVersion": 1,
+  "canonicalProjectId": "dc5e67c3-42d0-4823-ae23-586b7d3985cb",
+  "canonicalRoute": "/calming-sleep-sound-mixer-demo",
+  "title": "Calming Sleep-Sound Mixer",
+  "defaultSourceRunId": "5a9ad307-177d-4939-b3ed-cabecb236deb",
+  "contract": {
+    "version": "sleep-sound-mixer-v1",
+    "sha256": "05549150158e48d0e849c6464ebbdd69dcef821e8b9e32911f72c36501b93089",
+    "openingPromptExact": "Build me a calming sleep-sound mixer I can save as one file and open in my browser. I want adjustable rain, fan, and brown-noise layers that are generated in the page instead of streamed, a few useful presets, and a sleep timer that fades out gently. It should feel reassuring and simple enough to use in the dark.",
+    "openingPromptSha256": "d662a84b6227a69891a41a71f94f429f1fcac921bfe004a94e39648e705384e1",
+    "acceptanceCriteria": [
+      "Produce one complete self-contained HTML file.",
+      "Generate rain, fan, and brown-noise audio locally in the browser without streamed or bundled audio.",
+      "Provide independent layer controls plus a clearly labeled overall master-volume control.",
+      "Provide at least three genuinely distinct presets.",
+      "Provide a sleep timer with visible state, a gentle fade, and a truthful finished or cancelled state.",
+      "Start audio only from a user gesture and keep play, pause, and resume state truthful.",
+      "Operate offline with no external APIs, hosted generation, CDNs, remote fonts, scripts, stylesheets, or fragile dependencies.",
+      "Avoid unsafe HTML sinks, eval-like execution, inline event handlers, modal dialogs, and deprecated clipboard handling.",
+      "Avoid page-level horizontal overflow at 390 by 844 and at desktop width.",
+      "Keep essential controls visible and reachable while preserving exact prompt, response, and artifact evidence."
+    ],
+    "adaptiveRepairPolicy": "Preserve and score the first artifact. Continue only when verification proves a concrete defect or a source-capture failure; use the same source session and model; name the observed defect in ordinary language; preserve every real artifact version; stop as soon as the artifact passes; allow no more than three total prompts except for documented truncation or mechanical capture failure."
+  },
+  "variants": [
+    {
+      "sourceRunId": "cf73efd5-2fb6-48fe-a9fd-a1a0df336d18",
+      "providerKey": "openai",
+      "serviceLabel": "ChatGPT",
+      "modelLabel": "GPT-5.6 Luna",
+      "modelSettings": "ChatGPT Work surface; Effort: Extra High; Speed: Standard.",
+      "operatorKind": "original-author",
+      "operatorLabel": "Original source run · Lena Dusk",
+      "runRole": "historical-baseline",
+      "qualityStatus": "known-issue",
+      "capturedAt": "2026-07-10T11:49:49.000Z",
+      "promptCount": 1,
+      "repairPromptCount": 0,
+      "packageFile": "sleep-sound-mixer-chatgpt-56-luna-extra-high-source-run.json",
+      "packageSha256": "708bbaab663d80ce33b429ec8f101e34fbbe91b0f8ac3159a65f100194dbc72b",
+      "firstArtifactPath": "public/artifacts/sleep-sound-mixer-chatgpt-56-luna-extra-high.html",
+      "finalArtifactPath": "public/artifacts/sleep-sound-mixer-chatgpt-56-luna-extra-high.html",
+      "artifactVersionPaths": [
+        "public/artifacts/sleep-sound-mixer-chatgpt-56-luna-extra-high.html"
+      ],
+      "firstPassMetrics": {
+        "qualityScore": 90,
+        "artifactReady": true,
+        "hardGatesPassed": false,
+        "functionalChecks": {
+          "passed": 11,
+          "total": 12
+        },
+        "consoleErrorCount": 0,
+        "horizontalOverflowPx": 0,
+        "notes": [
+          "Historical one-shot baseline. Presets move the visible master control without applying the same value to the live master gain."
+        ]
+      },
+      "finalMetrics": {
+        "qualityScore": 90,
+        "artifactReady": true,
+        "hardGatesPassed": false,
+        "functionalChecks": {
+          "passed": 11,
+          "total": 12
+        },
+        "consoleErrorCount": 0,
+        "horizontalOverflowPx": 0,
+        "notes": [
+          "No repair was performed in the historical source run. The preset/master mismatch remains visible as a disclosed baseline issue."
+        ]
+      }
+    },
+    {
+      "sourceRunId": "5a9ad307-177d-4939-b3ed-cabecb236deb",
+      "providerKey": "anthropic",
+      "serviceLabel": "Claude",
+      "modelLabel": "Fable 5 High",
+      "modelSettings": "Claude web; High reasoning.",
+      "operatorKind": "pathforge-labs-manual",
+      "operatorLabel": "PathForge Labs · Developer-operated",
+      "runRole": "comparison-run",
+      "qualityStatus": "verified",
+      "capturedAt": "2026-07-10T16:50:25.542Z",
+      "promptCount": 2,
+      "repairPromptCount": 1,
+      "packageFile": "model-variants/sleep-sound-mixer-claude-fable-5-high-source-run.json",
+      "packageSha256": "9e8ef3cf02994d083dcbef7f0ec0c46c5db2c22209b8651fe420dfa26660b8ab",
+      "firstArtifactPath": "public/artifacts/sleep-sound-mixer-claude-fable-5-high-first-pass.html",
+      "finalArtifactPath": "public/artifacts/sleep-sound-mixer-claude-fable-5-high-final.html",
+      "artifactVersionPaths": [
+        "public/artifacts/sleep-sound-mixer-claude-fable-5-high-first-pass.html",
+        "public/artifacts/sleep-sound-mixer-claude-fable-5-high-final.html"
+      ],
+      "firstPassMetrics": {
+        "qualityScore": 90,
+        "artifactReady": true,
+        "hardGatesPassed": false,
+        "functionalChecks": {
+          "passed": 9,
+          "total": 12
+        },
+        "consoleErrorCount": 0,
+        "horizontalOverflowPx": 0,
+        "notes": [
+          "First response lacked overall volume, paused abruptly, and could leave a scheduled fade active after selecting Off."
+        ]
+      },
+      "finalMetrics": {
+        "qualityScore": 99,
+        "artifactReady": true,
+        "hardGatesPassed": true,
+        "functionalChecks": {
+          "passed": 12,
+          "total": 12
+        },
+        "consoleErrorCount": 0,
+        "horizontalOverflowPx": 0,
+        "notes": [
+          "One verification-driven repair resolved every measured defect. Final artifact passed the fixed contract and is the default model run."
+        ]
+      }
+    },
+    {
+      "sourceRunId": "7d9524c0ede185b2",
+      "providerKey": "google",
+      "serviceLabel": "Gemini",
+      "modelLabel": "Gemini 3.1 Pro",
+      "modelSettings": "Gemini web; Pro mode.",
+      "operatorKind": "pathforge-labs-manual",
+      "operatorLabel": "PathForge Labs · Developer-operated",
+      "runRole": "comparison-run",
+      "qualityStatus": "verified",
+      "capturedAt": "2026-07-10T16:54:14.828Z",
+      "promptCount": 3,
+      "repairPromptCount": 2,
+      "packageFile": "model-variants/sleep-sound-mixer-gemini-31-pro-source-run.json",
+      "packageSha256": "e07cdc0a6b5a52fa265050e4a7123cb3925d236a2b90e8709823eb7822ea4e1d",
+      "firstArtifactPath": "public/artifacts/sleep-sound-mixer-gemini-31-pro-first-pass.html",
+      "finalArtifactPath": "public/artifacts/sleep-sound-mixer-gemini-31-pro-final.html",
+      "artifactVersionPaths": [
+        "public/artifacts/sleep-sound-mixer-gemini-31-pro-first-pass.html",
+        "public/artifacts/sleep-sound-mixer-gemini-31-pro-repair-1.html",
+        "public/artifacts/sleep-sound-mixer-gemini-31-pro-final.html"
+      ],
+      "firstPassMetrics": {
+        "qualityScore": 82,
+        "artifactReady": true,
+        "hardGatesPassed": false,
+        "functionalChecks": {
+          "passed": 8,
+          "total": 12
+        },
+        "consoleErrorCount": 0,
+        "horizontalOverflowPx": 0,
+        "notes": [
+          "First response had playback-state recursion, no master control, and inline event handlers. The first repair then exposed stale pre-play percentage labels."
+        ]
+      },
+      "finalMetrics": {
+        "qualityScore": 97,
+        "artifactReady": true,
+        "hardGatesPassed": true,
+        "functionalChecks": {
+          "passed": 12,
+          "total": 12
+        },
+        "consoleErrorCount": 0,
+        "horizontalOverflowPx": 0,
+        "notes": [
+          "Two verification-driven repairs resolved the measured defects. The final artifact passed the fixed contract within the three-prompt cap."
+        ]
+      }
+    }
+  ]
+}

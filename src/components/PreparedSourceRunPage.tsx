@@ -1,12 +1,19 @@
 import Link from 'next/link'
 import ProjectCommunityPanel from '@/components/ProjectCommunityPanel'
 import ProjectEngagementBar from '@/components/ProjectEngagementBar'
+import PathForgeLabsModelRuns, {
+  PathForgeLabsModelComparison,
+} from '@/components/PathForgeLabsModelRuns'
 import SourceRunShowcase, {
   type SourceRunShowcaseArtifactVersion,
   type SourceRunShowcaseStep,
 } from '@/components/SourceRunShowcase'
 import { getApprovedProjectForks } from '@/lib/data'
 import type { PreparedShowcaseProject } from '@/lib/prepared-showcase-projects'
+import type {
+  ProjectModelVariant,
+  ProjectModelVariantSet,
+} from '@/lib/project-model-variants'
 import type { SourceRunPackage, SourceRunPackageStep } from '@/lib/source-run-package'
 
 function getPublicArtifactPath(artifactPath?: string | null) {
@@ -153,17 +160,26 @@ export default async function PreparedSourceRunPage({
   sourceRunPackage,
   route,
   capturedAt,
+  modelVariantSet,
+  activeModelVariant,
+  compareModelVariant,
 }: {
   project: PreparedShowcaseProject
   sourceRunPackage: SourceRunPackage
   route: string
   capturedAt: string
+  modelVariantSet?: ProjectModelVariantSet | null
+  activeModelVariant?: ProjectModelVariant | null
+  compareModelVariant?: ProjectModelVariant | null
 }) {
   const sourceRun = sourceRunPackage
   const providerName = getProviderName(sourceRun, project)
   const sourceUrl = sourceRun.source_url || project.sourceUrl
   const steps = mainPathSourceSteps(sourceRun, project).map((step) => toShowcaseStep(step, sourceRun, project))
-  const forkNetwork = await getApprovedProjectForks(project.id)
+  const usesModelVariants = Boolean(modelVariantSet && activeModelVariant)
+  const isHistoricalOriginalRun =
+    !usesModelVariants || activeModelVariant?.runRole === 'historical-baseline'
+  const forkNetwork = isHistoricalOriginalRun ? await getApprovedProjectForks(project.id) : []
 
   return (
     <main className="min-h-screen bg-surface-50 text-surface-900">
@@ -187,20 +203,37 @@ export default async function PreparedSourceRunPage({
                 {project.description}
               </p>
             </div>
-            <RunSummary sourceRun={sourceRun} project={project} capturedAt={capturedAt} />
+            {modelVariantSet && activeModelVariant ? (
+              <PathForgeLabsModelRuns
+                variantSet={modelVariantSet}
+                activeVariant={activeModelVariant}
+              />
+            ) : (
+              <RunSummary sourceRun={sourceRun} project={project} capturedAt={capturedAt} />
+            )}
           </div>
 
           <ProjectEngagementBar projectId={project.id} loginNextPath={route} />
         </div>
       </section>
 
+      {modelVariantSet && activeModelVariant && compareModelVariant && (
+        <PathForgeLabsModelComparison
+          variantSet={modelVariantSet}
+          activeVariant={activeModelVariant}
+          compareVariant={compareModelVariant}
+        />
+      )}
+
       <SourceRunShowcase
+        key={activeModelVariant?.sourceRunId ?? project.sourceRunId}
         sourceRunUrl={sourceUrl}
         projectId={project.id}
         projectTitle={project.title}
         providerName={providerName}
         steps={steps}
         forkNetwork={forkNetwork}
+        allowForks={isHistoricalOriginalRun}
         defaultStepNumber={defaultStepNumber(sourceRun)}
       />
 

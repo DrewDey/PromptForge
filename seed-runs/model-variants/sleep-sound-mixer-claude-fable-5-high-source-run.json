@@ -1,0 +1,113 @@
+{
+  "title": "Calming Sleep-Sound Mixer — Claude model variant",
+  "slug": "sleep-sound-mixer-claude-fable-5-high",
+  "source_run_id": "5a9ad307-177d-4939-b3ed-cabecb236deb",
+  "provider": "Claude",
+  "model": "Fable 5 High",
+  "model_settings": "Claude web; High reasoning.",
+  "source_url": "https://claude.ai/share/156bd4c9-1280-4e99-8e80-10224fbc29ed",
+  "run_started_at": "2026-07-10T16:30:06.571Z",
+  "run_finished_at": "2026-07-10T16:50:25.542Z",
+  "chain_type": "repair-assisted",
+  "prompt_count": 2,
+  "repair_prompt_count": 1,
+  "status": "published_model_variant",
+  "description": "A developer-operated Claude rerun of the canonical Calming Sleep-Sound Mixer brief, preserved as an auditable PathForge Labs model variant rather than a community fork.",
+  "operator_provenance": {
+    "kind": "pathforge_labs_manual",
+    "label": "PathForge Labs · Developer-operated",
+    "canonical_project_id": "dc5e67c3-42d0-4823-ae23-586b7d3985cb",
+    "canonical_route": "/calming-sleep-sound-mixer-demo",
+    "comparison_contract_version": "sleep-sound-mixer-v1",
+    "comparison_contract_sha256": "05549150158e48d0e849c6464ebbdd69dcef821e8b9e32911f72c36501b93089",
+    "opening_prompt_sha256": "d662a84b6227a69891a41a71f94f429f1fcac921bfe004a94e39648e705384e1",
+    "ordinary_fork": false
+  },
+  "comparison_basis": {
+    "opening_prompt_exact": "Build me a calming sleep-sound mixer I can save as one file and open in my browser. I want adjustable rain, fan, and brown-noise layers that are generated in the page instead of streamed, a few useful presets, and a sleep timer that fades out gently. It should feel reassuring and simple enough to use in the dark.",
+    "acceptance_criteria": [
+      "Produce one complete self-contained HTML file.",
+      "Generate rain, fan, and brown-noise audio locally in the browser without streamed or bundled audio.",
+      "Provide independent layer controls plus a clearly labeled overall master-volume control.",
+      "Provide at least three genuinely distinct presets.",
+      "Provide a sleep timer with visible state, a gentle fade, and a truthful finished or cancelled state.",
+      "Start audio only from a user gesture and keep play, pause, and resume state truthful.",
+      "Operate offline with no external APIs, hosted generation, CDNs, remote fonts, scripts, stylesheets, or fragile dependencies.",
+      "Avoid unsafe HTML sinks, eval-like execution, inline event handlers, modal dialogs, and deprecated clipboard handling.",
+      "Avoid page-level horizontal overflow at 390 by 844 and at desktop width.",
+      "Keep essential controls visible and reachable while preserving exact prompt, response, and artifact evidence."
+    ],
+    "adaptive_repair_policy": "Preserve and score the first artifact. Continue only when verification proves a concrete defect or a source-capture failure; use the same source session and model; name the observed defect in ordinary language; preserve every real artifact version; stop as soon as the artifact passes; allow no more than three total prompts except for documented truncation or mechanical capture failure.",
+    "independence_note": "Claude received the invariant brief in a fresh session and was not shown the historical implementation, screenshots, source code, or another provider's output."
+  },
+  "agent_notes": [
+    "Provider: Claude.",
+    "Model used: Fable 5 High.",
+    "Model settings: Claude web; High reasoning.",
+    "PathForge Labs provenance: developer-operated comparison run; not a user, community fork, vote, bookmark, or engagement event.",
+    "Prompt count: 2. The second prompt was a verification-driven repair for a missing master control, abrupt pause, and an uncancelled timer-fade edge case.",
+    "The first and final artifacts are preserved under public/artifacts. The final artifact is the default selectable version for this model run.",
+    "Final verification passed static safety, JavaScript parsing, pre-play labels, playback, presets, timer, pause, timer cancellation, desktop layout, and measured 390x844 no-overflow checks."
+  ],
+  "final_artifact_path": "public/artifacts/sleep-sound-mixer-claude-fable-5-high-final.html",
+  "artifact_type": "html",
+  "artifact_versions": [
+    "public/artifacts/sleep-sound-mixer-claude-fable-5-high-first-pass.html",
+    "public/artifacts/sleep-sound-mixer-claude-fable-5-high-final.html"
+  ],
+  "generated_files": [
+    "public/artifacts/sleep-sound-mixer-claude-fable-5-high-first-pass.html",
+    "public/artifacts/sleep-sound-mixer-claude-fable-5-high-final.html"
+  ],
+  "artifact_sha256": "3122e8bc0ca4ae5a167cfdd03cf404ef41dc585cefb08652f7934f0fcade31c4",
+  "artifact_version_notes": [
+    {
+      "path": "public/artifacts/sleep-sound-mixer-claude-fable-5-high-first-pass.html",
+      "sha256": "ae720fc60e985de68843fdd161a076507b27e32e9926de7f35945553fd3f0f22",
+      "bytes": 18327,
+      "lines": 699,
+      "disposition": "Preserved first response; not the default because verification found three concrete mixer-state defects."
+    },
+    {
+      "path": "public/artifacts/sleep-sound-mixer-claude-fable-5-high-final.html",
+      "sha256": "3122e8bc0ca4ae5a167cfdd03cf404ef41dc585cefb08652f7934f0fcade31c4",
+      "bytes": 20598,
+      "lines": 759,
+      "disposition": "Final verified artifact and default Claude version."
+    }
+  ],
+  "verification_notes": [
+    "The final artifact's single inline script parsed successfully.",
+    "Static scan found no external URL, remote dependency, fetch, XHR, WebSocket, unsafe HTML sink, eval-like execution, inline handler, document.write, modal API, or deprecated clipboard handling.",
+    "Before playback, master and layer labels updated truthfully. A 15-minute timer started playback, displayed a live countdown, and Off cancelled the timer. Pause returned to Play. Rainy Night applied the intended 70/0/20 layer values.",
+    "At 390x844 the document and body stayed within 390 pixels with no page-level horizontal overflow. Full-page visual inspection found a polished, low-glare, reachable interface.",
+    "The Chrome verification bridge emitted a synthetic image-fetch message beyond the artifact source; the artifact contains no image or fetch code."
+  ],
+  "steps": [
+    {
+      "step_number": 1,
+      "title": "Build the invariant sleep-sound mixer brief",
+      "prompt_exact": "Build me a calming sleep-sound mixer I can save as one file and open in my browser. I want adjustable rain, fan, and brown-noise layers that are generated in the page instead of streamed, a few useful presets, and a sleep timer that fades out gently. It should feel reassuring and simple enough to use in the dark.",
+      "response_exact": "Caught a stray broken CSS line I left in — cleaning that up, then running your scanner checks.Here's Nightsound — one file, fully offline, everything synthesized in-page with the Web Audio API.\n\nHow the sound is made: rain is band-filtered white noise plus randomly scheduled droplet \"plops\" that scale with the slider; fan is low-passed noise with a shallow 5.3 Hz wobble and a faint 108 Hz motor hum underneath; brown noise is a leaky-integrator random walk through a soft lowpass. Sliders use a squared volume curve so the low end has fine control, which matters at 2 AM.\n\nUsage details: hitting Play with everything at zero auto-loads Rainy Night so you never get silence, presets start playback immediately, and the sleep timer (15/30/45/60/90) counts down visibly and rolls into a 60-second exponential fade at the end — picking a new timer mid-fade ramps the volume back up. The moon breathes while playing (respects reduced-motion), and the whole UI is dim with 44px touch targets for dark-room use.\n\nYour scans came back clean across the board: no innerHTML, no inline handlers, no modal APIs, no URL literals anywhere in the file, no letter-spacing, no vw/clamp font sizing, no external dependencies, no storage APIs. JS syntax-checked too.\n\nOne browser note: audio can't start without a user gesture, so the first tap on Play (or a preset) is what spins up the AudioContext — that's by design, not a bug.",
+      "response_summary": "Claude produced the first complete one-file Nightsound artifact.",
+      "generated_files": [
+        "public/artifacts/sleep-sound-mixer-claude-fable-5-high-first-pass.html"
+      ],
+      "artifact_version_path": "public/artifacts/sleep-sound-mixer-claude-fable-5-high-first-pass.html",
+      "notes": "Preserved as the unmodified first artifact. Verification found a missing overall-volume control, an abrupt pause path, and an Off-during-fade edge case."
+    },
+    {
+      "step_number": 2,
+      "title": "Repair the verified master, pause, and timer defects",
+      "prompt_exact": "I tested Nightsound. The three layer controls, playback, presets, timer UI, offline scan, and 390px layout are clean. One important mixer control is missing: there is no overall volume, so lowering the whole mix requires moving three sliders. Pause also suspends the AudioContext immediately instead of ramping down, which makes the manual stop abrupt. I also traced a timer edge case: choosing Off during the final fade clears the countdown but leaves the scheduled master fade active. Please add a clearly labeled master-volume slider, give Pause a short gentle ramp before suspension, and make Off cancel any scheduled fade and restore the chosen master level. Preserve every current feature and the offline one-file design, then return the complete updated HTML as the artifact.",
+      "response_exact": "Good catches — all three are real. The fade fix needs a small architecture change: I'm splitting the master into an automation gain (play-in ramp, timer fade, pause ramp) and a separate user-controlled master gain, so timer fades and your master level never fight over the same node.Updated file above. What changed:\n\n**Master volume.** New \"Master volume\" card sits below the three layers, styled like the others but with the moon accent so it reads as different in the dark. Defaults to 100% so existing behavior is unchanged, uses the same squared perceptual curve as the layer sliders. Under the hood the signal chain is now `layers → master (automation) → masterVol (your slider) → destination`, so the timer fade, play-in ramp, and pause ramp all operate on a separate node and never clobber your chosen level — and vice versa.\n\n**Gentle pause.** Pause now does a 0.5s exponential ramp to silence, then suspends the context ~100ms after the ramp lands. If you hit Play again during that window, the pending suspend is cancelled cleanly and playback ramps back in.\n\n**Off cancels the fade.** Choosing Off mid-fade now cancels all scheduled values on the automation gain and ramps it back to full over 2 seconds, so the mix recovers to exactly the master level you had set. The existing \"picked a new timer mid-fade\" recovery path got the same benefit for free since it also targets the automation gain.\n\nYour full scan suite is still clean (no innerHTML, inline handlers, modal APIs, URL literals, letter-spacing, vw/clamp fonts, external deps, or storage), JS syntax-checked, and everything else — presets, droplet scheduler, timer countdown, auto-preset on silent play — is untouched.",
+      "response_summary": "Claude repaired the measured mixer-state defects and returned the complete updated artifact.",
+      "continuation_reason": "Verification-proven defects: missing overall volume, immediate pause suspension, and scheduled fade persisting after Off.",
+      "generated_files": [
+        "public/artifacts/sleep-sound-mixer-claude-fable-5-high-final.html"
+      ],
+      "artifact_version_path": "public/artifacts/sleep-sound-mixer-claude-fable-5-high-final.html",
+      "notes": "Final verified production artifact. No additional continuation was warranted."
+    }
+  ]
+}

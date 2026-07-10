@@ -102,6 +102,10 @@ export {
   updateSourceRunStatusById,
 } from './data/source-runs'
 export {
+  getProjectModelVariantsForAdmin,
+  getPublishedProjectModelVariants,
+} from './data/model-variants'
+export {
   approveSuggestionById,
   createSuggestion,
   createSuggestionResponse,

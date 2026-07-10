@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Deep Sleep Mixer</title>
+    <style>
+        :root {
+            --bg-color: #0f1115;
+            --panel-bg: #1a1d24;
+            --text-main: #e2e8f0;
+            --text-muted: #94a3b8;
+            --accent: #6366f1;
+            --accent-hover: #4f46e5;
+            --danger: #ef4444;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        .container {
+            background-color: var(--panel-bg);
+            padding: 32px;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            width: 100%;
+            max-width: 400px;
+        }
+
+        h1 {
+            margin: 0 0 8px 0;
+            font-size: 24px;
+            text-align: center;
+            font-weight: 600;
+        }
+
+        .subtitle {
+            color: var(--text-muted);
+            text-align: center;
+            font-size: 14px;
+            margin-bottom: 30px;
+        }
+
+        .control-group {
+            margin-bottom: 24px;
+        }
+
+        .control-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            font-size: 15px;
+            font-weight: 500;
+        }
+
+        input[type=range] {
+            -webkit-appearance: none;
+            width: 100%;
+            background: transparent;
+        }
+
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 20px;
+            width: 20px;
+            border-radius: 50%;
+            background: var(--accent);
+            cursor: pointer;
+            margin-top: -8px;
+            box-shadow: 0 0 10px rgba(99, 102, 241, 0.3);
+        }
+
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 4px;
+            cursor: pointer;
+            background: #334155;
+            border-radius: 2px;
+        }
+
+        .presets {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 30px;
+        }
+
+        button {
+            background-color: #334155;
+            color: var(--text-main);
+            border: none;
+            padding: 8px 12px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 13px;
+            flex: 1;
+            transition: background-color 0.2s;
+        }
+
+        button:hover {
+            background-color: #475569;
+        }
+
+        .main-btn {
+            background-color: var(--accent);
+            color: white;
+            width: 100%;
+            padding: 16px;
+            font-size: 18px;
+            font-weight: 600;
+            border-radius: 12px;
+            margin-bottom: 20px;
+        }
+
+        .main-btn:hover {
+            background-color: var(--accent-hover);
+        }
+
+        .main-btn.playing {
+            background-color: var(--danger);
+        }
+
+        .timer-section {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+
+        select {
+            background-color: #334155;
+            color: var(--text-main);
+            border: none;
+            padding: 10px;
+            border-radius: 8px;
+            flex: 1;
+            outline: none;
+            font-size: 14px;
+        }
+
+        #timer-display {
+            text-align: center;
+            font-size: 13px;
+            color: var(--accent);
+            margin-top: 12px;
+            min-height: 16px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>Sleep Mixer</h1>
+    <div class="subtitle">Synthesized ambient noise for rest</div>
+
+    <button id="toggle-btn" class="main-btn">Start Audio</button>
+
+    <div class="presets">
+        <button onclick="setPreset(80, 0, 0)">Deep Noise</button>
+        <button onclick="setPreset(10, 80, 20)">Stormy</button>
+        <button onclick="setPreset(0, 0, 80)">Box Fan</button>
+    </div>
+
+    <div class="control-group">
+        <div class="control-header">
+            <span>Brown Noise</span>
+            <span id="brown-val">0%</span>
+        </div>
+        <input type="range" id="brown-slider" min="0" max="100" value="0">
+    </div>
+
+    <div class="control-group">
+        <div class="control-header">
+            <span>Rain</span>
+            <span id="rain-val">0%</span>
+        </div>
+        <input type="range" id="rain-slider" min="0" max="100" value="0">
+    </div>
+
+    <div class="control-group">
+        <div class="control-header">
+            <span>Fan</span>
+            <span id="fan-val">0%</span>
+        </div>
+        <input type="range" id="fan-slider" min="0" max="100" value="0">
+    </div>
+
+    <div class="timer-section">
+        <select id="timer-select">
+            <option value="0">No timer (Infinite)</option>
+            <option value="15">15 Minutes</option>
+            <option value="30">30 Minutes</option>
+            <option value="60">1 Hour</option>
+            <option value="120">2 Hours</option>
+        </select>
+        <button onclick="startTimer()" style="flex: 0.5;">Set Timer</button>
+    </div>
+    <div id="timer-display"></div>
+</div>
+
+<script>
+    let audioCtx;
+    let masterGain;
+    let isPlaying = false;
+    let timerInterval;
+
+    // Node references
+    let nodes = {
+        brown: { source: null, gain: null },
+        rain: { source: null, gain: null },
+        fan: { source: null, gain: null }
+    };
+
+    // UI Elements
+    const btnToggle = document.getElementById('toggle-btn');
+    const sliders = {
+        brown: document.getElementById('brown-slider'),
+        rain: document.getElementById('rain-slider'),
+        fan: document.getElementById('fan-slider')
+    };
+    const labels = {
+        brown: document.getElementById('brown-val'),
+        rain: document.getElementById('rain-val'),
+        fan: document.getElementById('fan-val')
+    };
+
+    // Noise Generators
+    function createBrownNoiseBuffer(ctx) {
+        const bufferSize = ctx.sampleRate * 2;
+        const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+        const output = buffer.getChannelData(0);
+        let lastOut = 0;
+        for (let i = 0; i < bufferSize; i++) {
+            let white = Math.random() * 2 - 1;
+            output[i] = (lastOut + (0.02 * white)) / 1.02;
+            lastOut = output[i];
+            output[i] *= 3.5; 
+        }
+        return buffer;
+    }
+
+    function createPinkNoiseBuffer(ctx) {
+        const bufferSize = ctx.sampleRate * 2;
+        const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+        const output = buffer.getChannelData(0);
+        let b0 = 0, b1 = 0, b2 = 0, b3 = 0, b4 = 0, b5 = 0, b6 = 0;
+        for (let i = 0; i < bufferSize; i++) {
+            let white = Math.random() * 2 - 1;
+            b0 = 0.99886 * b0 + white * 0.0555179;
+            b1 = 0.99332 * b1 + white * 0.0750759;
+            b2 = 0.96900 * b2 + white * 0.1538520;
+            b3 = 0.86650 * b3 + white * 0.3104856;
+            b4 = 0.55000 * b4 + white * 0.5329522;
+            b5 = -0.7616 * b5 - white * 0.0168980;
+            output[i] = b0 + b1 + b2 + b3 + b4 + b5 + b6 + white * 0.5362;
+            output[i] *= 0.11;
+            b6 = white * 0.115926;
+        }
+        return buffer;
+    }
+
+    function initAudio() {
+        if (audioCtx) return;
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        masterGain = audioCtx.createGain();
+        masterGain.gain.value = 0.001; // Start quiet for fade-in
+        masterGain.connect(audioCtx.destination);
+
+        const brownBuffer = createBrownNoiseBuffer(audioCtx);
+        const pinkBuffer = createPinkNoiseBuffer(audioCtx);
+
+        // --- Brown Noise Setup ---
+        nodes.brown.source = audioCtx.createBufferSource();
+        nodes.brown.source.buffer = brownBuffer;
+        nodes.brown.source.loop = true;
+        
+        let brownFilter = audioCtx.createBiquadFilter();
+        brownFilter.type = 'lowpass';
+        brownFilter.frequency.value = 400; // Deep rumble
+
+        nodes.brown.gain = audioCtx.createGain();
+        nodes.brown.gain.gain.value = 0;
+
+        nodes.brown.source.connect(brownFilter);
+        brownFilter.connect(nodes.brown.gain);
+        nodes.brown.gain.connect(masterGain);
+        nodes.brown.source.start();
+
+        // --- Rain Setup ---
+        nodes.rain.source = audioCtx.createBufferSource();
+        nodes.rain.source.buffer = pinkBuffer;
+        nodes.rain.source.loop = true;
+
+        let rainFilter = audioCtx.createBiquadFilter();
+        rainFilter.type = 'lowpass';
+        rainFilter.frequency.value = 1200; // Muffles the pink noise slightly
+
+        nodes.rain.gain = audioCtx.createGain();
+        nodes.rain.gain.gain.value = 0;
+
+        nodes.rain.source.connect(rainFilter);
+        rainFilter.connect(nodes.rain.gain);
+        nodes.rain.gain.connect(masterGain);
+        nodes.rain.source.start();
+
+        // --- Fan Setup ---
+        nodes.fan.source = audioCtx.createBufferSource();
+        nodes.fan.source.buffer = brownBuffer;
+        nodes.fan.source.loop = true;
+
+        let fanFilter = audioCtx.createBiquadFilter();
+        fanFilter.type = 'bandpass';
+        fanFilter.frequency.value = 300;
+        fanFilter.Q.value = 0.8;
+
+        // Fan oscillation effect
+        let lfo = audioCtx.createOscillator();
+        lfo.type = 'sine';
+        lfo.frequency.value = 15; // 15Hz rumble
+
+        let lfoGain = audioCtx.createGain();
+        lfoGain.gain.value = 100;
+
+        lfo.connect(lfoGain);
+        lfoGain.connect(fanFilter.detune);
+        lfo.start();
+
+        nodes.fan.gain = audioCtx.createGain();
+        nodes.fan.gain.gain.value = 0;
+
+        nodes.fan.source.connect(fanFilter);
+        fanFilter.connect(nodes.fan.gain);
+        nodes.fan.gain.connect(masterGain);
+        nodes.fan.source.start();
+
+        updateVolumes();
+    }
+
+    function toggleAudio() {
+        if (!audioCtx) initAudio();
+
+        if (isPlaying) {
+            // Gentle fade out when manually stopping
+            masterGain.gain.setTargetAtTime(0, audioCtx.currentTime, 0.5);
+            setTimeout(() => { audioCtx.suspend(); }, 2000);
+            btnToggle.textContent = "Start Audio";
+            btnToggle.classList.remove('playing');
+            cancelTimer();
+        } else {
+            audioCtx.resume();
+            // Gentle fade in
+            masterGain.gain.cancelScheduledValues(audioCtx.currentTime);
+            masterGain.gain.setValueAtTime(0.001, audioCtx.currentTime);
+            masterGain.gain.exponentialRampToValueAtTime(1, audioCtx.currentTime + 2);
+            btnToggle.textContent = "Stop Audio";
+            btnToggle.classList.add('playing');
+            
+            // Set initial volumes if all sliders are 0
+            if(sliders.brown.value == 0 && sliders.rain.value == 0 && sliders.fan.value == 0) {
+                setPreset(80, 0, 0);
+            }
+        }
+        isPlaying = !isPlaying;
+    }
+
+    function updateVolumes() {
+        if(!audioCtx) return;
+        
+        ['brown', 'rain', 'fan'].forEach(type => {
+            const val = parseInt(sliders[type].value);
+            labels[type].textContent = val + '%';
+            // Exponential volume curve feels more natural
+            const normalizedVol = (val / 100) ** 2;
+            nodes[type].gain.gain.setTargetAtTime(normalizedVol, audioCtx.currentTime, 0.1);
+        });
+    }
+
+    function setPreset(b, r, f) {
+        sliders.brown.value = b;
+        sliders.rain.value = r;
+        sliders.fan.value = f;
+        updateVolumes();
+        if(!isPlaying) toggleAudio();
+    }
+
+    function startTimer() {
+        if (!isPlaying) return;
+        cancelTimer();
+        
+        const minutes = parseInt(document.getElementById('timer-select').value);
+        if (minutes === 0) return;
+
+        const display = document.getElementById('timer-display');
+        let secondsRemaining = minutes * 60;
+        
+        // Fading parameters
+        const fadeOutDuration = 120; // Fade out over the last 2 minutes
+        const fadeStartTime = Math.max(0, secondsRemaining - fadeOutDuration);
+
+        timerInterval = setInterval(() => {
+            secondsRemaining--;
+            
+            let m = Math.floor(secondsRemaining / 60);
+            let s = secondsRemaining % 60;
+            display.textContent = `Fading out and stopping in ${m}m ${s.toString().padStart(2, '0')}s`;
+
+            if (secondsRemaining === fadeOutDuration) {
+                // Begin the master volume fade down
+                masterGain.gain.cancelScheduledValues(audioCtx.currentTime);
+                masterGain.gain.setValueAtTime(masterGain.gain.value, audioCtx.currentTime);
+                masterGain.gain.linearRampToValueAtTime(0.001, audioCtx.currentTime + fadeOutDuration);
+            }
+
+            if (secondsRemaining <= 0) {
+                toggleAudio();
+                display.textContent = "Timer finished. Audio stopped.";
+            }
+        }, 1000);
+        
+        display.textContent = `Timer set for ${minutes} minutes.`;
+    }
+
+    function cancelTimer() {
+        clearInterval(timerInterval);
+        document.getElementById('timer-display').textContent = "";
+        if (audioCtx && isPlaying) {
+            masterGain.gain.cancelScheduledValues(audioCtx.currentTime);
+            masterGain.gain.setTargetAtTime(1, audioCtx.currentTime, 0.5); // restore volume
+        }
+    }
+
+    // Event Listeners
+    btnToggle.addEventListener('click', toggleAudio);
+    ['brown', 'rain', 'fan'].forEach(type => {
+        sliders[type].addEventListener('input', updateVolumes);
+    });
+
+</script>
+</body>
+</html>

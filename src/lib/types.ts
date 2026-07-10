@@ -104,6 +104,53 @@ export type SourceRunSubmissionWithRelations = SourceRunSubmission & {
   extracted_prompt?: PromptWithRelations | null
 }
 
+export type ProjectModelVariantRecord = {
+  id: string
+  project_id: string
+  source_run_id: string
+  provider_key: 'openai' | 'anthropic' | 'google'
+  service_label: string
+  model_release_key: string
+  model_label: string
+  model_settings: Record<string, unknown>
+  source_url: string
+  source_package_file: string
+  source_package_sha256: string
+  opening_prompt_sha256: string
+  comparison_contract_version: string
+  comparison_contract_sha256: string
+  operator_kind: 'original_author' | 'pathforge_labs_manual' | 'pathforge_labs_automation'
+  operator_label: string
+  automation_run_id: string | null
+  run_role: 'historical_baseline' | 'comparison_run'
+  quality_status: 'verified' | 'known_issue'
+  run_started_at: string | null
+  run_finished_at: string | null
+  prompt_count: number
+  repair_prompt_count: number
+  first_artifact_path: string
+  final_artifact_path: string
+  artifact_version_paths: string[]
+  first_pass_metrics: Record<string, unknown>
+  final_metrics: Record<string, unknown>
+  status: 'draft' | 'published' | 'historical' | 'retired' | 'failed'
+  is_current: boolean
+  is_default: boolean
+  supersedes_variant_id: string | null
+  created_at: string
+  updated_at: string
+}
+
+export type ProjectModelVariantPublicRecord = Omit<
+  ProjectModelVariantRecord,
+  | 'automation_run_id'
+  | 'source_package_file'
+  | 'source_package_sha256'
+  | 'opening_prompt_sha256'
+  | 'comparison_contract_version'
+  | 'comparison_contract_sha256'
+>
+
 export type SuggestionModerationStatus = 'pending' | 'approved' | 'declined'
 export type SuggestionPublicStatus = 'under_review' | 'planned' | 'shipped' | 'declined'
 export type SuggestionVisibility = 'private' | 'scheduled_public' | 'public'

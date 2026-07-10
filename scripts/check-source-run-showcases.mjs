@@ -899,6 +899,8 @@ const pendingSourceRunShowcases = read('src/lib/pending-source-run-showcases.ts'
 const curatedProjects = sourceRunProjects.filter((project) => project.curated)
 const curatedSourceRunShowcases = curatedProjects.length > 0 ? read(curatedRegistryPath) : ''
 const preparedShowcaseMetadata = `${preparedShowcase}\n${pendingSourceRunShowcases}\n${curatedSourceRunShowcases}`
+const modelVariantRegistryPath = 'seed-runs/model-variants/calming-sleep-sound-mixer.json'
+const modelVariantRegistry = existsSync(modelVariantRegistryPath) ? read(modelVariantRegistryPath) : ''
 const guardedRouteSet = new Set(sourceRunProjects.map((project) => project.route))
 
 if (curatedProjects.length > 0) {
@@ -1003,12 +1005,16 @@ for (const project of sourceRunProjects) {
   if (!pkg) continue
 
   if (project.curated) {
-    mustInclude(
-      project.route,
-      routeContent,
-      basename(project.packagePath),
-      `${project.name} route must load its curated source-run package`,
-    )
+    const packageFileName = basename(project.packagePath)
+    const packageLoadedByModelVariantRegistry =
+      routeContent.includes('getProjectModelVariantSet') &&
+      modelVariantRegistry.includes(packageFileName)
+
+    if (!routeContent.includes(packageFileName) && !packageLoadedByModelVariantRegistry) {
+      failures.push(
+        `${project.route}: ${project.name} route must load its curated source-run package`,
+      )
+    }
 
     const packageSourceRunId = pkg.source_run_submission_id ?? pkg.pathforge_pending_id
     if (packageSourceRunId !== project.sourceRunId) {

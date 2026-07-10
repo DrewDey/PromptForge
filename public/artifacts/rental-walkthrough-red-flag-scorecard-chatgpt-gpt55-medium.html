@@ -1,0 +1,1239 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Apartment Walkthrough Scorecard</title>
+  <style>
+    :root {
+      --bg: #f4f6f8;
+      --panel: #ffffff;
+      --panel-2: #eef4f6;
+      --ink: #17212b;
+      --muted: #637282;
+      --line: #d8e0e7;
+      --accent: #276f86;
+      --accent-2: #1d596d;
+      --warn: #a45c15;
+      --danger: #a93232;
+      --ok: #2f7a4f;
+      --soft-danger: #fff0ef;
+      --soft-warn: #fff7ea;
+      --soft-ok: #eef8f1;
+      --radius: 8px;
+      --shadow: 0 10px 28px rgba(22, 35, 47, 0.08);
+    }
+
+    * {
+      box-sizing: border-box;
+      letter-spacing: 0;
+    }
+
+    html {
+      background: var(--bg);
+      color: var(--ink);
+      font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      line-height: 1.4;
+    }
+
+    body {
+      margin: 0;
+      min-width: 0;
+    }
+
+    button,
+    input,
+    textarea,
+    select {
+      font: inherit;
+    }
+
+    button {
+      border: 0;
+      border-radius: var(--radius);
+      cursor: pointer;
+      background: var(--accent);
+      color: #fff;
+      padding: 0.7rem 0.9rem;
+      font-weight: 750;
+    }
+
+    button:hover {
+      background: var(--accent-2);
+    }
+
+    button.secondary {
+      background: #e6edf2;
+      color: var(--ink);
+      border: 1px solid var(--line);
+    }
+
+    button.secondary:hover {
+      background: #dce7ee;
+    }
+
+    button.danger {
+      background: #8f3838;
+    }
+
+    button.danger:hover {
+      background: #762d2d;
+    }
+
+    input,
+    textarea,
+    select {
+      width: 100%;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      padding: 0.65rem;
+      background: #fff;
+      color: var(--ink);
+      min-width: 0;
+    }
+
+    textarea {
+      resize: vertical;
+      min-height: 5rem;
+    }
+
+    label {
+      font-size: 0.88rem;
+      font-weight: 750;
+      color: var(--ink);
+    }
+
+    .app {
+      max-width: 1180px;
+      margin: 0 auto;
+      padding: 1rem;
+    }
+
+    .hero {
+      display: grid;
+      grid-template-columns: 1.35fr 0.65fr;
+      gap: 1rem;
+      align-items: stretch;
+      margin-bottom: 1rem;
+    }
+
+    .hero-card,
+    .panel,
+    .room-card,
+    .brief-card {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+    }
+
+    .hero-card {
+      padding: 1rem;
+    }
+
+    .hero-card h1 {
+      margin: 0 0 0.4rem;
+      font-size: 1.7rem;
+      line-height: 1.15;
+    }
+
+    .hero-card p {
+      margin: 0;
+      color: var(--muted);
+      max-width: 70ch;
+    }
+
+    .score-box {
+      padding: 1rem;
+      display: grid;
+      gap: 0.7rem;
+      align-content: center;
+      background: var(--panel-2);
+    }
+
+    .big-score {
+      display: flex;
+      align-items: baseline;
+      gap: 0.35rem;
+    }
+
+    .big-score strong {
+      font-size: 2.1rem;
+    }
+
+    .risk-pill {
+      display: inline-flex;
+      width: fit-content;
+      align-items: center;
+      border-radius: 999px;
+      padding: 0.28rem 0.58rem;
+      font-size: 0.82rem;
+      font-weight: 850;
+      border: 1px solid var(--line);
+      background: #fff;
+    }
+
+    .risk-pill.ok {
+      color: var(--ok);
+      background: var(--soft-ok);
+      border-color: #b9dfc7;
+    }
+
+    .risk-pill.warn {
+      color: var(--warn);
+      background: var(--soft-warn);
+      border-color: #ead3a6;
+    }
+
+    .risk-pill.danger {
+      color: var(--danger);
+      background: var(--soft-danger);
+      border-color: #efc0bd;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: 0.78fr 1.22fr;
+      gap: 1rem;
+      align-items: start;
+    }
+
+    .panel {
+      padding: 1rem;
+      display: grid;
+      gap: 0.9rem;
+    }
+
+    .panel h2,
+    .room-card h2,
+    .brief-card h2 {
+      font-size: 1.1rem;
+      margin: 0;
+    }
+
+    .field-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.8rem;
+    }
+
+    .field {
+      display: grid;
+      gap: 0.35rem;
+      min-width: 0;
+    }
+
+    .actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.55rem;
+      align-items: center;
+    }
+
+    .status {
+      color: var(--muted);
+      font-size: 0.88rem;
+      min-height: 1.3rem;
+    }
+
+    .rooms {
+      display: grid;
+      gap: 1rem;
+    }
+
+    .room-card {
+      padding: 1rem;
+      display: grid;
+      gap: 0.9rem;
+    }
+
+    .room-head {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 0.7rem;
+      align-items: center;
+    }
+
+    .room-title-wrap {
+      min-width: 0;
+    }
+
+    .room-title {
+      font-size: 1.08rem;
+      font-weight: 850;
+      border: 0;
+      border-bottom: 1px solid var(--line);
+      border-radius: 0;
+      padding: 0.25rem 0;
+      background: transparent;
+    }
+
+    .room-title:focus {
+      outline: 2px solid #bed9e3;
+      outline-offset: 2px;
+      border-radius: var(--radius);
+    }
+
+    .mini-score {
+      display: grid;
+      gap: 0.15rem;
+      justify-items: end;
+      white-space: nowrap;
+      color: var(--muted);
+      font-size: 0.82rem;
+    }
+
+    .mini-score strong {
+      color: var(--ink);
+      font-size: 1.25rem;
+    }
+
+    .slider-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 0.65rem;
+    }
+
+    .slider-card {
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      padding: 0.65rem;
+      background: #fbfcfd;
+      display: grid;
+      gap: 0.45rem;
+    }
+
+    .slider-top {
+      display: flex;
+      justify-content: space-between;
+      gap: 0.5rem;
+      align-items: center;
+    }
+
+    .slider-top span {
+      color: var(--muted);
+      font-size: 0.82rem;
+      font-weight: 800;
+    }
+
+    input[type="range"] {
+      padding: 0;
+      accent-color: var(--accent);
+    }
+
+    .check-section {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.75rem;
+    }
+
+    .check-box {
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      padding: 0.75rem;
+      background: #fbfcfd;
+    }
+
+    .check-box h3 {
+      margin: 0 0 0.5rem;
+      font-size: 0.95rem;
+    }
+
+    .checks {
+      display: grid;
+      gap: 0.45rem;
+    }
+
+    .check-row {
+      display: grid;
+      grid-template-columns: auto 1fr;
+      gap: 0.5rem;
+      align-items: start;
+      font-size: 0.9rem;
+      color: var(--ink);
+      font-weight: 600;
+    }
+
+    .check-row input {
+      width: auto;
+      margin-top: 0.18rem;
+      accent-color: var(--accent);
+    }
+
+    .notes-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.75rem;
+    }
+
+    .tag-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.4rem;
+    }
+
+    .tag {
+      border: 1px solid var(--line);
+      background: #f7fafb;
+      color: var(--muted);
+      border-radius: 999px;
+      padding: 0.28rem 0.55rem;
+      font-size: 0.78rem;
+      font-weight: 800;
+    }
+
+    .tag.bad {
+      background: var(--soft-danger);
+      color: var(--danger);
+      border-color: #efc0bd;
+    }
+
+    .tag.warn {
+      background: var(--soft-warn);
+      color: var(--warn);
+      border-color: #ead3a6;
+    }
+
+    .tag.ok {
+      background: var(--soft-ok);
+      color: var(--ok);
+      border-color: #b9dfc7;
+    }
+
+    .brief-card {
+      padding: 1rem;
+      display: grid;
+      gap: 0.75rem;
+      margin-top: 1rem;
+    }
+
+    .brief-output {
+      min-height: 13rem;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+      font-size: 0.88rem;
+      line-height: 1.45;
+      white-space: pre-wrap;
+    }
+
+    .small {
+      color: var(--muted);
+      font-size: 0.86rem;
+    }
+
+    .divider {
+      height: 1px;
+      background: var(--line);
+      margin: 0.15rem 0;
+    }
+
+    .clear-wrap {
+      display: grid;
+      gap: 0.35rem;
+      padding-top: 0.25rem;
+    }
+
+    @media (max-width: 860px) {
+      .hero,
+      .grid,
+      .slider-grid,
+      .check-section,
+      .notes-grid,
+      .field-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .room-head {
+        grid-template-columns: 1fr;
+      }
+
+      .mini-score {
+        justify-items: start;
+      }
+
+      .app {
+        padding: 0.75rem;
+      }
+
+      .hero-card h1 {
+        font-size: 1.45rem;
+      }
+
+      .actions button {
+        width: 100%;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="app">
+    <section class="hero">
+      <div class="hero-card">
+        <h1>Apartment Walkthrough Scorecard</h1>
+        <p>Rate each room while you tour, capture hazards and lease-risk clues, attach photo notes, then copy a clean inspection brief before you decide or negotiate.</p>
+      </div>
+      <div class="score-box">
+        <div class="big-score">
+          <strong id="overallScore">0</strong>
+          <span>/ 100</span>
+        </div>
+        <div id="overallRisk" class="risk-pill warn">Not scored yet</div>
+        <div id="overallSummary" class="small">Add room ratings to calculate readiness.</div>
+      </div>
+    </section>
+
+    <section class="grid">
+      <aside class="panel">
+        <h2>Walkthrough details</h2>
+
+        <div class="field-grid">
+          <div class="field">
+            <label for="propertyName">Property or unit</label>
+            <input id="propertyName" type="text" placeholder="Example: Oakview Apt 3B">
+          </div>
+          <div class="field">
+            <label for="walkDate">Walkthrough date</label>
+            <input id="walkDate" type="date">
+          </div>
+          <div class="field">
+            <label for="rentAmount">Quoted rent</label>
+            <input id="rentAmount" type="text" placeholder="$1,450/month">
+          </div>
+          <div class="field">
+            <label for="contactName">Landlord or agent</label>
+            <input id="contactName" type="text" placeholder="Name / company">
+          </div>
+        </div>
+
+        <div class="field">
+          <label for="dealNotes">Deal notes</label>
+          <textarea id="dealNotes" placeholder="Deposit, pet fee, parking, utilities, move-in date, promised repairs, special terms."></textarea>
+        </div>
+
+        <div class="actions">
+          <button id="addRoomBtn" type="button">Add room</button>
+          <button id="sampleBtn" class="secondary" type="button">Load sample</button>
+          <button id="saveBtn" class="secondary" type="button">Save locally</button>
+        </div>
+        <div id="topStatus" class="status"></div>
+
+        <div class="divider"></div>
+
+        <div class="clear-wrap">
+          <button id="clearBtn" class="danger" type="button">Clear all data</button>
+          <div id="clearStatus" class="status">First click arms clear. Second click clears.</div>
+        </div>
+
+        <p class="small">Photo notes are written references, not image uploads, so the file stays fully offline and lightweight.</p>
+      </aside>
+
+      <section class="rooms" id="rooms"></section>
+    </section>
+
+    <section class="brief-card">
+      <h2>Inspection brief</h2>
+      <div class="actions">
+        <button id="buildBriefBtn" type="button">Build brief</button>
+        <button id="copyBriefBtn" class="secondary" type="button">Copy brief</button>
+        <button id="downloadBriefBtn" class="secondary" type="button">Download .txt</button>
+      </div>
+      <div id="briefStatus" class="status"></div>
+      <textarea id="briefOutput" class="brief-output" readonly placeholder="Your inspection brief will appear here."></textarea>
+    </section>
+  </main>
+
+  <script>
+    (function () {
+      "use strict";
+
+      const hazardOptions = [
+        "Water stain / active leak",
+        "Mold or musty odor",
+        "Loose outlet / exposed wiring",
+        "Broken lock or poor entry security",
+        "Smoke/CO alarm issue",
+        "Trip hazard / damaged flooring",
+        "Pest evidence",
+        "Poor ventilation"
+      ];
+
+      const leaseRiskOptions = [
+        "Promised repair not written",
+        "Utility responsibility unclear",
+        "Deposit / fee terms unclear",
+        "Pet, guest, or parking rule unclear",
+        "Existing damage not documented",
+        "Appliance ownership unclear",
+        "Noise, access, or construction concern",
+        "Move-in condition differs from listing"
+      ];
+
+      const defaultRooms = [
+        "Entry / Hall",
+        "Living Room",
+        "Kitchen",
+        "Bedroom",
+        "Bathroom",
+        "Laundry / Mechanical"
+      ];
+
+      const state = {
+        armedClear: false,
+        rooms: []
+      };
+
+      const roomsEl = document.getElementById("rooms");
+      const overallScoreEl = document.getElementById("overallScore");
+      const overallRiskEl = document.getElementById("overallRisk");
+      const overallSummaryEl = document.getElementById("overallSummary");
+      const topStatusEl = document.getElementById("topStatus");
+      const briefStatusEl = document.getElementById("briefStatus");
+      const briefOutputEl = document.getElementById("briefOutput");
+      const clearStatusEl = document.getElementById("clearStatus");
+
+      const fields = {
+        propertyName: document.getElementById("propertyName"),
+        walkDate: document.getElementById("walkDate"),
+        rentAmount: document.getElementById("rentAmount"),
+        contactName: document.getElementById("contactName"),
+        dealNotes: document.getElementById("dealNotes")
+      };
+
+      function todayISO() {
+        const now = new Date();
+        const offset = now.getTimezoneOffset();
+        const local = new Date(now.getTime() - offset * 60000);
+        return local.toISOString().slice(0, 10);
+      }
+
+      function uid() {
+        return "room-" + Math.random().toString(36).slice(2, 10);
+      }
+
+      function makeRoom(name) {
+        return {
+          id: uid(),
+          name: name || "New Room",
+          condition: 7,
+          cleanliness: 7,
+          safety: 7,
+          leaseClarity: 7,
+          hazards: [],
+          risks: [],
+          photoNotes: "",
+          repairNotes: "",
+          keepNotes: ""
+        };
+      }
+
+      function getMeta() {
+        return {
+          propertyName: fields.propertyName.value.trim(),
+          walkDate: fields.walkDate.value,
+          rentAmount: fields.rentAmount.value.trim(),
+          contactName: fields.contactName.value.trim(),
+          dealNotes: fields.dealNotes.value.trim()
+        };
+      }
+
+      function setMeta(meta) {
+        fields.propertyName.value = meta.propertyName || "";
+        fields.walkDate.value = meta.walkDate || todayISO();
+        fields.rentAmount.value = meta.rentAmount || "";
+        fields.contactName.value = meta.contactName || "";
+        fields.dealNotes.value = meta.dealNotes || "";
+      }
+
+      function roomScore(room) {
+        const base = (
+          Number(room.condition) +
+          Number(room.cleanliness) +
+          Number(room.safety) +
+          Number(room.leaseClarity)
+        ) / 40 * 100;
+
+        const hazardPenalty = room.hazards.length * 4;
+        const riskPenalty = room.risks.length * 3;
+        const score = Math.round(Math.max(0, Math.min(100, base - hazardPenalty - riskPenalty)));
+        return score;
+      }
+
+      function overallScore() {
+        if (!state.rooms.length) {
+          return 0;
+        }
+        const total = state.rooms.reduce(function (sum, room) {
+          return sum + roomScore(room);
+        }, 0);
+        return Math.round(total / state.rooms.length);
+      }
+
+      function riskLabel(score) {
+        if (score >= 82) {
+          return {
+            label: "Strong walkthrough",
+            className: "risk-pill ok",
+            summary: "Good condition signal. Still document all promises and existing damage."
+          };
+        }
+        if (score >= 65) {
+          return {
+            label: "Proceed with fixes",
+            className: "risk-pill warn",
+            summary: "Usable option, but repair promises and unclear lease terms need written confirmation."
+          };
+        }
+        return {
+          label: "High caution",
+          className: "risk-pill danger",
+          summary: "Too many condition, safety, or lease-risk flags. Do not rely on verbal assurances."
+        };
+      }
+
+      function updateOverall() {
+        const score = overallScore();
+        const risk = state.rooms.length ? riskLabel(score) : {
+          label: "Not scored yet",
+          className: "risk-pill warn",
+          summary: "Add room ratings to calculate readiness."
+        };
+
+        overallScoreEl.textContent = String(score);
+        overallRiskEl.textContent = risk.label;
+        overallRiskEl.className = risk.className;
+        overallSummaryEl.textContent = risk.summary;
+      }
+
+      function clearNode(node) {
+        while (node.firstChild) {
+          node.removeChild(node.firstChild);
+        }
+      }
+
+      function createEl(tag, className, text) {
+        const el = document.createElement(tag);
+        if (className) {
+          el.className = className;
+        }
+        if (typeof text === "string") {
+          el.textContent = text;
+        }
+        return el;
+      }
+
+      function createSlider(room, key, labelText) {
+        const wrap = createEl("div", "slider-card");
+        const top = createEl("div", "slider-top");
+
+        const label = createEl("label", "", labelText);
+        label.setAttribute("for", room.id + "-" + key);
+
+        const value = createEl("span", "", String(room[key]) + "/10");
+        top.appendChild(label);
+        top.appendChild(value);
+
+        const input = document.createElement("input");
+        input.type = "range";
+        input.id = room.id + "-" + key;
+        input.min = "0";
+        input.max = "10";
+        input.step = "1";
+        input.value = String(room[key]);
+
+        input.addEventListener("input", function () {
+          room[key] = Number(input.value);
+          value.textContent = String(room[key]) + "/10";
+          renderRooms();
+          saveQuietly();
+        });
+
+        wrap.appendChild(top);
+        wrap.appendChild(input);
+        return wrap;
+      }
+
+      function createChecks(room, kind, options) {
+        const list = createEl("div", "checks");
+
+        options.forEach(function (option) {
+          const row = createEl("label", "check-row");
+          const check = document.createElement("input");
+          check.type = "checkbox";
+          check.checked = room[kind].indexOf(option) !== -1;
+
+          const span = createEl("span", "", option);
+
+          check.addEventListener("change", function () {
+            const current = room[kind].slice();
+            const index = current.indexOf(option);
+            if (check.checked && index === -1) {
+              current.push(option);
+            }
+            if (!check.checked && index !== -1) {
+              current.splice(index, 1);
+            }
+            room[kind] = current;
+            renderRooms();
+            saveQuietly();
+          });
+
+          row.appendChild(check);
+          row.appendChild(span);
+          list.appendChild(row);
+        });
+
+        return list;
+      }
+
+      function addTag(container, text, className) {
+        const tag = createEl("span", "tag " + className, text);
+        container.appendChild(tag);
+      }
+
+      function createRoomCard(room) {
+        const card = createEl("article", "room-card");
+
+        const head = createEl("div", "room-head");
+        const titleWrap = createEl("div", "room-title-wrap");
+
+        const title = document.createElement("input");
+        title.type = "text";
+        title.className = "room-title";
+        title.value = room.name;
+        title.setAttribute("aria-label", "Room name");
+
+        title.addEventListener("input", function () {
+          room.name = title.value;
+          saveQuietly();
+        });
+
+        titleWrap.appendChild(title);
+
+        const mini = createEl("div", "mini-score");
+        const scoreStrong = createEl("strong", "", String(roomScore(room)));
+        const scoreLabel = createEl("span", "", "room score");
+        mini.appendChild(scoreStrong);
+        mini.appendChild(scoreLabel);
+
+        head.appendChild(titleWrap);
+        head.appendChild(mini);
+
+        const sliders = createEl("div", "slider-grid");
+        sliders.appendChild(createSlider(room, "condition", "Condition"));
+        sliders.appendChild(createSlider(room, "cleanliness", "Cleanliness"));
+        sliders.appendChild(createSlider(room, "safety", "Safety"));
+        sliders.appendChild(createSlider(room, "leaseClarity", "Lease clarity"));
+
+        const checkSection = createEl("div", "check-section");
+
+        const hazardBox = createEl("div", "check-box");
+        hazardBox.appendChild(createEl("h3", "", "Hazards"));
+        hazardBox.appendChild(createChecks(room, "hazards", hazardOptions));
+
+        const riskBox = createEl("div", "check-box");
+        riskBox.appendChild(createEl("h3", "", "Lease-risk clues"));
+        riskBox.appendChild(createChecks(room, "risks", leaseRiskOptions));
+
+        checkSection.appendChild(hazardBox);
+        checkSection.appendChild(riskBox);
+
+        const notes = createEl("div", "notes-grid");
+        notes.appendChild(createTextareaField("Photo notes", room, "photoNotes", "Example: IMG_3042 shows ceiling stain above window."));
+        notes.appendChild(createTextareaField("Repair / condition notes", room, "repairNotes", "Write specific defects, measurements, smell, noise, damage, or missing items."));
+        notes.appendChild(createTextareaField("Keep / positive notes", room, "keepNotes", "Good light, working appliances, quiet room, storage, clean grout, solid lock."));
+        notes.appendChild(createRoomActions(room));
+
+        const tags = createEl("div", "tag-list");
+        if (room.hazards.length === 0 && room.risks.length === 0) {
+          addTag(tags, "No major flags marked", "ok");
+        }
+        if (room.hazards.length > 0) {
+          addTag(tags, String(room.hazards.length) + " hazard flag(s)", "bad");
+        }
+        if (room.risks.length > 0) {
+          addTag(tags, String(room.risks.length) + " lease-risk clue(s)", "warn");
+        }
+        if (roomScore(room) < 65) {
+          addTag(tags, "Needs negotiation or repair proof", "bad");
+        }
+
+        card.appendChild(head);
+        card.appendChild(sliders);
+        card.appendChild(checkSection);
+        card.appendChild(notes);
+        card.appendChild(tags);
+
+        return card;
+      }
+
+      function createTextareaField(labelText, room, key, placeholder) {
+        const field = createEl("div", "field");
+        const label = createEl("label", "", labelText);
+        label.setAttribute("for", room.id + "-" + key);
+
+        const textarea = document.createElement("textarea");
+        textarea.id = room.id + "-" + key;
+        textarea.placeholder = placeholder;
+        textarea.value = room[key] || "";
+
+        textarea.addEventListener("input", function () {
+          room[key] = textarea.value;
+          saveQuietly();
+        });
+
+        field.appendChild(label);
+        field.appendChild(textarea);
+        return field;
+      }
+
+      function createRoomActions(room) {
+        const wrap = createEl("div", "field");
+        const label = createEl("label", "", "Room controls");
+        const actions = createEl("div", "actions");
+
+        const duplicate = createEl("button", "secondary", "Duplicate");
+        duplicate.type = "button";
+        duplicate.addEventListener("click", function () {
+          const copy = JSON.parse(JSON.stringify(room));
+          copy.id = uid();
+          copy.name = room.name + " copy";
+          state.rooms.push(copy);
+          renderRooms();
+          saveWithStatus("Room duplicated.");
+        });
+
+        const remove = createEl("button", "danger", "Remove");
+        remove.type = "button";
+        remove.addEventListener("click", function () {
+          state.rooms = state.rooms.filter(function (item) {
+            return item.id !== room.id;
+          });
+          renderRooms();
+          saveWithStatus("Room removed.");
+        });
+
+        actions.appendChild(duplicate);
+        actions.appendChild(remove);
+        wrap.appendChild(label);
+        wrap.appendChild(actions);
+        return wrap;
+      }
+
+      function renderRooms() {
+        clearNode(roomsEl);
+
+        state.rooms.forEach(function (room) {
+          roomsEl.appendChild(createRoomCard(room));
+        });
+
+        updateOverall();
+        buildBrief();
+      }
+
+      function buildBrief() {
+        const meta = getMeta();
+        const score = overallScore();
+        const risk = state.rooms.length ? riskLabel(score).label : "Not scored";
+
+        const lines = [];
+        lines.push("APARTMENT WALKTHROUGH INSPECTION BRIEF");
+        lines.push("");
+        lines.push("Property/unit: " + (meta.propertyName || "Not entered"));
+        lines.push("Date: " + (meta.walkDate || "Not entered"));
+        lines.push("Quoted rent: " + (meta.rentAmount || "Not entered"));
+        lines.push("Landlord/agent: " + (meta.contactName || "Not entered"));
+        lines.push("");
+        lines.push("Overall score: " + score + "/100");
+        lines.push("Overall risk: " + risk);
+        lines.push("");
+
+        if (meta.dealNotes) {
+          lines.push("Deal notes:");
+          lines.push(meta.dealNotes);
+          lines.push("");
+        }
+
+        const allHazards = [];
+        const allRisks = [];
+        const repairRequests = [];
+
+        state.rooms.forEach(function (room) {
+          room.hazards.forEach(function (item) {
+            allHazards.push(room.name + ": " + item);
+          });
+          room.risks.forEach(function (item) {
+            allRisks.push(room.name + ": " + item);
+          });
+          if (room.repairNotes.trim()) {
+            repairRequests.push(room.name + ": " + room.repairNotes.trim());
+          }
+        });
+
+        lines.push("Highest-priority flags:");
+        if (!allHazards.length && !allRisks.length && !repairRequests.length) {
+          lines.push("- No major hazards, lease-risk clues, or repair notes entered.");
+        } else {
+          allHazards.slice(0, 10).forEach(function (item) {
+            lines.push("- Hazard: " + item);
+          });
+          allRisks.slice(0, 10).forEach(function (item) {
+            lines.push("- Lease risk: " + item);
+          });
+          repairRequests.slice(0, 10).forEach(function (item) {
+            lines.push("- Repair note: " + item);
+          });
+        }
+
+        lines.push("");
+        lines.push("Room-by-room notes:");
+
+        if (!state.rooms.length) {
+          lines.push("- No rooms entered.");
+        }
+
+        state.rooms.forEach(function (room) {
+          lines.push("");
+          lines.push(room.name + " — " + roomScore(room) + "/100");
+          lines.push("  Condition: " + room.condition + "/10");
+          lines.push("  Cleanliness: " + room.cleanliness + "/10");
+          lines.push("  Safety: " + room.safety + "/10");
+          lines.push("  Lease clarity: " + room.leaseClarity + "/10");
+          lines.push("  Hazards: " + (room.hazards.length ? room.hazards.join("; ") : "None marked"));
+          lines.push("  Lease-risk clues: " + (room.risks.length ? room.risks.join("; ") : "None marked"));
+          lines.push("  Photo notes: " + (room.photoNotes.trim() || "None"));
+          lines.push("  Repair / condition notes: " + (room.repairNotes.trim() || "None"));
+          lines.push("  Positives: " + (room.keepNotes.trim() || "None"));
+        });
+
+        lines.push("");
+        lines.push("Before signing:");
+        lines.push("- Put repair promises, fee terms, utility responsibility, parking, pet rules, and existing damage in writing.");
+        lines.push("- Save photos/videos with room names and dates.");
+        lines.push("- Ask for written confirmation before relying on verbal statements.");
+
+        briefOutputEl.value = lines.join("\n");
+        return briefOutputEl.value;
+      }
+
+      function collectState() {
+        return {
+          meta: getMeta(),
+          rooms: state.rooms
+        };
+      }
+
+      function saveQuietly() {
+        try {
+          localStorage.setItem("apartmentWalkthroughScorecard", JSON.stringify(collectState()));
+        } catch (error) {
+          return false;
+        }
+        return true;
+      }
+
+      function saveWithStatus(message) {
+        const ok = saveQuietly();
+        topStatusEl.textContent = ok ? message : "Could not save locally in this browser.";
+      }
+
+      function loadSaved() {
+        try {
+          const raw = localStorage.getItem("apartmentWalkthroughScorecard");
+          if (!raw) {
+            return false;
+          }
+          const parsed = JSON.parse(raw);
+          setMeta(parsed.meta || {});
+          state.rooms = Array.isArray(parsed.rooms) ? parsed.rooms : [];
+          if (!state.rooms.length) {
+            state.rooms = defaultRooms.map(makeRoom);
+          }
+          return true;
+        } catch (error) {
+          return false;
+        }
+      }
+
+      function loadStarter() {
+        setMeta({
+          propertyName: "",
+          walkDate: todayISO(),
+          rentAmount: "",
+          contactName: "",
+          dealNotes: ""
+        });
+        state.rooms = defaultRooms.map(makeRoom);
+        renderRooms();
+        saveQuietly();
+      }
+
+      function loadSample() {
+        setMeta({
+          propertyName: "Sample Unit 3B",
+          walkDate: todayISO(),
+          rentAmount: "$1,650/month",
+          contactName: "Sample Leasing Agent",
+          dealNotes: "Ask whether water/trash are included. Confirm move-in repair timeline in writing."
+        });
+
+        state.rooms = [
+          makeRoom("Living Room"),
+          makeRoom("Kitchen"),
+          makeRoom("Bedroom"),
+          makeRoom("Bathroom")
+        ];
+
+        state.rooms[0].condition = 8;
+        state.rooms[0].cleanliness = 7;
+        state.rooms[0].safety = 8;
+        state.rooms[0].leaseClarity = 7;
+        state.rooms[0].photoNotes = "Photo 01: window lock and floor scratch near entry.";
+        state.rooms[0].repairNotes = "Small floor gouge near front wall.";
+        state.rooms[0].keepNotes = "Good natural light and outlet placement.";
+
+        state.rooms[1].condition = 6;
+        state.rooms[1].cleanliness = 6;
+        state.rooms[1].safety = 6;
+        state.rooms[1].leaseClarity = 5;
+        state.rooms[1].hazards = ["Poor ventilation"];
+        state.rooms[1].risks = ["Appliance ownership unclear", "Promised repair not written"];
+        state.rooms[1].photoNotes = "Photo 04: dishwasher front panel loose.";
+        state.rooms[1].repairNotes = "Dishwasher panel loose. Fan sounded weak.";
+        state.rooms[1].keepNotes = "Counter space is usable.";
+
+        state.rooms[2].condition = 8;
+        state.rooms[2].cleanliness = 8;
+        state.rooms[2].safety = 8;
+        state.rooms[2].leaseClarity = 8;
+        state.rooms[2].photoNotes = "Photo 07: closet and window screen.";
+        state.rooms[2].keepNotes = "Quiet side of building.";
+
+        state.rooms[3].condition = 5;
+        state.rooms[3].cleanliness = 6;
+        state.rooms[3].safety = 5;
+        state.rooms[3].leaseClarity = 6;
+        state.rooms[3].hazards = ["Mold or musty odor", "Water stain / active leak"];
+        state.rooms[3].risks = ["Existing damage not documented"];
+        state.rooms[3].photoNotes = "Photo 09: stain under sink. Photo 10: caulk gap around tub.";
+        state.rooms[3].repairNotes = "Musty smell under sink. Need written repair before signing.";
+
+        renderRooms();
+        saveWithStatus("Sample loaded.");
+      }
+
+      async function copyBrief() {
+        const text = buildBrief();
+        briefStatusEl.textContent = "";
+
+        if (!text.trim()) {
+          briefStatusEl.textContent = "Build the brief first.";
+          return;
+        }
+
+        if (navigator.clipboard && window.isSecureContext) {
+          try {
+            await navigator.clipboard.writeText(text);
+            briefStatusEl.textContent = "Brief copied.";
+            return;
+          } catch (error) {
+            briefOutputEl.focus();
+            briefOutputEl.select();
+            briefStatusEl.textContent = "Clipboard blocked. Brief selected instead. Press Cmd+C or Ctrl+C.";
+            return;
+          }
+        }
+
+        briefOutputEl.focus();
+        briefOutputEl.select();
+        briefStatusEl.textContent = "Clipboard unavailable in this browser. Brief selected instead. Press Cmd+C or Ctrl+C.";
+      }
+
+      function downloadBrief() {
+        const text = buildBrief();
+        const blob = new Blob([text], { type: "text/plain" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        const meta = getMeta();
+        const safeName = (meta.propertyName || "apartment-walkthrough")
+          .toLowerCase()
+          .replace(/[^a-z0-9]+/g, "-")
+          .replace(/^-+|-+$/g, "") || "apartment-walkthrough";
+
+        a.href = url;
+        a.download = safeName + "-inspection-brief.txt";
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(url);
+        briefStatusEl.textContent = "Text file downloaded.";
+      }
+
+      function clearAllFlow() {
+        if (!state.armedClear) {
+          state.armedClear = true;
+          clearStatusEl.textContent = "Clear armed. Click again to permanently clear this local scorecard.";
+          window.setTimeout(function () {
+            state.armedClear = false;
+            clearStatusEl.textContent = "First click arms clear. Second click clears.";
+          }, 5000);
+          return;
+        }
+
+        localStorage.removeItem("apartmentWalkthroughScorecard");
+        state.armedClear = false;
+        clearStatusEl.textContent = "Local scorecard cleared.";
+        loadStarter();
+      }
+
+      function wireEvents() {
+        document.getElementById("addRoomBtn").addEventListener("click", function () {
+          state.rooms.push(makeRoom("New Room"));
+          renderRooms();
+          saveWithStatus("Room added.");
+        });
+
+        document.getElementById("sampleBtn").addEventListener("click", loadSample);
+
+        document.getElementById("saveBtn").addEventListener("click", function () {
+          saveWithStatus("Saved locally in this browser.");
+        });
+
+        document.getElementById("clearBtn").addEventListener("click", clearAllFlow);
+
+        document.getElementById("buildBriefBtn").addEventListener("click", function () {
+          buildBrief();
+          briefStatusEl.textContent = "Brief rebuilt.";
+        });
+
+        document.getElementById("copyBriefBtn").addEventListener("click", copyBrief);
+        document.getElementById("downloadBriefBtn").addEventListener("click", downloadBrief);
+
+        Object.keys(fields).forEach(function (key) {
+          fields[key].addEventListener("input", function () {
+            saveQuietly();
+            buildBrief();
+          });
+        });
+      }
+
+      function init() {
+        wireEvents();
+
+        const loaded = loadSaved();
+        if (!loaded) {
+          loadStarter();
+        } else {
+          renderRooms();
+        }
+
+        if (!fields.walkDate.value) {
+          fields.walkDate.value = todayISO();
+        }
+
+        buildBrief();
+      }
+
+      init();
+    }());
+  </script>
+</body>
+</html>

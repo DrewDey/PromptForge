@@ -1,0 +1,755 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>BASSLINE — Route the Rave</title>
+<style>
+  :root{
+    --bg:#0a0712;
+    --bg2:#12091f;
+    --panel:rgba(22,12,38,0.72);
+    --panel-edge:rgba(160,107,255,0.35);
+    --ink:#f3ecff;
+    --ink-dim:#a99cc4;
+    --mag:#ff3d9a;
+    --cyan:#36e2ff;
+    --lime:#b6ff3b;
+    --purp:#a06bff;
+    --amber:#ffb13b;
+    --red:#ff5a5a;
+    --mono:"SFMono-Regular",Consolas,"Liberation Mono",Menlo,monospace;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    font-family:-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    color:var(--ink);
+    background:
+      radial-gradient(900px 520px at 18% -8%, rgba(255,61,154,0.18), transparent 60%),
+      radial-gradient(820px 520px at 92% 4%, rgba(54,226,255,0.16), transparent 60%),
+      radial-gradient(900px 700px at 50% 120%, rgba(160,107,255,0.20), transparent 60%),
+      linear-gradient(160deg, var(--bg), var(--bg2));
+    min-height:100vh;
+    padding:22px 16px 60px;
+  }
+  .wrap{max-width:1000px;margin:0 auto;}
+  header.top{text-align:center;margin-bottom:14px;}
+  h1{
+    margin:0;
+    font-size:38px;
+    font-weight:900;
+    line-height:1.02;
+    background:linear-gradient(92deg,var(--mag),var(--amber) 40%,var(--lime) 70%,var(--cyan));
+    -webkit-background-clip:text;
+    background-clip:text;
+    color:transparent;
+    text-shadow:0 0 26px rgba(255,61,154,0.25);
+  }
+  .tag{color:var(--ink-dim);font-size:14px;margin-top:6px;}
+  .how{
+    color:var(--ink-dim);font-size:12.5px;margin:8px auto 0;max-width:680px;line-height:1.5;
+  }
+  .how b{color:var(--ink);}
+
+  .meters{
+    display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:16px 0 14px;
+  }
+  .meter{
+    background:var(--panel);border:1px solid var(--panel-edge);border-radius:14px;
+    padding:10px 12px;backdrop-filter:blur(6px);
+  }
+  .meter .lab{font-size:11px;color:var(--ink-dim);text-transform:uppercase;}
+  .meter .val{font-size:21px;font-weight:800;margin:2px 0 7px;}
+  .track{height:9px;border-radius:6px;background:rgba(255,255,255,0.08);overflow:hidden;}
+  .fill{height:100%;width:0%;border-radius:6px;transition:width .45s ease;}
+
+  .stage-wrap{display:grid;grid-template-columns:1.05fr 1fr;gap:14px;}
+  @media (max-width:780px){ .stage-wrap{grid-template-columns:1fr;} .meters{grid-template-columns:repeat(2,1fr);} h1{font-size:30px;} }
+
+  .card{
+    background:var(--panel);border:1px solid var(--panel-edge);border-radius:16px;
+    padding:14px;backdrop-filter:blur(6px);
+  }
+  canvas#map{width:100%;height:auto;max-width:620px;display:block;margin:0 auto;border-radius:12px;}
+  .maphint{text-align:center;color:var(--ink-dim);font-size:11.5px;margin-top:8px;}
+
+  .blockhead{display:flex;align-items:baseline;justify-content:space-between;gap:8px;margin-bottom:10px;}
+  .blockhead .time{font-size:22px;font-weight:900;}
+  .blockhead .of{font-size:12px;color:var(--ink-dim);}
+
+  .acts{display:flex;flex-direction:column;gap:9px;}
+  .act{
+    text-align:left;width:100%;cursor:pointer;color:var(--ink);
+    background:rgba(255,255,255,0.03);
+    border:1px solid rgba(255,255,255,0.10);
+    border-left-width:5px;border-radius:12px;padding:10px 12px;
+    transition:transform .12s ease, box-shadow .18s ease, background .18s ease;
+    font:inherit;
+  }
+  .act:hover{transform:translateY(-2px);background:rgba(255,255,255,0.06);}
+  .act:focus-visible{outline:2px solid var(--cyan);outline-offset:2px;}
+  .act .nm{font-size:16px;font-weight:800;display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+  .act .vibe{font-size:12.5px;color:var(--ink-dim);margin:3px 0 7px;}
+  .act .row{display:flex;align-items:center;gap:12px;font-size:11.5px;flex-wrap:wrap;}
+  .stage-dot{width:9px;height:9px;border-radius:50%;display:inline-block;}
+  .cost{color:var(--ink-dim);}
+  .cost b{color:var(--ink);font-weight:700;}
+  .badge{font-size:10.5px;font-weight:800;padding:2px 7px;border-radius:999px;}
+  .badge.must{background:rgba(255,177,59,0.18);color:var(--amber);border:1px solid rgba(255,177,59,0.5);}
+  .badge.crew{background:rgba(54,226,255,0.16);color:var(--cyan);border:1px solid rgba(54,226,255,0.45);}
+
+  .rest{
+    margin-top:11px;width:100%;cursor:pointer;font:inherit;color:var(--ink);
+    background:rgba(160,107,255,0.12);border:1px dashed rgba(160,107,255,0.55);
+    border-radius:12px;padding:10px 12px;transition:background .18s ease;
+  }
+  .rest:hover{background:rgba(160,107,255,0.22);}
+  .rest .t{font-weight:800;font-size:14px;}
+  .rest .s{font-size:11.5px;color:var(--ink-dim);margin-top:2px;}
+
+  #status{
+    min-height:20px;text-align:center;font-size:13.5px;font-weight:700;margin:12px 0 4px;
+    color:var(--lime);transition:opacity .2s ease;
+  }
+
+  .route{margin-top:6px;}
+  .route .lab{font-size:11px;color:var(--ink-dim);text-transform:uppercase;margin-bottom:7px;}
+  .chips{display:flex;flex-wrap:wrap;gap:7px;}
+  .chip{
+    font-size:11.5px;border-radius:999px;padding:4px 10px;
+    background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.12);
+    display:flex;align-items:center;gap:6px;
+  }
+  .chip .ct{color:var(--ink-dim);font-weight:700;}
+  .chip.skip{border-style:dashed;color:var(--ink-dim);}
+
+  /* results */
+  #results{display:none;}
+  .scoreBig{font-size:54px;font-weight:900;line-height:1;
+    background:linear-gradient(92deg,var(--lime),var(--cyan));
+    -webkit-background-clip:text;background-clip:text;color:transparent;}
+  .grade{font-size:18px;font-weight:900;margin-top:4px;}
+  .verdict{color:var(--ink-dim);font-size:13.5px;margin:6px 0 14px;line-height:1.5;}
+  .bd{display:flex;flex-direction:column;gap:6px;margin-bottom:14px;}
+  .bdrow{display:flex;justify-content:space-between;font-size:13.5px;border-bottom:1px dashed rgba(255,255,255,0.10);padding-bottom:5px;}
+  .bdrow b{font-weight:800;}
+  textarea#export{
+    width:100%;min-height:184px;resize:vertical;border-radius:12px;
+    background:rgba(0,0,0,0.35);color:var(--ink);border:1px solid var(--panel-edge);
+    padding:11px;font-family:var(--mono);font-size:12.5px;line-height:1.5;
+  }
+  .btns{display:flex;flex-wrap:wrap;gap:10px;margin-top:12px;}
+  button.action{
+    cursor:pointer;font:inherit;font-weight:800;font-size:14px;color:#0a0712;
+    border:none;border-radius:11px;padding:11px 18px;transition:transform .12s ease, filter .18s ease;
+  }
+  button.action:hover{transform:translateY(-2px);filter:brightness(1.08);}
+  button.action:focus-visible{outline:2px solid var(--ink);outline-offset:2px;}
+  .b-copy{background:linear-gradient(92deg,var(--lime),#7be000);}
+  .b-dl{background:linear-gradient(92deg,var(--cyan),#00b7e6);}
+  .b-reset{background:linear-gradient(92deg,var(--mag),#ff7ac0);}
+  .ghost{
+    cursor:pointer;font:inherit;font-weight:800;font-size:14px;
+    background:transparent;color:var(--ink);border:1px solid var(--panel-edge);
+    border-radius:11px;padding:11px 18px;
+  }
+  .ghost:hover{background:rgba(255,255,255,0.05);}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <h1>BASSLINE</h1>
+    <div class="tag">Route the rave — one festival day, five stages, zero do-overs.</div>
+    <p class="how">
+      Every slot, sets overlap. Pick <b>one</b> act or sit it out. Chasing <b>★ must-sees</b> scores big,
+      but the <b>👥 crew</b> wanders off to its own picks, far stages drain <b>energy</b> and rack up <b>steps</b>.
+      Plan the day, then copy or download your route.
+    </p>
+  </header>
+
+  <section class="meters" aria-label="status meters">
+    <div class="meter">
+      <div class="lab">Energy</div>
+      <div class="val"><span id="energyVal">100</span>/100</div>
+      <div class="track"><div class="fill" id="energyBar"></div></div>
+    </div>
+    <div class="meter">
+      <div class="lab">Crew loyalty</div>
+      <div class="val"><span id="loyaltyVal">75</span>/100</div>
+      <div class="track"><div class="fill" id="loyaltyBar"></div></div>
+    </div>
+    <div class="meter">
+      <div class="lab">Must-sees</div>
+      <div class="val"><span id="mustVal">0</span>/4</div>
+      <div class="track"><div class="fill" id="mustBar"></div></div>
+    </div>
+    <div class="meter">
+      <div class="lab">Steps walked</div>
+      <div class="val" id="stepsVal">0</div>
+      <div class="track"><div class="fill" id="stepsBar" style="width:0%;background:linear-gradient(90deg,#7a6,#cfa);"></div></div>
+    </div>
+  </section>
+
+  <div class="stage-wrap">
+    <div class="card">
+      <canvas id="map" width="620" height="380"></canvas>
+      <div class="maphint">Your path lights up as you go. Pulsing rings = this slot's options.</div>
+    </div>
+    <div class="card">
+      <div id="blockPanel"></div>
+      <div id="results"></div>
+    </div>
+  </div>
+
+  <div id="status"></div>
+
+  <div class="route card">
+    <div class="lab">Your route so far</div>
+    <div class="chips" id="routeRow"></div>
+  </div>
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  /* ---------- data ---------- */
+  var W = 620, H = 380;
+
+  var STAGES = {
+    "Entrance":       { x:310, y:352, color:"#cccccc", energy:0  },
+    "Leviathan":      { x:310, y:66,  color:"#ff3d9a", energy:13 },
+    "Honeycomb":      { x:86,  y:196, color:"#b6ff3b", energy:10 },
+    "The Trench":     { x:540, y:248, color:"#36e2ff", energy:16 },
+    "The Glade":      { x:196, y:300, color:"#a06bff", energy:6  },
+    "Sunrise Temple": { x:540, y:84,  color:"#ffb13b", energy:12 }
+  };
+
+  var BLOCKS = [
+    { time:"4:00 PM", acts:[
+      { id:"a1", name:"Bass Cadet",        stage:"Leviathan",  vibe:"Epic opening anthem to start the day right.", must:true,  crew:false },
+      { id:"a2", name:"Gummy Bass",        stage:"Honeycomb",  vibe:"Gooey melodic wobbles, an easy warmup.",       must:false, crew:true  },
+      { id:"a3", name:"Drift Reptile",     stage:"The Glade",  vibe:"Slow downtempo to ease into the grounds.",     must:false, crew:false }
+    ]},
+    { time:"5:30 PM", acts:[
+      { id:"a4", name:"Mantis Step",       stage:"The Trench", vibe:"Early heavy stomp for the brave.",             must:false, crew:false },
+      { id:"a5", name:"Lunar Tide",        stage:"Honeycomb",  vibe:"Shimmering future-bass float.",                must:false, crew:true  },
+      { id:"a6", name:"Crystal Toad",      stage:"The Glade",  vibe:"Wonky glitch grooves, low effort.",            must:false, crew:false }
+    ]},
+    { time:"7:00 PM", acts:[
+      { id:"a7", name:"Subwoofer Sermon",  stage:"The Trench", vibe:"The preacher of filth. You came for this.",    must:true,  crew:false },
+      { id:"a8", name:"Velvet Sasquatch",  stage:"Leviathan",  vibe:"Big crowd singalong, crew's hyped.",           must:false, crew:true  },
+      { id:"a9", name:"Mothlight",         stage:"The Glade",  vibe:"Dreamy downtempo to catch your breath.",       must:false, crew:false }
+    ]},
+    { time:"8:30 PM", acts:[
+      { id:"a10", name:"Gravity Worm",     stage:"The Trench", vibe:"Crushing low-end. Crew's diving in.",          must:false, crew:true  },
+      { id:"a11", name:"Polychrome",       stage:"Honeycomb",  vibe:"Color-drenched melodic set.",                  must:false, crew:false },
+      { id:"a12", name:"Cosmic Catfish",   stage:"The Glade",  vibe:"Wonky bottom-feeder funk. Secretly elite.",    must:true,  crew:false }
+    ]},
+    { time:"10:00 PM", acts:[
+      { id:"a13", name:"Neon Yeti",        stage:"Leviathan",  vibe:"The headliner. Everyone is here.",             must:true,  crew:true  },
+      { id:"a14", name:"Hydraulic Press",  stage:"The Trench", vibe:"Maximum-pressure dubstep.",                    must:false, crew:false },
+      { id:"a15", name:"Glacial Funk",     stage:"Honeycomb",  vibe:"A cool melodic breather.",                     must:false, crew:false }
+    ]},
+    { time:"11:30 PM", acts:[
+      { id:"a16", name:"The Bog Wizard",   stage:"Sunrise Temple", vibe:"Psychedelic late-night ritual. Crew's call.", must:false, crew:true  },
+      { id:"a17", name:"Tidal Mecha",      stage:"The Trench",     vibe:"The heavy closer.",                           must:false, crew:false },
+      { id:"a18", name:"Static Monk",      stage:"The Glade",      vibe:"Downtempo wind-down to float home.",          must:false, crew:false }
+    ]}
+  ];
+
+  var TOTAL_MUST = 4;
+  var WALK_ENERGY = 0.04;   /* energy per logical pixel */
+  var STEP_FACTOR = 1.7;    /* flavour "steps" per pixel */
+  var REST_ENERGY = 26;
+
+  /* ---------- state ---------- */
+  var state;
+  function freshState(){
+    return {
+      idx:0,
+      energy:100,
+      loyalty:75,
+      caught:0,
+      steps:0,
+      at:"Entrance",
+      route:[],          /* {time, label, stage|null, must, crew, skipped} */
+      visited:{},
+      finished:false
+    };
+  }
+
+  /* ---------- helpers ---------- */
+  function dist(aName,bName){
+    var a=STAGES[aName], b=STAGES[bName];
+    return Math.sqrt((a.x-b.x)*(a.x-b.x)+(a.y-b.y)*(a.y-b.y));
+  }
+  function bound(v,lo,hi){ return v<lo?lo:(v>hi?hi:v); }
+  function clear(node){ while(node.firstChild){ node.removeChild(node.firstChild); } }
+  function fmt(n){ return String(Math.round(n)).replace(/\B(?=(\d{3})+(?!\d))/g, ","); }
+
+  var $ = function(id){ return document.getElementById(id); };
+
+  /* ---------- meters ---------- */
+  function colorForEnergy(v){
+    if(v<25) return "linear-gradient(90deg,#ff5a5a,#ff9a5a)";
+    if(v<55) return "linear-gradient(90deg,#ffb13b,#ffe07a)";
+    return "linear-gradient(90deg,#36e2ff,#b6ff3b)";
+  }
+  function renderMeters(){
+    $("energyVal").textContent = String(Math.round(state.energy));
+    $("energyBar").style.width = bound(state.energy,0,100) + "%";
+    $("energyBar").style.background = colorForEnergy(state.energy);
+
+    $("loyaltyVal").textContent = String(Math.round(state.loyalty));
+    $("loyaltyBar").style.width = bound(state.loyalty,0,100) + "%";
+    $("loyaltyBar").style.background = "linear-gradient(90deg,#36e2ff,#a06bff)";
+
+    $("mustVal").textContent = String(state.caught);
+    $("mustBar").style.width = (state.caught/TOTAL_MUST*100) + "%";
+    $("mustBar").style.background = "linear-gradient(90deg,#ffb13b,#ff3d9a)";
+
+    $("stepsVal").textContent = fmt(state.steps);
+    var stepPct = bound(state.steps/4200*100,0,100);
+    $("stepsBar").style.width = stepPct + "%";
+  }
+
+  /* ---------- status ---------- */
+  function setStatus(msg,color){
+    var s=$("status");
+    s.textContent=msg;
+    s.style.color=color||"var(--lime)";
+  }
+
+  /* ---------- block panel ---------- */
+  function makeBadge(text,cls){
+    var b=document.createElement("span");
+    b.className="badge "+cls;
+    b.textContent=text;
+    return b;
+  }
+
+  function renderBlock(){
+    var panel=$("blockPanel");
+    clear(panel);
+    if(state.finished){ panel.style.display="none"; return; }
+    panel.style.display="block";
+
+    var block=BLOCKS[state.idx];
+
+    var head=document.createElement("div");
+    head.className="blockhead";
+    var t=document.createElement("div"); t.className="time"; t.textContent=block.time;
+    var of=document.createElement("div"); of.className="of"; of.textContent="Slot "+(state.idx+1)+" of "+BLOCKS.length;
+    head.appendChild(t); head.appendChild(of);
+    panel.appendChild(head);
+
+    var list=document.createElement("div");
+    list.className="acts";
+
+    block.acts.forEach(function(act){
+      var d=dist(state.at, act.stage);
+      var eCost=Math.round(STAGES[act.stage].energy + d*WALK_ENERGY);
+      var steps=Math.round(d*STEP_FACTOR);
+      var st=STAGES[act.stage];
+
+      var btn=document.createElement("button");
+      btn.type="button";
+      btn.className="act";
+      btn.style.borderLeftColor=st.color;
+
+      var nm=document.createElement("div"); nm.className="nm";
+      var nmText=document.createElement("span"); nmText.textContent=act.name;
+      nm.appendChild(nmText);
+      if(act.must) nm.appendChild(makeBadge("★ MUST-SEE","must"));
+      if(act.crew) nm.appendChild(makeBadge("👥 CREW","crew"));
+      btn.appendChild(nm);
+
+      var vibe=document.createElement("div"); vibe.className="vibe"; vibe.textContent=act.vibe;
+      btn.appendChild(vibe);
+
+      var row=document.createElement("div"); row.className="row";
+      var stg=document.createElement("span");
+      var dot=document.createElement("span"); dot.className="stage-dot"; dot.style.background=st.color;
+      stg.appendChild(dot);
+      var stgName=document.createElement("span"); stgName.textContent=" "+act.stage;
+      stg.appendChild(stgName);
+      stg.style.display="flex"; stg.style.alignItems="center"; stg.style.gap="5px";
+      row.appendChild(stg);
+
+      var cost=document.createElement("span"); cost.className="cost";
+      var ce=document.createElement("b"); ce.textContent="-"+eCost;
+      cost.appendChild(document.createTextNode("⚡ "));
+      cost.appendChild(ce);
+      cost.appendChild(document.createTextNode(" energy"));
+      row.appendChild(cost);
+
+      var cost2=document.createElement("span"); cost2.className="cost";
+      var cs=document.createElement("b"); cs.textContent=fmt(steps);
+      cost2.appendChild(document.createTextNode("👟 +"));
+      cost2.appendChild(cs);
+      cost2.appendChild(document.createTextNode(" steps"));
+      row.appendChild(cost2);
+
+      btn.appendChild(row);
+
+      btn.addEventListener("click", function(){ chooseAct(act, eCost, steps); });
+      list.appendChild(btn);
+    });
+
+    panel.appendChild(list);
+
+    var rest=document.createElement("button");
+    rest.type="button";
+    rest.className="rest";
+    var rt=document.createElement("div"); rt.className="t"; rt.textContent="😴 Sit this one out";
+    var rs=document.createElement("div"); rs.className="s";
+    rs.textContent="+"+REST_ENERGY+" energy, no walking — but the crew dances without you (-5 loyalty).";
+    rest.appendChild(rt); rest.appendChild(rs);
+    rest.addEventListener("click", restSlot);
+    panel.appendChild(rest);
+  }
+
+  /* ---------- route chips ---------- */
+  function renderRoute(){
+    var row=$("routeRow");
+    clear(row);
+    if(state.route.length===0){
+      var empty=document.createElement("span");
+      empty.className="chip skip";
+      empty.textContent="No moves yet — the gates just opened.";
+      row.appendChild(empty);
+      return;
+    }
+    state.route.forEach(function(r){
+      var chip=document.createElement("span");
+      chip.className="chip"+(r.skipped?" skip":"");
+      var ct=document.createElement("span"); ct.className="ct"; ct.textContent=r.time;
+      chip.appendChild(ct);
+      var lab=document.createElement("span"); lab.textContent=r.label;
+      chip.appendChild(lab);
+      if(r.must){ var s=document.createElement("span"); s.textContent="★"; s.style.color="var(--amber)"; chip.appendChild(s); }
+      if(r.crew){ var c=document.createElement("span"); c.textContent="👥"; chip.appendChild(c); }
+      row.appendChild(chip);
+    });
+  }
+
+  /* ---------- actions ---------- */
+  function chooseAct(act, eCost, steps){
+    state.energy = bound(state.energy - eCost, 0, 100);
+    state.steps += steps;
+    state.at = act.stage;
+    state.visited[act.stage] = true;
+
+    var loyaltyMsg, msgColor;
+    if(act.crew){
+      state.loyalty = bound(state.loyalty + 10, 0, 100);
+      loyaltyMsg="Rolled in with the crew — loyalty up. ";
+      msgColor="var(--cyan)";
+    } else {
+      state.loyalty = bound(state.loyalty - 8, 0, 100);
+      loyaltyMsg="Split off solo — the crew's a little bummed. ";
+      msgColor="var(--purp)";
+    }
+
+    var mustMsg="";
+    if(act.must){
+      state.caught += 1;
+      mustMsg="🔥 Caught a must-see! ";
+      msgColor="var(--lime)";
+    }
+
+    state.route.push({
+      time:act_time(state.idx), label:act.name+" @ "+act.stage,
+      stage:act.stage, must:act.must, crew:act.crew, skipped:false
+    });
+
+    setStatus(mustMsg+loyaltyMsg+ (state.energy<25?"Running low on juice ⚡":""), msgColor);
+    advance();
+  }
+
+  function restSlot(){
+    var before=state.energy;
+    state.energy = bound(state.energy + REST_ENERGY, 0, 100);
+    state.loyalty = bound(state.loyalty - 5, 0, 100);
+    state.route.push({
+      time:act_time(state.idx), label:"Sat it out (recharge)",
+      stage:null, must:false, crew:false, skipped:true
+    });
+    var gained=Math.round(state.energy-before);
+    setStatus("Recharged +"+gained+" energy. Crew kept dancing without you.","var(--amber)");
+    advance();
+  }
+
+  function act_time(i){ return BLOCKS[i].time; }
+
+  function advance(){
+    state.idx += 1;
+    renderMeters();
+    renderRoute();
+    if(state.idx >= BLOCKS.length){
+      state.finished=true;
+      renderBlock();
+      showResults();
+    } else {
+      renderBlock();
+    }
+  }
+
+  /* ---------- scoring + results ---------- */
+  function computeScore(){
+    var mustPts = state.caught*180;
+    var loyaltyPts = Math.round(state.loyalty*3.5);
+    var staminaPts = Math.round(state.energy*1.5);
+    var visitedCount = Object.keys(state.visited).length;
+    var varietyPts = visitedCount*25;
+    var total = mustPts+loyaltyPts+staminaPts+varietyPts;
+    return {
+      mustPts:mustPts, loyaltyPts:loyaltyPts, staminaPts:staminaPts,
+      varietyPts:varietyPts, visitedCount:visitedCount, total:total
+    };
+  }
+
+  function gradeFor(total){
+    if(total>=1060) return {g:"S", v:"Festival legend. The crew, your feet, and your soul all left satisfied."};
+    if(total>=860)  return {g:"A", v:"Crew MVP. You threaded the schedule like a true route nerd."};
+    if(total>=660)  return {g:"B", v:"Solid run. A few regrets, but a great day on the grounds."};
+    if(total>=470)  return {g:"C", v:"You survived it. Next time, plan the energy and the walks."};
+    return {g:"D", v:"Rough one. Burned out, ditched the crew, missed the heaters. We've all been there."};
+  }
+
+  function buildExportText(sc, grade){
+    var lines=[];
+    lines.push("🎪 BASSLINE — My Festival Route");
+    lines.push("Score: "+sc.total+"  (Grade "+grade.g+")");
+    lines.push("--------------------------------------");
+    state.route.forEach(function(r){
+      var tags="";
+      if(r.must) tags+=" [must-see]";
+      if(r.crew) tags+=" [with crew]";
+      var pad=r.time;
+      while(pad.length<9) pad+=" ";
+      lines.push(pad+"▸ "+r.label+tags);
+    });
+    lines.push("--------------------------------------");
+    lines.push("Must-sees caught : "+state.caught+"/"+TOTAL_MUST);
+    lines.push("Crew loyalty     : "+Math.round(state.loyalty)+"/100");
+    lines.push("Stamina left     : "+Math.round(state.energy)+"/100");
+    lines.push("Stages visited   : "+sc.visitedCount);
+    lines.push("Steps walked     : "+fmt(state.steps));
+    lines.push("");
+    lines.push("Built in BASSLINE — Route the Rave.");
+    return lines.join("\n");
+  }
+
+  function bdRow(label,value){
+    var r=document.createElement("div"); r.className="bdrow";
+    var l=document.createElement("span"); l.textContent=label;
+    var v=document.createElement("b"); v.textContent=value;
+    r.appendChild(l); r.appendChild(v);
+    return r;
+  }
+
+  function showResults(){
+    var sc=computeScore();
+    var grade=gradeFor(sc.total);
+    var box=$("results");
+    clear(box);
+    box.style.display="block";
+
+    var big=document.createElement("div"); big.className="scoreBig"; big.textContent=String(sc.total);
+    box.appendChild(big);
+    var g=document.createElement("div"); g.className="grade"; g.textContent="Grade "+grade.g;
+    box.appendChild(g);
+    var v=document.createElement("div"); v.className="verdict"; v.textContent=grade.v;
+    box.appendChild(v);
+
+    var bd=document.createElement("div"); bd.className="bd";
+    bd.appendChild(bdRow("Must-sees ("+state.caught+"/"+TOTAL_MUST+")", "+"+sc.mustPts));
+    bd.appendChild(bdRow("Crew loyalty ("+Math.round(state.loyalty)+")", "+"+sc.loyaltyPts));
+    bd.appendChild(bdRow("Stamina left ("+Math.round(state.energy)+")", "+"+sc.staminaPts));
+    bd.appendChild(bdRow("Variety ("+sc.visitedCount+" stages)", "+"+sc.varietyPts));
+    bd.appendChild(bdRow("Steps walked", fmt(state.steps)));
+    box.appendChild(bd);
+
+    var ta=document.createElement("textarea");
+    ta.id="export"; ta.readOnly=true;
+    ta.value=buildExportText(sc,grade);
+    box.appendChild(ta);
+
+    var btns=document.createElement("div"); btns.className="btns";
+
+    var copyBtn=document.createElement("button");
+    copyBtn.type="button"; copyBtn.className="action b-copy"; copyBtn.textContent="📋 Copy route";
+    copyBtn.addEventListener("click", function(){ copyText(ta.value, copyBtn); });
+
+    var dlBtn=document.createElement("button");
+    dlBtn.type="button"; dlBtn.className="action b-dl"; dlBtn.textContent="⬇ Download .txt";
+    dlBtn.addEventListener("click", function(){ downloadText(ta.value); });
+
+    var resetBtn=document.createElement("button");
+    resetBtn.type="button"; resetBtn.className="action b-reset"; resetBtn.textContent="↻ New run";
+    resetBtn.addEventListener("click", resetGame);
+
+    btns.appendChild(copyBtn);
+    btns.appendChild(dlBtn);
+    btns.appendChild(resetBtn);
+    box.appendChild(btns);
+
+    setStatus("That's a wrap. Your route's ready to copy or download. 🎉","var(--lime)");
+  }
+
+  function copyText(text, btn){
+    var done=function(){
+      var old=btn.textContent;
+      btn.textContent="✓ Copied!";
+      window.setTimeout(function(){ btn.textContent=old; }, 1400);
+    };
+    if(navigator.clipboard && navigator.clipboard.writeText){
+      navigator.clipboard.writeText(text).then(done, function(){
+        selectFallback();
+      });
+    } else {
+      selectFallback();
+    }
+  }
+  function selectFallback(){
+    var ta=$("export");
+    ta.focus(); ta.select();
+    setStatus("Couldn't auto-copy — the text is selected, hit your copy shortcut.","var(--amber)");
+  }
+
+  function downloadText(text){
+    var blob=new Blob([text], {type:"text/plain"});
+    var objUrl=URL.createObjectURL(blob);
+    var a=document.createElement("a");
+    a.href=objUrl;
+    a.download="bassline-route.txt";
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    window.setTimeout(function(){ URL.revokeObjectURL(objUrl); }, 800);
+  }
+
+  function resetGame(){
+    state=freshState();
+    $("results").style.display="none";
+    clear($("results"));
+    setStatus("Fresh day, new plan. Gates are open. 🎟️","var(--cyan)");
+    renderMeters();
+    renderRoute();
+    renderBlock();
+  }
+
+  /* ---------- canvas map ---------- */
+  var canvas=$("map");
+  var ctx=canvas.getContext("2d");
+  var dpr=window.devicePixelRatio||1;
+  canvas.width=W*dpr; canvas.height=H*dpr;
+  ctx.scale(dpr,dpr);
+
+  function roundedNode(x,y,r,color,fillAlpha){
+    ctx.beginPath();
+    ctx.arc(x,y,r,0,Math.PI*2);
+    ctx.fillStyle=color;
+    ctx.globalAlpha=fillAlpha;
+    ctx.fill();
+    ctx.globalAlpha=1;
+  }
+
+  function drawMap(ts){
+    ctx.clearRect(0,0,W,H);
+
+    /* subtle grid */
+    ctx.strokeStyle="rgba(160,107,255,0.08)";
+    ctx.lineWidth=1;
+    for(var gx=0; gx<=W; gx+=31){
+      ctx.beginPath(); ctx.moveTo(gx,0); ctx.lineTo(gx,H); ctx.stroke();
+    }
+    for(var gy=0; gy<=H; gy+=31){
+      ctx.beginPath(); ctx.moveTo(0,gy); ctx.lineTo(W,gy); ctx.stroke();
+    }
+
+    /* path taken */
+    var pathPts=[STAGES["Entrance"]];
+    state.route.forEach(function(r){ if(r.stage){ pathPts.push(STAGES[r.stage]); } });
+    if(pathPts.length>1){
+      ctx.lineWidth=3.5;
+      ctx.strokeStyle="rgba(182,255,59,0.85)";
+      ctx.shadowColor="rgba(182,255,59,0.65)";
+      ctx.shadowBlur=10;
+      ctx.beginPath();
+      ctx.moveTo(pathPts[0].x, pathPts[0].y);
+      for(var i=1;i<pathPts.length;i++){ ctx.lineTo(pathPts[i].x, pathPts[i].y); }
+      ctx.stroke();
+      ctx.shadowBlur=0;
+      /* step dots */
+      for(var j=1;j<pathPts.length;j++){
+        roundedNode(pathPts[j].x, pathPts[j].y, 4.5, "#b6ff3b", 1);
+      }
+    }
+
+    var pulse=0.5+0.5*Math.sin((ts||0)/420);
+
+    /* upcoming option rings */
+    if(!state.finished){
+      var opts=BLOCKS[state.idx].acts;
+      opts.forEach(function(act){
+        var s=STAGES[act.stage];
+        var rr=20+pulse*9;
+        ctx.beginPath();
+        ctx.arc(s.x,s.y,rr,0,Math.PI*2);
+        ctx.strokeStyle=s.color;
+        ctx.globalAlpha=0.35+0.4*pulse;
+        ctx.lineWidth=2;
+        ctx.stroke();
+        ctx.globalAlpha=1;
+      });
+    }
+
+    /* stage nodes + labels */
+    Object.keys(STAGES).forEach(function(name){
+      var s=STAGES[name];
+      var isEntrance=(name==="Entrance");
+      var r=isEntrance?7:13;
+      ctx.shadowColor=s.color;
+      ctx.shadowBlur=isEntrance?6:16;
+      roundedNode(s.x,s.y,r,s.color,isEntrance?0.85:0.95);
+      ctx.shadowBlur=0;
+      if(!isEntrance){
+        roundedNode(s.x,s.y,r-5,"#0a0712",0.55);
+      }
+      ctx.fillStyle="#f3ecff";
+      ctx.font="600 12px -apple-system,Segoe UI,Roboto,Arial,sans-serif";
+      ctx.textAlign="center";
+      ctx.fillText(name, s.x, s.y + (s.y>300? -20 : 28));
+    });
+
+    /* "you are here" */
+    var here=STAGES[state.at];
+    var hr=16+pulse*4;
+    ctx.beginPath();
+    ctx.arc(here.x,here.y,hr,0,Math.PI*2);
+    ctx.strokeStyle="#ffffff";
+    ctx.globalAlpha=0.55;
+    ctx.lineWidth=1.5;
+    ctx.stroke();
+    ctx.globalAlpha=1;
+
+    requestAnimationFrame(drawMap);
+  }
+
+  /* ---------- boot ---------- */
+  state=freshState();
+  renderMeters();
+  renderRoute();
+  renderBlock();
+  setStatus("Gates are open. Plan your day. 🎟️","var(--cyan)");
+  requestAnimationFrame(drawMap);
+
+})();
+</script>
+</body>
+</html>

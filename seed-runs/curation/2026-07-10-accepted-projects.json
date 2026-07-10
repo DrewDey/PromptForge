@@ -1,0 +1,356 @@
+{
+  "manifestVersion": "1",
+  "generatedAt": "2026-07-10T15:06:14Z",
+  "queueTotal": 212,
+  "acceptedCount": 8,
+  "declinedCount": 204,
+  "projects": [
+    {
+      "projectId": "dc5e67c3-42d0-4823-ae23-586b7d3985cb",
+      "sourceRunId": "cf73efd5-2fb6-48fe-a9fd-a1a0df336d18",
+      "href": "/calming-sleep-sound-mixer-demo",
+      "title": "Calming Sleep-Sound Mixer",
+      "description": "A calm offline browser mixer that procedurally generates rain, fan, and brown-noise layers with presets, independent volume controls, and a gentle sleep timer.",
+      "content": "Lena Dusk used ChatGPT (GPT-5.6 Luna) to build Calming Sleep-Sound Mixer through 1 prompt. The public page mounts the verified final artifact first and preserves every exact prompt in source-run order.",
+      "resultContent": "ChatGPT Work produced a self-contained dark-mode sound mixer that procedurally generates rain, fan, and brown-noise layers with presets, per-layer controls, master volume, and a fade-out sleep timer.",
+      "categorySlug": "personal",
+      "mockCategoryId": "cat-10",
+      "difficulty": "beginner",
+      "modelUsed": "GPT-5.6 Luna",
+      "modelRecommendation": "GPT-5.6 Luna",
+      "toolsUsed": [
+        "ChatGPT Work",
+        "GPT-5.6 Luna",
+        "HTML",
+        "Web Audio API",
+        "Browser"
+      ],
+      "tags": [
+        "sleep routine",
+        "sound mixer",
+        "white noise",
+        "offline tool",
+        "web audio",
+        "html"
+      ],
+      "artifactPath": "/artifacts/sleep-sound-mixer-chatgpt-56-luna-extra-high.html",
+      "artifactVersionPaths": [
+        "public/artifacts/sleep-sound-mixer-chatgpt-56-luna-extra-high.html"
+      ],
+      "sourceUrl": "https://chatgpt.com/share/6a50e972-7b94-83ea-b3d7-f8b726dd2e4d",
+      "authorDisplayName": "Lena Dusk",
+      "authorUsername": "LenaDusk",
+      "createdAt": "2026-07-10T11:42:46.137Z",
+      "updatedAt": "2026-07-10T11:49:49.000Z",
+      "prompts": [
+        "Build me a calming sleep-sound mixer I can save as one file and open in my browser. I want adjustable rain, fan, and brown-noise layers that are generated in the page instead of streamed, a few useful presets, and a sleep timer that fades out gently. It should feel reassuring and simple enough to use in the dark."
+      ],
+      "packageFile": "seed-runs/sleep-sound-mixer-chatgpt-56-luna-extra-high-source-run.json",
+      "capturedAt": "2026-07-10T11:49:49.000Z"
+    },
+    {
+      "projectId": "0ddfc7cf-37bf-47ae-8fe0-d8d445ba1bee",
+      "sourceRunId": "08c8b725-4228-4b24-a6e6-5d7fcf78457c",
+      "href": "/booking-flow-handoff-simulator-demo",
+      "title": "Booking Flow Handoff Simulator",
+      "description": "Model intake questions, service slots, confirmations, edge cases, and failure handoffs; run booking scenarios and export an implementation receipt.",
+      "content": "Milo Booking used Claude (Sonnet 4.6 Low) to build Booking Flow Handoff Simulator through 4 prompts. The public page mounts the verified final artifact first and preserves every exact prompt in source-run order. Earlier real artifact versions remain recorded in the source package so the repair path stays inspectable.",
+      "resultContent": "Claude returned a complete repaired HTML artifact with the prohibited execCommand token removed while preserving receipt controls and 390px layout fixes.",
+      "categorySlug": "productivity",
+      "mockCategoryId": "cat-7",
+      "difficulty": "intermediate",
+      "modelUsed": "Sonnet 4.6 Low",
+      "modelRecommendation": "Sonnet 4.6 Low",
+      "toolsUsed": [
+        "Claude",
+        "Sonnet 4.6 Low",
+        "HTML",
+        "Browser"
+      ],
+      "tags": [
+        "booking",
+        "operations",
+        "handoff",
+        "automation-planning",
+        "offline-tool"
+      ],
+      "artifactPath": "/artifacts/booking-flow-handoff-simulator-claude-sonnet46-low.html",
+      "artifactVersionPaths": [
+        "public/artifacts/booking-flow-handoff-simulator-claude-sonnet46-low-v2.html",
+        "public/artifacts/booking-flow-handoff-simulator-claude-sonnet46-low-v3.html",
+        "public/artifacts/booking-flow-handoff-simulator-claude-sonnet46-low.html"
+      ],
+      "sourceUrl": "https://claude.ai/chat/71f62415-8373-48ae-ae1e-f0c85ecc2235",
+      "authorDisplayName": "Milo Booking",
+      "authorUsername": "MiloBooking",
+      "createdAt": "2026-06-19T07:37:00Z",
+      "updatedAt": "2026-06-19T07:58:19Z",
+      "prompts": [
+        "Can you make me a self-contained booking-flow handoff simulator a solo service business can save and use before automating customer messages?",
+        "Please go ahead and make it now as one saveable offline HTML file.",
+        "This runs, but the export is only a textarea; add truthful Copy Receipt and Download Receipt controls for the generated handoff, and make the layout fit a 390px screen without sideways scrolling.",
+        "The repaired file still contains the prohibited execCommand token in comments, so please return the complete HTML again with those comments/strings removed while keeping the copy fallback and receipt controls working."
+      ],
+      "packageFile": "seed-runs/booking-flow-handoff-simulator-claude-sonnet46-low-source-run.json",
+      "capturedAt": "2026-06-19T07:58:19Z"
+    },
+    {
+      "projectId": "e0e4e2b7-082e-4db1-9468-484fc3fd3a69",
+      "sourceRunId": "3216db0c-fd3a-48f0-af70-58b47f34068c",
+      "href": "/first-principles-claim-ladder-game-demo",
+      "title": "First-Principles Claim Ladder Game",
+      "description": "Break a plan into claims, assumptions, evidence, and experiments; move ladder cards, run collapse checks, score the reasoning, and export a receipt.",
+      "content": "Ari Ladder used ChatGPT (GPT-5.5) to build First-Principles Claim Ladder Game through 1 prompt. The public page mounts the verified final artifact first and preserves every exact prompt in source-run order.",
+      "resultContent": "Break a plan into claims, assumptions, evidence, and experiments; move ladder cards, run collapse checks, score the reasoning, and export a receipt.",
+      "categorySlug": "productivity",
+      "mockCategoryId": "cat-7",
+      "difficulty": "beginner",
+      "modelUsed": "GPT-5.5",
+      "modelRecommendation": "GPT-5.5",
+      "toolsUsed": [
+        "ChatGPT",
+        "GPT-5.5",
+        "HTML",
+        "Browser"
+      ],
+      "tags": [
+        "first principles",
+        "reasoning",
+        "learning productivity",
+        "offline game",
+        "receipt"
+      ],
+      "artifactPath": "/artifacts/first-principles-claim-ladder-game-chatgpt-gpt55-medium.html",
+      "artifactVersionPaths": [
+        "public/artifacts/first-principles-claim-ladder-game-chatgpt-gpt55-medium.html"
+      ],
+      "sourceUrl": "https://chatgpt.com/c/6a35e460-9298-83ea-aa7b-9a04fbc6fab9",
+      "authorDisplayName": "Ari Ladder",
+      "authorUsername": "AriLadder",
+      "createdAt": "2026-06-20T00:55:00Z",
+      "updatedAt": "2026-06-20T01:17:58.233Z",
+      "prompts": [
+        "Can you build a self-contained one-file HTML game called First-Principles Claim Ladder where I test a big plan by moving claim, assumption, evidence, and experiment cards up a ladder, score whether the plan holds or collapses, and copy or download a reasoning receipt I can keep offline?"
+      ],
+      "packageFile": "seed-runs/first-principles-claim-ladder-game-chatgpt-gpt55-medium-source-run.json",
+      "capturedAt": "2026-06-20T01:17:58.233Z"
+    },
+    {
+      "projectId": "a7201847-c8d6-4e09-814b-0a382f8f8080",
+      "sourceRunId": "4d02e29c-ff98-4c73-82ca-942430632443",
+      "href": "/tiny-festival-set-time-clash-game-demo",
+      "title": "Tiny Festival Set-Time Clash Game",
+      "description": "Choose a route through overlapping festival set times, weigh energy and distance tradeoffs, complete the six-slot run, and export the final route.",
+      "content": "Milo Festival used Claude (Opus 4.8 Medium) to build Tiny Festival Set-Time Clash Game through 1 prompt. The public page mounts the verified final artifact first and preserves every exact prompt in source-run order.",
+      "resultContent": "Claude produced a self-contained HTML artifact named BASSLINE - Route the Rave, a festival route puzzle with overlapping set choices, energy/crew/must-see/steps meters, canvas map, final scoring, copy, and download export.",
+      "categorySlug": "personal",
+      "mockCategoryId": "cat-10",
+      "difficulty": "beginner",
+      "modelUsed": "Opus 4.8 Medium",
+      "modelRecommendation": "Opus 4.8 Medium",
+      "toolsUsed": [
+        "Claude",
+        "Opus 4.8 Medium",
+        "HTML",
+        "Browser"
+      ],
+      "tags": [
+        "festival",
+        "planner",
+        "game",
+        "route-puzzle",
+        "offline-html"
+      ],
+      "artifactPath": "/artifacts/tiny-festival-set-time-clash-game-claude-opus48-medium.html",
+      "artifactVersionPaths": [
+        "public/artifacts/tiny-festival-set-time-clash-game-claude-opus48-medium.html"
+      ],
+      "sourceUrl": "https://claude.ai/chat/9e5a4985-781e-4175-a58a-325d9a6bcf87",
+      "authorDisplayName": "Milo Festival",
+      "authorUsername": "MiloFestival",
+      "createdAt": "2026-06-19T14:49:00-04:00",
+      "updatedAt": "2026-06-19T18:59:30.862Z",
+      "prompts": [
+        "Make a playful self-contained offline HTML mini game where I have to pick a festival route through overlapping set times, trading off energy, walking distance, friend loyalty, and must-see acts, then copy or export my final route."
+      ],
+      "packageFile": "seed-runs/tiny-festival-set-time-clash-game-claude-opus48-medium-source-run.json",
+      "capturedAt": "2026-06-19T18:59:30.862Z"
+    },
+    {
+      "projectId": "22bcc36b-497f-43f7-824f-3ccba9690da6",
+      "sourceRunId": "3137def2-964d-49a8-ad22-3b776870e3fe",
+      "href": "/rental-walkthrough-red-flag-scorecard-demo",
+      "title": "Rental Walkthrough Red Flag Scorecard",
+      "description": "Document room-by-room apartment red flags, severity, and evidence; save the walkthrough and export an inspection brief.",
+      "content": "Maya Keys used ChatGPT (GPT-5.5) to build Rental Walkthrough Red Flag Scorecard through 1 prompt. The public page mounts the verified final artifact first and preserves every exact prompt in source-run order.",
+      "resultContent": "ChatGPT returned a complete single-file offline Apartment Walkthrough Scorecard HTML app with room scoring, hazard and lease-risk checklists, evidence/photo notes, local save, sample data, copyable inspection brief, and text download.",
+      "categorySlug": "productivity",
+      "mockCategoryId": "cat-7",
+      "difficulty": "beginner",
+      "modelUsed": "GPT-5.5",
+      "modelRecommendation": "GPT-5.5",
+      "toolsUsed": [
+        "ChatGPT",
+        "GPT-5.5",
+        "HTML",
+        "Browser"
+      ],
+      "tags": [
+        "housing",
+        "rental walkthrough",
+        "inspection",
+        "scorecard",
+        "offline tool"
+      ],
+      "artifactPath": "/artifacts/rental-walkthrough-red-flag-scorecard-chatgpt-gpt55-medium.html",
+      "artifactVersionPaths": [
+        "public/artifacts/rental-walkthrough-red-flag-scorecard-chatgpt-gpt55-medium.html"
+      ],
+      "sourceUrl": "https://chatgpt.com/c/6a31b2b3-05ac-83ea-8bef-354974d20954",
+      "authorDisplayName": "Maya Keys",
+      "authorUsername": "MayaKeys",
+      "createdAt": "2026-06-16T20:23:00Z",
+      "updatedAt": "2026-06-16T20:37:33Z",
+      "prompts": [
+        "Can you make a saveable offline browser scorecard I can use during an apartment walkthrough to rate each room, note hazards and lease-risk clues, attach photo notes, and copy a clean inspection brief at the end?"
+      ],
+      "packageFile": "seed-runs/rental-walkthrough-red-flag-scorecard-chatgpt-gpt55-medium-source-run.json",
+      "capturedAt": "2026-06-16T20:37:33Z"
+    },
+    {
+      "projectId": "ca0c2e08-9e02-4725-90f5-58ef248fe4c7",
+      "sourceRunId": "0eea38da-ead0-44e0-b50c-ddc6840cb033",
+      "href": "/gym-mirror-progress-shot-consistency-studio-demo",
+      "title": "Gym Mirror Progress Shot Consistency Studio",
+      "description": "Offline Contact Sheet-style studio for planning comparable gym mirror progress photos with repeatable setup cards, privacy checks, retake warnings, comparability scoring, and copyable shoot receipts.",
+      "content": "Rhea Fitline used Claude (Sonnet 4.6 Max) to build Gym Mirror Progress Shot Consistency Studio through 4 prompts. The public page mounts the verified final artifact first and preserves every exact prompt in source-run order. Earlier real artifact versions remain recorded in the source package so the repair path stays inspectable.",
+      "resultContent": "Claude set all custom letter-spacing declarations to 0 while preserving the scanner fix and repaired save workflow.",
+      "categorySlug": "personal",
+      "mockCategoryId": "cat-10",
+      "difficulty": "intermediate",
+      "modelUsed": "Sonnet 4.6 Max",
+      "modelRecommendation": "Sonnet 4.6 Max",
+      "toolsUsed": [
+        "Claude",
+        "Sonnet 4.6 Max",
+        "HTML",
+        "Browser"
+      ],
+      "tags": [
+        "fitness",
+        "photo planning",
+        "privacy",
+        "checklist",
+        "offline studio",
+        "source-inspired"
+      ],
+      "artifactPath": "/artifacts/gym-mirror-progress-shot-consistency-studio-claude-sonnet46-max.html",
+      "artifactVersionPaths": [
+        "public/artifacts/gym-mirror-progress-shot-consistency-studio-claude-sonnet46-max-v1.html",
+        "public/artifacts/gym-mirror-progress-shot-consistency-studio-claude-sonnet46-max-v2.html",
+        "public/artifacts/gym-mirror-progress-shot-consistency-studio-claude-sonnet46-max-v3.html",
+        "public/artifacts/gym-mirror-progress-shot-consistency-studio-claude-sonnet46-max-v4.html",
+        "public/artifacts/gym-mirror-progress-shot-consistency-studio-claude-sonnet46-max.html"
+      ],
+      "sourceUrl": "https://claude.ai/chat/7254c1e6-56b1-4b32-beb6-f97c7b3d091a",
+      "authorDisplayName": "Rhea Fitline",
+      "authorUsername": "RheaFitline",
+      "createdAt": "2026-06-16T20:34:00-04:00",
+      "updatedAt": "2026-06-17T01:07:31.143Z",
+      "prompts": [
+        "I want a saveable, openable Gym Mirror Progress Shot Consistency Studio for tablet and desktop that helps me make comparable gym progress photos with pose, angle, lighting, background cards, privacy crop checks, retake warnings, a session comparison score, and a copyable shoot receipt, without needing to upload images.\n",
+        "The file is close, but my verifier flags the literal word execCommand in a comment inside the HTML; the scanner rejects that token even when it is not called. Remove that scanner-visible token while keeping the manual-copy fallback, and present the finished complete HTML artifact again.\n",
+        "Local verification found a real workflow bug: after I select today's pose, angle, lighting, background, distance, and time bucket, the Save this session & score it button still stays disabled and the hint still says to fill those fields. Please fix the change handling or save-availability logic so visible selected values enable saving, keep the previous scanner-token fix, and present the complete HTML artifact again.\n",
+        "One more local design scan found a concrete style defect: the HTML still uses positive letter-spacing declarations, but our UI rule requires letter spacing to be 0. Please remove or set every letter-spacing declaration to 0, keep the scanner-token fix and the repaired Save this session workflow, and present the complete HTML artifact again.\n"
+      ],
+      "packageFile": "seed-runs/gym-mirror-progress-shot-consistency-studio-claude-sonnet46-max-source-run.json",
+      "capturedAt": "2026-06-17T01:07:31.143Z"
+    },
+    {
+      "projectId": "384ebd4d-88af-400b-b230-4eb771bb2194",
+      "sourceRunId": "2f2bfc9f-019a-4ff3-b51f-3270a7ea9eab",
+      "href": "/security-cam-anomaly-timeline-game-demo",
+      "title": "Security-Cam Anomaly Timeline Game",
+      "description": "A one-prompt ChatGPT Extra High source run that produced an offline security-camera anomaly timeline game with timestamped camera cards, odd-detail marking, timeline ordering, scoring, hints, answer reveal, autosave, and copy/download report export.",
+      "content": "Evan Trace used ChatGPT (Extra High) to build Security-Cam Anomaly Timeline Game through 1 prompt. The public page mounts the verified final artifact first and preserves every exact prompt in source-run order.",
+      "resultContent": "ChatGPT returned a sandbox download link and an embedded artifact with a Code tab; the Code tab contained one complete offline HTML security-camera anomaly timeline game.",
+      "categorySlug": "personal",
+      "mockCategoryId": "cat-10",
+      "difficulty": "intermediate",
+      "modelUsed": "Extra High",
+      "modelRecommendation": "Extra High",
+      "toolsUsed": [
+        "ChatGPT",
+        "Extra High",
+        "HTML",
+        "Browser"
+      ],
+      "tags": [
+        "security camera",
+        "timeline game",
+        "anomaly spotting",
+        "deduction",
+        "timestamp cards",
+        "offline html",
+        "browser game"
+      ],
+      "artifactPath": "/artifacts/security-cam-anomaly-timeline-chatgpt-extra-high.html",
+      "artifactVersionPaths": [
+        "public/artifacts/security-cam-anomaly-timeline-chatgpt-extra-high.html"
+      ],
+      "sourceUrl": "https://chatgpt.com/c/6a2f739d-fffc-83ea-be11-e4d242207eb4",
+      "authorDisplayName": "Evan Trace",
+      "authorUsername": "EvanTrace",
+      "createdAt": "2026-06-15T03:27:00Z",
+      "updatedAt": "2026-06-15T03:48:23Z",
+      "prompts": [
+        "Make me a playable security-cam anomaly timeline game I can save and open locally, where I review timestamped camera cards, spot odd details, and arrange the events into the correct sequence."
+      ],
+      "packageFile": "seed-runs/security-cam-anomaly-timeline-chatgpt-extra-high-source-run.json",
+      "capturedAt": "2026-06-15T03:48:23Z"
+    },
+    {
+      "projectId": "17c42c87-3709-4d5e-9ae3-d4ac4807bc4c",
+      "sourceRunId": "94e76d4a-a6e4-4fd1-9de6-9b84ff21483e",
+      "href": "/t-shirt-print-alignment-press-game-demo",
+      "title": "T-Shirt Print Alignment Press Game",
+      "description": "Offline shirt-print layout scorer where a user arranges text/icon blocks on a shirt mockup, checks print-safe margins and readability, and copies an order-ready production spec.",
+      "content": "Della Patch used ChatGPT (Medium) to build T-Shirt Print Alignment Press Game through 1 prompt. The public page mounts the verified final artifact first and preserves every exact prompt in source-run order.",
+      "resultContent": "ChatGPT returned a complete single-file HTML T-Shirt Print Alignment Press Game with draggable text/icon blocks, print-safe zone, scoring, production checks, copy/download spec actions, and responsive layout.",
+      "categorySlug": "design",
+      "mockCategoryId": "cat-5",
+      "difficulty": "beginner",
+      "modelUsed": "Medium",
+      "modelRecommendation": "Medium",
+      "toolsUsed": [
+        "ChatGPT",
+        "Medium",
+        "HTML",
+        "Browser"
+      ],
+      "tags": [
+        "t-shirt-design",
+        "print-layout",
+        "alignment",
+        "safe-zone",
+        "readability",
+        "offline-tool",
+        "playful-design"
+      ],
+      "artifactPath": "/artifacts/t-shirt-print-alignment-press-chatgpt-medium.html",
+      "artifactVersionPaths": [
+        "public/artifacts/t-shirt-print-alignment-press-chatgpt-medium.html"
+      ],
+      "sourceUrl": "https://chatgpt.com/c/6a2f41d3-a068-83ea-b7e4-5532e9ed0e59",
+      "authorDisplayName": "Della Patch",
+      "authorUsername": "DellaPatch",
+      "createdAt": "2026-06-15T00:00:58Z",
+      "updatedAt": "2026-06-15T00:12:47Z",
+      "prompts": [
+        "Can you make me a self-contained T-shirt print alignment press game I can save as one HTML file, where I arrange text and icon blocks on a shirt mockup, check print-safe margins/readability, and copy an order-ready layout spec?"
+      ],
+      "packageFile": "seed-runs/t-shirt-print-alignment-press-chatgpt-medium-source-run.json",
+      "capturedAt": "2026-06-15T00:12:47Z"
+    }
+  ]
+}

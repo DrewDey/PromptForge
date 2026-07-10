@@ -561,6 +561,177 @@ const sourceRunProjects = [
   },
 ]
 
+const curatedManifestPath = 'seed-runs/curation/2026-07-10-accepted-projects.json'
+const curatedRegistryPath = 'src/lib/curated-source-run-showcases.ts'
+const curatedManifestProjectFields = [
+  'projectId',
+  'sourceRunId',
+  'href',
+  'title',
+  'description',
+  'content',
+  'resultContent',
+  'categorySlug',
+  'mockCategoryId',
+  'difficulty',
+  'modelUsed',
+  'modelRecommendation',
+  'toolsUsed',
+  'tags',
+  'artifactPath',
+  'artifactVersionPaths',
+  'sourceUrl',
+  'authorDisplayName',
+  'authorUsername',
+  'createdAt',
+  'updatedAt',
+  'prompts',
+  'packageFile',
+  'capturedAt',
+]
+
+function loadCuratedSourceRunProjects() {
+  if (!existsSync(curatedManifestPath)) {
+    failures.push(`${curatedManifestPath}: missing required curated source-run manifest`)
+    return []
+  }
+
+  let manifest
+  try {
+    manifest = JSON.parse(readFileSync(curatedManifestPath, 'utf8'))
+  } catch (error) {
+    failures.push(`${curatedManifestPath}: invalid JSON: ${error.message}`)
+    return []
+  }
+
+  if (!manifest || typeof manifest !== 'object' || Array.isArray(manifest)) {
+    failures.push(`${curatedManifestPath}: top level must be an object`)
+    return []
+  }
+
+  for (const field of ['manifestVersion', 'generatedAt', 'queueTotal', 'acceptedCount', 'declinedCount', 'projects']) {
+    if (!Object.hasOwn(manifest, field)) {
+      failures.push(`${curatedManifestPath}: missing required top-level field ${field}`)
+    }
+  }
+
+  if (!Array.isArray(manifest.projects)) {
+    failures.push(`${curatedManifestPath}: projects must be an array`)
+    return []
+  }
+
+  if (typeof manifest.generatedAt !== 'string' || manifest.generatedAt.trim().length === 0) {
+    failures.push(`${curatedManifestPath}: generatedAt must be a nonblank string`)
+  }
+  for (const field of ['queueTotal', 'acceptedCount', 'declinedCount']) {
+    if (!Number.isInteger(manifest[field]) || manifest[field] < 0) {
+      failures.push(`${curatedManifestPath}: ${field} must be a nonnegative integer`)
+    }
+  }
+
+  if (manifest.acceptedCount !== manifest.projects.length) {
+    failures.push(`${curatedManifestPath}: acceptedCount must equal projects.length`)
+  }
+  if (
+    Number.isInteger(manifest.queueTotal) &&
+    Number.isInteger(manifest.acceptedCount) &&
+    Number.isInteger(manifest.declinedCount) &&
+    manifest.queueTotal !== manifest.acceptedCount + manifest.declinedCount
+  ) {
+    failures.push(`${curatedManifestPath}: queueTotal must equal acceptedCount + declinedCount`)
+  }
+
+  const seenProjectIds = new Set()
+  const seenSourceRunIds = new Set()
+  const seenHrefs = new Set()
+
+  return manifest.projects.flatMap((entry, index) => {
+    const entryLabel = `${curatedManifestPath} projects[${index}]`
+    if (!entry || typeof entry !== 'object' || Array.isArray(entry)) {
+      failures.push(`${entryLabel}: entry must be an object`)
+      return []
+    }
+    for (const field of curatedManifestProjectFields) {
+      if (!Object.hasOwn(entry, field)) failures.push(`${entryLabel}: missing required field ${field}`)
+    }
+
+    for (const field of curatedManifestProjectFields.filter(
+      (field) => !['toolsUsed', 'tags', 'artifactVersionPaths', 'prompts'].includes(field),
+    )) {
+      if (typeof entry[field] !== 'string' || entry[field].trim().length === 0) {
+        failures.push(`${entryLabel}: ${field} must be a nonblank string`)
+      }
+    }
+    for (const field of ['toolsUsed', 'tags', 'artifactVersionPaths', 'prompts']) {
+      if (!Array.isArray(entry[field]) || entry[field].length === 0) {
+        failures.push(`${entryLabel}: ${field} must be a nonempty array`)
+      }
+    }
+
+    if (typeof entry.href === 'string' && !/^\/[a-z0-9][a-z0-9-/]*$/.test(entry.href)) {
+      failures.push(`${entryLabel}: href must be a root-relative route`)
+    }
+    if (typeof entry.packageFile === 'string' && !entry.packageFile.startsWith('seed-runs/')) {
+      failures.push(`${entryLabel}: packageFile must be repo-relative under seed-runs/`)
+    }
+    if (typeof entry.artifactPath === 'string' && !entry.artifactPath.startsWith('/artifacts/')) {
+      failures.push(`${entryLabel}: artifactPath must be public-facing under /artifacts/`)
+    }
+    if (
+      Array.isArray(entry.artifactVersionPaths) &&
+      entry.artifactVersionPaths.some(
+        (artifactPath) => typeof artifactPath !== 'string' || !artifactPath.startsWith('public/artifacts/'),
+      )
+    ) {
+      failures.push(`${entryLabel}: artifactVersionPaths must contain repo-relative public/artifacts paths`)
+    }
+    if (
+      typeof entry.artifactPath === 'string' &&
+      Array.isArray(entry.artifactVersionPaths) &&
+      !entry.artifactVersionPaths.includes(`public${entry.artifactPath}`)
+    ) {
+      failures.push(`${entryLabel}: artifactVersionPaths must include the public artifactPath default`)
+    }
+
+    for (const [field, value, seen] of [
+      ['projectId', entry.projectId, seenProjectIds],
+      ['sourceRunId', entry.sourceRunId, seenSourceRunIds],
+      ['href', entry.href, seenHrefs],
+    ]) {
+      if (typeof value !== 'string' || value.length === 0) continue
+      if (seen.has(value)) failures.push(`${entryLabel}: duplicate ${field} ${value}`)
+      seen.add(value)
+    }
+
+    if (
+      typeof entry.title !== 'string' ||
+      typeof entry.href !== 'string' ||
+      typeof entry.projectId !== 'string' ||
+      typeof entry.sourceRunId !== 'string' ||
+      typeof entry.packageFile !== 'string'
+    ) {
+      return []
+    }
+
+    return [{
+      name: entry.title,
+      route: `src/app${entry.href}/page.tsx`,
+      projectId: entry.projectId,
+      sourceRunId: entry.sourceRunId,
+      showcaseExport: 'PENDING_SOURCE_RUN_SHOWCASE_PROJECTS',
+      href: entry.href,
+      packagePath: entry.packageFile,
+      artifactPaths: Array.isArray(entry.artifactVersionPaths) ? entry.artifactVersionPaths : [],
+      defaultArtifactPath: entry.artifactPath,
+      prompts: entry.prompts,
+      expectPersistableAfterPublish: true,
+      curated: true,
+    }]
+  })
+}
+
+sourceRunProjects.push(...loadCuratedSourceRunProjects())
+
 function read(path) {
   if (!existsSync(path)) {
     failures.push(`${path}: missing required file`)
@@ -664,6 +835,18 @@ function usesSharedSourceRunRenderer(routeContent) {
   )
 }
 
+function curatedRegistryHasDescriptor(registryContent, project) {
+  const mapsManifestFields = (
+    /sourceRunId:\s*[A-Za-z_$][\w$]*\.sourceRunId/.test(registryContent) &&
+    /href:\s*[A-Za-z_$][\w$]*\.href/.test(registryContent)
+  )
+  const hasLiteralDescriptor = (
+    registryContent.includes(project.sourceRunId) &&
+    registryContent.includes(project.href)
+  )
+  return mapsManifestFields || hasLiteralDescriptor
+}
+
 const sharedComponent = 'src/components/SourceRunShowcase.tsx'
 const sharedComponentContent = read(sharedComponent)
 mustInclude(sharedComponent, sharedComponentContent, 'aria-pressed={selected}', 'shared showcase must render a selected state on response artifact controls')
@@ -713,7 +896,37 @@ const adminDashboard = read('src/app/admin/page.tsx')
 const adminSourceRunDetail = read('src/app/admin/source-runs/[id]/page.tsx')
 const preparedSourceRunPage = read('src/components/PreparedSourceRunPage.tsx')
 const pendingSourceRunShowcases = read('src/lib/pending-source-run-showcases.ts')
+const curatedProjects = sourceRunProjects.filter((project) => project.curated)
+const curatedSourceRunShowcases = curatedProjects.length > 0 ? read(curatedRegistryPath) : ''
+const preparedShowcaseMetadata = `${preparedShowcase}\n${pendingSourceRunShowcases}\n${curatedSourceRunShowcases}`
 const guardedRouteSet = new Set(sourceRunProjects.map((project) => project.route))
+
+if (curatedProjects.length > 0) {
+  mustInclude(
+    curatedRegistryPath,
+    curatedSourceRunShowcases,
+    '2026-07-10-accepted-projects.json',
+    'curated source-run registry must be driven by the accepted-projects manifest',
+  )
+  mustInclude(
+    curatedRegistryPath,
+    curatedSourceRunShowcases,
+    'CURATED_SOURCE_RUN_SHOWCASE_PROJECTS',
+    'curated source-run registry must export its project descriptor collection',
+  )
+  mustInclude(
+    curatedRegistryPath,
+    curatedSourceRunShowcases,
+    'sourceRunId',
+    'curated source-run descriptors must preserve sourceRunId',
+  )
+  mustInclude(
+    curatedRegistryPath,
+    curatedSourceRunShowcases,
+    'href',
+    'curated source-run descriptors must preserve href',
+  )
+}
 
 mustNotInclude('src/components/PreparedSourceRunPage.tsx', preparedSourceRunPage, 'readArtifact', 'prepared source-run wrapper must not serialize artifact HTML into public page payloads')
 mustNotInclude('src/components/PreparedSourceRunPage.tsx', preparedSourceRunPage, 'notes: step.notes', 'prepared source-run wrapper must not serialize internal step notes into public page payloads')
@@ -750,16 +963,24 @@ for (const project of sourceRunProjects) {
   mustInclude(project.route, routeShellContent, 'ProjectEngagementBar', `${project.name} must keep the public project shell`)
   mustInclude(project.route, routeShellContent, 'ProjectCommunityPanel', `${project.name} must keep the community panel`)
 
-  mustInclude('src/lib/featured-projects.ts', featuredProjects, project.projectId, `${project.name} must have a featured project id`)
-  if (!preparedShowcase.includes(project.showcaseExport) && !pendingSourceRunShowcases.includes(project.showcaseExport)) {
+  if (project.curated) {
+    if (!curatedRegistryHasDescriptor(curatedSourceRunShowcases, project)) {
+      failures.push(`${curatedRegistryPath}: ${project.name} descriptor must preserve sourceRunId ${project.sourceRunId} and href ${project.href}`)
+    }
+  } else {
+    mustInclude('src/lib/featured-projects.ts', featuredProjects, project.projectId, `${project.name} must have a featured project id`)
+  }
+  if (!preparedShowcaseMetadata.includes(project.showcaseExport)) {
     failures.push(`src/lib/prepared-showcase-projects.ts: ${project.name} must have prepared showcase metadata`)
   }
-  if (!preparedShowcase.includes(project.href) && !pendingSourceRunShowcases.includes(project.href)) {
+  if (!preparedShowcaseMetadata.includes(project.href) && !project.curated) {
     failures.push(`src/lib/prepared-showcase-projects.ts: ${project.name} prepared showcase must point to its special route`)
   }
   mustInclude('src/lib/project-links.ts', projectLinks, project.projectId, `${project.name} must have a route override`)
   mustInclude('src/lib/project-links.ts', projectLinks, project.href, `${project.name} route override must point to the special page`)
-  mustInclude('src/lib/data.ts', data, project.projectId, `${project.name} must be approved in public fallback data`)
+  if (!project.curated) {
+    mustInclude('src/lib/data.ts', data, project.projectId, `${project.name} must be approved in public fallback data`)
+  }
   if (!project.expectPersistableAfterPublish) {
     mustInclude('src/lib/project-engagement.ts', engagement, project.projectId, `${project.name} must be non-persistable until a real prompts row exists`)
   }
@@ -780,6 +1001,90 @@ for (const project of sourceRunProjects) {
 
   const pkg = parseJson(project.packagePath)
   if (!pkg) continue
+
+  if (project.curated) {
+    mustInclude(
+      project.route,
+      routeContent,
+      basename(project.packagePath),
+      `${project.name} route must load its curated source-run package`,
+    )
+
+    const packageSourceRunId = pkg.source_run_submission_id ?? pkg.pathforge_pending_id
+    if (packageSourceRunId !== project.sourceRunId) {
+      failures.push(`${project.packagePath}: source-run id must match curated manifest id ${project.sourceRunId}`)
+    }
+
+    const expectedFinalArtifactPath = `public${project.defaultArtifactPath}`
+    if (pkg.final_artifact_path !== expectedFinalArtifactPath) {
+      failures.push(`${project.packagePath}: final_artifact_path must match curated default ${expectedFinalArtifactPath}`)
+    }
+
+    if (existsSync(expectedFinalArtifactPath)) {
+      const finalArtifactContent = readFileSync(expectedFinalArtifactPath, 'utf8')
+      const forbiddenFinalArtifactPatterns = [
+        [/https?:\/\//i, 'remote URL'],
+        [/<script\b[^>]*\bsrc\s*=/i, 'external script'],
+        [/<link\b[^>]*\bhref\s*=/i, 'external linked resource'],
+        [/@import\s/i, 'CSS import'],
+        [/\bfetch\s*\(/i, 'fetch call'],
+        [/\bXMLHttpRequest\b/i, 'XMLHttpRequest'],
+        [/\bWebSocket\b/i, 'WebSocket'],
+        [/\bwindow\.open\s*\(/i, 'window.open'],
+        [/\b(?:window\.)?alert\s*\(/i, 'alert dialog'],
+        [/\b(?:window\.)?confirm\s*\(/i, 'confirm dialog'],
+        [/\b(?:window\.)?prompt\s*\(/i, 'prompt dialog'],
+        [/\bwindow\.print\s*\(/i, 'print dialog'],
+        [/\bdocument\.write\s*\(/i, 'document.write'],
+        [/\b(?:innerHTML|outerHTML|insertAdjacentHTML)\b/i, 'dynamic HTML rendering'],
+        [/<[^>]+\son[a-z]+\s*=/i, 'inline event handler'],
+        [/\bdocument\.execCommand\s*\(/i, 'document.execCommand'],
+        [/\beval\s*\(/i, 'eval'],
+        [/\bnew\s+Function\s*\(/i, 'new Function'],
+      ]
+      for (const [pattern, label] of forbiddenFinalArtifactPatterns) {
+        if (pattern.test(finalArtifactContent)) {
+          failures.push(`${expectedFinalArtifactPath}: curated final artifact contains forbidden ${label}`)
+        }
+      }
+    }
+
+    const packagePrompts = Array.isArray(pkg.steps)
+      ? pkg.steps.map((step) => step.prompt_exact)
+      : []
+    if (JSON.stringify(packagePrompts) !== JSON.stringify(project.prompts)) {
+      failures.push(`${project.packagePath}: exact prompts must match the curated project descriptor`)
+    }
+
+    const packageArtifactPaths = new Set()
+    if (typeof pkg.final_artifact_path === 'string' && pkg.final_artifact_path.startsWith('public/artifacts/')) {
+      packageArtifactPaths.add(pkg.final_artifact_path)
+    }
+    for (const artifactVersion of Array.isArray(pkg.artifact_versions) ? pkg.artifact_versions : []) {
+      const artifactPath = typeof artifactVersion === 'string'
+        ? artifactVersion
+        : artifactVersion?.path ?? artifactVersion?.artifact_path
+      if (typeof artifactPath === 'string' && artifactPath.startsWith('public/artifacts/')) {
+        packageArtifactPaths.add(artifactPath)
+      }
+    }
+    for (const step of Array.isArray(pkg.steps) ? pkg.steps : []) {
+      if (typeof step.artifact_version_path === 'string' && step.artifact_version_path.startsWith('public/artifacts/')) {
+        packageArtifactPaths.add(step.artifact_version_path)
+      }
+      for (const artifactPath of Array.isArray(step.generated_files) ? step.generated_files : []) {
+        if (typeof artifactPath === 'string' && artifactPath.startsWith('public/artifacts/')) {
+          packageArtifactPaths.add(artifactPath)
+        }
+      }
+    }
+
+    const manifestArtifactPaths = [...(project.artifactPaths ?? [])].sort()
+    if (JSON.stringify([...packageArtifactPaths].sort()) !== JSON.stringify(manifestArtifactPaths)) {
+      failures.push(`${project.packagePath}: curated artifactVersionPaths must match every public artifact version in the package`)
+    }
+  }
+
   if (!Array.isArray(pkg.steps) || pkg.steps.length === 0) {
     failures.push(`${project.packagePath}: source-run package must have steps`)
     continue

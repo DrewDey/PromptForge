@@ -1,0 +1,84 @@
+{
+  "title": "Calming Sleep-Sound Mixer",
+  "slug": "sleep-sound-mixer-chatgpt-56-luna-extra-high",
+  "provider": "ChatGPT",
+  "model": "GPT-5.6 Luna",
+  "model_settings": "ChatGPT Work surface; Effort: Extra High; Speed: Standard.",
+  "source_url": "https://chatgpt.com/share/6a50e972-7b94-83ea-b3d7-f8b726dd2e4d",
+  "run_started_at": "2026-07-10T11:42:46.137Z",
+  "run_finished_at": "2026-07-10T11:49:49.000Z",
+  "chain_type": "one-shot",
+  "prompt_count": 1,
+  "category": "productivity",
+  "difficulty": "beginner",
+  "tags": [
+    "sleep routine",
+    "sound mixer",
+    "white noise",
+    "offline tool",
+    "web audio",
+    "html"
+  ],
+  "tools_used": [
+    "ChatGPT Work",
+    "GPT-5.6 Luna",
+    "HTML",
+    "Web Audio API",
+    "Browser"
+  ],
+  "status": "submitted_pending",
+  "description": "A calm offline browser mixer that procedurally generates rain, fan, and brown-noise layers with presets, independent volume controls, and a gentle sleep timer.",
+  "source_inspiration": [
+    {
+      "url": "https://play.google.com/store/apps/details?id=net.relaxio.relaxio",
+      "title": "White Noise Generator",
+      "engagement_signal": "The current Google Play listing displayed 1M+ downloads and 65.6K reviews, demonstrating broad demand for mixable rain, fan, and colored-noise sleep sounds.",
+      "pathforge_fit_adaptation": "Converted the popular streaming/app-store shape into a deterministic one-file browser artifact. All three layers are generated locally with the Web Audio API, so the PathForge artifact needs no remote audio, account, subscription, CDN, or hosted generation call."
+    }
+  ],
+  "agent_notes": [
+    "Profile registry ID: pathforge-seed-502",
+    "Seed profile: Lena Dusk / LenaDusk",
+    "Prompt count: 1; one-shot Work-mode artifact generation. No continuation or repair prompt was needed because the first saved artifact verified cleanly.",
+    "Provider: ChatGPT",
+    "Model used: GPT-5.6 Luna",
+    "Model settings: Work surface; Effort Extra High; Speed Standard.",
+    "Final artifact: public/artifacts/sleep-sound-mixer-chatgpt-56-luna-extra-high.html",
+    "Source inspiration: the current Google Play White Noise Generator listing displayed 1M+ downloads and 65.6K reviews. The signal was used only as outside demand research; no third-party prompt or product copy was reused.",
+    "PathForge-fit adaptation: a calm one-file procedural sleep-sound mixer, not a streaming client or API wrapper. It generates rain, fan, and brown noise in the browser, provides four presets and independent controls, and runs a local fade-out timer.",
+    "Verification: downloaded ChatGPT file and public artifact are byte-identical at SHA-256 577cea637ba15cd64e888ba76a7b5ab2cd22b0b19044a95d2c2c6b64b8fa29ea; static scan found no external URL, script, stylesheet, remote font, fetch/XHR/WebSocket, unsafe HTML sink, eval/new Function, inline handler, document.execCommand, or modal API; the single inline script parsed; browser testing passed preset selection, custom slider state, Web Audio play/pause, live preset switching, and sleep-timer state; desktop had no horizontal overflow; measured 390x844 layout had 390px document/body width with all controls visible and clean two-row button wrapping. Chrome's verification bridge logged its own synthetic line-925 image fetch error beyond the 924-line source file; this was not emitted by the artifact and the static source contains no image or fetch code.",
+    "Provisioning note: the first public-signup attempt with the unused local handle MaraQuinn failed before intake creation with Database error saving new user. No pending row was created by that attempt. The second attempt provisioned LenaDusk successfully and created the one accepted queued intake recorded here.",
+    "This is queued source-run intake only. Do not create or publish a public project page without a separate explicit admin review step."
+  ],
+  "final_artifact_path": "public/artifacts/sleep-sound-mixer-chatgpt-56-luna-extra-high.html",
+  "artifact_type": "html",
+  "artifact_versions": [
+    "public/artifacts/sleep-sound-mixer-chatgpt-56-luna-extra-high.html"
+  ],
+  "generated_files": [
+    "public/artifacts/sleep-sound-mixer-chatgpt-56-luna-extra-high.html"
+  ],
+  "artifact_sha256": "577cea637ba15cd64e888ba76a7b5ab2cd22b0b19044a95d2c2c6b64b8fa29ea",
+  "screenshots": [],
+  "verification_notes": "The ChatGPT download and final public artifact are byte-identical. One inline JavaScript block parsed. The source is fully self-contained and contains no remote dependencies or unsafe rendering paths. Browser verification confirmed Deep rest values, custom volume changes, 15-minute timer state, Web Audio playback, live Quiet room preset switching, pause behavior, and a polished 390x844 render with no horizontal overflow. A Chrome verification-bridge image fetch error pointed to synthetic line 925, beyond the artifact's 924-line EOF; the artifact itself contains no image element or fetch call.",
+  "steps": [
+    {
+      "step_number": 1,
+      "title": "Build a calming offline sleep-sound mixer",
+      "prompt_exact": "Build me a calming sleep-sound mixer I can save as one file and open in my browser. I want adjustable rain, fan, and brown-noise layers that are generated in the page instead of streamed, a few useful presets, and a sleep timer that fades out gently. It should feel reassuring and simple enough to use in the dark.",
+      "response_exact": "I’m building this as a self-contained offline HTML tool, with the visual controls and audio behavior kept deliberately quiet and low-friction for nighttime use. I’m also checking the workspace’s artifact-saving instructions so the finished file is available properly.\n\nThe first path lookup was just a stale skill alias, so I’m correcting that and reading the actual local guidance before I start the build.\n\nThe mixer is now built as a single dark, offline page with generated audio layers, presets, and a fade-out timer. I’m checking the interaction logic next, especially pause/resume and timer edge cases, before saving the finished file.\n\nThe file passes a JavaScript syntax check and stays fully offline with no streaming, fetches, or external dependencies. I’m saving this validated version now so it remains available as a reusable file.\n\nCalling tool\n\nBuilt and saved with generated rain, fan, brown noise, presets, independent controls, master volume, and a gentle two-minute fade-out timer.\n\nsleep-sound-mixer.html\n\nsleep-sound-mixer.html",
+      "response_summary": "ChatGPT Work produced a self-contained dark-mode sound mixer that procedurally generates rain, fan, and brown-noise layers with presets, per-layer controls, master volume, and a fade-out sleep timer.",
+      "code_blocks": [],
+      "generated_files": [
+        "public/artifacts/sleep-sound-mixer-chatgpt-56-luna-extra-high.html"
+      ],
+      "artifact_version_path": "public/artifacts/sleep-sound-mixer-chatgpt-56-luna-extra-high.html",
+      "notes": "The response created a real downloadable HTML file. It passed exact-file, static, JavaScript, functional, desktop, and measured 390px checks on the first attempt, so no continuation was warranted."
+    }
+  ],
+  "pathforge_submission_url": "https://prompt-forge-sandy.vercel.app/admin/source-runs/cf73efd5-2fb6-48fe-a9fd-a1a0df336d18",
+  "pathforge_pending_id": "cf73efd5-2fb6-48fe-a9fd-a1a0df336d18",
+  "submitted_by_account": "LenaDusk",
+  "submitted_by_profile_registry_id": "pathforge-seed-502",
+  "admin_review_status": "queued_pending_review"
+}

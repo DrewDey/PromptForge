@@ -51,6 +51,17 @@ type ArtifactSize = {
   height: number
 }
 
+type LoadedArtifactSource = {
+  packageId: string
+  srcDoc: string | null
+  usesDirectSource: boolean
+}
+
+type MeasuredArtifact = {
+  packageId: string
+  size: ArtifactSize
+}
+
 const ARTIFACT_FRAME_HEIGHT = 'clamp(520px, calc(100svh - 160px), 760px)'
 const MAX_AUTO_FIT_ARTIFACT_HEIGHT = 6000
 const MAX_AUTO_FIT_ARTIFACT_WIDTH = 14000
@@ -117,9 +128,15 @@ function ArtifactFrame({
   const frameRef = useRef<HTMLDivElement | null>(null)
   const iframeRef = useRef<HTMLIFrameElement | null>(null)
   const [frameSize, setFrameSize] = useState<ArtifactSize | null>(null)
-  const [artifactSize, setArtifactSize] = useState<ArtifactSize | null>(null)
-  const [srcDoc, setSrcDoc] = useState<string | null>(null)
-  const [usesDirectSource, setUsesDirectSource] = useState(false)
+  const [loadedArtifact, setLoadedArtifact] = useState<LoadedArtifactSource | null>(null)
+  const [measuredArtifact, setMeasuredArtifact] = useState<MeasuredArtifact | null>(null)
+  const activeLoadedArtifact =
+    loadedArtifact?.packageId === selectedPackage.id ? loadedArtifact : null
+  const srcDoc = activeLoadedArtifact?.srcDoc ?? null
+  const usesDirectSource = activeLoadedArtifact?.usesDirectSource ?? false
+  const sourceResolved = Boolean(activeLoadedArtifact)
+  const artifactSize =
+    measuredArtifact?.packageId === selectedPackage.id ? measuredArtifact.size : null
 
   useEffect(() => {
     const frame = frameRef.current
@@ -153,38 +170,55 @@ function ArtifactFrame({
   }, [])
 
   useEffect(() => {
-    let cancelled = false
-    setArtifactSize(null)
-    setSrcDoc(null)
-    setUsesDirectSource(false)
+    const controller = new AbortController()
+    const packageId = selectedPackage.id
 
     async function loadArtifact() {
       try {
         const artifactHref = new URL(selectedPackage.artifactPath, window.location.origin).href
-        const response = await fetch(selectedPackage.artifactPath)
+        const response = await fetch(selectedPackage.artifactPath, {
+          signal: controller.signal,
+        })
         const html = await response.text()
 
         if (!response.ok || html.length > MAX_AUTO_FIT_HTML_BYTES) {
-          if (!cancelled) setUsesDirectSource(true)
+          if (!controller.signal.aborted) {
+            setLoadedArtifact({
+              packageId,
+              srcDoc: null,
+              usesDirectSource: true,
+            })
+          }
           return
         }
 
-        if (!cancelled) {
-          setSrcDoc(injectArtifactFitProbe(html, artifactHref))
+        if (!controller.signal.aborted) {
+          setLoadedArtifact({
+            packageId,
+            srcDoc: injectArtifactFitProbe(html, artifactHref),
+            usesDirectSource: false,
+          })
         }
       } catch {
-        if (!cancelled) setUsesDirectSource(true)
+        if (controller.signal.aborted) return
+        setLoadedArtifact({
+          packageId,
+          srcDoc: null,
+          usesDirectSource: true,
+        })
       }
     }
 
     loadArtifact()
 
     return () => {
-      cancelled = true
+      controller.abort()
     }
   }, [selectedPackage.artifactPath, selectedPackage.id])
 
   useEffect(() => {
+    const packageId = selectedPackage.id
+
     function handleMessage(event: MessageEvent) {
       if (event.source !== iframeRef.current?.contentWindow) return
       const data = event.data
@@ -198,22 +232,22 @@ function ArtifactFrame({
         height: Math.max(1, Math.ceil(height)),
       }
 
-      setArtifactSize((current) => {
+      setMeasuredArtifact((current) => {
         if (
-          current &&
-          Math.abs(current.width - nextSize.width) < 4 &&
-          Math.abs(current.height - nextSize.height) < 4
+          current?.packageId === packageId &&
+          Math.abs(current.size.width - nextSize.width) < 4 &&
+          Math.abs(current.size.height - nextSize.height) < 4
         ) {
           return current
         }
 
-        return nextSize
+        return { packageId, size: nextSize }
       })
     }
 
     window.addEventListener('message', handleMessage)
     return () => window.removeEventListener('message', handleMessage)
-  }, [])
+  }, [selectedPackage.id])
 
   const canAutoFit =
     Boolean(srcDoc && frameSize && artifactSize) &&
@@ -254,7 +288,6 @@ function ArtifactFrame({
 
   return (
     <div
-      key={selectedPackage.id}
       id="final-result"
       className="overflow-hidden border border-surface-800 bg-[#111827] shadow-[0_28px_90px_rgba(0,0,0,0.28)]"
     >
@@ -286,20 +319,33 @@ function ArtifactFrame({
         data-artifact-measured-width={artifactSize?.width ?? ''}
         data-artifact-virtual-height={virtualHeight ?? ''}
         data-artifact-virtual-width={virtualWidth ?? ''}
+        data-artifact-package-id={selectedPackage.id}
+        data-artifact-path={selectedPackage.artifactPath}
         className="relative w-full overflow-hidden bg-[#111827]"
         style={{ height: ARTIFACT_FRAME_HEIGHT }}
       >
-        <iframe
-          ref={iframeRef}
-          key={selectedPackage.id}
-          title={`${selectedPackage.artifactTitle} generated from a ${providerName} source run`}
-          src={usesDirectSource || !srcDoc ? selectedPackage.artifactPath : undefined}
-          srcDoc={srcDoc ?? undefined}
-          sandbox="allow-scripts allow-same-origin"
-          scrolling={canAutoFit ? 'no' : 'auto'}
-          className="absolute left-0 top-0 max-w-none bg-[#111827]"
-          style={iframeStyle}
-        />
+        {sourceResolved ? (
+          <iframe
+            ref={iframeRef}
+            key={`${selectedPackage.id}:${usesDirectSource ? 'direct' : 'document'}`}
+            title={`${selectedPackage.artifactTitle} generated from a ${providerName} source run`}
+            src={usesDirectSource ? selectedPackage.artifactPath : undefined}
+            srcDoc={usesDirectSource ? undefined : srcDoc ?? undefined}
+            sandbox="allow-scripts allow-same-origin"
+            scrolling={canAutoFit ? 'no' : 'auto'}
+            className="absolute left-0 top-0 max-w-none bg-[#111827]"
+            style={iframeStyle}
+          />
+        ) : (
+          <div
+            className="absolute inset-0 grid place-items-center bg-surface-950 px-6 text-center text-sm font-semibold text-surface-300"
+            role="status"
+            aria-live="polite"
+            data-artifact-loading
+          >
+            Loading selected artifact…
+          </div>
+        )}
       </div>
     </div>
   )
@@ -971,7 +1017,11 @@ export default function SourceRunShowcase({
       {selectedPackage && (
         <section className="border-b border-surface-200 bg-surface-50 px-4 pb-9 sm:px-6 lg:px-8">
           <div className="mx-auto max-w-7xl">
-            <ArtifactFrame selectedPackage={selectedPackage} providerName={providerName} />
+            <ArtifactFrame
+              key={selectedPackage.id}
+              selectedPackage={selectedPackage}
+              providerName={providerName}
+            />
           </div>
         </section>
       )}

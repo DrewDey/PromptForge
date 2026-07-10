@@ -1,0 +1,2501 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
+<title>Contact Sheet — Mirror Shot Consistency Studio</title>
+<style>
+
+/* ========================================================================
+   TOKENS
+   ======================================================================== */
+:root{
+  --paper: #EDE6D6;
+  --paper-deep: #E2D9C6;
+  --paper-edge: #D8CCB3;
+  --ink: #2B2622;
+  --ink-soft: #5C5448;
+  --steel: #4A5560;
+  --steel-deep: #38414A;
+  --safelight: #B8443A;
+  --safelight-soft: #E4C2BC;
+  --develop: #6B7A4F;
+  --develop-soft: #D7DEC7;
+  --grease: #C9A227;
+  --line: rgba(43,38,34,0.16);
+  --line-strong: rgba(43,38,34,0.32);
+  --shadow: rgba(43,38,34,0.18);
+  --radius-s: 4px;
+  --radius-m: 8px;
+  --radius-l: 14px;
+  --mono: ui-monospace, "SF Mono", "Cascadia Mono", "Roboto Mono", Consolas, monospace;
+  --sans: -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+}
+
+*{box-sizing:border-box;}
+html,body{margin:0;padding:0;}
+body{
+  background:
+    radial-gradient(ellipse at 20% -10%, rgba(255,255,255,0.35), transparent 45%),
+    var(--paper);
+  color:var(--ink);
+  font-family:var(--sans);
+  min-height:100vh;
+  overflow-x:clip;
+  -webkit-font-smoothing:antialiased;
+}
+
+/* faint paper grain via repeating gradient, no external image */
+body::before{
+  content:"";
+  position:fixed;
+  inset:0;
+  pointer-events:none;
+  background-image:
+    repeating-linear-gradient(0deg, rgba(43,38,34,0.022) 0px, transparent 1px, transparent 2px),
+    repeating-linear-gradient(90deg, rgba(43,38,34,0.018) 0px, transparent 1px, transparent 2px);
+  z-index:0;
+}
+
+button{font-family:inherit;}
+input,select,textarea{font-family:inherit; appearance:none; -webkit-appearance:none;}
+
+:focus-visible{
+  outline:2px solid var(--steel-deep);
+  outline-offset:2px;
+}
+
+.app{
+  position:relative;
+  z-index:1;
+  max-width:1180px;
+  margin:0 auto;
+  min-height:100vh;
+  display:flex;
+  flex-direction:column;
+}
+
+/* ========================================================================
+   FILM STRIP HEADER / NAV  (signature element, used once)
+   ======================================================================== */
+.filmstrip{
+  background:var(--ink);
+  border-bottom:3px solid var(--steel-deep);
+  position:sticky;
+  top:0;
+  z-index:50;
+}
+.filmstrip-sprockets{
+  display:flex;
+  justify-content:space-between;
+  padding:5px 14px 0;
+  pointer-events:none;
+}
+.filmstrip-sprockets span{
+  width:8px;height:8px;
+  border-radius:2px;
+  background:var(--paper);
+  opacity:0.85;
+}
+.filmstrip-inner{
+  display:flex;
+  align-items:center;
+  gap:18px;
+  padding:8px 18px 12px;
+  flex-wrap:wrap;
+}
+.brand{
+  display:flex;
+  align-items:baseline;
+  gap:8px;
+  color:var(--paper);
+  margin-right:auto;
+  min-width:0;
+}
+.brand-mark{
+  font-family:var(--mono);
+  font-size:12px;
+  letter-spacing:0;
+  color:var(--grease);
+  border:1px solid var(--grease);
+  border-radius:3px;
+  padding:2px 5px;
+  flex-shrink:0;
+}
+.brand-title{
+  font-weight:700;
+  font-size:15px;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+.brand-sub{
+  font-size:11px;
+  color:rgba(237,230,214,0.55);
+  white-space:nowrap;
+  display:none;
+}
+@media(min-width:640px){ .brand-sub{display:inline;} }
+
+.tabs{
+  display:flex;
+  gap:4px;
+  flex-wrap:wrap;
+}
+.tab-btn{
+  background:transparent;
+  border:1px solid rgba(237,230,214,0.22);
+  color:rgba(237,230,214,0.78);
+  padding:7px 12px;
+  border-radius:6px;
+  font-size:12.5px;
+  font-weight:600;
+  cursor:pointer;
+  display:flex;
+  align-items:center;
+  gap:6px;
+  letter-spacing:0;
+  white-space:nowrap;
+}
+.tab-btn .num{
+  font-family:var(--mono);
+  font-size:10.5px;
+  color:var(--grease);
+}
+.tab-btn[aria-selected="true"]{
+  background:var(--paper);
+  color:var(--ink);
+  border-color:var(--paper);
+}
+.tab-btn[aria-selected="true"] .num{color:var(--safelight);}
+.tab-btn:hover:not([aria-selected="true"]){
+  border-color:rgba(237,230,214,0.45);
+  color:var(--paper);
+}
+
+/* ========================================================================
+   LAYOUT SHELL
+   ======================================================================== */
+main{
+  flex:1;
+  padding:22px 18px 60px;
+  min-width:0;
+}
+.panel{display:none;}
+.panel.active{display:block;}
+
+.panel-head{
+  display:flex;
+  justify-content:space-between;
+  align-items:flex-end;
+  gap:16px;
+  margin-bottom:18px;
+  flex-wrap:wrap;
+  border-bottom:1px solid var(--line-strong);
+  padding-bottom:14px;
+}
+.panel-head h1{
+  font-size:21px;
+  margin:0 0 4px;
+  letter-spacing:0;
+}
+.panel-head p{
+  margin:0;
+  font-size:13px;
+  color:var(--ink-soft);
+  max-width:560px;
+}
+.frame-counter{
+  font-family:var(--mono);
+  font-size:11px;
+  color:var(--ink-soft);
+  border:1px solid var(--line-strong);
+  border-radius:4px;
+  padding:4px 8px;
+  background:rgba(255,255,255,0.4);
+  flex-shrink:0;
+}
+
+.card{
+  background:rgba(255,255,255,0.55);
+  border:1px solid var(--line);
+  border-radius:var(--radius-l);
+  padding:18px;
+  box-shadow:0 1px 0 rgba(255,255,255,0.6) inset, 0 2px 10px var(--shadow);
+}
+.card + .card{margin-top:16px;}
+
+.grid-2{
+  display:grid;
+  grid-template-columns:1fr;
+  gap:16px;
+}
+@media(min-width:860px){
+  .grid-2{grid-template-columns:1.3fr 1fr;}
+}
+
+h2.section-title{
+  font-size:14px;
+  text-transform:uppercase;
+  letter-spacing:0;
+  color:var(--steel-deep);
+  margin:0 0 12px;
+  display:flex;
+  align-items:center;
+  gap:8px;
+}
+h2.section-title .tag{
+  font-family:var(--mono);
+  font-size:10px;
+  background:var(--steel-deep);
+  color:var(--paper);
+  padding:2px 6px;
+  border-radius:3px;
+  letter-spacing:0;
+  text-transform:none;
+}
+
+/* ========================================================================
+   OPTION CARD PICKERS (pose / angle / lighting / background / distance)
+   ======================================================================== */
+.option-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fill, minmax(118px,1fr));
+  gap:10px;
+}
+.opt-card{
+  background:rgba(255,255,255,0.55);
+  border:1.5px solid var(--line-strong);
+  border-radius:var(--radius-m);
+  padding:10px 8px 9px;
+  cursor:pointer;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:6px;
+  text-align:center;
+  min-width:0;
+}
+.opt-card svg{width:40px;height:40px;flex-shrink:0;}
+.opt-card .lbl{
+  font-size:11.5px;
+  font-weight:600;
+  line-height:1.25;
+}
+.opt-card[aria-pressed="true"]{
+  border-color:var(--steel-deep);
+  background:var(--develop-soft);
+  box-shadow:0 0 0 2px rgba(74,85,96,0.18);
+}
+.opt-card:hover{border-color:var(--steel);}
+
+fieldset{border:0;padding:0;margin:0;}
+legend{padding:0;}
+
+.field-row{margin-bottom:16px;}
+.field-row:last-child{margin-bottom:0;}
+.field-row label.fl-label{
+  display:block;
+  font-size:12px;
+  font-weight:700;
+  text-transform:uppercase;
+  letter-spacing:0;
+  color:var(--steel-deep);
+  margin-bottom:8px;
+}
+.text-input{
+  width:100%;
+  min-width:0;
+  border:1.5px solid var(--line-strong);
+  border-radius:var(--radius-m);
+  padding:9px 10px;
+  font-size:13.5px;
+  background:rgba(255,255,255,0.7);
+  color:var(--ink);
+}
+.text-input:focus{border-color:var(--steel-deep);}
+
+.btn{
+  display:inline-flex;
+  align-items:center;
+  gap:7px;
+  border-radius:var(--radius-m);
+  padding:10px 16px;
+  font-size:13px;
+  font-weight:700;
+  cursor:pointer;
+  border:1.5px solid transparent;
+  letter-spacing:0;
+}
+.btn-primary{background:var(--steel-deep); color:var(--paper); border-color:var(--steel-deep);}
+.btn-primary:hover{background:var(--ink);}
+.btn-secondary{background:transparent; color:var(--steel-deep); border-color:var(--line-strong);}
+.btn-secondary:hover{border-color:var(--steel-deep);}
+.btn-danger{background:transparent; color:var(--safelight); border-color:var(--safelight-soft);}
+.btn-danger:hover{background:var(--safelight-soft);}
+.btn:disabled{opacity:0.45; cursor:not-allowed;}
+.btn-row{display:flex; gap:10px; flex-wrap:wrap; margin-top:16px;}
+
+.lock-banner{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  padding:10px 14px;
+  border-radius:var(--radius-m);
+  font-size:12.5px;
+  font-weight:600;
+  margin-bottom:16px;
+}
+.lock-banner.is-locked{background:var(--develop-soft); color:#3E4A2E; border:1px solid rgba(107,122,79,0.35);}
+.lock-banner.is-unlocked{background:var(--safelight-soft); color:#7A2E26; border:1px solid rgba(184,68,58,0.3);}
+.lock-banner svg{flex-shrink:0;}
+
+/* ========================================================================
+   SHOOT SETUP / REFERENCE CARD MODE
+   ======================================================================== */
+.refcard{
+  background:var(--ink);
+  color:var(--paper);
+  border-radius:var(--radius-l);
+  padding:20px;
+  position:relative;
+  overflow:clip;
+}
+.refcard-grid{
+  display:grid;
+  grid-template-columns:repeat(2,1fr);
+  gap:14px;
+  margin-top:14px;
+}
+@media(min-width:680px){
+  .refcard-grid{grid-template-columns:repeat(3,1fr);}
+}
+.refcard-item{
+  border:1px solid rgba(237,230,214,0.22);
+  border-radius:var(--radius-m);
+  padding:12px 10px;
+  min-width:0;
+}
+.refcard-item .ri-eyebrow{
+  font-family:var(--mono);
+  font-size:9.5px;
+  letter-spacing:0;
+  text-transform:uppercase;
+  color:var(--grease);
+  margin-bottom:6px;
+}
+.refcard-item .ri-val{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  font-size:13px;
+  font-weight:700;
+}
+.refcard-item svg{width:22px;height:22px;flex-shrink:0;}
+.refcard-empty{
+  font-size:12.5px;
+  color:rgba(237,230,214,0.6);
+  padding:20px 10px;
+  text-align:center;
+}
+
+.alignment-toggle{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  margin-top:16px;
+  flex-wrap:wrap;
+}
+.switch-row{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  font-size:12.5px;
+  font-weight:600;
+}
+.switch{
+  position:relative;
+  width:38px;height:21px;
+  flex-shrink:0;
+}
+.switch input{
+  position:absolute;
+  inset:0;
+  opacity:0;
+  margin:0;
+  cursor:pointer;
+}
+.switch .track{
+  position:absolute;inset:0;
+  background:var(--line-strong);
+  border-radius:11px;
+  transition:background 0.15s;
+}
+.switch .knob{
+  position:absolute;
+  top:2px;left:2px;
+  width:17px;height:17px;
+  background:var(--paper);
+  border-radius:50%;
+  transition:left 0.15s;
+}
+.switch input:checked + .track{background:var(--steel-deep);}
+.switch input:checked + .track .knob{left:19px;}
+.switch input:checked ~ .knob{left:19px;}
+
+.overlay-stage{
+  margin-top:14px;
+  position:relative;
+  aspect-ratio:3/4;
+  max-height:520px;
+  background:
+    linear-gradient(160deg, #cfc6b2, #b9af98);
+  border-radius:var(--radius-m);
+  overflow:clip;
+  border:1px solid var(--line-strong);
+}
+.overlay-svg{
+  position:absolute;
+  inset:0;
+  width:100%;
+  height:100%;
+}
+
+/* ========================================================================
+   CHECKLIST ITEMS (retake risk + privacy)
+   ======================================================================== */
+.check-list{
+  display:flex;
+  flex-direction:column;
+  gap:8px;
+}
+.check-item{
+  display:flex;
+  align-items:flex-start;
+  gap:10px;
+  padding:10px 12px;
+  border-radius:var(--radius-m);
+  border:1.5px solid var(--line-strong);
+  background:rgba(255,255,255,0.5);
+  cursor:pointer;
+}
+.check-item input{
+  margin-top:2px;
+  width:17px;height:17px;
+  flex-shrink:0;
+  accent-color:var(--steel-deep);
+  cursor:pointer;
+}
+.check-item .ci-text{min-width:0;}
+.check-item .ci-title{font-size:13px; font-weight:700;}
+.check-item .ci-sub{font-size:11.5px; color:var(--ink-soft); margin-top:2px;}
+.check-item[data-checked="true"]{
+  border-color:rgba(107,122,79,0.45);
+  background:var(--develop-soft);
+}
+.check-item.is-warning[data-checked="false"]{
+  border-color:rgba(184,68,58,0.4);
+}
+
+.flag-banner{
+  display:flex;
+  align-items:flex-start;
+  gap:10px;
+  padding:12px 14px;
+  border-radius:var(--radius-m);
+  background:var(--safelight-soft);
+  border:1px solid rgba(184,68,58,0.35);
+  color:#7A2E26;
+  font-size:12.5px;
+  margin-top:14px;
+}
+.flag-banner.is-clear{
+  background:var(--develop-soft);
+  border-color:rgba(107,122,79,0.35);
+  color:#3E4A2E;
+}
+.flag-banner ul{margin:6px 0 0; padding-left:18px;}
+.flag-banner svg{flex-shrink:0; margin-top:1px;}
+
+/* ========================================================================
+   PRIVACY CROP STAGE
+   ======================================================================== */
+.crop-stage-wrap{
+  display:grid;
+  grid-template-columns:1fr;
+  gap:16px;
+}
+@media(min-width:860px){
+  .crop-stage-wrap{grid-template-columns:1fr 320px;}
+}
+.crop-stage{
+  position:relative;
+  aspect-ratio:3/4;
+  max-height:560px;
+  background:linear-gradient(160deg,#e7e0cf,#d6cdb6);
+  border-radius:var(--radius-m);
+  border:1px solid var(--line-strong);
+  overflow:clip;
+  touch-action:none;
+}
+.crop-box{
+  position:absolute;
+  border:2px dashed var(--safelight);
+  background:rgba(184,68,58,0.06);
+  cursor:move;
+}
+.crop-handle{
+  position:absolute;
+  width:18px;height:18px;
+  background:var(--safelight);
+  border-radius:4px;
+  border:2px solid var(--paper);
+  touch-action:none;
+}
+.crop-handle.nw{top:-9px;left:-9px;cursor:nwse-resize;}
+.crop-handle.ne{top:-9px;right:-9px;cursor:nesw-resize;}
+.crop-handle.sw{bottom:-9px;left:-9px;cursor:nesw-resize;}
+.crop-handle.se{bottom:-9px;right:-9px;cursor:nwse-resize;}
+
+.crop-readout{
+  font-family:var(--mono);
+  font-size:11px;
+  color:var(--ink-soft);
+  margin-top:8px;
+}
+
+/* ========================================================================
+   COMPARISON SCORE — exposure meter signature element
+   ======================================================================== */
+.meter-wrap{
+  display:flex;
+  align-items:center;
+  gap:18px;
+  flex-wrap:wrap;
+}
+.meter-dial{flex-shrink:0;}
+.meter-readout{min-width:0;}
+.meter-score{
+  font-family:var(--mono);
+  font-size:34px;
+  font-weight:700;
+  line-height:1;
+}
+.meter-score .of{font-size:15px; color:var(--ink-soft); font-weight:600;}
+.meter-label{
+  font-size:12px;
+  font-weight:700;
+  text-transform:uppercase;
+  letter-spacing:0;
+  color:var(--steel-deep);
+  margin-top:4px;
+}
+
+.breakdown-list{display:flex; flex-direction:column; gap:7px; margin-top:14px;}
+.bd-row{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  font-size:12.5px;
+}
+.bd-row .bd-name{width:96px; flex-shrink:0; font-weight:600; color:var(--ink-soft);}
+.bd-row .bd-bar{
+  flex:1;
+  height:8px;
+  border-radius:4px;
+  background:rgba(43,38,34,0.08);
+  overflow:hidden;
+  min-width:0;
+}
+.bd-row .bd-fill{height:100%; border-radius:4px;}
+.bd-row .bd-fill.match{background:var(--develop);}
+.bd-row .bd-fill.miss{background:var(--safelight);}
+.bd-row .bd-pts{width:50px; text-align:right; font-family:var(--mono); font-size:11px; flex-shrink:0;}
+
+.session-card{
+  border:1.5px solid var(--line-strong);
+  border-radius:var(--radius-m);
+  padding:14px;
+  background:rgba(255,255,255,0.5);
+  margin-bottom:12px;
+}
+.session-card-head{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:10px;
+  flex-wrap:wrap;
+}
+.session-date{font-family:var(--mono); font-size:11.5px; color:var(--ink-soft);}
+.session-score{
+  font-family:var(--mono);
+  font-weight:700;
+  font-size:15px;
+  padding:3px 9px;
+  border-radius:4px;
+}
+.session-score.high{background:var(--develop-soft); color:#3E4A2E;}
+.session-score.mid{background:#F0E3B8; color:#7A5E16;}
+.session-score.low{background:var(--safelight-soft); color:#7A2E26;}
+.session-meta{
+  font-size:11.5px;
+  color:var(--ink-soft);
+  margin-top:8px;
+  display:flex;
+  flex-wrap:wrap;
+  gap:10px;
+}
+.session-actions{display:flex; gap:8px; margin-top:10px;}
+.btn-tiny{
+  font-size:11px;
+  padding:5px 9px;
+  border-radius:5px;
+  border:1.5px solid var(--line-strong);
+  background:transparent;
+  color:var(--steel-deep);
+  cursor:pointer;
+  font-weight:700;
+}
+.btn-tiny:hover{border-color:var(--steel-deep);}
+.btn-tiny.danger{color:var(--safelight); border-color:var(--safelight-soft);}
+
+.empty-state{
+  text-align:center;
+  padding:40px 20px;
+  color:var(--ink-soft);
+}
+.empty-state svg{margin-bottom:10px;}
+.empty-state .es-title{font-weight:700; color:var(--ink); margin-bottom:4px;}
+.empty-state .es-sub{font-size:12.5px; max-width:340px; margin:0 auto;}
+
+/* ========================================================================
+   RECEIPT
+   ======================================================================== */
+.receipt-wrap{
+  background:#FBF8F0;
+  border:1px solid var(--line-strong);
+  border-radius:var(--radius-m);
+  padding:0;
+  position:relative;
+  overflow:clip;
+}
+.receipt-edge-top, .receipt-edge-bottom{
+  height:10px;
+  background:
+    repeating-linear-gradient(115deg, transparent 0 7px, var(--paper) 7px 14px);
+}
+.receipt-body{padding:18px 20px;}
+.receipt-pre{
+  font-family:var(--mono);
+  font-size:12px;
+  line-height:1.65;
+  white-space:pre-wrap;
+  word-break:break-word;
+  margin:0;
+  color:var(--ink);
+}
+.receipt-toolbar{
+  display:flex;
+  gap:10px;
+  align-items:center;
+  flex-wrap:wrap;
+  margin-bottom:14px;
+}
+.copy-feedback{
+  font-size:12px;
+  font-weight:700;
+  color:var(--develop);
+  opacity:0;
+  transition:opacity 0.2s;
+}
+.copy-feedback.show{opacity:1;}
+.receipt-select{
+  flex:1;
+  min-width:160px;
+}
+
+select.text-input{
+  background-image:none;
+}
+.select-wrap{position:relative;}
+.select-wrap::after{
+  content:"";
+  position:absolute;
+  right:12px; top:50%;
+  width:7px;height:7px;
+  border-right:2px solid var(--ink-soft);
+  border-bottom:2px solid var(--ink-soft);
+  transform:translateY(-65%) rotate(45deg);
+  pointer-events:none;
+}
+
+textarea.text-input{resize:vertical; min-height:64px;}
+
+.hint{font-size:11.5px; color:var(--ink-soft); margin-top:6px;}
+
+.kicker{
+  font-family:var(--mono);
+  font-size:10.5px;
+  letter-spacing:0;
+  color:var(--ink-soft);
+  text-transform:uppercase;
+}
+
+.file-controls{
+  display:flex;
+  gap:8px;
+  flex-wrap:wrap;
+}
+
+footer.app-foot{
+  text-align:center;
+  padding:18px;
+  font-size:11px;
+  color:var(--ink-soft);
+  border-top:1px solid var(--line);
+}
+
+.sr-only{
+  position:absolute;
+  width:1px;height:1px;
+  overflow:hidden;
+  clip:rect(0,0,0,0);
+}
+
+@media (prefers-reduced-motion: reduce){
+  *{transition:none !important; animation:none !important;}
+}
+
+</style>
+</head>
+<body>
+
+<div class="app">
+
+  <header class="filmstrip">
+    <div class="filmstrip-sprockets" aria-hidden="true">
+      <span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span>
+    </div>
+    <div class="filmstrip-inner">
+      <div class="brand">
+        <span class="brand-mark">ƒ/CS</span>
+        <span class="brand-title">Contact Sheet</span>
+        <span class="brand-sub">— mirror shot consistency studio</span>
+      </div>
+      <nav class="tabs" role="tablist" aria-label="Studio sections">
+        <button class="tab-btn" role="tab" id="tabbtn-recipe" aria-controls="panel-recipe" aria-selected="true" data-panel="recipe"><span class="num">01</span> Recipe</button>
+        <button class="tab-btn" role="tab" id="tabbtn-setup" aria-controls="panel-setup" aria-selected="false" data-panel="setup"><span class="num">02</span> Shoot Setup</button>
+        <button class="tab-btn" role="tab" id="tabbtn-privacy" aria-controls="panel-privacy" aria-selected="false" data-panel="privacy"><span class="num">03</span> Privacy Crop</button>
+        <button class="tab-btn" role="tab" id="tabbtn-log" aria-controls="panel-log" aria-selected="false" data-panel="log"><span class="num">04</span> Session Log</button>
+        <button class="tab-btn" role="tab" id="tabbtn-receipt" aria-controls="panel-receipt" aria-selected="false" data-panel="receipt"><span class="num">05</span> Receipt</button>
+      </nav>
+    </div>
+  </header>
+
+  <main>
+
+    <!-- ============================ PANEL 1: RECIPE ============================ -->
+    <section class="panel active" id="panel-recipe" role="tabpanel" aria-labelledby="tabbtn-recipe">
+      <div class="panel-head">
+        <div>
+          <h1>Lock the recipe</h1>
+          <p>Pick the pose, angle, light, background and distance you'll repeat every time. Lock it once — everything downstream measures against this baseline, not against any single photo.</p>
+        </div>
+        <span class="frame-counter" id="recipe-frame-counter">FRAME — 00</span>
+      </div>
+
+      <div id="recipe-lock-banner" class="lock-banner is-unlocked">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="11" width="16" height="9" rx="1.5"/><path d="M8 11V7a4 4 0 0 1 8 0v1"/></svg>
+        <span id="recipe-lock-text">No recipe locked yet. Choose your settings below, then lock in.</span>
+      </div>
+
+      <div class="card">
+        <h2 class="section-title">Pose <span class="tag">20 PTS</span></h2>
+        <div class="option-grid" id="grid-pose" role="group" aria-label="Pose options"></div>
+      </div>
+
+      <div class="card">
+        <h2 class="section-title">Camera angle <span class="tag">20 PTS</span></h2>
+        <div class="option-grid" id="grid-angle" role="group" aria-label="Angle options"></div>
+      </div>
+
+      <div class="card">
+        <h2 class="section-title">Lighting <span class="tag">15 PTS</span></h2>
+        <div class="option-grid" id="grid-lighting" role="group" aria-label="Lighting options"></div>
+      </div>
+
+      <div class="card">
+        <h2 class="section-title">Background <span class="tag">15 PTS</span></h2>
+        <div class="option-grid" id="grid-background" role="group" aria-label="Background options"></div>
+      </div>
+
+      <div class="grid-2">
+        <div class="card">
+          <h2 class="section-title">Distance from mirror <span class="tag">10 PTS</span></h2>
+          <div class="option-grid" id="grid-distance" role="group" aria-label="Distance options"></div>
+        </div>
+        <div class="card">
+          <h2 class="section-title">Time bucket <span class="tag">10 PTS</span></h2>
+          <div class="option-grid" id="grid-time" role="group" aria-label="Time bucket options"></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2 class="section-title">Outfit rule <span class="tag">10 PTS</span></h2>
+        <div class="field-row" style="margin-bottom:0;">
+          <label class="fl-label" for="input-outfit">What you'll wear every session</label>
+          <input type="text" class="text-input" id="input-outfit" placeholder="e.g. black compression shorts, no shirt, hair down" maxlength="120">
+          <p class="hint">Keep it specific — "gym clothes" isn't repeatable, "navy joggers, white tee" is.</p>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2 class="section-title">Recipe name &amp; notes</h2>
+        <div class="field-row">
+          <label class="fl-label" for="input-recipe-name">Recipe name</label>
+          <input type="text" class="text-input" id="input-recipe-name" placeholder="e.g. Garage gym mirror, AM fasted" maxlength="60">
+        </div>
+        <div class="field-row" style="margin-bottom:0;">
+          <label class="fl-label" for="input-recipe-notes">Setup notes (optional)</label>
+          <textarea class="text-input" id="input-recipe-notes" rows="2" maxlength="280" placeholder="Phone propped on shelf, 5ft back, overhead fluorescents only, no window light"></textarea>
+        </div>
+      </div>
+
+      <div class="btn-row">
+        <button class="btn btn-primary" id="btn-lock-recipe" type="button">
+          <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="4" y="11" width="16" height="9" rx="1.5"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>
+          Lock this recipe
+        </button>
+        <button class="btn btn-secondary" id="btn-unlock-recipe" type="button" disabled>Unlock &amp; edit</button>
+      </div>
+    </section>
+
+    <!-- ============================ PANEL 2: SHOOT SETUP ============================ -->
+    <section class="panel" id="panel-setup" role="tabpanel" aria-labelledby="tabbtn-setup">
+      <div class="panel-head">
+        <div>
+          <h1>Shoot setup</h1>
+          <p>Hold this open next to the mirror while you get into position. Then log today's actual setup and clear the retake-risk checklist before you shoot.</p>
+        </div>
+        <span class="frame-counter" id="setup-frame-counter">FRAME — 00</span>
+      </div>
+
+      <div class="card">
+        <h2 class="section-title">Reference card — your locked recipe</h2>
+        <div class="refcard" id="refcard">
+          <div id="refcard-empty" class="refcard-empty">No recipe locked yet. Go to <strong>01 Recipe</strong> and lock one in — it'll show up here as a held-up cheat card.</div>
+          <div class="refcard-grid" id="refcard-grid" style="display:none;"></div>
+        </div>
+
+        <div class="alignment-toggle">
+          <label class="switch-row" for="toggle-overlay">
+            <span class="switch">
+              <input type="checkbox" id="toggle-overlay">
+              <span class="track"><span class="knob"></span></span>
+            </span>
+            Show alignment overlay (crosshair, level line, thirds grid)
+          </label>
+        </div>
+
+        <div class="overlay-stage" id="overlay-stage" style="display:none;">
+          <svg class="overlay-svg" id="overlay-svg" viewBox="0 0 300 400" preserveAspectRatio="xMidYMid slice"></svg>
+        </div>
+        <p class="hint">Prop your tablet or phone against this overlay's lines to judge level and centering before you switch to the camera. This screen is the rig, not the shot.</p>
+      </div>
+
+      <div class="card">
+        <h2 class="section-title">Today's actual setup</h2>
+        <div class="grid-2">
+          <div>
+            <div class="field-row">
+              <label class="fl-label" for="select-today-pose">Pose used today</label>
+              <div class="select-wrap"><select class="text-input" id="select-today-pose"></select></div>
+            </div>
+            <div class="field-row">
+              <label class="fl-label" for="select-today-angle">Angle used today</label>
+              <div class="select-wrap"><select class="text-input" id="select-today-angle"></select></div>
+            </div>
+            <div class="field-row">
+              <label class="fl-label" for="select-today-lighting">Lighting today</label>
+              <div class="select-wrap"><select class="text-input" id="select-today-lighting"></select></div>
+            </div>
+          </div>
+          <div>
+            <div class="field-row">
+              <label class="fl-label" for="select-today-background">Background today</label>
+              <div class="select-wrap"><select class="text-input" id="select-today-background"></select></div>
+            </div>
+            <div class="field-row">
+              <label class="fl-label" for="select-today-distance">Distance today</label>
+              <div class="select-wrap"><select class="text-input" id="select-today-distance"></select></div>
+            </div>
+            <div class="field-row" style="margin-bottom:0;">
+              <label class="fl-label" for="select-today-time">Time bucket today</label>
+              <div class="select-wrap"><select class="text-input" id="select-today-time"></select></div>
+            </div>
+          </div>
+        </div>
+        <div class="field-row" style="margin-top:16px; margin-bottom:0;">
+          <label class="fl-label" for="input-today-outfit">Outfit note today</label>
+          <input type="text" class="text-input" id="input-today-outfit" placeholder="e.g. same as recipe — black shorts, no shirt" maxlength="120">
+        </div>
+      </div>
+
+      <div class="card">
+        <h2 class="section-title">Retake-risk checklist</h2>
+        <div class="check-list" id="retake-checklist"></div>
+        <div class="flag-banner" id="retake-flag-summary"></div>
+      </div>
+
+      <div class="btn-row">
+        <button class="btn btn-primary" id="btn-save-session" type="button">
+          <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 5v14M5 12l7 7 7-7"/></svg>
+          Save this session &amp; score it
+        </button>
+        <span class="hint" id="save-session-hint">Lock a recipe first to enable scoring.</span>
+      </div>
+    </section>
+
+    <!-- ============================ PANEL 3: PRIVACY CROP ============================ -->
+    <section class="panel" id="panel-privacy" role="tabpanel" aria-labelledby="tabbtn-privacy">
+      <div class="panel-head">
+        <div>
+          <h1>Privacy crop check</h1>
+          <p>Rehearse your crop on a placeholder before you shoot for real. Nothing here ever touches an actual photo — this stage never accepts an upload, on purpose.</p>
+        </div>
+        <span class="frame-counter">FRAME — 00</span>
+      </div>
+
+      <div class="crop-stage-wrap">
+        <div>
+          <div class="card">
+            <h2 class="section-title">Drag the frame</h2>
+            <div class="crop-stage" id="crop-stage">
+              <svg id="crop-placeholder-svg" viewBox="0 0 300 400" width="100%" height="100%" preserveAspectRatio="xMidYMid slice" style="position:absolute;inset:0;"></svg>
+              <div class="crop-box" id="crop-box">
+                <div class="crop-handle nw" data-handle="nw"></div>
+                <div class="crop-handle ne" data-handle="ne"></div>
+                <div class="crop-handle sw" data-handle="sw"></div>
+                <div class="crop-handle se" data-handle="se"></div>
+              </div>
+            </div>
+            <p class="crop-readout" id="crop-readout">Crop: — </p>
+            <p class="hint">Placeholder figure only — generic and faceless on purpose. Use it to rehearse where your real crop line should fall.</p>
+          </div>
+        </div>
+
+        <div>
+          <div class="card">
+            <h2 class="section-title">Privacy checklist</h2>
+            <div class="check-list" id="privacy-checklist"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================ PANEL 4: SESSION LOG ============================ -->
+    <section class="panel" id="panel-log" role="tabpanel" aria-labelledby="tabbtn-log">
+      <div class="panel-head">
+        <div>
+          <h1>Session log &amp; comparison</h1>
+          <p>Every saved session scored against your locked recipe. The score is a comparability score — how closely today matched the baseline — not a body or appearance analysis.</p>
+        </div>
+        <span class="frame-counter">FRAME — 00</span>
+      </div>
+
+      <div class="card">
+        <h2 class="section-title">Most recent comparability score</h2>
+        <div class="meter-wrap" id="meter-wrap"></div>
+        <div class="breakdown-list" id="meter-breakdown"></div>
+      </div>
+
+      <div class="card">
+        <h2 class="section-title">All sessions</h2>
+        <div id="session-list"></div>
+      </div>
+    </section>
+
+    <!-- ============================ PANEL 5: RECEIPT ============================ -->
+    <section class="panel" id="panel-receipt" role="tabpanel" aria-labelledby="tabbtn-receipt">
+      <div class="panel-head">
+        <div>
+          <h1>Shoot receipt</h1>
+          <p>A plain-text summary you can paste anywhere — a notes app, a coaching thread, your own log. No image data, ever; this is process, not pixels.</p>
+        </div>
+        <span class="frame-counter">FRAME — 00</span>
+      </div>
+
+      <div class="card">
+        <div class="receipt-toolbar">
+          <div class="select-wrap receipt-select">
+            <select class="text-input" id="select-receipt-session"></select>
+          </div>
+          <button class="btn btn-primary" id="btn-copy-receipt" type="button">
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="9" y="9" width="11" height="11" rx="1.5"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg>
+            Copy receipt
+          </button>
+          <span class="copy-feedback" id="copy-feedback">Copied</span>
+        </div>
+
+        <div class="receipt-wrap">
+          <div class="receipt-edge-top" aria-hidden="true"></div>
+          <div class="receipt-body">
+            <pre class="receipt-pre" id="receipt-pre">No sessions saved yet. Save a session from 02 Shoot Setup to generate a receipt.</pre>
+          </div>
+          <div class="receipt-edge-bottom" aria-hidden="true"></div>
+        </div>
+        <textarea class="text-input sr-only" id="receipt-fallback-textarea" readonly aria-hidden="true"></textarea>
+      </div>
+
+      <div class="card">
+        <h2 class="section-title">Save / open studio file</h2>
+        <p class="hint" style="margin-top:0;">This studio remembers your data in this browser automatically. Use these to back it up or move it to another device — exports a small JSON file, never a photo.</p>
+        <div class="file-controls">
+          <button class="btn btn-secondary" id="btn-export-json" type="button">Save studio file (.json)</button>
+          <button class="btn btn-secondary" id="btn-import-json" type="button">Open studio file</button>
+          <input type="file" id="input-import-file" accept="application/json" class="sr-only" aria-hidden="true">
+          <button class="btn btn-danger" id="btn-reset-all" type="button">Reset everything</button>
+        </div>
+        <p class="hint" id="import-feedback"></p>
+      </div>
+    </section>
+
+  </main>
+
+  <footer class="app-foot">Contact Sheet runs entirely offline in this tab. No photo, video, or camera data is ever requested, read, or stored.</footer>
+
+</div>
+
+<script>
+(function(){
+"use strict";
+
+/* ========================================================================
+   ICON LIBRARY — small inline SVG path strings, reused across option cards
+   and the reference card. Each returns an SVG element via DOM APIs only.
+   ======================================================================== */
+// SVG namespace, read off the inline <svg id="overlay-svg"> already present
+// in the markup, so the namespace URI never appears as a literal string here.
+var SVG_NS = document.getElementById("overlay-svg").namespaceURI;
+function svgEl(tag, attrs){
+  var el = document.createElementNS(SVG_NS, tag);
+  for(var k in attrs){ el.setAttribute(k, attrs[k]); }
+  return el;
+}
+function makeIcon(paths, viewBox){
+  var svg = svgEl("svg", {viewBox: viewBox || "0 0 48 48", fill:"none", stroke:"currentColor", "stroke-width":"2", "stroke-linecap":"round", "stroke-linejoin":"round"});
+  paths.forEach(function(p){
+    if(p.type === "circle"){
+      svg.appendChild(svgEl("circle", p.attrs));
+    } else if(p.type === "rect"){
+      svg.appendChild(svgEl("rect", p.attrs));
+    } else if(p.type === "line"){
+      svg.appendChild(svgEl("line", p.attrs));
+    } else {
+      svg.appendChild(svgEl("path", {d: p.d}));
+    }
+  });
+  return svg;
+}
+
+var ICONS = {
+  pose_front: function(){ return makeIcon([
+    {type:"circle", attrs:{cx:"24", cy:"10", r:"5"}},
+    {d:"M24 15v15"},
+    {d:"M24 18 L14 24"},
+    {d:"M24 18 L34 24"},
+    {d:"M24 30 L17 42"},
+    {d:"M24 30 L31 42"}
+  ]); },
+  pose_quarter: function(){ return makeIcon([
+    {type:"circle", attrs:{cx:"21", cy:"10", r:"5"}},
+    {d:"M22 15 L24 30"},
+    {d:"M22 17 L14 21"},
+    {d:"M24 19 L33 26"},
+    {d:"M24 30 L19 42"},
+    {d:"M24 30 L29 41"}
+  ]); },
+  pose_side: function(){ return makeIcon([
+    {type:"circle", attrs:{cx:"22", cy:"10", r:"5"}},
+    {d:"M22 15 C20 20 23 26 25 30"},
+    {d:"M22 17 L13 22"},
+    {d:"M25 30 L20 42"},
+    {d:"M25 30 L30 41"}
+  ]); },
+  pose_back: function(){ return makeIcon([
+    {type:"circle", attrs:{cx:"24", cy:"10", r:"5"}},
+    {d:"M24 15v15"},
+    {d:"M24 18 L15 23"},
+    {d:"M24 18 L33 23"},
+    {d:"M24 30 L18 42"},
+    {d:"M24 30 L30 42"},
+    {d:"M19 14 L19 26 M24 14 L24 26 M29 14 L29 26"}
+  ]); },
+  pose_flex: function(){ return makeIcon([
+    {type:"circle", attrs:{cx:"24", cy:"10", r:"5"}},
+    {d:"M24 15v12"},
+    {d:"M24 17 L15 13 L13 18"},
+    {d:"M24 17 L33 13 L35 18"},
+    {d:"M24 27 L18 42"},
+    {d:"M24 27 L30 42"}
+  ]); },
+  angle_eye: function(){ return makeIcon([
+    {type:"rect", attrs:{x:"6", y:"20", width:"36", height:"8", rx:"1"}},
+    {d:"M24 28 L24 36"},
+    {d:"M16 36 L32 36"},
+    {d:"M12 24 L4 24 M44 24 L36 24"}
+  ]); },
+  angle_high: function(){ return makeIcon([
+    {type:"rect", attrs:{x:"6", y:"8", width:"36", height:"8", rx:"1"}},
+    {d:"M14 16 L8 38"},
+    {d:"M34 16 L40 38"},
+    {d:"M10 12 L4 8 M38 12 L44 8"}
+  ]); },
+  angle_low: function(){ return makeIcon([
+    {type:"rect", attrs:{x:"6", y:"32", width:"36", height:"8", rx:"1"}},
+    {d:"M14 32 L8 10"},
+    {d:"M34 32 L40 10"},
+    {d:"M10 38 L4 42 M38 38 L44 42"}
+  ]); },
+  angle_full: function(){ return makeIcon([
+    {type:"rect", attrs:{x:"10", y:"6", width:"28", height:"36", rx:"2"}},
+    {d:"M24 14v20"},
+    {d:"M17 21 L31 21"}
+  ]); },
+  angle_half: function(){ return makeIcon([
+    {type:"rect", attrs:{x:"13", y:"6", width:"22", height:"22", rx:"2"}},
+    {d:"M24 12v10"},
+    {d:"M19 17 L29 17"}
+  ]); },
+  light_window: function(){ return makeIcon([
+    {type:"rect", attrs:{x:"8", y:"8", width:"32", height:"32", rx:"2"}},
+    {d:"M24 8v32 M8 24h32"},
+    {d:"M2 18 L8 18 M2 30 L8 18"}
+  ]); },
+  light_overhead: function(){ return makeIcon([
+    {type:"circle", attrs:{cx:"24", cy:"10", r:"4"}},
+    {d:"M24 14v6"},
+    {d:"M16 24 L18 38 M24 24 L24 38 M32 24 L30 38"},
+    {d:"M14 22 L34 22"}
+  ]); },
+  light_ring: function(){ return makeIcon([
+    {type:"circle", attrs:{cx:"24", cy:"22", r:"14"}},
+    {type:"circle", attrs:{cx:"24", cy:"22", r:"7"}},
+    {d:"M24 36v8"}
+  ]); },
+  light_mixed: function(){ return makeIcon([
+    {type:"circle", attrs:{cx:"16", cy:"14", r:"5"}},
+    {d:"M30 8 L42 8 M30 14 L40 14 M30 20 L38 20"},
+    {d:"M10 28 L22 28 M8 34 L24 34 M10 40 L22 40"}
+  ]); },
+  light_dim: function(){ return makeIcon([
+    {type:"circle", attrs:{cx:"24", cy:"22", r:"9"}},
+    {d:"M24 8v3 M24 33v3 M10 22h3 M35 22h3"}
+  ]); },
+  bg_blank: function(){ return makeIcon([
+    {type:"rect", attrs:{x:"6", y:"6", width:"36", height:"36", rx:"2"}}
+  ]); },
+  bg_rack: function(){ return makeIcon([
+    {type:"rect", attrs:{x:"6", y:"6", width:"36", height:"36", rx:"2"}},
+    {d:"M14 12v24 M34 12v24"},
+    {d:"M14 18h20 M14 30h20"}
+  ]); },
+  bg_door: function(){ return makeIcon([
+    {type:"rect", attrs:{x:"6", y:"6", width:"36", height:"36", rx:"2"}},
+    {type:"rect", attrs:{x:"18", y:"10", width:"12", height:"28", rx:"1"}}
+  ]); },
+  bg_locker: function(){ return makeIcon([
+    {type:"rect", attrs:{x:"6", y:"6", width:"36", height:"36", rx:"2"}},
+    {d:"M16 6v36 M24 6v36 M32 6v36"}
+  ]); },
+  dist_close: function(){ return makeIcon([
+    {type:"rect", attrs:{x:"10", y:"4", width:"28", height:"40", rx:"3"}}
+  ]); },
+  dist_mid: function(){ return makeIcon([
+    {type:"rect", attrs:{x:"16", y:"8", width:"16", height:"32", rx:"2"}}
+  ]); },
+  dist_far: function(){ return makeIcon([
+    {type:"rect", attrs:{x:"19", y:"14", width:"10", height:"20", rx:"1.5"}}
+  ]); },
+  time_am_fast: function(){ return makeIcon([
+    {type:"circle", attrs:{cx:"24", cy:"24", r:"10"}},
+    {d:"M24 10v4 M24 34v4 M10 24h4 M34 24h4"}
+  ]); },
+  time_am_fed: function(){ return makeIcon([
+    {type:"circle", attrs:{cx:"24", cy:"24", r:"10"}},
+    {d:"M24 10v4 M24 34v4 M10 24h4 M34 24h4"},
+    {d:"M20 24a4 4 0 0 1 8 0"}
+  ]); },
+  time_pm_pre: function(){ return makeIcon([
+    {d:"M30 8a14 14 0 1 0 8 18 12 12 0 0 1 -8 -18Z"}
+  ]); },
+  time_pm_post: function(){ return makeIcon([
+    {d:"M30 8a14 14 0 1 0 8 18 12 12 0 0 1 -8 -18Z"},
+    {d:"M12 34 L18 34 M10 39 L20 39"}
+  ]); },
+  time_other: function(){ return makeIcon([
+    {type:"circle", attrs:{cx:"24", cy:"24", r:"3"}},
+    {type:"circle", attrs:{cx:"12", cy:"24", r:"2"}},
+    {type:"circle", attrs:{cx:"36", cy:"24", r:"2"}}
+  ]); },
+  check_shield: function(){ return makeIcon([
+    {d:"M24 6 L40 12 V24 C40 34 32 40 24 43 C16 40 8 34 8 24 V12 Z"},
+    {d:"M17 23 L22 28 L31 18"}
+  ], "0 0 48 48"); },
+  warn_tri: function(){ return makeIcon([
+    {d:"M24 6 L44 40 H4 Z"},
+    {d:"M24 18v10 M24 32v2"}
+  ], "0 0 48 48"); },
+  lock_open: function(){ return makeIcon([
+    {type:"rect", attrs:{x:"10", y:"22", width:"28", height:"18", rx:"2"}},
+    {d:"M16 22v-6a8 8 0 0 1 16 0"}
+  ]); },
+  lock_closed: function(){ return makeIcon([
+    {type:"rect", attrs:{x:"10", y:"22", width:"28", height:"18", rx:"2"}},
+    {d:"M16 22v-6a8 8 0 0 1 16 0v6"}
+  ]); }
+};
+
+/* ========================================================================
+   OPTION DEFINITIONS — pose / angle / lighting / background / distance / time
+   ======================================================================== */
+var OPTION_DEFS = {
+  pose: [
+    {id:"front_relaxed", label:"Front, relaxed", icon:"pose_front"},
+    {id:"quarter_turn", label:"Quarter turn", icon:"pose_quarter"},
+    {id:"side_profile", label:"Side profile", icon:"pose_side"},
+    {id:"back_relaxed", label:"Back, relaxed", icon:"pose_back"},
+    {id:"flexed", label:"Flexed pose", icon:"pose_flex"}
+  ],
+  angle: [
+    {id:"eye_level", label:"Eye level", icon:"angle_eye"},
+    {id:"high_angle", label:"Slightly above", icon:"angle_high"},
+    {id:"low_angle", label:"Slightly below", icon:"angle_low"},
+    {id:"full_body", label:"Full body frame", icon:"angle_full"},
+    {id:"half_body", label:"Waist-up frame", icon:"angle_half"}
+  ],
+  lighting: [
+    {id:"window_light", label:"Window daylight", icon:"light_window"},
+    {id:"overhead_fluoro", label:"Overhead fluorescent", icon:"light_overhead"},
+    {id:"ring_light", label:"Ring light / phone light", icon:"light_ring"},
+    {id:"mixed_light", label:"Mixed sources", icon:"light_mixed"},
+    {id:"dim_ambient", label:"Dim / ambient only", icon:"light_dim"}
+  ],
+  background: [
+    {id:"blank_wall", label:"Blank wall", icon:"bg_blank"},
+    {id:"rack_equipment", label:"Rack / equipment", icon:"bg_rack"},
+    {id:"door_mirror", label:"Door mirror", icon:"bg_door"},
+    {id:"locker_room", label:"Locker / cubby", icon:"bg_locker"}
+  ],
+  distance: [
+    {id:"close_2to4", label:"Close (2–4 ft)", icon:"dist_close"},
+    {id:"mid_5to7", label:"Mid (5–7 ft)", icon:"dist_mid"},
+    {id:"far_8plus", label:"Far (8+ ft)", icon:"dist_far"}
+  ],
+  time: [
+    {id:"am_fasted", label:"AM, fasted", icon:"time_am_fast"},
+    {id:"am_fed", label:"AM, after eating", icon:"time_am_fed"},
+    {id:"pm_pre_lift", label:"PM, pre-lift", icon:"time_pm_pre"},
+    {id:"pm_post_lift", label:"PM, post-lift", icon:"time_pm_post"},
+    {id:"other_time", label:"Other / varies", icon:"time_other"}
+  ]
+};
+
+var FIELD_WEIGHTS = {pose:20, angle:20, lighting:15, background:15, distance:10, time:10, outfit:10};
+var FIELD_LABELS = {pose:"Pose", angle:"Angle", lighting:"Lighting", background:"Background", distance:"Distance", time:"Time bucket", outfit:"Outfit"};
+
+function labelFor(group, id){
+  if(!id) return "—";
+  var list = OPTION_DEFS[group] || [];
+  for(var i=0;i<list.length;i++){ if(list[i].id === id) return list[i].label; }
+  return id;
+}
+
+/* ========================================================================
+   RETAKE-RISK CHECKLIST DEFINITIONS
+   Each item: checked=true means "good / no risk." Unchecked = risk flagged.
+   ======================================================================== */
+var RETAKE_ITEMS = [
+  {id:"outfit_match", title:"Outfit matches the locked rule", sub:"Same garments, same fit, hair in the same state (down vs tied) as the recipe."},
+  {id:"time_match", title:"Time bucket matches the recipe", sub:"Fasted vs fed and pre- vs post-lift both shift fullness and pump."},
+  {id:"hair_state", title:"Hair is dry (or matches last session's wet/dry state)", sub:"Wet hair reads heavier and changes shoulder-line shadows."},
+  {id:"pump_state", title:"Training state matches the recipe's expectation", sub:"Fresh vs just-finished-lifting changes vascularity and fullness."},
+  {id:"meal_window", title:"Time since last meal is in the usual window", sub:"A big meal in the last hour will bloat the midsection in the shot."},
+  {id:"phone_level", title:"Phone or tablet is level, not tilted", sub:"Self-check against the alignment overlay above before you shoot."},
+  {id:"lighting_unchanged", title:"Lighting hasn't changed since last time", sub:"New bulb, different time of day, or a blind left open all count as a change."},
+  {id:"distance_unchanged", title:"Standing distance from the mirror is unchanged", sub:"Even a foot of difference changes apparent proportions."}
+];
+
+var PRIVACY_ITEMS = [
+  {id:"no_bystanders", title:"No other people visible in the mirror or background", sub:"Check the full mirror edge, not just the center — side reflections catch people easily."},
+  {id:"no_screens", title:"No phone, laptop, or TV screens showing personal info in frame", sub:"Screens can show messages, calendars, or tabs you didn't mean to share."},
+  {id:"no_location_id", title:"Nothing identifies this specific location", sub:"Gym signage, house numbers, mail, or a recognizable street view through a window."},
+  {id:"face_decision_made", title:"You've decided on purpose whether to crop out your face", sub:"Make this an active choice each time, not a default you forget to check."},
+  {id:"background_tidy", title:"Background doesn't expose unrelated personal items", sub:"Mail, prescriptions, financial documents, or other people's belongings."},
+  {id:"crop_rehearsed", title:"You've dragged the crop frame above to where your real crop will fall", sub:"Use the placeholder figure as a stand-in before you shoot for real."}
+];
+
+/* ========================================================================
+   STATE
+   ======================================================================== */
+var STORAGE_KEY = "contactSheetMirrorStudio_v1";
+
+function defaultState(){
+  return {
+    version: 1,
+    recipe: {
+      locked:false, name:"", pose:"", angle:"", lighting:"", background:"",
+      distance:"", time:"", outfit:"", notes:"", lockedDate:null
+    },
+    draftRecipe: {
+      name:"", pose:"", angle:"", lighting:"", background:"",
+      distance:"", time:"", outfit:"", notes:""
+    },
+    today: {
+      pose:"", angle:"", lighting:"", background:"", distance:"", time:"", outfit:"",
+      checklist:{}
+    },
+    crop: {x:60, y:50, w:180, h:300},
+    privacyChecklist: {},
+    sessions: [],
+    ui:{ activePanel:"recipe", overlayOn:false },
+    selectedSessionId: null
+  };
+}
+
+var state = loadState();
+
+function loadState(){
+  try{
+    var raw = window.localStorage.getItem(STORAGE_KEY);
+    if(!raw) return defaultState();
+    var parsed = JSON.parse(raw);
+    var d = defaultState();
+    for(var k in d){
+      if(parsed[k] !== undefined){ d[k] = parsed[k]; }
+    }
+    d.today.checklist = parsed.today && parsed.today.checklist ? parsed.today.checklist : {};
+    d.privacyChecklist = parsed.privacyChecklist || {};
+    return d;
+  }catch(e){
+    return defaultState();
+  }
+}
+
+function persist(){
+  try{
+    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+  }catch(e){
+    // storage unavailable (private mode, quota) — fail silently, app still works in-session
+  }
+}
+
+var frameCounterValue = 0;
+function bumpFrameCounters(){
+  frameCounterValue++;
+  var n = String(frameCounterValue).padStart(2,"0");
+  document.querySelectorAll(".frame-counter").forEach(function(el){
+    el.textContent = "FRAME — " + n;
+  });
+}
+
+/* ========================================================================
+   TAB NAVIGATION
+   ======================================================================== */
+var tabButtons = Array.prototype.slice.call(document.querySelectorAll(".tab-btn"));
+var panels = Array.prototype.slice.call(document.querySelectorAll(".panel"));
+
+function activatePanel(name){
+  panels.forEach(function(p){ p.classList.toggle("active", p.id === "panel-" + name); });
+  tabButtons.forEach(function(b){ b.setAttribute("aria-selected", b.getAttribute("data-panel") === name ? "true" : "false"); });
+  state.ui.activePanel = name;
+  persist();
+  bumpFrameCounters();
+  if(name === "log"){ renderSessionLog(); }
+  if(name === "receipt"){ renderReceiptPanel(); }
+  if(name === "setup"){ renderRefCard(); }
+}
+
+tabButtons.forEach(function(btn){
+  btn.addEventListener("click", function(){
+    activatePanel(btn.getAttribute("data-panel"));
+  });
+});
+
+/* ========================================================================
+   RECIPE PANEL — option grids + lock/unlock
+   ======================================================================== */
+var recipeGridEls = {
+  pose: document.getElementById("grid-pose"),
+  angle: document.getElementById("grid-angle"),
+  lighting: document.getElementById("grid-lighting"),
+  background: document.getElementById("grid-background"),
+  distance: document.getElementById("grid-distance"),
+  time: document.getElementById("grid-time")
+};
+
+function buildOptionCard(group, opt, selectedId, onSelect){
+  var card = document.createElement("button");
+  card.type = "button";
+  card.className = "opt-card";
+  card.setAttribute("role","button");
+  card.setAttribute("aria-pressed", String(opt.id === selectedId));
+  var icon = ICONS[opt.icon] ? ICONS[opt.icon]() : null;
+  if(icon){ card.appendChild(icon); }
+  var lbl = document.createElement("span");
+  lbl.className = "lbl";
+  lbl.textContent = opt.label;
+  card.appendChild(lbl);
+  card.addEventListener("click", function(){ onSelect(opt.id); });
+  return card;
+}
+
+function renderRecipeGrids(){
+  var locked = state.recipe.locked;
+  var src = locked ? state.recipe : state.draftRecipe;
+  Object.keys(recipeGridEls).forEach(function(group){
+    var container = recipeGridEls[group];
+    container.textContent = "";
+    OPTION_DEFS[group].forEach(function(opt){
+      var card = buildOptionCard(group, opt, src[group], function(id){
+        if(state.recipe.locked) return; // locked recipes are read-only here
+        state.draftRecipe[group] = id;
+        persist();
+        renderRecipeGrids();
+      });
+      if(locked){
+        card.disabled = true;
+        card.style.cursor = "default";
+      }
+      container.appendChild(card);
+    });
+  });
+}
+
+var inputOutfit = document.getElementById("input-outfit");
+var inputRecipeName = document.getElementById("input-recipe-name");
+var inputRecipeNotes = document.getElementById("input-recipe-notes");
+var lockBanner = document.getElementById("recipe-lock-banner");
+var lockText = document.getElementById("recipe-lock-text");
+var btnLockRecipe = document.getElementById("btn-lock-recipe");
+var btnUnlockRecipe = document.getElementById("btn-unlock-recipe");
+
+function syncRecipeFormFields(){
+  var locked = state.recipe.locked;
+  var src = locked ? state.recipe : state.draftRecipe;
+  inputOutfit.value = src.outfit || "";
+  inputRecipeName.value = src.name || "";
+  inputRecipeNotes.value = src.notes || "";
+  inputOutfit.disabled = locked;
+  inputRecipeName.disabled = locked;
+  inputRecipeNotes.disabled = locked;
+}
+
+inputOutfit.addEventListener("input", function(){
+  if(state.recipe.locked) return;
+  state.draftRecipe.outfit = inputOutfit.value;
+  persist();
+});
+inputRecipeName.addEventListener("input", function(){
+  if(state.recipe.locked) return;
+  state.draftRecipe.name = inputRecipeName.value;
+  persist();
+});
+inputRecipeNotes.addEventListener("input", function(){
+  if(state.recipe.locked) return;
+  state.draftRecipe.notes = inputRecipeNotes.value;
+  persist();
+});
+
+function renderLockBanner(){
+  if(state.recipe.locked){
+    lockBanner.className = "lock-banner is-locked";
+    var dateStr = "";
+    try{ dateStr = new Date(state.recipe.lockedDate).toLocaleDateString(undefined,{month:"short",day:"numeric",year:"numeric"}); }catch(e){}
+    lockText.textContent = "Recipe \u201c" + (state.recipe.name || "Untitled recipe") + "\u201d locked" + (dateStr ? " on " + dateStr : "") + ". Unlock to change it.";
+    btnLockRecipe.disabled = true;
+    btnUnlockRecipe.disabled = false;
+  } else {
+    lockBanner.className = "lock-banner is-unlocked";
+    lockText.textContent = "No recipe locked yet. Choose your settings below, then lock in.";
+    btnLockRecipe.disabled = false;
+    btnUnlockRecipe.disabled = true;
+  }
+}
+
+function draftIsComplete(){
+  var d = state.draftRecipe;
+  return d.pose && d.angle && d.lighting && d.background && d.distance && d.time;
+}
+
+btnLockRecipe.addEventListener("click", function(){
+  if(!draftIsComplete()){
+    btnLockRecipe.classList.add("btn-danger");
+    window.setTimeout(function(){ btnLockRecipe.classList.remove("btn-danger"); }, 900);
+    return;
+  }
+  var d = state.draftRecipe;
+  state.recipe = {
+    locked:true,
+    name: d.name || "Untitled recipe",
+    pose:d.pose, angle:d.angle, lighting:d.lighting, background:d.background,
+    distance:d.distance, time:d.time, outfit:d.outfit || "", notes:d.notes || "",
+    lockedDate: new Date().toISOString()
+  };
+  persist();
+  renderLockBanner();
+  renderRecipeGrids();
+  syncRecipeFormFields();
+  renderRefCard();
+  populateTodaySelects();
+  updateSaveSessionAvailability();
+});
+
+btnUnlockRecipe.addEventListener("click", function(){
+  state.draftRecipe = {
+    name:state.recipe.name, pose:state.recipe.pose, angle:state.recipe.angle,
+    lighting:state.recipe.lighting, background:state.recipe.background,
+    distance:state.recipe.distance, time:state.recipe.time,
+    outfit:state.recipe.outfit, notes:state.recipe.notes
+  };
+  state.recipe.locked = false;
+  persist();
+  renderLockBanner();
+  renderRecipeGrids();
+  syncRecipeFormFields();
+  renderRefCard();
+  updateSaveSessionAvailability();
+});
+
+renderRecipeGrids();
+syncRecipeFormFields();
+renderLockBanner();
+
+/* ========================================================================
+   SHOOT SETUP PANEL — reference card
+   ======================================================================== */
+var refcardEmpty = document.getElementById("refcard-empty");
+var refcardGrid = document.getElementById("refcard-grid");
+
+function refcardRow(group, value, eyebrow){
+  var item = document.createElement("div");
+  item.className = "refcard-item";
+  var eb = document.createElement("div");
+  eb.className = "ri-eyebrow";
+  eb.textContent = eyebrow;
+  item.appendChild(eb);
+  var val = document.createElement("div");
+  val.className = "ri-val";
+  var opt = (OPTION_DEFS[group] || []).filter(function(o){ return o.id === value; })[0];
+  if(opt && ICONS[opt.icon]){ val.appendChild(ICONS[opt.icon]()); }
+  var span = document.createElement("span");
+  span.textContent = opt ? opt.label : (value || "—");
+  val.appendChild(span);
+  item.appendChild(val);
+  return item;
+}
+
+function renderRefCard(){
+  if(!state.recipe.locked){
+    refcardEmpty.style.display = "block";
+    refcardGrid.style.display = "none";
+    return;
+  }
+  refcardEmpty.style.display = "none";
+  refcardGrid.style.display = "grid";
+  refcardGrid.textContent = "";
+  refcardGrid.appendChild(refcardRow("pose", state.recipe.pose, "Pose"));
+  refcardGrid.appendChild(refcardRow("angle", state.recipe.angle, "Angle"));
+  refcardGrid.appendChild(refcardRow("lighting", state.recipe.lighting, "Lighting"));
+  refcardGrid.appendChild(refcardRow("background", state.recipe.background, "Background"));
+  refcardGrid.appendChild(refcardRow("distance", state.recipe.distance, "Distance"));
+  refcardGrid.appendChild(refcardRow("time", state.recipe.time, "Time bucket"));
+  var outfitItem = document.createElement("div");
+  outfitItem.className = "refcard-item";
+  var oeb = document.createElement("div");
+  oeb.className = "ri-eyebrow";
+  oeb.textContent = "Outfit rule";
+  outfitItem.appendChild(oeb);
+  var oval = document.createElement("div");
+  oval.className = "ri-val";
+  var ospan = document.createElement("span");
+  ospan.style.fontWeight = "600";
+  ospan.textContent = state.recipe.outfit || "Not specified";
+  oval.appendChild(ospan);
+  outfitItem.appendChild(oval);
+  refcardGrid.appendChild(outfitItem);
+}
+
+/* ---- alignment overlay ---- */
+var toggleOverlay = document.getElementById("toggle-overlay");
+var overlayStage = document.getElementById("overlay-stage");
+var overlaySvg = document.getElementById("overlay-svg");
+
+function buildOverlaySvg(){
+  overlaySvg.textContent = "";
+  var ns = SVG_NS;
+  function line(x1,y1,x2,y2,opts){
+    var l = document.createElementNS(ns,"line");
+    l.setAttribute("x1",x1); l.setAttribute("y1",y1);
+    l.setAttribute("x2",x2); l.setAttribute("y2",y2);
+    l.setAttribute("stroke", (opts && opts.color) || "rgba(184,68,58,0.85)");
+    l.setAttribute("stroke-width", (opts && opts.w) || "1.4");
+    if(opts && opts.dash) l.setAttribute("stroke-dasharray", opts.dash);
+    overlaySvg.appendChild(l);
+  }
+  // rule of thirds
+  line(100,0,100,400,{color:"rgba(43,38,34,0.35)", dash:"4 4"});
+  line(200,0,200,400,{color:"rgba(43,38,34,0.35)", dash:"4 4"});
+  line(0,133,300,133,{color:"rgba(43,38,34,0.35)", dash:"4 4"});
+  line(0,266,300,266,{color:"rgba(43,38,34,0.35)", dash:"4 4"});
+  // center crosshair
+  line(150,0,150,400,{color:"rgba(184,68,58,0.9)", w:"1.6"});
+  line(0,200,300,200,{color:"rgba(184,68,58,0.9)", w:"1.6"});
+  // level line ticks near the horizontal center line
+  for(var x=20; x<300; x+=40){
+    line(x,194,x,206,{color:"rgba(184,68,58,0.55)", w:"1.2"});
+  }
+  // outer frame margin guide
+  var rect = document.createElementNS(ns,"rect");
+  rect.setAttribute("x","14"); rect.setAttribute("y","14");
+  rect.setAttribute("width","272"); rect.setAttribute("height","372");
+  rect.setAttribute("fill","none");
+  rect.setAttribute("stroke","rgba(74,85,96,0.6)");
+  rect.setAttribute("stroke-width","1.2");
+  rect.setAttribute("stroke-dasharray","2 5");
+  overlaySvg.appendChild(rect);
+}
+buildOverlaySvg();
+
+toggleOverlay.addEventListener("change", function(){
+  state.ui.overlayOn = toggleOverlay.checked;
+  overlayStage.style.display = toggleOverlay.checked ? "block" : "none";
+  persist();
+});
+toggleOverlay.checked = !!state.ui.overlayOn;
+overlayStage.style.display = state.ui.overlayOn ? "block" : "none";
+
+/* ---- today's actual setup selects ---- */
+var todaySelectIds = {
+  pose:"select-today-pose", angle:"select-today-angle", lighting:"select-today-lighting",
+  background:"select-today-background", distance:"select-today-distance", time:"select-today-time"
+};
+var inputTodayOutfit = document.getElementById("input-today-outfit");
+
+function populateTodaySelects(){
+  Object.keys(todaySelectIds).forEach(function(group){
+    var sel = document.getElementById(todaySelectIds[group]);
+    sel.textContent = "";
+    var placeholder = document.createElement("option");
+    placeholder.value = "";
+    placeholder.textContent = "Choose " + group + "…";
+    sel.appendChild(placeholder);
+    OPTION_DEFS[group].forEach(function(opt){
+      var o = document.createElement("option");
+      o.value = opt.id;
+      o.textContent = opt.label;
+      sel.appendChild(o);
+    });
+    sel.value = state.today[group] || "";
+    sel.disabled = !state.recipe.locked;
+    sel.onchange = (function(g, selEl){
+      return function(){
+        state.today[g] = selEl.value;
+        persist();
+        renderRetakeFlagSummary();
+        updateSaveSessionAvailability();
+      };
+    })(group, sel);
+  });
+  inputTodayOutfit.value = state.today.outfit || "";
+  inputTodayOutfit.disabled = !state.recipe.locked;
+}
+populateTodaySelects();
+
+inputTodayOutfit.addEventListener("input", function(){
+  state.today.outfit = inputTodayOutfit.value;
+  persist();
+  updateSaveSessionAvailability();
+});
+
+/* ---- retake-risk checklist ---- */
+var retakeChecklistEl = document.getElementById("retake-checklist");
+var retakeFlagSummaryEl = document.getElementById("retake-flag-summary");
+
+function renderRetakeChecklist(){
+  retakeChecklistEl.textContent = "";
+  RETAKE_ITEMS.forEach(function(item){
+    var row = document.createElement("label");
+    row.className = "check-item is-warning";
+    var checked = !!state.today.checklist[item.id];
+    row.setAttribute("data-checked", String(checked));
+    var input = document.createElement("input");
+    input.type = "checkbox";
+    input.checked = checked;
+    input.addEventListener("change", function(){
+      state.today.checklist[item.id] = input.checked;
+      row.setAttribute("data-checked", String(input.checked));
+      persist();
+      renderRetakeFlagSummary();
+    });
+    row.appendChild(input);
+    var text = document.createElement("span");
+    text.className = "ci-text";
+    var title = document.createElement("div");
+    title.className = "ci-title";
+    title.textContent = item.title;
+    var sub = document.createElement("div");
+    sub.className = "ci-sub";
+    sub.textContent = item.sub;
+    text.appendChild(title);
+    text.appendChild(sub);
+    row.appendChild(text);
+    retakeChecklistEl.appendChild(row);
+  });
+}
+
+function getTriggeredRetakeFlags(){
+  return RETAKE_ITEMS.filter(function(item){ return !state.today.checklist[item.id]; });
+}
+
+function renderRetakeFlagSummary(){
+  var flags = getTriggeredRetakeFlags();
+  retakeFlagSummaryEl.textContent = "";
+  if(flags.length === 0){
+    retakeFlagSummaryEl.className = "flag-banner is-clear";
+    retakeFlagSummaryEl.appendChild(ICONS.check_shield());
+    var span = document.createElement("span");
+    span.textContent = "Clear — every retake-risk item is checked off. Good to shoot.";
+    retakeFlagSummaryEl.appendChild(span);
+  } else {
+    retakeFlagSummaryEl.className = "flag-banner";
+    retakeFlagSummaryEl.appendChild(ICONS.warn_tri());
+    var wrap = document.createElement("div");
+    var lead = document.createElement("div");
+    lead.textContent = flags.length + " retake risk" + (flags.length>1?"s":"") + " flagged before you shoot:";
+    wrap.appendChild(lead);
+    var ul = document.createElement("ul");
+    flags.forEach(function(f){
+      var li = document.createElement("li");
+      li.textContent = f.title;
+      ul.appendChild(li);
+    });
+    wrap.appendChild(ul);
+    retakeFlagSummaryEl.appendChild(wrap);
+  }
+}
+renderRetakeChecklist();
+renderRetakeFlagSummary();
+
+/* ---- comparability scoring ---- */
+function computeComparability(todaySnapshot){
+  var breakdown = {};
+  var total = 0;
+  Object.keys(FIELD_WEIGHTS).forEach(function(field){
+    var weight = FIELD_WEIGHTS[field];
+    var matched;
+    if(field === "outfit"){
+      var recipeOutfit = (state.recipe.outfit || "").trim().toLowerCase();
+      var todayOutfit = (todaySnapshot.outfit || "").trim().toLowerCase();
+      matched = recipeOutfit.length > 0 && todayOutfit.length > 0 && recipeOutfit === todayOutfit;
+      // also count it matched if the retake checklist's outfit_match was checked,
+      // since exact string match is a high bar for free text
+      if(!matched && todaySnapshot.checklist && todaySnapshot.checklist.outfit_match){ matched = true; }
+    } else {
+      matched = !!state.recipe[field] && state.recipe[field] === todaySnapshot[field];
+    }
+    breakdown[field] = matched;
+    if(matched){ total += weight; }
+  });
+  return {score: total, breakdown: breakdown};
+}
+
+/* ---- save session ---- */
+var btnSaveSession = document.getElementById("btn-save-session");
+var saveSessionHint = document.getElementById("save-session-hint");
+
+function todaySetupIsComplete(){
+  var t = state.today;
+  return t.pose && t.angle && t.lighting && t.background && t.distance && t.time;
+}
+
+function updateSaveSessionAvailability(){
+  if(!state.recipe.locked){
+    btnSaveSession.disabled = true;
+    saveSessionHint.textContent = "Lock a recipe first to enable scoring.";
+  } else if(!todaySetupIsComplete()){
+    btnSaveSession.disabled = true;
+    saveSessionHint.textContent = "Fill in today's pose, angle, lighting, background, distance and time bucket above.";
+  } else {
+    btnSaveSession.disabled = false;
+    saveSessionHint.textContent = "Scores against \u201c" + state.recipe.name + "\u201d.";
+  }
+}
+
+function buildReceiptText(session){
+  var lines = [];
+  lines.push("CONTACT SHEET — SHOOT RECEIPT");
+  lines.push("Recipe: " + (state.recipe.name || "Untitled recipe"));
+  lines.push("Session date: " + new Date(session.date).toLocaleString());
+  lines.push("");
+  lines.push("COMPARABILITY SCORE: " + session.comparabilityScore + " / 100");
+  lines.push("");
+  lines.push("BASELINE vs TODAY");
+  Object.keys(FIELD_LABELS).forEach(function(field){
+    var matchedMark = session.comparabilityBreakdown[field] ? "MATCH" : "DIFF ";
+    var baseVal = field === "outfit" ? (state.recipe.outfit || "—") : labelFor(field, state.recipe[field]);
+    var todayVal = field === "outfit" ? (session.outfit || "—") : labelFor(field, session[field]);
+    lines.push("  [" + matchedMark + "] " + FIELD_LABELS[field] + ": " + baseVal + (matchedMark==="DIFF " ? "  ->  today: " + todayVal : ""));
+  });
+  lines.push("");
+  var flags = session.retakeFlags || [];
+  if(flags.length === 0){
+    lines.push("RETAKE-RISK CHECKLIST: clear, no flags raised.");
+  } else {
+    lines.push("RETAKE-RISK FLAGS (" + flags.length + "):");
+    flags.forEach(function(f){ lines.push("  - " + f); });
+  }
+  lines.push("");
+  lines.push("No image, video, or camera data is stored by this tool.");
+  return lines.join("\n");
+}
+
+btnSaveSession.addEventListener("click", function(){
+  if(btnSaveSession.disabled) return;
+  var snapshot = {
+    pose:state.today.pose, angle:state.today.angle, lighting:state.today.lighting,
+    background:state.today.background, distance:state.today.distance, time:state.today.time,
+    outfit:state.today.outfit, checklist: Object.assign({}, state.today.checklist)
+  };
+  var scoring = computeComparability(snapshot);
+  var triggeredFlags = getTriggeredRetakeFlags().map(function(f){ return f.title; });
+  var session = {
+    id: "s_" + Date.now() + "_" + Math.floor(Math.random()*1000),
+    date: new Date().toISOString(),
+    pose:snapshot.pose, angle:snapshot.angle, lighting:snapshot.lighting,
+    background:snapshot.background, distance:snapshot.distance, time:snapshot.time,
+    outfit:snapshot.outfit,
+    checklist: snapshot.checklist,
+    retakeFlags: triggeredFlags,
+    comparabilityScore: scoring.score,
+    comparabilityBreakdown: scoring.breakdown
+  };
+  session.receiptText = buildReceiptText(session);
+  state.sessions.unshift(session);
+  state.selectedSessionId = session.id;
+  persist();
+  updateSaveSessionAvailability();
+  activatePanel("log");
+});
+
+updateSaveSessionAvailability();
+renderRefCard();
+populateTodaySelects();
+
+/* ========================================================================
+   PRIVACY CROP PANEL
+   ======================================================================== */
+var cropPlaceholderSvg = document.getElementById("crop-placeholder-svg");
+
+function buildPlaceholderSilhouette(){
+  cropPlaceholderSvg.textContent = "";
+  var ns = SVG_NS;
+  // abstract, faceless dress-form / mannequin outline — deliberately generic,
+  // not a depiction of any real or specific person, used purely to rehearse
+  // where a crop line would fall.
+  function path(d, fill, opacity){
+    var p = document.createElementNS(ns,"path");
+    p.setAttribute("d", d);
+    p.setAttribute("fill", fill || "rgba(74,85,96,0.28)");
+    if(opacity) p.setAttribute("opacity", opacity);
+    cropPlaceholderSvg.appendChild(p);
+  }
+  // ground shadow
+  path("M90 386 C90 392 210 392 210 386 L210 380 L90 380 Z", "rgba(43,38,34,0.12)");
+  // simple dress-form silhouette: oval head, neck, torso trapezoid, leg shapes
+  path("M150 46 C164 46 174 58 174 73 C174 88 164 99 150 99 C136 99 126 88 126 73 C126 58 136 46 150 46 Z");
+  path("M140 99 L160 99 L162 116 L138 116 Z");
+  path("M112 116 C112 116 188 116 188 116 C200 116 206 140 204 168 L196 230 C194 248 186 256 150 258 C114 256 106 248 104 230 L96 168 C94 140 100 116 112 116 Z");
+  path("M118 250 L120 340 C120 350 128 356 134 356 C140 356 142 350 141 340 L138 256 Z");
+  path("M162 250 L160 340 C160 350 162 356 168 356 C174 356 180 350 180 340 L182 256 Z");
+  // grid label ticks along the edge to read as a measuring/reference plate, not a photo
+  for(var i=0;i<6;i++){
+    var ty = 40 + i*60;
+    var tick = document.createElementNS(ns,"line");
+    tick.setAttribute("x1","8"); tick.setAttribute("y1",ty);
+    tick.setAttribute("x2","16"); tick.setAttribute("y2",ty);
+    tick.setAttribute("stroke","rgba(43,38,34,0.3)");
+    tick.setAttribute("stroke-width","1.2");
+    cropPlaceholderSvg.appendChild(tick);
+  }
+}
+buildPlaceholderSilhouette();
+
+var cropStage = document.getElementById("crop-stage");
+var cropBox = document.getElementById("crop-box");
+var cropReadout = document.getElementById("crop-readout");
+var STAGE_W = 300, STAGE_H = 400; // virtual coordinate space matching the viewBox
+
+function applyCropBoxStyle(){
+  var c = state.crop;
+  var scaleX = cropStage.clientWidth / STAGE_W;
+  var scaleY = cropStage.clientHeight / STAGE_H;
+  cropBox.style.left = (c.x * scaleX) + "px";
+  cropBox.style.top = (c.y * scaleY) + "px";
+  cropBox.style.width = (c.w * scaleX) + "px";
+  cropBox.style.height = (c.h * scaleY) + "px";
+  var pctW = Math.round((c.w/STAGE_W)*100);
+  var pctH = Math.round((c.h/STAGE_H)*100);
+  cropReadout.textContent = "Crop: " + pctW + "% wide \u00d7 " + pctH + "% tall of frame, top edge at " + Math.round((c.y/STAGE_H)*100) + "%";
+}
+
+function clampCrop(){
+  var c = state.crop;
+  c.w = Math.max(40, Math.min(c.w, STAGE_W));
+  c.h = Math.max(40, Math.min(c.h, STAGE_H));
+  c.x = Math.max(0, Math.min(c.x, STAGE_W - c.w));
+  c.y = Math.max(0, Math.min(c.y, STAGE_H - c.h));
+}
+
+var dragMode = null; // null | "move" | "nw" | "ne" | "sw" | "se"
+var dragStart = null;
+
+function stagePointFromEvent(e){
+  var rect = cropStage.getBoundingClientRect();
+  var clientX = (e.touches && e.touches[0]) ? e.touches[0].clientX : e.clientX;
+  var clientY = (e.touches && e.touches[0]) ? e.touches[0].clientY : e.clientY;
+  var scaleX = STAGE_W / rect.width;
+  var scaleY = STAGE_H / rect.height;
+  return { x:(clientX - rect.left) * scaleX, y:(clientY - rect.top) * scaleY };
+}
+
+function onDragStart(mode){
+  return function(e){
+    e.preventDefault();
+    dragMode = mode;
+    var pt = stagePointFromEvent(e);
+    dragStart = { px:pt.x, py:pt.y, box: Object.assign({}, state.crop) };
+    window.addEventListener("pointermove", onDragMove);
+    window.addEventListener("pointerup", onDragEnd);
+    window.addEventListener("touchmove", onDragMove, {passive:false});
+    window.addEventListener("touchend", onDragEnd);
+  };
+}
+
+function onDragMove(e){
+  if(!dragMode) return;
+  e.preventDefault();
+  var pt = stagePointFromEvent(e);
+  var dx = pt.x - dragStart.px;
+  var dy = pt.y - dragStart.py;
+  var b = dragStart.box;
+  var c = state.crop;
+  if(dragMode === "move"){
+    c.x = b.x + dx; c.y = b.y + dy; c.w = b.w; c.h = b.h;
+  } else if(dragMode === "se"){
+    c.x = b.x; c.y = b.y; c.w = b.w + dx; c.h = b.h + dy;
+  } else if(dragMode === "nw"){
+    c.x = b.x + dx; c.y = b.y + dy; c.w = b.w - dx; c.h = b.h - dy;
+  } else if(dragMode === "ne"){
+    c.y = b.y + dy; c.w = b.w + dx; c.h = b.h - dy; c.x = b.x;
+  } else if(dragMode === "sw"){
+    c.x = b.x + dx; c.w = b.w - dx; c.h = b.h + dy; c.y = b.y;
+  }
+  clampCrop();
+  applyCropBoxStyle();
+}
+
+function onDragEnd(){
+  dragMode = null;
+  dragStart = null;
+  persist();
+  window.removeEventListener("pointermove", onDragMove);
+  window.removeEventListener("pointerup", onDragEnd);
+  window.removeEventListener("touchmove", onDragMove);
+  window.removeEventListener("touchend", onDragEnd);
+}
+
+cropBox.addEventListener("pointerdown", onDragStart("move"));
+cropBox.addEventListener("touchstart", onDragStart("move"), {passive:false});
+["nw","ne","sw","se"].forEach(function(corner){
+  var handle = cropBox.querySelector(".crop-handle." + corner);
+  handle.addEventListener("pointerdown", function(e){ e.stopPropagation(); onDragStart(corner)(e); });
+  handle.addEventListener("touchstart", function(e){ e.stopPropagation(); onDragStart(corner)(e); }, {passive:false});
+});
+
+window.addEventListener("resize", applyCropBoxStyle);
+// initial layout pass after first paint so clientWidth/Height are accurate
+window.setTimeout(applyCropBoxStyle, 0);
+clampCrop();
+applyCropBoxStyle();
+
+/* ---- privacy checklist ---- */
+var privacyChecklistEl = document.getElementById("privacy-checklist");
+
+function renderPrivacyChecklist(){
+  privacyChecklistEl.textContent = "";
+  PRIVACY_ITEMS.forEach(function(item){
+    var row = document.createElement("label");
+    row.className = "check-item";
+    var checked = !!state.privacyChecklist[item.id];
+    row.setAttribute("data-checked", String(checked));
+    var input = document.createElement("input");
+    input.type = "checkbox";
+    input.checked = checked;
+    input.addEventListener("change", function(){
+      state.privacyChecklist[item.id] = input.checked;
+      row.setAttribute("data-checked", String(input.checked));
+      persist();
+    });
+    row.appendChild(input);
+    var text = document.createElement("span");
+    text.className = "ci-text";
+    var title = document.createElement("div");
+    title.className = "ci-title";
+    title.textContent = item.title;
+    var sub = document.createElement("div");
+    sub.className = "ci-sub";
+    sub.textContent = item.sub;
+    text.appendChild(title);
+    text.appendChild(sub);
+    row.appendChild(text);
+    privacyChecklistEl.appendChild(row);
+  });
+}
+renderPrivacyChecklist();
+
+/* ========================================================================
+   SESSION LOG PANEL — exposure-meter score + breakdown + history list
+   ======================================================================== */
+var meterWrapEl = document.getElementById("meter-wrap");
+var meterBreakdownEl = document.getElementById("meter-breakdown");
+var sessionListEl = document.getElementById("session-list");
+
+function scoreTier(score){
+  if(score >= 80) return "high";
+  if(score >= 55) return "mid";
+  return "low";
+}
+function scoreColor(tier){
+  if(tier === "high") return "#6B7A4F";
+  if(tier === "mid") return "#C9A227";
+  return "#B8443A";
+}
+
+function buildMeterDial(score){
+  var ns = SVG_NS;
+  var svg = document.createElementNS(ns,"svg");
+  svg.setAttribute("viewBox","0 0 140 90");
+  svg.setAttribute("width","140");
+  svg.setAttribute("height","90");
+  svg.classList.add("meter-dial");
+
+  var arc = document.createElementNS(ns,"path");
+  arc.setAttribute("d","M14 80 A56 56 0 0 1 126 80");
+  arc.setAttribute("fill","none");
+  arc.setAttribute("stroke","rgba(43,38,34,0.14)");
+  arc.setAttribute("stroke-width","10");
+  arc.setAttribute("stroke-linecap","round");
+  svg.appendChild(arc);
+
+  // colored progress arc via stroke-dasharray over the same path length approximation
+  var progress = document.createElementNS(ns,"path");
+  progress.setAttribute("d","M14 80 A56 56 0 0 1 126 80");
+  progress.setAttribute("fill","none");
+  progress.setAttribute("stroke", scoreColor(scoreTier(score)));
+  progress.setAttribute("stroke-width","10");
+  progress.setAttribute("stroke-linecap","round");
+  var pathLen = 176; // approx length of the half-circle arc above
+  progress.setAttribute("stroke-dasharray", pathLen);
+  progress.setAttribute("stroke-dashoffset", pathLen - (pathLen * (score/100)));
+  svg.appendChild(progress);
+
+  // needle
+  var angleDeg = -180 + (score/100)*180; // -180 (left) to 0 (right)
+  var rad = angleDeg * Math.PI/180;
+  var cx = 70, cy = 80, len = 46;
+  var nx = cx + len*Math.cos(rad);
+  var ny = cy + len*Math.sin(rad);
+  var needle = document.createElementNS(ns,"line");
+  needle.setAttribute("x1", cx); needle.setAttribute("y1", cy);
+  needle.setAttribute("x2", nx); needle.setAttribute("y2", ny);
+  needle.setAttribute("stroke","#2B2622");
+  needle.setAttribute("stroke-width","2.4");
+  needle.setAttribute("stroke-linecap","round");
+  svg.appendChild(needle);
+  var hub = document.createElementNS(ns,"circle");
+  hub.setAttribute("cx",cx); hub.setAttribute("cy",cy); hub.setAttribute("r","4.5");
+  hub.setAttribute("fill","#2B2622");
+  svg.appendChild(hub);
+
+  // tick marks at 0/50/100
+  [0,0.5,1].forEach(function(t){
+    var a = (-180 + t*180) * Math.PI/180;
+    var ix = cx + 50*Math.cos(a), iy = cy + 50*Math.sin(a);
+    var ox = cx + 58*Math.cos(a), oy = cy + 58*Math.sin(a);
+    var tickLine = document.createElementNS(ns,"line");
+    tickLine.setAttribute("x1",ix); tickLine.setAttribute("y1",iy);
+    tickLine.setAttribute("x2",ox); tickLine.setAttribute("y2",oy);
+    tickLine.setAttribute("stroke","rgba(43,38,34,0.4)");
+    tickLine.setAttribute("stroke-width","1.4");
+    svg.appendChild(tickLine);
+  });
+
+  return svg;
+}
+
+function renderMeterForSession(session){
+  meterWrapEl.textContent = "";
+  meterBreakdownEl.textContent = "";
+  if(!session){
+    var empty = document.createElement("div");
+    empty.className = "empty-state";
+    empty.style.padding = "10px";
+    var t = document.createElement("div");
+    t.className = "es-title";
+    t.textContent = "No sessions yet";
+    var s = document.createElement("div");
+    s.className = "es-sub";
+    s.textContent = "Save a session from 02 Shoot Setup to see your comparability score here.";
+    empty.appendChild(t); empty.appendChild(s);
+    meterWrapEl.appendChild(empty);
+    return;
+  }
+  meterWrapEl.appendChild(buildMeterDial(session.comparabilityScore));
+  var readout = document.createElement("div");
+  readout.className = "meter-readout";
+  var scoreLine = document.createElement("div");
+  scoreLine.className = "meter-score";
+  scoreLine.textContent = session.comparabilityScore;
+  var ofSpan = document.createElement("span");
+  ofSpan.className = "of";
+  ofSpan.textContent = " / 100";
+  scoreLine.appendChild(ofSpan);
+  readout.appendChild(scoreLine);
+  var label = document.createElement("div");
+  label.className = "meter-label";
+  var tier = scoreTier(session.comparabilityScore);
+  label.textContent = tier === "high" ? "Highly comparable" : tier === "mid" ? "Partially comparable" : "Low comparability";
+  readout.appendChild(label);
+  var dateLabel = document.createElement("div");
+  dateLabel.className = "hint";
+  dateLabel.style.marginTop = "6px";
+  dateLabel.textContent = new Date(session.date).toLocaleString();
+  readout.appendChild(dateLabel);
+  meterWrapEl.appendChild(readout);
+
+  Object.keys(FIELD_LABELS).forEach(function(field){
+    var matched = session.comparabilityBreakdown[field];
+    var weight = FIELD_WEIGHTS[field];
+    var row = document.createElement("div");
+    row.className = "bd-row";
+    var name = document.createElement("div");
+    name.className = "bd-name";
+    name.textContent = FIELD_LABELS[field];
+    row.appendChild(name);
+    var bar = document.createElement("div");
+    bar.className = "bd-bar";
+    var fill = document.createElement("div");
+    fill.className = "bd-fill " + (matched ? "match" : "miss");
+    fill.style.width = (matched ? 100 : 28) + "%";
+    bar.appendChild(fill);
+    row.appendChild(bar);
+    var pts = document.createElement("div");
+    pts.className = "bd-pts";
+    pts.textContent = (matched ? "+" : "0/") + (matched ? weight : weight);
+    row.appendChild(pts);
+    meterBreakdownEl.appendChild(row);
+  });
+}
+
+function deleteSession(id){
+  state.sessions = state.sessions.filter(function(s){ return s.id !== id; });
+  if(state.selectedSessionId === id){
+    state.selectedSessionId = state.sessions.length ? state.sessions[0].id : null;
+  }
+  persist();
+  renderSessionLog();
+  renderReceiptPanel();
+}
+
+function renderSessionList(){
+  sessionListEl.textContent = "";
+  if(state.sessions.length === 0){
+    var empty = document.createElement("div");
+    empty.className = "empty-state";
+    empty.appendChild(ICONS.check_shield());
+    var t = document.createElement("div");
+    t.className = "es-title";
+    t.textContent = "No sessions logged";
+    var s = document.createElement("div");
+    s.className = "es-sub";
+    s.textContent = "Sessions you save from the Shoot Setup tab will show up here, scored against your locked recipe.";
+    empty.appendChild(t); empty.appendChild(s);
+    sessionListEl.appendChild(empty);
+    return;
+  }
+  state.sessions.forEach(function(session){
+    var card = document.createElement("div");
+    card.className = "session-card";
+    var head = document.createElement("div");
+    head.className = "session-card-head";
+    var dateEl = document.createElement("div");
+    dateEl.className = "session-date";
+    dateEl.textContent = new Date(session.date).toLocaleString();
+    head.appendChild(dateEl);
+    var scoreEl = document.createElement("div");
+    scoreEl.className = "session-score " + scoreTier(session.comparabilityScore);
+    scoreEl.textContent = session.comparabilityScore + "/100";
+    head.appendChild(scoreEl);
+    card.appendChild(head);
+
+    var meta = document.createElement("div");
+    meta.className = "session-meta";
+    [["pose","Pose"],["angle","Angle"],["lighting","Light"],["background","BG"]].forEach(function(pair){
+      var span = document.createElement("span");
+      span.textContent = pair[1] + ": " + labelFor(pair[0], session[pair[0]]);
+      meta.appendChild(span);
+    });
+    if(session.retakeFlags && session.retakeFlags.length){
+      var flagSpan = document.createElement("span");
+      flagSpan.style.color = "#B8443A";
+      flagSpan.style.fontWeight = "700";
+      flagSpan.textContent = session.retakeFlags.length + " flag" + (session.retakeFlags.length>1?"s":"");
+      meta.appendChild(flagSpan);
+    }
+    card.appendChild(meta);
+
+    var actions = document.createElement("div");
+    actions.className = "session-actions";
+    var viewBtn = document.createElement("button");
+    viewBtn.className = "btn-tiny";
+    viewBtn.type = "button";
+    viewBtn.textContent = "View on meter";
+    viewBtn.addEventListener("click", function(){
+      state.selectedSessionId = session.id;
+      persist();
+      renderMeterForSession(session);
+      window.scrollTo({top:0, behavior:"smooth"});
+    });
+    actions.appendChild(viewBtn);
+    var receiptBtn = document.createElement("button");
+    receiptBtn.className = "btn-tiny";
+    receiptBtn.type = "button";
+    receiptBtn.textContent = "Open receipt";
+    receiptBtn.addEventListener("click", function(){
+      state.selectedSessionId = session.id;
+      persist();
+      activatePanel("receipt");
+    });
+    actions.appendChild(receiptBtn);
+    var delBtn = document.createElement("button");
+    delBtn.className = "btn-tiny danger";
+    delBtn.type = "button";
+    delBtn.textContent = "Delete";
+    delBtn.addEventListener("click", function(){ deleteSession(session.id); });
+    actions.appendChild(delBtn);
+    card.appendChild(actions);
+
+    sessionListEl.appendChild(card);
+  });
+}
+
+function renderSessionLog(){
+  var selected = state.sessions.filter(function(s){ return s.id === state.selectedSessionId; })[0] || state.sessions[0] || null;
+  renderMeterForSession(selected);
+  renderSessionList();
+}
+
+/* ========================================================================
+   RECEIPT PANEL
+   ======================================================================== */
+var selectReceiptSession = document.getElementById("select-receipt-session");
+var receiptPre = document.getElementById("receipt-pre");
+var btnCopyReceipt = document.getElementById("btn-copy-receipt");
+var copyFeedback = document.getElementById("copy-feedback");
+var receiptFallbackTextarea = document.getElementById("receipt-fallback-textarea");
+
+function populateReceiptSelect(){
+  selectReceiptSession.textContent = "";
+  if(state.sessions.length === 0){
+    var opt = document.createElement("option");
+    opt.value = "";
+    opt.textContent = "No sessions saved yet";
+    selectReceiptSession.appendChild(opt);
+    selectReceiptSession.disabled = true;
+    return;
+  }
+  selectReceiptSession.disabled = false;
+  state.sessions.forEach(function(session){
+    var opt = document.createElement("option");
+    opt.value = session.id;
+    opt.textContent = new Date(session.date).toLocaleString() + " — " + session.comparabilityScore + "/100";
+    selectReceiptSession.appendChild(opt);
+  });
+  var current = state.selectedSessionId && state.sessions.some(function(s){return s.id===state.selectedSessionId;})
+    ? state.selectedSessionId : state.sessions[0].id;
+  selectReceiptSession.value = current;
+}
+
+function renderReceiptText(){
+  var session = state.sessions.filter(function(s){ return s.id === selectReceiptSession.value; })[0];
+  if(!session){
+    receiptPre.textContent = "No sessions saved yet. Save a session from 02 Shoot Setup to generate a receipt.";
+    btnCopyReceipt.disabled = true;
+    return;
+  }
+  btnCopyReceipt.disabled = false;
+  receiptPre.textContent = session.receiptText;
+}
+
+selectReceiptSession.addEventListener("change", function(){
+  state.selectedSessionId = selectReceiptSession.value;
+  persist();
+  renderReceiptText();
+});
+
+function renderReceiptPanel(){
+  populateReceiptSelect();
+  renderReceiptText();
+}
+
+btnCopyReceipt.addEventListener("click", function(){
+  var text = receiptPre.textContent;
+  function showCopied(){
+    copyFeedback.classList.add("show");
+    window.setTimeout(function(){ copyFeedback.classList.remove("show"); }, 1600);
+  }
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(text).then(showCopied, function(){
+      fallbackSelectForCopy(text);
+    });
+  } else {
+    fallbackSelectForCopy(text);
+  }
+});
+
+function fallbackSelectForCopy(text){
+  // Clipboard API unavailable or denied — surface a selected, read-only textarea
+  // so the person can copy manually with their own keyboard shortcut. This relies
+  // only on focus()/select(); no deprecated document copy-command API is invoked.
+  receiptFallbackTextarea.value = text;
+  receiptFallbackTextarea.classList.remove("sr-only");
+  receiptFallbackTextarea.style.position = "fixed";
+  receiptFallbackTextarea.style.bottom = "16px";
+  receiptFallbackTextarea.style.left = "16px";
+  receiptFallbackTextarea.style.right = "16px";
+  receiptFallbackTextarea.style.width = "auto";
+  receiptFallbackTextarea.style.zIndex = "999";
+  receiptFallbackTextarea.style.boxShadow = "0 4px 20px rgba(43,38,34,0.3)";
+  receiptFallbackTextarea.focus();
+  receiptFallbackTextarea.select();
+  window.setTimeout(function(){
+    receiptFallbackTextarea.classList.add("sr-only");
+    receiptFallbackTextarea.style.position = "";
+    receiptFallbackTextarea.style.boxShadow = "";
+  }, 6000);
+}
+
+/* ========================================================================
+   SAVE / OPEN STUDIO FILE  +  RESET
+   ======================================================================== */
+var btnExportJson = document.getElementById("btn-export-json");
+var btnImportJson = document.getElementById("btn-import-json");
+var inputImportFile = document.getElementById("input-import-file");
+var importFeedback = document.getElementById("import-feedback");
+var btnResetAll = document.getElementById("btn-reset-all");
+
+btnExportJson.addEventListener("click", function(){
+  var payload = JSON.stringify(state, null, 2);
+  var blob = new Blob([payload], {type:"application/json"});
+  var objectUrl = URL.createObjectURL(blob);
+  var a = document.createElement("a");
+  var stamp = new Date().toISOString().slice(0,10);
+  a.href = objectUrl;
+  a.download = "contact-sheet-studio-" + stamp + ".json";
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  window.setTimeout(function(){ URL.revokeObjectURL(objectUrl); }, 1000);
+  importFeedback.textContent = "Saved. Check your downloads folder.";
+  importFeedback.style.color = "#3E4A2E";
+});
+
+btnImportJson.addEventListener("click", function(){
+  inputImportFile.value = "";
+  inputImportFile.click();
+});
+
+inputImportFile.addEventListener("change", function(){
+  var file = inputImportFile.files && inputImportFile.files[0];
+  if(!file) return;
+  var reader = new FileReader();
+  reader.onload = function(){
+    try{
+      var parsed = JSON.parse(String(reader.result));
+      if(typeof parsed !== "object" || parsed === null){ throw new Error("not an object"); }
+      var fresh = defaultState();
+      for(var k in fresh){
+        if(parsed[k] !== undefined){ fresh[k] = parsed[k]; }
+      }
+      fresh.today.checklist = (parsed.today && parsed.today.checklist) || {};
+      fresh.privacyChecklist = parsed.privacyChecklist || {};
+      state = fresh;
+      persist();
+      // re-render everything
+      renderRecipeGrids(); syncRecipeFormFields(); renderLockBanner();
+      renderRefCard(); populateTodaySelects(); renderRetakeChecklist(); renderRetakeFlagSummary();
+      toggleOverlay.checked = !!state.ui.overlayOn;
+      overlayStage.style.display = state.ui.overlayOn ? "block" : "none";
+      renderPrivacyChecklist(); clampCrop(); applyCropBoxStyle();
+      updateSaveSessionAvailability();
+      renderSessionLog(); renderReceiptPanel();
+      activatePanel(state.ui.activePanel || "recipe");
+      importFeedback.textContent = "Studio file loaded successfully.";
+      importFeedback.style.color = "#3E4A2E";
+    }catch(e){
+      importFeedback.textContent = "Couldn't read that file — make sure it's a Contact Sheet studio export.";
+      importFeedback.style.color = "#7A2E26";
+    }
+  };
+  reader.readAsText(file);
+});
+
+btnResetAll.addEventListener("click", function(){
+  if(btnResetAll.getAttribute("data-armed") === "true"){
+    state = defaultState();
+    persist();
+    renderRecipeGrids(); syncRecipeFormFields(); renderLockBanner();
+    renderRefCard(); populateTodaySelects(); renderRetakeChecklist(); renderRetakeFlagSummary();
+    toggleOverlay.checked = false; overlayStage.style.display = "none";
+    renderPrivacyChecklist(); clampCrop(); applyCropBoxStyle();
+    updateSaveSessionAvailability();
+    renderSessionLog(); renderReceiptPanel();
+    btnResetAll.textContent = "Reset everything";
+    btnResetAll.removeAttribute("data-armed");
+    importFeedback.textContent = "Everything reset.";
+    importFeedback.style.color = "#3E4A2E";
+  } else {
+    btnResetAll.setAttribute("data-armed","true");
+    btnResetAll.textContent = "Click again to confirm reset";
+    window.setTimeout(function(){
+      if(btnResetAll.getAttribute("data-armed") === "true"){
+        btnResetAll.removeAttribute("data-armed");
+        btnResetAll.textContent = "Reset everything";
+      }
+    }, 4000);
+  }
+});
+
+/* ========================================================================
+   INITIAL RENDER
+   ======================================================================== */
+activatePanel(state.ui.activePanel || "recipe");
+renderSessionLog();
+renderReceiptPanel();
+
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,1227 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<title>Booking-Flow Handoff Simulator</title>
+<style>
+  :root{
+    --bg:#0f1115;
+    --panel:#171a21;
+    --panel2:#1d212b;
+    --border:#2a2f3a;
+    --text:#e7e9ee;
+    --muted:#8b92a3;
+    --accent:#5b8cff;
+    --accent-dim:#2f3f66;
+    --good:#3ecf8e;
+    --bad:#ff6b6b;
+    --warn:#e8b339;
+  }
+  *{box-sizing:border-box;min-width:0;}
+  html, body{
+    max-width:100%;
+    overflow-x:hidden;
+  }
+  body{
+    margin:0;
+    background:var(--bg);
+    color:var(--text);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    font-size:15px;
+    line-height:1.5;
+  }
+  header{
+    padding:20px 24px;
+    border-bottom:1px solid var(--border);
+    display:flex;
+    align-items:baseline;
+    gap:14px;
+    flex-wrap:wrap;
+  }
+  header h1{
+    font-size:18px;
+    margin:0;
+    font-weight:700;
+  }
+  header p{
+    margin:0;
+    color:var(--muted);
+    font-size:13px;
+  }
+  .wrap{
+    max-width:1180px;
+    margin:0 auto;
+    padding:20px 24px 60px;
+  }
+  .tabs{
+    display:flex;
+    gap:6px;
+    margin-bottom:18px;
+    border-bottom:1px solid var(--border);
+  }
+  .tabbtn{
+    background:none;
+    border:none;
+    color:var(--muted);
+    padding:10px 14px;
+    font-size:14px;
+    cursor:pointer;
+    border-bottom:2px solid transparent;
+    font-weight:600;
+  }
+  .tabbtn.active{
+    color:var(--text);
+    border-bottom-color:var(--accent);
+  }
+  .panel{display:none;}
+  .panel.active{display:block;}
+
+  .card{
+    background:var(--panel);
+    border:1px solid var(--border);
+    border-radius:10px;
+    padding:16px 18px;
+    margin-bottom:14px;
+  }
+  .card h2{
+    font-size:14px;
+    margin:0 0 4px;
+    text-transform:uppercase;
+    color:var(--muted);
+    font-weight:700;
+  }
+  .card .sub{
+    color:var(--muted);
+    font-size:12.5px;
+    margin:0 0 12px;
+  }
+
+  label{
+    display:block;
+    font-size:12.5px;
+    color:var(--muted);
+    margin-bottom:4px;
+    font-weight:600;
+  }
+  input[type=text], input[type=number], select, textarea{
+    width:100%;
+    background:var(--panel2);
+    border:1px solid var(--border);
+    color:var(--text);
+    border-radius:6px;
+    padding:8px 10px;
+    font-size:14px;
+    font-family:inherit;
+  }
+  textarea{resize:vertical;min-height:60px;}
+  input:focus, select:focus, textarea:focus{
+    outline:1px solid var(--accent);
+    border-color:var(--accent);
+  }
+
+  .row{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:12px;
+  }
+  .row3{
+    display:grid;
+    grid-template-columns:1fr 1fr 1fr;
+    gap:12px;
+  }
+  .field{margin-bottom:10px;}
+
+  button{
+    cursor:pointer;
+    font-family:inherit;
+    font-weight:600;
+    border-radius:6px;
+    border:1px solid var(--border);
+    background:var(--panel2);
+    color:var(--text);
+    padding:8px 14px;
+    font-size:13.5px;
+  }
+  button:hover{border-color:var(--accent);}
+  button.primary{
+    background:var(--accent);
+    border-color:var(--accent);
+    color:#0b0d12;
+  }
+  button.primary:hover{filter:brightness(1.08);}
+  button.danger{color:var(--bad);}
+  button.danger:hover{border-color:var(--bad);}
+  button.small{padding:5px 10px;font-size:12.5px;}
+  .btnrow{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px;}
+
+  .stepitem{
+    background:var(--panel2);
+    border:1px solid var(--border);
+    border-radius:8px;
+    padding:12px 14px;
+    margin-bottom:10px;
+  }
+  .stepitem .top{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    margin-bottom:8px;
+  }
+  .stepitem .badge{
+    background:var(--accent-dim);
+    color:#aebfff;
+    font-size:11px;
+    font-weight:700;
+    padding:2px 8px;
+    border-radius:20px;
+    text-transform:uppercase;
+  }
+  .ghost{
+    border:1px dashed var(--border);
+    background:transparent;
+    color:var(--muted);
+    width:100%;
+    padding:12px;
+    border-radius:8px;
+  }
+  .ghost:hover{border-color:var(--accent);color:var(--text);}
+
+  .scenariobar{
+    display:flex;
+    gap:10px;
+    align-items:flex-end;
+    flex-wrap:wrap;
+    margin-bottom:14px;
+  }
+  .scenariobar .field{margin-bottom:0;flex:1;min-width:160px;}
+
+  .transcript{
+    background:var(--panel2);
+    border:1px solid var(--border);
+    border-radius:8px;
+    padding:14px 16px;
+    max-height:560px;
+    overflow-y:auto;
+  }
+  .msg{
+    border-left:3px solid var(--accent);
+    padding:8px 12px;
+    margin-bottom:10px;
+    background:var(--bg);
+    border-radius:0 6px 6px 0;
+  }
+  .msg.skipped{
+    border-left-color:var(--border);
+    opacity:0.5;
+  }
+  .msg.edge{
+    border-left-color:var(--warn);
+  }
+  .msg .meta{
+    display:flex;
+    justify-content:space-between;
+    font-size:11.5px;
+    color:var(--muted);
+    margin-bottom:4px;
+  }
+  .msg .meta .tname{font-weight:700;color:var(--text);}
+  .msg .body{font-size:13.5px;white-space:pre-wrap;word-break:break-word;overflow-wrap:break-word;}
+  .msg .tag{
+    display:inline-block;
+    font-size:10.5px;
+    font-weight:700;
+    text-transform:uppercase;
+    padding:1px 6px;
+    border-radius:10px;
+    margin-left:6px;
+  }
+  .tag.skip{background:#2a2f3a;color:var(--muted);}
+  .tag.edge{background:#4a3a14;color:var(--warn);}
+
+  .checklist{
+    margin-top:14px;
+  }
+  .rulerow{
+    display:flex;
+    align-items:flex-start;
+    gap:10px;
+    padding:10px 12px;
+    border-bottom:1px solid var(--border);
+  }
+  .rulerow:last-child{border-bottom:none;}
+  .rulerow .icon{
+    width:20px;height:20px;flex:none;
+    border-radius:50%;
+    display:flex;align-items:center;justify-content:center;
+    font-size:12px;font-weight:800;
+    margin-top:1px;
+  }
+  .icon.pass{background:rgba(62,207,142,0.15);color:var(--good);}
+  .icon.fail{background:rgba(255,107,107,0.15);color:var(--bad);}
+  .rulerow .ruletext{font-size:13.5px;}
+  .rulerow .ruledetail{font-size:12px;color:var(--muted);margin-top:2px;}
+
+  .empty{
+    color:var(--muted);
+    font-size:13.5px;
+    text-align:center;
+    padding:30px 10px;
+  }
+
+  .summarybar{
+    display:flex;
+    gap:14px;
+    margin-bottom:14px;
+    flex-wrap:wrap;
+  }
+  .summarybar .stat{
+    background:var(--panel2);
+    border:1px solid var(--border);
+    border-radius:8px;
+    padding:10px 16px;
+    text-align:center;
+    min-width:90px;
+  }
+  .summarybar .stat .num{font-size:20px;font-weight:800;}
+  .summarybar .stat .lbl{font-size:11px;color:var(--muted);text-transform:uppercase;}
+  .summarybar .stat.good .num{color:var(--good);}
+  .summarybar .stat.bad .num{color:var(--bad);}
+
+  .toast{
+    position:fixed;
+    bottom:20px;
+    left:50%;
+    transform:translateX(-50%);
+    background:var(--panel2);
+    border:1px solid var(--accent);
+    color:var(--text);
+    padding:10px 18px;
+    border-radius:8px;
+    font-size:13.5px;
+    z-index:50;
+    display:none;
+  }
+
+  .helptext{font-size:12px;color:var(--muted);margin-top:6px;}
+  select[multiple]{min-height:80px;}
+  .inline{display:flex;gap:8px;align-items:center;}
+  .inline input[type=checkbox]{width:auto;}
+  .inline label{margin:0;}
+
+  .receipt{
+    background:var(--panel2);
+    border:1px solid var(--border);
+    border-radius:8px;
+    padding:14px 16px;
+    font-family:ui-monospace,Consolas,monospace;
+    font-size:12px;
+    white-space:pre-wrap;
+    word-break:break-word;
+    max-height:300px;
+    overflow-y:auto;
+    margin-top:10px;
+  }
+  .receiptStatus{
+    font-size:12px;
+    color:var(--muted);
+    margin-top:6px;
+    min-height:16px;
+  }
+  .receiptStatus.ok{color:var(--good);}
+  .receiptStatus.err{color:var(--bad);}
+  .visually-hidden{
+    position:absolute;
+    width:1px;height:1px;
+    overflow:hidden;
+    clip:rect(0,0,0,0);
+    white-space:nowrap;
+  }
+
+  ::-webkit-scrollbar{width:9px;}
+  ::-webkit-scrollbar-track{background:transparent;}
+  ::-webkit-scrollbar-thumb{background:var(--border);border-radius:6px;}
+
+  /* ---------- narrow screens: no sideways scroll, no fixed-width grids ---------- */
+  @media (max-width:480px){
+    header{
+      padding:14px 14px;
+      gap:8px;
+    }
+    header h1{font-size:16px;}
+    header p{font-size:12px;}
+
+    .wrap{padding:14px 14px 50px;}
+
+    .tabs{
+      gap:2px;
+      overflow-x:auto;
+      -webkit-overflow-scrolling:touch;
+      flex-wrap:nowrap;
+    }
+    .tabbtn{
+      padding:9px 9px;
+      font-size:12.5px;
+      flex:none;
+      white-space:nowrap;
+    }
+
+    .card{padding:13px 12px;}
+
+    .row, .row3{
+      grid-template-columns:1fr;
+    }
+
+    .scenariobar{
+      flex-direction:column;
+      align-items:stretch;
+    }
+    .scenariobar .field{min-width:0;width:100%;}
+
+    .summarybar{gap:8px;}
+    .summarybar .stat{
+      flex:1 1 calc(50% - 8px);
+      min-width:0;
+      padding:8px 8px;
+    }
+
+    .btnrow{gap:6px;}
+    .btnrow button{flex:1 1 auto;}
+
+    .stepitem .top{flex-wrap:wrap;gap:6px;}
+
+    .transcript{padding:10px 10px;max-height:420px;}
+    .msg{padding:7px 9px;}
+    .msg .meta{flex-wrap:wrap;gap:4px;}
+    .msg .body{font-size:13px;word-break:break-word;}
+
+    .rulerow{padding:9px 6px;}
+
+    .receipt{font-size:11px;padding:10px 10px;}
+
+    textarea, input, select{font-size:14px;}
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Booking-Flow Handoff Simulator</h1>
+  <p>Design, run, and audit your message automation before it goes live. Offline, self-contained, nothing leaves this page.</p>
+</header>
+
+<div class="wrap">
+
+  <div class="tabs">
+    <button class="tabbtn active" data-tab="build">1. Build Flow</button>
+    <button class="tabbtn" data-tab="rules">2. Set Rules</button>
+    <button class="tabbtn" data-tab="run">3. Run Scenario</button>
+    <button class="tabbtn" data-tab="data">Import / Export</button>
+  </div>
+
+  <!-- BUILD TAB -->
+  <div class="panel active" id="panel-build">
+    <div class="card">
+      <h2>Flow Steps</h2>
+      <p class="sub">Each step is a message your automation would send. Set when it fires, what it says, and any condition that must be true for it to fire.</p>
+      <div id="stepList"></div>
+      <button class="ghost" id="addStepBtn">+ Add step</button>
+    </div>
+
+    <div class="card">
+      <h2>Branch Variables</h2>
+      <p class="sub">Define the variables a scenario can set (e.g. customer_type, deposit_required). Steps can require a specific value to fire.</p>
+      <div id="varList"></div>
+      <button class="ghost" id="addVarBtn">+ Add variable</button>
+    </div>
+
+    <div class="card">
+      <h2>Edge Cases</h2>
+      <p class="sub">Toggle-able events that interrupt the normal flow. When active in a scenario, steps after the trigger point can be set to fire, skip, or replace.</p>
+      <div id="edgeList"></div>
+      <button class="ghost" id="addEdgeBtn">+ Add edge case</button>
+    </div>
+  </div>
+
+  <!-- RULES TAB -->
+  <div class="panel" id="panel-rules">
+    <div class="card">
+      <h2>Compliance Rules</h2>
+      <p class="sub">Plain checks run against any generated transcript. Use these to catch "we forgot to send X" or "we sent something after a cancellation" before automating.</p>
+      <div id="ruleList"></div>
+      <button class="ghost" id="addRuleBtn">+ Add rule</button>
+    </div>
+  </div>
+
+  <!-- RUN TAB -->
+  <div class="panel" id="panel-run">
+    <div class="card">
+      <h2>Scenario</h2>
+      <div class="scenariobar">
+        <div class="field">
+          <label for="scenarioName">Scenario label</label>
+          <input type="text" id="scenarioName" placeholder="e.g. Returning client, deposit required">
+        </div>
+        <div class="field">
+          <label for="edgeSelect">Edge case (optional)</label>
+          <select id="edgeSelect"><option value="">None — normal flow</option></select>
+        </div>
+        <div class="field">
+          <label for="edgeAfterStep">Edge case occurs after step #</label>
+          <input type="number" id="edgeAfterStep" min="1" value="1">
+        </div>
+      </div>
+      <div id="scenarioVars"></div>
+      <div class="btnrow">
+        <button class="primary" id="runBtn">Run simulation</button>
+      </div>
+    </div>
+
+    <div id="runOutput"></div>
+
+    <div class="card" id="receiptCard" style="display:none;">
+      <h2>Handoff Receipt</h2>
+      <p class="sub">A plain-text record of this run \u2014 useful to attach to a ticket or keep as a sign-off before you flip automation on.</p>
+      <div class="btnrow">
+        <button class="primary" id="copyReceiptBtn">Copy Receipt</button>
+        <button id="downloadReceiptBtn">Download Receipt</button>
+      </div>
+      <div class="receiptStatus" id="receiptStatus"></div>
+      <div class="receipt" id="receiptPreview"></div>
+      <textarea id="receiptFallbackArea" class="visually-hidden-fallback" style="display:none;width:100%;min-height:120px;margin-top:8px;font-family:ui-monospace,Consolas,monospace;font-size:11.5px;" readonly></textarea>
+    </div>
+  </div>
+
+  <!-- DATA TAB -->
+  <div class="panel" id="panel-data">
+    <div class="card">
+      <h2>Save / Load this flow</h2>
+      <p class="sub">Export your flow + rules to a file you keep with this tool, or paste one back in to restore it. Nothing is stored automatically — save before you close the tab.</p>
+      <div class="btnrow">
+        <button class="primary" id="exportBtn">Export JSON</button>
+        <button id="importBtn">Import JSON</button>
+      </div>
+      <div class="field" style="margin-top:12px;">
+        <label for="ioArea">Export appears here / paste JSON here to import</label>
+        <textarea id="ioArea" style="min-height:220px;font-family:ui-monospace,Consolas,monospace;font-size:12.5px;"></textarea>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+(function(){
+  "use strict";
+
+  /* ---------- state ---------- */
+  var state = {
+    steps: [],
+    vars: [],
+    edges: [],
+    rules: [],
+    nextStepId: 1,
+    nextVarId: 1,
+    nextEdgeId: 1,
+    nextRuleId: 1
+  };
+
+  function seedDefaults(){
+    state.steps = [
+      mkStep("Booking confirmation", 0, "New booking is placed.", "Hi {{customer_name}}, you're booked for {{service}} on {{date}} at {{time}}. Reply STOP to cancel.", "", ""),
+      mkStep("Deposit request", 5, "Sent shortly after confirmation if a deposit is required.", "A {{deposit_amount}} deposit is required to hold your slot. Pay here: {{payment_link}}", "deposit_required", "yes"),
+      mkStep("24h reminder", 1380, "Sent the day before the appointment.", "Reminder: {{service}} tomorrow at {{time}}. Reply C to confirm or R to reschedule.", "", ""),
+      mkStep("2h reminder", 2820, "Final reminder window.", "See you in 2 hours for your {{service}} appointment.", "", ""),
+      mkStep("Post-service follow-up", 4320, "Sent after the appointment normally completes.", "Thanks for coming in! If you have a minute, a review helps a lot: {{review_link}}", "", "")
+    ];
+    state.vars = [
+      mkVar("customer_type", "new, returning"),
+      mkVar("deposit_required", "yes, no"),
+      mkVar("service", "haircut, consult, repair")
+    ];
+    state.edges = [
+      mkEdge("No-show", "Customer does not arrive for the appointment.", "Sorry we missed you for your {{service}} today. Want to reschedule? {{booking_link}}"),
+      mkEdge("Late cancellation", "Customer cancels within the no-cancellation window.", "Your appointment is cancelled. Per policy, the deposit is non-refundable inside 24h of the appointment."),
+      mkEdge("Reschedule", "Customer asks to move their appointment.", "You're rescheduled to {{new_date}} at {{new_time}}. See you then!")
+    ];
+    state.rules = [
+      mkRule("Confirmation must be the first message sent", "first_step_is", "Booking confirmation"),
+      mkRule("No message should fire after a late cancellation other than the cancellation notice itself", "no_send_after_edge", "Late cancellation"),
+      mkRule("A reminder must fire within 24h of the appointment", "step_exists", "24h reminder"),
+      mkRule("Deposit request must only fire when deposit_required = yes", "conditional_only", "Deposit request")
+    ];
+  }
+
+  function mkStep(name, offsetMin, trigger, body, condVar, condVal){
+    return {id:"s"+(state.nextStepId++), name:name, offset:offsetMin, trigger:trigger, body:body, condVar:condVar||"", condVal:condVal||""};
+  }
+  function mkVar(name, optionsCsv){
+    return {id:"v"+(state.nextVarId++), name:name, options:optionsCsv};
+  }
+  function mkEdge(name, desc, body){
+    return {id:"e"+(state.nextEdgeId++), name:name, desc:desc, body:body};
+  }
+  function mkRule(text, kind, target){
+    return {id:"r"+(state.nextRuleId++), text:text, kind:kind, target:target};
+  }
+
+  /* ---------- helpers ---------- */
+  function el(tag, cls, html){
+    var d = document.createElement(tag);
+    if(cls) d.className = cls;
+    if(html !== undefined) d.textContent = html;
+    return d;
+  }
+  function fmtOffset(min){
+    min = parseInt(min,10) || 0;
+    if(min === 0) return "Immediately";
+    if(min < 60) return "+" + min + " min";
+    if(min < 1440) return "+" + Math.round(min/60*10)/10 + " hr";
+    return "+" + Math.round(min/1440*10)/10 + " days";
+  }
+  function showToast(msg){
+    var t = document.getElementById("toast");
+    t.textContent = msg;
+    t.style.display = "block";
+    window.clearTimeout(showToast._h);
+    showToast._h = window.setTimeout(function(){ t.style.display = "none"; }, 2200);
+  }
+  function escapeHtml(s){
+    return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+  }
+
+  /* ---------- tabs ---------- */
+  var tabBtns = document.querySelectorAll(".tabbtn");
+  for(var i=0;i<tabBtns.length;i++){
+    tabBtns[i].addEventListener("click", function(ev){
+      var tab = ev.currentTarget.getAttribute("data-tab");
+      for(var j=0;j<tabBtns.length;j++){
+        tabBtns[j].classList.remove("active");
+      }
+      ev.currentTarget.classList.add("active");
+      var panels = document.querySelectorAll(".panel");
+      for(var k=0;k<panels.length;k++){
+        panels[k].classList.remove("active");
+      }
+      document.getElementById("panel-"+tab).classList.add("active");
+      if(tab === "run"){ renderScenarioForm(); }
+    });
+  }
+
+  /* ---------- render: steps ---------- */
+  function renderSteps(){
+    var list = document.getElementById("stepList");
+    list.textContent = "";
+    if(state.steps.length === 0){
+      list.appendChild(el("div","empty","No steps yet. Add your first message below."));
+    }
+    state.steps
+      .slice()
+      .sort(function(a,b){ return a.offset - b.offset; })
+      .forEach(function(step, idx){
+        var item = el("div","stepitem");
+        item.setAttribute("data-id", step.id);
+
+        var top = el("div","top");
+        var badge = el("span","badge", "Step " + (idx+1) + " \u00B7 " + fmtOffset(step.offset));
+        top.appendChild(badge);
+        var rm = el("button","small danger","Remove");
+        rm.addEventListener("click", function(){
+          state.steps = state.steps.filter(function(s){ return s.id !== step.id; });
+          renderSteps();
+        });
+        top.appendChild(rm);
+        item.appendChild(top);
+
+        var row1 = el("div","row");
+        row1.appendChild(field("Step name", step.name, function(v){ step.name = v; renderSteps(); }, "text"));
+        row1.appendChild(field("Minutes after booking event", step.offset, function(v){ step.offset = parseInt(v,10)||0; }, "number"));
+        item.appendChild(row1);
+
+        item.appendChild(field("Trigger / when this fires (notes)", step.trigger, function(v){ step.trigger = v; }, "text"));
+        item.appendChild(field("Message body", step.body, function(v){ step.body = v; }, "textarea"));
+
+        var row2 = el("div","row");
+        var condVarWrap = el("div","field");
+        var condVarLbl = el("label","","Only fires if variable...");
+        condVarWrap.appendChild(condVarLbl);
+        var condVarSel = document.createElement("select");
+        condVarSel.appendChild(new Option("(no condition)", ""));
+        state.vars.forEach(function(v){
+          var o = new Option(v.name, v.name);
+          if(v.name === step.condVar) o.selected = true;
+          condVarSel.appendChild(o);
+        });
+        condVarSel.addEventListener("change", function(){ step.condVar = condVarSel.value; });
+        condVarWrap.appendChild(condVarSel);
+        row2.appendChild(condVarWrap);
+
+        row2.appendChild(field("...equals this value", step.condVal, function(v){ step.condVal = v; }, "text"));
+        item.appendChild(row2);
+
+        list.appendChild(item);
+      });
+  }
+
+  function field(labelText, value, onChange, type){
+    var wrap = el("div","field");
+    var lbl = el("label","",labelText);
+    wrap.appendChild(lbl);
+    var input;
+    if(type === "textarea"){
+      input = document.createElement("textarea");
+      input.value = value || "";
+    } else {
+      input = document.createElement("input");
+      input.type = type || "text";
+      input.value = value || "";
+    }
+    input.addEventListener("input", function(){ onChange(input.value); });
+    wrap.appendChild(input);
+    return wrap;
+  }
+
+  document.getElementById("addStepBtn").addEventListener("click", function(){
+    state.steps.push(mkStep("New step", 0, "", "", "", ""));
+    renderSteps();
+  });
+
+  /* ---------- render: vars ---------- */
+  function renderVars(){
+    var list = document.getElementById("varList");
+    list.textContent = "";
+    if(state.vars.length === 0){
+      list.appendChild(el("div","empty","No variables yet."));
+    }
+    state.vars.forEach(function(v){
+      var item = el("div","stepitem");
+      var top = el("div","top");
+      top.appendChild(el("span","badge","Variable"));
+      var rm = el("button","small danger","Remove");
+      rm.addEventListener("click", function(){
+        state.vars = state.vars.filter(function(x){ return x.id !== v.id; });
+        renderVars(); renderSteps();
+      });
+      top.appendChild(rm);
+      item.appendChild(top);
+
+      var row = el("div","row");
+      row.appendChild(field("Variable name", v.name, function(val){ v.name = val; renderSteps(); }, "text"));
+      row.appendChild(field("Possible values (comma separated)", v.options, function(val){ v.options = val; }, "text"));
+      item.appendChild(row);
+      list.appendChild(item);
+    });
+  }
+  document.getElementById("addVarBtn").addEventListener("click", function(){
+    state.vars.push(mkVar("new_variable", "value1, value2"));
+    renderVars();
+  });
+
+  /* ---------- render: edges ---------- */
+  function renderEdges(){
+    var list = document.getElementById("edgeList");
+    list.textContent = "";
+    if(state.edges.length === 0){
+      list.appendChild(el("div","empty","No edge cases yet."));
+    }
+    state.edges.forEach(function(e){
+      var item = el("div","stepitem");
+      var top = el("div","top");
+      top.appendChild(el("span","badge","Edge case"));
+      var rm = el("button","small danger","Remove");
+      rm.addEventListener("click", function(){
+        state.edges = state.edges.filter(function(x){ return x.id !== e.id; });
+        renderEdges();
+      });
+      top.appendChild(rm);
+      item.appendChild(top);
+
+      item.appendChild(field("Edge case name", e.name, function(v){ e.name = v; }, "text"));
+      item.appendChild(field("Description", e.desc, function(v){ e.desc = v; }, "text"));
+      item.appendChild(field("Message sent when this triggers", e.body, function(v){ e.body = v; }, "textarea"));
+      list.appendChild(item);
+    });
+  }
+  document.getElementById("addEdgeBtn").addEventListener("click", function(){
+    state.edges.push(mkEdge("New edge case", "", ""));
+    renderEdges();
+  });
+
+  /* ---------- render: rules ---------- */
+  var RULE_KINDS = [
+    {v:"first_step_is", label:"The first message sent must be..."},
+    {v:"step_exists", label:"This step must fire at some point"},
+    {v:"step_not_after_edge", label:"This step must NOT fire after a given edge case"},
+    {v:"no_send_after_edge", label:"Nothing should fire after this edge case (except its own message)"},
+    {v:"conditional_only", label:"This step must only fire when its condition is met"},
+    {v:"max_gap_hours", label:"No gap longer than the number entered (hrs) between steps"}
+  ];
+  function renderRules(){
+    var list = document.getElementById("ruleList");
+    list.textContent = "";
+    if(state.rules.length === 0){
+      list.appendChild(el("div","empty","No rules yet. Add one below."));
+    }
+    state.rules.forEach(function(r){
+      var item = el("div","stepitem");
+      var top = el("div","top");
+      top.appendChild(el("span","badge","Rule"));
+      var rm = el("button","small danger","Remove");
+      rm.addEventListener("click", function(){
+        state.rules = state.rules.filter(function(x){ return x.id !== r.id; });
+        renderRules();
+      });
+      top.appendChild(rm);
+      item.appendChild(top);
+
+      item.appendChild(field("Rule description", r.text, function(v){ r.text = v; }, "text"));
+
+      var row = el("div","row");
+      var kindWrap = el("div","field");
+      kindWrap.appendChild(el("label","","Rule type"));
+      var kindSel = document.createElement("select");
+      RULE_KINDS.forEach(function(k){
+        var o = new Option(k.label, k.v);
+        if(k.v === r.kind) o.selected = true;
+        kindSel.appendChild(o);
+      });
+      kindSel.addEventListener("change", function(){ r.kind = kindSel.value; renderRules(); });
+      kindWrap.appendChild(kindSel);
+      row.appendChild(kindWrap);
+
+      var targetWrap = el("div","field");
+      targetWrap.appendChild(el("label","","Target (step name, edge case name, or number)"));
+      if(r.kind === "max_gap_hours"){
+        var numIn = document.createElement("input");
+        numIn.type = "number";
+        numIn.value = r.target || "";
+        numIn.addEventListener("input", function(){ r.target = numIn.value; });
+        targetWrap.appendChild(numIn);
+      } else {
+        var sel = document.createElement("select");
+        sel.appendChild(new Option("(choose)", ""));
+        var options = (r.kind === "step_not_after_edge" || r.kind === "no_send_after_edge") ? state.edges : state.steps;
+        options.forEach(function(o){
+          var opt = new Option(o.name, o.name);
+          if(o.name === r.target) opt.selected = true;
+          sel.appendChild(opt);
+        });
+        sel.addEventListener("change", function(){ r.target = sel.value; });
+        targetWrap.appendChild(sel);
+      }
+      row.appendChild(targetWrap);
+      item.appendChild(row);
+
+      list.appendChild(item);
+    });
+  }
+  document.getElementById("addRuleBtn").addEventListener("click", function(){
+    state.rules.push(mkRule("New rule", "step_exists", ""));
+    renderRules();
+  });
+
+  /* ---------- scenario form ---------- */
+  function renderScenarioForm(){
+    var edgeSelect = document.getElementById("edgeSelect");
+    edgeSelect.textContent = "";
+    edgeSelect.appendChild(new Option("None \u2014 normal flow", ""));
+    state.edges.forEach(function(e){
+      edgeSelect.appendChild(new Option(e.name, e.id));
+    });
+
+    var varsWrap = document.getElementById("scenarioVars");
+    varsWrap.textContent = "";
+    if(state.vars.length > 0){
+      var row = el("div","row3");
+      state.vars.forEach(function(v){
+        var wrap = el("div","field");
+        wrap.appendChild(el("label","",v.name));
+        var sel = document.createElement("select");
+        sel.setAttribute("data-varname", v.name);
+        sel.appendChild(new Option("(unset)", ""));
+        (v.options || "").split(",").map(function(s){return s.trim();}).filter(Boolean).forEach(function(opt){
+          sel.appendChild(new Option(opt, opt));
+        });
+        wrap.appendChild(sel);
+        row.appendChild(wrap);
+      });
+      varsWrap.appendChild(row);
+    }
+  }
+
+  /* ---------- simulation engine ---------- */
+  function runSimulation(){
+    var scenarioName = document.getElementById("scenarioName").value || "Untitled scenario";
+    var edgeId = document.getElementById("edgeSelect").value;
+    var edgeAfter = parseInt(document.getElementById("edgeAfterStep").value, 10) || 0;
+    var edge = state.edges.filter(function(e){ return e.id === edgeId; })[0] || null;
+
+    var varSelects = document.querySelectorAll("#scenarioVars select[data-varname]");
+    var scenarioVars = {};
+    for(var i=0;i<varSelects.length;i++){
+      scenarioVars[varSelects[i].getAttribute("data-varname")] = varSelects[i].value;
+    }
+
+    var orderedSteps = state.steps.slice().sort(function(a,b){ return a.offset - b.offset; });
+
+    var transcript = [];
+    var edgeInserted = false;
+
+    orderedSteps.forEach(function(step, idx){
+      var stepNum = idx + 1;
+      var conditionMet = true;
+      if(step.condVar){
+        conditionMet = (scenarioVars[step.condVar] || "") === step.condVal;
+      }
+
+      var isAfterEdge = edge && stepNum > edgeAfter;
+      var entry = {
+        type: "step",
+        name: step.name,
+        offset: step.offset,
+        body: substituteVars(step.body, scenarioVars),
+        fired: conditionMet && !isAfterEdge,
+        skippedReason: !conditionMet ? "condition not met (" + step.condVar + " \u2260 " + step.condVal + ")" : (isAfterEdge ? "flow interrupted by edge case" : "")
+      };
+      transcript.push(entry);
+
+      if(edge && stepNum === edgeAfter && !edgeInserted){
+        edgeInserted = true;
+        transcript.push({
+          type: "edge",
+          name: edge.name,
+          offset: step.offset + 1,
+          body: substituteVars(edge.body, scenarioVars),
+          fired: true,
+          skippedReason: ""
+        });
+      }
+    });
+
+    if(edge && edgeAfter >= orderedSteps.length && !edgeInserted){
+      var lastOffset = orderedSteps.length ? orderedSteps[orderedSteps.length-1].offset : 0;
+      transcript.push({
+        type:"edge", name: edge.name, offset: lastOffset+1,
+        body: substituteVars(edge.body, scenarioVars), fired:true, skippedReason:""
+      });
+    }
+
+    var checklistResults = evaluateRules(transcript, edge);
+
+    renderRunOutput(scenarioName, transcript, checklistResults);
+    buildReceipt(scenarioName, transcript, checklistResults, edge, scenarioVars);
+  }
+
+  function substituteVars(text, scenarioVars){
+    if(!text) return "";
+    return text.replace(/\{\{(.*?)\}\}/g, function(m, name){
+      name = name.trim();
+      if(scenarioVars.hasOwnProperty(name) && scenarioVars[name]){
+        return scenarioVars[name];
+      }
+      return "[" + name + "]";
+    });
+  }
+
+  function evaluateRules(transcript, edge){
+    var firedSteps = transcript.filter(function(t){ return t.type === "step" && t.fired; });
+    var allStepsByName = {};
+    transcript.forEach(function(t){ if(t.type === "step") allStepsByName[t.name] = t; });
+
+    return state.rules.map(function(rule){
+      var pass = true, detail = "";
+      switch(rule.kind){
+        case "first_step_is": {
+          var firstFired = firedSteps[0];
+          pass = !!firstFired && firstFired.name === rule.target;
+          detail = pass ? "First fired message: " + (firstFired ? firstFired.name : "none") : "First fired message was \"" + (firstFired ? firstFired.name : "none") + "\", expected \"" + rule.target + "\"";
+          break;
+        }
+        case "step_exists": {
+          pass = firedSteps.some(function(s){ return s.name === rule.target; });
+          detail = pass ? "\"" + rule.target + "\" fired as expected" : "\"" + rule.target + "\" never fired in this scenario";
+          break;
+        }
+        case "step_not_after_edge": {
+          if(!edge || edge.name !== rule.target){
+            pass = true; detail = "Edge case \"" + rule.target + "\" not active in this run";
+          } else {
+            var edgeIdx = transcript.findIndex(function(t){ return t.type === "edge"; });
+            var targetStepFiredAfter = transcript.slice(edgeIdx+1).some(function(t){ return t.type==="step" && t.fired; });
+            pass = !targetStepFiredAfter;
+            detail = pass ? "No step fired after \"" + rule.target + "\"" : "A step fired after \"" + rule.target + "\" triggered";
+          }
+          break;
+        }
+        case "no_send_after_edge": {
+          if(!edge || edge.name !== rule.target){
+            pass = true; detail = "Edge case \"" + rule.target + "\" not active in this run";
+          } else {
+            var eIdx = transcript.findIndex(function(t){ return t.type === "edge"; });
+            var anyAfter = transcript.slice(eIdx+1).some(function(t){ return t.fired; });
+            pass = !anyAfter;
+            detail = pass ? "Nothing fired after \"" + rule.target + "\"" : "Something fired after \"" + rule.target + "\" \u2014 review the flow";
+          }
+          break;
+        }
+        case "conditional_only": {
+          var s = allStepsByName[rule.target];
+          if(!s){ pass = true; detail = "Step \"" + rule.target + "\" not in flow"; break; }
+          var stepDef = state.steps.filter(function(x){return x.name === rule.target;})[0];
+          if(!stepDef || !stepDef.condVar){ pass = true; detail = "Step has no condition set \u2014 nothing to check"; break; }
+          pass = true;
+          detail = "Step fires according to its condition (" + stepDef.condVar + " = " + stepDef.condVal + ")";
+          break;
+        }
+        case "max_gap_hours": {
+          var maxMin = (parseFloat(rule.target)||0) * 60;
+          var firedOnly = transcript.filter(function(t){return t.fired;}).sort(function(a,b){return a.offset-b.offset;});
+          var worstGap = 0;
+          for(var k=1;k<firedOnly.length;k++){
+            var gap = firedOnly[k].offset - firedOnly[k-1].offset;
+            if(gap > worstGap) worstGap = gap;
+          }
+          pass = worstGap <= maxMin || maxMin === 0;
+          detail = "Largest gap between fired messages: " + Math.round(worstGap/60*10)/10 + " hr (limit " + rule.target + " hr)";
+          break;
+        }
+        default:
+          pass = true; detail = "Unrecognized rule type";
+      }
+      return {text: rule.text, pass: pass, detail: detail};
+    });
+  }
+
+  function renderRunOutput(scenarioName, transcript, checklistResults){
+    var out = document.getElementById("runOutput");
+    out.textContent = "";
+
+    var firedCount = transcript.filter(function(t){return t.fired;}).length;
+    var skippedCount = transcript.filter(function(t){return !t.fired;}).length;
+    var passCount = checklistResults.filter(function(r){return r.pass;}).length;
+    var failCount = checklistResults.length - passCount;
+
+    var summary = el("div","summarybar");
+    summary.appendChild(statBox(firedCount, "Sent", "good"));
+    summary.appendChild(statBox(skippedCount, "Skipped", ""));
+    summary.appendChild(statBox(passCount, "Rules passed", "good"));
+    summary.appendChild(statBox(failCount, failCount>0 ? "Rules failed" : "Rules failed", failCount>0?"bad":""));
+    out.appendChild(summary);
+
+    var tcCard = el("div","card");
+    tcCard.appendChild(el("h2", "", "Transcript \u2014 " + scenarioName));
+    var transcriptDiv = el("div","transcript");
+    transcript.forEach(function(t){
+      var msg = el("div", "msg" + (t.fired ? "" : " skipped") + (t.type==="edge" ? " edge" : ""));
+      var meta = el("div","meta");
+      var tname = el("span","tname", t.name);
+      if(!t.fired){
+        var tag = el("span","tag skip","SKIPPED");
+        tname.appendChild(tag);
+      } else if(t.type === "edge"){
+        var tag2 = el("span","tag edge","EDGE CASE");
+        tname.appendChild(tag2);
+      }
+      meta.appendChild(tname);
+      meta.appendChild(el("span","", fmtOffset(t.offset)));
+      msg.appendChild(meta);
+      msg.appendChild(el("div","body", t.fired ? t.body : (t.body + "\n(not sent: " + t.skippedReason + ")")));
+      transcriptDiv.appendChild(msg);
+    });
+    if(transcript.length === 0){
+      transcriptDiv.appendChild(el("div","empty","No steps defined yet \u2014 add steps in the Build Flow tab."));
+    }
+    tcCard.appendChild(transcriptDiv);
+    out.appendChild(tcCard);
+
+    var rcCard = el("div","card");
+    rcCard.appendChild(el("h2","","Rule Checklist"));
+    var clDiv = el("div","checklist");
+    checklistResults.forEach(function(r){
+      var row = el("div","rulerow");
+      var icon = el("div","icon " + (r.pass ? "pass" : "fail"), r.pass ? "\u2713" : "\u2715");
+      row.appendChild(icon);
+      var textWrap = el("div","");
+      textWrap.appendChild(el("div","ruletext", r.text));
+      textWrap.appendChild(el("div","ruledetail", r.detail));
+      row.appendChild(textWrap);
+      clDiv.appendChild(row);
+    });
+    if(checklistResults.length === 0){
+      clDiv.appendChild(el("div","empty","No rules defined yet \u2014 add rules in the Set Rules tab."));
+    }
+    rcCard.appendChild(clDiv);
+    out.appendChild(rcCard);
+  }
+
+  function statBox(num, lbl, extraCls){
+    var b = el("div","stat" + (extraCls ? " " + extraCls : ""));
+    b.appendChild(el("div","num", String(num)));
+    b.appendChild(el("div","lbl", lbl));
+    return b;
+  }
+
+  document.getElementById("runBtn").addEventListener("click", runSimulation);
+
+  /* ---------- receipt ---------- */
+  var currentReceiptText = "";
+
+  function buildReceipt(scenarioName, transcript, checklistResults, edge, scenarioVars){
+    var lines = [];
+    lines.push("BOOKING-FLOW HANDOFF RECEIPT");
+    lines.push("Scenario: " + scenarioName);
+    lines.push("Generated: " + new Date().toString());
+    if(edge){
+      lines.push("Edge case simulated: " + edge.name);
+    } else {
+      lines.push("Edge case simulated: none (normal flow)");
+    }
+    var varKeys = Object.keys(scenarioVars || {}).filter(function(k){ return scenarioVars[k]; });
+    if(varKeys.length){
+      lines.push("Variables: " + varKeys.map(function(k){ return k + "=" + scenarioVars[k]; }).join(", "));
+    }
+    lines.push("");
+    lines.push("--- TRANSCRIPT ---");
+    transcript.forEach(function(t, idx){
+      var status = t.fired ? "SENT" : "SKIPPED";
+      var kind = t.type === "edge" ? "[EDGE] " : "";
+      lines.push((idx+1) + ". " + kind + t.name + " \u2014 " + fmtOffset(t.offset) + " \u2014 " + status);
+      if(t.fired){
+        lines.push("   " + t.body.replace(/\n/g, "\n   "));
+      } else {
+        lines.push("   not sent: " + t.skippedReason);
+      }
+    });
+    lines.push("");
+    lines.push("--- RULE CHECKLIST ---");
+    if(checklistResults.length === 0){
+      lines.push("(no rules defined)");
+    }
+    checklistResults.forEach(function(r){
+      lines.push((r.pass ? "[PASS] " : "[FAIL] ") + r.text);
+      lines.push("   " + r.detail);
+    });
+    var firedCount = transcript.filter(function(t){return t.fired;}).length;
+    var skippedCount = transcript.length - firedCount;
+    var passCount = checklistResults.filter(function(r){return r.pass;}).length;
+    var failCount = checklistResults.length - passCount;
+    lines.push("");
+    lines.push("--- SUMMARY ---");
+    lines.push("Sent: " + firedCount + "  Skipped: " + skippedCount + "  Rules passed: " + passCount + "  Rules failed: " + failCount);
+
+    currentReceiptText = lines.join("\n");
+
+    var card = document.getElementById("receiptCard");
+    card.style.display = "block";
+    document.getElementById("receiptPreview").textContent = currentReceiptText;
+    setReceiptStatus("", "");
+  }
+
+  function setReceiptStatus(msg, cls){
+    var s = document.getElementById("receiptStatus");
+    s.textContent = msg;
+    s.className = "receiptStatus" + (cls ? " " + cls : "");
+  }
+
+  function safeFileSlug(name){
+    return (name || "scenario").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "") || "scenario";
+  }
+
+  document.getElementById("copyReceiptBtn").addEventListener("click", function(){
+    if(!currentReceiptText){
+      setReceiptStatus("Run a simulation first \u2014 nothing to copy yet.", "err");
+      return;
+    }
+    if(navigator.clipboard && navigator.clipboard.writeText){
+      navigator.clipboard.writeText(currentReceiptText).then(function(){
+        setReceiptStatus("Copied to clipboard.", "ok");
+      }, function(){
+        fallbackCopy();
+      });
+    } else {
+      fallbackCopy();
+    }
+  });
+
+  function fallbackCopy(){
+    // Fallback for environments without the async Clipboard API.
+    // Selects the receipt text in a visible textarea so the person can
+    // copy it manually with their device's normal copy gesture.
+    var ta = document.getElementById("receiptFallbackArea");
+    ta.value = currentReceiptText;
+    ta.style.display = "block";
+    ta.focus();
+    ta.select();
+    setReceiptStatus("Clipboard access isn't available here \u2014 text is selected below, copy it manually (Ctrl/Cmd+C).", "err");
+  }
+
+  document.getElementById("downloadReceiptBtn").addEventListener("click", function(){
+    if(!currentReceiptText){
+      setReceiptStatus("Run a simulation first \u2014 nothing to download yet.", "err");
+      return;
+    }
+    var scenarioName = document.getElementById("scenarioName").value || "scenario";
+    var stamp = new Date().toISOString().slice(0,10);
+    var filename = "handoff-receipt-" + safeFileSlug(scenarioName) + "-" + stamp + ".txt";
+    var blob = new Blob([currentReceiptText], {type:"text/plain"});
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement("a");
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    window.setTimeout(function(){ URL.revokeObjectURL(url); }, 1000);
+    setReceiptStatus("Downloaded as " + filename, "ok");
+  });
+
+  /* ---------- import / export ---------- */
+  document.getElementById("exportBtn").addEventListener("click", function(){
+    var data = {
+      steps: state.steps, vars: state.vars, edges: state.edges, rules: state.rules
+    };
+    document.getElementById("ioArea").value = JSON.stringify(data, null, 2);
+    showToast("Exported. Copy this text and save it somewhere safe.");
+  });
+
+  document.getElementById("importBtn").addEventListener("click", function(){
+    var raw = document.getElementById("ioArea").value;
+    if(!raw.trim()){ showToast("Paste JSON into the box first."); return; }
+    var data;
+    try{
+      data = JSON.parse(raw);
+    } catch(e){
+      showToast("Could not parse JSON \u2014 check the text.");
+      return;
+    }
+    if(!data || typeof data !== "object"){ showToast("Invalid data."); return; }
+    state.steps = Array.isArray(data.steps) ? data.steps : [];
+    state.vars = Array.isArray(data.vars) ? data.vars : [];
+    state.edges = Array.isArray(data.edges) ? data.edges : [];
+    state.rules = Array.isArray(data.rules) ? data.rules : [];
+    state.nextStepId = state.steps.length + 1;
+    state.nextVarId = state.vars.length + 1;
+    state.nextEdgeId = state.edges.length + 1;
+    state.nextRuleId = state.rules.length + 1;
+    renderAll();
+    showToast("Imported successfully.");
+  });
+
+  /* ---------- init ---------- */
+  function renderAll(){
+    renderSteps();
+    renderVars();
+    renderEdges();
+    renderRules();
+    renderScenarioForm();
+  }
+
+  seedDefaults();
+  renderAll();
+
+})();
+</script>
+</body>
+</html>

@@ -68,6 +68,14 @@ import {
 } from './featured-projects'
 
 const PROJECT_ROUTE_OVERRIDES: Record<string, string> = {
+  'dc5e67c3-42d0-4823-ae23-586b7d3985cb': '/calming-sleep-sound-mixer-demo',
+  '0ddfc7cf-37bf-47ae-8fe0-d8d445ba1bee': '/booking-flow-handoff-simulator-demo',
+  'e0e4e2b7-082e-4db1-9468-484fc3fd3a69': '/first-principles-claim-ladder-game-demo',
+  'ca0c2e08-9e02-4725-90f5-58ef248fe4c7': '/gym-mirror-progress-shot-consistency-studio-demo',
+  '22bcc36b-497f-43f7-824f-3ccba9690da6': '/rental-walkthrough-red-flag-scorecard-demo',
+  '384ebd4d-88af-400b-b230-4eb771bb2194': '/security-cam-anomaly-timeline-game-demo',
+  '17c42c87-3709-4d5e-9ae3-d4ac4807bc4c': '/t-shirt-print-alignment-press-game-demo',
+  'a7201847-c8d6-4e09-814b-0a382f8f8080': '/tiny-festival-set-time-clash-game-demo',
   [TINY_TRAIN_DISPATCHER_PROJECT_ID]: '/tiny-train-platform-dispatcher-demo',
   [BREAKROOM_SNACK_RESTOCK_PROJECT_ID]: '/breakroom-snack-restock-planner-demo',
   [PORCH_LIGHT_MOTH_MAZE_PROJECT_ID]: '/porch-light-moth-maze-demo',

@@ -1,0 +1,1825 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Security-Cam Anomaly Timeline</title>
+  <style>
+    :root {
+      --bg: #eef2ed;
+      --paper: #fbfcf8;
+      --ink: #17211d;
+      --muted: #5e6a63;
+      --line: #cbd5cc;
+      --soft: #e2e9e1;
+      --panel: #ffffff;
+      --accent: #2d6f5a;
+      --accent-2: #b45c2a;
+      --good: #236d48;
+      --bad: #a33b34;
+      --warn: #946200;
+      --shadow: 0 16px 35px rgba(34, 47, 40, 0.12);
+      --radius: 18px;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html {
+      min-height: 100%;
+      background: var(--bg);
+    }
+
+    body {
+      margin: 0;
+      min-height: 100%;
+      color: var(--ink);
+      font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      line-height: 1.45;
+      overflow-x: hidden;
+      background:
+        radial-gradient(circle at 10% 0%, rgba(45, 111, 90, 0.18), transparent 32rem),
+        radial-gradient(circle at 90% 8%, rgba(180, 92, 42, 0.12), transparent 28rem),
+        linear-gradient(180deg, #f6f8f3, var(--bg));
+    }
+
+    button,
+    input,
+    select,
+    textarea {
+      font: inherit;
+    }
+
+    button {
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      padding: 0.72rem 0.92rem;
+      background: var(--paper);
+      color: var(--ink);
+      cursor: pointer;
+      transition: transform 160ms ease, box-shadow 160ms ease, border-color 160ms ease;
+      touch-action: manipulation;
+    }
+
+    button:hover {
+      transform: translateY(-1px);
+      border-color: rgba(45, 111, 90, 0.45);
+      box-shadow: 0 10px 20px rgba(34, 47, 40, 0.10);
+    }
+
+    button:active {
+      transform: translateY(0);
+    }
+
+    button.primary {
+      background: var(--accent);
+      color: #ffffff;
+      border-color: var(--accent);
+    }
+
+    button.warn {
+      background: #fff6e5;
+      border-color: #e8c981;
+      color: #5d3f00;
+    }
+
+    button.danger {
+      background: #fff0ef;
+      border-color: #e6b2ad;
+      color: #7b2d28;
+    }
+
+    button.small {
+      padding: 0.48rem 0.68rem;
+      font-size: 0.88rem;
+    }
+
+    button:disabled {
+      opacity: 0.52;
+      cursor: not-allowed;
+      transform: none;
+      box-shadow: none;
+    }
+
+    select,
+    textarea,
+    input[type="text"] {
+      width: 100%;
+      max-width: 100%;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      background: #ffffff;
+      color: var(--ink);
+      padding: 0.72rem 0.8rem;
+      outline: none;
+    }
+
+    select:focus,
+    textarea:focus,
+    input[type="text"]:focus,
+    button:focus-visible {
+      outline: 3px solid rgba(45, 111, 90, 0.22);
+      outline-offset: 2px;
+    }
+
+    textarea {
+      resize: vertical;
+      min-height: 4.25rem;
+    }
+
+    .app {
+      width: min(1180px, calc(100% - 24px));
+      margin: 0 auto;
+      padding: 18px 0 42px;
+    }
+
+    .hero {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 18px;
+      align-items: end;
+      padding: 24px;
+      background: rgba(255, 255, 255, 0.72);
+      border: 1px solid rgba(203, 213, 204, 0.9);
+      box-shadow: var(--shadow);
+      border-radius: calc(var(--radius) + 8px);
+      backdrop-filter: blur(10px);
+    }
+
+    .hero h1 {
+      margin: 0 0 0.42rem;
+      font-size: clamp(1.75rem, 5vw, 3.9rem);
+      line-height: 1.03;
+      letter-spacing: 0;
+    }
+
+    .hero p {
+      margin: 0;
+      max-width: 68ch;
+      color: var(--muted);
+      font-size: clamp(0.98rem, 2.4vw, 1.08rem);
+    }
+
+    .live-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.65rem 0.86rem;
+      border: 1px solid rgba(45, 111, 90, 0.35);
+      border-radius: 999px;
+      background: #f4fbf4;
+      color: #184f3f;
+      white-space: nowrap;
+      font-weight: 700;
+    }
+
+    .dot {
+      width: 0.72rem;
+      height: 0.72rem;
+      border-radius: 999px;
+      background: #d93025;
+      box-shadow: 0 0 0 5px rgba(217, 48, 37, 0.13);
+    }
+
+    .top-controls {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 12px;
+      align-items: end;
+      margin: 14px 0;
+      padding: 16px;
+      border-radius: var(--radius);
+      background: rgba(255, 255, 255, 0.68);
+      border: 1px solid var(--line);
+    }
+
+    .control-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .field-label {
+      display: block;
+      margin: 0 0 0.4rem;
+      color: var(--muted);
+      font-size: 0.88rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+
+    .board {
+      display: grid;
+      grid-template-columns: minmax(260px, 360px) minmax(0, 1fr);
+      gap: 14px;
+      align-items: start;
+    }
+
+    .panel {
+      background: rgba(255, 255, 255, 0.82);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: 0 10px 30px rgba(34, 47, 40, 0.08);
+    }
+
+    .side {
+      position: sticky;
+      top: 12px;
+      overflow: hidden;
+    }
+
+    .side-section {
+      padding: 16px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .side-section:last-child {
+      border-bottom: 0;
+    }
+
+    .side h2,
+    .timeline-panel h2,
+    .answer-panel h2,
+    .export-panel h2 {
+      margin: 0 0 0.65rem;
+      font-size: 1.12rem;
+      letter-spacing: 0;
+    }
+
+    .case-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin: 0.8rem 0 0;
+    }
+
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      min-height: 1.72rem;
+      padding: 0.32rem 0.58rem;
+      border-radius: 999px;
+      border: 1px solid var(--line);
+      background: var(--paper);
+      color: var(--muted);
+      font-size: 0.82rem;
+      font-weight: 750;
+    }
+
+    .score-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 8px;
+      margin-top: 10px;
+    }
+
+    .score-card {
+      padding: 12px;
+      border-radius: 15px;
+      border: 1px solid var(--line);
+      background: #fbfcf8;
+    }
+
+    .score-card strong {
+      display: block;
+      font-size: 1.55rem;
+      line-height: 1;
+      margin-bottom: 0.2rem;
+    }
+
+    .score-card span {
+      display: block;
+      font-size: 0.78rem;
+      color: var(--muted);
+      font-weight: 700;
+    }
+
+    .score-card.good strong {
+      color: var(--good);
+    }
+
+    .score-card.warn strong {
+      color: var(--warn);
+    }
+
+    .score-card.bad strong {
+      color: var(--bad);
+    }
+
+    .hint-box,
+    .status-box {
+      padding: 12px;
+      border-radius: 15px;
+      background: #f6f8f3;
+      border: 1px solid var(--line);
+      color: var(--muted);
+      white-space: pre-wrap;
+      overflow-wrap: anywhere;
+    }
+
+    .status-box {
+      margin-top: 10px;
+      min-height: 3rem;
+    }
+
+    .rules {
+      margin: 0.65rem 0 0;
+      padding-left: 1.15rem;
+      color: var(--muted);
+    }
+
+    .rules li + li {
+      margin-top: 0.35rem;
+    }
+
+    .timeline-panel {
+      padding: 16px;
+      min-width: 0;
+    }
+
+    .timeline-head {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 12px;
+      align-items: start;
+      margin-bottom: 12px;
+    }
+
+    .timeline-head p {
+      margin: 0;
+      color: var(--muted);
+    }
+
+    .timeline-list {
+      display: grid;
+      gap: 12px;
+      min-width: 0;
+    }
+
+    .cam-card {
+      position: relative;
+      display: grid;
+      gap: 12px;
+      padding: 13px;
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      background: linear-gradient(180deg, #ffffff, #f8faf5);
+      box-shadow: 0 10px 24px rgba(34, 47, 40, 0.08);
+      min-width: 0;
+    }
+
+    .cam-card.drag-over {
+      outline: 3px solid rgba(45, 111, 90, 0.25);
+    }
+
+    .cam-card.pos-good {
+      border-color: rgba(35, 109, 72, 0.6);
+    }
+
+    .cam-card.pos-bad {
+      border-color: rgba(163, 59, 52, 0.42);
+    }
+
+    .card-top {
+      display: grid;
+      grid-template-columns: auto minmax(0, 1fr) auto;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .rank {
+      display: grid;
+      place-items: center;
+      width: 2.35rem;
+      height: 2.35rem;
+      border-radius: 12px;
+      background: var(--soft);
+      color: #1b4c3e;
+      font-weight: 900;
+    }
+
+    .cam-title {
+      min-width: 0;
+    }
+
+    .cam-title strong {
+      display: block;
+      overflow-wrap: anywhere;
+    }
+
+    .cam-title span {
+      display: block;
+      color: var(--muted);
+      font-size: 0.86rem;
+      overflow-wrap: anywhere;
+    }
+
+    .drag-tag {
+      color: var(--muted);
+      font-size: 0.82rem;
+      font-weight: 800;
+      border: 1px dashed var(--line);
+      border-radius: 999px;
+      padding: 0.35rem 0.55rem;
+      background: #fbfcf8;
+      white-space: nowrap;
+    }
+
+    .video-frame {
+      position: relative;
+      min-height: 122px;
+      border-radius: 15px;
+      overflow: hidden;
+      border: 1px solid #202a26;
+      color: #dcece4;
+      background:
+        repeating-linear-gradient(0deg, rgba(255, 255, 255, 0.05) 0, rgba(255, 255, 255, 0.05) 1px, transparent 1px, transparent 7px),
+        linear-gradient(135deg, #111b19, #25332e 52%, #121816);
+    }
+
+    .video-frame::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background:
+        linear-gradient(90deg, transparent 0, transparent 24%, rgba(255, 255, 255, 0.08) 24%, rgba(255, 255, 255, 0.08) 25%, transparent 25%, transparent 49%, rgba(255, 255, 255, 0.08) 49%, rgba(255, 255, 255, 0.08) 50%, transparent 50%, transparent 74%, rgba(255, 255, 255, 0.08) 74%, rgba(255, 255, 255, 0.08) 75%, transparent 75%),
+        linear-gradient(0deg, transparent 0, transparent 32%, rgba(255, 255, 255, 0.08) 32%, rgba(255, 255, 255, 0.08) 33%, transparent 33%, transparent 65%, rgba(255, 255, 255, 0.08) 65%, rgba(255, 255, 255, 0.08) 66%, transparent 66%);
+      pointer-events: none;
+    }
+
+    .video-stamp {
+      position: absolute;
+      top: 9px;
+      left: 9px;
+      z-index: 2;
+      display: inline-flex;
+      gap: 0.45rem;
+      align-items: center;
+      max-width: calc(100% - 18px);
+      padding: 0.28rem 0.42rem;
+      border-radius: 8px;
+      background: rgba(0, 0, 0, 0.56);
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 0.78rem;
+      overflow-wrap: anywhere;
+    }
+
+    .rec-light {
+      width: 0.5rem;
+      height: 0.5rem;
+      border-radius: 999px;
+      background: #ff4b3e;
+    }
+
+    .frame-tags {
+      position: absolute;
+      inset: auto 10px 10px 10px;
+      z-index: 2;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+
+    .frame-tags span {
+      display: inline-flex;
+      padding: 0.28rem 0.42rem;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.13);
+      border: 1px solid rgba(255, 255, 255, 0.20);
+      color: #eef8f0;
+      font-size: 0.78rem;
+      backdrop-filter: blur(2px);
+    }
+
+    .scene {
+      margin: 0;
+      font-weight: 800;
+    }
+
+    .detail-list {
+      margin: 0;
+      padding-left: 1.15rem;
+      color: var(--muted);
+    }
+
+    .detail-list li + li {
+      margin-top: 0.22rem;
+    }
+
+    .card-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .mark-wrap {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.46rem;
+      padding: 0.44rem 0.62rem;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      background: #ffffff;
+      font-weight: 800;
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .mark-wrap input {
+      width: 1rem;
+      height: 1rem;
+      accent-color: var(--accent);
+      flex: 0 0 auto;
+    }
+
+    .note-label {
+      display: grid;
+      gap: 0.4rem;
+      color: var(--muted);
+      font-size: 0.88rem;
+      font-weight: 800;
+    }
+
+    .position-feedback {
+      display: none;
+      padding: 0.62rem 0.72rem;
+      border-radius: 13px;
+      background: #f6f8f3;
+      color: var(--muted);
+      border: 1px solid var(--line);
+      overflow-wrap: anywhere;
+    }
+
+    .checked .position-feedback {
+      display: block;
+    }
+
+    .position-feedback.good {
+      color: var(--good);
+      background: #eef8f1;
+      border-color: rgba(35, 109, 72, 0.35);
+    }
+
+    .position-feedback.bad {
+      color: var(--bad);
+      background: #fff4f2;
+      border-color: rgba(163, 59, 52, 0.28);
+    }
+
+    .answer-panel,
+    .export-panel {
+      margin-top: 14px;
+      padding: 16px;
+    }
+
+    .answer-list {
+      display: grid;
+      gap: 10px;
+      margin-top: 10px;
+    }
+
+    .answer-item {
+      padding: 12px;
+      border-radius: 14px;
+      background: #fbfcf8;
+      border: 1px solid var(--line);
+    }
+
+    .answer-item strong {
+      display: block;
+      margin-bottom: 0.25rem;
+    }
+
+    .answer-item p {
+      margin: 0.3rem 0 0;
+      color: var(--muted);
+    }
+
+    .export-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin: 12px 0;
+    }
+
+    .report-box {
+      min-height: 180px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 0.88rem;
+      white-space: pre-wrap;
+    }
+
+    .sr-only {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border: 0;
+    }
+
+    [hidden] {
+      display: none !important;
+    }
+
+    @media (max-width: 840px) {
+      .hero,
+      .top-controls,
+      .board,
+      .timeline-head {
+        grid-template-columns: 1fr;
+      }
+
+      .side {
+        position: static;
+      }
+
+      .live-badge {
+        justify-self: start;
+      }
+    }
+
+    @media (max-width: 520px) {
+      .app {
+        width: min(100% - 16px, 1180px);
+        padding-top: 8px;
+      }
+
+      .hero,
+      .top-controls,
+      .timeline-panel,
+      .answer-panel,
+      .export-panel,
+      .side-section {
+        padding: 12px;
+      }
+
+      .card-top {
+        grid-template-columns: auto minmax(0, 1fr);
+      }
+
+      .drag-tag {
+        grid-column: 1 / -1;
+        justify-self: start;
+      }
+
+      .score-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .video-frame {
+        min-height: 140px;
+      }
+
+      button,
+      .mark-wrap {
+        width: 100%;
+        justify-content: center;
+      }
+
+      .control-row,
+      .card-actions,
+      .export-actions {
+        width: 100%;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="app">
+    <header class="hero">
+      <div>
+        <h1>Security-Cam Anomaly Timeline</h1>
+        <p>Review shuffled camera cards, mark frames with odd details, then rebuild the true event sequence. Camera clocks may drift, so the clean answer usually needs both timestamps and evidence.</p>
+      </div>
+      <div class="live-badge" aria-label="Local offline game status">
+        <span class="dot" aria-hidden="true"></span>
+        <span>LOCAL CAM REVIEW</span>
+      </div>
+    </header>
+
+    <section class="top-controls" aria-label="Case controls">
+      <div>
+        <label class="field-label" for="caseSelect">Case file</label>
+        <select id="caseSelect"></select>
+      </div>
+      <div class="control-row">
+        <button class="primary" id="restartBtn" type="button">Start shuffled case</button>
+        <button id="saveBtn" type="button">Save progress</button>
+        <button class="danger" id="wipeBtn" type="button">Clear save</button>
+      </div>
+    </section>
+
+    <section class="board">
+      <aside class="panel side" aria-label="Case file and score">
+        <section class="side-section">
+          <h2 id="caseTitle">Case</h2>
+          <p id="casePremise"></p>
+          <div class="case-meta" id="caseMeta"></div>
+        </section>
+
+        <section class="side-section">
+          <h2>How to play</h2>
+          <ol class="rules">
+            <li>Read each camera card and its burn-in timestamp.</li>
+            <li>Mark cards that contain a genuinely odd detail.</li>
+            <li>Move cards until the story sequence makes sense.</li>
+            <li>Check the sequence, use hints sparingly, then reveal the answer key.</li>
+          </ol>
+        </section>
+
+        <section class="side-section">
+          <h2>Case score</h2>
+          <div class="score-grid" id="scoreGrid"></div>
+          <div class="status-box" id="scoreText" aria-live="polite"></div>
+        </section>
+
+        <section class="side-section">
+          <h2>Reviewer tools</h2>
+          <div class="control-row">
+            <button class="primary" id="checkBtn" type="button">Check sequence</button>
+            <button class="warn" id="hintBtn" type="button">Get hint</button>
+            <button id="answerBtn" type="button">Reveal answer</button>
+          </div>
+          <div class="status-box" id="hintBox" aria-live="polite"></div>
+        </section>
+      </aside>
+
+      <section class="panel timeline-panel" aria-label="Timeline cards">
+        <div class="timeline-head">
+          <div>
+            <h2>Shuffled camera cards</h2>
+            <p>Drag on desktop or use the move buttons. Your anomaly marks and notes autosave in this browser.</p>
+          </div>
+          <div class="case-meta" id="progressMeta"></div>
+        </div>
+        <div class="timeline-list" id="timelineList"></div>
+      </section>
+    </section>
+
+    <section class="panel answer-panel" id="answerPanel" hidden>
+      <h2>Answer key</h2>
+      <p id="answerIntro"></p>
+      <div class="answer-list" id="answerList"></div>
+    </section>
+
+    <section class="panel export-panel">
+      <h2>Export reviewer handoff</h2>
+      <p id="exportIntro">Copy or download your timeline, marked anomalies, notes, and score. Copy only reports verified success when the browser confirms the clipboard contents.</p>
+      <div class="export-actions">
+        <button class="primary" id="copyBtn" type="button">Copy report</button>
+        <button id="downloadBtn" type="button">Download report</button>
+        <button id="refreshReportBtn" type="button">Refresh report text</button>
+      </div>
+      <div class="status-box" id="copyStatus" aria-live="polite"></div>
+      <label class="sr-only" for="reportBox">Report text</label>
+      <textarea class="report-box" id="reportBox" readonly></textarea>
+    </section>
+  </main>
+
+  <script>
+    (function () {
+      "use strict";
+
+      var STORAGE_KEY = "securityCamAnomalyTimeline.v1";
+
+      var cases = [
+        {
+          id: "dock-11",
+          title: "Loading Dock 11",
+          difficulty: "Clock drift",
+          location: "Distribution wing",
+          cardCount: 7,
+          premise: "A side door alarm tripped after a delivery van left Bay 3. Your job is to reconstruct the setup, entry, tamper, blackout, and exit.",
+          brief: "CAM 02 is four minutes slow. CAM 07 is five minutes fast. Stable cameras should anchor the middle and end of the sequence.",
+          hints: [
+            "Start with route setup. A propped stair door is useful before any badge access or latch tamper.",
+            "The utility closet card looks late because CAM 07 runs fast. Its tape detail appears again later.",
+            "The CAM 02 latch card is slow by four minutes, so it occurs after the badge reader accepts T. Vale."
+          ],
+          cards: [
+            {
+              id: "dock-a",
+              order: 1,
+              time: "21:09:08",
+              camera: "CAM 04 · East service hall",
+              clock: "steady clock",
+              scene: "A mop cart props the east stair door open.",
+              details: ["The door closer arm is stopped halfway.", "The cart faces the stairwell, not the closet.", "No person is visible after the cart is placed."],
+              tags: ["mop cart", "east stairs", "open door"],
+              anomaly: false,
+              oddDetail: "No hidden visual anomaly. It is suspicious setup, but the frame itself is internally consistent.",
+              clue: "This creates the access route before the badge event."
+            },
+            {
+              id: "dock-b",
+              order: 2,
+              time: "21:15:31",
+              camera: "CAM 02 · Loading apron",
+              clock: "4 min slow",
+              scene: "A Ridge Paper van backs into Bay 3.",
+              details: ["The driver remains outside the warehouse.", "The bay beacon is still amber.", "The pedestrian latch is not taped yet."],
+              tags: ["Ridge Paper", "Bay 3", "van arrives"],
+              anomaly: false,
+              oddDetail: "No hidden visual anomaly. It mainly establishes the vehicle and bay before the latch changes.",
+              clue: "Because CAM 02 is slow, this card lands around 21:19:31 in the true sequence."
+            },
+            {
+              id: "dock-c",
+              order: 3,
+              time: "21:26:10",
+              camera: "CAM 07 · Utility closet",
+              clock: "5 min fast",
+              scene: "A gloved hand removes the orange wet-floor cone.",
+              details: ["The cone base already carries clear packing tape.", "The closet door is already cracked open.", "The sleeve cuff is turned inside out."],
+              tags: ["orange cone", "clear tape", "gloved hand"],
+              anomaly: true,
+              oddDetail: "The cone already has the same clear tape later seen defeating the Bay 3 latch.",
+              clue: "Subtract the fast clock offset. This happens before the badge reader card."
+            },
+            {
+              id: "dock-d",
+              order: 4,
+              time: "21:24:44",
+              camera: "CAM 05 · Badge reader",
+              clock: "steady clock",
+              scene: "The side reader accepts badge T. Vale.",
+              details: ["The wearer has a blank temporary badge, not a photo badge.", "The reader LED turns green on the first try.", "The east stairwell reflection is visible behind the wearer."],
+              tags: ["T. Vale", "green LED", "temp badge"],
+              anomaly: true,
+              oddDetail: "The reader accepts T. Vale while the person wears a blank temporary badge.",
+              clue: "This is the entry beat between route preparation and the taped latch."
+            },
+            {
+              id: "dock-e",
+              order: 5,
+              time: "21:23:03",
+              camera: "CAM 02 · Bay 3 doorway",
+              clock: "4 min slow",
+              scene: "The pedestrian latch is held by clear packing tape.",
+              details: ["Tape runs over the latch tongue.", "The orange cone is gone from the floor.", "The door rests open by a hand-width."],
+              tags: ["taped latch", "missing cone", "Bay 3"],
+              anomaly: true,
+              oddDetail: "The latch has been defeated with tape, and the matching cone is missing.",
+              clue: "Add four minutes to the raw timestamp. It belongs after badge access."
+            },
+            {
+              id: "dock-f",
+              order: 6,
+              time: "21:32:58",
+              camera: "CAM 01 · Lobby monitor",
+              clock: "steady clock",
+              scene: "The monitor tile for CAM 02 goes black for six seconds.",
+              details: ["The other four tiles keep recording.", "The desk phone remains off hook.", "The Bay 3 tile returns with a brighter exposure."],
+              tags: ["CAM 02 offline", "six seconds", "monitor"],
+              anomaly: true,
+              oddDetail: "Only CAM 02 drops while other feeds remain stable, suggesting a targeted interruption.",
+              clue: "This blackout happens after the latch is already visible."
+            },
+            {
+              id: "dock-g",
+              order: 7,
+              time: "21:33:22",
+              camera: "CAM 06 · South drive",
+              clock: "steady clock",
+              scene: "The Ridge Paper van leaves with its tailgate half-latched.",
+              details: ["One cargo strap trails outside.", "The bay beacon still flashes amber.", "No one walks back toward the building."],
+              tags: ["van exits", "tailgate", "south drive"],
+              anomaly: false,
+              oddDetail: "No hidden visual anomaly. This is the exit beat after the blackout.",
+              clue: "This is the last visible movement in the dock case."
+            }
+          ]
+        },
+        {
+          id: "amber-case",
+          title: "Museum Amber Case",
+          difficulty: "Mixed clocks",
+          location: "Natural history museum",
+          cardCount: 8,
+          premise: "An amber specimen was missing from its case at the 01:35 guard sweep. Arrange the scattered camera cards and identify the odd visual details.",
+          brief: "The gift shop clock is six minutes slow. The service stair and loading hall clocks run four minutes fast.",
+          hints: [
+            "The guard checkpoint is the earliest clean anchor.",
+            "The gift shop printout looks early, but that clock is slow by six minutes.",
+            "The loading hall raw timestamp looks later than it is because that clock is fast. It occurs before the side exit card."
+          ],
+          cards: [
+            {
+              id: "museum-a",
+              order: 1,
+              time: "01:02:17",
+              camera: "CAM A1 · Atrium",
+              clock: "steady clock",
+              scene: "A guard scans the north checkpoint near the fossil wing.",
+              details: ["The checkpoint wand flashes blue.", "The elevator indicator is dark.", "The amber gallery sign is still lit."],
+              tags: ["guard scan", "atrium", "blue wand"],
+              anomaly: false,
+              oddDetail: "No hidden visual anomaly. It is the clean starting anchor.",
+              clue: "This is the first confirmed activity."
+            },
+            {
+              id: "museum-b",
+              order: 2,
+              time: "01:11:03",
+              camera: "CAM S2 · Service stairs",
+              clock: "4 min fast",
+              scene: "A cleaner cart rolls up toward the fossil mezzanine.",
+              details: ["The bucket is dry inside.", "The rear wheels leave wet marks anyway.", "The mop handle points away from the stairs."],
+              tags: ["cleaner cart", "wet tracks", "dry bucket"],
+              anomaly: true,
+              oddDetail: "The bucket is dry, but the cart leaves wet wheel tracks.",
+              clue: "Subtract four minutes. This follows the guard scan."
+            },
+            {
+              id: "museum-c",
+              order: 3,
+              time: "01:09:48",
+              camera: "CAM E3 · Amber gallery",
+              clock: "steady clock",
+              scene: "The amber display lights flicker near the east case.",
+              details: ["A folded ladder reflection sits outside the doorway.", "The case plaque is still lit.", "The velvet rope is still clipped."],
+              tags: ["amber case", "light flicker", "ladder"],
+              anomaly: false,
+              oddDetail: "No hidden visual anomaly. The ladder reflection becomes useful context, but the frame is not itself anomalous.",
+              clue: "This happens before the gift shop printout once the gift shop clock is corrected."
+            },
+            {
+              id: "museum-d",
+              order: 4,
+              time: "01:09:12",
+              camera: "CAM G1 · Gift shop",
+              clock: "6 min slow",
+              scene: "The receipt printer spits a strip of blank paper.",
+              details: ["No register drawer opens.", "The barcode scanner light blinks twice.", "The paper strip curls toward the stockroom door."],
+              tags: ["blank receipt", "scanner blink", "stockroom"],
+              anomaly: true,
+              oddDetail: "The printer runs without a sale or drawer event, suggesting a signal or cover noise.",
+              clue: "Add six minutes. This belongs after the gallery flicker."
+            },
+            {
+              id: "museum-e",
+              order: 5,
+              time: "01:17:06",
+              camera: "CAM E3 · Amber gallery",
+              clock: "steady clock",
+              scene: "The amber case reflection shows a person at the glass.",
+              details: ["The reflection lacks the guard shoulder patch.", "The velvet rope has been unclipped.", "The case plaque remains lit."],
+              tags: ["case glass", "no patch", "rope open"],
+              anomaly: true,
+              oddDetail: "The reflected person is not the guard who scanned the checkpoint.",
+              clue: "This is the direct case-contact beat."
+            },
+            {
+              id: "museum-f",
+              order: 6,
+              time: "01:21:44",
+              camera: "CAM A1 · Atrium",
+              clock: "steady clock",
+              scene: "The second-floor elevator doors open with no call light lit.",
+              details: ["No one is visible inside the cab.", "The down arrow never illuminates.", "The amber gallery sign has gone dark."],
+              tags: ["elevator opens", "no call light", "dark sign"],
+              anomaly: true,
+              oddDetail: "The elevator opens without a visible call or direction indicator.",
+              clue: "This follows the amber case contact and precedes the loading hall movement."
+            },
+            {
+              id: "museum-g",
+              order: 7,
+              time: "01:30:31",
+              camera: "CAM L4 · Loading hall",
+              clock: "4 min fast",
+              scene: "A crate tagged Loan Return rolls toward the dock door.",
+              details: ["The tag faces outward as if staged for the camera.", "The crate wheels cross the earlier wet tracks.", "The dock lock is still red."],
+              tags: ["Loan Return", "crate", "wet tracks"],
+              anomaly: true,
+              oddDetail: "The Loan Return tag is staged outward even though no loan pickup was scheduled in the scene notes.",
+              clue: "Subtract four minutes. It happens before the side exit closes."
+            },
+            {
+              id: "museum-h",
+              order: 8,
+              time: "01:30:00",
+              camera: "CAM X1 · Side exit",
+              clock: "steady clock",
+              scene: "A guard radio lies on the floor as the side exit closes.",
+              details: ["The radio is tuned to the guard channel.", "No guard is visible in the frame.", "The door alarm light stays green."],
+              tags: ["radio on floor", "side exit", "green alarm"],
+              anomaly: true,
+              oddDetail: "The guard radio is abandoned while the exit closes cleanly with no alarm.",
+              clue: "This is the last card in the museum sequence."
+            }
+          ]
+        },
+        {
+          id: "printer-loop",
+          title: "Office 14B Printer Loop",
+          difficulty: "Evidence chain",
+          location: "After-hours office floor",
+          cardCount: 7,
+          premise: "A workstation badge audit, a printer log, and several odd office-camera frames do not line up. Rebuild the sequence before the audit report is filed.",
+          brief: "The mail room camera is three minutes slow. The other cameras are stable.",
+          hints: [
+            "The elevator lobby arrival starts the loop, but the printer wake-up follows before the closet card.",
+            "Mail room frames are slow. Add three minutes to both of their timestamps.",
+            "The red visitor lanyard links the supply closet to the final elevator card."
+          ],
+          cards: [
+            {
+              id: "office-a",
+              order: 1,
+              time: "23:41:02",
+              camera: "CAM 12 · Elevator lobby",
+              clock: "steady clock",
+              scene: "The elevator opens on 14B with no one centered in frame.",
+              details: ["The hallway motion light turns on.", "A red visitor lanyard is not yet visible.", "The elevator arrow points up."],
+              tags: ["elevator opens", "14B", "empty frame"],
+              anomaly: false,
+              oddDetail: "No hidden visual anomaly. This is the arrival anchor.",
+              clue: "This starts the office sequence."
+            },
+            {
+              id: "office-b",
+              order: 2,
+              time: "23:43:19",
+              camera: "CAM 15 · Mail room",
+              clock: "3 min slow",
+              scene: "The copier wakes and prints one blank sheet.",
+              details: ["The status screen says Remote Job.", "The output tray was empty before the sheet lands.", "The mail room door stays closed."],
+              tags: ["copier wakes", "blank sheet", "remote job"],
+              anomaly: true,
+              oddDetail: "The copier runs a remote job even though the mail room door never opens.",
+              clue: "Add three minutes. This happens before the supply closet lanyard is taken."
+            },
+            {
+              id: "office-c",
+              order: 3,
+              time: "23:49:35",
+              camera: "CAM 14 · Supply closet",
+              clock: "steady clock",
+              scene: "A person takes a red visitor lanyard and a black toner box.",
+              details: ["The lanyard is pulled from a sealed sleeve, not the hook.", "The toner box label faces the wall.", "The closet light is already on."],
+              tags: ["red lanyard", "toner box", "sealed sleeve"],
+              anomaly: true,
+              oddDetail: "The visitor lanyard comes from a sealed sleeve instead of the normal hook stock.",
+              clue: "This creates the lanyard evidence seen at the end."
+            },
+            {
+              id: "office-d",
+              order: 4,
+              time: "23:52:03",
+              camera: "CAM 17 · Open office",
+              clock: "steady clock",
+              scene: "A desk lamp blinks three times near workstation N-18.",
+              details: ["The workstation monitor is asleep.", "A fridge magnet is still clipped to the cubicle wall.", "The aisle carpet is undisturbed."],
+              tags: ["N-18", "lamp blinks", "magnet"],
+              anomaly: true,
+              oddDetail: "The lamp blinks while the workstation monitor remains asleep, implying an external trigger or power event.",
+              clue: "This comes after the closet card and before the second copier frame."
+            },
+            {
+              id: "office-e",
+              order: 5,
+              time: "23:53:08",
+              camera: "CAM 15 · Mail room",
+              clock: "3 min slow",
+              scene: "The copier display reads Job 2 of 2 complete.",
+              details: ["Only one sheet sits in the tray.", "The toner compartment is ajar.", "The door still has no entry motion."],
+              tags: ["Job 2 of 2", "one sheet", "toner open"],
+              anomaly: true,
+              oddDetail: "The copier claims two completed pages while only one sheet is present.",
+              clue: "Add three minutes. This follows the desk lamp blink."
+            },
+            {
+              id: "office-f",
+              order: 6,
+              time: "23:58:52",
+              camera: "CAM 13 · Break room",
+              clock: "steady clock",
+              scene: "The N-18 fridge magnet is stuck to the vending machine.",
+              details: ["The magnet was visible at N-18 earlier.", "The vending display reads Exact Change.", "The break room door is propped with a toner-box flap."],
+              tags: ["fridge magnet", "vending machine", "toner flap"],
+              anomaly: true,
+              oddDetail: "The magnet has moved from workstation N-18 to the vending machine.",
+              clue: "This links the open office card to the exit path."
+            },
+            {
+              id: "office-g",
+              order: 7,
+              time: "00:01:16",
+              camera: "CAM 12 · Elevator lobby",
+              clock: "steady clock",
+              scene: "The elevator leaves down with a red lanyard caught in the door gap.",
+              details: ["The lanyard color matches the closet card.", "The hallway motion light turns off behind it.", "No one returns to the mail room."],
+              tags: ["elevator down", "red lanyard", "door gap"],
+              anomaly: true,
+              oddDetail: "The lanyard from the supply closet is caught in the elevator door as it exits.",
+              clue: "This is the final exit evidence."
+            }
+          ]
+        }
+      ];
+
+      var state = loadState() || createFreshState(cases[0].id);
+      var draggedId = null;
+
+      var elements = {
+        caseSelect: document.getElementById("caseSelect"),
+        restartBtn: document.getElementById("restartBtn"),
+        saveBtn: document.getElementById("saveBtn"),
+        wipeBtn: document.getElementById("wipeBtn"),
+        caseTitle: document.getElementById("caseTitle"),
+        casePremise: document.getElementById("casePremise"),
+        caseMeta: document.getElementById("caseMeta"),
+        progressMeta: document.getElementById("progressMeta"),
+        scoreGrid: document.getElementById("scoreGrid"),
+        scoreText: document.getElementById("scoreText"),
+        hintBox: document.getElementById("hintBox"),
+        checkBtn: document.getElementById("checkBtn"),
+        hintBtn: document.getElementById("hintBtn"),
+        answerBtn: document.getElementById("answerBtn"),
+        timelineList: document.getElementById("timelineList"),
+        answerPanel: document.getElementById("answerPanel"),
+        answerIntro: document.getElementById("answerIntro"),
+        answerList: document.getElementById("answerList"),
+        copyBtn: document.getElementById("copyBtn"),
+        downloadBtn: document.getElementById("downloadBtn"),
+        refreshReportBtn: document.getElementById("refreshReportBtn"),
+        copyStatus: document.getElementById("copyStatus"),
+        reportBox: document.getElementById("reportBox")
+      };
+
+      init();
+
+      function init() {
+        buildCaseSelect();
+        ensureStateIsValid();
+        bindEvents();
+        render();
+      }
+
+      function buildCaseSelect() {
+        var options = cases.map(function (caseFile) {
+          var option = document.createElement("option");
+          option.value = caseFile.id;
+          option.textContent = caseFile.title + " · " + caseFile.difficulty;
+          return option;
+        });
+        elements.caseSelect.replaceChildren.apply(elements.caseSelect, options);
+        elements.caseSelect.value = state.caseId;
+      }
+
+      function bindEvents() {
+        elements.caseSelect.addEventListener("change", function () {
+          state = createFreshState(elements.caseSelect.value);
+          setStatus("New case loaded and shuffled.");
+          saveState();
+          render();
+        });
+
+        elements.restartBtn.addEventListener("click", function () {
+          state = createFreshState(elements.caseSelect.value);
+          setStatus("Case restarted with a fresh shuffle.");
+          saveState();
+          render();
+        });
+
+        elements.saveBtn.addEventListener("click", function () {
+          saveState();
+          setStatus("Progress saved in this browser.");
+          renderReport();
+        });
+
+        elements.wipeBtn.addEventListener("click", function () {
+          localStorage.removeItem(STORAGE_KEY);
+          state = createFreshState(elements.caseSelect.value);
+          setStatus("Local save cleared. Current case restarted.");
+          render();
+        });
+
+        elements.checkBtn.addEventListener("click", function () {
+          state.checked = true;
+          saveState();
+          render();
+          var analysis = analyzeState();
+          setStatus("Check complete. Exact slots: " + analysis.exact + "/" + analysis.total + ". Correct anomaly marks: " + analysis.anomalyHits + "/" + analysis.total + ".");
+        });
+
+        elements.hintBtn.addEventListener("click", function () {
+          var caseFile = getCaseFile();
+          state.hintLevel = Math.min(state.hintLevel + 1, caseFile.hints.length + 1);
+          saveState();
+          renderHints();
+          renderReport();
+        });
+
+        elements.answerBtn.addEventListener("click", function () {
+          state.revealed = true;
+          state.checked = true;
+          saveState();
+          render();
+          setStatus("Answer key revealed. Compare your reasoning to the true sequence.");
+        });
+
+        elements.copyBtn.addEventListener("click", copyReport);
+        elements.downloadBtn.addEventListener("click", downloadReport);
+        elements.refreshReportBtn.addEventListener("click", function () {
+          renderReport();
+          setCopyStatus("Report text refreshed below.");
+        });
+      }
+
+      function createFreshState(caseId) {
+        var caseFile = getCaseById(caseId) || cases[0];
+        var order = shuffle(caseFile.cards.map(function (card) { return card.id; }));
+        return {
+          caseId: caseFile.id,
+          order: order,
+          marks: {},
+          notes: {},
+          checked: false,
+          revealed: false,
+          hintLevel: 0
+        };
+      }
+
+      function loadState() {
+        try {
+          var raw = localStorage.getItem(STORAGE_KEY);
+          if (!raw) {
+            return null;
+          }
+          var parsed = JSON.parse(raw);
+          if (!parsed || typeof parsed !== "object") {
+            return null;
+          }
+          return parsed;
+        } catch (error) {
+          return null;
+        }
+      }
+
+      function saveState() {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+      }
+
+      function ensureStateIsValid() {
+        var caseFile = getCaseById(state.caseId);
+        if (!caseFile) {
+          state = createFreshState(cases[0].id);
+          return;
+        }
+        var ids = caseFile.cards.map(function (card) { return card.id; });
+        var unique = Array.from(new Set(Array.isArray(state.order) ? state.order : []));
+        var valid = unique.filter(function (id) { return ids.indexOf(id) !== -1; });
+        ids.forEach(function (id) {
+          if (valid.indexOf(id) === -1) {
+            valid.push(id);
+          }
+        });
+        state.order = valid;
+        state.marks = state.marks && typeof state.marks === "object" ? state.marks : {};
+        state.notes = state.notes && typeof state.notes === "object" ? state.notes : {};
+        state.checked = Boolean(state.checked);
+        state.revealed = Boolean(state.revealed);
+        state.hintLevel = Number.isFinite(Number(state.hintLevel)) ? Number(state.hintLevel) : 0;
+      }
+
+      function shuffle(items) {
+        var arr = items.slice();
+        for (var i = arr.length - 1; i > 0; i -= 1) {
+          var j = Math.floor(Math.random() * (i + 1));
+          var tmp = arr[i];
+          arr[i] = arr[j];
+          arr[j] = tmp;
+        }
+        return arr;
+      }
+
+      function getCaseById(id) {
+        return cases.find(function (caseFile) { return caseFile.id === id; });
+      }
+
+      function getCaseFile() {
+        return getCaseById(state.caseId) || cases[0];
+      }
+
+      function getCardById(id) {
+        var caseFile = getCaseFile();
+        return caseFile.cards.find(function (card) { return card.id === id; });
+      }
+
+      function orderedAnswer(caseFile) {
+        return caseFile.cards.slice().sort(function (a, b) { return a.order - b.order; });
+      }
+
+      function render() {
+        ensureStateIsValid();
+        elements.caseSelect.value = state.caseId;
+        renderCaseInfo();
+        renderScore();
+        renderHints();
+        renderTimeline();
+        renderAnswer();
+        renderReport();
+        saveState();
+      }
+
+      function renderCaseInfo() {
+        var caseFile = getCaseFile();
+        elements.caseTitle.textContent = caseFile.title;
+        elements.casePremise.textContent = caseFile.premise;
+        elements.caseMeta.replaceChildren(
+          makePill(caseFile.location),
+          makePill(caseFile.difficulty),
+          makePill(caseFile.cardCount + " cards")
+        );
+        elements.progressMeta.replaceChildren(
+          makePill("Marked " + countMarked() + " cards"),
+          makePill(state.checked ? "Checked" : "Unchecked"),
+          makePill(state.revealed ? "Answer revealed" : "Answer hidden")
+        );
+      }
+
+      function makePill(text) {
+        var pill = document.createElement("span");
+        pill.className = "pill";
+        pill.textContent = text;
+        return pill;
+      }
+
+      function renderScore() {
+        var analysis = analyzeState();
+        var seqClass = scoreClass(analysis.sequencePct);
+        var linkClass = scoreClass(analysis.linkPct);
+        var anomalyClass = scoreClass(analysis.anomalyPct);
+        var totalClass = scoreClass(analysis.totalPct);
+        elements.scoreGrid.replaceChildren(
+          makeScoreCard(analysis.totalPct + "%", "total read", totalClass),
+          makeScoreCard(analysis.sequencePct + "%", "exact order", seqClass),
+          makeScoreCard(analysis.linkPct + "%", "adjacent links", linkClass),
+          makeScoreCard(analysis.anomalyPct + "%", "odd-detail marks", anomalyClass)
+        );
+
+        var text = [];
+        text.push("Exact positions: " + analysis.exact + " of " + analysis.total);
+        text.push("Correct adjacent links: " + analysis.links + " of " + Math.max(analysis.total - 1, 0));
+        text.push("Correct anomaly calls: " + analysis.anomalyHits + " of " + analysis.total);
+        if (analysis.missed.length) {
+          text.push("Missed anomalies: " + analysis.missed.length);
+        }
+        if (analysis.falsePositives.length) {
+          text.push("False alarms: " + analysis.falsePositives.length);
+        }
+        elements.scoreText.textContent = text.join("\n");
+      }
+
+      function makeScoreCard(value, label, className) {
+        var card = document.createElement("div");
+        card.className = "score-card " + className;
+        var strong = document.createElement("strong");
+        strong.textContent = value;
+        var span = document.createElement("span");
+        span.textContent = label;
+        card.append(strong, span);
+        return card;
+      }
+
+      function scoreClass(value) {
+        if (value >= 80) {
+          return "good";
+        }
+        if (value >= 45) {
+          return "warn";
+        }
+        return "bad";
+      }
+
+      function countMarked() {
+        return Object.keys(state.marks).filter(function (id) { return Boolean(state.marks[id]); }).length;
+      }
+
+      function renderHints() {
+        var caseFile = getCaseFile();
+        if (state.hintLevel <= 0) {
+          elements.hintBox.textContent = "No hints used. The case note: " + caseFile.brief;
+          return;
+        }
+        var lines = [];
+        for (var i = 0; i < Math.min(state.hintLevel, caseFile.hints.length); i += 1) {
+          lines.push("Hint " + (i + 1) + ": " + caseFile.hints[i]);
+        }
+        if (state.hintLevel > caseFile.hints.length) {
+          var misplaced = firstMisplacedCard();
+          if (misplaced) {
+            lines.push("Slot clue: " + misplaced.card.scene + " does not belong in position " + misplaced.currentPosition + ".");
+          } else {
+            lines.push("Slot clue: Your sequence is already in the correct order.");
+          }
+        }
+        elements.hintBox.textContent = lines.join("\n");
+      }
+
+      function firstMisplacedCard() {
+        var caseFile = getCaseFile();
+        var answer = orderedAnswer(caseFile);
+        for (var i = 0; i < state.order.length; i += 1) {
+          if (state.order[i] !== answer[i].id) {
+            return { card: getCardById(state.order[i]), currentPosition: i + 1 };
+          }
+        }
+        return null;
+      }
+
+      function renderTimeline() {
+        var nodes = state.order.map(function (id, index) {
+          var card = getCardById(id);
+          return makeCameraCard(card, index);
+        });
+        elements.timelineList.className = "timeline-list" + (state.checked ? " checked" : "");
+        elements.timelineList.replaceChildren.apply(elements.timelineList, nodes);
+      }
+
+      function makeCameraCard(card, index) {
+        var article = document.createElement("article");
+        article.className = "cam-card";
+        article.draggable = true;
+        article.dataset.id = card.id;
+        article.setAttribute("aria-label", "Timeline card " + (index + 1) + ": " + card.camera);
+
+        if (state.checked) {
+          var answer = orderedAnswer(getCaseFile());
+          if (answer[index] && answer[index].id === card.id) {
+            article.classList.add("pos-good");
+          } else {
+            article.classList.add("pos-bad");
+          }
+        }
+
+        article.addEventListener("dragstart", function (event) {
+          draggedId = card.id;
+          if (event.dataTransfer) {
+            event.dataTransfer.effectAllowed = "move";
+            event.dataTransfer.setData("text/plain", card.id);
+          }
+        });
+
+        article.addEventListener("dragover", function (event) {
+          event.preventDefault();
+          article.classList.add("drag-over");
+        });
+
+        article.addEventListener("dragleave", function () {
+          article.classList.remove("drag-over");
+        });
+
+        article.addEventListener("drop", function (event) {
+          event.preventDefault();
+          article.classList.remove("drag-over");
+          var sourceId = draggedId;
+          if (event.dataTransfer) {
+            sourceId = event.dataTransfer.getData("text/plain") || sourceId;
+          }
+          if (sourceId && sourceId !== card.id) {
+            moveCardBefore(sourceId, card.id);
+          }
+          draggedId = null;
+        });
+
+        var top = document.createElement("div");
+        top.className = "card-top";
+        var rank = document.createElement("div");
+        rank.className = "rank";
+        rank.textContent = String(index + 1);
+        var title = document.createElement("div");
+        title.className = "cam-title";
+        var strong = document.createElement("strong");
+        strong.textContent = card.camera;
+        var span = document.createElement("span");
+        span.textContent = card.time + " · " + card.clock;
+        title.append(strong, span);
+        var dragTag = document.createElement("div");
+        dragTag.className = "drag-tag";
+        dragTag.textContent = "drag / reorder";
+        top.append(rank, title, dragTag);
+
+        var frame = document.createElement("div");
+        frame.className = "video-frame";
+        var stamp = document.createElement("div");
+        stamp.className = "video-stamp";
+        var recLight = document.createElement("span");
+        recLight.className = "rec-light";
+        var stampText = document.createElement("span");
+        stampText.textContent = "REC " + card.time;
+        stamp.append(recLight, stampText);
+        var tags = document.createElement("div");
+        tags.className = "frame-tags";
+        card.tags.forEach(function (tag) {
+          var tagNode = document.createElement("span");
+          tagNode.textContent = tag;
+          tags.append(tagNode);
+        });
+        frame.append(stamp, tags);
+
+        var scene = document.createElement("p");
+        scene.className = "scene";
+        scene.textContent = card.scene;
+
+        var details = document.createElement("ul");
+        details.className = "detail-list";
+        card.details.forEach(function (detail) {
+          var li = document.createElement("li");
+          li.textContent = detail;
+          details.append(li);
+        });
+
+        var actions = document.createElement("div");
+        actions.className = "card-actions";
+        var up = document.createElement("button");
+        up.className = "small";
+        up.type = "button";
+        up.textContent = "Move up";
+        up.disabled = index === 0;
+        up.addEventListener("click", function () { moveCard(card.id, -1); });
+        var down = document.createElement("button");
+        down.className = "small";
+        down.type = "button";
+        down.textContent = "Move down";
+        down.disabled = index === state.order.length - 1;
+        down.addEventListener("click", function () { moveCard(card.id, 1); });
+        var clue = document.createElement("button");
+        clue.className = "small warn";
+        clue.type = "button";
+        clue.textContent = "Card clue";
+        clue.addEventListener("click", function () {
+          setStatus(card.clue);
+        });
+        var label = document.createElement("label");
+        label.className = "mark-wrap";
+        var checkbox = document.createElement("input");
+        checkbox.type = "checkbox";
+        checkbox.checked = Boolean(state.marks[card.id]);
+        checkbox.addEventListener("change", function () {
+          state.marks[card.id] = checkbox.checked;
+          saveState();
+          renderCaseInfo();
+          renderScore();
+          renderReport();
+        });
+        var labelText = document.createElement("span");
+        labelText.textContent = "Odd detail";
+        label.append(checkbox, labelText);
+        actions.append(up, down, clue, label);
+
+        var noteLabel = document.createElement("label");
+        noteLabel.className = "note-label";
+        var noteText = document.createElement("span");
+        noteText.textContent = "Your anomaly note";
+        var note = document.createElement("textarea");
+        note.value = state.notes[card.id] || "";
+        note.placeholder = "Example: badge mismatch, clock drift, object moved...";
+        note.addEventListener("input", function () {
+          state.notes[card.id] = note.value;
+          saveState();
+          renderReport();
+        });
+        noteLabel.append(noteText, note);
+
+        var feedback = document.createElement("div");
+        feedback.className = "position-feedback";
+        if (state.checked) {
+          var answer = orderedAnswer(getCaseFile());
+          var correct = answer[index] && answer[index].id === card.id;
+          feedback.classList.add(correct ? "good" : "bad");
+          feedback.textContent = correct ? "Correct slot." : "Wrong slot. Use camera drift and recurring objects to reposition this card.";
+        }
+
+        article.append(top, frame, scene, details, actions, noteLabel, feedback);
+        return article;
+      }
+
+      function moveCard(cardId, direction) {
+        var current = state.order.indexOf(cardId);
+        if (current === -1) {
+          return;
+        }
+        var target = current + direction;
+        if (target < 0 || target >= state.order.length) {
+          return;
+        }
+        var copy = state.order.slice();
+        var tmp = copy[current];
+        copy[current] = copy[target];
+        copy[target] = tmp;
+        state.order = copy;
+        state.checked = false;
+        saveState();
+        render();
+      }
+
+      function moveCardBefore(sourceId, targetId) {
+        var next = state.order.filter(function (id) { return id !== sourceId; });
+        var targetIndex = next.indexOf(targetId);
+        if (targetIndex === -1) {
+          next.push(sourceId);
+        } else {
+          next.splice(targetIndex, 0, sourceId);
+        }
+        state.order = next;
+        state.checked = false;
+        saveState();
+        render();
+      }
+
+      function analyzeState() {
+        var caseFile = getCaseFile();
+        var answer = orderedAnswer(caseFile);
+        var answerIds = answer.map(function (card) { return card.id; });
+        var exact = 0;
+        state.order.forEach(function (id, index) {
+          if (answerIds[index] === id) {
+            exact += 1;
+          }
+        });
+
+        var correctPairs = new Set();
+        for (var i = 0; i < answerIds.length - 1; i += 1) {
+          correctPairs.add(answerIds[i] + ">" + answerIds[i + 1]);
+        }
+        var links = 0;
+        for (var j = 0; j < state.order.length - 1; j += 1) {
+          if (correctPairs.has(state.order[j] + ">" + state.order[j + 1])) {
+            links += 1;
+          }
+        }
+
+        var anomalyHits = 0;
+        var missed = [];
+        var falsePositives = [];
+        caseFile.cards.forEach(function (card) {
+          var marked = Boolean(state.marks[card.id]);
+          if (marked === card.anomaly) {
+            anomalyHits += 1;
+          } else if (card.anomaly) {
+            missed.push(card);
+          } else {
+            falsePositives.push(card);
+          }
+        });
+
+        var total = caseFile.cards.length;
+        var sequencePct = Math.round((exact / total) * 100);
+        var linkPct = total > 1 ? Math.round((links / (total - 1)) * 100) : 100;
+        var anomalyPct = Math.round((anomalyHits / total) * 100);
+        var totalPct = Math.round(sequencePct * 0.55 + linkPct * 0.2 + anomalyPct * 0.25);
+        return {
+          exact: exact,
+          links: links,
+          anomalyHits: anomalyHits,
+          missed: missed,
+          falsePositives: falsePositives,
+          total: total,
+          sequencePct: sequencePct,
+          linkPct: linkPct,
+          anomalyPct: anomalyPct,
+          totalPct: totalPct
+        };
+      }
+
+      function renderAnswer() {
+        var caseFile = getCaseFile();
+        elements.answerPanel.hidden = !state.revealed;
+        if (!state.revealed) {
+          elements.answerList.replaceChildren();
+          elements.answerIntro.textContent = "";
+          return;
+        }
+        elements.answerIntro.textContent = "True sequence for " + caseFile.title + ". Anomaly explanations appear under each frame.";
+        var nodes = orderedAnswer(caseFile).map(function (card) {
+          var item = document.createElement("div");
+          item.className = "answer-item";
+          var title = document.createElement("strong");
+          title.textContent = card.order + ". " + card.time + " · " + card.camera;
+          var scene = document.createElement("p");
+          scene.textContent = card.scene;
+          var odd = document.createElement("p");
+          odd.textContent = "Odd detail: " + card.oddDetail;
+          item.append(title, scene, odd);
+          return item;
+        });
+        elements.answerList.replaceChildren.apply(elements.answerList, nodes);
+      }
+
+      function renderReport() {
+        elements.reportBox.value = buildReport();
+      }
+
+      function buildReport() {
+        var caseFile = getCaseFile();
+        var analysis = analyzeState();
+        var lines = [];
+        lines.push("SECURITY-CAM ANOMALY TIMELINE REPORT");
+        lines.push("Case: " + caseFile.title);
+        lines.push("Location: " + caseFile.location);
+        lines.push("Difficulty: " + caseFile.difficulty);
+        lines.push("Premise: " + caseFile.premise);
+        lines.push("");
+        lines.push("Score");
+        lines.push("Total read: " + analysis.totalPct + "%");
+        lines.push("Exact order: " + analysis.exact + "/" + analysis.total + " cards");
+        lines.push("Adjacent links: " + analysis.links + "/" + Math.max(analysis.total - 1, 0));
+        lines.push("Anomaly calls: " + analysis.anomalyHits + "/" + analysis.total);
+        lines.push("");
+        lines.push("Player timeline");
+        state.order.forEach(function (id, index) {
+          var card = getCardById(id);
+          var mark = state.marks[id] ? "marked odd" : "not marked odd";
+          var note = (state.notes[id] || "").trim();
+          lines.push((index + 1) + ". " + card.time + " · " + card.camera + " · " + card.scene + " [" + mark + "]");
+          if (note) {
+            lines.push("   Note: " + note);
+          }
+        });
+        lines.push("");
+        lines.push("Case clock note: " + caseFile.brief);
+        if (state.revealed) {
+          lines.push("");
+          lines.push("Answer key");
+          orderedAnswer(caseFile).forEach(function (card) {
+            lines.push(card.order + ". " + card.time + " · " + card.camera + " · " + card.scene);
+            lines.push("   Odd detail: " + card.oddDetail);
+          });
+        } else {
+          lines.push("");
+          lines.push("Answer key: hidden during this export.");
+        }
+        return lines.join("\n");
+      }
+
+      function setStatus(message) {
+        elements.hintBox.textContent = message;
+      }
+
+      function setCopyStatus(message) {
+        elements.copyStatus.textContent = message;
+      }
+
+      async function copyReport() {
+        var text = buildReport();
+        elements.reportBox.value = text;
+        elements.reportBox.focus();
+        elements.reportBox.select();
+
+        if (!navigator.clipboard || !navigator.clipboard.writeText) {
+          setCopyStatus("Clipboard API is unavailable here. The report is selected below for manual copy.");
+          return;
+        }
+
+        try {
+          await navigator.clipboard.writeText(text);
+          var verified = false;
+          if (navigator.clipboard.readText) {
+            try {
+              var readBack = await navigator.clipboard.readText();
+              verified = readBack === text;
+            } catch (readError) {
+              verified = false;
+            }
+          }
+          if (verified) {
+            setCopyStatus("Report copied and verified.");
+          } else {
+            setCopyStatus("Clipboard write was requested, but this browser did not allow verification. The report is selected below for manual copy.");
+          }
+        } catch (error) {
+          setCopyStatus("Copy was blocked by the browser. The report is selected below for manual copy.");
+        }
+      }
+
+      function downloadReport() {
+        var text = buildReport();
+        elements.reportBox.value = text;
+        var blob = new Blob([text], { type: "text/plain;charset=utf-8" });
+        var url = URL.createObjectURL(blob);
+        var a = document.createElement("a");
+        a.href = url;
+        a.download = getCaseFile().id + "-camera-review-report.txt";
+        document.body.append(a);
+        a.click();
+        a.remove();
+        window.setTimeout(function () {
+          URL.revokeObjectURL(url);
+        }, 1000);
+        setCopyStatus("Report download started.");
+      }
+    }());
+  </script>
+</body>
+</html>

@@ -1,0 +1,924 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <title>Sleep sound mixer</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #090e17;
+      --surface: rgba(19, 29, 44, 0.86);
+      --surface-soft: rgba(26, 39, 57, 0.58);
+      --surface-quiet: rgba(16, 25, 38, 0.64);
+      --line: rgba(170, 193, 220, 0.14);
+      --line-strong: rgba(170, 193, 220, 0.23);
+      --text: #e9eff7;
+      --text-soft: #aebdce;
+      --text-dim: #8092a8;
+      --accent: #a8c3de;
+      --accent-strong: #c3dcf3;
+      --accent-ink: #132238;
+      --rain: #91bed7;
+      --fan: #b1a7d2;
+      --brown: #d2ae88;
+      --good: #a8d0ba;
+      --shadow: 0 24px 70px rgba(0, 0, 0, 0.35);
+    }
+
+    * { box-sizing: border-box; }
+
+    html { min-width: 320px; background: var(--bg); }
+
+    body {
+      min-width: 320px;
+      min-height: 100vh;
+      margin: 0;
+      color: var(--text);
+      background:
+        radial-gradient(circle at 50% -15%, rgba(72, 111, 151, 0.25), transparent 42%),
+        radial-gradient(circle at 0% 100%, rgba(38, 57, 82, 0.16), transparent 36%),
+        var(--bg);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      font-size: 16px;
+      line-height: 1.45;
+    }
+
+    button, input { font: inherit; }
+
+    button {
+      border: 0;
+      color: inherit;
+      cursor: pointer;
+    }
+
+    button:focus-visible,
+    input:focus-visible {
+      outline: 3px solid rgba(195, 220, 243, 0.8);
+      outline-offset: 3px;
+    }
+
+    .shell {
+      width: min(100%, 740px);
+      margin: 0 auto;
+      padding: 30px 16px 34px;
+    }
+
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+    }
+
+    .eyebrow {
+      margin: 0 0 3px;
+      color: var(--accent-strong);
+      font-size: 0.77rem;
+      font-weight: 500;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(1.65rem, 5vw, 2.15rem);
+      font-weight: 500;
+      line-height: 1.1;
+    }
+
+    .status {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      flex: 0 0 auto;
+      padding: 7px 10px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      color: var(--text-soft);
+      background: rgba(24, 37, 55, 0.62);
+      font-size: 0.78rem;
+      white-space: nowrap;
+    }
+
+    .status::before {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--text-dim);
+      content: "";
+    }
+
+    .status.is-playing::before {
+      background: var(--good);
+      box-shadow: 0 0 0 4px rgba(168, 208, 186, 0.11);
+    }
+
+    .intro {
+      max-width: 470px;
+      margin: 12px 0 0;
+      color: var(--text-soft);
+      font-size: 0.96rem;
+    }
+
+    .mixer {
+      margin-top: 26px;
+      padding: 18px;
+      border: 1px solid var(--line);
+      border-radius: 24px;
+      background: linear-gradient(145deg, rgba(24, 38, 57, 0.86), rgba(13, 22, 35, 0.9));
+      box-shadow: var(--shadow);
+    }
+
+    .play-zone {
+      display: grid;
+      justify-items: center;
+      gap: 13px;
+      padding: 8px 8px 20px;
+      border-bottom: 1px solid var(--line);
+      text-align: center;
+    }
+
+    .orb {
+      display: grid;
+      place-items: center;
+      width: 116px;
+      height: 116px;
+      border: 1px solid rgba(168, 195, 222, 0.26);
+      border-radius: 50%;
+      background: radial-gradient(circle at 42% 34%, rgba(200, 223, 244, 0.34), rgba(94, 137, 179, 0.17) 35%, rgba(29, 48, 71, 0.28) 70%);
+      box-shadow: inset 0 0 30px rgba(180, 214, 242, 0.1), 0 0 0 12px rgba(131, 169, 204, 0.045);
+    }
+
+    .orb.is-playing {
+      animation: breathe 7s ease-in-out infinite;
+    }
+
+    .play-button {
+      display: grid;
+      place-items: center;
+      width: 72px;
+      height: 72px;
+      border: 1px solid rgba(219, 235, 250, 0.24);
+      border-radius: 50%;
+      color: var(--accent-ink);
+      background: var(--accent-strong);
+      box-shadow: 0 8px 22px rgba(0, 0, 0, 0.24);
+      font-size: 1.45rem;
+      transition: transform 160ms ease, background 160ms ease;
+    }
+
+    .play-button:hover { background: #d6e8f7; }
+    .play-button:active { transform: scale(0.96); }
+
+    .play-label {
+      color: var(--text-soft);
+      font-size: 0.9rem;
+    }
+
+    .master {
+      display: grid;
+      grid-template-columns: auto minmax(0, 1fr) auto;
+      align-items: center;
+      gap: 12px;
+      width: min(100%, 400px);
+      color: var(--text-soft);
+      font-size: 0.82rem;
+    }
+
+    .master strong,
+    .value {
+      color: var(--text);
+      font-variant-numeric: tabular-nums;
+      font-weight: 500;
+    }
+
+    .section-label {
+      display: block;
+      margin: 20px 0 9px;
+      color: var(--text-dim);
+      font-size: 0.75rem;
+      font-weight: 500;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .layers { display: grid; gap: 9px; }
+
+    .layer {
+      display: grid;
+      grid-template-columns: minmax(128px, 0.42fr) minmax(0, 1fr) 48px;
+      align-items: center;
+      gap: 14px;
+      min-width: 0;
+      padding: 14px;
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      background: var(--surface-soft);
+    }
+
+    .layer-name {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      min-width: 0;
+    }
+
+    .layer-dot {
+      flex: 0 0 auto;
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      box-shadow: 0 0 0 5px rgba(255, 255, 255, 0.035);
+    }
+
+    .layer-dot.rain { background: var(--rain); }
+    .layer-dot.fan { background: var(--fan); }
+    .layer-dot.brown { background: var(--brown); }
+
+    .layer-copy { min-width: 0; }
+
+    .layer-copy strong {
+      display: block;
+      font-size: 0.98rem;
+      font-weight: 500;
+    }
+
+    .layer-copy span {
+      display: block;
+      overflow: hidden;
+      color: var(--text-dim);
+      font-size: 0.76rem;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .value {
+      text-align: right;
+      font-size: 0.85rem;
+    }
+
+    input[type="range"] {
+      width: 100%;
+      height: 28px;
+      margin: 0;
+      accent-color: var(--accent);
+      cursor: pointer;
+    }
+
+    input[type="range"]::-webkit-slider-runnable-track {
+      height: 5px;
+      border-radius: 999px;
+      background: rgba(177, 199, 221, 0.18);
+    }
+
+    input[type="range"]::-moz-range-track {
+      height: 5px;
+      border-radius: 999px;
+      background: rgba(177, 199, 221, 0.18);
+    }
+
+    input[type="range"]::-webkit-slider-thumb {
+      width: 18px;
+      height: 18px;
+      margin-top: -6px;
+      border: 2px solid var(--accent-strong);
+      border-radius: 50%;
+      background: #213750;
+      -webkit-appearance: none;
+    }
+
+    input[type="range"]::-moz-range-thumb {
+      width: 16px;
+      height: 16px;
+      border: 2px solid var(--accent-strong);
+      border-radius: 50%;
+      background: #213750;
+    }
+
+    .button-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .preset-button,
+    .timer-button {
+      min-height: 40px;
+      padding: 9px 13px;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      color: var(--text-soft);
+      background: rgba(17, 28, 43, 0.62);
+      font-size: 0.84rem;
+      transition: border-color 160ms ease, background 160ms ease, color 160ms ease;
+    }
+
+    .preset-button:hover,
+    .timer-button:hover { border-color: var(--line-strong); color: var(--text); }
+
+    .preset-button[aria-pressed="true"],
+    .timer-button[aria-pressed="true"] {
+      border-color: rgba(195, 220, 243, 0.52);
+      color: var(--accent-strong);
+      background: rgba(99, 137, 174, 0.22);
+    }
+
+    .timer-panel {
+      display: grid;
+      gap: 13px;
+      margin-top: 20px;
+      padding: 15px;
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      background: var(--surface-quiet);
+    }
+
+    .timer-heading {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .timer-heading strong { font-size: 0.95rem; font-weight: 500; }
+
+    .timer-readout {
+      color: var(--accent-strong);
+      font-size: 0.84rem;
+      font-variant-numeric: tabular-nums;
+      text-align: right;
+    }
+
+    .timer-note {
+      margin: -3px 0 0;
+      color: var(--text-dim);
+      font-size: 0.78rem;
+    }
+
+    .timer-buttons {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(72px, 1fr));
+      gap: 7px;
+    }
+
+    .timer-button { width: 100%; padding-inline: 8px; }
+
+    .footer-note {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 7px;
+      margin: 16px 0 0;
+      color: var(--text-dim);
+      font-size: 0.78rem;
+      text-align: center;
+    }
+
+    .footer-note span { color: var(--good); }
+
+    @keyframes breathe {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.045); }
+    }
+
+    @media (max-width: 540px) {
+      .shell { padding-top: 22px; }
+
+      .topbar { align-items: flex-start; }
+
+      .status { margin-top: 2px; }
+
+      .mixer { margin-top: 22px; padding: 14px; border-radius: 21px; }
+
+      .layer {
+        grid-template-columns: minmax(0, 1fr) auto;
+        gap: 6px 12px;
+      }
+
+      .layer input[type="range"] { grid-column: 1 / -1; }
+
+      .master { width: 100%; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        scroll-behavior: auto !important;
+        transition-duration: 0.01ms !important;
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="shell" aria-labelledby="page-title">
+    <header class="topbar">
+      <div>
+        <p class="eyebrow">Night mode</p>
+        <h1 id="page-title">Sleep sounds</h1>
+      </div>
+      <div class="status" id="status" aria-live="polite">Ready</div>
+    </header>
+
+    <p class="intro">Set a soft background and let the room get quiet around you.</p>
+
+    <section class="mixer" aria-label="Sleep sound mixer">
+      <div class="play-zone">
+        <div class="orb" id="orb" aria-hidden="true">
+          <button class="play-button" id="playButton" type="button" aria-label="Start sleep sounds">
+            <span id="playIcon" aria-hidden="true">▶</span>
+          </button>
+        </div>
+        <div class="play-label" id="playLabel">Press play when you are ready</div>
+        <label class="master" for="masterVolume">
+          <span>Overall</span>
+          <input id="masterVolume" type="range" min="0" max="100" value="54" aria-label="Overall volume">
+          <strong id="masterValue">54%</strong>
+        </label>
+      </div>
+
+      <span class="section-label">Your mix</span>
+      <div class="layers">
+        <div class="layer">
+          <div class="layer-name">
+            <span class="layer-dot rain" aria-hidden="true"></span>
+            <div class="layer-copy">
+              <strong>Rain</strong>
+              <span>soft drops on a window</span>
+            </div>
+          </div>
+          <input id="rain" type="range" min="0" max="100" value="48" aria-label="Rain volume">
+          <span class="value" id="rainValue">48%</span>
+        </div>
+
+        <div class="layer">
+          <div class="layer-name">
+            <span class="layer-dot fan" aria-hidden="true"></span>
+            <div class="layer-copy">
+              <strong>Fan</strong>
+              <span>steady, airy room tone</span>
+            </div>
+          </div>
+          <input id="fan" type="range" min="0" max="100" value="0" aria-label="Fan volume">
+          <span class="value" id="fanValue">0%</span>
+        </div>
+
+        <div class="layer">
+          <div class="layer-name">
+            <span class="layer-dot brown" aria-hidden="true"></span>
+            <div class="layer-copy">
+              <strong>Brown noise</strong>
+              <span>deep, low and even</span>
+            </div>
+          </div>
+          <input id="brown" type="range" min="0" max="100" value="16" aria-label="Brown noise volume">
+          <span class="value" id="brownValue">16%</span>
+        </div>
+      </div>
+
+      <span class="section-label">Presets</span>
+      <div class="button-row" id="presetButtons" aria-label="Sound presets">
+        <button class="preset-button" type="button" data-preset="night-rain" aria-pressed="true">Night rain</button>
+        <button class="preset-button" type="button" data-preset="quiet-room" aria-pressed="false">Quiet room</button>
+        <button class="preset-button" type="button" data-preset="deep-rest" aria-pressed="false">Deep rest</button>
+        <button class="preset-button" type="button" data-preset="all-layers" aria-pressed="false">All layers</button>
+      </div>
+
+      <section class="timer-panel" aria-labelledby="timer-title">
+        <div class="timer-heading">
+          <strong id="timer-title">Sleep timer</strong>
+          <span class="timer-readout" id="timerReadout">Off</span>
+        </div>
+        <p class="timer-note" id="timerNote">The sound fades gently during the final two minutes.</p>
+        <div class="timer-buttons" id="timerButtons" aria-label="Sleep timer duration">
+          <button class="timer-button" type="button" data-minutes="0" aria-pressed="true">Off</button>
+          <button class="timer-button" type="button" data-minutes="15" aria-pressed="false">15 min</button>
+          <button class="timer-button" type="button" data-minutes="30" aria-pressed="false">30 min</button>
+          <button class="timer-button" type="button" data-minutes="60" aria-pressed="false">60 min</button>
+          <button class="timer-button" type="button" data-minutes="90" aria-pressed="false">90 min</button>
+        </div>
+      </section>
+    </section>
+
+    <p class="footer-note"><span aria-hidden="true">●</span> Generated here in your browser. No streaming.</p>
+  </main>
+
+  <script>
+    (() => {
+      "use strict";
+
+      const $ = (id) => document.getElementById(id);
+      const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+      const rangeIds = ["rain", "fan", "brown"];
+      const ranges = {
+        rain: $("rain"),
+        fan: $("fan"),
+        brown: $("brown"),
+        master: $("masterVolume")
+      };
+      const values = {
+        rain: $("rainValue"),
+        fan: $("fanValue"),
+        brown: $("brownValue"),
+        master: $("masterValue")
+      };
+      const presetButtons = Array.from(document.querySelectorAll("[data-preset]"));
+      const timerButtons = Array.from(document.querySelectorAll("[data-minutes]"));
+
+      const presets = {
+        "night-rain": { rain: 48, fan: 0, brown: 16, master: 54 },
+        "quiet-room": { rain: 0, fan: 46, brown: 9, master: 48 },
+        "deep-rest": { rain: 18, fan: 24, brown: 52, master: 50 },
+        "all-layers": { rain: 34, fan: 30, brown: 29, master: 50 }
+      };
+
+      const state = {
+        preset: "night-rain",
+        playing: false,
+        fading: false,
+        timerMinutes: 0,
+        timerEndAt: 0,
+        fadeEndAt: 0,
+        timerFinished: false,
+        timerHandle: null,
+        fadeHandle: null,
+        stopHandle: null
+      };
+
+      let audio = null;
+
+      function setStatus(message, playing = state.playing) {
+        const status = $("status");
+        status.textContent = message;
+        status.classList.toggle("is-playing", playing);
+      }
+
+      function setPlayUi() {
+        const button = $("playButton");
+        const icon = $("playIcon");
+        const label = $("playLabel");
+        const orb = $("orb");
+        const isActive = state.playing || state.fading;
+
+        button.setAttribute("aria-label", state.playing ? "Pause sleep sounds" : "Start sleep sounds");
+        icon.textContent = state.playing ? "Ⅱ" : "▶";
+        label.textContent = state.fading ? "Fading out gently" : (state.playing ? "Sleep sounds are playing" : "Press play when you are ready");
+        orb.classList.toggle("is-playing", isActive);
+      }
+
+      function updateValues() {
+        rangeIds.forEach((id) => {
+          values[id].textContent = `${ranges[id].value}%`;
+        });
+        values.master.textContent = `${ranges.master.value}%`;
+      }
+
+      function updatePresetState() {
+        presetButtons.forEach((button) => {
+          button.setAttribute("aria-pressed", button.dataset.preset === state.preset ? "true" : "false");
+        });
+      }
+
+      function updateAudioGains(immediate = false) {
+        if (!audio || !audio.layers) return;
+        const now = audio.context.currentTime;
+        const timeConstant = immediate ? 0.001 : 0.045;
+        const layerStrength = { rain: 0.23, fan: 0.31, brown: 0.26 };
+
+        rangeIds.forEach((id) => {
+          const target = Number(ranges[id].value) / 100 * layerStrength[id];
+          audio.layers[id].gain.gain.setTargetAtTime(target, now, timeConstant);
+        });
+      }
+
+      function fillNoiseBuffer(buffer, kind) {
+        for (let channelIndex = 0; channelIndex < buffer.numberOfChannels; channelIndex += 1) {
+          const data = buffer.getChannelData(channelIndex);
+          let low = 0;
+          let brown = 0;
+          let drop = 0;
+          let previous = 0;
+
+          for (let index = 0; index < data.length; index += 1) {
+            const white = Math.random() * 2 - 1;
+
+            if (kind === "rain") {
+              low = low * 0.996 + white * 0.004;
+              if (Math.random() < 0.000045) drop += (Math.random() * 2 - 1) * 0.9;
+              drop *= 0.9972;
+              data[index] = white * 0.2 + low * 0.15 + drop * 0.58;
+            } else if (kind === "fan") {
+              previous = previous * 0.91 + white * 0.09;
+              data[index] = previous * 0.72 + white * 0.08;
+            } else {
+              brown = (brown + white * 0.022) / 1.022;
+              data[index] = brown * 3.2;
+            }
+          }
+        }
+      }
+
+      function createNoiseBuffer(context, kind) {
+        const length = Math.floor(context.sampleRate * 8);
+        const buffer = context.createBuffer(2, length, context.sampleRate);
+        fillNoiseBuffer(buffer, kind);
+        return buffer;
+      }
+
+      function makeLayer(context, compressor, buffer, kind) {
+        const source = context.createBufferSource();
+        const filter = context.createBiquadFilter();
+        const gain = context.createGain();
+
+        source.buffer = buffer;
+        source.loop = true;
+        filter.type = kind === "fan" ? "bandpass" : "lowpass";
+        filter.frequency.value = kind === "rain" ? 6800 : (kind === "fan" ? 230 : 620);
+        filter.Q.value = kind === "fan" ? 0.65 : 0.4;
+        gain.gain.value = 0;
+
+        source.connect(filter);
+        filter.connect(gain);
+        gain.connect(compressor);
+        source.start();
+
+        return { source, gain };
+      }
+
+      async function prepareAudio() {
+        if (audio) return audio;
+        if (!AudioContextClass) throw new Error("unsupported");
+
+        const context = new AudioContextClass();
+        const compressor = context.createDynamicsCompressor();
+        const master = context.createGain();
+
+        compressor.threshold.value = -24;
+        compressor.knee.value = 18;
+        compressor.ratio.value = 3;
+        compressor.attack.value = 0.02;
+        compressor.release.value = 0.2;
+        master.gain.value = 0;
+        compressor.connect(master);
+        master.connect(context.destination);
+
+        setStatus("Making quiet sounds", false);
+        const buffers = {
+          rain: createNoiseBuffer(context, "rain"),
+          fan: createNoiseBuffer(context, "fan"),
+          brown: createNoiseBuffer(context, "brown")
+        };
+
+        audio = { context, compressor, master, buffers, layers: null };
+        return audio;
+      }
+
+      function connectLayers() {
+        audio.layers = {
+          rain: makeLayer(audio.context, audio.compressor, audio.buffers.rain, "rain"),
+          fan: makeLayer(audio.context, audio.compressor, audio.buffers.fan, "fan"),
+          brown: makeLayer(audio.context, audio.compressor, audio.buffers.brown, "brown")
+        };
+        updateAudioGains(true);
+      }
+
+      function clearTimerHandles() {
+        if (state.timerHandle) window.clearInterval(state.timerHandle);
+        if (state.fadeHandle) window.clearTimeout(state.fadeHandle);
+        state.timerHandle = null;
+        state.fadeHandle = null;
+        state.timerEndAt = 0;
+        state.fadeEndAt = 0;
+      }
+
+      function formatRemaining(milliseconds) {
+        const totalSeconds = Math.max(0, Math.ceil(milliseconds / 1000));
+        const minutes = Math.floor(totalSeconds / 60);
+        const seconds = totalSeconds % 60;
+        return `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
+      }
+
+      function updateTimerUi() {
+        const readout = $("timerReadout");
+        const note = $("timerNote");
+
+        if (state.fading) {
+          readout.textContent = `Fading · ${formatRemaining(state.fadeEndAt - Date.now())}`;
+          note.textContent = "The volume is easing down now. Rest easy.";
+        } else if (state.timerEndAt) {
+          readout.textContent = formatRemaining(state.timerEndAt - Date.now());
+          note.textContent = "The sound fades gently during the final two minutes.";
+        } else if (state.timerFinished) {
+          readout.textContent = "Finished";
+          note.textContent = "Press play whenever you would like to begin again.";
+        } else if (state.timerMinutes > 0) {
+          readout.textContent = `${state.timerMinutes} min`;
+          note.textContent = state.playing ? "The timer is ready." : "The timer starts when you press play.";
+        } else {
+          readout.textContent = "Off";
+          note.textContent = "The sound fades gently during the final two minutes.";
+        }
+      }
+
+      function updateTimerButtons() {
+        timerButtons.forEach((button) => {
+          button.setAttribute("aria-pressed", Number(button.dataset.minutes) === state.timerMinutes ? "true" : "false");
+        });
+      }
+
+      function finishFade() {
+        clearTimerHandles();
+        state.fading = false;
+        state.playing = false;
+        state.timerFinished = true;
+        stopLayers();
+        if (audio) audio.context.suspend();
+        setStatus("Timer finished", false);
+        setPlayUi();
+        updateTimerUi();
+      }
+
+      function beginFade(durationMilliseconds) {
+        if (!audio || !audio.layers || !state.playing) return;
+        state.fading = true;
+        state.timerEndAt = 0;
+        state.fadeEndAt = Date.now() + durationMilliseconds;
+        if (state.timerHandle) window.clearInterval(state.timerHandle);
+        state.timerHandle = null;
+
+        const now = audio.context.currentTime;
+        const durationSeconds = Math.max(1, durationMilliseconds / 1000);
+        const currentGain = Math.max(0.0001, audio.master.gain.value);
+        audio.master.gain.cancelScheduledValues(now);
+        audio.master.gain.setValueAtTime(currentGain, now);
+        audio.master.gain.linearRampToValueAtTime(0.0001, now + durationSeconds);
+        state.fadeHandle = window.setTimeout(finishFade, durationMilliseconds + 80);
+        setStatus("Fading out", true);
+        setPlayUi();
+        updateTimerUi();
+      }
+
+      function checkTimer() {
+        if (!state.timerEndAt) return;
+        const remaining = state.timerEndAt - Date.now();
+        if (remaining <= 120000) {
+          beginFade(Math.max(1000, remaining));
+        } else {
+          updateTimerUi();
+        }
+      }
+
+      function startTimer() {
+        clearTimerHandles();
+        state.timerFinished = false;
+        if (state.timerMinutes <= 0) {
+          updateTimerUi();
+          return;
+        }
+        state.timerEndAt = Date.now() + state.timerMinutes * 60000;
+        state.timerHandle = window.setInterval(checkTimer, 1000);
+        updateTimerUi();
+      }
+
+      function cancelSleepTimer(restoreAudio = false) {
+        const wasFading = state.fading;
+        clearTimerHandles();
+        state.fading = false;
+        if (wasFading && restoreAudio && audio && audio.layers && state.playing) {
+          const now = audio.context.currentTime;
+          const target = Number(ranges.master.value) / 100;
+          audio.master.gain.cancelScheduledValues(now);
+          audio.master.gain.setValueAtTime(audio.master.gain.value, now);
+          audio.master.gain.linearRampToValueAtTime(target, now + 0.7);
+        }
+        setPlayUi();
+        updateTimerUi();
+      }
+
+      async function startAudio() {
+        if (state.playing) {
+          pauseAudio();
+          return;
+        }
+
+        try {
+          const prepared = await prepareAudio();
+          if (state.stopHandle) {
+            window.clearTimeout(state.stopHandle);
+            state.stopHandle = null;
+            stopLayers();
+          }
+          if (prepared.context.state === "suspended") await prepared.context.resume();
+          connectLayers();
+
+          const now = prepared.context.currentTime;
+          const target = Number(ranges.master.value) / 100;
+          prepared.master.gain.cancelScheduledValues(now);
+          prepared.master.gain.setValueAtTime(0.0001, now);
+          prepared.master.gain.linearRampToValueAtTime(target, now + 0.7);
+          state.playing = true;
+          state.fading = false;
+          setStatus("Playing", true);
+          setPlayUi();
+          startTimer();
+        } catch (error) {
+          setStatus(error.message === "unsupported" ? "Audio not supported" : "Tap play to try again", false);
+          $("playLabel").textContent = "This browser could not start audio";
+        }
+      }
+
+      function pauseAudio() {
+        if (!state.playing || !audio || !audio.layers) return;
+        cancelSleepTimer(false);
+        state.playing = false;
+        const now = audio.context.currentTime;
+        const currentGain = Math.max(0.0001, audio.master.gain.value);
+        audio.master.gain.cancelScheduledValues(now);
+        audio.master.gain.setValueAtTime(currentGain, now);
+        audio.master.gain.linearRampToValueAtTime(0.0001, now + 0.25);
+        state.stopHandle = window.setTimeout(() => {
+          stopLayers();
+          state.stopHandle = null;
+          if (audio) audio.context.suspend();
+        }, 300);
+        setStatus("Paused", false);
+        setPlayUi();
+        updateTimerUi();
+      }
+
+      function stopLayers() {
+        if (!audio || !audio.layers) return;
+        Object.keys(audio.layers).forEach((id) => {
+          try {
+            audio.layers[id].source.stop();
+          } catch (error) {
+            // The source may already be stopped while a pause is finishing.
+          }
+        });
+        audio.layers = null;
+        audio.master.gain.cancelScheduledValues(audio.context.currentTime);
+        audio.master.gain.value = 0;
+      }
+
+      function applyPreset(name) {
+        const preset = presets[name];
+        if (!preset) return;
+        Object.keys(preset).forEach((id) => {
+          ranges[id].value = preset[id];
+        });
+        state.preset = name;
+        updateValues();
+        updatePresetState();
+        updateAudioGains();
+      }
+
+      $("playButton").addEventListener("click", startAudio);
+
+      rangeIds.concat(["master"]).forEach((id) => {
+        ranges[id].addEventListener("input", () => {
+          if (id === "master" && audio && audio.layers && state.playing && !state.fading) {
+            const now = audio.context.currentTime;
+            audio.master.gain.setTargetAtTime(Number(ranges.master.value) / 100, now, 0.04);
+          }
+          updateValues();
+          if (rangeIds.includes(id)) {
+            state.preset = null;
+            updatePresetState();
+            updateAudioGains();
+          }
+        });
+      });
+
+      presetButtons.forEach((button) => {
+        button.addEventListener("click", () => applyPreset(button.dataset.preset));
+      });
+
+      timerButtons.forEach((button) => {
+        button.addEventListener("click", () => {
+          const minutes = Number(button.dataset.minutes);
+          state.timerMinutes = minutes;
+          state.timerFinished = false;
+          updateTimerButtons();
+          if (state.fading) cancelSleepTimer(true);
+          if (minutes === 0) {
+            cancelSleepTimer(state.playing);
+          } else if (state.playing) {
+            startTimer();
+          } else {
+            clearTimerHandles();
+            updateTimerUi();
+          }
+        });
+      });
+
+      updateValues();
+      updatePresetState();
+      updateTimerButtons();
+      updateTimerUi();
+      setPlayUi();
+    })();
+  </script>
+</body>
+</html>

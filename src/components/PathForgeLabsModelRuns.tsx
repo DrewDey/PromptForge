@@ -5,6 +5,19 @@ import type {
   ProjectModelVariantSet,
 } from '@/lib/project-model-variants'
 
+const MODEL_LABEL_COLLATOR = new Intl.Collator('en', {
+  numeric: true,
+  sensitivity: 'base',
+})
+
+function compareModelVariants(left: ProjectModelVariant, right: ProjectModelVariant) {
+  return (
+    MODEL_LABEL_COLLATOR.compare(left.modelLabel, right.modelLabel) ||
+    MODEL_LABEL_COLLATOR.compare(left.serviceLabel, right.serviceLabel) ||
+    left.sourceRunId.localeCompare(right.sourceRunId)
+  )
+}
+
 function runHref(route: string, run: ProjectModelVariant, compare?: ProjectModelVariant | null) {
   const params = new URLSearchParams({ run: run.sourceRunId })
   if (compare && compare.sourceRunId !== run.sourceRunId) {
@@ -42,10 +55,7 @@ export default function PathForgeLabsModelRuns({
   const historicalVariant = variantSet.variants.find(
     (variant) => variant.runRole === 'historical-baseline',
   )
-  const orderedVariants = [
-    activeVariant,
-    ...variantSet.variants.filter((variant) => variant.sourceRunId !== activeVariant.sourceRunId),
-  ]
+  const orderedVariants = [...variantSet.variants].sort(compareModelVariants)
 
   return (
     <aside

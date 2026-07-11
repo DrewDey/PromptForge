@@ -85,13 +85,19 @@ function optionalString(value) {
 }
 
 function canonicalSourceUrl(value) {
-  const parsed = new URL(requireString(value, 'source_url'))
+  const parsed = new URL(requireString(value, 'source_url').toLowerCase())
   if (!['http:', 'https:'].includes(parsed.protocol)) {
     throw new Error('Seed package source_url must use http or https.')
   }
-  parsed.hash = ''
-  if (parsed.pathname.length > 1) parsed.pathname = parsed.pathname.replace(/\/+$/, '')
-  return parsed.toString()
+  const hostname = parsed.hostname.replace(/^www\./, '')
+  const port = parsed.port ? `:${parsed.port}` : ''
+  const pathname = parsed.pathname.replace(/\/+$/, '')
+  const queryParts = parsed.search.slice(1).split('&').filter((part) => {
+    if (!part) return false
+    const key = part.split('=', 1)[0]
+    return !key.startsWith('utm_') && !['fbclid', 'gclid', 'mc_cid', 'mc_eid'].includes(key)
+  }).sort()
+  return `${parsed.protocol}//${hostname}${port}${pathname}${queryParts.length ? `?${queryParts.join('&')}` : ''}`
 }
 
 function checkedPackageSourceRunId(pkg) {

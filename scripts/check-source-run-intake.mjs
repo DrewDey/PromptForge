@@ -60,6 +60,12 @@ mustInclude(importer, ".eq('id', checkedSourceRunId)", 'checked source-run impor
 mustInclude(importer, 'different intake evidence', 'checked source-run identity collisions must fail closed')
 mustInclude(importer, 'immutablePayloadDifferences', 'checked source-run identity must compare the full normalized immutable payload')
 mustInclude(importer, 'canonical_source_url', 'package imports must persist canonical source URL identity')
+mustInclude(importer, "new URL(requireString(value, 'source_url').toLowerCase())", 'connector intake canonicalization must match the database lowercase identity contract')
+mustInclude('src/lib/source-run-package.ts', 'new URL(value.trim().toLowerCase())', 'prepared publication canonicalization must match the database lowercase identity contract')
+for (const trackingKey of ['utm_', 'fbclid', 'gclid', 'mc_cid', 'mc_eid']) {
+  mustInclude(importer, trackingKey, `connector intake canonicalization must remove ${trackingKey}`)
+  mustInclude('src/lib/source-run-package.ts', trackingKey, `prepared publication canonicalization must remove ${trackingKey}`)
+}
 mustInclude(importer, 'source_package_file', 'package imports must persist normalized source package file identity')
 mustInclude(importer, 'source_package_sha256', 'package imports must persist the exact package SHA-256')
 mustInclude(importer, 'intake_evidence', 'package imports must persist canonical immutable intake evidence')

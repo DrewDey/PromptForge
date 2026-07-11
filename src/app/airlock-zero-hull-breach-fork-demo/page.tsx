@@ -8,6 +8,7 @@ import { notFound } from 'next/navigation'
 const route = '/airlock-zero-hull-breach-fork-demo'
 const project = AIRLOCK_ZERO_GEMINI_FORK_SHOWCASE_PROJECT
 
+export const dynamic = 'force-dynamic'
 export const metadata = buildPreparedSourceRunDetailMetadata(project)
 
 export default async function AirlockZeroHullBreachForkDemoPage() {

@@ -1109,6 +1109,7 @@ for (const project of sourceRunProjects) {
   mustInclude('src/lib/project-links.ts', projectLinks, project.href, `${project.name} route override must point to the special page`)
   if (project.releaseGate) {
     mustInclude(project.route, routeContent, project.releaseGate, `${project.name} must fail closed until persisted release evidence exists`)
+    mustInclude(project.route, routeContent, "export const dynamic = 'force-dynamic'", `${project.name} release gate must re-check persisted approval on every request`)
     mustNotInclude('src/lib/data.ts', data, project.projectId, `${project.name} must not appear through approved mock fallback data`)
   } else if (!project.curated) {
     mustInclude('src/lib/data.ts', data, project.projectId, `${project.name} must be approved in public fallback data`)

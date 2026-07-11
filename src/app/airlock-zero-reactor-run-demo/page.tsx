@@ -14,6 +14,7 @@ import { notFound } from 'next/navigation'
 const route = '/airlock-zero-reactor-run-demo'
 const project = AIRLOCK_ZERO_SHOWCASE_PROJECT
 
+export const dynamic = 'force-dynamic'
 export const metadata = buildPreparedSourceRunDetailMetadata(project)
 
 export default async function AirlockZeroReactorRunDemoPage({

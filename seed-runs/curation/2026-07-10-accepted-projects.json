@@ -80,7 +80,7 @@
         "public/artifacts/booking-flow-handoff-simulator-claude-sonnet46-low-v3.html",
         "public/artifacts/booking-flow-handoff-simulator-claude-sonnet46-low.html"
       ],
-      "sourceUrl": "https://claude.ai/chat/71f62415-8373-48ae-ae1e-f0c85ecc2235",
+      "sourceUrl": "https://claude.ai/share/cb340686-5bd0-4ba5-917d-c6792527bcd8",
       "authorDisplayName": "Milo Booking",
       "authorUsername": "MiloBooking",
       "createdAt": "2026-06-19T07:37:00Z",
@@ -124,7 +124,7 @@
       "artifactVersionPaths": [
         "public/artifacts/first-principles-claim-ladder-game-chatgpt-gpt55-medium.html"
       ],
-      "sourceUrl": "https://chatgpt.com/c/6a35e460-9298-83ea-aa7b-9a04fbc6fab9",
+      "sourceUrl": "https://chatgpt.com/share/6a517a3f-3ce4-83ea-9686-863ec43e5473",
       "authorDisplayName": "Ari Ladder",
       "authorUsername": "AriLadder",
       "createdAt": "2026-06-20T00:55:00Z",
@@ -165,7 +165,7 @@
       "artifactVersionPaths": [
         "public/artifacts/tiny-festival-set-time-clash-game-claude-opus48-medium.html"
       ],
-      "sourceUrl": "https://claude.ai/chat/9e5a4985-781e-4175-a58a-325d9a6bcf87",
+      "sourceUrl": "https://claude.ai/share/7b1dd75e-0fde-45ef-bd6b-b10389db14dd",
       "authorDisplayName": "Milo Festival",
       "authorUsername": "MiloFestival",
       "createdAt": "2026-06-19T14:49:00-04:00",
@@ -206,7 +206,7 @@
       "artifactVersionPaths": [
         "public/artifacts/rental-walkthrough-red-flag-scorecard-chatgpt-gpt55-medium.html"
       ],
-      "sourceUrl": "https://chatgpt.com/c/6a31b2b3-05ac-83ea-8bef-354974d20954",
+      "sourceUrl": "https://chatgpt.com/share/6a517a76-813c-83ea-ae97-b0cc7f323946",
       "authorDisplayName": "Maya Keys",
       "authorUsername": "MayaKeys",
       "createdAt": "2026-06-16T20:23:00Z",
@@ -252,7 +252,7 @@
         "public/artifacts/gym-mirror-progress-shot-consistency-studio-claude-sonnet46-max-v4.html",
         "public/artifacts/gym-mirror-progress-shot-consistency-studio-claude-sonnet46-max.html"
       ],
-      "sourceUrl": "https://claude.ai/chat/7254c1e6-56b1-4b32-beb6-f97c7b3d091a",
+      "sourceUrl": "https://claude.ai/share/d9c411db-f543-488e-89cf-c940fd65cb98",
       "authorDisplayName": "Rhea Fitline",
       "authorUsername": "RheaFitline",
       "createdAt": "2026-06-16T20:34:00-04:00",
@@ -271,17 +271,17 @@
       "sourceRunId": "2f2bfc9f-019a-4ff3-b51f-3270a7ea9eab",
       "href": "/security-cam-anomaly-timeline-game-demo",
       "title": "Security-Cam Anomaly Timeline Game",
-      "description": "A one-prompt ChatGPT Extra High source run that produced an offline security-camera anomaly timeline game with timestamped camera cards, odd-detail marking, timeline ordering, scoring, hints, answer reveal, autosave, and copy/download report export.",
-      "content": "Evan Trace used ChatGPT (Extra High) to build Security-Cam Anomaly Timeline Game through 1 prompt. The public page mounts the verified final artifact first and preserves every exact prompt in source-run order.",
+      "description": "A one-prompt ChatGPT GPT-5.5 source run at Extra High reasoning that produced an offline security-camera anomaly timeline game with timestamped camera cards, odd-detail marking, timeline ordering, scoring, hints, answer reveal, autosave, and copy/download report export.",
+      "content": "Evan Trace used ChatGPT GPT-5.5 at Extra High reasoning to build Security-Cam Anomaly Timeline Game through 1 prompt. The public page mounts the verified final artifact first and preserves every exact prompt in source-run order.",
       "resultContent": "ChatGPT returned a sandbox download link and an embedded artifact with a Code tab; the Code tab contained one complete offline HTML security-camera anomaly timeline game.",
       "categorySlug": "personal",
       "mockCategoryId": "cat-10",
       "difficulty": "intermediate",
-      "modelUsed": "Extra High",
-      "modelRecommendation": "Extra High",
+      "modelUsed": "GPT-5.5",
+      "modelRecommendation": "GPT-5.5 at Extra High reasoning",
       "toolsUsed": [
         "ChatGPT",
-        "Extra High",
+        "Extra High reasoning",
         "HTML",
         "Browser"
       ],
@@ -298,7 +298,7 @@
       "artifactVersionPaths": [
         "public/artifacts/security-cam-anomaly-timeline-chatgpt-extra-high.html"
       ],
-      "sourceUrl": "https://chatgpt.com/c/6a2f739d-fffc-83ea-be11-e4d242207eb4",
+      "sourceUrl": "https://chatgpt.com/share/6a517a82-8b00-83ea-97c4-8d709462926f",
       "authorDisplayName": "Evan Trace",
       "authorUsername": "EvanTrace",
       "createdAt": "2026-06-15T03:27:00Z",
@@ -315,16 +315,16 @@
       "href": "/t-shirt-print-alignment-press-game-demo",
       "title": "T-Shirt Print Alignment Press Game",
       "description": "Offline shirt-print layout scorer where a user arranges text/icon blocks on a shirt mockup, checks print-safe margins and readability, and copies an order-ready production spec.",
-      "content": "Della Patch used ChatGPT (Medium) to build T-Shirt Print Alignment Press Game through 1 prompt. The public page mounts the verified final artifact first and preserves every exact prompt in source-run order.",
+      "content": "Della Patch used ChatGPT GPT-5.5 at Medium reasoning to build T-Shirt Print Alignment Press Game through 1 prompt. The public page mounts the verified final artifact first and preserves every exact prompt in source-run order.",
       "resultContent": "ChatGPT returned a complete single-file HTML T-Shirt Print Alignment Press Game with draggable text/icon blocks, print-safe zone, scoring, production checks, copy/download spec actions, and responsive layout.",
       "categorySlug": "design",
       "mockCategoryId": "cat-5",
       "difficulty": "beginner",
-      "modelUsed": "Medium",
-      "modelRecommendation": "Medium",
+      "modelUsed": "GPT-5.5",
+      "modelRecommendation": "GPT-5.5 at Medium reasoning",
       "toolsUsed": [
         "ChatGPT",
-        "Medium",
+        "Medium reasoning",
         "HTML",
         "Browser"
       ],
@@ -341,7 +341,7 @@
       "artifactVersionPaths": [
         "public/artifacts/t-shirt-print-alignment-press-chatgpt-medium.html"
       ],
-      "sourceUrl": "https://chatgpt.com/c/6a2f41d3-a068-83ea-b7e4-5532e9ed0e59",
+      "sourceUrl": "https://chatgpt.com/share/6a517a8e-b4ec-83ea-b1a4-6112792b8438",
       "authorDisplayName": "Della Patch",
       "authorUsername": "DellaPatch",
       "createdAt": "2026-06-15T00:00:58Z",

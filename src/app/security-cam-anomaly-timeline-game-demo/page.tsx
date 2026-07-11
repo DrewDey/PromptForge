@@ -1,7 +1,8 @@
-import PreparedSourceRunPage from '@/components/PreparedSourceRunPage'
+import PreparedModelVariantSourceRunPage, {
+  type ModelVariantSearchParams,
+} from '@/components/PreparedModelVariantSourceRunPage'
 import { buildPreparedSourceRunDetailMetadata } from '@/lib/build-path-metadata'
 import { getPreparedShowcaseProjectBySourceRunId } from '@/lib/prepared-showcase-projects'
-import { loadSourceRunPackage } from '@/lib/source-run-package'
 
 const route = '/security-cam-anomaly-timeline-game-demo'
 const sourceRunId = '2f2bfc9f-019a-4ff3-b51f-3270a7ea9eab'
@@ -11,13 +12,16 @@ if (!project) throw new Error(`Missing prepared showcase project for source run 
 
 export const metadata = buildPreparedSourceRunDetailMetadata(project)
 
-export default function SecurityCamAnomalyTimelineGameDemoPage() {
+export default function SecurityCamAnomalyTimelineGameDemoPage({
+  searchParams,
+}: {
+  searchParams: ModelVariantSearchParams
+}) {
   return (
-    <PreparedSourceRunPage
+    <PreparedModelVariantSourceRunPage
       project={project!}
-      sourceRunPackage={loadSourceRunPackage('security-cam-anomaly-timeline-chatgpt-extra-high-source-run.json')}
       route={route}
-      capturedAt="June 15, 2026"
+      searchParams={searchParams}
     />
   )
 }

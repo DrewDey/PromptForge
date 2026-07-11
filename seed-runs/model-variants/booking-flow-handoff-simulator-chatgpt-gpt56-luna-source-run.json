@@ -1,0 +1,128 @@
+{
+  "title": "Booking Flow Handoff Simulator — ChatGPT model variant",
+  "slug": "booking-flow-handoff-simulator-chatgpt-gpt56-luna",
+  "source_run_id": "c42eebed94a0395e",
+  "provider": "ChatGPT",
+  "model": "GPT-5.6 Luna",
+  "model_settings": "ChatGPT Work surface; Effort: Extra High; Speed: Standard.",
+  "source_url": "https://chatgpt.com/share/6a5160b0-fd9c-83ea-9ce8-f16d8a84ebd2",
+  "run_started_at": "2026-07-10T20:55:05.660Z",
+  "run_finished_at": "2026-07-10T21:07:15.000Z",
+  "chain_type": "one-shot",
+  "prompt_count": 1,
+  "repair_prompt_count": 0,
+  "status": "published_model_variant",
+  "description": "A developer-operated ChatGPT rerun of the canonical Booking Flow Handoff Simulator brief, preserved as an auditable PathForge Labs model variant rather than a community fork.",
+  "operator_provenance": {
+    "kind": "pathforge_labs_manual",
+    "label": "PathForge Labs · Developer-operated",
+    "canonical_project_id": "0ddfc7cf-37bf-47ae-8fe0-d8d445ba1bee",
+    "canonical_route": "/booking-flow-handoff-simulator-demo",
+    "comparison_contract_version": "booking-flow-handoff-simulator-v1",
+    "comparison_contract_sha256": "f3b2bb3dea091820f159ae16812d6de970840ad8de403ca84a1a581f8aac4d7f",
+    "opening_prompt_sha256": "52b7f47ca0a9ca8c3fb846a5bf3817f5a7b30782d29b89a800931ab0c84404e1",
+    "ordinary_fork": false
+  },
+  "comparison_basis": {
+    "opening_prompt_exact": "Can you make me a self-contained booking-flow handoff simulator a solo service business can save and use before automating customer messages?",
+    "acceptance_criteria": [
+      "Let the user model booking intake questions, service slots, confirmations, branch conditions, and failure handoffs.",
+      "Run realistic booking scenarios and clearly distinguish sent, skipped, interrupted, and failed steps.",
+      "Evaluate the simulated transcript against a visible implementation or compliance checklist.",
+      "Provide truthful copy and download controls for an implementation-ready handoff receipt.",
+      "Produce one complete self-contained HTML file that is immediately usable in a browser.",
+      "Operate offline with no external APIs, hosted generation, CDNs, remote fonts, scripts, stylesheets, or fragile dependencies.",
+      "Avoid unsafe HTML sinks, eval-like execution, inline event handlers, modal dialogs, and deprecated clipboard handling.",
+      "Avoid page-level horizontal overflow at 390 by 844 and at desktop width.",
+      "Keep essential controls visible, keyboard or touch reachable, and truthful about their current state.",
+      "Preserve exact prompt, response, source, and artifact-version evidence for the run."
+    ],
+    "adaptive_repair_policy": "Preserve and score the first real artifact. Continue only when verification proves a concrete defect or a source-capture failure; use the same source session and model; name the observed defect in ordinary language; preserve every real artifact version; stop as soon as the artifact passes; prefer no more than three total prompts and go beyond three only for a documented concrete lane reason such as a verification-proven regression, truncation, or mechanical capture failure.",
+    "independence_note": "ChatGPT received the invariant brief in a fresh session and was not shown the historical implementation, screenshots, source code, or another provider's output."
+  },
+  "agent_notes": [
+    "Provider: ChatGPT.",
+    "Model used: GPT-5.6 Luna.",
+    "Model settings: ChatGPT Work surface; Effort: Extra High; Speed: Standard.",
+    "PathForge Labs provenance: developer-operated comparison run; not a user, community fork, vote, bookmark, or engagement event.",
+    "Prompt count: 1. The first returned artifact passed the full static, workflow, desktop, and true-390 verification contract without repair.",
+    "The one real artifact is preserved under public/artifacts and is the default selectable version for this model run."
+  ],
+  "final_artifact_path": "public/artifacts/booking-flow-handoff-simulator-chatgpt-gpt56-luna-final.html",
+  "artifact_type": "html",
+  "artifact_versions": [
+    "public/artifacts/booking-flow-handoff-simulator-chatgpt-gpt56-luna-final.html"
+  ],
+  "generated_files": [
+    "public/artifacts/booking-flow-handoff-simulator-chatgpt-gpt56-luna-final.html"
+  ],
+  "artifact_sha256": "1b79876471630e2438c3f39de64cbd1301d4a8bcf6a3dc017c119dcaab71bcda",
+  "artifact_version_notes": [
+    {
+      "path": "public/artifacts/booking-flow-handoff-simulator-chatgpt-gpt56-luna-final.html",
+      "sha256": "1b79876471630e2438c3f39de64cbd1301d4a8bcf6a3dc017c119dcaab71bcda",
+      "bytes": 48872,
+      "lines": 963,
+      "disposition": "First response, final verified artifact, and default ChatGPT version."
+    }
+  ],
+  "verification_notes": [
+    "The artifact's single inline script parsed successfully.",
+    "Static scan found no remote dependency, fetch or XHR, unsafe HTML sink, eval-like execution, inline handler, document.write, modal API, deprecated clipboard handling, or negative letter spacing.",
+    "The desktop workflow reset the run, started a New inquiry, selected a realistic customer reply, finished the audit, reached 100%, and reported Ready for a controlled pilot with a saved New inquiry history row.",
+    "At the desktop viewport the document and body both measured 1660 pixels wide with no page-level horizontal overflow.",
+    "At a true 390x844 viewport the document and body both measured 390 pixels wide with no page-level horizontal overflow.",
+    "Copy, text download, JSON export, local history, and inline clear confirmation controls remained present and reachable."
+  ],
+  "verification_evidence": {
+    "schema_version": 1,
+    "verified_at": "2026-07-10T22:18:44Z",
+    "first_pass_metrics": {
+      "qualityScore": 99,
+      "artifactReady": true,
+      "hardGatesPassed": true,
+      "functionalChecks": {
+        "passed": 10,
+        "total": 10
+      },
+      "consoleErrorCount": 0,
+      "horizontalOverflowPx": 0,
+      "notes": [
+        "The first delivered artifact passed all ten invariant acceptance checks.",
+        "Desktop workflow reached Audited, 100%, and Ready for a controlled pilot; true 390x844 document and body widths both measured 390 pixels."
+      ]
+    },
+    "final_metrics": {
+      "qualityScore": 99,
+      "artifactReady": true,
+      "hardGatesPassed": true,
+      "functionalChecks": {
+        "passed": 10,
+        "total": 10
+      },
+      "consoleErrorCount": 0,
+      "horizontalOverflowPx": 0,
+      "notes": [
+        "Final equals first pass because no verification-driven continuation was needed.",
+        "Static safety, script parsing, desktop workflow, local history, and true 390x844 no-overflow verification all passed."
+      ]
+    }
+  },
+  "steps": [
+    {
+      "step_number": 1,
+      "title": "Build the invariant booking-flow handoff simulator",
+      "prompt_exact": "Can you make me a self-contained booking-flow handoff simulator a solo service business can save and use before automating customer messages?",
+      "response_exact": "Built and saved the self-contained simulator.\n\n[Download booking-flow-handoff-simulator.html](sandbox:/workspace/scratch/58a875ade55d/booking-flow-handoff-simulator.html)\n\nIt includes scenario testing, handoff scoring, exception flags, local history, copyable receipts, text/JSON export, and inline confirmations without browser dialogs.\n",
+      "response_summary": "ChatGPT produced the complete self-contained booking-flow simulator artifact in one response.",
+      "generated_files": [
+        "public/artifacts/booking-flow-handoff-simulator-chatgpt-gpt56-luna-final.html"
+      ],
+      "artifact_version_path": "public/artifacts/booking-flow-handoff-simulator-chatgpt-gpt56-luna-final.html",
+      "notes": "First response passed and became the final production artifact."
+    }
+  ],
+  "pathforge_submission_url": null,
+  "pathforge_pending_id": null,
+  "submission": null
+}

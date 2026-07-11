@@ -1,0 +1,190 @@
+{
+  "schemaVersion": 1,
+  "canonicalProjectId": "a7201847-c8d6-4e09-814b-0a382f8f8080",
+  "canonicalRoute": "/tiny-festival-set-time-clash-game-demo",
+  "title": "Tiny Festival Set-Time Clash Game",
+  "defaultSourceRunId": "c7572f3cc2fb7c6f",
+  "contract": {
+    "version": "tiny-festival-set-time-clash-game-v1",
+    "openingPromptExact": "Make a playful self-contained offline HTML mini game where I have to pick a festival route through overlapping set times, trading off energy, walking distance, friend loyalty, and must-see acts, then copy or export my final route.",
+    "acceptanceCriteria": [
+      "Present overlapping festival set choices as a playable multi-slot route decision.",
+      "Make energy, walking distance, friend loyalty, and must-see tradeoffs visibly affect the route.",
+      "Provide a clear completed state with a meaningful score or route assessment.",
+      "Provide a truthful copy or download export of the final festival route.",
+      "Produce one complete self-contained HTML file that is immediately usable in a browser.",
+      "Operate offline with no external APIs, hosted generation, CDNs, remote fonts, scripts, stylesheets, or fragile dependencies.",
+      "Avoid unsafe HTML sinks, eval-like execution, inline event handlers, modal dialogs, and deprecated clipboard handling.",
+      "Avoid page-level horizontal overflow at 390 by 844 and at desktop width.",
+      "Keep essential controls visible, keyboard or touch reachable, and truthful about their current state.",
+      "Preserve exact prompt, response, source, and artifact-version evidence for the run."
+    ],
+    "adaptiveRepairPolicy": "Preserve and score the first real artifact. Continue only when verification proves a concrete defect or a source-capture failure; use the same source session and model; name the observed defect in ordinary language; preserve every real artifact version; stop as soon as the artifact passes; prefer no more than three total prompts and go beyond three only for a documented concrete lane reason such as a verification-proven regression, truncation, or mechanical capture failure.",
+    "sha256": "1300cd07eb8ef7e3c9c095d1e4f20a0e5e729ced2d9277edc9d8d80d52c5a8c8",
+    "openingPromptSha256": "7a293e4034d57fc1bd2e93970b5e31443a9c945e3490215f989a73f7a7533fa0"
+  },
+  "variants": [
+    {
+      "sourceRunId": "4d02e29c-ff98-4c73-82ca-942430632443",
+      "providerKey": "anthropic",
+      "serviceLabel": "Claude",
+      "modelLabel": "Opus 4.8 Medium",
+      "modelSettings": "Visible Claude picker showed Model: Opus 4.8 Medium before prompt send; Opus 4.8 selected with Effort Medium and Thinking enabled; no OpenRouter, files, connectors, or external tools used in Claude.",
+      "operatorKind": "original-author",
+      "operatorLabel": "Original source run · Milo Festival",
+      "runRole": "historical-baseline",
+      "qualityStatus": "verified",
+      "isCurrent": false,
+      "capturedAt": "2026-06-19T18:59:30.862Z",
+      "promptCount": 1,
+      "repairPromptCount": 0,
+      "packageFile": "tiny-festival-set-time-clash-game-claude-opus48-medium-source-run.json",
+      "packageSha256": "0cf213356e1a08dd5084ee3e4a679105aec722b08327f890c24959b2e0ce682d",
+      "firstArtifactPath": "public/artifacts/tiny-festival-set-time-clash-game-claude-opus48-medium.html",
+      "finalArtifactPath": "public/artifacts/tiny-festival-set-time-clash-game-claude-opus48-medium.html",
+      "artifactVersionPaths": [
+        "public/artifacts/tiny-festival-set-time-clash-game-claude-opus48-medium.html"
+      ],
+      "firstPassMetrics": {
+        "qualityScore": 96,
+        "artifactReady": true,
+        "hardGatesPassed": true,
+        "functionalChecks": {
+          "passed": 10,
+          "total": 10
+        },
+        "consoleErrorCount": 0,
+        "horizontalOverflowPx": 0,
+        "notes": [
+          "The one-shot six-decision route completed with visible energy, loyalty, must-see, distance, score, grade, and verdict state.",
+          "Copy, download, reset, static safety, 390px, and desktop checks passed."
+        ]
+      },
+      "finalMetrics": {
+        "qualityScore": 96,
+        "artifactReady": true,
+        "hardGatesPassed": true,
+        "functionalChecks": {
+          "passed": 10,
+          "total": 10
+        },
+        "consoleErrorCount": 0,
+        "horizontalOverflowPx": 0,
+        "notes": [
+          "The one-shot final passed all ten contract checks with a complete route export and zero console or layout defects."
+        ]
+      }
+    },
+    {
+      "sourceRunId": "c7572f3cc2fb7c6f",
+      "providerKey": "openai",
+      "serviceLabel": "ChatGPT",
+      "modelLabel": "GPT-5.6 Luna",
+      "modelSettings": "ChatGPT Work surface; Effort: Extra High; Speed: Standard.",
+      "operatorKind": "pathforge-labs-manual",
+      "operatorLabel": "PathForge Labs · Developer-operated",
+      "runRole": "comparison-run",
+      "qualityStatus": "verified",
+      "isCurrent": true,
+      "capturedAt": "2026-07-10T21:11:31.000Z",
+      "promptCount": 4,
+      "repairPromptCount": 3,
+      "packageFile": "model-variants/tiny-festival-set-time-clash-game-chatgpt-gpt56-luna-source-run.json",
+      "packageSha256": "4f33648598352d2690c38a4df4247ae7beae1c850c5761bbe2874dc52e99e41a",
+      "firstArtifactPath": "public/artifacts/tiny-festival-set-time-clash-game-chatgpt-gpt56-luna-first-pass.html",
+      "finalArtifactPath": "public/artifacts/tiny-festival-set-time-clash-game-chatgpt-gpt56-luna-final.html",
+      "artifactVersionPaths": [
+        "public/artifacts/tiny-festival-set-time-clash-game-chatgpt-gpt56-luna-first-pass.html",
+        "public/artifacts/tiny-festival-set-time-clash-game-chatgpt-gpt56-luna-repair-1.html",
+        "public/artifacts/tiny-festival-set-time-clash-game-chatgpt-gpt56-luna-repair-2.html",
+        "public/artifacts/tiny-festival-set-time-clash-game-chatgpt-gpt56-luna-final.html"
+      ],
+      "firstPassMetrics": {
+        "qualityScore": 84,
+        "artifactReady": true,
+        "hardGatesPassed": false,
+        "functionalChecks": {
+          "passed": 8,
+          "total": 10
+        },
+        "consoleErrorCount": 0,
+        "horizontalOverflowPx": 0,
+        "notes": [
+          "The first artifact rendered and its script ran without console errors or horizontal overflow at desktop and true 390x844 widths.",
+          "Its core schedule and export were materially wrong: Solar Flare displayed 4:30a–5:30a and Moon Motel displayed 11a–12p instead of the promised afternoon-through-midnight event.",
+          "Prompt-2 and prompt-3 downloads remained byte-for-byte identical to the first pass, documenting a generated-file cache mismatch rather than a successful repair."
+        ]
+      },
+      "finalMetrics": {
+        "qualityScore": 99,
+        "artifactReady": true,
+        "hardGatesPassed": true,
+        "functionalChecks": {
+          "passed": 10,
+          "total": 10
+        },
+        "consoleErrorCount": 0,
+        "horizontalOverflowPx": 0,
+        "notes": [
+          "The final artifact passed all ten invariant acceptance checks, static safety, script parsing, desktop workflow, and true 390x844 no-overflow verification.",
+          "A two-set overlapping route produced one clash, updated the score and tradeoffs, and exported corrected 4:30p and 5p route times; the late boundary renders 11p–12a."
+        ]
+      }
+    },
+    {
+      "sourceRunId": "6a98e6ecec56a165",
+      "providerKey": "google",
+      "serviceLabel": "Gemini",
+      "modelLabel": "Gemini 3.1 Pro",
+      "modelSettings": "Gemini web; Pro mode.",
+      "operatorKind": "pathforge-labs-manual",
+      "operatorLabel": "PathForge Labs · Developer-operated",
+      "runRole": "comparison-run",
+      "qualityStatus": "verified",
+      "isCurrent": true,
+      "capturedAt": "2026-07-10T21:04:08.519Z",
+      "promptCount": 2,
+      "repairPromptCount": 1,
+      "packageFile": "model-variants/tiny-festival-set-time-clash-game-gemini-31-pro-source-run.json",
+      "packageSha256": "65705bd818b2983041b5dde70350c54cf51c5d84477c0f583bcdfdf20985be04",
+      "firstArtifactPath": "public/artifacts/tiny-festival-set-time-clash-game-gemini-31-pro-first-pass.html",
+      "finalArtifactPath": "public/artifacts/tiny-festival-set-time-clash-game-gemini-31-pro-final.html",
+      "artifactVersionPaths": [
+        "public/artifacts/tiny-festival-set-time-clash-game-gemini-31-pro-first-pass.html",
+        "public/artifacts/tiny-festival-set-time-clash-game-gemini-31-pro-final.html"
+      ],
+      "firstPassMetrics": {
+        "qualityScore": 88,
+        "artifactReady": true,
+        "hardGatesPassed": false,
+        "functionalChecks": {
+          "passed": 9,
+          "total": 10
+        },
+        "consoleErrorCount": 0,
+        "horizontalOverflowPx": 0,
+        "notes": [
+          "Fresh 390x844 and 1440x1000 measurements reported zero horizontal overflow and zero console errors.",
+          "The live workflow selected four route slots, reached 3/3 must-see acts, updated energy to 20%, loyalty to 100%, distance to 1.0 mi, and enabled the route export.",
+          "The first artifact failed one common safety check because act-card markup was appended through one dynamic innerHTML sink."
+        ]
+      },
+      "finalMetrics": {
+        "qualityScore": 97,
+        "artifactReady": true,
+        "hardGatesPassed": true,
+        "functionalChecks": {
+          "passed": 10,
+          "total": 10
+        },
+        "consoleErrorCount": 0,
+        "horizontalOverflowPx": 0,
+        "notes": [
+          "Fresh 390x844 and 1440x1000 measurements reported zero horizontal overflow and zero console errors, and the static hard-gate scan found no forbidden sink or dependency.",
+          "The live four-slot route workflow reached 3/3 must-see acts, updated all four tradeoff meters, enabled the completed-state export, and produced the previously verified 311-character route copy.",
+          "All four project checks and all six shared production checks passed."
+        ]
+      }
+    }
+  ]
+}

@@ -1,0 +1,136 @@
+{
+  "title": "Security-Cam Anomaly Timeline Game — Claude model variant",
+  "slug": "security-cam-anomaly-timeline-game-claude-fable-5-high",
+  "source_run_id": "4f090917-f268-4811-87b7-6c0598139caa",
+  "provider": "Claude",
+  "model": "Fable 5 High",
+  "model_settings": "Claude web; High reasoning.",
+  "source_url": "https://claude.ai/share/5a2ad723-2273-40ec-ba0c-579f69dcc705",
+  "run_started_at": "2026-07-10T20:40:00.517Z",
+  "run_finished_at": "2026-07-10T22:19:43.970Z",
+  "chain_type": "capture-recovery",
+  "prompt_count": 2,
+  "repair_prompt_count": 0,
+  "status": "published_model_variant",
+  "description": "A developer-operated Claude rerun of the canonical Security-Cam Anomaly Timeline Game brief, preserved as an auditable PathForge Labs model variant rather than a community fork.",
+  "agent_notes": [
+    "Provider: Claude.",
+    "Model used: Fable 5 High.",
+    "Model settings: Claude web; High reasoning.",
+    "PathForge Labs provenance: developer-operated comparison run; not a user, community fork, vote, bookmark, or engagement event.",
+    "Prompt count: 2. The opening response hit the provider usage limit before exposing an artifact; the second prompt was capture recovery, not a quality repair.",
+    "The first real artifact arrived on the recovery step and passed the complete acceptance contract without another prompt."
+  ],
+  "final_artifact_path": "public/artifacts/security-cam-anomaly-timeline-game-claude-fable-5-high-final.html",
+  "artifact_type": "html",
+  "artifact_versions": [
+    "public/artifacts/security-cam-anomaly-timeline-game-claude-fable-5-high-final.html"
+  ],
+  "generated_files": [
+    "public/artifacts/security-cam-anomaly-timeline-game-claude-fable-5-high-final.html"
+  ],
+  "artifact_sha256": "0ec250f1c60e0409084a8918528ba566a8bfaf20e30cf2f0070b935d20ea2823",
+  "artifact_version_notes": [
+    {
+      "path": "public/artifacts/security-cam-anomaly-timeline-game-claude-fable-5-high-final.html",
+      "sha256": "0ec250f1c60e0409084a8918528ba566a8bfaf20e30cf2f0070b935d20ea2823",
+      "bytes": 42778,
+      "lines": 1049,
+      "disposition": "First real artifact after usage-limit capture recovery; final verified artifact and default Claude version."
+    }
+  ],
+  "verification_notes": [
+    "The artifact's single inline script parsed successfully and the static scan found no remote dependency, network call, unsafe HTML sink, eval-like execution, inline handler, modal API, document.write, or deprecated clipboard token.",
+    "The full workflow logged the one intended anomaly in all 15 frames across three tapes, produced sequence feedback, unlocked answer reveal after two failed attempts, generated the shift report, and reset for replay.",
+    "Desktop measured 1660/1660 document width with zero overflow; true 390x844 measured 390/390 document and body width with zero overflow.",
+    "The final browser run recorded zero console errors."
+  ],
+  "verification_evidence": {
+    "schema_version": 1,
+    "verified_at": "2026-07-10T22:32:43.978Z",
+    "first_pass_metrics": {
+      "qualityScore": 98,
+      "artifactReady": true,
+      "hardGatesPassed": true,
+      "functionalChecks": {
+        "passed": 10,
+        "total": 10
+      },
+      "consoleErrorCount": 0,
+      "horizontalOverflowPx": 0,
+      "notes": [
+        "The opening response was usage-limit interrupted and preserved as a transcript-only status with no artifact claim.",
+        "The first real artifact arrived on the capture-recovery step and directly passed all four project checks plus six common checks, desktop and true 390x844 layout, and zero-console-error verification."
+      ]
+    },
+    "final_metrics": {
+      "qualityScore": 98,
+      "artifactReady": true,
+      "hardGatesPassed": true,
+      "functionalChecks": {
+        "passed": 10,
+        "total": 10
+      },
+      "consoleErrorCount": 0,
+      "horizontalOverflowPx": 0,
+      "notes": [
+        "The first real artifact required no quality repair: 15/15 anomaly detection, sequence feedback, deliberate reveal, shift report, replay, static safety, desktop, true 390x844, and zero-console-error checks all passed."
+      ]
+    }
+  },
+  "steps": [
+    {
+      "step_number": 1,
+      "title": "Request the invariant security-camera timeline game",
+      "prompt_exact": "Make me a playable security-cam anomaly timeline game I can save and open locally, where I review timestamped camera cards, spot odd details, and arrange the events into the correct sequence.",
+      "response_exact": "Architected retro CCTV aesthetic with corrupted timestamps and verification workflow",
+      "response_summary": "Claude began architecting the game, but the provider usage limit interrupted before any usable artifact was exposed.",
+      "generated_files": [],
+      "artifact_version_path": null,
+      "notes": "Exact visible status-only transcript preserved. No artifact is claimed for this step."
+    },
+    {
+      "step_number": 2,
+      "title": "Recover the interrupted artifact",
+      "prompt_exact": "Your last response stopped at the usage limit before presenting a usable artifact. Please finish the requested security-cam anomaly timeline game now and present one complete downloadable self-contained HTML file. Keep it fully offline and preserve the timestamp-card deduction, anomaly marking, sequence ordering, feedback, answer reveal, and replay or report workflow.",
+      "response_exact": "Now the syntax check and your scanner suite:The `\"use strict\"` pragma keeps eval'd vars scoped — stripping it for the test copy:The umbrella persists into later lobby frames but was flagged as a clickable anomaly everywhere. Gating it:**DEAD CHANNEL** — single self-contained HTML file, save it anywhere and open in a browser. Fully offline, zero external anything.\n\nThree tapes with corrupted timestamps: a break room theft (4 frames, tutorial — the wall clock still works), a loading dock heist (5 frames, the crate count is your calendar), and a lobby painting swap (6 frames, lamp states and elevator indicators). Each frame has exactly one clickable anomaly rendered as CSS scene art — finding it pays +100 and logs a note containing the sequencing clue; wild clicks cost 25 with a static jolt. Then you drag the frames into order via ▲▼, verify (150/slot first try, decaying to 50), and a reveal button unlocks after two failed attempts if you want the answer at zero points. Ends with a per-tape shift report and a desk rating out of 3750.\n\nVerified before delivery: `node --check` passed, exactly one anomaly per frame across all 15 events, valid non-identity shuffles, and the full scan came back clean — no innerHTML, no inline handlers, no modal APIs, no URL literals, no letter-spacing, no vw/clamp, no storage APIs, no fetch.",
+      "response_summary": "Claude completed and exposed the one-file Dead Channel security timeline game.",
+      "continuation_reason": "Source-capture recovery: the provider usage limit interrupted the opening response before any usable artifact was exposed.",
+      "generated_files": [
+        "public/artifacts/security-cam-anomaly-timeline-game-claude-fable-5-high-final.html"
+      ],
+      "artifact_version_path": "public/artifacts/security-cam-anomaly-timeline-game-claude-fable-5-high-final.html",
+      "notes": "First real artifact and final verified production artifact."
+    }
+  ],
+  "pathforge_submission_url": null,
+  "pathforge_pending_id": null,
+  "submission": null,
+  "comparison_basis": {
+    "opening_prompt_exact": "Make me a playable security-cam anomaly timeline game I can save and open locally, where I review timestamped camera cards, spot odd details, and arrange the events into the correct sequence.",
+    "acceptance_criteria": [
+      "Present timestamped security-camera cards with enough odd details to support a real deduction game.",
+      "Let the player mark anomalies and arrange the events into a coherent timeline using accessible controls.",
+      "Provide useful scoring or sequence feedback plus hints and a deliberate answer-reveal state.",
+      "Provide a replay, reset, or report workflow that makes the completed case inspectable.",
+      "Produce one complete self-contained HTML file that is immediately usable in a browser.",
+      "Operate offline with no external APIs, hosted generation, CDNs, remote fonts, scripts, stylesheets, or fragile dependencies.",
+      "Avoid unsafe HTML sinks, eval-like execution, inline event handlers, modal dialogs, and deprecated clipboard handling.",
+      "Avoid page-level horizontal overflow at 390 by 844 and at desktop width.",
+      "Keep essential controls visible, keyboard or touch reachable, and truthful about their current state.",
+      "Preserve exact prompt, response, source, and artifact-version evidence for the run."
+    ],
+    "adaptive_repair_policy": "Preserve and score the first real artifact. Continue only when verification proves a concrete defect or a source-capture failure; use the same source session and model; name the observed defect in ordinary language; preserve every real artifact version; stop as soon as the artifact passes; prefer no more than three total prompts and go beyond three only for a documented concrete lane reason such as a verification-proven regression, truncation, or mechanical capture failure.",
+    "independence_note": "Claude received the invariant brief in a fresh session and was not shown the historical implementation, screenshots, source code, or another provider's output."
+  },
+  "operator_provenance": {
+    "kind": "pathforge_labs_manual",
+    "label": "PathForge Labs · Developer-operated",
+    "canonical_project_id": "384ebd4d-88af-400b-b230-4eb771bb2194",
+    "canonical_route": "/security-cam-anomaly-timeline-game-demo",
+    "comparison_contract_version": "security-cam-anomaly-timeline-game-v1",
+    "comparison_contract_sha256": "84a1de64f4f02a0e6c13ce3563ca864f33bb56828bb461e2c5eb95b01dda9d1b",
+    "opening_prompt_sha256": "e4665f766dd67b50cda474856fd59e0020d8785a6422f22f1e42d47b7ff2b4fc",
+    "ordinary_fork": false
+  }
+}

@@ -4,19 +4,19 @@ import type {
   ProjectModelVariant,
   ProjectModelVariantSet,
 } from '@/lib/project-model-variants'
+import { compareModelVariantRecords } from '@/lib/model-variant-ui.mjs'
 
-const MODEL_LABEL_COLLATOR = new Intl.Collator('en', {
-  numeric: true,
-  sensitivity: 'base',
+const RUN_TIMESTAMP_FORMATTER = new Intl.DateTimeFormat('en', {
+  year: 'numeric',
+  month: 'short',
+  day: 'numeric',
+  hour: '2-digit',
+  minute: '2-digit',
+  second: '2-digit',
+  hourCycle: 'h23',
+  timeZone: 'UTC',
+  timeZoneName: 'short',
 })
-
-function compareModelVariants(left: ProjectModelVariant, right: ProjectModelVariant) {
-  return (
-    MODEL_LABEL_COLLATOR.compare(left.modelLabel, right.modelLabel) ||
-    MODEL_LABEL_COLLATOR.compare(left.serviceLabel, right.serviceLabel) ||
-    left.sourceRunId.localeCompare(right.sourceRunId)
-  )
-}
 
 function runHref(route: string, run: ProjectModelVariant, compare?: ProjectModelVariant | null) {
   const params = new URLSearchParams({ run: run.sourceRunId })
@@ -26,8 +26,31 @@ function runHref(route: string, run: ProjectModelVariant, compare?: ProjectModel
   return `${route}?${params.toString()}`
 }
 
+function viewRunHref(
+  variantSet: ProjectModelVariantSet,
+  run: ProjectModelVariant,
+) {
+  return run.sourceRunId === variantSet.defaultSourceRunId
+    ? variantSet.canonicalRoute
+    : runHref(variantSet.canonicalRoute, run)
+}
+
 function statusLabel(variant: ProjectModelVariant) {
   return variant.qualityStatus === 'verified' ? 'Verified' : 'Known issue'
+}
+
+function conciseModelSettings(variant: ProjectModelVariant) {
+  const settings = variant.modelSettings.trim()
+  if (settings.length <= 96) return settings
+  return 'Detailed model settings are preserved in the source evidence.'
+}
+
+function runTimestamp(variant: ProjectModelVariant) {
+  return RUN_TIMESTAMP_FORMATTER.format(new Date(variant.capturedAt))
+}
+
+function accessibleRunLabel(variant: ProjectModelVariant) {
+  return `${variant.modelLabel} on ${variant.serviceLabel}, captured ${runTimestamp(variant)}; source run ${variant.sourceRunId}`
 }
 
 function StatusBadge({ variant }: { variant: ProjectModelVariant }) {
@@ -48,21 +71,26 @@ function StatusBadge({ variant }: { variant: ProjectModelVariant }) {
 export default function PathForgeLabsModelRuns({
   variantSet,
   activeVariant,
+  compareSourceRunId,
 }: {
   variantSet: ProjectModelVariantSet
   activeVariant: ProjectModelVariant
+  compareSourceRunId?: string
 }) {
   const historicalVariant = variantSet.variants.find(
     (variant) => variant.runRole === 'historical-baseline',
   )
-  const orderedVariants = [...variantSet.variants].sort(compareModelVariants)
+  const orderedVariants = [...variantSet.variants].sort(compareModelVariantRecords)
 
   return (
     <aside
       className="relative w-full lg:w-[340px] lg:shrink-0"
       data-model-variant-selector
     >
-      <details className="group relative">
+      <details
+        key={`${activeVariant.sourceRunId}:${compareSourceRunId ?? ''}`}
+        className="group relative"
+      >
         <summary className="flex min-h-16 cursor-pointer list-none items-center justify-between gap-4 border border-surface-300 bg-white px-4 py-3 shadow-[0_8px_24px_rgba(15,23,42,0.06)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-blue">
           <div className="min-w-0">
             <div className="font-mono text-[9px] font-bold uppercase tracking-[0.16em] text-surface-500">
@@ -72,7 +100,10 @@ export default function PathForgeLabsModelRuns({
               <span className="truncate text-sm font-black text-surface-900">
                 {activeVariant.modelLabel}
               </span>
-              <span className="text-xs text-surface-500">{activeVariant.serviceLabel}</span>
+              <span className="text-xs text-surface-500">
+                {activeVariant.serviceLabel} ·{' '}
+                <time dateTime={activeVariant.capturedAt}>{runTimestamp(activeVariant)}</time>
+              </span>
             </div>
           </div>
           <span className="inline-flex shrink-0 items-center gap-1.5 font-mono text-[10px] font-bold uppercase tracking-[0.12em] text-brand-blue">
@@ -93,6 +124,13 @@ export default function PathForgeLabsModelRuns({
             {orderedVariants.map((variant) => {
               const isActive = variant.sourceRunId === activeVariant.sourceRunId
               const isDefault = variant.sourceRunId === variantSet.defaultSourceRunId
+              const releaseLabel = isDefault
+                ? 'Default'
+                : variant.isCurrent
+                  ? 'Latest'
+                  : variant.runRole === 'historical-baseline'
+                    ? 'Original'
+                    : 'Previous'
               return (
                 <div
                   key={variant.sourceRunId}
@@ -103,14 +141,16 @@ export default function PathForgeLabsModelRuns({
                     <div className="min-w-0">
                       <div className="flex flex-wrap items-center gap-2">
                         <span className="text-sm font-black text-surface-900">{variant.modelLabel}</span>
-                        {isDefault && (
+                        {releaseLabel && (
                           <span className="font-mono text-[8px] font-bold uppercase tracking-[0.12em] text-brand-orange-dark">
-                            Default
+                            {releaseLabel}
                           </span>
                         )}
                       </div>
                       <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-surface-500">
                         <span>{variant.serviceLabel}</span>
+                        <span aria-hidden="true">·</span>
+                        <time dateTime={variant.capturedAt}>{runTimestamp(variant)}</time>
                         <StatusBadge variant={variant} />
                       </div>
                     </div>
@@ -118,15 +158,16 @@ export default function PathForgeLabsModelRuns({
                     {isActive ? (
                       <span
                         aria-current="page"
+                        aria-label={`Viewing ${accessibleRunLabel(variant)}`}
                         className="border border-brand-blue/30 bg-white px-2.5 py-1.5 font-mono text-[9px] font-bold uppercase tracking-[0.12em] text-brand-blue"
                       >
-                        Current
+                        Viewing
                       </span>
                     ) : (
                       <div className="flex shrink-0 items-center gap-2">
                         <Link
-                          href={runHref(variantSet.canonicalRoute, variant)}
-                          aria-label={`View ${variant.modelLabel} run`}
+                          href={viewRunHref(variantSet, variant)}
+                          aria-label={`View ${accessibleRunLabel(variant)}`}
                           className="border border-brand-blue bg-brand-blue px-2.5 py-1.5 text-[11px] font-bold text-white hover:bg-brand-blue-dark"
                           data-model-variant-view
                         >
@@ -134,7 +175,7 @@ export default function PathForgeLabsModelRuns({
                         </Link>
                         <Link
                           href={runHref(variantSet.canonicalRoute, activeVariant, variant)}
-                          aria-label={`Compare ${activeVariant.modelLabel} with ${variant.modelLabel}`}
+                          aria-label={`Compare ${accessibleRunLabel(activeVariant)} with ${accessibleRunLabel(variant)}`}
                           className="border border-brand-orange/60 bg-white px-2.5 py-1.5 text-[11px] font-bold text-brand-orange-dark hover:bg-orange-50"
                           data-model-variant-compare
                         >
@@ -188,14 +229,20 @@ function ComparisonCard({
             Run {label}
           </div>
           <h3 className="mt-2 text-lg font-black text-surface-900">{variant.modelLabel}</h3>
-          <p className="mt-1 text-xs leading-5 text-surface-500">
-            {variant.serviceLabel} · {variant.modelSettings}
+          <p
+            className="mt-1 max-w-xl text-xs leading-5 text-surface-500"
+            title={variant.modelSettings}
+          >
+            {variant.serviceLabel} · <time dateTime={variant.capturedAt}>{runTimestamp(variant)}</time>
+            <br />
+            {conciseModelSettings(variant)}
           </p>
         </div>
         <StatusBadge variant={variant} />
       </div>
       <Link
-        href={runHref(variantSet.canonicalRoute, variant, otherVariant)}
+        href={`${runHref(variantSet.canonicalRoute, variant, otherVariant)}#final-result`}
+        aria-label={`Preview ${accessibleRunLabel(variant)} below`}
         className="mt-4 inline-flex border border-brand-blue/30 px-3 py-2 text-xs font-black text-brand-blue hover:bg-blue-50"
       >
         Preview run {label} below

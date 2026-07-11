@@ -1,15 +1,20 @@
 {
   "title": "Security-Cam Anomaly Timeline Game",
   "slug": "security-cam-anomaly-timeline-chatgpt-extra-high",
-  "description": "A one-prompt ChatGPT Extra High source run that produced an offline security-camera anomaly timeline game with timestamped camera cards, odd-detail marking, timeline ordering, scoring, hints, answer reveal, autosave, and copy/download report export.",
+  "description": "A one-prompt ChatGPT GPT-5.5 source run at Extra High reasoning that produced an offline security-camera anomaly timeline game with timestamped camera cards, odd-detail marking, timeline ordering, scoring, hints, answer reveal, autosave, and copy/download report export.",
   "provider": "ChatGPT",
-  "model": "Extra High",
-  "model_used": "Extra High",
-  "model_settings": "Normal ChatGPT web lane in logged-in Chrome; visible composer/model-control label selected before prompting: Extra High; no files, connectors, remote tools, custom settings, or OpenRouter fallback used. Extra High was selected to avoid recently repeated ChatGPT Instant/Medium labels while keeping the run on ChatGPT.",
-  "source_url": "https://chatgpt.com/c/6a2f739d-fffc-83ea-be11-e4d242207eb4",
-  "source_url_note": "Real logged-in ChatGPT conversation URL captured from Chrome. Package candidate only; not live imported or uploaded by this builder lane.",
+  "model": "GPT-5.5",
+  "model_used": "GPT-5.5",
+  "model_visible_selected_label": "Extra High",
+  "model_share_model_slug": "gpt-5-5-thinking",
+  "model_share_thinking_effort": "max",
+  "model_settings": "ChatGPT web; GPT-5.5 Thinking (public share model_slug: gpt-5-5-thinking); Intelligence: Extra High (public share thinking_effort: max). No files, connectors, remote tools, custom settings, or OpenRouter fallback used.",
+  "source_url": "https://chatgpt.com/share/6a517a82-8b00-83ea-97c4-8d709462926f",
+  "source_run_id": "2f2bfc9f-019a-4ff3-b51f-3270a7ea9eab",
+  "source_url_note": "Public ChatGPT share captured from the real source session. The share payload was rechecked before model-history release and records model_slug gpt-5-5-thinking with thinking_effort max.",
   "run_started_at": "2026-06-15T03:27:00Z",
   "run_finished_at": "2026-06-15T03:48:23Z",
+  "repair_prompt_count": 0,
   "chain_type": "one-shot",
   "category": "game",
   "difficulty": "beginner/intermediate",
@@ -25,13 +30,50 @@
   "status": "submitted_pending",
   "artifact_type": "html",
   "final_artifact_path": "public/artifacts/security-cam-anomaly-timeline-chatgpt-extra-high.html",
+  "artifact_sha256": "ac62d2d7afcc046f4919285b5ee9522d90cd363470df38292ce83fe899d9ad8e",
   "artifact_versions": [
     "public/artifacts/security-cam-anomaly-timeline-chatgpt-extra-high.html"
+  ],
+  "artifact_version_notes": [
+    {
+      "path": "public/artifacts/security-cam-anomaly-timeline-chatgpt-extra-high.html",
+      "sha256": "ac62d2d7afcc046f4919285b5ee9522d90cd363470df38292ce83fe899d9ad8e",
+      "bytes": 62309,
+      "lines": 1825,
+      "disposition": "Historical final artifact; canonical baseline version."
+    }
   ],
   "generated_files": [
     "public/artifacts/security-cam-anomaly-timeline-chatgpt-extra-high.html"
   ],
   "screenshots": [],
+  "verification_evidence": {
+    "schema_version": 1,
+    "verified_at": "2026-07-10T23:32:43.000Z",
+    "first_pass_metrics": {
+      "qualityScore": 96,
+      "artifactReady": true,
+      "hardGatesPassed": true,
+      "functionalChecks": { "passed": 10, "total": 10 },
+      "consoleErrorCount": 0,
+      "horizontalOverflowPx": 0,
+      "notes": [
+        "The one-shot case workflow exercised seven timestamped cards, move controls, anomaly marking, notes, scoring, hinting, reveal, replay, and report export.",
+        "It measured 390/390 and 1440/1440 with zero console errors."
+      ]
+    },
+    "final_metrics": {
+      "qualityScore": 96,
+      "artifactReady": true,
+      "hardGatesPassed": true,
+      "functionalChecks": { "passed": 10, "total": 10 },
+      "consoleErrorCount": 0,
+      "horizontalOverflowPx": 0,
+      "notes": [
+        "All ten contract checks passed, including sequence feedback, deliberate reveal, replay, and inspectable report output."
+      ]
+    }
+  },
   "verification_notes": [
     "Saved exact ChatGPT generated HTML from the response Code tab to public/artifacts/security-cam-anomaly-timeline-chatgpt-extra-high.html and evidence copy seed-runs/evidence/security-cam-anomaly-timeline-chatgpt-extra-high-code.html.",
     "Static scan found no http(s) URLs, CDN imports, remote fonts, external scripts/styles, fetch/XMLHttpRequest/WebSocket/EventSource calls, or API calls.",
@@ -88,13 +130,13 @@
   "admin_review_status": "queued_pending_review",
   "pass_recommendation": {
     "status": "pass",
-    "reason": "One-prompt ChatGPT Extra High package has exact prompt and exact copied visible response, a captured complete HTML Code-tab artifact, source inspiration notes, model/source metadata, clean static scans, local gameplay verification, no console errors, and measured 390px no-overflow proof."
+    "reason": "One-prompt ChatGPT GPT-5.5 package at Extra High reasoning has exact prompt and exact copied visible response, a captured complete HTML Code-tab artifact, source inspiration notes, model/source metadata, clean static scans, local gameplay verification, no console errors, and measured 390px no-overflow proof."
   },
   "source_run_notes": [
     "Provider: ChatGPT",
-    "Model used: Extra High",
-    "Model settings: Normal ChatGPT web lane in logged-in Chrome; visible composer/model-control label selected before prompting: Extra High; no files, connectors, remote tools, custom settings, or OpenRouter fallback used.",
-    "Source URL: https://chatgpt.com/c/6a2f739d-fffc-83ea-be11-e4d242207eb4",
+    "Model used: GPT-5.5",
+    "Model settings: ChatGPT web; GPT-5.5 Thinking (public share model_slug: gpt-5-5-thinking); Intelligence: Extra High (public share thinking_effort: max). No files, connectors, remote tools, custom settings, or OpenRouter fallback used.",
+    "Source URL: https://chatgpt.com/share/6a517a82-8b00-83ea-97c4-8d709462926f",
     "Prompt count and chain type: 1 prompt one-shot. No continuation or repair prompts sent.",
     "Source inspiration: PromptHero Top rank 7 FLUX CCTV/fish-eye/timestamp/static RPG-style scene prompt, URL https://prompthero.com/prompt/193baa13e5b-flux-flux-11-pro-rpg-style-macro-a-low-quality-cctv-camera-with-a-slightly-fish-eye-lens-effect-the-cameras-timestamp-and-static, visible signals 100 favorites and 6,340 views as supplied in the lane assignment. Demand signal only; no PromptHero prompt text copied and no outside engagement represented as PathForge engagement.",
     "PathForge-fit adaptation: offline deterministic security-cam anomaly timeline game with timestamped camera cards, anomaly marking, reorderable timeline, scoring, hints, answer reveal, autosave, and copy/download report export.",
@@ -104,5 +146,5 @@
     "Verification: static no-external/no-unsafe-sink scan passed; inline script parsed; Chrome local workflow verified nonblank render, seven cards, game controls, scoring/hint/reveal/report behavior, zero console warnings/errors, runtime inline handler count 0, and 390px headless iframe overflow false.",
     "Boundary: source-run package candidate only. No live PathForge import/upload, admin pending row, public page, approval, publish action, manual submission, prompt rows, prompt_steps rows, votes, comments, bookmarks, or forks were created."
   ],
-  "agent_notes": "Provider: ChatGPT\nModel used: Extra High\nModel settings: Normal ChatGPT web lane in logged-in Chrome; visible composer/model-control label selected before prompting: Extra High; no files, connectors, remote tools, custom settings, or OpenRouter fallback used.\nSource URL: https://chatgpt.com/c/6a2f739d-fffc-83ea-be11-e4d242207eb4\nPrompt count: 1. No continuation or repair prompts.\nFinal artifact: public/artifacts/security-cam-anomaly-timeline-chatgpt-extra-high.html.\nVerification: passed static no-external/no-unsafe-sink scan, script parse, Chrome local workflow test, zero console warnings/errors, and headless 390px no-overflow probe.\nImported pending source-run intake: 2f2bfc9f-019a-4ff3-b51f-3270a7ea9eab under pathforge-seed-264 / EvanTrace / Evan Trace. Manager retargeted from the builder's pathforge-seed-263 suggestion to avoid an older local package claim.\nBoundary: source-run intake only; no public page, approval, manual submission, prompt rows, prompt_steps rows, votes, comments, bookmarks, or forks created."
+  "agent_notes": "Provider: ChatGPT\nModel used: GPT-5.5\nModel settings: ChatGPT web; GPT-5.5 Thinking (public share model_slug: gpt-5-5-thinking); Intelligence: Extra High (public share thinking_effort: max). No files, connectors, remote tools, custom settings, or OpenRouter fallback used.\nSource URL: https://chatgpt.com/share/6a517a82-8b00-83ea-97c4-8d709462926f\nPrompt count: 1. No continuation or repair prompts.\nFinal artifact: public/artifacts/security-cam-anomaly-timeline-chatgpt-extra-high.html.\nVerification: passed static no-external/no-unsafe-sink scan, script parse, Chrome local workflow test, zero console warnings/errors, and headless 390px no-overflow probe.\nImported pending source-run intake: 2f2bfc9f-019a-4ff3-b51f-3270a7ea9eab under pathforge-seed-264 / EvanTrace / Evan Trace. Manager retargeted from the builder's pathforge-seed-263 suggestion to avoid an older local package claim.\nBoundary: source-run intake only; no public page, approval, manual submission, prompt rows, prompt_steps rows, votes, comments, bookmarks, or forks created."
 }

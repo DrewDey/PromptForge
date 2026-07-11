@@ -1,0 +1,252 @@
+{
+  "title": "T-Shirt Print Alignment Press Game — Claude model variant",
+  "slug": "t-shirt-print-alignment-press-game-claude-fable-5-high",
+  "source_run_id": "43f452e6-5d3a-43d9-b8ba-8108ecf9ca35",
+  "provider": "Claude",
+  "model": "Fable 5 High",
+  "model_settings": "Claude web; High reasoning.",
+  "source_url": "https://claude.ai/share/24807cac-f0ca-49b7-9bdc-831cf9a33c66",
+  "run_started_at": "2026-07-10T20:40:15.552Z",
+  "run_finished_at": "2026-07-10T22:53:59.500Z",
+  "chain_type": "capture-recovery-plus-repair",
+  "prompt_count": 7,
+  "repair_prompt_count": 5,
+  "status": "published_model_variant",
+  "description": "A developer-operated Claude rerun of the canonical T-Shirt Print Alignment Press Game brief, preserved as an auditable PathForge Labs model variant rather than a community fork.",
+  "agent_notes": [
+    "Provider: Claude.",
+    "Model used: Fable 5 High.",
+    "Model settings: Claude web; High reasoning.",
+    "PathForge Labs provenance: developer-operated comparison run; not a user, community fork, vote, bookmark, or engagement event.",
+    "Prompt count: 7. Step 2 recovered an opening response interrupted by the usage limit; steps 3-7 were verification-driven repairs for document.execCommand, independently measured viewport defects, and the repository verifier's final 429-vs-390 blocker.",
+    "Every real artifact version is preserved under public/artifacts; only the repository-verifier-passing final artifact is the default.",
+    "The extended chain is documented, evidence-preserving, and justified by concrete saved-file defects rather than speculative polishing."
+  ],
+  "final_artifact_path": "public/artifacts/t-shirt-print-alignment-press-game-claude-fable-5-high-final.html",
+  "artifact_type": "html",
+  "artifact_versions": [
+    "public/artifacts/t-shirt-print-alignment-press-game-claude-fable-5-high-capture-recovery.html",
+    "public/artifacts/t-shirt-print-alignment-press-game-claude-fable-5-high-execcommand-repair.html",
+    "public/artifacts/t-shirt-print-alignment-press-game-claude-fable-5-high-layout-repair-1.html",
+    "public/artifacts/t-shirt-print-alignment-press-game-claude-fable-5-high-layout-repair-2.html",
+    "public/artifacts/t-shirt-print-alignment-press-game-claude-fable-5-high-layout-repair-3.html",
+    "public/artifacts/t-shirt-print-alignment-press-game-claude-fable-5-high-final.html"
+  ],
+  "generated_files": [
+    "public/artifacts/t-shirt-print-alignment-press-game-claude-fable-5-high-capture-recovery.html",
+    "public/artifacts/t-shirt-print-alignment-press-game-claude-fable-5-high-execcommand-repair.html",
+    "public/artifacts/t-shirt-print-alignment-press-game-claude-fable-5-high-layout-repair-1.html",
+    "public/artifacts/t-shirt-print-alignment-press-game-claude-fable-5-high-layout-repair-2.html",
+    "public/artifacts/t-shirt-print-alignment-press-game-claude-fable-5-high-layout-repair-3.html",
+    "public/artifacts/t-shirt-print-alignment-press-game-claude-fable-5-high-final.html"
+  ],
+  "artifact_sha256": "4792542377be8df938b6918827db65d954f004aa6483e9df9bcc3b4ed87f07c8",
+  "artifact_version_notes": [
+    {
+      "path": "public/artifacts/t-shirt-print-alignment-press-game-claude-fable-5-high-capture-recovery.html",
+      "sha256": "a138b1f687bbde8defeac8c5fc7de2d10695ee2e6cae57a0dc477a738cbaff98",
+      "bytes": 36497,
+      "lines": 1055,
+      "disposition": "First real artifact after usage-limit capture recovery; core workflow worked, but static verification found document.execCommand and true 390px verification measured 21px of page overflow."
+    },
+    {
+      "path": "public/artifacts/t-shirt-print-alignment-press-game-claude-fable-5-high-execcommand-repair.html",
+      "sha256": "312d83fb614d0db30f980bc0bc714d6eecdd37fa1a5b123f995655339c18af90",
+      "bytes": 36424,
+      "lines": 1054,
+      "disposition": "Preserved safety repair; document.execCommand was removed, but true 390px verification still measured 21px of page overflow."
+    },
+    {
+      "path": "public/artifacts/t-shirt-print-alignment-press-game-claude-fable-5-high-layout-repair-1.html",
+      "sha256": "1e162809e5bb8860ae88c1835ce3b4d1d1ca03c4ec0bbcb17ed0e822c20de496",
+      "bytes": 36618,
+      "lines": 1063,
+      "disposition": "Preserved first layout repair; independent saved-file verification improved the page but still measured 6px of horizontal overflow."
+    },
+    {
+      "path": "public/artifacts/t-shirt-print-alignment-press-game-claude-fable-5-high-layout-repair-2.html",
+      "sha256": "25b33b4c2653371e1396684531008e1d2a0aa8199cc7c7d87fe141a5314abbf8",
+      "bytes": 37139,
+      "lines": 1084,
+      "disposition": "Preserved second layout repair; shirt and print-area internals were contained, but fresh verification exposed a remaining wrapper scroll contribution."
+    },
+    {
+      "path": "public/artifacts/t-shirt-print-alignment-press-game-claude-fable-5-high-layout-repair-3.html",
+      "sha256": "ca38e2feaf057f4b34ea0fb03ec68a1f36fa2f3b56ac4083e34581e749796244",
+      "bytes": 37300,
+      "lines": 1087,
+      "disposition": "Preserved prior final from the same source session; scripts/measure-html-artifacts.mjs measured 429px scroll width at the 390px mobile viewport, or 39px of horizontal overflow."
+    },
+    {
+      "path": "public/artifacts/t-shirt-print-alignment-press-game-claude-fable-5-high-final.html",
+      "sha256": "4792542377be8df938b6918827db65d954f004aa6483e9df9bcc3b4ed87f07c8",
+      "bytes": 37319,
+      "lines": 1087,
+      "disposition": "Final verified artifact and default Claude version; scripts/measure-html-artifacts.mjs reports mobile 390/390 and desktop 1440/1440 with zero overflow and zero console errors."
+    }
+  ],
+  "verification_notes": [
+    "The final artifact's single inline script parsed successfully and the static scan found no remote dependency, network call, unsafe HTML sink, eval-like execution, inline handler, modal API, document.write, or deprecated clipboard token.",
+    "The repository's exact scripts/measure-html-artifacts.mjs verifier reports mobile viewport 390, scroll width 390, overflow 0, console errors 0; desktop viewport 1440, scroll width 1440, overflow 0, console errors 0.",
+    "The final workflow added an icon, changed its glyph, used the nudge step and directional control, switched to Youth placement, ran press scoring, generated a 518-character order specification, and displayed the truthful copied status with zero console errors.",
+    "The superseded prior final remains selectable as layout-repair-3; the same repository verifier measured it at scroll width 429 in the 390px mobile viewport, or 39px of overflow.",
+    "The first real artifact directly measured 21px of overflow and contained document.execCommand. Intermediate versions remain preserved with each measured continuation reason."
+  ],
+  "verification_evidence": {
+    "schema_version": 1,
+    "verified_at": "2026-07-10T22:57:23.740Z",
+    "first_pass_metrics": {
+      "qualityScore": 82,
+      "artifactReady": true,
+      "hardGatesPassed": false,
+      "functionalChecks": {
+        "passed": 8,
+        "total": 10
+      },
+      "consoleErrorCount": 0,
+      "horizontalOverflowPx": 21,
+      "notes": [
+        "The opening response hit the provider usage limit and is preserved as transcript-only; the first real artifact arrived on the capture-recovery step.",
+        "Direct first-artifact verification passed all four project checks, one-file/offline behavior, evidence preservation, essential controls, desktop layout, and zero console errors.",
+        "Static verification found document.execCommand, and true 390x844 verification measured 411px document width for 21px of overflow; those two common checks failed."
+      ]
+    },
+    "final_metrics": {
+      "qualityScore": 98,
+      "artifactReady": true,
+      "hardGatesPassed": true,
+      "functionalChecks": {
+        "passed": 10,
+        "total": 10
+      },
+      "consoleErrorCount": 0,
+      "horizontalOverflowPx": 0,
+      "notes": [
+        "All four project checks and six common acceptance checks passed on the final saved artifact.",
+        "scripts/measure-html-artifacts.mjs directly reported mobile 390/390, overflow 0, console errors 0 and desktop 1440/1440, overflow 0, console errors 0 after its exact 350ms post-load wait.",
+        "The final workflow added an icon, changed its glyph, used the nudge controls, switched to Youth placement, scored the layout, generated a 518-character order spec, and displayed the successful copy status with zero console errors.",
+        "Static verification found no external dependency, network call, unsafe sink, eval-like execution, inline handler, modal API, document.write, document.execCommand, remote font, or JavaScript syntax error."
+      ]
+    }
+  },
+  "steps": [
+    {
+      "step_number": 1,
+      "title": "Request the invariant print-alignment game",
+      "prompt_exact": "Can you make me a self-contained T-shirt print alignment press game I can save as one HTML file, where I arrange text and icon blocks on a shirt mockup, check print-safe margins/readability, and copy an order-ready layout spec?",
+      "response_exact": "Architected interactive shirt mockup with draggable blocks, scoring system, and spec export",
+      "response_summary": "Claude began architecting the game, but the provider usage limit interrupted before any usable artifact was exposed.",
+      "generated_files": [],
+      "artifact_version_path": null,
+      "notes": "Exact visible status-only transcript preserved. No artifact is claimed for this step."
+    },
+    {
+      "step_number": 2,
+      "title": "Recover the interrupted print artifact",
+      "prompt_exact": "Your last response stopped at the usage limit before presenting a usable artifact. Please finish the requested T-shirt print alignment press game now and present one complete downloadable self-contained HTML file. Keep it fully offline and preserve the movable text and icon blocks, print-safe margin, overlap and readability checks, narrow-screen placement controls, and order-ready specification.",
+      "response_exact": "Now running the compliance scan against your static analysis constraints:Everything functions — one wording redundancy in the spec (\"Left chest (left chest)\") to fix, and let me eyeball the render:Done — **PRESS CHECK** is one self-contained HTML file, fully offline, styled like a screen-print shop job ticket with CMYK registration crosshairs marking the print area corners.\n\nWhat's in it:\n\n- **Blocks**: text blocks (Impact-style shirt type) and icon blocks (10 glyphs), draggable with pointer/touch, plus arrow-key nudging (0.05\" fine / Shift for 0.25\") and an on-screen nudge pad for narrow screens with a toggleable step size\n- **Setup**: 6 shirt colors, 8 plastisol-style inks, three placements (12×16 standard, 10×12 youth, 4×4 left chest)\n- **Press check scoring** out of 100: registration inside the 0.75\" safe margin (40), print-scale readability minimums (30), ink-vs-garment contrast ratio (20), horizontal balance (10), with overlap/trap deductions — violating blocks get flagged red on the platen, and you get a grade stamp from PRESS READY down to MISPRINT with session-best tracking\n- **Order spec**: plain-text output with garment, placement, per-element ink/height/position/footprint in inches from print-area origin, distinct ink count, and the press check score — copy button with a select-and-fallback path since clipboard access can fail on `file://`\n\nScanner verification ran clean on all seven checks: no innerHTML/insertAdjacent, no inline handlers, no modal APIs, no URL literals (that's why icons are unicode glyphs instead of SVG — SVG needs an xmlns URL), no letter-spacing, no vw/clamp sizing, no external tags. Runtime smoke test passed with zero console errors: drag-to-violation correctly dropped the score from 95 to 70 and flagged the block, nudge pad and area/shirt switching worked, spec generated with positions.",
+      "response_summary": "Claude completed and exposed the first one-file Press Check game.",
+      "continuation_reason": "Source-capture recovery: the provider usage limit interrupted the opening response before any usable artifact was exposed.",
+      "generated_files": [
+        "public/artifacts/t-shirt-print-alignment-press-game-claude-fable-5-high-capture-recovery.html"
+      ],
+      "artifact_version_path": "public/artifacts/t-shirt-print-alignment-press-game-claude-fable-5-high-capture-recovery.html",
+      "notes": "First real artifact. Core workflow worked, but verification found document.execCommand and 21px of true-390 overflow."
+    },
+    {
+      "step_number": 3,
+      "title": "Remove the deprecated copy fallback",
+      "prompt_exact": "I tested the downloaded file and found one concrete safety issue: the Copy spec fallback still calls document.execCommand, and our public artifact verifier rejects that deprecated token. Remove document.execCommand entirely; use navigator.clipboard when available and otherwise focus and select the visible order-spec textarea so I can copy it manually. Keep the drag/nudge controls, safe margins, overlap/readability scoring, narrow-screen controls, order-ready spec, offline behavior, and current design unchanged, then return the complete corrected self-contained HTML file.",
+      "response_exact": "Fixed. `document.execCommand` is gone entirely — the copy flow is now: try `navigator.clipboard.writeText`, and if it's unavailable or rejects, focus the spec textarea, select the full contents, and toast \"Spec selected — press Ctrl+C (Cmd+C) to copy.\"\n\nVerification on the corrected file:\n\n- Scanner clean across all checks, including a new explicit `execCommand` grep (zero hits), plus the original seven: no innerHTML, no inline handlers, no modal APIs, no URL literals, no letter-spacing, no vw/clamp, no external tags\n- Runtime test forced the fallback path by nulling `navigator.clipboard` — result: textarea took focus, all 396 spec characters selected, correct toast shown, zero console errors, and press check still scores normally afterward\n\nEverything else — drag, nudge pad, keyboard nudging, safe margins, overlap/readability/contrast/balance scoring, mobile layout, offline behavior, and the design — is untouched.",
+      "response_summary": "Claude removed document.execCommand and returned the complete corrected file.",
+      "continuation_reason": "Verification-proven defect: the Copy spec fallback used document.execCommand, which failed the public artifact safety gate.",
+      "generated_files": [
+        "public/artifacts/t-shirt-print-alignment-press-game-claude-fable-5-high-execcommand-repair.html"
+      ],
+      "artifact_version_path": "public/artifacts/t-shirt-print-alignment-press-game-claude-fable-5-high-execcommand-repair.html",
+      "notes": "Safety repair preserved. Subsequent true-390 verification still measured 21px of overflow."
+    },
+    {
+      "step_number": 4,
+      "title": "Repair the measured 21px mobile overflow",
+      "prompt_exact": "I tested the corrected file at a true 390×844 phone viewport and found one concrete layout defect: the document is 411px wide, so 21px spills horizontally and the header and platen are clipped on the right. Please make the entire page fit within a 390px viewport with zero horizontal overflow, including the job-ticket header, ink/type panel, platen, and press-check/spec area. Keep every current feature and the document.execCommand removal unchanged, then return the complete corrected self-contained HTML file.",
+      "response_exact": "Fixed. The overflow came from the platen panel: 26px platen padding on each side plus the 340px shirt container plus panel/main padding stacked to 424px. The ≤560px breakpoint now tightens main and panel padding to 10px, platen padding to 8px, and sizes the shirt at 329px wide with a 0.70 scale, so the whole stack fits with room to spare.\n\nMeasured verification, not eyeballed:\n\n- **390×844**: `document.scrollWidth` = 390 exactly, zero elements extending past the right edge, no console errors\n- Also checked **360px** and **320px** viewports (doc width matches viewport at both) and **1280px desktop** (unchanged three-column layout)\n- Mobile feature regression on the same run: add icon block, nudge pad, press check scoring, and the clipboard-less copy fallback (textarea focused + selected, correct toast) all pass\n- Full scanner re-run clean: no execCommand, no innerHTML, no inline handlers, no modal APIs, no URL literals, no letter-spacing, no vw/clamp, and JS syntax verified\n\nEverything else is byte-for-byte the same behavior — only the small-screen CSS block changed.",
+      "response_summary": "Claude tightened the narrow-screen layout and returned another complete file.",
+      "continuation_reason": "Verification-proven defect: true 390x844 measurement reported document width 411px, or 21px of horizontal overflow.",
+      "generated_files": [
+        "public/artifacts/t-shirt-print-alignment-press-game-claude-fable-5-high-layout-repair-1.html"
+      ],
+      "artifact_version_path": "public/artifacts/t-shirt-print-alignment-press-game-claude-fable-5-high-layout-repair-1.html",
+      "notes": "Preserved layout repair. Independent saved-file verification still measured 396px document width, or 6px of overflow."
+    },
+    {
+      "step_number": 5,
+      "title": "Contain the residual mockup overflow",
+      "prompt_exact": "I rechecked the new download at a true 390×844 phone viewport. The document still measures 396px, so there is 6px of horizontal overflow. I traced the remainder to the shirt mockup: #shirt reports scrollWidth 399 versus clientWidth 329, and #printArea reports 319 versus 310, likely from the scaled sleeve or registration-mark geometry. Please contain that decorative overflow without clipping the visible shirt design or movable blocks, and verify both document and body scrollWidth are exactly 390 at a true 390px viewport. Preserve every feature and the earlier safety fixes, then return the complete corrected self-contained HTML file.",
+      "response_exact": "Contained at the source, not masked. Three changes:\n\n1. **Sleeves**: they sat at `left/right: -6px`, and their 24° rotation bounding boxes extended ~29px past the shirt container — that was the bulk of `#shirt`'s 470→399 mismatch. They're now at `left/right: 30px`, which keeps the full rotated bounding box inside the 470px container. `#shirt` now reports scrollWidth 470 / clientWidth 470 — zero internal overflow, and the silhouette still reads the same (screenshot-verified on desktop and mobile).\n\n2. **Registration marks**: the 9px corner overhang came from marks positioned at `-9px` inside `#printArea`. They now live in a dedicated `#regFrame` sibling sized 18px larger than the print area on all sides, with marks at its corners using zero negative offsets. `applyArea` positions the frame alongside the print area, so it tracks placement changes. `#printArea` now reports 310/310 exactly.\n\n3. **Mobile scaling**: `#shirt` keeps its natural 470×520 layout inside a `#shirtScale` wrapper with `overflow: hidden` sized to the exact scaled footprint (329×364 at 0.70) — and since nothing inside the shirt extends past its own bounds anymore, that clip removes nothing visible. Added a ≤356px breakpoint (0.55 scale) so even 320px viewports fit exactly.\n\nMeasured results: document **and** body scrollWidth are exactly 390 at a true 390×844 viewport, with zero elements past the right edge — and the same exact-match holds at 360 and 320. Full mobile regression on the same run passed: add/drag/glyph/nudge, area and shirt-color switching, press check scoring, clipboard-less copy fallback, and the spec correctly reflecting the changed placement. Compliance scan clean including the execCommand check.",
+      "response_summary": "Claude contained shirt and registration-mark internals and returned another complete file.",
+      "continuation_reason": "Verification-proven defect: the prior saved file still measured 396px at the true 390px viewport; shirt and print-area scroll geometry identified the residual source.",
+      "generated_files": [
+        "public/artifacts/t-shirt-print-alignment-press-game-claude-fable-5-high-layout-repair-2.html"
+      ],
+      "artifact_version_path": "public/artifacts/t-shirt-print-alignment-press-game-claude-fable-5-high-layout-repair-2.html",
+      "notes": "Preserved containment repair. Fresh verification exposed a remaining wrapper scroll contribution."
+    },
+    {
+      "step_number": 6,
+      "title": "Remove the scale wrapper's scroll contribution",
+      "prompt_exact": "I tested the latest saved file after a fresh reload at a true 390×844 viewport. The page still measures 410px wide, so there is 20px of horizontal overflow. The shirt and print-area internals now match their client widths, but #shirtScale is the remaining offender: it is 329px wide while scrollWidth remains 470 even with overflow:hidden. Please fix the actual page scroll contribution—for example by taking the transformed 470px shirt out of normal layout inside a fixed 329×364 clipping wrapper and/or using overflow:clip—so documentElement and body scrollWidth both read exactly 390 after a fresh reload. Keep the full visible shirt, movable blocks, and every prior safety and workflow fix, then return the complete corrected self-contained HTML file.",
+      "response_exact": "Applied both techniques you named, together:\n\n- `#shirt` is now `position: absolute; left: 0; top: 0` inside `#shirtScale`, taking the transformed 470px box out of normal layout\n- `#shirtScale` is `position: relative` with `overflow: hidden` declared first as the fallback, then `overflow: clip` overriding it in supporting engines — with `clip`, the wrapper is not a scroll container at all, so its content produces no scrollable overflow rather than merely hidden overflow\n\nMeasured after a **fresh reload** at each viewport (loaded, then reloaded, then measured, matching your test flow):\n\n- **390×844**: `documentElement.scrollWidth` = 390, `body.scrollWidth` = 390, and critically `#shirtScale` now reports scrollWidth 329 / clientWidth 329 — the 470 contribution is gone at the source, not masked. Zero elements past the right edge.\n- Same exact-match at **360** (360/360, wrapper 329/329) and **320** (320/320, wrapper 259/259), and desktop unchanged at 1280 with the wrapper at its full 470/470.\n- `#shirt` internals stay 470/470 and `#printArea` stays 310/310 from the previous fixes.\n\nRegression on the same run: full shirt renders unclipped at 390 (screenshot-verified), drag and nudge work, press check scores correctly on both mobile and desktop, the clipboard-less copy fallback still focuses and selects the spec, and the compliance scan is clean — no execCommand, no innerHTML, no inline handlers, no modal APIs, no URL literals, no letter-spacing, no vw/clamp. Only the two CSS rules changed; everything else is untouched.",
+      "response_summary": "Claude took the transformed shirt out of normal layout, clipped the fixed wrapper, and returned another complete file.",
+      "continuation_reason": "Verification-proven defect: the 329px scale wrapper retained a 470px scrollable child and the fresh saved page still reported nonzero horizontal overflow.",
+      "generated_files": [
+        "public/artifacts/t-shirt-print-alignment-press-game-claude-fable-5-high-layout-repair-3.html"
+      ],
+      "artifact_version_path": "public/artifacts/t-shirt-print-alignment-press-game-claude-fable-5-high-layout-repair-3.html",
+      "notes": "Preserved prior final. scripts/measure-html-artifacts.mjs subsequently measured 429px scroll width at the 390px mobile viewport, requiring one final same-session repair."
+    },
+    {
+      "step_number": 7,
+      "title": "Pass the repository's exact true-mobile verifier",
+      "prompt_exact": "I ran the saved file through our repository’s production verifier. It opens the file in headless Chrome, emulates a true mobile 390×844 viewport, waits 350 ms after the page load event, and then measures the larger of documentElement.scrollWidth and body.scrollWidth. It reports 429px, so the page still has 39px of horizontal overflow; the 1440px desktop check reports zero. Please repair the actual saved file so that this exact verifier returns 390px with zero horizontal overflow and zero console errors on mobile, without hiding or clipping any usable shirt, movable block, control, or order spec. Keep every existing workflow and safety fix, then return the complete corrected self-contained HTML file.",
+      "response_exact": "Let me reproduce that exact verifier — true mobile emulation (mobile UA, touch, DPR) rather than just a resized window — and find the 39px:Reproduced — layout viewport expanded to 493. Finding which element forces that width:Verifier metric reads exactly 390 now. Running the complete matrix — mobile emulation with full feature regression, plus the 1440 desktop check:Found it — and it explains why my earlier resized-window tests passed while your verifier failed. Under **true mobile emulation**, Chrome's mobile viewport heuristic computed a content width that included the clipped 470px shirt box and expanded the *layout viewport itself* (I reproduced 493px; your 429 is the same mechanism with slightly different accounting). `documentElement.scrollWidth` then reports the expanded viewport, so it's a viewport-sizing issue, not a stray wide element — that's also why the desktop check was clean. The fix is one token: `minimum-scale=1.0` added to the viewport meta, which pins the layout viewport to device width; `initial-scale` alone doesn't prevent Chrome's zoom-out-to-fit behavior.\n\nVerified under your verifier's exact conditions — headless Chrome, mobile emulation (390×844, touch, DPR 3), waiting 350ms after the load event, measuring `max(documentElement.scrollWidth, body.scrollWidth)`:\n\n- **Mobile verifier metric: 390 exactly**, zero elements past the viewport edge, zero console errors — and it stays 390 after a full interaction pass on the same page\n- **1440 desktop: 1440 exactly**, zero console errors, press check scoring normal\n- Plain (non-emulated) 390/360/320 viewports all still measure exactly their width\n\nNothing is hidden or clipped: the full shirt, sleeves, and regmarks render as before, and the touch regression on the emulated device confirmed everything usable works — add icon, glyph swap, drag, nudge pad with step toggle, press check (scored 95, PRESS READY stamp), and the clipboard-less copy fallback selecting the full spec. The meta tag adds only `minimum-scale` — no `maximum-scale`, no `user-scalable=no` — so pinch-zoom-in accessibility is untouched. Compliance scan clean: no execCommand, no innerHTML, no inline handlers, no modal APIs, no URL literals, no letter-spacing, no vw/clamp. The viewport meta is the only changed line.",
+      "response_summary": "Claude reproduced the headless true-mobile viewport expansion, added minimum-scale=1.0 to the viewport declaration, and returned the complete corrected file.",
+      "continuation_reason": "Verification-proven defect: scripts/measure-html-artifacts.mjs measured the prior saved final at scroll width 429 in a 390px true-mobile viewport, or 39px of horizontal overflow, while desktop passed.",
+      "generated_files": [
+        "public/artifacts/t-shirt-print-alignment-press-game-claude-fable-5-high-final.html"
+      ],
+      "artifact_version_path": "public/artifacts/t-shirt-print-alignment-press-game-claude-fable-5-high-final.html",
+      "notes": "Final verified production artifact. The exact repository measurement script reports zero mobile and desktop overflow and zero console errors."
+    }
+  ],
+  "pathforge_submission_url": null,
+  "pathforge_pending_id": null,
+  "submission": null,
+  "comparison_basis": {
+    "opening_prompt_exact": "Can you make me a self-contained T-shirt print alignment press game I can save as one HTML file, where I arrange text and icon blocks on a shirt mockup, check print-safe margins/readability, and copy an order-ready layout spec?",
+    "acceptance_criteria": [
+      "Provide a recognizable shirt mockup with movable text and icon blocks rather than a static form only.",
+      "Score or flag print-safe margins, alignment, overlap, and readability from the current layout.",
+      "Make placement usable with pointer and narrow-screen controls without trapping the design off canvas.",
+      "Provide a truthful copyable or downloadable order-ready production specification.",
+      "Produce one complete self-contained HTML file that is immediately usable in a browser.",
+      "Operate offline with no external APIs, hosted generation, CDNs, remote fonts, scripts, stylesheets, or fragile dependencies.",
+      "Avoid unsafe HTML sinks, eval-like execution, inline event handlers, modal dialogs, and deprecated clipboard handling.",
+      "Avoid page-level horizontal overflow at 390 by 844 and at desktop width.",
+      "Keep essential controls visible, keyboard or touch reachable, and truthful about their current state.",
+      "Preserve exact prompt, response, source, and artifact-version evidence for the run."
+    ],
+    "adaptive_repair_policy": "Preserve and score the first real artifact. Continue only when verification proves a concrete defect or a source-capture failure; use the same source session and model; name the observed defect in ordinary language; preserve every real artifact version; stop as soon as the artifact passes; prefer no more than three total prompts and go beyond three only for a documented concrete lane reason such as a verification-proven regression, truncation, or mechanical capture failure.",
+    "independence_note": "Claude received the invariant brief in a fresh session and was not shown the historical implementation, screenshots, source code, or another provider's output."
+  },
+  "operator_provenance": {
+    "kind": "pathforge_labs_manual",
+    "label": "PathForge Labs · Developer-operated",
+    "canonical_project_id": "17c42c87-3709-4d5e-9ae3-d4ac4807bc4c",
+    "canonical_route": "/t-shirt-print-alignment-press-game-demo",
+    "comparison_contract_version": "t-shirt-print-alignment-press-game-v1",
+    "comparison_contract_sha256": "98535f10ca5f59db341c63ecaf7403f3a5eddf193008d9af1efad70ead116cb5",
+    "opening_prompt_sha256": "5afb342fcf8ff3e88af7c6321fcb89884073a79c02918b04f72cc6e05b2089d3",
+    "ordinary_fork": false
+  }
+}

@@ -1,0 +1,788 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>First-Principles Claim Ladder</title>
+<style>
+  :root{
+    --ink:#101828;
+    --field:#1b2440;
+    --field-deep:#141b31;
+    --rail:#8fa3cc;
+    --chalk:#e8edf7;
+    --chalk-dim:#a9b6d3;
+    --amber:#f5a83c;
+    --amber-deep:#c77f1a;
+    --mint:#4fd6a3;
+    --coral:#f0645c;
+    --paper:#faf7ef;
+    --paper-ink:#2a2a26;
+    --card:#232e52;
+    --card-edge:#33406e;
+    --radius:10px;
+    --mono:ui-monospace, "Cascadia Mono", Consolas, "SF Mono", Menlo, monospace;
+    --sans:system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%}
+  body{
+    font-family:var(--sans);
+    background:
+      repeating-linear-gradient(0deg, transparent 0 39px, rgba(143,163,204,0.07) 39px 40px),
+      repeating-linear-gradient(90deg, transparent 0 39px, rgba(143,163,204,0.07) 39px 40px),
+      var(--field);
+    color:var(--chalk);
+    min-height:100%;
+    padding:24px 16px 80px;
+  }
+  .wrap{max-width:1180px;margin:0 auto}
+
+  header{margin-bottom:22px}
+  .eyebrow{
+    font-family:var(--mono);
+    font-size:12px;
+    color:var(--amber);
+    text-transform:uppercase;
+    margin-bottom:6px;
+  }
+  h1{
+    font-size:34px;
+    font-weight:800;
+    line-height:1.05;
+    color:var(--chalk);
+  }
+  h1 .thin{font-weight:300;color:var(--chalk-dim)}
+  .sub{margin-top:8px;color:var(--chalk-dim);font-size:14px;max-width:62ch}
+
+  .panel{
+    background:var(--field-deep);
+    border:1px solid var(--card-edge);
+    border-radius:var(--radius);
+    padding:16px;
+  }
+
+  /* plan bar */
+  .planbar{display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;margin-bottom:20px}
+  .planbar .grow{flex:1 1 340px}
+  label{
+    display:block;
+    font-family:var(--mono);
+    font-size:11px;
+    text-transform:uppercase;
+    color:var(--chalk-dim);
+    margin-bottom:5px;
+  }
+  input[type="text"], textarea, select{
+    width:100%;
+    background:#0f1526;
+    border:1px solid var(--card-edge);
+    border-radius:6px;
+    color:var(--chalk);
+    font-family:var(--sans);
+    font-size:15px;
+    padding:10px 12px;
+  }
+  textarea{resize:vertical;min-height:64px}
+  input:focus, textarea:focus, select:focus, button:focus{
+    outline:2px solid var(--amber);
+    outline-offset:2px;
+  }
+
+  button{
+    font-family:var(--sans);
+    font-size:14px;
+    font-weight:600;
+    border:1px solid var(--card-edge);
+    border-radius:6px;
+    background:#2a3560;
+    color:var(--chalk);
+    padding:10px 14px;
+    cursor:pointer;
+  }
+  button:hover{background:#33406e}
+  button.primary{background:var(--amber);border-color:var(--amber-deep);color:#241a05}
+  button.primary:hover{background:#ffbb55}
+  button.ghost{background:transparent}
+  button.small{font-size:12px;padding:6px 9px}
+  button:disabled{opacity:0.45;cursor:not-allowed}
+
+  /* layout */
+  .grid{display:grid;grid-template-columns:340px 1fr;gap:20px}
+  @media (max-width:900px){.grid{grid-template-columns:1fr}}
+
+  /* forge */
+  .forge h2, .laddercol h2, .receiptcol h2{
+    font-size:15px;
+    font-weight:700;
+    margin-bottom:12px;
+    display:flex;
+    align-items:center;
+    gap:8px;
+  }
+  .forge h2::before{content:"⚒";color:var(--amber)}
+  .fieldrow{margin-bottom:12px}
+  .typegrid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px}
+  .typebtn{
+    text-align:left;
+    font-size:13px;
+    padding:9px 10px;
+    border-radius:6px;
+    background:#0f1526;
+  }
+  .typebtn .tname{display:block;font-weight:700}
+  .typebtn .tdesc{display:block;font-size:11px;color:var(--chalk-dim);margin-top:2px}
+  .typebtn[aria-pressed="true"]{border-color:var(--amber);background:#2b2410}
+  .loadrow{display:flex;align-items:center;gap:8px;margin-bottom:12px}
+  .loadrow input{width:auto}
+  .loadrow span{font-size:13px;color:var(--chalk-dim)}
+
+  /* scoreboard */
+  .score{margin-top:20px}
+  .score h2::before{content:"▲"}
+  .meterwrap{background:#0f1526;border:1px solid var(--card-edge);border-radius:6px;height:22px;overflow:hidden;margin:8px 0}
+  .meterfill{height:100%;width:0%;background:var(--amber);transition:width 0.4s ease, background-color 0.4s ease}
+  .verdict{
+    font-family:var(--mono);
+    font-size:20px;
+    font-weight:700;
+    margin-top:6px;
+  }
+  .verdict.holds{color:var(--mint)}
+  .verdict.shaky{color:var(--amber)}
+  .verdict.collapses{color:var(--coral)}
+  .scorenote{font-size:12px;color:var(--chalk-dim);margin-top:6px;line-height:1.5}
+
+  /* ladder */
+  .laddercol h2::before{content:"┃┃";color:var(--rail);font-family:var(--mono)}
+  .ladder{position:relative;padding-left:34px}
+  .ladder::before, .ladder::after{
+    content:"";
+    position:absolute;
+    top:0;bottom:0;
+    width:4px;
+    background:var(--rail);
+    border-radius:2px;
+    opacity:0.55;
+  }
+  .ladder::before{left:6px}
+  .ladder::after{left:22px}
+  .rung{
+    position:relative;
+    border:1px dashed var(--card-edge);
+    border-radius:var(--radius);
+    padding:12px;
+    margin-bottom:16px;
+    min-height:74px;
+    background:rgba(15,21,38,0.6);
+  }
+  .rung::before{
+    content:"";
+    position:absolute;
+    left:-28px;
+    top:26px;
+    width:26px;
+    height:4px;
+    background:var(--rail);
+    border-radius:2px;
+    opacity:0.55;
+  }
+  .runghead{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px;gap:8px;flex-wrap:wrap}
+  .rungname{font-family:var(--mono);font-size:12px;text-transform:uppercase;color:var(--amber)}
+  .rungq{font-size:12px;color:var(--chalk-dim);font-style:italic}
+  .rung.deck .rungname{color:var(--chalk-dim)}
+
+  /* cards */
+  .card{
+    background:var(--card);
+    border:1px solid var(--card-edge);
+    border-left:5px solid var(--rail);
+    border-radius:8px;
+    padding:10px 12px;
+    margin-bottom:10px;
+  }
+  .card.t-claim{border-left-color:var(--amber)}
+  .card.t-assumption{border-left-color:#b48ce8}
+  .card.t-evidence{border-left-color:var(--mint)}
+  .card.t-experiment{border-left-color:#6ab7ff}
+  .cardtop{display:flex;justify-content:space-between;gap:8px;align-items:flex-start}
+  .cardtype{
+    font-family:var(--mono);
+    font-size:10px;
+    text-transform:uppercase;
+    color:var(--chalk-dim);
+  }
+  .cardtype .lb{color:var(--coral);font-weight:700}
+  .cardtext{font-size:14px;margin:6px 0 10px;line-height:1.45;overflow-wrap:anywhere}
+  .cardbtns{display:flex;gap:6px;flex-wrap:wrap}
+  .statusbtn[aria-pressed="true"].s-holds{background:#123c2d;border-color:var(--mint);color:var(--mint)}
+  .statusbtn[aria-pressed="true"].s-shaky{background:#3c2f10;border-color:var(--amber);color:var(--amber)}
+  .statusbtn[aria-pressed="true"].s-collapsed{background:#3c1613;border-color:var(--coral);color:var(--coral)}
+  .challenge{
+    margin-top:10px;
+    border-top:1px dashed var(--card-edge);
+    padding-top:10px;
+  }
+  .challenge p{font-size:13px;color:var(--amber);margin-bottom:6px}
+  .challenge .hint{font-size:11px;color:var(--chalk-dim);margin-top:4px}
+  .challenge .actions{display:flex;gap:6px;margin-top:8px}
+  .answers{margin-top:8px}
+  .answers details{font-size:12px;color:var(--chalk-dim)}
+  .answers summary{cursor:pointer;font-family:var(--mono);font-size:11px}
+  .answers li{margin:4px 0 4px 18px;line-height:1.4}
+  .empty{font-size:12px;color:var(--chalk-dim);font-style:italic}
+
+  /* receipt */
+  .receiptcol{margin-top:20px}
+  .receiptcol h2::before{content:"✂";color:var(--chalk-dim)}
+  .receipt{
+    background:var(--paper);
+    color:var(--paper-ink);
+    font-family:var(--mono);
+    font-size:12px;
+    line-height:1.55;
+    padding:18px 16px 26px;
+    border-radius:2px;
+    white-space:pre-wrap;
+    overflow-wrap:anywhere;
+    max-height:420px;
+    overflow-y:auto;
+    box-shadow:0 6px 18px rgba(0,0,0,0.35);
+    position:relative;
+  }
+  .receipt::after{
+    content:"";
+    position:absolute;
+    left:0;right:0;bottom:0;height:12px;
+    background:
+      linear-gradient(-45deg, transparent 6px, var(--paper) 0) 0 0 / 12px 12px repeat-x,
+      linear-gradient(45deg, transparent 6px, var(--paper) 0) 0 0 / 12px 12px repeat-x;
+    background-position:bottom;
+    transform:translateY(100%);
+  }
+  .receiptbtns{display:flex;gap:8px;margin:14px 0;flex-wrap:wrap}
+  .toast{
+    font-family:var(--mono);
+    font-size:12px;
+    color:var(--mint);
+    min-height:18px;
+    margin-top:4px;
+  }
+  .toast.err{color:var(--coral)}
+  .manualcopy{margin:10px 0}
+  .manualcopy.hidden{display:none}
+  .manualcopy textarea{
+    font-family:var(--mono);
+    font-size:12px;
+    min-height:120px;
+  }
+
+  @media (prefers-reduced-motion: reduce){
+    *{transition:none !important;animation:none !important}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="eyebrow">Reasoning Rig · No. 001</div>
+    <h1>FIRST-PRINCIPLES <span class="thin">CLAIM LADDER</span></h1>
+    <p class="sub">Break a big plan into claims, assumptions, evidence, and experiments. Climb each card up the ladder by surviving a challenge at every rung. The plan holds only if its load-bearing pieces do.</p>
+  </header>
+
+  <div class="panel planbar">
+    <div class="grow">
+      <label for="planInput">The big plan under test</label>
+      <input type="text" id="planInput" maxlength="240" placeholder="e.g. Launch an internal AI paraplanning workflow by Q4">
+    </div>
+    <button class="primary" id="setPlanBtn" type="button">Lock plan</button>
+  </div>
+
+  <div class="grid">
+    <div>
+      <div class="panel forge">
+        <h2>Card forge</h2>
+        <div class="typegrid" id="typeGrid">
+          <button class="typebtn" type="button" data-type="claim" aria-pressed="true">
+            <span class="tname">Claim</span><span class="tdesc">Something the plan asserts is true</span>
+          </button>
+          <button class="typebtn" type="button" data-type="assumption" aria-pressed="false">
+            <span class="tname">Assumption</span><span class="tdesc">Believed without proof — yet</span>
+          </button>
+          <button class="typebtn" type="button" data-type="evidence" aria-pressed="false">
+            <span class="tname">Evidence</span><span class="tdesc">An observation you can point to</span>
+          </button>
+          <button class="typebtn" type="button" data-type="experiment" aria-pressed="false">
+            <span class="tname">Experiment</span><span class="tdesc">A test that could kill the plan</span>
+          </button>
+        </div>
+        <div class="fieldrow">
+          <label for="cardText">Card text</label>
+          <textarea id="cardText" maxlength="400" placeholder="State it in one falsifiable sentence."></textarea>
+        </div>
+        <div class="loadrow">
+          <input type="checkbox" id="loadBearing">
+          <span>Load-bearing — if this collapses, the plan collapses</span>
+        </div>
+        <button class="primary" id="addCardBtn" type="button">Forge card → deck</button>
+
+        <div class="score">
+          <h2>Verdict</h2>
+          <div class="meterwrap"><div class="meterfill" id="meterFill"></div></div>
+          <div class="verdict" id="verdictText">— no cards yet —</div>
+          <p class="scorenote" id="scoreNote">Confidence rises as cards climb and hold. Cards left in the deck drag the score down. A collapsed load-bearing card forces a collapse verdict no matter the score.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel laddercol">
+      <h2>The ladder</h2>
+      <div class="ladder" id="ladder"></div>
+    </div>
+  </div>
+
+  <div class="panel receiptcol">
+    <h2>Reasoning receipt</h2>
+    <div class="receiptbtns">
+      <button class="primary" id="genReceiptBtn" type="button">Print receipt</button>
+      <button id="copyReceiptBtn" type="button" disabled>Copy to clipboard</button>
+      <button id="dlReceiptBtn" type="button" disabled>Download .txt</button>
+    </div>
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
+    <div class="manualcopy hidden" id="manualCopyWrap">
+      <label for="manualCopyTa">Clipboard unavailable — the receipt is selected below. Press Ctrl+C (or Cmd+C) to copy.</label>
+      <textarea id="manualCopyTa" readonly></textarea>
+    </div>
+    <div class="receipt" id="receiptOut">Press “Print receipt” to generate a plain-text record of the plan, every card, its rung, its challenge answers, and the final verdict. Keep it offline, staple it to the plan.</div>
+  </div>
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  var RUNGS = [
+    { key:0, name:"Deck", q:"Unstated. Forge cards land here." },
+    { key:1, name:"Rung 1 — Stated", q:"Is it written as a single falsifiable sentence?" },
+    { key:2, name:"Rung 2 — Stress-tested", q:"What is the strongest honest objection?" },
+    { key:3, name:"Rung 3 — Evidenced", q:"What concrete observation backs it?" },
+    { key:4, name:"Rung 4 — Verified", q:"What test result would kill it — and did it survive?" }
+  ];
+
+  var CHALLENGES = {
+    1:"Restate this card as one falsifiable sentence. If you can’t say what would prove it wrong, it isn’t ready to climb.",
+    2:"Steelman the strongest objection to this card. Argue against yourself in good faith.",
+    3:"Name a concrete observation, number, or source that supports this card. No vibes.",
+    4:"Describe the test: what you did or would do, and the specific result that would kill this card."
+  };
+
+  var MIN_ANSWER = 20;
+  var TYPE_WEIGHT = { claim:3, assumption:2, evidence:2, experiment:3 };
+  var TYPE_LABEL = { claim:"Claim", assumption:"Assumption", evidence:"Evidence", experiment:"Experiment" };
+  var STATUS_FACTOR = { holds:1, shaky:0.4, collapsed:0, untested:0.15 };
+
+  var state = {
+    plan:"",
+    planLocked:false,
+    cards:[],
+    nextId:1,
+    selectedType:"claim",
+    openChallenge:null
+  };
+
+  var el = {
+    planInput: document.getElementById("planInput"),
+    setPlanBtn: document.getElementById("setPlanBtn"),
+    typeGrid: document.getElementById("typeGrid"),
+    cardText: document.getElementById("cardText"),
+    loadBearing: document.getElementById("loadBearing"),
+    addCardBtn: document.getElementById("addCardBtn"),
+    ladder: document.getElementById("ladder"),
+    meterFill: document.getElementById("meterFill"),
+    verdictText: document.getElementById("verdictText"),
+    scoreNote: document.getElementById("scoreNote"),
+    genReceiptBtn: document.getElementById("genReceiptBtn"),
+    copyReceiptBtn: document.getElementById("copyReceiptBtn"),
+    dlReceiptBtn: document.getElementById("dlReceiptBtn"),
+    receiptOut: document.getElementById("receiptOut"),
+    toast: document.getElementById("toast"),
+    manualCopyWrap: document.getElementById("manualCopyWrap"),
+    manualCopyTa: document.getElementById("manualCopyTa")
+  };
+
+  var lastReceipt = "";
+
+  /* ---------- helpers ---------- */
+
+  function clearNode(n){ while(n.firstChild){ n.removeChild(n.firstChild); } }
+
+  function mk(tag, cls, text){
+    var n = document.createElement(tag);
+    if(cls){ n.className = cls; }
+    if(text !== undefined){ n.textContent = text; }
+    return n;
+  }
+
+  function toast(msg, isErr){
+    el.toast.textContent = msg;
+    el.toast.className = isErr ? "toast err" : "toast";
+    window.setTimeout(function(){
+      if(el.toast.textContent === msg){ el.toast.textContent = ""; }
+    }, 3500);
+  }
+
+  /* ---------- scoring ---------- */
+
+  function computeScore(){
+    if(state.cards.length === 0){ return { pct:0, verdict:"none", forced:false }; }
+    var num = 0, den = 0, forced = false;
+    for(var i=0;i<state.cards.length;i++){
+      var c = state.cards[i];
+      var w = TYPE_WEIGHT[c.type];
+      var p = c.rung / 4;
+      var f = c.status === "untested" ? STATUS_FACTOR.untested * p : STATUS_FACTOR[c.status];
+      num += w * p * f;
+      den += w;
+      if(c.loadBearing && c.status === "collapsed"){ forced = true; }
+    }
+    var pct = den > 0 ? Math.round((num/den)*100) : 0;
+    var verdict;
+    if(forced){ verdict = "collapses"; }
+    else if(pct >= 70){ verdict = "holds"; }
+    else if(pct >= 40){ verdict = "shaky"; }
+    else { verdict = "collapses"; }
+    return { pct:pct, verdict:verdict, forced:forced };
+  }
+
+  function verdictLabel(v, forced){
+    if(v === "none"){ return "— no cards yet —"; }
+    if(v === "holds"){ return "PLAN HOLDS"; }
+    if(v === "shaky"){ return "PLAN IS SHAKY"; }
+    return forced ? "PLAN COLLAPSES (load-bearing failure)" : "PLAN COLLAPSES";
+  }
+
+  /* ---------- rendering ---------- */
+
+  function render(){
+    clearNode(el.ladder);
+    for(var r = RUNGS.length - 1; r >= 0; r--){
+      el.ladder.appendChild(renderRung(RUNGS[r]));
+    }
+    renderScore();
+  }
+
+  function renderScore(){
+    var s = computeScore();
+    el.meterFill.style.width = (s.verdict === "none" ? 0 : Math.max(s.pct, 2)) + "%";
+    var color = "#f5a83c";
+    if(s.verdict === "holds"){ color = "#4fd6a3"; }
+    if(s.verdict === "collapses"){ color = "#f0645c"; }
+    el.meterFill.style.backgroundColor = color;
+    el.verdictText.textContent = s.verdict === "none"
+      ? verdictLabel(s.verdict, false)
+      : s.pct + "% · " + verdictLabel(s.verdict, s.forced);
+    el.verdictText.className = "verdict " + (s.verdict === "none" ? "" : s.verdict);
+  }
+
+  function renderRung(rung){
+    var box = mk("div", "rung" + (rung.key === 0 ? " deck" : ""));
+    var head = mk("div", "runghead");
+    head.appendChild(mk("span", "rungname", rung.name));
+    head.appendChild(mk("span", "rungq", rung.q));
+    box.appendChild(head);
+
+    var cards = state.cards.filter(function(c){ return c.rung === rung.key; });
+    if(cards.length === 0){
+      box.appendChild(mk("p", "empty", rung.key === 0 ? "Deck is empty — forge a card." : "No cards have reached this rung."));
+    } else {
+      for(var i=0;i<cards.length;i++){ box.appendChild(renderCard(cards[i])); }
+    }
+    return box;
+  }
+
+  function renderCard(c){
+    var card = mk("div", "card t-" + c.type);
+
+    var top = mk("div", "cardtop");
+    var typeLine = mk("span", "cardtype");
+    typeLine.appendChild(document.createTextNode(TYPE_LABEL[c.type] + " · #" + c.id + " "));
+    if(c.loadBearing){ typeLine.appendChild(mk("span", "lb", "· LOAD-BEARING")); }
+    top.appendChild(typeLine);
+    var del = mk("button", "small ghost", "✕");
+    del.type = "button";
+    del.setAttribute("aria-label", "Remove card " + c.id);
+    del.addEventListener("click", function(){ removeCard(c.id); });
+    top.appendChild(del);
+    card.appendChild(top);
+
+    card.appendChild(mk("p", "cardtext", c.text));
+
+    var btns = mk("div", "cardbtns");
+
+    if(c.rung < 4){
+      var climb = mk("button", "small primary", "Climb ↑ " + RUNGS[c.rung + 1].name.replace(/ — .*/, ""));
+      climb.type = "button";
+      climb.addEventListener("click", function(){ toggleChallenge(c.id); });
+      btns.appendChild(climb);
+    }
+    if(c.rung > 0){
+      var down = mk("button", "small", "Demote ↓");
+      down.type = "button";
+      down.addEventListener("click", function(){ demote(c.id); });
+      btns.appendChild(down);
+    }
+
+    var statuses = ["holds","shaky","collapsed"];
+    var statusNames = { holds:"Holds", shaky:"Shaky", collapsed:"Collapsed" };
+    for(var i=0;i<statuses.length;i++){
+      (function(st){
+        var b = mk("button", "small statusbtn s-" + st, statusNames[st]);
+        b.type = "button";
+        b.setAttribute("aria-pressed", c.status === st ? "true" : "false");
+        b.addEventListener("click", function(){ setStatus(c.id, st); });
+        btns.appendChild(b);
+      })(statuses[i]);
+    }
+    card.appendChild(btns);
+
+    if(state.openChallenge === c.id && c.rung < 4){
+      card.appendChild(renderChallenge(c));
+    }
+
+    if(c.answers.length > 0){
+      var wrap = mk("div", "answers");
+      var det = document.createElement("details");
+      var sum = mk("summary", "", "Challenge log (" + c.answers.length + ")");
+      det.appendChild(sum);
+      var ul = document.createElement("ul");
+      for(var a=0;a<c.answers.length;a++){
+        ul.appendChild(mk("li", "", "R" + c.answers[a].rung + ": " + c.answers[a].text));
+      }
+      det.appendChild(ul);
+      wrap.appendChild(det);
+      card.appendChild(wrap);
+    }
+
+    return card;
+  }
+
+  function renderChallenge(c){
+    var target = c.rung + 1;
+    var box = mk("div", "challenge");
+    box.appendChild(mk("p", "", "Challenge to reach " + RUNGS[target].name + ":"));
+    box.appendChild(mk("p", "hint", CHALLENGES[target]));
+    var ta = document.createElement("textarea");
+    ta.maxLength = 600;
+    ta.placeholder = "Answer honestly — minimum " + MIN_ANSWER + " characters.";
+    box.appendChild(ta);
+    var actions = mk("div", "actions");
+    var ok = mk("button", "small primary", "Submit & climb");
+    ok.type = "button";
+    ok.addEventListener("click", function(){
+      var txt = ta.value.trim();
+      if(txt.length < MIN_ANSWER){
+        toast("Answer too thin — give it at least " + MIN_ANSWER + " characters.", true);
+        ta.focus();
+        return;
+      }
+      c.answers.push({ rung: target, text: txt });
+      c.rung = target;
+      state.openChallenge = null;
+      toast("Card #" + c.id + " climbed to " + RUNGS[target].name + ".");
+      render();
+    });
+    var cancel = mk("button", "small ghost", "Cancel");
+    cancel.type = "button";
+    cancel.addEventListener("click", function(){ state.openChallenge = null; render(); });
+    actions.appendChild(ok);
+    actions.appendChild(cancel);
+    box.appendChild(actions);
+    window.setTimeout(function(){ ta.focus(); }, 0);
+    return box;
+  }
+
+  /* ---------- actions ---------- */
+
+  function toggleChallenge(id){
+    state.openChallenge = state.openChallenge === id ? null : id;
+    render();
+  }
+
+  function demote(id){
+    var c = findCard(id);
+    if(c && c.rung > 0){
+      c.rung -= 1;
+      toast("Card #" + id + " demoted to " + RUNGS[c.rung].name + ".");
+      render();
+    }
+  }
+
+  function setStatus(id, st){
+    var c = findCard(id);
+    if(!c){ return; }
+    c.status = c.status === st ? "untested" : st;
+    render();
+  }
+
+  function removeCard(id){
+    var c = findCard(id);
+    if(!c){ return; }
+    if(!c.confirmDelete){
+      c.confirmDelete = true;
+      toast("Press ✕ again on card #" + id + " to confirm removal.", true);
+      window.setTimeout(function(){ c.confirmDelete = false; }, 4000);
+      return;
+    }
+    state.cards = state.cards.filter(function(x){ return x.id !== id; });
+    if(state.openChallenge === id){ state.openChallenge = null; }
+    toast("Card #" + id + " removed.");
+    render();
+  }
+
+  function findCard(id){
+    for(var i=0;i<state.cards.length;i++){
+      if(state.cards[i].id === id){ return state.cards[i]; }
+    }
+    return null;
+  }
+
+  /* ---------- receipt ---------- */
+
+  function line(ch, n){
+    var s = "";
+    for(var i=0;i<n;i++){ s += ch; }
+    return s;
+  }
+
+  function buildReceipt(){
+    var s = computeScore();
+    var now = new Date();
+    var out = [];
+    out.push(line("=", 46));
+    out.push("  FIRST-PRINCIPLES CLAIM LADDER — RECEIPT");
+    out.push(line("=", 46));
+    out.push("Date:    " + now.toLocaleString());
+    out.push("Plan:    " + (state.plan || "(no plan locked)"));
+    out.push("Cards:   " + state.cards.length);
+    out.push(line("-", 46));
+    for(var i=0;i<state.cards.length;i++){
+      var c = state.cards[i];
+      out.push("[#" + c.id + "] " + TYPE_LABEL[c.type].toUpperCase() + (c.loadBearing ? "  (LOAD-BEARING)" : ""));
+      out.push("  Text:   " + c.text);
+      out.push("  Rung:   " + c.rung + "/4 — " + RUNGS[c.rung].name);
+      out.push("  Status: " + (c.status === "untested" ? "Untested" : c.status.charAt(0).toUpperCase() + c.status.slice(1)));
+      for(var a=0;a<c.answers.length;a++){
+        out.push("  R" + c.answers[a].rung + " answer: " + c.answers[a].text);
+      }
+      out.push(line("-", 46));
+    }
+    out.push("CONFIDENCE: " + (state.cards.length ? s.pct + "%" : "n/a"));
+    out.push("VERDICT:    " + verdictLabel(s.verdict, s.forced));
+    out.push(line("=", 46));
+    out.push("Rule of the rig: a plan is only as strong as");
+    out.push("its weakest load-bearing card.");
+    return out.join("\n");
+  }
+
+  function slug(str){
+    return (str || "plan").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 40) || "plan";
+  }
+
+  function showManualCopy(text){
+    el.manualCopyTa.value = text;
+    el.manualCopyWrap.className = "manualcopy";
+    el.manualCopyTa.focus();
+    el.manualCopyTa.select();
+    toast("Clipboard unavailable — receipt selected below. Press Ctrl+C or Cmd+C.", true);
+  }
+
+  function hideManualCopy(){
+    el.manualCopyWrap.className = "manualcopy hidden";
+    el.manualCopyTa.value = "";
+  }
+
+  /* ---------- wiring ---------- */
+
+  el.setPlanBtn.addEventListener("click", function(){
+    var v = el.planInput.value.trim();
+    if(!v){ toast("Write the plan before locking it.", true); el.planInput.focus(); return; }
+    state.plan = v;
+    state.planLocked = true;
+    toast("Plan locked. Now forge its claims and assumptions.");
+  });
+
+  el.typeGrid.addEventListener("click", function(ev){
+    var btn = ev.target.closest("button[data-type]");
+    if(!btn){ return; }
+    state.selectedType = btn.getAttribute("data-type");
+    var all = el.typeGrid.querySelectorAll("button[data-type]");
+    for(var i=0;i<all.length;i++){
+      all[i].setAttribute("aria-pressed", all[i] === btn ? "true" : "false");
+    }
+  });
+
+  el.addCardBtn.addEventListener("click", function(){
+    var txt = el.cardText.value.trim();
+    if(txt.length < 8){
+      toast("Card text is too short to test.", true);
+      el.cardText.focus();
+      return;
+    }
+    state.cards.push({
+      id: state.nextId++,
+      type: state.selectedType,
+      text: txt,
+      rung: 0,
+      status: "untested",
+      loadBearing: el.loadBearing.checked,
+      answers: [],
+      confirmDelete: false
+    });
+    el.cardText.value = "";
+    el.loadBearing.checked = false;
+    toast("Card forged into the deck.");
+    render();
+  });
+
+  el.genReceiptBtn.addEventListener("click", function(){
+    lastReceipt = buildReceipt();
+    el.receiptOut.textContent = lastReceipt;
+    el.copyReceiptBtn.disabled = false;
+    el.dlReceiptBtn.disabled = false;
+    hideManualCopy();
+    toast("Receipt printed below.");
+  });
+
+  el.copyReceiptBtn.addEventListener("click", function(){
+    if(!lastReceipt){ return; }
+    if(navigator.clipboard && navigator.clipboard.writeText){
+      navigator.clipboard.writeText(lastReceipt).then(function(){
+        hideManualCopy();
+        toast("Receipt copied to clipboard.");
+      }, function(){
+        showManualCopy(lastReceipt);
+      });
+    } else {
+      showManualCopy(lastReceipt);
+    }
+  });
+
+  el.dlReceiptBtn.addEventListener("click", function(){
+    if(!lastReceipt){ return; }
+    var blob = new Blob([lastReceipt], { type: "text/plain" });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement("a");
+    a.href = url;
+    a.download = "claim-ladder-receipt-" + slug(state.plan) + ".txt";
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    window.setTimeout(function(){ URL.revokeObjectURL(url); }, 1000);
+    toast("Receipt downloaded.");
+  });
+
+  render();
+})();
+</script>
+</body>
+</html>

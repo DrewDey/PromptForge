@@ -1,0 +1,148 @@
+{
+  "title": "Rental Walkthrough Red Flag Scorecard — Claude model variant",
+  "slug": "rental-walkthrough-red-flag-scorecard-claude-fable-5-high",
+  "source_run_id": "b0472de4-e13d-453e-bf53-48cd2047412c",
+  "provider": "Claude",
+  "model": "Fable 5 High",
+  "model_settings": "Claude web; High reasoning.",
+  "source_url": "https://claude.ai/share/99928098-cefb-4c96-841f-d9b001d91860",
+  "run_started_at": "2026-07-10T20:39:41.233Z",
+  "run_finished_at": "2026-07-10T22:11:34.259Z",
+  "chain_type": "repair-assisted",
+  "prompt_count": 2,
+  "repair_prompt_count": 1,
+  "status": "published_model_variant",
+  "description": "A developer-operated Claude rerun of the canonical Rental Walkthrough Red Flag Scorecard brief, preserved as an auditable PathForge Labs model variant rather than a community fork.",
+  "agent_notes": [
+    "Provider: Claude.",
+    "Model used: Fable 5 High.",
+    "Model settings: Claude web; High reasoning.",
+    "PathForge Labs provenance: developer-operated comparison run; not a user, community fork, vote, bookmark, or engagement event.",
+    "Prompt count: 2. Verification found one deprecated clipboard fallback token and the second prompt repaired it.",
+    "Both real artifact versions are preserved under public/artifacts; the corrected final artifact is the default."
+  ],
+  "final_artifact_path": "public/artifacts/rental-walkthrough-red-flag-scorecard-claude-fable-5-high-final.html",
+  "artifact_type": "html",
+  "artifact_versions": [
+    "public/artifacts/rental-walkthrough-red-flag-scorecard-claude-fable-5-high-first-pass.html",
+    "public/artifacts/rental-walkthrough-red-flag-scorecard-claude-fable-5-high-final.html"
+  ],
+  "generated_files": [
+    "public/artifacts/rental-walkthrough-red-flag-scorecard-claude-fable-5-high-first-pass.html",
+    "public/artifacts/rental-walkthrough-red-flag-scorecard-claude-fable-5-high-final.html"
+  ],
+  "artifact_sha256": "7339a1980e7922038e9f2eb620fedcb6fff98c7174ed23bc2ee4242b2dd81072",
+  "artifact_version_notes": [
+    {
+      "path": "public/artifacts/rental-walkthrough-red-flag-scorecard-claude-fable-5-high-first-pass.html",
+      "sha256": "2bab877ddbd72e2320d7bbcc2328036de0809e1bbac48617e5e281a8c035780a",
+      "bytes": 26055,
+      "lines": 782,
+      "disposition": "Preserved first response; room scoring, hazards, notes, lease risks, brief generation, and both viewports passed, but document.execCommand failed the deprecated clipboard hard gate."
+    },
+    {
+      "path": "public/artifacts/rental-walkthrough-red-flag-scorecard-claude-fable-5-high-final.html",
+      "sha256": "7339a1980e7922038e9f2eb620fedcb6fff98c7174ed23bc2ee4242b2dd81072",
+      "bytes": 25887,
+      "lines": 779,
+      "disposition": "Final verified artifact and default Claude version."
+    }
+  ],
+  "verification_notes": [
+    "The final artifact's single inline script parsed successfully and the static scan found no remote dependency, network call, unsafe HTML sink, eval-like execution, inline handler, modal API, document.write, or deprecated clipboard token.",
+    "At 390px, the workflow scored the first room 2/5, flagged mold and two lease risks, preserved notes, and generated an 838-character inspection brief with written follow-ups.",
+    "Desktop measured 1660/1660 document width with zero overflow; true 390x844 measured 390/390 document and body width with zero overflow.",
+    "The final browser run recorded zero console errors."
+  ],
+  "verification_evidence": {
+    "schema_version": 1,
+    "verified_at": "2026-07-10T22:32:43.978Z",
+    "first_pass_metrics": {
+      "qualityScore": 88,
+      "artifactReady": true,
+      "hardGatesPassed": false,
+      "functionalChecks": {
+        "passed": 9,
+        "total": 10
+      },
+      "consoleErrorCount": 0,
+      "horizontalOverflowPx": 0,
+      "notes": [
+        "The first artifact passed all four project checks, desktop layout, and true 390x844 layout with zero artifact-origin console errors.",
+        "Static verification found document.execCommand in the copy fallback, failing one common safety check and triggering a same-session repair."
+      ]
+    },
+    "final_metrics": {
+      "qualityScore": 97,
+      "artifactReady": true,
+      "hardGatesPassed": true,
+      "functionalChecks": {
+        "passed": 10,
+        "total": 10
+      },
+      "consoleErrorCount": 0,
+      "horizontalOverflowPx": 0,
+      "notes": [
+        "All four project checks and six common acceptance checks passed on the corrected artifact.",
+        "Static, room scoring, hazard and lease-risk flags, local state, 838-character brief, desktop 1660px, true 390x844, and zero-console-error checks were directly rerun."
+      ]
+    }
+  },
+  "steps": [
+    {
+      "step_number": 1,
+      "title": "Build the invariant rental walkthrough brief",
+      "prompt_exact": "Can you make a saveable offline browser scorecard I can use during an apartment walkthrough to rate each room, note hazards and lease-risk clues, attach photo notes, and copy a clean inspection brief at the end?",
+      "response_exact": "All scans clean — zero hits on innerHTML, inline handlers, modal APIs, external deps, URL literals, letter-spacing, and vw/clamp font sizing, and the JS passes a syntax check.Single file, fully offline. How it works:\n\n**Rooms** — starts with entry, living, kitchen, bath, and bedroom 1; add or remove any. Each room gets a big 1–5 tap score (1–2 render in hazard orange, 3–5 in green), 12 hazard chips (mold/moisture, fresh paint over stains, pest bait stations, missing smoke/CO detector, etc.), free notes, and photo attachments. Photos open your camera on mobile, get downscaled to 1024px JPEG so storage doesn't blow up, and each takes a caption.\n\n**Lease-risk clues** — a global chip set for the softer red flags: listing mismatch, rushed showing, vague deposit terms, repairs promised verbally, utilities not separately metered, plus a notes box for landlord questions.\n\n**Brief** — one tap builds a plain-text summary: average score, hazard and clue counts, room-by-room breakdown with photo captions, and an auto-generated \"follow-ups before signing\" list (every hazard becomes a \"get remediation in writing\" item, and flagged clues like verbal repair promises generate addendum requests). Copy uses the clipboard API with a select-and-copy fallback for file:// contexts.\n\n**Persistence** — autosaves to localStorage (debounced, with a save indicator), plus JSON export/import so you can back up or move between phone and desktop. Destructive actions (remove room, clear all) use two-tap arm/confirm instead of modals. If photo storage hits the quota, the save indicator flips orange and tells you to trim photos or export.",
+      "response_summary": "Claude returned the first complete one-file apartment walkthrough scorecard.",
+      "generated_files": [
+        "public/artifacts/rental-walkthrough-red-flag-scorecard-claude-fable-5-high-first-pass.html"
+      ],
+      "artifact_version_path": "public/artifacts/rental-walkthrough-red-flag-scorecard-claude-fable-5-high-first-pass.html",
+      "notes": "Preserved exact first artifact. Functional and viewport checks passed, but static verification found document.execCommand."
+    },
+    {
+      "step_number": 2,
+      "title": "Remove the deprecated inspection-brief copy fallback",
+      "prompt_exact": "I tested the saved file and found one concrete safety issue: the clipboard fallback still calls document.execCommand, and our public artifact verifier rejects that deprecated token. Remove document.execCommand entirely; use navigator.clipboard when available and otherwise leave the generated brief visible, focused, and selected for manual copying. Keep the room scores, hazard and lease-risk flags, photo notes, local save/import/export, inspection brief, offline behavior, and current design unchanged, then return the complete updated self-contained HTML file.",
+      "response_exact": "Fixed. `document.execCommand` is gone entirely — zero hits on the re-scan, along with clean passes on all the original checks and JS syntax.\n\nNew copy behavior: `navigator.clipboard.writeText` when available; otherwise (or if it rejects, which happens on some file:// contexts) the fallback focuses the brief textarea, selects the full text via `select()` + `setSelectionRange`, and shows \"Brief selected — press Ctrl+C (or Cmd+C) to copy\" in the status line. Also dropped the readonly-toggle dance since it only existed to support execCommand — the textarea stays readonly throughout, which doesn't block selection or manual copying. Everything else is untouched.",
+      "response_summary": "Claude removed document.execCommand and returned the complete corrected scorecard.",
+      "continuation_reason": "Verification-proven defect: the first artifact used document.execCommand in its inspection-brief copy fallback.",
+      "generated_files": [
+        "public/artifacts/rental-walkthrough-red-flag-scorecard-claude-fable-5-high-final.html"
+      ],
+      "artifact_version_path": "public/artifacts/rental-walkthrough-red-flag-scorecard-claude-fable-5-high-final.html",
+      "notes": "Final verified production artifact."
+    }
+  ],
+  "pathforge_submission_url": null,
+  "pathforge_pending_id": null,
+  "submission": null,
+  "comparison_basis": {
+    "opening_prompt_exact": "Can you make a saveable offline browser scorecard I can use during an apartment walkthrough to rate each room, note hazards and lease-risk clues, attach photo notes, and copy a clean inspection brief at the end?",
+    "acceptance_criteria": [
+      "Support room-by-room scoring with hazards, lease-risk clues, severity, and evidence or photo-note fields.",
+      "Keep the overall rental assessment synchronized with the current room findings.",
+      "Provide useful local save or restore behavior without uploading private inspection data.",
+      "Provide a clean copyable or downloadable inspection brief suitable for a real rental decision.",
+      "Produce one complete self-contained HTML file that is immediately usable in a browser.",
+      "Operate offline with no external APIs, hosted generation, CDNs, remote fonts, scripts, stylesheets, or fragile dependencies.",
+      "Avoid unsafe HTML sinks, eval-like execution, inline event handlers, modal dialogs, and deprecated clipboard handling.",
+      "Avoid page-level horizontal overflow at 390 by 844 and at desktop width.",
+      "Keep essential controls visible, keyboard or touch reachable, and truthful about their current state.",
+      "Preserve exact prompt, response, source, and artifact-version evidence for the run."
+    ],
+    "adaptive_repair_policy": "Preserve and score the first real artifact. Continue only when verification proves a concrete defect or a source-capture failure; use the same source session and model; name the observed defect in ordinary language; preserve every real artifact version; stop as soon as the artifact passes; prefer no more than three total prompts and go beyond three only for a documented concrete lane reason such as a verification-proven regression, truncation, or mechanical capture failure.",
+    "independence_note": "Claude received the invariant brief in a fresh session and was not shown the historical implementation, screenshots, source code, or another provider's output."
+  },
+  "operator_provenance": {
+    "kind": "pathforge_labs_manual",
+    "label": "PathForge Labs · Developer-operated",
+    "canonical_project_id": "22bcc36b-497f-43f7-824f-3ccba9690da6",
+    "canonical_route": "/rental-walkthrough-red-flag-scorecard-demo",
+    "comparison_contract_version": "rental-walkthrough-red-flag-scorecard-v1",
+    "comparison_contract_sha256": "d0665706de7a1616b9120d01ac531f1311c3cd10967c0de86614bf8f26ddafb7",
+    "opening_prompt_sha256": "4e058c3d45c54971b9ee6cff153e0d4128a21704ff1393c43d5902f83099d57e",
+    "ordinary_fork": false
+  }
+}

@@ -1,0 +1,488 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gym Mirror Progress Shot Consistency Studio</title>
+    <style>
+        :root {
+            --bg-color: #121212;
+            --panel-bg: #1e1e1e;
+            --text-color: #e0e0e0;
+            --accent: #00e676;
+            --accent-hover: #00c853;
+            --warning: #ff5252;
+            --border: #333;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        header {
+            background-color: var(--panel-bg);
+            padding: 15px 20px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        header h1 {
+            font-size: 1.2rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .main-container {
+            display: flex;
+            flex: 1;
+            overflow: hidden;
+        }
+
+        @media (max-width: 900px) {
+            .main-container {
+                flex-direction: column;
+            }
+        }
+
+        /* Viewport / Image Area */
+        .viewport-section {
+            flex: 2;
+            position: relative;
+            background-color: #000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+            border-right: 1px solid var(--border);
+        }
+
+        .image-wrapper {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        img {
+            max-width: 100%;
+            max-height: 100%;
+            position: absolute;
+            object-fit: contain;
+            transition: opacity 0.2s ease;
+        }
+
+        #refImage {
+            opacity: 0.5;
+            z-index: 1;
+        }
+
+        #currentImage {
+            z-index: 2;
+        }
+
+        /* Overlays */
+        .grid-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 10;
+            pointer-events: none;
+            display: none;
+            background-image: 
+                linear-gradient(to right, transparent 33.33%, rgba(255,255,255,0.3) 33.33%, rgba(255,255,255,0.3) 33.53%, transparent 33.53%, transparent 66.66%, rgba(255,255,255,0.3) 66.66%, rgba(255,255,255,0.3) 66.86%, transparent 66.86%),
+                linear-gradient(to bottom, transparent 33.33%, rgba(255,255,255,0.3) 33.33%, rgba(255,255,255,0.3) 33.53%, transparent 33.53%, transparent 66.66%, rgba(255,255,255,0.3) 66.66%, rgba(255,255,255,0.3) 66.86%, transparent 66.86%);
+        }
+
+        .privacy-crop {
+            position: absolute;
+            top: 10%;
+            width: 100%;
+            height: 15%;
+            background-color: rgba(0, 0, 0, 0.85);
+            z-index: 15;
+            display: none;
+            cursor: ns-resize;
+            border-top: 2px dashed #666;
+            border-bottom: 2px dashed #666;
+        }
+
+        /* Controls Panel */
+        .controls-section {
+            flex: 1;
+            background-color: var(--panel-bg);
+            padding: 20px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .card {
+            background-color: #2a2a2a;
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+        }
+
+        .card h2 {
+            font-size: 1rem;
+            margin-bottom: 15px;
+            color: var(--accent);
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 5px;
+        }
+
+        .file-input-group {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .file-input-group label {
+            font-size: 0.85rem;
+            color: #aaa;
+        }
+
+        input[type="file"] {
+            background: #121212;
+            padding: 8px;
+            border-radius: 4px;
+            font-size: 0.85rem;
+            color: #ccc;
+            border: 1px solid var(--border);
+            width: 100%;
+        }
+
+        .slider-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        input[type="range"] {
+            flex: 1;
+            accent-color: var(--accent);
+        }
+
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+
+        .checkbox-group input {
+            accent-color: var(--accent);
+            width: 18px;
+            height: 18px;
+        }
+
+        .checkbox-group label {
+            font-size: 0.95rem;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        /* Buttons */
+        button {
+            background-color: var(--accent);
+            color: #000;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 4px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background 0.2s;
+            width: 100%;
+            margin-top: 10px;
+        }
+
+        button:hover {
+            background-color: var(--accent-hover);
+        }
+
+        button.secondary {
+            background-color: transparent;
+            color: var(--text-color);
+            border: 1px solid var(--border);
+        }
+
+        button.secondary:hover {
+            background-color: #333;
+        }
+
+        /* Warnings & Scores */
+        .status-panel {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 10px;
+        }
+
+        .score-display {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: var(--accent);
+        }
+
+        .retake-warning {
+            color: var(--warning);
+            font-weight: bold;
+            display: none;
+            font-size: 0.9rem;
+        }
+
+        /* Receipt */
+        #receiptArea {
+            width: 100%;
+            height: 120px;
+            background-color: #121212;
+            color: var(--accent);
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            padding: 10px;
+            font-family: monospace;
+            font-size: 0.85rem;
+            resize: none;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>Consistency Studio</h1>
+        <div id="topScore" class="score-display">0/100</div>
+    </header>
+
+    <div class="main-container">
+        <!-- Viewport -->
+        <div class="viewport-section">
+            <div class="image-wrapper" id="imageWrapper">
+                <img id="refImage" alt="">
+                <img id="currentImage" alt="">
+                <div class="grid-overlay" id="gridOverlay"></div>
+                <div class="privacy-crop" id="privacyCrop"></div>
+            </div>
+        </div>
+
+        <!-- Controls -->
+        <div class="controls-section">
+            
+            <div class="card">
+                <h2>1. Load Images (Local Only)</h2>
+                <div class="file-input-group">
+                    <label>Reference Photo (Last Session)</label>
+                    <input type="file" id="refInput" accept="image/*">
+                </div>
+                <div class="file-input-group">
+                    <label>Current Photo</label>
+                    <input type="file" id="currentInput" accept="image/*">
+                </div>
+                <div class="slider-group">
+                    <label style="font-size:0.85rem; color:#aaa; width: 60px;">Overlay</label>
+                    <input type="range" id="opacitySlider" min="0" max="100" value="100">
+                </div>
+            </div>
+
+            <div class="card">
+                <h2>2. Alignment & Overlays</h2>
+                <div class="checkbox-group">
+                    <input type="checkbox" id="toggleGrid">
+                    <label for="toggleGrid">Show Rule of Thirds Grid</label>
+                </div>
+                <div class="checkbox-group">
+                    <input type="checkbox" id="togglePrivacy">
+                    <label for="togglePrivacy">Show Privacy Crop Guide</label>
+                </div>
+                <p style="font-size: 0.75rem; color: #888; margin-top: 5px; display: none;" id="privacyHint">Drag the privacy guide up/down to check face/identifiable feature masking.</p>
+            </div>
+
+            <div class="card">
+                <h2>3. Consistency Checklist</h2>
+                <div class="checkbox-group">
+                    <input type="checkbox" class="consistency-check" id="chkPose" value="25">
+                    <label for="chkPose">Pose matches reference exactly</label>
+                </div>
+                <div class="checkbox-group">
+                    <input type="checkbox" class="consistency-check" id="chkAngle" value="25">
+                    <label for="chkAngle">Camera height/angle is identical</label>
+                </div>
+                <div class="checkbox-group">
+                    <input type="checkbox" class="consistency-check" id="chkLight" value="25">
+                    <label for="chkLight">Lighting matches (time of day/room)</label>
+                </div>
+                <div class="checkbox-group">
+                    <input type="checkbox" class="consistency-check" id="chkBg" value="25">
+                    <label for="chkBg">Background is clear of distractions</label>
+                </div>
+                
+                <div class="status-panel">
+                    <span class="retake-warning" id="retakeWarning">⚠️ SUBOPTIMAL - RETAKE RECOMMENDED</span>
+                </div>
+            </div>
+
+            <div class="card">
+                <h2>4. Session Receipt</h2>
+                <textarea id="receiptArea" readonly>Load images and complete checklist to generate receipt.</textarea>
+                <button id="btnCopy">Copy Receipt to Clipboard</button>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        // DOM Elements
+        const refInput = document.getElementById('refInput');
+        const currentInput = document.getElementById('currentInput');
+        const refImage = document.getElementById('refImage');
+        const currentImage = document.getElementById('currentImage');
+        
+        const opacitySlider = document.getElementById('opacitySlider');
+        const toggleGrid = document.getElementById('toggleGrid');
+        const togglePrivacy = document.getElementById('togglePrivacy');
+        const gridOverlay = document.getElementById('gridOverlay');
+        const privacyCrop = document.getElementById('privacyCrop');
+        const privacyHint = document.getElementById('privacyHint');
+        
+        const checks = document.querySelectorAll('.consistency-check');
+        const topScore = document.getElementById('topScore');
+        const retakeWarning = document.getElementById('retakeWarning');
+        const receiptArea = document.getElementById('receiptArea');
+        const btnCopy = document.getElementById('btnCopy');
+
+        let score = 0;
+
+        // Image Loading (Client-side Object URLs)
+        function handleImageUpload(input, imgElement) {
+            input.addEventListener('change', (e) => {
+                const file = e.target.files[0];
+                if (file) {
+                    imgElement.src = URL.createObjectURL(file);
+                    updateReceipt();
+                }
+            });
+        }
+        handleImageUpload(refInput, refImage);
+        handleImageUpload(currentInput, currentImage);
+
+        // Opacity Slider for Alignment
+        opacitySlider.addEventListener('input', (e) => {
+            currentImage.style.opacity = e.target.value / 100;
+        });
+
+        // Toggles
+        toggleGrid.addEventListener('change', (e) => {
+            gridOverlay.style.display = e.target.checked ? 'block' : 'none';
+        });
+
+        togglePrivacy.addEventListener('change', (e) => {
+            privacyCrop.style.display = e.target.checked ? 'block' : 'none';
+            privacyHint.style.display = e.target.checked ? 'block' : 'none';
+        });
+
+        // Draggable Privacy Mask
+        let isDragging = false;
+        let startY;
+        let startTop;
+
+        privacyCrop.addEventListener('mousedown', (e) => {
+            isDragging = true;
+            startY = e.clientY;
+            startTop = parseInt(window.getComputedStyle(privacyCrop).top, 10);
+        });
+
+        window.addEventListener('mousemove', (e) => {
+            if (!isDragging) return;
+            const containerHeight = document.getElementById('imageWrapper').offsetHeight;
+            let newTop = startTop + (e.clientY - startY);
+            // Constrain to container
+            newTop = Math.max(0, Math.min(newTop, containerHeight - privacyCrop.offsetHeight));
+            privacyCrop.style.top = newTop + 'px';
+        });
+
+        window.addEventListener('mouseup', () => {
+            isDragging = false;
+        });
+
+        // Scoring & Receipt Generation
+        function updateScore() {
+            score = Array.from(checks).reduce((acc, check) => {
+                return acc + (check.checked ? parseInt(check.value) : 0);
+            }, 0);
+
+            topScore.innerText = `${score}/100`;
+
+            if (score < 100 && score > 0) {
+                retakeWarning.style.display = 'block';
+            } else {
+                retakeWarning.style.display = 'none';
+            }
+            updateReceipt();
+        }
+
+        function updateReceipt() {
+            const date = new Date().toISOString().split('T')[0];
+            const time = new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+            
+            const failedChecks = Array.from(checks)
+                .filter(c => !c.checked)
+                .map(c => c.nextElementSibling.innerText)
+                .join(' | ');
+
+            let receipt = `PROGRESS SHOT RECEIPT\nDate: ${date} ${time}\nConsistency Score: ${score}/100\n`;
+            
+            if (score === 100) {
+                receipt += `Status: VALIDATED (Perfect Match)\n`;
+            } else {
+                receipt += `Status: DEVIATION DETECTED\nDeviations: ${failedChecks || 'None selected yet.'}\n`;
+            }
+
+            if (document.getElementById('togglePrivacy').checked) {
+                receipt += `Privacy Mask: Active\n`;
+            }
+
+            receiptArea.value = receipt;
+        }
+
+        checks.forEach(check => {
+            check.addEventListener('change', updateScore);
+        });
+
+        // Copy to Clipboard
+        btnCopy.addEventListener('click', () => {
+            receiptArea.select();
+            document.execCommand('copy');
+            const originalText = btnCopy.innerText;
+            btnCopy.innerText = 'Copied to Clipboard!';
+            btnCopy.style.backgroundColor = '#00c853';
+            setTimeout(() => {
+                btnCopy.innerText = originalText;
+                btnCopy.style.backgroundColor = 'var(--accent)';
+            }, 2000);
+        });
+
+        // Initialize
+        updateScore();
+    </script>
+</body>
+</html>

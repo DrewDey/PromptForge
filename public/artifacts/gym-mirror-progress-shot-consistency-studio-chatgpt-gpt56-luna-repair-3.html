@@ -1,0 +1,1363 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Gym Mirror Progress Shot Consistency Studio</title>
+  <style>
+    :root {
+      --ink: #1c252b;
+      --muted: #66737a;
+      --line: #d9dfdc;
+      --paper: #f4f5f1;
+      --panel: #ffffff;
+      --sand: #ece8df;
+      --lime: #d7f36c;
+      --lime-deep: #577018;
+      --coral: #ff806d;
+      --coral-soft: #ffe2dc;
+      --blue: #1f6771;
+      --blue-soft: #e0f0ed;
+      --warning: #a95d16;
+      --warning-soft: #fff0d6;
+      --shadow: 0 18px 48px rgba(28, 37, 43, .08);
+    }
+
+    * { box-sizing: border-box; }
+
+    html { min-width: 320px; background: var(--paper); }
+
+    body {
+      margin: 0;
+      color: var(--ink);
+      background:
+        radial-gradient(circle at 80% 0%, rgba(215,243,108,.26), transparent 28rem),
+        var(--paper);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      font-size: 15px;
+      line-height: 1.45;
+    }
+
+    button, input, select, textarea { font: inherit; }
+
+    button {
+      cursor: pointer;
+      border: 0;
+    }
+
+    button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible {
+      outline: 3px solid rgba(31,103,113,.28);
+      outline-offset: 2px;
+    }
+
+    .app {
+      width: min(1480px, 100%);
+      margin: 0 auto;
+      padding: 28px clamp(16px, 3vw, 48px) 48px;
+    }
+
+    .topbar {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 24px;
+      margin-bottom: 28px;
+    }
+
+    .eyebrow {
+      margin: 0 0 6px;
+      color: var(--blue);
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: .14em;
+      text-transform: uppercase;
+    }
+
+    h1, h2, h3, p { margin-top: 0; }
+
+    h1 {
+      max-width: 820px;
+      margin-bottom: 8px;
+      font-size: clamp(28px, 4.4vw, 58px);
+      line-height: .98;
+      letter-spacing: -.05em;
+    }
+
+    .lede {
+      max-width: 720px;
+      margin-bottom: 0;
+      color: var(--muted);
+      font-size: 15px;
+    }
+
+    .top-actions,
+    .button-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .top-actions { justify-content: flex-end; }
+
+    .button {
+      min-height: 38px;
+      padding: 9px 14px;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      color: var(--ink);
+      background: var(--panel);
+      font-weight: 700;
+      transition: transform .15s ease, border-color .15s ease, background .15s ease;
+    }
+
+    .button:hover { transform: translateY(-1px); border-color: var(--blue); }
+    .button.primary { border-color: var(--ink); background: var(--ink); color: #fff; }
+    .button.lime { border-color: var(--lime); background: var(--lime); color: var(--ink); }
+    .button.ghost { background: transparent; }
+    .button.small { min-height: 32px; padding: 6px 10px; border-radius: 8px; font-size: 12px; }
+
+    .workspace {
+      display: grid;
+      grid-template-columns: minmax(280px, 340px) minmax(0, 1fr);
+      gap: 20px;
+      align-items: start;
+    }
+
+    .sidebar,
+    .panel {
+      border: 1px solid var(--line);
+      background: rgba(255,255,255,.84);
+      box-shadow: var(--shadow);
+    }
+
+    .sidebar {
+      position: sticky;
+      top: 18px;
+      padding: 18px;
+      border-radius: 18px;
+    }
+
+    .section-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+
+    .section-head h2,
+    .section-head h3 {
+      margin: 0;
+      font-size: 15px;
+      letter-spacing: -.01em;
+    }
+
+    .section-number {
+      display: inline-grid;
+      place-items: center;
+      width: 25px;
+      height: 25px;
+      border-radius: 8px;
+      background: var(--sand);
+      color: var(--blue);
+      font-size: 12px;
+      font-weight: 800;
+    }
+
+    .stack { display: grid; gap: 18px; }
+
+    .field {
+      display: grid;
+      gap: 6px;
+    }
+
+    .field label,
+    .field legend {
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: .06em;
+      text-transform: uppercase;
+    }
+
+    .field input,
+    .field select,
+    .field textarea {
+      width: 100%;
+      min-width: 0;
+      border: 1px solid var(--line);
+      border-radius: 9px;
+      padding: 10px 11px;
+      color: var(--ink);
+      background: var(--paper);
+    }
+
+    .field textarea { min-height: 150px; resize: vertical; }
+
+    .two-up {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    fieldset { min-width: 0; margin: 0; padding: 0; border: 0; }
+
+    .choice-grid {
+      display: grid;
+      gap: 8px;
+    }
+
+    .choice-grid.two { grid-template-columns: 1fr 1fr; }
+
+    .choice {
+      display: grid;
+      gap: 3px;
+      min-height: 62px;
+      padding: 10px;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      text-align: left;
+      color: var(--ink);
+      background: var(--paper);
+    }
+
+    .choice:hover { border-color: var(--blue); }
+    .choice[aria-pressed="true"] { border-color: var(--blue); background: var(--blue-soft); box-shadow: inset 0 0 0 1px var(--blue); }
+    .choice-title { font-weight: 800; font-size: 12px; }
+    .choice-note { color: var(--muted); font-size: 11px; line-height: 1.25; }
+
+    .background-choice { min-height: 72px; }
+    .background-swatch { display: block; height: 22px; border: 1px solid rgba(28,37,43,.18); border-radius: 6px; }
+    .background-swatch.plain { background: linear-gradient(110deg, #dbe7dc, #d6d4c9 52%, #b6bec1); }
+    .background-swatch.locker { background: repeating-linear-gradient(90deg, #b8c4bf 0 18px, #d6ddd5 18px 21px); }
+    .background-swatch.dark { background: linear-gradient(120deg, #4a5152, #1f292d 55%, #766353); }
+
+    .pose-choice {
+      grid-template-columns: 42px 1fr;
+      align-items: center;
+      min-height: 74px;
+    }
+
+    .pose-choice > span:last-child {
+      display: grid;
+      gap: 4px;
+      min-width: 0;
+    }
+
+    .mini-pose {
+      position: relative;
+      width: 30px;
+      height: 51px;
+      margin: 0 auto;
+    }
+
+    .mini-pose::before {
+      content: "";
+      position: absolute;
+      left: 10px;
+      top: 1px;
+      width: 10px;
+      height: 10px;
+      border: 2px solid var(--blue);
+      border-radius: 50%;
+    }
+
+    .mini-pose::after {
+      content: "";
+      position: absolute;
+      left: 14px;
+      top: 14px;
+      width: 2px;
+      height: 28px;
+      border-radius: 2px;
+      background: var(--blue);
+      box-shadow: -8px 6px 0 -1px var(--blue), 8px 6px 0 -1px var(--blue), -5px 35px 0 -1px var(--blue), 5px 35px 0 -1px var(--blue);
+    }
+
+    .mini-pose.side::after { transform: rotate(10deg); transform-origin: top center; }
+    .mini-pose.back::before, .mini-pose.back::after { opacity: .58; }
+
+    .note {
+      margin: 0;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.4;
+    }
+
+    .save-strip {
+      display: grid;
+      gap: 8px;
+      padding-top: 2px;
+    }
+
+    .autosave {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      color: var(--muted);
+      font-size: 11px;
+    }
+
+    .pulse {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--lime-deep);
+    }
+
+    .main-stack { display: grid; gap: 20px; min-width: 0; }
+
+    .panel { border-radius: 18px; overflow: hidden; }
+    .panel-pad { padding: clamp(16px, 2vw, 24px); }
+
+    .studio-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 14px;
+      padding: 18px 22px;
+      border-bottom: 1px solid var(--line);
+      background: var(--sand);
+    }
+
+    .studio-title { display: flex; align-items: center; gap: 10px; }
+    .studio-title h2 { margin: 0; font-size: 19px; letter-spacing: -.03em; }
+
+    .status-pill,
+    .score-pill,
+    .tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      width: fit-content;
+      border-radius: 999px;
+      padding: 5px 9px;
+      font-size: 11px;
+      font-weight: 800;
+    }
+
+    .status-pill { background: var(--blue-soft); color: var(--blue); }
+    .score-pill { background: var(--lime); color: var(--ink); font-size: 12px; }
+    .tag { border: 1px solid var(--line); background: var(--panel); color: var(--muted); }
+    .tag.good { border-color: #bfd781; background: #f2f9df; color: var(--lime-deep); }
+    .tag.warn { border-color: #f0c885; background: var(--warning-soft); color: var(--warning); }
+
+    .studio-grid {
+      display: grid;
+      grid-template-columns: minmax(280px, 1fr) minmax(260px, 360px);
+      gap: 22px;
+      align-items: start;
+    }
+
+    .preview-wrap { min-width: 0; }
+
+    .preview-stage {
+      position: relative;
+      aspect-ratio: 4 / 3;
+      min-height: 320px;
+      overflow: hidden;
+      border: 1px solid #bfcbc5;
+      border-radius: 14px;
+      background: #d9d5ca;
+    }
+
+    .preview-stage[data-lighting="soft-front"] { background: linear-gradient(115deg, #dbe7dc 0%, #d6d4c9 46%, #b6bec1 100%); }
+    .preview-stage[data-lighting="side-light"] { background: linear-gradient(90deg, #b2b8b5 0%, #ded9ca 52%, #c3a88e 100%); }
+    .preview-stage[data-lighting="overhead"] { background: linear-gradient(180deg, #eee8d5 0%, #b8bfbc 63%, #8d9895 100%); }
+
+    .stage-label {
+      position: absolute;
+      top: 12px;
+      left: 12px;
+      z-index: 3;
+      padding: 5px 8px;
+      border: 1px solid rgba(28,37,43,.14);
+      border-radius: 7px;
+      background: rgba(255,255,255,.72);
+      color: var(--ink);
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: .04em;
+      text-transform: uppercase;
+      backdrop-filter: blur(6px);
+    }
+
+    .stage-label.right { left: auto; right: 12px; }
+
+    .mirror-grid {
+      position: absolute;
+      inset: 0;
+      opacity: .28;
+      background-image: linear-gradient(rgba(255,255,255,.7) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.7) 1px, transparent 1px);
+      background-size: 12.5% 16.666%;
+      pointer-events: none;
+    }
+
+    .floor-line {
+      position: absolute;
+      left: 7%;
+      right: 7%;
+      bottom: 16%;
+      height: 2px;
+      background: rgba(28,37,43,.25);
+    }
+
+    .floor-mark {
+      position: absolute;
+      left: 50%;
+      bottom: 12%;
+      width: 54px;
+      height: 9px;
+      transform: translateX(-50%);
+      border: 2px solid rgba(28,37,43,.48);
+      border-radius: 50%;
+    }
+
+    .crop-zone {
+      position: absolute;
+      z-index: 2;
+      inset: 10% 27% 8%;
+      border: 1px dashed rgba(28,37,43,.58);
+      border-radius: 9px;
+      pointer-events: none;
+    }
+
+    .crop-zone[data-crop="upper-body"] { inset: 12% 24% 38%; }
+    .crop-zone[data-crop="waist-up"] { inset: 13% 20% 26%; }
+    .crop-zone::after {
+      content: "privacy crop";
+      position: absolute;
+      left: 8px;
+      bottom: 8px;
+      padding: 3px 5px;
+      border-radius: 4px;
+      color: var(--ink);
+      background: rgba(255,255,255,.68);
+      font-size: 10px;
+      font-weight: 800;
+      text-transform: uppercase;
+    }
+
+    .person {
+      position: absolute;
+      left: 50%;
+      bottom: 16%;
+      width: 32%;
+      height: 68%;
+      transform: translateX(-50%);
+      opacity: .82;
+    }
+
+    .person .head {
+      position: absolute;
+      left: 50%;
+      top: 0;
+      width: 16%;
+      aspect-ratio: 1;
+      transform: translateX(-50%);
+      border: 2px solid rgba(28,37,43,.68);
+      border-radius: 50%;
+      background: rgba(248,239,222,.62);
+    }
+
+    .person .torso {
+      position: absolute;
+      left: 50%;
+      top: 15%;
+      width: 39%;
+      height: 42%;
+      transform: translateX(-50%);
+      border: 2px solid rgba(28,37,43,.68);
+      border-radius: 45% 45% 28% 28%;
+      background: rgba(31,103,113,.34);
+    }
+
+    .person .arm,
+    .person .leg {
+      position: absolute;
+      width: 11%;
+      border: 2px solid rgba(28,37,43,.68);
+      border-radius: 999px;
+      background: rgba(248,239,222,.54);
+      transform-origin: top center;
+    }
+
+    .person .arm { top: 17%; height: 40%; }
+    .person .arm.left { left: 25%; transform: rotate(7deg); }
+    .person .arm.right { right: 25%; transform: rotate(-7deg); }
+    .person .leg { top: 53%; height: 47%; }
+    .person .leg.left { left: 38%; transform: rotate(3deg); }
+    .person .leg.right { right: 38%; transform: rotate(-3deg); }
+
+    .person.side { width: 26%; }
+    .person.side .torso { width: 30%; transform: translateX(-50%) skewY(-4deg); }
+    .person.side .arm.left, .person.side .leg.left { opacity: .35; }
+    .person.side .head { left: 54%; }
+    .person.back .torso { background: rgba(87,112,24,.28); }
+
+    .stage-legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px 16px;
+      margin-top: 10px;
+      color: var(--muted);
+      font-size: 11px;
+    }
+
+    .legend-item { display: inline-flex; align-items: center; gap: 6px; }
+    .legend-line { width: 18px; border-top: 1px dashed var(--ink); }
+    .legend-mark { width: 17px; height: 6px; border: 1px solid var(--ink); border-radius: 50%; }
+
+    .control-column { display: grid; gap: 17px; }
+
+    .control-block {
+      padding-bottom: 15px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .control-block:last-child { padding-bottom: 0; border-bottom: 0; }
+
+    .control-label {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 8px;
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: .06em;
+      text-transform: uppercase;
+    }
+
+    .control-value { color: var(--ink); letter-spacing: 0; text-transform: none; }
+
+    .segmented {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 5px;
+      padding: 4px;
+      border-radius: 10px;
+      background: var(--sand);
+    }
+
+    .segment {
+      min-height: 36px;
+      padding: 6px 5px;
+      border-radius: 7px;
+      color: var(--muted);
+      background: transparent;
+      font-size: 11px;
+      font-weight: 700;
+    }
+
+    .segment[aria-pressed="true"] { color: var(--ink); background: var(--panel); box-shadow: 0 2px 7px rgba(28,37,43,.08); }
+
+    .checks {
+      display: grid;
+      gap: 8px;
+    }
+
+    .check-row {
+      display: grid;
+      grid-template-columns: 18px 1fr auto;
+      align-items: center;
+      gap: 8px;
+      min-height: 31px;
+      color: var(--ink);
+      font-size: 12px;
+    }
+
+    .check-row input { width: 16px; height: 16px; accent-color: var(--blue); }
+    .check-row small { color: var(--muted); font-size: 10px; }
+
+    .alert {
+      display: grid;
+      gap: 6px;
+      padding: 12px;
+      border: 1px solid #f0c885;
+      border-radius: 11px;
+      background: var(--warning-soft);
+      color: #74450f;
+    }
+
+    .alert.good { border-color: #bdd57c; background: #f3f9df; color: #4e681b; }
+    .alert-title { font-size: 12px; font-weight: 800; }
+    .alert-list { margin: 0; padding-left: 18px; font-size: 12px; }
+
+    .lower-grid {
+      display: grid;
+      grid-template-columns: minmax(280px, 1.05fr) minmax(260px, .95fr);
+      gap: 20px;
+    }
+
+    .score-panel { min-width: 0; }
+
+    .score-layout {
+      display: grid;
+      grid-template-columns: 148px 1fr;
+      gap: 20px;
+      align-items: center;
+    }
+
+    .score-orb {
+      display: grid;
+      place-items: center;
+      width: 148px;
+      aspect-ratio: 1;
+      border-radius: 50%;
+      background: conic-gradient(var(--blue) calc(var(--score) * 1%), var(--sand) 0);
+    }
+
+    .score-orb::after {
+      content: "";
+      grid-area: 1 / 1;
+      width: 112px;
+      aspect-ratio: 1;
+      border-radius: 50%;
+      background: var(--panel);
+    }
+
+    .score-inside {
+      position: relative;
+      z-index: 1;
+      grid-area: 1 / 1;
+      display: grid;
+      place-items: center;
+      text-align: center;
+    }
+
+    .score-number { font-size: 36px; font-weight: 900; line-height: 1; letter-spacing: -.06em; }
+    .score-caption { color: var(--muted); font-size: 10px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
+
+    .metric-list { display: grid; gap: 11px; }
+    .metric { display: grid; grid-template-columns: 1fr auto; gap: 10px; align-items: center; }
+    .metric-name { color: var(--muted); font-size: 12px; }
+    .metric-value { font-size: 12px; font-weight: 800; }
+    .meter { grid-column: 1 / -1; height: 7px; overflow: hidden; border-radius: 999px; background: var(--sand); }
+    .meter > span { display: block; height: 100%; border-radius: inherit; background: var(--blue); transition: width .2s ease; }
+
+    .comparison-note {
+      margin: 14px 0 0;
+      padding-top: 12px;
+      border-top: 1px solid var(--line);
+      color: var(--muted);
+      font-size: 11px;
+    }
+
+    .receipt-box { display: grid; gap: 10px; }
+    .receipt-box textarea { width: 100%; min-height: 250px; padding: 12px; border: 1px solid var(--line); border-radius: 10px; color: var(--ink); background: var(--paper); font: 12px/1.5 ui-monospace, SFMono-Regular, Menlo, monospace; resize: vertical; }
+
+    .history-list { display: grid; gap: 8px; }
+    .history-item {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 10px;
+      align-items: center;
+      padding: 10px;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: var(--paper);
+    }
+
+    .history-title { font-size: 12px; font-weight: 800; }
+    .history-meta { color: var(--muted); font-size: 11px; }
+    .empty { color: var(--muted); font-size: 12px; }
+
+    .footer-note {
+      margin: 16px 0 0;
+      color: var(--muted);
+      font-size: 11px;
+      text-align: center;
+    }
+
+    @media (max-width: 1080px) {
+      .workspace { grid-template-columns: 300px minmax(0, 1fr); }
+      .studio-grid { grid-template-columns: 1fr; }
+      .control-column { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 15px 18px; }
+      .control-block:nth-child(3) { padding-bottom: 0; border-bottom: 0; }
+    }
+
+    @media (max-width: 780px) {
+      .topbar { display: grid; }
+      .top-actions { justify-content: flex-start; }
+      .workspace, .lower-grid { grid-template-columns: 1fr; }
+      .sidebar { position: static; }
+      .control-column { grid-template-columns: 1fr; }
+      .score-layout { grid-template-columns: 126px 1fr; gap: 14px; }
+      .score-orb { width: 126px; }
+      .score-orb::after { width: 94px; }
+    }
+
+    @media (max-width: 480px) {
+      .app { padding: 18px 12px 30px; }
+      h1 { font-size: 34px; }
+      .studio-head { padding: 15px; }
+      .panel-pad { padding: 15px; }
+      .two-up, .choice-grid.two { grid-template-columns: 1fr; }
+      .preview-stage { min-height: 250px; }
+      .score-layout { grid-template-columns: 1fr; justify-items: center; }
+      .metric-list { width: 100%; }
+      .score-panel .section-head { align-self: stretch; }
+    }
+
+  </style>
+</head>
+<body>
+  <main class="app" id="studioApp">
+    <header class="topbar">
+      <div>
+        <p class="eyebrow">Gym mirror protocol · no uploads</p>
+        <h1>Make every progress shot easier to compare.</h1>
+        <p class="lede">Lock the variables that change the story, check the frame before you leave the mirror, and keep a copyable receipt for the next session.</p>
+      </div>
+      <div class="top-actions" aria-label="Studio actions">
+        <button class="button ghost" type="button" id="resetBtn">Reset current</button>
+        <button class="button" type="button" id="exportBtn">Export session</button>
+        <button class="button primary" type="button" id="saveBtn">Save session</button>
+      </div>
+    </header>
+
+    <div class="workspace">
+      <aside class="sidebar" aria-label="Session setup">
+        <div class="stack">
+          <section>
+            <div class="section-head">
+              <h2><span class="section-number">01</span> Name the session</h2>
+            </div>
+            <div class="two-up">
+              <div class="field">
+                <label for="sessionName">Session label</label>
+                <input id="sessionName" type="text" placeholder="Week 08 · morning" autocomplete="off">
+              </div>
+              <div class="field">
+                <label for="sessionDate">Date</label>
+                <input id="sessionDate" type="date">
+              </div>
+            </div>
+          </section>
+
+          <section>
+            <div class="section-head">
+              <h2><span class="section-number">02</span> Choose a pose</h2>
+            </div>
+            <fieldset class="choice-grid two" id="poseChoices" aria-label="Pose">
+              <button class="choice pose-choice" type="button" data-choice-group="pose" data-value="front-relaxed" aria-pressed="true">
+                <span class="mini-pose"></span><span><span class="choice-title">Front relaxed</span><span class="choice-note">Neutral stance</span></span>
+              </button>
+              <button class="choice pose-choice" type="button" data-choice-group="pose" data-value="front-flexed" aria-pressed="false">
+                <span class="mini-pose"></span><span><span class="choice-title">Front flexed</span><span class="choice-note">Repeatable flex</span></span>
+              </button>
+              <button class="choice pose-choice" type="button" data-choice-group="pose" data-value="side-relaxed" aria-pressed="false">
+                <span class="mini-pose side"></span><span><span class="choice-title">Side relaxed</span><span class="choice-note">Same side each time</span></span>
+              </button>
+              <button class="choice pose-choice" type="button" data-choice-group="pose" data-value="back-relaxed" aria-pressed="false">
+                <span class="mini-pose back"></span><span><span class="choice-title">Back relaxed</span><span class="choice-note">Shoulders even</span></span>
+              </button>
+            </fieldset>
+          </section>
+
+          <section>
+            <div class="section-head">
+              <h2><span class="section-number">03</span> Lock the variables</h2>
+            </div>
+            <div class="stack">
+              <div class="field">
+                <label for="angleSelect">Camera angle</label>
+                <select id="angleSelect">
+                  <option value="eye-level">Eye level</option>
+                  <option value="slightly-above">Slightly above</option>
+                  <option value="slightly-below">Slightly below</option>
+                </select>
+              </div>
+              <div class="field">
+                <label for="lightingSelect">Lighting</label>
+                <select id="lightingSelect">
+                  <option value="soft-front">Soft front</option>
+                  <option value="side-light">Side light</option>
+                  <option value="overhead">Overhead</option>
+                </select>
+              </div>
+              <div class="field">
+                <label>Background card</label>
+                <fieldset class="choice-grid" id="backgroundChoices" aria-label="Background card">
+                  <button class="choice background-choice" type="button" data-choice-group="background" data-value="plain-neutral" aria-pressed="true">
+                    <span class="background-swatch plain"></span><span class="choice-title">Plain neutral wall</span><span class="choice-note">Quiet reference</span>
+                  </button>
+                  <button class="choice background-choice" type="button" data-choice-group="background" data-value="locker-line" aria-pressed="false">
+                    <span class="background-swatch locker"></span><span class="choice-title">Locker line</span><span class="choice-note">Repeat the same bays</span>
+                  </button>
+                  <button class="choice background-choice" type="button" data-choice-group="background" data-value="dark-corner" aria-pressed="false">
+                    <span class="background-swatch dark"></span><span class="choice-title">Dark corner</span><span class="choice-note">Watch shadow shift</span>
+                  </button>
+                </fieldset>
+              </div>
+            </div>
+          </section>
+
+          <section>
+            <div class="section-head">
+              <h2><span class="section-number">04</span> Compare against</h2>
+            </div>
+            <div class="field">
+              <label for="compareSelect">Baseline session</label>
+              <select id="compareSelect">
+                <option value="none">No saved baseline</option>
+              </select>
+            </div>
+            <p class="note" style="margin-top:8px">The comparison score measures protocol match and check completion. It does not inspect or store photos.</p>
+          </section>
+
+          <section class="save-strip">
+            <button class="button lime" type="button" id="saveSidebarBtn">Save this session</button>
+            <div class="autosave"><span class="pulse"></span><span id="saveStatus">Changes stay in this browser.</span></div>
+          </section>
+        </div>
+      </aside>
+
+      <div class="main-stack">
+        <section class="panel studio-panel" aria-labelledby="studioHeading">
+          <div class="studio-head">
+            <div class="studio-title">
+              <span class="status-pill">LIVE SETUP</span>
+              <h2 id="studioHeading">Mirror framing card</h2>
+            </div>
+            <span class="score-pill" id="headerScore">Setup score 68</span>
+          </div>
+          <div class="panel-pad">
+            <div class="studio-grid">
+              <div class="preview-wrap">
+                <div class="preview-stage" id="previewStage" data-lighting="soft-front">
+                  <span class="stage-label" id="stagePoseLabel">Front relaxed</span>
+                  <span class="stage-label right" id="stageBackgroundLabel">Plain neutral wall</span>
+                  <div class="mirror-grid"></div>
+                  <div class="crop-zone" id="cropZone" data-crop="full-body"></div>
+                  <div class="person" id="personSilhouette" aria-hidden="true">
+                    <span class="head"></span><span class="torso"></span>
+                    <span class="arm left"></span><span class="arm right"></span>
+                    <span class="leg left"></span><span class="leg right"></span>
+                  </div>
+                  <div class="floor-line"></div>
+                  <div class="floor-mark"></div>
+                </div>
+                <div class="stage-legend" aria-label="Framing guide legend">
+                  <span class="legend-item"><span class="legend-line"></span> safe crop zone</span>
+                  <span class="legend-item"><span class="legend-mark"></span> feet mark</span>
+                  <span class="legend-item">schematic only · no camera access</span>
+                </div>
+              </div>
+
+              <div class="control-column">
+                <div class="control-block">
+                  <div class="control-label"><span>Camera height</span><span class="control-value" id="heightValue">Eye level</span></div>
+                  <div class="segmented" id="heightChoices">
+                    <button class="segment" type="button" data-choice-group="height" data-value="slightly-above" aria-pressed="false">Above</button>
+                    <button class="segment" type="button" data-choice-group="height" data-value="eye-level" aria-pressed="true">Eye level</button>
+                    <button class="segment" type="button" data-choice-group="height" data-value="slightly-below" aria-pressed="false">Below</button>
+                  </div>
+                </div>
+
+                <div class="control-block">
+                  <div class="control-label"><span>Distance marker</span><span class="control-value" id="distanceValue">Same mark</span></div>
+                  <div class="segmented" id="distanceChoices">
+                    <button class="segment" type="button" data-choice-group="distance" data-value="same-mark" aria-pressed="true">Same mark</button>
+                    <button class="segment" type="button" data-choice-group="distance" data-value="one-step" aria-pressed="false">One step</button>
+                    <button class="segment" type="button" data-choice-group="distance" data-value="unknown" aria-pressed="false">Not sure</button>
+                  </div>
+                </div>
+
+                <div class="control-block">
+                  <div class="control-label"><span>Privacy crop</span><span class="control-value" id="cropValue">Full body</span></div>
+                  <div class="segmented" id="cropChoices">
+                    <button class="segment" type="button" data-choice-group="crop" data-value="full-body" aria-pressed="true">Full body</button>
+                    <button class="segment" type="button" data-choice-group="crop" data-value="waist-up" aria-pressed="false">Waist up</button>
+                    <button class="segment" type="button" data-choice-group="crop" data-value="upper-body" aria-pressed="false">Upper body</button>
+                  </div>
+                </div>
+
+                <div class="control-block">
+                  <div class="control-label"><span>Before you leave the mirror</span><span class="control-value" id="checkCount">4 / 5 checked</span></div>
+                  <div class="checks" id="shotChecks">
+                    <label class="check-row"><input type="checkbox" data-check="stance" checked><span>Stance matches the reference</span><small>pose</small></label>
+                    <label class="check-row"><input type="checkbox" data-check="feet" checked><span>Feet sit on the same mark</span><small>distance</small></label>
+                    <label class="check-row"><input type="checkbox" data-check="camera" checked><span>Camera is level and centered</span><small>angle</small></label>
+                    <label class="check-row"><input type="checkbox" data-check="shoulders" checked><span>Shoulders and hips are square</span><small>alignment</small></label>
+                    <label class="check-row"><input type="checkbox" data-check="breath"><span>Breath and flex level are repeatable</span><small>effort</small></label>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="panel panel-pad" aria-labelledby="privacyHeading">
+          <div class="section-head">
+            <h2 id="privacyHeading">Privacy and retake review</h2>
+            <span class="tag warn" id="privacyTag">Review needed</span>
+          </div>
+          <div class="lower-grid">
+            <div>
+              <div class="checks" id="privacyChecks">
+                <label class="check-row"><input type="checkbox" data-privacy="face" checked><span>Face is outside the saved crop or intentionally included</span><small>identity</small></label>
+                <label class="check-row"><input type="checkbox" data-privacy="reflection" checked><span>Mirror reflection shows no name, badge, or location detail</span><small>context</small></label>
+                <label class="check-row"><input type="checkbox" data-privacy="marks"><span>Distinctive marks or tattoos are treated consistently</span><small>privacy</small></label>
+                <label class="check-row"><input type="checkbox" data-privacy="bystanders" checked><span>No bystander, locker number, or personal item is visible</span><small>background</small></label>
+              </div>
+            </div>
+            <div class="alert" id="retakeAlert" aria-live="polite">
+              <div class="alert-title" id="retakeTitle">Retake before saving</div>
+              <ul class="alert-list" id="retakeList"></ul>
+            </div>
+          </div>
+        </section>
+
+        <div class="lower-grid">
+          <section class="panel panel-pad score-panel" aria-labelledby="scoreHeading">
+            <div class="section-head">
+              <h2 id="scoreHeading">Session comparison score</h2>
+              <span class="tag" id="baselineTag">No baseline</span>
+            </div>
+            <div class="score-layout">
+              <div class="score-orb" id="scoreOrb" style="--score:68">
+                <div class="score-inside"><span class="score-number" id="scoreNumber">68</span><span class="score-caption">/ 100</span></div>
+              </div>
+              <div class="metric-list">
+                <div class="metric"><span class="metric-name">Repeatability checks</span><span class="metric-value" id="repeatabilityValue">80%</span><div class="meter"><span id="repeatabilityMeter" style="width:80%"></span></div></div>
+                <div class="metric"><span class="metric-name">Privacy review</span><span class="metric-value" id="privacyValue">75%</span><div class="meter"><span id="privacyMeter" style="width:75%"></span></div></div>
+                <div class="metric"><span class="metric-name">Variable match</span><span class="metric-value" id="matchValue">—</span><div class="meter"><span id="matchMeter" style="width:100%"></span></div></div>
+              </div>
+            </div>
+            <p class="comparison-note" id="comparisonNote">Complete a session, save it, then select it as a baseline next time. This score is a shooting-protocol check, not a physique judgment.</p>
+          </section>
+
+          <section class="panel panel-pad" aria-labelledby="receiptHeading">
+            <div class="section-head">
+              <h2 id="receiptHeading">Copyable shoot receipt</h2>
+              <button class="button small" type="button" id="copyBtn">Copy receipt</button>
+            </div>
+            <div class="receipt-box">
+              <textarea id="receiptText" readonly aria-label="Shoot receipt"></textarea>
+              <div class="button-row">
+                <button class="button small" type="button" id="downloadReceiptBtn">Download receipt</button>
+                <button class="button small" type="button" id="clearHistoryBtn">Clear saved history</button>
+              </div>
+            </div>
+          </section>
+        </div>
+
+        <section class="panel panel-pad history-panel" aria-labelledby="historyHeading">
+          <div class="section-head">
+            <h2 id="historyHeading">Saved sessions</h2>
+            <span class="tag" id="historyCount">0 saved</span>
+          </div>
+          <div class="history-list" id="historyList"><p class="empty">No sessions saved yet. The first saved session becomes a useful reference card.</p></div>
+        </section>
+      </div>
+    </div>
+    <p class="footer-note">Everything stays local to this browser. This studio never requests camera access and never needs an image upload.</p>
+  </main>
+
+  <script>
+    (() => {
+      const STORAGE_KEY = "gym-mirror-progress-shot-sessions-v1";
+      const today = new Date().toISOString().slice(0, 10);
+      const labels = {
+        pose: { "front-relaxed": "Front relaxed", "front-flexed": "Front flexed", "side-relaxed": "Side relaxed", "back-relaxed": "Back relaxed" },
+        angle: { "eye-level": "Eye level", "slightly-above": "Slightly above", "slightly-below": "Slightly below" },
+        lighting: { "soft-front": "Soft front", "side-light": "Side light", "overhead": "Overhead" },
+        background: { "plain-neutral": "Plain neutral wall", "locker-line": "Locker line", "dark-corner": "Dark corner" },
+        height: { "eye-level": "Eye level", "slightly-above": "Above", "slightly-below": "Below" },
+        distance: { "same-mark": "Same mark", "one-step": "One step", "unknown": "Not sure" },
+        crop: { "full-body": "Full body", "waist-up": "Waist up", "upper-body": "Upper body" }
+      };
+
+      const defaultState = () => ({
+        name: "",
+        date: today,
+        pose: "front-relaxed",
+        angle: "eye-level",
+        lighting: "soft-front",
+        background: "plain-neutral",
+        height: "eye-level",
+        distance: "same-mark",
+        crop: "full-body",
+        checks: { stance: true, feet: true, camera: true, shoulders: true, breath: false },
+        privacy: { face: true, reflection: true, marks: false, bystanders: true }
+      });
+
+      let state = defaultState();
+      let history = readHistory();
+      let clearArmTimer = null;
+
+      const $ = (id) => document.getElementById(id);
+      const all = (selector, root = document) => Array.from(root.querySelectorAll(selector));
+
+      function readHistory() {
+        try {
+          const stored = JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
+          return Array.isArray(stored) ? stored : [];
+        } catch (error) {
+          return [];
+        }
+      }
+
+      function writeHistory() {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(history.slice(0, 12)));
+      }
+
+      function scoreState() {
+        const checkValues = Object.values(state.checks);
+        const privacyValues = Object.values(state.privacy);
+        const repeatability = Math.round(checkValues.filter(Boolean).length / checkValues.length * 100);
+        const privacy = Math.round(privacyValues.filter(Boolean).length / privacyValues.length * 100);
+        const baseline = state.compareId ? history.find((item) => item.id === state.compareId) : null;
+        const comparedFields = ["pose", "angle", "lighting", "background", "height", "distance", "crop"];
+        const matches = baseline ? comparedFields.filter((field) => baseline[field] === state[field]).length : null;
+        const variableMatch = baseline ? Math.round(matches / comparedFields.length * 100) : 100;
+        const overall = baseline ? Math.round(repeatability * .4 + privacy * .2 + variableMatch * .4) : Math.round(repeatability * .6 + privacy * .4);
+        return { repeatability, privacy, variableMatch, overall, baseline, matches, comparedFields };
+      }
+
+      function formatDate(dateString) {
+        if (!dateString) return "Undated";
+        const date = new Date(dateString + "T12:00:00");
+        return Number.isNaN(date.getTime()) ? dateString : date.toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" });
+      }
+
+      function setPressed(group, value) {
+        all(`[data-choice-group="${group}"]`).forEach((button) => {
+          button.setAttribute("aria-pressed", button.dataset.value === value ? "true" : "false");
+        });
+      }
+
+      function renderCompareOptions() {
+        const select = $("compareSelect");
+        const current = state.compareId || "none";
+        select.replaceChildren();
+        const none = document.createElement("option");
+        none.value = "none";
+        none.textContent = "No saved baseline";
+        select.append(none);
+        history.forEach((item) => {
+          const option = document.createElement("option");
+          option.value = item.id;
+          option.textContent = `${item.name || "Untitled session"} · ${formatDate(item.date)}`;
+          select.append(option);
+        });
+        select.value = history.some((item) => item.id === current) ? current : "none";
+      }
+
+      function renderHistory() {
+        const list = $("historyList");
+        list.replaceChildren();
+        $("historyCount").textContent = `${history.length} saved`;
+        if (!history.length) {
+          const empty = document.createElement("p");
+          empty.className = "empty";
+          empty.textContent = "No sessions saved yet. The first saved session becomes a useful reference card.";
+          list.append(empty);
+          return;
+        }
+        history.forEach((item) => {
+          const row = document.createElement("div");
+          row.className = "history-item";
+          const copy = document.createElement("div");
+          const title = document.createElement("div");
+          title.className = "history-title";
+          title.textContent = item.name || "Untitled session";
+          const meta = document.createElement("div");
+          meta.className = "history-meta";
+          meta.textContent = `${formatDate(item.date)} · ${labels.pose[item.pose]} · score ${item.score}`;
+          copy.append(title, meta);
+          const actions = document.createElement("div");
+          actions.className = "button-row";
+          const compareButton = document.createElement("button");
+          compareButton.type = "button";
+          compareButton.className = "button small";
+          compareButton.textContent = "Use baseline";
+          compareButton.addEventListener("click", () => {
+            state.compareId = item.id;
+            render();
+            window.scrollTo({ top: 0, behavior: "smooth" });
+          });
+          const loadButton = document.createElement("button");
+          loadButton.type = "button";
+          loadButton.className = "button small ghost";
+          loadButton.textContent = "Load setup";
+          loadButton.addEventListener("click", () => {
+            state = {
+              name: item.name || "",
+              date: item.date || today,
+              pose: item.pose || "front-relaxed",
+              angle: item.angle || "eye-level",
+              lighting: item.lighting || "soft-front",
+              background: item.background || "plain-neutral",
+              height: item.height || "eye-level",
+              distance: item.distance || "same-mark",
+              crop: item.crop || "full-body",
+              checks: { ...defaultState().checks, ...(item.checks || {}) },
+              privacy: { ...defaultState().privacy, ...(item.privacy || {}) },
+              compareId: state.compareId || "none"
+            };
+            render();
+            window.scrollTo({ top: 0, behavior: "smooth" });
+          });
+          actions.append(compareButton, loadButton);
+          row.append(copy, actions);
+          list.append(row);
+        });
+      }
+
+      function renderReceipt(scores) {
+        const baselineText = scores.baseline ? `${scores.baseline.name || "Untitled session"} · ${formatDate(scores.baseline.date)}` : "No saved baseline";
+        const checks = Object.entries(state.checks).map(([key, value]) => `${value ? "[x]" : "[ ]"} ${key}`).join("\n");
+        const privacy = Object.entries(state.privacy).map(([key, value]) => `${value ? "[x]" : "[ ]"} ${key}`).join("\n");
+        const warnings = getWarnings();
+        const warningText = warnings.length ? warnings.map((warning) => `- ${warning}`).join("\n") : "- None";
+        const receipt = [
+          "GYM MIRROR PROGRESS SHOT RECEIPT",
+          "================================",
+          `Session: ${state.name || "Untitled session"}`,
+          `Date: ${formatDate(state.date)}`,
+          `Baseline: ${baselineText}`,
+          "",
+          "LOCKED VARIABLES",
+          `Pose: ${labels.pose[state.pose]}`,
+          `Camera angle: ${labels.angle[state.angle]}`,
+          `Camera height: ${labels.height[state.height]}`,
+          `Distance marker: ${labels.distance[state.distance]}`,
+          `Lighting: ${labels.lighting[state.lighting]}`,
+          `Background: ${labels.background[state.background]}`,
+          `Privacy crop: ${labels.crop[state.crop]}`,
+          "",
+          "REPEATABILITY CHECKS",
+          checks,
+          "",
+          "PRIVACY CHECKS",
+          privacy,
+          "",
+          `COMPARISON SCORE: ${scores.overall}/100`,
+          `Repeatability: ${scores.repeatability}% · Privacy: ${scores.privacy}% · Variable match: ${scores.baseline ? `${scores.variableMatch}%` : "n/a"}`,
+          "",
+          "RETAKE WARNINGS",
+          warningText,
+          "",
+          "Next session reminder: use the same pose, camera mark, height, lighting, and crop before judging change."
+        ].join("\n");
+        $("receiptText").value = receipt;
+      }
+
+      function getWarnings() {
+        const warnings = [];
+        if (state.height !== "eye-level") warnings.push("Camera height is not at eye level.");
+        if (state.distance !== "same-mark") warnings.push("Distance is not locked to the same floor mark.");
+        if (state.lighting === "overhead") warnings.push("Overhead light can deepen shadows and change perceived definition.");
+        if (!state.checks.camera) warnings.push("Camera level or centering has not been confirmed.");
+        if (!state.checks.breath) warnings.push("Breath or flex level has not been confirmed.");
+        Object.entries(state.privacy).forEach(([key, value]) => {
+          if (!value) {
+            const names = { face: "face crop", reflection: "reflection", marks: "distinctive marks", bystanders: "bystanders or personal items" };
+            warnings.push(`Privacy review is incomplete for ${names[key]}.`);
+          }
+        });
+        return warnings;
+      }
+
+      function render() {
+        $("sessionName").value = state.name;
+        $("sessionDate").value = state.date;
+        $("angleSelect").value = state.angle;
+        $("lightingSelect").value = state.lighting;
+        setPressed("pose", state.pose);
+        setPressed("height", state.height);
+        setPressed("distance", state.distance);
+        setPressed("crop", state.crop);
+        all("[data-check]").forEach((input) => { input.checked = Boolean(state.checks[input.dataset.check]); });
+        all("[data-privacy]").forEach((input) => { input.checked = Boolean(state.privacy[input.dataset.privacy]); });
+
+        const poseClass = state.pose.startsWith("side") ? "side" : state.pose.startsWith("back") ? "back" : "";
+        $("personSilhouette").className = `person ${poseClass}`.trim();
+        $("previewStage").dataset.lighting = state.lighting;
+        $("cropZone").dataset.crop = state.crop;
+        $("stagePoseLabel").textContent = labels.pose[state.pose];
+        $("stageBackgroundLabel").textContent = labels.background[state.background];
+        $("heightValue").textContent = labels.height[state.height];
+        $("distanceValue").textContent = labels.distance[state.distance];
+        $("cropValue").textContent = labels.crop[state.crop];
+
+        const checkTotal = Object.keys(state.checks).length;
+        const checkDone = Object.values(state.checks).filter(Boolean).length;
+        $("checkCount").textContent = `${checkDone} / ${checkTotal} checked`;
+
+        const scores = scoreState();
+        $("headerScore").textContent = `Setup score ${scores.overall}`;
+        $("scoreNumber").textContent = scores.overall;
+        $("scoreOrb").style.setProperty("--score", scores.overall);
+        $("repeatabilityValue").textContent = `${scores.repeatability}%`;
+        $("repeatabilityMeter").style.width = `${scores.repeatability}%`;
+        $("privacyValue").textContent = `${scores.privacy}%`;
+        $("privacyMeter").style.width = `${scores.privacy}%`;
+        $("matchValue").textContent = scores.baseline ? `${scores.variableMatch}%` : "—";
+        $("matchMeter").style.width = `${scores.variableMatch}%`;
+        $("baselineTag").textContent = scores.baseline ? `Against ${scores.baseline.name || "untitled"}` : "No baseline";
+        $("comparisonNote").textContent = scores.baseline ? `${scores.matches} of ${scores.comparedFields.length} locked variables match ${scores.baseline.name || "the selected baseline"}. The score is a protocol check, not a physique judgment.` : "Complete a session, save it, then select it as a baseline next time. This score is a shooting-protocol check, not a physique judgment.";
+
+        const warnings = getWarnings();
+        const alert = $("retakeAlert");
+        const list = $("retakeList");
+        list.replaceChildren();
+        if (!warnings.length) {
+          alert.className = "alert good";
+          $("retakeTitle").textContent = "Ready to save";
+          const item = document.createElement("li");
+          item.textContent = "Variables and privacy checks are complete.";
+          list.append(item);
+          $("privacyTag").className = "tag good";
+          $("privacyTag").textContent = "Ready";
+        } else {
+          alert.className = "alert";
+          $("retakeTitle").textContent = "Retake before saving";
+          warnings.forEach((warning) => {
+            const item = document.createElement("li");
+            item.textContent = warning;
+            list.append(item);
+          });
+          $("privacyTag").className = "tag warn";
+          $("privacyTag").textContent = "Review needed";
+        }
+        renderCompareOptions();
+        renderReceipt(scores);
+      }
+
+      function saveSession() {
+        const scores = scoreState();
+        const snapshot = {
+          id: `session-${Date.now()}`,
+          name: state.name.trim(),
+          date: state.date || today,
+          pose: state.pose,
+          angle: state.angle,
+          lighting: state.lighting,
+          background: state.background,
+          height: state.height,
+          distance: state.distance,
+          crop: state.crop,
+          checks: { ...state.checks },
+          privacy: { ...state.privacy },
+          score: scores.overall
+        };
+        history = [snapshot, ...history.filter((item) => item.id !== snapshot.id)].slice(0, 12);
+        writeHistory();
+        $("saveStatus").textContent = `Saved locally at ${new Date().toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}.`;
+        renderHistory();
+        render();
+      }
+
+      function exportSession() {
+        const data = { ...state, score: scoreState().overall, exportedAt: new Date().toISOString() };
+        const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = `${(state.name || "gym-progress-shot").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "gym-progress-shot"}.json`;
+        document.body.append(link);
+        link.click();
+        link.remove();
+        URL.revokeObjectURL(url);
+        $("saveStatus").textContent = "Session JSON exported.";
+      }
+
+      function downloadReceipt() {
+        const text = $("receiptText").value;
+        const filenameBase = (state.name || "gym-progress-shot-receipt").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "gym-progress-shot-receipt";
+        const blob = new Blob([text], { type: "text/plain;charset=utf-8" });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = `${filenameBase}.txt`;
+        document.body.append(link);
+        link.click();
+        link.remove();
+        URL.revokeObjectURL(url);
+        $("saveStatus").textContent = "Receipt downloaded as a text file.";
+      }
+
+      async function copyReceipt() {
+        const text = $("receiptText").value;
+        try {
+          await navigator.clipboard.writeText(text);
+          $("copyBtn").textContent = "Copied";
+          setTimeout(() => { $("copyBtn").textContent = "Copy receipt"; }, 1600);
+        } catch (error) {
+          $("receiptText").focus();
+          $("receiptText").select();
+          $("copyBtn").textContent = "Text selected · copy now";
+          setTimeout(() => { $("copyBtn").textContent = "Copy receipt"; }, 2200);
+        }
+      }
+
+      function attachEvents() {
+        $("sessionName").addEventListener("input", (event) => { state.name = event.target.value; render(); });
+        $("sessionDate").addEventListener("input", (event) => { state.date = event.target.value; render(); });
+        $("angleSelect").addEventListener("change", (event) => { state.angle = event.target.value; render(); });
+        $("lightingSelect").addEventListener("change", (event) => { state.lighting = event.target.value; render(); });
+        $("compareSelect").addEventListener("change", (event) => { state.compareId = event.target.value === "none" ? null : event.target.value; render(); });
+
+        all("[data-choice-group]").forEach((button) => {
+          button.addEventListener("click", () => {
+            const group = button.dataset.choiceGroup;
+            state[group] = button.dataset.value;
+            render();
+          });
+        });
+
+        all("[data-check]").forEach((input) => {
+          input.addEventListener("change", () => { state.checks[input.dataset.check] = input.checked; render(); });
+        });
+        all("[data-privacy]").forEach((input) => {
+          input.addEventListener("change", () => { state.privacy[input.dataset.privacy] = input.checked; render(); });
+        });
+
+        $("saveBtn").addEventListener("click", saveSession);
+        $("saveSidebarBtn").addEventListener("click", saveSession);
+        $("exportBtn").addEventListener("click", exportSession);
+        $("copyBtn").addEventListener("click", copyReceipt);
+        $("downloadReceiptBtn").addEventListener("click", downloadReceipt);
+        $("resetBtn").addEventListener("click", () => { state = defaultState(); $("saveStatus").textContent = "Current setup reset."; render(); });
+        $("clearHistoryBtn").addEventListener("click", () => {
+          const button = $("clearHistoryBtn");
+          if (!history.length) {
+            $("saveStatus").textContent = "There is no saved history to clear.";
+            return;
+          }
+          if (button.dataset.armed === "true") {
+            history = [];
+            writeHistory();
+            state.compareId = null;
+            button.dataset.armed = "false";
+            button.textContent = "Clear saved history";
+            clearTimeout(clearArmTimer);
+            $("saveStatus").textContent = "Saved history cleared.";
+            renderHistory();
+            render();
+            return;
+          }
+          button.dataset.armed = "true";
+          button.textContent = "Click again to clear";
+          $("saveStatus").textContent = "Click the history button again within 4 seconds to clear saved sessions.";
+          clearTimeout(clearArmTimer);
+          clearArmTimer = setTimeout(() => {
+            button.dataset.armed = "false";
+            button.textContent = "Clear saved history";
+          }, 4000);
+        });
+      }
+
+      attachEvents();
+      renderHistory();
+      render();
+    })();
+  </script>
+</body>
+</html>

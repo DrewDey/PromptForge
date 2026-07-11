@@ -1,0 +1,482 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Booking Flow Handoff Simulator</title>
+<style>
+  :root {
+    --bg: #f4f4f5;
+    --card: #ffffff;
+    --text: #1e293b;
+    --muted: #64748b;
+    --border: #e2e8f0;
+    --primary: #3b82f6;
+    --primary-hover: #2563eb;
+    --danger: #ef4444;
+    --sent: #3b82f6;
+    --skipped: #94a3b8;
+    --interrupted: #f59e0b;
+    --failed: #ef4444;
+  }
+  
+  * { box-sizing: border-box; }
+  
+  body {
+    font-family: system-ui, -apple-system, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    margin: 0;
+    padding: 16px;
+    display: flex;
+    justify-content: center;
+  }
+  
+  .app-container {
+    width: 100%;
+    max-width: 600px; /* Adapts down to 390px easily */
+    background: var(--card);
+    border-radius: 12px;
+    box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
+    overflow: hidden;
+  }
+  
+  /* Tabs */
+  .tabs {
+    display: flex;
+    background: #0f172a;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+  }
+  .tab-btn {
+    flex: 1;
+    min-width: 110px;
+    padding: 16px 8px;
+    background: transparent;
+    color: white;
+    border: none;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    text-align: center;
+    border-bottom: 3px solid transparent;
+  }
+  .tab-btn.active { border-bottom-color: var(--primary); }
+  
+  /* Views */
+  .view { display: none; padding: 20px; }
+  .view.active { display: block; }
+  
+  h2 { margin-top: 0; font-size: 18px; margin-bottom: 16px; }
+  h3 { font-size: 16px; margin: 20px 0 10px; border-bottom: 1px solid var(--border); padding-bottom: 4px;}
+  p { font-size: 14px; color: var(--muted); line-height: 1.4; margin-top: 0; }
+  
+  /* Forms & Inputs */
+  .input-group { display: flex; gap: 8px; margin-bottom: 12px; }
+  input[type="text"] {
+    flex: 1;
+    padding: 10px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    font-size: 14px;
+    min-width: 0;
+  }
+  button {
+    padding: 10px 16px;
+    border: none;
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: opacity 0.2s;
+  }
+  button:active { opacity: 0.8; }
+  .btn-primary { background: var(--primary); color: white; }
+  .btn-danger { background: var(--danger); color: white; padding: 10px; }
+  .btn-outline { background: transparent; border: 1px solid var(--border); color: var(--text); width: 100%; margin-bottom: 8px; text-align: left; }
+  .btn-block { width: 100%; display: block; margin-top: 16px; }
+  
+  /* Lists */
+  .item-list { list-style: none; padding: 0; margin: 0 0 16px 0; }
+  .item-list li {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 12px;
+    background: var(--bg);
+    border-radius: 6px;
+    margin-bottom: 8px;
+    font-size: 14px;
+    word-break: break-word;
+  }
+  
+  /* Settings */
+  .setting-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 0;
+    font-size: 14px;
+  }
+  
+  /* Simulator Log */
+  .log-container {
+    background: var(--bg);
+    border-radius: 8px;
+    padding: 16px;
+    min-height: 200px;
+    max-height: 300px;
+    overflow-y: auto;
+    margin-bottom: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .log-entry {
+    background: var(--card);
+    padding: 12px;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+    font-size: 14px;
+  }
+  .badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: bold;
+    color: white;
+    margin-bottom: 6px;
+  }
+  .badge.sent { background: var(--sent); }
+  .badge.skipped { background: var(--skipped); }
+  .badge.interrupted { background: var(--interrupted); }
+  .badge.failed { background: var(--failed); }
+  
+  .controls-area { border-top: 1px solid var(--border); padding-top: 16px; }
+  
+  /* Checklist */
+  .check-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    margin-bottom: 12px;
+    font-size: 14px;
+  }
+  .check-item input[type="checkbox"] { margin-top: 3px; width: 16px; height: 16px; }
+</style>
+</head>
+<body>
+
+<div class="app-container">
+  <div class="tabs">
+    <button class="tab-btn active" data-target="view-config">1. Configure</button>
+    <button class="tab-btn" data-target="view-simulate">2. Simulate</button>
+    <button class="tab-btn" data-target="view-checklist">3. Export</button>
+  </div>
+
+  <!-- VIEW 1: CONFIGURE -->
+  <div id="view-config" class="view active">
+    <h2>Define Your Flow</h2>
+    <p>Set up the intake requirements and booking parameters before simulating the handoff.</p>
+    
+    <h3>Intake Questions</h3>
+    <ul id="question-list" class="item-list"></ul>
+    <div class="input-group">
+      <input type="text" id="question-input" placeholder="e.g., What is your project address?">
+      <button class="btn-primary" id="add-question-btn">Add</button>
+    </div>
+
+    <h3>Available Service Slots</h3>
+    <ul id="slot-list" class="item-list"></ul>
+    <div class="input-group">
+      <input type="text" id="slot-input" placeholder="e.g., Tuesday at 10:00 AM">
+      <button class="btn-primary" id="add-slot-btn">Add</button>
+    </div>
+
+    <h3>Booking Conditions</h3>
+    <div class="setting-row">
+      <input type="checkbox" id="require-deposit">
+      <label for="require-deposit">Require deposit before final confirmation</label>
+    </div>
+  </div>
+
+  <!-- VIEW 2: SIMULATE -->
+  <div id="view-simulate" class="view">
+    <h2>Run Scenario</h2>
+    <p>Test how the automation handles customer responses and failures.</p>
+    
+    <div class="log-container" id="simulation-log">
+      <!-- Log entries appear here -->
+    </div>
+
+    <div class="controls-area" id="simulation-controls">
+      <button class="btn-primary btn-block" id="start-sim-btn">Start New Scenario</button>
+      <div id="action-buttons" style="display:none; margin-top: 10px;">
+        <!-- Dynamic action buttons injected here -->
+      </div>
+    </div>
+  </div>
+
+  <!-- VIEW 3: CHECKLIST & EXPORT -->
+  <div id="view-checklist" class="view">
+    <h2>Implementation & Export</h2>
+    <p>Complete your setup checklist and export the receipt of your defined flow and simulation results.</p>
+    
+    <h3>Deployment Checklist</h3>
+    <div id="checklist-container">
+      <label class="check-item">
+        <input type="checkbox" class="checklist-cb" value="Map intake questions to CRM fields">
+        <span>Map intake questions to CRM fields</span>
+      </label>
+      <label class="check-item">
+        <input type="checkbox" class="checklist-cb" value="Create scheduling link matching service slots">
+        <span>Create scheduling link matching service slots</span>
+      </label>
+      <label class="check-item">
+        <input type="checkbox" class="checklist-cb" value="Draft deposit invoice/payment template">
+        <span>Draft deposit invoice/payment template</span>
+      </label>
+      <label class="check-item">
+        <input type="checkbox" class="checklist-cb" value="Configure manual notification alert for FAILED handoffs">
+        <span>Configure manual notification alert for FAILED handoffs</span>
+      </label>
+    </div>
+
+    <button class="btn-primary btn-block" id="download-btn" style="margin-top: 24px;">Download Handoff Receipt</button>
+  </div>
+</div>
+
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    // State
+    const state = {
+      questions: ['What service do you need?', 'What is your timeline?'],
+      slots: ['Anytime next week', 'Mornings only'],
+      requireDeposit: false,
+      scenarioLog: [],
+      simState: 'INIT' // INIT, INTAKE, SCHEDULING, DEPOSIT, DONE
+    };
+
+    // DOM Elements
+    const tabBtns = document.querySelectorAll('.tab-btn');
+    const views = document.querySelectorAll('.view');
+    
+    const questionList = document.getElementById('question-list');
+    const questionInput = document.getElementById('question-input');
+    const addQuestionBtn = document.getElementById('add-question-btn');
+    
+    const slotList = document.getElementById('slot-list');
+    const slotInput = document.getElementById('slot-input');
+    const addSlotBtn = document.getElementById('add-slot-btn');
+    
+    const requireDepositCb = document.getElementById('require-deposit');
+    
+    const simLog = document.getElementById('simulation-log');
+    const startSimBtn = document.getElementById('start-sim-btn');
+    const actionBtns = document.getElementById('action-buttons');
+    
+    const checklistCbs = document.querySelectorAll('.checklist-cb');
+    const downloadBtn = document.getElementById('download-btn');
+
+    // --- Tab Navigation ---
+    tabBtns.forEach(btn => {
+      btn.addEventListener('click', () => {
+        tabBtns.forEach(b => b.classList.remove('active'));
+        views.forEach(v => v.classList.remove('active'));
+        btn.classList.add('active');
+        document.getElementById(btn.getAttribute('data-target')).classList.add('active');
+      });
+    });
+
+    // --- DOM Helpers ---
+    function safeCreateEl(tag, text, className) {
+      const el = document.createElement(tag);
+      if (text) el.textContent = text;
+      if (className) el.className = className;
+      return el;
+    }
+
+    function emptyEl(el) {
+      while (el.firstChild) el.removeChild(el.firstChild);
+    }
+
+    // --- Configuration Logic ---
+    function renderList(container, items, type) {
+      emptyEl(container);
+      items.forEach((item, index) => {
+        const li = document.createElement('li');
+        const span = safeCreateEl('span', item);
+        const delBtn = safeCreateEl('button', 'X', 'btn-danger');
+        delBtn.style.padding = '4px 8px';
+        delBtn.addEventListener('click', () => {
+          state[type].splice(index, 1);
+          renderList(container, state[type], type);
+        });
+        li.appendChild(span);
+        li.appendChild(delBtn);
+        container.appendChild(li);
+      });
+    }
+
+    addQuestionBtn.addEventListener('click', () => {
+      const val = questionInput.value.trim();
+      if (val) {
+        state.questions.push(val);
+        questionInput.value = '';
+        renderList(questionList, state.questions, 'questions');
+      }
+    });
+
+    addSlotBtn.addEventListener('click', () => {
+      const val = slotInput.value.trim();
+      if (val) {
+        state.slots.push(val);
+        slotInput.value = '';
+        renderList(slotList, state.slots, 'slots');
+      }
+    });
+
+    requireDepositCb.addEventListener('change', (e) => {
+      state.requireDeposit = e.target.checked;
+    });
+
+    // --- Simulation Logic ---
+    function logStep(stepName, status, detail) {
+      state.scenarioLog.push({ stepName, status, detail });
+      
+      const entry = safeCreateEl('div', null, 'log-entry');
+      const badge = safeCreateEl('span', status, `badge ${status.toLowerCase()}`);
+      const text = safeCreateEl('div', `${stepName}: ${detail}`);
+      text.style.marginTop = '4px';
+      
+      entry.appendChild(badge);
+      entry.appendChild(text);
+      simLog.appendChild(entry);
+      simLog.scrollTop = simLog.scrollHeight;
+    }
+
+    function renderSimControls() {
+      emptyEl(actionBtns);
+      startSimBtn.style.display = 'none';
+      actionBtns.style.display = 'block';
+
+      if (state.simState === 'INTAKE') {
+        createActionButton('Customer provides all info', () => {
+          logStep('Send Service Slots', 'SENT', `Offered ${state.slots.length} slots.`);
+          state.simState = 'SCHEDULING';
+          renderSimControls();
+        });
+        createActionButton('Customer misses a question', () => {
+          logStep('Intake Clarification', 'INTERRUPTED', 'Prompted for missing info.');
+        });
+        createActionButton('Customer stops responding', () => {
+          logStep('Intake Handoff', 'FAILED', 'Manual follow-up required.');
+          state.simState = 'DONE';
+          renderSimControls();
+        });
+      } 
+      else if (state.simState === 'SCHEDULING') {
+        createActionButton('Customer picks a slot', () => {
+          if (state.requireDeposit) {
+            logStep('Deposit Invoice', 'SENT', 'Sent payment link for confirmation.');
+            state.simState = 'DEPOSIT';
+          } else {
+            logStep('Deposit Phase', 'SKIPPED', 'No deposit required.');
+            logStep('Booking Confirmation', 'SENT', 'Final details dispatched.');
+            state.simState = 'DONE';
+          }
+          renderSimControls();
+        });
+        createActionButton('Customer rejects all slots', () => {
+          logStep('Scheduling Handoff', 'FAILED', 'Manual calendar review required.');
+          state.simState = 'DONE';
+          renderSimControls();
+        });
+      }
+      else if (state.simState === 'DEPOSIT') {
+        createActionButton('Customer pays deposit', () => {
+          logStep('Booking Confirmation', 'SENT', 'Payment received, booking locked.');
+          state.simState = 'DONE';
+          renderSimControls();
+        });
+        createActionButton('Customer disputes or ignores payment', () => {
+          logStep('Deposit Handoff', 'FAILED', 'Manual billing resolution required.');
+          state.simState = 'DONE';
+          renderSimControls();
+        });
+      }
+      else if (state.simState === 'DONE') {
+        actionBtns.style.display = 'none';
+        startSimBtn.style.display = 'block';
+        startSimBtn.textContent = 'Restart Scenario';
+      }
+    }
+
+    function createActionButton(text, onClick) {
+      const btn = safeCreateEl('button', text, 'btn-outline');
+      btn.addEventListener('click', onClick);
+      actionBtns.appendChild(btn);
+    }
+
+    startSimBtn.addEventListener('click', () => {
+      emptyEl(simLog);
+      state.scenarioLog = [];
+      
+      const qCount = state.questions.length;
+      if (qCount === 0) {
+        logStep('Intake Phase', 'SKIPPED', 'No questions configured.');
+        logStep('Send Service Slots', 'SENT', `Offered ${state.slots.length} slots.`);
+        state.simState = 'SCHEDULING';
+      } else {
+        logStep('Send Intake Questions', 'SENT', `Requested ${qCount} details.`);
+        state.simState = 'INTAKE';
+      }
+      renderSimControls();
+    });
+
+    // --- Export Logic ---
+    downloadBtn.addEventListener('click', () => {
+      let receipt = "===================================\n";
+      receipt += " BOOKING FLOW HANDOFF RECEIPT\n";
+      receipt += "===================================\n\n";
+      
+      receipt += "--- 1. CONFIGURATION ---\n";
+      receipt += `Intake Questions (${state.questions.length}):\n`;
+      state.questions.forEach(q => receipt += ` - ${q}\n`);
+      receipt += `\nService Slots (${state.slots.length}):\n`;
+      state.slots.forEach(s => receipt += ` - ${s}\n`);
+      receipt += `\nDeposit Required: ${state.requireDeposit ? 'YES' : 'NO'}\n\n`;
+
+      receipt += "--- 2. SCENARIO LOG ---\n";
+      if (state.scenarioLog.length === 0) {
+        receipt += "No scenario run yet.\n";
+      } else {
+        state.scenarioLog.forEach(log => {
+          receipt += `[${log.status}] ${log.stepName}: ${log.detail}\n`;
+        });
+      }
+      receipt += "\n";
+
+      receipt += "--- 3. CHECKLIST STATUS ---\n";
+      checklistCbs.forEach(cb => {
+        const mark = cb.checked ? "[X]" : "[ ]";
+        receipt += `${mark} ${cb.value}\n`;
+      });
+
+      const blob = new Blob([receipt], { type: 'text/plain' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = 'handoff-simulator-receipt.txt';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    });
+
+    // Init
+    renderList(questionList, state.questions, 'questions');
+    renderList(slotList, state.slots, 'slots');
+  });
+</script>
+</body>
+</html>

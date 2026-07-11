@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Booking Flow Handoff Simulator</title>
+<style>
+  body { 
+    font-family: system-ui, -apple-system, sans-serif; 
+    background: #f4f4f5; 
+    display: flex; 
+    justify-content: center; 
+    padding: 20px; 
+    margin: 0;
+  }
+  .simulator-container { 
+    display: flex; 
+    gap: 30px; 
+    max-width: 900px; 
+    width: 100%; 
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  .phone-frame { 
+    border: 12px solid #18181b; 
+    border-radius: 36px; 
+    background: #fff; 
+    width: 350px; 
+    height: 700px; 
+    display: flex; 
+    flex-direction: column; 
+    overflow: hidden; 
+    box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1); 
+  }
+  .chat-header { 
+    background: #0f172a; 
+    color: white; 
+    padding: 16px; 
+    text-align: center; 
+    font-weight: 600; 
+    font-size: 16px;
+  }
+  .chat-log { 
+    flex: 1; 
+    padding: 16px; 
+    overflow-y: auto; 
+    display: flex; 
+    flex-direction: column; 
+    gap: 12px; 
+    background: #f8fafc; 
+  }
+  .message { 
+    max-width: 80%; 
+    padding: 12px 16px; 
+    border-radius: 18px; 
+    font-size: 14px; 
+    line-height: 1.5; 
+  }
+  .msg-customer { 
+    background: #e2e8f0; 
+    color: #1e293b; 
+    align-self: flex-start; 
+    border-bottom-left-radius: 4px; 
+  }
+  .msg-business { 
+    background: #3b82f6; 
+    color: white; 
+    align-self: flex-end; 
+    border-bottom-right-radius: 4px; 
+  }
+  .input-area { 
+    padding: 16px; 
+    background: white; 
+    border-top: 1px solid #e2e8f0; 
+    display: flex; 
+    gap: 10px; 
+  }
+  .input-area input { 
+    flex: 1; 
+    padding: 12px 16px; 
+    border: 1px solid #cbd5e1; 
+    border-radius: 24px; 
+    outline: none; 
+    font-size: 14px;
+  }
+  .input-area input:focus {
+    border-color: #3b82f6;
+  }
+  .input-area button { 
+    background: #3b82f6; 
+    color: white; 
+    border: none; 
+    padding: 10px 16px; 
+    border-radius: 24px; 
+    cursor: pointer; 
+    font-weight: 600; 
+    transition: background 0.2s;
+  }
+  .input-area button:hover {
+    background: #2563eb;
+  }
+  .controls { 
+    background: white; 
+    padding: 24px; 
+    border-radius: 24px; 
+    width: 350px; 
+    box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); 
+    display: flex;
+    flex-direction: column;
+  }
+  .controls h3 { 
+    margin-top: 0; 
+    color: #0f172a;
+    font-size: 20px;
+  }
+  .controls p {
+    font-size: 14px; 
+    color: #64748b; 
+    margin-bottom: 24px;
+    line-height: 1.5;
+  }
+  .control-btn { 
+    display: block; 
+    width: 100%; 
+    padding: 12px 16px; 
+    margin-bottom: 12px; 
+    border: 1px solid #e2e8f0; 
+    background: #f8fafc; 
+    border-radius: 12px; 
+    cursor: pointer; 
+    text-align: left; 
+    font-size: 14px;
+    font-weight: 500;
+    color: #334155;
+    transition: all 0.2s; 
+  }
+  .control-btn:hover { 
+    background: #e2e8f0; 
+    border-color: #cbd5e1;
+  }
+  #export-btn { 
+    background: #10b981; 
+    color: white; 
+    border: none; 
+    font-weight: bold; 
+    margin-top: auto; 
+    text-align: center; 
+    padding: 16px;
+    font-size: 15px;
+  }
+  #export-btn:hover { 
+    background: #059669; 
+  }
+  
+  /* Scrollbar styling for chat */
+  .chat-log::-webkit-scrollbar { width: 6px; }
+  .chat-log::-webkit-scrollbar-track { background: transparent; }
+  .chat-log::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+</style>
+</head>
+<body>
+
+<div class="simulator-container">
+  <div class="phone-frame">
+    <div class="chat-header">Booking Chat</div>
+    <div class="chat-log" id="chat-log">
+      <div class="message msg-customer">Hi, I'm looking to book a service.</div>
+    </div>
+    <div class="input-area">
+      <input type="text" id="reply-input" placeholder="Type your response..." onkeypress="handleEnter(event)">
+      <button onclick="sendBusinessMessage()">Send</button>
+    </div>
+  </div>
+
+  <div class="controls">
+    <h3>Simulate Customer</h3>
+    <p>Click these buttons to trigger common customer messages. Practice guiding them through your booking flow on the left.</p>
+
+    <button class="control-btn" onclick="sendCustomerMessage('How much do you charge?')">💰 Ask for Pricing</button>
+    <button class="control-btn" onclick="sendCustomerMessage('What does that package include exactly?')">📦 Ask for Details</button>
+    <button class="control-btn" onclick="sendCustomerMessage('Do you have any openings next Tuesday?')">📅 Check Availability</button>
+    <button class="control-btn" onclick="sendCustomerMessage('Okay, that works for me. How do I book?')">✅ Ready to Book</button>
+    <button class="control-btn" onclick="sendCustomerMessage('I just paid the invoice/deposit.')">💳 Payment Completed</button>
+    <button class="control-btn" onclick="sendCustomerMessage('Let me think about it and get back to you.')">⏸️ Hesitation/Delay</button>
+
+    <button class="control-btn" id="export-btn" onclick="exportTranscript()">💾 Download Message Script</button>
+  </div>
+</div>
+
+<script>
+  const chatLog = document.getElementById('chat-log');
+  const replyInput = document.getElementById('reply-input');
+  
+  // Track the script for export
+  let transcript = "BOOKING FLOW TEMPLATE SCRIPT\n============================\n\n";
+  transcript += "Customer: Hi, I'm looking to book a service.\n\n";
+
+  function appendMessage(text, sender) {
+    const msgDiv = document.createElement('div');
+    msgDiv.classList.add('message', sender === 'business' ? 'msg-business' : 'msg-customer');
+    msgDiv.innerText = text;
+    chatLog.appendChild(msgDiv);
+    
+    // Auto-scroll to bottom
+    chatLog.scrollTop = chatLog.scrollHeight;
+
+    // Add to transcript log
+    const prefix = sender === 'business' ? 'YOUR MESSAGE:\n' : 'CUSTOMER TRIGGER:\n';
+    transcript += prefix + text + '\n\n';
+  }
+
+  function sendBusinessMessage() {
+    const text = replyInput.value.trim();
+    if (text) {
+      appendMessage(text, 'business');
+      replyInput.value = '';
+    }
+  }
+
+  function handleEnter(e) {
+    if (e.key === 'Enter') sendBusinessMessage();
+  }
+
+  function sendCustomerMessage(text) {
+    appendMessage(text, 'customer');
+  }
+
+  function exportTranscript() {
+    const blob = new Blob([transcript], { type: 'text/plain' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'my-booking-templates.txt';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+  }
+</script>
+</body>
+</html>

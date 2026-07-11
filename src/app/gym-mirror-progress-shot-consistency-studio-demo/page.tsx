@@ -1,7 +1,8 @@
-import PreparedSourceRunPage from '@/components/PreparedSourceRunPage'
+import PreparedModelVariantSourceRunPage, {
+  type ModelVariantSearchParams,
+} from '@/components/PreparedModelVariantSourceRunPage'
 import { buildPreparedSourceRunDetailMetadata } from '@/lib/build-path-metadata'
 import { getPreparedShowcaseProjectBySourceRunId } from '@/lib/prepared-showcase-projects'
-import { loadSourceRunPackage } from '@/lib/source-run-package'
 
 const route = '/gym-mirror-progress-shot-consistency-studio-demo'
 const sourceRunId = '0eea38da-ead0-44e0-b50c-ddc6840cb033'
@@ -11,13 +12,16 @@ if (!project) throw new Error(`Missing prepared showcase project for source run 
 
 export const metadata = buildPreparedSourceRunDetailMetadata(project)
 
-export default function GymMirrorProgressShotConsistencyStudioDemoPage() {
+export default function GymMirrorProgressShotConsistencyStudioDemoPage({
+  searchParams,
+}: {
+  searchParams: ModelVariantSearchParams
+}) {
   return (
-    <PreparedSourceRunPage
+    <PreparedModelVariantSourceRunPage
       project={project!}
-      sourceRunPackage={loadSourceRunPackage('gym-mirror-progress-shot-consistency-studio-claude-sonnet46-max-source-run.json')}
       route={route}
-      capturedAt="June 17, 2026"
+      searchParams={searchParams}
     />
   )
 }

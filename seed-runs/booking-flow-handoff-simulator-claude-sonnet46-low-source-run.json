@@ -4,9 +4,11 @@
   "provider": "Claude",
   "model": "Sonnet 4.6 Low",
   "model_settings": "Visible model button before prompt send: Sonnet 4.6 Low. Claude initially opened on Haiku 4.5 Extended; model menu showed Fable 5 unavailable, Opus 4.8, Sonnet 4.6, Haiku 4.5, and Effort Medium. Selected Sonnet 4.6, opened Effort Medium submenu, chose Low Default, and composer button displayed Sonnet 4.6 Low before prompt 1. No Claude usage-credit wall appeared before prompt send. Temporary OpenRouter pause honored; no OpenRouter route/fallback.",
-  "source_url": "https://claude.ai/chat/71f62415-8373-48ae-ae1e-f0c85ecc2235",
+  "source_url": "https://claude.ai/share/cb340686-5bd0-4ba5-917d-c6792527bcd8",
+  "source_run_id": "08c8b725-4228-4b24-a6e6-5d7fcf78457c",
   "run_started_at": "2026-06-19T07:37:00Z",
   "run_finished_at": "2026-06-19T07:58:19Z",
+  "repair_prompt_count": 2,
   "chain_type": "multi-prompt repair",
   "category": "productivity",
   "difficulty": "intermediate",
@@ -19,11 +21,35 @@
   ],
   "status": "submitted_pending",
   "final_artifact_path": "public/artifacts/booking-flow-handoff-simulator-claude-sonnet46-low.html",
+  "artifact_sha256": "89e2faad18d830f05ee008f023f7bf8b99cd9b051386b7f88e4f2a7d6cc63931",
   "artifact_type": "html",
   "artifact_versions": [
     "public/artifacts/booking-flow-handoff-simulator-claude-sonnet46-low-v2.html",
     "public/artifacts/booking-flow-handoff-simulator-claude-sonnet46-low-v3.html",
     "public/artifacts/booking-flow-handoff-simulator-claude-sonnet46-low.html"
+  ],
+  "artifact_version_notes": [
+    {
+      "path": "public/artifacts/booking-flow-handoff-simulator-claude-sonnet46-low-v2.html",
+      "sha256": "26c12654e0688ee6cbd80ccd9769dfac17b3af19505dac290dc0f3b5503e342c",
+      "bytes": 35490,
+      "lines": 1009,
+      "disposition": "Historical intermediate artifact preserved from the original source run."
+    },
+    {
+      "path": "public/artifacts/booking-flow-handoff-simulator-claude-sonnet46-low-v3.html",
+      "sha256": "da0e3b3aac94d3df688e01c44e10344e2cbc8a4b73057c8d282068e3c2b2f5e9",
+      "bytes": 43018,
+      "lines": 1229,
+      "disposition": "Historical intermediate artifact preserved from the original source run."
+    },
+    {
+      "path": "public/artifacts/booking-flow-handoff-simulator-claude-sonnet46-low.html",
+      "sha256": "89e2faad18d830f05ee008f023f7bf8b99cd9b051386b7f88e4f2a7d6cc63931",
+      "bytes": 42867,
+      "lines": 1227,
+      "disposition": "Historical final artifact; canonical baseline version."
+    }
   ],
   "generated_files": [
     "public/artifacts/booking-flow-handoff-simulator-claude-sonnet46-low-v2.html",
@@ -31,6 +57,34 @@
     "public/artifacts/booking-flow-handoff-simulator-claude-sonnet46-low.html"
   ],
   "screenshots": [],
+  "verification_evidence": {
+    "schema_version": 1,
+    "verified_at": "2026-07-10T23:32:43.000Z",
+    "first_pass_metrics": {
+      "qualityScore": 68,
+      "artifactReady": true,
+      "hardGatesPassed": false,
+      "functionalChecks": { "passed": 6, "total": 10 },
+      "consoleErrorCount": 0,
+      "horizontalOverflowPx": 590,
+      "notes": [
+        "The first real artifact lacked a mobile viewport and rendered on a 980px layout under 390px emulation.",
+        "It also lacked the handoff receipt, copy, and download workflow."
+      ]
+    },
+    "final_metrics": {
+      "qualityScore": 88,
+      "artifactReady": true,
+      "hardGatesPassed": false,
+      "functionalChecks": { "passed": 9, "total": 10 },
+      "consoleErrorCount": 0,
+      "horizontalOverflowPx": 0,
+      "notes": [
+        "The final measured 390/390 and 1431/1431 with zero console errors, and its scenario, rule checklist, copy, and download receipt workflows worked.",
+        "Delivery steps expose SENT and SKIPPED plus interruption and rule-failure feedback, but no delivery step can enter an explicit FAILED state."
+      ]
+    }
+  },
   "verification_notes": "Final v4 static scan passed for no remote URLs/CDNs/fonts/scripts/styles, no external scripts/styles, no unsafe dynamic HTML sinks (innerHTML/outerHTML/insertAdjacentHTML), no inline event attributes, no modal APIs alert/confirm/prompt, no document.execCommand token, no eval/new Function, no document.write, no fetch/XMLHttpRequest, no negative letter spacing, and no viewport-scaled font sizing. Inline script parsed with one script block and 29216 characters. Chrome localhost desktop render was nonblank with title/header, no desktop horizontal overflow, receipt controls present, scenario workflow generated transcript and rule checklist, Copy Receipt placed BOOKING-FLOW HANDOFF RECEIPT on clipboard, Download Receipt reported handoff-receipt-late-cancellation-after-deposit-2026-06-19.txt, and console warnings/errors were empty. Browser wrapper did not surface a native download event, so download is verified by UI status plus Blob/object URL source path. 390px same-origin harness measured no horizontal overflow on Build, Rules, Run-after-scenario, and Data tabs; results saved in viewport-390-results.json.",
   "steps": [
     {

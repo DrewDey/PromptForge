@@ -1,0 +1,1048 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>DEAD CHANNEL — Night Review Desk</title>
+<style>
+  :root{
+    --ink:#0a0e0b;
+    --panel:#101711;
+    --panel2:#141d15;
+    --line:#223026;
+    --dim:#5f7a63;
+    --mid:#8fb894;
+    --hot:#baf5c0;
+    --amber:#d8b25a;
+    --bad:#c96a5a;
+    --ok:#7dd98a;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{background:var(--ink);color:var(--mid);
+    font-family:ui-monospace,Menlo,Consolas,"Cascadia Mono",monospace;
+    font-size:15px;line-height:1.45;min-height:100%}
+  body{padding:18px 14px 40px}
+  #app{max-width:1020px;margin:0 auto}
+
+  .hidden{display:none !important}
+
+  h1{font-size:30px;color:var(--hot);font-weight:700;line-height:1.1}
+  h2{font-size:18px;color:var(--hot);font-weight:700}
+  .sub{color:var(--dim)}
+  .amber{color:var(--amber)}
+  .bad{color:var(--bad)}
+  .ok{color:var(--ok)}
+
+  button{
+    font-family:inherit;font-size:14px;color:var(--hot);
+    background:var(--panel2);border:1px solid var(--line);
+    padding:9px 16px;cursor:pointer;border-radius:3px;
+  }
+  button:hover{background:var(--line)}
+  button:focus-visible{outline:2px solid var(--hot);outline-offset:2px}
+  button:disabled{opacity:.35;cursor:default}
+  button.primary{border-color:var(--dim);color:var(--ink);background:var(--mid);font-weight:700}
+  button.primary:hover{background:var(--hot)}
+  button.tiny{padding:4px 9px;font-size:13px}
+
+  /* ---------- title screen ---------- */
+  #screen-title{padding-top:48px}
+  .mast{border:1px solid var(--line);background:var(--panel);padding:26px 24px;border-radius:4px;
+    box-shadow:0 0 0 4px rgba(20,29,21,.35)}
+  .mast .tag{color:var(--amber);font-size:13px;margin-bottom:8px}
+  .mast p{margin-top:12px;max-width:62ch}
+  .rules{margin-top:16px;border-top:1px dashed var(--line);padding-top:14px;color:var(--dim);font-size:14px}
+  .rules div{margin-top:6px}
+  .rules b{color:var(--mid);font-weight:700}
+  #btn-start{margin-top:22px;font-size:16px;padding:12px 26px}
+
+  /* ---------- game header ---------- */
+  .hud{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between;
+    border:1px solid var(--line);background:var(--panel);padding:10px 14px;border-radius:4px;margin-bottom:14px}
+  .hud .left{display:flex;gap:14px;align-items:baseline;flex-wrap:wrap}
+  .hud .tape-name{color:var(--hot);font-weight:700}
+  .hud .score{color:var(--amber);font-weight:700}
+  .tabs{display:flex;gap:6px}
+  .tabs button{padding:6px 12px;font-size:13px;color:var(--dim)}
+  .tabs button.on{color:var(--ink);background:var(--mid);border-color:var(--mid);font-weight:700}
+
+  /* ---------- review layout ---------- */
+  .review-grid{display:grid;grid-template-columns:minmax(0,3fr) minmax(0,2fr);gap:14px}
+  @media (max-width:780px){.review-grid{grid-template-columns:minmax(0,1fr)}}
+
+  .viewer{border:1px solid var(--line);background:var(--panel);border-radius:4px;padding:12px}
+  .cam-top{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px;font-size:13px}
+  .cam-top .rec{color:var(--bad);animation:blink 1.4s steps(2,start) infinite}
+  @keyframes blink{to{visibility:hidden}}
+
+  .frame{position:relative;width:100%;aspect-ratio:16/9;background:#0b110c;
+    border:1px solid var(--line);overflow:hidden;cursor:crosshair;border-radius:2px}
+  .frame.static-hit{animation:jolt .28s linear}
+  @keyframes jolt{
+    0%{filter:brightness(2.2) contrast(1.6)}
+    40%{filter:brightness(.6)}
+    100%{filter:none}
+  }
+  .frame::after{
+    content:"";position:absolute;inset:0;pointer-events:none;
+    background:
+      repeating-linear-gradient(to bottom, rgba(190,255,200,.045) 0 1px, transparent 1px 3px),
+      radial-gradient(ellipse at center, transparent 55%, rgba(0,0,0,.45) 100%);
+  }
+  @media (prefers-reduced-motion:reduce){
+    .frame.static-hit{animation:none}
+    .cam-top .rec{animation:none}
+  }
+  .shape{position:absolute}
+  .shape.txt{background:transparent;white-space:pre}
+  .shape.rev{box-shadow:0 0 0 2px var(--amber), 0 0 12px 2px rgba(216,178,90,.45)}
+
+  .stamp{position:absolute;left:8px;bottom:6px;color:var(--hot);font-size:13px;
+    text-shadow:0 0 6px rgba(186,245,192,.6);pointer-events:none;z-index:2}
+  .camid{position:absolute;right:8px;top:6px;color:var(--hot);font-size:13px;
+    text-shadow:0 0 6px rgba(186,245,192,.6);pointer-events:none;z-index:2}
+
+  .cam-strip{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}
+  .cam-strip button{font-size:12px;padding:5px 9px;color:var(--dim)}
+  .cam-strip button.on{color:var(--ink);background:var(--mid);border-color:var(--mid);font-weight:700}
+  .cam-strip button.done{border-color:var(--amber)}
+
+  .viewer-actions{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap;align-items:center}
+  .feed-msg{margin-top:10px;min-height:22px;font-size:14px}
+
+  .side{display:flex;flex-direction:column;gap:14px}
+  .panel{border:1px solid var(--line);background:var(--panel);border-radius:4px;padding:12px}
+  .panel h3{font-size:13px;color:var(--amber);font-weight:700;margin-bottom:8px}
+  .log{display:flex;flex-direction:column;gap:8px;font-size:13.5px;max-height:340px;overflow:auto}
+  .log .entry{border-left:2px solid var(--amber);padding:2px 0 2px 10px}
+  .log .entry .who{color:var(--hot);font-weight:700}
+  .log .empty{color:var(--dim);font-style:italic}
+  .brief-txt{font-size:14px}
+
+  /* ---------- sequence phase ---------- */
+  .seq-wrap{border:1px solid var(--line);background:var(--panel);border-radius:4px;padding:14px}
+  .seq-help{color:var(--dim);font-size:14px;margin-bottom:12px}
+  .seq-list{display:flex;flex-direction:column;gap:8px}
+  .row{display:grid;grid-template-columns:34px 132px minmax(0,1fr) auto;gap:10px;align-items:center;
+    border:1px solid var(--line);background:var(--panel2);padding:8px;border-radius:3px}
+  @media (max-width:640px){.row{grid-template-columns:26px 96px minmax(0,1fr) auto}}
+  .row.good{border-color:var(--ok)}
+  .row.wrong{border-color:var(--bad)}
+  .row .slot{color:var(--amber);font-weight:700;text-align:center}
+  .thumb{position:relative;width:100%;aspect-ratio:16/9;background:#0b110c;
+    border:1px solid var(--line);overflow:hidden;pointer-events:none;border-radius:2px}
+  .row .meta{font-size:13px;min-width:0}
+  .row .meta .cam{color:var(--hot);font-weight:700}
+  .row .meta .note{color:var(--dim);overflow:hidden;text-overflow:ellipsis;display:block}
+  .row .ctl{display:flex;flex-direction:column;gap:4px}
+  .seq-actions{display:flex;gap:10px;margin-top:14px;flex-wrap:wrap;align-items:center}
+  #seq-msg{font-size:14px}
+
+  /* ---------- results / final ---------- */
+  .result-box{border:1px solid var(--line);background:var(--panel);border-radius:4px;padding:22px;
+    max-width:640px;margin:0 auto}
+  .result-box .big{font-size:24px;color:var(--hot);font-weight:700;margin-bottom:10px}
+  .stat-line{display:flex;justify-content:space-between;border-bottom:1px dashed var(--line);padding:7px 0;font-size:14px}
+  .stat-line:last-of-type{border-bottom:none}
+  .result-actions{margin-top:18px;display:flex;gap:10px;flex-wrap:wrap}
+  .rank{color:var(--amber);font-size:20px;font-weight:700}
+  .report{margin-top:16px;border:1px dashed var(--line);background:var(--panel2);
+    padding:12px;font-size:13px;color:var(--dim);white-space:pre-wrap;border-radius:3px}
+</style>
+</head>
+<body>
+<div id="app">
+
+  <!-- ============ TITLE ============ -->
+  <section id="screen-title">
+    <div class="mast">
+      <div class="tag">INTERNAL USE — OVERNIGHT REVIEW DESK — SHIFT 3</div>
+      <h1>DEAD CHANNEL</h1>
+      <div class="sub">Security footage anomaly review &amp; event reconstruction</div>
+      <p>Three tapes came in tonight with corrupted timestamps. Your job: pull each camera
+      frame, find the detail that doesn't belong, and log it. Then use what you logged to
+      put the frames back in the order they actually happened.</p>
+      <div class="rules">
+        <div><b>REVIEW:</b> click the one thing in each frame that's wrong. Anomaly found = +100. Wild click = −25.</div>
+        <div><b>NOTES:</b> every anomaly you log carries a clue about where the frame sits in time.</div>
+        <div><b>SEQUENCE:</b> arrange the frames, then verify. First-try slots pay 150, then 100, then 50.</div>
+        <div><b>HINTS:</b> stuck on a frame? Buy a hint for −50.</div>
+      </div>
+      <button id="btn-start" class="primary">START SHIFT</button>
+    </div>
+  </section>
+
+  <!-- ============ GAME ============ -->
+  <section id="screen-game" class="hidden">
+    <div class="hud">
+      <div class="left">
+        <span class="tape-name" id="hud-tape">TAPE 01</span>
+        <span class="sub" id="hud-progress"></span>
+        <span class="score" id="hud-score">SCORE 0</span>
+      </div>
+      <div class="tabs">
+        <button id="tab-review" class="on">REVIEW</button>
+        <button id="tab-seq">SEQUENCE</button>
+      </div>
+    </div>
+
+    <!-- review view -->
+    <div id="view-review">
+      <div class="review-grid">
+        <div class="viewer">
+          <div class="cam-top">
+            <span class="rec">● REC</span>
+            <span class="sub" id="cam-count"></span>
+          </div>
+          <div class="frame" id="frame"></div>
+          <div class="cam-strip" id="cam-strip"></div>
+          <div class="viewer-actions">
+            <button id="btn-prev" class="tiny">◀ PREV</button>
+            <button id="btn-next" class="tiny">NEXT ▶</button>
+            <button id="btn-hint" class="tiny">HINT (−50)</button>
+            <button id="btn-to-seq" class="primary">GO TO SEQUENCING ▶</button>
+          </div>
+          <div class="feed-msg" id="feed-msg"></div>
+        </div>
+        <div class="side">
+          <div class="panel">
+            <h3>CASE BRIEF</h3>
+            <div class="brief-txt" id="brief-txt"></div>
+          </div>
+          <div class="panel">
+            <h3>EVIDENCE LOG</h3>
+            <div class="log" id="log"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- sequence view -->
+    <div id="view-seq" class="hidden">
+      <div class="seq-wrap">
+        <div class="seq-help">Arrange the frames top-to-bottom in the order the events actually happened.
+        Slot 1 is earliest. Your evidence log is reprinted on each card — the timestamps are garbage, trust the notes.</div>
+        <div class="seq-list" id="seq-list"></div>
+        <div class="seq-actions">
+          <button id="btn-verify" class="primary">VERIFY SEQUENCE</button>
+          <button id="btn-reveal" class="tiny" disabled>REVEAL ORDER (0 pts)</button>
+          <button id="btn-back-review">◀ BACK TO REVIEW</button>
+          <span id="seq-msg"></span>
+        </div>
+      </div>
+    </div>
+
+    <!-- tape results -->
+    <div id="view-result" class="hidden">
+      <div class="result-box">
+        <div class="big" id="res-title">TAPE CLOSED</div>
+        <div class="stat-line"><span>Anomalies logged</span><span id="res-anom"></span></div>
+        <div class="stat-line"><span>Wild clicks</span><span id="res-miss"></span></div>
+        <div class="stat-line"><span>Hints bought</span><span id="res-hints"></span></div>
+        <div class="stat-line"><span>Sequence attempts</span><span id="res-att"></span></div>
+        <div class="stat-line"><span>Tape score</span><span class="amber" id="res-score"></span></div>
+        <div class="result-actions">
+          <button id="btn-next-tape" class="primary">LOAD NEXT TAPE ▶</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ FINAL ============ -->
+  <section id="screen-final" class="hidden">
+    <div class="result-box">
+      <div class="big">SHIFT COMPLETE</div>
+      <div class="stat-line"><span>Total anomalies logged</span><span id="fin-anom"></span></div>
+      <div class="stat-line"><span>Final score</span><span class="amber" id="fin-score"></span></div>
+      <div style="margin-top:16px">Desk rating:</div>
+      <div class="rank" id="fin-rank"></div>
+      <div class="sub" id="fin-line" style="margin-top:8px"></div>
+      <pre id="fin-report" class="report"></pre>
+      <div class="result-actions">
+        <button id="btn-restart" class="primary">RUN THE TAPES AGAIN</button>
+      </div>
+    </div>
+  </section>
+
+</div>
+
+<script>
+"use strict";
+
+/* ============================================================
+   SCENE PRIMITIVES
+   Shapes are positioned in percent of a 16:9 frame.
+   {x,y,w,h,c,r,o,t,fs,rot,a}
+   a:1 marks the anomaly (clickable target in review phase).
+   ============================================================ */
+
+function shape(x, y, w, h, c, extra) {
+  var s = { x: x, y: y, w: w, h: h, c: c };
+  if (extra) { for (var k in extra) { s[k] = extra[k]; } }
+  return s;
+}
+function txt(x, y, t, fs, c, extra) {
+  var s = { x: x, y: y, w: 30, h: 10, t: t, fs: fs, c: c };
+  if (extra) { for (var k in extra) { s[k] = extra[k]; } }
+  return s;
+}
+
+/* ---------------- TAPE 01: BREAK ROOM ---------------- */
+
+function breakRoom(o) {
+  var s = [];
+  s.push(shape(0, 0, 100, 72, "#18211b"));            // wall
+  s.push(shape(0, 70, 100, 2, "#121a15"));            // baseboard
+  s.push(shape(0, 72, 100, 28, "#0f1511"));           // floor
+  // wall clock (digital)
+  s.push(shape(6, 9, 12, 9, "#0d1411", { r: 2 }));
+  s.push(txt(7.6, 10.8, o.clock, 12, "#9fe8a8"));
+  // window
+  s.push(shape(55, 9, 23, 27, "#2c382e"));
+  if (o.windowOpen) {
+    s.push(shape(56.5, 11, 9.5, 23, "#0b1210"));                       // pane left
+    s.push(shape(66.5, 11, 10, 23, "#040706", { a: 1 }));              // open gap (anomaly)
+    s.push(shape(75.5, 9.5, 2, 26, "#3c4a3e"));                        // swung sash
+  } else {
+    s.push(shape(56.5, 11, 20, 23, "#0b1210"));
+    s.push(shape(66.2, 11, 0.8, 23, "#2c382e"));                       // mullion
+  }
+  if (o.silhouette) {
+    s.push(shape(58.5, 15, 5, 14, "#1e2820", { r: 4, a: 1 }));         // figure in glass (anomaly)
+  }
+  // shelf + tin
+  s.push(shape(80, 28, 16, 2.4, "#2c382e"));
+  s.push(shape(81, 30.4, 1.4, 4, "#242f26"));
+  if (o.tin) { s.push(shape(85, 20.5, 6.5, 7.5, "#c9a54f", { r: 1 })); }
+  // cabinet
+  s.push(shape(4, 42, 13, 28, "#263028"));
+  s.push(shape(15.2, 54, 1, 4, "#3c4a3e"));                            // handle
+  if (o.cabinetAjar) {
+    s.push(shape(16.4, 42, 1.6, 28, "#050807", { a: 1 }));             // dark gap (anomaly)
+  }
+  // table
+  s.push(shape(30, 56, 36, 5, "#33402f"));
+  s.push(shape(32.5, 61, 2.4, 13, "#242f26"));
+  s.push(shape(61, 61, 2.4, 13, "#242f26"));
+  // chair
+  var cx = o.chairOut ? 19 : 24;
+  s.push(shape(cx, 60, 9, 3.5, "#2c382e"));
+  s.push(shape(cx, 44, 2.2, 16, "#2c382e"));
+  s.push(shape(cx + 1, 63.5, 1.8, 10, "#242f26"));
+  s.push(shape(cx + 6.5, 63.5, 1.8, 10, "#242f26"));
+  // mug states
+  if (o.mug === "full") {
+    s.push(shape(46, 50.5, 4, 5.5, "#42543f", { r: 1 }));
+    s.push(shape(47.3, 45.5, 1.1, 3.6, "#5c705a", { o: 0.65, r: 2 })); // steam
+  } else if (o.mug === "half") {
+    s.push(shape(46, 50.5, 4, 5.5, "#42543f", { r: 1 }));
+    s.push(shape(46.9, 52.6, 2.2, 2.4, "#141b16"));
+  } else if (o.mug === "tipped") {
+    s.push(shape(44, 53.5, 6, 2.8, "#42543f", { r: 2 }));
+    s.push(shape(40, 55.5, 4.6, 1.5, "#1d2a20", { r: 3 }));            // spill
+  }
+  if (o.shoe) {
+    s.push(shape(39, 67.5, 5, 2.6, "#141c16", { r: 2, a: 1 }));        // shoe under table (anomaly)
+  }
+  // door
+  s.push(shape(87, 26, 11, 44, "#20291f"));
+  s.push(shape(88.4, 47, 1.4, 2.4, "#3c4a3e", { r: 50 }));
+  return s;
+}
+
+/* ---------------- TAPE 02: WAREHOUSE ---------------- */
+
+var CRATE_SPOTS = [[70, 58], [79.5, 58], [89, 58], [74.5, 45.5], [84, 45.5], [79.2, 33]];
+
+function warehouse(o) {
+  var s = [];
+  s.push(shape(0, 0, 100, 74, "#161e19"));            // wall
+  s.push(shape(0, 74, 100, 26, "#0e1410"));           // floor
+  // dock door frame
+  s.push(shape(34, 12, 34, 60, "#242e26"));
+  if (o.door === "closed") {
+    for (var i = 0; i < 5; i++) {
+      s.push(shape(36, 15 + i * 10.6, 30, 8.4, "#2e3a2f"));
+    }
+  } else if (o.door === "half") {
+    s.push(shape(36, 15, 30, 25, "#050806"));
+    for (var j = 0; j < 3; j++) {
+      s.push(shape(36, 41 + j * 10.6, 30, 8.4, "#2e3a2f"));
+    }
+  } else { // open
+    s.push(shape(36, 15, 30, 55, "#050806"));
+    if (o.truck) {
+      s.push(shape(38.5, 24, 25, 30, "#1b2520", { r: 1 }));            // box
+      s.push(shape(40.5, 40, 6, 9, "#131c16"));                        // cab shadow
+      if (o.noPlates) {
+        s.push(shape(48, 47.5, 7, 4, "#8fa793", { a: 1 }));            // blank plate (anomaly)
+      }
+    }
+  }
+  // crates
+  for (var c = 0; c < o.crates; c++) {
+    var p = CRATE_SPOTS[c];
+    s.push(shape(p[0], p[1], 7.6, 13, "#3a4a3c", { r: 1 }));
+    s.push(shape(p[0] + 3.1, p[1], 1.2, 13, "#2b382d"));
+  }
+  // forklift
+  var fx = o.forkX;
+  s.push(shape(fx, 57, 12, 10, "#31402f", { r: 1 }));
+  s.push(shape(fx + 11.3, 43, 2.4, 24, "#3c4a3e"));
+  s.push(shape(fx + 12.5, 64, 6, 1.8, "#3c4a3e"));                     // forks
+  s.push(shape(fx + 1, 66.5, 3.4, 5.6, "#101812", { r: 50 }));
+  s.push(shape(fx + 7.5, 66.5, 3.4, 5.6, "#101812", { r: 50 }));
+  if (o.keys) {
+    s.push(shape(fx + 8.6, 59.4, 1.4, 2.4, "#e8f7d9", { a: 1 }));      // key glint (anomaly)
+  }
+  // office door + light
+  s.push(shape(2, 40, 10, 31, "#20291f"));
+  s.push(shape(10.6, 55, 1, 3.6, "#3c4a3e"));
+  if (o.officeLight) {
+    s.push(shape(2, 70.2, 10, 1.6, "#d9ffcc", { a: 1, o: 0.9 }));      // light under door (anomaly)
+  }
+  // figure by crates
+  if (o.figure) {
+    s.push(shape(61, 50, 6, 19, "#1a231c", { r: 4 }));
+    s.push(shape(62.7, 44.5, 2.7, 5, "#1a231c", { r: 50 }));
+    s.push(shape(63.4, 54.5, 1.2, 2.2, "#e4d27a", { a: 1 }));          // lanyard badge (anomaly)
+  }
+  // scuffs + glove
+  if (o.scuffs) {
+    s.push(shape(42, 79, 9, 1.1, "#1a241c", { r: 2, rot: -8 }));
+    s.push(shape(55, 83, 8, 1.1, "#1a241c", { r: 2, rot: 6 }));
+    s.push(shape(48, 88, 10, 1.1, "#1a241c", { r: 2, rot: -4 }));
+    s.push(shape(64, 80.5, 4.2, 2.6, "#26332a", { r: 2, a: 1 }));      // dropped glove (anomaly)
+  }
+  return s;
+}
+
+/* ---------------- TAPE 03: LOBBY ---------------- */
+
+function lobby(o) {
+  var s = [];
+  s.push(shape(0, 0, 100, 73, "#171f1a"));            // wall
+  s.push(shape(0, 73, 100, 27, "#101712"));           // floor
+  // wall clock
+  s.push(shape(7, 8, 12, 8, "#0d1411", { r: 2 }));
+  s.push(txt(8.5, 9.6, o.clock, 11, "#7fae86"));
+  // elevator
+  s.push(shape(70, 20, 15, 50, "#232d25"));
+  s.push(shape(71.5, 23, 12, 47, "#2c382e"));
+  if (o.doorsOpen) {
+    s.push(shape(76.6, 23, 1.9, 47, "#cfe9c6", { o: 0.9 }));           // light through gap
+  } else {
+    s.push(shape(77.2, 23, 0.9, 47, "#161e19"));                       // seam
+  }
+  s.push(shape(72.6, 13, 9.6, 5, "#0d1411", { r: 1 }));                // indicator panel
+  if (o.indicator === "3") {
+    s.push(txt(74, 13.9, "FL 3", 11, "#baf5c0", { a: 1 }));            // lit at 3 (anomaly)
+  } else {
+    s.push(txt(74, 13.9, "FL " + o.indicator, 11, "#3d4f41"));
+  }
+  // guard desk
+  s.push(shape(14, 55, 26, 5, "#33402f"));
+  s.push(shape(14, 60, 26, 13, "#232d25"));
+  // lamp
+  s.push(shape(34, 48, 1.5, 7, "#3c4a3e"));
+  s.push(shape(31.8, 45.6, 5.6, 3, "#3c4a3e", { r: 2 }));
+  if (o.lamp) {
+    s.push(shape(30.8, 48.6, 7.4, 3.4, "#e6ffdb", { o: 0.8, r: 50 })); // glow
+  }
+  // figure at desk
+  if (o.figure) {
+    s.push(shape(22, 42, 6, 14, "#1a231c", { r: 4 }));
+    s.push(shape(23.7, 37, 2.7, 5, "#1a231c", { r: 50 }));
+  }
+  // moved chair
+  if (o.chairMoved) {
+    s.push(shape(43, 61, 8, 3.6, "#2c382e", { a: 1 }));                // chair out in the open (anomaly)
+    s.push(shape(49.5, 49, 2.2, 12, "#2c382e"));
+  }
+  // painting
+  var rot = o.crooked ? -7 : 0;
+  s.push(shape(45, 15, 15, 21, "#2c382e", { rot: rot }));
+  if (o.canvas === "red") {
+    s.push(shape(46.6, 17.6, 11.8, 15.6, "#8a4a42", { rot: rot, a: (o.flagCanvas ? 1 : 0) }));
+  } else {
+    s.push(shape(46.6, 17.6, 11.8, 15.6, "#3f5d84", { rot: rot }));
+  }
+  // ladder legs at frame edge
+  if (o.ladder) {
+    s.push(shape(61.5, 50, 1.6, 21, "#3c4a3e", { rot: 4, a: 1 }));     // ladder leg (anomaly)
+    s.push(shape(65.5, 50, 1.6, 21, "#3c4a3e", { rot: -4 }));
+    s.push(shape(61.8, 56, 5.2, 1.4, "#3c4a3e"));
+  }
+  // plant
+  var px = o.plantX;
+  s.push(shape(px - 1, 47, 9, 16, "#22402a", { r: 50 }));
+  s.push(shape(px, 61, 7, 9, "#2a352c", { a: (o.flagPlant ? 1 : 0) }));
+  // umbrella stand
+  s.push(shape(90.5, 60, 4, 9, "#232d25"));
+  if (o.umbrella) {
+    s.push(shape(91.6, 49.5, 1.8, 11.5, "#415444",
+      { rot: 8, a: (o.flagUmbrella ? 1 : 0) }));                       // umbrella (anomaly on first appearance)
+  }
+  // entrance door
+  s.push(shape(86, 24, 3.4, 45, "#20291f"));
+  return s;
+}
+
+/* ============================================================
+   TAPE DATA
+   ============================================================ */
+
+var TAPES = [
+  {
+    name: "TAPE 01 — BREAK ROOM",
+    brief: "The petty cash tin vanished from the second-floor break room sometime this morning. Four frames survived the corruption. Timestamps are shot — the wall clock in-frame still works, though.",
+    shuffle: [2, 0, 3, 1],
+    events: [
+      {
+        id: "t1e1", cam: "CAM 07", ts: "0▓:0▓:12",
+        desc: "Room quiet. Coffee untouched.",
+        scene: breakRoom({ clock: "9:04", tin: true, mug: "full", chairOut: false, silhouette: true }),
+        hint: "The room reads empty. The window glass disagrees.",
+        note: "A figure reflected in the window — but the badge log says nobody was on this floor. Coffee still steaming: this frame is early."
+      },
+      {
+        id: "t1e2", cam: "CAM 03", ts: "▓▓:26:5▓",
+        desc: "Chair pulled out. Coffee half gone.",
+        scene: breakRoom({ clock: "9:2▓", tin: true, mug: "half", chairOut: true, cabinetAjar: true }),
+        hint: "Storage doesn't open itself. Check the cabinet.",
+        note: "Supply cabinet ajar — someone went looking for something. Coffee half-drunk puts this after the first pour."
+      },
+      {
+        id: "t1e3", cam: "CAM 11", ts: "0▓:▓7:33",
+        desc: "Tin gone. Mug knocked over.",
+        scene: breakRoom({ clock: "9:4▓", tin: false, mug: "tipped", chairOut: true, shoe: true }),
+        hint: "They left in a hurry — but not all of them made it out of frame. Look low.",
+        note: "A shoe under the table. They were still in the room when this frame burned. Tin already missing — late in the tape."
+      },
+      {
+        id: "t1e4", cam: "CAM 05", ts: "1▓:1▓:0▓",
+        desc: "Room reset. Almost.",
+        scene: breakRoom({ clock: "10:1▓", tin: false, mug: "none", chairOut: false, windowOpen: true }),
+        hint: "Everything's back in place. Except the thing that's supposed to keep weather out.",
+        note: "Window swung open — the exit route. Chair tucked, mug washed, scene staged to look untouched. This is the final frame."
+      }
+    ]
+  },
+  {
+    name: "TAPE 02 — LOADING DOCK",
+    brief: "Six crates of inventory walked out of the dock overnight. No badge-ins, no manifests, no working clock on this camera. The crate count is your calendar.",
+    shuffle: [3, 1, 4, 0, 2],
+    events: [
+      {
+        id: "t2e1", cam: "CAM 22", ts: "▓▓:▓▓:41",
+        desc: "Dock sealed. Full stack.",
+        scene: warehouse({ door: "closed", crates: 6, forkX: 8, officeLight: true }),
+        hint: "The dock office was signed out at six. Look under its door.",
+        note: "Light burning under the office door after sign-out. Someone stayed behind. All six crates present — start of the tape."
+      },
+      {
+        id: "t2e2", cam: "CAM 19", ts: "0▓:▓2:▓▓",
+        desc: "Door rising. Stack intact.",
+        scene: warehouse({ door: "half", crates: 6, forkX: 15, keys: true }),
+        hint: "Nobody badged in to drive anything. So why did it move? Check the ignition.",
+        note: "Forklift repositioned with keys glinting in the ignition — no operator logged. Crates untouched, so the loading hasn't started yet."
+      },
+      {
+        id: "t2e3", cam: "CAM 22", ts: "▓2:1▓:0▓",
+        desc: "Truck at the door. Stack shrinking.",
+        scene: warehouse({ door: "open", crates: 4, forkX: 15, truck: true, noPlates: true }),
+        hint: "Every vehicle that docks here gets its plate logged. Try logging this one.",
+        note: "The truck's plate mount is bare metal — no plates at all. Two crates already aboard: mid-load."
+      },
+      {
+        id: "t2e4", cam: "CAM 19", ts: "0▓:5▓:▓7",
+        desc: "Figure in frame. Two crates left.",
+        scene: warehouse({ door: "open", crates: 2, forkX: 15, figure: true }),
+        hint: "Zoom the figure. Outside crews don't wear what's around that neck.",
+        note: "That's a company lanyard on the figure. Inside job. Only two crates remain — nearly done loading."
+      },
+      {
+        id: "t2e5", cam: "CAM 22", ts: "▓▓:▓9:1▓",
+        desc: "Dock sealed again. Floor empty.",
+        scene: warehouse({ door: "closed", crates: 0, forkX: 15, scuffs: true }),
+        hint: "The floor tells the story after the door closes. Something got left behind.",
+        note: "Drag scuffs across the floor and a work glove dropped by the door. Zero crates. The tape ends here."
+      }
+    ]
+  },
+  {
+    name: "TAPE 03 — LOBBY",
+    brief: "Morning staff found the lobby painting... different. The insurer wants a timeline. Six frames, one dead clock, and a desk lamp that somebody kept switching.",
+    shuffle: [4, 0, 5, 2, 1, 3],
+    events: [
+      {
+        id: "t3e1", cam: "CAM 01", ts: "2▓:▓4:▓▓",
+        desc: "Lobby at rest. Lamp on.",
+        scene: lobby({ clock: "▓▓:▓4", indicator: "3", lamp: true, canvas: "blue", plantX: 6 }),
+        hint: "The building emptied at nine. So who called the elevator upstairs?",
+        note: "Elevator car parked on floor 3 in an empty building. Desk lamp still on, painting straight and blue — the tape opens here."
+      },
+      {
+        id: "t3e2", cam: "CAM 04", ts: "▓▓:1▓:2▓",
+        desc: "Elevator light in the seam.",
+        scene: lobby({ clock: "2▓:▓▓", indicator: "L", doorsOpen: true, lamp: true, canvas: "blue", plantX: 6, umbrella: true, flagUmbrella: true }),
+        hint: "Compare the entryway to the first frame. Something's standing there that wasn't.",
+        note: "An umbrella appeared in the stand — it hasn't rained in a week. Car just reached the lobby: our visitor has arrived."
+      },
+      {
+        id: "t3e3", cam: "CAM 01", ts: "0▓:▓▓:5▓",
+        desc: "Figure at the desk. Lamp dead.",
+        scene: lobby({ clock: "▓▓:▓▓", indicator: "L", lamp: false, figure: true, chairMoved: true, canvas: "blue", plantX: 6, umbrella: true }),
+        hint: "The guard's chair has a home. It's not where it lives.",
+        note: "Guard chair dragged into the open — they killed the lamp and worked the desk in the dark. Painting still untouched: before the swap."
+      },
+      {
+        id: "t3e4", cam: "CAM 04", ts: "▓2:▓▓:▓▓",
+        desc: "Painting off-level.",
+        scene: lobby({ clock: "▓▓:▓▓", indicator: "L", lamp: false, canvas: "blue", crooked: true, ladder: true, plantX: 6, umbrella: true }),
+        hint: "You don't reach a painting that high from the floor. Look at the frame's edge.",
+        note: "Ladder legs at the edge of frame, canvas knocked crooked. The painting is coming down — swap in progress."
+      },
+      {
+        id: "t3e5", cam: "CAM 01", ts: "▓▓:5▓:▓1",
+        desc: "Painting level again.",
+        scene: lobby({ clock: "0▓:▓▓", indicator: "L", lamp: false, canvas: "red", flagCanvas: true, plantX: 6, umbrella: true }),
+        hint: "Straightened and rehung. Now look at what got rehung.",
+        note: "That is not the same canvas — the original was blue. Swap complete, lamp still dark. Late frame."
+      },
+      {
+        id: "t3e6", cam: "CAM 04", ts: "0▓:▓2:▓▓",
+        desc: "Lobby at rest. Lamp on. Again.",
+        scene: lobby({ clock: "0▓:1▓", indicator: "L", lamp: true, canvas: "red", plantX: 58, flagPlant: true }),
+        hint: "The room's been reset for morning. One thing didn't go back where it belongs.",
+        note: "The planter slid halfway across the lobby — covering scuff marks from the ladder. Lamp back on, scene staged for the day shift. Final frame."
+      }
+    ]
+  }
+];
+
+var MAX_SCORE = (4 + 5 + 6) * 100 + (4 + 5 + 6) * 150; // 1500 + 2250 = 3750
+
+/* ============================================================
+   STATE
+   ============================================================ */
+
+var state = null;
+
+function freshState() {
+  return {
+    tapeIdx: 0,
+    score: 0,
+    totalAnoms: 0,
+    history: [],
+    tape: null
+  };
+}
+
+function freshTapeState(idx) {
+  var tape = TAPES[idx];
+  return {
+    idx: idx,
+    cardIdx: 0,
+    found: {},          // eventId -> true
+    hinted: {},         // eventId -> true
+    misses: 0,
+    attempts: 0,
+    solved: false,
+    revealed: false,
+    scoreAtStart: state.score,
+    order: tape.shuffle.slice() // array of event indices, player-arranged
+  };
+}
+
+/* ============================================================
+   DOM HELPERS
+   ============================================================ */
+
+function byId(id) { return document.getElementById(id); }
+
+function clearNode(n) {
+  while (n.firstChild) { n.removeChild(n.firstChild); }
+}
+
+function make(tag, cls, text) {
+  var d = document.createElement(tag);
+  if (cls) { d.className = cls; }
+  if (text !== undefined) { d.textContent = text; }
+  return d;
+}
+
+function renderScene(host, shapes, revealAnomaly) {
+  clearNode(host);
+  for (var i = 0; i < shapes.length; i++) {
+    var s = shapes[i];
+    var d = document.createElement("div");
+    d.className = "shape" + (s.t !== undefined ? " txt" : "");
+    d.style.left = s.x + "%";
+    d.style.top = s.y + "%";
+    d.style.width = s.w + "%";
+    d.style.height = s.h + "%";
+    if (s.t !== undefined) {
+      d.textContent = s.t;
+      d.style.fontSize = (s.fs || 11) + "px";
+      d.style.color = s.c;
+    } else {
+      d.style.background = s.c;
+    }
+    if (s.r !== undefined) {
+      d.style.borderRadius = (s.r >= 50 ? "50%" : s.r + "px");
+    }
+    if (s.o !== undefined) { d.style.opacity = String(s.o); }
+    if (s.rot) { d.style.transform = "rotate(" + s.rot + "deg)"; }
+    if (s.a) {
+      d.dataset.anom = "1";
+      if (revealAnomaly) { d.classList.add("rev"); }
+    }
+    host.appendChild(d);
+  }
+}
+
+function addOverlays(host, cam, ts) {
+  var stamp = make("div", "stamp", ts + "  ·  DVR-3  ·  ▓▓/▓▓/▓▓");
+  var camid = make("div", "camid", cam);
+  host.appendChild(stamp);
+  host.appendChild(camid);
+}
+
+/* ============================================================
+   HUD
+   ============================================================ */
+
+function updateHud() {
+  var t = TAPES[state.tape.idx];
+  byId("hud-tape").textContent = t.name;
+  byId("hud-score").textContent = "SCORE " + state.score;
+  var foundCount = Object.keys(state.tape.found).length;
+  byId("hud-progress").textContent =
+    "TAPE " + (state.tape.idx + 1) + "/" + TAPES.length +
+    " · ANOMALIES " + foundCount + "/" + t.events.length;
+}
+
+function addScore(delta) {
+  state.score = Math.max(0, state.score + delta);
+  updateHud();
+}
+
+/* ============================================================
+   REVIEW PHASE
+   ============================================================ */
+
+function showCard(i) {
+  var tape = TAPES[state.tape.idx];
+  state.tape.cardIdx = i;
+  var ev = tape.events[i];
+  var frame = byId("frame");
+  renderScene(frame, ev.scene, !!state.tape.found[ev.id]);
+  addOverlays(frame, ev.cam, ev.ts);
+  byId("cam-count").textContent = "FRAME " + (i + 1) + " / " + tape.events.length;
+  setFeed(state.tape.found[ev.id] ? "Anomaly already logged on this frame." : "", "");
+  renderCamStrip();
+  byId("btn-hint").disabled = !!state.tape.found[ev.id] || !!state.tape.hinted[ev.id];
+}
+
+function renderCamStrip() {
+  var tape = TAPES[state.tape.idx];
+  var strip = byId("cam-strip");
+  clearNode(strip);
+  tape.events.forEach(function (ev, i) {
+    var b = make("button", "", ev.cam);
+    if (i === state.tape.cardIdx) { b.classList.add("on"); }
+    if (state.tape.found[ev.id]) { b.classList.add("done"); }
+    b.addEventListener("click", function () { showCard(i); });
+    strip.appendChild(b);
+  });
+}
+
+function setFeed(msg, cls) {
+  var f = byId("feed-msg");
+  f.textContent = msg;
+  f.className = "feed-msg" + (cls ? " " + cls : "");
+}
+
+function renderLog() {
+  var tape = TAPES[state.tape.idx];
+  var log = byId("log");
+  clearNode(log);
+  var any = false;
+  tape.events.forEach(function (ev) {
+    if (state.tape.found[ev.id]) {
+      any = true;
+      var e = make("div", "entry");
+      e.appendChild(make("span", "who", ev.cam + " — "));
+      e.appendChild(document.createTextNode(ev.note));
+      log.appendChild(e);
+    }
+  });
+  if (!any) {
+    log.appendChild(make("div", "empty", "Nothing logged yet. Find what's wrong in each frame."));
+  }
+}
+
+function onFrameClick(e) {
+  if (!state || !state.tape) { return; }
+  var tape = TAPES[state.tape.idx];
+  var ev = tape.events[state.tape.cardIdx];
+  if (state.tape.found[ev.id]) { return; }
+  var t = e.target;
+  if (t && t.dataset && t.dataset.anom === "1") {
+    state.tape.found[ev.id] = true;
+    state.totalAnoms += 1;
+    addScore(100);
+    renderScene(byId("frame"), ev.scene, true);
+    addOverlays(byId("frame"), ev.cam, ev.ts);
+    setFeed("ANOMALY LOGGED (+100): " + ev.note, "ok");
+    renderLog();
+    renderCamStrip();
+    byId("btn-hint").disabled = true;
+  } else {
+    state.tape.misses += 1;
+    addScore(-25);
+    setFeed("Nothing there. (−25)", "bad");
+    var frame = byId("frame");
+    frame.classList.remove("static-hit");
+    // restart animation
+    void frame.offsetWidth;
+    frame.classList.add("static-hit");
+  }
+}
+
+function buyHint() {
+  var tape = TAPES[state.tape.idx];
+  var ev = tape.events[state.tape.cardIdx];
+  if (state.tape.found[ev.id] || state.tape.hinted[ev.id]) { return; }
+  state.tape.hinted[ev.id] = true;
+  addScore(-50);
+  setFeed("HINT (−50): " + ev.hint, "amber");
+  byId("btn-hint").disabled = true;
+}
+
+/* ============================================================
+   SEQUENCE PHASE
+   ============================================================ */
+
+function renderSeq() {
+  var tape = TAPES[state.tape.idx];
+  var list = byId("seq-list");
+  clearNode(list);
+  state.tape.order.forEach(function (evIdx, pos) {
+    var ev = tape.events[evIdx];
+    var row = make("div", "row");
+    row.appendChild(make("div", "slot", String(pos + 1)));
+
+    var thumb = make("div", "thumb");
+    renderScene(thumb, ev.scene, false);
+    row.appendChild(thumb);
+
+    var meta = make("div", "meta");
+    meta.appendChild(make("span", "cam", ev.cam + "  " + ev.ts));
+    meta.appendChild(make("span", "note",
+      state.tape.found[ev.id] ? ev.note : ev.desc + "  (no anomaly logged)"));
+    row.appendChild(meta);
+
+    var ctl = make("div", "ctl");
+    var up = make("button", "tiny", "▲");
+    var dn = make("button", "tiny", "▼");
+    up.disabled = pos === 0 || state.tape.solved;
+    dn.disabled = pos === state.tape.order.length - 1 || state.tape.solved;
+    up.addEventListener("click", function () { moveRow(pos, -1); });
+    dn.addEventListener("click", function () { moveRow(pos, 1); });
+    ctl.appendChild(up);
+    ctl.appendChild(dn);
+    row.appendChild(ctl);
+
+    list.appendChild(row);
+  });
+}
+
+function moveRow(pos, dir) {
+  var o = state.tape.order;
+  var np = pos + dir;
+  if (np < 0 || np >= o.length) { return; }
+  var tmp = o[pos]; o[pos] = o[np]; o[np] = tmp;
+  byId("seq-msg").textContent = "";
+  renderSeq();
+}
+
+function verifySeq() {
+  if (state.tape.solved) { return; }
+  state.tape.attempts += 1;
+  var rows = byId("seq-list").children;
+  var correct = 0;
+  for (var i = 0; i < state.tape.order.length; i++) {
+    var good = state.tape.order[i] === i;
+    rows[i].classList.remove("good", "wrong");
+    rows[i].classList.add(good ? "good" : "wrong");
+    if (good) { correct += 1; }
+  }
+  var n = state.tape.order.length;
+  if (correct === n) {
+    state.tape.solved = true;
+    var per = state.tape.attempts === 1 ? 150 : (state.tape.attempts === 2 ? 100 : 50);
+    addScore(per * n);
+    byId("seq-msg").textContent = "SEQUENCE CONFIRMED. +" + (per * n) + " (" + per + "/slot, attempt " + state.tape.attempts + ")";
+    byId("seq-msg").className = "ok";
+    byId("btn-verify").disabled = true;
+    renderSeq();
+    window.setTimeout(showTapeResult, 1100);
+  } else {
+    byId("seq-msg").textContent = correct + " of " + n + " frames in position. Keep working it.";
+    byId("seq-msg").className = "bad";
+    if (state.tape.attempts >= 2) { byId("btn-reveal").disabled = false; }
+  }
+}
+
+function revealSeq() {
+  if (state.tape.solved) { return; }
+  state.tape.solved = true;
+  state.tape.revealed = true;
+  var n = state.tape.order.length;
+  for (var i = 0; i < n; i++) { state.tape.order[i] = i; }
+  renderSeq();
+  var rows = byId("seq-list").children;
+  for (var j = 0; j < rows.length; j++) { rows[j].classList.add("good"); }
+  byId("seq-msg").textContent = "ORDER REVEALED — no sequence points awarded.";
+  byId("seq-msg").className = "amber";
+  byId("btn-verify").disabled = true;
+  byId("btn-reveal").disabled = true;
+  window.setTimeout(showTapeResult, 1400);
+}
+
+/* ============================================================
+   PHASE / SCREEN SWITCHING
+   ============================================================ */
+
+function setTab(which) {
+  byId("tab-review").classList.toggle("on", which === "review");
+  byId("tab-seq").classList.toggle("on", which === "seq");
+  byId("view-review").classList.toggle("hidden", which !== "review");
+  byId("view-seq").classList.toggle("hidden", which !== "seq");
+  byId("view-result").classList.add("hidden");
+  if (which === "seq") { renderSeq(); }
+}
+
+function showTapeResult() {
+  var tape = TAPES[state.tape.idx];
+  byId("view-review").classList.add("hidden");
+  byId("view-seq").classList.add("hidden");
+  byId("view-result").classList.remove("hidden");
+  var foundCount = Object.keys(state.tape.found).length;
+  var delta = state.score - state.tape.scoreAtStart;
+  byId("res-title").textContent = tape.name + (state.tape.revealed ? " — CLOSED (REVEALED)" : " — CLOSED");
+  byId("res-anom").textContent = foundCount + " / " + tape.events.length;
+  byId("res-miss").textContent = String(state.tape.misses);
+  byId("res-hints").textContent = String(Object.keys(state.tape.hinted).length);
+  byId("res-att").textContent = String(state.tape.attempts) + (state.tape.revealed ? " (revealed)" : "");
+  byId("res-score").textContent = (delta >= 0 ? "+" : "") + delta;
+  state.history.push({
+    name: tape.name,
+    found: foundCount,
+    total: tape.events.length,
+    misses: state.tape.misses,
+    hints: Object.keys(state.tape.hinted).length,
+    attempts: state.tape.attempts,
+    revealed: state.tape.revealed,
+    delta: delta
+  });
+  byId("btn-next-tape").textContent =
+    state.tape.idx + 1 < TAPES.length ? "LOAD NEXT TAPE ▶" : "END SHIFT ▶";
+}
+
+function loadTape(idx) {
+  state.tape = freshTapeState(idx);
+  byId("brief-txt").textContent = TAPES[idx].brief;
+  byId("seq-msg").textContent = "";
+  byId("seq-msg").className = "";
+  byId("btn-verify").disabled = false;
+  byId("btn-reveal").disabled = true;
+  renderLog();
+  setTab("review");
+  showCard(0);
+  updateHud();
+}
+
+function nextTape() {
+  if (state.tape.idx + 1 < TAPES.length) {
+    loadTape(state.tape.idx + 1);
+  } else {
+    showFinal();
+  }
+}
+
+function rankFor(score) {
+  if (score >= 3400) { return ["SIGNAL SAVANT", "Nothing gets past you. The night shift is yours."]; }
+  if (score >= 2800) { return ["SENIOR NIGHT ANALYST", "Clean logs, tight timelines. The insurer sends coffee."]; }
+  if (score >= 2000) { return ["TAPE JOCKEY", "Solid work. A few frames got by, but the cases hold up."]; }
+  if (score >= 1000) { return ["ROOKIE REVIEWER", "You found the door. Next time find what came through it."]; }
+  return ["STATIC SLEEPER", "The tapes watched you back. Run them again."];
+}
+
+function showFinal() {
+  byId("screen-game").classList.add("hidden");
+  byId("screen-final").classList.remove("hidden");
+  byId("fin-anom").textContent = state.totalAnoms + " / 15";
+  byId("fin-score").textContent = state.score + " / " + MAX_SCORE;
+  var r = rankFor(state.score);
+  byId("fin-rank").textContent = r[0];
+  byId("fin-line").textContent = r[1];
+  var lines = ["SHIFT 3 REPORT — REVIEW DESK", "============================"];
+  state.history.forEach(function (h) {
+    lines.push("");
+    lines.push(h.name + (h.revealed ? "  [ORDER REVEALED]" : ""));
+    lines.push("  anomalies " + h.found + "/" + h.total +
+      "  · wild clicks " + h.misses +
+      "  · hints " + h.hints +
+      "  · verify attempts " + h.attempts +
+      "  · tape score " + (h.delta >= 0 ? "+" : "") + h.delta);
+  });
+  lines.push("");
+  lines.push("FINAL: " + state.score + " / " + MAX_SCORE + "  — " + r[0]);
+  byId("fin-report").textContent = lines.join("\n");
+}
+
+function startShift() {
+  state = freshState();
+  byId("screen-title").classList.add("hidden");
+  byId("screen-final").classList.add("hidden");
+  byId("screen-game").classList.remove("hidden");
+  loadTape(0);
+}
+
+/* ============================================================
+   WIRING
+   ============================================================ */
+
+function wire() {
+  byId("btn-start").addEventListener("click", startShift);
+  byId("btn-restart").addEventListener("click", startShift);
+  byId("frame").addEventListener("click", onFrameClick);
+  byId("btn-hint").addEventListener("click", buyHint);
+  byId("btn-prev").addEventListener("click", function () {
+    var n = TAPES[state.tape.idx].events.length;
+    showCard((state.tape.cardIdx + n - 1) % n);
+  });
+  byId("btn-next").addEventListener("click", function () {
+    var n = TAPES[state.tape.idx].events.length;
+    showCard((state.tape.cardIdx + 1) % n);
+  });
+  byId("btn-to-seq").addEventListener("click", function () { setTab("seq"); });
+  byId("tab-review").addEventListener("click", function () {
+    if (!state.tape.solved) { setTab("review"); showCard(state.tape.cardIdx); }
+  });
+  byId("tab-seq").addEventListener("click", function () { setTab("seq"); });
+  byId("btn-back-review").addEventListener("click", function () {
+    setTab("review"); showCard(state.tape.cardIdx);
+  });
+  byId("btn-verify").addEventListener("click", verifySeq);
+  byId("btn-reveal").addEventListener("click", revealSeq);
+  byId("btn-next-tape").addEventListener("click", nextTape);
+}
+
+wire();
+</script>
+</body>
+</html>

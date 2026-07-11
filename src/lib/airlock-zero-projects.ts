@@ -172,6 +172,7 @@ export const AIRLOCK_ZERO_CLAUDE_FORK_SHOWCASE_PROJECT: PreparedShowcaseProject 
   forkSource: {
     sourceProjectId: AIRLOCK_ZERO_PROJECT_ID,
     sourceProjectTitle: CANONICAL_TITLE,
+    sourceModelVariantId: 'b533b3c9-62cd-411f-acf6-1197a3ffdcad',
     sourceRunId: AIRLOCK_ZERO_CLAUDE_SOURCE_RUN_ID,
     sourceStepId: forkStepId(AIRLOCK_ZERO_CLAUDE_SOURCE_RUN_ID, 10),
     sourceStepNumber: 10,
@@ -242,6 +243,7 @@ export const AIRLOCK_ZERO_GPT_FORK_SHOWCASE_PROJECT: PreparedShowcaseProject = {
   forkSource: {
     sourceProjectId: AIRLOCK_ZERO_PROJECT_ID,
     sourceProjectTitle: CANONICAL_TITLE,
+    sourceModelVariantId: 'c5d4c314-e286-46c6-8a3d-213bc62415cc',
     sourceRunId: AIRLOCK_ZERO_GPT_SOURCE_RUN_ID,
     sourceStepId: forkStepId(AIRLOCK_ZERO_GPT_SOURCE_RUN_ID),
     sourceStepNumber: 2,
@@ -291,6 +293,7 @@ export const AIRLOCK_ZERO_GEMINI_FORK_SHOWCASE_PROJECT: PreparedShowcaseProject 
   forkSource: {
     sourceProjectId: AIRLOCK_ZERO_PROJECT_ID,
     sourceProjectTitle: CANONICAL_TITLE,
+    sourceModelVariantId: '62a2d0f4-7e61-46cf-a5a2-26229e930b0f',
     sourceRunId: AIRLOCK_ZERO_GEMINI_SOURCE_RUN_ID,
     sourceStepId: forkStepId(AIRLOCK_ZERO_GEMINI_SOURCE_RUN_ID),
     sourceStepNumber: 2,

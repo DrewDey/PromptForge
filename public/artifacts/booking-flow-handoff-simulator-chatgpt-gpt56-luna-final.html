@@ -1,0 +1,962 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Booking Flow Handoff Simulator</title>
+  <style>
+    :root {
+      --ink: #18201f;
+      --muted: #68716e;
+      --paper: #f7f8f4;
+      --card: #ffffff;
+      --line: #dce3dd;
+      --soft: #eef3ee;
+      --green: #2f6b57;
+      --green-dark: #1d4d3d;
+      --green-soft: #dceee3;
+      --amber: #a86c1d;
+      --amber-soft: #fff0d8;
+      --red: #a8483f;
+      --red-soft: #fbe4df;
+      --blue: #34687b;
+      --shadow: 0 14px 34px rgba(28, 48, 40, 0.08);
+      --radius: 18px;
+    }
+
+    * { box-sizing: border-box; }
+    html { background: var(--paper); }
+    body {
+      margin: 0;
+      color: var(--ink);
+      background:
+        radial-gradient(circle at 8% 0%, rgba(220, 238, 227, 0.82), transparent 30rem),
+        var(--paper);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      line-height: 1.45;
+    }
+
+    button, input, select, textarea { font: inherit; }
+    button { cursor: pointer; }
+    button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible {
+      outline: 3px solid rgba(52, 104, 123, 0.32);
+      outline-offset: 2px;
+    }
+
+    .app-shell { width: min(1180px, 100%); margin: 0 auto; padding: 28px 18px 56px; }
+    .eyebrow {
+      color: var(--green-dark);
+      font-size: 0.74rem;
+      font-weight: 800;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+    }
+    h1, h2, h3, p { margin-top: 0; }
+    h1 { max-width: 680px; margin-bottom: 10px; font-size: clamp(2rem, 5vw, 3.55rem); line-height: 0.98; }
+    h2 { margin-bottom: 6px; font-size: 1.2rem; }
+    h3 { margin-bottom: 6px; font-size: 0.98rem; }
+    .lede { max-width: 700px; margin-bottom: 0; color: var(--muted); font-size: 1.02rem; }
+
+    .topbar { display: flex; align-items: flex-start; justify-content: space-between; gap: 18px; margin-bottom: 24px; }
+    .local-badge, .status-pill, .tag {
+      display: inline-flex; align-items: center; gap: 7px; width: fit-content;
+      border: 1px solid var(--line); border-radius: 999px; padding: 7px 11px;
+      color: var(--muted); background: rgba(255,255,255,0.72); font-size: 0.78rem; font-weight: 750;
+    }
+    .local-badge::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: var(--green); }
+
+    .panel { margin-bottom: 16px; padding: 20px; border: 1px solid var(--line); border-radius: var(--radius); background: rgba(255,255,255,0.86); box-shadow: var(--shadow); }
+    .panel-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 14px; margin-bottom: 16px; }
+    .panel-header p { margin-bottom: 0; color: var(--muted); font-size: 0.9rem; }
+    .grid-2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+    .grid-3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
+    .field { min-width: 0; }
+    .field label { display: block; margin-bottom: 6px; color: var(--muted); font-size: 0.78rem; font-weight: 800; }
+    .field input, .field select, .field textarea {
+      width: 100%; border: 1px solid var(--line); border-radius: 11px; padding: 10px 11px;
+      color: var(--ink); background: #fbfcfa;
+    }
+    .field textarea { min-height: 78px; resize: vertical; }
+    .field input::placeholder, .field textarea::placeholder { color: #9aa39e; }
+    .field small { display: block; margin-top: 5px; color: var(--muted); font-size: 0.75rem; }
+
+    .scenario-grid { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 9px; }
+    .scenario-button {
+      min-height: 76px; padding: 10px; border: 1px solid var(--line); border-radius: 13px;
+      color: var(--ink); background: var(--card); text-align: left; transition: 150ms ease;
+    }
+    .scenario-button:hover { border-color: #9db9aa; transform: translateY(-1px); }
+    .scenario-button[aria-pressed="true"] { border-color: var(--green); background: var(--green-soft); box-shadow: inset 0 0 0 1px var(--green); }
+    .scenario-icon { display: block; margin-bottom: 5px; font-size: 1.15rem; }
+    .scenario-name { display: block; font-size: 0.8rem; font-weight: 800; }
+    .scenario-note { display: block; margin-top: 2px; color: var(--muted); font-size: 0.7rem; line-height: 1.2; }
+
+    .flow-map { display: flex; align-items: stretch; gap: 8px; margin-top: 16px; }
+    .flow-node { flex: 1 1 120px; min-width: 0; padding: 11px; border: 1px solid var(--line); border-radius: 13px; background: var(--soft); }
+    .flow-node.active { border-color: var(--green); background: var(--green-soft); }
+    .flow-node.done { border-color: #a9cbb9; background: #f1f8f3; }
+    .flow-node-index { display: block; margin-bottom: 3px; color: var(--muted); font-size: 0.7rem; font-weight: 800; }
+    .flow-node strong { display: block; font-size: 0.82rem; }
+    .flow-node span:last-child { display: block; margin-top: 2px; color: var(--muted); font-size: 0.72rem; }
+    .flow-arrow { align-self: center; color: #9aa8a0; font-size: 1.1rem; }
+
+    .workspace { display: grid; grid-template-columns: minmax(0, 1.22fr) minmax(300px, 0.78fr); gap: 16px; align-items: start; }
+    .simulator-panel { min-width: 0; }
+    .simulator-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 14px; }
+    .simulator-head p { margin-bottom: 0; color: var(--muted); font-size: 0.82rem; }
+    .conversation { display: grid; gap: 12px; padding: 14px; border: 1px solid var(--line); border-radius: 15px; background: #f2f5f1; }
+    .turn { max-width: 87%; padding: 12px 13px; border-radius: 14px; border: 1px solid var(--line); background: var(--card); }
+    .turn.customer { justify-self: start; border-bottom-left-radius: 4px; }
+    .turn.bot { justify-self: end; border-color: #b8d6c4; background: var(--green-soft); border-bottom-right-radius: 4px; }
+    .turn-label { display: block; margin-bottom: 4px; color: var(--muted); font-size: 0.7rem; font-weight: 850; text-transform: uppercase; letter-spacing: 0.08em; }
+    .turn p { margin-bottom: 0; white-space: pre-wrap; overflow-wrap: anywhere; }
+    .reply-area { margin-top: 14px; }
+    .reply-area h3 { color: var(--muted); font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.08em; }
+    .reply-options { display: grid; gap: 8px; }
+    .reply-button { width: 100%; padding: 11px 12px; border: 1px solid var(--line); border-radius: 11px; color: var(--ink); background: var(--card); text-align: left; }
+    .reply-button:hover { border-color: var(--green); background: #f4fbf6; }
+    .sim-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 9px; margin-top: 15px; }
+
+    .btn { display: inline-flex; align-items: center; justify-content: center; gap: 7px; min-height: 40px; padding: 9px 13px; border: 1px solid var(--line); border-radius: 10px; color: var(--ink); background: var(--card); font-weight: 800; }
+    .btn:hover { border-color: #9eb5aa; background: #f7fbf7; }
+    .btn-primary { border-color: var(--green); color: #fff; background: var(--green); }
+    .btn-primary:hover { border-color: var(--green-dark); color: #fff; background: var(--green-dark); }
+    .btn-quiet { border-color: transparent; color: var(--muted); background: transparent; }
+    .btn-danger { color: var(--red); background: var(--red-soft); border-color: #f0c1b8; }
+    .inline-confirm { display: inline-flex; align-items: center; flex-wrap: wrap; gap: 7px; color: var(--red); font-size: 0.8rem; font-weight: 750; }
+    .inline-confirm[hidden] { display: none; }
+    .status-line { min-height: 22px; color: var(--muted); font-size: 0.82rem; }
+
+    .audit-list { display: grid; gap: 9px; }
+    .audit-item { display: grid; grid-template-columns: auto 1fr; gap: 10px; align-items: start; padding: 11px 0; border-bottom: 1px solid var(--line); }
+    .audit-item:last-child { border-bottom: 0; padding-bottom: 0; }
+    .audit-dot { width: 10px; height: 10px; margin-top: 5px; border-radius: 50%; background: #aeb9b2; }
+    .audit-dot.pass { background: var(--green); box-shadow: 0 0 0 4px var(--green-soft); }
+    .audit-dot.warn { background: var(--amber); box-shadow: 0 0 0 4px var(--amber-soft); }
+    .audit-dot.block { background: var(--red); box-shadow: 0 0 0 4px var(--red-soft); }
+    .audit-item strong { display: block; font-size: 0.86rem; }
+    .audit-item p { margin: 2px 0 0; color: var(--muted); font-size: 0.78rem; }
+    .score-box { display: flex; align-items: center; gap: 13px; padding: 14px; border-radius: 14px; background: var(--soft); }
+    .score-number { min-width: 76px; color: var(--green-dark); font-size: 2.15rem; font-weight: 850; }
+    .score-box strong { display: block; }
+    .score-box p { margin: 2px 0 0; color: var(--muted); font-size: 0.8rem; }
+    .progress-track { height: 7px; margin-top: 9px; overflow: hidden; border-radius: 999px; background: #d9e3dc; }
+    .progress-fill { height: 100%; border-radius: inherit; background: var(--green); transition: width 180ms ease; }
+
+    .risk-strip { margin-top: 14px; padding: 12px; border-radius: 12px; color: #704817; background: var(--amber-soft); font-size: 0.8rem; }
+    .risk-strip.good { color: var(--green-dark); background: var(--green-soft); }
+    .risk-strip.block { color: #7c302b; background: var(--red-soft); }
+    .risk-strip strong { display: block; margin-bottom: 2px; }
+
+    .receipt-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(250px, 0.85fr); gap: 14px; }
+    .receipt-preview { min-height: 230px; margin: 0; padding: 14px; border: 1px solid var(--line); border-radius: 13px; color: #33413b; background: #f6f8f4; font: 0.78rem/1.55 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; white-space: pre-wrap; overflow-wrap: anywhere; }
+    .action-stack { display: grid; align-content: start; gap: 9px; }
+    .action-stack .btn { width: 100%; }
+    .history { margin-top: 17px; padding-top: 15px; border-top: 1px solid var(--line); }
+    .history-list { display: grid; gap: 8px; }
+    .history-row { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 9px 10px; border: 1px solid var(--line); border-radius: 11px; background: #fbfcfa; }
+    .history-row strong { display: block; font-size: 0.79rem; }
+    .history-row span { display: block; color: var(--muted); font-size: 0.72rem; }
+    .history-empty { color: var(--muted); font-size: 0.8rem; }
+    .footer-note { margin-top: 18px; color: var(--muted); font-size: 0.75rem; text-align: center; }
+
+    @media (max-width: 920px) {
+      .scenario-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+      .workspace, .receipt-grid { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 620px) {
+      .app-shell { padding: 20px 12px 42px; }
+      .topbar, .panel-header, .simulator-head { display: block; }
+      .local-badge, .status-pill { margin-top: 12px; }
+      h1 { font-size: 2.55rem; }
+      .panel { padding: 15px; border-radius: 15px; }
+      .grid-2, .grid-3 { grid-template-columns: 1fr; }
+      .scenario-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .flow-map { display: grid; grid-template-columns: 1fr 1fr; }
+      .flow-arrow { display: none; }
+      .flow-node { flex-basis: auto; }
+      .turn { max-width: 96%; }
+      .score-box { align-items: flex-start; }
+      .score-number { min-width: 62px; font-size: 1.85rem; }
+      .history-row { align-items: flex-start; }
+    }
+    @media (max-width: 360px) {
+      .scenario-grid { grid-template-columns: 1fr; }
+      .sim-actions .btn { width: 100%; }
+    }
+  </style>
+</head>
+<body>
+  <main class="app-shell" id="app">
+    <header class="topbar">
+      <div>
+        <div class="eyebrow">Before you automate</div>
+        <h1>Booking-flow handoff simulator</h1>
+        <p class="lede">Pressure-test the customer journey, decide where automation stops, and leave yourself a clean handoff brief before any message goes live.</p>
+      </div>
+      <div class="local-badge">Saved in this browser</div>
+    </header>
+
+    <section class="panel" aria-labelledby="setup-title">
+      <div class="panel-header">
+        <div>
+          <h2 id="setup-title">Set the operating rules</h2>
+          <p>These details are reused in the simulated messages and exported receipt.</p>
+        </div>
+        <span class="status-pill" id="saveStatus" role="status">Changes save locally</span>
+      </div>
+      <div class="grid-2">
+        <div class="field">
+          <label for="businessName">Business name</label>
+          <input id="businessName" data-field="businessName" type="text" placeholder="Your business">
+        </div>
+        <div class="field">
+          <label for="serviceName">Primary service</label>
+          <input id="serviceName" data-field="serviceName" type="text" placeholder="What customers book">
+        </div>
+        <div class="field">
+          <label for="bookingLink">Booking link or next-step URL</label>
+          <input id="bookingLink" data-field="bookingLink" type="text" placeholder="Paste the link customers should use">
+          <small>Displayed as text only. This file never opens or contacts it.</small>
+        </div>
+        <div class="field">
+          <label for="replyWindow">Your response window</label>
+          <input id="replyWindow" data-field="replyWindow" type="text" placeholder="within one business day">
+        </div>
+        <div class="field">
+          <label for="ownerName">Human handoff owner</label>
+          <input id="ownerName" data-field="ownerName" type="text" placeholder="Your name or role">
+        </div>
+        <div class="field">
+          <label for="ownerContact">Handoff contact</label>
+          <input id="ownerContact" data-field="ownerContact" type="text" placeholder="Email, phone, or inbox label">
+        </div>
+        <div class="field" style="grid-column: 1 / -1">
+          <label for="policy">Policy or expectation the automation must not invent</label>
+          <textarea id="policy" data-field="policy" placeholder="Example: Changes are free up to 24 hours before the appointment."></textarea>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel" aria-labelledby="scenario-title">
+      <div class="panel-header">
+        <div>
+          <h2 id="scenario-title">Choose a customer path</h2>
+          <p>Run the ordinary path, then deliberately test the awkward one.</p>
+        </div>
+      </div>
+      <div class="scenario-grid" id="scenarioGrid"></div>
+      <div class="grid-3" style="margin-top: 15px">
+        <div class="field">
+          <label for="customerName">Customer name</label>
+          <input id="customerName" data-field="customerName" type="text" placeholder="Customer name">
+        </div>
+        <div class="field">
+          <label for="customerEmail">Customer contact</label>
+          <input id="customerEmail" data-field="customerEmail" type="text" placeholder="Email or phone">
+        </div>
+        <div class="field">
+          <label for="requestDetail">Requested detail</label>
+          <input id="requestDetail" data-field="requestDetail" type="text" placeholder="Thursday after 4 PM">
+        </div>
+      </div>
+      <div class="flow-map" id="flowMap" aria-label="Booking flow stages"></div>
+    </section>
+
+    <div class="workspace">
+      <section class="panel simulator-panel" aria-labelledby="simulator-title">
+        <div class="simulator-head">
+          <div>
+            <h2 id="simulator-title">Scenario lab</h2>
+            <p id="scenarioDescription">A simulated customer path will appear here.</p>
+          </div>
+          <span class="status-pill" id="runStatus">Ready to start</span>
+        </div>
+        <div class="conversation" id="conversation" aria-live="polite"></div>
+        <div class="reply-area">
+          <h3 id="replyHeading">Choose the customer’s next reply</h3>
+          <div class="reply-options" id="replyOptions"></div>
+        </div>
+        <div class="sim-actions">
+          <button class="btn btn-primary" type="button" id="startButton">Start simulation</button>
+          <button class="btn" type="button" id="finishButton">Finish and audit</button>
+          <button class="btn btn-quiet" type="button" id="resetButton">Reset run</button>
+          <span class="inline-confirm" id="resetConfirm" hidden>
+            Reset this run?
+            <button class="btn btn-danger" type="button" id="resetYes">Reset</button>
+            <button class="btn btn-quiet" type="button" id="resetNo">Keep it</button>
+          </span>
+        </div>
+        <div class="status-line" id="interactionStatus" role="status"></div>
+      </section>
+
+      <aside class="panel" aria-labelledby="audit-title">
+        <div class="panel-header">
+          <div>
+            <h2 id="audit-title">Handoff audit</h2>
+            <p>Signals that determine whether the flow is ready to automate.</p>
+          </div>
+        </div>
+        <div class="score-box">
+          <div class="score-number" id="scoreNumber">0%</div>
+          <div>
+            <strong id="scoreLabel">Not tested yet</strong>
+            <p id="scoreNote">Start a scenario to create evidence.</p>
+            <div class="progress-track" aria-label="Readiness score"><div class="progress-fill" id="scoreFill" style="width: 0%"></div></div>
+          </div>
+        </div>
+        <div class="audit-list" id="auditList"></div>
+        <div class="risk-strip" id="riskStrip"><strong>Open questions</strong><span id="riskText">Set the rules and run one scenario.</span></div>
+      </aside>
+    </div>
+
+    <section class="panel" aria-labelledby="receipt-title">
+      <div class="panel-header">
+        <div>
+          <h2 id="receipt-title">Handoff receipt</h2>
+          <p>Copy this into your automation brief, or save it beside the message sequence.</p>
+        </div>
+        <span class="status-pill" id="receiptStatus">Draft</span>
+      </div>
+      <div class="receipt-grid">
+        <pre class="receipt-preview" id="receiptPreview" tabindex="0"></pre>
+        <div class="action-stack">
+          <button class="btn btn-primary" type="button" id="copyReceipt">Copy receipt</button>
+          <button class="btn" type="button" id="downloadReceipt">Download receipt</button>
+          <button class="btn" type="button" id="downloadJson">Export JSON snapshot</button>
+          <div class="status-line" id="exportStatus" role="status"></div>
+        </div>
+      </div>
+      <div class="history">
+        <div class="panel-header" style="margin-bottom: 9px">
+          <div>
+            <h3>Recent local test runs</h3>
+            <p>Only this browser can see these saved runs.</p>
+          </div>
+          <button class="btn btn-quiet" type="button" id="clearHistory">Clear history</button>
+        </div>
+        <div class="inline-confirm" id="historyConfirm" hidden>
+          Clear saved test history?
+          <button class="btn btn-danger" type="button" id="clearHistoryYes">Clear</button>
+          <button class="btn btn-quiet" type="button" id="clearHistoryNo">Keep it</button>
+        </div>
+        <div class="history-list" id="historyList"></div>
+      </div>
+    </section>
+
+    <p class="footer-note">Offline by design. No uploads, APIs, or message sending.</p>
+  </main>
+
+  <script>
+    (function () {
+      "use strict";
+
+      var STORAGE_KEY = "booking-flow-handoff-simulator-settings-v1";
+      var HISTORY_KEY = "booking-flow-handoff-simulator-history-v1";
+      var DEFAULTS = {
+        businessName: "Harbor & Pine Home Services",
+        serviceName: "90-minute intake call",
+        bookingLink: "Paste your booking link here",
+        replyWindow: "within one business day",
+        ownerName: "You",
+        ownerContact: "your inbox or phone",
+        policy: "Changes are free up to 24 hours before the appointment.",
+        customerName: "Maya",
+        customerEmail: "maya@example.com",
+        requestDetail: "Thursday after 4 PM",
+        scenario: "new-inquiry"
+      };
+
+      var SCENARIOS = {
+        "new-inquiry": {
+          icon: "✦",
+          name: "New inquiry",
+          note: "A normal first-time booking",
+          description: "A new customer wants to understand the service and book a time.",
+          intent: "book a first appointment",
+          opening: "Hi! I’m interested in booking and wanted to see if you have availability.",
+          replies: [
+            "Yes, I’d like the service on {detail}.",
+            "What does it cost, and what happens next?",
+            "I’m not sure which service I need yet.",
+            "Can I talk to a person before I book?"
+          ],
+          path: ["Capture intent", "Confirm fit", "Offer next step", "Set expectations", "Human handoff"],
+          handoff: "If the customer is unsure, asks for a custom quote, or asks for a person, stop selling and route to the owner."
+        },
+        reschedule: {
+          icon: "↻",
+          name: "Reschedule",
+          note: "An existing customer needs a change",
+          description: "An existing customer needs to move a booking without creating a second appointment.",
+          intent: "change an existing appointment",
+          opening: "Hi, I have an appointment coming up but need to move it to another day.",
+          replies: [
+            "The current appointment is under my name. I need {detail} instead.",
+            "Can I move it without a fee?",
+            "I don’t remember the date, but I know it’s soon.",
+            "I need someone to help me change it."
+          ],
+          path: ["Identify booking", "Confirm change", "Check policy", "Offer next step", "Human handoff"],
+          handoff: "Do not promise a fee waiver or availability. Confirm the booking identity, then route policy exceptions to the owner."
+        },
+        cancellation: {
+          icon: "×",
+          name: "Cancellation",
+          note: "A customer wants to cancel",
+          description: "A customer wants to cancel, so the automation must be clear about policy and ownership.",
+          intent: "cancel an existing appointment",
+          opening: "I need to cancel my appointment. Can you take care of that for me?",
+          replies: [
+            "It’s under my name, and I’m cancelling because my plans changed.",
+            "Will I be charged if I cancel today?",
+            "I might want to reschedule instead.",
+            "Please have the owner contact me about this."
+          ],
+          path: ["Identify booking", "Confirm intent", "State policy", "Protect next step", "Human handoff"],
+          handoff: "Cancellation requests should confirm the customer and booking, state the actual policy, and escalate any refund or dispute question."
+        },
+        "edge-case": {
+          icon: "!",
+          name: "Edge case",
+          note: "A request automation should not guess",
+          description: "A customer request falls outside the normal service, availability, or policy path.",
+          intent: "get an answer that requires judgment",
+          opening: "I have a slightly unusual request and I’m not sure whether your service can handle it.",
+          replies: [
+            "Here are the details. Can you tell me if it’s possible?",
+            "I need this urgently, sooner than your normal availability.",
+            "I have an accessibility need I want to discuss first.",
+            "I’d rather explain this to a person."
+          ],
+          path: ["Recognize exception", "Avoid guessing", "Capture details", "Set response window", "Human handoff"],
+          handoff: "An edge case is a successful test only when the automation recognizes its limits and gives the owner a clear, time-bound handoff."
+        },
+        "no-response": {
+          icon: "…",
+          name: "No response",
+          note: "A follow-up without pressure",
+          description: "A customer goes quiet after receiving a next step, so the follow-up must be useful and bounded.",
+          intent: "decide whether to continue or close the loop",
+          opening: "Thanks, I’ll take a look and get back to you.",
+          replies: [
+            "I’m ready to book now.",
+            "I’m still thinking about it.",
+            "I have a question before I decide.",
+            "Please stop following up."
+          ],
+          path: ["Set a pause", "Follow up once", "Respect intent", "Close the loop", "Human handoff"],
+          handoff: "A follow-up should make the next action obvious, respect a stop request, and never create an endless sequence."
+        }
+      };
+
+      var root = document.getElementById("app");
+      var state = loadSettings();
+      var history = loadHistory();
+      var run = createRun();
+      var resetArmed = false;
+      var historyArmed = false;
+
+      function byId(id) { return document.getElementById(id); }
+
+      function loadSettings() {
+        var saved = readStorage(STORAGE_KEY, {});
+        var merged = {};
+        Object.keys(DEFAULTS).forEach(function (key) { merged[key] = saved[key] !== undefined ? saved[key] : DEFAULTS[key]; });
+        return merged;
+      }
+
+      function loadHistory() {
+        var saved = readStorage(HISTORY_KEY, []);
+        return Array.isArray(saved) ? saved : [];
+      }
+
+      function readStorage(key, fallback) {
+        try {
+          var value = window.localStorage.getItem(key);
+          return value ? JSON.parse(value) : fallback;
+        } catch (error) {
+          return fallback;
+        }
+      }
+
+      function writeStorage(key, value) {
+        try {
+          window.localStorage.setItem(key, JSON.stringify(value));
+          return true;
+        } catch (error) {
+          return false;
+        }
+      }
+
+      function createRun() {
+        return {
+          started: false,
+          finished: false,
+          step: 0,
+          turns: [],
+          flags: {
+            humanRequest: false,
+            policyQuestion: false,
+            uncertainty: false,
+            urgency: false,
+            stopRequest: false
+          },
+          selectedReplies: []
+        };
+      }
+
+      function currentScenario() {
+        return SCENARIOS[state.scenario] || SCENARIOS["new-inquiry"];
+      }
+
+      function displayValue(value, fallback) {
+        var clean = String(value || "").trim();
+        return clean || fallback;
+      }
+
+      function template(text) {
+        return text
+          .replace(/\{detail\}/g, displayValue(state.requestDetail, "the requested time"))
+          .replace(/\{service\}/g, displayValue(state.serviceName, "the service"))
+          .replace(/\{business\}/g, displayValue(state.businessName, "our business"))
+          .replace(/\{name\}/g, displayValue(state.customerName, "there"));
+      }
+
+      function saveSettings(field, value) {
+        state[field] = value;
+        state.scenario = state.scenario || DEFAULTS.scenario;
+        writeStorage(STORAGE_KEY, state);
+        byId("saveStatus").textContent = "Saved locally · " + new Date().toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
+        renderAll();
+      }
+
+      function renderInputs() {
+        root.querySelectorAll("[data-field]").forEach(function (element) {
+          if (element.value !== String(state[element.dataset.field] || "")) element.value = state[element.dataset.field] || "";
+        });
+      }
+
+      function renderScenarios() {
+        var grid = byId("scenarioGrid");
+        grid.replaceChildren();
+        Object.keys(SCENARIOS).forEach(function (key) {
+          var scenario = SCENARIOS[key];
+          var button = document.createElement("button");
+          button.type = "button";
+          button.className = "scenario-button";
+          button.setAttribute("aria-pressed", key === state.scenario ? "true" : "false");
+          button.dataset.scenario = key;
+          var icon = document.createElement("span");
+          icon.className = "scenario-icon";
+          icon.textContent = scenario.icon;
+          var name = document.createElement("span");
+          name.className = "scenario-name";
+          name.textContent = scenario.name;
+          var note = document.createElement("span");
+          note.className = "scenario-note";
+          note.textContent = scenario.note;
+          button.append(icon, name, note);
+          grid.append(button);
+        });
+        byId("scenarioDescription").textContent = currentScenario().description;
+      }
+
+      function renderFlowMap() {
+        var map = byId("flowMap");
+        map.replaceChildren();
+        currentScenario().path.forEach(function (label, index) {
+          if (index > 0) {
+            var arrow = document.createElement("span");
+            arrow.className = "flow-arrow";
+            arrow.textContent = "→";
+            arrow.setAttribute("aria-hidden", "true");
+            map.append(arrow);
+          }
+          var node = document.createElement("div");
+          node.className = "flow-node";
+          if (run.started && index === Math.min(run.step, currentScenario().path.length - 1)) node.classList.add("active");
+          if (run.started && index < run.step) node.classList.add("done");
+          var number = document.createElement("span");
+          number.className = "flow-node-index";
+          number.textContent = "0" + (index + 1);
+          var strong = document.createElement("strong");
+          strong.textContent = label;
+          var detail = document.createElement("span");
+          detail.textContent = index < 2 ? "Capture the state" : index === 2 ? "Give one next action" : "Define the boundary";
+          node.append(number, strong, detail);
+          map.append(node);
+        });
+      }
+
+      function botMessage(step) {
+        var scenario = currentScenario();
+        var link = displayValue(state.bookingLink, "your booking link");
+        var owner = displayValue(state.ownerName, "the owner");
+        var contact = displayValue(state.ownerContact, "the business inbox");
+        var policy = displayValue(state.policy, "the stated business policy");
+        if (step === 0) return "Thanks, " + displayValue(state.customerName, "there") + ". I can help you " + scenario.intent + " with " + displayValue(state.businessName, "our business") + ". I’ll confirm a few details before giving you the right next step.";
+        if (step === 1) return "Thanks for explaining that. I have the request as “" + displayValue(state.requestDetail, "the requested time") + "” for " + displayValue(state.serviceName, "the service") + ". Is that the right starting point?";
+        if (step === 2) return "The next step is " + link + ". If the request is outside the normal path, I’ll stop here and send the details to " + owner + " at " + contact + ".";
+        if (step === 3) return "Before you continue, here is the expectation to keep consistent: " + policy + " I’ll reply " + displayValue(state.replyWindow, "within the stated response window") + ".";
+        return "I’m going to hand this to " + owner + " at " + contact + ". The automation should not guess here. You should receive a response " + displayValue(state.replyWindow, "within the stated response window") + ".";
+      }
+
+      function getOptions() {
+        var scenario = currentScenario();
+        if (!run.started) return [template(scenario.opening)];
+        if (run.finished) return [];
+        if (run.step === 0) return scenario.replies.map(template);
+        if (run.step === 1) return [
+          "Yes, that is right.",
+          "I have a different detail to add.",
+          "I’m not sure this is the right service.",
+          "I need a person to help me."
+        ];
+        if (run.step === 2) return [
+          "I can use that next step.",
+          "I still need help before I book.",
+          "That does not work for my situation.",
+          "Please have the owner contact me."
+        ];
+        if (run.step === 3) return [
+          "Understood. I’ll follow that process.",
+          "I have a policy question.",
+          "I need an exception.",
+          "I want to speak with someone."
+        ];
+        return ["That works, thank you.", "I still need a human response."];
+      }
+
+      function renderConversation() {
+        var conversation = byId("conversation");
+        conversation.replaceChildren();
+        if (!run.started) {
+          addTurn(conversation, "customer", template(currentScenario().opening));
+          return;
+        }
+        run.turns.forEach(function (turn) { addTurn(conversation, turn.role, turn.text); });
+        if (!run.finished) addTurn(conversation, "bot", botMessage(run.step));
+        else addTurn(conversation, "bot", botMessage(4));
+      }
+
+      function addTurn(container, role, text) {
+        var turn = document.createElement("div");
+        turn.className = "turn " + role;
+        var label = document.createElement("span");
+        label.className = "turn-label";
+        label.textContent = role === "customer" ? displayValue(state.customerName, "Customer") : displayValue(state.businessName, "Business");
+        var paragraph = document.createElement("p");
+        paragraph.textContent = text;
+        turn.append(label, paragraph);
+        container.append(turn);
+      }
+
+      function renderReplies() {
+        var options = byId("replyOptions");
+        options.replaceChildren();
+        var choices = getOptions();
+        byId("replyHeading").textContent = run.finished ? "Simulation complete" : run.started ? "Choose the customer’s next reply" : "Start with the customer’s opening message";
+        choices.forEach(function (choice, index) {
+          var button = document.createElement("button");
+          button.type = "button";
+          button.className = "reply-button";
+          button.textContent = choice;
+          button.dataset.replyIndex = String(index);
+          options.append(button);
+        });
+      }
+
+      function addReply(index) {
+        if (!run.started) startRun();
+        if (run.finished) return;
+        var choice = getOptions()[index];
+        if (!choice) return;
+        run.turns.push({ role: "customer", text: choice });
+        run.selectedReplies.push(choice);
+        inspectReply(choice);
+        run.step = Math.min(run.step + 1, currentScenario().path.length - 1);
+        byId("interactionStatus").textContent = "Captured reply " + run.selectedReplies.length + ". The audit updates as the customer introduces risk or ambiguity.";
+        if (run.selectedReplies.length >= 4) finishRun(true);
+        renderAll();
+      }
+
+      function inspectReply(text) {
+        var lower = text.toLowerCase();
+        if (/person|owner|human|talk|someone/.test(lower)) run.flags.humanRequest = true;
+        if (/cost|fee|charge|policy|refund/.test(lower)) run.flags.policyQuestion = true;
+        if (/not sure|different|unusual|exception|accessibility|possible/.test(lower)) run.flags.uncertainty = true;
+        if (/urgent|sooner|today|asap/.test(lower)) run.flags.urgency = true;
+        if (/stop|unsubscribe|no more/.test(lower)) run.flags.stopRequest = true;
+      }
+
+      function startRun() {
+        run = createRun();
+        run.started = true;
+        run.turns.push({ role: "customer", text: template(currentScenario().opening) });
+        byId("interactionStatus").textContent = "Simulation started. Select a reply to test the next handoff decision.";
+        renderAll();
+      }
+
+      function finishRun(saveToHistory) {
+        if (run.finished) return;
+        if (!run.started) startRun();
+        run.finished = true;
+        if (saveToHistory !== false) saveRunToHistory();
+        byId("interactionStatus").textContent = "Run audited. Review the open questions before you automate this path.";
+        renderAll();
+      }
+
+      function scoreAndAudit() {
+        var hasBusiness = Boolean(String(state.businessName || "").trim());
+        var hasService = Boolean(String(state.serviceName || "").trim());
+        var hasNextStep = Boolean(String(state.bookingLink || "").trim()) && !/paste your booking link/i.test(state.bookingLink);
+        var hasOwner = Boolean(String(state.ownerName || "").trim()) && Boolean(String(state.ownerContact || "").trim());
+        var hasPolicy = Boolean(String(state.policy || "").trim());
+        var tested = run.finished && run.selectedReplies.length >= 1;
+        var exceptionHandled = !run.flags.humanRequest && !run.flags.uncertainty && !run.flags.urgency && !run.flags.policyQuestion ? true : hasOwner && run.finished;
+        var score = 0;
+        if (hasBusiness && hasService) score += 20;
+        if (hasNextStep) score += 20;
+        if (hasOwner) score += 20;
+        if (hasPolicy) score += 15;
+        if (tested) score += 15;
+        if (exceptionHandled) score += 10;
+        var items = [
+          { state: hasBusiness && hasService ? "pass" : "block", title: "Service and intent are named", text: hasBusiness && hasService ? "The flow can say what it is helping with." : "Add a business name and service before writing automation." },
+          { state: hasNextStep ? "pass" : "block", title: "The next action is explicit", text: hasNextStep ? "A customer has one clear place to go next." : "Add the real booking link or next-step destination." },
+          { state: hasOwner ? "pass" : "warn", title: "A human owner is reachable", text: hasOwner ? "Exceptions have a named owner and contact." : "Add who receives the handoff and how to reach them." },
+          { state: hasPolicy ? "pass" : "warn", title: "Policy is written down", text: hasPolicy ? "The automation has a source of truth for expectations." : "Write the policy the message must repeat without guessing." },
+          { state: tested ? "pass" : "warn", title: "A real path has been tested", text: tested ? "This scenario produced customer replies to inspect." : "Start the scenario and test at least one customer reply." },
+          { state: exceptionHandled ? "pass" : "warn", title: "Exceptions stop at the boundary", text: exceptionHandled ? "The run has a defensible handoff boundary." : "The path surfaced an exception. Finish the run and make the human handoff explicit." }
+        ];
+        return { score: score, items: items, hasNextStep: hasNextStep, hasOwner: hasOwner, hasPolicy: hasPolicy, tested: tested, exceptionHandled: exceptionHandled };
+      }
+
+      function renderAudit() {
+        var audit = scoreAndAudit();
+        byId("scoreNumber").textContent = audit.score + "%";
+        byId("scoreFill").style.width = audit.score + "%";
+        var label = audit.score >= 85 ? "Ready for a controlled pilot" : audit.score >= 60 ? "Needs a review pass" : "Not ready to automate";
+        var note = audit.score >= 85 ? "The core path and boundary are documented." : audit.score >= 60 ? "A few gaps remain before messages should run unattended." : "Fill the operating rules and test the path first.";
+        byId("scoreLabel").textContent = label;
+        byId("scoreNote").textContent = note;
+        var list = byId("auditList");
+        list.replaceChildren();
+        audit.items.forEach(function (item) {
+          var row = document.createElement("div");
+          row.className = "audit-item";
+          var dot = document.createElement("span");
+          dot.className = "audit-dot " + item.state;
+          dot.setAttribute("aria-hidden", "true");
+          var copy = document.createElement("div");
+          var title = document.createElement("strong");
+          title.textContent = item.title;
+          var text = document.createElement("p");
+          text.textContent = item.text;
+          copy.append(title, text);
+          row.append(dot, copy);
+          list.append(row);
+        });
+        var risks = [];
+        if (!audit.hasNextStep) risks.push("add the real next-step link");
+        if (!audit.hasOwner) risks.push("name the human handoff owner");
+        if (!audit.hasPolicy) risks.push("write the policy");
+        if (run.flags.humanRequest || run.flags.uncertainty || run.flags.urgency || run.flags.policyQuestion) risks.push("review the exception surfaced in this run");
+        if (!run.started) risks.push("run a customer path");
+        var strip = byId("riskStrip");
+        strip.className = "risk-strip" + (risks.length === 0 ? " good" : audit.score < 45 ? " block" : "");
+        byId("riskText").textContent = risks.length ? risks.join(" · ") + "." : "No open questions detected in this run. Review the receipt, then pilot with one real conversation.";
+      }
+
+      function receiptText() {
+        var audit = scoreAndAudit();
+        var scenario = currentScenario();
+        var flags = [];
+        Object.keys(run.flags).forEach(function (key) { if (run.flags[key]) flags.push(key.replace(/([A-Z])/g, " $1").toLowerCase()); });
+        var lines = [
+          "BOOKING FLOW HANDOFF RECEIPT",
+          "============================",
+          "",
+          "Business       " + displayValue(state.businessName, "Not set"),
+          "Service        " + displayValue(state.serviceName, "Not set"),
+          "Scenario       " + scenario.name,
+          "Customer       " + displayValue(state.customerName, "Not set") + " · " + displayValue(state.customerEmail, "No contact captured"),
+          "Request        " + displayValue(state.requestDetail, "Not set"),
+          "Readiness      " + audit.score + "% · " + (audit.score >= 85 ? "controlled pilot" : audit.score >= 60 ? "review needed" : "not ready"),
+          "",
+          "HANDOFF RULE",
+          "-------------",
+          scenario.handoff,
+          "Owner          " + displayValue(state.ownerName, "Not assigned"),
+          "Contact        " + displayValue(state.ownerContact, "Not assigned"),
+          "Response window " + displayValue(state.replyWindow, "Not set"),
+          "Policy         " + displayValue(state.policy, "Not set"),
+          "",
+          "EXCEPTIONS SURFACED",
+          "-------------------",
+          flags.length ? flags.join(", ") : "None detected",
+          "",
+          "TESTED REPLIES",
+          "--------------"
+        ];
+        if (run.selectedReplies.length) run.selectedReplies.forEach(function (reply, index) { lines.push((index + 1) + ". " + reply); });
+        else lines.push("No customer replies selected yet.");
+        lines.push("", "NEXT REVIEW", "-----------", audit.score >= 85 ? "Pilot with one real customer path and watch the human handoff." : "Resolve the open questions above before turning on unattended messages.");
+        return lines.join("\n");
+      }
+
+      function renderReceipt() {
+        byId("receiptPreview").textContent = receiptText();
+        var audit = scoreAndAudit();
+        byId("receiptStatus").textContent = run.finished ? "Audited" : run.started ? "In progress" : "Draft";
+      }
+
+      function saveRunToHistory() {
+        var record = {
+          id: Date.now(),
+          date: new Date().toISOString(),
+          scenario: currentScenario().name,
+          customer: displayValue(state.customerName, "Customer"),
+          score: scoreAndAudit().score,
+          flags: run.flags,
+          replies: run.selectedReplies.slice()
+        };
+        history = [record].concat(history).slice(0, 6);
+        writeStorage(HISTORY_KEY, history);
+      }
+
+      function renderHistory() {
+        var list = byId("historyList");
+        list.replaceChildren();
+        if (!history.length) {
+          var empty = document.createElement("div");
+          empty.className = "history-empty";
+          empty.textContent = "No completed runs saved yet.";
+          list.append(empty);
+          return;
+        }
+        history.forEach(function (record) {
+          var row = document.createElement("div");
+          row.className = "history-row";
+          var copy = document.createElement("div");
+          var title = document.createElement("strong");
+          title.textContent = record.scenario + " · " + record.customer;
+          var date = document.createElement("span");
+          date.textContent = new Date(record.date).toLocaleString([], { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
+          copy.append(title, date);
+          var score = document.createElement("span");
+          score.className = "tag";
+          score.textContent = record.score + "%";
+          row.append(copy, score);
+          list.append(row);
+        });
+      }
+
+      function renderAll() {
+        renderInputs();
+        renderScenarios();
+        renderFlowMap();
+        renderConversation();
+        renderReplies();
+        renderAudit();
+        renderReceipt();
+        renderHistory();
+        byId("runStatus").textContent = run.finished ? "Audited" : run.started ? "In progress" : "Ready to start";
+      }
+
+      function downloadText(filename, content, type) {
+        var blob = new Blob([content], { type: type });
+        var url = URL.createObjectURL(blob);
+        var anchor = document.createElement("a");
+        anchor.href = url;
+        anchor.download = filename;
+        document.body.append(anchor);
+        anchor.click();
+        anchor.remove();
+        window.setTimeout(function () { URL.revokeObjectURL(url); }, 500);
+      }
+
+      function copyText(content) {
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          return navigator.clipboard.writeText(content).then(function () { return true; }).catch(function () { return false; });
+        }
+        return Promise.resolve(false);
+      }
+
+      root.addEventListener("input", function (event) {
+        var field = event.target.dataset.field;
+        if (field) saveSettings(field, event.target.value);
+      });
+
+      root.addEventListener("click", function (event) {
+        var scenarioButton = event.target.closest("[data-scenario]");
+        if (scenarioButton) {
+          state.scenario = scenarioButton.dataset.scenario;
+          writeStorage(STORAGE_KEY, state);
+          run = createRun();
+          byId("interactionStatus").textContent = "Scenario changed. Start a fresh run when you are ready.";
+          renderAll();
+          return;
+        }
+        var replyButton = event.target.closest("[data-reply-index]");
+        if (replyButton) {
+          addReply(Number(replyButton.dataset.replyIndex));
+          return;
+        }
+        if (event.target.id === "startButton") { startRun(); return; }
+        if (event.target.id === "finishButton") { finishRun(true); return; }
+        if (event.target.id === "resetButton") {
+          resetArmed = true;
+          byId("resetConfirm").hidden = false;
+          window.setTimeout(function () { resetArmed = false; byId("resetConfirm").hidden = true; }, 5000);
+          return;
+        }
+        if (event.target.id === "resetYes" && resetArmed) {
+          run = createRun();
+          resetArmed = false;
+          byId("resetConfirm").hidden = true;
+          byId("interactionStatus").textContent = "Run reset. Your operating rules are still saved.";
+          renderAll();
+          return;
+        }
+        if (event.target.id === "resetNo") { resetArmed = false; byId("resetConfirm").hidden = true; return; }
+        if (event.target.id === "copyReceipt") {
+          copyText(receiptText()).then(function (success) {
+            byId("exportStatus").textContent = success ? "Receipt copied to the clipboard." : "Clipboard access is unavailable. Select the receipt text above to copy it manually.";
+          });
+          return;
+        }
+        if (event.target.id === "downloadReceipt") {
+          downloadText("booking-flow-handoff-receipt.txt", receiptText(), "text/plain;charset=utf-8");
+          byId("exportStatus").textContent = "Receipt downloaded as a text file.";
+          return;
+        }
+        if (event.target.id === "downloadJson") {
+          var snapshot = { settings: state, scenario: currentScenario().name, run: run, audit: scoreAndAudit(), receipt: receiptText() };
+          downloadText("booking-flow-handoff-snapshot.json", JSON.stringify(snapshot, null, 2), "application/json;charset=utf-8");
+          byId("exportStatus").textContent = "JSON snapshot downloaded.";
+          return;
+        }
+        if (event.target.id === "clearHistory") {
+          historyArmed = true;
+          byId("historyConfirm").hidden = false;
+          window.setTimeout(function () { historyArmed = false; byId("historyConfirm").hidden = true; }, 5000);
+          return;
+        }
+        if (event.target.id === "clearHistoryYes" && historyArmed) {
+          history = [];
+          writeStorage(HISTORY_KEY, history);
+          historyArmed = false;
+          byId("historyConfirm").hidden = true;
+          renderHistory();
+          return;
+        }
+        if (event.target.id === "clearHistoryNo") { historyArmed = false; byId("historyConfirm").hidden = true; }
+      });
+
+      renderAll();
+    }());
+  </script>
+</body>
+</html>

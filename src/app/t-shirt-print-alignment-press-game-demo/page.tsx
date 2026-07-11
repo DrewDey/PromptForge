@@ -1,7 +1,8 @@
-import PreparedSourceRunPage from '@/components/PreparedSourceRunPage'
+import PreparedModelVariantSourceRunPage, {
+  type ModelVariantSearchParams,
+} from '@/components/PreparedModelVariantSourceRunPage'
 import { buildPreparedSourceRunDetailMetadata } from '@/lib/build-path-metadata'
 import { getPreparedShowcaseProjectBySourceRunId } from '@/lib/prepared-showcase-projects'
-import { loadSourceRunPackage } from '@/lib/source-run-package'
 
 const route = '/t-shirt-print-alignment-press-game-demo'
 const sourceRunId = '94e76d4a-a6e4-4fd1-9de6-9b84ff21483e'
@@ -11,13 +12,16 @@ if (!project) throw new Error(`Missing prepared showcase project for source run 
 
 export const metadata = buildPreparedSourceRunDetailMetadata(project)
 
-export default function TShirtPrintAlignmentPressGameDemoPage() {
+export default function TShirtPrintAlignmentPressGameDemoPage({
+  searchParams,
+}: {
+  searchParams: ModelVariantSearchParams
+}) {
   return (
-    <PreparedSourceRunPage
+    <PreparedModelVariantSourceRunPage
       project={project!}
-      sourceRunPackage={loadSourceRunPackage('t-shirt-print-alignment-press-chatgpt-medium-source-run.json')}
       route={route}
-      capturedAt="June 15, 2026"
+      searchParams={searchParams}
     />
   )
 }

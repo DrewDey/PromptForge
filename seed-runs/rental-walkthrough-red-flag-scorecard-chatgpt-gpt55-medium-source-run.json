@@ -4,9 +4,11 @@
   "provider": "ChatGPT",
   "model": "GPT-5.5",
   "model_settings": "Intelligence: Medium; visible ChatGPT menu before prompt showed GPT-5.5 with Intelligence options Instant, Medium, High, Extra High, and Pro Extended; Medium selected before prompting. No files or attachments used.",
-  "source_url": "https://chatgpt.com/c/6a31b2b3-05ac-83ea-8bef-354974d20954",
+  "source_url": "https://chatgpt.com/share/6a517a76-813c-83ea-ae97-b0cc7f323946",
+  "source_run_id": "3137def2-964d-49a8-ad22-3b776870e3fe",
   "run_started_at": "2026-06-16T20:23:00Z",
   "run_finished_at": "2026-06-16T20:37:33Z",
+  "repair_prompt_count": 0,
   "chain_type": "one-shot",
   "category": "productivity",
   "difficulty": "beginner",
@@ -19,9 +21,19 @@
   ],
   "status": "submitted_pending",
   "final_artifact_path": "public/artifacts/rental-walkthrough-red-flag-scorecard-chatgpt-gpt55-medium.html",
+  "artifact_sha256": "a7a00b197d827accc3944c1351f248d59c1c0f8274fd73ec6e7ab25c7facc517",
   "artifact_type": "html",
   "artifact_versions": [
     "public/artifacts/rental-walkthrough-red-flag-scorecard-chatgpt-gpt55-medium.html"
+  ],
+  "artifact_version_notes": [
+    {
+      "path": "public/artifacts/rental-walkthrough-red-flag-scorecard-chatgpt-gpt55-medium.html",
+      "sha256": "a7a00b197d827accc3944c1351f248d59c1c0f8274fd73ec6e7ab25c7facc517",
+      "bytes": 35388,
+      "lines": 1240,
+      "disposition": "Historical final artifact; canonical baseline version."
+    }
   ],
   "generated_files": [
     "public/artifacts/rental-walkthrough-red-flag-scorecard-chatgpt-gpt55-medium.html"
@@ -47,6 +59,33 @@
     "Artifact is a deterministic self-contained browser tool, not a real-estate API, hosted AI image-generation wrapper, or prompt-only document.",
     "Desktop/tablet-friendly workflow with editable room cards, checklists, sliders, local save, sample data, copy, and text download."
   ],
+  "verification_evidence": {
+    "schema_version": 1,
+    "verified_at": "2026-07-10T23:32:43.000Z",
+    "first_pass_metrics": {
+      "qualityScore": 97,
+      "artifactReady": true,
+      "hardGatesPassed": true,
+      "functionalChecks": { "passed": 10, "total": 10 },
+      "consoleErrorCount": 0,
+      "horizontalOverflowPx": 0,
+      "notes": [
+        "The one-shot room workflow exercised ratings, hazards, lease clues, evidence notes, synchronized overall scoring, local restore, and inspection export.",
+        "It measured 390/390 and 1440/1440 with zero console errors."
+      ]
+    },
+    "final_metrics": {
+      "qualityScore": 97,
+      "artifactReady": true,
+      "hardGatesPassed": true,
+      "functionalChecks": { "passed": 10, "total": 10 },
+      "consoleErrorCount": 0,
+      "horizontalOverflowPx": 0,
+      "notes": [
+        "All ten contract checks passed; saved property and room evidence survived reload and the exported brief stayed synchronized with current findings."
+      ]
+    }
+  },
   "verification_notes": [
     "Created real Codex goal before provider work; goal tool was available.",
     "Required foundation and PathForge seed-iteration instructions were read before provider work, including SKILL.md, profile registry, chain realism, seed idea quality, package contract, and PATHFORGE_AGENT_NOTES.md.",

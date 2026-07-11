@@ -1,0 +1,997 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#151228">
+  <title>Moonbeam Fields Route Quest</title>
+  <style>
+    :root {
+      --ink: #f8f4ff;
+      --muted: #b8b0cf;
+      --dim: #817897;
+      --bg: #151228;
+      --panel: #211b3b;
+      --panel-2: #2a2347;
+      --line: rgba(244, 237, 255, 0.12);
+      --line-strong: rgba(244, 237, 255, 0.22);
+      --pink: #ff6f9d;
+      --yellow: #ffd166;
+      --cyan: #67e8f9;
+      --mint: #8df0c5;
+      --violet: #a78bfa;
+      --danger: #ff8b8b;
+      --shadow: 0 18px 60px rgba(5, 3, 16, 0.35);
+    }
+
+    * { box-sizing: border-box; }
+
+    html { background: var(--bg); }
+
+    body {
+      margin: 0;
+      min-width: 320px;
+      color: var(--ink);
+      background:
+        radial-gradient(circle at 8% 0%, rgba(255, 111, 157, 0.16), transparent 32rem),
+        radial-gradient(circle at 100% 20%, rgba(103, 232, 249, 0.13), transparent 30rem),
+        linear-gradient(145deg, #151228 0%, #19132f 52%, #111021 100%);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      line-height: 1.45;
+    }
+
+    button, input, textarea { font: inherit; }
+
+    button { color: inherit; }
+
+    button:focus-visible, input:focus-visible, textarea:focus-visible {
+      outline: 3px solid var(--yellow);
+      outline-offset: 3px;
+    }
+
+    .shell {
+      width: min(1180px, calc(100% - 32px));
+      margin: 0 auto;
+      padding: 36px 0 56px;
+    }
+
+    .hero {
+      display: grid;
+      grid-template-columns: minmax(0, 1.3fr) minmax(250px, 0.7fr);
+      gap: 24px;
+      align-items: end;
+      padding: 8px 0 32px;
+    }
+
+    .eyebrow, .kicker {
+      color: var(--yellow);
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+    }
+
+    .eyebrow {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 14px;
+    }
+
+    .eyebrow-dot {
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      background: var(--pink);
+      box-shadow: 0 0 20px var(--pink);
+    }
+
+    h1, h2, h3, p { margin: 0; }
+
+    h1 {
+      max-width: 720px;
+      font-size: clamp(2.6rem, 7vw, 5.8rem);
+      line-height: 0.94;
+      letter-spacing: 0;
+      font-weight: 800;
+    }
+
+    .hero-copy {
+      max-width: 640px;
+      margin-top: 18px;
+      color: var(--muted);
+      font-size: clamp(1rem, 2vw, 1.18rem);
+    }
+
+    .night-card {
+      position: relative;
+      overflow: hidden;
+      min-height: 150px;
+      padding: 22px;
+      border: 1px solid var(--line);
+      border-radius: 24px;
+      background: linear-gradient(145deg, rgba(255, 209, 102, 0.14), rgba(167, 139, 250, 0.13));
+      box-shadow: var(--shadow);
+    }
+
+    .night-card::after {
+      content: "✦  ·  ✧  ·  ✦";
+      position: absolute;
+      right: 18px;
+      top: 18px;
+      color: var(--yellow);
+      opacity: 0.72;
+      letter-spacing: 0.3em;
+    }
+
+    .night-card strong {
+      display: block;
+      margin: 8px 0 5px;
+      font-size: 1.35rem;
+    }
+
+    .night-card p { color: var(--muted); font-size: 0.9rem; }
+
+    .game-layout {
+      display: grid;
+      grid-template-columns: minmax(0, 1.55fr) minmax(290px, 0.75fr);
+      gap: 18px;
+      align-items: start;
+    }
+
+    .main-column, .side-column { display: grid; gap: 18px; min-width: 0; }
+
+    .panel {
+      min-width: 0;
+      padding: 22px;
+      border: 1px solid var(--line);
+      border-radius: 24px;
+      background: rgba(33, 27, 59, 0.84);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(14px);
+    }
+
+    .panel-heading {
+      display: flex;
+      justify-content: space-between;
+      gap: 14px;
+      align-items: start;
+      margin-bottom: 18px;
+    }
+
+    .panel h2 {
+      margin-top: 3px;
+      font-size: 1.35rem;
+      line-height: 1.1;
+    }
+
+    .panel-subtitle {
+      margin-top: 6px;
+      color: var(--muted);
+      font-size: 0.9rem;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 7px;
+      min-height: 40px;
+      padding: 9px 13px;
+      border: 1px solid var(--line-strong);
+      border-radius: 12px;
+      background: rgba(255, 255, 255, 0.05);
+      color: var(--ink);
+      cursor: pointer;
+      font-size: 0.86rem;
+      font-weight: 700;
+      transition: transform 160ms ease, border-color 160ms ease, background 160ms ease;
+    }
+
+    .btn:hover { transform: translateY(-1px); border-color: rgba(255, 255, 255, 0.4); background: rgba(255, 255, 255, 0.1); }
+    .btn-primary { border-color: transparent; background: var(--pink); color: #26152c; }
+    .btn-primary:hover { background: #ff8daf; }
+    .btn-ghost { border-color: transparent; background: transparent; color: var(--muted); }
+
+    .scout-tip {
+      display: flex;
+      gap: 10px;
+      align-items: start;
+      margin-bottom: 20px;
+      padding: 13px 15px;
+      border-left: 3px solid var(--cyan);
+      border-radius: 0 14px 14px 0;
+      background: rgba(103, 232, 249, 0.08);
+      color: var(--muted);
+      font-size: 0.88rem;
+    }
+
+    .scout-tip b { color: var(--cyan); white-space: nowrap; }
+
+    .schedule-wrap { min-width: 0; }
+
+    .axis {
+      display: grid;
+      grid-template-columns: 100px repeat(8, 1fr);
+      gap: 0;
+      margin-bottom: 7px;
+      color: var(--dim);
+      font-size: 0.66rem;
+      font-weight: 700;
+      text-transform: uppercase;
+    }
+
+    .axis span { padding-left: 6px; }
+    .axis span:first-child { padding-left: 0; }
+
+    .stage-row {
+      display: grid;
+      grid-template-columns: 100px minmax(0, 1fr);
+      min-height: 80px;
+      border-top: 1px solid var(--line);
+    }
+
+    .stage-label {
+      padding: 13px 10px 10px 0;
+      color: var(--ink);
+      font-size: 0.77rem;
+      font-weight: 700;
+    }
+
+    .stage-label span {
+      display: block;
+      margin-top: 3px;
+      color: var(--dim);
+      font-size: 0.66rem;
+      font-weight: 400;
+    }
+
+    .track {
+      position: relative;
+      min-width: 0;
+      min-height: 80px;
+      background-image: linear-gradient(to right, rgba(244, 237, 255, 0.08) 1px, transparent 1px);
+      background-size: 12.5% 100%;
+    }
+
+    .act-card {
+      position: absolute;
+      left: var(--left);
+      top: 10px;
+      width: var(--width);
+      min-width: 74px;
+      height: 60px;
+      overflow: hidden;
+      padding: 8px 9px;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 12px;
+      background: var(--act-color);
+      color: #21152e;
+      cursor: pointer;
+      text-align: left;
+      transition: transform 150ms ease, filter 150ms ease, box-shadow 150ms ease;
+    }
+
+    .act-card:hover { transform: translateY(-2px); filter: brightness(1.06); }
+    .act-card.is-selected { box-shadow: 0 0 0 3px var(--yellow), 0 8px 22px rgba(0, 0, 0, 0.25); z-index: 2; }
+    .act-card.is-clash { border-color: var(--danger); }
+    .act-card.is-selected.is-clash { box-shadow: 0 0 0 3px var(--danger), 0 8px 22px rgba(0, 0, 0, 0.25); }
+
+    .act-name {
+      display: block;
+      overflow: hidden;
+      font-size: 0.77rem;
+      font-weight: 800;
+      line-height: 1.1;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .act-time {
+      display: block;
+      margin-top: 6px;
+      font-size: 0.66rem;
+      font-weight: 700;
+      opacity: 0.77;
+    }
+
+    .act-meta { display: none; }
+
+    .schedule-legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 9px 14px;
+      margin-top: 16px;
+      color: var(--muted);
+      font-size: 0.74rem;
+    }
+
+    .legend-item { display: inline-flex; gap: 6px; align-items: center; }
+    .legend-dot { width: 9px; height: 9px; border-radius: 3px; background: var(--yellow); }
+    .legend-dot.clash { background: var(--danger); }
+
+    .route-empty {
+      display: grid;
+      place-items: center;
+      min-height: 142px;
+      padding: 24px;
+      border: 1px dashed var(--line-strong);
+      border-radius: 16px;
+      color: var(--muted);
+      text-align: center;
+    }
+
+    .route-empty .big-note { display: block; margin-bottom: 5px; color: var(--yellow); font-size: 1.5rem; }
+
+    .route-list { display: grid; gap: 0; }
+
+    .route-stop {
+      position: relative;
+      display: grid;
+      grid-template-columns: 74px minmax(0, 1fr) auto;
+      gap: 11px;
+      align-items: center;
+      min-width: 0;
+      padding: 12px 0 12px 17px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .route-stop:last-child { border-bottom: 0; }
+    .route-stop::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 3px; background: var(--act-color); border-radius: 4px; }
+    .route-stop::after { content: ""; position: absolute; left: -3px; bottom: -7px; width: 9px; height: 9px; border-radius: 50%; background: var(--act-color); }
+    .route-stop:last-child::after { display: none; }
+
+    .route-time { color: var(--muted); font-size: 0.74rem; font-weight: 700; }
+    .route-act { min-width: 0; }
+    .route-act strong { display: block; overflow: hidden; font-size: 0.91rem; text-overflow: ellipsis; white-space: nowrap; }
+    .route-act span { display: block; overflow: hidden; color: var(--muted); font-size: 0.74rem; text-overflow: ellipsis; white-space: nowrap; }
+    .route-cost { color: var(--dim); font-size: 0.72rem; white-space: nowrap; }
+
+    .route-alert {
+      margin: 16px 0 0;
+      padding: 11px 13px;
+      border-radius: 12px;
+      background: rgba(255, 139, 139, 0.1);
+      color: #ffc0c0;
+      font-size: 0.8rem;
+    }
+
+    .route-actions { display: flex; flex-wrap: wrap; gap: 9px; justify-content: end; margin-top: 18px; }
+
+    .score-panel { background: linear-gradient(145deg, rgba(42, 35, 71, 0.93), rgba(33, 27, 59, 0.84)); }
+
+    .score-top {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: end;
+      margin-bottom: 18px;
+    }
+
+    .score-value { color: var(--yellow); font-size: 3.3rem; font-weight: 800; line-height: 0.9; letter-spacing: 0; }
+    .score-label { color: var(--muted); font-size: 0.78rem; }
+    .score-verdict { max-width: 150px; color: var(--pink); font-size: 0.9rem; font-weight: 800; text-align: right; }
+
+    .meter-list { display: grid; gap: 15px; }
+
+    .meter-head { display: flex; justify-content: space-between; gap: 12px; margin-bottom: 6px; color: var(--muted); font-size: 0.78rem; }
+    .meter-head strong { color: var(--ink); }
+    .meter { height: 9px; overflow: hidden; border-radius: 99px; background: rgba(255, 255, 255, 0.09); }
+    .meter-fill { height: 100%; width: 0%; border-radius: inherit; background: var(--mint); transition: width 250ms ease, background 250ms ease; }
+    .meter-fill.energy { background: var(--cyan); }
+    .meter-fill.distance { background: var(--pink); }
+    .meter-fill.must-see { background: var(--yellow); }
+
+    .score-note { margin-top: 17px; color: var(--muted); font-size: 0.8rem; }
+
+    .crew-list { display: grid; gap: 10px; }
+    .crew-row { display: grid; grid-template-columns: 32px minmax(0, 1fr) auto; gap: 10px; align-items: center; }
+    .crew-avatar { display: grid; place-items: center; width: 32px; height: 32px; border-radius: 50%; background: var(--crew-color); color: #21152e; font-size: 0.75rem; font-weight: 800; }
+    .crew-name { font-size: 0.81rem; font-weight: 700; }
+    .crew-fav { display: block; overflow: hidden; color: var(--muted); font-size: 0.7rem; text-overflow: ellipsis; white-space: nowrap; }
+    .crew-status { color: var(--dim); font-size: 0.72rem; font-weight: 700; }
+    .crew-status.met { color: var(--mint); }
+
+    .route-name-label { display: block; margin-bottom: 7px; color: var(--muted); font-size: 0.78rem; font-weight: 700; }
+    .route-name-input, .route-output {
+      width: 100%;
+      border: 1px solid var(--line-strong);
+      border-radius: 12px;
+      background: rgba(10, 7, 24, 0.35);
+      color: var(--ink);
+    }
+    .route-name-input { min-height: 42px; padding: 9px 11px; }
+    .route-output { min-height: 172px; margin-top: 14px; padding: 12px; resize: vertical; font-size: 0.77rem; line-height: 1.55; }
+    .export-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 9px; margin-top: 10px; }
+    .copy-status { min-height: 20px; margin-top: 8px; color: var(--cyan); font-size: 0.75rem; }
+
+    .finale {
+      display: none;
+      margin-top: 16px;
+      padding: 15px;
+      border: 1px solid rgba(255, 209, 102, 0.28);
+      border-radius: 15px;
+      background: rgba(255, 209, 102, 0.09);
+    }
+    .finale.is-visible { display: block; }
+    .finale strong { display: block; color: var(--yellow); font-size: 1.02rem; }
+    .finale p { margin-top: 4px; color: var(--muted); font-size: 0.82rem; }
+
+    @media (max-width: 840px) {
+      .hero, .game-layout { grid-template-columns: 1fr; }
+      .night-card { min-height: 120px; }
+      .side-column { grid-template-columns: 1fr 1fr; align-items: start; }
+      .export-panel { grid-column: 1 / -1; }
+    }
+
+    @media (max-width: 600px) {
+      .shell { width: min(100% - 20px, 520px); padding-top: 24px; }
+      .hero { gap: 17px; padding-bottom: 22px; }
+      h1 { font-size: clamp(2.65rem, 15vw, 4.2rem); }
+      .panel { padding: 17px; border-radius: 19px; }
+      .panel-heading { margin-bottom: 15px; }
+      .panel-heading .btn { min-height: 36px; padding: 7px 10px; font-size: 0.76rem; }
+      .scout-tip { display: block; }
+      .scout-tip b { display: block; margin-bottom: 3px; }
+      .axis { display: none; }
+      .stage-row { display: block; min-height: 0; }
+      .stage-label { padding: 13px 0 4px; }
+      .stage-label span { display: inline; margin-left: 5px; }
+      .track { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; min-height: 0; padding: 6px 0 13px; background-image: none; }
+      .act-card { position: relative; left: auto; top: auto; width: auto; min-width: 0; height: 63px; }
+      .act-meta { display: block; overflow: hidden; margin-top: 3px; font-size: 0.64rem; opacity: 0.72; text-overflow: ellipsis; white-space: nowrap; }
+      .schedule-legend { margin-top: 11px; }
+      .route-stop { grid-template-columns: 65px minmax(0, 1fr); gap: 8px; padding-left: 14px; }
+      .route-cost { grid-column: 2; margin-top: -6px; }
+      .route-actions { justify-content: stretch; }
+      .route-actions .btn { flex: 1 1 130px; }
+      .side-column { grid-template-columns: 1fr; }
+      .export-panel { grid-column: auto; }
+      .export-actions { grid-template-columns: 1fr; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { scroll-behavior: auto !important; transition-duration: 0.01ms !important; animation-duration: 0.01ms !important; }
+    }
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <header class="hero">
+      <div>
+        <div class="eyebrow"><span class="eyebrow-dot" aria-hidden="true"></span> Moonbeam Fields · Route Quest</div>
+        <h1>Pick your night.</h1>
+        <p class="hero-copy">The sets overlap. Your legs are finite. Your friends have opinions. Build the route you can actually enjoy, then take it with you.</p>
+      </div>
+      <div class="night-card" aria-label="Festival details">
+        <span class="kicker">One night only</span>
+        <strong>Friday · 4:00 PM–12:00 AM</strong>
+        <p>Five stages, ten acts, one suspiciously ambitious plan.</p>
+      </div>
+    </header>
+
+    <div class="game-layout">
+      <div class="main-column">
+        <section class="panel" aria-labelledby="build-heading">
+          <div class="panel-heading">
+            <div>
+              <div class="kicker">01 / Build the route</div>
+              <h2 id="build-heading">Book your night</h2>
+              <p class="panel-subtitle">Tap a set to commit. Tap again to bail.</p>
+            </div>
+            <button class="btn btn-ghost" id="resetButton" type="button">Reset route</button>
+          </div>
+
+          <div class="scout-tip" aria-live="polite">
+            <b id="tipLabel">Scout tip</b>
+            <span id="tipText">Start with one must-see, then leave yourself enough runway to move and breathe.</span>
+          </div>
+
+          <div class="schedule-wrap" aria-label="Festival set times">
+            <div class="axis" aria-hidden="true">
+              <span>Stage</span><span>4p</span><span>5p</span><span>6p</span><span>7p</span><span>8p</span><span>9p</span><span>10p</span><span>11p</span>
+            </div>
+            <div id="schedule"></div>
+          </div>
+
+          <div class="schedule-legend" aria-label="Schedule legend">
+            <span class="legend-item"><span class="legend-dot" aria-hidden="true"></span>selected set</span>
+            <span class="legend-item"><span class="legend-dot clash" aria-hidden="true"></span>selected clash</span>
+            <span class="legend-item">distance and energy update live</span>
+          </div>
+        </section>
+
+        <section class="panel" aria-labelledby="route-heading">
+          <div class="panel-heading">
+            <div>
+              <div class="kicker">02 / See the night</div>
+              <h2 id="route-heading">Your route</h2>
+              <p class="panel-subtitle" id="routeSubtitle">No commitments yet. The gates are open.</p>
+            </div>
+          </div>
+          <div id="routeList" class="route-list"></div>
+          <div id="routeAlert" class="route-alert" hidden></div>
+          <div id="finale" class="finale">
+            <strong id="finaleTitle">Route locked.</strong>
+            <p id="finaleText">You have made your choices. Export the itinerary when you are ready to leave your phone in your pocket.</p>
+          </div>
+          <div class="route-actions">
+            <button class="btn btn-primary" id="finishButton" type="button">Finish route</button>
+          </div>
+        </section>
+      </div>
+
+      <aside class="side-column">
+        <section class="panel score-panel" aria-labelledby="score-heading">
+          <div class="score-top">
+            <div>
+              <div class="kicker">Live route rating</div>
+              <div class="score-value" id="scoreValue">0</div>
+              <div class="score-label">out of 100</div>
+            </div>
+            <div class="score-verdict" id="scoreVerdict">Waiting for your first set</div>
+          </div>
+
+          <div class="meter-list">
+            <div>
+              <div class="meter-head"><span>Energy left</span><strong id="energyValue">100%</strong></div>
+              <div class="meter"><div class="meter-fill energy" id="energyFill"></div></div>
+            </div>
+            <div>
+              <div class="meter-head"><span>Friend loyalty</span><strong id="loyaltyValue">15%</strong></div>
+              <div class="meter"><div class="meter-fill" id="loyaltyFill"></div></div>
+            </div>
+            <div>
+              <div class="meter-head"><span>Must-see acts</span><strong id="mustSeeValue">0 / 26</strong></div>
+              <div class="meter"><div class="meter-fill must-see" id="mustSeeFill"></div></div>
+            </div>
+            <div>
+              <div class="meter-head"><span>Walking distance</span><strong id="distanceValue">0.0 mi</strong></div>
+              <div class="meter"><div class="meter-fill distance" id="distanceFill"></div></div>
+            </div>
+          </div>
+          <p class="score-note" id="scoreNote">Every choice spends something. A route with room to breathe can beat a heroic sprint.</p>
+        </section>
+
+        <section class="panel" aria-labelledby="crew-heading">
+          <div class="panel-heading">
+            <div>
+              <div class="kicker">Your people</div>
+              <h2 id="crew-heading">Crew pulse</h2>
+            </div>
+          </div>
+          <div class="crew-list" id="crewList"></div>
+        </section>
+
+        <section class="panel export-panel" aria-labelledby="export-heading">
+          <div class="panel-heading">
+            <div>
+              <div class="kicker">03 / Take it with you</div>
+              <h2 id="export-heading">Route handoff</h2>
+              <p class="panel-subtitle">Name it, copy it, or export a tiny text itinerary.</p>
+            </div>
+          </div>
+          <label class="route-name-label" for="routeName">Route name</label>
+          <input class="route-name-input" id="routeName" type="text" maxlength="60" value="Moonbeam route" autocomplete="off">
+          <textarea class="route-output" id="routeOutput" readonly aria-label="Exportable route text"></textarea>
+          <div class="export-actions">
+            <button class="btn btn-primary" id="copyButton" type="button">Copy route</button>
+            <button class="btn" id="downloadButton" type="button">Export .txt</button>
+          </div>
+          <div class="copy-status" id="copyStatus" role="status" aria-live="polite"></div>
+        </section>
+      </aside>
+    </div>
+  </main>
+
+  <script>
+    (function () {
+      "use strict";
+
+      var stages = [
+        { id: "orbit", name: "Main Orbit", note: "big lights", x: 52, y: 28 },
+        { id: "pine", name: "Pine Hollow", note: "soft corners", x: 18, y: 48 },
+        { id: "arcade", name: "Arcade Alley", note: "bass + snacks", x: 78, y: 47 },
+        { id: "lake", name: "Lantern Lake", note: "waterfront", x: 58, y: 73 },
+        { id: "river", name: "River Stage", note: "low-key magic", x: 25, y: 78 }
+      ];
+
+      var acts = [
+        { id: "solar-flare", name: "Solar Flare", stage: "orbit", start: 270, end: 330, color: "#ff9f8e", mustSee: 3, energy: 8, friends: ["Maya"], blurb: "Disco rockets at golden hour." },
+        { id: "juniper-static", name: "Juniper Static", stage: "pine", start: 300, end: 360, color: "#a9e7a3", mustSee: 2, energy: 7, friends: ["Theo"], blurb: "Dream-pop with a loyal little cult." },
+        { id: "velvet-comets", name: "The Velvet Comets", stage: "orbit", start: 360, end: 450, color: "#c4a7ff", mustSee: 4, energy: 13, friends: ["Maya", "Priya"], blurb: "Your group chat's consensus pick." },
+        { id: "night-bus", name: "Night Bus", stage: "arcade", start: 390, end: 450, color: "#ffd166", mustSee: 2, energy: 9, friends: ["Sam"], blurb: "Fast, loud, and probably confetti-heavy." },
+        { id: "dj-lumen", name: "DJ Lumen", stage: "lake", start: 450, end: 540, color: "#78dce8", mustSee: 3, energy: 12, friends: ["Priya", "Sam"], blurb: "The set everyone will quote tomorrow." },
+        { id: "small-hours", name: "Small Hours", stage: "pine", start: 510, end: 570, color: "#f0a7d8", mustSee: 2, energy: 8, friends: ["Theo"], blurb: "A tiny stage and a huge chorus." },
+        { id: "neon-orchard", name: "Neon Orchard", stage: "orbit", start: 540, end: 600, color: "#f4e58a", mustSee: 3, energy: 10, friends: ["Drew"], blurb: "The one you will regret missing." },
+        { id: "river-choir", name: "River Choir", stage: "river", start: 570, end: 660, color: "#92d6c8", mustSee: 1, energy: 7, friends: ["Sam"], blurb: "Warm harmonies under the string lights." },
+        { id: "yoko-satellites", name: "Yoko & The Satellites", stage: "arcade", start: 630, end: 690, color: "#f6a3a3", mustSee: 2, energy: 8, friends: ["Maya"], blurb: "A late-night glitter detour." },
+        { id: "moon-motel", name: "Moon Motel", stage: "lake", start: 660, end: 720, color: "#9dc4ff", mustSee: 4, energy: 9, friends: ["Drew", "Priya"], blurb: "The finale, whether you planned for it or not." }
+      ];
+
+      var friends = [
+        { name: "Maya", favorite: "Solar Flare", color: "#ff9f8e" },
+        { name: "Theo", favorite: "Juniper Static", color: "#a9e7a3" },
+        { name: "Priya", favorite: "DJ Lumen", color: "#78dce8" },
+        { name: "Sam", favorite: "Night Bus", color: "#ffd166" },
+        { name: "Drew", favorite: "Neon Orchard", color: "#c4a7ff" }
+      ];
+
+      var stageById = {};
+      var actById = {};
+      stages.forEach(function (stage) { stageById[stage.id] = stage; });
+      acts.forEach(function (act) { actById[act.id] = act; });
+
+      var selected = [];
+      var finished = false;
+      var tips = [
+        "Start with one must-see, then leave yourself enough runway to move and breathe.",
+        "A clash can be intentional. Just know that a split set costs extra energy.",
+        "Your crew does not need every favorite. One thoughtful detour can save the group chat.",
+        "The lake is gorgeous, but it is not next door to the Orbit. Your calves have receipts.",
+        "A short route with three full sets can outscore a frantic route with seven half-sets."
+      ];
+
+      var els = {
+        schedule: document.getElementById("schedule"),
+        routeList: document.getElementById("routeList"),
+        routeSubtitle: document.getElementById("routeSubtitle"),
+        routeAlert: document.getElementById("routeAlert"),
+        scoreValue: document.getElementById("scoreValue"),
+        scoreVerdict: document.getElementById("scoreVerdict"),
+        energyValue: document.getElementById("energyValue"),
+        energyFill: document.getElementById("energyFill"),
+        loyaltyValue: document.getElementById("loyaltyValue"),
+        loyaltyFill: document.getElementById("loyaltyFill"),
+        mustSeeValue: document.getElementById("mustSeeValue"),
+        mustSeeFill: document.getElementById("mustSeeFill"),
+        distanceValue: document.getElementById("distanceValue"),
+        distanceFill: document.getElementById("distanceFill"),
+        scoreNote: document.getElementById("scoreNote"),
+        crewList: document.getElementById("crewList"),
+        routeName: document.getElementById("routeName"),
+        routeOutput: document.getElementById("routeOutput"),
+        copyStatus: document.getElementById("copyStatus"),
+        finale: document.getElementById("finale"),
+        finaleTitle: document.getElementById("finaleTitle"),
+        finaleText: document.getElementById("finaleText"),
+        tipText: document.getElementById("tipText")
+      };
+
+      function clamp(value, min, max) {
+        return Math.max(min, Math.min(max, value));
+      }
+
+      function formatTime(minutes) {
+        // Stored set minutes are festival-relative.  Normalize them to the intended clock.
+        // Boundary checks: 270 => 4:30p and 720 => 12a.
+        var normalizedMinutes = (minutes + 720) % 1440;
+        var hour = Math.floor(normalizedMinutes / 60);
+        var minute = normalizedMinutes % 60;
+        var suffix = hour >= 12 ? "p" : "a";
+        var displayHour = hour % 12;
+        if (displayHour === 0) displayHour = 12;
+        return displayHour + (minute ? ":" + String(minute).padStart(2, "0") : "") + suffix;
+      }
+
+      function formatRange(act) {
+        return formatTime(act.start) + "–" + formatTime(act.end);
+      }
+
+      function getSortedSelected() {
+        return selected.map(function (id) { return actById[id]; }).sort(function (a, b) {
+          return a.start - b.start || a.end - b.end;
+        });
+      }
+
+      function getOverlaps(route) {
+        var overlaps = [];
+        route.forEach(function (act, index) {
+          route.slice(index + 1).forEach(function (other) {
+            if (act.start < other.end && other.start < act.end) {
+              overlaps.push([act.id, other.id]);
+            }
+          });
+        });
+        return overlaps;
+      }
+
+      function distanceBetween(stageA, stageB) {
+        var dx = stageA.x - stageB.x;
+        var dy = stageA.y - stageB.y;
+        return Math.round((Math.hypot(dx, dy) / 35) * 10) / 10;
+      }
+
+      function calculate() {
+        var route = getSortedSelected();
+        var overlaps = getOverlaps(route);
+        var distance = 0;
+        var previousStage = { x: 4, y: 8 };
+
+        route.forEach(function (act) {
+          var stage = stageById[act.stage];
+          distance += distanceBetween(previousStage, stage);
+          previousStage = stage;
+        });
+
+        var maxMustSee = acts.reduce(function (sum, act) { return sum + act.mustSee; }, 0);
+        var mustSee = route.reduce(function (sum, act) { return sum + act.mustSee; }, 0);
+        var energyUsed = route.reduce(function (sum, act) { return sum + act.energy; }, 0) + distance * 5 + overlaps.length * 5;
+        var energyLeft = clamp(Math.round(100 - energyUsed), 0, 100);
+        var friendHits = friends.filter(function (friend) {
+          return route.some(function (act) { return act.friends.indexOf(friend.name) !== -1; });
+        }).length;
+        var loyalty = clamp(15 + friendHits * 17 - overlaps.length * 5, 0, 100);
+        var distanceRatio = 1 - clamp(distance / 15, 0, 1);
+        var score = Math.round(clamp((mustSee / maxMustSee) * 40 + (energyLeft / 100) * 25 + loyalty * 0.2 + distanceRatio * 15, 0, 100));
+
+        return {
+          route: route,
+          overlaps: overlaps,
+          distance: distance,
+          mustSee: mustSee,
+          maxMustSee: maxMustSee,
+          energyLeft: energyLeft,
+          energyUsed: Math.round(energyUsed),
+          loyalty: loyalty,
+          score: score,
+          friendHits: friendHits
+        };
+      }
+
+      function createElement(tag, className, text) {
+        var element = document.createElement(tag);
+        if (className) element.className = className;
+        if (text !== undefined) element.textContent = text;
+        return element;
+      }
+
+      function renderSchedule() {
+        els.schedule.replaceChildren();
+        stages.forEach(function (stage) {
+          var row = createElement("div", "stage-row");
+          var label = createElement("div", "stage-label");
+          label.appendChild(createElement("span", "", stage.name));
+          label.appendChild(createElement("span", "", stage.note));
+          row.appendChild(label);
+
+          var track = createElement("div", "track");
+          acts.filter(function (act) { return act.stage === stage.id; }).forEach(function (act) {
+            var card = createElement("button", "act-card");
+            card.type = "button";
+            card.dataset.actId = act.id;
+            card.style.setProperty("--act-color", act.color);
+            card.style.setProperty("--left", ((act.start - 240) / 480 * 100) + "%");
+            card.style.setProperty("--width", ((act.end - act.start) / 480 * 100 - 1.2) + "%");
+            card.setAttribute("aria-pressed", selected.indexOf(act.id) !== -1 ? "true" : "false");
+            card.setAttribute("aria-label", act.name + ", " + formatRange(act) + ", " + stage.name + ". " + act.blurb);
+            card.appendChild(createElement("span", "act-name", act.name));
+            card.appendChild(createElement("span", "act-time", formatRange(act)));
+            card.appendChild(createElement("span", "act-meta", act.mustSee + " must-see · " + act.energy + " energy"));
+            if (selected.indexOf(act.id) !== -1) card.classList.add("is-selected");
+            track.appendChild(card);
+          });
+          row.appendChild(track);
+          els.schedule.appendChild(row);
+        });
+      }
+
+      function renderRoute(data) {
+        els.routeList.replaceChildren();
+        if (!data.route.length) {
+          var empty = createElement("div", "route-empty");
+          var note = createElement("span", "big-note", "✦");
+          empty.appendChild(note);
+          empty.appendChild(createElement("span", "", "Tap a set above to start building your night."));
+          els.routeList.appendChild(empty);
+          els.routeSubtitle.textContent = "No commitments yet. The gates are open.";
+        } else {
+          els.routeSubtitle.textContent = data.route.length + " set" + (data.route.length === 1 ? "" : "s") + " booked · " + data.overlaps.length + " clash" + (data.overlaps.length === 1 ? "" : "es");
+          data.route.forEach(function (act) {
+            var stop = createElement("div", "route-stop");
+            stop.style.setProperty("--act-color", act.color);
+            var time = createElement("div", "route-time", formatRange(act));
+            var actInfo = createElement("div", "route-act");
+            actInfo.appendChild(createElement("strong", "", act.name));
+            actInfo.appendChild(createElement("span", "", stageById[act.stage].name));
+            var cost = createElement("div", "route-cost", act.energy + " energy");
+            stop.appendChild(time);
+            stop.appendChild(actInfo);
+            stop.appendChild(cost);
+            els.routeList.appendChild(stop);
+          });
+        }
+
+        if (data.overlaps.length) {
+          var overlapNames = data.overlaps.map(function (pair) {
+            return actById[pair[0]].name + " + " + actById[pair[1]].name;
+          });
+          els.routeAlert.hidden = false;
+          els.routeAlert.textContent = "Clash alert · " + overlapNames.join(" · ") + ". You can make it work, but the sprint costs 5 extra energy and 5 loyalty points per clash.";
+        } else {
+          els.routeAlert.hidden = true;
+          els.routeAlert.textContent = "";
+        }
+      }
+
+      function renderCrew(data) {
+        els.crewList.replaceChildren();
+        friends.forEach(function (friend) {
+          var row = createElement("div", "crew-row");
+          var avatar = createElement("div", "crew-avatar", friend.name.charAt(0));
+          avatar.style.setProperty("--crew-color", friend.color);
+          var info = createElement("div", "");
+          info.appendChild(createElement("div", "crew-name", friend.name));
+          info.appendChild(createElement("span", "crew-fav", "wants " + friend.favorite));
+          var met = data.route.some(function (act) { return act.name === friend.favorite; });
+          var status = createElement("div", "crew-status" + (met ? " met" : ""), met ? "heard" : "waiting");
+          row.appendChild(avatar);
+          row.appendChild(info);
+          row.appendChild(status);
+          els.crewList.appendChild(row);
+        });
+      }
+
+      function verdictFor(score, routeLength) {
+        if (!routeLength) return "Waiting for your first set";
+        if (score >= 82) return "Golden-hour genius";
+        if (score >= 68) return "Strong little route";
+        if (score >= 52) return "Good enough to dance";
+        return "Beautiful chaos";
+      }
+
+      function noteFor(data) {
+        if (!data.route.length) return "Every choice spends something. A route with room to breathe can beat a heroic sprint.";
+        if (data.energyLeft <= 0) return "Your route is running on glitter and stubbornness. Consider dropping a set or a clash.";
+        if (data.overlaps.length > 1) return "You have built a sprint. The question is whether the memories are worth the cardio.";
+        if (data.mustSee >= 14 && data.distance < 8) return "You found a rare thing: lots of favorites without turning the festival into a triathlon.";
+        if (data.loyalty >= 66) return "The crew is feeling seen. Keep a little energy for the walk home.";
+        return "You have a shape. Now decide which moments deserve the miles.";
+      }
+
+      function updateMeters(data) {
+        els.scoreValue.textContent = String(data.score);
+        els.scoreVerdict.textContent = verdictFor(data.score, data.route.length);
+        els.energyValue.textContent = data.energyLeft + "%";
+        els.energyFill.style.width = data.energyLeft + "%";
+        els.energyFill.style.background = data.energyLeft < 25 ? "var(--danger)" : "var(--cyan)";
+        els.loyaltyValue.textContent = data.loyalty + "%";
+        els.loyaltyFill.style.width = data.loyalty + "%";
+        els.mustSeeValue.textContent = data.mustSee + " / " + data.maxMustSee;
+        els.mustSeeFill.style.width = clamp(data.mustSee / data.maxMustSee * 100, 0, 100) + "%";
+        els.distanceValue.textContent = data.distance.toFixed(1) + " mi";
+        els.distanceFill.style.width = clamp(data.distance / 15 * 100, 0, 100) + "%";
+        els.scoreNote.textContent = noteFor(data);
+      }
+
+      function routeText(data) {
+        var name = els.routeName.value.trim() || "Moonbeam route";
+        var lines = [
+          name + " · Moonbeam Fields",
+          "Route rating " + data.score + "/100 · " + verdictFor(data.score, data.route.length),
+          "Energy left " + data.energyLeft + "% · Walking " + data.distance.toFixed(1) + " mi · Must-see " + data.mustSee + "/" + data.maxMustSee + " · Friend loyalty " + data.loyalty + "%",
+          ""
+        ];
+        if (!data.route.length) {
+          lines.push("No sets booked yet.");
+        } else {
+          data.route.forEach(function (act, index) {
+            lines.push((index + 1) + ". " + formatRange(act) + " · " + act.name + " @ " + stageById[act.stage].name);
+          });
+        }
+        if (data.overlaps.length) {
+          lines.push("", "Clashes " + data.overlaps.map(function (pair) { return actById[pair[0]].name + " + " + actById[pair[1]].name; }).join(" · "));
+        }
+        lines.push("", "Built with Moonbeam Fields Route Quest");
+        return lines.join("\n");
+      }
+
+      function persist() {
+        try {
+          localStorage.setItem("moonbeam-route-quest", JSON.stringify({ selected: selected, name: els.routeName.value }));
+        } catch (error) {
+          // Offline play still works when storage is unavailable.
+        }
+      }
+
+      function loadSaved() {
+        try {
+          var saved = JSON.parse(localStorage.getItem("moonbeam-route-quest") || "null");
+          if (saved && Array.isArray(saved.selected)) {
+            selected = saved.selected.filter(function (id) { return actById[id]; });
+          }
+          if (saved && typeof saved.name === "string" && saved.name) els.routeName.value = saved.name.slice(0, 60);
+        } catch (error) {
+          selected = [];
+        }
+      }
+
+      function renderAll() {
+        var data = calculate();
+        renderSchedule();
+        renderRoute(data);
+        renderCrew(data);
+        updateMeters(data);
+        els.routeOutput.value = routeText(data);
+        els.tipText.textContent = tips[data.route.length % tips.length];
+        els.finale.classList.toggle("is-visible", finished);
+        persist();
+      }
+
+      function toggleAct(id) {
+        var position = selected.indexOf(id);
+        if (position === -1) selected.push(id);
+        else selected.splice(position, 1);
+        finished = false;
+        els.copyStatus.textContent = "";
+        renderAll();
+      }
+
+      document.getElementById("schedule").addEventListener("click", function (event) {
+        var button = event.target.closest("button[data-act-id]");
+        if (button) toggleAct(button.dataset.actId);
+      });
+
+      document.getElementById("resetButton").addEventListener("click", function () {
+        selected = [];
+        finished = false;
+        els.copyStatus.textContent = "Route cleared.";
+        renderAll();
+      });
+
+      document.getElementById("finishButton").addEventListener("click", function () {
+        var data = calculate();
+        if (!data.route.length) {
+          els.copyStatus.textContent = "Pick at least one set first.";
+          document.getElementById("schedule").scrollIntoView({ behavior: "smooth", block: "center" });
+          return;
+        }
+        finished = true;
+        els.finaleTitle.textContent = data.score >= 68 ? "Route locked. Excellent choices." : "Route locked. Beautifully imperfect.";
+        els.finaleText.textContent = data.overlaps.length ? "You accepted " + data.overlaps.length + " clash" + (data.overlaps.length === 1 ? "" : "es") + ". That is not a failure. That is a festival personality." : "No clashes. Your future self may send you a thank-you text around 10:45 PM.";
+        renderAll();
+        els.finale.scrollIntoView({ behavior: "smooth", block: "nearest" });
+      });
+
+      els.routeName.addEventListener("input", function () {
+        els.routeOutput.value = routeText(calculate());
+        persist();
+      });
+
+      document.getElementById("copyButton").addEventListener("click", function () {
+        var text = routeText(calculate());
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(text).then(function () {
+            els.copyStatus.textContent = "Copied. Your route is ready for the group chat.";
+          }).catch(function () {
+            els.routeOutput.focus();
+            els.routeOutput.select();
+            els.copyStatus.textContent = "Route text selected. Press Ctrl+C or Cmd+C to copy it.";
+          });
+        } else {
+          els.routeOutput.focus();
+          els.routeOutput.select();
+          els.copyStatus.textContent = "Route text selected. Press Ctrl+C or Cmd+C to copy it.";
+        }
+      });
+
+      document.getElementById("downloadButton").addEventListener("click", function () {
+        var text = routeText(calculate());
+        var safeName = (els.routeName.value.trim() || "moonbeam-route").replace(/[^a-z0-9]+/gi, "-").replace(/^-|-$/g, "").toLowerCase() || "moonbeam-route";
+        var blob = new Blob([text], { type: "text/plain;charset=utf-8" });
+        var link = document.createElement("a");
+        link.href = URL.createObjectURL(blob);
+        link.download = safeName + ".txt";
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        setTimeout(function () { URL.revokeObjectURL(link.href); }, 0);
+        els.copyStatus.textContent = "Exported " + safeName + ".txt";
+      });
+
+      loadSaved();
+      renderAll();
+    }());
+  </script>
+</body>
+</html>

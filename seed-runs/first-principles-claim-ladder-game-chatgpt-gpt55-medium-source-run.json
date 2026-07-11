@@ -4,7 +4,8 @@
   "provider": "ChatGPT",
   "model": "GPT-5.5",
   "model_settings": "Visible ChatGPT picker showed GPT-5.5 family with Intelligence options; Medium was selected before prompt send. GPT-5.4 was preferred but not visible; latest run's GPT-5.5 Instant was avoided by choosing Medium. No files, connectors, attachments, external tools, or OpenRouter route/fallback used.",
-  "source_url": "https://chatgpt.com/c/6a35e460-9298-83ea-aa7b-9a04fbc6fab9",
+  "source_url": "https://chatgpt.com/share/6a517a3f-3ce4-83ea-9686-863ec43e5473",
+  "source_run_id": "3216db0c-fd3a-48f0-af70-58b47f34068c",
   "source_inspiration": {
     "urls": [
       "https://snackprompt.com/prompts",
@@ -19,6 +20,7 @@
   "pathforge_fit_adaptation": "Offline deterministic ladder game/scorer for breaking plans into claims, assumptions, evidence, and experiments; users move cards up/down, see collapse checks and score, then copy/download a reasoning receipt.",
   "run_started_at": "2026-06-20T00:55:00Z",
   "run_finished_at": "2026-06-20T01:17:58.233Z",
+  "repair_prompt_count": 0,
   "chain_type": "one-shot",
   "prompt_count": 1,
   "category": "productivity",
@@ -34,10 +36,20 @@
   "status": "submitted_pending",
   "public_status": "pending_source_run_review_only_no_public_page",
   "final_artifact_path": "public/artifacts/first-principles-claim-ladder-game-chatgpt-gpt55-medium.html",
+  "artifact_sha256": "466899d9491d5876497eab33f7e33fb46ae8d545e56acd8ac9f4103b761a09b4",
   "final_artifact_clue": "Open the HTML, move claim/assumption/evidence/experiment cards on the ladder, and copy or download the reasoning receipt.",
   "artifact_type": "html",
   "artifact_versions": [
     "public/artifacts/first-principles-claim-ladder-game-chatgpt-gpt55-medium.html"
+  ],
+  "artifact_version_notes": [
+    {
+      "path": "public/artifacts/first-principles-claim-ladder-game-chatgpt-gpt55-medium.html",
+      "sha256": "466899d9491d5876497eab33f7e33fb46ae8d545e56acd8ac9f4103b761a09b4",
+      "bytes": 29416,
+      "lines": 1108,
+      "disposition": "Historical final artifact; canonical baseline version."
+    }
   ],
   "generated_files": [
     "public/artifacts/first-principles-claim-ladder-game-chatgpt-gpt55-medium.html"
@@ -49,6 +61,34 @@
     "seed-runs/evidence/first-principles-claim-ladder-game-chatgpt-gpt55-medium/mobile-overflow-harness.html"
   ],
   "screenshots": [],
+  "verification_evidence": {
+    "schema_version": 1,
+    "verified_at": "2026-07-10T23:32:43.000Z",
+    "first_pass_metrics": {
+      "qualityScore": 88,
+      "artifactReady": true,
+      "hardGatesPassed": false,
+      "functionalChecks": { "passed": 9, "total": 10 },
+      "consoleErrorCount": 0,
+      "horizontalOverflowPx": 114,
+      "notes": [
+        "The one-shot artifact supports all four card types, moving and classifying cards, score changes, verdicts, saved state, and a reasoning receipt.",
+        "At the true 390px target it measures 504px wide, leaving 114px of horizontal overflow."
+      ]
+    },
+    "final_metrics": {
+      "qualityScore": 88,
+      "artifactReady": true,
+      "hardGatesPassed": false,
+      "functionalChecks": { "passed": 9, "total": 10 },
+      "consoleErrorCount": 0,
+      "horizontalOverflowPx": 114,
+      "notes": [
+        "The source run is one-shot, so the measured 114px narrow-screen overflow remains in the historical final.",
+        "Desktop and the complete reasoning workflow remain usable and inspectable."
+      ]
+    }
+  },
   "verification_notes": "Accepted as uploadable package-only candidate. Static gates clean except safe textContent/confidence/letter-spacing:0 hits; script parsed; exact artifact hash matches the captured ChatGPT code block; localhost Chrome workflow passed nonblank render, add/move/score/receipt/copy/download, hostile literal text inert with zero image nodes, no JS dialog, and no desktop horizontal overflow. True 390px viewport could not be forced with available Chrome helper and local Playwright was missing; responsive CSS was inspected for one-column collapse under 1080px and full-width controls under 520px.",
   "recommended_seed_profile": {
     "registry_id": "pathforge-seed-449",

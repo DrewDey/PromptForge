@@ -163,6 +163,7 @@ export default async function PreparedSourceRunPage({
   modelVariantSet,
   activeModelVariant,
   compareModelVariant,
+  modelVariantRegistryWarning,
 }: {
   project: PreparedShowcaseProject
   sourceRunPackage: SourceRunPackage
@@ -171,6 +172,7 @@ export default async function PreparedSourceRunPage({
   modelVariantSet?: ProjectModelVariantSet | null
   activeModelVariant?: ProjectModelVariant | null
   compareModelVariant?: ProjectModelVariant | null
+  modelVariantRegistryWarning?: string
 }) {
   const sourceRun = sourceRunPackage
   const providerName = getProviderName(sourceRun, project)
@@ -207,6 +209,7 @@ export default async function PreparedSourceRunPage({
               <PathForgeLabsModelRuns
                 variantSet={modelVariantSet}
                 activeVariant={activeModelVariant}
+                compareSourceRunId={compareModelVariant?.sourceRunId}
               />
             ) : (
               <RunSummary sourceRun={sourceRun} project={project} capturedAt={capturedAt} />
@@ -216,6 +219,16 @@ export default async function PreparedSourceRunPage({
           <ProjectEngagementBar projectId={project.id} loginNextPath={route} />
         </div>
       </section>
+
+      {modelVariantRegistryWarning && (
+        <div
+          className="border-b border-amber-300 bg-amber-50 px-4 py-3 text-center text-xs font-semibold leading-5 text-amber-900"
+          role="status"
+          data-model-variant-registry-warning
+        >
+          {modelVariantRegistryWarning}
+        </div>
+      )}
 
       {modelVariantSet && activeModelVariant && compareModelVariant && (
         <PathForgeLabsModelComparison

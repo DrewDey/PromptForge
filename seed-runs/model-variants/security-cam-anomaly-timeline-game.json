@@ -1,0 +1,187 @@
+{
+  "schemaVersion": 1,
+  "canonicalProjectId": "384ebd4d-88af-400b-b230-4eb771bb2194",
+  "canonicalRoute": "/security-cam-anomaly-timeline-game-demo",
+  "title": "Security-Cam Anomaly Timeline Game",
+  "defaultSourceRunId": "4f090917-f268-4811-87b7-6c0598139caa",
+  "contract": {
+    "version": "security-cam-anomaly-timeline-game-v1",
+    "openingPromptExact": "Make me a playable security-cam anomaly timeline game I can save and open locally, where I review timestamped camera cards, spot odd details, and arrange the events into the correct sequence.",
+    "acceptanceCriteria": [
+      "Present timestamped security-camera cards with enough odd details to support a real deduction game.",
+      "Let the player mark anomalies and arrange the events into a coherent timeline using accessible controls.",
+      "Provide useful scoring or sequence feedback plus hints and a deliberate answer-reveal state.",
+      "Provide a replay, reset, or report workflow that makes the completed case inspectable.",
+      "Produce one complete self-contained HTML file that is immediately usable in a browser.",
+      "Operate offline with no external APIs, hosted generation, CDNs, remote fonts, scripts, stylesheets, or fragile dependencies.",
+      "Avoid unsafe HTML sinks, eval-like execution, inline event handlers, modal dialogs, and deprecated clipboard handling.",
+      "Avoid page-level horizontal overflow at 390 by 844 and at desktop width.",
+      "Keep essential controls visible, keyboard or touch reachable, and truthful about their current state.",
+      "Preserve exact prompt, response, source, and artifact-version evidence for the run."
+    ],
+    "adaptiveRepairPolicy": "Preserve and score the first real artifact. Continue only when verification proves a concrete defect or a source-capture failure; use the same source session and model; name the observed defect in ordinary language; preserve every real artifact version; stop as soon as the artifact passes; prefer no more than three total prompts and go beyond three only for a documented concrete lane reason such as a verification-proven regression, truncation, or mechanical capture failure.",
+    "sha256": "84a1de64f4f02a0e6c13ce3563ca864f33bb56828bb461e2c5eb95b01dda9d1b",
+    "openingPromptSha256": "e4665f766dd67b50cda474856fd59e0020d8785a6422f22f1e42d47b7ff2b4fc"
+  },
+  "variants": [
+    {
+      "sourceRunId": "2f2bfc9f-019a-4ff3-b51f-3270a7ea9eab",
+      "providerKey": "openai",
+      "serviceLabel": "ChatGPT",
+      "modelLabel": "GPT-5.5",
+      "modelSettings": "ChatGPT web; GPT-5.5 Thinking (public share model_slug: gpt-5-5-thinking); Intelligence: Extra High (public share thinking_effort: max). No files, connectors, remote tools, custom settings, or OpenRouter fallback used.",
+      "operatorKind": "original-author",
+      "operatorLabel": "Original source run · Evan Trace",
+      "runRole": "historical-baseline",
+      "qualityStatus": "verified",
+      "isCurrent": false,
+      "capturedAt": "2026-06-15T03:48:23Z",
+      "promptCount": 1,
+      "repairPromptCount": 0,
+      "packageFile": "security-cam-anomaly-timeline-chatgpt-extra-high-source-run.json",
+      "packageSha256": "32be8df0b0f17ab795d40ffd9007df892a02f6a348f0b947e4f9f4f12c9a1cda",
+      "firstArtifactPath": "public/artifacts/security-cam-anomaly-timeline-chatgpt-extra-high.html",
+      "finalArtifactPath": "public/artifacts/security-cam-anomaly-timeline-chatgpt-extra-high.html",
+      "artifactVersionPaths": [
+        "public/artifacts/security-cam-anomaly-timeline-chatgpt-extra-high.html"
+      ],
+      "firstPassMetrics": {
+        "qualityScore": 96,
+        "artifactReady": true,
+        "hardGatesPassed": true,
+        "functionalChecks": {
+          "passed": 10,
+          "total": 10
+        },
+        "consoleErrorCount": 0,
+        "horizontalOverflowPx": 0,
+        "notes": [
+          "The one-shot case workflow exercised seven timestamped cards, move controls, anomaly marking, notes, scoring, hinting, reveal, replay, and report export.",
+          "It measured 390/390 and 1440/1440 with zero console errors."
+        ]
+      },
+      "finalMetrics": {
+        "qualityScore": 96,
+        "artifactReady": true,
+        "hardGatesPassed": true,
+        "functionalChecks": {
+          "passed": 10,
+          "total": 10
+        },
+        "consoleErrorCount": 0,
+        "horizontalOverflowPx": 0,
+        "notes": [
+          "All ten contract checks passed, including sequence feedback, deliberate reveal, replay, and inspectable report output."
+        ]
+      }
+    },
+    {
+      "sourceRunId": "4f090917-f268-4811-87b7-6c0598139caa",
+      "providerKey": "anthropic",
+      "serviceLabel": "Claude",
+      "modelLabel": "Fable 5 High",
+      "modelSettings": "Claude web; High reasoning.",
+      "operatorKind": "pathforge-labs-manual",
+      "operatorLabel": "PathForge Labs · Developer-operated",
+      "runRole": "comparison-run",
+      "qualityStatus": "verified",
+      "isCurrent": true,
+      "capturedAt": "2026-07-10T22:19:43.970Z",
+      "promptCount": 2,
+      "repairPromptCount": 0,
+      "packageFile": "model-variants/security-cam-anomaly-timeline-game-claude-fable-5-high-source-run.json",
+      "packageSha256": "029a58e964a40d3fc685a19236805a043ff16e7566ec376b9001bcc81a85a407",
+      "firstArtifactPath": "public/artifacts/security-cam-anomaly-timeline-game-claude-fable-5-high-final.html",
+      "finalArtifactPath": "public/artifacts/security-cam-anomaly-timeline-game-claude-fable-5-high-final.html",
+      "artifactVersionPaths": [
+        "public/artifacts/security-cam-anomaly-timeline-game-claude-fable-5-high-final.html"
+      ],
+      "firstPassMetrics": {
+        "qualityScore": 98,
+        "artifactReady": true,
+        "hardGatesPassed": true,
+        "functionalChecks": {
+          "passed": 10,
+          "total": 10
+        },
+        "consoleErrorCount": 0,
+        "horizontalOverflowPx": 0,
+        "notes": [
+          "The opening response was usage-limit interrupted and preserved as a transcript-only status with no artifact claim.",
+          "The first real artifact arrived on the capture-recovery step and directly passed all four project checks plus six common checks, desktop and true 390x844 layout, and zero-console-error verification."
+        ]
+      },
+      "finalMetrics": {
+        "qualityScore": 98,
+        "artifactReady": true,
+        "hardGatesPassed": true,
+        "functionalChecks": {
+          "passed": 10,
+          "total": 10
+        },
+        "consoleErrorCount": 0,
+        "horizontalOverflowPx": 0,
+        "notes": [
+          "The first real artifact required no quality repair: 15/15 anomaly detection, sequence feedback, deliberate reveal, shift report, replay, static safety, desktop, true 390x844, and zero-console-error checks all passed."
+        ]
+      }
+    },
+    {
+      "sourceRunId": "6f024f1c499a2624",
+      "providerKey": "google",
+      "serviceLabel": "Gemini",
+      "modelLabel": "Gemini 3.1 Pro",
+      "modelSettings": "Gemini web; Pro mode.",
+      "operatorKind": "pathforge-labs-manual",
+      "operatorLabel": "PathForge Labs · Developer-operated",
+      "runRole": "comparison-run",
+      "qualityStatus": "verified",
+      "isCurrent": true,
+      "capturedAt": "2026-07-11T05:49:47.390Z",
+      "promptCount": 3,
+      "repairPromptCount": 2,
+      "packageFile": "model-variants/security-cam-anomaly-timeline-game-gemini-31-pro-source-run.json",
+      "packageSha256": "4253e5b23ac7bb9ebb589b69b65556b58606d1be5790bc47eb5b4a5b2d034db9",
+      "firstArtifactPath": "public/artifacts/security-cam-anomaly-timeline-game-gemini-31-pro-first-pass.html",
+      "finalArtifactPath": "public/artifacts/security-cam-anomaly-timeline-game-gemini-31-pro-repair-2.html",
+      "artifactVersionPaths": [
+        "public/artifacts/security-cam-anomaly-timeline-game-gemini-31-pro-first-pass.html",
+        "public/artifacts/security-cam-anomaly-timeline-game-gemini-31-pro-final.html",
+        "public/artifacts/security-cam-anomaly-timeline-game-gemini-31-pro-repair-2.html"
+      ],
+      "firstPassMetrics": {
+        "qualityScore": 64,
+        "artifactReady": true,
+        "hardGatesPassed": false,
+        "functionalChecks": {
+          "passed": 5,
+          "total": 10
+        },
+        "consoleErrorCount": 0,
+        "horizontalOverflowPx": 0,
+        "notes": [
+          "Static scan found ten inline event handlers.",
+          "The first artifact had a sequence board but no real anomaly-marking choice, score, hint, deliberate reveal, replay/reset, or inspectable report.",
+          "Fresh mobile and desktop measurements had zero overflow and zero console errors."
+        ]
+      },
+      "finalMetrics": {
+        "qualityScore": 97,
+        "artifactReady": true,
+        "hardGatesPassed": true,
+        "functionalChecks": {
+          "passed": 10,
+          "total": 10
+        },
+        "consoleErrorCount": 0,
+        "horizontalOverflowPx": 0,
+        "notes": [
+          "Fresh 390x844 and 1440x1000 measurements reported zero horizontal overflow and zero console errors, and the complete static hard-gate scan passed.",
+          "Direct correct-case verification produced 5/5 sequence and 5/5 anomaly scores plus a complete shift report.",
+          "Hint, accessible add/up/down/remove controls, replay/reset, failed-attempt feedback, and two-step deliberate reveal were independently exercised.",
+          "All four project-specific checks and all six shared production checks passed."
+        ]
+      }
+    }
+  ]
+}

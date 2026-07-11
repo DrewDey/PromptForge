@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>T-Shirt Print Alignment Game</title>
+    <style>
+        :root {
+            --bg: #f1f5f9;
+            --shirt: #ffffff;
+            --safe: #dbeafe;
+            --primary: #2563eb;
+            --danger: #dc2626;
+            --success: #16a34a;
+        }
+
+        body {
+            margin: 0;
+            font-family: system-ui, sans-serif;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+            background-color: var(--bg);
+            overflow-x: hidden;
+        }
+
+        #toolbar {
+            padding: 1rem;
+            background: #fff;
+            border-bottom: 1px solid #cbd5e1;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        #canvas-area {
+            flex-grow: 1;
+            display: flex;
+            justify-content: center;
+            padding: 1rem;
+            position: relative;
+        }
+
+        #shirt {
+            width: 320px;
+            height: 400px;
+            background: var(--shirt);
+            border-radius: 40px 40px 10px 10px;
+            position: relative;
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
+        }
+
+        #safe-zone {
+            position: absolute;
+            top: 60px;
+            left: 40px;
+            right: 40px;
+            bottom: 40px;
+            border: 2px dashed var(--primary);
+            background: var(--safe);
+            pointer-events: none;
+        }
+
+        .element {
+            position: absolute;
+            cursor: move;
+            padding: 0.5rem;
+            border: 2px solid transparent;
+            background: #1e293b;
+            color: white;
+            user-select: none;
+            touch-action: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .element.selected { border-color: var(--primary); outline: 2px solid var(--primary); }
+
+        #nudge-controls {
+            display: none;
+            gap: 0.5rem;
+            margin-top: 0.5rem;
+            padding: 0.5rem;
+            background: #f8fafc;
+            border-radius: 4px;
+        }
+
+        #results {
+            margin-top: 1rem;
+            padding: 1rem;
+            border-radius: 4px;
+            font-size: 0.85rem;
+            white-space: pre-line;
+            border: 1px solid #e2e8f0;
+        }
+
+        .btn { padding: 8px 12px; cursor: pointer; border: none; border-radius: 4px; background: var(--primary); color: white; }
+    </style>
+</head>
+<body>
+
+    <div id="toolbar">
+        <div style="display: flex; gap: 0.5rem;">
+            <button id="add-text" class="btn">Text</button>
+            <button id="add-icon" class="btn">Icon</button>
+            <button id="check-btn" class="btn" style="background: var(--success);">Score</button>
+        </div>
+        <div id="nudge-controls">
+            <button id="n-up" class="btn">▲</button>
+            <button id="n-down" class="btn">▼</button>
+            <button id="n-left" class="btn">◀</button>
+            <button id="n-right" class="btn">▶</button>
+            <button id="n-del" class="btn" style="background:var(--danger)">X</button>
+        </div>
+        <div id="results">Design status will appear here.</div>
+        <div style="display: flex; gap: 0.5rem;">
+            <button id="copy-json" class="btn">Copy JSON</button>
+            <button id="dl-json" class="btn">Download JSON</button>
+        </div>
+    </div>
+
+    <div id="canvas-area">
+        <div id="shirt">
+            <div id="safe-zone"></div>
+        </div>
+    </div>
+
+    <script>
+        const shirt = document.getElementById('shirt');
+        const safeZone = document.getElementById('safe-zone');
+        const results = document.getElementById('results');
+        const nudgeControls = document.getElementById('nudge-controls');
+        
+        let selectedEl = null;
+
+        function updateResults(text) {
+            results.textContent = text;
+        }
+
+        function createBlock(type) {
+            const el = document.createElement('div');
+            el.className = 'element';
+            el.textContent = type === 'text' ? 'TEXT' : '★';
+            el.dataset.type = type;
+            el.style.left = '100px';
+            el.style.top = '100px';
+            
+            el.addEventListener('mousedown', selectEl);
+            el.addEventListener('touchstart', selectEl);
+            shirt.appendChild(el);
+            selectEl({currentTarget: el});
+        }
+
+        function selectEl(e) {
+            if (selectedEl) selectedEl.classList.remove('selected');
+            selectedEl = e.currentTarget;
+            selectedEl.classList.add('selected');
+            nudgeControls.style.display = 'flex';
+        }
+
+        // Nudge / Move logic
+        function move(dx, dy) {
+            if (!selectedEl) return;
+            const x = parseInt(selectedEl.style.left) + dx;
+            const y = parseInt(selectedEl.style.top) + dy;
+            selectedEl.style.left = x + 'px';
+            selectedEl.style.top = y + 'px';
+        }
+
+        document.getElementById('n-up').addEventListener('click', () => move(0, -5));
+        document.getElementById('n-down').addEventListener('click', () => move(0, 5));
+        document.getElementById('n-left').addEventListener('click', () => move(-5, 0));
+        document.getElementById('n-right').addEventListener('click', () => move(5, 0));
+        document.getElementById('n-del').addEventListener('click', () => {
+            if (selectedEl) { selectedEl.remove(); selectedEl = null; nudgeControls.style.display = 'none'; }
+        });
+
+        // Validation Scoring
+        document.getElementById('check-btn').addEventListener('click', () => {
+            const els = document.querySelectorAll('.element');
+            if (els.length === 0) return updateResults('No elements to score.');
+            
+            let score = 100;
+            const log = [];
+            const safe = safeZone.getBoundingClientRect();
+            
+            els.forEach((el, i) => {
+                const r = el.getBoundingClientRect();
+                // Margin check
+                if (r.left < safe.left || r.right > safe.right || r.top < safe.top || r.bottom > safe.bottom) {
+                    score -= 20;
+                    log.push(`Element ${i+1} is outside print safe area.`);
+                }
+                // Overlap check
+                els.forEach((el2, j) => {
+                    if (i === j) return;
+                    const r2 = el2.getBoundingClientRect();
+                    if (!(r.right < r2.left || r.left > r2.right || r.bottom < r2.top || r.top > r2.bottom)) {
+                        score -= 30;
+                        if (!log.includes('Overlap detected.')) log.push('Overlap detected.');
+                    }
+                });
+            });
+
+            updateResults(`Quality Score: ${Math.max(0, score)}/100\n${log.join('\n') || 'All checks passed!'}`);
+        });
+
+        // Drag functionality
+        let isDragging = false;
+        document.addEventListener('mousemove', (e) => {
+            if (isDragging && selectedEl) {
+                const s = shirt.getBoundingClientRect();
+                selectedEl.style.left = (e.clientX - s.left - 20) + 'px';
+                selectedEl.style.top = (e.clientY - s.top - 20) + 'px';
+            }
+        });
+
+        document.addEventListener('mousedown', (e) => {
+            if (e.target.classList.contains('element')) isDragging = true;
+        });
+        document.addEventListener('mouseup', () => isDragging = false);
+
+        // Export logic
+        const getLayout = () => {
+            const els = Array.from(document.querySelectorAll('.element')).map(el => ({
+                type: el.dataset.type,
+                x: el.style.left,
+                y: el.style.top
+            }));
+            return JSON.stringify(els, null, 2);
+        };
+
+        document.getElementById('copy-json').addEventListener('click', async () => {
+            await navigator.clipboard.writeText(getLayout());
+            updateResults('Layout JSON copied!');
+        });
+
+        document.getElementById('dl-json').addEventListener('click', () => {
+            const blob = new Blob([getLayout()], {type: 'application/json'});
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'layout.json';
+            a.click();
+        });
+
+        document.getElementById('add-text').addEventListener('click', () => createBlock('text'));
+        document.getElementById('add-icon').addEventListener('click', () => createBlock('icon'));
+    </script>
+</body>
+</html>

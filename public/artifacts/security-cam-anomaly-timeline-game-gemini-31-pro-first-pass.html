@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Security OS - Anomaly Review</title>
+    <style>
+        body {
+            background-color: #050505;
+            color: #0f0;
+            font-family: 'Courier New', Courier, monospace;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        h1 {
+            text-align: center;
+            border-bottom: 2px solid #0f0;
+            padding-bottom: 10px;
+            margin-bottom: 5px;
+            width: 100%;
+            max-width: 900px;
+        }
+
+        p.instructions {
+            color: #888;
+            max-width: 900px;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .game-board {
+            display: flex;
+            gap: 20px;
+            width: 100%;
+            max-width: 1000px;
+            justify-content: space-between;
+        }
+
+        .panel {
+            flex: 1;
+            background: #111;
+            border: 1px dashed #333;
+            padding: 15px;
+            border-radius: 5px;
+            min-height: 600px;
+        }
+
+        .panel-title {
+            text-align: center;
+            color: #ffeb3b;
+            font-weight: bold;
+            margin-bottom: 15px;
+        }
+
+        .card {
+            background: #000;
+            border: 1px solid #0f0;
+            padding: 10px;
+            margin-bottom: 15px;
+            cursor: grab;
+            box-shadow: 2px 2px 0px #0f0;
+            transition: transform 0.1s;
+        }
+
+        .card:active {
+            cursor: grabbing;
+            transform: scale(0.98);
+        }
+
+        .card-header {
+            font-weight: bold;
+            color: #f44336;
+            margin-bottom: 8px;
+            font-size: 0.9em;
+            border-bottom: 1px solid #333;
+            padding-bottom: 4px;
+        }
+
+        .card-visual {
+            font-size: 2.5em;
+            text-align: center;
+            background: #1a1a1a;
+            border: 1px solid #333;
+            padding: 10px;
+            margin-bottom: 8px;
+        }
+
+        .card-desc {
+            font-size: 0.85em;
+            color: #ccc;
+            line-height: 1.4;
+        }
+
+        .timeline-slot {
+            margin-bottom: 15px;
+        }
+
+        .slot-label {
+            font-size: 0.8em;
+            color: #555;
+            margin-bottom: 5px;
+        }
+
+        .drop-zone {
+            min-height: 140px;
+            border: 2px dashed #444;
+            background: #0a0a0a;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .drop-zone.hover {
+            border-color: #0f0;
+            background: #112211;
+        }
+
+        .controls {
+            margin-top: 30px;
+            text-align: center;
+        }
+
+        button {
+            background: #0f0;
+            color: #000;
+            border: none;
+            padding: 12px 24px;
+            font-family: inherit;
+            font-weight: bold;
+            font-size: 1.1em;
+            cursor: pointer;
+            box-shadow: 3px 3px 0px #005500;
+        }
+
+        button:hover {
+            background: #fff;
+        }
+
+        button:active {
+            box-shadow: 1px 1px 0px #005500;
+            transform: translate(2px, 2px);
+        }
+
+        #status-msg {
+            margin-top: 15px;
+            font-weight: bold;
+            font-size: 1.2em;
+            height: 24px;
+        }
+
+        .success { color: #0f0; }
+        .error { color: #f44336; }
+
+    </style>
+</head>
+<body>
+
+    <h1>SECURITY OS v3.1 - INCIDENT REVIEW</h1>
+    <p class="instructions">
+        WARNING: Temporal corruption detected in camera logs. Timestamps may be fabricated or glitched. 
+        Drag the footage cards from the Unsorted Logs into the Timeline to reconstruct the true chronological sequence of the containment breach.
+    </p>
+
+    <div class="game-board">
+        <!-- Pool for unsorted cards -->
+        <div class="panel" id="pool-panel">
+            <div class="panel-title">UNSORTED LOGS</div>
+            <div id="pool" class="drop-zone" style="border:none; min-height:500px; display:block;" ondrop="drop(event)" ondragover="allowDrop(event)">
+                
+                <div class="card" id="card1" draggable="true" ondragstart="drag(event)" data-order="1">
+                    <div class="card-header">REC: 23:42:01</div>
+                    <div class="card-visual">🛌</div>
+                    <div class="card-desc">Subject asleep in containment cell. Glass is intact. Bio-monitor reads stable.</div>
+                </div>
+
+                <div class="card" id="card2" draggable="true" ondragstart="drag(event)" data-order="5">
+                    <div class="card-header">REC: 23:40:00 [ANOMALY]</div>
+                    <div class="card-visual">🚨</div>
+                    <div class="card-desc">Emergency lights flashing. Glass is completely shattered outward. Subject is gone.</div>
+                </div>
+
+                <div class="card" id="card3" draggable="true" ondragstart="drag(event)" data-order="3">
+                    <div class="card-header">REC: 23:45:10</div>
+                    <div class="card-visual">💥</div>
+                    <div class="card-desc">Subject is violently striking the glass. A spiderweb crack appears. Bio-monitor flatlining.</div>
+                </div>
+
+                <div class="card" id="card4" draggable="true" ondragstart="drag(event)" data-order="2">
+                    <div class="card-header">REC: 23:44:15</div>
+                    <div class="card-visual">📈</div>
+                    <div class="card-desc">Subject is writhing. Bio-monitor is spiking into the red zone. Glass remains intact.</div>
+                </div>
+
+                <div class="card" id="card5" draggable="true" ondragstart="drag(event)" data-order="4">
+                    <div class="card-header">REC: [DATA_CORRUPT]</div>
+                    <div class="card-visual">🕳️</div>
+                    <div class="card-desc">Containment cell is empty. A large hole has formed in the cracked glass. Monitor offline.</div>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- Timeline drop zones -->
+        <div class="panel" id="timeline-panel">
+            <div class="panel-title">TIMELINE RECONSTRUCTION</div>
+            
+            <div class="timeline-slot">
+                <div class="slot-label">SEQUENCE T-01 (INCIDENT START)</div>
+                <div class="drop-zone target-slot" data-slot="1" ondrop="drop(event)" ondragover="allowDrop(event)"></div>
+            </div>
+            <div class="timeline-slot">
+                <div class="slot-label">SEQUENCE T-02</div>
+                <div class="drop-zone target-slot" data-slot="2" ondrop="drop(event)" ondragover="allowDrop(event)"></div>
+            </div>
+            <div class="timeline-slot">
+                <div class="slot-label">SEQUENCE T-03</div>
+                <div class="drop-zone target-slot" data-slot="3" ondrop="drop(event)" ondragover="allowDrop(event)"></div>
+            </div>
+            <div class="timeline-slot">
+                <div class="slot-label">SEQUENCE T-04</div>
+                <div class="drop-zone target-slot" data-slot="4" ondrop="drop(event)" ondragover="allowDrop(event)"></div>
+            </div>
+            <div class="timeline-slot">
+                <div class="slot-label">SEQUENCE T-05 (AFTERMATH)</div>
+                <div class="drop-zone target-slot" data-slot="5" ondrop="drop(event)" ondragover="allowDrop(event)"></div>
+            </div>
+
+        </div>
+    </div>
+
+    <div class="controls">
+        <button onclick="verifySequence()">COMPILE TIMELINE</button>
+        <div id="status-msg"></div>
+    </div>
+
+    <script>
+        // Shuffle cards on load so they aren't in HTML order
+        window.onload = () => {
+            const pool = document.getElementById('pool');
+            const cards = Array.from(pool.children);
+            cards.sort(() => Math.random() - 0.5);
+            cards.forEach(card => pool.appendChild(card));
+        };
+
+        function allowDrop(ev) {
+            ev.preventDefault();
+            if(ev.target.classList.contains('drop-zone')) {
+                ev.target.classList.add('hover');
+            }
+        }
+
+        // Remove hover effect when dragging leaves the zone
+        document.addEventListener('dragleave', (ev) => {
+            if(ev.target.classList.contains('drop-zone')) {
+                ev.target.classList.remove('hover');
+            }
+        });
+
+        function drag(ev) {
+            ev.dataTransfer.setData("text", ev.target.id);
+        }
+
+        function drop(ev) {
+            ev.preventDefault();
+            const data = ev.dataTransfer.getData("text");
+            const draggedCard = document.getElementById(data);
+            
+            let dropTarget = ev.target;
+            
+            // Clean up hover class
+            document.querySelectorAll('.drop-zone').forEach(el => el.classList.remove('hover'));
+
+            // If dropped on a card inside a slot, redirect target to the parent drop-zone
+            while (dropTarget && !dropTarget.classList.contains('drop-zone')) {
+                dropTarget = dropTarget.parentNode;
+            }
+
+            if (dropTarget) {
+                // If dropping into a timeline slot that already has a card, swap them
+                if (dropTarget.classList.contains('target-slot') && dropTarget.children.length > 0) {
+                    const existingCard = dropTarget.children[0];
+                    document.getElementById('pool').appendChild(existingCard);
+                }
+                dropTarget.appendChild(draggedCard);
+            }
+        }
+
+        function verifySequence() {
+            const slots = document.querySelectorAll('.target-slot');
+            const statusMsg = document.getElementById('status-msg');
+            let isCorrect = true;
+            let cardsPlaced = 0;
+
+            slots.forEach(slot => {
+                const requiredOrder = slot.getAttribute('data-slot');
+                
+                if (slot.children.length > 0) {
+                    cardsPlaced++;
+                    const cardOrder = slot.children[0].getAttribute('data-order');
+                    if (cardOrder !== requiredOrder) {
+                        isCorrect = false;
+                    }
+                } else {
+                    isCorrect = false;
+                }
+            });
+
+            if (cardsPlaced < 5) {
+                statusMsg.className = 'error';
+                statusMsg.innerText = 'ERROR: INCOMPLETE SEQUENCE. PLACE ALL CARDS.';
+                return;
+            }
+
+            if (isCorrect) {
+                statusMsg.className = 'success';
+                statusMsg.innerText = 'OVERRIDE ACCEPTED. SEQUENCE RESTORED. INCIDENT LOGGED.';
+            } else {
+                statusMsg.className = 'error';
+                statusMsg.innerText = 'TIMELINE MISMATCH DETECTED. REVIEW ANOMALIES AND TRY AGAIN.';
+            }
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,712 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Progress Shot Consistency Studio</title>
+    <style>
+        :root {
+            --bg-base: #0f1115;
+            --bg-panel: #1a1d24;
+            --bg-card: #252a33;
+            --text-main: #e2e8f0;
+            --text-muted: #94a3b8;
+            --accent: #3b82f6;
+            --accent-hover: #2563eb;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --border: #334155;
+            --radius: 8px;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-base);
+            color: var(--text-main);
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            overflow-x: hidden;
+        }
+
+        header {
+            background-color: var(--bg-panel);
+            padding: 16px 20px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-shrink: 0;
+        }
+
+        header h1 {
+            font-size: 1.1rem;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+        }
+
+        .score-display {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: var(--success);
+            background: rgba(16, 185, 129, 0.1);
+            padding: 4px 12px;
+            border-radius: 20px;
+        }
+
+        .main-container {
+            display: flex;
+            flex: 1;
+            overflow: hidden;
+        }
+
+        @media (max-width: 900px) {
+            .main-container {
+                flex-direction: column;
+                overflow-y: auto;
+            }
+        }
+
+        /* Setup Board */
+        .setup-section {
+            flex: 2;
+            padding: 20px;
+            overflow-y: auto;
+            border-right: 1px solid var(--border);
+        }
+
+        .factor-group {
+            margin-bottom: 24px;
+        }
+
+        .factor-group h2 {
+            font-size: 0.95rem;
+            color: var(--text-muted);
+            margin-bottom: 12px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .card-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+            gap: 12px;
+        }
+
+        .setup-card {
+            background-color: var(--bg-card);
+            color: var(--text-main);
+            border: 2px solid transparent;
+            border-radius: var(--radius);
+            padding: 16px 12px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-size: 0.9rem;
+            font-weight: 500;
+            user-select: none;
+            outline: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .setup-card:hover {
+            background-color: #2e3440;
+        }
+
+        .setup-card:focus-visible {
+            border-color: var(--text-main);
+            box-shadow: 0 0 0 2px var(--accent);
+        }
+
+        .setup-card.selected {
+            border-color: var(--accent);
+            background-color: rgba(59, 130, 246, 0.1);
+            color: #fff;
+        }
+
+        .setup-card.baseline-match {
+            border-color: var(--success);
+            background-color: rgba(16, 185, 129, 0.1);
+        }
+
+        .setup-card.baseline-mismatch {
+            border-color: var(--danger);
+            background-color: rgba(239, 68, 68, 0.1);
+        }
+
+        /* Sidebar / Controls */
+        .sidebar-section {
+            flex: 1;
+            background-color: var(--bg-panel);
+            padding: 20px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            min-width: 320px;
+        }
+
+        .panel {
+            background-color: var(--bg-base);
+            padding: 16px;
+            border-radius: var(--radius);
+            border: 1px solid var(--border);
+        }
+
+        .panel h3 {
+            font-size: 1rem;
+            margin-bottom: 16px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid var(--border);
+            color: var(--text-main);
+        }
+
+        /* Warnings & Inline Status */
+        .warning-box {
+            display: none;
+            background-color: rgba(239, 68, 68, 0.1);
+            border-left: 4px solid var(--danger);
+            padding: 12px;
+            margin-bottom: 16px;
+            border-radius: 4px;
+        }
+
+        .warning-box h4 {
+            color: var(--danger);
+            font-size: 0.9rem;
+            margin-bottom: 4px;
+        }
+
+        .warning-box p {
+            font-size: 0.85rem;
+            color: var(--text-main);
+            line-height: 1.4;
+        }
+
+        .inline-status {
+            font-size: 0.85rem;
+            margin-top: 8px;
+            min-height: 1.2em;
+            font-weight: 500;
+        }
+        
+        .status-error { color: var(--danger); }
+        .status-success { color: var(--success); }
+
+        /* Confirm Controls */
+        .confirm-controls {
+            display: none;
+            flex-direction: column;
+            gap: 8px;
+            margin-top: 10px;
+            padding: 12px;
+            background-color: rgba(239, 68, 68, 0.1);
+            border-radius: var(--radius);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+        }
+        
+        .confirm-controls p {
+            font-size: 0.85rem;
+            margin-bottom: 4px;
+            color: #fff;
+        }
+        
+        .confirm-buttons {
+            display: flex;
+            gap: 8px;
+        }
+
+        .confirm-buttons button {
+            margin-bottom: 0;
+            padding: 8px;
+        }
+
+        /* Privacy Checks */
+        .check-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 12px;
+            cursor: pointer;
+        }
+
+        .check-item input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            accent-color: var(--accent);
+            cursor: pointer;
+        }
+
+        .check-item label {
+            font-size: 0.9rem;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        /* Buttons */
+        button {
+            width: 100%;
+            padding: 12px;
+            border-radius: var(--radius);
+            border: none;
+            font-weight: 600;
+            font-size: 0.95rem;
+            cursor: pointer;
+            transition: opacity 0.2s;
+            margin-bottom: 10px;
+        }
+
+        button:active {
+            opacity: 0.8;
+        }
+
+        button:focus-visible {
+            outline: 2px solid var(--text-main);
+            outline-offset: 2px;
+        }
+
+        .btn-primary {
+            background-color: var(--accent);
+            color: white;
+        }
+
+        .btn-success {
+            background-color: var(--success);
+            color: white;
+        }
+
+        .btn-danger {
+            background-color: var(--danger);
+            color: white;
+        }
+        
+        .btn-outline {
+            background-color: transparent;
+            border: 1px solid var(--border);
+            color: var(--text-main);
+        }
+
+        /* Receipt */
+        textarea {
+            width: 100%;
+            height: 140px;
+            background-color: #000;
+            color: var(--success);
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            padding: 12px;
+            font-family: monospace;
+            font-size: 0.85rem;
+            resize: none;
+            line-height: 1.4;
+        }
+
+        /* History */
+        .history-list {
+            list-style: none;
+            max-height: 150px;
+            overflow-y: auto;
+        }
+
+        .history-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid var(--border);
+            font-size: 0.85rem;
+        }
+
+        .history-item:last-child {
+            border-bottom: none;
+        }
+
+        .history-score {
+            font-weight: bold;
+        }
+        
+        .score-100 { color: var(--success); }
+        .score-mid { color: var(--warning); }
+        .score-low { color: var(--danger); }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>Consistency Studio</h1>
+        <div id="topScore" class="score-display">--/100</div>
+    </header>
+
+    <div class="main-container">
+        <!-- Visual Setup Board -->
+        <div class="setup-section" id="setupBoard">
+            <!-- Populated via JS -->
+        </div>
+
+        <!-- Controls & State -->
+        <div class="sidebar-section">
+            
+            <div class="warning-box" id="retakeWarning">
+                <h4>⚠️ Retake Recommended</h4>
+                <p id="warningText"></p>
+            </div>
+
+            <div class="panel">
+                <h3>Baseline Management</h3>
+                <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 12px;" id="baselineStatus">No baseline saved.</p>
+                <button class="btn-outline" id="btnSaveBaseline" type="button">Save Current as Baseline</button>
+                <div id="baselineFeedback" class="inline-status"></div>
+            </div>
+
+            <div class="panel">
+                <h3>Privacy & Frame Checks</h3>
+                <div class="check-item">
+                    <input type="checkbox" id="chkFace" class="privacy-check">
+                    <label for="chkFace">Face cropped out or masked</label>
+                </div>
+                <div class="check-item">
+                    <input type="checkbox" id="chkTattoos" class="privacy-check">
+                    <label for="chkTattoos">Identifying marks/tattoos hidden</label>
+                </div>
+                <div class="check-item">
+                    <input type="checkbox" id="chkRoom" class="privacy-check">
+                    <label for="chkRoom">No reflective surfaces showing room layout</label>
+                </div>
+            </div>
+
+            <div class="panel">
+                <h3>Session Receipt</h3>
+                <textarea id="receiptArea" readonly aria-label="Session Receipt">Select configurations to generate receipt.</textarea>
+                <button class="btn-primary" id="btnCopy" type="button">Copy Receipt</button>
+                <div id="copyFeedback" class="inline-status"></div>
+                
+                <button class="btn-success" id="btnLogSession" type="button" style="margin-top: 12px;">Log Session to History</button>
+                <div id="logFeedback" class="inline-status"></div>
+            </div>
+
+            <div class="panel">
+                <h3>Session History</h3>
+                <ul class="history-list" id="historyList">
+                    <!-- Populated via JS -->
+                </ul>
+                <button class="btn-outline" style="margin-top: 10px; padding: 6px; font-size: 0.8rem;" id="btnInitiateClear" type="button">Clear History</button>
+                
+                <!-- Inline Confirmation for Clear History -->
+                <div class="confirm-controls" id="clearConfirmUI">
+                    <p>Clear all history and baseline?</p>
+                    <div class="confirm-buttons">
+                        <button class="btn-danger" id="btnConfirmClear" type="button">Yes, Clear</button>
+                        <button class="btn-outline" id="btnCancelClear" type="button">Cancel</button>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        // Configuration Schema
+        const schema = [
+            { id: 'pose', label: 'Pose', options: ['Front Relaxed', 'Front Flexed', 'Side Relaxed', 'Back Flexed', 'Vacuum'] },
+            { id: 'angle', label: 'Camera Angle', options: ['Low (Navel)', 'Mid (Chest)', 'High (Eye-level)'] },
+            { id: 'lighting', label: 'Lighting', options: ['Morning Natural', 'Overhead Gym', 'Ring Light', 'Evening Room', 'Harsh Downlight'] },
+            { id: 'background', label: 'Background', options: ['Blank Wall', 'Gym Floor', 'Bedroom Door', 'Bathroom Mirror'] },
+            { id: 'distance', label: 'Camera Distance', options: ['2ft (Close)', '5ft (Full Body)', '10ft (Environmental)'] },
+            { id: 'timing', label: 'Timing', options: ['Fasted Morning', 'Post-Workout', 'Pre-Bed', 'Mid-Day'] }
+        ];
+
+        // State
+        let currentSetup = {};
+        let baselineSetup = JSON.parse(localStorage.getItem('consistencyBaseline')) || null;
+        let sessionHistory = JSON.parse(localStorage.getItem('consistencyHistory')) || [];
+        let currentScore = 0;
+
+        // DOM Elements
+        const setupBoard = document.getElementById('setupBoard');
+        const topScore = document.getElementById('topScore');
+        const baselineStatus = document.getElementById('baselineStatus');
+        const retakeWarning = document.getElementById('retakeWarning');
+        const warningText = document.getElementById('warningText');
+        const receiptArea = document.getElementById('receiptArea');
+        const historyList = document.getElementById('historyList');
+
+        // Helpers
+        function showFeedback(elementId, message, isError = false) {
+            const el = document.getElementById(elementId);
+            el.textContent = message;
+            el.className = 'inline-status ' + (isError ? 'status-error' : 'status-success');
+            setTimeout(() => { el.textContent = ''; }, 3000);
+        }
+
+        // Initialize UI
+        function initBoard() {
+            schema.forEach(factor => {
+                const group = document.createElement('div');
+                group.className = 'factor-group';
+                
+                const title = document.createElement('h2');
+                title.textContent = factor.label;
+                group.appendChild(title);
+
+                const grid = document.createElement('div');
+                grid.className = 'card-grid';
+
+                factor.options.forEach(opt => {
+                    const card = document.createElement('button');
+                    card.type = 'button';
+                    card.className = 'setup-card';
+                    card.textContent = opt;
+                    card.dataset.factor = factor.id;
+                    card.dataset.value = opt;
+                    
+                    card.addEventListener('click', () => handleCardSelect(factor.id, opt));
+                    grid.appendChild(card);
+                });
+
+                group.appendChild(grid);
+                setupBoard.appendChild(group);
+            });
+
+            updateBaselineStatus();
+            renderHistory();
+        }
+
+        // Logic
+        function handleCardSelect(factorId, value) {
+            currentSetup[factorId] = value;
+            evaluateState();
+        }
+
+        function evaluateState() {
+            document.querySelectorAll('.setup-card').forEach(card => {
+                const factor = card.dataset.factor;
+                const val = card.dataset.value;
+                
+                card.classList.remove('selected', 'baseline-match', 'baseline-mismatch');
+
+                if (currentSetup[factor] === val) {
+                    card.classList.add('selected');
+                    
+                    if (baselineSetup) {
+                        if (baselineSetup[factor] === val) {
+                            card.classList.add('baseline-match');
+                        } else {
+                            card.classList.add('baseline-mismatch');
+                        }
+                    }
+                }
+            });
+
+            calculateScore();
+            generateReceipt();
+        }
+
+        function calculateScore() {
+            const keysFilled = Object.keys(currentSetup).length;
+            if (keysFilled < schema.length) {
+                topScore.textContent = '--/100';
+                topScore.style.color = 'var(--text-muted)';
+                retakeWarning.style.display = 'none';
+                return;
+            }
+
+            if (!baselineSetup) {
+                topScore.textContent = 'Ready';
+                topScore.style.color = 'var(--text-main)';
+                return;
+            }
+
+            let matches = 0;
+            let deviations = [];
+            
+            schema.forEach(s => {
+                if (currentSetup[s.id] === baselineSetup[s.id]) {
+                    matches++;
+                } else {
+                    deviations.push(`${s.label} (${currentSetup[s.id]} vs ${baselineSetup[s.id]})`);
+                }
+            });
+
+            currentScore = Math.round((matches / schema.length) * 100);
+            topScore.textContent = `${currentScore}/100`;
+
+            if (currentScore === 100) {
+                topScore.style.color = 'var(--success)';
+                retakeWarning.style.display = 'none';
+            } else {
+                topScore.style.color = currentScore > 60 ? 'var(--warning)' : 'var(--danger)';
+                retakeWarning.style.display = 'block';
+                
+                // Construct warning DOM safely without innerHTML
+                warningText.replaceChildren();
+                const strong = document.createElement('strong');
+                strong.textContent = 'Deviations from Baseline:';
+                warningText.appendChild(strong);
+                
+                deviations.forEach(dev => {
+                    warningText.appendChild(document.createElement('br'));
+                    warningText.appendChild(document.createTextNode('• ' + dev));
+                });
+            }
+        }
+
+        function generateReceipt() {
+            const date = new Date().toISOString().split('T')[0];
+            const time = new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+            
+            let receipt = `=== PROGRESS SHOT RECEIPT ===\nDate: ${date} @ ${time}\n`;
+            
+            if (baselineSetup && Object.keys(currentSetup).length === schema.length) {
+                receipt += `Comparability Score: ${currentScore}/100\n\n`;
+            } else {
+                receipt += `Comparability Score: N/A\n\n`;
+            }
+
+            receipt += `[ SHOT SETUP ]\n`;
+            schema.forEach(s => {
+                const val = currentSetup[s.id] || 'Not Selected';
+                receipt += `- ${s.label}: ${val}\n`;
+            });
+
+            const privacyChecks = document.querySelectorAll('.privacy-check:checked');
+            receipt += `\n[ PRIVACY VERIFICATION ]\nChecks Passed: ${privacyChecks.length}/3\n`;
+
+            receiptArea.value = receipt;
+        }
+
+        function updateBaselineStatus() {
+            if (baselineSetup) {
+                baselineStatus.textContent = "Baseline established. New setups will be compared against it.";
+            } else {
+                baselineStatus.textContent = "No baseline saved. Configure your ideal setup and save it.";
+            }
+            evaluateState();
+        }
+
+        function renderHistory() {
+            historyList.replaceChildren();
+            if (sessionHistory.length === 0) {
+                const emptyState = document.createElement('li');
+                emptyState.style.color = 'var(--text-muted)';
+                emptyState.style.fontSize = '0.85rem';
+                emptyState.textContent = 'No sessions logged yet.';
+                historyList.appendChild(emptyState);
+                return;
+            }
+
+            sessionHistory.slice().reverse().slice(0, 10).forEach(session => {
+                const li = document.createElement('li');
+                li.className = 'history-item';
+                
+                let scoreClass = 'score-low';
+                if (session.score === 100) scoreClass = 'score-100';
+                else if (session.score >= 60) scoreClass = 'score-mid';
+
+                const dateSpan = document.createElement('span');
+                dateSpan.textContent = session.date;
+                
+                const scoreSpan = document.createElement('span');
+                scoreSpan.className = `history-score ${scoreClass}`;
+                scoreSpan.textContent = session.score !== null ? session.score + '/100' : 'N/A';
+                
+                li.appendChild(dateSpan);
+                li.appendChild(scoreSpan);
+                historyList.appendChild(li);
+            });
+        }
+
+        // Event Listeners
+        document.querySelectorAll('.privacy-check').forEach(chk => {
+            chk.addEventListener('change', generateReceipt);
+        });
+
+        document.getElementById('btnSaveBaseline').addEventListener('click', () => {
+            if (Object.keys(currentSetup).length < schema.length) {
+                showFeedback('baselineFeedback', 'Please select an option for all 6 factors first.', true);
+                return;
+            }
+            baselineSetup = { ...currentSetup };
+            localStorage.setItem('consistencyBaseline', JSON.stringify(baselineSetup));
+            updateBaselineStatus();
+            showFeedback('baselineFeedback', 'Baseline saved successfully.');
+        });
+
+        document.getElementById('btnCopy').addEventListener('click', () => {
+            const btn = document.getElementById('btnCopy');
+            const originalText = btn.textContent;
+            
+            navigator.clipboard.writeText(receiptArea.value).then(() => {
+                btn.textContent = 'Copied!';
+                btn.style.backgroundColor = 'var(--success)';
+                showFeedback('copyFeedback', 'Receipt copied to clipboard.');
+                setTimeout(() => {
+                    btn.textContent = originalText;
+                    btn.style.backgroundColor = 'var(--accent)';
+                }, 2000);
+            }).catch(() => {
+                showFeedback('copyFeedback', 'Failed to copy. Please copy manually.', true);
+            });
+        });
+
+        document.getElementById('btnLogSession').addEventListener('click', () => {
+            if (Object.keys(currentSetup).length < schema.length) {
+                showFeedback('logFeedback', 'Please complete the setup board first.', true);
+                return;
+            }
+
+            const date = new Date().toISOString().split('T')[0];
+            const sessionData = {
+                date: date,
+                setup: { ...currentSetup },
+                score: baselineSetup ? currentScore : null
+            };
+
+            sessionHistory.push(sessionData);
+            localStorage.setItem('consistencyHistory', JSON.stringify(sessionHistory));
+            renderHistory();
+            showFeedback('logFeedback', 'Session logged successfully.');
+        });
+
+        // Inline Confirmation Flow for Clear History
+        const btnInitiateClear = document.getElementById('btnInitiateClear');
+        const clearConfirmUI = document.getElementById('clearConfirmUI');
+        const btnConfirmClear = document.getElementById('btnConfirmClear');
+        const btnCancelClear = document.getElementById('btnCancelClear');
+
+        btnInitiateClear.addEventListener('click', () => {
+            btnInitiateClear.style.display = 'none';
+            clearConfirmUI.style.display = 'flex';
+        });
+
+        btnCancelClear.addEventListener('click', () => {
+            clearConfirmUI.style.display = 'none';
+            btnInitiateClear.style.display = 'block';
+        });
+
+        btnConfirmClear.addEventListener('click', () => {
+            localStorage.removeItem('consistencyHistory');
+            localStorage.removeItem('consistencyBaseline');
+            sessionHistory = [];
+            baselineSetup = null;
+            currentSetup = {};
+            
+            renderHistory();
+            updateBaselineStatus();
+            evaluateState();
+            topScore.textContent = '--/100';
+            
+            clearConfirmUI.style.display = 'none';
+            btnInitiateClear.style.display = 'block';
+        });
+
+        // Boot
+        initBoard();
+    </script>
+</body>
+</html>

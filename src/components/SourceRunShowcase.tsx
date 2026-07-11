@@ -5,6 +5,15 @@ import Link from 'next/link'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { ArrowRight, CheckCircle2, ExternalLink, FileCode2, GitFork } from 'lucide-react'
 import CopyButton from '@/app/prompt/[id]/CopyButton'
+import {
+  artifactDocumentKey,
+  currentArtifactLoad,
+} from '@/lib/model-variant-ui.mjs'
+import {
+  artifactDownloadBridgeSource,
+  buildProtectedArtifactWrapperDocument,
+  PROTECTED_ARTIFACT_DOWNLOAD_DATA_URL_LIMIT,
+} from '@/lib/protected-artifact-wrapper.mjs'
 import { getProjectRouteOverride } from '@/lib/project-links'
 import { buildProjectResponseForkHref, type ProjectForkNetworkItem } from '@/lib/project-forks'
 
@@ -34,7 +43,7 @@ export type SourceRunShowcaseArtifactVersion = {
   isDefault?: boolean
 }
 
-type ArtifactPackage = Pick<
+export type ArtifactPackage = Pick<
   SourceRunShowcaseStep,
   'id' | 'stepNumber' | 'title' | 'prompt' | 'response' | 'responseCopyText' | 'callout'
 > & {
@@ -54,7 +63,7 @@ type ArtifactSize = {
 type LoadedArtifactSource = {
   packageId: string
   srcDoc: string | null
-  usesDirectSource: boolean
+  error: 'fetch-failed' | 'response-invalid' | 'too-large' | null
 }
 
 type MeasuredArtifact = {
@@ -66,10 +75,225 @@ const ARTIFACT_FRAME_HEIGHT = 'clamp(520px, calc(100svh - 160px), 760px)'
 const MAX_AUTO_FIT_ARTIFACT_HEIGHT = 6000
 const MAX_AUTO_FIT_ARTIFACT_WIDTH = 14000
 const MAX_AUTO_FIT_HTML_BYTES = 2_000_000
+const MAX_ARTIFACT_STORAGE_BYTES = 1_000_000
+const MAX_ARTIFACT_STORAGE_ENTRIES = 500
+const MAX_ARTIFACT_STORAGE_KEY_LENGTH = 1024
+const ARTIFACT_STORAGE_PREFIX = 'pathforge:artifact-storage:v1'
+const ARTIFACT_CSP = [
+  "default-src 'none'",
+  "script-src 'unsafe-inline'",
+  "style-src 'unsafe-inline'",
+  'img-src data: blob:',
+  'media-src data: blob:',
+  'font-src data:',
+  "connect-src 'none'",
+  "object-src 'none'",
+  "frame-src 'none'",
+  "base-uri 'none'",
+  "form-action 'none'",
+].join('; ')
 
-function artifactFitProbeScript() {
+function artifactViewerHref(artifact: Pick<ArtifactPackage, 'artifactPath' | 'artifactTitle'>, providerName: string) {
+  const query = new URLSearchParams({
+    path: artifact.artifactPath,
+    title: artifact.artifactTitle,
+    provider: providerName,
+  })
+  return `/artifact-viewer?${query.toString()}`
+}
+
+type ArtifactStorageScope = 'local' | 'session'
+type ArtifactStorageSnapshot = Record<string, string>
+type ArtifactStorageSnapshots = Record<ArtifactStorageScope, ArtifactStorageSnapshot>
+
+function artifactStorageKey(scope: ArtifactStorageScope, artifactPath: string) {
+  return `${ARTIFACT_STORAGE_PREFIX}:${scope}:${artifactPath}`
+}
+
+function normalizeArtifactStorageSnapshot(value: unknown): ArtifactStorageSnapshot | null {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return null
+
+  const entries = Object.entries(value)
+  if (entries.length > MAX_ARTIFACT_STORAGE_ENTRIES) return null
+
+  const snapshot = Object.create(null) as ArtifactStorageSnapshot
+  const encoder = new TextEncoder()
+  let totalBytes = 0
+
+  for (const [key, entryValue] of entries) {
+    if (
+      key.length > MAX_ARTIFACT_STORAGE_KEY_LENGTH ||
+      typeof entryValue !== 'string'
+    ) {
+      return null
+    }
+
+    totalBytes += encoder.encode(key).byteLength + encoder.encode(entryValue).byteLength
+    if (totalBytes > MAX_ARTIFACT_STORAGE_BYTES) return null
+    snapshot[key] = entryValue
+  }
+
+  return snapshot
+}
+
+function readArtifactStorageSnapshot(
+  scope: ArtifactStorageScope,
+  artifactPath: string,
+): ArtifactStorageSnapshot {
+  try {
+    const storage = scope === 'local' ? window.localStorage : window.sessionStorage
+    const raw = storage.getItem(artifactStorageKey(scope, artifactPath))
+    if (!raw) return {}
+    return normalizeArtifactStorageSnapshot(JSON.parse(raw)) ?? {}
+  } catch {
+    return {}
+  }
+}
+
+function writeArtifactStorageSnapshot(
+  scope: ArtifactStorageScope,
+  artifactPath: string,
+  value: unknown,
+) {
+  const snapshot = normalizeArtifactStorageSnapshot(value)
+  if (!snapshot) return
+
+  try {
+    const storage = scope === 'local' ? window.localStorage : window.sessionStorage
+    storage.setItem(artifactStorageKey(scope, artifactPath), JSON.stringify(snapshot))
+  } catch {
+    // Storage can be unavailable or full. The artifact keeps its in-frame copy.
+  }
+}
+
+function scriptSafeJson(value: unknown) {
+  return (JSON.stringify(value) ?? 'null')
+    .replace(/</g, '\\u003c')
+    .replace(/>/g, '\\u003e')
+    .replace(/&/g, '\\u0026')
+    .replace(/\u2028/g, '\\u2028')
+    .replace(/\u2029/g, '\\u2029')
+}
+
+function artifactStorageBootstrapSource(snapshots: ArtifactStorageSnapshots) {
+  const initialState = scriptSafeJson(snapshots)
+
   return `
-<script>
+(() => {
+  const initialState = ${initialState};
+  const maxBytes = ${MAX_ARTIFACT_STORAGE_BYTES};
+  const maxEntries = ${MAX_ARTIFACT_STORAGE_ENTRIES};
+  const maxKeyLength = ${MAX_ARTIFACT_STORAGE_KEY_LENGTH};
+  const encoder = new TextEncoder();
+
+  const createStorage = (scope) => {
+    const values = Object.assign(Object.create(null), initialState[scope] || {});
+    const target = {};
+    const keys = () => Object.keys(values);
+    const snapshot = () => Object.fromEntries(keys().map((key) => [key, values[key]]));
+    const withinQuota = () => {
+      const currentKeys = keys();
+      if (currentKeys.length > maxEntries) return false;
+      let totalBytes = 0;
+      for (const key of currentKeys) {
+        if (key.length > maxKeyLength) return false;
+        totalBytes += encoder.encode(key).byteLength + encoder.encode(values[key]).byteLength;
+        if (totalBytes > maxBytes) return false;
+      }
+      return true;
+    };
+    const notify = () => {
+      window.parent.postMessage({
+        type: 'pathforge-artifact-storage',
+        scope,
+        entries: snapshot(),
+      }, '*');
+    };
+    const methods = {
+      clear() {
+        for (const key of keys()) delete values[key];
+        notify();
+      },
+      getItem(key) {
+        const normalizedKey = String(key);
+        return Object.prototype.hasOwnProperty.call(values, normalizedKey)
+          ? values[normalizedKey]
+          : null;
+      },
+      key(index) {
+        const normalizedIndex = Number(index);
+        return Number.isInteger(normalizedIndex) && normalizedIndex >= 0
+          ? keys()[normalizedIndex] ?? null
+          : null;
+      },
+      removeItem(key) {
+        delete values[String(key)];
+        notify();
+      },
+      setItem(key, value) {
+        const normalizedKey = String(key);
+        const hadValue = Object.prototype.hasOwnProperty.call(values, normalizedKey);
+        const previousValue = values[normalizedKey];
+        values[normalizedKey] = String(value);
+        if (!withinQuota()) {
+          if (hadValue) values[normalizedKey] = previousValue;
+          else delete values[normalizedKey];
+          throw new DOMException('Artifact storage quota exceeded.', 'QuotaExceededError');
+        }
+        notify();
+      },
+    };
+
+    return new Proxy(target, {
+      deleteProperty(_target, property) {
+        if (typeof property === 'string') {
+          methods.removeItem(property);
+          return true;
+        }
+        return false;
+      },
+      get(_target, property) {
+        if (property === 'length') return keys().length;
+        if (property === Symbol.toStringTag) return 'Storage';
+        if (typeof property === 'string' && property in methods) return methods[property];
+        if (property in target) return Reflect.get(target, property);
+        if (typeof property === 'string') return methods.getItem(property);
+        return undefined;
+      },
+      getOwnPropertyDescriptor(_target, property) {
+        if (typeof property === 'string' && Object.prototype.hasOwnProperty.call(values, property)) {
+          return { configurable: true, enumerable: true, value: values[property], writable: true };
+        }
+        return Reflect.getOwnPropertyDescriptor(target, property);
+      },
+      ownKeys() {
+        return Reflect.ownKeys(target).concat(keys());
+      },
+      set(_target, property, value) {
+        if (typeof property !== 'string') return false;
+        methods.setItem(property, value);
+        return true;
+      },
+    });
+  };
+
+  try {
+    Object.defineProperty(window, 'localStorage', {
+      configurable: true,
+      value: createStorage('local'),
+    });
+    Object.defineProperty(window, 'sessionStorage', {
+      configurable: true,
+      value: createStorage('session'),
+    });
+  } catch {
+    // The artifact remains usable even when this browser refuses the shim.
+  }
+})();`
+}
+
+function artifactFitProbeSource() {
+  return `
 (() => {
   const sendSize = () => {
     const doc = document.documentElement;
@@ -99,41 +323,59 @@ function artifactFitProbeScript() {
   setTimeout(schedule, 60);
   setTimeout(schedule, 300);
   setTimeout(schedule, 1000);
-})();
-</script>`
+})();`
 }
 
-function injectArtifactFitProbe(html: string, artifactHref: string) {
-  const baseTag = `<base href="${artifactHref}">`
-  const hasBaseTag = /<base\s/i.test(html)
-  const htmlWithBase = hasBaseTag
-    ? html
-    : html.replace(/<head([^>]*)>/i, `<head$1>${baseTag}`)
-  const probe = artifactFitProbeScript()
+function injectArtifactFitProbe(
+  html: string,
+  storageSnapshots: ArtifactStorageSnapshots,
+) {
+  const parsed = new DOMParser().parseFromString(html, 'text/html')
+  const csp = parsed.createElement('meta')
+  csp.httpEquiv = 'Content-Security-Policy'
+  csp.content = ARTIFACT_CSP
 
-  if (/<\/body>/i.test(htmlWithBase)) {
-    return htmlWithBase.replace(/<\/body>/i, `${probe}</body>`)
-  }
+  const storageBootstrap = parsed.createElement('script')
+  storageBootstrap.textContent = artifactStorageBootstrapSource(storageSnapshots)
+  const downloadBridge = parsed.createElement('script')
+  downloadBridge.textContent = artifactDownloadBridgeSource()
 
-  return `${htmlWithBase}${probe}`
+  // Insert trusted policy bytes into the actual parsed head. Text that merely
+  // looks like <head> or </body> inside artifact comments and strings cannot
+  // redirect these controls into attacker-owned content.
+  parsed.head.prepend(downloadBridge)
+  parsed.head.prepend(storageBootstrap)
+  parsed.head.prepend(csp)
+
+  const fitProbe = parsed.createElement('script')
+  fitProbe.textContent = artifactFitProbeSource()
+  parsed.body.append(fitProbe)
+
+  return `<!doctype html>\n${parsed.documentElement.outerHTML}`
 }
 
-function ArtifactFrame({
+export function ProtectedArtifactFrame({
   selectedPackage,
   providerName,
+  showOpenAction = true,
+  frameHeight = ARTIFACT_FRAME_HEIGHT,
+  contextLabel,
 }: {
   selectedPackage: ArtifactPackage
   providerName: string
+  showOpenAction?: boolean
+  frameHeight?: string
+  contextLabel?: string
 }) {
   const frameRef = useRef<HTMLDivElement | null>(null)
   const iframeRef = useRef<HTMLIFrameElement | null>(null)
+  const lastDownloadAtRef = useRef(-Infinity)
   const [frameSize, setFrameSize] = useState<ArtifactSize | null>(null)
   const [loadedArtifact, setLoadedArtifact] = useState<LoadedArtifactSource | null>(null)
   const [measuredArtifact, setMeasuredArtifact] = useState<MeasuredArtifact | null>(null)
-  const activeLoadedArtifact =
-    loadedArtifact?.packageId === selectedPackage.id ? loadedArtifact : null
+  const activeLoadedArtifact = currentArtifactLoad(selectedPackage.id, loadedArtifact)
   const srcDoc = activeLoadedArtifact?.srcDoc ?? null
-  const usesDirectSource = activeLoadedArtifact?.usesDirectSource ?? false
+  const loadError = activeLoadedArtifact?.error ?? null
   const sourceResolved = Boolean(activeLoadedArtifact)
   const artifactSize =
     measuredArtifact?.packageId === selectedPackage.id ? measuredArtifact.size : null
@@ -175,28 +417,58 @@ function ArtifactFrame({
 
     async function loadArtifact() {
       try {
-        const artifactHref = new URL(selectedPackage.artifactPath, window.location.origin).href
         const response = await fetch(selectedPackage.artifactPath, {
           signal: controller.signal,
+          credentials: 'omit',
         })
-        const html = await response.text()
+        const contentLength = Number(response.headers.get('content-length'))
 
-        if (!response.ok || html.length > MAX_AUTO_FIT_HTML_BYTES) {
+        if (!response.ok) {
           if (!controller.signal.aborted) {
             setLoadedArtifact({
               packageId,
               srcDoc: null,
-              usesDirectSource: true,
+              error: 'response-invalid',
             })
           }
           return
         }
 
+        if (Number.isFinite(contentLength) && contentLength > MAX_AUTO_FIT_HTML_BYTES) {
+          if (!controller.signal.aborted) {
+            setLoadedArtifact({
+              packageId,
+              srcDoc: null,
+              error: 'too-large',
+            })
+          }
+          return
+        }
+
+        const html = await response.text()
+        const htmlBytes = new TextEncoder().encode(html).byteLength
+        if (htmlBytes > MAX_AUTO_FIT_HTML_BYTES) {
+          if (!controller.signal.aborted) {
+            setLoadedArtifact({
+              packageId,
+              srcDoc: null,
+              error: 'too-large',
+            })
+          }
+          return
+        }
+
+        const storageSnapshots: ArtifactStorageSnapshots = {
+          local: readArtifactStorageSnapshot('local', selectedPackage.artifactPath),
+          session: readArtifactStorageSnapshot('session', selectedPackage.artifactPath),
+        }
+
         if (!controller.signal.aborted) {
+          const protectedArtifactDocument = injectArtifactFitProbe(html, storageSnapshots)
           setLoadedArtifact({
             packageId,
-            srcDoc: injectArtifactFitProbe(html, artifactHref),
-            usesDirectSource: false,
+            srcDoc: buildProtectedArtifactWrapperDocument(protectedArtifactDocument),
+            error: null,
           })
         }
       } catch {
@@ -204,7 +476,7 @@ function ArtifactFrame({
         setLoadedArtifact({
           packageId,
           srcDoc: null,
-          usesDirectSource: true,
+          error: 'fetch-failed',
         })
       }
     }
@@ -222,7 +494,45 @@ function ArtifactFrame({
     function handleMessage(event: MessageEvent) {
       if (event.source !== iframeRef.current?.contentWindow) return
       const data = event.data
-      if (!data || data.type !== 'pathforge-artifact-size') return
+      if (!data || typeof data !== 'object') return
+
+      if (data.type === 'pathforge-artifact-storage') {
+        if (data.scope !== 'local' && data.scope !== 'session') return
+        writeArtifactStorageSnapshot(
+          data.scope,
+          selectedPackage.artifactPath,
+          data.entries,
+        )
+        return
+      }
+
+      if (data.type === 'pathforge-artifact-download') {
+        const now = performance.now()
+        if (
+          now - lastDownloadAtRef.current < 750 ||
+          typeof data.filename !== 'string' ||
+          typeof data.dataUrl !== 'string' ||
+          !data.dataUrl.startsWith('data:') ||
+          data.dataUrl.length > PROTECTED_ARTIFACT_DOWNLOAD_DATA_URL_LIMIT
+        ) return
+
+        const filename = data.filename
+          .replace(/[\\/:*?"<>|\u0000-\u001f]/g, '-')
+          .replace(/^\.+/, '')
+          .slice(0, 140) || 'artifact-download'
+        lastDownloadAtRef.current = now
+        const link = document.createElement('a')
+        link.href = data.dataUrl
+        link.download = filename
+        link.rel = 'noreferrer'
+        link.hidden = true
+        document.body.append(link)
+        link.click()
+        link.remove()
+        return
+      }
+
+      if (data.type !== 'pathforge-artifact-size') return
       const width = Number(data.width)
       const height = Number(data.height)
       if (!Number.isFinite(width) || !Number.isFinite(height)) return
@@ -247,7 +557,7 @@ function ArtifactFrame({
 
     window.addEventListener('message', handleMessage)
     return () => window.removeEventListener('message', handleMessage)
-  }, [selectedPackage.id])
+  }, [selectedPackage.artifactPath, selectedPackage.id])
 
   const canAutoFit =
     Boolean(srcDoc && frameSize && artifactSize) &&
@@ -280,8 +590,8 @@ function ArtifactFrame({
         height: '100%',
         border: 0,
       }
-  const fitMode = usesDirectSource
-    ? 'direct'
+  const fitMode = loadError
+    ? 'blocked'
     : canAutoFit
       ? shouldScale ? 'scaled' : 'native'
       : srcDoc ? 'guarded-scroll' : 'loading'
@@ -298,18 +608,22 @@ function ArtifactFrame({
           </div>
           <div className="truncate text-sm font-semibold">{selectedPackage.artifactTitle}</div>
           <div className="mt-1 text-xs text-surface-400">
-            Prompt {String(selectedPackage.stepNumber).padStart(2, '0')} version from {providerName}
+            {contextLabel ?? (
+              `Prompt ${String(selectedPackage.stepNumber).padStart(2, '0')} version from ${providerName}`
+            )}
           </div>
         </div>
-        <a
-          href={selectedPackage.artifactPath}
-          target="_blank"
-          rel="noreferrer"
-          className="inline-flex shrink-0 items-center gap-1.5 border border-surface-700 px-3 py-1.5 text-xs font-semibold text-surface-300 transition hover:border-brand-orange hover:text-brand-orange"
-        >
-          <ExternalLink className="h-3.5 w-3.5" />
-          Open
-        </a>
+        {showOpenAction && (
+          <Link
+            href={artifactViewerHref(selectedPackage, providerName)}
+            target="_blank"
+            rel="noreferrer"
+            className="inline-flex shrink-0 items-center gap-1.5 border border-surface-700 px-3 py-1.5 text-xs font-semibold text-surface-300 transition hover:border-brand-orange hover:text-brand-orange"
+          >
+            <ExternalLink className="h-3.5 w-3.5" />
+            Open safely
+          </Link>
+        )}
       </div>
       <div
         ref={frameRef}
@@ -322,16 +636,32 @@ function ArtifactFrame({
         data-artifact-package-id={selectedPackage.id}
         data-artifact-path={selectedPackage.artifactPath}
         className="relative w-full overflow-hidden bg-[#111827]"
-        style={{ height: ARTIFACT_FRAME_HEIGHT }}
+        style={{ height: frameHeight }}
       >
-        {sourceResolved ? (
+        {loadError ? (
+          <div
+            className="absolute inset-0 grid place-items-center bg-surface-950 px-6 text-center text-sm text-surface-300"
+            role="alert"
+            data-artifact-load-error={loadError}
+          >
+            <div className="max-w-md">
+              <div className="font-semibold text-white">This artifact cannot be previewed safely.</div>
+              <p className="mt-2 leading-6 text-surface-400">
+                {loadError === 'too-large'
+                  ? 'The file exceeds the protected preview size limit. Use Open only if you trust this artifact.'
+                  : 'The protected preview could not load this file. You can retry the page or use Open if you trust this artifact.'}
+              </p>
+            </div>
+          </div>
+        ) : sourceResolved ? (
           <iframe
             ref={iframeRef}
-            key={`${selectedPackage.id}:${usesDirectSource ? 'direct' : 'document'}`}
+            key={artifactDocumentKey(selectedPackage.id)}
             title={`${selectedPackage.artifactTitle} generated from a ${providerName} source run`}
-            src={usesDirectSource ? selectedPackage.artifactPath : undefined}
-            srcDoc={usesDirectSource ? undefined : srcDoc ?? undefined}
-            sandbox="allow-scripts allow-same-origin"
+            srcDoc={srcDoc ?? undefined}
+            sandbox="allow-scripts"
+            allow="clipboard-write"
+            referrerPolicy="no-referrer"
             scrolling={canAutoFit ? 'no' : 'auto'}
             className="absolute left-0 top-0 max-w-none bg-[#111827]"
             style={iframeStyle}
@@ -774,11 +1104,13 @@ function ResponsePackageCard({
   artifactPackages,
   selectedPackage,
   onSelect,
+  providerName,
 }: {
   step: SourceRunShowcaseStep
   artifactPackages: ArtifactPackage[]
   selectedPackage?: ArtifactPackage
   onSelect?: (packageId: string) => void
+  providerName: string
 }) {
   const copyText = step.responseCopyText ?? step.response
   const hasArtifactPackages = artifactPackages.length > 0
@@ -821,6 +1153,7 @@ function ResponsePackageCard({
           type="button"
           onClick={() => onSelect?.(detailPackage.id)}
           aria-pressed={selected}
+          data-artifact-package-select={detailPackage.id}
           className={[
             'flex w-full items-start justify-between gap-4 border p-4 text-left transition hover:bg-brand-blue/5',
             selected ? 'border-brand-blue bg-brand-blue/5' : 'border-surface-200 bg-surface-50',
@@ -838,15 +1171,15 @@ function ResponsePackageCard({
         {detailPackage ? (
           <div className="border border-surface-200 bg-surface-50 px-4 py-3">
             <div className="flex flex-wrap items-center justify-between gap-3">
-              <a
-                href={detailPackage.artifactPath}
+              <Link
+                href={artifactViewerHref(detailPackage, providerName)}
                 target="_blank"
                 rel="noreferrer"
                 className="inline-flex items-center gap-2 border-b border-surface-400 text-sm font-semibold text-surface-900 transition hover:border-brand-orange hover:text-brand-orange"
               >
-                Open artifact
+                Open artifact safely
                 <ExternalLink className="h-3.5 w-3.5" />
-              </a>
+              </Link>
               {artifactPackages.length > 1 && onSelect && (
                 <div className="flex flex-wrap gap-2">
                 {artifactPackages.map((pkg) => {
@@ -857,6 +1190,7 @@ function ResponsePackageCard({
                       type="button"
                       onClick={() => onSelect(pkg.id)}
                       aria-pressed={packageSelected}
+                      data-artifact-version-select={pkg.id}
                       className={[
                         'border px-2.5 py-1.5 text-left font-mono text-[10px] uppercase tracking-[0.12em]',
                         packageSelected
@@ -1017,7 +1351,7 @@ export default function SourceRunShowcase({
       {selectedPackage && (
         <section className="border-b border-surface-200 bg-surface-50 px-4 pb-9 sm:px-6 lg:px-8">
           <div className="mx-auto max-w-7xl">
-            <ArtifactFrame
+            <ProtectedArtifactFrame
               key={selectedPackage.id}
               selectedPackage={selectedPackage}
               providerName={providerName}
@@ -1091,6 +1425,7 @@ export default function SourceRunShowcase({
                       artifactPackages={artifactPackages}
                       selectedPackage={selectedStepPackage}
                       onSelect={artifactPackages.length > 0 ? setSelectedPackageId : undefined}
+                      providerName={providerName}
                     />
                     </PipeNode>
                     {hasForkLane && (

@@ -1,0 +1,148 @@
+{
+  "title": "First-Principles Claim Ladder Game — Claude model variant",
+  "slug": "first-principles-claim-ladder-game-claude-fable-5-high",
+  "source_run_id": "8c6cca2f-c67a-4fd0-9e09-81df7f9cdd0f",
+  "provider": "Claude",
+  "model": "Fable 5 High",
+  "model_settings": "Claude web; High reasoning.",
+  "source_url": "https://claude.ai/share/f4e89548-8767-485f-8683-0257d9978bf0",
+  "run_started_at": "2026-07-10T20:37:47.993Z",
+  "run_finished_at": "2026-07-10T22:11:34.259Z",
+  "chain_type": "repair-assisted",
+  "prompt_count": 2,
+  "repair_prompt_count": 1,
+  "status": "published_model_variant",
+  "description": "A developer-operated Claude rerun of the canonical First-Principles Claim Ladder Game brief, preserved as an auditable PathForge Labs model variant rather than a community fork.",
+  "agent_notes": [
+    "Provider: Claude.",
+    "Model used: Fable 5 High.",
+    "Model settings: Claude web; High reasoning.",
+    "PathForge Labs provenance: developer-operated comparison run; not a user, community fork, vote, bookmark, or engagement event.",
+    "Prompt count: 2. Verification found one deprecated clipboard fallback token and the second prompt repaired it.",
+    "Both real artifact versions are preserved under public/artifacts; the corrected final artifact is the default."
+  ],
+  "final_artifact_path": "public/artifacts/first-principles-claim-ladder-game-claude-fable-5-high-final.html",
+  "artifact_type": "html",
+  "artifact_versions": [
+    "public/artifacts/first-principles-claim-ladder-game-claude-fable-5-high-first-pass.html",
+    "public/artifacts/first-principles-claim-ladder-game-claude-fable-5-high-final.html"
+  ],
+  "generated_files": [
+    "public/artifacts/first-principles-claim-ladder-game-claude-fable-5-high-first-pass.html",
+    "public/artifacts/first-principles-claim-ladder-game-claude-fable-5-high-final.html"
+  ],
+  "artifact_sha256": "ac5a1e62bbe2140d83dad2512df5bea5d51933e375805f57fce5af7cae394adf",
+  "artifact_version_notes": [
+    {
+      "path": "public/artifacts/first-principles-claim-ladder-game-claude-fable-5-high-first-pass.html",
+      "sha256": "b52358938d63504bd69d19f47b48329c76b522104285bc1af61f600fef282b2e",
+      "bytes": 26786,
+      "lines": 774,
+      "disposition": "Preserved first response; workflow and both viewport checks passed, but document.execCommand failed the deprecated clipboard hard gate."
+    },
+    {
+      "path": "public/artifacts/first-principles-claim-ladder-game-claude-fable-5-high-final.html",
+      "sha256": "ac5a1e62bbe2140d83dad2512df5bea5d51933e375805f57fce5af7cae394adf",
+      "bytes": 27223,
+      "lines": 789,
+      "disposition": "Final verified artifact and default Claude version."
+    }
+  ],
+  "verification_notes": [
+    "The final artifact's single inline script parsed successfully and the static scan found no remote dependency, network call, unsafe HTML sink, eval-like execution, inline handler, modal API, document.write, or deprecated clipboard token.",
+    "The main workflow locked a plan, forged a load-bearing Claim, answered the rung challenge, marked the card Holds, updated the verdict, and generated a complete reasoning receipt.",
+    "Desktop measured 1660/1660 document width with zero overflow; true 390x844 measured 390/390 document and body width with zero overflow.",
+    "The final browser run recorded zero console errors."
+  ],
+  "verification_evidence": {
+    "schema_version": 1,
+    "verified_at": "2026-07-10T22:32:43.978Z",
+    "first_pass_metrics": {
+      "qualityScore": 88,
+      "artifactReady": true,
+      "hardGatesPassed": false,
+      "functionalChecks": {
+        "passed": 9,
+        "total": 10
+      },
+      "consoleErrorCount": 0,
+      "horizontalOverflowPx": 0,
+      "notes": [
+        "The first artifact passed all four project checks, desktop layout, and true 390x844 layout with zero artifact-origin console errors.",
+        "Static verification found document.execCommand in the clipboard fallback, failing one common safety check and triggering a same-session repair."
+      ]
+    },
+    "final_metrics": {
+      "qualityScore": 98,
+      "artifactReady": true,
+      "hardGatesPassed": true,
+      "functionalChecks": {
+        "passed": 10,
+        "total": 10
+      },
+      "consoleErrorCount": 0,
+      "horizontalOverflowPx": 0,
+      "notes": [
+        "All four project checks and six common acceptance checks passed on the corrected artifact.",
+        "Static, full workflow, desktop 1660px, true 390x844, receipt, and zero-console-error checks were directly rerun on the final file."
+      ]
+    }
+  },
+  "steps": [
+    {
+      "step_number": 1,
+      "title": "Build the invariant Claim Ladder brief",
+      "prompt_exact": "Can you build a self-contained one-file HTML game called First-Principles Claim Ladder where I test a big plan by moving claim, assumption, evidence, and experiment cards up a ladder, score whether the plan holds or collapses, and copy or download a reasoning receipt I can keep offline?",
+      "response_exact": "Correcting a filename typo in that share — here's the actual file:Done. Single file, fully offline, scanner-verified clean on all seven constraints (no innerHTML/outerHTML/insertAdjacentHTML, no inline handlers, no alert/confirm/prompt, no URL literals or external deps, no letter-spacing, no vw/clamp, and no localStorage) plus a `node --check` pass on the JS.\n\nHow the game works:\n\n**Setup** — Type your big plan and lock it. Then forge cards in one of four types: Claim, Assumption, Evidence, Experiment. Any card can be flagged **load-bearing**.\n\n**The ladder** — All cards start in the Deck. Four rungs above it: Stated → Stress-tested → Evidenced → Verified. Climbing a rung requires answering that rung's challenge inline (falsifiable restatement, steelman objection, concrete observation, kill-condition test) with a 20-character minimum. Answers get logged to the card. You can demote cards back down.\n\n**Scoring** — Each card gets marked Holds / Shaky / Collapsed. Confidence is weighted by card type (claims and experiments count 3, assumptions and evidence 2) times how high it climbed. Deck-dwellers drag the score down. ≥70% holds, 40–69% shaky, below that collapses — but a collapsed load-bearing card forces a collapse verdict regardless of the number.\n\n**Receipt** — \"Print receipt\" generates a plain-text thermal-printer-style record: plan, timestamp, every card with rung/status/challenge answers, and the verdict. Copy uses the clipboard API with a select-and-copy fallback; download builds a Blob at runtime (no URL literals) and names the file after your plan slug.\n\nDelete is two-tap confirm via toast instead of `confirm()`, and it respects reduced-motion. State is in-memory only — the receipt is your persistence, by design.",
+      "response_summary": "Claude returned the first complete one-file Claim Ladder artifact.",
+      "generated_files": [
+        "public/artifacts/first-principles-claim-ladder-game-claude-fable-5-high-first-pass.html"
+      ],
+      "artifact_version_path": "public/artifacts/first-principles-claim-ladder-game-claude-fable-5-high-first-pass.html",
+      "notes": "Preserved exact first artifact. Functional and viewport checks passed, but static verification found document.execCommand."
+    },
+    {
+      "step_number": 2,
+      "title": "Remove the deprecated clipboard fallback",
+      "prompt_exact": "I tested the saved file and found one concrete safety issue: the clipboard fallback still calls document.execCommand, and our public artifact verifier rejects that deprecated token. Remove document.execCommand entirely; use navigator.clipboard when available and otherwise reveal and select a plain textarea so I can copy manually. Keep the ladder, scoring, receipt, download, offline behavior, and current design unchanged, then return the complete updated self-contained HTML file.",
+      "response_exact": "Fixed. `document.execCommand` is gone entirely — zero occurrences in the file.\n\nThe copy flow is now: `navigator.clipboard.writeText` when available; if it's missing or the promise rejects, a styled textarea reveals below the receipt buttons, pre-filled with the receipt, auto-focused and selected, with a label and toast telling you to press Ctrl+C / Cmd+C. Printing a fresh receipt or a successful clipboard copy hides it again so stale text never lingers.\n\nEverything else is untouched — ladder, challenges, scoring, load-bearing collapse rule, download path, offline behavior, and design. Full scanner re-run passed on all constraints including the new execCommand check, and the JS still passes `node --check`.",
+      "response_summary": "Claude removed document.execCommand and returned the complete corrected artifact.",
+      "continuation_reason": "Verification-proven defect: the first artifact used document.execCommand in its receipt-copy fallback.",
+      "generated_files": [
+        "public/artifacts/first-principles-claim-ladder-game-claude-fable-5-high-final.html"
+      ],
+      "artifact_version_path": "public/artifacts/first-principles-claim-ladder-game-claude-fable-5-high-final.html",
+      "notes": "Final verified production artifact."
+    }
+  ],
+  "pathforge_submission_url": null,
+  "pathforge_pending_id": null,
+  "submission": null,
+  "comparison_basis": {
+    "opening_prompt_exact": "Can you build a self-contained one-file HTML game called First-Principles Claim Ladder where I test a big plan by moving claim, assumption, evidence, and experiment cards up a ladder, score whether the plan holds or collapses, and copy or download a reasoning receipt I can keep offline?",
+    "acceptance_criteria": [
+      "Provide distinct claim, assumption, evidence, and experiment cards in one understandable ladder workflow.",
+      "Let the user move or classify cards and run a visible holds-versus-collapses reasoning check.",
+      "Produce a meaningful reasoning score or assessment tied to the current ladder state.",
+      "Provide a copyable or downloadable reasoning receipt that includes the experiment or next test.",
+      "Produce one complete self-contained HTML file that is immediately usable in a browser.",
+      "Operate offline with no external APIs, hosted generation, CDNs, remote fonts, scripts, stylesheets, or fragile dependencies.",
+      "Avoid unsafe HTML sinks, eval-like execution, inline event handlers, modal dialogs, and deprecated clipboard handling.",
+      "Avoid page-level horizontal overflow at 390 by 844 and at desktop width.",
+      "Keep essential controls visible, keyboard or touch reachable, and truthful about their current state.",
+      "Preserve exact prompt, response, source, and artifact-version evidence for the run."
+    ],
+    "adaptive_repair_policy": "Preserve and score the first real artifact. Continue only when verification proves a concrete defect or a source-capture failure; use the same source session and model; name the observed defect in ordinary language; preserve every real artifact version; stop as soon as the artifact passes; prefer no more than three total prompts and go beyond three only for a documented concrete lane reason such as a verification-proven regression, truncation, or mechanical capture failure.",
+    "independence_note": "Claude received the invariant brief in a fresh session and was not shown the historical implementation, screenshots, source code, or another provider's output."
+  },
+  "operator_provenance": {
+    "kind": "pathforge_labs_manual",
+    "label": "PathForge Labs · Developer-operated",
+    "canonical_project_id": "e0e4e2b7-082e-4db1-9468-484fc3fd3a69",
+    "canonical_route": "/first-principles-claim-ladder-game-demo",
+    "comparison_contract_version": "first-principles-claim-ladder-game-v1",
+    "comparison_contract_sha256": "d448592808fad70b0d2aee5141c79332416432c1c77c3c2a6b19db51f8ab92b6",
+    "opening_prompt_sha256": "ef62e4a9df8e098d6fc92cd404b0de0c00e0349b4f650203511ba6c311a11bf4",
+    "ordinary_fork": false
+  }
+}

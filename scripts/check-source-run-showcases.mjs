@@ -810,13 +810,15 @@ function finalArtifactStepNumber(pkg) {
 function sharedShowcaseRoutes() {
   return readdirSync('src/app', { withFileTypes: true })
     .filter((entry) => entry.isDirectory())
+    .filter((entry) => entry.name !== 'artifact-viewer')
     .map((entry) => `src/app/${entry.name}/page.tsx`)
     .filter((routePath) => existsSync(routePath))
     .filter((routePath) => {
       const routeContent = readFileSync(routePath, 'utf8')
       return (
         routeContent.includes("from '@/components/SourceRunShowcase'") ||
-        routeContent.includes("from '@/components/PreparedSourceRunPage'")
+        routeContent.includes("from '@/components/PreparedSourceRunPage'") ||
+        routeContent.includes("from '@/components/PreparedModelVariantSourceRunPage'")
       )
     })
 }
@@ -831,7 +833,8 @@ function demoRoutes() {
 function usesSharedSourceRunRenderer(routeContent) {
   return (
     routeContent.includes("from '@/components/SourceRunShowcase'") ||
-    routeContent.includes("from '@/components/PreparedSourceRunPage'")
+    routeContent.includes("from '@/components/PreparedSourceRunPage'") ||
+    routeContent.includes("from '@/components/PreparedModelVariantSourceRunPage'")
   )
 }
 
@@ -849,6 +852,8 @@ function curatedRegistryHasDescriptor(registryContent, project) {
 
 const sharedComponent = 'src/components/SourceRunShowcase.tsx'
 const sharedComponentContent = read(sharedComponent)
+const protectedWrapper = 'src/lib/protected-artifact-wrapper.mjs'
+const protectedWrapperContent = read(protectedWrapper)
 mustInclude(sharedComponent, sharedComponentContent, 'aria-pressed={selected}', 'shared showcase must render a selected state on response artifact controls')
 mustInclude(sharedComponent, sharedComponentContent, 'onClick={() => onSelect?.(detailPackage.id)}', 'shared showcase must let each response mount its artifact above')
 mustInclude(sharedComponent, sharedComponentContent, 'setSelectedPackageId', 'shared showcase must keep artifact package selection state')
@@ -857,15 +862,31 @@ mustInclude(sharedComponent, sharedComponentContent, 'artifactVersions?: SourceR
 mustInclude(sharedComponent, sharedComponentContent, 'isDefaultArtifact', 'shared showcase must support an explicit default artifact version')
 mustInclude(sharedComponent, sharedComponentContent, '<ExactResponseBlock', 'shared showcase must render verbatim response text for each response package')
 mustInclude(sharedComponent, sharedComponentContent, 'setSelectedPackageId', 'shared showcase must let response cards mount their artifact above')
-mustInclude(sharedComponent, sharedComponentContent, 'loadedArtifact?.packageId === selectedPackage.id', 'shared showcase must scope loaded artifact source state to the selected package')
+mustInclude(sharedComponent, sharedComponentContent, 'data-artifact-package-select={detailPackage.id}', 'response artifact controls must expose stable package identities for browser regression verification')
+mustInclude(sharedComponent, sharedComponentContent, 'data-artifact-version-select={pkg.id}', 'artifact-version controls must expose stable identities for browser regression verification')
+  mustInclude(sharedComponent, sharedComponentContent, 'currentArtifactLoad(selectedPackage.id, loadedArtifact)', 'shared showcase must scope loaded artifact source state to the selected package through the behavior-tested helper')
 mustInclude(sharedComponent, sharedComponentContent, 'measuredArtifact?.packageId === selectedPackage.id', 'shared showcase must scope artifact measurements to the selected package')
 mustInclude(sharedComponent, sharedComponentContent, 'const controller = new AbortController()', 'shared showcase must abort stale artifact loads during selection changes')
 mustInclude(sharedComponent, sharedComponentContent, 'data-artifact-package-id={selectedPackage.id}', 'shared showcase must expose the mounted artifact package identity')
 mustInclude(sharedComponent, sharedComponentContent, 'data-artifact-path={selectedPackage.artifactPath}', 'shared showcase must expose the mounted artifact path for switching verification')
 mustInclude(sharedComponent, sharedComponentContent, 'data-artifact-loading', 'shared showcase must show an explicit loading state between artifact selections')
-mustInclude(sharedComponent, sharedComponentContent, 'src={usesDirectSource ? selectedPackage.artifactPath : undefined}', 'shared showcase must choose one resolved iframe source')
-mustInclude(sharedComponent, sharedComponentContent, 'srcDoc={usesDirectSource ? undefined : srcDoc ?? undefined}', 'shared showcase must not navigate one iframe through direct and srcDoc sources')
-mustNotInclude(sharedComponent, sharedComponentContent, 'src={usesDirectSource || !srcDoc', 'shared showcase must not use the old direct-then-srcDoc iframe race')
+mustInclude(sharedComponent, sharedComponentContent, 'srcDoc={srcDoc ?? undefined}', 'shared showcase must mount checked artifact HTML through one srcDoc source')
+  mustInclude(sharedComponent, sharedComponentContent, 'sandbox="allow-scripts"', 'shared showcase must keep generated scripts in an opaque-origin sandbox without direct download permission')
+  mustInclude(sharedComponent, sharedComponentContent, 'buildProtectedArtifactWrapperDocument', 'shared showcase must put artifacts behind the persistent nested-frame navigation policy')
+  mustInclude(sharedComponent, sharedComponentContent, 'pathforge-artifact-download', 'shared showcase must bridge bounded data-only downloads instead of granting direct network downloads')
+mustInclude(sharedComponent, sharedComponentContent, 'allow="clipboard-write"', 'shared showcase must preserve user-triggered copy controls')
+  mustInclude(sharedComponent, sharedComponentContent, "new DOMParser().parseFromString(html, 'text/html')", 'shared showcase must parse the actual artifact document before injecting security controls')
+  mustInclude(sharedComponent, sharedComponentContent, 'parsed.head.prepend(csp)', 'shared showcase must inject a restrictive artifact CSP into the actual parsed head before generated scripts')
+mustInclude(sharedComponent, sharedComponentContent, 'pathforge-artifact-storage', 'shared showcase must bridge namespaced storage without same-origin access')
+mustInclude(sharedComponent, sharedComponentContent, 'data-artifact-load-error', 'shared showcase must block unsafe direct fallback when protected loading fails')
+mustInclude(sharedComponent, sharedComponentContent, 'artifactViewerHref(selectedPackage, providerName)', 'shared showcase must open the mounted artifact through the protected viewer')
+mustInclude(sharedComponent, sharedComponentContent, 'artifactViewerHref(detailPackage, providerName)', 'response artifact links must open through the protected viewer')
+  mustNotInclude(sharedComponent, sharedComponentContent, 'allow-same-origin', 'shared showcase must not combine generated scripts with same-origin access')
+  mustNotInclude(sharedComponent, sharedComponentContent, 'allow-downloads', 'shared showcase must not let artifact frames initiate uncontrolled network downloads')
+mustNotInclude(sharedComponent, sharedComponentContent, 'src={selectedPackage.artifactPath}', 'shared showcase must not navigate the sandbox directly to generated files')
+mustNotInclude(sharedComponent, sharedComponentContent, 'href={selectedPackage.artifactPath}', 'shared showcase must not open generated HTML with PathForge origin privileges')
+mustNotInclude(sharedComponent, sharedComponentContent, 'href={detailPackage.artifactPath}', 'response artifact links must not open generated HTML with PathForge origin privileges')
+mustNotInclude(sharedComponent, sharedComponentContent, 'usesDirectSource', 'shared showcase must not retain the old direct-source fallback race')
 mustInclude(sharedComponent, sharedComponentContent, 'Source run', 'shared showcase must expose one provider source-run link at the bottom')
 mustNotInclude(sharedComponent, sharedComponentContent, '<ArtifactCodeBlock', 'shared showcase must not dump generated HTML into the public response path')
 mustNotInclude(sharedComponent, sharedComponentContent, '<SourceLink', 'shared showcase must not repeat provider links inside every response package')
@@ -880,9 +901,17 @@ mustInclude(sharedComponent, sharedComponentContent, 'data-source-run-node={vari
 mustInclude(sharedComponent, sharedComponentContent, 'variant="prompt"', 'shared showcase must render prompts as their own pipe nodes')
 mustInclude(sharedComponent, sharedComponentContent, 'variant="response"', 'shared showcase must render response packages as their own pipe nodes')
 mustNotInclude(sharedComponent, sharedComponentContent, 'ProjectEngagementBar', 'shared showcase should not own page-shell engagement controls')
-mustComeBefore(sharedComponent, sharedComponentContent, '<ArtifactFrame', 'Build path', 'shared showcase must mount the artifact before the prompt/response path')
+mustComeBefore(sharedComponent, sharedComponentContent, '<ProtectedArtifactFrame', 'Build path', 'shared showcase must mount the artifact before the prompt/response path')
 mustComeBefore(sharedComponent, sharedComponentContent, '<PromptText text={step.prompt}', '<ResponsePackageCard', 'shared showcase must render each prompt before its response package')
 mustComeBefore(sharedComponent, sharedComponentContent, 'variant="prompt"', 'variant="response"', 'shared showcase must connect prompt and response as separate sequential pipe nodes')
+mustInclude(protectedWrapper, protectedWrapperContent, '"frame-src \'none\'"', 'trusted artifact wrapper must persistently block child-frame navigation')
+mustInclude(protectedWrapper, protectedWrapperContent, '"child-src \'none\'"', 'trusted artifact wrapper must block legacy child navigation paths')
+mustInclude(protectedWrapper, protectedWrapperContent, 'frame.srcdoc = artifactDocument', 'trusted wrapper must mount the artifact without a network-addressable child URL')
+mustInclude(protectedWrapper, protectedWrapperContent, 'sandbox="allow-scripts"', 'inner artifact document must remain script-capable but opaque-origin sandboxed')
+mustInclude(protectedWrapper, protectedWrapperContent, "data.dataUrl.startsWith('data:')", 'download bridge must forward only data-backed content')
+mustInclude(protectedWrapper, protectedWrapperContent, 'navigator.userActivation?.isActive', 'download bridge must require real user activation in the trusted wrapper')
+mustNotInclude(protectedWrapper, protectedWrapperContent, 'allow-downloads', 'neither protected artifact layer may grant uncontrolled downloads')
+mustNotInclude(protectedWrapper, protectedWrapperContent, 'frame-src blob:', 'trusted wrapper must not allow blob self-navigation to shed the artifact CSP')
 
 for (const deletedExplorer of [
   'src/app/hp-10bii-calculator-demo/Hp10BiiSourceRunExplorer.tsx',
@@ -904,12 +933,34 @@ const mockData = read('src/lib/mock-data.ts')
 const adminDashboard = read('src/app/admin/page.tsx')
 const adminSourceRunDetail = read('src/app/admin/source-runs/[id]/page.tsx')
 const preparedSourceRunPage = read('src/components/PreparedSourceRunPage.tsx')
+const preparedModelVariantSourceRunPage = read('src/components/PreparedModelVariantSourceRunPage.tsx')
+const artifactViewerPage = read('src/app/artifact-viewer/page.tsx')
+const nextConfig = read('next.config.ts')
 const pendingSourceRunShowcases = read('src/lib/pending-source-run-showcases.ts')
 const curatedProjects = sourceRunProjects.filter((project) => project.curated)
 const curatedSourceRunShowcases = curatedProjects.length > 0 ? read(curatedRegistryPath) : ''
 const preparedShowcaseMetadata = `${preparedShowcase}\n${pendingSourceRunShowcases}\n${curatedSourceRunShowcases}`
-const modelVariantRegistryPath = 'seed-runs/model-variants/calming-sleep-sound-mixer.json'
-const modelVariantRegistry = existsSync(modelVariantRegistryPath) ? read(modelVariantRegistryPath) : ''
+const modelVariantRegistryDirectory = 'seed-runs/model-variants'
+const modelVariantManifestsByProjectId = new Map()
+if (existsSync(modelVariantRegistryDirectory)) {
+  for (const fileName of readdirSync(modelVariantRegistryDirectory).filter((name) => name.endsWith('.json'))) {
+    const manifestPath = join(modelVariantRegistryDirectory, fileName)
+    const candidate = parseJson(manifestPath)
+    if (!candidate || !Array.isArray(candidate.variants) || !candidate.contract) continue
+    if (typeof candidate.canonicalProjectId !== 'string') {
+      failures.push(`${manifestPath}: model-variant manifest needs canonicalProjectId`)
+      continue
+    }
+    if (modelVariantManifestsByProjectId.has(candidate.canonicalProjectId)) {
+      failures.push(`${manifestPath}: duplicate model-variant manifest for ${candidate.canonicalProjectId}`)
+      continue
+    }
+    modelVariantManifestsByProjectId.set(candidate.canonicalProjectId, {
+      path: manifestPath,
+      manifest: candidate,
+    })
+  }
+}
 const guardedRouteSet = new Set(sourceRunProjects.map((project) => project.route))
 
 if (curatedProjects.length > 0) {
@@ -941,6 +992,14 @@ if (curatedProjects.length > 0) {
 
 mustNotInclude('src/components/PreparedSourceRunPage.tsx', preparedSourceRunPage, 'readArtifact', 'prepared source-run wrapper must not serialize artifact HTML into public page payloads')
 mustNotInclude('src/components/PreparedSourceRunPage.tsx', preparedSourceRunPage, 'notes: step.notes', 'prepared source-run wrapper must not serialize internal step notes into public page payloads')
+mustInclude('src/app/artifact-viewer/page.tsx', artifactViewerPage, 'safeArtifactPath', 'protected artifact viewer must validate requested artifact paths')
+mustInclude('src/app/artifact-viewer/page.tsx', artifactViewerPage, '<ProtectedArtifactFrame', 'protected artifact viewer must preserve the opaque-origin sandbox')
+mustInclude('src/app/artifact-viewer/page.tsx', artifactViewerPage, 'showOpenAction={false}', 'protected artifact viewer must not recursively expose a direct-open action')
+mustInclude('src/app/artifact-viewer/page.tsx', artifactViewerPage, 'download', 'protected artifact viewer may expose generated HTML only as a download')
+mustInclude('next.config.ts', nextConfig, 'source: "/artifacts/:path*"', 'raw public artifacts must have a dedicated response-header boundary')
+mustInclude('next.config.ts', nextConfig, 'Content-Disposition', 'raw public artifacts must download instead of executing on the PathForge origin')
+mustInclude('next.config.ts', nextConfig, "sandbox; default-src 'none'; frame-ancestors 'none'", 'raw artifact responses need a sandboxed deny-all CSP as defense in depth')
+mustInclude('next.config.ts', nextConfig, 'X-Content-Type-Options', 'raw artifact responses must disable MIME sniffing')
 
 for (const routePath of demoRoutes()) {
   const routeContent = read(routePath)
@@ -965,9 +1024,14 @@ mustInclude('src/app/admin/source-runs/[id]/page.tsx', adminSourceRunDetail, 'Ne
 for (const project of sourceRunProjects) {
   const routeContent = read(project.route)
   const usesPreparedWrapper = routeContent.includes("from '@/components/PreparedSourceRunPage'")
-  const routeShellContent = usesPreparedWrapper ? `${routeContent}\n${preparedSourceRunPage}` : routeContent
-  if (!routeContent.includes("from '@/components/SourceRunShowcase'") && !usesPreparedWrapper) {
-    failures.push(`${project.route}: ${project.name} must use the shared source-run showcase or PreparedSourceRunPage wrapper`)
+  const usesModelVariantWrapper = routeContent.includes("from '@/components/PreparedModelVariantSourceRunPage'")
+  const routeShellContent = usesModelVariantWrapper
+    ? `${routeContent}\n${preparedModelVariantSourceRunPage}\n${preparedSourceRunPage}`
+    : usesPreparedWrapper
+      ? `${routeContent}\n${preparedSourceRunPage}`
+      : routeContent
+  if (!routeContent.includes("from '@/components/SourceRunShowcase'") && !usesPreparedWrapper && !usesModelVariantWrapper) {
+    failures.push(`${project.route}: ${project.name} must use the shared source-run showcase, PreparedSourceRunPage, or the model-variant wrapper`)
   }
   mustInclude(project.route, routeShellContent, 'defaultStepNumber', `${project.name} must explicitly default the mounted artifact`)
   mustInclude(project.route, routeShellContent, 'sourceRunUrl=', `${project.name} must pass the full provider source-run link to the shared showcase`)
@@ -1015,9 +1079,22 @@ for (const project of sourceRunProjects) {
 
   if (project.curated) {
     const packageFileName = basename(project.packagePath)
-    const packageLoadedByModelVariantRegistry =
-      routeContent.includes('getProjectModelVariantSet') &&
-      modelVariantRegistry.includes(packageFileName)
+    const modelVariantManifestEntry = modelVariantManifestsByProjectId.get(project.projectId)
+    const packageLoadedByModelVariantRegistry = Boolean(
+      usesModelVariantWrapper &&
+      modelVariantManifestEntry?.manifest.canonicalRoute === project.href &&
+      modelVariantManifestEntry.manifest.variants.some(
+        (variant) =>
+          variant?.packageFile === packageFileName &&
+          variant?.sourceRunId === project.sourceRunId,
+      ),
+    )
+
+    if (usesModelVariantWrapper && !modelVariantManifestEntry) {
+      failures.push(
+        `${project.route}: ${project.name} must have its own canonical model-variant manifest`,
+      )
+    }
 
     if (!routeContent.includes(packageFileName) && !packageLoadedByModelVariantRegistry) {
       failures.push(
@@ -1107,7 +1184,7 @@ for (const project of sourceRunProjects) {
 
   const defaultStepNumber = routeDefaultStepNumber(routeContent)
   const finalStepNumber = finalArtifactStepNumber(pkg)
-  if (usesPreparedWrapper) {
+  if (usesPreparedWrapper || usesModelVariantWrapper) {
     mustInclude(
       'src/components/PreparedSourceRunPage.tsx',
       preparedSourceRunPage,

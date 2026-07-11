@@ -1,0 +1,161 @@
+{
+  "schemaVersion": 1,
+  "canonicalProjectId": "dc5e67c3-42d0-4823-ae23-586b7d3985cb",
+  "verifiedAt": "2026-07-10T17:25:03.000Z",
+  "purpose": "Structured verification sidecar for the three immutable pilot packages published before package-level verification_evidence was required.",
+  "records": [
+    {
+      "sourceRunId": "cf73efd5-2fb6-48fe-a9fd-a1a0df336d18",
+      "sourcePackageFile": "seed-runs/sleep-sound-mixer-chatgpt-56-luna-extra-high-source-run.json",
+      "sourcePackageSha256": "708bbaab663d80ce33b429ec8f101e34fbbe91b0f8ac3159a65f100194dbc72b",
+      "immutableLegacyPackage": true,
+      "submissionState": "historical_original_source_run",
+      "artifactVersionNotes": [
+        {
+          "path": "public/artifacts/sleep-sound-mixer-chatgpt-56-luna-extra-high.html",
+          "sha256": "577cea637ba15cd64e888ba76a7b5ab2cd22b0b19044a95d2c2c6b64b8fa29ea",
+          "bytes": 28808,
+          "lines": 925,
+          "disposition": "Immutable historical one-shot; the disclosed preset-to-master gain mismatch remains inspectable."
+        }
+      ],
+      "firstPassMetrics": {
+        "qualityScore": 90,
+        "artifactReady": true,
+        "hardGatesPassed": false,
+        "functionalChecks": {
+          "passed": 11,
+          "total": 12
+        },
+        "consoleErrorCount": 0,
+        "horizontalOverflowPx": 0,
+        "notes": [
+          "Historical one-shot baseline. Presets move the visible master control without applying the same value to the live master gain."
+        ]
+      },
+      "finalMetrics": {
+        "qualityScore": 90,
+        "artifactReady": true,
+        "hardGatesPassed": false,
+        "functionalChecks": {
+          "passed": 11,
+          "total": 12
+        },
+        "consoleErrorCount": 0,
+        "horizontalOverflowPx": 0,
+        "notes": [
+          "No repair was performed in the historical source run. The preset/master mismatch remains visible as a disclosed baseline issue."
+        ]
+      }
+    },
+    {
+      "sourceRunId": "5a9ad307-177d-4939-b3ed-cabecb236deb",
+      "sourcePackageFile": "seed-runs/model-variants/sleep-sound-mixer-claude-fable-5-high-source-run.json",
+      "sourcePackageSha256": "9e8ef3cf02994d083dcbef7f0ec0c46c5db2c22209b8651fe420dfa26660b8ab",
+      "immutableLegacyPackage": true,
+      "submissionState": "not_applicable_model_variant",
+      "artifactVersionNotes": [
+        {
+          "path": "public/artifacts/sleep-sound-mixer-claude-fable-5-high-first-pass.html",
+          "sha256": "ae720fc60e985de68843fdd161a076507b27e32e9926de7f35945553fd3f0f22",
+          "bytes": 18327,
+          "lines": 700,
+          "disposition": "Preserved first response; verification found three concrete mixer-state defects."
+        },
+        {
+          "path": "public/artifacts/sleep-sound-mixer-claude-fable-5-high-final.html",
+          "sha256": "3122e8bc0ca4ae5a167cfdd03cf404ef41dc585cefb08652f7934f0fcade31c4",
+          "bytes": 20598,
+          "lines": 760,
+          "disposition": "Final verified artifact and default Claude version."
+        }
+      ],
+      "firstPassMetrics": {
+        "qualityScore": 90,
+        "artifactReady": true,
+        "hardGatesPassed": false,
+        "functionalChecks": {
+          "passed": 9,
+          "total": 12
+        },
+        "consoleErrorCount": 0,
+        "horizontalOverflowPx": 0,
+        "notes": [
+          "First response lacked overall volume, paused abruptly, and could leave a scheduled fade active after selecting Off."
+        ]
+      },
+      "finalMetrics": {
+        "qualityScore": 99,
+        "artifactReady": true,
+        "hardGatesPassed": true,
+        "functionalChecks": {
+          "passed": 12,
+          "total": 12
+        },
+        "consoleErrorCount": 0,
+        "horizontalOverflowPx": 0,
+        "notes": [
+          "One verification-driven repair resolved every measured defect. Final artifact passed the fixed contract and is the default model run."
+        ]
+      }
+    },
+    {
+      "sourceRunId": "7d9524c0ede185b2",
+      "sourcePackageFile": "seed-runs/model-variants/sleep-sound-mixer-gemini-31-pro-source-run.json",
+      "sourcePackageSha256": "e07cdc0a6b5a52fa265050e4a7123cb3925d236a2b90e8709823eb7822ea4e1d",
+      "immutableLegacyPackage": true,
+      "submissionState": "not_applicable_model_variant",
+      "artifactVersionNotes": [
+        {
+          "path": "public/artifacts/sleep-sound-mixer-gemini-31-pro-first-pass.html",
+          "sha256": "a250c951ed4aae3c964ac829b9f3e27657bb2ac4f414f02a9919dc15ca26771a",
+          "bytes": 14062,
+          "lines": 449,
+          "disposition": "Preserved first response; verification found playback-state recursion and acceptance/safety gaps."
+        },
+        {
+          "path": "public/artifacts/sleep-sound-mixer-gemini-31-pro-repair-1.html",
+          "sha256": "fbde9575bd471f5694391cd27676692b46f437fb42db63a0a17a3418a54aaa26",
+          "bytes": 15878,
+          "lines": 507,
+          "disposition": "Preserved first repair; verification then found stale pre-play percentage labels."
+        },
+        {
+          "path": "public/artifacts/sleep-sound-mixer-gemini-31-pro-final.html",
+          "sha256": "8c1bb8d976bf783549dbd82b74a29b2b4814cfe54b07699e079244412bf7ed7b",
+          "bytes": 15650,
+          "lines": 504,
+          "disposition": "Final verified artifact and default Gemini version."
+        }
+      ],
+      "firstPassMetrics": {
+        "qualityScore": 82,
+        "artifactReady": true,
+        "hardGatesPassed": false,
+        "functionalChecks": {
+          "passed": 8,
+          "total": 12
+        },
+        "consoleErrorCount": 0,
+        "horizontalOverflowPx": 0,
+        "notes": [
+          "First response had playback-state recursion, no master control, and inline event handlers. The first repair then exposed stale pre-play percentage labels."
+        ]
+      },
+      "finalMetrics": {
+        "qualityScore": 97,
+        "artifactReady": true,
+        "hardGatesPassed": true,
+        "functionalChecks": {
+          "passed": 12,
+          "total": 12
+        },
+        "consoleErrorCount": 0,
+        "horizontalOverflowPx": 0,
+        "notes": [
+          "Two verification-driven repairs resolved the measured defects. The final artifact passed the fixed contract within the three-prompt cap."
+        ]
+      }
+    }
+  ]
+}

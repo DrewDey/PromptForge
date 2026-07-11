@@ -11,6 +11,11 @@ const CANONICAL_OPENING_PROMPT = 'Build me a calming sleep-sound mixer I can sav
 const CANONICAL_OPENING_PROMPT_SHA256 = 'd662a84b6227a69891a41a71f94f429f1fcac921bfe004a94e39648e705384e1'
 const CANONICAL_CONTRACT_SHA256 = '05549150158e48d0e849c6464ebbdd69dcef821e8b9e32911f72c36501b93089'
 const PROVIDER_KEYS = ['openai', 'anthropic', 'google']
+const PILOT_LAUNCH_SOURCE_RUN_IDS = [
+  'cf73efd5-2fb6-48fe-a9fd-a1a0df336d18',
+  '5a9ad307-177d-4939-b3ed-cabecb236deb',
+  '7d9524c0ede185b2',
+]
 const PROVIDER_SERVICE_LABELS = {
   openai: 'ChatGPT',
   anthropic: 'Claude',
@@ -20,6 +25,11 @@ const PROVIDER_SOURCE_HOSTS = {
   openai: /(^|\.)chatgpt\.com$/i,
   anthropic: /(^|\.)claude\.ai$/i,
   google: /(^|\.)(?:gemini\.google\.com|share\.gemini\.google)$/i,
+}
+const PROVIDER_PUBLIC_SHARE_URLS = {
+  openai: /^https:\/\/chatgpt\.com\/share\//,
+  anthropic: /^https:\/\/claude\.ai\/share\//,
+  google: /^https:\/\/share\.gemini\.google\//,
 }
 const SOURCE_RUN_ID_PATTERN = /^(?:[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}|[0-9a-f]{16})$/i
 const SHA256_PATTERN = /^[0-9a-f]{64}$/
@@ -264,13 +274,30 @@ function validateUiWiring() {
   mustInclude('src/lib/project-model-variants.ts', 'resolveProjectModelVariant', 'runtime registry must resolve requested and default runs')
   mustInclude('src/lib/project-model-variants.ts', 'resolveProjectModelVariantComparison', 'runtime registry must resolve comparisons separately')
 
-  mustInclude('src/app/calming-sleep-sound-mixer-demo/page.tsx', 'getProjectModelVariantSet', 'canonical route must load its variant set')
-  mustInclude('src/app/calming-sleep-sound-mixer-demo/page.tsx', 'resolveProjectModelVariant(', 'canonical route must resolve the active run')
-  mustInclude('src/app/calming-sleep-sound-mixer-demo/page.tsx', 'resolveProjectModelVariantComparison(', 'canonical route must resolve the compare run')
-  mustInclude('src/app/calming-sleep-sound-mixer-demo/page.tsx', 'searchParams', 'canonical route must read run/compare query state')
-  mustInclude('src/app/calming-sleep-sound-mixer-demo/page.tsx', 'sourceRunPackage={activeVariant.sourceRunPackage}', 'canonical route must mount the active package')
-  mustInclude('src/app/calming-sleep-sound-mixer-demo/page.tsx', 'modelVariantSet={variantSet}', 'canonical route must render model-run controls')
-  mustInclude('src/app/calming-sleep-sound-mixer-demo/page.tsx', 'compareModelVariant={compareVariant}', 'canonical route must render comparison state')
+  const sharedRoute = 'src/components/PreparedModelVariantSourceRunPage.tsx'
+  mustInclude(sharedRoute, 'getProjectModelVariantSet', 'shared route must load its variant set')
+  mustInclude(sharedRoute, 'getPublishedProjectModelVariants', 'shared route must load published database records')
+  mustInclude(sharedRoute, 'reconcileProjectModelVariantSet', 'shared route must reconcile database and release-manifest evidence')
+  mustInclude(sharedRoute, 'resolveProjectModelVariant(', 'shared route must resolve the active run')
+  mustInclude(sharedRoute, 'resolveProjectModelVariantComparison(', 'shared route must resolve the compare run')
+  mustInclude(sharedRoute, 'sourceRunPackage={activeVariant.sourceRunPackage}', 'shared route must mount the active package')
+  mustInclude(sharedRoute, 'modelVariantSet={variantSet}', 'shared route must render model-run controls')
+  mustInclude(sharedRoute, 'compareModelVariant={compareVariant}', 'shared route must render comparison state')
+
+  for (const route of [
+    'calming-sleep-sound-mixer-demo',
+    'booking-flow-handoff-simulator-demo',
+    'first-principles-claim-ladder-game-demo',
+    'tiny-festival-set-time-clash-game-demo',
+    'rental-walkthrough-red-flag-scorecard-demo',
+    'gym-mirror-progress-shot-consistency-studio-demo',
+    'security-cam-anomaly-timeline-game-demo',
+    't-shirt-print-alignment-press-game-demo',
+  ]) {
+    const routePath = `src/app/${route}/page.tsx`
+    mustInclude(routePath, 'PreparedModelVariantSourceRunPage', 'canonical route must use the shared model-variant wrapper')
+    mustInclude(routePath, 'searchParams', 'canonical route must pass run/compare query state')
+  }
 
   mustInclude('src/components/PathForgeLabsModelRuns.tsx', 'Developer-operated reruns · same brief · not community forks', 'Labs UI must distinguish reruns from community forks')
   mustInclude('src/components/PathForgeLabsModelRuns.tsx', 'data-model-variant-selector', 'Labs UI must expose a stable selector marker')
@@ -278,9 +305,13 @@ function validateUiWiring() {
   mustInclude('src/components/PathForgeLabsModelRuns.tsx', 'data-model-variant-view', 'Labs UI must keep visible model-view actions')
   mustInclude('src/components/PathForgeLabsModelRuns.tsx', 'data-model-variant-compare', 'Labs UI must keep visible comparison actions')
   mustInclude('src/components/PathForgeLabsModelRuns.tsx', '<summary', 'Labs model selector must remain keyboard-operable with native details/summary')
-  mustInclude('src/components/PathForgeLabsModelRuns.tsx', "new Intl.Collator('en'", 'Labs model selector must use one deterministic alphabetical collation')
-  mustInclude('src/components/PathForgeLabsModelRuns.tsx', 'numeric: true', 'Labs model selector must sort numbered model labels naturally')
-  mustInclude('src/components/PathForgeLabsModelRuns.tsx', 'const orderedVariants = [...variantSet.variants].sort(compareModelVariants)', 'Labs model selector must keep one fixed alphabetical order instead of promoting the active run')
+  mustInclude('src/components/PathForgeLabsModelRuns.tsx', "key={`${activeVariant.sourceRunId}:${compareSourceRunId ?? ''}`}", 'Labs model selector must close its native menu after changing runs or comparisons')
+  mustInclude('src/components/PathForgeLabsModelRuns.tsx', 'compareModelVariantRecords', 'Labs model selector must use the behavior-tested deterministic alphabetical collation')
+  mustInclude('src/components/PathForgeLabsModelRuns.tsx', 'const orderedVariants = [...variantSet.variants].sort(compareModelVariantRecords)', 'Labs model selector must keep one fixed alphabetical order instead of promoting the active run')
+  mustInclude('src/components/PathForgeLabsModelRuns.tsx', 'run.sourceRunId === variantSet.defaultSourceRunId', 'Labs model selector must link the default run directly to the canonical route')
+  mustInclude('src/lib/model-variant-ui.mjs', 'Date.parse(right.capturedAt) - Date.parse(left.capturedAt)', 'same-label model history must sort newest-first without selection-based reordering')
+  mustInclude('src/components/PathForgeLabsModelRuns.tsx', 'dateTime={variant.capturedAt}', 'same-label model history must expose a visible run date')
+  mustInclude('src/components/PathForgeLabsModelRuns.tsx', 'conciseModelSettings', 'comparison cards must keep long historical settings compact')
   mustNotInclude('src/components/PathForgeLabsModelRuns.tsx', '...variantSet.variants.filter((variant) => variant.sourceRunId !== activeVariant.sourceRunId)', 'Labs model selector must not reorder by moving the active run first')
   mustNotInclude('src/components/PathForgeLabsModelRuns.tsx', 'finalMetrics.functionalChecks', 'Labs selector must not expose unexplained internal check counts')
   mustNotInclude('src/components/PathForgeLabsModelRuns.tsx', 'variant.promptCount', 'Labs selector must not expose prompt counts as selection metadata')
@@ -288,7 +319,9 @@ function validateUiWiring() {
   mustInclude('src/components/PathForgeLabsModelRuns.tsx', "new URLSearchParams({ run: run.sourceRunId })", 'Labs UI must use run query state')
   mustInclude('src/components/PathForgeLabsModelRuns.tsx', "params.set('compare', compare.sourceRunId)", 'Labs UI must use compare query state')
   mustInclude('src/components/PathForgeLabsModelRuns.tsx', "variant.qualityStatus === 'verified'", 'Labs UI must distinguish verified and known-issue runs')
-  mustInclude('src/components/PathForgeLabsModelRuns.tsx', 'variantSet.defaultSourceRunId', 'Labs UI must label the default run from the manifest')
+  mustInclude('src/components/PathForgeLabsModelRuns.tsx', 'variantSet.defaultSourceRunId', 'Labs UI must label the resolved default run')
+  mustInclude('src/components/PathForgeLabsModelRuns.tsx', 'variant.isCurrent', 'Labs UI must distinguish latest provider releases from preserved history')
+  mustInclude('src/components/PathForgeLabsModelRuns.tsx', 'Viewing', 'Labs UI must distinguish the selected view from release currency')
   mustInclude('src/components/PathForgeLabsModelRuns.tsx', 'Same exact brief, two model runs', 'comparison UI must explain invariant prompt parity')
 
   mustInclude('src/components/PreparedSourceRunPage.tsx', "activeModelVariant?.runRole === 'historical-baseline'", 'only the historical baseline may retain canonical fork behavior')
@@ -306,6 +339,17 @@ function validateUiWiring() {
 
   mustInclude('src/lib/data/model-variants.ts', ".from('project_model_variants')", 'data layer must read model variants from their own table')
   mustInclude('src/lib/data/model-variants.ts', ".in('status', ['published', 'historical'])", 'public data reads must exclude draft/failed model variants')
+  mustInclude('src/lib/data/model-variants.ts', 'SUPABASE_READ_TIMEOUT_MS', 'model-variant reads must retain a bounded timeout')
+  mustInclude('src/lib/data/model-variants.ts', 'Promise<ProjectModelVariantPublicRecord[] | null>', 'local manifest fallback must be distinguishable from a configured empty database result')
+  mustInclude('src/lib/data/model-variants.ts', 'isTransportFailure', 'checked manifest fallback must be limited to real transport failures')
+  mustInclude('src/lib/data/model-variants.ts', 'Published model-variant evidence query failed', 'database permission or schema errors must fail closed as evidence errors')
+  mustNotInclude('src/lib/data/model-variants.ts', 'readWithFallback', 'database evidence errors must not silently fall back to manifests')
+  mustNotInclude('src/lib/data/model-variants.ts', 'Could not load published model variants', 'database contract errors must not be wrapped as transient read failures')
+  mustInclude('src/lib/project-model-variants.ts', 'records.length === 0', 'configured empty database evidence must fail closed')
+  mustInclude('src/lib/project-model-variants.ts', 'const providerHistory = variants', 'runtime manifests must preserve one chronological provider history')
+  mustInclude('src/lib/project-model-variants.ts', 'must supersede the immediately prior', 'runtime manifests must reject skipped provider predecessors')
+  mustInclude('src/lib/project-model-variants.ts', 'must finish after the', 'runtime manifests must reject backdated superseding runs')
+  mustNotInclude('src/lib/project-model-variants.ts', 'record.is_default !== (variant.sourceRunId === variantSet.defaultSourceRunId)', 'a verified database default change must not be mistaken for immutable evidence drift')
 
   mustInclude('supabase/project-model-variants.sql', "provider_key IN ('openai', 'anthropic', 'google')", 'database provider set must match the manifest contract')
   mustInclude('supabase/project-model-variants.sql', 'idx_project_model_variants_current_provider', 'database must allow only one current published run per provider')
@@ -314,6 +358,69 @@ function validateUiWiring() {
   mustInclude('supabase/project-model-variants.sql', 'AND quality_status = \'verified\'', 'database defaults must be verified')
   mustInclude('supabase/project-model-variants.sql', "quality_status = 'verified' OR run_role = 'historical_baseline'", 'known issues must be restricted to historical baselines')
   mustInclude('supabase/project-model-variants.sql', 'prevent_published_model_variant_evidence_update', 'published variant evidence must be immutable')
+  mustInclude('supabase/project-model-variants.sql', 'publish_project_model_variant_release', 'model history releases must use one atomic database function')
+  mustInclude('supabase/project-model-variants.sql', 'publish_project_model_variant_cohort', 'multi-project model releases must share one transaction')
+  mustInclude('supabase/project-model-variants.sql', 'pg_advisory_xact_lock', 'model history releases must serialize per canonical project')
+  mustInclude('supabase/project-model-variants.sql', 'Release payload omits an existing public model-variant row', 'atomic releases must preserve all existing public history')
+  mustInclude('supabase/project-model-variants.sql', 'REVOKE INSERT, UPDATE, DELETE ON TABLE project_model_variants FROM anon, authenticated', 'direct authenticated table writes must not bypass the atomic release contract')
+  mustInclude('supabase/project-model-variants.sql', 'valid_project_model_variant_artifact_paths', 'database writes must validate production artifact paths')
+  mustInclude('supabase/project-model-variants.sql', 'valid_project_model_variant_metrics', 'database writes must validate immutable verification metrics')
+  mustInclude('supabase/project-model-variants.sql', 'with at least eight checks', 'database metrics must retain one meaningful acceptance denominator')
+  mustInclude('supabase/schema.sql', 'publish_project_model_variant_release', 'the full database schema must install the atomic model-variant release function')
+  for (const sqlPath of ['supabase/project-model-variants.sql', 'supabase/schema.sql']) {
+    mustInclude(sqlPath, 'REVOKE INSERT, UPDATE, DELETE, TRUNCATE, REFERENCES, TRIGGER', 'service_role must release through the audited RPC instead of direct table writes')
+    mustInclude(sqlPath, 'GRANT SELECT ON TABLE project_model_variants TO service_role;', 'service_role needs read-only preflight access to model variants')
+    mustInclude(sqlPath, 'GRANT EXECUTE ON FUNCTION publish_project_model_variant_release(UUID, JSONB)\n  TO service_role;', 'single-project publication must be service-only')
+    mustInclude(sqlPath, 'GRANT EXECUTE ON FUNCTION publish_project_model_variant_cohort(JSONB)\n  TO service_role;', 'cohort publication must be service-only')
+    mustInclude(sqlPath, 'GRANT UPDATE (username, display_name, avatar_url, bio, updated_at)', 'profile owners must be limited to presentation fields')
+    mustInclude(sqlPath, 'ON TABLE profiles TO authenticated;', 'authenticated profile updates must use the safe column grant')
+    mustInclude(sqlPath, 'AND id <> target_variant_id;', 'default switching must clear the old row before setting the new row')
+    mustInclude(sqlPath, 'AND NOT is_default;', 're-selecting the current default must be a no-op')
+    mustInclude(sqlPath, 'retained_default_source_run_id', 'locked releases must preserve the database-selected default')
+    mustInclude(sqlPath, 'Existing default has no current verified successor in the release payload.', 'default inheritance must fail closed when its provider has no valid successor')
+    mustInclude(sqlPath, 'Release payload must request one current verified comparison as its default.', 'release callers must provide a valid checked default before database reconciliation')
+  }
+  mustInclude('src/lib/data/model-variants.ts', 'source_package_sha256, opening_prompt_sha256, comparison_contract_version, comparison_contract_sha256', 'public runtime reads must include immutable evidence hashes')
+  mustInclude('src/lib/project-model-variants.ts', 'record.source_package_sha256 !== variant.packageSha256', 'runtime reconciliation must fail closed on package-hash drift')
+  mustInclude('src/lib/project-model-variants.ts', 'expectedDatabaseModelSettings', 'runtime reconciliation must derive the exact structured model-settings record')
+  mustInclude('src/lib/project-model-variants.ts', '!sameJson(record.model_settings, expectedDatabaseModelSettings(variant))', 'runtime reconciliation must fail closed on any structured model-settings drift')
+  mustNotInclude('src/lib/project-model-variants.ts', 'normalizedManifestSettings.includes', 'runtime reconciliation must not accept partial model-settings records by substring')
+  mustInclude('scripts/release-project-model-variants.mjs', ".rpc(\n    'publish_project_model_variant_cohort'", 'release tooling must call the atomic cohort function')
+  mustInclude('scripts/release-project-model-variants.mjs', ".in('status', ['published', 'historical'])", 'release tooling must ignore retired or failed private rows when preserving public history')
+  mustInclude('scripts/release-project-model-variants.mjs', 'RELEASE_SELECT', 'release idempotency must compare an explicit stable evidence projection')
+  mustInclude('scripts/release-project-model-variants.mjs', '--emit-payload', 'checked initial releases must support an authenticated database-connector handoff')
+  mustInclude('scripts/release-project-model-variants.mjs', 'verifyPublicSourceUrls', 'release tooling must confirm every visible source share is reachable')
+  mustInclude('scripts/release-project-model-variants.mjs', 'history_appended', 'release tooling must support append-only future model history')
+  mustInclude('scripts/release-project-model-variants.mjs', 'releasedByProject', 'release summaries must report the rows actually returned by the locked database transaction')
+  mustInclude('scripts/release-project-model-variants.mjs', "['status', '--porcelain=v1', '--untracked-files=all']", 'database publication must be bound to a clean committed worktree')
+  mustInclude('scripts/release-project-model-variants.mjs', 'assertReleaseCandidateUnchanged(releaseHead)', 'database publication must recheck the commit after slow release verification')
+  mustInclude('scripts/release-project-model-variants.mjs', "EXPECTED_SUPABASE_PROJECT_REF = 'iccjwlwkaqnxifuxljla'", 'database publication must target the intended Supabase project')
+  mustInclude('scripts/release-project-model-variants.mjs', 'preserveExistingReleaseDefault', 'idempotent release must preserve the operator-selected database default')
+  mustNotInclude('scripts/release-project-model-variants.mjs', ".from('project_model_variants').insert", 'release tooling must not publish a provider set with non-atomic direct inserts')
+  mustInclude('package.json', 'npm run check:model-variants && node scripts/check-project-model-variant-live-registry.mjs', 'Vercel builds must validate the local cohort before database-first publication')
+  mustInclude('vercel.json', 'npm run build', 'Vercel must use the guarded npm build lifecycle')
+  mustInclude('scripts/check-project-model-variant-live-registry.mjs', "process.env.VERCEL !== '1'", 'live registry verification must run only in the Vercel release environment')
+  mustInclude('scripts/check-project-model-variant-live-registry.mjs', "EXPECTED_SUPABASE_PROJECT_REF = 'iccjwlwkaqnxifuxljla'", 'Vercel must verify the intended Supabase project')
+  mustInclude('scripts/check-project-model-variant-live-registry.mjs', 'missing checked source run', 'Vercel must fail before build when database-first evidence is incomplete')
+  mustInclude('scripts/check-project-model-variant-cohort.mjs', 'PRESERVABLE_INTERMEDIATE_FINDINGS', 'preserved intermediates must not retain network, arbitrary execution, or parse defects')
+  const launchBuilder = readRequired('scripts/build-project-model-variant-manifests.mjs')
+  const cohortPreflightIndex = launchBuilder.indexOf(
+    'for (const spec of SPECS) assertLaunchBuilderCanWrite(spec)',
+  )
+  const cohortCommitIndex = launchBuilder.indexOf(
+    'const pendingWrites = [...pendingPackageWrites, ...pendingManifestWrites]',
+    Math.max(0, cohortPreflightIndex),
+  )
+  assert(
+    cohortPreflightIndex >= 0 && cohortCommitIndex > cohortPreflightIndex,
+    'scripts/build-project-model-variant-manifests.mjs: every manifest must pass append-history preflight before the cohort commit',
+  )
+  assert(
+    (launchBuilder.match(/\bwriteJson\(/g) ?? []).length === 2,
+    'scripts/build-project-model-variant-manifests.mjs: package and manifest writes must occur only through the deferred cohort commit',
+  )
+  mustInclude('scripts/build-project-model-variant-manifests.mjs', 'commitJsonWrites(pendingWrites)', 'launch builder must stage the validated cohort before replacing checked files')
+  mustInclude('scripts/build-project-model-variant-manifests.mjs', 'renameSync(stagedWrite.absoluteTempPath, stagedWrite.absolutePath)', 'launch builder must atomically replace each staged file')
   mustNotInclude('supabase/project-model-variants.sql', 'INSERT INTO prompts', 'model variants must not create duplicate public projects')
 }
 
@@ -408,9 +515,10 @@ if (manifest) {
 
     assert(Array.isArray(manifest.variants), `${MANIFEST_PATH}: variants must be an array`)
     const variants = Array.isArray(manifest.variants) ? manifest.variants : []
-    assert(variants.length === 3, `${MANIFEST_PATH}: pilot must contain exactly three provider variants`)
+    assert(variants.length >= 3, `${MANIFEST_PATH}: pilot history must preserve at least three provider variants`)
 
     const providerCounts = new Map(PROVIDER_KEYS.map((key) => [key, 0]))
+    const currentProviderCounts = new Map(PROVIDER_KEYS.map((key) => [key, 0]))
     const seenSourceRunIds = new Set()
     const seenPackageFiles = new Set()
     const seenArtifactPaths = new Map()
@@ -437,6 +545,7 @@ if (manifest) {
         'operatorLabel',
         'runRole',
         'qualityStatus',
+        'isCurrent',
         'capturedAt',
         'promptCount',
         'repairPromptCount',
@@ -467,18 +576,27 @@ if (manifest) {
       assert(isNonBlankString(variant.operatorLabel), `${label}: operatorLabel must be nonblank`)
       assert(['historical-baseline', 'comparison-run'].includes(variant.runRole), `${label}: invalid runRole`)
       assert(['verified', 'known-issue'].includes(variant.qualityStatus), `${label}: invalid qualityStatus`)
+      assert(typeof variant.isCurrent === 'boolean', `${label}: isCurrent must be boolean`)
+      if (variant.isCurrent && currentProviderCounts.has(variant.providerKey)) {
+        currentProviderCounts.set(
+          variant.providerKey,
+          currentProviderCounts.get(variant.providerKey) + 1,
+        )
+      }
       assert(validTimestamp(variant.capturedAt), `${label}: capturedAt must be a valid timestamp`)
       assert(Number.isInteger(variant.promptCount) && variant.promptCount >= 1, `${label}: promptCount must be positive`)
       assert(
         Number.isInteger(variant.repairPromptCount) && variant.repairPromptCount >= 0 &&
-          variant.repairPromptCount === variant.promptCount - 1,
-        `${label}: every prompt after the invariant opener must be accounted for as an adaptive repair`,
+          variant.repairPromptCount < variant.promptCount,
+        `${label}: repairPromptCount must be non-negative and smaller than promptCount`,
       )
       assert(SHA256_PATTERN.test(variant.packageSha256 ?? ''), `${label}: packageSha256 must be lowercase SHA-256`)
       assert(uniqueStrings(variant.artifactVersionPaths), `${label}: artifactVersionPaths must be unique nonblank strings`)
       assert(
-        Array.isArray(variant.artifactVersionPaths) && variant.artifactVersionPaths.length === variant.promptCount,
-        `${label}: pilot requires one preserved artifact version per prompt`,
+        Array.isArray(variant.artifactVersionPaths) &&
+          variant.artifactVersionPaths.length >= 1 &&
+          variant.artifactVersionPaths.length <= variant.promptCount,
+        `${label}: artifact versions must preserve every real file without inventing transcript-only versions`,
       )
       if (Array.isArray(variant.artifactVersionPaths) && variant.artifactVersionPaths.length > 0) {
         assert(variant.artifactVersionPaths[0] === variant.firstArtifactPath, `${label}: firstArtifactPath must be the first preserved version`)
@@ -507,6 +625,7 @@ if (manifest) {
       if (variant.runRole === 'historical-baseline') {
         historicalCount += 1
         baseline = variant
+        assert(variant.isCurrent === false, `${label}: historical baseline cannot be current`)
         assert(variant.providerKey === 'openai', `${label}: historical baseline must be the original OpenAI run`)
         assert(variant.operatorKind === 'original-author', `${label}: historical baseline must retain original-author provenance`)
         assert(variant.qualityStatus === 'known-issue', `${label}: historical baseline must disclose its known preset/master issue`)
@@ -577,7 +696,8 @@ if (manifest) {
         try {
           const sourceUrl = new URL(pkg.source_url)
           assert(sourceUrl.protocol === 'https:', `${resolvedPackageFile}: source_url must use HTTPS`)
-          assert(PROVIDER_SOURCE_HOSTS[variant.providerKey].test(sourceUrl.hostname), `${resolvedPackageFile}: source_url host does not match ${variant.providerKey}`)
+          assert(PROVIDER_SOURCE_HOSTS[variant.providerKey]?.test(sourceUrl.hostname), `${resolvedPackageFile}: source_url host does not match ${variant.providerKey}`)
+          assert(PROVIDER_PUBLIC_SHARE_URLS[variant.providerKey]?.test(sourceUrl.href), `${resolvedPackageFile}: source_url must be a public provider share URL`)
         } catch {
           fail(`${resolvedPackageFile}: source_url must be a valid URL`)
         }
@@ -615,6 +735,7 @@ if (manifest) {
       }
 
       const steps = Array.isArray(pkg.steps) ? pkg.steps : []
+      const stepArtifactPaths = []
       for (const [stepIndex, step] of steps.entries()) {
         const stepLabel = `${resolvedPackageFile} step ${stepIndex + 1}`
         assert(isPlainObject(step), `${stepLabel}: step must be an object`)
@@ -622,11 +743,13 @@ if (manifest) {
         assert(step.step_number === stepIndex + 1, `${stepLabel}: step_number must be sequential`)
         assert(isNonBlankString(step.prompt_exact), `${stepLabel}: prompt_exact must be nonblank`)
         assert(isNonBlankString(step.response_exact), `${stepLabel}: response_exact must preserve exact visible text`)
-        assert(step.artifact_version_path === variant.artifactVersionPaths?.[stepIndex], `${stepLabel}: artifact_version_path must preserve the matching pilot version`)
-        assert(
-          Array.isArray(step.generated_files) && step.generated_files.includes(step.artifact_version_path),
-          `${stepLabel}: generated_files must include its artifact_version_path`,
-        )
+        if (isNonBlankString(step.artifact_version_path)) {
+          stepArtifactPaths.push(step.artifact_version_path)
+          assert(
+            Array.isArray(step.generated_files) && step.generated_files.includes(step.artifact_version_path),
+            `${stepLabel}: generated_files must include its artifact_version_path`,
+          )
+        }
         const response = String(step.response_exact ?? '').toLowerCase()
         for (const placeholder of [
           'exact response is preserved in the source session',
@@ -637,6 +760,10 @@ if (manifest) {
           assert(!response.includes(placeholder), `${stepLabel}: response_exact contains a summary placeholder`)
         }
       }
+      assert(
+        sameStringSet(stepArtifactPaths, variant.artifactVersionPaths ?? []),
+        `${resolvedPackageFile}: real step artifacts must match artifactVersionPaths`,
+      )
       assert(steps[0]?.prompt_exact === CANONICAL_OPENING_PROMPT, `${resolvedPackageFile}: first prompt must match the invariant opener byte-for-byte`)
       assert(steps[0]?.artifact_version_path === variant.firstArtifactPath, `${resolvedPackageFile}: first prompt must map to firstArtifactPath`)
       assert(steps.at(-1)?.artifact_version_path === variant.finalArtifactPath, `${resolvedPackageFile}: final repair step must map to finalArtifactPath`)
@@ -736,17 +863,20 @@ if (manifest) {
     }
 
     for (const providerKey of PROVIDER_KEYS) {
-      assert(providerCounts.get(providerKey) === 1, `${MANIFEST_PATH}: provider set must contain exactly one ${providerKey} run`)
+      assert(providerCounts.get(providerKey) >= 1, `${MANIFEST_PATH}: provider set must preserve at least one ${providerKey} run`)
+      assert(currentProviderCounts.get(providerKey) <= 1, `${MANIFEST_PATH}: provider set allows at most one current ${providerKey} run`)
+    }
+    for (const launchSourceRunId of PILOT_LAUNCH_SOURCE_RUN_IDS) {
+      assert(seenSourceRunIds.has(launchSourceRunId), `${MANIFEST_PATH}: pilot launch run ${launchSourceRunId} must remain inspectable`)
     }
     assert(functionalTotals.size === 1, `${MANIFEST_PATH}: every first/final run must use the same functional-check denominator`)
     assert(historicalCount === 1, `${MANIFEST_PATH}: exactly one run must be the historical baseline`)
     assert(knownIssueCount === 1, `${MANIFEST_PATH}: exactly one disclosed known-issue run is expected`)
-    assert(comparisonSourceRunIds.length === 2, `${MANIFEST_PATH}: exactly two runs must be Labs comparisons`)
+    assert(comparisonSourceRunIds.length >= 2, `${MANIFEST_PATH}: at least two runs must remain Labs comparisons`)
     assert(defaultVariant, `${MANIFEST_PATH}: defaultSourceRunId must match exactly one variant`)
     if (defaultVariant) {
-      assert(defaultVariant.providerKey === 'anthropic', `${MANIFEST_PATH}: Claude Fable 5 High is the intended default provider run`)
-      assert(/fable\s*5[\s\S]*high/i.test(defaultVariant.modelLabel), `${MANIFEST_PATH}: default model must be Fable 5 High`)
       assert(defaultVariant.runRole === 'comparison-run', `${MANIFEST_PATH}: default must be a Labs comparison run`)
+      assert(defaultVariant.isCurrent === true, `${MANIFEST_PATH}: default must be a current provider run`)
       assert(defaultVariant.qualityStatus === 'verified', `${MANIFEST_PATH}: default must be verified`)
       assert(defaultVariant.finalMetrics?.artifactReady === true, `${MANIFEST_PATH}: default final artifact must be ready`)
       assert(defaultVariant.finalMetrics?.hardGatesPassed === true, `${MANIFEST_PATH}: default final artifact must pass hard gates`)

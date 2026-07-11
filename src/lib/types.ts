@@ -143,12 +143,7 @@ export type ProjectModelVariantRecord = {
 
 export type ProjectModelVariantPublicRecord = Omit<
   ProjectModelVariantRecord,
-  | 'automation_run_id'
-  | 'source_package_file'
-  | 'source_package_sha256'
-  | 'opening_prompt_sha256'
-  | 'comparison_contract_version'
-  | 'comparison_contract_sha256'
+  'automation_run_id'
 >
 
 export type SuggestionModerationStatus = 'pending' | 'approved' | 'declined'

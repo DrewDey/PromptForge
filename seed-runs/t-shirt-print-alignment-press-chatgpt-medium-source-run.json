@@ -3,15 +3,19 @@
   "slug": "t-shirt-print-alignment-press-chatgpt-medium",
   "description": "Offline shirt-print layout scorer where a user arranges text/icon blocks on a shirt mockup, checks print-safe margins and readability, and copies an order-ready production spec.",
   "provider": "ChatGPT",
-  "model": "Medium",
-  "model_used": "Medium",
+  "model": "GPT-5.5",
+  "model_used": "GPT-5.5",
   "model_visible_selected_label": "Medium",
   "model_compact_chip": "Medium",
-  "model_settings": "ChatGPT GPT-5.5 Intelligence menu context; selected Medium before prompting after default High was visible; ChatGPT Pro account visible. No files, tools, external assets, or web/API calls requested.",
-  "source_url": "https://chatgpt.com/c/6a2f41d3-a068-83ea-b7e4-5532e9ed0e59",
-  "source_url_note": "Live ChatGPT source session captured in Chrome after response completion.",
+  "model_share_model_slug": "gpt-5-5-thinking",
+  "model_share_thinking_effort": "standard",
+  "model_settings": "ChatGPT web; GPT-5.5 Thinking (public share model_slug: gpt-5-5-thinking); Intelligence: Medium (public share thinking_effort: standard). ChatGPT Pro account visible; no files, tools, external assets, or web/API calls requested.",
+  "source_url": "https://chatgpt.com/share/6a517a8e-b4ec-83ea-b1a4-6112792b8438",
+  "source_run_id": "94e76d4a-a6e4-4fd1-9de6-9b84ff21483e",
+  "source_url_note": "Public ChatGPT share captured from the real source session. The share payload was rechecked before model-history release and records model_slug gpt-5-5-thinking with thinking_effort standard.",
   "run_started_at": "2026-06-15T00:00:58Z",
   "run_finished_at": "2026-06-15T00:12:47Z",
+  "repair_prompt_count": 0,
   "chain_type": "one-shot",
   "category": "games",
   "domain": "playful design tool/game",
@@ -41,8 +45,18 @@
   },
   "pathforge_fit_adaptation": "The outside demand signal is fast T-shirt concept shaping. This package adapts that into a deterministic offline shirt-print layout press game/studio that makes placement, safe-zone, contrast, scale, and copy/export tradeoffs inspectable on PathForge without image generation, remote APIs, CDN assets, hosted fonts, or marketplace content.",
   "final_artifact_path": "public/artifacts/t-shirt-print-alignment-press-chatgpt-medium.html",
+  "artifact_sha256": "f4b5c5fa33606baea1cb1038fb7e9c2f5c05b2397ec955ee559a81cdf996d8ea",
   "final_artifact_clue": "Open the HTML and arrange text/icon blocks on the shirt mockup; the readiness score, checks, and order spec update live.",
   "artifact_type": "html",
+  "artifact_version_notes": [
+    {
+      "path": "public/artifacts/t-shirt-print-alignment-press-chatgpt-medium.html",
+      "sha256": "f4b5c5fa33606baea1cb1038fb7e9c2f5c05b2397ec955ee559a81cdf996d8ea",
+      "bytes": 31078,
+      "lines": 1,
+      "disposition": "Historical final artifact; canonical baseline version."
+    }
+  ],
   "generated_files": [
     "public/artifacts/t-shirt-print-alignment-press-chatgpt-medium.html"
   ],
@@ -52,6 +66,34 @@
   "screenshots": [
     "seed-runs/evidence/t-shirt-print-alignment-press-chatgpt-medium-workflow.png"
   ],
+  "verification_evidence": {
+    "schema_version": 1,
+    "verified_at": "2026-07-10T23:32:43.000Z",
+    "first_pass_metrics": {
+      "qualityScore": 88,
+      "artifactReady": true,
+      "hardGatesPassed": false,
+      "functionalChecks": { "passed": 9, "total": 10 },
+      "consoleErrorCount": 0,
+      "horizontalOverflowPx": 0,
+      "notes": [
+        "The one-shot mockup supports movable text and icon blocks, keyboard movement, safety scoring, and a coordinate-rich production spec.",
+        "Two blocks overlapped by 2646 square pixels with no overlap warning or score effect."
+      ]
+    },
+    "final_metrics": {
+      "qualityScore": 88,
+      "artifactReady": true,
+      "hardGatesPassed": false,
+      "functionalChecks": { "passed": 9, "total": 10 },
+      "consoleErrorCount": 0,
+      "horizontalOverflowPx": 0,
+      "notes": [
+        "The historical final remains usable at 390px and desktop with working copy and download controls.",
+        "Its production checks do not detect block-to-block overlap, so one project criterion remains failed."
+      ]
+    }
+  },
   "verification_notes": [
     "Focused static scan passed: no remote dependencies, CDN/script/style URLs, remote fonts, inline event attributes, dynamic HTML sinks, modal APIs, document.write, eval/new Function, document.execCommand, network APIs, or negative letter spacing; inline script parsed.",
     "Local Chrome verification at 127.0.0.1:8767 rendered nonblank with 3 seeded blocks, 6 production checks, score/spec output, and no desktop horizontal overflow at 1420px.",
@@ -112,8 +154,8 @@
   ],
   "source_run_notes": [
     "Provider: ChatGPT",
-    "Model used: Medium",
-    "Model settings: ChatGPT GPT-5.5 Intelligence menu context; selected Medium before prompting after default High was visible; ChatGPT Pro account visible. No files, tools, external assets, or web/API calls requested.",
+    "Model used: GPT-5.5",
+    "Model settings: ChatGPT web; GPT-5.5 Thinking (public share model_slug: gpt-5-5-thinking); Intelligence: Medium (public share thinking_effort: standard). ChatGPT Pro account visible; no files, tools, external assets, or web/API calls requested.",
     "Prompt count: 1; no continuation prompts because first artifact passed static and workflow verification.",
     "Final artifact: public/artifacts/t-shirt-print-alignment-press-chatgpt-medium.html",
     "Artifact versions: one real artifact version only.",

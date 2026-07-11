@@ -1,0 +1,189 @@
+{
+  "schemaVersion": 1,
+  "canonicalProjectId": "22bcc36b-497f-43f7-824f-3ccba9690da6",
+  "canonicalRoute": "/rental-walkthrough-red-flag-scorecard-demo",
+  "title": "Rental Walkthrough Red Flag Scorecard",
+  "defaultSourceRunId": "b0472de4-e13d-453e-bf53-48cd2047412c",
+  "contract": {
+    "version": "rental-walkthrough-red-flag-scorecard-v1",
+    "openingPromptExact": "Can you make a saveable offline browser scorecard I can use during an apartment walkthrough to rate each room, note hazards and lease-risk clues, attach photo notes, and copy a clean inspection brief at the end?",
+    "acceptanceCriteria": [
+      "Support room-by-room scoring with hazards, lease-risk clues, severity, and evidence or photo-note fields.",
+      "Keep the overall rental assessment synchronized with the current room findings.",
+      "Provide useful local save or restore behavior without uploading private inspection data.",
+      "Provide a clean copyable or downloadable inspection brief suitable for a real rental decision.",
+      "Produce one complete self-contained HTML file that is immediately usable in a browser.",
+      "Operate offline with no external APIs, hosted generation, CDNs, remote fonts, scripts, stylesheets, or fragile dependencies.",
+      "Avoid unsafe HTML sinks, eval-like execution, inline event handlers, modal dialogs, and deprecated clipboard handling.",
+      "Avoid page-level horizontal overflow at 390 by 844 and at desktop width.",
+      "Keep essential controls visible, keyboard or touch reachable, and truthful about their current state.",
+      "Preserve exact prompt, response, source, and artifact-version evidence for the run."
+    ],
+    "adaptiveRepairPolicy": "Preserve and score the first real artifact. Continue only when verification proves a concrete defect or a source-capture failure; use the same source session and model; name the observed defect in ordinary language; preserve every real artifact version; stop as soon as the artifact passes; prefer no more than three total prompts and go beyond three only for a documented concrete lane reason such as a verification-proven regression, truncation, or mechanical capture failure.",
+    "sha256": "d0665706de7a1616b9120d01ac531f1311c3cd10967c0de86614bf8f26ddafb7",
+    "openingPromptSha256": "4e058c3d45c54971b9ee6cff153e0d4128a21704ff1393c43d5902f83099d57e"
+  },
+  "variants": [
+    {
+      "sourceRunId": "3137def2-964d-49a8-ad22-3b776870e3fe",
+      "providerKey": "openai",
+      "serviceLabel": "ChatGPT",
+      "modelLabel": "GPT-5.5",
+      "modelSettings": "Intelligence: Medium; visible ChatGPT menu before prompt showed GPT-5.5 with Intelligence options Instant, Medium, High, Extra High, and Pro Extended; Medium selected before prompting. No files or attachments used.",
+      "operatorKind": "original-author",
+      "operatorLabel": "Original source run · Maya Keys",
+      "runRole": "historical-baseline",
+      "qualityStatus": "verified",
+      "isCurrent": false,
+      "capturedAt": "2026-06-16T20:37:33Z",
+      "promptCount": 1,
+      "repairPromptCount": 0,
+      "packageFile": "rental-walkthrough-red-flag-scorecard-chatgpt-gpt55-medium-source-run.json",
+      "packageSha256": "dc59e44a86bd7ebd422ca5e0762c2549ffe3c5972949205fc02f691abbd944a2",
+      "firstArtifactPath": "public/artifacts/rental-walkthrough-red-flag-scorecard-chatgpt-gpt55-medium.html",
+      "finalArtifactPath": "public/artifacts/rental-walkthrough-red-flag-scorecard-chatgpt-gpt55-medium.html",
+      "artifactVersionPaths": [
+        "public/artifacts/rental-walkthrough-red-flag-scorecard-chatgpt-gpt55-medium.html"
+      ],
+      "firstPassMetrics": {
+        "qualityScore": 97,
+        "artifactReady": true,
+        "hardGatesPassed": true,
+        "functionalChecks": {
+          "passed": 10,
+          "total": 10
+        },
+        "consoleErrorCount": 0,
+        "horizontalOverflowPx": 0,
+        "notes": [
+          "The one-shot room workflow exercised ratings, hazards, lease clues, evidence notes, synchronized overall scoring, local restore, and inspection export.",
+          "It measured 390/390 and 1440/1440 with zero console errors."
+        ]
+      },
+      "finalMetrics": {
+        "qualityScore": 97,
+        "artifactReady": true,
+        "hardGatesPassed": true,
+        "functionalChecks": {
+          "passed": 10,
+          "total": 10
+        },
+        "consoleErrorCount": 0,
+        "horizontalOverflowPx": 0,
+        "notes": [
+          "All ten contract checks passed; saved property and room evidence survived reload and the exported brief stayed synchronized with current findings."
+        ]
+      }
+    },
+    {
+      "sourceRunId": "b0472de4-e13d-453e-bf53-48cd2047412c",
+      "providerKey": "anthropic",
+      "serviceLabel": "Claude",
+      "modelLabel": "Fable 5 High",
+      "modelSettings": "Claude web; High reasoning.",
+      "operatorKind": "pathforge-labs-manual",
+      "operatorLabel": "PathForge Labs · Developer-operated",
+      "runRole": "comparison-run",
+      "qualityStatus": "verified",
+      "isCurrent": true,
+      "capturedAt": "2026-07-10T22:11:34.259Z",
+      "promptCount": 2,
+      "repairPromptCount": 1,
+      "packageFile": "model-variants/rental-walkthrough-red-flag-scorecard-claude-fable-5-high-source-run.json",
+      "packageSha256": "8a070c9f693280f560f3e141557681fabe9fb1efc0205862fabc233be229651b",
+      "firstArtifactPath": "public/artifacts/rental-walkthrough-red-flag-scorecard-claude-fable-5-high-first-pass.html",
+      "finalArtifactPath": "public/artifacts/rental-walkthrough-red-flag-scorecard-claude-fable-5-high-final.html",
+      "artifactVersionPaths": [
+        "public/artifacts/rental-walkthrough-red-flag-scorecard-claude-fable-5-high-first-pass.html",
+        "public/artifacts/rental-walkthrough-red-flag-scorecard-claude-fable-5-high-final.html"
+      ],
+      "firstPassMetrics": {
+        "qualityScore": 88,
+        "artifactReady": true,
+        "hardGatesPassed": false,
+        "functionalChecks": {
+          "passed": 9,
+          "total": 10
+        },
+        "consoleErrorCount": 0,
+        "horizontalOverflowPx": 0,
+        "notes": [
+          "The first artifact passed all four project checks, desktop layout, and true 390x844 layout with zero artifact-origin console errors.",
+          "Static verification found document.execCommand in the copy fallback, failing one common safety check and triggering a same-session repair."
+        ]
+      },
+      "finalMetrics": {
+        "qualityScore": 97,
+        "artifactReady": true,
+        "hardGatesPassed": true,
+        "functionalChecks": {
+          "passed": 10,
+          "total": 10
+        },
+        "consoleErrorCount": 0,
+        "horizontalOverflowPx": 0,
+        "notes": [
+          "All four project checks and six common acceptance checks passed on the corrected artifact.",
+          "Static, room scoring, hazard and lease-risk flags, local state, 838-character brief, desktop 1660px, true 390x844, and zero-console-error checks were directly rerun."
+        ]
+      }
+    },
+    {
+      "sourceRunId": "b13bba3bcb88309c",
+      "providerKey": "google",
+      "serviceLabel": "Gemini",
+      "modelLabel": "Gemini 3.1 Pro",
+      "modelSettings": "Gemini web; Pro mode.",
+      "operatorKind": "pathforge-labs-manual",
+      "operatorLabel": "PathForge Labs · Developer-operated",
+      "runRole": "comparison-run",
+      "qualityStatus": "verified",
+      "isCurrent": true,
+      "capturedAt": "2026-07-11T00:39:04.030Z",
+      "promptCount": 4,
+      "repairPromptCount": 3,
+      "packageFile": "model-variants/rental-walkthrough-red-flag-scorecard-gemini-31-pro-source-run.json",
+      "packageSha256": "1c8757e16e7e06b6ce17453f08ceb73f9c9f4c7a09f75bb7af0c01d7a0eb0c89",
+      "firstArtifactPath": "public/artifacts/rental-walkthrough-red-flag-scorecard-gemini-31-pro-first-pass.html",
+      "finalArtifactPath": "public/artifacts/rental-walkthrough-red-flag-scorecard-gemini-31-pro-repair-3.html",
+      "artifactVersionPaths": [
+        "public/artifacts/rental-walkthrough-red-flag-scorecard-gemini-31-pro-first-pass.html",
+        "public/artifacts/rental-walkthrough-red-flag-scorecard-gemini-31-pro-repair-1.html",
+        "public/artifacts/rental-walkthrough-red-flag-scorecard-gemini-31-pro-final.html",
+        "public/artifacts/rental-walkthrough-red-flag-scorecard-gemini-31-pro-repair-3.html"
+      ],
+      "firstPassMetrics": {
+        "qualityScore": 84,
+        "artifactReady": true,
+        "hardGatesPassed": false,
+        "functionalChecks": {
+          "passed": 9,
+          "total": 10
+        },
+        "consoleErrorCount": 0,
+        "horizontalOverflowPx": 0,
+        "notes": [
+          "Fresh 390x844 and 1440x1000 measurements reported zero horizontal overflow and zero console errors.",
+          "The live workflow saved a 2/5 Kitchen with water-damage and photo evidence to localStorage and generated an inspection brief containing a 2.0/5.0 average plus global risk factors.",
+          "The first artifact failed the shared safety check with three dynamic innerHTML sinks, six inline event-handler attributes, and three blocking alert/confirm calls."
+        ]
+      },
+      "finalMetrics": {
+        "qualityScore": 97,
+        "artifactReady": true,
+        "hardGatesPassed": true,
+        "functionalChecks": {
+          "passed": 10,
+          "total": 10
+        },
+        "consoleErrorCount": 0,
+        "horizontalOverflowPx": 0,
+        "notes": [
+          "Fresh 390x844 and 1440x1000 measurements reported zero horizontal overflow and zero console errors, and the static hard-gate scan passed.",
+          "Direct workflow verified multi-room severity, risks and photo evidence, a synchronized live overall assessment, matching overall values in the brief, local save and reload restore, and in-page clear confirmation.",
+          "All four project-specific checks and all six shared production checks passed."
+        ]
+      }
+    }
+  ]
+}

@@ -1,0 +1,781 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Walkthrough Scorecard</title>
+<style>
+  :root {
+    --paper: #F2F3F1;
+    --card: #FFFFFF;
+    --ink: #1A2321;
+    --muted: #5C6662;
+    --line: #D5DAD7;
+    --pine: #24523F;
+    --pine-soft: #E3EDE8;
+    --flag: #C2410C;
+    --flag-soft: #FBEAE0;
+    --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { font-size: 16px; }
+  body {
+    background: var(--paper);
+    color: var(--ink);
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    line-height: 1.45;
+    padding: 12px 12px 80px;
+  }
+  .wrap { max-width: 720px; margin: 0 auto; }
+
+  header.tag {
+    background: var(--ink);
+    color: #F4F6F5;
+    border-radius: 10px;
+    padding: 14px 16px 16px;
+    margin-bottom: 14px;
+  }
+  header.tag .kicker {
+    font-family: var(--mono);
+    font-size: 11px;
+    text-transform: uppercase;
+    color: #9FB3AB;
+    margin-bottom: 4px;
+  }
+  header.tag h1 { font-size: 20px; font-weight: 800; line-height: 1.2; }
+  .headfields { display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap; }
+  .headfields input {
+    flex: 1 1 160px;
+    background: #26312E;
+    border: 1px solid #3A4642;
+    border-radius: 8px;
+    color: #F4F6F5;
+    padding: 9px 10px;
+    font-size: 15px;
+    font-family: inherit;
+  }
+  .headfields input::placeholder { color: #8A9992; }
+
+  .savebar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    margin-bottom: 14px;
+    flex-wrap: wrap;
+  }
+  .savestate {
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--muted);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--pine); }
+  .dot.warn { background: var(--flag); }
+  .savebar .actions { display: flex; gap: 6px; flex-wrap: wrap; }
+
+  button {
+    font-family: inherit;
+    font-size: 14px;
+    border: 1px solid var(--line);
+    background: var(--card);
+    color: var(--ink);
+    border-radius: 8px;
+    padding: 8px 12px;
+    cursor: pointer;
+  }
+  button:focus-visible { outline: 3px solid #7FB2A0; outline-offset: 1px; }
+  button.primary { background: var(--pine); border-color: var(--pine); color: #fff; font-weight: 700; }
+  button.danger { color: var(--flag); border-color: #E5C4B2; }
+  button.danger.armed { background: var(--flag); border-color: var(--flag); color: #fff; }
+  button.ghost { background: transparent; }
+
+  section.block { margin-bottom: 18px; }
+  .blockhead {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 8px;
+    margin: 0 2px 8px;
+  }
+  .blockhead h2 { font-size: 15px; font-weight: 800; text-transform: uppercase; }
+  .blockhead .count { font-family: var(--mono); font-size: 12px; color: var(--muted); }
+
+  .card {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 14px;
+    margin-bottom: 10px;
+  }
+  .roomtop { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; }
+  .roomtop input.roomname {
+    flex: 1;
+    font-size: 17px;
+    font-weight: 800;
+    border: none;
+    border-bottom: 1px dashed transparent;
+    background: transparent;
+    color: var(--ink);
+    padding: 2px 0;
+    font-family: inherit;
+    min-width: 0;
+  }
+  .roomtop input.roomname:focus { outline: none; border-bottom-color: var(--line); }
+  .roomtop button.del { padding: 6px 10px; font-size: 13px; flex-shrink: 0; }
+
+  .scorer { display: flex; gap: 6px; margin-bottom: 12px; }
+  .scorer button {
+    flex: 1;
+    font-family: var(--mono);
+    font-size: 18px;
+    font-weight: 700;
+    padding: 12px 0;
+    border-radius: 9px;
+    color: var(--muted);
+  }
+  .scorer button.on { background: var(--pine); border-color: var(--pine); color: #fff; }
+  .scorer button.on.low { background: var(--flag); border-color: var(--flag); }
+  .scorelabel { font-family: var(--mono); font-size: 11px; color: var(--muted); text-align: right; margin: -6px 2px 10px; }
+
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+  .chips button {
+    font-size: 13px;
+    padding: 7px 11px;
+    border-radius: 999px;
+    color: var(--muted);
+  }
+  .chips button.on {
+    background: var(--flag-soft);
+    border-color: var(--flag);
+    color: var(--flag);
+    font-weight: 700;
+  }
+  .chips.lease button.on {
+    background: var(--flag-soft);
+    border-color: var(--flag);
+    color: var(--flag);
+  }
+
+  textarea {
+    width: 100%;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 9px 10px;
+    font-family: inherit;
+    font-size: 15px;
+    color: var(--ink);
+    background: #FBFCFB;
+    resize: vertical;
+    min-height: 58px;
+  }
+  textarea:focus-visible { outline: 3px solid #7FB2A0; outline-offset: 1px; }
+  label.sub {
+    display: block;
+    font-family: var(--mono);
+    font-size: 11px;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin: 0 0 4px 2px;
+  }
+
+  .photos { margin-top: 12px; }
+  .photogrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 8px; margin-top: 8px; }
+  .photocell { border: 1px solid var(--line); border-radius: 8px; overflow: hidden; background: #FBFCFB; }
+  .photocell img { width: 100%; height: 90px; object-fit: cover; display: block; }
+  .photocell input {
+    width: 100%;
+    border: none;
+    border-top: 1px solid var(--line);
+    padding: 6px 7px;
+    font-size: 12px;
+    font-family: inherit;
+    background: transparent;
+    color: var(--ink);
+  }
+  .photocell input:focus { outline: none; background: #fff; }
+  .photocell button { width: 100%; border: none; border-top: 1px solid var(--line); border-radius: 0; font-size: 12px; padding: 5px; color: var(--flag); background: transparent; }
+  .addphoto { font-size: 13px; }
+  input[type="file"] { display: none; }
+
+  .brief textarea { font-family: var(--mono); font-size: 12px; min-height: 220px; }
+  .statusline { font-family: var(--mono); font-size: 12px; margin-top: 6px; min-height: 16px; }
+  .statusline.ok { color: var(--pine); }
+  .statusline.err { color: var(--flag); }
+
+  .addroomrow { display: flex; gap: 8px; }
+  .addroomrow input {
+    flex: 1;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 9px 10px;
+    font-size: 15px;
+    font-family: inherit;
+    background: var(--card);
+    color: var(--ink);
+  }
+  footer.note { font-family: var(--mono); font-size: 11px; color: var(--muted); margin-top: 22px; text-align: center; }
+  @media (prefers-reduced-motion: no-preference) {
+    button { transition: background 120ms ease, color 120ms ease, border-color 120ms ease; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="tag">
+    <div class="kicker">Field inspection record</div>
+    <h1>Apartment Walkthrough Scorecard</h1>
+    <div class="headfields">
+      <input id="propname" placeholder="Property / unit (e.g. 4412 Glenway #2)" autocomplete="off">
+      <input id="visitdate" placeholder="Visit date" autocomplete="off">
+    </div>
+  </header>
+
+  <div class="savebar">
+    <div class="savestate"><span class="dot" id="savedot"></span><span id="savemsg">Ready</span></div>
+    <div class="actions">
+      <button id="exportbtn">Export JSON</button>
+      <button id="importbtn">Import</button>
+      <button id="clearbtn" class="danger">Clear all</button>
+      <input type="file" id="importfile" accept="application/json">
+    </div>
+  </div>
+
+  <section class="block">
+    <div class="blockhead"><h2>Rooms</h2><span class="count" id="roomcount"></span></div>
+    <div id="rooms"></div>
+    <div class="addroomrow">
+      <input id="newroomname" placeholder="Add a room (e.g. Bedroom 2, Garage)" autocomplete="off">
+      <button id="addroombtn" class="primary">Add</button>
+    </div>
+  </section>
+
+  <section class="block">
+    <div class="blockhead"><h2>Lease-risk clues</h2><span class="count" id="leasecount"></span></div>
+    <div class="card">
+      <div class="chips lease" id="leasechips"></div>
+      <label class="sub" for="leasenotes">Lease notes / questions for landlord</label>
+      <textarea id="leasenotes" placeholder="Deposit terms, who pays which utilities, renewal language, anything the agent said that needs to be in writing..."></textarea>
+    </div>
+  </section>
+
+  <section class="block brief">
+    <div class="blockhead"><h2>Inspection brief</h2></div>
+    <div class="card">
+      <div class="actions" style="display:flex; gap:6px; margin-bottom:10px;">
+        <button id="genbtn" class="primary">Generate brief</button>
+        <button id="copybtn">Copy to clipboard</button>
+      </div>
+      <textarea id="briefout" placeholder="Generate to build a clean text brief from everything above." readonly></textarea>
+      <div class="statusline" id="briefstatus"></div>
+    </div>
+  </section>
+
+  <footer class="note">Offline tool - data stays on this device. Export JSON to back up or move between devices.</footer>
+</div>
+
+<script>
+(function () {
+  "use strict";
+
+  var STORE_KEY = "apt_scorecard_v1";
+  var SCORE_HINT = "1 = walk away / 5 = move-in ready";
+
+  var HAZARDS = [
+    "Mold / moisture smell",
+    "Water stains (ceiling/walls)",
+    "Fresh paint patch over stain",
+    "Electrical (loose outlets, scorch)",
+    "Pest signs / bait stations",
+    "No smoke or CO detector",
+    "Window won't lock / seal",
+    "HVAC weak or noisy",
+    "Plumbing leak / slow drain",
+    "Low water pressure",
+    "Floor damage / soft spots",
+    "Door won't latch / no deadbolt"
+  ];
+
+  var LEASE_CLUES = [
+    "Unit differs from listing photos",
+    "Deferred maintenance visible",
+    "Rushed showing / pressure tactics",
+    "Utilities not separately metered",
+    "Deposit terms vague or verbal",
+    "Prior tenant left abruptly",
+    "Common areas neglected",
+    "Poor cell signal inside",
+    "Noise from neighbors / street",
+    "Parking situation unclear",
+    "Landlord slow to answer questions",
+    "Repairs promised but not in writing"
+  ];
+
+  var DEFAULT_ROOMS = ["Entry / hallway", "Living room", "Kitchen", "Bathroom", "Bedroom 1"];
+
+  var state = null;
+  var saveTimer = null;
+  var nextId = 1;
+
+  function uid() { nextId += 1; return "n" + Date.now().toString(36) + nextId; }
+
+  function freshState() {
+    return {
+      property: "",
+      date: new Date().toLocaleDateString(),
+      rooms: DEFAULT_ROOMS.map(function (n) {
+        return { id: uid(), name: n, score: 0, hazards: [], notes: "", photos: [] };
+      }),
+      leaseFlags: [],
+      leaseNotes: ""
+    };
+  }
+
+  function loadState() {
+    try {
+      var raw = localStorage.getItem(STORE_KEY);
+      if (raw) {
+        var parsed = JSON.parse(raw);
+        if (parsed && Array.isArray(parsed.rooms)) return parsed;
+      }
+    } catch (e) { /* storage unavailable or corrupt */ }
+    return freshState();
+  }
+
+  function setSaveMsg(msg, warn) {
+    var dot = document.getElementById("savedot");
+    var el = document.getElementById("savemsg");
+    el.textContent = msg;
+    dot.className = warn ? "dot warn" : "dot";
+  }
+
+  function persist() {
+    try {
+      localStorage.setItem(STORE_KEY, JSON.stringify(state));
+      setSaveMsg("Saved " + new Date().toLocaleTimeString(), false);
+    } catch (e) {
+      setSaveMsg("Storage full - trim photos or export JSON", true);
+    }
+  }
+
+  function queueSave() {
+    setSaveMsg("Saving...", false);
+    if (saveTimer) clearTimeout(saveTimer);
+    saveTimer = setTimeout(persist, 400);
+  }
+
+  /* ---------- DOM helpers ---------- */
+
+  function el(tag, cls, text) {
+    var node = document.createElement(tag);
+    if (cls) node.className = cls;
+    if (text !== undefined && text !== null) node.textContent = text;
+    return node;
+  }
+
+  function clearNode(node) {
+    while (node.firstChild) node.removeChild(node.firstChild);
+  }
+
+  /* ---------- Photos ---------- */
+
+  function compressAndAdd(room, file, gridRefresh) {
+    var reader = new FileReader();
+    reader.onload = function () {
+      var img = new Image();
+      img.onload = function () {
+        var max = 1024;
+        var w = img.width, h = img.height;
+        if (w > max || h > max) {
+          if (w >= h) { h = Math.round(h * max / w); w = max; }
+          else { w = Math.round(w * max / h); h = max; }
+        }
+        var canvas = document.createElement("canvas");
+        canvas.width = w; canvas.height = h;
+        canvas.getContext("2d").drawImage(img, 0, 0, w, h);
+        var data = canvas.toDataURL("image/jpeg", 0.72);
+        room.photos.push({ id: uid(), data: data, caption: "" });
+        gridRefresh();
+        queueSave();
+      };
+      img.src = reader.result;
+    };
+    reader.readAsDataURL(file);
+  }
+
+  function buildPhotoGrid(room, container) {
+    clearNode(container);
+    room.photos.forEach(function (p) {
+      var cell = el("div", "photocell");
+      var img = document.createElement("img");
+      img.alt = p.caption || "Room photo";
+      img.src = p.data;
+      cell.appendChild(img);
+
+      var cap = document.createElement("input");
+      cap.type = "text";
+      cap.placeholder = "Caption (what am I looking at?)";
+      cap.value = p.caption;
+      cap.addEventListener("input", function () { p.caption = cap.value; queueSave(); });
+      cell.appendChild(cap);
+
+      var rm = el("button", null, "Remove photo");
+      rm.type = "button";
+      rm.addEventListener("click", function () {
+        room.photos = room.photos.filter(function (x) { return x.id !== p.id; });
+        buildPhotoGrid(room, container);
+        queueSave();
+      });
+      cell.appendChild(rm);
+      container.appendChild(cell);
+    });
+  }
+
+  /* ---------- Room cards ---------- */
+
+  function armButton(btn, baseLabel, confirmLabel, onConfirm) {
+    var armed = false;
+    var timer = null;
+    btn.addEventListener("click", function () {
+      if (!armed) {
+        armed = true;
+        btn.classList.add("armed");
+        btn.textContent = confirmLabel;
+        timer = setTimeout(function () {
+          armed = false;
+          btn.classList.remove("armed");
+          btn.textContent = baseLabel;
+        }, 3000);
+      } else {
+        clearTimeout(timer);
+        onConfirm();
+      }
+    });
+  }
+
+  function buildRoomCard(room) {
+    var card = el("div", "card");
+    card.dataset.roomId = room.id;
+
+    var top = el("div", "roomtop");
+    var name = document.createElement("input");
+    name.className = "roomname";
+    name.value = room.name;
+    name.placeholder = "Room name";
+    name.addEventListener("input", function () { room.name = name.value; queueSave(); });
+    top.appendChild(name);
+
+    var del = el("button", "del danger", "Remove");
+    del.type = "button";
+    armButton(del, "Remove", "Confirm?", function () {
+      state.rooms = state.rooms.filter(function (r) { return r.id !== room.id; });
+      renderRooms();
+      queueSave();
+    });
+    top.appendChild(del);
+    card.appendChild(top);
+
+    var scorer = el("div", "scorer");
+    var buttons = [];
+    for (var i = 1; i <= 5; i += 1) {
+      (function (val) {
+        var b = el("button", null, String(val));
+        b.type = "button";
+        b.addEventListener("click", function () {
+          room.score = (room.score === val) ? 0 : val;
+          buttons.forEach(function (bb, idx) {
+            var v = idx + 1;
+            bb.className = (room.score === v) ? (v <= 2 ? "on low" : "on") : "";
+          });
+          queueSave();
+        });
+        if (room.score === val) b.className = val <= 2 ? "on low" : "on";
+        buttons.push(b);
+        scorer.appendChild(b);
+      })(i);
+    }
+    card.appendChild(scorer);
+    card.appendChild(el("div", "scorelabel", SCORE_HINT));
+
+    var chips = el("div", "chips");
+    HAZARDS.forEach(function (hz) {
+      var c = el("button", room.hazards.indexOf(hz) >= 0 ? "on" : "", hz);
+      c.type = "button";
+      c.addEventListener("click", function () {
+        var idx = room.hazards.indexOf(hz);
+        if (idx >= 0) { room.hazards.splice(idx, 1); c.className = ""; }
+        else { room.hazards.push(hz); c.className = "on"; }
+        queueSave();
+      });
+      chips.appendChild(c);
+    });
+    card.appendChild(chips);
+
+    var noteLabel = el("label", "sub", "Notes");
+    noteLabel.htmlFor = "notes-" + room.id;
+    card.appendChild(noteLabel);
+    var notes = document.createElement("textarea");
+    notes.id = "notes-" + room.id;
+    notes.placeholder = "Condition details, measurements, smells, anything to verify later...";
+    notes.value = room.notes;
+    notes.addEventListener("input", function () { room.notes = notes.value; queueSave(); });
+    card.appendChild(notes);
+
+    var photos = el("div", "photos");
+    var addBtn = el("button", "addphoto", "+ Attach photo");
+    addBtn.type = "button";
+    var fileInput = document.createElement("input");
+    fileInput.type = "file";
+    fileInput.accept = "image/*";
+    fileInput.setAttribute("capture", "environment");
+    addBtn.addEventListener("click", function () { fileInput.click(); });
+    var grid = el("div", "photogrid");
+    fileInput.addEventListener("change", function () {
+      if (fileInput.files && fileInput.files[0]) {
+        compressAndAdd(room, fileInput.files[0], function () { buildPhotoGrid(room, grid); });
+        fileInput.value = "";
+      }
+    });
+    photos.appendChild(addBtn);
+    photos.appendChild(fileInput);
+    photos.appendChild(grid);
+    buildPhotoGrid(room, grid);
+    card.appendChild(photos);
+
+    return card;
+  }
+
+  function renderRooms() {
+    var host = document.getElementById("rooms");
+    clearNode(host);
+    state.rooms.forEach(function (r) { host.appendChild(buildRoomCard(r)); });
+    document.getElementById("roomcount").textContent = state.rooms.length + " room" + (state.rooms.length === 1 ? "" : "s");
+  }
+
+  /* ---------- Lease clues ---------- */
+
+  function renderLease() {
+    var host = document.getElementById("leasechips");
+    clearNode(host);
+    LEASE_CLUES.forEach(function (clue) {
+      var c = el("button", state.leaseFlags.indexOf(clue) >= 0 ? "on" : "", clue);
+      c.type = "button";
+      c.addEventListener("click", function () {
+        var idx = state.leaseFlags.indexOf(clue);
+        if (idx >= 0) { state.leaseFlags.splice(idx, 1); c.className = ""; }
+        else { state.leaseFlags.push(clue); c.className = "on"; }
+        updateLeaseCount();
+        queueSave();
+      });
+      host.appendChild(c);
+    });
+    updateLeaseCount();
+  }
+
+  function updateLeaseCount() {
+    document.getElementById("leasecount").textContent = state.leaseFlags.length + " flagged";
+  }
+
+  /* ---------- Brief ---------- */
+
+  function buildBrief() {
+    var lines = [];
+    var scored = state.rooms.filter(function (r) { return r.score > 0; });
+    var avg = scored.length
+      ? (scored.reduce(function (s, r) { return s + r.score; }, 0) / scored.length).toFixed(1)
+      : "n/a";
+    var hazardTotal = state.rooms.reduce(function (s, r) { return s + r.hazards.length; }, 0);
+    var photoTotal = state.rooms.reduce(function (s, r) { return s + r.photos.length; }, 0);
+
+    lines.push("APARTMENT INSPECTION BRIEF");
+    lines.push("Property: " + (state.property || "(not set)"));
+    lines.push("Visit date: " + (state.date || "(not set)"));
+    lines.push("Overall: " + avg + "/5 avg across " + scored.length + " scored room(s) | " +
+      hazardTotal + " hazard flag(s) | " + state.leaseFlags.length + " lease-risk clue(s) | " +
+      photoTotal + " photo(s) on file");
+    lines.push("");
+
+    lines.push("ROOM-BY-ROOM");
+    state.rooms.forEach(function (r) {
+      lines.push("- " + (r.name || "Unnamed room") + " - " + (r.score > 0 ? r.score + "/5" : "not scored"));
+      if (r.hazards.length) lines.push("    Hazards: " + r.hazards.join("; "));
+      if (r.notes.trim()) lines.push("    Notes: " + r.notes.trim().replace(/\s*\n\s*/g, " / "));
+      if (r.photos.length) {
+        var caps = r.photos.map(function (p, i) {
+          return p.caption.trim() ? p.caption.trim() : "photo " + (i + 1);
+        });
+        lines.push("    Photos (" + r.photos.length + "): " + caps.join("; "));
+      }
+    });
+    lines.push("");
+
+    lines.push("LEASE-RISK CLUES");
+    if (state.leaseFlags.length) {
+      state.leaseFlags.forEach(function (f) { lines.push("- " + f); });
+    } else {
+      lines.push("- None flagged");
+    }
+    if (state.leaseNotes.trim()) {
+      lines.push("Lease notes: " + state.leaseNotes.trim().replace(/\s*\n\s*/g, " / "));
+    }
+    lines.push("");
+
+    var followups = [];
+    state.rooms.forEach(function (r) {
+      r.hazards.forEach(function (h) {
+        followups.push("Get in writing: remediation plan for \"" + h + "\" in " + (r.name || "unnamed room"));
+      });
+    });
+    if (state.leaseFlags.indexOf("Repairs promised but not in writing") >= 0) {
+      followups.push("Request all promised repairs as a signed lease addendum before deposit");
+    }
+    if (state.leaseFlags.indexOf("Deposit terms vague or verbal") >= 0) {
+      followups.push("Request written deposit terms: amount, conditions, return timeline");
+    }
+    lines.push("FOLLOW-UPS BEFORE SIGNING");
+    if (followups.length) followups.forEach(function (f) { lines.push("- " + f); });
+    else lines.push("- None generated");
+
+    return lines.join("\n");
+  }
+
+  function setBriefStatus(msg, ok) {
+    var s = document.getElementById("briefstatus");
+    s.textContent = msg;
+    s.className = "statusline " + (ok ? "ok" : "err");
+  }
+
+  function copyBrief() {
+    var out = document.getElementById("briefout");
+    if (!out.value.trim()) {
+      out.value = buildBrief();
+    }
+    var text = out.value;
+    function fallback() {
+      out.removeAttribute("readonly");
+      out.focus();
+      out.select();
+      var done = false;
+      try { done = document.execCommand("copy"); } catch (e) { done = false; }
+      out.setAttribute("readonly", "readonly");
+      setBriefStatus(done ? "Copied (fallback)" : "Copy failed - select the text and copy manually", done);
+    }
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(function () {
+        setBriefStatus("Copied to clipboard", true);
+      }).catch(fallback);
+    } else {
+      fallback();
+    }
+  }
+
+  /* ---------- Export / import / clear ---------- */
+
+  function exportJson() {
+    var blob = new Blob([JSON.stringify(state, null, 2)], { type: "application/json" });
+    var a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    var safeName = (state.property || "apartment").replace(/[^a-z0-9]+/gi, "-").toLowerCase();
+    a.download = "walkthrough-" + safeName + ".json";
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(function () { URL.revokeObjectURL(a.href); }, 2000);
+  }
+
+  function importJson(file) {
+    var reader = new FileReader();
+    reader.onload = function () {
+      try {
+        var parsed = JSON.parse(reader.result);
+        if (!parsed || !Array.isArray(parsed.rooms)) throw new Error("shape");
+        state = parsed;
+        bindHeader();
+        renderRooms();
+        renderLease();
+        document.getElementById("leasenotes").value = state.leaseNotes || "";
+        persist();
+        setSaveMsg("Imported", false);
+      } catch (e) {
+        setSaveMsg("Import failed - not a valid scorecard file", true);
+      }
+    };
+    reader.readAsText(file);
+  }
+
+  function bindHeader() {
+    var p = document.getElementById("propname");
+    var d = document.getElementById("visitdate");
+    p.value = state.property || "";
+    d.value = state.date || "";
+  }
+
+  /* ---------- Init ---------- */
+
+  function init() {
+    state = loadState();
+    bindHeader();
+    renderRooms();
+    renderLease();
+    document.getElementById("leasenotes").value = state.leaseNotes || "";
+
+    document.getElementById("propname").addEventListener("input", function (e) {
+      state.property = e.target.value; queueSave();
+    });
+    document.getElementById("visitdate").addEventListener("input", function (e) {
+      state.date = e.target.value; queueSave();
+    });
+    document.getElementById("leasenotes").addEventListener("input", function (e) {
+      state.leaseNotes = e.target.value; queueSave();
+    });
+
+    document.getElementById("addroombtn").addEventListener("click", function () {
+      var inp = document.getElementById("newroomname");
+      var nm = inp.value.trim() || "Room " + (state.rooms.length + 1);
+      state.rooms.push({ id: uid(), name: nm, score: 0, hazards: [], notes: "", photos: [] });
+      inp.value = "";
+      renderRooms();
+      queueSave();
+    });
+    document.getElementById("newroomname").addEventListener("keydown", function (e) {
+      if (e.key === "Enter") document.getElementById("addroombtn").click();
+    });
+
+    document.getElementById("genbtn").addEventListener("click", function () {
+      document.getElementById("briefout").value = buildBrief();
+      setBriefStatus("Brief generated - review, then copy", true);
+    });
+    document.getElementById("copybtn").addEventListener("click", copyBrief);
+
+    document.getElementById("exportbtn").addEventListener("click", exportJson);
+    document.getElementById("importbtn").addEventListener("click", function () {
+      document.getElementById("importfile").click();
+    });
+    document.getElementById("importfile").addEventListener("change", function (e) {
+      if (e.target.files && e.target.files[0]) { importJson(e.target.files[0]); e.target.value = ""; }
+    });
+
+    armButton(document.getElementById("clearbtn"), "Clear all", "Really clear?", function () {
+      state = freshState();
+      bindHeader();
+      renderRooms();
+      renderLease();
+      document.getElementById("leasenotes").value = "";
+      document.getElementById("briefout").value = "";
+      persist();
+      var btn = document.getElementById("clearbtn");
+      btn.classList.remove("armed");
+      btn.textContent = "Clear all";
+    });
+
+    setSaveMsg("Loaded", false);
+  }
+
+  init();
+})();
+</script>
+</body>
+</html>

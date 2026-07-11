@@ -1,0 +1,200 @@
+{
+  "schemaVersion": 1,
+  "canonicalProjectId": "ca0c2e08-9e02-4725-90f5-58ef248fe4c7",
+  "canonicalRoute": "/gym-mirror-progress-shot-consistency-studio-demo",
+  "title": "Gym Mirror Progress Shot Consistency Studio",
+  "defaultSourceRunId": "415ab5f2c1b09824",
+  "contract": {
+    "version": "gym-mirror-progress-shot-consistency-studio-v1",
+    "openingPromptExact": "I want a saveable, openable Gym Mirror Progress Shot Consistency Studio for tablet and desktop that helps me make comparable gym progress photos with pose, angle, lighting, background cards, privacy crop checks, retake warnings, a session comparison score, and a copyable shoot receipt, without needing to upload images.\n",
+    "acceptanceCriteria": [
+      "Provide repeatable pose, angle, lighting, background, distance, and timing setup controls without requiring image upload.",
+      "Include privacy crop checks and useful retake warnings before a session is accepted.",
+      "Calculate a meaningful comparability score from the selected setup and preserve a usable session history.",
+      "Provide a copyable shoot receipt that makes the next progress-photo session repeatable.",
+      "Produce one complete self-contained HTML file that is immediately usable in a browser.",
+      "Operate offline with no external APIs, hosted generation, CDNs, remote fonts, scripts, stylesheets, or fragile dependencies.",
+      "Avoid unsafe HTML sinks, eval-like execution, inline event handlers, modal dialogs, and deprecated clipboard handling.",
+      "Avoid page-level horizontal overflow at 390 by 844 and at desktop width.",
+      "Keep essential controls visible, keyboard or touch reachable, and truthful about their current state.",
+      "Preserve exact prompt, response, source, and artifact-version evidence for the run."
+    ],
+    "adaptiveRepairPolicy": "Preserve and score the first real artifact. Continue only when verification proves a concrete defect or a source-capture failure; use the same source session and model; name the observed defect in ordinary language; preserve every real artifact version; stop as soon as the artifact passes; prefer no more than three total prompts and go beyond three only for a documented concrete lane reason such as a verification-proven regression, truncation, or mechanical capture failure.",
+    "sha256": "dadefe1362645b07c0b75a3d2eae7be2f0312d0d9cfd66dd9eb3ac6a6ae875eb",
+    "openingPromptSha256": "5822df6d560665e9e2fe3d85fb16514bb8571c781cdd75ef51a8bb2b9b002d0e"
+  },
+  "variants": [
+    {
+      "sourceRunId": "0eea38da-ead0-44e0-b50c-ddc6840cb033",
+      "providerKey": "anthropic",
+      "serviceLabel": "Claude",
+      "modelLabel": "Sonnet 4.6 Max",
+      "modelSettings": "Visible Claude model chip showed Sonnet 4.6 Max before prompts 1-4; Claude page also showed Fable 5 currently unavailable. No separate speed/thinking setting changed.",
+      "operatorKind": "original-author",
+      "operatorLabel": "Original source run · Rhea Fitline",
+      "runRole": "historical-baseline",
+      "qualityStatus": "verified",
+      "isCurrent": false,
+      "capturedAt": "2026-06-17T01:07:31.143Z",
+      "promptCount": 4,
+      "repairPromptCount": 3,
+      "packageFile": "gym-mirror-progress-shot-consistency-studio-claude-sonnet46-max-source-run.json",
+      "packageSha256": "c3ee64ebeb6a851e959a1dba054ac2392dc3578de0f246c18fbb77ce7e338931",
+      "firstArtifactPath": "public/artifacts/gym-mirror-progress-shot-consistency-studio-claude-sonnet46-max-v1.html",
+      "finalArtifactPath": "public/artifacts/gym-mirror-progress-shot-consistency-studio-claude-sonnet46-max.html",
+      "artifactVersionPaths": [
+        "public/artifacts/gym-mirror-progress-shot-consistency-studio-claude-sonnet46-max-v1.html",
+        "public/artifacts/gym-mirror-progress-shot-consistency-studio-claude-sonnet46-max-v2.html",
+        "public/artifacts/gym-mirror-progress-shot-consistency-studio-claude-sonnet46-max-v3.html",
+        "public/artifacts/gym-mirror-progress-shot-consistency-studio-claude-sonnet46-max-v4.html",
+        "public/artifacts/gym-mirror-progress-shot-consistency-studio-claude-sonnet46-max.html"
+      ],
+      "firstPassMetrics": {
+        "qualityScore": 72,
+        "artifactReady": true,
+        "hardGatesPassed": false,
+        "functionalChecks": {
+          "passed": 7,
+          "total": 10
+        },
+        "consoleErrorCount": 0,
+        "horizontalOverflowPx": 0,
+        "notes": [
+          "The first artifact left Save disabled after every required current-session field was selected, so it could not create history or a usable receipt.",
+          "It also preserved scanner-visible deprecated clipboard wording and nonzero letter spacing that later source-session repairs removed."
+        ]
+      },
+      "finalMetrics": {
+        "qualityScore": 98,
+        "artifactReady": true,
+        "hardGatesPassed": true,
+        "functionalChecks": {
+          "passed": 10,
+          "total": 10
+        },
+        "consoleErrorCount": 0,
+        "horizontalOverflowPx": 0,
+        "notes": [
+          "The final enabled Save for a complete setup, created a persistent 100/100 session, covered privacy and retake checks, and generated a detailed receipt.",
+          "Static safety, 390px, desktop, and console checks passed."
+        ]
+      }
+    },
+    {
+      "sourceRunId": "415ab5f2c1b09824",
+      "providerKey": "openai",
+      "serviceLabel": "ChatGPT",
+      "modelLabel": "GPT-5.6 Luna",
+      "modelSettings": "ChatGPT Work surface; Effort: Extra High; Speed: Standard.",
+      "operatorKind": "pathforge-labs-manual",
+      "operatorLabel": "PathForge Labs · Developer-operated",
+      "runRole": "comparison-run",
+      "qualityStatus": "verified",
+      "isCurrent": true,
+      "capturedAt": "2026-07-10T22:14:37.000Z",
+      "promptCount": 5,
+      "repairPromptCount": 4,
+      "packageFile": "model-variants/gym-mirror-progress-shot-consistency-studio-chatgpt-gpt56-luna-source-run.json",
+      "packageSha256": "828d0fb8bd7fdf7de992c40807945cffdc2b30b53f0f27867ac047effc262be8",
+      "firstArtifactPath": "public/artifacts/gym-mirror-progress-shot-consistency-studio-chatgpt-gpt56-luna-first-pass.html",
+      "finalArtifactPath": "public/artifacts/gym-mirror-progress-shot-consistency-studio-chatgpt-gpt56-luna-final.html",
+      "artifactVersionPaths": [
+        "public/artifacts/gym-mirror-progress-shot-consistency-studio-chatgpt-gpt56-luna-first-pass.html",
+        "public/artifacts/gym-mirror-progress-shot-consistency-studio-chatgpt-gpt56-luna-repair-1.html",
+        "public/artifacts/gym-mirror-progress-shot-consistency-studio-chatgpt-gpt56-luna-repair-2.html",
+        "public/artifacts/gym-mirror-progress-shot-consistency-studio-chatgpt-gpt56-luna-repair-3.html",
+        "public/artifacts/gym-mirror-progress-shot-consistency-studio-chatgpt-gpt56-luna-final.html"
+      ],
+      "firstPassMetrics": {
+        "qualityScore": 80,
+        "artifactReady": true,
+        "hardGatesPassed": false,
+        "functionalChecks": {
+          "passed": 8,
+          "total": 10
+        },
+        "consoleErrorCount": 0,
+        "horizontalOverflowPx": 0,
+        "notes": [
+          "The first artifact rendered at desktop and true 390x844 with no page-level overflow or console errors, and its core studio workflow was present.",
+          "Static verification found prohibited window.print() and window.confirm() paths plus four negative letter-spacing declarations.",
+          "True-390 measurement found the first pose title and subtitle overlapping on one line with -13px vertical separation, producing labels such as Front relaxedNeutral stance.",
+          "Prompt-2 delivery remained byte-for-byte identical to prompt 1, so its claimed dialog repair was not accepted."
+        ]
+      },
+      "finalMetrics": {
+        "qualityScore": 99,
+        "artifactReady": true,
+        "hardGatesPassed": true,
+        "functionalChecks": {
+          "passed": 10,
+          "total": 10
+        },
+        "consoleErrorCount": 0,
+        "horizontalOverflowPx": 0,
+        "notes": [
+          "The final artifact passed all ten invariant acceptance checks, static safety and typography gates, script parsing, desktop workflow, and true 390x844 no-overflow verification.",
+          "A saved session produced a 100/100 receipt; baseline comparison reported 7 of 7 locked variables match; inline two-click clear retained then removed history as intended.",
+          "At true 390px the pose title/subtitle wrapper is a grid with a computed 4px gap and separate title/note nodes."
+        ]
+      }
+    },
+    {
+      "sourceRunId": "7306c74eb7928857",
+      "providerKey": "google",
+      "serviceLabel": "Gemini",
+      "modelLabel": "Gemini 3.1 Pro",
+      "modelSettings": "Gemini web; Pro mode.",
+      "operatorKind": "pathforge-labs-manual",
+      "operatorLabel": "PathForge Labs · Developer-operated",
+      "runRole": "comparison-run",
+      "qualityStatus": "verified",
+      "isCurrent": true,
+      "capturedAt": "2026-07-11T05:26:38.953Z",
+      "promptCount": 4,
+      "repairPromptCount": 3,
+      "packageFile": "model-variants/gym-mirror-progress-shot-consistency-studio-gemini-31-pro-source-run.json",
+      "packageSha256": "81edc83e2945eef2474e201c5501a7b3b772c4af7dc31a6723486db1c25a8131",
+      "firstArtifactPath": "public/artifacts/gym-mirror-progress-shot-consistency-studio-gemini-31-pro-first-pass.html",
+      "finalArtifactPath": "public/artifacts/gym-mirror-progress-shot-consistency-studio-gemini-31-pro-repair-3.html",
+      "artifactVersionPaths": [
+        "public/artifacts/gym-mirror-progress-shot-consistency-studio-gemini-31-pro-first-pass.html",
+        "public/artifacts/gym-mirror-progress-shot-consistency-studio-gemini-31-pro-repair-1.html",
+        "public/artifacts/gym-mirror-progress-shot-consistency-studio-gemini-31-pro-repair-2.html",
+        "public/artifacts/gym-mirror-progress-shot-consistency-studio-gemini-31-pro-repair-3.html"
+      ],
+      "firstPassMetrics": {
+        "qualityScore": 58,
+        "artifactReady": true,
+        "hardGatesPassed": false,
+        "functionalChecks": {
+          "passed": 7,
+          "total": 10
+        },
+        "consoleErrorCount": 0,
+        "horizontalOverflowPx": 0,
+        "notes": [
+          "Fresh 390x844 and 1440x1000 measurements showed zero overflow and zero console errors.",
+          "The response required image uploads and provided only four consistency checkboxes, omitting the contracted distance and timing controls and persistent session history.",
+          "Static verification found deprecated document.execCommand clipboard handling."
+        ]
+      },
+      "finalMetrics": {
+        "qualityScore": 97,
+        "artifactReady": true,
+        "hardGatesPassed": true,
+        "functionalChecks": {
+          "passed": 10,
+          "total": 10
+        },
+        "consoleErrorCount": 0,
+        "horizontalOverflowPx": 0,
+        "notes": [
+          "Fresh 390x844 and 1440x1000 measurements reported zero horizontal overflow and zero console errors, and the complete static hard-gate scan passed.",
+          "Direct diff evidence showed the final repair changed exactly one safety-comment line and no executable behavior.",
+          "All four project-specific checks and all six shared production checks remain passed."
+        ]
+      }
+    }
+  ]
+}

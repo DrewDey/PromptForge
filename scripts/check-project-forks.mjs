@@ -27,7 +27,7 @@ function sharedSourceRunRoutes() {
     .filter((entry) => entry.isDirectory())
     .map((entry) => `src/app/${entry.name}/page.tsx`)
     .filter((routePath) => existsSync(routePath))
-    .filter((routePath) => read(routePath).includes("from '@/components/SourceRunShowcase'"))
+    .filter((routePath) => read(routePath).includes('import SourceRunShowcase'))
 }
 
 const forkLib = read('src/lib/project-forks.ts')

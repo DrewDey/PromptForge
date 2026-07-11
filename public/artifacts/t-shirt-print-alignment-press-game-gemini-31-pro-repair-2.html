@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>T-Shirt Print Alignment Game</title>
+    <style>
+        :root {
+            --bg: #f1f5f9;
+            --shirt: #ffffff;
+            --safe: #dbeafe;
+            --primary: #2563eb;
+            --danger: #dc2626;
+            --success: #16a34a;
+            --text: #1e293b;
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            margin: 0;
+            font-family: system-ui, -apple-system, sans-serif;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+            background-color: var(--bg);
+            overflow-x: hidden;
+            color: var(--text);
+        }
+
+        #toolbar {
+            padding: 1rem;
+            background: #fff;
+            border-bottom: 1px solid #cbd5e1;
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+            z-index: 10;
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 8px 16px;
+            cursor: pointer;
+            border: none;
+            border-radius: 4px;
+            background: var(--primary);
+            color: white;
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+
+        .btn-success { background: var(--success); }
+        .btn-danger { background: var(--danger); }
+        .btn-outline { background: transparent; border: 1px solid var(--primary); color: var(--primary); }
+
+        #nudge-controls {
+            display: none;
+            gap: 0.5rem;
+            padding: 0.5rem;
+            background: #f8fafc;
+            border-radius: 4px;
+            align-items: center;
+        }
+
+        #results {
+            padding: 1rem;
+            border-radius: 4px;
+            font-size: 0.85rem;
+            white-space: pre-line;
+            border: 1px solid #e2e8f0;
+            background: #f8fafc;
+            line-height: 1.4;
+        }
+
+        #canvas-area {
+            flex-grow: 1;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            padding: 2rem 1rem;
+            position: relative;
+            overflow: hidden;
+        }
+
+        #shirt {
+            width: 320px;
+            height: 420px;
+            background: var(--shirt);
+            border-radius: 40px 40px 10px 10px;
+            position: relative;
+            box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1);
+        }
+
+        /* Collar simulation */
+        #shirt::before {
+            content: '';
+            position: absolute;
+            top: -15px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 120px;
+            height: 30px;
+            background: var(--bg);
+            border-radius: 50%;
+            border-bottom: 2px solid #e2e8f0;
+        }
+
+        #safe-zone {
+            position: absolute;
+            top: 70px;
+            left: 40px;
+            right: 40px;
+            bottom: 40px;
+            border: 2px dashed var(--primary);
+            background: var(--safe);
+            pointer-events: none;
+        }
+
+        .element {
+            position: absolute;
+            cursor: move;
+            padding: 0.5rem 1rem;
+            border: 2px solid transparent;
+            background: var(--text);
+            color: white;
+            font-weight: bold;
+            user-select: none;
+            touch-action: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 4px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+
+        .element.icon-block {
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            padding: 0;
+            font-size: 1.5rem;
+            background: #f59e0b;
+        }
+
+        .element.selected {
+            border-color: #38bdf8;
+            outline: 2px solid #38bdf8;
+            outline-offset: 2px;
+            z-index: 5;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="toolbar">
+        <div class="btn-group">
+            <button id="add-text" class="btn">Add Text</button>
+            <button id="add-icon" class="btn">Add Icon</button>
+            <button id="check-btn" class="btn btn-success">Score Design</button>
+        </div>
+        
+        <div id="nudge-controls">
+            <span style="font-size: 0.8rem; font-weight: bold; margin-right: 5px;">Nudge:</span>
+            <button id="n-up" class="btn">▲</button>
+            <button id="n-down" class="btn">▼</button>
+            <button id="n-left" class="btn">◀</button>
+            <button id="n-right" class="btn">▶</button>
+            <button id="n-del" class="btn btn-danger" style="margin-left: auto;">Delete</button>
+        </div>
+
+        <div id="results">Add elements and score your design to see validation metrics.</div>
+        
+        <div class="btn-group">
+            <button id="copy-json" class="btn btn-outline">Copy Spec</button>
+            <button id="dl-json" class="btn btn-outline">Download Spec</button>
+        </div>
+    </div>
+
+    <div id="canvas-area">
+        <div id="shirt">
+            <div id="safe-zone"></div>
+        </div>
+    </div>
+
+    <script>
+        const shirt = document.getElementById('shirt');
+        const safeZone = document.getElementById('safe-zone');
+        const results = document.getElementById('results');
+        const nudgeControls = document.getElementById('nudge-controls');
+        
+        let selectedEl = null;
+        let lastScoreReport = null;
+
+        function updateResults(text) {
+            results.textContent = text;
+        }
+
+        function createBlock(type) {
+            const el = document.createElement('div');
+            el.className = 'element';
+            if (type === 'icon') el.classList.add('icon-block');
+            el.textContent = type === 'text' ? 'YOUR TEXT' : '★';
+            el.dataset.type = type;
+            el.style.left = '90px';
+            el.style.top = '120px';
+            
+            el.addEventListener('mousedown', selectEl);
+            el.addEventListener('touchstart', selectEl, {passive: false});
+            shirt.appendChild(el);
+            selectEl({currentTarget: el});
+            lastScoreReport = null;
+        }
+
+        function selectEl(e) {
+            if (selectedEl) selectedEl.classList.remove('selected');
+            selectedEl = e.currentTarget;
+            selectedEl.classList.add('selected');
+            nudgeControls.style.display = 'flex';
+        }
+
+        function deselectAll(e) {
+            if (e.target === shirt || e.target.id === 'canvas-area') {
+                if (selectedEl) selectedEl.classList.remove('selected');
+                selectedEl = null;
+                nudgeControls.style.display = 'none';
+            }
+        }
+        document.getElementById('canvas-area').addEventListener('mousedown', deselectAll);
+        document.getElementById('canvas-area').addEventListener('touchstart', deselectAll, {passive: false});
+
+        function move(dx, dy) {
+            if (!selectedEl) return;
+            const x = parseInt(selectedEl.style.left || 0) + dx;
+            const y = parseInt(selectedEl.style.top || 0) + dy;
+            selectedEl.style.left = x + 'px';
+            selectedEl.style.top = y + 'px';
+            lastScoreReport = null;
+        }
+
+        document.getElementById('n-up').addEventListener('click', () => move(0, -5));
+        document.getElementById('n-down').addEventListener('click', () => move(0, 5));
+        document.getElementById('n-left').addEventListener('click', () => move(-5, 0));
+        document.getElementById('n-right').addEventListener('click', () => move(5, 0));
+        document.getElementById('n-del').addEventListener('click', () => {
+            if (selectedEl) { 
+                selectedEl.remove(); 
+                selectedEl = null; 
+                nudgeControls.style.display = 'none'; 
+                lastScoreReport = null;
+            }
+        });
+
+        // Validation Engine
+        function runValidation() {
+            const els = Array.from(document.querySelectorAll('.element'));
+            if (els.length === 0) return null;
+
+            const safe = safeZone.getBoundingClientRect();
+            const safeCenterX = safe.left + (safe.width / 2);
+            
+            const report = {
+                metrics: {
+                    margin: 'PASS',
+                    alignment: 'PASS', 
+                    overlap: 'PASS',
+                    readability: 'PASS'
+                },
+                errors: []
+            };
+
+            els.forEach((el, i) => {
+                const r = el.getBoundingClientRect();
+                const elCenterX = r.left + (r.width / 2);
+
+                // 1. Margin Check (Strict containment)
+                if (r.left < safe.left || r.right > safe.right || r.top < safe.top || r.bottom > safe.bottom) {
+                    report.metrics.margin = 'FAIL';
+                    report.errors.push(`Element ${i+1} is outside the print-safe area.`);
+                }
+
+                // 2. Alignment Check (Must be horizontally centered within 8px tolerance)
+                const centerDiff = Math.abs(elCenterX - safeCenterX);
+                if (centerDiff > 8) {
+                    report.metrics.alignment = 'FAIL';
+                    report.errors.push(`Element ${i+1} is off-center by ${Math.round(centerDiff)}px.`);
+                }
+
+                // 3. Readability Check A (Clearance from safe zone borders to prevent edge distortion)
+                const clearance = 10;
+                if (r.left - safe.left < clearance || safe.right - r.right < clearance || 
+                    r.top - safe.top < clearance || safe.bottom - r.bottom < clearance) {
+                    report.metrics.readability = 'FAIL';
+                    if (!report.errors.includes('Elements lack adequate visual clearance from borders.')) {
+                        report.errors.push('Elements lack adequate visual clearance from borders.');
+                    }
+                }
+
+                // 4. Overlap & Readability Check B (Element interactions)
+                els.forEach((el2, j) => {
+                    if (i >= j) return;
+                    const r2 = el2.getBoundingClientRect();
+                    
+                    // Hard Overlap
+                    if (!(r.right < r2.left || r.left > r2.right || r.bottom < r2.top || r.top > r2.bottom)) {
+                        report.metrics.overlap = 'FAIL';
+                        if (!report.errors.includes('Hard overlap detected.')) {
+                            report.errors.push('Hard overlap detected.');
+                        }
+                    } else {
+                        // Visual Crowding (less than 12px apart)
+                        const xDist = Math.max(0, Math.max(r.left - r2.right, r2.left - r.right));
+                        const yDist = Math.max(0, Math.max(r.top - r2.bottom, r2.top - r.bottom));
+                        if (xDist < 12 && yDist < 12) {
+                            report.metrics.readability = 'FAIL';
+                            if (!report.errors.includes('Elements are too crowded (readability risk).')) {
+                                report.errors.push('Elements are too crowded (readability risk).');
+                            }
+                        }
+                    }
+                });
+            });
+
+            return report;
+        }
+
+        document.getElementById('check-btn').addEventListener('click', () => {
+            const report = runValidation();
+            if (!report) {
+                updateResults('No elements to score.');
+                return;
+            }
+
+            lastScoreReport = report;
+            const statusLines = [
+                `Margin: ${report.metrics.margin}`,
+                `Alignment: ${report.metrics.alignment}`,
+                `Overlap: ${report.metrics.overlap}`,
+                `Readability: ${report.metrics.readability}`,
+                '',
+                report.errors.length === 0 ? 'All checks passed! Ready for print.' : report.errors.join('\n')
+            ];
+            
+            updateResults(statusLines.join('\n'));
+        });
+
+        // Drag functionality (Mouse & Touch)
+        let isDragging = false;
+        let dragOffsetX = 0;
+        let dragOffsetY = 0;
+
+        function startDrag(e) {
+            if (e.target.classList.contains('element')) {
+                isDragging = true;
+                const clientX = e.type.includes('mouse') ? e.clientX : e.touches[0].clientX;
+                const clientY = e.type.includes('mouse') ? e.clientY : e.touches[0].clientY;
+                const rect = e.target.getBoundingClientRect();
+                const shirtRect = shirt.getBoundingClientRect();
+                
+                dragOffsetX = clientX - rect.left;
+                dragOffsetY = clientY - rect.top;
+                
+                if (e.type.includes('touch')) e.preventDefault();
+            }
+        }
+
+        function doDrag(e) {
+            if (isDragging && selectedEl) {
+                const clientX = e.type.includes('mouse') ? e.clientX : e.touches[0].clientX;
+                const clientY = e.type.includes('mouse') ? e.clientY : e.touches[0].clientY;
+                const shirtRect = shirt.getBoundingClientRect();
+                
+                selectedEl.style.left = (clientX - shirtRect.left - dragOffsetX) + 'px';
+                selectedEl.style.top = (clientY - shirtRect.top - dragOffsetY) + 'px';
+                lastScoreReport = null;
+                
+                if (e.type.includes('touch')) e.preventDefault();
+            }
+        }
+
+        function stopDrag() { isDragging = false; }
+
+        document.addEventListener('mousedown', startDrag);
+        document.addEventListener('mousemove', doDrag);
+        document.addEventListener('mouseup', stopDrag);
+        
+        document.addEventListener('touchstart', startDrag, {passive: false});
+        document.addEventListener('touchmove', doDrag, {passive: false});
+        document.addEventListener('touchend', stopDrag);
+
+        // Export logic
+        const getLayoutSpec = () => {
+            if (!lastScoreReport) {
+                lastScoreReport = runValidation() || { metrics: { error: 'No elements' }};
+            }
+
+            const spec = {
+                canvas: { width: 320, height: 420 },
+                validation_results: lastScoreReport.metrics,
+                elements: Array.from(document.querySelectorAll('.element')).map((el, index) => ({
+                    id: `element-${index + 1}`,
+                    type: el.dataset.type,
+                    x: parseInt(el.style.left),
+                    y: parseInt(el.style.top),
+                    content: el.textContent
+                }))
+            };
+            return JSON.stringify(spec, null, 2);
+        };
+
+        document.getElementById('copy-json').addEventListener('click', async () => {
+            if (document.querySelectorAll('.element').length === 0) return updateResults('Nothing to copy.');
+            try {
+                await navigator.clipboard.writeText(getLayoutSpec());
+                updateResults('Order-ready spec copied to clipboard!');
+            } catch (err) {
+                updateResults('Clipboard access denied.');
+            }
+        });
+
+        document.getElementById('dl-json').addEventListener('click', () => {
+            if (document.querySelectorAll('.element').length === 0) return updateResults('Nothing to download.');
+            const blob = new Blob([getLayoutSpec()], {type: 'application/json'});
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'shirt-layout-spec.json';
+            a.click();
+            URL.revokeObjectURL(url);
+        });
+
+        document.getElementById('add-text').addEventListener('click', () => createBlock('text'));
+        document.getElementById('add-icon').addEventListener('click', () => createBlock('icon'));
+    </script>
+</body>
+</html>

@@ -1,0 +1,190 @@
+{
+  "schemaVersion": 1,
+  "canonicalProjectId": "0ddfc7cf-37bf-47ae-8fe0-d8d445ba1bee",
+  "canonicalRoute": "/booking-flow-handoff-simulator-demo",
+  "title": "Booking Flow Handoff Simulator",
+  "defaultSourceRunId": "c42eebed94a0395e",
+  "contract": {
+    "version": "booking-flow-handoff-simulator-v1",
+    "openingPromptExact": "Can you make me a self-contained booking-flow handoff simulator a solo service business can save and use before automating customer messages?",
+    "acceptanceCriteria": [
+      "Let the user model booking intake questions, service slots, confirmations, branch conditions, and failure handoffs.",
+      "Run realistic booking scenarios and clearly distinguish sent, skipped, interrupted, and failed steps.",
+      "Evaluate the simulated transcript against a visible implementation or compliance checklist.",
+      "Provide truthful copy and download controls for an implementation-ready handoff receipt.",
+      "Produce one complete self-contained HTML file that is immediately usable in a browser.",
+      "Operate offline with no external APIs, hosted generation, CDNs, remote fonts, scripts, stylesheets, or fragile dependencies.",
+      "Avoid unsafe HTML sinks, eval-like execution, inline event handlers, modal dialogs, and deprecated clipboard handling.",
+      "Avoid page-level horizontal overflow at 390 by 844 and at desktop width.",
+      "Keep essential controls visible, keyboard or touch reachable, and truthful about their current state.",
+      "Preserve exact prompt, response, source, and artifact-version evidence for the run."
+    ],
+    "adaptiveRepairPolicy": "Preserve and score the first real artifact. Continue only when verification proves a concrete defect or a source-capture failure; use the same source session and model; name the observed defect in ordinary language; preserve every real artifact version; stop as soon as the artifact passes; prefer no more than three total prompts and go beyond three only for a documented concrete lane reason such as a verification-proven regression, truncation, or mechanical capture failure.",
+    "sha256": "f3b2bb3dea091820f159ae16812d6de970840ad8de403ca84a1a581f8aac4d7f",
+    "openingPromptSha256": "52b7f47ca0a9ca8c3fb846a5bf3817f5a7b30782d29b89a800931ab0c84404e1"
+  },
+  "variants": [
+    {
+      "sourceRunId": "08c8b725-4228-4b24-a6e6-5d7fcf78457c",
+      "providerKey": "anthropic",
+      "serviceLabel": "Claude",
+      "modelLabel": "Sonnet 4.6 Low",
+      "modelSettings": "Visible model button before prompt send: Sonnet 4.6 Low. Claude initially opened on Haiku 4.5 Extended; model menu showed Fable 5 unavailable, Opus 4.8, Sonnet 4.6, Haiku 4.5, and Effort Medium. Selected Sonnet 4.6, opened Effort Medium submenu, chose Low Default, and composer button displayed Sonnet 4.6 Low before prompt 1. No Claude usage-credit wall appeared before prompt send. Temporary OpenRouter pause honored; no OpenRouter route/fallback.",
+      "operatorKind": "original-author",
+      "operatorLabel": "Original source run · Milo Booking",
+      "runRole": "historical-baseline",
+      "qualityStatus": "known-issue",
+      "isCurrent": false,
+      "capturedAt": "2026-06-19T07:58:19Z",
+      "promptCount": 4,
+      "repairPromptCount": 2,
+      "packageFile": "booking-flow-handoff-simulator-claude-sonnet46-low-source-run.json",
+      "packageSha256": "83504679a95aba4d1ab42450bb280594f1e16c678a7a420e03fc77ad3d99af76",
+      "firstArtifactPath": "public/artifacts/booking-flow-handoff-simulator-claude-sonnet46-low-v2.html",
+      "finalArtifactPath": "public/artifacts/booking-flow-handoff-simulator-claude-sonnet46-low.html",
+      "artifactVersionPaths": [
+        "public/artifacts/booking-flow-handoff-simulator-claude-sonnet46-low-v2.html",
+        "public/artifacts/booking-flow-handoff-simulator-claude-sonnet46-low-v3.html",
+        "public/artifacts/booking-flow-handoff-simulator-claude-sonnet46-low.html"
+      ],
+      "firstPassMetrics": {
+        "qualityScore": 68,
+        "artifactReady": true,
+        "hardGatesPassed": false,
+        "functionalChecks": {
+          "passed": 6,
+          "total": 10
+        },
+        "consoleErrorCount": 0,
+        "horizontalOverflowPx": 590,
+        "notes": [
+          "The first real artifact lacked a mobile viewport and rendered on a 980px layout under 390px emulation.",
+          "It also lacked the handoff receipt, copy, and download workflow."
+        ]
+      },
+      "finalMetrics": {
+        "qualityScore": 88,
+        "artifactReady": true,
+        "hardGatesPassed": false,
+        "functionalChecks": {
+          "passed": 9,
+          "total": 10
+        },
+        "consoleErrorCount": 0,
+        "horizontalOverflowPx": 0,
+        "notes": [
+          "The final measured 390/390 and 1431/1431 with zero console errors, and its scenario, rule checklist, copy, and download receipt workflows worked.",
+          "Delivery steps expose SENT and SKIPPED plus interruption and rule-failure feedback, but no delivery step can enter an explicit FAILED state."
+        ]
+      }
+    },
+    {
+      "sourceRunId": "c42eebed94a0395e",
+      "providerKey": "openai",
+      "serviceLabel": "ChatGPT",
+      "modelLabel": "GPT-5.6 Luna",
+      "modelSettings": "ChatGPT Work surface; Effort: Extra High; Speed: Standard.",
+      "operatorKind": "pathforge-labs-manual",
+      "operatorLabel": "PathForge Labs · Developer-operated",
+      "runRole": "comparison-run",
+      "qualityStatus": "verified",
+      "isCurrent": true,
+      "capturedAt": "2026-07-10T21:07:15.000Z",
+      "promptCount": 1,
+      "repairPromptCount": 0,
+      "packageFile": "model-variants/booking-flow-handoff-simulator-chatgpt-gpt56-luna-source-run.json",
+      "packageSha256": "4c486959d21ec6b50b40ac64c686a30aa211f67ced603800200374bb0a17e8b4",
+      "firstArtifactPath": "public/artifacts/booking-flow-handoff-simulator-chatgpt-gpt56-luna-final.html",
+      "finalArtifactPath": "public/artifacts/booking-flow-handoff-simulator-chatgpt-gpt56-luna-final.html",
+      "artifactVersionPaths": [
+        "public/artifacts/booking-flow-handoff-simulator-chatgpt-gpt56-luna-final.html"
+      ],
+      "firstPassMetrics": {
+        "qualityScore": 99,
+        "artifactReady": true,
+        "hardGatesPassed": true,
+        "functionalChecks": {
+          "passed": 10,
+          "total": 10
+        },
+        "consoleErrorCount": 0,
+        "horizontalOverflowPx": 0,
+        "notes": [
+          "The first delivered artifact passed all ten invariant acceptance checks.",
+          "Desktop workflow reached Audited, 100%, and Ready for a controlled pilot; true 390x844 document and body widths both measured 390 pixels."
+        ]
+      },
+      "finalMetrics": {
+        "qualityScore": 99,
+        "artifactReady": true,
+        "hardGatesPassed": true,
+        "functionalChecks": {
+          "passed": 10,
+          "total": 10
+        },
+        "consoleErrorCount": 0,
+        "horizontalOverflowPx": 0,
+        "notes": [
+          "Final equals first pass because no verification-driven continuation was needed.",
+          "Static safety, script parsing, desktop workflow, local history, and true 390x844 no-overflow verification all passed."
+        ]
+      }
+    },
+    {
+      "sourceRunId": "4fcd2293646af036",
+      "providerKey": "google",
+      "serviceLabel": "Gemini",
+      "modelLabel": "Gemini 3.1 Pro",
+      "modelSettings": "Gemini web; Pro mode.",
+      "operatorKind": "pathforge-labs-manual",
+      "operatorLabel": "PathForge Labs · Developer-operated",
+      "runRole": "comparison-run",
+      "qualityStatus": "verified",
+      "isCurrent": true,
+      "capturedAt": "2026-07-11T00:32:35.807Z",
+      "promptCount": 3,
+      "repairPromptCount": 2,
+      "packageFile": "model-variants/booking-flow-handoff-simulator-gemini-31-pro-source-run.json",
+      "packageSha256": "24ca3bb42b180b8b309946681acd3ee6c4b48277945fed038afcf64342d200a0",
+      "firstArtifactPath": "public/artifacts/booking-flow-handoff-simulator-gemini-31-pro-first-pass.html",
+      "finalArtifactPath": "public/artifacts/booking-flow-handoff-simulator-gemini-31-pro-repair-2.html",
+      "artifactVersionPaths": [
+        "public/artifacts/booking-flow-handoff-simulator-gemini-31-pro-first-pass.html",
+        "public/artifacts/booking-flow-handoff-simulator-gemini-31-pro-final.html",
+        "public/artifacts/booking-flow-handoff-simulator-gemini-31-pro-repair-2.html"
+      ],
+      "firstPassMetrics": {
+        "qualityScore": 64,
+        "artifactReady": true,
+        "hardGatesPassed": false,
+        "functionalChecks": {
+          "passed": 6,
+          "total": 10
+        },
+        "consoleErrorCount": 0,
+        "horizontalOverflowPx": 0,
+        "notes": [
+          "Fresh 390x844 and 1440x1000 measurements reported zero horizontal overflow and zero console errors; the customer trigger, custom reply, and local transcript-download control worked.",
+          "The first artifact contained nine prohibited inline event-handler attributes.",
+          "Against the ten-check contract it also lacked configurable intake, service-slot, confirmation, branch, and failure-handoff steps; explicit sent/skipped/interrupted/failed outcomes; and a visible implementation checklist."
+        ]
+      },
+      "finalMetrics": {
+        "qualityScore": 97,
+        "artifactReady": true,
+        "hardGatesPassed": true,
+        "functionalChecks": {
+          "passed": 10,
+          "total": 10
+        },
+        "consoleErrorCount": 0,
+        "horizontalOverflowPx": 0,
+        "notes": [
+          "Fresh 390x844 and 1440x1000 measurements reported zero horizontal overflow and zero console errors, and the static hard-gate scan passed.",
+          "Direct scenarios verified editable intake questions and service slots, deposit branching and failure handoffs, all four required outcome states, a visible four-item implementation checklist, and an 861-character receipt containing configuration, statuses, and checklist results.",
+          "All four project-specific checks and all six shared production checks passed."
+        ]
+      }
+    }
+  ]
+}

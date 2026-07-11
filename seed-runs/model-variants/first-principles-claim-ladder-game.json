@@ -1,0 +1,189 @@
+{
+  "schemaVersion": 1,
+  "canonicalProjectId": "e0e4e2b7-082e-4db1-9468-484fc3fd3a69",
+  "canonicalRoute": "/first-principles-claim-ladder-game-demo",
+  "title": "First-Principles Claim Ladder Game",
+  "defaultSourceRunId": "8c6cca2f-c67a-4fd0-9e09-81df7f9cdd0f",
+  "contract": {
+    "version": "first-principles-claim-ladder-game-v1",
+    "openingPromptExact": "Can you build a self-contained one-file HTML game called First-Principles Claim Ladder where I test a big plan by moving claim, assumption, evidence, and experiment cards up a ladder, score whether the plan holds or collapses, and copy or download a reasoning receipt I can keep offline?",
+    "acceptanceCriteria": [
+      "Provide distinct claim, assumption, evidence, and experiment cards in one understandable ladder workflow.",
+      "Let the user move or classify cards and run a visible holds-versus-collapses reasoning check.",
+      "Produce a meaningful reasoning score or assessment tied to the current ladder state.",
+      "Provide a copyable or downloadable reasoning receipt that includes the experiment or next test.",
+      "Produce one complete self-contained HTML file that is immediately usable in a browser.",
+      "Operate offline with no external APIs, hosted generation, CDNs, remote fonts, scripts, stylesheets, or fragile dependencies.",
+      "Avoid unsafe HTML sinks, eval-like execution, inline event handlers, modal dialogs, and deprecated clipboard handling.",
+      "Avoid page-level horizontal overflow at 390 by 844 and at desktop width.",
+      "Keep essential controls visible, keyboard or touch reachable, and truthful about their current state.",
+      "Preserve exact prompt, response, source, and artifact-version evidence for the run."
+    ],
+    "adaptiveRepairPolicy": "Preserve and score the first real artifact. Continue only when verification proves a concrete defect or a source-capture failure; use the same source session and model; name the observed defect in ordinary language; preserve every real artifact version; stop as soon as the artifact passes; prefer no more than three total prompts and go beyond three only for a documented concrete lane reason such as a verification-proven regression, truncation, or mechanical capture failure.",
+    "sha256": "d448592808fad70b0d2aee5141c79332416432c1c77c3c2a6b19db51f8ab92b6",
+    "openingPromptSha256": "ef62e4a9df8e098d6fc92cd404b0de0c00e0349b4f650203511ba6c311a11bf4"
+  },
+  "variants": [
+    {
+      "sourceRunId": "3216db0c-fd3a-48f0-af70-58b47f34068c",
+      "providerKey": "openai",
+      "serviceLabel": "ChatGPT",
+      "modelLabel": "GPT-5.5",
+      "modelSettings": "Visible ChatGPT picker showed GPT-5.5 family with Intelligence options; Medium was selected before prompt send. GPT-5.4 was preferred but not visible; latest run's GPT-5.5 Instant was avoided by choosing Medium. No files, connectors, attachments, external tools, or OpenRouter route/fallback used.",
+      "operatorKind": "original-author",
+      "operatorLabel": "Original source run · Ari Ladder",
+      "runRole": "historical-baseline",
+      "qualityStatus": "known-issue",
+      "isCurrent": false,
+      "capturedAt": "2026-06-20T01:17:58.233Z",
+      "promptCount": 1,
+      "repairPromptCount": 0,
+      "packageFile": "first-principles-claim-ladder-game-chatgpt-gpt55-medium-source-run.json",
+      "packageSha256": "e4478fe2ce3bc4aacb5f67e9341d637d83090ce8a62ee52becc3873a81825297",
+      "firstArtifactPath": "public/artifacts/first-principles-claim-ladder-game-chatgpt-gpt55-medium.html",
+      "finalArtifactPath": "public/artifacts/first-principles-claim-ladder-game-chatgpt-gpt55-medium.html",
+      "artifactVersionPaths": [
+        "public/artifacts/first-principles-claim-ladder-game-chatgpt-gpt55-medium.html"
+      ],
+      "firstPassMetrics": {
+        "qualityScore": 88,
+        "artifactReady": true,
+        "hardGatesPassed": false,
+        "functionalChecks": {
+          "passed": 9,
+          "total": 10
+        },
+        "consoleErrorCount": 0,
+        "horizontalOverflowPx": 114,
+        "notes": [
+          "The one-shot artifact supports all four card types, moving and classifying cards, score changes, verdicts, saved state, and a reasoning receipt.",
+          "At the true 390px target it measures 504px wide, leaving 114px of horizontal overflow."
+        ]
+      },
+      "finalMetrics": {
+        "qualityScore": 88,
+        "artifactReady": true,
+        "hardGatesPassed": false,
+        "functionalChecks": {
+          "passed": 9,
+          "total": 10
+        },
+        "consoleErrorCount": 0,
+        "horizontalOverflowPx": 114,
+        "notes": [
+          "The source run is one-shot, so the measured 114px narrow-screen overflow remains in the historical final.",
+          "Desktop and the complete reasoning workflow remain usable and inspectable."
+        ]
+      }
+    },
+    {
+      "sourceRunId": "8c6cca2f-c67a-4fd0-9e09-81df7f9cdd0f",
+      "providerKey": "anthropic",
+      "serviceLabel": "Claude",
+      "modelLabel": "Fable 5 High",
+      "modelSettings": "Claude web; High reasoning.",
+      "operatorKind": "pathforge-labs-manual",
+      "operatorLabel": "PathForge Labs · Developer-operated",
+      "runRole": "comparison-run",
+      "qualityStatus": "verified",
+      "isCurrent": true,
+      "capturedAt": "2026-07-10T22:11:34.259Z",
+      "promptCount": 2,
+      "repairPromptCount": 1,
+      "packageFile": "model-variants/first-principles-claim-ladder-game-claude-fable-5-high-source-run.json",
+      "packageSha256": "e5c6cc3dfd9be2700cffd76835f586492d59247c385507e85cd590c9ad3a851e",
+      "firstArtifactPath": "public/artifacts/first-principles-claim-ladder-game-claude-fable-5-high-first-pass.html",
+      "finalArtifactPath": "public/artifacts/first-principles-claim-ladder-game-claude-fable-5-high-final.html",
+      "artifactVersionPaths": [
+        "public/artifacts/first-principles-claim-ladder-game-claude-fable-5-high-first-pass.html",
+        "public/artifacts/first-principles-claim-ladder-game-claude-fable-5-high-final.html"
+      ],
+      "firstPassMetrics": {
+        "qualityScore": 88,
+        "artifactReady": true,
+        "hardGatesPassed": false,
+        "functionalChecks": {
+          "passed": 9,
+          "total": 10
+        },
+        "consoleErrorCount": 0,
+        "horizontalOverflowPx": 0,
+        "notes": [
+          "The first artifact passed all four project checks, desktop layout, and true 390x844 layout with zero artifact-origin console errors.",
+          "Static verification found document.execCommand in the clipboard fallback, failing one common safety check and triggering a same-session repair."
+        ]
+      },
+      "finalMetrics": {
+        "qualityScore": 98,
+        "artifactReady": true,
+        "hardGatesPassed": true,
+        "functionalChecks": {
+          "passed": 10,
+          "total": 10
+        },
+        "consoleErrorCount": 0,
+        "horizontalOverflowPx": 0,
+        "notes": [
+          "All four project checks and six common acceptance checks passed on the corrected artifact.",
+          "Static, full workflow, desktop 1660px, true 390x844, receipt, and zero-console-error checks were directly rerun on the final file."
+        ]
+      }
+    },
+    {
+      "sourceRunId": "5ef359499f3b85fa",
+      "providerKey": "google",
+      "serviceLabel": "Gemini",
+      "modelLabel": "Gemini 3.1 Pro",
+      "modelSettings": "Gemini web; Pro mode.",
+      "operatorKind": "pathforge-labs-manual",
+      "operatorLabel": "PathForge Labs · Developer-operated",
+      "runRole": "comparison-run",
+      "qualityStatus": "verified",
+      "isCurrent": true,
+      "capturedAt": "2026-07-11T00:50:23.000Z",
+      "promptCount": 3,
+      "repairPromptCount": 2,
+      "packageFile": "model-variants/first-principles-claim-ladder-game-gemini-31-pro-source-run.json",
+      "packageSha256": "13c77df4c44b269d3c9831809d2a71e68e48186f0e505dc517548f23eee1509e",
+      "firstArtifactPath": "public/artifacts/first-principles-claim-ladder-game-gemini-31-pro-first-pass.html",
+      "finalArtifactPath": "public/artifacts/first-principles-claim-ladder-game-gemini-31-pro-repair-2.html",
+      "artifactVersionPaths": [
+        "public/artifacts/first-principles-claim-ladder-game-gemini-31-pro-first-pass.html",
+        "public/artifacts/first-principles-claim-ladder-game-gemini-31-pro-final.html",
+        "public/artifacts/first-principles-claim-ladder-game-gemini-31-pro-repair-2.html"
+      ],
+      "firstPassMetrics": {
+        "qualityScore": 66,
+        "artifactReady": true,
+        "hardGatesPassed": false,
+        "functionalChecks": {
+          "passed": 7,
+          "total": 10
+        },
+        "consoleErrorCount": 0,
+        "horizontalOverflowPx": 0,
+        "notes": [
+          "The first artifact implemented all four card types, ladder movement, holds/collapses evaluation, and receipt copy/download.",
+          "Static verification found prohibited inline event attributes, innerHTML rendering, and an alert dialog.",
+          "The safe second artifact later measured no page overflow but its 390px add-card form compressed the selector and text field to about 83px, requiring a second repair."
+        ]
+      },
+      "finalMetrics": {
+        "qualityScore": 97,
+        "artifactReady": true,
+        "hardGatesPassed": true,
+        "functionalChecks": {
+          "passed": 10,
+          "total": 10
+        },
+        "consoleErrorCount": 0,
+        "horizontalOverflowPx": 0,
+        "notes": [
+          "Fresh 390x844 and 1440x1000 measurements reported zero horizontal overflow and zero console errors, and the static hard-gate scan passed.",
+          "Direct interaction verified all four card types, actual drag/drop event wiring, both collapse and holds outcomes, and byte-identical copy and download of a 380-character receipt.",
+          "All four project-specific checks and all six shared production checks passed."
+        ]
+      }
+    }
+  ]
+}

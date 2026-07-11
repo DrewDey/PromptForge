@@ -1,0 +1,1062 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PRESS CHECK — Print Alignment Game</title>
+<style>
+  :root {
+    --chassis: #221F1C;
+    --panel: #2C2926;
+    --panel-2: #35312D;
+    --line: #4A443E;
+    --paper: #F1ECE2;
+    --ink-soft: #B9B2A6;
+    --reg-cyan: #19B5C4;
+    --reg-magenta: #E2447E;
+    --safety: #F2C230;
+    --alarm: #D8402C;
+    --pass: #57B15D;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { background: var(--chassis); color: var(--paper); }
+  body {
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    font-size: 14px;
+    min-height: 100%;
+  }
+  .display {
+    font-family: Impact, Haettenschweiler, "Arial Narrow Bold", "Franklin Gothic Medium", sans-serif;
+    font-weight: 400;
+    text-transform: uppercase;
+  }
+  .mono { font-family: ui-monospace, Menlo, Consolas, monospace; }
+
+  /* ---------- Job ticket header ---------- */
+  header {
+    display: flex; align-items: center; gap: 16px; flex-wrap: wrap;
+    padding: 12px 18px;
+    border-bottom: 3px solid var(--line);
+    background:
+      repeating-linear-gradient(90deg, var(--panel) 0px, var(--panel) 46px, var(--panel-2) 46px, var(--panel-2) 48px);
+  }
+  header h1 { font-size: 30px; line-height: 1; }
+  header h1 .cy { color: var(--reg-cyan); }
+  header h1 .mg { color: var(--reg-magenta); }
+  .ticket {
+    font-size: 11px; color: var(--ink-soft);
+    border: 1px dashed var(--line);
+    padding: 4px 10px;
+  }
+  .header-spacer { flex: 1; }
+  .score-lamp {
+    text-align: right;
+  }
+  .score-lamp .num { font-size: 30px; line-height: 1; color: var(--safety); }
+  .score-lamp .lbl { font-size: 10px; color: var(--ink-soft); text-transform: uppercase; }
+
+  /* ---------- Layout ---------- */
+  main {
+    display: flex; gap: 14px; flex-wrap: wrap;
+    padding: 14px; align-items: flex-start; justify-content: center;
+  }
+  .panel {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    padding: 14px;
+  }
+  .panel h2 {
+    font-size: 18px; margin-bottom: 10px;
+    border-bottom: 2px solid var(--line); padding-bottom: 6px;
+  }
+  .panel h2 .tab { color: var(--reg-cyan); }
+  #toolbox { width: 240px; }
+  #station { flex: 0 1 auto; }
+  #inspect { width: 300px; }
+
+  .row { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 10px; }
+  .field-label {
+    display: block; font-size: 10px; text-transform: uppercase;
+    color: var(--ink-soft); margin: 10px 0 4px 0;
+  }
+
+  button {
+    font-family: inherit; font-size: 13px;
+    background: var(--panel-2); color: var(--paper);
+    border: 1px solid var(--line);
+    padding: 7px 10px; cursor: pointer;
+  }
+  button:hover { border-color: var(--reg-cyan); }
+  button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible, .block:focus-visible {
+    outline: 2px solid var(--reg-cyan); outline-offset: 2px;
+  }
+  button.primary {
+    background: var(--reg-cyan); color: #10282B; border-color: var(--reg-cyan);
+    font-weight: 700;
+  }
+  button.primary:hover { background: #3FCBD8; }
+  button.danger { color: var(--alarm); border-color: var(--alarm); }
+  button:disabled { opacity: 0.45; cursor: default; }
+
+  input[type="text"], select {
+    font-family: inherit; font-size: 13px;
+    background: var(--chassis); color: var(--paper);
+    border: 1px solid var(--line); padding: 6px 8px; width: 100%;
+  }
+  input[type="range"] { width: 100%; accent-color: var(--reg-cyan); }
+
+  .chip-row { display: flex; gap: 6px; flex-wrap: wrap; }
+  .chip {
+    width: 26px; height: 26px; border: 2px solid var(--line);
+    cursor: pointer; padding: 0;
+  }
+  .chip.on { border-color: var(--reg-cyan); box-shadow: 0 0 0 2px var(--chassis), 0 0 0 4px var(--reg-cyan); }
+
+  .nudge-pad { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+  .nudge-mid { display: flex; gap: 4px; }
+  .nudge { width: 44px; height: 36px; font-size: 13px; padding: 0; }
+  .nudge.step { font-family: ui-monospace, Menlo, Consolas, monospace; color: var(--safety); }
+
+  .glyph-row { display: flex; gap: 4px; flex-wrap: wrap; }
+  .glyph-btn { width: 34px; height: 34px; font-size: 18px; padding: 0; }
+  .glyph-btn.on { border-color: var(--reg-magenta); color: var(--reg-magenta); }
+
+  /* ---------- Platen + shirt ---------- */
+  #platen {
+    position: relative;
+    padding: 26px;
+    background: var(--panel-2);
+    border: 1px solid var(--line);
+  }
+  #shirt {
+    position: relative;
+    width: 470px; height: 520px;
+    margin: 0 auto;
+  }
+  .shirt-body {
+    position: absolute; left: 75px; top: 30px;
+    width: 320px; height: 470px;
+    border-radius: 26px 26px 10px 10px;
+  }
+  .sleeve {
+    position: absolute; top: 26px;
+    width: 120px; height: 170px;
+    border-radius: 30px;
+  }
+  .sleeve.left  { left: -6px;  transform: rotate(24deg); }
+  .sleeve.right { right: -6px; transform: rotate(-24deg); }
+  .collar {
+    position: absolute; left: 50%; top: 22px;
+    width: 120px; height: 44px;
+    transform: translateX(-50%);
+    border-radius: 0 0 60px 60px;
+    border-bottom: 8px solid rgba(0,0,0,0.25);
+    background: var(--panel-2);
+  }
+  .seam {
+    position: absolute; left: 75px; top: 30px;
+    width: 320px; height: 470px;
+    border-radius: 26px 26px 10px 10px;
+    border: 1px dashed rgba(127,127,127,0.35);
+    pointer-events: none;
+  }
+
+  #printArea {
+    position: absolute;
+    border: 1px dashed rgba(25,181,196,0.65);
+    touch-action: none;
+  }
+  #safeZone {
+    position: absolute;
+    border: 1px dashed rgba(242,194,48,0.55);
+    pointer-events: none;
+  }
+  /* Registration crosshair marks — the shop signature */
+  .regmark {
+    position: absolute; width: 18px; height: 18px;
+    pointer-events: none;
+  }
+  .regmark::before, .regmark::after {
+    content: ""; position: absolute; background: var(--reg-magenta);
+  }
+  .regmark::before { left: 8px; top: 0; width: 2px; height: 18px; }
+  .regmark::after  { left: 0; top: 8px; width: 18px; height: 2px; }
+  .regmark .ring {
+    position: absolute; left: 3px; top: 3px; width: 12px; height: 12px;
+    border: 2px solid var(--reg-cyan); border-radius: 50%;
+  }
+  .regmark.tl { left: -9px; top: -9px; }
+  .regmark.tr { right: -9px; top: -9px; }
+  .regmark.bl { left: -9px; bottom: -9px; }
+  .regmark.br { right: -9px; bottom: -9px; }
+
+  .block {
+    position: absolute;
+    cursor: grab;
+    user-select: none;
+    white-space: nowrap;
+    line-height: 1.05;
+    touch-action: none;
+  }
+  .block.dragging { cursor: grabbing; }
+  .block.selected { outline: 2px dashed var(--reg-cyan); outline-offset: 3px; }
+  .block.violation { outline: 2px solid var(--alarm); outline-offset: 3px; }
+  .block .txt { font-family: Impact, Haettenschweiler, "Arial Narrow Bold", sans-serif; }
+
+  .platen-caption {
+    text-align: center; font-size: 10px; color: var(--ink-soft);
+    text-transform: uppercase; margin-top: 10px;
+  }
+
+  /* ---------- Press check panel ---------- */
+  #report { display: block; }
+  .check-line {
+    display: flex; gap: 8px; align-items: baseline;
+    padding: 6px 0; border-bottom: 1px solid var(--line);
+    font-size: 13px;
+  }
+  .check-line .pts { margin-left: auto; font-size: 12px; }
+  .check-line.ok .mark { color: var(--pass); }
+  .check-line.warn .mark { color: var(--safety); }
+  .check-line.bad .mark { color: var(--alarm); }
+  .check-sub { font-size: 11px; color: var(--ink-soft); padding: 2px 0 6px 20px; border-bottom: 1px solid var(--line); }
+
+  #stamp {
+    display: none;
+    margin: 14px auto 4px auto;
+    width: fit-content;
+    padding: 8px 18px;
+    border: 4px solid var(--pass);
+    color: var(--pass);
+    font-size: 28px;
+    transform: rotate(-7deg);
+  }
+  #stamp.warn { border-color: var(--safety); color: var(--safety); }
+  #stamp.bad { border-color: var(--alarm); color: var(--alarm); }
+  #stamp.show { display: block; animation: slam 220ms ease-out; }
+  @keyframes slam {
+    0% { transform: rotate(-7deg) scale(2.4); opacity: 0; }
+    100% { transform: rotate(-7deg) scale(1); opacity: 1; }
+  }
+  #best {
+    font-size: 11px; color: var(--ink-soft); text-align: center; margin-top: 8px;
+  }
+
+  #specOut {
+    width: 100%; height: 180px; margin-top: 8px;
+    background: var(--chassis); color: var(--paper);
+    border: 1px solid var(--line);
+    font-family: ui-monospace, Menlo, Consolas, monospace;
+    font-size: 11px; padding: 8px; resize: vertical;
+  }
+  .hint { font-size: 11px; color: var(--ink-soft); margin-top: 8px; line-height: 1.5; }
+
+  #toast {
+    position: fixed; left: 50%; bottom: 24px;
+    transform: translateX(-50%);
+    background: var(--reg-cyan); color: #10282B;
+    font-weight: 700; font-size: 13px;
+    padding: 10px 18px;
+    opacity: 0; pointer-events: none;
+    transition: opacity 180ms ease;
+  }
+  #toast.show { opacity: 1; }
+
+  @media (prefers-reduced-motion: reduce) {
+    * { transition: none; animation: none; }
+    #stamp.show { animation: none; }
+  }
+  @media (max-width: 1100px) {
+    #toolbox, #inspect { width: 100%; max-width: 522px; }
+  }
+  @media (max-width: 560px) {
+    main { padding: 10px; gap: 10px; }
+    .panel { padding: 10px; }
+    #toolbox, #station, #inspect { width: 100%; max-width: 100%; }
+    #platen { padding: 8px; }
+    #shirt {
+      transform: scale(0.70);
+      transform-origin: top left;
+      width: 329px;
+      height: 364px;
+    }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1 class="display">PRESS <span class="cy">CHE</span><span class="mg">CK</span></h1>
+  <div class="ticket mono">JOB Nº 3160 · PLATEN 1 · PLASTISOL · 1 PASS + FLASH</div>
+  <div class="header-spacer"></div>
+  <div class="score-lamp">
+    <div class="num display" id="scoreNum">--</div>
+    <div class="lbl">last press check</div>
+  </div>
+</header>
+
+<main>
+  <!-- ============ TOOLBOX ============ -->
+  <section class="panel" id="toolbox" aria-label="Ink and type toolbox">
+    <h2 class="display"><span class="tab">01</span> INK &amp; TYPE</h2>
+
+    <div class="row">
+      <button id="addTextBtn" type="button">+ Text block</button>
+      <button id="addIconBtn" type="button">+ Icon block</button>
+    </div>
+
+    <span class="field-label">Shirt color</span>
+    <div class="chip-row" id="shirtChips"></div>
+
+    <span class="field-label">Print area</span>
+    <select id="areaSelect">
+      <option value="std">Standard adult — 12 × 16 in</option>
+      <option value="youth">Youth — 10 × 12 in</option>
+      <option value="pocket">Left chest — 4 × 4 in</option>
+    </select>
+
+    <div id="props">
+      <span class="field-label">Selected block — content</span>
+      <input type="text" id="propText" maxlength="40" autocomplete="off">
+      <div id="glyphWrap">
+        <span class="field-label">Glyph</span>
+        <div class="glyph-row" id="glyphRow"></div>
+      </div>
+      <span class="field-label">Size — <span id="sizeReadout" class="mono">--</span></span>
+      <input type="range" id="propSize" min="14" max="120" step="1">
+      <span class="field-label">Ink</span>
+      <div class="chip-row" id="inkChips"></div>
+      <span class="field-label">Nudge — <span id="nudgeReadout" class="mono">0.05 in</span></span>
+      <div class="nudge-pad">
+        <button id="nudgeUp" type="button" class="nudge" aria-label="Nudge up">&#9650;</button>
+        <div class="nudge-mid">
+          <button id="nudgeLeft" type="button" class="nudge" aria-label="Nudge left">&#9664;</button>
+          <button id="nudgeStep" type="button" class="nudge step" aria-label="Toggle nudge step size">.05</button>
+          <button id="nudgeRight" type="button" class="nudge" aria-label="Nudge right">&#9654;</button>
+        </div>
+        <button id="nudgeDown" type="button" class="nudge" aria-label="Nudge down">&#9660;</button>
+      </div>
+      <div class="row" style="margin-top: 12px;">
+        <button id="centerBtn" type="button">Center H</button>
+        <button id="deleteBtn" type="button" class="danger">Remove</button>
+      </div>
+    </div>
+
+    <p class="hint">Drag blocks on the platen. Arrow keys nudge the selected block 0.05 in — hold Shift for 0.25 in. Delete key removes it.</p>
+  </section>
+
+  <!-- ============ PLATEN ============ -->
+  <section class="panel" id="station" aria-label="Press platen">
+    <h2 class="display"><span class="tab">02</span> PLATEN</h2>
+    <div id="platen">
+      <div id="shirt">
+        <div class="sleeve left" id="sleeveL"></div>
+        <div class="sleeve right" id="sleeveR"></div>
+        <div class="shirt-body" id="shirtBody"></div>
+        <div class="collar" id="collar"></div>
+        <div class="seam"></div>
+        <div id="printArea">
+          <div class="regmark tl"><span class="ring"></span></div>
+          <div class="regmark tr"><span class="ring"></span></div>
+          <div class="regmark bl"><span class="ring"></span></div>
+          <div class="regmark br"><span class="ring"></span></div>
+          <div id="safeZone"></div>
+        </div>
+      </div>
+      <div class="platen-caption mono" id="platenCaption"></div>
+    </div>
+  </section>
+
+  <!-- ============ PRESS CHECK ============ -->
+  <section class="panel" id="inspect" aria-label="Press check and order spec">
+    <h2 class="display"><span class="tab">03</span> PRESS CHECK</h2>
+    <div class="row">
+      <button id="checkBtn" type="button" class="primary">Run press check</button>
+    </div>
+    <div id="report"></div>
+    <div id="stamp" class="display"></div>
+    <div id="best" class="mono"></div>
+
+    <span class="field-label">Order-ready layout spec</span>
+    <div class="row">
+      <button id="copyBtn" type="button">Copy spec</button>
+    </div>
+    <textarea id="specOut" readonly aria-label="Layout spec output"></textarea>
+    <p class="hint">Spec positions are inches from the top-left of the print area. Run a press check, fix anything off register, then copy the spec into your order notes.</p>
+  </section>
+</main>
+
+<div id="toast" role="status"></div>
+
+<script>
+(function () {
+  "use strict";
+
+  /* ---------------- Constants ---------------- */
+  var PX_PER_IN = 26;
+  var SAFE_MARGIN_IN = 0.75;
+  var MIN_TEXT_IN = 0.3;    /* minimum letter height for at-distance readability */
+  var MIN_ICON_IN = 0.5;
+  var MIN_CONTRAST = 3.0;
+
+  var AREAS = {
+    std:    { label: "Standard adult", w: 12, h: 16, top: 96 },
+    youth:  { label: "Youth",          w: 10, h: 12, top: 96 },
+    pocket: { label: "Left chest",     w: 4,  h: 4,  top: 110, chest: true }
+  };
+
+  var SHIRT_COLORS = [
+    { name: "Black",        hex: "#1C1A18" },
+    { name: "White",        hex: "#F1EEE6" },
+    { name: "Heather Grey", hex: "#9A9793" },
+    { name: "Navy",         hex: "#232C42" },
+    { name: "Cardinal",     hex: "#7E2430" },
+    { name: "Sand",         hex: "#D8C9A8" }
+  ];
+
+  var INKS = [
+    { name: "White",     hex: "#F4F2EC" },
+    { name: "Black",     hex: "#17150F" },
+    { name: "Reg Cyan",  hex: "#19B5C4" },
+    { name: "Magenta",   hex: "#E2447E" },
+    { name: "Sun Gold",  hex: "#F2C230" },
+    { name: "Fire Red",  hex: "#D8402C" },
+    { name: "Royal",     hex: "#2B4C9B" },
+    { name: "Kelly",     hex: "#2E8B57" }
+  ];
+
+  var GLYPHS = ["\u2605", "\u26A1", "\u2665", "\u263E", "\u2600", "\u266A", "\u2693", "\u273F", "\u2666", "\u2618"];
+
+  /* ---------------- State ---------------- */
+  var state = {
+    shirt: SHIRT_COLORS[0],
+    areaKey: "std",
+    blocks: [],
+    selectedId: null,
+    nextId: 1,
+    lastScore: null,
+    best: null
+  };
+
+  /* ---------------- DOM refs ---------------- */
+  var $ = function (id) { return document.getElementById(id); };
+  var printArea = $("printArea");
+  var safeZone = $("safeZone");
+  var shirtBody = $("shirtBody");
+  var sleeveL = $("sleeveL");
+  var sleeveR = $("sleeveR");
+  var collar = $("collar");
+  var report = $("report");
+  var stamp = $("stamp");
+  var specOut = $("specOut");
+  var toastEl = $("toast");
+  var toastTimer = null;
+
+  /* ---------------- Helpers ---------------- */
+  function el(tag, cls, text) {
+    var n = document.createElement(tag);
+    if (cls) n.className = cls;
+    if (text !== undefined) n.textContent = text;
+    return n;
+  }
+  function clear(node) { while (node.firstChild) node.removeChild(node.firstChild); }
+  function inches(px) { return px / PX_PER_IN; }
+  function fmtIn(v) { return (Math.round(v * 100) / 100).toFixed(2); }
+  function clampNum(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
+
+  function toast(msg) {
+    toastEl.textContent = msg;
+    toastEl.classList.add("show");
+    if (toastTimer) clearTimeout(toastTimer);
+    toastTimer = setTimeout(function () { toastEl.classList.remove("show"); }, 1800);
+  }
+
+  function hexToRgb(hex) {
+    var h = hex.replace("#", "");
+    return [parseInt(h.substr(0, 2), 16), parseInt(h.substr(2, 2), 16), parseInt(h.substr(4, 2), 16)];
+  }
+  function luminance(hex) {
+    var rgb = hexToRgb(hex).map(function (c) {
+      c = c / 255;
+      return c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4);
+    });
+    return 0.2126 * rgb[0] + 0.7152 * rgb[1] + 0.0722 * rgb[2];
+  }
+  function contrast(a, b) {
+    var l1 = luminance(a), l2 = luminance(b);
+    var hi = Math.max(l1, l2), lo = Math.min(l1, l2);
+    return (hi + 0.05) / (lo + 0.05);
+  }
+
+  function area() { return AREAS[state.areaKey]; }
+  function areaPx() { var a = area(); return { w: a.w * PX_PER_IN, h: a.h * PX_PER_IN }; }
+  function selected() {
+    for (var i = 0; i < state.blocks.length; i++) {
+      if (state.blocks[i].id === state.selectedId) return state.blocks[i];
+    }
+    return null;
+  }
+
+  /* ---------------- Shirt + platen geometry ---------------- */
+  function applyShirt() {
+    var hex = state.shirt.hex;
+    shirtBody.style.background = hex;
+    sleeveL.style.background = hex;
+    sleeveR.style.background = hex;
+    collar.style.borderBottomColor = "rgba(0,0,0,0.25)";
+    collar.style.background = hex;
+    collar.style.filter = "brightness(0.85)";
+  }
+
+  function applyArea() {
+    var a = area(), p = areaPx();
+    var shirtW = 470;
+    var left;
+    if (a.chest) {
+      left = 75 + 320 * 0.62; /* wearer's left chest = viewer's right */
+    } else {
+      left = (shirtW - p.w) / 2;
+    }
+    printArea.style.left = left + "px";
+    printArea.style.top = a.top + "px";
+    printArea.style.width = p.w + "px";
+    printArea.style.height = p.h + "px";
+
+    var m = SAFE_MARGIN_IN * PX_PER_IN;
+    safeZone.style.left = m + "px";
+    safeZone.style.top = m + "px";
+    safeZone.style.width = (p.w - 2 * m) + "px";
+    safeZone.style.height = (p.h - 2 * m) + "px";
+
+    $("platenCaption").textContent =
+      a.label + " · " + a.w + " × " + a.h + " in print area · safe margin " + SAFE_MARGIN_IN + " in (gold)";
+  }
+
+  /* ---------------- Blocks ---------------- */
+  function addBlock(kind) {
+    var p = areaPx();
+    var b = {
+      id: state.nextId++,
+      kind: kind,
+      content: kind === "text" ? "YOUR TEXT" : GLYPHS[0],
+      sizePx: kind === "text" ? 34 : 52,
+      ink: state.shirt.name === "White" || state.shirt.name === "Sand" ? INKS[1] : INKS[0],
+      x: p.w / 2 - 40,
+      y: Math.min(p.h / 2 - 20, p.h - 40)
+    };
+    state.blocks.push(b);
+    state.selectedId = b.id;
+    renderBlocks();
+    renderProps();
+    invalidateScore();
+  }
+
+  function removeSelected() {
+    var s = selected();
+    if (!s) return;
+    state.blocks = state.blocks.filter(function (b) { return b.id !== s.id; });
+    state.selectedId = state.blocks.length ? state.blocks[state.blocks.length - 1].id : null;
+    renderBlocks();
+    renderProps();
+    invalidateScore();
+  }
+
+  function blockRect(b) {
+    var node = document.getElementById("blk" + b.id);
+    if (!node) return { x: b.x, y: b.y, w: 10, h: 10 };
+    return { x: b.x, y: b.y, w: node.offsetWidth, h: node.offsetHeight };
+  }
+
+  function clampBlock(b) {
+    var p = areaPx();
+    var r = blockRect(b);
+    b.x = clampNum(b.x, 0, Math.max(0, p.w - r.w));
+    b.y = clampNum(b.y, 0, Math.max(0, p.h - r.h));
+  }
+
+  function renderBlocks() {
+    var olds = printArea.querySelectorAll(".block");
+    for (var i = 0; i < olds.length; i++) olds[i].remove();
+
+    state.blocks.forEach(function (b) {
+      var node = el("div", "block");
+      node.id = "blk" + b.id;
+      node.setAttribute("tabindex", "0");
+      node.setAttribute("role", "button");
+      node.setAttribute("aria-label", (b.kind === "text" ? "Text block: " : "Icon block: ") + b.content);
+      var inner = el("span", b.kind === "text" ? "txt" : "ico", b.content);
+      node.appendChild(inner);
+      node.style.fontSize = b.sizePx + "px";
+      node.style.color = b.ink.hex;
+      node.style.left = b.x + "px";
+      node.style.top = b.y + "px";
+      if (b.id === state.selectedId) node.classList.add("selected");
+      printArea.appendChild(node);
+      wireDrag(node, b);
+    });
+  }
+
+  function positionBlockNode(b) {
+    var node = document.getElementById("blk" + b.id);
+    if (node) { node.style.left = b.x + "px"; node.style.top = b.y + "px"; }
+  }
+
+  function wireDrag(node, b) {
+    node.addEventListener("pointerdown", function (ev) {
+      ev.preventDefault();
+      selectBlock(b.id);
+      node.setPointerCapture(ev.pointerId);
+      node.classList.add("dragging");
+      var startX = ev.clientX, startY = ev.clientY;
+      var origX = b.x, origY = b.y;
+
+      function onMove(mv) {
+        b.x = origX + (mv.clientX - startX);
+        b.y = origY + (mv.clientY - startY);
+        clampBlock(b);
+        positionBlockNode(b);
+      }
+      function onUp(up) {
+        node.classList.remove("dragging");
+        node.removeEventListener("pointermove", onMove);
+        node.removeEventListener("pointerup", onUp);
+        node.removeEventListener("pointercancel", onUp);
+        invalidateScore();
+      }
+      node.addEventListener("pointermove", onMove);
+      node.addEventListener("pointerup", onUp);
+      node.addEventListener("pointercancel", onUp);
+    });
+
+    node.addEventListener("focus", function () { selectBlock(b.id); });
+  }
+
+  function selectBlock(id) {
+    if (state.selectedId === id) { renderProps(); return; }
+    state.selectedId = id;
+    var all = printArea.querySelectorAll(".block");
+    for (var i = 0; i < all.length; i++) all[i].classList.remove("selected");
+    var node = document.getElementById("blk" + id);
+    if (node) node.classList.add("selected");
+    renderProps();
+  }
+
+  /* ---------------- Properties panel ---------------- */
+  var shirtChipEls = [];
+  var inkChipEls = [];
+  var glyphBtnEls = [];
+
+  function buildChips() {
+    var sc = $("shirtChips");
+    SHIRT_COLORS.forEach(function (c) {
+      var chip = el("button", "chip");
+      chip.type = "button";
+      chip.style.background = c.hex;
+      chip.title = c.name;
+      chip.setAttribute("aria-label", "Shirt color " + c.name);
+      chip.addEventListener("click", function () {
+        state.shirt = c;
+        applyShirt();
+        markShirtChips();
+        invalidateScore();
+      });
+      sc.appendChild(chip);
+      shirtChipEls.push({ el: chip, c: c });
+    });
+
+    var ic = $("inkChips");
+    INKS.forEach(function (ink) {
+      var chip = el("button", "chip");
+      chip.type = "button";
+      chip.style.background = ink.hex;
+      chip.title = ink.name;
+      chip.setAttribute("aria-label", "Ink " + ink.name);
+      chip.addEventListener("click", function () {
+        var s = selected();
+        if (!s) return;
+        s.ink = ink;
+        var node = document.getElementById("blk" + s.id);
+        if (node) node.style.color = ink.hex;
+        markInkChips();
+        invalidateScore();
+      });
+      ic.appendChild(chip);
+      inkChipEls.push({ el: chip, ink: ink });
+    });
+
+    var gr = $("glyphRow");
+    GLYPHS.forEach(function (g) {
+      var btn = el("button", "glyph-btn", g);
+      btn.type = "button";
+      btn.setAttribute("aria-label", "Glyph " + g);
+      btn.addEventListener("click", function () {
+        var s = selected();
+        if (!s || s.kind !== "icon") return;
+        s.content = g;
+        renderBlocks();
+        renderProps();
+        invalidateScore();
+      });
+      gr.appendChild(btn);
+      glyphBtnEls.push({ el: btn, g: g });
+    });
+  }
+
+  function markShirtChips() {
+    shirtChipEls.forEach(function (o) {
+      o.el.classList.toggle("on", o.c.name === state.shirt.name);
+    });
+  }
+  function markInkChips() {
+    var s = selected();
+    inkChipEls.forEach(function (o) {
+      o.el.classList.toggle("on", !!s && o.ink.name === s.ink.name);
+    });
+  }
+  function markGlyphs() {
+    var s = selected();
+    glyphBtnEls.forEach(function (o) {
+      o.el.classList.toggle("on", !!s && s.kind === "icon" && s.content === o.g);
+    });
+  }
+
+  function renderProps() {
+    var s = selected();
+    var props = $("props");
+    props.style.opacity = s ? "1" : "0.4";
+    $("propText").disabled = !s || s.kind !== "text";
+    $("propSize").disabled = !s;
+    $("deleteBtn").disabled = !s;
+    $("centerBtn").disabled = !s;
+    ["nudgeUp", "nudgeDown", "nudgeLeft", "nudgeRight", "nudgeStep"].forEach(function (id) {
+      $(id).disabled = !s;
+    });
+    $("glyphWrap").style.display = s && s.kind === "icon" ? "block" : "none";
+
+    if (s) {
+      if (s.kind === "text") $("propText").value = s.content;
+      else $("propText").value = "";
+      $("propSize").value = String(s.sizePx);
+      $("sizeReadout").textContent = fmtIn(inches(s.sizePx)) + " in tall";
+    } else {
+      $("propText").value = "";
+      $("sizeReadout").textContent = "--";
+    }
+    markInkChips();
+    markGlyphs();
+  }
+
+  /* ---------------- Press check ---------------- */
+  function invalidateScore() {
+    state.lastScore = null;
+    $("scoreNum").textContent = "--";
+    stamp.classList.remove("show");
+    var all = printArea.querySelectorAll(".block");
+    for (var i = 0; i < all.length; i++) all[i].classList.remove("violation");
+    refreshSpec();
+  }
+
+  function runCheck() {
+    var p = areaPx();
+    var m = SAFE_MARGIN_IN * PX_PER_IN;
+    var results = [];
+    var total = 0;
+
+    clear(report);
+
+    if (!state.blocks.length) {
+      report.appendChild(el("div", "check-sub", "Empty platen. Add at least one block, then run the check."));
+      state.lastScore = 0;
+      $("scoreNum").textContent = "0";
+      refreshSpec();
+      return;
+    }
+
+    var rects = state.blocks.map(function (b) {
+      var r = blockRect(b);
+      r.b = b;
+      return r;
+    });
+
+    /* Registration — 40 pts */
+    var offReg = rects.filter(function (r) {
+      return r.x < m || r.y < m || r.x + r.w > p.w - m || r.y + r.h > p.h - m;
+    });
+    var regPts = Math.round(40 * (1 - offReg.length / rects.length));
+    total += regPts;
+    results.push({
+      grade: offReg.length === 0 ? "ok" : (offReg.length < rects.length ? "warn" : "bad"),
+      label: "Registration — inside safe margins",
+      pts: regPts + " / 40",
+      sub: offReg.length === 0 ? "All blocks clear the " + SAFE_MARGIN_IN + " in safe margin."
+        : offReg.length + " block(s) cross the gold safe line. Prints there risk clipping on the press."
+    });
+    offReg.forEach(function (r) {
+      var node = document.getElementById("blk" + r.b.id);
+      if (node) node.classList.add("violation");
+    });
+
+    /* Readability — 30 pts */
+    var small = rects.filter(function (r) {
+      var minIn = r.b.kind === "text" ? MIN_TEXT_IN : MIN_ICON_IN;
+      return inches(r.b.sizePx) < minIn;
+    });
+    var readPts = Math.round(30 * (1 - small.length / rects.length));
+    total += readPts;
+    results.push({
+      grade: small.length === 0 ? "ok" : "warn",
+      label: "Readability — print-scale sizing",
+      pts: readPts + " / 30",
+      sub: small.length === 0 ? "Every element clears minimum print size (text \u2265 " + MIN_TEXT_IN + " in, icons \u2265 " + MIN_ICON_IN + " in)."
+        : small.length + " block(s) under minimum size will muddy at arm's length."
+    });
+
+    /* Ink contrast — 20 pts */
+    var lowC = rects.filter(function (r) {
+      return contrast(r.b.ink.hex, state.shirt.hex) < MIN_CONTRAST;
+    });
+    var conPts = Math.round(20 * (1 - lowC.length / rects.length));
+    total += conPts;
+    results.push({
+      grade: lowC.length === 0 ? "ok" : "bad",
+      label: "Ink contrast vs " + state.shirt.name.toLowerCase() + " garment",
+      pts: conPts + " / 20",
+      sub: lowC.length === 0 ? "All inks hit " + MIN_CONTRAST.toFixed(1) + ":1 contrast or better against the shirt."
+        : lowC.length + " ink(s) sit under " + MIN_CONTRAST.toFixed(1) + ":1 and will vanish into the garment."
+    });
+
+    /* Balance — 10 pts */
+    var mass = 0, momX = 0;
+    rects.forEach(function (r) {
+      var w = r.w * r.h;
+      mass += w;
+      momX += w * (r.x + r.w / 2);
+    });
+    var comX = momX / mass;
+    var offIn = Math.abs(inches(comX - p.w / 2));
+    var balPts = offIn <= 0.5 ? 10 : Math.max(0, Math.round(10 * (1 - (offIn - 0.5) / 1.0)));
+    total += balPts;
+    results.push({
+      grade: balPts >= 9 ? "ok" : (balPts >= 5 ? "warn" : "bad"),
+      label: "Balance — horizontal center of mass",
+      pts: balPts + " / 10",
+      sub: "Layout center sits " + fmtIn(offIn) + " in off true center."
+    });
+
+    /* Overlap deduction */
+    var overlaps = 0;
+    for (var i = 0; i < rects.length; i++) {
+      for (var j = i + 1; j < rects.length; j++) {
+        var a = rects[i], b2 = rects[j];
+        if (a.x < b2.x + b2.w && a.x + a.w > b2.x && a.y < b2.y + b2.h && a.y + a.h > b2.y) overlaps++;
+      }
+    }
+    if (overlaps > 0) {
+      var ded = Math.min(total, overlaps * 5);
+      total -= ded;
+      results.push({
+        grade: "bad",
+        label: "Trap warning — overlapping blocks",
+        pts: "-" + ded,
+        sub: overlaps + " overlap(s). Overlapping elements need trap/knockout decisions before separations."
+      });
+    }
+
+    results.forEach(function (r) {
+      var line = el("div", "check-line " + r.grade);
+      line.appendChild(el("span", "mark", r.grade === "ok" ? "\u25CF" : (r.grade === "warn" ? "\u25B2" : "\u2716")));
+      line.appendChild(el("span", "", r.label));
+      line.appendChild(el("span", "pts mono", r.pts));
+      report.appendChild(line);
+      report.appendChild(el("div", "check-sub", r.sub));
+    });
+
+    state.lastScore = total;
+    $("scoreNum").textContent = String(total);
+    if (state.best === null || total > state.best) state.best = total;
+    $("best").textContent = "Best run this session: " + state.best + " / 100";
+
+    stamp.classList.remove("warn", "bad", "show");
+    var stampText, stampCls;
+    if (total >= 95) { stampText = "PRESS READY"; stampCls = ""; }
+    else if (total >= 80) { stampText = "ONE MORE PASS"; stampCls = "warn"; }
+    else if (total >= 60) { stampText = "OFF REGISTER"; stampCls = "warn"; }
+    else { stampText = "MISPRINT"; stampCls = "bad"; }
+    stamp.textContent = stampText;
+    if (stampCls) stamp.classList.add(stampCls);
+    /* restart the slam animation */
+    void stamp.offsetWidth;
+    stamp.classList.add("show");
+
+    refreshSpec();
+  }
+
+  /* ---------------- Spec ---------------- */
+  function buildSpec() {
+    var a = area();
+    var lines = [];
+    lines.push("=== PRINT ORDER SPEC ===");
+    lines.push("Garment: unisex tee, " + state.shirt.name + " (" + state.shirt.hex + ")");
+    lines.push("Placement: " + a.label + (a.chest ? "" : " (front center)"));
+    lines.push("Print area: " + a.w + " x " + a.h + " in");
+    lines.push("Safe margin: " + SAFE_MARGIN_IN + " in all sides");
+    lines.push("Origin: top-left of print area, X right / Y down, inches");
+    lines.push("");
+    if (!state.blocks.length) {
+      lines.push("(no elements placed)");
+    }
+    state.blocks.forEach(function (b, idx) {
+      var r = blockRect(b);
+      lines.push("Element " + (idx + 1) + ": " + (b.kind === "text" ? "TEXT" : "ICON"));
+      lines.push("  Content: " + b.content);
+      lines.push("  Ink: " + b.ink.name + " (" + b.ink.hex + ")");
+      lines.push("  Height: " + fmtIn(inches(b.sizePx)) + " in");
+      lines.push("  Position: X " + fmtIn(inches(r.x)) + " in, Y " + fmtIn(inches(r.y)) + " in");
+      lines.push("  Footprint: " + fmtIn(inches(r.w)) + " x " + fmtIn(inches(r.h)) + " in");
+    });
+    lines.push("");
+    var inkNames = [];
+    state.blocks.forEach(function (b) {
+      if (inkNames.indexOf(b.ink.name) === -1) inkNames.push(b.ink.name);
+    });
+    lines.push("Ink colors (" + inkNames.length + "): " + (inkNames.join(", ") || "none"));
+    lines.push("Press check: " + (state.lastScore === null ? "NOT RUN — run before ordering" : state.lastScore + " / 100"));
+    return lines.join("\n");
+  }
+
+  function refreshSpec() {
+    specOut.value = buildSpec();
+  }
+
+  function copySpec() {
+    refreshSpec();
+    var text = specOut.value;
+    function fallback() {
+      specOut.focus();
+      specOut.select();
+      specOut.setSelectionRange(0, text.length);
+      toast("Spec selected — press Ctrl+C (Cmd+C) to copy");
+    }
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(
+        function () { toast("Spec copied to clipboard"); },
+        fallback
+      );
+    } else {
+      fallback();
+    }
+  }
+
+  /* ---------------- Wiring ---------------- */
+  $("addTextBtn").addEventListener("click", function () { addBlock("text"); });
+  $("addIconBtn").addEventListener("click", function () { addBlock("icon"); });
+  $("deleteBtn").addEventListener("click", removeSelected);
+  $("checkBtn").addEventListener("click", runCheck);
+  $("copyBtn").addEventListener("click", copySpec);
+
+  $("centerBtn").addEventListener("click", function () {
+    var s = selected();
+    if (!s) return;
+    var p = areaPx();
+    var r = blockRect(s);
+    s.x = (p.w - r.w) / 2;
+    positionBlockNode(s);
+    invalidateScore();
+  });
+
+  $("propText").addEventListener("input", function () {
+    var s = selected();
+    if (!s || s.kind !== "text") return;
+    s.content = this.value || " ";
+    var node = document.getElementById("blk" + s.id);
+    if (node && node.firstChild) node.firstChild.textContent = s.content;
+    clampBlock(s);
+    positionBlockNode(s);
+    invalidateScore();
+  });
+
+  $("propSize").addEventListener("input", function () {
+    var s = selected();
+    if (!s) return;
+    s.sizePx = parseInt(this.value, 10);
+    var node = document.getElementById("blk" + s.id);
+    if (node) node.style.fontSize = s.sizePx + "px";
+    $("sizeReadout").textContent = fmtIn(inches(s.sizePx)) + " in tall";
+    clampBlock(s);
+    positionBlockNode(s);
+    invalidateScore();
+  });
+
+  $("areaSelect").addEventListener("change", function () {
+    state.areaKey = this.value;
+    applyArea();
+    state.blocks.forEach(function (b) { clampBlock(b); positionBlockNode(b); });
+    invalidateScore();
+  });
+
+  var nudgeFine = true;
+
+  function nudge(dx, dy, inchesStep) {
+    var s = selected();
+    if (!s) return;
+    var step = inchesStep * PX_PER_IN;
+    s.x += dx * step;
+    s.y += dy * step;
+    clampBlock(s);
+    positionBlockNode(s);
+    invalidateScore();
+  }
+
+  function padStep() { return nudgeFine ? 0.05 : 0.25; }
+
+  $("nudgeUp").addEventListener("click", function () { nudge(0, -1, padStep()); });
+  $("nudgeDown").addEventListener("click", function () { nudge(0, 1, padStep()); });
+  $("nudgeLeft").addEventListener("click", function () { nudge(-1, 0, padStep()); });
+  $("nudgeRight").addEventListener("click", function () { nudge(1, 0, padStep()); });
+  $("nudgeStep").addEventListener("click", function () {
+    nudgeFine = !nudgeFine;
+    this.textContent = nudgeFine ? ".05" : ".25";
+    $("nudgeReadout").textContent = padStep().toFixed(2) + " in";
+  });
+
+  document.addEventListener("keydown", function (ev) {
+    var s = selected();
+    if (!s) return;
+    var tag = document.activeElement ? document.activeElement.tagName : "";
+    if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return;
+    var step = (ev.shiftKey ? 0.25 : 0.05) * PX_PER_IN;
+    var moved = false;
+    if (ev.key === "ArrowLeft")  { s.x -= step; moved = true; }
+    if (ev.key === "ArrowRight") { s.x += step; moved = true; }
+    if (ev.key === "ArrowUp")    { s.y -= step; moved = true; }
+    if (ev.key === "ArrowDown")  { s.y += step; moved = true; }
+    if (ev.key === "Delete" || ev.key === "Backspace") {
+      ev.preventDefault();
+      removeSelected();
+      return;
+    }
+    if (moved) {
+      ev.preventDefault();
+      clampBlock(s);
+      positionBlockNode(s);
+      invalidateScore();
+    }
+  });
+
+  /* ---------------- Boot ---------------- */
+  buildChips();
+  applyShirt();
+  applyArea();
+  markShirtChips();
+  addBlock("text");
+  var first = selected();
+  if (first) {
+    first.content = "BANK IT";
+    renderBlocks();
+    renderProps();
+  }
+  runCheck();
+})();
+</script>
+</body>
+</html>

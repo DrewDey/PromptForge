@@ -1,0 +1,604 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Security OS - Incident Review</title>
+    <style>
+        :root {
+            --bg: #050505;
+            --panel-bg: #111;
+            --border: #333;
+            --text-main: #0f0;
+            --text-muted: #888;
+            --accent: #f44336;
+            --highlight: #ffeb3b;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            background-color: var(--bg);
+            color: var(--text-main);
+            font-family: 'Courier New', Courier, monospace;
+            margin: 0;
+            padding: 10px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            overflow-x: hidden;
+        }
+
+        h1 {
+            text-align: center;
+            border-bottom: 2px solid var(--text-main);
+            padding-bottom: 10px;
+            margin: 10px 0;
+            width: 100%;
+            max-width: 900px;
+            font-size: 1.5rem;
+        }
+
+        p.instructions {
+            color: var(--text-muted);
+            max-width: 900px;
+            text-align: center;
+            margin-bottom: 20px;
+            font-size: 0.9rem;
+            line-height: 1.4;
+        }
+
+        .game-board {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            width: 100%;
+            max-width: 1000px;
+        }
+
+        @media (min-width: 800px) {
+            .game-board {
+                flex-direction: row;
+            }
+        }
+
+        .panel {
+            flex: 1;
+            background: var(--panel-bg);
+            border: 1px dashed var(--border);
+            padding: 10px;
+            border-radius: 5px;
+            min-height: 400px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .panel-title {
+            text-align: center;
+            color: var(--highlight);
+            font-weight: bold;
+            padding-bottom: 10px;
+            border-bottom: 1px solid var(--border);
+            margin-bottom: 5px;
+        }
+
+        .card {
+            background: #000;
+            border: 1px solid var(--text-main);
+            padding: 10px;
+            box-shadow: 2px 2px 0px var(--text-main);
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .card-header {
+            font-weight: bold;
+            color: var(--highlight);
+            font-size: 0.9em;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 4px;
+        }
+
+        .card-visual {
+            font-size: 2rem;
+            text-align: center;
+            background: #1a1a1a;
+            border: 1px solid var(--border);
+            padding: 10px;
+        }
+
+        .card-desc {
+            font-size: 0.85em;
+            color: #ccc;
+            line-height: 1.4;
+        }
+
+        .anomaly-section {
+            background: #1a1a1a;
+            border: 1px dashed #555;
+            padding: 8px;
+            margin-top: 5px;
+        }
+
+        .anomaly-title {
+            font-size: 0.8em;
+            color: var(--text-muted);
+            margin-bottom: 5px;
+        }
+
+        .radio-group {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .radio-label {
+            font-size: 0.8em;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            cursor: pointer;
+            word-break: break-word;
+        }
+
+        input[type="radio"] {
+            accent-color: var(--text-main);
+            margin: 0;
+        }
+
+        .card-actions {
+            display: flex;
+            gap: 5px;
+            margin-top: 5px;
+            flex-wrap: wrap;
+        }
+
+        button {
+            background: var(--text-main);
+            color: #000;
+            border: none;
+            padding: 8px 12px;
+            font-family: inherit;
+            font-weight: bold;
+            font-size: 0.9rem;
+            cursor: pointer;
+            box-shadow: 2px 2px 0px #005500;
+            flex: 1;
+            min-width: 80px;
+        }
+
+        button:hover { background: #fff; }
+        button:active {
+            box-shadow: 0px 0px 0px #005500;
+            transform: translate(2px, 2px);
+        }
+        
+        button:disabled {
+            background: #333;
+            color: #666;
+            box-shadow: none;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .btn-danger { background: var(--accent); color: #fff; box-shadow: 2px 2px 0px #550000; }
+        .btn-danger:hover { background: #ff7961; }
+        
+        .btn-warning { background: var(--highlight); color: #000; box-shadow: 2px 2px 0px #887700; }
+        .btn-warning:hover { background: #fff9c4; }
+
+        .sys-controls {
+            margin-top: 20px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            justify-content: center;
+            width: 100%;
+            max-width: 900px;
+        }
+
+        .sys-controls button {
+            flex: 0 1 auto;
+        }
+
+        #feedback-panel {
+            margin-top: 20px;
+            padding: 15px;
+            background: #111;
+            border: 1px solid var(--border);
+            width: 100%;
+            max-width: 900px;
+            text-align: center;
+            min-height: 80px;
+        }
+
+        .status-msg {
+            font-weight: bold;
+            font-size: 1.1em;
+            margin-bottom: 10px;
+        }
+
+        .success { color: var(--text-main); }
+        .error { color: var(--accent); }
+        .hint { color: var(--highlight); font-size: 0.9em; margin-top: 10px; }
+
+        .hidden { display: none !important; }
+
+        #report-area {
+            width: 100%;
+            height: 120px;
+            background: #000;
+            color: var(--text-main);
+            border: 1px dashed var(--text-main);
+            font-family: inherit;
+            padding: 10px;
+            margin-top: 15px;
+            resize: vertical;
+        }
+
+        .timeline-indicator {
+            color: var(--highlight);
+            font-size: 0.8em;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>SECURITY OS v3.2 - INCIDENT REVIEW</h1>
+    <p class="instructions">
+        WARNING: Temporal corruption detected. A subject has breached containment.
+        Review the cards, mark the specific anomaly on each feed, and sequence them chronologically.
+    </p>
+
+    <div class="game-board">
+        <div class="panel" id="pool-panel">
+            <div class="panel-title">UNSORTED LOGS</div>
+            <div id="pool-container"></div>
+        </div>
+
+        <div class="panel" id="timeline-panel">
+            <div class="panel-title">TIMELINE RECONSTRUCTION</div>
+            <div id="timeline-container"></div>
+        </div>
+    </div>
+
+    <div class="sys-controls">
+        <button id="btn-compile">COMPILE TIMELINE</button>
+        <button id="btn-hint" class="btn-warning">REQUEST HINT</button>
+        <button id="btn-reveal" class="btn-danger hidden" data-step="0">REVEAL CLASSIFIED LOGS</button>
+        <button id="btn-reset">SYSTEM RESET</button>
+    </div>
+
+    <div id="feedback-panel">
+        <div id="status-display" class="status-msg">AWAITING COMPILATION...</div>
+        <div id="score-display"></div>
+        <div id="hint-display" class="hint"></div>
+        <div id="report-container" class="hidden">
+            <textarea id="report-area" readonly></textarea>
+            <button id="btn-copy" style="margin-top: 10px;">COPY SHIFT REPORT</button>
+        </div>
+    </div>
+
+    <script>
+        // --- Game Data ---
+        const initialCards = [
+            {
+                id: 'c1', originalTime: 'REC: 23:42:01', visual: '🛌',
+                desc: 'Subject asleep in containment cell. Glass is intact. Bio-monitor reads stable.',
+                options: ['None detected', 'Subject missing', 'Glass shattered'],
+                correctAnomaly: 0, targetOrder: 1
+            },
+            {
+                id: 'c2', originalTime: 'REC: 23:40:00', visual: '🚨',
+                desc: 'Emergency lights flashing. Glass is completely shattered outward. Subject is gone.',
+                options: ['Timestamp precedes incident', 'None detected', 'Subject is visible'],
+                correctAnomaly: 0, targetOrder: 5
+            },
+            {
+                id: 'c3', originalTime: 'REC: 23:45:10', visual: '💥',
+                desc: 'Subject is violently striking the glass. A spiderweb crack appears. Bio-monitor reads flatline.',
+                options: ['Glass repairing itself', 'Time moving backwards', 'Active subject has flatline'],
+                correctAnomaly: 2, targetOrder: 3
+            },
+            {
+                id: 'c4', originalTime: 'REC: 23:44:15', visual: '📈',
+                desc: 'Subject is writhing. Bio-monitor is spiking into the red zone. Glass remains intact.',
+                options: ['Bio-monitor offline', 'None detected', 'Multiple subjects'],
+                correctAnomaly: 1, targetOrder: 2
+            },
+            {
+                id: 'c5', originalTime: 'REC: [DATA_CORRUPT]', visual: '🕳️',
+                desc: 'Containment cell is empty. A large hole has formed in the cracked glass. Monitor offline.',
+                options: ['None detected', 'Subject asleep', 'Room is flooded'],
+                correctAnomaly: 0, targetOrder: 4
+            }
+        ];
+
+        const hints = [
+            "HINT 1: Striking glass requires a pulse. Check the bio-monitors.",
+            "HINT 2: The subject was contained at 23:42. A timestamp before that showing an escape is fabricated.",
+            "HINT 3: Corrupt data usually happens immediately after a critical failure.",
+            "HINT 4: The correct flow: Asleep -> Agitated -> Breaking -> Broken -> Fabricated aftermath."
+        ];
+
+        // --- State ---
+        let pool = [];
+        let timeline = [];
+        let failedAttempts = 0;
+        let hintIndex = 0;
+        let gameResolved = false;
+
+        // --- DOM Elements ---
+        const poolContainer = document.getElementById('pool-container');
+        const timelineContainer = document.getElementById('timeline-container');
+        const statusDisplay = document.getElementById('status-display');
+        const scoreDisplay = document.getElementById('score-display');
+        const hintDisplay = document.getElementById('hint-display');
+        const btnCompile = document.getElementById('btn-compile');
+        const btnHint = document.getElementById('btn-hint');
+        const btnReveal = document.getElementById('btn-reveal');
+        const btnReset = document.getElementById('btn-reset');
+        const reportContainer = document.getElementById('report-container');
+        const reportArea = document.getElementById('report-area');
+        const btnCopy = document.getElementById('btn-copy');
+
+        // --- Initialization ---
+        function initGame() {
+            // Deep copy and shuffle initial cards
+            pool = JSON.parse(JSON.stringify(initialCards)).sort(() => Math.random() - 0.5);
+            
+            // Add a user selection property
+            pool.forEach(card => card.selectedAnomaly = null);
+            timeline = [];
+            
+            failedAttempts = 0;
+            hintIndex = 0;
+            gameResolved = false;
+            
+            btnReveal.classList.add('hidden');
+            btnReveal.dataset.step = "0";
+            btnReveal.textContent = "REVEAL CLASSIFIED LOGS";
+            
+            reportContainer.classList.add('hidden');
+            statusDisplay.className = 'status-msg';
+            statusDisplay.textContent = 'AWAITING COMPILATION...';
+            scoreDisplay.textContent = '';
+            hintDisplay.textContent = '';
+            
+            render();
+        }
+
+        // --- Rendering ---
+        function createEl(tag, className, textContent) {
+            const el = document.createElement(tag);
+            if (className) el.className = className;
+            if (textContent) el.textContent = textContent;
+            return el;
+        }
+
+        function buildCardElement(card, inTimeline, index) {
+            const cardEl = createEl('div', 'card');
+            
+            if (inTimeline) {
+                const indicator = createEl('div', 'timeline-indicator', `SEQUENCE T-0${index + 1}`);
+                cardEl.appendChild(indicator);
+            }
+
+            const header = createEl('div', 'card-header', card.originalTime);
+            const visual = createEl('div', 'card-visual', card.visual);
+            const desc = createEl('div', 'card-desc', card.desc);
+            
+            cardEl.appendChild(header);
+            cardEl.appendChild(visual);
+            cardEl.appendChild(desc);
+
+            // Anomaly selection
+            const anomalySec = createEl('div', 'anomaly-section');
+            anomalySec.appendChild(createEl('div', 'anomaly-title', 'MARK ANOMALY:'));
+            
+            const radioGroup = createEl('div', 'radio-group');
+            card.options.forEach((optText, optIdx) => {
+                const label = createEl('label', 'radio-label');
+                const radio = createEl('input');
+                radio.type = 'radio';
+                radio.name = `anomaly-${card.id}`;
+                radio.value = optIdx;
+                if (card.selectedAnomaly === optIdx) radio.checked = true;
+                if (gameResolved) radio.disabled = true;
+                
+                radio.addEventListener('change', () => {
+                    card.selectedAnomaly = optIdx;
+                });
+
+                label.appendChild(radio);
+                label.appendChild(document.createTextNode(optText));
+                radioGroup.appendChild(label);
+            });
+            anomalySec.appendChild(radioGroup);
+            cardEl.appendChild(anomalySec);
+
+            // Actions
+            if (!gameResolved) {
+                const actions = createEl('div', 'card-actions');
+                
+                if (!inTimeline) {
+                    const btnAdd = createEl('button', '', 'ADD TO TIMELINE');
+                    btnAdd.addEventListener('click', () => moveCard(card.id, 'toTimeline'));
+                    actions.appendChild(btnAdd);
+                } else {
+                    const btnUp = createEl('button', '', 'UP');
+                    btnUp.disabled = index === 0;
+                    btnUp.addEventListener('click', () => reorderTimeline(index, -1));
+                    
+                    const btnDown = createEl('button', '', 'DOWN');
+                    btnDown.disabled = index === timeline.length - 1;
+                    btnDown.addEventListener('click', () => reorderTimeline(index, 1));
+                    
+                    const btnRemove = createEl('button', 'btn-danger', 'REMOVE');
+                    btnRemove.addEventListener('click', () => moveCard(card.id, 'toPool'));
+                    
+                    actions.appendChild(btnUp);
+                    actions.appendChild(btnDown);
+                    actions.appendChild(btnRemove);
+                }
+                cardEl.appendChild(actions);
+            }
+
+            return cardEl;
+        }
+
+        function render() {
+            poolContainer.replaceChildren();
+            timelineContainer.replaceChildren();
+
+            pool.forEach(card => {
+                poolContainer.appendChild(buildCardElement(card, false, 0));
+            });
+
+            timeline.forEach((card, index) => {
+                timelineContainer.appendChild(buildCardElement(card, true, index));
+            });
+            
+            btnCompile.disabled = gameResolved;
+        }
+
+        // --- Interactions ---
+        function moveCard(id, direction) {
+            if (direction === 'toTimeline') {
+                const idx = pool.findIndex(c => c.id === id);
+                if (idx > -1) {
+                    timeline.push(pool.splice(idx, 1)[0]);
+                }
+            } else if (direction === 'toPool') {
+                const idx = timeline.findIndex(c => c.id === id);
+                if (idx > -1) {
+                    pool.push(timeline.splice(idx, 1)[0]);
+                }
+            }
+            render();
+        }
+
+        function reorderTimeline(index, offset) {
+            const newIndex = index + offset;
+            if (newIndex >= 0 && newIndex < timeline.length) {
+                const temp = timeline[index];
+                timeline[index] = timeline[newIndex];
+                timeline[newIndex] = temp;
+                render();
+            }
+        }
+
+        // --- Logic & Scoring ---
+        function compileTimeline() {
+            if (timeline.length < initialCards.length) {
+                statusDisplay.className = 'status-msg error';
+                statusDisplay.textContent = 'ERROR: TIMELINE INCOMPLETE. PLACE ALL LOGS.';
+                return;
+            }
+
+            let seqCorrect = 0;
+            let anomalyCorrect = 0;
+
+            timeline.forEach((card, idx) => {
+                if (card.targetOrder === idx + 1) seqCorrect++;
+                if (card.selectedAnomaly === card.correctAnomaly) anomalyCorrect++;
+            });
+
+            const total = initialCards.length;
+            scoreDisplay.textContent = `SEQUENCE: ${seqCorrect}/${total} | ANOMALIES: ${anomalyCorrect}/${total}`;
+
+            if (seqCorrect === total && anomalyCorrect === total) {
+                statusDisplay.className = 'status-msg success';
+                statusDisplay.textContent = 'OVERRIDE ACCEPTED. SEQUENCE RESTORED.';
+                triggerWinState(seqCorrect, anomalyCorrect);
+            } else {
+                failedAttempts++;
+                statusDisplay.className = 'status-msg error';
+                statusDisplay.textContent = 'TIMELINE MISMATCH OR INCORRECT ANOMALIES DETECTED.';
+                
+                if (failedAttempts >= 1) {
+                    btnReveal.classList.remove('hidden');
+                }
+            }
+        }
+
+        function requestHint() {
+            hintDisplay.textContent = hints[hintIndex];
+            hintIndex = (hintIndex + 1) % hints.length;
+        }
+
+        function handleRevealClick() {
+            const step = btnReveal.dataset.step;
+            if (step === "0") {
+                btnReveal.textContent = "CONFIRM REVEAL?";
+                btnReveal.dataset.step = "1";
+            } else {
+                // Auto-solve
+                timeline = [...timeline, ...pool].sort((a, b) => a.targetOrder - b.targetOrder);
+                pool = [];
+                timeline.forEach(card => {
+                    card.selectedAnomaly = card.correctAnomaly;
+                });
+                
+                statusDisplay.className = 'status-msg error';
+                statusDisplay.textContent = 'CLASSIFIED LOGS REVEALED. MANUAL OVERRIDE INITIATED.';
+                scoreDisplay.textContent = 'AUTO-RESOLVED BY SYSTEM OVERRIDE';
+                triggerWinState(0, 0, true);
+            }
+        }
+
+        function triggerWinState(seqScore, anomScore, isForced = false) {
+            gameResolved = true;
+            btnReveal.classList.add('hidden');
+            hintDisplay.textContent = '';
+            
+            // Build Report
+            const dateStr = new Date().toISOString().replace('T', ' ').substring(0, 19);
+            const forcedTag = isForced ? "[AUTO-RESOLVED VIA CLASSIFIED OVERRIDE]\n" : "";
+            
+            const report = `--- SECURITY OS SHIFT REPORT ---\n` +
+                           `TIMESTAMP: ${dateStr}\n` +
+                           `STATUS: CONTAINMENT BREACH LOGGED\n` +
+                           forcedTag +
+                           `SEQUENCE SCORE: ${isForced ? 'N/A' : seqScore + '/5'}\n` +
+                           `ANOMALY SCORE:  ${isForced ? 'N/A' : anomScore + '/5'}\n` +
+                           `VERIFICATION: COMPLETE.`;
+            
+            reportArea.value = report;
+            reportContainer.classList.remove('hidden');
+            render(); // Rerender to disable buttons/inputs
+        }
+
+        function copyReport() {
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(reportArea.value).then(() => {
+                    btnCopy.textContent = "COPIED TO CLIPBOARD";
+                    setTimeout(() => btnCopy.textContent = "COPY SHIFT REPORT", 2000);
+                }).catch(() => {
+                    btnCopy.textContent = "COPY FAILED - SELECT MANUALLY";
+                });
+            } else {
+                reportArea.select();
+                btnCopy.textContent = "PRESS CTRL+C TO COPY";
+            }
+        }
+
+        // --- Event Listeners ---
+        btnCompile.addEventListener('click', compileTimeline);
+        btnHint.addEventListener('click', requestHint);
+        btnReveal.addEventListener('click', handleRevealClick);
+        btnReset.addEventListener('click', initGame);
+        btnCopy.addEventListener('click', copyReport);
+
+        // Start
+        window.addEventListener('DOMContentLoaded', initGame);
+
+    </script>
+</body>
+</html>

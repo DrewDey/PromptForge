@@ -1,0 +1,197 @@
+{
+  "schemaVersion": 1,
+  "canonicalProjectId": "17c42c87-3709-4d5e-9ae3-d4ac4807bc4c",
+  "canonicalRoute": "/t-shirt-print-alignment-press-game-demo",
+  "title": "T-Shirt Print Alignment Press Game",
+  "defaultSourceRunId": "43f452e6-5d3a-43d9-b8ba-8108ecf9ca35",
+  "contract": {
+    "version": "t-shirt-print-alignment-press-game-v1",
+    "openingPromptExact": "Can you make me a self-contained T-shirt print alignment press game I can save as one HTML file, where I arrange text and icon blocks on a shirt mockup, check print-safe margins/readability, and copy an order-ready layout spec?",
+    "acceptanceCriteria": [
+      "Provide a recognizable shirt mockup with movable text and icon blocks rather than a static form only.",
+      "Score or flag print-safe margins, alignment, overlap, and readability from the current layout.",
+      "Make placement usable with pointer and narrow-screen controls without trapping the design off canvas.",
+      "Provide a truthful copyable or downloadable order-ready production specification.",
+      "Produce one complete self-contained HTML file that is immediately usable in a browser.",
+      "Operate offline with no external APIs, hosted generation, CDNs, remote fonts, scripts, stylesheets, or fragile dependencies.",
+      "Avoid unsafe HTML sinks, eval-like execution, inline event handlers, modal dialogs, and deprecated clipboard handling.",
+      "Avoid page-level horizontal overflow at 390 by 844 and at desktop width.",
+      "Keep essential controls visible, keyboard or touch reachable, and truthful about their current state.",
+      "Preserve exact prompt, response, source, and artifact-version evidence for the run."
+    ],
+    "adaptiveRepairPolicy": "Preserve and score the first real artifact. Continue only when verification proves a concrete defect or a source-capture failure; use the same source session and model; name the observed defect in ordinary language; preserve every real artifact version; stop as soon as the artifact passes; prefer no more than three total prompts and go beyond three only for a documented concrete lane reason such as a verification-proven regression, truncation, or mechanical capture failure.",
+    "sha256": "98535f10ca5f59db341c63ecaf7403f3a5eddf193008d9af1efad70ead116cb5",
+    "openingPromptSha256": "5afb342fcf8ff3e88af7c6321fcb89884073a79c02918b04f72cc6e05b2089d3"
+  },
+  "variants": [
+    {
+      "sourceRunId": "94e76d4a-a6e4-4fd1-9de6-9b84ff21483e",
+      "providerKey": "openai",
+      "serviceLabel": "ChatGPT",
+      "modelLabel": "GPT-5.5",
+      "modelSettings": "ChatGPT web; GPT-5.5 Thinking (public share model_slug: gpt-5-5-thinking); Intelligence: Medium (public share thinking_effort: standard). ChatGPT Pro account visible; no files, tools, external assets, or web/API calls requested.",
+      "operatorKind": "original-author",
+      "operatorLabel": "Original source run · Della Patch",
+      "runRole": "historical-baseline",
+      "qualityStatus": "known-issue",
+      "isCurrent": false,
+      "capturedAt": "2026-06-15T00:12:47Z",
+      "promptCount": 1,
+      "repairPromptCount": 0,
+      "packageFile": "t-shirt-print-alignment-press-chatgpt-medium-source-run.json",
+      "packageSha256": "2f8966bb0cb1afc26d554eb5887f9ce1a125f41ba5b4943f4d01acd120aa9449",
+      "firstArtifactPath": "public/artifacts/t-shirt-print-alignment-press-chatgpt-medium.html",
+      "finalArtifactPath": "public/artifacts/t-shirt-print-alignment-press-chatgpt-medium.html",
+      "artifactVersionPaths": [
+        "public/artifacts/t-shirt-print-alignment-press-chatgpt-medium.html"
+      ],
+      "firstPassMetrics": {
+        "qualityScore": 88,
+        "artifactReady": true,
+        "hardGatesPassed": false,
+        "functionalChecks": {
+          "passed": 9,
+          "total": 10
+        },
+        "consoleErrorCount": 0,
+        "horizontalOverflowPx": 0,
+        "notes": [
+          "The one-shot mockup supports movable text and icon blocks, keyboard movement, safety scoring, and a coordinate-rich production spec.",
+          "Two blocks overlapped by 2646 square pixels with no overlap warning or score effect."
+        ]
+      },
+      "finalMetrics": {
+        "qualityScore": 88,
+        "artifactReady": true,
+        "hardGatesPassed": false,
+        "functionalChecks": {
+          "passed": 9,
+          "total": 10
+        },
+        "consoleErrorCount": 0,
+        "horizontalOverflowPx": 0,
+        "notes": [
+          "The historical final remains usable at 390px and desktop with working copy and download controls.",
+          "Its production checks do not detect block-to-block overlap, so one project criterion remains failed."
+        ]
+      }
+    },
+    {
+      "sourceRunId": "43f452e6-5d3a-43d9-b8ba-8108ecf9ca35",
+      "providerKey": "anthropic",
+      "serviceLabel": "Claude",
+      "modelLabel": "Fable 5 High",
+      "modelSettings": "Claude web; High reasoning.",
+      "operatorKind": "pathforge-labs-manual",
+      "operatorLabel": "PathForge Labs · Developer-operated",
+      "runRole": "comparison-run",
+      "qualityStatus": "verified",
+      "isCurrent": true,
+      "capturedAt": "2026-07-10T22:53:59.500Z",
+      "promptCount": 7,
+      "repairPromptCount": 5,
+      "packageFile": "model-variants/t-shirt-print-alignment-press-game-claude-fable-5-high-source-run.json",
+      "packageSha256": "23781c34df1515f0e6a7aadaca782fb24c20a88cc1e950db5931051eab4b48b0",
+      "firstArtifactPath": "public/artifacts/t-shirt-print-alignment-press-game-claude-fable-5-high-capture-recovery.html",
+      "finalArtifactPath": "public/artifacts/t-shirt-print-alignment-press-game-claude-fable-5-high-final.html",
+      "artifactVersionPaths": [
+        "public/artifacts/t-shirt-print-alignment-press-game-claude-fable-5-high-capture-recovery.html",
+        "public/artifacts/t-shirt-print-alignment-press-game-claude-fable-5-high-execcommand-repair.html",
+        "public/artifacts/t-shirt-print-alignment-press-game-claude-fable-5-high-layout-repair-1.html",
+        "public/artifacts/t-shirt-print-alignment-press-game-claude-fable-5-high-layout-repair-2.html",
+        "public/artifacts/t-shirt-print-alignment-press-game-claude-fable-5-high-layout-repair-3.html",
+        "public/artifacts/t-shirt-print-alignment-press-game-claude-fable-5-high-final.html"
+      ],
+      "firstPassMetrics": {
+        "qualityScore": 82,
+        "artifactReady": true,
+        "hardGatesPassed": false,
+        "functionalChecks": {
+          "passed": 8,
+          "total": 10
+        },
+        "consoleErrorCount": 0,
+        "horizontalOverflowPx": 21,
+        "notes": [
+          "The opening response hit the provider usage limit and is preserved as transcript-only; the first real artifact arrived on the capture-recovery step.",
+          "Direct first-artifact verification passed all four project checks, one-file/offline behavior, evidence preservation, essential controls, desktop layout, and zero console errors.",
+          "Static verification found document.execCommand, and true 390x844 verification measured 411px document width for 21px of overflow; those two common checks failed."
+        ]
+      },
+      "finalMetrics": {
+        "qualityScore": 98,
+        "artifactReady": true,
+        "hardGatesPassed": true,
+        "functionalChecks": {
+          "passed": 10,
+          "total": 10
+        },
+        "consoleErrorCount": 0,
+        "horizontalOverflowPx": 0,
+        "notes": [
+          "All four project checks and six common acceptance checks passed on the final saved artifact.",
+          "scripts/measure-html-artifacts.mjs directly reported mobile 390/390, overflow 0, console errors 0 and desktop 1440/1440, overflow 0, console errors 0 after its exact 350ms post-load wait.",
+          "The final workflow added an icon, changed its glyph, used the nudge controls, switched to Youth placement, scored the layout, generated a 518-character order spec, and displayed the successful copy status with zero console errors.",
+          "Static verification found no external dependency, network call, unsafe sink, eval-like execution, inline handler, modal API, document.write, document.execCommand, remote font, or JavaScript syntax error."
+        ]
+      }
+    },
+    {
+      "sourceRunId": "83eb2c59e82ab443",
+      "providerKey": "google",
+      "serviceLabel": "Gemini",
+      "modelLabel": "Gemini 3.1 Pro",
+      "modelSettings": "Gemini web; Pro mode.",
+      "operatorKind": "pathforge-labs-manual",
+      "operatorLabel": "PathForge Labs · Developer-operated",
+      "runRole": "comparison-run",
+      "qualityStatus": "verified",
+      "isCurrent": true,
+      "capturedAt": "2026-07-11T05:59:00.025Z",
+      "promptCount": 3,
+      "repairPromptCount": 2,
+      "packageFile": "model-variants/t-shirt-print-alignment-press-game-gemini-31-pro-source-run.json",
+      "packageSha256": "59c764d28397c9324d33a1f7eeb5d6a7dfc828b5b29b7e501bd698725e27046f",
+      "firstArtifactPath": "public/artifacts/t-shirt-print-alignment-press-game-gemini-31-pro-first-pass.html",
+      "finalArtifactPath": "public/artifacts/t-shirt-print-alignment-press-game-gemini-31-pro-repair-2.html",
+      "artifactVersionPaths": [
+        "public/artifacts/t-shirt-print-alignment-press-game-gemini-31-pro-first-pass.html",
+        "public/artifacts/t-shirt-print-alignment-press-game-gemini-31-pro-final.html",
+        "public/artifacts/t-shirt-print-alignment-press-game-gemini-31-pro-repair-2.html"
+      ],
+      "firstPassMetrics": {
+        "qualityScore": 62,
+        "artifactReady": true,
+        "hardGatesPassed": false,
+        "functionalChecks": {
+          "passed": 5,
+          "total": 10
+        },
+        "consoleErrorCount": 0,
+        "horizontalOverflowPx": 0,
+        "notes": [
+          "The opening artifact's responsive behavior was visually broken despite zero page-level overflow: the shirt canvas was clipped offscreen at 390px.",
+          "Static scanning found two prohibited dynamic-HTML writes.",
+          "The workflow was pointer-only and lacked the contracted full scoring and production-export depth."
+        ]
+      },
+      "finalMetrics": {
+        "qualityScore": 97,
+        "artifactReady": true,
+        "hardGatesPassed": true,
+        "functionalChecks": {
+          "passed": 10,
+          "total": 10
+        },
+        "consoleErrorCount": 0,
+        "horizontalOverflowPx": 0,
+        "notes": [
+          "Fresh 390x844 and 1440x1000 measurements reported zero horizontal overflow and zero console errors, and the complete static hard-gate scan passed.",
+          "Direct workflow added text and icon blocks, selected and nudged the icon, and surfaced separate margin, alignment, overlap, and readability results.",
+          "The exported specification includes the four validation results and element placement details; copy feedback completed without console errors.",
+          "All four project-specific checks and all six shared production checks passed."
+        ]
+      }
+    }
+  ]
+}

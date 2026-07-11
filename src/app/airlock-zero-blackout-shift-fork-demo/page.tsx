@@ -8,6 +8,7 @@ import { notFound } from 'next/navigation'
 const route = '/airlock-zero-blackout-shift-fork-demo'
 const project = AIRLOCK_ZERO_CLAUDE_FORK_SHOWCASE_PROJECT
 
+export const dynamic = 'force-dynamic'
 export const metadata = buildPreparedSourceRunDetailMetadata(project)
 
 export default async function AirlockZeroBlackoutShiftForkDemoPage() {

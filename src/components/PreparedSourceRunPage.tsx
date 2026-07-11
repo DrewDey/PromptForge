@@ -1,3 +1,6 @@
+import { createHash } from 'node:crypto'
+import { readFileSync } from 'node:fs'
+import path from 'node:path'
 import Link from 'next/link'
 import ProjectCommunityPanel from '@/components/ProjectCommunityPanel'
 import ProjectEngagementBar from '@/components/ProjectEngagementBar'
@@ -5,20 +8,46 @@ import PathForgeLabsModelRuns, {
   PathForgeLabsModelComparison,
 } from '@/components/PathForgeLabsModelRuns'
 import SourceRunShowcase, {
+  type SourceRunShowcaseForkContext,
   type SourceRunShowcaseArtifactVersion,
   type SourceRunShowcaseStep,
 } from '@/components/SourceRunShowcase'
 import { getApprovedProjectForks } from '@/lib/data'
-import type { PreparedShowcaseProject } from '@/lib/prepared-showcase-projects'
+import {
+  getPreparedShowcaseProjectById,
+  resolvePreparedShowcaseLineage,
+  type PreparedShowcaseProject,
+} from '@/lib/prepared-showcase-projects'
+import { getProjectRouteOverride } from '@/lib/project-links'
+import type {
+  ProjectForkContinuationStep,
+  ProjectForkNetworkItem,
+  ProjectForkSource,
+  ProjectForkSourceStep,
+} from '@/lib/project-forks'
+import { buildProjectResponseForkHref } from '@/lib/project-forks'
 import type {
   ProjectModelVariant,
   ProjectModelVariantSet,
 } from '@/lib/project-model-variants'
+import { getProjectModelVariantSet } from '@/lib/project-model-variants'
 import type { SourceRunPackage, SourceRunPackageStep } from '@/lib/source-run-package'
+import { loadSourceRunPackage } from '@/lib/source-run-package'
 
 function getPublicArtifactPath(artifactPath?: string | null) {
   if (!artifactPath?.startsWith('public/artifacts/')) return null
   return `/${artifactPath.replace(/^public\//, '')}`
+}
+
+function artifactSha256(artifactPath: string) {
+  if (!artifactPath.startsWith('public/artifacts/')) return undefined
+  try {
+    return createHash('sha256')
+      .update(readFileSync(path.join(process.cwd(), artifactPath)))
+      .digest('hex')
+  } catch {
+    return undefined
+  }
 }
 
 function getProviderName(sourceRun: SourceRunPackage, project: PreparedShowcaseProject) {
@@ -70,6 +99,9 @@ function artifactVersionsForStep(
         id: `${project.id}-step-${step.step_number}-artifact-${index + 1}`,
         artifactPath: publicArtifactPath,
         artifactTitle: isDefault ? `${project.title} final` : `${project.title} step ${step.step_number}`,
+        artifactSha256: step.artifact_version_path === filePath && step.artifact_sha256
+          ? step.artifact_sha256
+          : artifactSha256(filePath),
         isDefault,
       })
 
@@ -81,6 +113,7 @@ function toShowcaseStep(
   step: SourceRunPackageStep,
   sourceRun: SourceRunPackage,
   project: PreparedShowcaseProject,
+  stepIdentityScope?: string,
 ): SourceRunShowcaseStep {
   const projectStep = project.steps.find((item) => item.stepNumber === step.step_number)
   const finalStepNumber = defaultStepNumber(sourceRun)
@@ -98,7 +131,9 @@ function toShowcaseStep(
     step.generated_files?.includes(sourceRun.final_artifact_path ?? '')
 
   return {
-    id: `${project.id}-step-${step.step_number}`,
+    id: stepIdentityScope
+      ? `${project.id}:${stepIdentityScope}:step:${step.step_number}`
+      : `${project.id}-step-${step.step_number}`,
     stepNumber: step.step_number,
     title: projectStep?.title ?? `Prompt ${step.step_number}`,
     prompt: step.prompt_exact,
@@ -119,13 +154,216 @@ function toShowcaseStep(
 
 function mainPathSourceSteps(
   sourceRun: SourceRunPackage,
-  project: PreparedShowcaseProject,
+  forkSource?: ProjectForkSource | null,
 ) {
-  const forkPointStepNumber = project.forkSource?.sourceStepNumber
+  const forkPointStepNumber = forkSource?.sourceStepNumber
   if (!forkPointStepNumber) return sourceRun.steps
 
   const continuationSteps = sourceRun.steps.filter((step) => step.step_number > forkPointStepNumber)
   return continuationSteps.length > 0 ? continuationSteps : sourceRun.steps
+}
+
+function toForkSourceStep(step: SourceRunShowcaseStep): ProjectForkSourceStep {
+  return {
+    id: step.id,
+    stepNumber: step.stepNumber,
+    promptTitle: step.title,
+    promptText: step.prompt,
+    responseText: step.response,
+    responsePackageId: step.id,
+    artifactPath: step.artifactPath,
+  }
+}
+
+function toForkContinuationStep(step: SourceRunShowcaseStep): ProjectForkContinuationStep {
+  return {
+    ...toForkSourceStep(step),
+    artifactVersions: (step.artifactVersions ?? []).map((artifact, index) => ({
+      id: artifact.id ?? `${step.id}:artifact:${index + 1}`,
+      artifactPath: artifact.artifactPath,
+      artifactTitle: artifact.artifactTitle,
+      artifactSha256: artifact.artifactSha256,
+      isDefault: artifact.isDefault,
+    })),
+  }
+}
+
+function withModelRun(href: string, sourceRunId?: string) {
+  if (!sourceRunId) return href
+  const query = new URLSearchParams({ run: sourceRunId })
+  return `${href}?${query.toString()}`
+}
+
+function resolvePreparedSourcePackage(
+  sourceProject: PreparedShowcaseProject,
+  forkSource: ProjectForkSource,
+) {
+  if (forkSource.sourceRunId) {
+    const variantSet = getProjectModelVariantSet(sourceProject.id)
+    const sourceVariant = variantSet?.variants.find((variant) => (
+      variant.sourceRunId === forkSource.sourceRunId
+    ))
+    if (sourceVariant) {
+      return {
+        sourcePackage: sourceVariant.sourceRunPackage,
+        sourceStepScope: sourceVariant.sourceRunId,
+      }
+    }
+
+    if (
+      sourceProject.sourceRunPackageFile &&
+      sourceProject.sourceRunId === forkSource.sourceRunId
+    ) {
+      const sourcePackage = loadSourceRunPackage(sourceProject.sourceRunPackageFile)
+      return {
+        sourcePackage,
+        sourceStepScope: sourcePackage.source_run_id ?? sourceProject.sourceRunId,
+      }
+    }
+
+    throw new Error(
+      `Fork source run ${forkSource.sourceRunId} is not registered for ${sourceProject.id}.`,
+    )
+  }
+
+  if (!sourceProject.sourceRunPackageFile) {
+    throw new Error(`Fork source project ${sourceProject.id} has no registered source package.`)
+  }
+  const sourcePackage = loadSourceRunPackage(sourceProject.sourceRunPackageFile)
+  return {
+    sourcePackage,
+    sourceStepScope: sourcePackage.source_run_id ?? sourceProject.sourceRunId,
+  }
+}
+
+function buildPreparedForkContext({
+  project,
+  sourceRun,
+  childSteps,
+  forkSource,
+  route,
+}: {
+  project: PreparedShowcaseProject
+  sourceRun: SourceRunPackage
+  childSteps: SourceRunShowcaseStep[]
+  forkSource: ProjectForkSource
+  route: string
+}): SourceRunShowcaseForkContext {
+  const lineage = resolvePreparedShowcaseLineage(project)
+  const registeredSource = getPreparedShowcaseProjectById(forkSource.sourceProjectId)
+  const immediateSource = lineage[lineage.length - 2]
+  if (!registeredSource || !immediateSource || immediateSource.id !== registeredSource.id) {
+    throw new Error(`Fork source project ${forkSource.sourceProjectId} is not the registered parent.`)
+  }
+
+  const sourceSteps: ProjectForkSourceStep[] = []
+  const trail: SourceRunShowcaseForkContext['trail'] = []
+  const sourceStepIds = new Set<string>()
+
+  for (let index = 0; index < lineage.length - 1; index += 1) {
+    const sourceProject = lineage[index]
+    const childProject = lineage[index + 1]
+    const childForkSource = childProject.forkSource
+    if (!childForkSource || childForkSource.sourceProjectId !== sourceProject.id) {
+      throw new Error(`Prepared lineage link ${sourceProject.id} -> ${childProject.id} is invalid.`)
+    }
+
+    const { sourcePackage, sourceStepScope } = resolvePreparedSourcePackage(
+      sourceProject,
+      childForkSource,
+    )
+    const forkPointNumber = childForkSource.sourceStepNumber
+    for (const step of mainPathSourceSteps(sourcePackage, sourceProject.forkSource)) {
+      if (forkPointNumber && step.step_number > forkPointNumber) continue
+      const preparedStep = toForkSourceStep(
+        toShowcaseStep(step, sourcePackage, sourceProject, sourceStepScope),
+      )
+      if (sourceStepIds.has(preparedStep.id)) continue
+      sourceStepIds.add(preparedStep.id)
+      sourceSteps.push(preparedStep)
+    }
+
+    const sourceRoute = getProjectRouteOverride(sourceProject.id) ?? sourceProject.href
+    trail.push({
+      id: sourceProject.id,
+      title: sourceProject.title,
+      href: withModelRun(sourceRoute, childForkSource.sourceRunId),
+      modelLabel: sourcePackage.model,
+    })
+  }
+
+  trail.push({
+    id: project.id,
+    title: project.title,
+    href: route,
+    modelLabel: sourceRun.model ?? project.modelUsed,
+    isCurrent: true,
+  })
+
+  const continuationSteps = childSteps.map((step) => {
+    const continuation = toForkContinuationStep(step)
+    const forkArtifact =
+      continuation.artifactVersions?.find((artifact) => artifact.isDefault) ??
+      null
+    const nestedSourceRunId = sourceRun.source_run_id?.trim()
+    const nestedArtifactPath = forkArtifact?.artifactPath
+      ? `public${forkArtifact.artifactPath}`
+      : null
+    const hasPublishableFinalEvidence = Boolean(
+      nestedSourceRunId &&
+      Number.isInteger(sourceRun.prompt_count) &&
+      sourceRun.prompt_count === continuation.stepNumber &&
+      forkArtifact?.artifactSha256 &&
+      nestedArtifactPath === sourceRun.final_artifact_path &&
+      forkArtifact.artifactSha256 === sourceRun.artifact_sha256,
+    )
+    if (!hasPublishableFinalEvidence || !nestedSourceRunId || !nestedArtifactPath || !forkArtifact?.artifactSha256) {
+      return continuation
+    }
+
+    return {
+      ...continuation,
+      forkHref: buildProjectResponseForkHref({
+        sourceProjectId: project.id,
+        sourceProjectTitle: project.title,
+        sourceRunId: nestedSourceRunId,
+        sourceStepId: continuation.id,
+        sourceStepNumber: continuation.stepNumber,
+        sourceArtifactPath: nestedArtifactPath,
+        sourceArtifactSha256: forkArtifact.artifactSha256,
+        currentForkSource: forkSource,
+        promptFamilyId: forkSource.promptFamilyId,
+      }),
+    }
+  })
+  const newForkHref =
+    continuationSteps.find((step) => step.forkHref)?.forkHref ??
+    null
+
+  const branch: ProjectForkNetworkItem = {
+    id: project.id,
+    title: project.title,
+    description: project.description,
+    authorUsername: project.authorUsername,
+    authorDisplayName: project.authorDisplayName,
+    modelUsed: sourceRun.model ?? project.modelUsed,
+    createdAt: project.createdAt,
+    forkSource,
+    continuationSteps,
+    childRoute: route,
+    childSourceUrl: sourceRun.source_url ?? project.sourceUrl,
+    childProviderName: sourceRun.provider ?? null,
+  }
+  const sourceRoute = getProjectRouteOverride(immediateSource.id) ?? immediateSource.href
+
+  return {
+    sourceSteps,
+    branch,
+    trail,
+    sourceProjectHref: withModelRun(sourceRoute, forkSource.sourceRunId),
+    sourceRunHref: sourceRun.source_url ?? project.sourceUrl,
+    newForkHref,
+  }
 }
 
 function RunSummary({
@@ -177,11 +415,32 @@ export default async function PreparedSourceRunPage({
   const sourceRun = sourceRunPackage
   const providerName = getProviderName(sourceRun, project)
   const sourceUrl = sourceRun.source_url || project.sourceUrl
-  const steps = mainPathSourceSteps(sourceRun, project).map((step) => toShowcaseStep(step, sourceRun, project))
   const usesModelVariants = Boolean(modelVariantSet && activeModelVariant)
-  const isHistoricalOriginalRun =
-    !usesModelVariants || activeModelVariant?.runRole === 'historical-baseline'
-  const forkNetwork = isHistoricalOriginalRun ? await getApprovedProjectForks(project.id) : []
+  const stepIdentityScope = activeModelVariant?.sourceRunId
+    ?? sourceRun.source_run_id
+    ?? project.sourceRunId
+  const forkSource = sourceRun.fork_source ?? project.forkSource ?? null
+  const steps = mainPathSourceSteps(sourceRun, forkSource).map((step) => (
+    toShowcaseStep(
+      step,
+      sourceRun,
+      project,
+      stepIdentityScope,
+    )
+  ))
+  const forkNetwork = await getApprovedProjectForks(
+    project.id,
+    usesModelVariants ? activeModelVariant?.sourceRunId : undefined,
+  )
+  const forkContext = forkSource
+    ? buildPreparedForkContext({
+      project,
+      sourceRun,
+      childSteps: steps,
+      forkSource,
+      route,
+    })
+    : null
 
   return (
     <main className="min-h-screen bg-surface-50 text-surface-900">
@@ -241,16 +500,22 @@ export default async function PreparedSourceRunPage({
       <SourceRunShowcase
         key={activeModelVariant?.sourceRunId ?? project.sourceRunId}
         sourceRunUrl={sourceUrl}
+        sourceRunAccessNote={sourceRun.source_access?.note}
         projectId={project.id}
         projectTitle={project.title}
+        sourceModelVariantId={activeModelVariant?.databaseId}
+        sourceRunId={activeModelVariant?.sourceRunId}
+        sourceArtifactPath={activeModelVariant?.finalArtifactPath ?? sourceRun.final_artifact_path}
+        sourceArtifactSha256={sourceRun.artifact_sha256}
         providerName={providerName}
         steps={steps}
         forkNetwork={forkNetwork}
-        allowForks={isHistoricalOriginalRun}
+        forkContext={forkContext}
+        allowForks
         defaultStepNumber={defaultStepNumber(sourceRun)}
       />
 
-      <ProjectCommunityPanel projectId={project.id} />
+      <ProjectCommunityPanel projectId={project.id} showForkLineage={false} />
     </main>
   )
 }

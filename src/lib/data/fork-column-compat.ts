@@ -1,8 +1,12 @@
 const SOURCE_RUN_FORK_COLUMNS = [
   'fork_source_project_id',
   'fork_source_project_title',
+  'fork_source_model_variant_id',
+  'fork_source_run_id',
   'fork_source_step_id',
   'fork_source_step_number',
+  'fork_source_artifact_path',
+  'fork_source_artifact_sha256',
   'fork_parent_submission_id',
   'prompt_family_id',
   'fork_depth',
@@ -34,16 +38,7 @@ export function forkColumnsMissing(error: { code?: string; message?: string } | 
 }
 
 export function omitForkFields<T extends Record<string, unknown>>(payload: T) {
-  const {
-    fork_source_project_id: _forkSourceProjectId,
-    fork_source_project_title: _forkSourceProjectTitle,
-    fork_source_step_id: _forkSourceStepId,
-    fork_source_step_number: _forkSourceStepNumber,
-    fork_parent_submission_id: _forkParentSubmissionId,
-    prompt_family_id: _promptFamilyId,
-    fork_depth: _forkDepth,
-    fork_branch_index: _forkBranchIndex,
-    ...rest
-  } = payload
+  const rest: Record<string, unknown> = { ...payload }
+  for (const column of SOURCE_RUN_FORK_COLUMNS) delete rest[column]
   return rest
 }

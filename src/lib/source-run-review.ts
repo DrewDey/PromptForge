@@ -136,6 +136,10 @@ export function agentNotesForSourceRunReview(
   ]
   const forkMetadataPrefixes = [
     'Fork source project:',
+    'Fork source model variant:',
+    'Fork source run:',
+    'Fork source artifact:',
+    'Fork source artifact SHA-256:',
     'Fork point response:',
     'Parent fork:',
     'Prompt family:',

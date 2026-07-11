@@ -1,6 +1,7 @@
 import { createHash } from 'node:crypto'
 import { readFileSync } from 'node:fs'
 import path from 'node:path'
+import airlockZeroReactorRunVariantSet from '../../seed-runs/model-variants/airlock-zero-reactor-run.json'
 import bookingFlowHandoffSimulatorVariantSet from '../../seed-runs/model-variants/booking-flow-handoff-simulator.json'
 import sleepSoundMixerVariantSet from '../../seed-runs/model-variants/calming-sleep-sound-mixer.json'
 import firstPrinciplesClaimLadderVariantSet from '../../seed-runs/model-variants/first-principles-claim-ladder-game.json'
@@ -9,6 +10,10 @@ import rentalWalkthroughScorecardVariantSet from '../../seed-runs/model-variants
 import securityCamAnomalyTimelineVariantSet from '../../seed-runs/model-variants/security-cam-anomaly-timeline-game.json'
 import tShirtPrintAlignmentVariantSet from '../../seed-runs/model-variants/t-shirt-print-alignment-press-game.json'
 import tinyFestivalSetTimeClashVariantSet from '../../seed-runs/model-variants/tiny-festival-set-time-clash-game.json'
+import {
+  assertProjectModelVariantOrigin,
+  resolveProjectModelVariantOriginMode,
+} from './project-model-variant-origin.mjs'
 import { loadSourceRunPackage, type SourceRunPackage } from './source-run-package'
 import type { ProjectModelVariantPublicRecord } from './types'
 
@@ -18,6 +23,7 @@ export type ProjectModelVariantOperatorKind =
   | 'pathforge-labs-manual'
   | 'pathforge-labs-automation'
 export type ProjectModelVariantQualityStatus = 'verified' | 'known-issue'
+export type ProjectModelVariantOriginMode = 'existing-project' | 'model-cohort'
 
 const PROVIDER_KEYS = ['openai', 'anthropic', 'google'] as const
 const OPERATOR_KINDS = [
@@ -51,6 +57,8 @@ export type ProjectModelVariantContract = {
 }
 
 export type ProjectModelVariant = {
+  /** Live immutable registry row id when the checked manifest has been reconciled to Supabase. */
+  databaseId?: string
   sourceRunId: string
   providerKey: ProjectModelProviderKey
   serviceLabel: string
@@ -78,6 +86,7 @@ export type ProjectModelVariant = {
 
 export type ProjectModelVariantSet = {
   schemaVersion: 1
+  originMode: ProjectModelVariantOriginMode
   canonicalProjectId: string
   canonicalRoute: string
   title: string
@@ -88,7 +97,9 @@ export type ProjectModelVariantSet = {
 
 type RawProjectModelVariant = Omit<ProjectModelVariant, 'sourceRunPackage'>
 
-type RawProjectModelVariantSet = Omit<ProjectModelVariantSet, 'variants'> & {
+type RawProjectModelVariantSet = Omit<ProjectModelVariantSet, 'originMode' | 'variants'> & {
+  /** Launch manifests predate this field and normalize to existing-project. */
+  originMode?: ProjectModelVariantOriginMode
   variants: RawProjectModelVariant[]
 }
 
@@ -107,12 +118,64 @@ if (RAW_VARIANT_SETS.length !== 8) {
   throw new Error('The model-variant runtime registry must contain all eight launch projects.')
 }
 
+// Post-launch manifests belong here instead of in RAW_VARIANT_SETS. Keeping
+// this registry separate makes the immutable eight-project launch snapshot
+// auditable while allowing explicitly-originated cohorts to join the runtime.
+const ACTIVE_ADDITIONAL_VARIANT_SETS = [
+  airlockZeroReactorRunVariantSet,
+] as unknown as RawProjectModelVariantSet[]
+
+for (const variantSet of ACTIVE_ADDITIONAL_VARIANT_SETS) {
+  if (variantSet.originMode === undefined) {
+    throw new Error(
+      `Post-launch model-variant set ${variantSet.canonicalProjectId} must declare originMode.`,
+    )
+  }
+}
+
+const ALL_RAW_VARIANT_SETS = [
+  ...RAW_VARIANT_SETS,
+  ...ACTIVE_ADDITIONAL_VARIANT_SETS,
+]
+
 function assertNonEmpty(value: string, field: string) {
   if (!value.trim()) throw new Error(`Model-variant field "${field}" cannot be blank.`)
 }
 
 function sha256(value: string | Buffer) {
   return createHash('sha256').update(value).digest('hex')
+}
+
+const PUBLIC_SOURCE_PATHS: Record<ProjectModelProviderKey, RegExp> = {
+  openai: /^https:\/\/chatgpt\.com\/(?:share|s)\//,
+  anthropic: /^https:\/\/claude\.ai\/share\//,
+  google: /^https:\/\/share\.gemini\.google\//,
+}
+
+function assertModelVariantSourceAccess(
+  variant: RawProjectModelVariant,
+  sourceRunPackage: SourceRunPackage,
+) {
+  const sourceUrl = sourceRunPackage.source_url ?? ''
+  if (PUBLIC_SOURCE_PATHS[variant.providerKey].test(sourceUrl)) {
+    if (sourceRunPackage.source_access?.mode === 'authenticated_owner_session') {
+      throw new Error(`Model variant ${variant.sourceRunId} public source cannot be labeled owner-only.`)
+    }
+    return
+  }
+
+  const ownerSessionFallback =
+    variant.providerKey === 'anthropic' &&
+    /^https:\/\/claude\.ai\/chat\/[0-9a-f-]+$/i.test(sourceUrl) &&
+    sourceRunPackage.source_access?.mode === 'authenticated_owner_session' &&
+    sourceRunPackage.source_access.public_share_unavailable === true &&
+    Boolean(sourceRunPackage.source_access.note?.trim())
+
+  if (!ownerSessionFallback) {
+    throw new Error(
+      `Model variant ${variant.sourceRunId} needs a public provider share URL or an explicit Claude owner-session fallback.`,
+    )
+  }
 }
 
 function seedRunPath(fileName: string) {
@@ -194,6 +257,7 @@ function prepareVariantSet(rawSet: RawProjectModelVariantSet): ProjectModelVaria
   }
   assertNonEmpty(rawSet.canonicalProjectId, 'canonicalProjectId')
   assertNonEmpty(rawSet.canonicalRoute, 'canonicalRoute')
+  const originMode = resolveProjectModelVariantOriginMode(rawSet.originMode)
   assertNonEmpty(rawSet.contract.openingPromptExact, 'contract.openingPromptExact')
   if (rawSet.contract.acceptanceCriteria.length < 1) {
     throw new Error(`Model-variant set ${rawSet.canonicalProjectId} needs acceptance criteria.`)
@@ -309,6 +373,7 @@ function prepareVariantSet(rawSet: RawProjectModelVariantSet): ProjectModelVaria
     if (!sourceRunPackage.source_url?.startsWith('https://')) {
       throw new Error(`Model variant ${variant.sourceRunId} needs a public HTTPS source URL.`)
     }
+    assertModelVariantSourceAccess(variant, sourceRunPackage)
     if (sourceRunPackage.final_artifact_path !== variant.finalArtifactPath) {
       throw new Error(`Model variant ${variant.sourceRunId} final artifact does not match its package.`)
     }
@@ -345,15 +410,11 @@ function prepareVariantSet(rawSet: RawProjectModelVariantSet): ProjectModelVaria
     )
   }
 
-  const historicalBaselines = variants.filter((variant) => variant.runRole === 'historical-baseline')
-  if (
-    historicalBaselines.length !== 1 ||
-    historicalBaselines[0].operatorKind !== 'original-author'
-  ) {
-    throw new Error(
-      `Model-variant set ${rawSet.canonicalProjectId} must have one original-author historical baseline.`,
-    )
-  }
+  assertProjectModelVariantOrigin({
+    canonicalProjectId: rawSet.canonicalProjectId,
+    originMode,
+    variants,
+  })
 
   for (const providerKey of providerKeys) {
     const providerHistory = variants
@@ -415,7 +476,7 @@ function prepareVariantSet(rawSet: RawProjectModelVariantSet): ProjectModelVaria
     )
   }
 
-  return { ...rawSet, variants }
+  return { ...rawSet, originMode, variants }
 }
 
 function validateRawVariantSets(variantSets: RawProjectModelVariantSet[]) {
@@ -458,10 +519,10 @@ function validateRawVariantSets(variantSets: RawProjectModelVariantSet[]) {
 
 // Keep global ownership checks cheap and deterministic at module load. Package
 // and artifact reads happen only when a route asks for its project below.
-validateRawVariantSets(RAW_VARIANT_SETS)
+validateRawVariantSets(ALL_RAW_VARIANT_SETS)
 
 const RAW_VARIANT_SETS_BY_PROJECT_ID = new Map(
-  RAW_VARIANT_SETS.map((variantSet) => [variantSet.canonicalProjectId, variantSet]),
+  ALL_RAW_VARIANT_SETS.map((variantSet) => [variantSet.canonicalProjectId, variantSet]),
 )
 const PREPARED_VARIANT_SET_CACHE = new Map<string, ProjectModelVariantSet>()
 
@@ -628,7 +689,7 @@ export function reconcileProjectModelVariantSet(
     ) {
       throw new Error(`Published model-variant record ${record.source_run_id} does not match its release payload.`)
     }
-    return variant
+    return { ...variant, databaseId: record.id }
   })
 
   const databaseDefaults = records.filter((record) => record.is_default)

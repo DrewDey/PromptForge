@@ -1,17 +1,22 @@
 #!/usr/bin/env node
 
 import { execFileSync } from 'node:child_process'
+import { createHash } from 'node:crypto'
 import { existsSync, readFileSync, writeFileSync } from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import {
-  EXPECTED_MODEL_VARIANT_MANIFESTS,
-  EXPECTED_MODEL_VARIANT_MANIFEST_PATHS,
+  ALL_MODEL_VARIANT_MANIFESTS,
+  ALL_MODEL_VARIANT_MANIFEST_PATHS,
 } from './project-model-variant-cohort-config.mjs'
 import {
   preserveExistingReleaseDefault,
   resolveAppendReleaseLineage,
 } from './project-model-variant-lineage.mjs'
+import {
+  artifactEvidenceMatches,
+  attachSourceRunIdentityToArtifactEvidence,
+} from './project-model-variant-release-evidence.mjs'
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 const EXPECTED_SUPABASE_PROJECT_REF = 'iccjwlwkaqnxifuxljla'
@@ -157,6 +162,12 @@ function readJson(relativePath) {
   return JSON.parse(readFileSync(path.join(root, relativePath), 'utf8'))
 }
 
+function sha256File(relativePath) {
+  return createHash('sha256')
+    .update(readFileSync(path.join(root, relativePath)))
+    .digest('hex')
+}
+
 function manifestPaths(args) {
   if (args.manifests.length > 0) {
     const selectedPaths = args.manifests.map((value) => {
@@ -165,7 +176,7 @@ function manifestPaths(args) {
         ? fileName
         : `seed-runs/model-variants/${fileName}`
     })
-    const allowedPaths = new Set(EXPECTED_MODEL_VARIANT_MANIFEST_PATHS)
+    const allowedPaths = new Set(ALL_MODEL_VARIANT_MANIFEST_PATHS)
     for (const selectedPath of selectedPaths) {
       if (!allowedPaths.has(selectedPath)) {
         throw new Error(
@@ -179,7 +190,7 @@ function manifestPaths(args) {
     return selectedPaths
   }
 
-  return EXPECTED_MODEL_VARIANT_MANIFESTS
+  return ALL_MODEL_VARIANT_MANIFESTS
     .map((fileName) => `seed-runs/model-variants/${fileName}`)
     .sort()
 }
@@ -223,6 +234,47 @@ function releaseRow(manifestPath, manifest, variant) {
   if (!sourcePackage.source_url) {
     throw new Error(`${packagePath}: missing source_url.`)
   }
+  const artifactEvidence = variant.artifactVersionPaths.map((artifactPath) => {
+    const artifactSha256 = sha256File(artifactPath)
+    let matchingSteps = (sourcePackage.steps ?? []).filter((step) => (
+      step.artifact_version_path === artifactPath ||
+      step.generated_files?.includes(artifactPath)
+    ))
+    if (matchingSteps.length === 0) {
+      matchingSteps = (sourcePackage.steps ?? []).filter((step) => {
+        const stepPaths = new Set([
+          step.artifact_version_path,
+          ...(step.generated_files ?? []),
+        ].filter(Boolean))
+        return [...stepPaths].some((stepPath) => (
+          existsSync(path.join(root, stepPath)) && sha256File(stepPath) === artifactSha256
+        ))
+      })
+    }
+    if (matchingSteps.length !== 1) {
+      throw new Error(
+        `${packagePath}: ${artifactPath} must belong to exactly one response; found ${matchingSteps.length}.`,
+      )
+    }
+    const step = matchingSteps[0]
+    if (
+      step.artifact_version_path === artifactPath &&
+      step.artifact_sha256 &&
+      step.artifact_sha256.toLowerCase() !== artifactSha256
+    ) {
+      throw new Error(`${packagePath}: stored SHA-256 drift for ${artifactPath}.`)
+    }
+    return {
+      source_run_id: variant.sourceRunId,
+      source_step_id: `${manifest.canonicalProjectId}:${variant.sourceRunId}:step:${step.step_number}`,
+      source_step_number: step.step_number,
+      artifact_path: artifactPath,
+      artifact_sha256: artifactSha256,
+    }
+  })
+  if (artifactEvidence.length === 0) {
+    throw new Error(`${packagePath}: model release needs response-level artifact evidence.`)
+  }
   return {
     project_id: manifest.canonicalProjectId,
     source_run_id: variant.sourceRunId,
@@ -256,6 +308,8 @@ function releaseRow(manifestPath, manifest, variant) {
     is_default: variant.sourceRunId === manifest.defaultSourceRunId,
     supersedes_variant_id: null,
     _supersedesSourceRunId: variant.supersedesSourceRunId ?? null,
+    _artifactEvidence: artifactEvidence,
+    _sourceAccess: sourcePackage.source_access ?? null,
     _manifest: manifestPath,
   }
 }
@@ -316,6 +370,7 @@ function publicSummary(rows, mode) {
     status: row.status,
     default: row.is_default,
     source_url: row.source_url,
+    source_access: row._sourceAccess?.mode ?? 'public_share',
     artifact: row.final_artifact_path,
   }))
 }
@@ -326,6 +381,15 @@ async function verifyPublicSourceUrls(rows) {
     while (nextIndex < rows.length) {
       const row = rows[nextIndex]
       nextIndex += 1
+      if (
+        row.provider_key === 'anthropic' &&
+        row._sourceAccess?.mode === 'authenticated_owner_session' &&
+        row._sourceAccess?.public_share_unavailable === true &&
+        typeof row._sourceAccess?.note === 'string' &&
+        row._sourceAccess.note.trim()
+      ) {
+        continue
+      }
       let response
       try {
         response = await fetch(row.source_url, {
@@ -418,6 +482,24 @@ async function prepareProjectRelease(supabase, manifestPath, rows) {
   }
 }
 
+function artifactEvidenceForReleasedProject(release, releasedRows) {
+  const modelVariantIdByRun = new Map(
+    releasedRows.map((row) => [row.source_run_id, row.id]),
+  )
+  return release.rows.flatMap((row) => {
+    const modelVariantId = modelVariantIdByRun.get(row.source_run_id)
+    if (!modelVariantId) {
+      throw new Error(
+        `${release.manifestPath}: released model row ${row.source_run_id} has no database ID.`,
+      )
+    }
+    return row._artifactEvidence.map((evidence) => ({
+      model_variant_id: modelVariantId,
+      ...evidence,
+    }))
+  })
+}
+
 async function applyCohort(supabase, releases) {
   const prepared = await Promise.all(
     releases.map((release) =>
@@ -472,6 +554,32 @@ async function applyCohort(supabase, releases) {
     const projectRows = releasedByProject.get(actual.project_id) ?? []
     projectRows.push(actual)
     releasedByProject.set(actual.project_id, projectRows)
+  }
+  for (const release of prepared) {
+    const projectRows = releasedByProject.get(release.projectId) ?? []
+    const evidenceRows = artifactEvidenceForReleasedProject(release, projectRows)
+    const { data: storedEvidence, error: evidenceError } = await supabase.rpc(
+      'publish_project_model_variant_artifact_evidence',
+      {
+        target_project_id: release.projectId,
+        evidence_rows: evidenceRows,
+      },
+    )
+    if (evidenceError) throw evidenceError
+    let storedEvidenceWithRunIdentity
+    try {
+      storedEvidenceWithRunIdentity = attachSourceRunIdentityToArtifactEvidence(
+        storedEvidence ?? [],
+        projectRows,
+      )
+    } catch (error) {
+      throw new Error(
+        `${release.manifestPath}: ${error instanceof Error ? error.message : String(error)}`,
+      )
+    }
+    if (!artifactEvidenceMatches(storedEvidenceWithRunIdentity, evidenceRows)) {
+      throw new Error(`${release.manifestPath}: stored response-artifact evidence is incomplete or drifted.`)
+    }
   }
   return prepared.map((release) => ({
     ...release,
@@ -537,14 +645,17 @@ async function main() {
           `--emit-payload cannot resolve supersession for ${unresolvedSupersession.source_run_id}; use --apply with a server secret.`,
         )
       }
-      const payload = `${JSON.stringify(
-        releases.map((release) => ({
+      const payload = `${JSON.stringify({
+        cohort_releases: releases.map((release) => ({
           project_id: release.rows[0].project_id,
           release_rows: release.rows.map(comparableRow),
         })),
-        null,
-        2,
-      )}\n`
+        response_artifact_evidence_plan: releases.map((release) => ({
+          target_project_id: release.rows[0].project_id,
+          rows_by_source_run: release.rows.flatMap((row) => row._artifactEvidence),
+          next_step: 'After publish_project_model_variant_cohort returns database row IDs, add model_variant_id by source_run_id and call publish_project_model_variant_artifact_evidence.',
+        })),
+      }, null, 2)}\n`
       if (args.output) {
         const outputPath = path.resolve(args.output)
         writeFileSync(outputPath, payload)

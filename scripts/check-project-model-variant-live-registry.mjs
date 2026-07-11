@@ -3,7 +3,7 @@
 import { existsSync, readFileSync } from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { EXPECTED_MODEL_VARIANT_MANIFESTS } from './project-model-variant-cohort-config.mjs'
+import { ALL_MODEL_VARIANT_MANIFESTS } from './project-model-variant-cohort-config.mjs'
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 const EXPECTED_SUPABASE_PROJECT_REF = 'iccjwlwkaqnxifuxljla'
@@ -47,7 +47,7 @@ async function main() {
     fail(`unexpected Supabase project ${projectRef ?? 'unknown'}.`)
   }
 
-  const manifests = EXPECTED_MODEL_VARIANT_MANIFESTS.map((fileName) =>
+  const manifests = ALL_MODEL_VARIANT_MANIFESTS.map((fileName) =>
     readJson(`seed-runs/model-variants/${fileName}`),
   )
   const expectedVariants = manifests.flatMap((manifest) =>

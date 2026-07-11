@@ -29,9 +29,9 @@
   "fork_source": {
     "source_project_id": "77da18f4-bf8d-4fef-bdac-c14ff4ea3920",
     "source_project_title": "HP 10Bii+ Financial Calculator",
-    "source_step_id": "77da18f4-bf8d-4fef-bdac-c14ff4ea3920-step-2",
+    "source_step_id": "77da18f4-bf8d-4fef-bdac-c14ff4ea3920:cb968686-6546-4218-93df-14c5113b1624:step:2",
     "source_step_number": 2,
-    "prompt_family_id": "77da18f4-bf8d-4fef-bdac-c14ff4ea3920:77da18f4-bf8d-4fef-bdac-c14ff4ea3920-step-2",
+    "prompt_family_id": "77da18f4-bf8d-4fef-bdac-c14ff4ea3920:77da18f4-bf8d-4fef-bdac-c14ff4ea3920:cb968686-6546-4218-93df-14c5113b1624:step:2",
     "fork_depth": 0,
     "fork_branch_index": 0
   },

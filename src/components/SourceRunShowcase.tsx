@@ -3,8 +3,11 @@
 import { Fragment, type CSSProperties, type ReactNode } from 'react'
 import Link from 'next/link'
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { ArrowRight, CheckCircle2, ExternalLink, FileCode2, GitFork } from 'lucide-react'
+import { ArrowRight, CheckCircle2, ExternalLink, GitFork } from 'lucide-react'
 import CopyButton from '@/app/prompt/[id]/CopyButton'
+import ProjectForkBuildPath, {
+  type ProjectForkBuildPathCrumb,
+} from '@/components/ProjectForkBuildPath'
 import {
   artifactDocumentKey,
   currentArtifactLoad,
@@ -14,8 +17,12 @@ import {
   buildProtectedArtifactWrapperDocument,
   PROTECTED_ARTIFACT_DOWNLOAD_DATA_URL_LIMIT,
 } from '@/lib/protected-artifact-wrapper.mjs'
-import { getProjectRouteOverride } from '@/lib/project-links'
-import { buildProjectResponseForkHref, type ProjectForkNetworkItem } from '@/lib/project-forks'
+import {
+  buildProjectResponseForkHref,
+  groupProjectForkNetworkBySourceStep,
+  type ProjectForkNetworkItem,
+  type ProjectForkSourceStep,
+} from '@/lib/project-forks'
 
 export type SourceRunShowcaseCallout = {
   tone: 'warning' | 'success' | 'neutral'
@@ -40,6 +47,7 @@ export type SourceRunShowcaseArtifactVersion = {
   id?: string
   artifactPath: string
   artifactTitle: string
+  artifactSha256?: string
   isDefault?: boolean
 }
 
@@ -52,7 +60,18 @@ export type ArtifactPackage = Pick<
   artifactTitle: string
   artifactOrdinal: number
   artifactCount: number
+  artifactSha256?: string
+  providerName?: string
   isDefaultArtifact: boolean
+}
+
+export type SourceRunShowcaseForkContext = {
+  sourceSteps: ProjectForkSourceStep[]
+  branch: ProjectForkNetworkItem
+  trail?: ProjectForkBuildPathCrumb[]
+  sourceProjectHref?: string | null
+  sourceRunHref?: string | null
+  newForkHref?: string | null
 }
 
 type ArtifactSize = {
@@ -659,7 +678,7 @@ export function ProtectedArtifactFrame({
             key={artifactDocumentKey(selectedPackage.id)}
             title={`${selectedPackage.artifactTitle} generated from a ${providerName} source run`}
             srcDoc={srcDoc ?? undefined}
-            sandbox="allow-scripts"
+            sandbox="allow-scripts allow-pointer-lock"
             allow="clipboard-write"
             referrerPolicy="no-referrer"
             scrolling={canAutoFit ? 'no' : 'auto'}
@@ -698,10 +717,6 @@ function compactForkText(value: string | null | undefined, fallback: string, max
   const trimmed = value?.trim()
   if (!trimmed) return fallback
   return trimmed.length > max ? `${trimmed.slice(0, max - 3)}...` : trimmed
-}
-
-function forkProjectHref(fork: ProjectForkNetworkItem) {
-  return getProjectRouteOverride(fork.id) ?? `/prompt/${fork.id}`
 }
 
 function forkAuthorLabel(fork: ProjectForkNetworkItem) {
@@ -932,143 +947,6 @@ function PipeNode({
   )
 }
 
-function ResponseForkFocusStage({
-  fork,
-  forkHref,
-  sourceStep,
-  steps,
-  onClose,
-}: {
-  fork: ProjectForkNetworkItem
-  forkHref: string
-  sourceStep: SourceRunShowcaseStep
-  steps: SourceRunShowcaseStep[]
-  onClose: () => void
-}) {
-  const forkHrefTarget = forkProjectHref(fork)
-  const sharedSteps = steps.filter((step) => step.stepNumber <= sourceStep.stepNumber)
-  const laterSteps = steps.filter((step) => step.stepNumber > sourceStep.stepNumber)
-
-  return (
-    <div data-response-fork-focus-stage className="relative">
-      <div className="grid gap-5 xl:grid-cols-[270px_minmax(0,1fr)]">
-        <aside className="relative pl-[58px]">
-          <div className="absolute left-[22px] top-8 h-[calc(100%-32px)] w-8 border-x-4 border-[#07551f] bg-[#2bd15f] opacity-55 shadow-[inset_5px_0_0_rgba(255,255,255,0.22),inset_-5px_0_0_rgba(0,0,0,0.16)]" />
-          <div className="absolute left-0 top-4 h-14 w-12 border-4 border-[#07551f] bg-[#2bd15f] opacity-75 shadow-[inset_6px_0_0_rgba(255,255,255,0.25),inset_-6px_0_0_rgba(0,0,0,0.14)]" />
-          <div className="relative border border-[#07551f]/25 bg-white p-3 shadow-[0_16px_38px_rgba(24,24,27,0.06)]">
-            <div className="font-mono text-[10px] font-black uppercase tracking-[0.14em] text-[#07551f]">
-              Shared path collapsed left
-            </div>
-            <div className="mt-3 grid gap-2">
-              {sharedSteps.map((step) => (
-                <div key={step.id} className="grid gap-1.5">
-                  <div
-                    className="border border-[#07551f]/20 bg-[#f8fff9] px-2.5 py-2 transition hover:border-[#07551f] hover:bg-[#effdf3]"
-                    title={step.prompt}
-                  >
-                    <div className="font-mono text-[9px] uppercase tracking-[0.12em] text-[#07551f]">
-                      Prompt {String(step.stepNumber).padStart(2, '0')}
-                    </div>
-                    <div className="mt-1 truncate text-xs font-black text-surface-900">
-                      {step.title}
-                    </div>
-                  </div>
-                  <div
-                    className={[
-                      'border px-2.5 py-2 transition hover:border-[#07551f] hover:bg-[#effdf3]',
-                      step.id === sourceStep.id ? 'border-[#07551f] bg-[#effdf3]' : 'border-surface-200 bg-surface-50',
-                    ].join(' ')}
-                    title={step.response}
-                  >
-                    <div className="font-mono text-[9px] uppercase tracking-[0.12em] text-surface-500">
-                      Response {String(step.stepNumber).padStart(2, '0')}
-                    </div>
-                    <div className="mt-1 truncate text-xs font-bold text-surface-700">
-                      {step.id === sourceStep.id ? 'Fork point' : compactForkText(step.response, step.title, 52)}
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-            {laterSteps.length > 0 && (
-              <div className="mt-3 border border-dashed border-surface-300 bg-surface-50 px-2.5 py-2 text-xs leading-5 text-surface-500">
-                Original continuation after response {String(sourceStep.stepNumber).padStart(2, '0')} is muted while this branch is in focus.
-              </div>
-            )}
-          </div>
-        </aside>
-
-        <div className="relative min-h-[360px] overflow-visible border-2 border-[#07551f] bg-[#f8fff9] p-4 shadow-[0_22px_70px_rgba(7,85,31,0.18)]">
-          <div className="absolute left-[-44px] top-1/2 hidden h-5 w-16 -translate-y-1/2 border-y-4 border-[#07551f] bg-[#2bd15f] shadow-[inset_0_5px_0_rgba(255,255,255,0.2),inset_0_-5px_0_rgba(0,0,0,0.16)] xl:block" aria-hidden="true" />
-          <div className="grid h-full gap-4 xl:grid-cols-[190px_minmax(0,1fr)]">
-            <div className="relative flex min-h-[220px] items-center justify-center overflow-hidden border border-[#07551f]/25 bg-white">
-              <div
-                className="absolute left-0 right-0 top-1/2 h-5 -translate-y-1/2 border-y-4 border-[#07551f] bg-[#2bd15f] shadow-[inset_0_5px_0_rgba(255,255,255,0.2),inset_0_-5px_0_rgba(0,0,0,0.16)]"
-                aria-hidden="true"
-              />
-              <div className="relative z-10 border-4 border-[#07551f] bg-white px-4 py-3 text-center shadow-[0_0_0_8px_rgba(43,209,95,0.18)]">
-                <div className="font-mono text-[10px] uppercase tracking-[0.14em] text-[#07551f]">
-                  Response {String(sourceStep.stepNumber).padStart(2, '0')}
-                </div>
-                <div className="mt-1 text-sm font-black text-surface-900">
-                  Fork point
-                </div>
-              </div>
-            </div>
-
-            <div className="border-2 border-[#07551f] bg-white p-4">
-              <div className="font-mono text-[10px] font-black uppercase tracking-[0.14em] text-[#07551f]">
-                Active branch options
-              </div>
-              <h4 className="mt-2 text-2xl font-black text-surface-900">{fork.title}</h4>
-              {fork.description && (
-                <p className="mt-2 max-w-3xl text-sm leading-6 text-surface-600">
-                  {fork.description}
-                </p>
-              )}
-              {fork.modelUsed && (
-                <div className="mt-3 inline-flex border border-surface-200 bg-surface-50 px-2.5 py-1.5 font-mono text-[10px] uppercase tracking-[0.12em] text-surface-600">
-                  {fork.modelUsed}
-                </div>
-              )}
-              <div className="mt-5 grid gap-2 sm:grid-cols-3">
-                <Link
-                  href={forkHrefTarget}
-                  className="inline-flex min-h-11 items-center justify-center gap-2 border-2 border-[#07551f] bg-[#07551f] px-3 py-2 text-xs font-black uppercase tracking-[0.12em] text-white transition hover:bg-[#0b6b29] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#2bd15f]"
-                >
-                  Open fork
-                  <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
-                </Link>
-                <Link
-                  href={`${forkHrefTarget}#source-run-path`}
-                  className="inline-flex min-h-11 items-center justify-center gap-2 border-2 border-[#07551f] bg-white px-3 py-2 text-xs font-black uppercase tracking-[0.12em] text-[#07551f] transition hover:bg-[#effdf3] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#2bd15f]"
-                >
-                  <FileCode2 className="h-3.5 w-3.5" aria-hidden="true" />
-                  Code explain
-                </Link>
-                <Link
-                  href={forkHref}
-                  className="inline-flex min-h-11 items-center justify-center gap-2 border-2 border-[#07551f] bg-white px-3 py-2 text-xs font-black uppercase tracking-[0.12em] text-[#07551f] transition hover:bg-[#effdf3] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#2bd15f]"
-                >
-                  <GitFork className="h-3.5 w-3.5" aria-hidden="true" />
-                  New fork
-                </Link>
-              </div>
-              <button
-                type="button"
-                onClick={onClose}
-                className="mt-4 border border-surface-300 px-3 py-2 text-xs font-bold text-surface-600 transition hover:border-[#07551f] hover:text-[#07551f] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#2bd15f]"
-              >
-                Close branch view
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  )
-}
-
 function ExactResponseBlock({
   text,
   copyText,
@@ -1220,25 +1098,37 @@ function ResponsePackageCard({
 
 export default function SourceRunShowcase({
   sourceRunUrl,
+  sourceRunAccessNote,
   projectId,
   projectTitle,
+  sourceModelVariantId,
+  sourceRunId,
+  sourceArtifactPath,
+  sourceArtifactSha256,
   providerName,
   steps,
   forkNetwork = [],
+  forkContext,
   defaultStepNumber,
   allowForks = true,
 }: {
   sourceRunUrl?: string | null
+  sourceRunAccessNote?: string | null
   projectId?: string
   projectTitle?: string
+  sourceModelVariantId?: string
+  sourceRunId?: string
+  sourceArtifactPath?: string
+  sourceArtifactSha256?: string
   providerName: string
   steps: SourceRunShowcaseStep[]
   forkNetwork?: ProjectForkNetworkItem[]
+  forkContext?: SourceRunShowcaseForkContext | null
   defaultStepNumber?: number
   allowForks?: boolean
 }) {
   const sourceRunHref = externalSourceRunHref(sourceRunUrl)
-  const packages = useMemo(
+  const packages = useMemo<ArtifactPackage[]>(
     () =>
       steps.flatMap((step) => {
         const explicitVersions = (step.artifactVersions ?? []).filter((version) => (
@@ -1258,6 +1148,7 @@ export default function SourceRunShowcase({
             callout: step.callout,
             artifactPath: version.artifactPath,
             artifactTitle: version.artifactTitle,
+            artifactSha256: version.artifactSha256,
             artifactOrdinal: index + 1,
             artifactCount: explicitVersions.length,
             isDefaultArtifact: Boolean(version.isDefault),
@@ -1281,10 +1172,50 @@ export default function SourceRunShowcase({
           artifactTitle: step.artifactTitle,
           artifactOrdinal: 1,
           artifactCount: 1,
+          artifactSha256: undefined,
           isDefaultArtifact: false,
         }]
       }),
     [steps],
+  )
+  const forkArtifactPackages = useMemo(
+    () => forkNetwork.flatMap((fork) => (
+      (fork.continuationSteps ?? []).flatMap((step) => {
+        const versions = [...(step.artifactVersions ?? [])]
+        if (
+          step.artifactPath &&
+          !versions.some((version) => version.artifactPath === step.artifactPath)
+        ) {
+          versions.push({
+            id: `${step.id}:artifact`,
+            artifactPath: step.artifactPath,
+            artifactTitle: `${step.promptTitle} artifact`,
+            isDefault: versions.length === 0,
+          })
+        }
+
+        return versions.map<ArtifactPackage>((version, index) => ({
+          id: version.id,
+          stepId: step.id,
+          stepNumber: step.stepNumber,
+          title: step.promptTitle,
+          prompt: step.promptText,
+          response: step.responseText ?? '',
+          responseCopyText: step.responseText ?? '',
+          artifactPath: version.artifactPath,
+          artifactTitle: version.artifactTitle,
+          artifactOrdinal: index + 1,
+          artifactCount: versions.length,
+          isDefaultArtifact: Boolean(version.isDefault),
+          providerName: fork.childProviderName ?? undefined,
+        }))
+      })
+    )),
+    [forkNetwork],
+  )
+  const displayPackages = useMemo(
+    () => [...packages, ...forkArtifactPackages],
+    [forkArtifactPackages, packages],
   )
   const defaultStepPackages = packages.filter((pkg) => pkg.stepNumber === defaultStepNumber)
   const defaultPackage =
@@ -1294,35 +1225,53 @@ export default function SourceRunShowcase({
   const [selectedPackageId, setSelectedPackageId] = useState(defaultPackage?.id ?? '')
   const [activeForkId, setActiveForkId] = useState<string | null>(null)
   const activeForkStageRef = useRef<HTMLDivElement | null>(null)
+  const sourceRunPathRef = useRef<HTMLElement | null>(null)
   const selectedPackage =
-    packages.find((pkg) => pkg.id === selectedPackageId) ?? defaultPackage ?? packages[0]
+    displayPackages.find((pkg) => pkg.id === selectedPackageId) ?? defaultPackage ?? packages[0]
+  const forkSourceSteps = useMemo<ProjectForkSourceStep[]>(() => steps.map((step) => ({
+    id: step.id,
+    stepNumber: step.stepNumber,
+    promptTitle: step.title,
+    promptText: step.prompt,
+    responseText: step.response,
+    responsePackageId: step.id,
+    artifactPath: step.artifactPath,
+  })), [steps])
   const forkBranchesByStepId = useMemo(() => {
     const branches = new Map<string, ProjectForkNetworkItem[]>()
 
-    for (const step of steps) {
-      branches.set(
-        step.id,
-        forkNetwork.filter((fork) => (
-          fork.forkSource.sourceStepId === step.id ||
-          fork.forkSource.sourceStepNumber === step.stepNumber
-        )),
-      )
+    const grouped = groupProjectForkNetworkBySourceStep(forkSourceSteps, forkNetwork)
+    for (const row of grouped.rows) {
+      branches.set(row.step.id, row.forks)
     }
 
     return branches
-  }, [forkNetwork, steps])
-  const activeForkContext = useMemo(() => {
+  }, [forkNetwork, forkSourceSteps])
+  const activeForkContext = (() => {
     if (!allowForks || !activeForkId || !projectId) return null
 
     for (const step of steps) {
       const fork = (forkBranchesByStepId.get(step.id) ?? []).find((branch) => branch.id === activeForkId)
       if (!fork) continue
 
+      const sourceStepPackages = packages.filter((pkg) => pkg.stepId === step.id)
+      const sourceArtifactPackage =
+        (selectedPackage?.stepId === step.id ? selectedPackage : undefined) ??
+        sourceStepPackages.find((pkg) => pkg.isDefaultArtifact) ??
+        sourceStepPackages.at(-1)
+
       const forkHref = buildProjectResponseForkHref({
         sourceProjectId: projectId,
         sourceProjectTitle: projectTitle,
+        sourceModelVariantId,
+        sourceRunId,
         sourceStepId: step.id,
         sourceStepNumber: step.stepNumber,
+        sourceArtifactPath: sourceArtifactPackage?.artifactPath
+          ? `public${sourceArtifactPackage.artifactPath}`
+          : step.stepNumber === defaultStepNumber ? sourceArtifactPath : undefined,
+        sourceArtifactSha256: sourceArtifactPackage?.artifactSha256
+          ?? (step.stepNumber === defaultStepNumber ? sourceArtifactSha256 : undefined),
         promptFamilyId: `${projectId}:${step.id}`,
       })
       if (!forkHref) return null
@@ -1335,16 +1284,20 @@ export default function SourceRunShowcase({
     }
 
     return null
-  }, [activeForkId, allowForks, forkBranchesByStepId, projectId, projectTitle, steps])
+  })()
   const hasForkLane = allowForks && forkNetwork.length > 0
   const pathRowClassName = hasForkLane
     ? 'grid min-w-0 gap-0 xl:grid-cols-[minmax(0,1fr)_320px]'
     : undefined
 
   useEffect(() => {
-    if (!activeForkContext) return
+    if (!activeForkId) return
     activeForkStageRef.current?.scrollIntoView({ block: 'start', behavior: 'smooth' })
-  }, [activeForkContext])
+  }, [activeForkId])
+
+  useEffect(() => {
+    sourceRunPathRef.current?.setAttribute('data-source-run-showcase-hydrated', 'true')
+  }, [])
 
   return (
     <>
@@ -1354,27 +1307,62 @@ export default function SourceRunShowcase({
             <ProtectedArtifactFrame
               key={selectedPackage.id}
               selectedPackage={selectedPackage}
-              providerName={providerName}
+              providerName={selectedPackage.providerName ?? providerName}
             />
           </div>
         </section>
       )}
 
-      <section id="source-run-path" className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
+      <section
+        ref={sourceRunPathRef}
+        id="source-run-path"
+        className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8"
+        data-source-run-showcase-hydrated="false"
+      >
         <div className="mb-7 border-l-4 border-[#2bd15f] pl-4">
           <h2 className="text-3xl font-black text-surface-900">
             Build path
           </h2>
         </div>
 
-        {activeForkContext ? (
+        {forkContext ? (
+          <ProjectForkBuildPath
+            mode="child"
+            sourceSteps={forkContext.sourceSteps}
+            branch={forkContext.branch}
+            trail={forkContext.trail}
+            sourceProjectHref={forkContext.sourceProjectHref}
+            branchHref={forkContext.branch.childRoute}
+            newForkHref={forkContext.newForkHref}
+            sourceRunHref={forkContext.sourceRunHref ?? forkContext.branch.childSourceUrl}
+            selectedArtifactPath={selectedPackage?.artifactPath}
+            onDisplayArtifact={(artifactPath, _artifactTitle, artifactId) => {
+              const artifactPackage = displayPackages.find((pkg) => (
+                pkg.id === artifactId || pkg.artifactPath === artifactPath
+              ))
+              if (artifactPackage) setSelectedPackageId(artifactPackage.id)
+            }}
+          />
+        ) : activeForkContext ? (
           <div ref={activeForkStageRef}>
-            <ResponseForkFocusStage
-              fork={activeForkContext.fork}
-              forkHref={activeForkContext.forkHref}
-              sourceStep={activeForkContext.sourceStep}
-              steps={steps}
-              onClose={() => setActiveForkId(null)}
+            <ProjectForkBuildPath
+              mode="parent"
+              sourceSteps={forkSourceSteps}
+              branch={activeForkContext.fork}
+              branchHref={activeForkContext.fork.childRoute}
+              newForkHref={activeForkContext.forkHref}
+              sourceRunHref={activeForkContext.fork.childSourceUrl}
+              selectedArtifactPath={selectedPackage?.artifactPath}
+              onDisplayArtifact={(artifactPath, _artifactTitle, artifactId) => {
+                const artifactPackage = displayPackages.find((pkg) => (
+                  pkg.id === artifactId || pkg.artifactPath === artifactPath
+                ))
+                if (artifactPackage) setSelectedPackageId(artifactPackage.id)
+              }}
+              onClose={() => {
+                setActiveForkId(null)
+                setSelectedPackageId(defaultPackage?.id ?? '')
+              }}
             />
           </div>
         ) : (
@@ -1382,12 +1370,23 @@ export default function SourceRunShowcase({
             {steps.map((step, index) => {
               const artifactPackages = packages.filter((pkg) => pkg.stepId === step.id)
               const selectedStepPackage = artifactPackages.find((pkg) => selectedPackage?.id === pkg.id)
+              const sourceArtifactPackage =
+                selectedStepPackage ??
+                artifactPackages.find((pkg) => pkg.isDefaultArtifact) ??
+                artifactPackages.at(-1)
               const forkHref = allowForks && projectId
                 ? buildProjectResponseForkHref({
                   sourceProjectId: projectId,
                   sourceProjectTitle: projectTitle,
+                  sourceModelVariantId,
+                  sourceRunId,
                   sourceStepId: step.id,
                   sourceStepNumber: step.stepNumber,
+                  sourceArtifactPath: sourceArtifactPackage?.artifactPath
+                    ? `public${sourceArtifactPackage.artifactPath}`
+                    : step.stepNumber === defaultStepNumber ? sourceArtifactPath : undefined,
+                  sourceArtifactSha256: sourceArtifactPackage?.artifactSha256
+                    ?? (step.stepNumber === defaultStepNumber ? sourceArtifactSha256 : undefined),
                   promptFamilyId: `${projectId}:${step.id}`,
                 })
                 : null
@@ -1444,15 +1443,22 @@ export default function SourceRunShowcase({
 
         <div className="mt-8 border border-surface-200 bg-white p-4">
           {sourceRunHref ? (
-            <a
-              href={sourceRunHref}
-              target="_blank"
-              rel="noreferrer"
-              className="flex items-center justify-between gap-3 text-sm font-semibold text-brand-blue hover:text-brand-blue-dark"
-            >
-              Source run
-              <ExternalLink className="h-4 w-4" />
-            </a>
+            <div>
+              <a
+                href={sourceRunHref}
+                target="_blank"
+                rel="noreferrer"
+                className="flex items-center justify-between gap-3 text-sm font-semibold text-brand-blue hover:text-brand-blue-dark"
+              >
+                Source run
+                <ExternalLink className="h-4 w-4" />
+              </a>
+              {sourceRunAccessNote && (
+                <p className="mt-2 text-xs leading-5 text-surface-500" data-source-run-access-note>
+                  {sourceRunAccessNote}
+                </p>
+              )}
+            </div>
           ) : (
             <div className="flex flex-wrap items-center justify-between gap-3 text-sm text-surface-700">
               <span className="font-semibold text-surface-900">Source run</span>

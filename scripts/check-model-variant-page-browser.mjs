@@ -169,7 +169,7 @@ async function main() {
       if (!mountedPackage.path.startsWith('/artifacts/')) {
         throw new Error(`Artifact switch mounted an invalid path: ${mountedPackage.path}.`)
       }
-      if (mountedPackage.sandbox !== 'allow-scripts') {
+      if (mountedPackage.sandbox !== 'allow-scripts allow-pointer-lock') {
         throw new Error(`Artifact frame has unexpected sandbox tokens: ${mountedPackage.sandbox}.`)
       }
 

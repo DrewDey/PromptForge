@@ -14,6 +14,24 @@ export const EXPECTED_MODEL_VARIANT_MANIFEST_PATHS =
     (fileName) => `seed-runs/model-variants/${fileName}`,
   )
 
+// Post-launch manifests are explicitly registered here without changing the
+// immutable eight-project launch cohort above. Release and Vercel evidence
+// checks consume the combined list; the launch-cohort guard consumes only the
+// EXPECTED_* constants.
+export const ACTIVE_ADDITIONAL_MODEL_VARIANT_MANIFESTS = [
+  'airlock-zero-reactor-run.json',
+]
+
+export const ALL_MODEL_VARIANT_MANIFESTS = [
+  ...EXPECTED_MODEL_VARIANT_MANIFESTS,
+  ...ACTIVE_ADDITIONAL_MODEL_VARIANT_MANIFESTS,
+]
+
+export const ALL_MODEL_VARIANT_MANIFEST_PATHS =
+  ALL_MODEL_VARIANT_MANIFESTS.map(
+    (fileName) => `seed-runs/model-variants/${fileName}`,
+  )
+
 // Immutable launch evidence. Later releases may append history, but these
 // exact 24 source runs must stay inspectable in every future manifest.
 export const EXPECTED_MODEL_VARIANT_LAUNCH_SOURCE_RUN_IDS = Object.freeze({

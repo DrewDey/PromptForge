@@ -8,8 +8,16 @@ import {
   projectForkSourceToSubmissionFields,
   type ProjectForkSource,
 } from '../project-forks'
+import {
+  buildSourceRunIntakeEvidence,
+  canonicalizeSourceRunUrl,
+  canonicalSourceRunForkEvidence,
+  findSourceRunPackageFileById,
+  loadSourceRunPackagePublicationEvidence,
+  sourceRunEvidenceEquals,
+} from '../source-run-package'
 import { composeSourceRunReviewNotes, detectSourceRunProvider } from '../source-run-review'
-import { forkColumnsMissing, omitForkFields, sourceRunForkColumnsMissing } from './fork-column-compat'
+import { sourceRunForkColumnsMissing } from './fork-column-compat'
 import { requireAdminAccess, SUPABASE_CONFIGURED } from './shared'
 
 function throwReadableSourceRunError(error: { code?: string; message?: string } | null) {
@@ -104,6 +112,12 @@ export async function createSourceRunSubmission(input: {
     .insert(payload)
     .select('id')
     .single()
+
+  if (sourceRunForkColumnsMissing(error) && input.fork_source) {
+    throw new Error(
+      'Fork intake is unavailable because the database is missing durable fork-lineage columns. No unlinked submission was created.',
+    )
+  }
 
   if (titleColumnMissing(error) || sourceRunForkColumnsMissing(error)) {
     const fallbackNotes = titleColumnMissing(error)
@@ -212,6 +226,91 @@ export async function updateSourceRunStatusById(
   throwReadableSourceRunError(error)
 }
 
+function sourceRunIntegrityColumnsMissing(error: { code?: string; message?: string } | null) {
+  const message = error?.message?.toLowerCase() ?? ''
+  return Boolean(
+    error &&
+    ['42703', 'PGRST204'].includes(error.code ?? '') &&
+    (
+      message.includes('canonical_source_url') ||
+      message.includes('source_package_file') ||
+      message.includes('source_package_sha256') ||
+      message.includes('intake_evidence')
+    )
+  )
+}
+
+function preparedPublishRpcMissing(error: { code?: string; message?: string } | null) {
+  if (!error) return false
+  const message = error.message?.toLowerCase() ?? ''
+  return (
+    ['42883', 'PGRST202'].includes(error.code ?? '') &&
+    message.includes('publish_prepared_showcase_source_run')
+  )
+}
+
+async function resolvePublishedForkSource(
+  supabase: Awaited<ReturnType<typeof requireAdminAccess>>['supabase'],
+  source?: ProjectForkSource | null,
+) {
+  if (!source?.sourceProjectId) return null
+  if (!source.sourceRunId) return source
+  if (!source.sourceStepId || !source.sourceStepNumber) {
+    throw new Error('Variant-aware fork publishing requires exact step id and step number.')
+  }
+  if (
+    source.sourceStepId !==
+    `${source.sourceProjectId}:${source.sourceRunId}:step:${source.sourceStepNumber}`
+  ) {
+    throw new Error('Variant-aware fork step identity does not match its project, run, and number.')
+  }
+
+  const { data: sourceVariant, error: sourceVariantError } = await supabase
+    .from('project_model_variants')
+    .select('id, project_id, source_run_id, artifact_version_paths')
+    .eq('project_id', source.sourceProjectId)
+    .eq('source_run_id', source.sourceRunId)
+    .maybeSingle()
+
+  if (sourceVariantError) throw sourceVariantError
+  if (!sourceVariant) {
+    throw new Error('Fork source model run is not published for the selected canonical project.')
+  }
+  if (source.sourceModelVariantId && source.sourceModelVariantId !== sourceVariant.id) {
+    throw new Error('Fork source model variant does not match the selected canonical run.')
+  }
+  if (
+    !source.sourceArtifactPath ||
+    !(sourceVariant.artifact_version_paths ?? []).includes(source.sourceArtifactPath)
+  ) {
+    throw new Error('Fork source artifact does not belong to the selected model run.')
+  }
+
+  return {
+    ...source,
+    sourceModelVariantId: sourceVariant.id,
+  }
+}
+
+function assertExactForkTuple(
+  intakeFork: ProjectForkSource | null,
+  preparedFork: ProjectForkSource | null,
+  packageFork: ProjectForkSource | null,
+) {
+  const intakeEvidence = canonicalSourceRunForkEvidence(intakeFork)
+  const preparedEvidence = canonicalSourceRunForkEvidence(preparedFork)
+  const packageEvidence = canonicalSourceRunForkEvidence(packageFork)
+  if (
+    !sourceRunEvidenceEquals(intakeEvidence, preparedEvidence) ||
+    !sourceRunEvidenceEquals(intakeEvidence, packageEvidence)
+  ) {
+    throw new Error(
+      'Prepared publish blocked: intake, prepared project, and source package fork tuples are not identical.',
+    )
+  }
+  return intakeEvidence
+}
+
 export async function publishPreparedShowcaseProjectFromSourceRun(
   sourceRunId: string,
   project: PreparedShowcaseProject
@@ -220,123 +319,129 @@ export async function publishPreparedShowcaseProjectFromSourceRun(
     throw new Error('Prepared project does not match this source run.')
   }
 
-  const { supabase, user } = await requireAdminAccess()
-  let { data: sourceRun, error: sourceRunError } = await supabase
+  const { supabase } = await requireAdminAccess()
+  const { data: sourceRun, error: sourceRunError } = await supabase
     .from('source_run_submissions')
-    .select('id, author_id, fork_source_project_id, fork_source_project_title, fork_source_step_id, fork_source_step_number, fork_parent_submission_id, prompt_family_id, fork_depth, fork_branch_index')
+    .select('id, author_id, status, title, source_url, canonical_source_url, file_name, notes, source_package_file, source_package_sha256, intake_evidence, fork_source_project_id, fork_source_project_title, fork_source_model_variant_id, fork_source_run_id, fork_source_step_id, fork_source_step_number, fork_source_artifact_path, fork_source_artifact_sha256, fork_parent_submission_id, prompt_family_id, fork_depth, fork_branch_index')
     .eq('id', sourceRunId)
     .maybeSingle()
 
+  if (sourceRunIntegrityColumnsMissing(sourceRunError)) {
+    throw new Error(
+      'Prepared publishing is unavailable because immutable intake evidence columns are missing.',
+    )
+  }
   if (sourceRunForkColumnsMissing(sourceRunError)) {
-    const fallbackResult = await supabase
-      .from('source_run_submissions')
-      .select('id, author_id')
-      .eq('id', sourceRunId)
-      .maybeSingle()
-    sourceRun = fallbackResult.data ? {
-      ...fallbackResult.data,
-      fork_source_project_id: null,
-      fork_source_project_title: null,
-      fork_source_step_id: null,
-      fork_source_step_number: null,
-      fork_parent_submission_id: null,
-      prompt_family_id: null,
-      fork_depth: null,
-      fork_branch_index: null,
-    } : null
-    sourceRunError = fallbackResult.error
+    throw new Error(
+      'Prepared publishing is unavailable because durable fork-lineage columns are missing.',
+    )
   }
 
   throwReadableSourceRunError(sourceRunError)
   if (!sourceRun) throw new Error('Source run not found.')
-  const sourceForkFields = projectForkSourceToSubmissionFields(projectForkSourceFromSubmissionFields(sourceRun))
+  if (!['queued', 'draft_created'].includes(sourceRun.status)) {
+    throw new Error(
+      `Prepared publish requires a queued intake or exact published replay; current status is ${sourceRun.status}.`,
+    )
+  }
 
-  const { data: category, error: categoryError } = await supabase
-    .from('categories')
-    .select('id')
-    .eq('slug', project.categorySlug)
-    .maybeSingle()
+  const sourcePackageFile = project.sourceRunPackageFile
+    ?? findSourceRunPackageFileById(sourceRunId)
+  if (!sourcePackageFile) {
+    throw new Error('Prepared publish requires an immutable source-run package file.')
+  }
+  const packageEvidence = loadSourceRunPackagePublicationEvidence(sourcePackageFile)
+  const packageSourceRunId = packageEvidence.sourceRunPackage.source_run_id
+    ?? packageEvidence.sourceRunPackage.source_run_submission_id
+  if (packageSourceRunId !== sourceRunId) {
+    throw new Error('Prepared project source run does not match its immutable package identity.')
+  }
 
-  if (categoryError) throw categoryError
-  if (!category) throw new Error(`Category not found: ${project.categorySlug}.`)
+  const intakeFork = await resolvePublishedForkSource(
+    supabase,
+    projectForkSourceFromSubmissionFields(sourceRun),
+  )
+  const preparedFork = await resolvePublishedForkSource(supabase, project.forkSource ?? null)
+  const packageFork = await resolvePublishedForkSource(
+    supabase,
+    packageEvidence.sourceRunPackage.fork_source ?? null,
+  )
+  const expectedFork = assertExactForkTuple(intakeFork, preparedFork, packageFork)
+  const sourceFork = intakeFork
 
-  const promptPatch = {
+  const expectedEvidence = buildSourceRunIntakeEvidence({
+    sourceRunPackage: packageEvidence.sourceRunPackage,
+    forkSource: sourceFork,
+  })
+  const packageSourceUrl = packageEvidence.sourceRunPackage.source_url?.trim()
+  if (!packageSourceUrl) {
+    throw new Error('Prepared publish package is missing its source URL.')
+  }
+  const canonicalPackageSourceUrl = canonicalizeSourceRunUrl(packageSourceUrl)
+  if (sourceRun.title !== packageEvidence.sourceRunPackage.title?.trim()) {
+    throw new Error('Prepared publish blocked: intake title differs from its source package.')
+  }
+  if (
+    sourceRun.source_url !== packageSourceUrl ||
+    sourceRun.canonical_source_url !== canonicalPackageSourceUrl
+  ) {
+    throw new Error('Prepared publish blocked: source URL identity differs from its package.')
+  }
+  if (sourceRun.file_name !== null) {
+    throw new Error('Prepared publish blocked: package intake unexpectedly has an uploaded file.')
+  }
+  if (sourceRun.source_package_file !== packageEvidence.sourcePackageFile) {
+    throw new Error('Prepared publish blocked: source package file identity changed after intake.')
+  }
+  if (sourceRun.source_package_sha256 !== packageEvidence.sourcePackageSha256) {
+    throw new Error('Prepared publish blocked: source package SHA-256 changed after intake.')
+  }
+  if (!sourceRunEvidenceEquals(sourceRun.intake_evidence, expectedEvidence)) {
+    throw new Error('Prepared publish blocked: immutable intake evidence no longer matches the package.')
+  }
+  const expectedIntake = {
+    author_id: sourceRun.author_id,
+    title: sourceRun.title,
+    source_url: sourceRun.source_url,
+    canonical_source_url: sourceRun.canonical_source_url,
+    file_name: sourceRun.file_name,
+    notes: sourceRun.notes,
+    source_package_file: sourceRun.source_package_file,
+    source_package_sha256: sourceRun.source_package_sha256,
+    intake_evidence: expectedEvidence,
+  }
+
+  const projectPayload = {
+    id: project.id,
     title: project.title,
     description: project.description,
     content: project.content,
     result_content: project.resultContent,
-    category_id: category.id as string,
+    category_slug: project.categorySlug,
     difficulty: project.difficulty,
     model_used: project.modelUsed,
     model_recommendation: project.modelRecommendation,
     tools_used: project.toolsUsed,
     tags: project.tags,
-    status: 'approved',
-    ...sourceForkFields,
-    updated_at: new Date().toISOString(),
+    created_at: project.createdAt,
+    public_href: project.href,
   }
-
-  const { data: existingPrompt, error: existingPromptError } = await supabase
-    .from('prompts')
-    .select('id')
-    .eq('id', project.id)
-    .maybeSingle()
-
-  if (existingPromptError) throw existingPromptError
-
-  if (!existingPrompt) {
-    const insertPayload = {
-      id: project.id,
-      ...promptPatch,
-      author_id: user.id,
-      vote_count: 0,
-      bookmark_count: 0,
-      created_at: project.createdAt,
-    }
-    const { error: insertError } = await supabase
-      .from('prompts')
-      .insert(insertPayload)
-
-    if (insertError) {
-      if (!forkColumnsMissing(insertError)) throw insertError
-
-      const { error: fallbackInsertError } = await supabase
-        .from('prompts')
-        .insert(omitForkFields(insertPayload))
-      if (fallbackInsertError) throw fallbackInsertError
-    }
+  const { error: atomicPublishError } = await supabase.rpc(
+    'publish_prepared_showcase_source_run',
+    {
+      target_source_run_id: sourceRunId,
+      expected_intake: expectedIntake,
+      expected_fork: expectedFork,
+      project_payload: projectPayload,
+    },
+  )
+  if (!atomicPublishError) return
+  if (preparedPublishRpcMissing(atomicPublishError)) {
+    throw new Error(
+      'Prepared publishing requires the atomic database function. Apply the checked source-run integrity migration first.',
+    )
   }
-
-  const updatePayload = {
-    ...promptPatch,
-    author_id: sourceRun.author_id,
-  }
-  const { error: updatePromptError } = await supabase
-    .from('prompts')
-    .update(updatePayload)
-    .eq('id', project.id)
-
-  if (updatePromptError) {
-    if (!forkColumnsMissing(updatePromptError)) throw updatePromptError
-
-    const { error: fallbackUpdateError } = await supabase
-      .from('prompts')
-      .update(omitForkFields(updatePayload))
-      .eq('id', project.id)
-    if (fallbackUpdateError) throw fallbackUpdateError
-  }
-
-  const { error: updateSourceRunError } = await supabase
-    .from('source_run_submissions')
-    .update({
-      status: 'draft_created',
-      extracted_prompt_id: project.id,
-      admin_notes: `Published to ${project.href}.`,
-      updated_at: new Date().toISOString(),
-    })
-    .eq('id', sourceRunId)
-
-  throwReadableSourceRunError(updateSourceRunError)
+  throw atomicPublishError
 }
 
 export async function getAllSourceRunSubmissionsForAdmin(): Promise<SourceRunSubmissionWithRelations[]> {

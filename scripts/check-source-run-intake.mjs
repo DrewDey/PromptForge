@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 
-import { existsSync, readFileSync } from 'node:fs'
+import { existsSync, readFileSync, readdirSync } from 'node:fs'
 import { homedir } from 'node:os'
-import { join } from 'node:path'
+import { join, relative } from 'node:path'
 
 const failures = []
 
@@ -41,9 +41,49 @@ function optionalMustNotInclude(path, text, message) {
   if (content.includes(text)) failures.push(`${path}: ${message}`)
 }
 
+function listJsonFiles(directory) {
+  if (!existsSync(directory)) return []
+  return readdirSync(directory, { withFileTypes: true }).flatMap((entry) => {
+    const entryPath = join(directory, entry.name)
+    if (entry.isDirectory()) return listJsonFiles(entryPath)
+    return entry.isFile() && entry.name.endsWith('.json') ? [entryPath] : []
+  })
+}
+
 const importer = 'scripts/import-pathforge-source-run.mjs'
 mustInclude(importer, "source_run_submissions", 'importer must write only to source_run_submissions')
 mustInclude(importer, "--submit-draft has been disabled", 'importer must hard-fail the old direct draft flag')
+mustInclude(importer, 'checkedPackageSourceRunId', 'importer must centralize checked source-run identity validation')
+mustInclude(importer, 'UUID_PATTERN.test(sourceRunId)', 'importer must validate an explicitly checked source-run identity')
+mustInclude(importer, 'POSTGRES_UUID_PATTERN.test(args.profileId)', 'connector handoff must accept exact PostgreSQL UUID profile identities, including seeded non-versioned values')
+mustInclude(importer, ".eq('id', checkedSourceRunId)", 'checked source-run imports must be idempotent by immutable identity')
+mustInclude(importer, 'different intake evidence', 'checked source-run identity collisions must fail closed')
+mustInclude(importer, 'immutablePayloadDifferences', 'checked source-run identity must compare the full normalized immutable payload')
+mustInclude(importer, 'canonical_source_url', 'package imports must persist canonical source URL identity')
+mustInclude(importer, 'source_package_file', 'package imports must persist normalized source package file identity')
+mustInclude(importer, 'source_package_sha256', 'package imports must persist the exact package SHA-256')
+mustInclude(importer, 'intake_evidence', 'package imports must persist canonical immutable intake evidence')
+mustInclude(importer, "if (arg === '--emit-intake-json')", 'importer must expose the checked connector handoff mode')
+mustInclude(importer, '--emit-intake-json requires --profile-id with the exact non-admin profile UUID.', 'connector handoff must require an exact author profile UUID')
+mustInclude(importer, 'Use either --dry-run or --emit-intake-json, not both.', 'dry-run and connector handoff modes must be mutually exclusive')
+mustInclude(importer, 'console.log(JSON.stringify(buildSubmissionPayload({', 'connector handoff must emit the same canonical queue payload used by direct import')
+mustInclude(importer, 'Exact-run fork source is neither a published model variant nor the immutable final response of an approved prepared project.', 'exact-run imports must fail closed unless model-variant or prepared-project evidence resolves')
+for (const evidenceKey of [
+  'model_used',
+  'model_settings',
+  'prompt_count',
+  'final_artifact_path',
+  'final_artifact_sha256',
+  'profile_registry_id',
+  'verification_notes',
+  'artifact_version_notes',
+  'source_inspiration_notes',
+]) {
+  mustInclude(importer, evidenceKey, `canonical intake evidence must include ${evidenceKey}`)
+}
+mustInclude(importer, 'sourceRunStatus', 'idempotent importer output must report the row\'s actual status')
+mustInclude(importer, 'validatePackageSteps', 'importer must reject invalid step identities before dry-run or upload')
+mustInclude(importer, 'reconcileForkWithParentPackage', 'variant-aware forks must reconcile with parent package evidence when present')
 mustInclude(importer, "pkg.source_url = requireString(pkg.source_url, 'source_url')", 'importer must require a real source_url')
 mustInclude(importer, "pkg.provider = requireString(pkg.provider, 'provider')", 'importer must require provider metadata')
 mustInclude(importer, "pkg.model = requireString(pkg.model || pkg.model_used, 'model')", 'importer must require model metadata')
@@ -56,6 +96,68 @@ mustNotMatch(importer, /\.from\(['"`]prompts['"`]\)/, 'importer must not insert 
 mustNotMatch(importer, /\.from\(['"`]prompt_steps['"`]\)/, 'importer must not insert into prompt_steps')
 mustNotMatch(importer, /args\.submitDraft\s*=\s*true|submitDraft:\s*true|mode:\s*['"`]draft['"`]/, 'importer must not support direct pending draft mode')
 mustNotMatch(importer, /vote_count|bookmark_count|category_id:\s*category\.id|result_content:\s*pkg/, 'importer must not populate public/upvote-page fields')
+
+const packageFiles = listJsonFiles('seed-runs')
+const packagesByRunId = new Map()
+for (const packagePath of packageFiles) {
+  let pkg
+  try {
+    pkg = JSON.parse(readFileSync(packagePath, 'utf8'))
+  } catch {
+    continue
+  }
+  const packageName = relative('seed-runs', packagePath)
+  if (Array.isArray(pkg.steps) && pkg.steps.length > 0) {
+    const stepNumbers = pkg.steps.map((step) => step?.step_number)
+    const validStepNumbers = stepNumbers.every((stepNumber, index) => (
+      Number.isInteger(stepNumber) &&
+      stepNumber > 0 &&
+      (index === 0 || stepNumber === stepNumbers[index - 1] + 1)
+    ))
+    if (!validStepNumbers || new Set(stepNumbers).size !== stepNumbers.length) {
+      failures.push(`${packagePath}: exact step identities must be positive, unique, and sequential`)
+    }
+  }
+  const runId = typeof pkg.source_run_id === 'string'
+    ? pkg.source_run_id.trim()
+    : typeof pkg.source_run_submission_id === 'string'
+      ? pkg.source_run_submission_id.trim()
+      : ''
+  if (runId) {
+    if (packagesByRunId.has(runId)) {
+      failures.push(`${packagePath}: duplicate immutable source run package identity ${runId}`)
+    } else {
+      packagesByRunId.set(runId, { pkg, packageName })
+    }
+  }
+}
+
+for (const packagePath of packageFiles) {
+  let pkg
+  try {
+    pkg = JSON.parse(readFileSync(packagePath, 'utf8'))
+  } catch {
+    continue
+  }
+  const fork = pkg.fork_source
+  if (!fork?.source_run_id) continue
+  const expectedStepId = `${fork.source_project_id}:${fork.source_run_id}:step:${fork.source_step_number}`
+  if (!fork.source_step_id || !Number.isInteger(fork.source_step_number) || fork.source_step_id !== expectedStepId) {
+    failures.push(`${packagePath}: variant-aware fork needs matching source_step_id and source_step_number`)
+    continue
+  }
+  const parent = packagesByRunId.get(String(fork.source_run_id).trim())
+  if (!parent) continue
+  const parentStep = parent.pkg.steps?.find((step) => step?.step_number === fork.source_step_number)
+  if (
+    !parentStep ||
+    parentStep.artifact_version_path !== fork.source_artifact_path ||
+    String(parentStep.artifact_sha256 ?? '').toLowerCase() !==
+      String(fork.source_artifact_sha256 ?? '').toLowerCase()
+  ) {
+    failures.push(`${packagePath}: variant-aware fork does not reconcile with parent package ${parent.packageName}`)
+  }
+}
 
 const legacySeeder = 'scripts/seed-submission.mjs'
 optionalMustInclude(legacySeeder, 'Deprecated compatibility shim', 'legacy seed-submission script must stay a safe wrapper, not a second importer')
@@ -104,6 +206,17 @@ mustInclude('src/lib/data/source-runs.ts', 'Add the exact model shown for this s
 mustInclude('src/lib/data/source-runs.ts', 'Pick the AI service for this source run.', 'server action must enforce provider metadata for user source-run uploads')
 mustInclude('src/lib/data/source-runs.ts', 'projectForkSourceToSubmissionFields', 'server action must store structured fork metadata for forked source-run uploads')
 mustInclude('src/lib/data/source-runs.ts', 'sourceRunForkColumnsMissing', 'server action must keep source-run intake working before fork SQL is applied')
+mustInclude('src/lib/data/source-runs.ts', 'assertExactForkTuple', 'prepared publish must compare intake, prepared, and package fork tuples')
+mustInclude('src/lib/data/source-runs.ts', "'publish_prepared_showcase_source_run'", 'prepared publish must prefer the atomic database RPC')
+mustInclude('src/lib/data/source-runs.ts', 'source_package_sha256', 'prepared publish must verify the immutable package digest')
+mustInclude('src/lib/data/source-runs.ts', 'intake_evidence', 'prepared publish must verify canonical immutable intake evidence')
+mustInclude('src/lib/data/source-runs.ts', 'canonical_source_url', 'prepared publish must exact-compare canonical source URL identity')
+mustInclude('src/lib/data/source-runs.ts', 'source_package_file', 'prepared publish must exact-compare source package file identity')
+mustInclude('src/lib/data/source-runs.ts', 'public_href: project.href', 'atomic project payload must use the finalized public_href key')
+mustNotInclude('src/lib/data/source-runs.ts', 'const insertPayload = {', 'prepared publish must not retain a non-atomic public prompt fallback')
+mustInclude('src/lib/source-run-package.ts', 'validateSequentialSteps', 'source package reads must reject invalid step identities')
+mustInclude('src/lib/source-run-package.ts', 'reconcileVariantAwareForkWithParentPackage', 'source package reads must reconcile variant forks with parent evidence')
+mustInclude('src/lib/source-run-package.ts', 'buildSourceRunIntakeEvidence', 'runtime publishing must rebuild the same canonical intake evidence as the importer')
 mustInclude('src/lib/source-run-review.ts', "labeledValue(notes, 'Provider/model')", 'admin metadata parser must preserve legacy provider/model notes')
 mustInclude('src/lib/source-run-review.ts', "labeledValue(notes, 'Provider/model/settings')", 'admin metadata parser must preserve legacy provider/model/settings notes')
 mustInclude('src/app/admin/page.tsx', 'modelMetadataForSourceRunReview', 'admin pending rows must surface model metadata')

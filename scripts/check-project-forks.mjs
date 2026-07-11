@@ -1,229 +1,560 @@
 import { existsSync, readFileSync, readdirSync } from 'node:fs'
+import ts from 'typescript'
 
 const failures = []
-const forbiddenNonRealModelLabel = ['Codex', 'sim', 'ulated'].join(' ')
-const forbiddenFormerForkHandle = ['Codex', 'Lane'].join('')
-const forbiddenNonRealProfileBio = ['Sim', 'ulated', 'Codex fork profile'].join(' ')
+
+function fail(message) {
+  failures.push(message)
+}
+
+function assert(condition, message) {
+  if (!condition) fail(message)
+}
 
 function read(path) {
+  if (!existsSync(path)) {
+    fail(`${path}: required file is missing`)
+    return ''
+  }
   return readFileSync(path, 'utf8')
 }
 
-function mustInclude(path, content, needle, message) {
-  if (!content.includes(needle)) failures.push(`${path}: ${message}`)
+function parse(path) {
+  const source = read(path)
+  const kind = path.endsWith('.tsx') ? ts.ScriptKind.TSX : ts.ScriptKind.TS
+  return ts.createSourceFile(path, source, ts.ScriptTarget.Latest, true, kind)
 }
 
-function mustNotInclude(path, content, needle, message) {
-  if (content.includes(needle)) failures.push(`${path}: ${message}`)
+function visit(node, predicate, matches = []) {
+  if (predicate(node)) matches.push(node)
+  ts.forEachChild(node, (child) => {
+    visit(child, predicate, matches)
+  })
+  return matches
 }
 
-function mustIncludeAtLeast(path, content, needle, count, message) {
-  const matches = content.split(needle).length - 1
-  if (matches < count) failures.push(`${path}: ${message}`)
+function declarationName(node) {
+  return node.name && ts.isIdentifier(node.name) ? node.name.text : null
+}
+
+function namedDeclarations(sourceFile, name) {
+  return visit(sourceFile, (node) => (
+    (
+      ts.isFunctionDeclaration(node) ||
+      ts.isTypeAliasDeclaration(node) ||
+      ts.isInterfaceDeclaration(node) ||
+      ts.isClassDeclaration(node) ||
+      ts.isVariableDeclaration(node)
+    ) && declarationName(node) === name
+  ))
+}
+
+function isExported(node) {
+  let declaration = node
+  if (ts.isVariableDeclaration(node)) declaration = node.parent?.parent
+  return Boolean(declaration?.modifiers?.some((modifier) => modifier.kind === ts.SyntaxKind.ExportKeyword))
+}
+
+function assertExport(sourceFile, path, name) {
+  const declarations = namedDeclarations(sourceFile, name)
+  assert(declarations.length > 0, `${path}: must declare ${name}`)
+  assert(declarations.some(isExported), `${path}: ${name} must be exported for shared use and behavior checks`)
+}
+
+function typeProperties(sourceFile, name) {
+  const declaration = namedDeclarations(sourceFile, name).find((node) => (
+    ts.isTypeAliasDeclaration(node) || ts.isInterfaceDeclaration(node)
+  ))
+  if (!declaration) return new Set()
+
+  function membersFromType(node) {
+    if (ts.isTypeLiteralNode(node)) return [...node.members]
+    if (ts.isIntersectionTypeNode(node)) return node.types.flatMap(membersFromType)
+    return []
+  }
+
+  const members = ts.isInterfaceDeclaration(declaration)
+    ? declaration.members
+    : membersFromType(declaration.type)
+
+  return new Set(members.flatMap((member) => {
+    if (!member.name) return []
+    if (ts.isIdentifier(member.name) || ts.isStringLiteral(member.name)) return [member.name.text]
+    return []
+  }))
+}
+
+function assertTypeProperties(sourceFile, path, name, expected) {
+  const properties = typeProperties(sourceFile, name)
+  assert(properties.size > 0, `${path}: ${name} must be an inspectable object contract`)
+  for (const property of expected) {
+    assert(properties.has(property), `${path}: ${name} must include ${property}`)
+  }
+}
+
+function typeStringLiterals(sourceFile, name) {
+  const declaration = namedDeclarations(sourceFile, name).find(ts.isTypeAliasDeclaration)
+  if (!declaration) return []
+  const members = ts.isUnionTypeNode(declaration.type) ? declaration.type.types : [declaration.type]
+  return members.flatMap((member) => (
+    ts.isLiteralTypeNode(member) && ts.isStringLiteral(member.literal) ? [member.literal.text] : []
+  ))
+}
+
+function numericExport(sourceFile, name) {
+  const declaration = namedDeclarations(sourceFile, name).find(ts.isVariableDeclaration)
+  if (!declaration?.initializer || !ts.isNumericLiteral(declaration.initializer)) return null
+  return Number(declaration.initializer.text)
+}
+
+function importHas(sourceFile, moduleName, importedName) {
+  return sourceFile.statements.some((statement) => {
+    if (!ts.isImportDeclaration(statement) || !ts.isStringLiteral(statement.moduleSpecifier)) return false
+    if (statement.moduleSpecifier.text !== moduleName) return false
+    const clause = statement.importClause
+    if (!clause) return false
+    if (clause.name?.text === importedName) return true
+    const bindings = clause.namedBindings
+    if (!bindings || !ts.isNamedImports(bindings)) return false
+    return bindings.elements.some((element) => element.name.text === importedName)
+  })
+}
+
+function jsxTagName(node) {
+  return node.tagName.getText()
+}
+
+function jsxOpenings(sourceFile, tagName) {
+  return visit(sourceFile, (node) => (
+    (ts.isJsxOpeningElement(node) || ts.isJsxSelfClosingElement(node)) &&
+    jsxTagName(node) === tagName
+  ))
+}
+
+function jsxAttributeNames(node) {
+  return new Set(node.attributes.properties.flatMap((property) => (
+    ts.isJsxAttribute(property) && ts.isIdentifier(property.name) ? [property.name.text] : []
+  )))
+}
+
+function hasJsxAttribute(sourceFile, attributeName) {
+  return visit(sourceFile, (node) => (
+    (ts.isJsxOpeningElement(node) || ts.isJsxSelfClosingElement(node)) &&
+    node.attributes.properties.some((property) => (
+      ts.isJsxAttribute(property) &&
+      ts.isIdentifier(property.name) &&
+      property.name.text === attributeName
+    ))
+  )).length > 0
+}
+
+function callsNamed(sourceFile, name) {
+  return visit(sourceFile, (node) => {
+    if (!ts.isCallExpression(node)) return false
+    if (ts.isIdentifier(node.expression)) return node.expression.text === name
+    return ts.isPropertyAccessExpression(node.expression) && node.expression.name.text === name
+  })
+}
+
+function objectPropertiesNamed(sourceFile, name) {
+  return visit(sourceFile, (node) => {
+    if (!ts.isPropertyAssignment(node) && !ts.isShorthandPropertyAssignment(node)) return false
+    return (
+      (ts.isIdentifier(node.name) || ts.isStringLiteral(node.name)) &&
+      node.name.text === name
+    )
+  })
+}
+
+function functionDeclaration(sourceFile, name) {
+  return namedDeclarations(sourceFile, name).find(ts.isFunctionDeclaration)
 }
 
 function sharedSourceRunRoutes() {
   return readdirSync('src/app', { withFileTypes: true })
     .filter((entry) => entry.isDirectory())
     .map((entry) => `src/app/${entry.name}/page.tsx`)
-    .filter((routePath) => existsSync(routePath))
-    .filter((routePath) => read(routePath).includes('import SourceRunShowcase'))
+    .filter((path) => existsSync(path))
+    .filter((path) => importHas(parse(path), '@/components/SourceRunShowcase', 'SourceRunShowcase'))
 }
 
-const forkLib = read('src/lib/project-forks.ts')
-mustInclude('src/lib/project-forks.ts', forkLib, 'PROJECT_FORK_MAX_DEPTH = 10', 'fork depth must support the requested 10x path')
-mustInclude('src/lib/project-forks.ts', forkLib, 'PROJECT_FORK_MAX_WIDTH = 10', 'fork width must support the requested 10x branch fanout')
-mustInclude('src/lib/project-forks.ts', forkLib, 'sourceStepId', 'fork contract must preserve the exact response/step fork point')
-mustInclude('src/lib/project-forks.ts', forkLib, 'promptFamilyId', 'fork contract must preserve prompt family identity')
-mustInclude('src/lib/project-forks.ts', forkLib, 'clampForkLimit', 'fork URL parsing must clamp unsafe depth/width values')
-mustInclude('src/lib/project-forks.ts', forkLib, 'projectForkSourceToSubmissionFields', 'fork source must map into durable source-run submission fields')
-mustInclude('src/lib/project-forks.ts', forkLib, 'projectForkSourceFromSubmissionFields', 'admin surfaces must reconstruct fork source from stored fields')
-mustInclude('src/lib/project-forks.ts', forkLib, 'buildProjectResponseForkHref', 'response-level fork URLs must be built by shared helper logic')
-mustInclude('src/lib/project-forks.ts', forkLib, 'currentForkSource ? currentForkSource.depth + 1 : 0', 'response-level fork URLs must advance fork depth consistently')
-mustInclude('src/lib/project-forks.ts', forkLib, 'if (nextDepth >= PROJECT_FORK_MAX_DEPTH) return null', 'response-level fork URLs must stop at the max depth boundary')
-mustInclude('src/lib/project-forks.ts', forkLib, 'groupProjectForkNetworkBySourceStep', 'public fork maps must group approved branches with reusable fork-network logic')
-mustInclude('src/lib/project-forks.ts', forkLib, 'resolveProjectForkTrail', 'fork ancestry must be resolved by shared deterministic helper logic')
-mustInclude('src/lib/project-forks.ts', forkLib, 'seenProjectIds', 'fork ancestry resolution must guard against lineage cycles')
-mustInclude('src/lib/project-forks.ts', forkLib, 'missingSourceProjectId', 'fork ancestry resolution must preserve missing-parent state')
+function assertSqlColumns(path, columnNames) {
+  const sql = read(path)
+  for (const columnName of columnNames) {
+    const definition = new RegExp(`\\b${columnName}\\s+(?:TEXT|UUID|INT|INTEGER)\\b`, 'i')
+    assert(definition.test(sql), `${path}: must define durable ${columnName}`)
+  }
+}
 
-const promptComparisons = read('src/lib/prompt-comparisons.ts')
-mustInclude('src/lib/prompt-comparisons.ts', promptComparisons, "PromptComparisonMatchBasis = 'prompt-family' | 'heuristic'", 'model comparisons must distinguish exact prompt-family matches from heuristic matches')
-mustInclude('src/lib/prompt-comparisons.ts', promptComparisons, 'normalizePromptFamilyId', 'model comparisons must normalize stored prompt family ids')
-mustInclude('src/lib/prompt-comparisons.ts', promptComparisons, 'prompt.prompt_family_id', 'model comparisons must prefer durable prompt family ids when present')
-mustInclude('src/lib/prompt-comparisons.ts', promptComparisons, 'key: `prompt-family:${promptFamilyId}`', 'model comparisons must bucket explicit prompt families separately from heuristic title matches')
-mustInclude('src/lib/prompt-comparisons.ts', promptComparisons, "matchBasis: 'prompt-family'", 'explicit prompt-family comparisons must expose their match basis')
-mustInclude('src/lib/prompt-comparisons.ts', promptComparisons, "matchBasis: 'heuristic'", 'fallback model comparisons must keep a heuristic match basis')
+function assertSqlForkConstraints(path) {
+  const sql = read(path).replace(/\s+/g, ' ')
+  assert(/fork_depth\s*>=\s*0\s+AND\s+fork_depth\s*<\s*10/i.test(sql), `${path}: must enforce the 10-level fork depth boundary`)
+  assert(/fork_branch_index\s*>=\s*0\s+AND\s+fork_branch_index\s*<\s*10/i.test(sql), `${path}: must enforce the 10-branch width boundary`)
+  assert(/fork_source_artifact_path[\s\S]*public\/artifacts\/%/i.test(sql), `${path}: fork artifacts must remain production-servable public artifact paths`)
+  assert(/fork_source_artifact_sha256[\s\S]*(?:64|\{64\})/i.test(sql), `${path}: fork artifact identity must enforce a 64-character SHA-256 digest`)
+}
 
-const sourceRunShowcase = read('src/components/SourceRunShowcase.tsx')
-mustInclude('src/components/SourceRunShowcase.tsx', sourceRunShowcase, 'buildProjectResponseForkHref', 'response packages must use shared response-level fork link logic')
-mustInclude('src/components/SourceRunShowcase.tsx', sourceRunShowcase, 'ProjectForkNetworkItem', 'source-run response chains must accept approved fork destination data')
-mustInclude('src/components/SourceRunShowcase.tsx', sourceRunShowcase, 'ResponseForkHoverRail', 'desktop response forks must use a dedicated hover pipe affordance')
-mustInclude('src/components/SourceRunShowcase.tsx', sourceRunShowcase, 'data-response-fork-socket', 'response fork points must expose a visible socket at the exact response')
-mustInclude('src/components/SourceRunShowcase.tsx', sourceRunShowcase, 'data-response-fork-hover-rail', 'response fork hover must grow a pipe rail from the socket')
-mustInclude('src/components/SourceRunShowcase.tsx', sourceRunShowcase, 'data-response-fork-branch-panel', 'response fork hover must end in a destination panel instead of a separate lower map')
-mustInclude('src/components/SourceRunShowcase.tsx', sourceRunShowcase, 'data-response-fork-middle-pipe', 'approved fork destinations must branch from the middle of the response')
-mustInclude('src/components/SourceRunShowcase.tsx', sourceRunShowcase, 'data-response-fork-destination-panel', 'approved fork destination cards must be visually detached from new-fork actions')
-mustInclude('src/components/SourceRunShowcase.tsx', sourceRunShowcase, 'data-response-fork-top-action', 'new fork actions must stay in the consistent top response action')
-mustInclude('src/components/SourceRunShowcase.tsx', sourceRunShowcase, 'data-response-fork-focus-stage', 'clicking an approved fork must open the branch focus stage')
-mustInclude('src/components/SourceRunShowcase.tsx', sourceRunShowcase, 'data-response-fork-existing-branch', 'responses with existing approved forks must expose a stronger socket state')
-mustInclude('src/components/SourceRunShowcase.tsx', sourceRunShowcase, 'scale-x-0', 'response fork pipe must start collapsed before hover/focus')
-mustInclude('src/components/SourceRunShowcase.tsx', sourceRunShowcase, 'group-hover/source-fork-node:scale-x-100', 'response fork pipe must expand on hover')
-mustInclude('src/components/SourceRunShowcase.tsx', sourceRunShowcase, 'Fork here', 'desktop hover pipe must expose a fork action')
-mustInclude('src/components/SourceRunShowcase.tsx', sourceRunShowcase, 'Forks from this response', 'approved fork destinations must live inside the response-level branch panel')
-mustInclude('src/components/SourceRunShowcase.tsx', sourceRunShowcase, 'New fork', 'active fork focus options must still expose a new-fork action')
-mustInclude('src/components/SourceRunShowcase.tsx', sourceRunShowcase, 'Code explain', 'approved fork focus options must expose a direct code explanation path')
-mustInclude('src/components/SourceRunShowcase.tsx', sourceRunShowcase, 'forkBranchesByStepId', 'approved fork destinations must be grouped by the exact source response')
-mustInclude('src/components/SourceRunShowcase.tsx', sourceRunShowcase, 'projectId?: string', 'source-run showcase must accept project identity for fork links')
-mustInclude('src/components/SourceRunShowcase.tsx', sourceRunShowcase, 'projectTitle?: string', 'source-run showcase must carry project title into fork links')
-mustInclude('src/components/SourceRunShowcase.tsx', sourceRunShowcase, 'forkNetwork?: ProjectForkNetworkItem[]', 'source-run showcase must receive approved forks from the page loader')
-mustInclude('src/components/SourceRunShowcase.tsx', sourceRunShowcase, 'promptFamilyId: `${projectId}:${step.id}`', 'response-level forks must carry a stable prompt family id')
+const forkPath = 'src/lib/project-forks.ts'
+const forkSource = parse(forkPath)
 
-const lineageScaffold = read('src/components/ProjectForkLineageScaffold.tsx')
-mustInclude('src/components/ProjectForkLineageScaffold.tsx', lineageScaffold, 'Shared path collapses left', 'fork graph must show collapsed shared history')
-mustInclude('src/components/ProjectForkLineageScaffold.tsx', lineageScaffold, 'Original text preview', 'fork graph must offer hover/focus previews of original text')
-mustInclude('src/components/ProjectForkLineageScaffold.tsx', lineageScaffold, 'New fork lane', 'fork graph must show the right-side branch lane')
-mustInclude('src/components/ProjectForkLineageScaffold.tsx', lineageScaffold, 'CapacityDots', 'fork graph must visualize depth/branch capacity')
-mustInclude('src/components/ProjectForkLineageScaffold.tsx', lineageScaffold, 'motion-safe:animate-pulse', 'fork point should have a visible socket effect')
+assert(numericExport(forkSource, 'PROJECT_FORK_MAX_DEPTH') === 10, `${forkPath}: fork depth capacity must remain 10`)
+assert(numericExport(forkSource, 'PROJECT_FORK_MAX_WIDTH') === 10, `${forkPath}: fork width capacity must remain 10`)
 
-const buildPage = read('src/app/prompt/new/page.tsx')
-mustInclude('src/app/prompt/new/page.tsx', buildPage, 'ForkSourcePanel', 'build page must show a rich fork-source handoff panel')
-mustInclude('src/app/prompt/new/page.tsx', buildPage, 'PROJECT_FORK_MAX_DEPTH', 'build page must surface fork depth capacity')
-mustInclude('src/app/prompt/new/page.tsx', buildPage, 'PROJECT_FORK_MAX_WIDTH', 'build page must surface fork branch capacity')
-mustInclude('src/app/prompt/new/page.tsx', buildPage, 'useSearchParams', 'build page must derive fork metadata directly from the current URL')
-mustInclude('src/app/prompt/new/page.tsx', buildPage, 'const forkSource = useMemo(() => parseProjectForkSearchParams(searchParams), [searchParams])', 'build page must keep fork source available without waiting on an auth effect')
-mustInclude('src/app/prompt/new/page.tsx', buildPage, 'serializeProjectForkSourceForNotes', 'source-run notes must keep fallback fork metadata before SQL is applied')
-mustInclude('src/app/prompt/new/page.tsx', buildPage, 'fork_source: forkSource', 'forked source-run submissions must send structured fork metadata')
-mustInclude('src/app/prompt/new/page.tsx', buildPage, 'setSourceRunTitle', 'fork handoff should prefill a useful source-run title')
-mustInclude('src/app/prompt/new/page.tsx', buildPage, 'authReturnPath', 'logged-out fork handoffs must preserve the fork URL through login/signup')
-mustInclude('src/app/prompt/new/page.tsx', buildPage, 'BuildLoggedOutLanding', 'loading and logged-out fork handoffs must keep a shared landing that receives fork source')
-mustIncludeAtLeast('src/app/prompt/new/page.tsx', buildPage, 'return <BuildLoggedOutLanding forkSource={forkSource}', 2, 'loading and logged-out fork handoffs must pass fork source into the shared landing')
-mustIncludeAtLeast('src/app/prompt/new/page.tsx', buildPage, '{forkSource && <ForkSourcePanel forkSource={forkSource} />}', 2, 'fork source panel must render in the shared landing and logged-in form handoff')
+for (const name of [
+  'normalizeProjectForkSource',
+  'parseProjectForkSearchParams',
+  'buildProjectForkHref',
+  'buildProjectResponseForkHref',
+  'projectForkSourceToSubmissionFields',
+  'projectForkSourceFromSubmissionFields',
+  'resolveProjectForkPoint',
+  'createProjectForkDraftContract',
+  'groupProjectForkNetworkBySourceStep',
+  'filterProjectForkNetworkBySourceRun',
+  'resolveProjectForkTrail',
+  'serializeProjectForkSourceForNotes',
+]) {
+  assertExport(forkSource, forkPath, name)
+}
 
-const promptDetailPage = read('src/app/prompt/[id]/page.tsx')
-mustInclude('src/app/prompt/[id]/page.tsx', promptDetailPage, 'projectForkSourceFromSubmissionFields(prompt)', 'generic project fork CTA must detect when the current project is already a fork')
-mustInclude('src/app/prompt/[id]/page.tsx', promptDetailPage, 'parentForkId: existingForkSource ? prompt.id : undefined', 'generic project fork CTA must preserve immediate parent when forking a fork')
-mustInclude('src/app/prompt/[id]/page.tsx', promptDetailPage, 'depth: nextForkDepth', 'generic project fork CTA must advance fork depth for fork-of-fork handoffs')
-mustInclude('src/app/prompt/[id]/page.tsx', promptDetailPage, 'promptFamilyId: existingForkSource?.promptFamilyId ?? forkContract.promptFamilyId', 'generic project fork CTA must preserve existing prompt family on fork-of-fork handoffs')
-mustInclude('src/app/prompt/[id]/page.tsx', promptDetailPage, 'canForkDeeper = nextForkDepth < PROJECT_FORK_MAX_DEPTH', 'generic project fork CTA must stop instead of silently clamping beyond max fork depth')
-mustInclude('src/app/prompt/[id]/page.tsx', promptDetailPage, 'Max fork depth reached', 'generic project fork CTA must expose a terminal max-depth state')
-mustInclude('src/app/prompt/[id]/page.tsx', promptDetailPage, 'Opens build intake with this path attached.', 'generic project fork CTA must describe the real fork handoff')
-mustNotInclude('src/app/prompt/[id]/page.tsx', promptDetailPage, 'auto-prefill coming soon', 'generic project fork CTA must not advertise stale future-copy now that fork metadata is attached')
-mustInclude('src/app/prompt/[id]/page.tsx', promptDetailPage, 'ResponseStepForkAffordance', 'generic project pages must expose exact-response fork affordances')
-mustInclude('src/app/prompt/[id]/page.tsx', promptDetailPage, 'buildProjectResponseForkHref', 'generic project response forks must use shared response-level fork link logic')
-mustInclude('src/app/prompt/[id]/page.tsx', promptDetailPage, 'data-generic-response-fork-socket', 'generic response forks must show a socket at the response')
-mustInclude('src/app/prompt/[id]/page.tsx', promptDetailPage, 'data-generic-response-fork-hover-rail', 'generic response forks must grow a hover pipe from the response')
-mustInclude('src/app/prompt/[id]/page.tsx', promptDetailPage, 'data-generic-response-fork-action', 'generic response forks must expose a direct response-level build handoff')
-mustInclude('src/app/prompt/[id]/page.tsx', promptDetailPage, 'getResponseForkHref(step)', 'each generic response card must build its own fork href')
-mustInclude('src/app/prompt/[id]/page.tsx', promptDetailPage, 'sourceStepId: step.id', 'generic response forks must carry the exact response step id')
-mustInclude('src/app/prompt/[id]/page.tsx', promptDetailPage, 'sourceStepNumber: step.step_number', 'generic response forks must carry the exact response step number')
-mustInclude('src/app/prompt/[id]/page.tsx', promptDetailPage, 'currentForkSource: existingForkSource', 'generic response forks must preserve fork-of-fork source context')
-mustInclude('src/app/prompt/[id]/page.tsx', promptDetailPage, 'promptFamilyId: existingForkSource?.promptFamilyId ?? `${prompt.id}:${step.id}`', 'generic response forks must preserve prompt family identity per response')
+const variantIdentity = [
+  'sourceModelVariantId',
+  'sourceRunId',
+  'sourceStepId',
+  'sourceStepNumber',
+  'sourceArtifactPath',
+  'sourceArtifactSha256',
+]
+assertTypeProperties(forkSource, forkPath, 'ProjectForkSource', [
+  'sourceProjectId',
+  ...variantIdentity,
+  'parentForkId',
+  'depth',
+  'branchIndex',
+  'promptFamilyId',
+])
+assertTypeProperties(forkSource, forkPath, 'ProjectForkSourceSubmissionFields', [
+  'fork_source_project_id',
+  'fork_source_model_variant_id',
+  'fork_source_run_id',
+  'fork_source_step_id',
+  'fork_source_step_number',
+  'fork_source_artifact_path',
+  'fork_source_artifact_sha256',
+  'fork_parent_submission_id',
+  'prompt_family_id',
+])
+assertTypeProperties(forkSource, forkPath, 'ProjectForkNetworkItem', [
+  'id',
+  'forkSource',
+  'continuationSteps',
+  'childRoute',
+])
+assertTypeProperties(forkSource, forkPath, 'ProjectForkContinuationStep', ['artifactVersions'])
 
-const browsePage = read('src/app/browse/page.tsx')
-mustInclude('src/app/browse/page.tsx', browsePage, "group.matchBasis === 'prompt-family' ? 'Same prompt family' : 'Model matchup'", 'browse comparisons must label exact same-family reruns separately from heuristic matchups')
-mustInclude('src/app/browse/page.tsx', browsePage, 'is-prompt-family', 'browse comparisons must expose a class hook for exact prompt-family groups')
+const sourcePackagePath = 'src/lib/source-run-package.ts'
+const sourcePackage = parse(sourcePackagePath)
+assert(importHas(sourcePackage, './project-forks', 'ProjectForkSource'), `${sourcePackagePath}: source packages must use the shared fork source contract`)
+assert(typeProperties(sourcePackage, 'SourceRunPackage').has('fork_source'), `${sourcePackagePath}: source packages must preserve structured fork_source`)
+assert(functionDeclaration(sourcePackage, 'parseForkSource'), `${sourcePackagePath}: source packages must validate fork_source instead of treating it as opaque notes`)
 
-const browseStyles = read('src/app/browse.css')
-mustInclude('src/app/browse.css', browseStyles, '.compare-group.is-prompt-family', 'browse comparison styles must visually distinguish exact prompt-family groups')
+const importerPath = 'scripts/import-pathforge-source-run.mjs'
+const importer = parse(importerPath)
+assert(functionDeclaration(importer, 'forkSubmissionFields'), `${importerPath}: importer must map structured fork fields`)
+assert(callsNamed(importer, 'forkSubmissionFields').length >= 1, `${importerPath}: importer must apply structured fork fields to an intake`)
 
-const preparedShowcases = read('src/lib/prepared-showcase-projects.ts')
-mustInclude('src/lib/prepared-showcase-projects.ts', preparedShowcases, 'promptFamilyId?: string', 'prepared source-run projects must be able to carry prompt family ids into model comparisons')
-mustInclude('src/lib/prepared-showcase-projects.ts', preparedShowcases, 'forkSource?: ProjectForkSource | null', 'prepared source-run projects must be able to carry static fork lineage')
-mustNotInclude('src/lib/prepared-showcase-projects.ts', preparedShowcases, forbiddenNonRealModelLabel, 'prepared source-run projects must not include non-real fork data')
-mustNotInclude('src/lib/prepared-showcase-projects.ts', preparedShowcases, forbiddenFormerForkHandle, 'prepared source-run projects must not include fake fork profiles')
+const buildPagePath = 'src/app/prompt/new/page.tsx'
+const buildPage = parse(buildPagePath)
+assert(importHas(buildPage, '@/lib/project-forks', 'parseProjectForkSearchParams'), `${buildPagePath}: build intake must parse fork identity from its URL`)
+assert(importHas(buildPage, '@/lib/project-forks', 'serializeProjectForkSourceForNotes'), `${buildPagePath}: build intake must preserve readable review evidence`)
+assert(callsNamed(buildPage, 'parseProjectForkSearchParams').length >= 1, `${buildPagePath}: build intake must resolve structured fork identity`)
+assert(objectPropertiesNamed(buildPage, 'fork_source').length >= 1, `${buildPagePath}: source-run intake must submit structured fork_source`)
 
-const pendingShowcases = read('src/lib/pending-source-run-showcases.ts')
-mustInclude('src/lib/pending-source-run-showcases.ts', pendingShowcases, 'promptFamilyId?: string', 'pending source-run showcase descriptors must preserve prompt family ids when supplied')
-mustInclude('src/lib/pending-source-run-showcases.ts', pendingShowcases, 'promptFamilyId: input.promptFamilyId', 'pending source-run showcase builder must copy prompt family ids')
+const dataPath = 'src/lib/data.ts'
+const dataSource = parse(dataPath)
+assert(importHas(dataSource, './project-forks', 'filterProjectForkNetworkBySourceRun'), `${dataPath}: approved fork reads must use the shared exact-run filter`)
+assert(functionDeclaration(dataSource, 'limitProjectForksPerResponseSocket'), `${dataPath}: public fork reads must enforce width per exact response socket`)
+const mockForkReader = functionDeclaration(dataSource, 'getPublicMockProjectForks')
+assert(mockForkReader?.parameters.some((parameter) => ts.isIdentifier(parameter.name) && parameter.name.text === 'sourceRunId'), `${dataPath}: prepared fallback forks must be filtered by source run before width limiting`)
+if (mockForkReader) {
+  const mockFilterCalls = visit(mockForkReader, (node) => (
+    ts.isCallExpression(node) && ts.isIdentifier(node.expression) && node.expression.text === 'filterProjectForkNetworkBySourceRun'
+  ))
+  assert(mockFilterCalls.length >= 1, `${dataPath}: prepared fallback fork reader must apply exact source-run isolation`)
+}
+const approvedForkReader = functionDeclaration(dataSource, 'getApprovedProjectForks')
+assert(approvedForkReader, `${dataPath}: must expose getApprovedProjectForks`)
+if (approvedForkReader) {
+  const parameterNames = approvedForkReader.parameters.flatMap((parameter) => (
+    ts.isIdentifier(parameter.name) ? [parameter.name.text] : []
+  ))
+  assert(parameterNames[0] === 'projectId', `${dataPath}: approved fork reader must key from canonical project id`)
+  assert(parameterNames.includes('sourceRunId'), `${dataPath}: approved fork reader must accept an optional exact source run id`)
+  const filterCalls = visit(approvedForkReader, (node) => (
+    ts.isCallExpression(node) && ts.isIdentifier(node.expression) && node.expression.text === 'filterProjectForkNetworkBySourceRun'
+  ))
+  assert(filterCalls.length >= 2, `${dataPath}: exact source-run filtering must cover both fallback and database fork results`)
+  const socketLimitCalls = visit(approvedForkReader, (node) => (
+    ts.isCallExpression(node) &&
+    ts.isIdentifier(node.expression) &&
+    node.expression.text === 'limitProjectForksPerResponseSocket'
+  ))
+  assert(socketLimitCalls.length >= 1, `${dataPath}: approved fork width must be capped independently for every response socket`)
+  const globalWidthLimits = visit(approvedForkReader, (node) => (
+    ts.isCallExpression(node) &&
+    ts.isPropertyAccessExpression(node.expression) &&
+    node.expression.name.text === 'limit' &&
+    node.arguments.some((argument) => argument.getText().includes('PROJECT_FORK_MAX_WIDTH'))
+  ))
+  assert(globalWidthLimits.length === 0, `${dataPath}: approved fork reads must not apply one global ten-branch cap to the whole run`)
+  const exactRunQuery = visit(approvedForkReader, (node) => (
+    ts.isCallExpression(node) &&
+    ts.isPropertyAccessExpression(node.expression) &&
+    node.expression.name.text === 'eq' &&
+    node.arguments.length >= 2 &&
+    ts.isStringLiteral(node.arguments[0]) &&
+    node.arguments[0].text === 'fork_source_run_id' &&
+    node.arguments[1].getText().includes('sourceRunId')
+  ))
+  assert(exactRunQuery.length >= 1, `${dataPath}: database fork query must constrain fork_source_run_id before width limiting`)
+  const queryLiterals = visit(approvedForkReader, ts.isStringLiteral).map((literal) => literal.text).join(',')
+  for (const field of [
+    'fork_source_model_variant_id',
+    'fork_source_run_id',
+    'fork_source_artifact_path',
+    'fork_source_artifact_sha256',
+    'prompt_steps',
+  ]) {
+    assert(queryLiterals.includes(field), `${dataPath}: approved branch hydration must select ${field}`)
+  }
+  assert(objectPropertiesNamed(approvedForkReader, 'continuationSteps').length >= 1, `${dataPath}: approved branches must expose exact child continuation transcript/artifacts`)
+  assert(objectPropertiesNamed(approvedForkReader, 'childRoute').length >= 1, `${dataPath}: approved branches must expose a stable child route`)
+}
 
-const mockData = read('src/lib/mock-data.ts')
-mustInclude('src/lib/mock-data.ts', mockData, 'prompt_family_id: project.promptFamilyId ?? forkSubmissionFields.prompt_family_id ?? null', 'mock/prepared public prompts must preserve prompt family ids for comparison grouping')
-mustInclude('src/lib/mock-data.ts', mockData, 'projectForkSourceToSubmissionFields(project.forkSource)', 'mock/prepared public prompts must persist static fork lineage fields')
-mustNotInclude('src/lib/mock-data.ts', mockData, forbiddenFormerForkHandle, 'mock public data must not include fake fork profiles')
-mustNotInclude('src/lib/mock-data.ts', mockData, forbiddenNonRealProfileBio, 'mock public data must not include non-real fork profiles')
+const rendererPath = 'src/components/ProjectForkBuildPath.tsx'
+const renderer = parse(rendererPath)
+assertExport(renderer, rendererPath, 'ProjectForkBuildPath')
+assertExport(renderer, rendererPath, 'ProjectForkBuildPathProps')
+assertExport(renderer, rendererPath, 'ProjectForkBuildPathMode')
+assert(importHas(renderer, '@/lib/project-forks', 'resolveProjectForkPoint'), `${rendererPath}: source-response anchoring must use the shared strict resolver`)
+assert(callsNamed(renderer, 'resolveProjectForkPoint').length >= 1, `${rendererPath}: source-response anchoring must reject stale exact ids without numeric fallback`)
+const rendererModes = new Set(typeStringLiterals(renderer, 'ProjectForkBuildPathMode'))
+assert(rendererModes.has('parent'), `${rendererPath}: shared renderer must represent a parent branch focus state`)
+assert(rendererModes.has('child'), `${rendererPath}: shared renderer must represent a child lineage page state`)
+assertTypeProperties(renderer, rendererPath, 'ProjectForkBuildPathProps', [
+  'mode',
+  'sourceSteps',
+  'forkSource',
+  'branch',
+  'trail',
+  'sourceProjectHref',
+  'branchHref',
+  'newForkHref',
+  'sourceRunHref',
+  'onClose',
+  'onDisplayArtifact',
+  'selectedArtifactPath',
+  'artifactOpenHrefs',
+])
+for (const hook of [
+  'data-project-fork-build-path',
+  'data-fork-inherited-path',
+  'data-fork-source-response',
+  'data-fork-continuation',
+  'data-fork-continuation-fork',
+  'data-fork-display-artifact',
+]) {
+  assert(hasJsxAttribute(renderer, hook), `${rendererPath}: shared renderer must expose ${hook} for mounted lineage verification`)
+}
+const rendererHasMobileDisclosure = jsxOpenings(renderer, 'details').length > 0 || hasJsxAttribute(renderer, 'aria-expanded')
+assert(rendererHasMobileDisclosure, `${rendererPath}: inherited history needs an accessible compact/mobile disclosure`)
 
-const communityPanel = read('src/components/ProjectCommunityPanel.tsx')
-mustNotInclude('src/components/ProjectCommunityPanel.tsx', communityPanel, '>Forks<', 'community surface must not show a fake forks count before real counts exist')
-mustInclude('src/components/ProjectCommunityPanel.tsx', communityPanel, 'ProjectForkOriginBand', 'public project pages must show source lineage for approved forks')
-mustInclude('src/components/ProjectCommunityPanel.tsx', communityPanel, 'resolveProjectForkTrail(project, getPromptById)', 'fork-of-fork pages must use the shared bounded ancestor resolver')
-mustInclude('src/components/ProjectCommunityPanel.tsx', communityPanel, 'ProjectForkAncestryTrail', 'forked public pages must show a nested fork ancestry ladder')
-mustInclude('src/components/ProjectCommunityPanel.tsx', communityPanel, 'Fork ancestry', 'nested fork ladder must be visible as a first-class public surface')
-mustInclude('src/components/ProjectCommunityPanel.tsx', communityPanel, 'Fork hop', 'mobile nested fork ladder must keep pipe/hop semantics')
-mustInclude('src/components/ProjectCommunityPanel.tsx', communityPanel, 'immediateSourceProject', 'inherited path display must reuse the resolved immediate parent')
-mustInclude('src/components/ProjectCommunityPanel.tsx', communityPanel, 'ProjectForkInheritedPathBand', 'forked public pages must show inherited source path plus current fork continuation')
-mustInclude('src/components/ProjectCommunityPanel.tsx', communityPanel, 'sourceProject={sourceProject}', 'forked public pages must pass the immediate source project into inherited path display')
-mustInclude('src/components/ProjectCommunityPanel.tsx', communityPanel, 'Source continuation after fork point', 'forked public pages must mute the original source continuation after the fork point')
-mustInclude('src/components/ProjectCommunityPanel.tsx', communityPanel, 'Current fork continues right', 'forked public pages must show the fork continuation on the right')
-mustInclude('src/components/ProjectCommunityPanel.tsx', communityPanel, 'Source path collapses first', 'forked public pages must have a stacked mobile inherited-path view')
-mustInclude('src/components/ProjectCommunityPanel.tsx', communityPanel, 'MobileForkBreak', 'fork maps must have a mobile-safe pipe break visual')
-mustInclude('src/components/ProjectCommunityPanel.tsx', communityPanel, 'Original text preview', 'public fork network must preserve hover/focus previews of source text')
-mustInclude('src/components/ProjectCommunityPanel.tsx', communityPanel, 'projectForkSourceFromSubmissionFields(project)', 'public lineage must read structured fork fields from approved projects')
-mustInclude('src/components/ProjectCommunityPanel.tsx', communityPanel, 'Open source path', 'public fork lineage must link back to the source path')
-mustNotInclude('src/components/ProjectCommunityPanel.tsx', communityPanel, '<ProjectForkNetworkBand', 'approved child forks must render inside the response chain instead of a lower fork map')
-mustNotInclude('src/components/ProjectCommunityPanel.tsx', communityPanel, '<ProjectForkCallout', 'the lower fork-this-path callout must not render on public source-run pages')
-mustNotInclude('src/components/ProjectCommunityPanel.tsx', communityPanel, 'Fork lanes', 'discussion should not show confusing fork-capacity counters')
-mustNotInclude('src/components/ProjectCommunityPanel.tsx', communityPanel, 'Discussion signal', 'discussion should not carry a separate fork metric panel')
+const showcasePath = 'src/components/SourceRunShowcase.tsx'
+const showcase = parse(showcasePath)
+assert(importHas(showcase, '@/components/ProjectForkBuildPath', 'ProjectForkBuildPath'), `${showcasePath}: parent and prepared child paths must use the shared fork renderer`)
+assert(importHas(showcase, '@/lib/project-forks', 'groupProjectForkNetworkBySourceStep'), `${showcasePath}: branch attachment must use the strict shared response matcher`)
+assert(callsNamed(showcase, 'groupProjectForkNetworkBySourceStep').length >= 1, `${showcasePath}: branch attachment must reject stale exact step ids at render time`)
+const showcaseForkHandoffs = callsNamed(showcase, 'buildProjectResponseForkHref')
+const exactVariantHandoff = showcaseForkHandoffs.some((call) => {
+  const input = call.arguments[0]
+  if (!input || !ts.isObjectLiteralExpression(input)) return false
+  const properties = new Set(input.properties.flatMap((property) => (
+    property.name && (ts.isIdentifier(property.name) || ts.isStringLiteral(property.name))
+      ? [property.name.text]
+      : []
+  )))
+  return ['sourceModelVariantId', 'sourceRunId', 'sourceArtifactPath', 'sourceArtifactSha256']
+    .every((property) => properties.has(property))
+})
+assert(exactVariantHandoff, `${showcasePath}: new-fork URLs must carry exact model, run, artifact path, and artifact digest identity`)
+const showcaseRenderers = jsxOpenings(showcase, 'ProjectForkBuildPath')
+assert(showcaseRenderers.length >= 1, `${showcasePath}: must render ProjectForkBuildPath for active branch/lineage state`)
+if (showcaseRenderers.length > 0) {
+  const attributes = jsxAttributeNames(showcaseRenderers[0])
+  for (const property of ['mode', 'sourceSteps', 'branch', 'onDisplayArtifact', 'selectedArtifactPath']) {
+    assert(attributes.has(property), `${showcasePath}: shared renderer integration must pass ${property}`)
+  }
+}
+assert(namedDeclarations(showcase, 'ResponseForkFocusStage').length === 0, `${showcasePath}: remove the divergent legacy fork focus renderer`)
+
+const preparedPath = 'src/components/PreparedSourceRunPage.tsx'
+const prepared = parse(preparedPath)
+const preparedShowcases = jsxOpenings(prepared, 'SourceRunShowcase')
+assert(preparedShowcases.length === 1, `${preparedPath}: prepared page must have one source-run renderer`)
+if (preparedShowcases.length === 1) {
+  const attributes = jsxAttributeNames(preparedShowcases[0])
+  for (const property of [
+    'forkNetwork',
+    'forkContext',
+    'sourceRunId',
+    'sourceModelVariantId',
+    'sourceArtifactPath',
+    'sourceArtifactSha256',
+  ]) {
+    assert(attributes.has(property), `${preparedPath}: exact parent/child lineage integration must pass ${property}`)
+  }
+}
+const preparedForkReads = callsNamed(prepared, 'getApprovedProjectForks')
+assert(preparedForkReads.some((call) => call.arguments.length >= 2), `${preparedPath}: model pages must read forks using canonical project plus exact source run`)
+assert(callsNamed(prepared, 'resolvePreparedShowcaseLineage').length >= 1, `${preparedPath}: prepared child pages must reconstruct complete nested ancestry through the shared registry resolver`)
+assert(callsNamed(prepared, 'buildProjectResponseForkHref').length >= 1, `${preparedPath}: prepared child continuations must create exact nested-fork handoffs`)
+for (const nestedEvidence of [
+  'sourceRun.prompt_count === continuation.stepNumber',
+  'nestedArtifactPath === sourceRun.final_artifact_path',
+  'forkArtifact.artifactSha256 === sourceRun.artifact_sha256',
+  'currentForkSource: forkSource',
+]) {
+  assert(prepared.getFullText().includes(nestedEvidence), `${preparedPath}: nested fork handoff must require ${nestedEvidence}`)
+}
+
+const preparedRegistryPath = 'src/lib/prepared-showcase-projects.ts'
+const preparedRegistry = read(preparedRegistryPath)
+assert(preparedRegistry.includes('MAX_PREPARED_FORK_DEPTH = 10'), `${preparedRegistryPath}: prepared lineage must share the ten-generation ceiling`)
+assert(preparedRegistry.includes('Prepared fork lineage cycle detected'), `${preparedRegistryPath}: prepared lineage must fail closed on cycles`)
+assert(preparedRegistry.includes('references missing source project'), `${preparedRegistryPath}: prepared lineage must fail closed on missing parents`)
+
+const preparedReleaseGatesPath = 'src/lib/prepared-release-gates.ts'
+const preparedReleaseGates = read(preparedReleaseGatesPath)
+assert(preparedReleaseGates.includes("process.env.VERCEL_ENV === 'production'"), `${preparedReleaseGatesPath}: Vercel production must always enforce persistence gates`)
+assert(!preparedReleaseGates.includes('PATHFORGE_ALLOW_UNPUBLISHED_PREPARED_ROUTES'), `${preparedReleaseGatesPath}: no environment variable may reopen unpublished production routes`)
+
+const nestedFixturePath = 'src/app/qa/fork-lineage-grandchild-fixture/page.tsx'
+const nestedFixture = read(nestedFixturePath)
+assert(nestedFixture.includes("process.env.VERCEL_ENV === 'production'"), `${nestedFixturePath}: nested QA fixture must be unavailable in production`)
+const forkBrowserGuard = read('scripts/check-project-fork-page-browser.mjs')
+assert(forkBrowserGuard.includes('/qa/fork-lineage-grandchild-fixture'), 'fork browser guard must exercise a real prepared grandchild route')
+assert(forkBrowserGuard.includes('grandchildSnapshot.trail.length !== 3'), 'fork browser guard must require complete three-generation breadcrumbs')
+assert(forkBrowserGuard.includes('/airlock-zero-swarm-shift-fork-demo'), 'fork browser guard must exercise nested-fork creation from a verified prepared child')
+assert(forkBrowserGuard.includes('data-fork-continuation-fork'), 'fork browser guard must inspect the continuation-level nested-fork action')
+assert(forkBrowserGuard.includes("nested.depth !== '1'"), 'fork browser guard must verify nested depth increments from the immediate parent')
+
+const communityPath = 'src/components/ProjectCommunityPanel.tsx'
+const community = parse(communityPath)
+assert(importHas(community, '@/components/ProjectForkBuildPath', 'ProjectForkBuildPath'), `${communityPath}: generic project fork lineage must use the shared renderer`)
+assert(jsxOpenings(community, 'ProjectForkBuildPath').length >= 1, `${communityPath}: generic fork pages must render the shared lineage workspace`)
+assert(jsxOpenings(community, 'ProjectForkInheritedPathBand').length === 0, `${communityPath}: remove the divergent legacy inherited-path renderer`)
 
 for (const routePath of sharedSourceRunRoutes()) {
-  const content = read(routePath)
-  mustInclude(routePath, content, 'projectId={', 'direct SourceRunShowcase routes must pass projectId for response-level fork links')
-  mustInclude(routePath, content, 'projectTitle={', 'direct SourceRunShowcase routes must pass projectTitle for response-level fork links')
-  mustInclude(routePath, content, 'getApprovedProjectForks', 'direct SourceRunShowcase routes must load approved fork destinations')
-  mustInclude(routePath, content, 'forkNetwork={forkNetwork}', 'direct SourceRunShowcase routes must pass approved fork destinations into the chain')
+  const route = parse(routePath)
+  const showcases = jsxOpenings(route, 'SourceRunShowcase')
+  assert(showcases.length >= 1, `${routePath}: direct showcase route must render SourceRunShowcase`)
+  for (const showcaseNode of showcases) {
+    const attributes = jsxAttributeNames(showcaseNode)
+    assert(attributes.has('projectId'), `${routePath}: direct showcase must pass canonical project identity`)
+    assert(attributes.has('projectTitle'), `${routePath}: direct showcase must pass project title`)
+    assert(attributes.has('sourceRunId'), `${routePath}: direct showcase must pass exact source-run identity`)
+    assert(attributes.has('forkNetwork'), `${routePath}: direct showcase must pass approved branch destinations`)
+  }
+  const directForkReads = callsNamed(route, 'getApprovedProjectForks')
+  assert(directForkReads.length >= 1, `${routePath}: direct showcase must load approved branches`)
+  assert(directForkReads.some((call) => call.arguments.length >= 2), `${routePath}: direct showcase must isolate approved branches to the exact source run`)
 }
 
-const preparedWrapper = read('src/components/PreparedSourceRunPage.tsx')
-mustInclude('src/components/PreparedSourceRunPage.tsx', preparedWrapper, 'projectId={project.id}', 'prepared source-run pages must pass project identity to fork links')
-mustInclude('src/components/PreparedSourceRunPage.tsx', preparedWrapper, 'projectTitle={project.title}', 'prepared source-run pages must pass project title to fork links')
-mustInclude('src/components/PreparedSourceRunPage.tsx', preparedWrapper, 'getApprovedProjectForks(project.id)', 'prepared source-run pages must load approved fork destinations')
-mustInclude('src/components/PreparedSourceRunPage.tsx', preparedWrapper, 'forkNetwork={forkNetwork}', 'prepared source-run pages must pass approved fork destinations into the chain')
-mustInclude('src/components/PreparedSourceRunPage.tsx', preparedWrapper, 'mainPathSourceSteps', 'prepared fork pages must choose their visible main path separately from inherited transcript context')
-mustInclude('src/components/PreparedSourceRunPage.tsx', preparedWrapper, 'project.forkSource?.sourceStepNumber', 'prepared fork pages must find the original response number that created the fork')
-mustInclude('src/components/PreparedSourceRunPage.tsx', preparedWrapper, 'step.step_number > forkPointStepNumber', 'prepared fork pages must start the visible build path after the fork point')
+const promptDetailPath = 'src/app/prompt/[id]/page.tsx'
+const promptDetail = parse(promptDetailPath)
+assert(callsNamed(promptDetail, 'buildProjectResponseForkHref').length >= 1, `${promptDetailPath}: generic response cards must create exact-response fork handoffs`)
+assert(jsxOpenings(promptDetail, 'ProjectCommunityPanel').length >= 1, `${promptDetailPath}: generic project pages must mount the shared community/lineage surface`)
 
-const dataLayer = read('src/lib/data.ts')
-const sourceRunDataLayer = read('src/lib/data/source-runs.ts')
-mustInclude('src/lib/data/source-runs.ts', sourceRunDataLayer, 'projectForkSourceToSubmissionFields', 'source-run creation must store structured fork metadata when available')
-mustInclude('src/lib/data/source-runs.ts', sourceRunDataLayer, 'sourceRunForkColumnsMissing', 'source-run creation must gracefully fall back before fork columns are applied')
-mustInclude('src/lib/data/source-runs.ts', sourceRunDataLayer, 'projectForkSourceFromSubmissionFields(sourceRun)', 'publishing a source-run fork must copy lineage onto the approved project')
-mustInclude('src/lib/data/source-runs.ts', sourceRunDataLayer, 'omitForkFields(updatePayload)', 'project publish must gracefully fall back before prompt fork columns are applied')
-mustInclude('src/lib/data.ts', dataLayer, 'getApprovedProjectForks', 'public pages must have a bounded approved-fork reader')
-mustInclude('src/lib/data.ts', dataLayer, 'PROJECT_FORK_MAX_WIDTH', 'approved-fork reader must stay bounded to the fork width limit')
-mustInclude('src/lib/data.ts', dataLayer, 'author:profiles(username,display_name)', 'approved fork reader must return author labels for response-chain branch destinations')
-mustInclude('src/lib/data.ts', dataLayer, 'authorUsername', 'approved fork destinations must expose usernames for branch labels')
-mustInclude('src/lib/data.ts', dataLayer, 'getPublicMockProjectForks', 'approved-fork reader must include static prepared forks when no live DB child row exists')
-mustInclude('src/lib/data.ts', dataLayer, 'fallbackForks', 'approved-fork reader must merge static fork destinations with database forks')
+const adminDetailPath = 'src/app/admin/source-runs/[id]/page.tsx'
+const adminDetail = parse(adminDetailPath)
+assert(callsNamed(adminDetail, 'projectForkSourceFromSubmissionFields').length >= 1, `${adminDetailPath}: review detail must reconstruct structured fork identity`)
 
-const types = read('src/lib/types.ts')
-mustInclude('src/lib/types.ts', types, 'fork_source_project_id?: string | null', 'approved project type must carry fork source project id')
-mustInclude('src/lib/types.ts', types, 'prompt_family_id?: string | null', 'approved project type must carry prompt family id')
+const adminDashboardPath = 'src/app/admin/page.tsx'
+const adminDashboard = parse(adminDashboardPath)
+assert(callsNamed(adminDashboard, 'projectForkSourceFromSubmissionFields').length >= 1, `${adminDashboardPath}: pending rows must identify structured fork intakes`)
 
-const sourceRunSchema = read('supabase/source-run-submissions.sql')
-mustInclude('supabase/source-run-submissions.sql', sourceRunSchema, 'fork_source_project_id TEXT', 'source-run schema must store source project id for forks')
-mustInclude('supabase/source-run-submissions.sql', sourceRunSchema, 'fork_source_step_id TEXT', 'source-run schema must store exact fork step id')
-mustInclude('supabase/source-run-submissions.sql', sourceRunSchema, 'prompt_family_id TEXT', 'source-run schema must store prompt family identity')
-mustInclude('supabase/source-run-submissions.sql', sourceRunSchema, 'fork_depth >= 0 AND fork_depth < 10', 'source-run schema must enforce fork depth capacity')
-mustInclude('supabase/source-run-submissions.sql', sourceRunSchema, 'fork_branch_index >= 0 AND fork_branch_index < 10', 'source-run schema must enforce fork branch capacity')
+const forkColumns = [
+  'fork_source_project_id',
+  'fork_source_model_variant_id',
+  'fork_source_run_id',
+  'fork_source_step_id',
+  'fork_source_step_number',
+  'fork_source_artifact_path',
+  'fork_source_artifact_sha256',
+  'fork_parent_submission_id',
+  'prompt_family_id',
+  'fork_depth',
+  'fork_branch_index',
+]
+assertSqlColumns('supabase/source-run-submissions.sql', forkColumns)
+assertSqlColumns('supabase/schema.sql', forkColumns)
+assertSqlColumns('supabase/project-forks.sql', forkColumns)
+assertSqlForkConstraints('supabase/source-run-submissions.sql')
+assertSqlForkConstraints('supabase/schema.sql')
+assertSqlForkConstraints('supabase/project-forks.sql')
 
-const baseSchema = read('supabase/schema.sql')
-mustInclude('supabase/schema.sql', baseSchema, 'fork_source_project_id TEXT', 'base prompt schema must store public fork source project id')
-mustInclude('supabase/schema.sql', baseSchema, 'idx_prompts_prompt_family', 'base prompt schema must index prompt families')
+const variantAwareMigrations = readdirSync('supabase/migrations')
+  .filter((fileName) => fileName.endsWith('.sql'))
+  .map((fileName) => `supabase/migrations/${fileName}`)
+  .filter((path) => {
+    const sql = read(path)
+    return (
+      sql.includes('fork_source_model_variant_id') &&
+      sql.includes('fork_source_run_id') &&
+      sql.includes('fork_source_artifact_sha256')
+    )
+  })
+assert(variantAwareMigrations.length >= 1, 'supabase/migrations: variant-aware fork schema must have an additive deployable migration')
+for (const migrationPath of variantAwareMigrations) {
+  assertSqlColumns(migrationPath, forkColumns)
+  assertSqlForkConstraints(migrationPath)
+  const migrationSql = read(migrationPath)
+  assert(/CREATE\s+(?:CONSTRAINT\s+)?TRIGGER/i.test(migrationSql), `${migrationPath}: migration must install fail-closed lineage validation triggers`)
+  assert(/REVOKE\s+(?:ALL|EXECUTE)[\s\S]+FROM\s+PUBLIC/i.test(migrationSql), `${migrationPath}: lineage validation helpers must not be publicly executable`)
+  assert(migrationSql.includes('project_model_variant_artifacts'), `${migrationPath}: exact response artifact evidence must be persisted in SQL`)
+  assert(migrationSql.includes('Prepared fork response/artifact evidence does not match the approved source-run project final.'), `${migrationPath}: nested prepared forks must validate exact immutable final-response evidence`)
+  assert(migrationSql.includes('publish_prepared_showcase_source_run'), `${migrationPath}: prepared publication must use one atomic database transaction`)
+}
 
-const projectForkSchema = read('supabase/project-forks.sql')
-mustInclude('supabase/project-forks.sql', projectForkSchema, 'ALTER TABLE prompts', 'fork migration must alter prompts for public lineage')
-mustInclude('supabase/project-forks.sql', projectForkSchema, 'fork_source_step_number INT', 'fork migration must store prompt fork step number')
-mustInclude('supabase/project-forks.sql', projectForkSchema, 'fork_branch_index >= 0 AND fork_branch_index < 10', 'fork migration must enforce public branch capacity')
+const sourceRunsDataPath = 'src/lib/data/source-runs.ts'
+const sourceRunsData = read(sourceRunsDataPath)
+assert(sourceRunsData.includes("'publish_prepared_showcase_source_run'"), `${sourceRunsDataPath}: prepared publication must call the atomic RPC`)
+assert(!sourceRunsData.includes('const insertPayload = {'), `${sourceRunsDataPath}: prepared publication must not fall back to a non-atomic prompt insert`)
+for (const rpcArgument of [
+  'target_source_run_id: sourceRunId',
+  'expected_intake: expectedIntake',
+  'expected_fork: expectedFork',
+  'project_payload: projectPayload',
+]) {
+  assert(sourceRunsData.includes(rpcArgument), `${sourceRunsDataPath}: atomic RPC must pass ${rpcArgument}`)
+}
+assert(sourceRunsData.includes('public_href: project.href'), `${sourceRunsDataPath}: atomic project payload must use public_href`)
 
-const adminDetail = read('src/app/admin/source-runs/[id]/page.tsx')
-mustInclude('src/app/admin/source-runs/[id]/page.tsx', adminDetail, 'Fork source', 'admin source-run detail must show structured fork source metadata')
-mustInclude('src/app/admin/source-runs/[id]/page.tsx', adminDetail, 'hideForkMetadata', 'admin source-run detail must avoid duplicating structured fork metadata in notes')
-
-const adminDashboard = read('src/app/admin/page.tsx')
-mustInclude('src/app/admin/page.tsx', adminDashboard, 'projectForkSourceFromSubmissionFields', 'admin pending rows must identify forked source-run intakes')
+const preparedProjects = read('src/lib/prepared-showcase-projects.ts')
+const mockData = read('src/lib/mock-data.ts')
+const forbiddenSyntheticMarkers = [
+  ['Codex' + ' sim' + 'ulated', 'non-real model label'],
+  ['Codex' + 'Lane', 'synthetic profile handle'],
+  ['Sim' + 'ulated Codex fork profile', 'synthetic profile biography'],
+]
+for (const [needle, description] of forbiddenSyntheticMarkers) {
+  assert(!preparedProjects.includes(needle), `src/lib/prepared-showcase-projects.ts: must not ship ${description}`)
+  assert(!mockData.includes(needle), `src/lib/mock-data.ts: must not ship ${description}`)
+}
 
 if (failures.length > 0) {
   console.error(failures.join('\n'))
   process.exit(1)
 }
 
-console.log('Project fork guard passed.')
+console.log('Project fork structural guard passed.')

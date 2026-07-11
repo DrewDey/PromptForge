@@ -1,126 +1,19 @@
-import Link from 'next/link'
-import ProjectEngagementBar from '@/components/ProjectEngagementBar'
-import ProjectCommunityPanel from '@/components/ProjectCommunityPanel'
-import SourceRunShowcase, { type SourceRunShowcaseStep } from '@/components/SourceRunShowcase'
+import PreparedSourceRunPage from '@/components/PreparedSourceRunPage'
 import { buildPreparedSourceRunDetailMetadata } from '@/lib/build-path-metadata'
-import { getApprovedProjectForks } from '@/lib/data'
-import { MEETING_COST_PROJECT_ID } from '@/lib/featured-projects'
 import { MEETING_COST_SHOWCASE_PROJECT } from '@/lib/prepared-showcase-projects'
-import sourceRunPackage from '../../../seed-runs/meeting-cost-calculator-chatgpt-source-run.json'
-
-type MeetingCostSeedStep = {
-  step_number: number
-  prompt_exact: string
-  response_exact: string
-  artifact_version_path?: string | null
-}
-
-type MeetingCostSeedRun = {
-  title: string
-  model: string
-  model_settings: string
-  source_url: string
-  verification_notes: string
-  pathforge_submission_url: string
-  source_run_submission_id: string
-  steps: MeetingCostSeedStep[]
-}
+import { loadSourceRunPackage } from '@/lib/source-run-package'
 
 const project = MEETING_COST_SHOWCASE_PROJECT
-const projectId = MEETING_COST_PROJECT_ID
-const capturedAt = 'June 3, 2026'
 
 export const metadata = buildPreparedSourceRunDetailMetadata(project)
 
-function getPublicArtifactPath(artifactPath?: string | null) {
-  if (!artifactPath?.startsWith('public/artifacts/')) return null
-  return `/${artifactPath.replace(/^public\//, '')}`
-}
-
-function toStep(step: MeetingCostSeedStep): SourceRunShowcaseStep {
-  const projectStep = project.steps.find((item) => item.stepNumber === step.step_number)
-
-  return {
-    id: `${projectId}-step-${step.step_number}`,
-    stepNumber: step.step_number,
-    title: projectStep?.title ?? `Prompt ${step.step_number}`,
-    prompt: step.prompt_exact,
-    response: step.response_exact,
-    artifactPath: getPublicArtifactPath(step.artifact_version_path),
-    artifactTitle: 'Meeting Cost Calculator final',
-    callout: {
-      tone: 'success',
-      title: 'Default approved artifact',
-      body: 'This is the one-shot ChatGPT artifact that loads first on the public page.',
-    },
-  }
-}
-
-function RunSummary({ sourceRun }: { sourceRun: MeetingCostSeedRun }) {
+export default function MeetingCostCalculatorDemoPage() {
   return (
-    <div className="grid gap-3 text-sm sm:grid-cols-2">
-      <div className="border border-surface-200 bg-white px-4 py-3">
-        <div className="font-mono text-[10px] uppercase tracking-[0.16em] text-surface-500">
-          Model
-        </div>
-        <div className="mt-1 font-semibold text-surface-900">{sourceRun.model}</div>
-      </div>
-      <div className="border border-surface-200 bg-white px-4 py-3">
-        <div className="font-mono text-[10px] uppercase tracking-[0.16em] text-surface-500">
-          Captured
-        </div>
-        <div className="mt-1 font-semibold text-surface-900">{capturedAt}</div>
-      </div>
-    </div>
-  )
-}
-
-export default async function MeetingCostCalculatorDemoPage() {
-  const sourceRun = sourceRunPackage as MeetingCostSeedRun
-  const steps = sourceRun.steps.map(toStep)
-  const forkNetwork = await getApprovedProjectForks(projectId)
-
-  return (
-    <main className="min-h-screen bg-surface-50 text-surface-900">
-      <section className="border-b border-surface-200 bg-white text-surface-900">
-        <div className="mx-auto max-w-7xl px-4 py-5 sm:px-6 lg:px-8">
-          <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
-            <Link
-              href="/"
-              className="font-mono text-xs uppercase tracking-[0.18em] text-surface-500 hover:text-brand-orange"
-            >
-              PathForge
-            </Link>
-          </div>
-
-          <div className="mb-5 grid gap-5 lg:grid-cols-[minmax(0,1fr)_430px] lg:items-end">
-            <div>
-              <h1 className="max-w-4xl text-3xl font-black leading-[0.96] tracking-normal sm:text-5xl">
-                Meeting Cost Calculator from a ChatGPT run.
-              </h1>
-              <p className="mt-4 max-w-2xl text-sm leading-6 text-surface-600">
-                A one-prompt ChatGPT source run produced a polished browser calculator that makes meeting cost and
-                wasted time obvious, then exports a simple summary.
-              </p>
-            </div>
-            <RunSummary sourceRun={sourceRun} />
-          </div>
-
-          <ProjectEngagementBar projectId={projectId} loginNextPath="/meeting-cost-calculator-demo" />
-        </div>
-      </section>
-
-      <SourceRunShowcase
-        sourceRunUrl={sourceRun.source_url}
-        projectId={projectId}
-        projectTitle={project.title}
-        providerName="ChatGPT"
-        steps={steps}
-        forkNetwork={forkNetwork}
-        defaultStepNumber={1}
-      />
-
-      <ProjectCommunityPanel projectId={projectId} />
-    </main>
+    <PreparedSourceRunPage
+      project={project}
+      sourceRunPackage={loadSourceRunPackage('meeting-cost-calculator-chatgpt-source-run.json')}
+      route={project.href}
+      capturedAt="June 3, 2026"
+    />
   )
 }

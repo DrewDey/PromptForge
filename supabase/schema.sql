@@ -30,9 +30,12 @@ CREATE TABLE prompts (
   title TEXT NOT NULL,
   description TEXT NOT NULL,
   content TEXT NOT NULL,
+  result_content TEXT,
   category_id UUID REFERENCES categories(id),
   difficulty TEXT NOT NULL CHECK (difficulty IN ('beginner', 'intermediate', 'advanced')),
+  model_used TEXT,
   model_recommendation TEXT,
+  tools_used TEXT[] DEFAULT '{}',
   tags TEXT[] DEFAULT '{}',
   status TEXT DEFAULT 'pending' CHECK (status IN ('pending', 'approved', 'rejected')),
   author_id UUID REFERENCES profiles(id),
@@ -42,6 +45,10 @@ CREATE TABLE prompts (
   fork_source_project_title TEXT,
   fork_source_step_id TEXT,
   fork_source_step_number INT CHECK (fork_source_step_number IS NULL OR fork_source_step_number > 0),
+  fork_source_model_variant_id UUID,
+  fork_source_run_id TEXT,
+  fork_source_artifact_path TEXT,
+  fork_source_artifact_sha256 TEXT,
   fork_parent_submission_id TEXT,
   prompt_family_id TEXT,
   fork_depth INT NOT NULL DEFAULT 0 CHECK (fork_depth >= 0 AND fork_depth < 10),
@@ -57,6 +64,7 @@ CREATE TABLE prompt_steps (
   step_number INT NOT NULL,
   title TEXT NOT NULL,
   content TEXT NOT NULL,
+  result_content TEXT,
   description TEXT,
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
@@ -148,6 +156,53 @@ CREATE TABLE project_model_variants (
     )
   )
 );
+
+ALTER TABLE public.prompts
+  ADD CONSTRAINT prompts_fork_source_model_variant_fkey
+    FOREIGN KEY (fork_source_model_variant_id)
+    REFERENCES public.project_model_variants(id)
+    ON DELETE RESTRICT,
+  ADD CONSTRAINT prompts_fork_source_run_check
+    CHECK (
+      fork_source_run_id IS NULL
+      OR (
+        BTRIM(fork_source_run_id) <> ''
+        AND fork_source_run_id = BTRIM(fork_source_run_id)
+      )
+    ),
+  ADD CONSTRAINT prompts_fork_source_artifact_path_check
+    CHECK (
+      fork_source_artifact_path IS NULL
+      OR (
+        fork_source_artifact_path LIKE 'public/artifacts/%'
+        AND LENGTH(fork_source_artifact_path) > LENGTH('public/artifacts/')
+        AND fork_source_artifact_path NOT LIKE '%..%'
+        AND STRPOS(fork_source_artifact_path, CHR(92)) = 0
+        AND fork_source_artifact_path = BTRIM(fork_source_artifact_path)
+      )
+    ),
+  ADD CONSTRAINT prompts_fork_source_artifact_sha256_check
+    CHECK (
+      fork_source_artifact_sha256 IS NULL
+      OR fork_source_artifact_sha256 ~ '^[0-9a-f]{64}$'
+    ),
+  ADD CONSTRAINT prompts_variant_aware_fork_fields_check
+    CHECK (
+      (
+        fork_source_model_variant_id IS NULL
+        AND fork_source_run_id IS NULL
+        AND fork_source_artifact_path IS NULL
+        AND fork_source_artifact_sha256 IS NULL
+      )
+      OR (
+        NULLIF(BTRIM(COALESCE(fork_source_project_id, '')), '') IS NOT NULL
+        AND NULLIF(BTRIM(COALESCE(fork_source_run_id, '')), '') IS NOT NULL
+        AND NULLIF(BTRIM(COALESCE(fork_source_step_id, '')), '') IS NOT NULL
+        AND fork_source_step_number > 0
+        AND NULLIF(BTRIM(COALESCE(fork_source_artifact_path, '')), '') IS NOT NULL
+        AND fork_source_artifact_sha256 ~ '^[0-9a-f]{64}$'
+      )
+    );
 
 CREATE UNIQUE INDEX idx_project_model_variants_current_provider
   ON project_model_variants(project_id, provider_key)
@@ -1151,6 +1206,151 @@ CREATE INDEX idx_prompts_status ON prompts(status);
 CREATE INDEX idx_prompts_author ON prompts(author_id);
 CREATE INDEX idx_prompts_difficulty ON prompts(difficulty);
 CREATE INDEX idx_prompts_fork_source_project ON prompts(fork_source_project_id);
+CREATE INDEX idx_prompts_fork_source_model_variant
+  ON prompts(fork_source_model_variant_id)
+  WHERE fork_source_model_variant_id IS NOT NULL;
+CREATE INDEX idx_prompts_fork_source_run
+  ON prompts(fork_source_run_id)
+  WHERE fork_source_run_id IS NOT NULL;
+CREATE UNIQUE INDEX idx_prompts_unique_approved_fork_branch_slot
+  ON prompts(
+    BTRIM(fork_source_project_id),
+    COALESCE(
+      'run:' || NULLIF(BTRIM(fork_source_run_id), ''),
+      'variant:' || fork_source_model_variant_id::TEXT,
+      'legacy'
+    ),
+    (CASE
+      WHEN NULLIF(BTRIM(fork_source_step_id), '') IS NOT NULL
+        THEN 'id:' || BTRIM(fork_source_step_id)
+      WHEN fork_source_step_number IS NOT NULL
+        THEN 'number:' || fork_source_step_number::TEXT
+      ELSE 'project'
+    END),
+    fork_branch_index
+  )
+  WHERE status = 'approved'
+    AND NULLIF(BTRIM(fork_source_project_id), '') IS NOT NULL;
+
+-- Direct-write least privilege. Public publication stays RPC-only.
+-- ---------------------------------------------------------------------------
+
+ALTER TABLE public.prompts ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.prompt_steps ENABLE ROW LEVEL SECURITY;
+REVOKE ALL ON TABLE public.prompts FROM anon, authenticated;
+GRANT SELECT ON TABLE public.prompts TO anon, authenticated;
+GRANT INSERT (
+  title,
+  description,
+  content,
+  result_content,
+  category_id,
+  difficulty,
+  model_used,
+  model_recommendation,
+  tools_used,
+  tags,
+  status,
+  author_id,
+  fork_source_project_id,
+  fork_source_project_title,
+  fork_source_model_variant_id,
+  fork_source_run_id,
+  fork_source_step_id,
+  fork_source_step_number,
+  fork_source_artifact_path,
+  fork_source_artifact_sha256,
+  fork_parent_submission_id,
+  prompt_family_id,
+  fork_depth,
+  fork_branch_index
+) ON TABLE public.prompts TO authenticated;
+GRANT UPDATE (
+  title,
+  description,
+  content,
+  result_content,
+  category_id,
+  difficulty,
+  model_used,
+  model_recommendation,
+  tools_used,
+  tags,
+  status,
+  updated_at
+) ON TABLE public.prompts TO authenticated;
+
+DROP POLICY IF EXISTS "Approved prompts are viewable by everyone" ON public.prompts;
+DROP POLICY IF EXISTS "Authenticated users can create prompts" ON public.prompts;
+DROP POLICY IF EXISTS "Authors and admins can update prompts" ON public.prompts;
+DROP POLICY IF EXISTS "Public prompts, owners, and admins can read" ON public.prompts;
+DROP POLICY IF EXISTS "Authenticated users create pending zero-engagement prompts" ON public.prompts;
+DROP POLICY IF EXISTS "Owners edit pending prompts and admins review" ON public.prompts;
+
+CREATE POLICY "Public prompts, owners, and admins can read"
+  ON public.prompts FOR SELECT
+  USING (
+    status = 'approved'
+    OR author_id = (SELECT auth.uid())
+    OR EXISTS (
+      SELECT 1 FROM public.profiles
+      WHERE profiles.id = (SELECT auth.uid())
+        AND profiles.role = 'admin'
+    )
+  );
+
+CREATE POLICY "Authenticated users create pending zero-engagement prompts"
+  ON public.prompts FOR INSERT TO authenticated
+  WITH CHECK (
+    author_id = (SELECT auth.uid())
+    AND status = 'pending'
+    AND vote_count = 0
+    AND bookmark_count = 0
+  );
+
+CREATE POLICY "Owners edit pending prompts and admins review"
+  ON public.prompts FOR UPDATE TO authenticated
+  USING (
+    (author_id = (SELECT auth.uid()) AND status = 'pending')
+    OR EXISTS (
+      SELECT 1 FROM public.profiles
+      WHERE profiles.id = (SELECT auth.uid())
+        AND profiles.role = 'admin'
+    )
+  )
+  WITH CHECK (
+    (author_id = (SELECT auth.uid()) AND status = 'pending')
+    OR EXISTS (
+      SELECT 1 FROM public.profiles
+      WHERE profiles.id = (SELECT auth.uid())
+        AND profiles.role = 'admin'
+    )
+  );
+
+REVOKE ALL ON TABLE public.prompt_steps FROM anon, authenticated;
+GRANT SELECT ON TABLE public.prompt_steps TO anon, authenticated;
+GRANT INSERT (
+  prompt_id,
+  step_number,
+  title,
+  content,
+  result_content,
+  description
+) ON TABLE public.prompt_steps TO authenticated;
+
+DROP POLICY IF EXISTS "Authenticated users can create prompt steps" ON public.prompt_steps;
+DROP POLICY IF EXISTS "Owners can add steps to pending prompts" ON public.prompt_steps;
+CREATE POLICY "Owners can add steps to pending prompts"
+  ON public.prompt_steps FOR INSERT TO authenticated
+  WITH CHECK (
+    EXISTS (
+      SELECT 1
+      FROM public.prompts
+      WHERE prompts.id = prompt_steps.prompt_id
+        AND prompts.author_id = (SELECT auth.uid())
+        AND prompts.status = 'pending'
+    )
+  );
 CREATE INDEX idx_prompts_prompt_family ON prompts(prompt_family_id);
 CREATE INDEX idx_prompts_parent_fork ON prompts(fork_parent_submission_id);
 CREATE INDEX idx_prompt_steps_prompt ON prompt_steps(prompt_id);
@@ -1253,21 +1453,6 @@ ALTER TABLE categories ENABLE ROW LEVEL SECURITY;
 -- Everyone can read categories
 CREATE POLICY "Categories are viewable by everyone" ON categories FOR SELECT USING (true);
 
--- Everyone can read approved prompts; authors can see their own
-CREATE POLICY "Approved prompts are viewable by everyone" ON prompts
-  FOR SELECT USING (status = 'approved' OR author_id = auth.uid());
-
--- Authenticated users can create prompts
-CREATE POLICY "Authenticated users can create prompts" ON prompts
-  FOR INSERT WITH CHECK (auth.uid() = author_id);
-
--- Authors can update their own prompts; admins can update any
-CREATE POLICY "Authors and admins can update prompts" ON prompts
-  FOR UPDATE USING (
-    author_id = auth.uid() OR
-    EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role = 'admin')
-  );
-
 -- Prompt steps follow their parent prompt's visibility
 CREATE POLICY "Prompt steps are viewable with their prompt" ON prompt_steps
   FOR SELECT USING (
@@ -1316,3 +1501,616 @@ CREATE POLICY "Users can bookmark" ON bookmarks FOR INSERT WITH CHECK (
   )
 );
 CREATE POLICY "Users can remove own bookmarks" ON bookmarks FOR DELETE USING (auth.uid() = user_id);
+
+-- Immutable model-run artifact evidence
+-- ---------------------------------------------------------------------------
+
+CREATE TABLE IF NOT EXISTS public.project_model_variant_artifacts (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  model_variant_id UUID NOT NULL
+    REFERENCES public.project_model_variants(id) ON DELETE RESTRICT,
+  source_step_id TEXT NOT NULL CHECK (
+    BTRIM(source_step_id) <> ''
+    AND source_step_id = BTRIM(source_step_id)
+  ),
+  source_step_number INT NOT NULL CHECK (source_step_number > 0),
+  artifact_path TEXT NOT NULL CHECK (
+    artifact_path LIKE 'public/artifacts/%'
+    AND LENGTH(artifact_path) > LENGTH('public/artifacts/')
+    AND artifact_path = BTRIM(artifact_path)
+    AND artifact_path NOT LIKE '%..%'
+    AND STRPOS(artifact_path, CHR(92)) = 0
+  ),
+  artifact_sha256 TEXT NOT NULL CHECK (artifact_sha256 ~ '^[0-9a-f]{64}$'),
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  UNIQUE (model_variant_id, artifact_path),
+  UNIQUE (
+    model_variant_id,
+    source_step_id,
+    source_step_number,
+    artifact_path,
+    artifact_sha256
+  )
+);
+
+CREATE INDEX IF NOT EXISTS idx_project_model_variant_artifacts_step
+  ON public.project_model_variant_artifacts(
+    model_variant_id,
+    source_step_number,
+    source_step_id
+  );
+
+CREATE OR REPLACE FUNCTION public.validate_project_model_variant_artifact_step_identity()
+RETURNS TRIGGER
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = ''
+AS $$
+BEGIN
+  IF EXISTS (
+    SELECT 1
+    FROM public.project_model_variant_artifacts AS existing
+    WHERE existing.model_variant_id = NEW.model_variant_id
+      AND (
+        (existing.source_step_id = NEW.source_step_id AND existing.source_step_number <> NEW.source_step_number)
+        OR (existing.source_step_number = NEW.source_step_number AND existing.source_step_id <> NEW.source_step_id)
+      )
+  ) THEN
+    RAISE EXCEPTION 'A model-run response ID and response number must map one-to-one.';
+  END IF;
+  RETURN NEW;
+END;
+$$;
+
+REVOKE ALL ON FUNCTION public.validate_project_model_variant_artifact_step_identity()
+  FROM PUBLIC, anon, authenticated;
+DROP TRIGGER IF EXISTS validate_project_model_variant_artifact_step_identity_fields
+  ON public.project_model_variant_artifacts;
+CREATE TRIGGER validate_project_model_variant_artifact_step_identity_fields
+  BEFORE INSERT ON public.project_model_variant_artifacts
+  FOR EACH ROW EXECUTE FUNCTION public.validate_project_model_variant_artifact_step_identity();
+
+CREATE OR REPLACE FUNCTION public.prevent_project_model_variant_artifact_mutation()
+RETURNS TRIGGER
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = ''
+AS $$
+BEGIN
+  RAISE EXCEPTION 'Published model-variant artifact evidence is immutable.';
+END;
+$$;
+
+REVOKE ALL ON FUNCTION public.prevent_project_model_variant_artifact_mutation() FROM PUBLIC;
+REVOKE ALL ON FUNCTION public.prevent_project_model_variant_artifact_mutation() FROM anon, authenticated;
+
+DROP TRIGGER IF EXISTS prevent_project_model_variant_artifact_mutation_fields
+  ON public.project_model_variant_artifacts;
+CREATE TRIGGER prevent_project_model_variant_artifact_mutation_fields
+  BEFORE UPDATE OR DELETE ON public.project_model_variant_artifacts
+  FOR EACH ROW EXECUTE FUNCTION public.prevent_project_model_variant_artifact_mutation();
+
+ALTER TABLE public.project_model_variant_artifacts ENABLE ROW LEVEL SECURITY;
+REVOKE ALL ON TABLE public.project_model_variant_artifacts
+  FROM PUBLIC, anon, authenticated, service_role;
+GRANT SELECT ON TABLE public.project_model_variant_artifacts TO service_role;
+
+CREATE OR REPLACE FUNCTION public.publish_project_model_variant_artifact_evidence(
+  target_project_id UUID,
+  evidence_rows JSONB
+)
+RETURNS SETOF public.project_model_variant_artifacts
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = ''
+AS $$
+DECLARE
+  evidence_row JSONB;
+BEGIN
+  IF COALESCE((SELECT auth.jwt() ->> 'role'), '') <> 'service_role'
+    AND NOT EXISTS (
+      SELECT 1
+      FROM public.profiles
+      WHERE profiles.id = (SELECT auth.uid())
+        AND profiles.role = 'admin'
+    ) THEN
+    RAISE EXCEPTION 'Admin access required.';
+  END IF;
+
+  IF jsonb_typeof(evidence_rows) IS DISTINCT FROM 'array'
+    OR jsonb_array_length(evidence_rows) < 1 THEN
+    RAISE EXCEPTION 'Artifact-evidence payload must be a nonempty JSON array.';
+  END IF;
+
+  PERFORM pg_catalog.pg_advisory_xact_lock(
+    pg_catalog.hashtextextended(target_project_id::TEXT || '|artifact-evidence', 0)
+  );
+
+  IF NOT EXISTS (
+    SELECT 1
+    FROM public.prompts
+    WHERE prompts.id = target_project_id
+      AND prompts.status = 'approved'
+  ) THEN
+    RAISE EXCEPTION 'Artifact evidence requires an approved canonical project.';
+  END IF;
+
+  IF NOT EXISTS (
+    SELECT 1
+    FROM public.project_model_variants
+    WHERE project_model_variants.project_id = target_project_id
+      AND project_model_variants.status IN ('published', 'historical')
+  ) THEN
+    RAISE EXCEPTION 'Artifact evidence requires at least one public model variant.';
+  END IF;
+
+  FOR evidence_row IN SELECT value FROM jsonb_array_elements(evidence_rows)
+  LOOP
+    IF jsonb_typeof(evidence_row) IS DISTINCT FROM 'object'
+      OR NOT (evidence_row ?& ARRAY[
+        'model_variant_id',
+        'source_run_id',
+        'source_step_id',
+        'source_step_number',
+        'artifact_path',
+        'artifact_sha256'
+      ])
+      OR evidence_row - ARRAY[
+        'model_variant_id',
+        'source_run_id',
+        'source_step_id',
+        'source_step_number',
+        'artifact_path',
+        'artifact_sha256'
+      ] <> '{}'::JSONB
+      OR NULLIF(BTRIM(evidence_row->>'model_variant_id'), '') IS NULL
+      OR NULLIF(BTRIM(evidence_row->>'source_run_id'), '') IS NULL
+      OR NULLIF(BTRIM(evidence_row->>'source_step_id'), '') IS NULL
+      OR jsonb_typeof(evidence_row->'source_step_number') IS DISTINCT FROM 'number'
+      OR (evidence_row->>'source_step_number') !~ '^[1-9][0-9]*$'
+      OR NULLIF(BTRIM(evidence_row->>'artifact_path'), '') IS NULL
+      OR evidence_row->>'artifact_path' NOT LIKE 'public/artifacts/%'
+      OR LENGTH(evidence_row->>'artifact_path') <= LENGTH('public/artifacts/')
+      OR evidence_row->>'artifact_path' IS DISTINCT FROM BTRIM(evidence_row->>'artifact_path')
+      OR evidence_row->>'artifact_path' LIKE '%..%'
+      OR STRPOS(evidence_row->>'artifact_path', CHR(92)) > 0
+      OR COALESCE(evidence_row->>'artifact_sha256', '') !~ '^[0-9a-f]{64}$' THEN
+      RAISE EXCEPTION 'Artifact-evidence row is malformed or contains unsupported fields.';
+    END IF;
+
+    IF NOT EXISTS (
+      SELECT 1
+      FROM public.project_model_variants AS variant
+      WHERE variant.id = (evidence_row->>'model_variant_id')::UUID
+        AND variant.project_id = target_project_id
+        AND variant.source_run_id = evidence_row->>'source_run_id'
+        AND variant.status IN ('published', 'historical')
+        AND evidence_row->>'artifact_path' = ANY (variant.artifact_version_paths)
+    ) THEN
+      RAISE EXCEPTION 'Artifact evidence does not belong to a public run of the canonical project.';
+    END IF;
+  END LOOP;
+
+  IF EXISTS (
+    SELECT 1
+    FROM jsonb_array_elements(evidence_rows) AS rows(row_value)
+    GROUP BY row_value->>'model_variant_id', row_value->>'artifact_path'
+    HAVING COUNT(*) <> 1
+  ) THEN
+    RAISE EXCEPTION 'Artifact-evidence payload repeats a model-run artifact path.';
+  END IF;
+
+  IF EXISTS (
+    SELECT 1 FROM jsonb_array_elements(evidence_rows) AS rows(row_value)
+    GROUP BY row_value->>'model_variant_id', row_value->>'source_step_id'
+    HAVING COUNT(DISTINCT (row_value->>'source_step_number')::INT) <> 1
+  ) OR EXISTS (
+    SELECT 1 FROM jsonb_array_elements(evidence_rows) AS rows(row_value)
+    GROUP BY row_value->>'model_variant_id', (row_value->>'source_step_number')::INT
+    HAVING COUNT(DISTINCT row_value->>'source_step_id') <> 1
+  ) THEN
+    RAISE EXCEPTION 'A model-run response ID and response number must map one-to-one.';
+  END IF;
+
+  IF EXISTS (
+    SELECT 1
+    FROM public.project_model_variants AS variant
+    CROSS JOIN LATERAL UNNEST(variant.artifact_version_paths) AS paths(artifact_path)
+    WHERE variant.project_id = target_project_id
+      AND variant.status IN ('published', 'historical')
+      AND NOT EXISTS (
+        SELECT 1
+        FROM jsonb_array_elements(evidence_rows) AS rows(row_value)
+        WHERE (rows.row_value->>'model_variant_id')::UUID = variant.id
+          AND rows.row_value->>'source_run_id' = variant.source_run_id
+          AND rows.row_value->>'artifact_path' = paths.artifact_path
+      )
+  ) OR EXISTS (
+    SELECT 1
+    FROM jsonb_array_elements(evidence_rows) AS rows(row_value)
+    WHERE NOT EXISTS (
+      SELECT 1
+      FROM public.project_model_variants AS variant
+      WHERE variant.id = (rows.row_value->>'model_variant_id')::UUID
+        AND variant.project_id = target_project_id
+        AND variant.status IN ('published', 'historical')
+        AND rows.row_value->>'artifact_path' = ANY (variant.artifact_version_paths)
+    )
+  ) THEN
+    RAISE EXCEPTION 'Artifact evidence must cover every public model-run artifact exactly once.';
+  END IF;
+
+  IF EXISTS (
+    SELECT 1
+    FROM jsonb_array_elements(evidence_rows) AS rows(row_value)
+    JOIN public.project_model_variant_artifacts AS stored
+      ON stored.model_variant_id = (rows.row_value->>'model_variant_id')::UUID
+      AND stored.artifact_path = rows.row_value->>'artifact_path'
+    WHERE stored.source_step_id IS DISTINCT FROM rows.row_value->>'source_step_id'
+      OR stored.source_step_number IS DISTINCT FROM (rows.row_value->>'source_step_number')::INT
+      OR stored.artifact_sha256 IS DISTINCT FROM rows.row_value->>'artifact_sha256'
+  ) THEN
+    RAISE EXCEPTION 'Immutable artifact evidence differs from the previously published tuple.';
+  END IF;
+
+  INSERT INTO public.project_model_variant_artifacts (
+    model_variant_id,
+    source_step_id,
+    source_step_number,
+    artifact_path,
+    artifact_sha256
+  )
+  SELECT
+    (rows.row_value->>'model_variant_id')::UUID,
+    rows.row_value->>'source_step_id',
+    (rows.row_value->>'source_step_number')::INT,
+    rows.row_value->>'artifact_path',
+    rows.row_value->>'artifact_sha256'
+  FROM jsonb_array_elements(evidence_rows) AS rows(row_value)
+  ON CONFLICT (model_variant_id, artifact_path) DO NOTHING;
+
+  RETURN QUERY
+  SELECT evidence.*
+  FROM public.project_model_variant_artifacts AS evidence
+  JOIN public.project_model_variants AS variant
+    ON variant.id = evidence.model_variant_id
+  WHERE variant.project_id = target_project_id
+    AND variant.status IN ('published', 'historical')
+  ORDER BY variant.source_run_id, evidence.source_step_number, evidence.artifact_path;
+END;
+$$;
+
+REVOKE ALL ON FUNCTION public.publish_project_model_variant_artifact_evidence(UUID, JSONB)
+  FROM PUBLIC, anon, authenticated;
+GRANT EXECUTE ON FUNCTION public.publish_project_model_variant_artifact_evidence(UUID, JSONB)
+  TO service_role;
+
+CREATE OR REPLACE FUNCTION public.prevent_referenced_model_variant_retirement()
+RETURNS TRIGGER
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = ''
+AS $$
+BEGIN
+  IF OLD.status IN ('published', 'historical')
+    AND NEW.status NOT IN ('published', 'historical')
+    AND EXISTS (
+      SELECT 1
+      FROM public.prompts
+      WHERE prompts.status = 'approved'
+        AND prompts.fork_source_model_variant_id = OLD.id
+    ) THEN
+    RAISE EXCEPTION 'A model variant referenced by a public fork cannot be retired.';
+  END IF;
+  RETURN NEW;
+END;
+$$;
+
+REVOKE ALL ON FUNCTION public.prevent_referenced_model_variant_retirement()
+  FROM PUBLIC, anon, authenticated;
+
+DROP TRIGGER IF EXISTS prevent_referenced_model_variant_retirement_fields
+  ON public.project_model_variants;
+CREATE TRIGGER prevent_referenced_model_variant_retirement_fields
+  BEFORE UPDATE OF status ON public.project_model_variants
+  FOR EACH ROW EXECUTE FUNCTION public.prevent_referenced_model_variant_retirement();
+
+-- Variant-aware forks must name an exact response/artifact/SHA tuple that was
+-- published through the evidence RPC. Legacy project-only forks remain valid.
+ALTER TABLE public.prompts
+  DROP CONSTRAINT IF EXISTS prompts_variant_aware_fork_fields_check,
+  ADD CONSTRAINT prompts_variant_aware_fork_fields_check CHECK (
+    (
+      fork_source_model_variant_id IS NULL
+      AND fork_source_run_id IS NULL
+      AND fork_source_artifact_path IS NULL
+      AND fork_source_artifact_sha256 IS NULL
+    )
+    OR (
+      NULLIF(BTRIM(COALESCE(fork_source_project_id, '')), '') IS NOT NULL
+      AND NULLIF(BTRIM(COALESCE(fork_source_run_id, '')), '') IS NOT NULL
+      AND NULLIF(BTRIM(COALESCE(fork_source_step_id, '')), '') IS NOT NULL
+      AND fork_source_step_number > 0
+      AND NULLIF(BTRIM(COALESCE(fork_source_artifact_path, '')), '') IS NOT NULL
+      AND fork_source_artifact_sha256 ~ '^[0-9a-f]{64}$'
+    )
+  );
+
+ALTER TABLE public.prompts
+  DROP CONSTRAINT IF EXISTS prompts_exact_variant_artifact_fkey,
+  ADD CONSTRAINT prompts_exact_variant_artifact_fkey
+    FOREIGN KEY (
+      fork_source_model_variant_id,
+      fork_source_step_id,
+      fork_source_step_number,
+      fork_source_artifact_path,
+      fork_source_artifact_sha256
+    ) REFERENCES public.project_model_variant_artifacts (
+      model_variant_id,
+      source_step_id,
+      source_step_number,
+      artifact_path,
+      artifact_sha256
+    ) ON DELETE RESTRICT;
+
+CREATE OR REPLACE FUNCTION public.validate_variant_aware_project_fork()
+RETURNS TRIGGER
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = ''
+AS $$
+DECLARE
+  source_variant public.project_model_variants%ROWTYPE;
+BEGIN
+  IF NEW.fork_source_model_variant_id IS NULL
+    AND NEW.fork_source_run_id IS NULL
+    AND NEW.fork_source_artifact_path IS NULL
+    AND NEW.fork_source_artifact_sha256 IS NULL THEN
+    RETURN NEW;
+  END IF;
+
+  IF NULLIF(BTRIM(COALESCE(NEW.fork_source_project_id, '')), '') IS NULL
+    OR NULLIF(BTRIM(COALESCE(NEW.fork_source_run_id, '')), '') IS NULL
+    OR NULLIF(BTRIM(COALESCE(NEW.fork_source_step_id, '')), '') IS NULL
+    OR NEW.fork_source_step_number IS NULL
+    OR NEW.fork_source_step_number < 1
+    OR NULLIF(BTRIM(COALESCE(NEW.fork_source_artifact_path, '')), '') IS NULL
+    OR COALESCE(NEW.fork_source_artifact_sha256, '') !~ '^[0-9a-f]{64}$' THEN
+    RAISE EXCEPTION 'Exact-run forks require a public project, run, response, artifact, and SHA-256 tuple.';
+  END IF;
+
+  IF NEW.fork_source_model_variant_id IS NOT NULL THEN
+    SELECT variant.*
+    INTO source_variant
+    FROM public.project_model_variants AS variant
+    WHERE variant.id = NEW.fork_source_model_variant_id
+      AND variant.project_id::TEXT = BTRIM(NEW.fork_source_project_id)
+      AND variant.source_run_id = BTRIM(NEW.fork_source_run_id)
+      AND variant.status IN ('published', 'historical')
+      AND EXISTS (
+        SELECT 1
+        FROM public.prompts AS canonical_project
+        WHERE canonical_project.id = variant.project_id
+          AND canonical_project.status = 'approved'
+      )
+    FOR KEY SHARE;
+
+    IF NOT FOUND THEN
+      RAISE EXCEPTION 'Variant-aware fork source is not a public run of the approved canonical project.';
+    END IF;
+
+    IF NOT EXISTS (
+      SELECT 1
+      FROM public.project_model_variant_artifacts AS evidence
+      WHERE evidence.model_variant_id = source_variant.id
+        AND evidence.source_step_id = BTRIM(NEW.fork_source_step_id)
+        AND evidence.source_step_number = NEW.fork_source_step_number
+        AND evidence.artifact_path = BTRIM(NEW.fork_source_artifact_path)
+        AND evidence.artifact_sha256 = NEW.fork_source_artifact_sha256
+    ) THEN
+      RAISE EXCEPTION 'Variant-aware fork response/artifact evidence does not match the selected model run.';
+    END IF;
+
+    NEW.fork_source_project_id = source_variant.project_id::TEXT;
+    NEW.fork_source_run_id = source_variant.source_run_id;
+  ELSIF NOT EXISTS (
+    SELECT 1
+    FROM public.source_run_submissions AS source_intake
+    JOIN public.prompts AS source_project
+      ON source_project.id = source_intake.extracted_prompt_id
+    WHERE source_project.id::TEXT = BTRIM(NEW.fork_source_project_id)
+      AND source_project.status = 'approved'
+      AND source_intake.id::TEXT = BTRIM(NEW.fork_source_run_id)
+      AND source_intake.status = 'draft_created'
+      AND source_intake.intake_evidence IS NOT NULL
+      AND source_intake.intake_evidence->>'prompt_count' = NEW.fork_source_step_number::TEXT
+      AND BTRIM(NEW.fork_source_step_id) = (
+        source_project.id::TEXT
+        || ':' || source_intake.id::TEXT
+        || ':step:' || NEW.fork_source_step_number::TEXT
+      )
+      AND source_intake.intake_evidence->>'final_artifact_path' =
+        BTRIM(NEW.fork_source_artifact_path)
+      AND source_intake.intake_evidence->>'final_artifact_sha256' =
+        NEW.fork_source_artifact_sha256
+  ) THEN
+    RAISE EXCEPTION 'Prepared fork response/artifact evidence does not match the approved source-run project final.';
+  END IF;
+
+  NEW.fork_source_project_id = BTRIM(NEW.fork_source_project_id);
+  NEW.fork_source_run_id = BTRIM(NEW.fork_source_run_id);
+  NEW.fork_source_step_id = BTRIM(NEW.fork_source_step_id);
+  NEW.fork_source_artifact_path = BTRIM(NEW.fork_source_artifact_path);
+  RETURN NEW;
+END;
+$$;
+
+REVOKE ALL ON FUNCTION public.validate_variant_aware_project_fork()
+  FROM PUBLIC, anon, authenticated;
+
+DROP TRIGGER IF EXISTS validate_variant_aware_project_fork_fields ON public.prompts;
+CREATE TRIGGER validate_variant_aware_project_fork_fields
+  BEFORE INSERT OR UPDATE OF
+    fork_source_project_id,
+    fork_source_model_variant_id,
+    fork_source_run_id,
+    fork_source_step_id,
+    fork_source_step_number,
+    fork_source_artifact_path,
+    fork_source_artifact_sha256
+  ON public.prompts
+  FOR EACH ROW EXECUTE FUNCTION public.validate_variant_aware_project_fork();
+-- ---------------------------------------------------------------------------
+-- Server-owned public fork branch slots
+-- ---------------------------------------------------------------------------
+
+CREATE OR REPLACE FUNCTION public.allocate_project_fork_branch_index()
+RETURNS TRIGGER
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = ''
+AS $$
+DECLARE
+  source_run_scope TEXT;
+  source_step_scope TEXT;
+  current_prompt_id UUID;
+  available_branch_index INT;
+  unchanged_approved_scope BOOLEAN;
+BEGIN
+  IF NEW.status IS DISTINCT FROM 'approved'
+    OR NULLIF(BTRIM(COALESCE(NEW.fork_source_project_id, '')), '') IS NULL THEN
+    RETURN NEW;
+  END IF;
+
+  unchanged_approved_scope := TG_OP = 'UPDATE'
+    AND OLD.status = 'approved'
+    AND OLD.fork_source_project_id IS NOT DISTINCT FROM NEW.fork_source_project_id
+    AND OLD.fork_source_model_variant_id IS NOT DISTINCT FROM NEW.fork_source_model_variant_id
+    AND OLD.fork_source_run_id IS NOT DISTINCT FROM NEW.fork_source_run_id
+    AND OLD.fork_source_step_id IS NOT DISTINCT FROM NEW.fork_source_step_id
+    AND OLD.fork_source_step_number IS NOT DISTINCT FROM NEW.fork_source_step_number;
+
+  IF unchanged_approved_scope THEN
+    NEW.fork_branch_index = OLD.fork_branch_index;
+    RETURN NEW;
+  END IF;
+
+  source_run_scope := CASE
+    WHEN NEW.fork_source_model_variant_id IS NOT NULL THEN
+      'variant:' || NEW.fork_source_model_variant_id::TEXT
+      || '|run:' || BTRIM(NEW.fork_source_run_id)
+    ELSE
+      'legacy:' || COALESCE('run:' || NULLIF(BTRIM(NEW.fork_source_run_id), ''), 'project')
+  END;
+  source_step_scope := CASE
+    WHEN NEW.fork_source_model_variant_id IS NOT NULL THEN
+      'id:' || BTRIM(NEW.fork_source_step_id)
+      || '|number:' || NEW.fork_source_step_number::TEXT
+    WHEN NULLIF(BTRIM(NEW.fork_source_step_id), '') IS NOT NULL THEN
+      'id:' || BTRIM(NEW.fork_source_step_id)
+    WHEN NEW.fork_source_step_number IS NOT NULL THEN
+      'number:' || NEW.fork_source_step_number::TEXT
+    ELSE 'project'
+  END;
+  current_prompt_id := CASE WHEN TG_OP = 'UPDATE' THEN OLD.id ELSE NULL END;
+
+  PERFORM pg_catalog.pg_advisory_xact_lock(
+    pg_catalog.hashtextextended(
+      BTRIM(NEW.fork_source_project_id) || '|' || source_run_scope || '|' || source_step_scope,
+      0
+    )
+  );
+
+  SELECT slots.branch_index
+  INTO available_branch_index
+  FROM pg_catalog.generate_series(0, 9) AS slots(branch_index)
+  WHERE NOT EXISTS (
+    SELECT 1
+    FROM public.prompts AS existing_fork
+    WHERE existing_fork.status = 'approved'
+      AND BTRIM(existing_fork.fork_source_project_id) = BTRIM(NEW.fork_source_project_id)
+      AND (
+        CASE
+          WHEN existing_fork.fork_source_model_variant_id IS NOT NULL THEN
+            'variant:' || existing_fork.fork_source_model_variant_id::TEXT
+            || '|run:' || BTRIM(existing_fork.fork_source_run_id)
+          ELSE
+            'legacy:' || COALESCE(
+              'run:' || NULLIF(BTRIM(existing_fork.fork_source_run_id), ''),
+              'project'
+            )
+        END
+      ) = source_run_scope
+      AND (
+        CASE
+          WHEN existing_fork.fork_source_model_variant_id IS NOT NULL THEN
+            'id:' || BTRIM(existing_fork.fork_source_step_id)
+            || '|number:' || existing_fork.fork_source_step_number::TEXT
+          WHEN NULLIF(BTRIM(existing_fork.fork_source_step_id), '') IS NOT NULL THEN
+            'id:' || BTRIM(existing_fork.fork_source_step_id)
+          WHEN existing_fork.fork_source_step_number IS NOT NULL THEN
+            'number:' || existing_fork.fork_source_step_number::TEXT
+          ELSE 'project'
+        END
+      ) = source_step_scope
+      AND existing_fork.fork_branch_index = slots.branch_index
+      AND (current_prompt_id IS NULL OR existing_fork.id <> current_prompt_id)
+  )
+  ORDER BY slots.branch_index
+  LIMIT 1;
+
+  IF available_branch_index IS NULL THEN
+    RAISE EXCEPTION 'The selected response already has the maximum of ten public fork branches.';
+  END IF;
+
+  NEW.fork_branch_index = available_branch_index;
+  RETURN NEW;
+END;
+$$;
+
+REVOKE ALL ON FUNCTION public.allocate_project_fork_branch_index()
+  FROM PUBLIC, anon, authenticated;
+
+DROP TRIGGER IF EXISTS allocate_project_fork_branch_index_fields ON public.prompts;
+CREATE TRIGGER allocate_project_fork_branch_index_fields
+  BEFORE INSERT OR UPDATE OF
+    status,
+    fork_source_project_id,
+    fork_source_model_variant_id,
+    fork_source_run_id,
+    fork_source_step_id,
+    fork_source_step_number,
+    fork_branch_index
+  ON public.prompts
+  FOR EACH ROW EXECUTE FUNCTION public.allocate_project_fork_branch_index();
+
+DROP INDEX IF EXISTS public.idx_prompts_unique_approved_fork_branch_slot;
+CREATE UNIQUE INDEX idx_prompts_unique_approved_fork_branch_slot
+  ON public.prompts(
+    BTRIM(fork_source_project_id),
+    (CASE
+      WHEN fork_source_model_variant_id IS NOT NULL THEN
+        'variant:' || fork_source_model_variant_id::TEXT
+        || '|run:' || BTRIM(fork_source_run_id)
+      ELSE
+        'legacy:' || COALESCE(
+          'run:' || NULLIF(BTRIM(fork_source_run_id), ''),
+          'project'
+        )
+    END),
+    (CASE
+      WHEN fork_source_model_variant_id IS NOT NULL THEN
+        'id:' || BTRIM(fork_source_step_id)
+        || '|number:' || fork_source_step_number::TEXT
+      WHEN NULLIF(BTRIM(fork_source_step_id), '') IS NOT NULL THEN
+        'id:' || BTRIM(fork_source_step_id)
+      WHEN fork_source_step_number IS NOT NULL THEN
+        'number:' || fork_source_step_number::TEXT
+      ELSE 'project'
+    END),
+    fork_branch_index
+  )
+  WHERE status = 'approved'
+    AND NULLIF(BTRIM(fork_source_project_id), '') IS NOT NULL;
+
+-- ---------------------------------------------------------------------------
